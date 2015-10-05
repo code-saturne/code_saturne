@@ -83,10 +83,10 @@ implicit none
 
 integer          ii
 integer          ifcvsl, kislts, ifctsl, kbfid
-integer          iflid, kval, iopchr, ivar
+integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
 logical          ilved, iprev, inoprv, is_set
-integer          f_id, b_f_id, f_loc
+integer          f_id
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
 

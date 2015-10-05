@@ -125,7 +125,7 @@ _get_fspec(cs_lnum_t                    f_id,
            const cs_mesh_t             *m,
            const cs_mesh_quantities_t  *mq)
 {
-  int  f, j, k, v, e, s;
+  cs_lnum_t  f, j, k, v, e, s;
   double  inv_n, nx, ny, nz;
   double  P[3]; /* Point belonging to the current face */
   _cdo_fspec_t  fspec;
@@ -460,7 +460,7 @@ static void
 _compute_dface_quantities(const cs_cdo_connect_t  *topo,
                           cs_cdo_quantities_t     *iq)  /* In/out */
 {
-  int  c_id, i, j, k, size, shift, parent;
+  cs_lnum_t  c_id, i, j, k, size, shift, parent;
   double orient, area, inv;
   cs_real_3_t  trinorm, xexf, xexc, xc;
 
@@ -561,12 +561,12 @@ _saturn_algorithm(const cs_mesh_t             *mesh,
                   const cs_mesh_quantities_t  *mq,
                   cs_cdo_quantities_t         *cdoq) /* In/out */
 {
-  int  i, j, k;
+  cs_lnum_t  i, j, k;
 
-  const int  n_cells = mesh->n_cells;
-  const int  n_i_faces = mesh->n_i_faces;
-  const int  n_b_faces = mesh->n_b_faces;
-  const int  n_faces = n_i_faces + n_b_faces;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t  n_faces = n_i_faces + n_b_faces;
 
   assert(mq != NULL);
 
@@ -722,23 +722,26 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
                    const cs_cdo_connect_t      *connect,
                    cs_cdo_quantities_t         *iq) /* In/out */
 {
-  int  i, k, c_id, f_id, A, B, C, sgn;
+  cs_lnum_t  i, k, c_id, f_id, A, B, C, sgn;
   double  Fvol, inv_surf;
   _cdo_fspec_t  fspec;
   _cdo_fsubq_t  fsubq;
 
   const int X = 0, Y = 1, Z = 2;
-  const int n_cells = mesh->n_cells;
-  const int n_faces = iq->n_faces;
+  const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t n_faces = iq->n_faces;
 
   /* Sanity check */
+
   assert(connect->f2c != NULL);
   assert(connect->c2f != NULL);
 
   /* Allocate and initialize cell quantities */
+
   BFT_MALLOC(iq->face, n_faces, cs_quant_t);
   BFT_MALLOC(iq->cell_centers, 3*n_cells, cs_real_t);
   BFT_MALLOC(iq->cell_vol, n_cells, cs_real_t);
+
   for (i = 0; i < n_cells; i++) {
     iq->cell_vol[i] = 0.0;
     for (k = 0; k < 3; k++)
@@ -1001,7 +1004,7 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *q)
 void
 cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
 {
-  int  i, p;
+  cs_lnum_t  i, p;
 
   FILE  *fdump = NULL;
 
@@ -1086,7 +1089,7 @@ cs_compute_pvol_vtx(const cs_cdo_connect_t     *connect,
                     const cs_cdo_quantities_t  *quant,
                     double                     *p_pvol[])
 {
-  int  i, j;
+  cs_lnum_t  i, j;
 
   double  *pvol = *p_pvol;
 
@@ -1103,6 +1106,7 @@ cs_compute_pvol_vtx(const cs_cdo_connect_t     *connect,
       pvol[c2v->ids[j]] += quant->dcell_vol[j];
 
   /* Return pointer */
+
   *p_pvol = pvol;
 }
 
@@ -1122,7 +1126,7 @@ cs_compute_pvol_edge(const cs_cdo_connect_t      *connect,
                      const cs_cdo_quantities_t   *quant,
                      double                      *p_pvol[])
 {
-  int  i, j;
+  cs_lnum_t  i, j;
   double  dvol;
 
   double  *pvol = *p_pvol;

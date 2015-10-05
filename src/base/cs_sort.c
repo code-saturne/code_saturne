@@ -126,7 +126,6 @@ cs_sort_shell(cs_lnum_t  l,
               cs_lnum_t  a[])
 {
   int i, j, h;
-  cs_lnum_t  v;
 
   /* Compute stride */
   for (h = 1; h <= (r-l)/9; h = 3*h+1) ;

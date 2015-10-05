@@ -282,6 +282,24 @@ bft_mem_memalign(size_t       alignment,
                  const char  *file_name,
                  int          line_num);
 
+/*!
+ * \brief Return current theoretical dynamic memory allocated.
+ *
+ * \return current memory handled through bft_mem_...() (in kB).
+ */
+
+size_t
+bft_mem_size_current(void);
+
+/*!
+ * \brief Return maximum theoretical dynamic memory allocated.
+ *
+ * \return maximum memory handled through bft_mem_...() (in kB).
+ */
+
+size_t
+bft_mem_size_max(void);
+
 /*
  * Indicate if a memory aligned allocation variant is available.
  *
