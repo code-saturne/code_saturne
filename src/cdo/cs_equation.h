@@ -307,6 +307,7 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
  * \brief  Post-processing related to this equation
  *
  * \param[in]  mesh       pointer to the mesh structure
+ * \param[in]  cdoq       pointer to a cs_cdo_quantities_t struct.
  * \param[in]  time_iter  id of the time iteration
  * \param[in]  tcur       current physical time
  * \param[in]  eq         pointer to a cs_equation_t structure
@@ -314,10 +315,11 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_post(const cs_mesh_t          *mesh,
-                 int                       time_iter,
-                 cs_real_t                 tcur,
-                 const cs_equation_t      *eq);
+cs_equation_post(const cs_mesh_t            *mesh,
+                 const cs_cdo_quantities_t  *cdoq,
+                 int                         time_iter,
+                 cs_real_t                   tcur,
+                 const cs_equation_t        *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!

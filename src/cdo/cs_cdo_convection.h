@@ -156,6 +156,44 @@ cs_convection_with_diffusion(const cs_cdo_connect_t      *connect,
                              cs_sla_matrix_t             *matrix);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the Peclet number in each cell in a given direction
+ *
+ * \param[in]      cdoq      pointer to the cdo quantities structure
+ * \param[in]      a_info   set of options for the advection term
+ * \param[in]      d_info   set of options for the diffusion term
+ * \param[in]      dir_vect  direction in which we estimate the Peclet number
+ * \param[in]      tcur      value of the current time
+ * \param[in, out] peclet    pointer to the pointer of real numbers to fill
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_convection_get_peclet_cell(const cs_cdo_quantities_t   *cdoq,
+                              const cs_param_advection_t   a_info,
+                              const cs_param_hodge_t       d_info,
+                              const cs_real_3_t            dir_vect,
+                              cs_real_t                    tcur,
+                              cs_real_t                   *p_peclet[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the value in each cell of the upwinding coefficient given
+ *          a related Peclet number
+ *
+ * \param[in]      cdoq      pointer to the cdo quantities structure
+ * \param[in, out] coefval   pointer to the pointer of real numbers to fill
+ *                           in: Peclet number in each cell
+ *                           out: value of the upwind coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_convection_get_upwind_coef_cell(const cs_cdo_quantities_t   *cdoq,
+                                   const cs_param_advection_t   a_info,
+                                   cs_real_t                    coefval[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

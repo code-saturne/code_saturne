@@ -110,7 +110,8 @@ static cs_real_t  one_third = 1./3;
 /*!
  * \brief   Compute the value of the weighting function related to upwinding
  *
- * \param[in]  criterion  dot product between advection and normal vectors
+ * \param[in]  criterion  dot product between advection and normal vectors or
+ *                        estimation of a local Peclet number
  * \param[in]  adv_info   set of options for the computation
  *
  * \return the weight value
@@ -838,6 +839,104 @@ cs_convection_with_diffusion(const cs_cdo_connect_t      *connect,
     bft_error(__FILE__, __LINE__, 0,
               " Invalid type of advection operation.\n"
               " Choices are the following: conservative or not");
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the Peclet number in each cell in a given direction
+ *
+ * \param[in]      cdoq      pointer to the cdo quantities structure
+ * \param[in]      a_info   set of options for the advection term
+ * \param[in]      d_info   set of options for the diffusion term
+ * \param[in]      dir_vect  direction in which we estimate the Peclet number
+ * \param[in]      tcur      value of the current time
+ * \param[in, out] peclet    pointer to the pointer of real numbers to fill
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_convection_get_peclet_cell(const cs_cdo_quantities_t   *cdoq,
+                              const cs_param_advection_t   a_info,
+                              const cs_param_hodge_t       d_info,
+                              const cs_real_3_t            dir_vect,
+                              cs_real_t                    tcur,
+                              cs_real_t                   *p_peclet[])
+{
+  cs_real_33_t  matpty;
+  cs_real_3_t  beta_c, ptydir;
+
+  cs_real_3_t  xc = {0, 0, 0};
+  cs_real_t  *peclet = *p_peclet;
+
+  bool  pty_uniform = cs_param_pty_is_uniform(d_info.pty_id);
+  bool  adv_uniform = cs_param_adv_field_is_uniform(a_info.adv_id);
+
+  if (peclet == NULL)
+    BFT_MALLOC(peclet, cdoq->n_cells, cs_real_t);
+
+  if (pty_uniform)
+    cs_evaluate_pty(d_info.pty_id, tcur, xc, false, &matpty);
+  if (adv_uniform)
+    cs_evaluate_adv_field(a_info.adv_id, tcur, xc, &beta_c);
+
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+    if (!pty_uniform || !adv_uniform) { /* Retrieve cell center */
+      for (int k = 0; k < 3; k++)
+        xc[k] = cdoq->cell_centers[3*c_id+k];
+
+      /* Get the value of the material property at the cell center */
+      if (!pty_uniform)
+        cs_evaluate_pty(d_info.pty_id, tcur, xc, false, &matpty);
+
+      if (!adv_uniform)
+        cs_evaluate_adv_field(a_info.adv_id, tcur, xc, &beta_c);
+
+    } // not uniform
+
+    cs_real_t  hc = pow(cdoq->cell_vol[c_id], one_third);
+    cs_real_t  dp = _dp3(beta_c, dir_vect);
+
+    _mv3(matpty, dir_vect, &ptydir);
+
+    cs_real_t  inv_denum = 1/(_dp3(dir_vect, ptydir));
+
+    peclet[c_id] = hc * dp * inv_denum;
+
+  } // Loop on cells
+
+  /* Return pointer */
+  *p_peclet = peclet;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the value in each cell of the upwinding coefficient given
+ *          a related Peclet number
+ *
+ * \param[in]      cdoq      pointer to the cdo quantities structure
+ * \param[in, out] coefval   pointer to the pointer of real numbers to fill
+ *                           in: Peclet number in each cell
+ *                           out: value of the upwind coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_convection_get_upwind_coef_cell(const cs_cdo_quantities_t   *cdoq,
+                                   const cs_param_advection_t   a_info,
+                                   cs_real_t                    coefval[])
+{
+  /* Sanity check */
+  assert(coefval != NULL);
+
+  for (cs_lnum_t  c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+    cs_real_t  coef = _upwind_weight(coefval[c_id], a_info);
+
+    coefval[c_id] = coef;
+
+  } // Loop on cells
 
 }
 

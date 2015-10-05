@@ -63,6 +63,7 @@
 #include "cs_param.h"
 #include "cs_cdovb_codits.h"
 #include "cs_cdofb_codits.h"
+#include "cs_cdo_convection.h"
 
 #if defined(HAVE_PETSC)
 #include "cs_sles_petsc.h"
@@ -189,8 +190,8 @@ static cs_equation_algo_t _algo_info_by_default = {
 
 static cs_param_itsol_t _itsol_info_by_default = {
 #if defined(HAVE_PETSC)
-  CS_PARAM_PRECOND_ICC0,  // preconditioner
-  CS_PARAM_ITSOL_CG,      // iterative solver
+  CS_PARAM_PRECOND_ILU0,  // preconditioner
+  CS_PARAM_ITSOL_BICG,    // iterative solver
 #else
   CS_PARAM_PRECOND_DIAG,  // preconditioner
   CS_PARAM_ITSOL_CG,      // iterative solver
@@ -219,6 +220,7 @@ typedef enum {
   EQKEY_BC_ENFORCEMENT,
   EQKEY_BC_QUADRATURE,
   EQKEY_POST_FREQ,
+  EQKEY_POST,
   EQKEY_ADV_OP_TYPE,
   EQKEY_ADV_WEIGHT_ALGO,
   EQKEY_ADV_WEIGHT_CRIT,
@@ -647,6 +649,8 @@ _print_eqkey(eqkey_t  key)
     return "bc_quadrature";
   case EQKEY_POST_FREQ:
     return "post_freq";
+  case EQKEY_POST:
+    return "post";
   case EQKEY_ADV_OP_TYPE:
     return "adv_formulation";
   case EQKEY_ADV_WEIGHT_ALGO:
@@ -745,6 +749,8 @@ _get_eqkey(const char *keyname)
       key = EQKEY_BC_QUADRATURE;
   }
 
+  else if (strcmp(keyname, "post") == 0)
+    key = EQKEY_POST;
   else if (strcmp(keyname, "post_freq") == 0)
     key = EQKEY_POST_FREQ;
 
@@ -818,6 +824,7 @@ _create_equation_param(cs_equation_status_t   status,
   eqp->type = type;
   eqp->verbosity = 0;
   eqp->post_freq = 5;
+  eqp->post_flag = 0;
 
   /* Build the equation flag */
   eqp->flag = 0;
@@ -1762,6 +1769,13 @@ cs_equation_set(cs_equation_t       *eq,
     eqp->post_freq = atoi(val);
     break;
 
+  case EQKEY_POST:
+    if (strcmp(val, "peclet") == 0)
+      eqp->post_flag |= CS_EQUATION_POST_PECLET;
+    else if (strcmp(val, "upwind_coef") == 0)
+      eqp->post_flag |= CS_EQUATION_POST_UPWIND_COEF;
+    break;
+
   case EQKEY_ADV_OP_TYPE:
     if (strcmp(val, "conservative") == 0)
       eqp->advection.form = CS_PARAM_ADVECTION_FORM_CONSERV;
@@ -2490,6 +2504,7 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
  * \brief  Post-processing related to this equation
  *
  * \param[in]  mesh       pointer to the mesh structure
+ * \param[in]  cdoq       pointer to a cs_cdo_quantities_t struct.
  * \param[in]  time_iter  id of the time iteration
  * \param[in]  tcur       current physical time
  * \param[in]  eq         pointer to a cs_equation_t structure
@@ -2497,11 +2512,16 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_post(const cs_mesh_t          *mesh,
-                 int                       time_iter,
-                 cs_real_t                 tcur,
-                 const cs_equation_t      *eq)
+cs_equation_post(const cs_mesh_t            *mesh,
+                 const cs_cdo_quantities_t  *cdoq,
+                 int                         time_iter,
+                 cs_real_t                   tcur,
+                 const cs_equation_t        *eq)
 {
+  int  len;
+
+  char *postlabel = NULL;
+
   const cs_field_t  *field = cs_field_by_id(eq->field_id);
   const cs_equation_param_t  *eqp = eq->param;
 
@@ -2513,6 +2533,8 @@ cs_equation_post(const cs_mesh_t          *mesh,
   if (time_iter > 0 && eqp->post_freq == 0)
     return;
 
+  bft_printf(" <post/var> %s\n", field->name);
+
   /* Perform the post-processing */
   if (eq->post_ts_id > -1)
     cs_timer_stats_start(eq->post_ts_id);
@@ -2520,7 +2542,6 @@ cs_equation_post(const cs_mesh_t          *mesh,
   switch (eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
-    bft_printf(" <post/var> %s\n", field->name);
     cs_post_write_vertex_var(-1,              // id du maillage de post
                              field->name,
                              field->dim,
@@ -2529,13 +2550,10 @@ cs_equation_post(const cs_mesh_t          *mesh,
                              CS_POST_TYPE_cs_real_t,
                              field->val,      // values on vertices
                              NULL);           // time step management structure
-
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
     {
-      char *postlabel = NULL;
-
       const cs_lnum_t  n_i_faces = mesh->n_i_faces;
       const cs_real_t  *face_pdi = cs_equation_get_face_values(eq);
 
@@ -2551,7 +2569,7 @@ cs_equation_post(const cs_mesh_t          *mesh,
                         NULL);              // time step management structure
 
 
-      int  len = strlen(field->name) + 8 + 1;
+      len = strlen(field->name) + 8 + 1;
       BFT_MALLOC(postlabel, len, char);
       sprintf(postlabel, "%s.Border", field->name);
       cs_post_write_var(-2,                    // id du maillage de post
@@ -2577,6 +2595,87 @@ cs_equation_post(const cs_mesh_t          *mesh,
     break;
 
   } // Switch on space_scheme
+
+  if ( (eqp->flag & CS_EQUATION_CONVECTION) &&
+       (eqp->flag & CS_EQUATION_DIFFUSION) &&
+       (eqp->post_flag & CS_EQUATION_POST_PECLET ||
+        eqp->post_flag & CS_EQUATION_POST_UPWIND_COEF) ) {
+
+    cs_real_t  *work_c = NULL;
+    cs_real_3_t  base_vect;
+
+    const cs_param_advection_t  a_info = eqp->advection;
+    const cs_param_hodge_t  d_info = eqp->diffusion_hodge;
+
+    len = strlen(eq->name) + 9 + 1;
+    BFT_MALLOC(postlabel, len, char);
+
+    for (int k = 0; k < 3; k++) {
+
+      if (k == 0) {
+        sprintf(postlabel, "%s.Peclet.X", eq->name);
+        base_vect[0] = 1, base_vect[1] = base_vect[2] = 0;
+      }
+      else if (k == 1) {
+        sprintf(postlabel, "%s.Peclet.Y", eq->name);
+        base_vect[1] = 1, base_vect[0] = base_vect[2] = 0;
+      }
+      else {
+        sprintf(postlabel, "%s.Peclet.Z", eq->name);
+        base_vect[2] = 1, base_vect[1] = base_vect[0] = 0;
+      }
+
+      cs_convection_get_peclet_cell(cdoq,
+                                    a_info,
+                                    d_info,
+                                    base_vect,
+                                    tcur,
+                                    &work_c);
+
+      if (eqp->post_flag & CS_EQUATION_POST_PECLET)
+        cs_post_write_var(-1,           // id du maillage de post
+                          postlabel,
+                          1,
+                          true,         // interlace
+                          true,         // true = original mesh
+                          CS_POST_TYPE_cs_real_t,
+                          work_c,       // values on cells
+                          NULL,         // values at internal faces
+                          NULL,         // values at border faces
+                          NULL);        // time step management structure
+
+      if (eqp->post_flag & CS_EQUATION_POST_UPWIND_COEF) {
+
+        if (k == 0)
+          sprintf(postlabel, "%s.UpwCoefX", eq->name);
+        else if (k == 1)
+          sprintf(postlabel, "%s.UpwCoefY", eq->name);
+        else
+          sprintf(postlabel, "%s.UpwCoefZ", eq->name);
+
+        cs_convection_get_upwind_coef_cell(cdoq,
+                                           a_info,
+                                           work_c);
+
+        cs_post_write_var(-1,           // id du maillage de post
+                          postlabel,
+                          1,
+                          true,         // interlace
+                          true,         // true = original mesh
+                          CS_POST_TYPE_cs_real_t,
+                          work_c,       // values on cells
+                          NULL,         // values at internal faces
+                          NULL,         // values at border faces
+                          NULL);        // time step management structure
+
+      } /* Post upwinding coefficient */
+
+    } // Loop on space dimension
+
+    BFT_FREE(postlabel);
+    BFT_FREE(work_c);
+
+  } // Post a Peclet attached to cells
 
   if (eq->post_ts_id > -1)
     cs_timer_stats_stop(eq->post_ts_id);

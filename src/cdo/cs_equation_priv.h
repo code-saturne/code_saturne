@@ -39,11 +39,15 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/* Boundary condition flag */
+/* Term flag */
 #define  CS_EQUATION_UNSTEADY   (1 <<  0)  /*  1: unsteady term */
 #define  CS_EQUATION_CONVECTION (1 <<  1)  /*  2: convection term */
 #define  CS_EQUATION_DIFFUSION  (1 <<  2)  /*  4: diffusion term */
 #define  CS_EQUATION_SOURCETERM (1 <<  3)  /*  8: source term */
+
+/* Post flag */
+#define  CS_EQUATION_POST_PECLET      (1 << 0)
+#define  CS_EQUATION_POST_UPWIND_COEF (2 << 0)
 
 /*============================================================================
  * Type definitions
@@ -103,7 +107,9 @@ typedef struct {
   cs_equation_status_t  status;  /* predefined, user... */
   cs_equation_type_t    type;    /* scalar, vector, tensor... */
   int                   verbosity;  /* Level of detail to output */
+
   int                   post_freq; /* Move this option to cs_field_t ? */
+  cs_flag_t             post_flag; /* Type of post-treatment to do */
 
   /* Unsteady-Diffusion-Convection-Source term activated or not */
   int                   flag;

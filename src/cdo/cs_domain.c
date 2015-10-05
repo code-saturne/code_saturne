@@ -963,6 +963,7 @@ cs_domain_extra_operations(cs_domain_t   *domain,
     cs_equation_t  *eq = domain->equations[eq_id];
 
     cs_equation_post(domain->mesh,
+                     domain->cdo_quantities,
                      time_iter,
                      tcur,
                      eq);
