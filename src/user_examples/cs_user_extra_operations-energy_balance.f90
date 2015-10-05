@@ -345,7 +345,7 @@ if (inpdt0.eq.0) then
     flumab = bmasfl(ifac)
 
     ! Contribution to flux from the current face
-    ! (diffusion and convection flux, negative if incoming)
+    ! (diffusion and convection fluxes)
 
     xfluxf = - surfbn(ifac) * dt(iel)                       &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
@@ -372,7 +372,7 @@ if (inpdt0.eq.0) then
     flumab = bmasfl(ifac)
 
     ! Contribution to flux from the current face
-    ! (diffusion and convection flux, negative if incoming)
+    ! (diffusion and convection fluxes)
 
     xfluxf = - surfbn(ifac) * dt(iel)                       &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
@@ -398,7 +398,7 @@ if (inpdt0.eq.0) then
     flumab = bmasfl(ifac)
 
     ! Contribution to flux from the current face
-    ! (diffusion and convection flux, negative if incoming)
+    ! (diffusion and convection fluxes)
 
     xfluxf = - surfbn(ifac) * dt(iel)                       &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
@@ -424,7 +424,7 @@ if (inpdt0.eq.0) then
     flumab = bmasfl(ifac)
 
     ! Contribution to flux from the current face
-    ! (diffusion and convection flux, negative if incoming)
+    ! (diffusion and convection fluxes)
 
     xfluxf = - surfbn(ifac) * dt(iel)                       &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
@@ -450,7 +450,7 @@ if (inpdt0.eq.0) then
     flumab = bmasfl(ifac)
 
     ! Contribution to flux from the current face
-    ! (diffusion and convection flux, negative if incoming)
+    ! (diffusion and convection fluxes)
 
     xfluxf = - surfbn(ifac) * dt(iel)                       &
              * (cofafp(ifac) + cofbfp(ifac)*treco(ifac))    &
