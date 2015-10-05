@@ -1049,7 +1049,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
       }
       cs_post_write_var(-1,
-                        "Offset_c_max",
+                        "Offset",
                         1,
                         false,
                         true,
