@@ -64,12 +64,10 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  int     XYZ[3];    /* Direct permutation of the ref. axis such that nZ
-                        is maximal */
-  double  surf;      /* Face surface */
-  double  n[3];      /* Face normal with unitary norm */
-  double  omega;     /* P = Point belonging to the face
-                        omega = - < n, P> */
+  int         XYZ[3]; /* Direct permutation of the ref. axis such that nZ
+                         is maximal */
+  cs_qvect_t  q;      /* face surface and its unit normal */
+  double      omega;  /* P = Point belonging to the face omega = - < n, P> */
 
 } _cdo_fspec_t;
 
@@ -128,7 +126,7 @@ _get_fspec(cs_lnum_t                    f_id,
            const cs_mesh_quantities_t  *mq)
 {
   int  f, j, k, v, e, s;
-  double  inv_surf, inv_n, nx, ny, nz;
+  double  inv_n, nx, ny, nz;
   double  P[3]; /* Point belonging to the current face */
   _cdo_fspec_t  fspec;
 
@@ -136,10 +134,10 @@ _get_fspec(cs_lnum_t                    f_id,
 
   /* Treatment according to the kind of face (interior or border) */
 
-  if (fid < m->n_i_faces) { /* Interior face */
+  if (f_id < m->n_i_faces) { /* Interior face */
 
     /* Choose a vertex belonging to this face */
-    f = fid;
+    f = f_id;
     s = m->i_face_vtx_idx[f];
     e = m->i_face_vtx_idx[f+1];
     inv_n = 1.0 / (e - s);
@@ -156,14 +154,13 @@ _get_fspec(cs_lnum_t                    f_id,
     for (k = 0; k < 3; k++)
       P[k] *= inv_n;
 
-    for (k = 0; k < 3; k++)
-      fspec.n[k] = mq->i_face_normal[3*f+k];
+    cs_qvect(&(mq->i_face_normal[3*f+k]), &(fspec.q));
 
   }
   else { /* Border face */
 
     /* Choose a vertex belonging to this face */
-    f = fid - m->n_i_faces;
+    f = f_id - m->n_i_faces;
     s = m->b_face_vtx_idx[f];
     e = m->b_face_vtx_idx[f+1];
     inv_n = 1.0 / (e - s);
@@ -180,23 +177,17 @@ _get_fspec(cs_lnum_t                    f_id,
     for (k = 0; k < 3; k++)
       P[k] *= inv_n;
 
-    for (k = 0; k < 3; k++)
-      fspec.n[k] = mq->b_face_normal[3*f+k];
+    cs_qvect(&(mq->b_face_normal[3*f+k]), &(fspec.q));
 
   }
 
-  /* Define face normal with unitary norm and omega = -<n,P>*/
-  fspec.surf = _n3(fspec.n);
-  inv_surf = 1 / fspec.surf;
-  for (k = 0; k < 3; k++)
-    fspec.n[k] *= inv_surf;
-
-  fspec.omega = - _dp3(P, fspec.n);
+  /* Define omega = -<n,P>*/
+  fspec.omega = - _dp3(P, fspec.q.unitv);
 
   /* Define a direct basis such that n[Z] maximal */
-  nx = fabs(fspec.n[X]);
-  ny = fabs(fspec.n[Y]);
-  nz = fabs(fspec.n[Z]);
+  nx = fabs(fspec.q.unitv[X]);
+  ny = fabs(fspec.q.unitv[Y]);
+  nz = fabs(fspec.q.unitv[Z]);
 
   if (nx > ny && nx > nz)
     fspec.XYZ[Z] = X;
@@ -221,91 +212,73 @@ _get_fspec(cs_lnum_t                    f_id,
  * ---------------------------------------------------------------------------*/
 
 static _cdo_projq_t
-_get_proj_quantities(int                        fid,
+_get_proj_quantities(cs_lnum_t                f_id,
                      const cs_cdo_connect_t  *connect,
-                     const double               vtx_coords[],
-                     const int                  axis[])
+                     const cs_real_t          coords[],
+                     const int                axis[])
 {
-  cs_lnum_t  i, e_sgn, e_id, s, e;
   cs_lnum_t  v_id[2];
-  double  da, db, C1, Ca, Cb, Cab, Ca2, Cb2, Kab;
-  double  a0, a1, a0_2, a1_2, a0_3;
-  double  b0, b1, b0_2, b1_2, b0_3;
+  cs_real_t  a[2], b[2], a2[2], b2[2];
 
   const cs_sla_matrix_t  *f2e = connect->f2e;
   const cs_sla_matrix_t  *e2v = connect->e2v;
 
   /* Initialize structure */
-
   _cdo_projq_t  projq;
 
   /* These quantities are the integral of q on the plane
      (alpha, beta) where the face is projected */
 
-  projq.p1 = 0.0;
-  projq.pa = 0.0;
-  projq.pb = 0.0;
-  projq.pc = 0.0;
-  projq.pab = 0.0;
-  projq.pa2 = 0.0;
-  projq.pb2 = 0.0;
+  projq.p1 = projq.pa = projq.pb =  projq.pc = 0.0;
+  projq.pab = projq.pa2 = projq.pb2 = 0.0;
 
   /* Scan edges which belong to the current face */
+  for (cs_lnum_t  i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
 
-  for (i = f2e->idx[fid]; i < f2e->idx[fid+1]; i++) {
-
-    e_sgn = f2e->sgn[i];
-    e_id = f2e->col_id[i];
-    s = e2v->idx[e_id], e = e2v->idx[e_id+1];
-
-    /* Sanity check */
-    assert(e-s == 2);
+    short int  e_sgn = f2e->sgn[i];
+    cs_lnum_t  e_id = f2e->col_id[i];
+    cs_lnum_t  s = e2v->idx[e_id];
 
     if (e_sgn > 0)
       v_id[0] = e2v->col_id[s], v_id[1] = e2v->col_id[s+1];
     else
       v_id[0] = e2v->col_id[s+1], v_id[1] = e2v->col_id[s];
 
-    /* First vertex coordinnates in (alpha, beta) plane */
-    a0 = vtx_coords[3*v_id[0] + axis[0]];
-    b0 = vtx_coords[3*v_id[0] + axis[1]];
-
-    /* Second vertex coordinnates in (alpha, beta) plane */
-    a1 = vtx_coords[3*v_id[1] + axis[0]];
-    b1 = vtx_coords[3*v_id[1] + axis[1]];
+    /* Vertices in the plane (alpha, beta) */
+    for (int k = 0; k < 2; k++) {
+      a[k] = coords[3*v_id[k] + axis[0]];
+      a2[k] = a[k]*a[k];
+      b[k] = coords[3*v_id[k] + axis[1]];
+      b2[k] = b[k]*b[k];
+    }
 
     /* Related variables */
-    a0_2 = a0 * a0, a0_3 = a0_2 * a0;
-    b0_2 = b0 * b0, b0_3 = b0_2 * b0;
-    a1_2 = a1 * a1;
-    b1_2 = b1 * b1;
-    da  = a1 - a0;
-    db  = b1 - b0;
-
-    C1  = a0 + a1;
-    Ca  = C1 * a1 + a0_2;
-    Cb  = b1_2 + b1*b0 + b0_2;
-    Ca2 = a1 * Ca + a0_3;
-    Cb2 = b1 * Cb + b0_3;
-    Cab = 3*a1_2 + 2*a1*a0 +   a0_2;
-    Kab =   a1_2 + 2*a1*a0 + 3*a0_2;
+    cs_real_t  a0_3 = a2[0] * a[0];
+    cs_real_t  b0_3 = b2[0] * b[0];
+    cs_real_t  da  = a[1] - a[0], db  = b[1] - b[0];
+    cs_real_t  C1  = a[0] + a[1];
+    cs_real_t  Ca  = C1 * a[1] + a2[0];
+    cs_real_t  Cb  = b2[1] + b[1]*b[0] + b2[0];
+    cs_real_t  Ca2 = a[1] * Ca + a0_3;
+    cs_real_t  Cb2 = b[1] * Cb + b0_3;
+    cs_real_t  Cab = 3*a2[1] + 2*a[1]*a[0] + a2[0];
+    cs_real_t  Kab = a2[1] + 2*a[1]*a[0] + 3*a2[0];
 
     projq.p1  += db * C1;
     projq.pa  += db * Ca;
     projq.pb  += da * Cb;
     projq.pa2 += db * Ca2;
     projq.pb2 += da * Cb2;
-    projq.pab += db * (b1 * Cab + b0 * Kab);
-
+    projq.pab += db * (b[1] * Cab + b[0] * Kab);
 
   } /* Loop on face edges */
 
   projq.p1  *=  0.5;
-  projq.pa  *=  over_6;
-  projq.pb  *= -over_6;
-  projq.pab *=  over_24;
-  projq.pa2 *=  over_12;
-  projq.pb2 *= -over_12;
+  projq.pa  *=  one_6;
+  projq.pb  *= -one_6;
+  projq.pab *=  one_24;
+  projq.pa2 *=  one_12;
+  projq.pb2 *= -one_12;
 
   return  projq;
 }
@@ -313,29 +286,27 @@ _get_proj_quantities(int                        fid,
 /* ---------------------------------------------------------------------------*/
 
 static _cdo_fsubq_t
-_get_fsub_quantities(int                         fid,
+_get_fsub_quantities(cs_lnum_t                 f_id,
                      const cs_cdo_connect_t   *connect,
-                     const cs_mesh_t            *m,
+                     const cs_real_t          *coord,
                      _cdo_fspec_t              fspec)
 {
-  _cdo_projq_t  projq;
   _cdo_fsubq_t  fsubq;
 
-  double  na = fspec.n[fspec.XYZ[0]];
-  double  nb = fspec.n[fspec.XYZ[1]];
-  double  nc = fspec.n[fspec.XYZ[2]];
-  double  k1 = 1 / nc;
+  double  na = fspec.q.unitv[fspec.XYZ[0]];
+  double  nb = fspec.q.unitv[fspec.XYZ[1]];
+  double  nc = fspec.q.unitv[fspec.XYZ[2]];
+  double  k1 = 1./nc;
   double  k2 = k1 * k1;
   double  k3 = k2 * k1;
 
   /* Compute projected quantities */
-
-  projq = _get_proj_quantities(fid, connect, m->vtx_coord, fspec.XYZ);
+  _cdo_projq_t  projq = _get_proj_quantities(f_id, connect, coord, fspec.XYZ);
 
 #if CDO_QUANTITIES_DBG > 1
   printf(" F: %d >> p1: %.4e, pa: %.4e, pb: %.4e, pc: %.4e,"
          " pab: %.4e, pa2: %.4e, pb2: %.4e\n",
-         fid, projq.p1, projq.pa, projq.pb, projq.pc,
+         f_id, projq.p1, projq.pa, projq.pb, projq.pc,
          projq.pab, projq.pa2, projq.pb2);
 #endif
 
@@ -786,7 +757,7 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
     B = fspec.XYZ[Y];
     C = fspec.XYZ[Z];
 
-    fsubq = _get_fsub_quantities(f_id, connect, mesh, fspec);
+    fsubq = _get_fsub_quantities(f_id, connect, mesh->vtx_coord, fspec);
 
     inv_surf = 1.0/fsubq.F1;
     iq->face[f_id].center[A] = inv_surf * fsubq.Fa;
@@ -802,10 +773,10 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
       Fvol = ( (fspec.XYZ[X] == 0) ? fsubq.Fa :
                ( (fspec.XYZ[Y] == 0) ? fsubq.Fb : fsubq.Fc) );
 
-      iq->cell_vol[c_id] += sgn * fspec.n[0] * Fvol;
-      iq->cell_centers[3*c_id + A] += sgn * fspec.n[A] * fsubq.Fa2;
-      iq->cell_centers[3*c_id + B] += sgn * fspec.n[B] * fsubq.Fb2;
-      iq->cell_centers[3*c_id + C] += sgn * fspec.n[C] * fsubq.Fc2;
+      iq->cell_vol[c_id] += sgn * fspec.q.unitv[0] * Fvol;
+      iq->cell_centers[3*c_id + A] += sgn * fspec.q.unitv[A] * fsubq.Fa2;
+      iq->cell_centers[3*c_id + B] += sgn * fspec.q.unitv[B] * fsubq.Fb2;
+      iq->cell_centers[3*c_id + C] += sgn * fspec.q.unitv[C] * fsubq.Fc2;
 
     } /* End of loop on cell faces */
 
