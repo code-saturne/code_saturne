@@ -91,8 +91,8 @@ void CS_PROCF (symmetric_matrix_product, SYMMETRIC_MATRIX_PRODUCT)
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_math_33_3_product(const cs_real_33_t m,
-                     const cs_real_3_t  v,
+cs_math_33_3_product(const cs_real_t  m[3][3],
+                     const cs_real_t  v[3],
                      cs_real_3_t mv)
 {
   for (int ii = 0; ii < 3; ii++)
@@ -113,9 +113,9 @@ cs_math_33_3_product(const cs_real_33_t m,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_math_sym_33_3_product(const cs_real_6_t  m,
-                         const cs_real_3_t  v,
-                         cs_real_3_t        mv)
+cs_math_sym_33_3_product(const cs_real_t  m[6],
+                         const cs_real_t  v[3],
+                         cs_real_t        mv[restrict 3])
 {
   mv[0] = m[0] * v[0] + m[3] * v[1] + m[5] * v[2];
   mv[1] = m[3] * v[0] + m[1] * v[1] + m[4] * v[2];
@@ -134,8 +134,8 @@ cs_math_sym_33_3_product(const cs_real_6_t  m,
 /*----------------------------------------------------------------------------*/
 
 static inline cs_real_t
-cs_math_3_dot_product(const cs_real_3_t u,
-                      const cs_real_3_t v)
+cs_math_3_dot_product(const cs_real_t u[3],
+                      const cs_real_t v[3])
 {
   cs_real_t uv = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
 
@@ -153,7 +153,7 @@ cs_math_3_dot_product(const cs_real_3_t u,
 /*----------------------------------------------------------------------------*/
 
 static inline cs_real_t
-cs_math_3_square_norm(const cs_real_3_t v)
+cs_math_3_square_norm(const cs_real_t v[3])
 {
   cs_real_t v2 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
 
@@ -163,7 +163,9 @@ cs_math_3_square_norm(const cs_real_3_t v)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the inverse of a symmetric matrix using Cramer's rule.
- * NB: Symmetric matrix are stored as follows (s11, s22, s33, s12, s23, s13)
+ *
+ * \remark Symmetric matrix coefficients are stored as follows:
+ *         (s11, s22, s33, s12, s23, s13)
  *
  * \param[in]     s             symmetric matrix
  * \param[out]    sout          sout = 1/s1
@@ -171,8 +173,8 @@ cs_math_3_square_norm(const cs_real_3_t v)
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_math_sym_33_inv_cramer(const cs_real_6_t s,
-                          cs_real_6_t       sout)
+cs_math_sym_33_inv_cramer(const cs_real_t s[6],
+                          cs_real_t       sout[restrict 6])
 {
   double detinv;
 
@@ -185,18 +187,20 @@ cs_math_sym_33_inv_cramer(const cs_real_6_t s,
 
   detinv = 1. / (s[0]*sout[0] + s[3]*sout[3] + s[5]*sout[5]);
 
-  sout[0] = sout[0] * detinv;
-  sout[1] = sout[1] * detinv;
-  sout[2] = sout[2] * detinv;
-  sout[3] = sout[3] * detinv;
-  sout[4] = sout[4] * detinv;
-  sout[5] = sout[5] * detinv;
+  sout[0] *= detinv;
+  sout[1] *= detinv;
+  sout[2] *= detinv;
+  sout[3] *= detinv;
+  sout[4] *= detinv;
+  sout[5] *= detinv;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the product of two symmetric matrices.
- * NB: Symmetric matrix are stored as follows (s11, s22, s33, s12, s23, s13)
+ *
+ * \remark Symmetric matrix coefficients are stored as follows:
+ *         (s11, s22, s33, s12, s23, s13)
  *
  * \param[in]     s1            symmetric matrix
  * \param[in]     s2            symmetric matrix
@@ -205,9 +209,9 @@ cs_math_sym_33_inv_cramer(const cs_real_6_t s,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_math_sym_33_product(const cs_real_6_t s1,
-                       const cs_real_6_t s2,
-                       cs_real_6_t       sout)
+cs_math_sym_33_product(const cs_real_t s1[6],
+                       const cs_real_t s2[6],
+                       cs_real_t       sout[restrict 6])
 {
   /* S11 */
   sout[0] = s1[0]*s2[0] + s1[3]*s2[3] + s1[5]*s2[5];
@@ -226,7 +230,9 @@ cs_math_sym_33_product(const cs_real_6_t s1,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the product of three symmetric matrices.
- * NB: Symmetric matrix are stored as follows (s11, s22, s33, s12, s23, s13)
+ *
+ * \remark Symmetric matrix coefficients are stored as follows:
+ *         (s11, s22, s33, s12, s23, s13)
  *
  * \param[in]     s1            symmetric matrix
  * \param[in]     s2            symmetric matrix
@@ -236,12 +242,13 @@ cs_math_sym_33_product(const cs_real_6_t s1,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_math_sym_33_double_product(const cs_real_6_t s1,
-                              const cs_real_6_t s2,
-                              const cs_real_6_t s3,
-                              cs_real_33_t     sout)
+cs_math_sym_33_double_product(const cs_real_t s1[6],
+                              const cs_real_t s2[6],
+                              const cs_real_t s3[6],
+                              cs_real_t       sout[restrict 3][3])
 {
   cs_real_33_t _sout;
+
   /* S11 */
   _sout[0][0] = s1[0]*s2[0] + s1[3]*s2[3] + s1[5]*s2[5];
   /* S22 */
@@ -278,7 +285,6 @@ cs_math_sym_33_double_product(const cs_real_6_t s1,
   sout[0][2] = _sout[0][0]*s3[5] + _sout[0][1]*s3[4] + _sout[0][2]*s3[2];
   /* S31  */
   sout[2][0] = s3[0]*_sout[2][0] + s3[3]*_sout[2][1] + s3[5]*_sout[2][2];
-
 }
 
 /*----------------------------------------------------------------------------*/
