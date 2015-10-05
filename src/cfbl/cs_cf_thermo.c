@@ -199,8 +199,11 @@ cs_cf_thermo_default_init(int isuite)
   cs_real_t  p0    = cs_glob_fluid_properties->p0;
   cs_real_t  t0    = cs_glob_fluid_properties->t0;
   cs_real_t  cp0   = cs_glob_fluid_properties->cp0;
-  cs_real_t *cv0   = &cs_glob_fluid_properties->cv0;
-  cs_real_t *ro0   = &cs_glob_fluid_properties->ro0;
+
+  cs_fluid_properties_t *fluid_properties = cs_get_glob_fluid_properties();
+
+  cs_real_t *cv0   = &fluid_properties->cv0;
+  cs_real_t *ro0   = &fluid_properties->ro0;
 
   /* Default initializations
      t0 is positive (this assumption has been checked in verini) */
