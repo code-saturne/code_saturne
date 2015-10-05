@@ -298,7 +298,7 @@ def init_rank_id():
     global rank_id
     for v in rank_env_vars:
         if os.getenv(v):
-            rank_id = str(os.getenv(v))
+            rank_id = int(os.getenv(v))
             break
 
 #-------------------------------------------------------------------------------
