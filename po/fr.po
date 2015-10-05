@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-09-28 18:28+0200\n"
+"POT-Creation-Date: 2015-10-05 11:15+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4668,6 +4668,21 @@ msgstr ""
 "   \"%s\"\n"
 "\n"
 
+msgid "bad choice: you can't choose pressure as an output variable"
+msgstr ""
+
+msgid "bad choice: isochoric heat capacity not available yet"
+msgstr ""
+
+msgid "bad choice: specific volume not available yet"
+msgstr ""
+
+msgid "bad choice: quality not available yet"
+msgstr ""
+
+msgid "bad choice: speed of sound not available yet"
+msgstr ""
+
 msgid "point-to-point or not synchronized"
 msgstr "point à point ou non synchronisé"
 
@@ -4761,22 +4776,7 @@ msgstr ""
 msgid "bad choice: you chose to work in the %i plane with EOS."
 msgstr ""
 
-msgid "bad choice: you can't choose pressure as an output variable"
-msgstr ""
-
-msgid "bad choice: isochoric heat capacity not available yet"
-msgstr ""
-
-msgid "bad choice: specific volume not available yet"
-msgstr ""
-
 msgid "bad choice: internal energy not available yet"
-msgstr ""
-
-msgid "bad choice: quality not available yet"
-msgstr ""
-
-msgid "bad choice: speed of sound not available yet"
 msgstr ""
 
 msgid ""
@@ -8059,6 +8059,33 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid ""
+" Invalid key value %s for setting the form of the convection term.\n"
+" Choices are among conservative and non_conservative."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key value %s for setting the algorithm for defining the proportion "
+"of upwinding.\n"
+" Choices are among upwind, samarskii, sg and centered."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key value %s for setting the algorithm for computing the upwinding "
+"weight.\n"
+" Choices are among flux and xexc."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key value %s for setting the quadrature behaviour used for "
+"computing the advection flux.\n"
+" Choices are among bary, higher and highest."
+msgstr ""
+
+#, c-format
 msgid " Key %s is not implemented yet."
 msgstr " La clé %s n'est pas encore gérée."
 
@@ -8157,6 +8184,15 @@ msgstr ""
 msgid " Invalid type of definition.\n"
 msgstr ""
 
+msgid " Invalid type of definition of a material property."
+msgstr ""
+
+msgid " Invalid type of material property."
+msgstr ""
+
+msgid " Invalid type of definition for an advection field."
+msgstr ""
+
 msgid " This type of discrete Hodge operator is not covered.\n"
 msgstr ""
 
@@ -8247,7 +8283,13 @@ msgstr ""
 #, c-format
 msgid ""
 " Invalid id (equal to %d and should be between 0 and %d).\n"
-" Cannot access to the definition of the material property.\n"
+" Cannot access to the definition of this material property.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid id (equal to %d and should be between 0 and %d).\n"
+" Cannot access to the definition of this advection field.\n"
 msgstr ""
 
 #, c-format
@@ -8276,23 +8318,17 @@ msgid ""
 " This case is not handled. Please check your settings.\n"
 msgstr ""
 
-msgid " Invalid type of material property."
-msgstr ""
-
-#, c-format
-msgid " Type of property for %s is invalid with the creation of field.\n"
+msgid " Invalid type of definition for a material property."
 msgstr ""
 
 #, c-format
 msgid ""
-" Invalid id (eqal to %d).\n"
-" Cannot access to the material property definition.\n"
+" An existing advection field has already the same name %s.\n"
+" Stop adding this advection field.\n"
 msgstr ""
 
-msgid " Invalid type of definition of a material property."
-msgstr ""
-
-msgid " Invalid type of definition for a material property."
+#, c-format
+msgid " Type of property for %s is invalid with the creation of field.\n"
 msgstr ""
 
 msgid " Invalid solver. Stop execution."
@@ -10143,7 +10179,8 @@ msgstr ""
 
 #, c-format
 msgid ""
-"\\  Number of calls (statistics are cumulative): %d:\n"
+"\n"
+"  Number of calls (statistics are cumulative): %d:\n"
 "\n"
 msgstr ""
 
