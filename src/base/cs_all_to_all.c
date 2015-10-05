@@ -229,8 +229,8 @@ _compute_displ(int        n_ranks,
 
   displ[0] = 0;
 
-  for (i = 1; i < n_ranks; i++)
-    displ[i] = displ[i-1] + count[i-1];
+  for (i = 0; i < n_ranks; i++)
+    displ[i+1] = displ[i] + count[i];
 
   total_count = displ[n_ranks-1] + count[n_ranks-1];
 
@@ -259,6 +259,12 @@ _alltoall_caller_create_meta_s(int            stride,
   int rank_id, n_ranks;
   size_t elt_size = cs_datatype_size[datatype]*stride;
   size_t align_size = sizeof(cs_lnum_t);
+
+  if (cs_datatype_size[datatype] > align_size)
+    align_size = cs_datatype_size[datatype];
+
+  if (cs_datatype_size[dest_id_datatype] > align_size)
+    align_size = cs_datatype_size[dest_id_datatype];
 
   _mpi_all_to_all_caller_t *dc = NULL;
 
@@ -368,7 +374,7 @@ _alltoall_caller_create_s(size_t         n_elts,
   unsigned const char *_elt = elt;
   unsigned const char *_elt_id = elt_id;
 
-  assert(elt != NULL || n_elts == 0);
+  assert(elt != NULL || (n_elts == 0 || stride == 0));
 
   /* Create base data */
 
@@ -486,7 +492,7 @@ _alltoall_caller_create_from_block_s(size_t                 n_elts,
   const int rank_step = bi.rank_step;
   const cs_gnum_t block_size = bi.block_size;
 
-  assert(elt != NULL || n_elts == 0);
+  assert(elt != NULL || (n_elts == 0 || stride == 0));
 
   /* Create base data */
 
@@ -680,6 +686,12 @@ _crystal_create_meta_s(size_t         n_elts,
   size_t comp_size = 0;
   size_t elt_size = cs_datatype_size[datatype]*stride;
   size_t align_size = sizeof(cs_lnum_t);
+
+  if (cs_datatype_size[datatype] > align_size)
+    align_size = cs_datatype_size[datatype];
+
+  if (cs_datatype_size[dest_id_datatype] > align_size)
+    align_size = cs_datatype_size[dest_id_datatype];
 
   /* Ensure alignement on integer size at least */
 
@@ -1043,7 +1055,7 @@ _crystal_sendrecv_strided(_crystal_router_t  *cr,
   if ((uint64_t)send_size != test_size)
     bft_error(__FILE__, __LINE__, 0,
               "Crystal router:"
-              "  Message to send would has size too large for C int: %llu",
+              "  Message to send would have size too large for C int: %llu",
               (unsigned long long)test_size);
 
   MPI_Isend(&send_size, 1, MPI_INT, target, cr->rank_id,
