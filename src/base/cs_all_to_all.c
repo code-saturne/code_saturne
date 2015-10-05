@@ -1618,6 +1618,46 @@ cs_all_to_all_n_elts(const cs_all_to_all_t  *d)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Build ordering array of elements associated with an all-to-all
+ *        distributor based on their global number.
+ *
+ * \param[in]  d      pointer to associated all-to-all distributor
+ * \param[out] order  pointer to pre-allocated ordering table
+ *                    (size: cs_all_to_all_n_elts(d))
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_all_to_all_order_by_gnum_allocated(cs_all_to_all_t  *d,
+                                      cs_lnum_t        *order)
+{
+  size_t gnum_stride;
+  cs_gnum_t *gnum;
+
+  cs_lnum_t n_ent = cs_all_to_all_n_elts(d);
+
+  cs_all_to_all_get_gnum_pointer(d, &gnum_stride, &gnum);
+
+  cs_gnum_t *gnum_o;
+  if (gnum_stride == 1)
+    gnum_o = gnum;
+  else {
+    BFT_MALLOC(gnum_o, n_ent, cs_gnum_t);
+    for (cs_lnum_t i = 0; i < n_ent; i++)
+      gnum_o[i] = gnum[i*gnum_stride];
+  }
+
+  cs_order_gnum_allocated(NULL,
+                          gnum_o,
+                          order,
+                          n_ent);
+
+  if (gnum_o != gnum)
+    BFT_FREE(gnum_o);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Swap source and destination ranks of all-to-all distributor.
  *
  * \param[in, out]  d   pointer to associated all-to-all distributor

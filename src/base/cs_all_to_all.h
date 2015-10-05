@@ -219,6 +219,20 @@ cs_lnum_t
 cs_all_to_all_n_elts(const cs_all_to_all_t  *d);
 
 /*----------------------------------------------------------------------------
+ * Build ordering array of elements associated with an all-to-all
+ * distributor based on their global number.
+ *
+ * parameters:
+ *   d     <-- pointer to associated all-to-all distributor
+ *   order --> pointer to pre-allocated ordering table
+ *             (size: cs_all_to_all_n_elts(d))
+ *----------------------------------------------------------------------------*/
+
+void
+cs_all_to_all_order_by_gnum_allocated(cs_all_to_all_t  *d,
+                                      cs_lnum_t        *order);
+
+/*----------------------------------------------------------------------------
  * Swap source and destination ranks of all-to-all distributor.
  *
  * parameters:
