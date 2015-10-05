@@ -1419,7 +1419,7 @@ _join_performance_log(const cs_join_t  *this_join)
 
   if (this_join->stats.n_calls > 1)
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("\  Number of calls (statistics are cumulative): %d:\n\n"),
+                  _("\n  Number of calls (statistics are cumulative): %d:\n\n"),
                   this_join->stats.n_calls);
 
   cs_log_printf(CS_LOG_PERFORMANCE,
