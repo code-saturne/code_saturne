@@ -244,6 +244,8 @@ class Probes(object):
         self.legend   = "Probe " + str(ycol - 1)
         self.fmt      = ""
         self.ismesure = False
+        self.xerr    = None
+        self.yerr    = None
 
         xcol = 1
 
