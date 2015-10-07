@@ -21,19 +21,25 @@
 !-------------------------------------------------------------------------------
 
 !> \file visecv.f90
-!> \brief Computes the secondary viscosity contribution \f$\kappa -2/3 \mu\f$
-!> in order to compute:
+!> \brief Computes the secondary viscosity contribution \f$\kappa
+!> -\dfrac{2}{3} \mu\f$ in order to compute:
 !> \f[
-!> \grad( \kappa -2/3 \mu) \trace( \gradt(\vect{u})) )
+!> \grad\left( (\kappa -\dfrac{2}{3} \mu) \trace( \gradt(\vect{u})) \right)
 !> \f]
 !> with:
 !>   - \f$ \mu = \mu_{laminar} + \mu_{turbulent} \f$
 !>   - \f$ \kappa \f$ is the volume viscosity (generally zero)
 !>
-!> \remark:
-!>   In LES, the tensor \f$<(u-<u>)(u-<u>)>\f$ is modeled by \f$mut <S>\f$
-!>   and not by \f$mut <S> - 2/3 mut Tr(<S>) Id + 2/3 k Id\f$
-!>   so that no term \f$mut div<u>\f$ is needed.
+!> \remark
+!> In LES, the tensor
+!> \f$\overline{\left(\vect{u}-\overline{\vect{u}}\right)\otimes\left(\vect{u}
+!>-\overline{\vect{u}}\right)}\f$
+!> is modeled by \f$\mu_t \overline{\tens{S}}\f$
+!> and not by
+!> \f$\mu_t\overline{\tens{S}}-\dfrac{2}{3}\mu_t
+!> \trace\left(\overline{\tens{S}}\right)\tens{1}+\dfrac{2}{3}k\tens{1}\f$
+!> so that no term
+!> \f$\mu_t \dive \left(\overline{\vect{u}}\right)\f$ is needed.
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
