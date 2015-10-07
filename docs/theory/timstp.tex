@@ -54,15 +54,15 @@ Finally, all the variables are updated and another time step may start.
 The general equation for advection (valid for the velocity components, the
 turbulent variables and the scalars) is re-written as follows in a condensed
 form; the mass equation ($\frac{\partial \rho } {\partial t}+ \dive(\rho
-\vect{u}) = \Gamma$ see Equation (\ref{eq:mass})) has been used to split the time derivative:
+\vect{u}) = \Gamma$ see Equation \eqref{eq:goveqn:mass}) has been used to split the time derivative:
 %
-\begin{equation}\label{eq:transport_eq_scalar}
+\begin{equation}\label{eq:timstp:transport_eq_scalar}
 \rho \der{\varia}{t} + \grad \varia \cdot \left(\rho \vect{u} \right)
 - \dive \left(\rho \vect{u} \right) \varia
 - \dive \left(K \grad \varia \right) = S_{i}\left(\Phi, \, \varphi\right) \varia + S_{e}\left(\Phi,\varphi \right)
 + \Gamma \left( \varia - \varia^{in} \right).
 \end{equation}
-In Equation~\ref{eq:transport_eq_scalar}, $\Phi$ represents the physical properties such as $(\rho,K,\mu_{t},...)$,
+In Equation \eqref{eq:timstp:transport_eq_scalar}, $\Phi$ represents the physical properties such as $(\rho,K,\mu_{t},...)$,
 $\varphi$ represents the variables of the problem such as $(\vect{u},k,\epsilon,...)$,
 $S_{i}\left(\Phi, \, \varphi \right) \varia$ is the linear part of the source terms
 and
@@ -179,7 +179,7 @@ properties are taken at $n+\theta_\Phi$, with $\theta_F$ and $\theta_\Phi$
 dependent upon the specific schemes selected for the mass flux and the
 physical properties respectively and all $\theta$s are denoted by $\theta$.
 
-Under a general form, the discrete counterpart of Equation~(\ref{eq:transport_eq_scalar}) at
+Under a general form, the discrete counterpart of Equation \eqref{eq:timstp:transport_eq_scalar} at
 $n+\theta$ reads:
 \begin{equation}
 \displaystyle \dfrac{\rho}{\Delta t} \left(\varia^{n+1}-\varia^{n}\right)
@@ -219,7 +219,7 @@ or weakly compressible (dilatable or Low Mach algorithm) combined with a
 implicit Euler time stepping or a second order Crank Nicolson time stepping.
 
 The set of equations to be solved is
-\begin{equation}\label{eq:time_stepping_navier_stokes}
+\begin{equation}\label{eq:timstp:navier_stokes}
 \left\{\begin{array}{l}
 \displaystyle \rho \der{\vect{u}}{t} + \gradt \, \vect{u} \cdot \left( \rho\vect{u}  \right)
 =\divv(\tens{\sigma}) - \divv(\rho \tens{R}) + \vect{ST}_u - \tens{K}\,\vect{u} + \rho \vect{g} + \Gamma \left( \vect{u}^{in} - \vect{u} \right), \\
@@ -255,52 +255,43 @@ at the cell faces are updated.
 
 \subsubsection{Prediction step}
 In this section, a predicted velocity field $ \widetilde{\vect{u}} $ is obtained by solving
-the momentum equation of \eqref{eq:time_stepping_navier_stokes}
+the momentum equation of \eqref{eq:timstp:navier_stokes}
 
-\begin{equation}
+\begin{equation}\label{eq:timstp:prediction}
 \begin{array}{rcl}
-\displaystyle \rho \der{ \vect {u} } { t}
+\displaystyle \rho \dfrac{ \vect{\widetilde{u}} - \vect{u}^{n} } { \Delta t}
 +
 \underbrace {
-\gradt \,  \underline{u} \cdot \left( \rho\vect{u} \right)
+\gradt \,  \vect{\widetilde{u}}^{n+\theta} \cdot \left( \rho\vect{u} \right)
 }_{
 \text{convection}
 }%end underbrace
 &= & \underbrace{
-\divv \left(\mu\ \gradt \, \vect{u} \right)
+\divv \left[ \mu \left( \gradt \, \vect{\widetilde{u}}^{n+\theta}
+          + \transpose{\left(\gradt \, \vect{\widetilde{u}}^{n+\theta}\right)}
+          - \frac{2}{3} \trace \left( \gradt \, \vect{\widetilde{u}}^{n+\theta}  \right)\right)\right]
 }_{
-\text{diffusion}
-}%end underbrace
- +
-\underbrace{
-\divv \left( \mu \transpose{\gradt \, \vect{u}} \right)
-}_{
-\text{transpose of the velocity gradient term}
-}% end underbrace
-\underbrace{
--  \frac{2}{3} \grad \left( \mu\ \trace \left( \gradt \, \vect{u}  \right) \right)
-}_{
-\text{secondary viscosity}
+\text{viscous term}
 }% end underbrace
 \\
- &-& \grad \left( P \right)
+ &-& \grad \left( P^n \right)
  - \divv \left( \rho \tens{R} \right)
  + \left( \rho -\rho_0 \right) \vect{g} \\
 &\displaystyle +&
 \underbrace{
-\Gamma \left( \vect{u}^{in}-\vect{u} \right)
+\Gamma \left( \vect{u}^{in}-\vect{\widetilde{u}} \right)
 }_{
 \text{Mass source term}
 }%end underbrace
 -
 \underbrace{
-\rho \tens{K} \, \vect{u}
+\rho \tens{K} \, \vect{\widetilde{u}}
 }_{
 \text{Head loss}
 }%end underbrace
  +
 \underbrace{
-\vect{ST}_{u}^{exp}+ \tens{ST}_{u}^{imp}\, \vect{u}
+\vect{ST}_{u}^{exp}+ \tens{ST}_{u}^{imp}\, \vect{\widetilde{u}}
 }_{
 \text{user source terms}
 }%end underbrace
@@ -308,6 +299,7 @@ the momentum equation of \eqref{eq:time_stepping_navier_stokes}
 \end{equation}
 
 For more details, see \S~ \ref{ap:navstv} and \ref{ap:predvv}.
+
 \subsubsection{Correction step}
 The predicted velocity has \emph{a priori} non-zero divergence. The second step
 corrects the pressure by imposing the nullity\footnote{or the density time-variation
@@ -323,7 +315,7 @@ We then solve:
 \dive(\rho\vect{u})^{n+1} = \Gamma ,\\
 \end{array}\right.
 \end{equation}
-
+% FIXME add head loss to the source term
 where the pressure increment $\delta P^{n+\theta}$ is defined as:
 \begin{equation}
 \delta P^{n+\theta}=P^{n+\theta}-P^{n-1+\theta} .
@@ -338,6 +330,139 @@ modified at the start of the next time step, after the scalars
 
 
 For more details, see \S~ \ref{ap:navstv} and \ref{ap:resopv}.
+
+%-------------------------------------------------------------------------------
+\subsection{Variable density conservative solvers}
+
+Some flows such as those encountered in fire are natively unsteady.
+In addition, density varies with mixture and temperature. Thus, the temporal
+variation of density in Navier-Stokes equation has to be considered to get
+unsteady phenomena such as flame puffings.
+The SIMPLEC algorithm detailed before rewrites for a variable density field:
+
+\begin{itemize}
+ \item the prediction step solves the momentum equation with an explicit pressure:
+%
+\begin{equation}\label{eq:timstp:prediction}
+\dfrac{\rho^n \vect{\widetilde{u}} - \rho^{n-1} \vect{u}^n}{\Delta t}
++ \divv \left[\vect{\widetilde{u}} \otimes (\rho \vect{u})^n \right] = -\grad p^n + \divv{\tens{\widetilde{\tau}}} + \rho^n\vect{g}.
+\end{equation}
+
+ \item the correction step computes the pressure increment $\delta p^{n+1} = p^{n+1} - p^n$
+ used to correct the velocity respecting mass balance equation:
+\begin{equation}
+\left\{
+  \begin{array}{r c l}
+\dfrac{\rho^n \vect{u}^{n+1} - \rho^n\vect{\widetilde{u}}}{\Delta t} & = & -\grad \delta p^{n+1}\\
+\dfrac{\rho^n - \rho^{n-1}}{\Delta t}+\divs{ \left(\rho \vect{u} \right)}^{n+1} & = & \Gamma
+  \end{array}
+\right.
+\label{eq:timstp:correction}
+\end{equation}
+Combining the two equations of \eqref{eq:timstp:correction} leads to a Poisson equation on the pressure increment:
+\begin{equation}
+\divs{ \left( -\Delta t \grad \delta p^{n+1} \right) } = \Gamma
+- \dfrac{\rho^n - \rho^{n-1}}{\Delta t} - \divs{ \left( \rho \vect{\widetilde{u}} \right) }
+\end{equation}
+
+\end{itemize}
+
+%\begin{remark}
+%Note that with this algorithm, the quantity $ $ is conserved
+%\end{remark}
+
+%-------------------------------------------------------------------------------
+\subsection{Variable density semi-analytical solvers for fire modelling}
+The algorithm detailed in this section is not conservative, and
+is based on the state law for density.
+The idea is to use an analytical expression for the total derivative of density,
+expressed in terms of the solved variables
+involved in the state law and the total derivatives of these scalars,
+which are derived
+from their non conservative balance equation ($\rho \DP{\varia} = \divs \left(K \grad Y \right)+ S_\varia $):
+\begin{equation}
+\dfrac{1}{\rho}\DP{\rho} = \dfrac{1}{\rho} \sum_{p=1}^N \der{\rho}{\varia_p}
+\DP{\varia_p} = \dfrac{1}{\rho^2} \sum_{p=1}^N \der{\rho}{\varia_p} \left[\divs{ \left( K \grad {\varia_p} \right) }+S_{\varia_p}\right].
+\label{eq:timstp:total_derivative}
+\end{equation}
+
+These scalars have to be independant to avoid counting several times
+their effect on  the mass accumulation.
+One have also to bear in mind that the total derivatives are dependent of the state law for density.
+
+Therefore, the correction system \eqref{eq:timstp:correction} written in a non conservative form reads:
+\begin{equation}
+\left\{
+  \begin{array}{rcl}
+  \dfrac{(\rho \vect{u})^{n+1} - (\rho\vect{\widetilde{u}})}{\Delta t} = - \grad \delta p^{n+1} \\
+  \DP{\rho} + \divs{ \left( \rho \vect{u} \right)^{n+1} } - \vect{u}^{n+1} \cdot \grad{\rho}^n = \Gamma,
+  \end{array}
+  \right.
+\label{eq:timstp:correction3}
+\end{equation}
+and leads to a new equation for the pressure increment:
+\begin{equation}
+\DP{\rho} + \divs{ \left( \rho \vect{\widetilde{u}} \right) }
++ \divs{ \left( -\Delta t \grad \delta p^{n+1} \right) } - \vect{u}^{n+1} \cdot \grad{\rho}^n = \Gamma.
+\label{eq:timstp:pression3}
+\end{equation}
+Using the expression for the corrected velocity:
+\begin{equation}
+\vect{u}^{n+1} = \vect{\widetilde{u}} - \dfrac{\Delta t}{\rho^n} \grad{\delta p^{n+1}},
+\end{equation}
+in equation \eqref{eq:timstp:pression3} leads to:
+%
+\begin{equation}
+\dfrac{\Delta t}{\rho^n} \grad{\rho}^n \cdot \grad{\delta p^{n+1}}
+- \divs{ \left( \Delta t \grad \delta p^{n+1} \right) } = \Gamma
++ \vect{\widetilde{u}} \cdot \grad{\rho}^n - \DP{\rho}
+- \divs{ \left( \rho \vect{\widetilde{u}} \right) }.
+\label{eq:timstp:pression4}
+\end{equation}
+%
+Using some relationships between differential operators one obtains:
+\begin{equation}
+\dfrac{\Delta t}{\rho^n}\grad{\rho}^n \cdot \grad{\delta p^{n+1}}
+= \divs{ \left( \dfrac{\Delta t}{\rho^n}\grad{\rho}^n \delta p^{n+1} \right) }
+- \delta p^{n+1} \divs{ \left( \dfrac{\Delta t}{\rho^n} \grad{\rho^n} \right) },
+\end{equation}
+leads to a steady convection diffusion equation for the pressure increment:
+\begin{equation}
+\underbrace{ \divs{ \left( \dfrac{\Delta t}{\rho^n} \grad{\rho}^n \delta p^{n+1} \right) }
+           - \divs{ \left( \dfrac{\Delta t}{\rho^n} \grad{\rho^n} \right) } \delta p^{n+1}
+}_{\text{convection}}
+-
+\underbrace{
+  \divs{ \left( \Delta t \grad \delta p^{n+1} \right) }
+}_{\text{diffusion}}
+ = \Gamma - \DP{\rho}
+- \rho^n \divs{\vect{\widetilde{u}}}
+\label{eq:timstp:pression5}
+\end{equation}
+This equation is solved in two steps with $\delta p = \delta p_1 + \delta p_2$
+to split it into a pure diffusive step (which is the only remaining step when
+the density is constant) and a convective/diffusive step:
+%
+\begin{enumerate}
+ \item the first step solves the following equation which is closed to the equation solved in the standard algorithm,
+\begin{equation}
+ - \divs{ \left( \Delta t \grad \delta p_1^{n+1} \right) }
+ = \Gamma - \DP{\rho} - \rho^n \divs{\vect{\widetilde{u}}}
+ \label{eq:timstp:pression6}
+\end{equation}
+\item the second step solves the following steady convection diffusion equation
+(see \S \ref{sec:algebrea_iterative_process}):
+\begin{equation}
+ \begin{array}{rcl}
+  - \divs{ \left( \dfrac{\Delta t}{\rho^n} \grad{\rho^n} \right) } \delta p_2^{n+1}
+  + \divs{ \left( \dfrac{\Delta t}{\rho^n} \grad{\rho}^n \delta p_2^{n+1} \right) }
+  - \divs{ \left( \Delta t \grad \delta p_2^{n+1} \right) } = \\
+    \divs{ \left( \dfrac{\Delta t}{\rho^n} \grad{\rho^n} \right) } \delta p_1^{n+1}
+  - \divs{ \left( \dfrac{\Delta t}{\rho^n} \grad{\rho}^n \delta p_1^{n+1} \right) }
+  \end{array}
+ \label{eq:timstp:pression7}
+\end{equation}
+\end{enumerate}
 
 %-------------------------------------------------------------------------------
 %\subsection{Pseudo-coupled solver}

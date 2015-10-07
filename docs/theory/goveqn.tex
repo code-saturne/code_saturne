@@ -34,7 +34,7 @@ momentum, or again on mass of a scalar. A useful theorem, the so-called
 Leibniz theorem, states that the variation of the integral of a given field $A$
 over a moving domain $\Omega$ reads:
 
- \begin{equation}\label{eq:goveq:leibnitz_th}
+ \begin{equation}\label{eq:goveqn:leibnitz_th}
 \begin{array}{r c l}
 \displaystyle \DP{} \left( \int_{\vol{} } A \dd \vol{} \right) &=&
 \displaystyle \int_{\vol{} }\der{A}{t} \dd \vol{} + \int_{\partial \vol{}} A  \variav \cdot  \dd \vect{S},
@@ -45,13 +45,13 @@ over a moving domain $\Omega$ reads:
 %-----------------------------------------------
 \subsection{Laminar flows}
 \paragraph{Mass equation:}
-Let now apply \eqref{eq:goveq:leibnitz_th} to a fluid volume\footnote{%
+Let now apply \eqref{eq:goveqn:leibnitz_th} to a fluid volume\footnote{%
 A fluid volume consists of fluid particles, that is to say it moves with the fluid velocity.
 },
 so $\partial \Omega$ moves with the fluid velocity denoted by $\vect{u}$, and to the field
 $A= \rho$, where $\rho$ denotes the density:
 %
- \begin{equation}\label{eq:goveq:leibnitz_th_mass}
+ \begin{equation}\label{eq:goveqn:leibnitz_th_mass}
 \begin{array}{r c l}
 \displaystyle \DP{} \left( \int_{\vol{}} \rho \dd \vol{}\right) &=&
 \displaystyle \int_{\vol{}} \der{\rho}{t} \dd \vol{} + \int_{\partial \vol{}} \rho  \vect{u} \cdot  \dd \vect{S}, \\
@@ -59,20 +59,20 @@ $A= \rho$, where $\rho$ denotes the density:
 \displaystyle \int_{\vol{ }} \left( \der{\rho}{t} + \dive \left( \rho \vect{u} \right) \right) \dd \vol{},
 \end{array}
  \end{equation}
-the second line is obtained using Green relation. In \eqref{eq:goveq:leibnitz_th_mass}, the term
+the second line is obtained using Green relation. In \eqref{eq:goveqn:leibnitz_th_mass}, the term
 $\DP{} \left( \int_{\vol{} }\rho \dd \vol{}\right) $ is zero because\footnote{
 it can be non-zero in some rare cases when fluid is created by a chemical reaction for instance.
 }
  it is the variation of the mass of a fluid volume. This equality is true for any fluid volume, so
  if the density field and the velocity field are sufficiently regular then the \textbf{continuity} equation holds:
 
-\begin{equation}\label{eq:mass0}
+\begin{equation}\label{eq:goveqn:mass0}
 \dfrac{\partial \rho}{\partial t} + \dive(\rho \vect{u})=0.
 \end{equation}
 
-Equation \eqref{eq:mass0} could be slightly generalized to cases where a mass source term $\Gamma$
+Equation \eqref{eq:goveqn:mass0} could be slightly generalized to cases where a mass source term $\Gamma$
 exists:
-\begin{equation}\label{eq:mass}
+\begin{equation}\label{eq:goveqn:mass}
 \dfrac{\partial \rho}{\partial t} + \dive(\rho \vect{u})=\Gamma,
 \end{equation}
 but $\Gamma$ is generally taken to $0$.
@@ -82,7 +82,7 @@ but $\Gamma$ is generally taken to $0$.
 
 \paragraph{Momentum equation:}
 The same procedure on the momentum gives:
-\begin{equation}\label{eq:goveq:leibnitz_th_momentum}
+\begin{equation}\label{eq:goveqn:leibnitz_th_momentum}
 \begin{array}{r c l}
 \displaystyle \DP{} \left( \int_{\vol{} }\rho \vect{u} \dd \vol{}\right) &=&
 \displaystyle \int_{\vol{} }\der{\left( \rho \vect{u} \right) }{t} \dd \vol{} + \int_{\partial \vol{}}  \vect{u}\otimes \left( \rho \vect{u} \right) \cdot  \dd \vect{S}, \\
@@ -92,7 +92,7 @@ The same procedure on the momentum gives:
  \end{equation}
 once again, the Green relation has been used to obtain the second line. One then invokes Newton's second law
 stating that the variation of momentum is equal to the external forces:
-\begin{equation}\label{eq:goveq:leibnitz_th_momentum2}
+\begin{equation}\label{eq:goveqn:leibnitz_th_momentum2}
 \begin{array}{r c l}
 \displaystyle \DP{} \left( \int_{\vol{}} \rho \vect{u} \dd \vol{}\right) &=&
 \displaystyle
@@ -118,9 +118,9 @@ $ \dd \vect{S} $ by the exterior of the domain $\Omega$.
 }, $\vect{g}$ is the gravity field. Other source of momentum can be added in particular case, such
 as head losses or Coriolis forces for instance.
 
-Finally, bringing \eqref{eq:goveq:leibnitz_th_momentum} and \eqref{eq:goveq:leibnitz_th_momentum2} all together
+Finally, bringing \eqref{eq:goveqn:leibnitz_th_momentum} and \eqref{eq:goveqn:leibnitz_th_momentum2} all together
 the \textbf{momentum} equation is obtained:
-\begin{equation}\label{eq:momentum}
+\begin{equation}\label{eq:goveqn:momentum}
 \dfrac{\partial }{\partial t}(\rho \vect{u})
 +\divv \left( \vect{u}\otimes \rho \vect{u} \right)
 =\divv \left( \tens{\sigma} \right) +\rho \vect{g} +\vect{ST}_{\vect{u}}-\tens{K}\,\vect{u} + \Gamma \vect{u}^{in},
@@ -135,7 +135,7 @@ momentum Source Terms
 contribution associated with a user-prescribed mass source term...).
 Note that $\tens{K}$ is a symmetric positive tensor, by definition.
 
-In order to make the set of Equations \eqref{eq:mass} and \eqref{eq:momentum} closed, the Newtonian state law
+In order to make the set of Equations \eqref{eq:goveqn:mass} and \eqref{eq:goveqn:momentum} closed, the Newtonian state law
 linking the deviatoric part of the stress tensor $\tens{\sigma}$ to the velocity field (more precisely to the rate of strain tensor $\tens{S}$)
 is introduced:
 %
@@ -160,7 +160,7 @@ P &=& -\dfrac{1}{3} \trace \left( \tens{\sigma} \right), \\
 \nomenclature[rp ]{$P$}{pressure field \nomunit{$Pa$}}
 \nomenclature[gtaut2]{$\tens{\tau}$}{viscous stress tensor, which is the deviatoric part of the stress tensor \nomunit{$Pa$}}
 and $\tens{S}$ , the strain rate tensor, as:
-\begin{equation}\label{eq:base_introd_strainrate}
+\begin{equation}\label{eq:goveqn:base_introd_strainrate}
  \tens{S}=\frac{1}{2} \left( \gradt \, \vect{u}+ \transpose{\gradt \, \vect{u}} \right).
 \end{equation}
 %
@@ -173,10 +173,10 @@ Note that a fluid for which \eqref{eq:goveqn:newtonian_fluid} holds isS called a
 for water, air, but not the case of a paint because the stresses do not depend linearly on the strain rate.
 
 \paragraph{Navier-Stokes equations:}
-Injecting Equation \eqref{eq:goveqn:newtonian_fluid} into the momentum Equation \eqref{eq:momentum} and combining
-it with the continuity Equation \eqref{eq:mass} give the Navier-Stokes equations:
+Injecting Equation \eqref{eq:goveqn:newtonian_fluid} into the momentum Equation \eqref{eq:goveqn:momentum} and combining
+it with the continuity Equation \eqref{eq:goveqn:mass} give the Navier-Stokes equations:
 %
-\begin{equation}\label{eq:navier_stokes_conservative}
+\begin{equation}\label{eq:goveqn:navier_stokes_conservative}
 \left\lbrace
 \begin{array}{r c l}
 \dfrac{\partial \rho}{\partial t} + \dive \left( \rho \vect{u} \right) &=& \Gamma, \\
@@ -190,7 +190,7 @@ it with the continuity Equation \eqref{eq:mass} give the Navier-Stokes equations
 \right.
 \end{equation}
 
-The left hand side of the momentum part of  Equation \eqref{eq:navier_stokes_conservative} can be rewritten using the continuity Equation \eqref{eq:mass}:
+The left hand side of the momentum part of  Equation \eqref{eq:goveqn:navier_stokes_conservative} can be rewritten using the continuity Equation \eqref{eq:goveqn:mass}:
 \begin{equation}\label{eq:goveqn:conservative_non_conservative}
 \dfrac{\partial }{\partial t}(\rho \vect{u}) +\divv \left( \vect{u}\otimes \rho \vect{u} \right)
  =
@@ -210,7 +210,7 @@ The left hand side of the momentum part of  Equation \eqref{eq:navier_stokes_con
 \end{equation}
 
 Then the Navier-Stokes equations read in non-conservative form:
-\begin{equation}\label{eq:navier_stokes_laminar}
+\begin{equation}\label{eq:goveqn:navier_stokes_laminar}
 \left\lbrace
 \begin{array}{r c l}
 \dfrac{\partial \rho}{\partial t} + \dive \left( \rho \vect{u} \right) &=& \Gamma, \\
@@ -236,9 +236,9 @@ a fluctuating field $\vect{u}^\prime$:
 \begin{equation}
 \vect{u} = \overline{\vect{u}} + \vect{u}^\prime .
 \end{equation}
-The Reynolds average operator $\overline{\left( \cdot\right)}$ is applied to Navier-Stokes Equation \eqref{eq:navier_stokes_conservative}:
+The Reynolds average operator $\overline{\left( \cdot\right)}$ is applied to Navier-Stokes Equation \eqref{eq:goveqn:navier_stokes_conservative}:
 %
-\begin{equation}\label{eq:reynolds}
+\begin{equation}\label{eq:goveqn:reynolds}
 \left\lbrace
 \begin{array}{r c l}
 \dfrac{\partial \rho}{\partial t} + \dive \left( \rho \overline{\vect{u}} \right) &=& \Gamma, \\
@@ -257,10 +257,10 @@ The Reynolds average operator $\overline{\left( \cdot\right)}$ is applied to Nav
 \end{equation}
 %
 Only the mean fields $\overline{\vect{u}}$ and $\overline{P}$ are computed.
-An additional term $\tens{R}$ appears in the Reynolds Equations \eqref{eq:reynolds} which is by definition the covariance tensor of the fluctuating
+An additional term $\tens{R}$ appears in the Reynolds Equations \eqref{eq:goveqn:reynolds} which is by definition the covariance tensor of the fluctuating
 velocity field and called the Reynolds stress tensor:
 %
-\begin{equation}\label{eq:def_reynolds_stress-tensor}
+\begin{equation}\label{eq:goveqn:def_reynolds_stress-tensor}
 \tens{R} \equiv \overline{\vect{u}^\prime \otimes \vect{u}^ \prime}.
 \end{equation}
 the latter requires a closure modelling which depends the turbulence model adopted. Two major types of modelling exist:
@@ -287,7 +287,7 @@ $k-\varepsilon$, $k-\varepsilon$ with Linear Production (\emph{LP}), $k-\omega$ 
 \item Differential Reynolds Stress Models (\emph{DRSM}) which solve
 a transport equation on the components of the Reynolds stress tensor $\tens{R}$
 during the simulation, and are readily available for the momentum
-equation \eqref{eq:reynolds}. Three \emph{DRSM} models are available in \CS: $R_{ij}-\varepsilon$ proposed by Launder Reece and Rodi (\emph{LRR}) in \cite{Launder:1975},
+equation \eqref{eq:goveqn:reynolds}. Three \emph{DRSM} models are available in \CS: $R_{ij}-\varepsilon$ proposed by Launder Reece and Rodi (\emph{LRR}) in \cite{Launder:1975},
 $R_{ij}-\varepsilon$ proposed by Speziale, Sarkar and Gatski (\emph{SSG}) in \cite{Speziale:1991} and an Elliptic Blending version \emph{EB-RSM} (see \cite{Manceau:2002}).
 %
 
@@ -297,9 +297,9 @@ $R_{ij}-\varepsilon$ proposed by Speziale, Sarkar and Gatski (\emph{SSG}) in \ci
 %-----------------------------------------------
 \subsection{Large Eddy Simulation (\emph{LES}):}
 The \emph{LES} approach consists in spatially filtering the $\vect{u}$ field using an operator denoted by $\widetilde{\left(\cdot \right)} $.
-Applying the latter filter to the Navier-Stokes Equations \eqref{eq:navier_stokes} gives:
+Applying the latter filter to the Navier-Stokes Equations \eqref{eq:goveqn:navier_stokes} gives:
 %
-\begin{equation}\label{eq:navier_stokes_les}
+\begin{equation}\label{eq:goveqn:navier_stokes_les}
 \left\lbrace
 \begin{array}{r c l}
 \dfrac{\partial \rho}{\partial t} + \dive \left( \rho \widetilde{\vect{u}} \right) &=& \Gamma, \\
@@ -330,13 +330,13 @@ it is about \emph{RANS} velocity field $\overline{\vect{u}}$ or \emph{LES} veloc
 Moreover, a manipulation on the right hand side of the momentum is  performed to change the meaning
 of the pressure field. let $P^\star$ be the dynamic pressure field defined by:
 %
-\begin{equation}\label{eq:dynamic_pressure_def}
+\begin{equation}\label{eq:goveqn:dynamic_pressure_def}
 P^\star = P - \rho_0 \vect{g} \cdot \vect{x} + \dfrac{2}{3} \rho k,
 \end{equation}
 where $\rho_0$ is a reference constant density field. Then the continuity and the momentum equations
 read:
  %
- \begin{equation}\label{eq:navier_stokes}
+ \begin{equation}\label{eq:goveqn:navier_stokes}
 \left\lbrace
 \begin{array}{r c l}
 \dfrac{\partial \rho}{\partial t} + \dive \left( \rho \vect{u} \right) &=& \Gamma, \\
@@ -362,7 +362,7 @@ read:
 The energy equation reads:
 \begin{equation}
  \rho \DP{e} = -\divs \left(\vect{q''} \right) +q'''-P \divs \left( \vect{u} \right) + \mu S^2,
-\label{eq:energy}
+\label{eq:goveqn:energy}
 \end{equation}
 where $e$ is the specific internal energy,
 $\vect{q''}$ is the heat flux vector,
@@ -392,7 +392,7 @@ Applying the Lagrangian derivative $\DP{}$ to $h$:
 \end{equation}
 %
 then
-\begin{equation}\label{eq:enthalpyT}
+\begin{equation}\label{eq:goveqn:enthalpyT}
 \begin{array}{r c l}
   \rho \DP{h} &=& \divs \left( \lambda \grad T \right) +q'''-P\divs \vect{u} + \mu S^2 + \DP{P} -\frac{P}{\rho}\DP{\rho}, \\
    &=& \divs \left( \lambda \grad T \right) +q''' + \mu  S^2 + \DP{P} - \frac{P}{\rho} \left(\underbrace{\DP{\rho} + \rho \divs \vect{u}}_{\displaystyle =0} \right), \\
@@ -400,7 +400,7 @@ then
 \end{array}
 \end{equation}
 
-To express \eqref{eq:enthalpyT} only in terms of $h$ and not $T$, some thermodynamics relationships can be used.
+To express \eqref{eq:goveqn:enthalpyT} only in terms of $h$ and not $T$, some thermodynamics relationships can be used.
 For a pure substance, Maxwell's relations give:
 %
 \begin{equation}\label{eq:goveqn:dh_dt_dp}
@@ -412,8 +412,8 @@ where $\beta$ is the thermal expansion coefficient defined by:
  \beta= -\frac{1}{\rho}  \left.\der{\rho}{T}\right|_P.
 \end{equation}
 
-The equation \eqref{eq:enthalpyT} then becomes:
-\begin{equation}\label{eq:enthalpyH}
+The equation \eqref{eq:goveqn:enthalpyT} then becomes:
+\begin{equation}\label{eq:goveqn:enthalpyH}
  \rho \DP{h} = \divs \left( \dfrac{\lambda}{C_p} \left(\grad h -\dfrac{1-\beta T }{\rho}\grad P\right)\right) +q''' + \mu S^2 + \DP{P}.
 \end{equation}
 
@@ -428,7 +428,7 @@ Note that for incompressible flows, $\beta T$ is negligible compared to $1$. Mor
 %-------------------------------------------------------------------------------
 \subsection{Temperature equation}
 
-In order to rearrange the enthalpy Equation (\ref{eq:enthalpyT}) in terms of temperature \eqref{eq:goveqn:dh_dt_dp} is used:
+In order to rearrange the enthalpy Equation \eqref{eq:goveqn:enthalpyT} in terms of temperature \eqref{eq:goveqn:dh_dt_dp} is used:
 \begin{equation}
  \left.\der{s}{P}\right|_T = -  \left.\der{(1/\rho)}{T}\right|_P = \frac{1}{\rho^2} \left.\der{\rho}{T}\right|_P=-\frac{\beta}{\rho},
 \end{equation}
@@ -438,14 +438,14 @@ and also:
 \dfrac{\lambda}{C_p} \left(\grad h -\dfrac{1-\beta T }{\rho}\grad P\right) = \lambda \grad T,
 \end{equation}
 %
- and Equation \eqref{eq:enthalpyH} becomes:
+ and Equation \eqref{eq:goveqn:enthalpyH} becomes:
  %
 \begin{equation}
   \rho C_p \DP{T}=  \divs \left( \lambda \grad T \right) + \beta T \DP{P} +q''' + \mu S^2.
-\label{eq:T_all}
+\label{eq:goveqn:T_all}
 \end{equation}
 
-The Eq. \eqref{eq:T_all} can be reduced using some hypothesis, for example:
+The Eq. \eqref{eq:goveqn:T_all} can be reduced using some hypothesis, for example:
 \begin{itemize}
  \item If the fluid is an ideal gas, $\beta=\dfrac{1}{T}$ and it becomes:
 \begin{equation}
@@ -500,7 +500,7 @@ additional source terms:
 \end{enumerate}
 
 The two previous equations can be unified formally as:
-\begin{equation}\label{eq:base_introd_depart}
+\begin{equation}\label{eq:goveqn:base_introd_depart}
 \frac{\partial (\rho \varia)}{\partial t}+\dive \left( \rho \vect{u} \varia \right)
 -\dive \left( K\grad \varia \right) = ST_{\varia}+\Gamma \,\varia^{in}+ \mathcal{P}_\varia - \mathcal{\epsilon}_\varia
 \end{equation}%
@@ -534,7 +534,7 @@ The so-called diffusion-inertia model has been first proposed by Zaichik \emph{e
 of the aerosol transport in turbulent flows can be described by solving a single
 transport equation on the particle mass concentration, which reads (using the
 notations of P. N\'erisson \cite{Nerisson:2009}):
-\begin{eqnarray}\label{eq:drift:transport}
+\begin{eqnarray}\label{eq:goveqn:transport}
   \der{C}{t} + \der{}{x_i}\left(\left[U_{f,i} + \tau_pg_i
     - \tau_p \left(\der{U_{f,i}}{t}+U_{f,k}\der{U_{f,i}}{x_k}\right)
     - \der{}{x_k}\left(D_b\delta_{ik}+\dfrac{\Omega}{1+\Omega}D^T_{ik}\right)\right]C\right)=\\
@@ -564,24 +564,24 @@ equation of the aerosols follows:
 \end{itemize}
 If the particulate Reynolds number is sufficiently small, the particle relaxation time $\tau_p$
 can be defined as
-\begin{equation}\label{eq:taup}
+\begin{equation}\label{eq:goveqn:taup}
   \tau_p = \dfrac{\rho_pd_p^2}{18\mu_f}
 \end{equation}
 with $\rho_p$ the particle density, $\mu_f$ the fluid dynamic viscosity and $d_p$ the particle
 diameter.
 It should be underlined that to take advantage of the classical transport equation of the
-species in \CS, Eq. \eqref{eq:drift:transport} is reformulated by considering the variable
+species in \CS, Eq. \eqref{eq:goveqn:transport} is reformulated by considering the variable
 $Y\equiv C/\rho_f$ (with $\rho_f$ considered as a good enough approximation of the density of
 the particle-laden flow) and actually solving an equation on this variable.
 With a vectorial notation, this equation reads\footnote{This equation is not exact. In the second member, density has been extracted from the gradient operator, and in the additional convective flux density was integrated inside the divergent operator, for compatibility reason with \CS construction. These approximations do not have major impact.}:
-\begin{eqnarray}\label{eq:drift:transportY}
+\begin{eqnarray}\label{eq:goveqn:transportY}
   \rho\der{Y}{t} + \textrm{div}\left(\left[\rho \vect{u}_Y\right]Y\right)
   -\textrm{div}\left(\rho \vect{u}_Y\right)Y
   +\textrm{div}\left(\rho \vect{u}_Y-\rho\vect{u}\right)Y =
   \textrm{div}\left(\left[\rho D_b \tens{{1}} + \rho\tens{{D}}_p^T\right]\vect{\nabla}Y\right)
 \end{eqnarray}
 where the additional convective flux is:
-\begin{equation}\label{eq:flux}
+\begin{equation}\label{eq:goveqn:flux}
  \left(\rho \vect{u}_Y-\rho\vect{u}\right) = \tau_p \rho \vect{g}
  - \tau_p\rho \dfrac{\dd\vect{u}}{\dd t}
  - \vect{\textrm{div}}\left(\rho D_b \tens{{1}} + \rho\dfrac{\Omega}{1+\Omega}\tens{{D}}_p^t\right)
@@ -589,19 +589,19 @@ where the additional convective flux is:
 
 %-----------------------------------
 \subsubsection{Brownian diffusion}
-Let us detail Eq. \eqref{eq:drift:transport} in case all terms are canceled except the diffusion one:
-\begin{equation}\label{eq:diffusion}
+Let us detail Eq. \eqref{eq:goveqn:transport} in case all terms are canceled except the diffusion one:
+\begin{equation}\label{eq:goveqn:diffusion}
   \rho\der{Y}{t} = \textrm{div}\left(\left[\rho D_b \tens{{1}} + \rho\tens{{D}}_p^t\right]\vect{\nabla}Y\right)
 \end{equation}
 
 The coefficient $D_b$ is theoretically given by the Stokes-Einstein relation:
-\begin{equation}\label{eq:db}
+\begin{equation}\label{eq:goveqn:db}
   D_b=\dfrac{k_BT}{6\pi\mu_f\frac{d_p}{2}}
 \end{equation}
 with $k_B$ the Boltzmann constant equal to $1.38\,\times\,10^{-23}$ J.K$^{-1}$.
 
 %-----------------------------------
-\subsubsection{Sedimentation terms}\label{med:sed}
+\subsubsection{Sedimentation terms}\label{med:goveqn:sed}
 Let us now focus on the term simulating transport by the gravity acceleration,
 in case all terms that model particle transport and diffusion are set to zero except gravity and the
 fluid velocity, the scalar speed $\vect{u}_Y$ reduces to:
@@ -613,7 +613,7 @@ fluid velocity, the scalar speed $\vect{u}_Y$ reduces to:
 \subsubsection{Turbophoretic transport}
 Cancelling all but turbophoresis transport terms (no gravity, no turbulent diffusion, etc.), the scalar
 associated velocity $\vect{u}_Y$ becomes:
-\begin{equation}\label{eq:drift:turbophoresis}
+\begin{equation}\label{eq:goveqn:turbophoresis}
  \rho \vect{u}_Y = \rho \vect{u} - \vect{\textrm{div}}\left(\rho\dfrac{\Omega}{1+\Omega}\tens{{D}}_p^T\right)
 \end{equation}
 
