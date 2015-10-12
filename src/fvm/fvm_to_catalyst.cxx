@@ -442,8 +442,6 @@ _get_catalyst_field_id(fvm_to_catalyst_t         *writer,
  *   mesh_id    <-- id of associated mesh in structure.
  *   dim        <-- number of field components.
  *   location   <-- mesh location (cells or vertices).
- *   time_step  <-- number of time step to add
- *   time_value <-- associated time value
  *
  * returns
  *   field id in writer structure
@@ -455,9 +453,7 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
                     int                        mesh_id,
                     int                        dim,
                     cs_datatype_t              datatype,
-                    fvm_writer_var_loc_t       location,
-                    const int                  time_step,
-                    const double               time_value)
+                    fvm_writer_var_loc_t       location)
 {
   int f_id = writer->n_fields;
 
@@ -481,12 +477,14 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
     tmp->SetNumberOfComponents(dest_dim);
 
     if (location == FVM_WRITER_PER_NODE) {
-      f->GetPointData()->AllocateArrays(f->GetNumberOfPoints());
+      tmp->SetNumberOfTuples(f->GetNumberOfPoints());
+      // f->GetPointData()->AllocateArrays(f->GetNumberOfPoints());
       vtkDataSetAttributes::SafeDownCast
         (f->GetPointData())->AddArray(vtkAbstractArray::SafeDownCast(tmp));
     }
     else {
-      f->GetCellData()->AllocateArrays(f->GetNumberOfCells());
+      tmp->SetNumberOfTuples(f->GetNumberOfCells());
+      // f->GetCellData()->AllocateArrays(f->GetNumberOfCells());
       /* force to AddArray, due to protection of SetArray */
       vtkDataSetAttributes::SafeDownCast
         (f->GetCellData())->AddArray(vtkAbstractArray::SafeDownCast(tmp));
@@ -974,6 +972,8 @@ fvm_to_catalyst_init_writer(const char             *name,
   w->rank = 0;
   w->n_ranks = 1;
 
+  w->time_dependency = time_dependency;
+
   w->mb = vtkMultiBlockDataSet::New();
 
   w->n_fields  = 0;
@@ -1178,6 +1178,17 @@ fvm_to_catalyst_set_mesh_time(void    *this_writer_p,
   double _time_value = (time_value > 0.0) ? time_value : 0.0;
 
   if (_time_step > w->time_step) {
+    if (   w->time_dependency == FVM_WRITER_TRANSIENT_CONNECT
+        && _time_step > w->time_step) {
+      for (int i = 0; i < w->n_fields; i++) {
+        w->fields[i]->f = NULL; // delete w->fields[i]->f;
+        BFT_FREE(w->fields[i]);
+      }
+      BFT_FREE(w->fields);
+      w->n_fields = 0;
+      w->mb->Delete();
+      w->mb = vtkMultiBlockDataSet::New();
+    }
     w->time_step = _time_step;
     assert(time_value >= w->time_value);
     w->time_value = _time_value;
@@ -1367,9 +1378,7 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
                                    mesh_id,
                                    dimension,
                                    datatype,
-                                   location,
-                                   time_step,
-                                   time_value);
+                                   location);
 
   vtkUnstructuredGrid  *f = w->fields[field_id]->f;
 
