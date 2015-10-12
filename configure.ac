@@ -1051,6 +1051,7 @@ echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
 if (test x$cs_have_mpi = xyes) ; then
   echo "   MPI I/O support: "$cs_have_mpi_io""
   echo "   MPI2 one-sided communication support: "$cs_have_mpi_one_sided""
+  echo "   MPI3 neighborhood collectives support: "$cs_have_mpi_one_sided""
 fi
 echo " OpenMP support: "$cs_have_openmp""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""

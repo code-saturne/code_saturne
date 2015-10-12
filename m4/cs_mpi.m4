@@ -408,13 +408,26 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                     cs_have_mpi_one_sided=yes],
                    [cs_have_mpi_one_sided=no])
     AC_MSG_RESULT($cs_have_mpi_one_sided)
-    AC_MSG_CHECKING([for MPI2 features])
+    AC_MSG_CHECKING([for MPI in place])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                    [[ MPI_Allreduce(MPI_IN_PLACE, (void *)0, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD); ]])],
                    [AC_DEFINE([HAVE_MPI_IN_PLACE], 1, [MPI_IN_PLACE support])
                    have_mpi_in_place=yes],
                    [have_mpi_in_place=no])
     AC_MSG_RESULT($have_mpi_in_place)
+    # Try to detect some MPI 3 features
+    AC_MSG_CHECKING([for MPI Neighborhood collectives])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                   [[ void *sbuf, *rbuf;
+                      int *scounts, *sdispls, *rcounts, *rdispls;
+                      MPI_Comm comm;
+                      MPI_Neighbor_alltoallv(sbuf, scounts, sdispls, MPI_INT,
+                                             rbuf, rcounts, rdispls, MPI_INT,
+                                             comm); ]])],
+                   [AC_DEFINE([HAVE_MPI_NEIGHBOR_COLL], 1, [MPI neighborhood collectives])
+                    cs_have_mpi_neighbor_coll=yes],
+                   [cs_have_mpi_neighbor_coll=no])
+      AC_MSG_RESULT($cs_have_mpi_neighbor_coll)
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"
