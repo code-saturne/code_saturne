@@ -891,6 +891,7 @@ _transfer_location_distant(ple_locator_t  *this_locator,
  *                          boxes added to tolerance
  *   n_points           <-- number of points to locate
  *   point_list         <-- optional indirection array to point_coords
+ *   point_tag          <-- optional point tag
  *   point_coords       <-- coordinates of points to locate
  *                          (dimension: dim * n_points)
  *   location           <-> number of distant element containing or closest
@@ -911,6 +912,7 @@ _locate_distant(ple_locator_t               *this_locator,
                 float                        tolerance_fraction,
                 ple_lnum_t                   n_points,
                 const ple_lnum_t             point_list[],
+                const ple_lnum_t             point_tag[],
                 const ple_coord_t            point_coords[],
                 ple_lnum_t                   location[],
                 ple_lnum_t                   location_rank_id[],
@@ -923,6 +925,7 @@ _locate_distant(ple_locator_t               *this_locator,
   ple_lnum_t j;
   ple_lnum_t n_coords_loc, n_coords_dist;
   ple_lnum_t *location_loc, *location_dist;
+  ple_lnum_t *tag_dist, *send_tag;
   ple_coord_t *coords_dist, *send_coords;
   float *distance_dist, *distance_loc;
 
@@ -939,6 +942,7 @@ _locate_distant(ple_locator_t               *this_locator,
 
   const int dim = this_locator->dim;
   const int stride = dim * 2;
+  const int have_tags = this_locator->have_tags;
   const ple_lnum_t idb = this_locator->point_id_base;
 
   /* Filter non-located points */
@@ -952,6 +956,7 @@ _locate_distant(ple_locator_t               *this_locator,
   }
 
   if (_n_points < n_points) {
+
     PLE_MALLOC(_point_list, _n_points, ple_lnum_t);
     _point_list_p = point_list;
 
@@ -973,6 +978,7 @@ _locate_distant(ple_locator_t               *this_locator,
         }
       }
     }
+
   }
 
   /* Update intersect for current point list */
@@ -991,6 +997,11 @@ _locate_distant(ple_locator_t               *this_locator,
 
   PLE_MALLOC(send_coords, _n_points * dim, ple_coord_t);
   PLE_MALLOC(send_id, _n_points, ple_lnum_t);
+
+  if (have_tags)
+    PLE_MALLOC(send_tag, _n_points, ple_lnum_t);
+  else
+    send_tag = NULL;
 
   /* First loop on possibly intersecting distant ranks */
   /*---------------------------------------------------*/
@@ -1031,6 +1042,9 @@ _locate_distant(ple_locator_t               *this_locator,
         for (k = 0; k < dim; k++)
           send_coords[n_coords_loc*dim + k] = point_coords[dim*coord_idx + k];
 
+        if (have_tags)
+          send_tag[n_coords_loc] = point_tag[coord_idx];
+
         n_coords_loc += 1;
       }
 
@@ -1049,6 +1063,10 @@ _locate_distant(ple_locator_t               *this_locator,
     _locator_trace_end_comm(_ple_locator_log_end_p_comm, comm_timing);
 
     PLE_MALLOC(coords_dist, n_coords_dist*dim, ple_coord_t);
+    if (have_tags)
+      PLE_MALLOC(tag_dist, n_coords_dist, ple_lnum_t);
+    else
+      tag_dist = NULL;
 
     _locator_trace_start_comm(_ple_locator_log_start_p_comm, comm_timing);
 
@@ -1057,6 +1075,13 @@ _locate_distant(ple_locator_t               *this_locator,
                  coords_dist, (int)(n_coords_dist*dim),
                  PLE_MPI_COORD, dist_rank, PLE_MPI_TAG,
                  this_locator->comm, &status);
+
+    if (have_tags)
+      MPI_Sendrecv(send_tag, (int)(n_coords_loc),
+                   PLE_MPI_LNUM, dist_rank, PLE_MPI_TAG,
+                   tag_dist, (int)(n_coords_dist),
+                   PLE_MPI_LNUM, dist_rank, PLE_MPI_TAG,
+                   this_locator->comm, &status);
 
     _locator_trace_end_comm(_ple_locator_log_end_p_comm, comm_timing);
 
@@ -1075,10 +1100,11 @@ _locate_distant(ple_locator_t               *this_locator,
                   tolerance_fraction,
                   n_coords_dist,
                   coords_dist,
-                  NULL, /* tags_dist */
+                  tag_dist,
                   location_dist,
                   distance_dist);
 
+    PLE_FREE(tag_dist);
     PLE_FREE(coords_dist);
 
     /* Exchange location return information with distant rank */
@@ -1128,6 +1154,7 @@ _locate_distant(ple_locator_t               *this_locator,
   /* Free temporary arrays */
 
   PLE_FREE(send_id);
+  PLE_FREE(send_tag);
   PLE_FREE(send_coords);
 
   if (_point_list != point_list) {
@@ -1156,6 +1183,7 @@ _locate_distant(ple_locator_t               *this_locator,
  *   dim               <-- spatial dimension
  *   n_points          <-- number of points to locate
  *   point_list        <-- optional indirection array to point_coords
+ *   point_tag         <-- optional point tag
  *   point_coords      <-- coordinates of points to locate
  *                         (dimension: dim * n_points)
  *   location          <-> number of distant element containing or closest
@@ -1178,6 +1206,7 @@ _locate_all_distant(ple_locator_t               *this_locator,
                     float                        tolerance_fraction,
                     ple_lnum_t                   n_points,
                     const ple_lnum_t             point_list[],
+                    const ple_lnum_t             point_tag[],
                     const ple_coord_t            point_coords[],
                     ple_lnum_t                   location[],
                     ple_lnum_t                   location_rank_id[],
@@ -1214,6 +1243,7 @@ _locate_all_distant(ple_locator_t               *this_locator,
                   tolerance_fraction,
                   n_points,
                   point_list,
+                  point_tag,
                   point_coords,
                   location,
                   location_rank_id,
@@ -1590,6 +1620,7 @@ _intersects_local(ple_locator_t       *this_locator,
  *                          boxes added to tolerance
  *   n_points           <-- number of points to locate
  *   point_list         <-- optional indirection array to point_coords
+ *   point_tag         <-- optional point tag
  *   point_coords       <-- coordinates of points to locate
  *                          (dimension: dim * n_points)
  *   distance           --> optional distance from point to matching element:
@@ -1607,6 +1638,7 @@ _locate_all_local(ple_locator_t               *this_locator,
                   float                        tolerance_fraction,
                   ple_lnum_t                   n_points,
                   const ple_lnum_t             point_list[],
+                  const ple_lnum_t             point_tag[],
                   const ple_coord_t            point_coords[],
                   ple_lnum_t                   location[],
                   float                        distance[],
@@ -1616,6 +1648,7 @@ _locate_all_local(ple_locator_t               *this_locator,
   int l;
   ple_lnum_t j, k;
   ple_lnum_t n_coords, n_interior, n_exterior, coord_idx;
+  ple_lnum_t *tag;
   ple_coord_t *coords;
   _rank_intersects_t intersects;
 
@@ -1623,11 +1656,17 @@ _locate_all_local(ple_locator_t               *this_locator,
   float *_distance = distance;
 
   const int dim = this_locator->dim;
+  const int have_tags = this_locator->have_tags;
   const ple_lnum_t idb = this_locator->point_id_base;
 
   /* Initialization */
 
   PLE_MALLOC(coords, n_points * dim, ple_coord_t);
+
+  if (have_tags)
+    PLE_MALLOC(tag, n_points, ple_lnum_t);
+  else
+    tag = NULL;
 
   /* Update intersect for current point list */
 
@@ -1667,12 +1706,17 @@ _locate_all_local(ple_locator_t               *this_locator,
           coords[n_coords*dim + k]
             = point_coords[dim*coord_idx + k];
 
+        if (have_tags)
+          tag[n_coords] = point_tag[coord_idx];
+
         n_coords += 1;
       }
 
     }
 
     PLE_REALLOC(coords, n_coords * dim, ple_coord_t);
+    if (have_tags)
+      PLE_REALLOC(tag, n_coords, ple_lnum_t);
 
     if (n_coords < n_points)
       PLE_MALLOC(_location, n_coords, ple_lnum_t);
@@ -1689,10 +1733,11 @@ _locate_all_local(ple_locator_t               *this_locator,
                   tolerance_fraction,
                   n_coords,
                   coords,
-                  NULL, /* tags_dist */
+                  tag,
                   _location,
                   _distance);
 
+    PLE_FREE(tag);
     PLE_FREE(coords);
 
     if (n_coords < n_points) {
@@ -2762,6 +2807,8 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
 
   const int idb = this_locator->point_id_base;
 
+  this_locator->have_tags = 0;
+
   /* Prepare locator (MPI version) */
   /*-------------------------------*/
 
@@ -2828,10 +2875,9 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
                   "  global maximum algorithm id %d\n"
                   "PLE library versions or builds are incompatible."),
                 globflag[2], globflag[3]);
-    else if (globflag[5] > 0)
-      ple_error(__FILE__, __LINE__, 0,
-                _("Usage of point tags in locator is not implemented yet."),
-                globflag[5]);
+
+    if (globflag[5] > 0)
+      this_locator->have_tags = 1;
 
     /* Free temporary memory */
 
@@ -2849,6 +2895,7 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
                         tolerance_fraction,
                         n_points,
                         point_list,
+                        point_tag,
                         point_coords,
                         location,
                         location_rank_id,
@@ -2869,6 +2916,9 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
     if (mesh == NULL || n_points == 0)
       return;
 
+    if (point_tag != NULL)
+      this_locator->have_tags = 1;
+
     PLE_MALLOC(location, n_points, ple_lnum_t);
 
     _transfer_location_local(this_locator,
@@ -2881,6 +2931,7 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
                       tolerance_fraction,
                       n_points,
                       point_list,
+                      point_tag,
                       point_coords,
                       location,
                       distance,

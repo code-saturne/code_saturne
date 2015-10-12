@@ -2,6 +2,13 @@
 Trunk (unreleased)
 ==================
 
+Changes:
+--------
+
+- Implement handling of point tags so as to ignore location
+  on elements sharing tag (also requires matching features
+  in ple_mesh_elements_locate_t function used.
+
 Architectural changes
 ---------------------
 
