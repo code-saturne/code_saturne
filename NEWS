@@ -14,6 +14,8 @@ Changes:
    so that the Reichard profile is imposed next to walls.
    Activate it with reinit_turb=1 (in usipsu).
 
+ - Add precipitation/dissulotion modeling for particle tracking.
+
  - Simplify Lagrangian particle tracking, removing a linked list.
    This is transparent for the user, except for a possible differences
    in particle numbering.

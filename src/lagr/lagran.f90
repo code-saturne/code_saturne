@@ -324,14 +324,14 @@ module lagran
 
   !> - 0: no precipitation/dissolution model
   !> - 1: precipitation/dissolution model
-  integer, save ::         iprec
+  integer, save ::         ipreci
   !> number of particle classes
   integer, save ::         nbrclas
 
   !> diameter of particles formed by precipitation
    double precision, save :: dprec
   !> density of particles formed by precipitation
-   double precision, save :: rho_prec
+   double precision, save :: rho_preci
 
   !> \}
   !=======================
@@ -391,6 +391,19 @@ module lagran
 
   !> error indicator
   integer, save :: ierr
+
+  !> \}
+
+  !=============================================================================
+
+  !> \defgroup precipitation/dissolution
+
+  !> \addtogroup precipitation_dissolution
+  !> \{
+
+  integer, allocatable, dimension(:)            :: nbprec
+  double precision, allocatable, dimension(:)   :: solub
+  double precision, allocatable, dimension(:,:) :: mp_diss
 
   !> \}
 
@@ -1851,6 +1864,36 @@ contains
     return
 
   end subroutine lagr_status
+
+  !=============================================================================
+
+  ! Initialize auxiliary arrays
+
+  subroutine init_lagr_arrays
+
+    use mesh
+
+    implicit none
+
+    if (ipreci .eq. 1) then
+      allocate(solub(ncelet))
+      allocate(nbprec(ncelet))
+      allocate(mp_diss(ncelet,nbrclas))
+    endif
+
+    return
+
+  end subroutine init_lagr_arrays
+
+  !=============================================================================
+
+  subroutine finalize_lagr_arrays
+
+    if (allocated(solub)) deallocate(solub)
+    if (allocated(nbprec)) deallocate(nbprec)
+    if (allocated(mp_diss)) deallocate(mp_diss)
+
+  end subroutine finalize_lagr_arrays
 
   !=============================================================================
 

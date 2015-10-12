@@ -136,7 +136,7 @@ double precision xxpart , yypart , zzpart
 double precision swpart , uupart , vvpart , wwpart
 double precision ddpart , ttpart
 double precision dintrf(1)
-double precision dnbpnw_prec
+double precision dnbpnw_preci
 
 integer, dimension(3) :: shpe
 integer, allocatable, dimension(:) :: iwork
@@ -807,9 +807,8 @@ enddo
 ! 5. Precipitation/Dissolution
 !===============================================================================
 
-if (iprec .eq. 1 ) then
-   call precdi               &
-        (  dt , iprev, dnbpnw_prec)
+if (ipreci .eq. 1) then
+  call precdi(dt, iprev, dnbpnw_preci)
 endif
 
 
@@ -1498,7 +1497,8 @@ do ii = 1,nfrlag
 
 enddo
 
-if (iprec .eq. 1) dnbpnw = dnbpnw + dnbpnw_prec
+if (ipreci .eq. 1) dnbpnw = dnbpnw + dnbpnw_preci
+
 !===============================================================================
 ! 10. NOUVEAU NOMBRE DE PARTICULES TOTAL
 !===============================================================================

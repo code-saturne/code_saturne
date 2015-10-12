@@ -140,7 +140,7 @@ double precision dt(ncelet)
 ! Local variables
 
 integer          ivart, iel, ifac
-integer          ith, iscal, ii, ifcvsl
+integer          iscal, ifcvsl
 double precision vara, varb, varc, varam, varbm, varcm, vardm
 double precision                   varal, varbl, varcl, vardl
 double precision                   varac, varbc
@@ -193,7 +193,7 @@ if (1.eq.1) return
 !    Below, we define the same density law
 !    Values of this property must be defined at cell centers
 !      (and optionally, at boundary faces).
-!  ===================================================================
+!===============================================================================
 
 !    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
@@ -302,7 +302,7 @@ endif ! --- Test on .false.
 !  =========
 !    Below, we define the same viscosity law
 !    Values of this property must be defined at cell centers
-!  ===================================================================
+!===============================================================================
 
 !    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
@@ -353,7 +353,7 @@ endif ! --- Test on .false.
 !  =========
 !    Below, we define the same viscosity law
 !    Values of this property must be defined at cell centers
-!  ===================================================================
+!===============================================================================
 
 !    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
@@ -411,7 +411,7 @@ endif ! --- Test on .false.
 !  =========
 !  Below, we define the same lambda/Cp ratio law (or lambda law if temperature is used)
 !  Values of this property must be defined at cell centers
-!  ====================================================================================
+!===============================================================================
 
 !    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
@@ -531,35 +531,25 @@ endif ! --- Test on .false.
 !    Below, we define the same diffusivity law for all scalars (except the
 !      ones excluded above).
 !    Values of this property must be defined at cell centers
-!  ===================================================================
+!===============================================================================
 
 !    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
 
 if (.false.) then
 
-  do ii = 1, nscaus ! Loop on scalars
-
-    ! --- Number of user scalar 'ii' in the lsit of scalars
-    iscal = ii
-
-    ! --- If it is a thermal variable, it has already been handled above
-    ith = 0
-    if (iscal.eq.iscalt) ith = 1
+  do iscal = 1, nscaus ! Loop on scalars
 
     ! --- If the variable is a fluctuation, its diffusivity is the same
     !       as that of the scalar to which it is attached:
     !       there is nothing to do here, we move on to the next variable
     !       without setting cpro_vscalt(iel).
 
-    ! We only handle here non-thermal variables which are not fluctuations
-    if (ith.eq.0.and.iscavr(iscal).le.0) then
-
-      ! Position of variables, coefficients
-      ! -----------------------------------
+    ! We only handle here variables which are not fluctuations
+    if (iscavr(iscal).le.0) then
 
       ! --- Number of the thermal variable
-      !       To use user scalar 2 instead, write 'ivart = isca(2)'
+      !     To use user scalar 2 instead, write 'ivart = isca(2)'
 
       if (iscalt.gt.0) then
         ivart = isca(iscalt)
@@ -586,7 +576,7 @@ if (.false.) then
       endif
 
       ! --- Coefficients of laws chosen by the user
-      !       Values given here are fictitious
+      !     Values given here are fictitious
 
       varal = -3.3283d-7
       varbl =  3.6021d-5
@@ -604,11 +594,10 @@ if (.false.) then
         cpro_vscalt(iel) = (xvart*(xvart*(varal*xvart+varbl)+varcl)+vardl)
       enddo
 
-    endif ! --- Tests on 'ith' and 'iscavr'
+    endif ! --- Tests on 'iscavr'
 
   enddo ! --- Loop on scalars
 endif ! --- Test on .false.
-
 
 !===============================================================================
 !  Example 6: Diffusivity as a function of temperature for user scalars
@@ -620,101 +609,94 @@ endif ! --- Test on .false.
 !    Below, we define the same diffusivity law for all scalars (except the
 !      ones excluded above).
 !    Values of this property must be defined at cell centers
-!  ===================================================================
+!===============================================================================
 
 !    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
 
 if (.false.) then
 
-call field_get_val_s(iprpfl(iviscl), cpro_viscl)
-call field_get_val_s(icrom, cpro_rom)
+  call field_get_val_s(iprpfl(iviscl), cpro_viscl)
+  call field_get_val_s(icrom, cpro_rom)
 
-   do ii = 1, nscaus ! Loop on scalars
+  do iscal = 1, nscaus ! Loop on scalars
 
-      ! --- Number of user scalar 'ii' in the lsit of scalars
-      iscal = ii
+    ! --- If the variable is a fluctuation, its diffusivity is the same
+    !       as that of the scalar to which it is attached:
+    !       there is nothing to do here, we move on to the next variable
+    !       without setting cpro_vscalt(iel).
 
-      ! --- If it is a thermal variable, it has already been handled above
-      ith = 0
-      if (iscal.eq.iscalt) ith = 1
+    ! We only handle here variables which are not fluctuations
+    if (iscavr(iscal).le.0) then
 
-      ! --- If the variable is a fluctuation, its diffusivity is the same
-      !       as that of the scalar to which it is attached:
-      !       there is nothing to do here, we move on to the next variable
-      !       without setting cpro_vscalt(iel).
+      ! --- Number of the thermal variable
+      !     To use user scalar 2 instead, write 'ivart = isca(2)'
 
-      ! We only handle here non-thermal variables which are not fluctuations
-      if (ith.eq.0.and.iscavr(iscal).le.0) then
+      if (iscalt.gt.0) then
+        ivart = isca(iscalt)
+        call field_get_val_s(ivarfl(ivart), cvar_scalt)
+      else
+        write(nfecra,9010) iscalt
+        call csexit (1)
+      endif
 
-         ! Position of variables, coefficients
-         ! -----------------------------------
+      ! --- Scalar's Lambda
 
-         ! --- Number of the thermal variable
-         !       To use user scalar 2 instead, write 'ivart = isca(2)'
+      call field_get_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
+      if (ifcvsl.ge.0) then
+        call field_get_val_s(ifcvsl, cpro_vscalt)
+      else
+        cpro_vscalt => NULL()
+      endif
 
-         if (iscalt.gt.0) then
-            ivart = isca(iscalt)
-            call field_get_val_s(ivarfl(ivart), cvar_scalt)
-         else
-            write(nfecra,9010) iscalt
-            call csexit (1)
-         endif
+      ! --- Stop if Lambda is not variable
 
-         ! --- Scalar's Lambda
+      if (ifcvsl.lt.0) then
+        write(nfecra,1010) iscal
+        call csexit (1)
+      endif
 
-        call field_get_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
-        if (ifcvsl.ge.0) then
-           call field_get_val_s(ifcvsl, cpro_vscalt)
-         else
-            cpro_vscalt => NULL()
-         endif
+      ! Stokes-Einstein equation
 
-         ! --- Stop if Lambda is not variable
+      varal =  1.38d-23 ! Boltzmann constant
+      varbl =  0.3d-9   ! Diameter of soluble ions
 
-         if (ifcvsl.lt.0) then
-            write(nfecra,1010) iscal
-            call csexit (1)
-         endif
+      do iel = 1, ncel
+        xvart = cvar_scalt(iel)
+        cpro_vscalt(iel) = (cpro_rom(iel) * varal * xvart)       &
+                           /(3.d0 * pi * cpro_viscl(iel) * varbl)
+      enddo
 
-         ! Stokes-Einstein equation
+    endif ! --- Tests on 'iscavr'
 
-         varal =  1.38d-23 ! Boltzmann constant
-         varbl =  0.3d-9   ! Diameter of soluble ions
-
-         do iel = 1, ncel
-            xvart = cvar_scalt(iel)
-            cpro_vscalt(iel) = (cpro_rom(iel) * varal * xvart)       &
-                 /(3.d0 * pi * cpro_viscl(iel) * varbl)
-         enddo
-
-      endif ! --- Tests on 'ith' and 'iscavr'
-
-   enddo ! --- Loop on scalars
+  enddo ! --- Loop on scalars
 endif ! --- Test on .false.
 
 !===============================================================================
-!  Example 7: Solubility as a function of temperature for user scalars (for iprec = 1)
+!  Example 7: Solubility as a function of temperature for user scalars
+!  =========
 !
-!  !  =========
 !    Excluding:
 !      - temperature, enthalpy (handled above)
 !      - fluctuation variances (property equal to that of the associated scalar)
-!
-!  ===================================================================
+!===============================================================================
+
 !    The test on .false. allows deactivating instructions (which are defined
 !       only as a starting example)
+
 if (.false.) then
-   if (iprec == 1) then
-      do iel = 1, ncel
-         if ( cvar_scalt(iel) .le. 250.d0) then
-            solub(iel) = -0.0088d0 *  cvar_scalt(iel) + 3.8839d0 ! low pH (Morp:5,5 ppm + NH3: 0,2 ppm+ hydrazine: 7,5 ppb)
+  if (ipreci == 1) then
+    do iel = 1, ncel
+      if (cvar_scalt(iel) .le. 250.d0) then
+        ! low pH (Morp:5,5 ppm + NH3: 0,2 ppm+ hydrazine: 7,5 ppb)
+        solub(iel) = -0.0088d0 *  cvar_scalt(iel) + 3.8839d0
       else
-         solub(iel) = 0.0039d0 *  cvar_scalt(iel) + 0.7165d0
+        solub(iel) = 0.0039d0 *  cvar_scalt(iel) + 0.7165d0
       endif
-   enddo
-endif
+    enddo
+  endif
 end if
+
 !--------
 ! Formats
 !--------

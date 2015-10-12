@@ -384,11 +384,9 @@ endif
 
 
 !Precipitation/dissolution
-! Calculation of source terms du to precipitation and dissolution
-! phenomena
-if (iprec .eq. 1) then
-   call precst( nvar  , nscal  ,                        &
-        iscal ,  dt   , smbrs  )
+! Calculation of source terms du to precipitation and dissolution phenomena
+if (ipreci .eq. 1) then
+  call precst(nvar, nscal, iscal, dt, smbrs)
 endif
 
 ! Si on extrapole les TS :

@@ -693,13 +693,13 @@ endif
 ! (default off: 0 ; on: 1)
 
 ! Caution: OPTION FOR DEVELOPERS ONLY
-iprec = 0
+ipreci = 0
 
 !diameter of particles formed by precipitation
 dprec =  2.d-6
 
 !diameter of particles formed by precipitation
-rho_prec =  5200.d0
+rho_preci =  5200.d0
 
 !number of particle classes
 nbrclas = 2

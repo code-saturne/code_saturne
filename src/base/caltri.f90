@@ -482,6 +482,8 @@ endif
 ! Memory reservation for Lagrangian module
 if (iilagr.gt.0) then
 
+  call init_lagr_arrays
+
   allocate(icocel(lndnod), itycel(ncelet+1))
   allocate(ifrlag(nfabor))
 
@@ -1249,6 +1251,8 @@ if (iilagr.gt.0) then
   deallocate(parbor)
 
   if (associated(dlgeo)) deallocate(dlgeo)
+
+  call finalize_lagr_arrays
 
 endif
 
