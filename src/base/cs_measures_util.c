@@ -151,6 +151,7 @@ _mesh_interpol_create_connect(cs_interpol_grid_t   *ig)
                            0.1,
                            0,
                            nb_points,
+                           NULL,
                            coords,
                            location,
                            distance);

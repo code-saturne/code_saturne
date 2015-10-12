@@ -72,6 +72,7 @@ BEGIN_C_DECLS
  *                            id of element + 1 in concatenated sections of
  *                            same element dimension if 0
  *   n_points             <-- number of points to locate
+ *   point_tag            <-- optional point tag
  *   point_coords         <-- point coordinates
  *   location             <-> number of element containing or closest to each
  *                            point (size: n_points)
@@ -87,6 +88,7 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
                          float               tolerance_fraction,
                          int                 locate_on_parents,
                          cs_lnum_t           n_points,
+                         const cs_lnum_t    *point_tag,
                          const cs_coord_t    point_coords[],
                          cs_lnum_t           location[],
                          float               distance[]);

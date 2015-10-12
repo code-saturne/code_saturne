@@ -180,6 +180,36 @@ fvm_nodal_init_io_num(fvm_nodal_t        *this_nodal,
                       int                 entity_dim);
 
 /*----------------------------------------------------------------------------
+ * Set entity tags (for non-vertex entities).
+ *
+ * The number of entities of the given dimension may be obtained
+ * through fvm_nodal_get_n_entities(), the tag[] array is populated
+ * in local section order, section by section).
+ *
+ * parameters:
+ *   this_nodal <-- nodal mesh structure
+ *   tag        <-- tag values to assign
+ *   entity_dim <-- 3 for cells, 2 for faces, 1 for edges
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_nodal_set_tag(fvm_nodal_t  *this_nodal,
+                  const int     tag[],
+                  int           entity_dim);
+
+/*----------------------------------------------------------------------------
+ * Remove entity tags.
+ *
+ * parameters:
+ *   this_nodal <-- nodal mesh structure
+ *   entity_dim <-- 3 for cells, 2 for faces, 1 for edges
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_nodal_remove_tag(fvm_nodal_t  *this_nodal,
+                     int           entity_dim);
+
+/*----------------------------------------------------------------------------
  * Preset number and list of vertices to assign to a nodal mesh.
  *
  * If the parent_vertex_num argument is NULL, the list is assumed to

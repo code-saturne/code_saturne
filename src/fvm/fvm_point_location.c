@@ -381,9 +381,11 @@ _point_extents(const int           dim,
  *
  * parameters:
  *   elt_num         <-- number of element corresponding to extents
+ *   elt_tag         <-- pointer to element tag, or NULL
  *   extents         <-> extents associated with element:
  *                       x_min, x_max (size: 2)
  *   n_points        <-- number of points to locate
+ *   point_tag       <-- optional point tag (size: n_points)
  *   point_coords    <-- point coordinates
  *   location        <-> number of element containing or closest to each
  *                       point (size: n_points)
@@ -394,8 +396,10 @@ _point_extents(const int           dim,
 
 static void
 _locate_by_extents_1d(cs_lnum_t         elt_num,
+                      const int        *elt_tag,
                       const double      extents[],
                       cs_lnum_t         n_points,
+                      const cs_lnum_t  *point_tag,
                       const cs_coord_t  point_coords[],
                       cs_lnum_t         location[],
                       float             distance[])
@@ -406,6 +410,10 @@ _locate_by_extents_1d(cs_lnum_t         elt_num,
   /* The behavior is quadradic, nothing is optimized yet */
 
   for (i = 0; i < n_points; i++) {
+
+    if (elt_tag != NULL && point_tag != NULL)
+      if (*elt_tag == point_tag[i])
+        continue;
 
     double elt_coord_max = -1;
     double elt_coord = -1;
@@ -1252,6 +1260,30 @@ _query_quadtree(const double        extents[],
                          0,
                          loc_point_ids,
                          n_loc_points);
+}
+
+/*----------------------------------------------------------------------------
+ * locate points in box defined by extents using an octree.
+ *
+ * parameters:
+ *   tag             <-- tag to avoid
+ *   point_tag       <-- point tags
+ *   n_loc_points    <-> number of points located
+ *   loc_point_ids   <-> ids of located points (max size: octree->n_points)
+ *----------------------------------------------------------------------------*/
+
+static void
+_ignore_same_tag(int                tag,
+                 const cs_lnum_t    point_tag[],
+                 cs_lnum_t         *n_loc_points,
+                 cs_lnum_t          loc_point_ids[])
+{
+  cs_lnum_t j = 0;
+  for (cs_lnum_t i = 0; i < *n_loc_points; i++) {
+    if (point_tag[loc_point_ids[i]] != tag)
+      loc_point_ids[j++] = loc_point_ids[i];
+  }
+  *n_loc_points = j;
 }
 
 /*----------------------------------------------------------------------------
@@ -2270,6 +2302,7 @@ _locate_in_cell_3d(cs_lnum_t          elt_num,
  *   base_element_num  <-- < 0 for location relative to parent element numbers,
  *                         number of elements in preceding sections of same
  *                         element dimension + 1 otherwise
+ *   point_tag         <-- optional point tag (size: n_points)
  *   point_coords      <-- point coordinates
  *   octree            <-- point octree
  *   points_in_extents <-> array for query of ids of points in extents
@@ -2287,6 +2320,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
                           const cs_coord_t            vertex_coords[],
                           const double                tolerance[2],
                           cs_lnum_t                   base_element_num,
+                          const cs_lnum_t            *point_tag,
                           const cs_coord_t            point_coords[],
                           _octree_t                  *octree,
                           cs_lnum_t                   points_in_extents[],
@@ -2371,6 +2405,12 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
                   octree,
                   &n_points_in_extents,
                   points_in_extents);
+
+    if (this_section->tag != NULL && point_tag != NULL)
+      _ignore_same_tag(this_section->tag[i],
+                       point_tag,
+                       &n_points_in_extents,
+                       points_in_extents);
 
     if (n_points_in_extents < 1)
       continue;
@@ -2498,6 +2538,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
  *                         number of elements in preceding sections of same
  *                         element dimension + 1 otherwise
  *   n_points          <-- number of points to locate
+ *   point_tag         <-- optional point tag (size: n_points)
  *   point_coords      <-- point coordinates
  *   octree            <-- point octree
  *   points_in_extents <-- array for query of ids of points in extents
@@ -2515,6 +2556,7 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
                             const cs_coord_t             vertex_coords[],
                             const double                 tolerance[2],
                             cs_lnum_t                    base_element_num,
+                            const cs_lnum_t             *point_tag,
                             const cs_coord_t             point_coords[],
                             _octree_t                   *octree,
                             cs_lnum_t                    points_in_extents[],
@@ -2591,6 +2633,12 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
                   &n_points_in_extents,
                   points_in_extents);
 
+    if (this_section->tag != NULL && point_tag != NULL)
+      _ignore_same_tag(this_section->tag[i],
+                       point_tag,
+                       &n_points_in_extents,
+                       points_in_extents);
+
     /* Triangulate polygon */
 
     n_vertices = (  this_section->vertex_index[i + 1]
@@ -2644,6 +2692,7 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
  *   base_element_num  <-- < 0 for location relative to parent element numbers,
  *                         number of elements in preceding sections of same
  *                         element dimension + 1 otherwise
+ *   point_tag         <-- optional point tag (size: n_points)
  *   point_coords      <-- point coordinates
  *   octree            <-- point octree
  *   points_in_extents <-- array for query of ids of points in extents
@@ -2662,6 +2711,7 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
                          const cs_coord_t            vertex_coords[],
                          const double                tolerance[2],
                          cs_lnum_t                   base_element_num,
+                         const cs_lnum_t            *point_tag,
                          const cs_coord_t            point_coords[],
                          _octree_t                  *octree,
                          cs_lnum_t                   points_in_extents[],
@@ -2683,6 +2733,7 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
                               vertex_coords,
                               tolerance,
                               base_element_num,
+                              point_tag,
                               point_coords,
                               octree,
                               points_in_extents,
@@ -2698,6 +2749,7 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
                                 vertex_coords,
                                 tolerance,
                                 base_element_num,
+                                point_tag,
                                 point_coords,
                                 octree,
                                 points_in_extents,
@@ -2744,6 +2796,13 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
                     octree,
                     &n_points_in_extents,
                     points_in_extents);
+
+      if (this_section->tag != NULL && point_tag != NULL)
+        _ignore_same_tag(this_section->tag[i],
+                         point_tag,
+                         &n_points_in_extents,
+                         points_in_extents);
+
 
       if (this_section->entity_dim == 3)
 
@@ -2833,6 +2892,7 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
  *   base_element_num  <-- < 0 for location relative to parent element numbers,
  *                         number of elements in preceding sections of same
  *                         element dimension + 1 otherwise
+ *   point_tag         <-- optional point tag (size: n_points)
  *   point_coords      <-- point coordinates
  *   quadtree          <-- point quadtree
  *   points_in_extents <-- array for query of ids of points in extents
@@ -2850,6 +2910,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
                          const cs_coord_t            vertex_coords[],
                          const double                tolerance[2],
                          cs_lnum_t                   base_element_num,
+                         const cs_lnum_t            *point_tag,
                          const cs_coord_t            point_coords[],
                          _quadtree_t                *quadtree,
                          cs_lnum_t                   points_in_extents[],
@@ -2958,6 +3019,13 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
                     quadtree,
                     &n_points_in_extents,
                     points_in_extents);
+
+    if (this_section->tag != NULL && point_tag != NULL)
+      _ignore_same_tag(this_section->tag[i],
+                       point_tag,
+                       &n_points_in_extents,
+                       points_in_extents);
+
 
     /* Divide all face types into triangles */
 
@@ -3068,6 +3136,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
  *                         number of elements in preceding sections of same
  *                         element dimension + 1 otherwise
  *   n_points          <-- number of points to locate
+ *   point_tag         <-- optional point tag (size: n_points)
  *   point_coords      <-- point coordinates
  *   points_in_extents <-- array for query of ids of points in extents
  *                         (size: n_points, less usually needed)
@@ -3085,13 +3154,16 @@ _nodal_section_locate_1d(const fvm_nodal_section_t  *this_section,
                          const double                tolerance[2],
                          cs_lnum_t                   base_element_num,
                          cs_lnum_t                   n_points,
+                         const cs_lnum_t            *point_tag,
                          const cs_coord_t            point_coords[],
                          cs_lnum_t                   location[],
                          float                       distance[])
 {
   cs_lnum_t   i, j, vertex_id, elt_num;
-  cs_coord_t edge_coords[2];
+  cs_coord_t  edge_coords[2];
   double delta, elt_extents[2];
+
+  cs_lnum_t *elt_tag = NULL;
 
   for (i = 0; i < this_section->n_elements; i++) {
 
@@ -3129,9 +3201,14 @@ _nodal_section_locate_1d(const fvm_nodal_section_t  *this_section,
     elt_extents[0] -= delta;
     elt_extents[1] += delta;
 
+    if (this_section->tag != NULL)
+      elt_tag = this_section->tag + i;
+
     _locate_by_extents_1d(elt_num,
+                          elt_tag,
                           elt_extents,
                           n_points,
+                          point_tag,
                           point_coords,
                           location,
                           distance);
@@ -3162,6 +3239,7 @@ _nodal_section_locate_1d(const fvm_nodal_section_t  *this_section,
  *                            id of element + 1 in concatenated sections of
  *                            same element dimension if 0
  *   n_points             <-- number of points to locate
+ *   point_tag            <-- optional point tag (size: n_points)
  *   point_coords         <-- point coordinates
  *   location             <-> number of element containing or closest to each
  *                            point (size: n_points)
@@ -3177,6 +3255,7 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
                          float               tolerance_fraction,
                          int                 locate_on_parents,
                          cs_lnum_t           n_points,
+                         const cs_lnum_t    *point_tag,
                          const cs_coord_t    point_coords[],
                          cs_lnum_t           location[],
                          float               distance[])
@@ -3222,6 +3301,7 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
                                  this_nodal->vertex_coords,
                                  tolerance,
                                  base_element_num,
+                                 point_tag,
                                  point_coords,
                                  &octree,
                                  points_in_extents,
@@ -3257,6 +3337,7 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
                                  this_nodal->vertex_coords,
                                  tolerance,
                                  base_element_num,
+                                 point_tag,
                                  point_coords,
                                  &quadtree,
                                  points_in_extents,
@@ -3289,6 +3370,7 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
                                  tolerance,
                                  base_element_num,
                                  n_points,
+                                 point_tag,
                                  point_coords,
                                  location,
                                  distance);

@@ -698,6 +698,7 @@ cs_coupling_point_in_mesh(const void         *mesh,
                            tolerance_fraction,
                            0, /* Do not locate on parents */
                            n_points,
+                           point_tag,
                            point_coords,
                            location,
                            distance);
@@ -745,6 +746,7 @@ cs_coupling_point_in_mesh_p(const void         *mesh,
                            tolerance_fraction,
                            1, /* Locate on parents */
                            n_points,
+                           point_tag,
                            point_coords,
                            location,
                            distance);

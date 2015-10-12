@@ -127,6 +127,11 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
 
   this_section->connectivity_size = connectivity_size;
 
+  /* Remove old attributes */
+
+  BFT_FREE(this_section->gc_id);
+  BFT_FREE(this_section->tag);
+
   /* Remove old parent numbering */
 
   this_section->parent_element_num = NULL;

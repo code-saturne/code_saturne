@@ -107,6 +107,10 @@ typedef struct _fvm_nodal_section_t {
 
   int         *gc_id;              /* Group class id, NULL if implicit 0 */
 
+  /* Optional tagging */
+
+  int         *tag;                /* Element tag */
+
   /* Auxiliary structure used to define subdivision of elements into
      simpler element types (usually polygons to triangles and
      polyhedra to tetrahedra and pyramids) */

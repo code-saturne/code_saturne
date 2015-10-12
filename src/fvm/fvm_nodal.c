@@ -167,6 +167,7 @@ _fvm_nodal_section_copy(const fvm_nodal_section_t *this_section)
   new_section->_vertex_num = NULL;
 
   new_section->gc_id = NULL;
+  new_section->tag = NULL;
 
   new_section->tesselation = NULL;  /* TODO: copy tesselation */
 
@@ -243,6 +244,9 @@ _fvm_nodal_section_reduce(fvm_nodal_section_t  * this_section)
 
   if (this_section->gc_id != NULL)
     BFT_FREE(this_section->gc_id);
+
+  if (this_section->tag != NULL)
+    BFT_FREE(this_section->tag);
 
   if (this_section->tesselation != NULL)
     fvm_tesselation_reduce(this_section->tesselation);
@@ -542,13 +546,15 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
              "  _vertex_index:        %p\n"
              "  _vertex_num:          %p\n"
              "  _parent_element_num:  %p\n"
-             "  gc_id:                %p\n",
+             "  gc_id:                %p\n"
+             "  tag:                  %p\n",
              (const void *)this_section->_face_index,
              (const void *)this_section->_face_num,
              (const void *)this_section->_vertex_index,
              (const void *)this_section->_vertex_num,
              (const void *)this_section->_parent_element_num,
-             (const void *)this_section->gc_id);
+             (const void *)this_section->gc_id,
+             (const void *)this_section->tag);
 
   if (this_section->face_index != NULL) {
     bft_printf("\nPolyhedra -> faces (polygons) connectivity:\n\n");
@@ -635,6 +641,13 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
     bft_printf("\n");
   }
 
+  if (this_section->tag != NULL) {
+    bft_printf("\nTags:\n\n");
+    for (i = 0; i < this_section->n_elements; i++)
+      bft_printf("%10d : %10d\n", i + 1, this_section->tag[i]);
+    bft_printf("\n");
+  }
+
   /* Faces tesselation */
 
   if (this_section->tesselation != NULL)
@@ -712,6 +725,7 @@ fvm_nodal_section_create(const fvm_element_t  type)
   this_section->_vertex_num = NULL;
 
   this_section->gc_id = NULL;
+  this_section->tag = NULL;
 
   this_section->tesselation = NULL;
 
@@ -753,6 +767,9 @@ fvm_nodal_section_destroy(fvm_nodal_section_t  * this_section)
 
   if (this_section->gc_id != NULL)
     BFT_FREE(this_section->gc_id);
+
+  if (this_section->tag != NULL)
+    BFT_FREE(this_section->tag);
 
   if (this_section->tesselation != NULL)
     fvm_tesselation_destroy(this_section->tesselation);
@@ -1379,6 +1396,55 @@ fvm_nodal_init_io_num(fvm_nodal_t       *this_nodal,
     }
   }
 
+}
+
+/*----------------------------------------------------------------------------
+ * Set entity tags (for non-vertex entities).
+ *
+ * The number of entities of the given dimension may be obtained
+ * through fvm_nodal_get_n_entities(), the tag[] array is populated
+ * in local section order, section by section).
+ *
+ * parameters:
+ *   this_nodal <-- nodal mesh structure
+ *   tag        <-- tag values to assign
+ *   entity_dim <-- 3 for cells, 2 for faces, 1 for edges
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_nodal_set_tag(fvm_nodal_t  *this_nodal,
+                  const int     tag[],
+                  int           entity_dim)
+{
+  cs_lnum_t entitiy_count = 0;
+  for (int i = 0; i < this_nodal->n_sections; i++) {
+    fvm_nodal_section_t  *section = this_nodal->sections[i];
+    if (section->entity_dim == entity_dim) {
+      BFT_REALLOC(section->tag, section->n_elements, int);
+      for (cs_lnum_t j = 0; j < section->n_elements; j++)
+        section->tag[j] = tag[entitiy_count + j];
+      entitiy_count += section->n_elements;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Remove entity tags.
+ *
+ * parameters:
+ *   this_nodal <-- nodal mesh structure
+ *   entity_dim <-- 3 for cells, 2 for faces, 1 for edges
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_nodal_remove_tag(fvm_nodal_t  *this_nodal,
+                     int           entity_dim)
+{
+  for (int i = 0; i < this_nodal->n_sections; i++) {
+    fvm_nodal_section_t  *section = this_nodal->sections[i];
+    if (section->entity_dim == entity_dim)
+      BFT_FREE(section->tag);
+  }
 }
 
 /*----------------------------------------------------------------------------

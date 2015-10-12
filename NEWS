@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes:
 --------
 
+ - Implement handling of point and element tags so as to ignore location
+   on elements sharing tag.
+
  - Automatic initialization of the Turbulence for EBRSM and k-omega models.
    From a reference velocity (uref), the turbulence profiles are reset
    after the first iteration. The velocity magnitude is also changed
