@@ -620,7 +620,7 @@ lamvbr = 0
 idepst = 0
 
 !===============================================================================
-! 13. Activation of resuspension model
+! 13. Activation of roughness and resuspension model
 !===============================================================================
 
 ! Activation of the resuspension model
@@ -639,7 +639,7 @@ irough = 0  ! dlvo deposition conditions for roughness surface
 espasg = 20.d-6
 
 !density of the small-scale asperities
-denasp = 6.36d10
+denasp = 6.36d13
 
 !radius of small asperities
 rayasp = 5.d-9
@@ -686,7 +686,26 @@ isttio = 1 !the statistical averages are not reset
 endif
 
 !===============================================================================
-! 15. Variables to visualize on the trajectories or the particles
+! 15. Activation of the precipitation/disolution model
+!===============================================================================
+
+! Activation of the precipitation/dissolution model
+! (default off: 0 ; on: 1)
+
+! Caution: OPTION FOR DEVELOPERS ONLY
+iprec = 0
+
+!diameter of particles formed by precipitation
+dprec =  2.d-6
+
+!diameter of particles formed by precipitation
+rho_prec =  5200.d0
+
+!number of particle classes
+nbrclas = 2
+
+!===============================================================================
+! 16. Variables to visualize on the trajectories or the particles
 !
 !     See also cs_user_postprocess_mesh in cs_user_postprocess.c to define
 !     the associated visualization particle or trajectory segment meshes.
@@ -728,10 +747,10 @@ if (iphyla.eq.2) then
 
 endif
 
-! 15.2 Boundary statistics: visualization of the particle/boundaries interactions
+! 16.1 Boundary statistics: visualization of the particle/boundaries interactions
 ! ------------------------------------------------
 
-! 15.2.1 Generic parameters
+! 16.1.1 Generic parameters
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ! Particle/boundary interaction mode
@@ -762,7 +781,7 @@ nstbor = 1
 
 seuilf = 0.d0
 
-! 15.2.2 Information to be recorded
+! 16.1.2 Information to be recorded
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
 ! * To activate them, the user has to set below
@@ -789,21 +808,6 @@ iangbd = 0
 ! (default off: 0 ; on: 1)
 ivitbd = 0
 
-! Boundary statistics related to particle clogging
-! iclgst (default off without iclogst: 0 ; on with iclogst: 1)
-!   Contains the following statistics:
-!     inclg: number of clusters on the boundary
-!     iclgt: average time of deposited clusters
-!     iscovc: surface covered by particles
-!     ihdepm: average height of deposited clusters
-!     ihdepv: variance of the height of deposited clusters
-!     ihdiam: mean diameter of deposited particles
- if (iclogst.eq.1) then
-    iclgst = 1 ! Has to be activated if iclogst = 1
- else
-    iclgst = 0
- endif
-
 ! (default off: 0 ; on: 1)
  if (iphyla.eq.2 .and. iencra.eq.1) then
    ! Number of particle/boundary interactions with fouling
@@ -824,7 +828,7 @@ ivitbd = 0
 
 nusbor = 0
 
-! 15.2.3 Name of the recordings for display,
+! 16.1.3 Name of the recordings for display,
 !        Average in time of particle average
 !        of the boundary statistics
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -857,7 +861,7 @@ nusbor = 0
 !   otherwise this average is set to zero.
 
 !===============================================================================
-! 16. Lagrangian listing
+! 17. Lagrangian listing
 !===============================================================================
 
 ! Lagrangian period for the writing of the Lagrangian listing

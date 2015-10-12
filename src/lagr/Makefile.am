@@ -121,7 +121,10 @@ lagstf.f90 \
 lagswe.f90 \
 lagtmp.f90 \
 lagune.f90 \
+precdi.f90 \
+precst.f90 \
 porcel.f90
+
 libcslagr_la_LDFLAGS = -no-undefined
 
 clean-local:

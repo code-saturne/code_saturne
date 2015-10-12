@@ -382,6 +382,15 @@ if ((ichemistry.ge.1).and.(isepchemistry.eq.2)                    &
   call chem_source_terms(iscal, smbrs, rovsdt)
 endif
 
+
+!Precipitation/dissolution
+! Calculation of source terms du to precipitation and dissolution
+! phenomena
+if (iprec .eq. 1) then
+   call precst( nvar  , nscal  ,                        &
+        iscal ,  dt   , smbrs  )
+endif
+
 ! Si on extrapole les TS :
 !   SMBRS recoit -theta PROPCE du pas de temps precedent
 !     (on aurait pu le faire avant ustssc, mais avec le risque que

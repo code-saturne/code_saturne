@@ -136,6 +136,7 @@ double precision xxpart , yypart , zzpart
 double precision swpart , uupart , vvpart , wwpart
 double precision ddpart , ttpart
 double precision dintrf(1)
+double precision dnbpnw_prec
 
 integer, dimension(3) :: shpe
 integer, allocatable, dimension(:) :: iwork
@@ -175,7 +176,6 @@ if (itemp1.gt.0) call field_get_val_s(iprpfl(itemp1), temp1)
 !===============================================================================
 ! 0.  GESTION MEMOIRE
 !===============================================================================
-
 allocate(ilftot(nflagm))
 
 !===============================================================================
@@ -802,6 +802,16 @@ do ii = 1,nfrtot
     endif
   enddo
 enddo
+
+!===============================================================================
+! 5. Precipitation/Dissolution
+!===============================================================================
+
+if (iprec .eq. 1 ) then
+   call precdi               &
+        (  dt , iprev, dnbpnw_prec)
+endif
+
 
 ! --> Limite du nombre de particules
 
@@ -1488,6 +1498,7 @@ do ii = 1,nfrlag
 
 enddo
 
+if (iprec .eq. 1) dnbpnw = dnbpnw + dnbpnw_prec
 !===============================================================================
 ! 10. NOUVEAU NOMBRE DE PARTICULES TOTAL
 !===============================================================================

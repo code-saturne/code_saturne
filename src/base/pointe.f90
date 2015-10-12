@@ -113,7 +113,9 @@ module pointe
   double precision, allocatable, dimension(:)   :: uetbor
 
   !> \}
-
+  double precision, allocatable, dimension(:)   :: solub
+  integer, allocatable, dimension(:)            :: nbprec
+  double precision, allocatable, dimension(:,:) :: mp_diss
   !=============================================================================
 
   !> \defgroup coupled_case Specific arrays for the coupled case
@@ -478,6 +480,12 @@ contains
       allocate(uetbor(nfabor))
     endif
 
+    if (iprec .eq. 1) then
+       allocate(solub(ncelet))
+       allocate(nbprec(ncelet))
+       allocate(mp_diss(ncelet,nbrclas))
+    endif
+
     ! Temporary storage arrays for k-omega model
 
     if (iturb.eq.60) then
@@ -620,6 +628,9 @@ contains
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)
     if (allocated(uetbor)) deallocate(uetbor)
+    if (allocated(solub)) deallocate(solub)
+    if (allocated(nbprec)) deallocate(nbprec)
+    if (allocated(mp_diss)) deallocate(mp_diss)
     if (allocated(s2kw)) deallocate(s2kw, divukw)
     if (allocated(straio))  deallocate(straio)
     if (allocated(b_head_loss)) deallocate(b_head_loss)

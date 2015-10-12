@@ -317,6 +317,23 @@ module lagran
 
   !> \}
 
+  !> \defgroup precipitation_model Precipitation model
+
+  !> \addtogroup precipitation_model
+  !> \{
+
+  !> - 0: no precipitation/dissolution model
+  !> - 1: precipitation/dissolution model
+  integer, save ::         iprec
+  !> number of particle classes
+  integer, save ::         nbrclas
+
+  !> diameter of particles formed by precipitation
+   double precision, save :: dprec
+  !> density of particles formed by precipitation
+   double precision, save :: rho_prec
+
+  !> \}
   !=======================
 
   !> \defgroup clogging_model Clogging model
