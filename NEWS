@@ -5,6 +5,8 @@ Version 4.0.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix example in uselrc.f90.
+
 - Fix for Catalyst using time-varying meshes.
 
 - Fix restart using RSM model and pre-4.0 restart file.
