@@ -4,12 +4,12 @@ Trunk (unreleased)
 
 Changes:
 --------
+
  - Automatic initialization of the Turbulence for EBRSM and k-omega models.
    From a reference velocity (uref), the turbulence profiles are reset
    after the first iteration. The velocity magnitude is also changed
    so that the Reichard profile is imposed next to walls.
    Activate it with reinit_turb=1 (in usipsu).
-
 
  - Simplify Lagrangian particle tracking, removing a linked list.
    This is transparent for the user, except for a possible differences
