@@ -317,6 +317,7 @@ def gen_cmd_file(cmds):
     else:
         f_name = "./commands.gdb"
     f = open(f_name, "w")
+    f.write("set breakpoint pending on\n")
     for c in cmds:
         f.write(c + '\n')
     f.close()
