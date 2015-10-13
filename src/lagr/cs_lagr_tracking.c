@@ -2878,6 +2878,7 @@ _local_propagation(void                           *particle,
 
       move_particle  = CS_LAGR_PART_MOVE_OFF;
       particle_state = CS_LAGR_PART_ERR;
+      return particle_state;
 
     }
 
@@ -3628,7 +3629,7 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
     cs_real_t cur_part_stat_weight
       = cs_lagr_particles_get_real(particles, i, CS_LAGR_STAT_WEIGHT);
 
-    /* Particle changes doamin */
+    /* Particle changes domain */
 
     if (cur_part_state == CS_LAGR_PART_TO_SYNC) {
 
