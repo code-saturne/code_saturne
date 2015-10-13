@@ -1226,6 +1226,16 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
             cs_exec_environment.write_prepend_path(s,
                                                    'LD_LIBRARY_PATH',
                                                    mpi_libdir)
+
+        # Add path for SALOME in case of coupling with YACS
+
+        if self.ast_domains:
+            salome_libdir = os.path.join(self.package_compute.get_dir("libdir"),
+                                         'salome')
+            cs_exec_environment.write_prepend_path(s,
+                                                   'LD_LIBRARY_PATH',
+                                                   salome_libdir)
+
         s.write('\n')
 
         # Handle rcfile and environment modules if used

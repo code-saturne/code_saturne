@@ -162,24 +162,16 @@ void CS_PROCF(astgeo, ASTGEO)
                                             NULL,
                                             lstfac);
 
-  n_vertices = fvm_nodal_get_n_entities(fsi_mesh, 0);
-
-  BFT_MALLOC(ast_coupling, 1, cs_ast_coupling_t);
-
-  ast_coupling->n_vertices = n_vertices;
-  ast_coupling->n_g_vertices = n_vertices;
-
-  ast_coupling->n_faces = n_faces;
-  ast_coupling->n_g_faces = n_faces;
-
-  assert(cs_glob_n_ranks == 1);
-
   /* Creation of the information structure for Code_Saturne/Code_Aster
      coupling */
 
   BFT_MALLOC(ast_coupling, 1, cs_ast_coupling_t);
 
+  n_vertices = fvm_nodal_get_n_entities(fsi_mesh, 0);
+  ast_coupling->n_vertices = n_vertices;
   ast_coupling->n_g_vertices = fvm_nodal_get_n_g_vertices(fsi_mesh);
+
+  ast_coupling->n_faces = n_faces;
   ast_coupling->n_g_faces = n_faces;
 
   BFT_MALLOC(ast_coupling->s_vtx_num, ast_coupling->n_vertices, cs_lnum_t);

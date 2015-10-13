@@ -5,6 +5,8 @@ Version 4.1.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fixes for coupling with Code_Aster.
+
 - Fix example in uselrc.f90.
 
 - Fix for Catalyst using time-varying meshes.
