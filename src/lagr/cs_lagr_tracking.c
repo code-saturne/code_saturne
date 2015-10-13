@@ -2095,6 +2095,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       particles->weight_dep += particle_stat_weight;
     }
 
+    cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
+                              CS_LAGR_PART_DEPOSITED);
+
     bdy_conditions->particle_flow_rate[boundary_zone]
       -= particle_stat_weight * particle_mass;
 
@@ -2123,8 +2126,11 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     /* Specific treatment in case of particle resuspension modeling */
 
     cs_lnum_t *cell_num = cs_lagr_particle_attr(particle,
-                                                    p_am,
-                                                    CS_LAGR_CELL_NUM);
+                                                p_am,
+                                                CS_LAGR_CELL_NUM);
+
+    cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
+                              CS_LAGR_PART_DEPOSITED);
 
     if (cs_glob_lagr_params->resuspension == 0) {
 
@@ -2137,8 +2143,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
     } else {
 
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                CS_LAGR_PART_DEPOSITED);
       *cell_num = cs_glob_mesh->b_face_cells[face_id] + 1;
 
       particle_state = CS_LAGR_PART_TREATED;
@@ -2209,6 +2213,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
      /* Deposition criterion: E_kin > E_barr */
     if (energ > energt * 0.5 * particle_diameter) {
+
+     cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
+                               CS_LAGR_PART_DEPOSITED);
 
       /* The particle deposits*/
       if (!cs_glob_lagr_params->clogging && !cs_glob_lagr_params->resuspension) {
@@ -4854,8 +4861,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
   particles->n_failed_part = 0;
   particles->weight_failed = 0.0;
 
-  _initialize_displacement(particles, part_b_mass_flux);
-
   /* Shift from 1-based to 0-based (temporary) */
 
   if (p_am->count[0][CS_LAGR_NEIGHBOR_FACE_ID] > 0) {
@@ -4866,6 +4871,8 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
                                    n_face_id);
     }
   }
+
+  _initialize_displacement(particles, part_b_mass_flux);
 
   /* Main loop on  particles: global propagation */
 
