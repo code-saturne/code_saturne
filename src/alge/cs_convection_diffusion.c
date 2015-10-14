@@ -3465,7 +3465,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
   cs_gnum_t n_upwind;
   cs_lnum_t face_id, ii, jj, cell_id;
   int iupwin, g_id, t_id;
-  double unsvol, visco, grdtrv, tgrdfl, secvis;
 
   cs_real_63_t *grad, *grdpa;
 
@@ -3640,14 +3639,14 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                          pvar[jj],
                                          pvara[ii],
                                          pvara[jj],
-                                         &pifri,
-                                         &pifrj,
-                                         &pjfri,
-                                         &pjfrj,
-                                         &pip,
-                                         &pjp,
-                                         &pipr,
-                                         &pjpr);
+                                         pifri,
+                                         pifrj,
+                                         pjfri,
+                                         pjfrj,
+                                         pip,
+                                         pjp,
+                                         pipr,
+                                         pjpr);
 
 
             cs_i_conv_flux_tensor(iconvp,
@@ -3658,8 +3657,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   pjfri,
                                   pjfrj,
                                   i_massflux[face_id],
-                                  &fluxi,
-                                  &fluxj);
+                                  fluxi,
+                                  fluxj);
 
 
             cs_i_diff_flux_tensor(idiffp,
@@ -3668,8 +3667,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   pipr,
                                   pjpr,
                                   i_visc[face_id],
-                                  &fluxi,
-                                  &fluxj);
+                                  fluxi,
+                                  fluxj);
 
            for (int isou = 0 ; isou < 6 ; isou++){
               rhs[ii][isou] = rhs[ii][isou] - fluxi[isou];
@@ -3716,14 +3715,14 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                            (const cs_real_3_t *)grad[jj],
                                            pvar[ii],
                                            pvar[jj],
-                                           &pifri,
-                                           &pifrj,
-                                           &pjfri,
-                                           &pjfrj,
-                                           &pip,
-                                           &pjp,
-                                           &pipr,
-                                           &pjpr);
+                                           pifri,
+                                           pifrj,
+                                           pjfri,
+                                           pjfrj,
+                                           pip,
+                                           pjp,
+                                           pipr,
+                                           pjpr);
 
             cs_i_conv_flux_tensor(iconvp,
                                   pvar[ii],
@@ -3733,8 +3732,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   pjfri,
                                   pjfrj,
                                   i_massflux[face_id],
-                                  &fluxi,
-                                  &fluxj);
+                                  fluxi,
+                                  fluxj);
 
 
             cs_i_diff_flux_tensor(idiffp,
@@ -3743,8 +3742,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   pipr,
                                   pjpr,
                                   i_visc[face_id],
-                                  &fluxi,
-                                  &fluxj);
+                                  fluxi,
+                                  fluxj);
 
             for (int isou = 0 ; isou < 6 ; isou++){
 
@@ -3804,14 +3803,14 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   pvar[jj],
                                   pvara[ii],
                                   pvara[jj],
-                                  &pifri,
-                                  &pifrj,
-                                  &pjfri,
-                                  &pjfrj,
-                                  &pip,
-                                  &pjp,
-                                  &pipr,
-                                  &pjpr);
+                                  pifri,
+                                  pifrj,
+                                  pjfri,
+                                  pjfrj,
+                                  pip,
+                                  pjp,
+                                  pipr,
+                                  pjpr);
 
             cs_i_conv_flux_tensor(iconvp,
                                   pvar[ii],
@@ -3821,8 +3820,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   pjfri,
                                   pjfrj,
                                   i_massflux[face_id],
-                                  &fluxi,
-                                  &fluxj);
+                                  fluxi,
+                                  fluxj);
 
 
             cs_i_diff_flux_tensor(idiffp,
@@ -3831,8 +3830,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   pipr,
                                   pjpr,
                                   i_visc[face_id],
-                                  &fluxi,
-                                  &fluxj);
+                                  fluxi,
+                                  fluxj);
 
             for (int isou = 0 ; isou < 6 ; isou++){
               rhs[ii][isou] = rhs[ii][isou] - fluxi[isou];
@@ -3877,14 +3876,14 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                     (const cs_real_3_t *)grad[jj],
                                     pvar[ii],
                                     pvar[jj],
-                                    &pifri,
-                                    &pifrj,
-                                    &pjfri,
-                                    &pjfrj,
-                                    &pip,
-                                    &pjp,
-                                    &pipr,
-                                    &pjpr);
+                                    pifri,
+                                    pifrj,
+                                    pjfri,
+                                    pjfrj,
+                                    pip,
+                                    pjp,
+                                    pipr,
+                                    pjpr);
 
             cs_i_conv_flux_tensor(iconvp,
                                   pvar[ii],
@@ -3894,8 +3893,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   pjfri,
                                   pjfrj,
                                   i_massflux[face_id],
-                                  &fluxi,
-                                  &fluxj);
+                                  fluxi,
+                                  fluxj);
 
 
             cs_i_diff_flux_tensor(idiffp,
@@ -3904,8 +3903,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   pipr,
                                   pjpr,
                                   i_visc[face_id],
-                                  &fluxi,
-                                  &fluxj);
+                                  fluxi,
+                                  fluxj);
 
             for (int isou = 0 ; isou < 6 ; isou++){
               rhs[ii][isou] -= thetap*(fluxi[isou]);
@@ -3948,7 +3947,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_real_6_t pip, pjp, pipr, pjpr;
             cs_real_6_t pifri, pifrj, pjfri, pjfrj;
             bool upwind_switch[6];
-            cs_i_cd_steady_slope_test_tensor(&upwind_switch,
+            cs_i_cd_steady_slope_test_tensor(upwind_switch,
                                              ircflp,
                                              ischcp,
                                              relaxp,
@@ -3970,14 +3969,14 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                              pvar[jj],
                                              pvara[ii],
                                              pvara[jj],
-                                             &pifri,
-                                             &pifrj,
-                                             &pjfri,
-                                             &pjfrj,
-                                             &pip,
-                                             &pjp,
-                                             &pipr,
-                                             &pjpr);
+                                             pifri,
+                                             pifrj,
+                                             pjfri,
+                                             pjfrj,
+                                             pip,
+                                             pjp,
+                                             pipr,
+                                             pjpr);
 
             cs_i_conv_flux_tensor(iconvp,
                                   pvar[ii],
@@ -3987,8 +3986,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   pjfri,
                                   pjfrj,
                                   i_massflux[face_id],
-                                  &fluxi,
-                                  &fluxj);
+                                  fluxi,
+                                  fluxj);
 
 
             cs_i_diff_flux_tensor(idiffp,
@@ -3997,8 +3996,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   pipr,
                                   pjpr,
                                   i_visc[face_id],
-                                  &fluxi,
-                                  &fluxj);
+                                  fluxi,
+                                  fluxj);
 
             for (int isou = 0 ; isou < 6 ; isou++){
               rhs[ii][isou] = rhs[ii][isou] - fluxi[isou];
@@ -4031,7 +4030,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_real_6_t pip, pjp, pipr, pjpr;
             cs_real_6_t pifri, pifrj, pjfri, pjfrj;
             bool upwind_switch[6];
-            cs_i_cd_unsteady_slope_test_tensor(&upwind_switch,
+            cs_i_cd_unsteady_slope_test_tensor(upwind_switch,
                                                ircflp,
                                                ischcp,
                                                blencp,
@@ -4050,14 +4049,14 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                                (const cs_real_3_t *)grdpa[jj],
                                                pvar[ii],
                                                pvar[jj],
-                                               &pifri,
-                                               &pifrj,
-                                               &pjfri,
-                                               &pjfrj,
-                                               &pip,
-                                               &pjp,
-                                               &pipr,
-                                               &pjpr);
+                                               pifri,
+                                               pifrj,
+                                               pjfri,
+                                               pjfrj,
+                                               pip,
+                                               pjp,
+                                               pipr,
+                                               pjpr);
 
             cs_i_conv_flux_tensor(iconvp,
                                   pvar[ii],
@@ -4067,8 +4066,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   pjfri,
                                   pjfrj,
                                   i_massflux[face_id],
-                                  &fluxi,
-                                  &fluxj);
+                                  fluxi,
+                                  fluxj);
 
 
             cs_i_diff_flux_tensor(idiffp,
@@ -4077,8 +4076,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   pipr,
                                   pjpr,
                                   i_visc[face_id],
-                                  &fluxi,
-                                  &fluxj);
+                                  fluxi,
+                                  fluxj);
 
             for (int isou = 0; isou < 6; isou++) {
 
@@ -4129,7 +4128,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
                face_id++) {
 
             ii = b_face_cells[face_id];
-            double fluxi[6], fluxj[6] ;
+            double fluxi[6] ;
             for (int isou =  0; isou < 6; isou++) {
               fluxi[isou] = 0;
             }
@@ -4141,8 +4140,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   (const cs_real_3_t *)grad[ii],
                                   pvar[ii],
                                   pvara[ii],
-                                  &pir,
-                                  &pipr);
+                                  pir,
+                                  pipr);
 
             cs_b_upwind_flux_tensor(iconvp,
                                     inc,
@@ -4154,7 +4153,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                     coefa[face_id],
                                     coefb[face_id],
                                     b_massflux[face_id],
-                                    &fluxi);
+                                    fluxi);
 
             cs_b_diff_flux_tensor(idiffp,
                                   inc,
@@ -4162,7 +4161,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   cofaf[face_id],
                                   cofbf[face_id],
                                   b_visc[face_id],
-                                  &fluxi);
+                                  fluxi);
 
             for(int isou = 0; isou < 6; isou++) {
                    rhs[ii][isou] -=- fluxi[isou];
@@ -4184,7 +4183,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
             ii = b_face_cells[face_id];
 
-            double fluxi[6], fluxj[6] ;
+            double fluxi[6] ;
             for (int isou =  0; isou < 6; isou++) {
               fluxi[isou] = 0;
             }
@@ -4196,8 +4195,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                     diipb[face_id],
                                     (const cs_real_3_t *)grad[ii],
                                     pvar[ii],
-                                    &pir,
-                                    &pipr);
+                                    pir,
+                                    pipr);
 
             cs_b_upwind_flux_tensor(iconvp,
                                     inc,
@@ -4209,7 +4208,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                     coefa[face_id],
                                     coefb[face_id],
                                     b_massflux[face_id],
-                                    &fluxi);
+                                    fluxi);
 
             cs_b_diff_flux_tensor(idiffp,
                                   inc,
@@ -4217,7 +4216,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   cofaf[face_id],
                                   cofbf[face_id],
                                   b_visc[face_id],
-                                  &fluxi);
+                                  fluxi);
 
             for(int isou = 0; isou < 6; isou++) {
               rhs[ii][isou] -= thetap * fluxi[isou];
@@ -6642,7 +6641,6 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
   const int iwarnp = var_cal_opt.iwarni;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
-  const double extrap = var_cal_opt.extrag;
   const double relaxp = var_cal_opt.relaxv;
   const double thetap = var_cal_opt.thetav;
 
@@ -6679,22 +6677,19 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
   char var_name[32];
 
   cs_lnum_t face_id, ii, jj, cell_id;
-  int isou,jsou, n_upwind, g_id, t_id;
+  int  n_upwind, g_id, t_id;
   double pfacd,flux,fluxi,fluxj;
   double pi[6], pj[6], pia[6], pja[6];
   double pir[6],pjr[6],pippr[6],pjppr[6];
   double diippf[3], djjppf[3], pipp[6], pjpp[6];
   double visci[3][3], viscj[3][3];
   double fikdvi, fjkdvi;
-  int tr_dim = 0;
 
   cs_real_6_t *viscce;
   cs_real_6_t *w2;
   cs_real_63_t *grad;
 
   cs_field_t *f;
-
-  cs_real_t *gweight = NULL;
 
   /* 1. Initialization */
 
@@ -6741,7 +6736,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
   } else if (porosi != NULL && porosf == NULL) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cell_id = 0; cell_id < n_cells; cell_id++) {
-      for (isou = 0; isou < 6; isou++) {
+      for (int isou = 0; isou < 6; isou++) {
         w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
       }
     }
@@ -6806,9 +6801,9 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
   n_upwind = 0;
 
   if (n_cells_ext > n_cells) {
-#   pragma omp parallel for private(isou) if(n_cells_ext -n_cells > CS_THR_MIN)
+#   pragma omp parallel  if(n_cells_ext -n_cells > CS_THR_MIN)
     for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
-      for (isou = 0; isou < 6; isou++) {
+      for (int isou = 0; isou < 6; isou++) {
         rhs[cell_id][isou] = 0.;
       }
     }
@@ -6835,7 +6830,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
             n_upwind++;
           }
 
-          for (isou = 0; isou < 6; isou++) {
+          for (int isou = 0; isou < 6; isou++) {
             pi[isou] = pvar[ii][isou];
             pj[isou] = pvar[jj][isou];
             pia[isou] = pvara[ii][isou];
@@ -6887,7 +6882,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
                                + viscj[2][i]*i_face_normal[face_id][2] );
           }
 
-          for (isou = 0; isou < 6; isou++) {
+          for (int isou = 0; isou < 6; isou++) {
             /* p in I" and J" */
             pipp[isou] = pi[isou] + ircflp*( grad[ii][isou][0]*diippf[0]
                                            + grad[ii][isou][1]*diippf[1]
@@ -6940,7 +6935,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
             n_upwind++;
           }
 
-          for (isou = 0; isou < 6; isou++) {
+          for (int isou = 0; isou < 6; isou++) {
             pi[isou] = pvar[ii][isou];
             pj[isou] = pvar[jj][isou];
           }
@@ -6990,7 +6985,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
                                + viscj[2][i]*i_face_normal[face_id][2] );
           }
 
-          for (isou = 0; isou < 6; isou++) {
+          for (int isou = 0; isou < 6; isou++) {
             /* p in I" and J" */
             pipp[isou] = pi[isou] + ircflp*( grad[ii][isou][0]*diippf[0]
                                            + grad[ii][isou][1]*diippf[1]
@@ -7027,12 +7022,12 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 
           ii = b_face_cells[face_id];
 
-          for (isou = 0; isou < 6; isou++) {
+          for (int isou = 0; isou < 6; isou++) {
             pi[isou] = pvar[ii][isou];
             pia[isou] = pvara[ii][isou];
+            pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp*pia[isou];
           }
 
-          pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp*pia[isou];
 
           /* Recompute II"
              --------------*/
@@ -7057,14 +7052,14 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
                                + visci[1][i]*b_face_normal[face_id][1]
                                + visci[2][i]*b_face_normal[face_id][2] );
           }
-          for (isou = 0; isou < 6; isou++) {
+          for (int isou = 0; isou < 6; isou++) {
             pippr[isou] = pir[isou] + ircflp*( grad[ii][isou][0]*diippf[0]
                                              + grad[ii][isou][1]*diippf[1]
                                              + grad[ii][isou][2]*diippf[2]);
           }
-          for (isou = 0; isou < 6; isou++) {
+          for (int isou = 0; isou < 6; isou++) {
             pfacd = inc*cofaf[face_id][isou];
-            for (jsou = 0; jsou < 6; jsou++) {
+            for (int jsou = 0; jsou < 6; jsou++) {
               pfacd += cofbf[face_id][isou][jsou]*pippr[jsou];
             }
 
@@ -7089,7 +7084,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 
           ii = b_face_cells[face_id];
 
-          for (isou = 0; isou < 6; isou++) {
+          for (int isou = 0; isou < 6; isou++) {
             pi[isou] = pvar[ii][isou];
           }
 
@@ -7116,14 +7111,14 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
                                + visci[1][i]*b_face_normal[face_id][1]
                                + visci[2][i]*b_face_normal[face_id][2]);
           }
-          for (isou = 0; isou < 6; isou++) {
+          for (int isou = 0; isou < 6; isou++) {
             pipp[isou] = pi[isou] + ircflp*( grad[ii][isou][0]*diippf[0]
                                            + grad[ii][isou][1]*diippf[1]
                                            + grad[ii][isou][2]*diippf[2]);
           }
-          for (isou = 0; isou < 6; isou++) {
+          for (int isou = 0; isou < 6; isou++) {
             pfacd = inc*cofaf[face_id][isou];
-            for (jsou = 0; jsou < 6; jsou++) {
+            for (int jsou = 0; jsou < 6; jsou++) {
               pfacd += cofbf[face_id][isou][jsou]*pipp[jsou];
             }
 

@@ -1110,14 +1110,14 @@ cs_i_cd_steady_upwind_tensor(const int          ircflp,
                              const cs_real_6_t  pj,
                              const cs_real_6_t  pia,
                              const cs_real_6_t  pja,
-                             cs_real_6_t        *pifri,
-                             cs_real_6_t        *pifrj,
-                             cs_real_6_t        *pjfri,
-                             cs_real_6_t        *pjfrj,
-                             cs_real_6_t        *pip,
-                             cs_real_6_t        *pjp,
-                             cs_real_6_t        *pipr,
-                             cs_real_6_t        *pjpr)
+                             cs_real_t          pifri[6],
+                             cs_real_t          pifrj[6],
+                             cs_real_t          pjfri[6],
+                             cs_real_t          pjfrj[6],
+                             cs_real_t          pip[6],
+                             cs_real_t          pjp[6],
+                             cs_real_t          pipr[6],
+                             cs_real_t          pjpr[6])
 {
   cs_real_6_t pir, pjr;
   cs_real_6_t recoi, recoj;
@@ -1132,8 +1132,8 @@ cs_i_cd_steady_upwind_tensor(const int          ircflp,
                                  gradj,
                                  pi,
                                  pj,
-                                 &recoi,
-                                 &recoj,
+                                 recoi,
+                                 recoj,
                                  pip,
                                  pjp);
 
@@ -1144,8 +1144,8 @@ cs_i_cd_steady_upwind_tensor(const int          ircflp,
                           recoj,
                           pi,
                           pj,
-                          &pir,
-                          &pjr,
+                          pir,
+                          pjr,
                           pipr,
                           pjpr);
 
@@ -1278,14 +1278,14 @@ cs_i_cd_unsteady_upwind_tensor(const int           ircflp,
                                const cs_real_63_t  gradj,
                                const cs_real_6_t   pi,
                                const cs_real_6_t   pj,
-                               cs_real_6_t         *pifri,
-                               cs_real_6_t         *pifrj,
-                               cs_real_6_t         *pjfri,
-                               cs_real_6_t         *pjfrj,
-                               cs_real_6_t         *pip,
-                               cs_real_6_t         *pjp,
-                               cs_real_6_t         *pipr,
-                               cs_real_6_t         *pjpr)
+                               cs_real_t           pifri[6],
+                               cs_real_t           pifrj[6],
+                               cs_real_t           pjfri[6],
+                               cs_real_t           pjfrj[6],
+                               cs_real_t           pip[6],
+                               cs_real_t           pjp[6],
+                               cs_real_t           pipr[6],
+                               cs_real_t           pjpr[6])
 {
   cs_real_6_t pir, pjr;
   cs_real_6_t recoi, recoj;
@@ -1300,17 +1300,17 @@ cs_i_cd_unsteady_upwind_tensor(const int           ircflp,
                                  gradj,
                                  pi,
                                  pj,
-                                 &recoi,
-                                 &recoj,
+                                 recoi,
+                                 recoj,
                                  pip,
                                  pjp);
 
   cs_i_no_relax_c_val_tensor(pi,
                              pj,
-                             *pip,
-                             *pjp,
-                             &pir,
-                             &pjr,
+                             pip,
+                             pjp,
+                             pir,
+                             pjr,
                              pipr,
                              pjpr);
 
@@ -1509,14 +1509,14 @@ cs_i_cd_steady_tensor(const int           ircflp,
                       const cs_real_6_t   pj,
                       const cs_real_6_t   pia,
                       const cs_real_6_t   pja,
-                      cs_real_6_t         *pifri,
-                      cs_real_6_t         *pifrj,
-                      cs_real_6_t         *pjfri,
-                      cs_real_6_t         *pjfrj,
-                      cs_real_6_t         *pip,
-                      cs_real_6_t         *pjp,
-                      cs_real_6_t         *pipr,
-                      cs_real_6_t         *pjpr)
+                      cs_real_t           pifri[6],
+                      cs_real_t           pifrj[6],
+                      cs_real_t           pjfri[6],
+                      cs_real_t           pjfrj[6],
+                      cs_real_t           pip[6],
+                      cs_real_t           pjp[6],
+                      cs_real_t           pipr[6],
+                      cs_real_t           pjpr[6])
 
 {
   cs_real_6_t pir, pjr;
@@ -1532,8 +1532,8 @@ cs_i_cd_steady_tensor(const int           ircflp,
                                  gradj,
                                  pi,
                                  pj,
-                                 &recoi,
-                                 &recoj,
+                                 recoi,
+                                 recoj,
                                  pip,
                                  pjp);
 
@@ -1544,8 +1544,8 @@ cs_i_cd_steady_tensor(const int           ircflp,
                           recoj,
                           pi,
                           pj,
-                          &pir,
-                          &pjr,
+                          pir,
+                          pjr,
                           pipr,
                           pjpr);
 
@@ -1555,10 +1555,10 @@ cs_i_cd_steady_tensor(const int           ircflp,
        --------*/
 
     cs_centered_f_val_tensor(weight,
-                             *pip,
-                             *pjp,
-                             *pipr,
-                             *pjpr,
+                             pip,
+                             pjp,
+                             pipr,
+                             pjpr,
                              pifri,
                              pifrj,
                              pjfri,
@@ -1770,14 +1770,14 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
                         const cs_real_63_t  gradj,
                         const cs_real_6_t   pi,
                         const cs_real_6_t   pj,
-                        cs_real_6_t         *pifri,
-                        cs_real_6_t         *pifrj,
-                        cs_real_6_t         *pjfri,
-                        cs_real_6_t         *pjfrj,
-                        cs_real_6_t         *pip,
-                        cs_real_6_t         *pjp,
-                        cs_real_6_t         *pipr,
-                        cs_real_6_t         *pjpr)
+                        cs_real_t           pifri[6],
+                        cs_real_t           pifrj[6],
+                        cs_real_t           pjfri[6],
+                        cs_real_t           pjfrj[6],
+                        cs_real_t           pip[6],
+                        cs_real_t           pjp[6],
+                        cs_real_t           pipr[6],
+                        cs_real_t           pjpr[6])
 
 {
   cs_real_6_t pir, pjr;
@@ -1793,17 +1793,17 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
                                  gradj,
                                  pi,
                                  pj,
-                                 &recoi,
-                                 &recoj,
+                                 recoi,
+                                 recoj,
                                  pip,
                                  pjp);
 
   cs_i_no_relax_c_val_tensor(pi,
                              pj,
-                             *pip,
-                             *pjp,
-                             &pir,
-                             &pjr,
+                             pip,
+                             pjp,
+                             pir,
+                             pjr,
                              pipr,
                              pjpr);
 
@@ -1813,10 +1813,10 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
        --------*/
 
     cs_centered_f_val_tensor(weight,
-                             *pip,
-                             *pjp,
-                             *pipr,
-                             *pjpr,
+                             pip,
+                             pjp,
+                             pipr,
+                             pjpr,
                              pifri,
                              pifrj,
                              pjfri,
@@ -2106,14 +2106,14 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
                                  const cs_real_6_t   pj,
                                  const cs_real_6_t   pia,
                                  const cs_real_6_t   pja,
-                                 cs_real_6_t         *pifri,
-                                 cs_real_6_t         *pifrj,
-                                 cs_real_6_t         *pjfri,
-                                 cs_real_6_t         *pjfrj,
-                                 cs_real_6_t         *pip,
-                                 cs_real_6_t         *pjp,
-                                 cs_real_6_t         *pipr,
-                                 cs_real_6_t         *pjpr)
+                                 cs_real_t           pifri[6],
+                                 cs_real_t           pifrj[6],
+                                 cs_real_t           pjfri[6],
+                                 cs_real_t           pjfrj[6],
+                                 cs_real_t           pip[6],
+                                 cs_real_t           pjp[6],
+                                 cs_real_t           pipr[6],
+                                 cs_real_t           pjpr[6])
 {
   cs_real_6_t pir, pjr;
   cs_real_6_t recoi, recoj;
@@ -2138,8 +2138,8 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
                                  gradj,
                                  pi,
                                  pj,
-                                 &recoi,
-                                 &recoj,
+                                 recoi,
+                                 recoj,
                                  pip,
                                  pjp);
 
@@ -2150,8 +2150,8 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
                           recoj,
                           pi,
                           pj,
-                          &pir,
-                          &pjr,
+                          pir,
+                          pjr,
                           pipr,
                           pjpr);
 
@@ -2165,8 +2165,8 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
                        grdpai,
                        grdpaj,
                        i_massflux,
-                       &testij,
-                       &tesqck);
+                       testij,
+                       tesqck);
 
   for (isou = 0 ; isou < 6; isou++) {
     if (tesqck[isou]<=0. || testij[isou]<=0.) {
@@ -2178,10 +2178,10 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
                       pj[isou],
                       pir[isou],
                       pjr[isou],
-                      pifri[isou],
-                      pifrj[isou],
-                      pjfri[isou],
-                      pjfrj[isou]);
+                      &pifri[isou],
+                      &pifrj[isou],
+                      &pjfri[isou],
+                      &pjfrj[isou]);
 
       upwind_switch[isou] = true;
 
@@ -2193,14 +2193,14 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
            --------*/
 
         cs_centered_f_val(weight,
-                          *pip[isou],
-                          *pjp[isou],
-                          *pipr[isou],
-                          *pjpr[isou],
-                          pifri[isou],
-                          pifrj[isou],
-                          pjfri[isou],
-                          pjfrj[isou]);
+                          pip[isou],
+                          pjp[isou],
+                          pipr[isou],
+                          pjpr[isou],
+                          &pifri[isou],
+                          &pifrj[isou],
+                          &pjfri[isou],
+                          &pjfrj[isou]);
 
       } else {
 
@@ -2216,10 +2216,10 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
                       pj[isou],
                       pir[isou],
                       pjr[isou],
-                      pifri[isou],
-                      pifrj[isou],
-                      pjfri[isou],
-                      pjfrj[isou]);
+                      &pifri[isou],
+                      &pifrj[isou],
+                      &pjfri[isou],
+                      &pjfrj[isou]);
 
       }
     }
@@ -2456,7 +2456,7 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_unsteady_slope_test_tensor(bool                *upwind_switch[],
+cs_i_cd_unsteady_slope_test_tensor(bool                upwind_switch[6],
                                    const int           ircflp,
                                    const int           ischcp,
                                    const double        blencp,
@@ -2475,14 +2475,14 @@ cs_i_cd_unsteady_slope_test_tensor(bool                *upwind_switch[],
                                    const cs_real_63_t  grdpaj,
                                    const cs_real_6_t   pi,
                                    const cs_real_6_t   pj,
-                                   cs_real_6_t         *pifri,
-                                   cs_real_6_t         *pifrj,
-                                   cs_real_6_t         *pjfri,
-                                   cs_real_6_t         *pjfrj,
-                                   cs_real_6_t         *pip,
-                                   cs_real_6_t         *pjp,
-                                   cs_real_6_t         *pipr,
-                                   cs_real_6_t         *pjpr)
+                                   cs_real_t           pifri[6],
+                                   cs_real_t           pifrj[6],
+                                   cs_real_t           pjfri[6],
+                                   cs_real_t           pjfrj[6],
+                                   cs_real_t           pip[6],
+                                   cs_real_t           pjp[6],
+                                   cs_real_t           pipr[6],
+                                   cs_real_t           pjpr[6])
 {
   cs_real_6_t pir, pjr;
   cs_real_6_t recoi, recoj;
@@ -2494,7 +2494,7 @@ cs_i_cd_unsteady_slope_test_tensor(bool                *upwind_switch[],
   srfan = i_face_surf;
 
   for (isou = 0; isou < 6; isou++) {
-    *upwind_switch[isou] = false;
+    upwind_switch[isou] = false;
   }
 
   cs_i_compute_quantities_tensor(ircflp,
@@ -2507,17 +2507,17 @@ cs_i_cd_unsteady_slope_test_tensor(bool                *upwind_switch[],
                                  gradj,
                                  pi,
                                  pj,
-                                 &recoi,
-                                 &recoj,
+                                 recoi,
+                                 recoj,
                                  pip,
                                  pjp);
 
   cs_i_no_relax_c_val_tensor(pi,
                              pj,
-                             *pip,
-                             *pjp,
-                             &pir,
-                             &pjr,
+                             pip,
+                             pjp,
+                             pir,
+                             pjr,
                              pipr,
                              pjpr);
 
@@ -2531,8 +2531,8 @@ cs_i_cd_unsteady_slope_test_tensor(bool                *upwind_switch[],
                        grdpai,
                        grdpaj,
                        i_massflux,
-                       &testij,
-                       &tesqck);
+                       testij,
+                       tesqck);
   for (isou = 0 ; isou < 6; isou++) {
     if (tesqck[isou]<=0. || testij[isou]<=0.) {
 
@@ -2543,12 +2543,12 @@ cs_i_cd_unsteady_slope_test_tensor(bool                *upwind_switch[],
                       pj[isou],
                       pir[isou],
                       pjr[isou],
-                      pifri[isou],
-                      pifrj[isou],
-                      pjfri[isou],
-                      pjfrj[isou]);
+                      &pifri[isou],
+                      &pifrj[isou],
+                      &pjfri[isou],
+                      &pjfrj[isou]);
 
-      *upwind_switch[isou] = true;
+      upwind_switch[isou] = true;
 
     } else {
 
@@ -2558,14 +2558,14 @@ cs_i_cd_unsteady_slope_test_tensor(bool                *upwind_switch[],
            --------*/
 
         cs_centered_f_val(weight,
-                          *pip[isou],
-                          *pjp[isou],
-                          *pipr[isou],
-                          *pjpr[isou],
-                          pifri[isou],
-                          pifrj[isou],
-                          pjfri[isou],
-                          pjfrj[isou]);
+                          pip[isou],
+                          pjp[isou],
+                          pipr[isou],
+                          pjpr[isou],
+                          &pifri[isou],
+                          &pifrj[isou],
+                          &pjfri[isou],
+                          &pjfrj[isou]);
 
       } else {
 
@@ -2581,10 +2581,10 @@ cs_i_cd_unsteady_slope_test_tensor(bool                *upwind_switch[],
                       pj[isou],
                       pir[isou],
                       pjr[isou],
-                      pifri[isou],
-                      pifrj[isou],
-                      pjfri[isou],
-                      pjfrj[isou]);
+                      &pifri[isou],
+                      &pifrj[isou],
+                      &pjfri[isou],
+                      &pjfrj[isou]);
 
       }
     }
@@ -2642,7 +2642,7 @@ inline static void
 cs_b_compute_quantities_tensor(const cs_real_3_t  diipb,
                                const cs_real_63_t  gradi,
                                const int           ircflp,
-                               cs_real_t           recoi[])
+                               cs_real_t           recoi[6])
 {
   for (int isou = 0; isou < 6; isou++) {
     recoi[isou] = ircflp * (gradi[isou][0]*diipb[0]
@@ -2692,12 +2692,12 @@ cs_b_relax_c_val_tensor(const double       relaxp,
                         const cs_real_6_t  pi,
                         const cs_real_6_t  pia,
                         const cs_real_6_t  recoi,
-                        cs_real_6_t        *pir,
-                        cs_real_6_t        *pipr)
+                        cs_real_t          pir[6],
+                        cs_real_t          pipr[6])
 {
   for (int isou = 0; isou < 6; isou++) {
-    *pir[isou]  = pi[isou]/relaxp - (1.-relaxp)/relaxp*pia[isou];
-    *pipr[isou] = *pir[isou] + recoi[isou];
+    pir[isou]  = pi[isou]/relaxp - (1.-relaxp)/relaxp*pia[isou];
+    pipr[isou] = pir[isou] + recoi[isou];
   }
 }
 /*----------------------------------------------------------------------------*/
@@ -3159,15 +3159,15 @@ cs_b_cd_steady_tensor(const int          ircflp,
                       const cs_real_63_t gradi,
                       const cs_real_6_t  pi,
                       const cs_real_6_t  pia,
-                      cs_real_6_t        *pir,
-                      cs_real_6_t        *pipr)
+                      cs_real_t          pir[6],
+                      cs_real_t          pipr[6])
 {
   cs_real_6_t recoi;
 
   cs_b_compute_quantities_tensor(diipb,
                                  gradi,
                                  ircflp,
-                                 &recoi);
+                                 recoi);
 
   cs_b_relax_c_val_tensor(relaxp,
                           pi,
@@ -3237,7 +3237,7 @@ cs_b_cd_unsteady_tensor(const int          ircflp,
   cs_b_compute_quantities_tensor(diipb,
                                  gradi,
                                  ircflp,
-                                 &recoi);
+                                 recoi);
 
   cs_b_no_relax_c_val_tensor(pi,
                              recoi,
