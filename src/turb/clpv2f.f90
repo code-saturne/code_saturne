@@ -71,7 +71,7 @@ integer          iwaphi
 ! Local variables
 
 integer          iel
-integer          nclpmx, nclpmn
+integer          nclpmx(1), nclpmn(1)
 double precision xphi, xal, vmin(1), vmax(1), var
 
 double precision, dimension(:), pointer :: cvar_al, cvar_phi
@@ -104,28 +104,28 @@ enddo
 !==============================================================================
 
 if (iwaphi.ge.2) then
-  nclpmx = 0
+  nclpmx(1) = 0
   do iel = 1, ncel
-    if (cvar_phi(iel).gt.2.d0) nclpmx = nclpmx+1
+    if (cvar_phi(iel).gt.2.d0) nclpmx(1) = nclpmx(1)+1
   enddo
-  if (irangp.ge.0) call parcpt(nclpmx)
-  if (nclpmx.gt.0) write(nfecra,1000) nclpmx
+  if (irangp.ge.0) call parcpt(nclpmx(1))
+  if (nclpmx(1).gt.0) write(nfecra,1000) nclpmx(1)
 endif
 
 !==============================================================================
 !     1.c Clipping en valeur absolue pour les valeurs negatives
 !==============================================================================
 
-nclpmn = 0
+nclpmn(1) = 0
 do iel = 1, ncel
   xphi = cvar_phi(iel)
   if (xphi.lt.0.d0) then
     cvar_phi(iel) = -xphi
-    nclpmn = nclpmn + 1
+    nclpmn(1) = nclpmn(1) + 1
   endif
 enddo
 
-call log_iteration_clipping_field(ivarfl(iphi), nclpmn, 0, vmin, vmax)
+call log_iteration_clipping_field(ivarfl(iphi), nclpmn(1), 0, vmin, vmax,nclpmn(1), nclpmx(1))
 
 !===============================================================================
 !  2. Pour le BL-v2/k model, clipping de alpha a 0 pour les valeurs negatives
@@ -151,21 +151,21 @@ if (iturb.eq.51) then
 !         superieures a 1
 !==============================================================================
 
-  nclpmn = 0
-  nclpmx = 0
+  nclpmn(1) = 0
+  nclpmx(1) = 0
   do iel = 1, ncel
     xal = cvar_al(iel)
     if (xal.lt.0.d0) then
       cvar_al(iel) = 0.d0
-      nclpmn = nclpmn + 1
+      nclpmn(1) = nclpmn(1) + 1
     endif
     if (xal.gt.1.d0) then
       cvar_al(iel) = 1.d0
-      nclpmx = nclpmx + 1
+      nclpmx(1) = nclpmx(1) + 1
     endif
   enddo
 
-  call log_iteration_clipping_field(ivarfl(ial), nclpmn, nclpmx, vmin, vmax)
+  call log_iteration_clipping_field(ivarfl(ial), nclpmn(1), nclpmx(1), vmin,vmax,nclpmn(1), nclpmx(1))
 
 endif
 

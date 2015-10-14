@@ -89,7 +89,7 @@ integer          imucpp, idftnp, iswdyp
 
 integer          icvflb
 integer          ivoid(1)
-integer          kscmin, kscmax, iclmin, iclmax
+integer          kscmin, kscmax, iclmin(1), iclmax(1)
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp, epsrsp, thetap
 
@@ -314,8 +314,8 @@ call codits &
 ! 3. Clipping: only if min/max principle is not satisfied
 !===============================================================================
 
-iclmax = 0
-iclmin = 0
+iclmax(1) = 0
+iclmin(1) = 0
 
 if (dt(1).gt.dtmaxg) then
 
@@ -334,11 +334,11 @@ if (dt(1).gt.dtmaxg) then
   if(scmaxp.gt.scminp)then
     do iel = 1, ncel
       if(cvar_voidf(iel).gt.scmaxp)then
-        iclmax = iclmax + 1
+        iclmax(1) = iclmax(1) + 1
         cvar_voidf(iel) = scmaxp
       endif
       if(cvar_voidf(iel).lt.scminp)then
-        iclmin = iclmin + 1
+        iclmin(1) = iclmin(1) + 1
         cvar_voidf(iel) = scminp
       endif
     enddo
@@ -346,7 +346,7 @@ if (dt(1).gt.dtmaxg) then
 
 endif
 
-call log_iteration_clipping_field(ivarfl(ivar), iclmin, iclmax, vmin, vmax)
+call log_iteration_clipping_field(ivarfl(ivar), iclmin(1), iclmax(1), vmin,vmax,iclmin(1), iclmax(1))
 
 ! Free memory
 deallocate(viscf, viscb)

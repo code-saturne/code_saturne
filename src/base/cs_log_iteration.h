@@ -134,7 +134,9 @@ cs_log_iteration_clipping_field(int               f_id,
                                 cs_lnum_t         n_clip_min,
                                 cs_lnum_t         n_clip_max,
                                 const cs_real_t   min_pre_clip[],
-                                const cs_real_t   max_pre_clip[]);
+                                const cs_real_t   max_pre_clip[],
+                                cs_lnum_t         n_clip_min_comp[],
+                                cs_lnum_t         n_clip_max_comp[]);
 
 /*----------------------------------------------------------------------------*/
 

@@ -110,7 +110,7 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 character(len=8) :: cnom
 
-integer          ifac, iel, icfmax, icfmin, idiff0, iconv0, isym, flid
+integer          ifac, iel, icfmax(1), icfmin(1), idiff0, iconv0, isym, flid
 integer          modntl
 integer          iflmas, iflmab
 integer          icou, ifou , icoucf
@@ -559,8 +559,8 @@ if (idtvar.ge.0) then
     ! 4.1.7 ON CLIPPE LE PAS DE TEMPS PAR RAPPORT A DTMIN ET DTMAX
     ! ==========================================================
 
-    icfmin = 0
-    icfmax = 0
+    icfmin(1) = 0
+    icfmax(1) = 0
 
     call field_get_id('dt', flid)
 
@@ -569,11 +569,11 @@ if (idtvar.ge.0) then
       dtloc = dt(1)
       if (dtloc.gt.dtmax) then
         dtloc = dtmax
-        icfmax = ncel
+        icfmax(1) = ncel
       endif
       if (dtloc.lt.dtmin) then
         dtloc = dtmin
-        icfmin = ncel
+        icfmin(1) = ncel
       endif
 
       ntcam1 = ntcabs - 1
@@ -583,7 +583,7 @@ if (idtvar.ge.0) then
         call csexit(1)
       endif
 
-      call log_iteration_clipping_field(flid, icfmin, icfmax, dt, dt)
+      call log_iteration_clipping_field(flid, icfmin(1), icfmax(1), dt, dt,icfmin(1), icfmax(1))
 
       ttcabs = ttcabs + (dtloc - dt(1))
       if (imobil.eq.1 .or. iturbo.eq.2) then
@@ -605,29 +605,29 @@ if (idtvar.ge.0) then
         vmax(1) = max(vmax(1),dt(iel))
 
         if (dt(iel).gt.dtmax) then
-          icfmax = icfmax +1
+          icfmax(1) = icfmax(1) +1
           dt(iel) = dtmax
         endif
         if (dt(iel).lt.dtmin) then
-          icfmin = icfmin +1
+          icfmin(1) = icfmin(1) +1
           dt(iel) = dtmin
         endif
 
       enddo
 
-      call log_iteration_clipping_field(flid, icfmin, icfmax, vmin, vmax)
+      call log_iteration_clipping_field(flid, icfmin(1), icfmax(1), vmin, vmax,icfmin(1), icfmax(1))
 
     endif
 
 
     if (iwarnp.ge.2) then
       if (irangp.ge.0) then
-        call parcpt (icfmin)
+        call parcpt (icfmin(1))
         !==========
-        call parcpt (icfmax)
+        call parcpt (icfmax(1))
         !==========
       endif
-      write (nfecra,1003) icfmin,dtmin,icfmax,dtmax
+      write (nfecra,1003) icfmin(1),dtmin,icfmax(1),dtmax
     endif
 
   endif
@@ -680,8 +680,8 @@ if (idtvar.ge.0) then
 
     cfmax = -grand
     cfmin =  grand
-    icfmax= 1
-    icfmin= 1
+    icfmax(1)= 1
+    icfmin(1)= 1
 
     do iel = 1, ncel
       cpro_cour(iel) = w1(iel)*dt(iel)
@@ -692,20 +692,20 @@ if (idtvar.ge.0) then
       do iel = 1, ncel
         if (cpro_cour(iel).le.cfmin) then
           cfmin  = cpro_cour(iel)
-          icfmin = iel
+          icfmin(1) = iel
         endif
         if (cpro_cour(iel).ge.cfmax) then
           cfmax  = cpro_cour(iel)
-          icfmax = iel
+          icfmax(1) = iel
         endif
       enddo
 
-      xyzmin(1) = xyzcen(1,icfmin)
-      xyzmin(2) = xyzcen(2,icfmin)
-      xyzmin(3) = xyzcen(3,icfmin)
-      xyzmax(1) = xyzcen(1,icfmax)
-      xyzmax(2) = xyzcen(2,icfmax)
-      xyzmax(3) = xyzcen(3,icfmax)
+      xyzmin(1) = xyzcen(1,icfmin(1))
+      xyzmin(2) = xyzcen(2,icfmin(1))
+      xyzmin(3) = xyzcen(3,icfmin(1))
+      xyzmax(1) = xyzcen(1,icfmax(1))
+      xyzmax(2) = xyzcen(2,icfmax(1))
+      xyzmax(3) = xyzcen(3,icfmax(1))
 
       if (irangp.ge.0) then
         nbrval = 3
@@ -751,8 +751,8 @@ if (idtvar.ge.0) then
 
     cfmax  = -grand
     cfmin  =  grand
-    icfmax = 0
-    icfmin = 0
+    icfmax(1) = 0
+    icfmin(1) = 0
 
     do iel = 1, ncel
       cpro_four(iel) = w1(iel)*dt(iel)
@@ -763,20 +763,20 @@ if (idtvar.ge.0) then
       do iel = 1, ncel
         if (cpro_four(iel).le.cfmin) then
           cfmin  = cpro_four(iel)
-          icfmin = iel
+          icfmin(1) = iel
         endif
         if (cpro_four(iel).ge.cfmax) then
           cfmax  = cpro_four(iel)
-          icfmax = iel
+          icfmax(1) = iel
         endif
       enddo
 
-      xyzmin(1) = xyzcen(1,icfmin)
-      xyzmin(2) = xyzcen(2,icfmin)
-      xyzmin(3) = xyzcen(3,icfmin)
-      xyzmax(1) = xyzcen(1,icfmax)
-      xyzmax(2) = xyzcen(2,icfmax)
-      xyzmax(3) = xyzcen(3,icfmax)
+      xyzmin(1) = xyzcen(1,icfmin(1))
+      xyzmin(2) = xyzcen(2,icfmin(1))
+      xyzmin(3) = xyzcen(3,icfmin(1))
+      xyzmax(1) = xyzcen(1,icfmax(1))
+      xyzmax(2) = xyzcen(2,icfmax(1))
+      xyzmax(3) = xyzcen(3,icfmax(1))
 
       if (irangp.ge.0) then
         nbrval = 3
@@ -825,8 +825,8 @@ if (idtvar.ge.0) then
 
     cfmax  = -grand
     cfmin  =  grand
-    icfmax = 0
-    icfmin = 0
+    icfmax(1) = 0
+    icfmin(1) = 0
 
     do iel = 1, ncel
       w2(iel) = w1(iel)*dt(iel)
@@ -841,20 +841,20 @@ if (idtvar.ge.0) then
       do iel = 1, ncel
         if (w2(iel).le.cfmin) then
           cfmin  = w2(iel)
-          icfmin = iel
+          icfmin(1) = iel
         endif
         if (w2(iel).ge.cfmax) then
           cfmax  = w2(iel)
-          icfmax = iel
+          icfmax(1) = iel
         endif
       enddo
 
-      xyzmin(1) = xyzcen(1,icfmin)
-      xyzmin(2) = xyzcen(2,icfmin)
-      xyzmin(3) = xyzcen(3,icfmin)
-      xyzmax(1) = xyzcen(1,icfmax)
-      xyzmax(2) = xyzcen(2,icfmax)
-      xyzmax(3) = xyzcen(3,icfmax)
+      xyzmin(1) = xyzcen(1,icfmin(1))
+      xyzmin(2) = xyzcen(2,icfmin(1))
+      xyzmin(3) = xyzcen(3,icfmin(1))
+      xyzmax(1) = xyzcen(1,icfmax(1))
+      xyzmax(2) = xyzcen(2,icfmax(1))
+      xyzmax(3) = xyzcen(3,icfmax(1))
 
       if (irangp.ge.0) then
         nbrval = 3
@@ -885,8 +885,8 @@ if (idtvar.ge.0) then
 
     cfmax  = -grand
     cfmin  =  grand
-    icfmax = 0
-    icfmin = 0
+    icfmax(1) = 0
+    icfmin(1) = 0
 
     do iel = 1, ncel
       w2(iel) = wcf(iel)*dt(iel)
@@ -901,20 +901,20 @@ if (idtvar.ge.0) then
       do iel = 1, ncel
         if (w2(iel).le.cfmin) then
           cfmin  = w2(iel)
-          icfmin = iel
+          icfmin(1) = iel
         endif
         if (w2(iel).ge.cfmax) then
           cfmax  = w2(iel)
-          icfmax = iel
+          icfmax(1) = iel
         endif
       enddo
 
-      xyzmin(1) = xyzcen(1,icfmin)
-      xyzmin(2) = xyzcen(2,icfmin)
-      xyzmin(3) = xyzcen(3,icfmin)
-      xyzmax(1) = xyzcen(1,icfmax)
-      xyzmax(2) = xyzcen(2,icfmax)
-      xyzmax(3) = xyzcen(3,icfmax)
+      xyzmin(1) = xyzcen(1,icfmin(1))
+      xyzmin(2) = xyzcen(2,icfmin(1))
+      xyzmin(3) = xyzcen(3,icfmin(1))
+      xyzmax(1) = xyzcen(1,icfmax(1))
+      xyzmax(2) = xyzcen(2,icfmax(1))
+      xyzmax(3) = xyzcen(3,icfmax(1))
 
       if (irangp.ge.0) then
         nbrval = 3

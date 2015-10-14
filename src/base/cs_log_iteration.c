@@ -418,66 +418,78 @@ _log_clip_info(const char        *prefix,
                const char        *name,
                size_t             name_width,
                int                dim,
-               cs_gnum_t          count_min,
-               cs_gnum_t          count_max,
+               cs_gnum_t          count_min[],
+               cs_gnum_t          count_max[],
                const double       vmin[],
                const double       vmax[])
 {
   int c_id;
-  const int _dim = (dim == 3) ? 4 : dim;
+  const int _dim = (dim == 1) ? dim : dim + 1;
 
   char tmp_s[2][64] =  {"", ""};
 
   for (c_id = 0; c_id < _dim; c_id++) {
 
+    int    _count_max, _count_min;
     double _vmin, _vmax;
     const char *_name = (c_id == 0) ? name : " ";
 
-    if (c_id < dim) {
+    if (c_id < _dim) {
+      _count_min = count_min[2*c_id];
+      _count_max = count_max[2*c_id];
       _vmin = vmin[c_id];
       _vmax = vmax[c_id];
     }
 
-    if (dim == 3) {
-      snprintf(tmp_s[1], 63, "%s%s", _name, cs_glob_field_comp_name_3[c_id]);
-      tmp_s[1][63] = '\0';
-      cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
-      if (c_id == dim) {
-        _vmin = sqrt(vmin[0]*vmin[0] + vmin[1]*vmin[1] + vmin[2]*vmin[2]);
-        _vmax = sqrt(vmax[0]*vmax[0] + vmax[1]*vmax[1] + vmax[2]*vmax[2]);
+    if (dim > 1) {
+      if (c_id == 0) {
+        snprintf(tmp_s[1], 63, "%s", _name);
+        tmp_s[1][63] = '\0';
+        cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
+        _vmin = 0.;
+        _vmax = 0.;
+        for (int i = 0; i< dim; i++) {
+          _vmin += vmin[i]*vmin[i];
+          _vmax += vmax[i]*vmax[i];
+        }
+        _vmin = sqrt(_vmin);
+        _vmax = sqrt(_vmax);
       }
-    }
-    else if (dim == 6) {
-      snprintf(tmp_s[1], 63, "%s%s", _name, cs_glob_field_comp_name_6[c_id]);
-      tmp_s[1][63] = '\0';
-      cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
+      else {
+        if (dim == 3)
+          snprintf(tmp_s[1], 63, "%s%s", name, cs_glob_field_comp_name_3[c_id - 1]);
+        else if (dim == 6)
+          snprintf(tmp_s[1], 63, "%s%s", name, cs_glob_field_comp_name_6[c_id - 1]);
+        tmp_s[1][63] = '\0';
+        cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
+      }
     }
     else
       cs_log_strpad(tmp_s[0], name, name_width, 64);
 
-    if (count_min > 0 && count_max > 0)
+    if (_count_min > 0 && _count_max > 0)
       cs_log_printf(CS_LOG_DEFAULT,
                     "%s%s  %14.5g  %14.5g  %12llu  %12llu\n",
                     prefix,
                     tmp_s[0],
                     _vmin,
                     _vmax,
-                    (unsigned long long)count_min,
-                    (unsigned long long)count_max);
-    else if (count_min > 0)
+                    _count_min,
+                    _count_max);
+    else if (_count_min > 0)
       cs_log_printf(CS_LOG_DEFAULT,
                     "%s%s  %14.5g                  %12llu\n",
                     prefix,
                     tmp_s[0],
                     _vmin,
-                    (unsigned long long)count_min);
-    else if (count_max > 0)
+                    _count_min);
+    else if (_count_max > 0)
       cs_log_printf(CS_LOG_DEFAULT,
                     "%s%s                  %14.5g                %12llu\n",
                     prefix,
                     tmp_s[0],
                     _vmax,
-                    (unsigned long long)count_max);
+                    _count_max);
     else
       cs_log_printf(CS_LOG_DEFAULT,
                     "%s%s\n",
@@ -1059,7 +1071,9 @@ _add_clipping(int               name_id,
               cs_lnum_t         n_clip_min,
               cs_lnum_t         n_clip_max,
               const cs_real_t   min_pre_clip[],
-              const cs_real_t   max_pre_clip[])
+              const cs_real_t   max_pre_clip[],
+              cs_lnum_t         n_clip_min_comp[],
+              cs_lnum_t         n_clip_max_comp[])
 {
   bool need_sort = false;
 
@@ -1070,7 +1084,7 @@ _add_clipping(int               name_id,
   if (clip_id < 0) {
 
     _n_clips += 1;
-    _clips_val_size += dim;
+    _clips_val_size += (dim == 1) ? 1 : dim + 1;
 
     /* Reallocate key definitions if necessary */
 
@@ -1098,7 +1112,7 @@ _add_clipping(int               name_id,
     _clips[clip_id].f_id = f_id;
     _clips[clip_id].name_id = name_id;
     _clips[clip_id].dim = dim;
-    _clips[clip_id].v_idx = _clips_val_size - dim;
+    _clips[clip_id].v_idx = (dim == 1) ? _clips_val_size - dim : _clips_val_size - dim - 1;
 
   }
 
@@ -1130,12 +1144,23 @@ _add_clipping(int               name_id,
     qsort(_clips, _n_clips, sizeof(cs_log_clip_t), &_compare_clips);
 
   /* Update values */
-
-  for (int i = 0; i < dim; i++) {
-    _clips_vmin[v_idx + i] = min_pre_clip[i];
-    _clips_vmax[v_idx + i] = max_pre_clip[i];
-    _clips_count[(v_idx + i)*2] = n_clip_min;
-    _clips_count[(v_idx + i)*2 + 1] = n_clip_max;
+  if (dim > 1) {
+      _clips_count[(v_idx)*2] = n_clip_min;
+      _clips_count[(v_idx)*2 + 1] = n_clip_max;
+      _clips_vmin[v_idx] = min_pre_clip[0];
+      _clips_vmax[v_idx] = max_pre_clip[0];
+    for (int i = 0; i < dim; i++) {
+      _clips_vmin[v_idx + i + 1] = min_pre_clip[i];
+      _clips_vmax[v_idx + i + 1] = max_pre_clip[i];
+      _clips_count[(v_idx + i + 1)*2] = n_clip_min_comp[i];
+      _clips_count[(v_idx + i + 1)*2 + 1] = n_clip_max_comp[i];
+    }
+  }
+  else {
+    _clips_vmin[v_idx] = min_pre_clip[0];
+    _clips_vmax[v_idx] = max_pre_clip[0];
+    _clips_count[(v_idx)*2] = n_clip_min;
+    _clips_count[(v_idx)*2 + 1] = n_clip_max;
   }
 }
 
@@ -1280,8 +1305,8 @@ _log_clips(void)
                       name,
                       max_name_width,
                      _clips[clip_id].dim,
-                     vcount[v_idx*2],
-                     vcount[v_idx*2 + 1],
+                     vcount + v_idx*2,
+                     vcount + v_idx*2 + 1,
                      vmin + v_idx,
                      vmax + v_idx);
     }
@@ -1549,7 +1574,7 @@ cs_log_iteration_clipping(const char       *name,
 
   _add_clipping(name_id, -1, dim,
                 n_clip_min, n_clip_max,
-                min_pre_clip, max_pre_clip);
+                min_pre_clip, max_pre_clip,0,0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1569,13 +1594,15 @@ cs_log_iteration_clipping_field(int               f_id,
                                 cs_lnum_t         n_clip_min,
                                 cs_lnum_t         n_clip_max,
                                 const cs_real_t   min_pre_clip[],
-                                const cs_real_t   max_pre_clip[])
+                                const cs_real_t   max_pre_clip[],
+                                cs_lnum_t         n_clip_min_comp[],
+                                cs_lnum_t         n_clip_max_comp[])
 {
   const cs_field_t  *f = cs_field_by_id(f_id);
 
   _add_clipping(-1, f_id, f->dim,
                 n_clip_min, n_clip_max,
-                min_pre_clip, max_pre_clip);
+                min_pre_clip, max_pre_clip,n_clip_min_comp,n_clip_max_comp);
 }
 
 /*----------------------------------------------------------------------------*/

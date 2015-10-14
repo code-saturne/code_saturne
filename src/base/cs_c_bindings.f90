@@ -851,12 +851,13 @@ module cs_c_bindings
     ! to logging of fields
 
     subroutine cs_log_iteration_clipping_field(f_id, n_clip_min, n_clip_max,  &
-                                               min_pre_clip, max_pre_clip)    &
+                                               min_pre_clip, max_pre_clip,n_clip_min_comp, n_clip_max_comp)    &
       bind(C, name='cs_log_iteration_clipping_field')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: f_id, n_clip_max, n_clip_min
       real(kind=c_double), dimension(*) :: min_pre_clip, max_pre_clip
+      integer(c_int), dimension(*), intent(in) :: n_clip_min_comp, n_clip_max_comp
     end subroutine cs_log_iteration_clipping_field
 
     !---------------------------------------------------------------------------
@@ -1937,7 +1938,8 @@ contains
   !> \param[in]  max_pre_clip  max local value prior to clip
 
   subroutine log_iteration_clipping_field(f_id, n_clip_min, n_clip_max,        &
-                                          min_pre_clip, max_pre_clip)
+                                          min_pre_clip, max_pre_clip,  &
+                                          n_clip_min_comp, n_clip_max_comp)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1946,7 +1948,7 @@ contains
 
     integer, intent(in)               :: f_id, n_clip_min, n_clip_max
     real(kind=c_double), dimension(*) :: min_pre_clip, max_pre_clip
-
+    integer(c_int), dimension(*), intent(in) :: n_clip_min_comp, n_clip_max_comp
     ! Local variables
 
     integer(c_int) :: c_f_id, c_clip_min, c_clip_max
@@ -1956,7 +1958,8 @@ contains
     c_clip_max = n_clip_max
 
     call cs_log_iteration_clipping_field(c_f_id, c_clip_min, c_clip_max, &
-                                         min_pre_clip, max_pre_clip)
+                                         min_pre_clip, max_pre_clip, &
+                                         n_clip_min_comp, n_clip_max_comp)
 
     return
 

@@ -97,7 +97,7 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 character(len=80) :: chaine
 integer          iel   , ifac  , inc   , iprev,  iccocg, ivar
 integer          ii, f_id , iiun
-integer          iclipk, iclipw
+integer          iclipk(1), iclipw, iclpkmx(1)
 integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
@@ -166,6 +166,7 @@ allocate(gdkgdw(ncelet))
 allocate(prodk(ncelet), prodw(ncelet))
 
 epz2 = epzero**2
+iclpkmx(1) = 0
 
 call field_get_val_s(iprpfl(ivisct), cvisct)
 call field_get_val_s(iprpfl(iviscl), viscl)
@@ -1055,16 +1056,16 @@ do ii = 1, 2
 enddo
 
 ! On clippe simplement k et omega par valeur absolue
-iclipk = 0
+iclipk(1) = 0
 iclipw = 0
 do iel = 1, ncel
   xk = cvar_k(iel)
   xw = cvar_omg(iel)
   if (abs(xk).le.epz2) then
-    iclipk = iclipk + 1
+    iclipk(1) = iclipk(1) + 1
     cvar_k(iel) = max(cvar_k(iel),epz2)
   elseif (xk.le.0.d0) then
-    iclipk = iclipk + 1
+    iclipk(1) = iclipk(1) + 1
     cvar_k(iel) = -xk
   endif
   if (abs(xw).le.epz2) then
@@ -1078,10 +1079,10 @@ enddo
 
 ! ---  Stockage nb de clippings pour listing
 
-call log_iteration_clipping_field(ivarfl(ik), iclipk, 0,    &
-                                  vrmin(1:1), vrmax(1:1))
+call log_iteration_clipping_field(ivarfl(ik), iclipk(1), 0,    &
+                                  vrmin(1:1), vrmax(1:1),iclipk(1), iclpkmx(1))
 call log_iteration_clipping_field(ivarfl(iomg), iclipw, 0,  &
-                                  vrmin(2:2), vrmax(2:2))
+                                  vrmin(2:2), vrmax(2:2),iclipk(1), iclpkmx(1))
 !===============================================================================
 ! 16. Advanced reinit
 !===============================================================================

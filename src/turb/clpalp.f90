@@ -71,7 +71,7 @@ integer          nvar, ncelet, ncel
 ! VARIABLES LOCALES
 
 integer          iel
-integer          iclpmn, iclpmx
+integer          iclpmn(1), iclpmx(1)
 double precision vmin(1), vmax(1), var
 
 double precision, dimension(:), pointer :: cvar_al
@@ -94,19 +94,19 @@ enddo
 
 ! ---> Clipping (modif pour eviter les valeurs exactement nulles)
 
-iclpmn = 0
-iclpmx = 0
+iclpmn(1) = 0
+iclpmx(1) = 0
 do iel = 1, ncel
   if (cvar_al(iel).lt.0.d0) then
-    iclpmn = iclpmn + 1
+    iclpmn(1) = iclpmn(1) + 1
     cvar_al(iel) = 0.d0
   elseif(cvar_al(iel).gt.1.d0) then
-    iclpmx = iclpmx + 1
+    iclpmx(1) = iclpmx(1) + 1
     cvar_al(iel) = 1.d0
   endif
 enddo
 
-call log_iteration_clipping_field(ivarfl(ial), iclpmn, iclpmx, vmin, vmax)
+call log_iteration_clipping_field(ivarfl(ial), iclpmn(1), iclpmx(1), vmin, vmax,iclpmn(1), iclpmx(1))
 
 return
 

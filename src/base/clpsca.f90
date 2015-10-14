@@ -63,7 +63,7 @@ integer          iscal
 ! Local variables
 
 integer          ivar, iel, iflid
-integer          iclmax, iclmin, iiscav
+integer          iclmax(1), iclmin(1), iiscav
 integer          kscmin, kscmax, f_id
 double precision vmin(1), vmax(1), vfmin, vfmax
 double precision scmax, scmin
@@ -109,8 +109,8 @@ if (iiscav.eq.0) then
 
   ! Clipping of non-variance scalars
 
-  iclmax = 0
-  iclmin = 0
+  iclmax(1) = 0
+  iclmin(1) = 0
 
   ! Get the min clipping
   call field_get_key_double(iflid, kscmin, scminp)
@@ -119,11 +119,11 @@ if (iiscav.eq.0) then
   if(scmaxp.gt.scminp)then
     do iel = 1, ncel
       if(cvar_scal(iel).gt.scmaxp)then
-        iclmax = iclmax + 1
+        iclmax(1) = iclmax(1) + 1
         cvar_scal(iel) = scmaxp
       endif
       if(cvar_scal(iel).lt.scminp)then
-        iclmin = iclmin + 1
+        iclmin(1) = iclmin(1) + 1
         cvar_scal(iel) = scminp
       endif
     enddo
@@ -136,14 +136,14 @@ else
   f_id = ivarfl(isca(iiscav))
   call field_get_val_s(f_id, cvar_scav)
 
-  iclmax = 0
-  iclmin = 0
+  iclmax(1) = 0
+  iclmin(1) = 0
 
   ! Minimal clipping at minimum 0.
   if(iclvfl(iscal).eq.0) then
     do iel = 1, ncel
       if(cvar_scal(iel).lt.0.d0) then
-        iclmin = iclmin + 1
+        iclmin(1) = iclmin(1) + 1
         cvar_scal(iel) = 0.d0
       endif
     enddo
@@ -152,7 +152,7 @@ else
   elseif(iclvfl(iscal).eq.1) then
     do iel = 1, ncel
       if(cvar_scal(iel).lt.0.d0) then
-        iclmin = iclmin + 1
+        iclmin(1) = iclmin(1) + 1
         cvar_scal(iel) = 0.d0
       endif
     enddo
@@ -164,7 +164,7 @@ else
     do iel = 1, ncel
       vfmax = (cvar_scav(iel)-scmin)*(scmax-cvar_scav(iel))
       if(cvar_scal(iel).gt.vfmax) then
-        iclmax = iclmax + 1
+        iclmax(1) = iclmax(1) + 1
         cvar_scal(iel) = vfmax
       endif
     enddo
@@ -181,11 +181,11 @@ else
     if(vfmax.gt.vfmin)then
       do iel = 1, ncel
         if(cvar_scal(iel).gt.vfmax)then
-          iclmax = iclmax + 1
+          iclmax(1) = iclmax(1) + 1
           cvar_scal(iel) = vfmax
         endif
         if(cvar_scal(iel).lt.vfmin)then
-          iclmin = iclmin + 1
+          iclmin(1) = iclmin(1) + 1
           cvar_scal(iel) = vfmin
         endif
       enddo
@@ -194,7 +194,7 @@ else
 
 endif
 
-call log_iteration_clipping_field(iflid, iclmin, iclmax, vmin, vmax)
+call log_iteration_clipping_field(iflid, iclmin(1), iclmax(1), vmin, vmax, iclmin(1), iclmax(1))
 
 !--------
 ! Formats

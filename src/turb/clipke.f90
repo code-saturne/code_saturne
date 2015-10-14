@@ -77,7 +77,7 @@ integer          iclip, iwarnk
 
 integer          iclpke,iel,iclpk2,iclpe2
 integer          ivar,ii
-integer          iclpmn(2)
+integer          iclpmn(2), iclpmx(1)
 double precision xepmin,xepm,xe,xkmin,xkm,xk,var,epz2
 double precision vmin(2), vmax(2)
 
@@ -96,7 +96,7 @@ call field_get_val_s(iprpfl(iviscl), viscl)
 ! Initialization to avoid compiler warnings
 
 ivar = 0
-
+iclpmx(1) = 0
 ! Une petite valeur pour eviter des valeurs exactement nulles.
 
 epz2 = epzero**2
@@ -235,7 +235,8 @@ do ii = 1, 2
   endif
 
   call log_iteration_clipping_field(ivarfl(ivar), iclpmn(ii), 0,  &
-                                    vmin(ii:ii), vmax(ii:ii))
+                                    vmin(ii:ii), vmax(ii:ii), iclpmn(ii),&
+                                    iclpmx(1))
 
 enddo
 

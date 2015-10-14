@@ -68,7 +68,7 @@ integer          ncel
 
 ! Local variables
 
-integer          iclpnu,iel
+integer          iclpnu(1),iel, iclmx(1)
 double precision xnu, var, epz2
 double precision vmin(1), vmax(1)
 
@@ -81,7 +81,7 @@ call field_get_val_s(ivarfl(inusa), cvar_nusa)
 ! Une petite valeur pour eviter des valeurs exactement nulles.
 
 epz2 = epzero**2
-
+iclmx(1) = 0
 !===============================================================================
 ! ---> Stockage Min et Max pour listing
 !===============================================================================
@@ -98,16 +98,16 @@ enddo
 ! ---> Clipping "standard" NUSA>0
 !===============================================================================
 
-iclpnu = 0
+iclpnu(1) = 0
 do iel = 1, ncel
   xnu = cvar_nusa(iel)
   if (xnu.lt.0.d0) then
-    iclpnu = iclpnu + 1
+    iclpnu(1) = iclpnu(1) + 1
     cvar_nusa(iel) = 0.d0
   endif
 enddo
 
-call log_iteration_clipping_field(ivarfl(inusa), iclpnu, 0, vmin, vmax)
+call log_iteration_clipping_field(ivarfl(inusa), iclpnu(1), 0, vmin, vmax,iclpnu(1), iclmx(1))
 
 return
 

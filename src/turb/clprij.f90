@@ -74,7 +74,7 @@ integer          iclip
 ! Local variables
 
 integer          iel, ivar, ivar1, ivar2, isou
-integer          iclrij(7)
+integer          iclrij(7),icl_max(1)
 double precision vmin(7), vmax(7), var, rijmin, varrel, und0, epz2
 
 double precision, dimension(:), pointer :: cvar_ep, cvara_ep
@@ -91,7 +91,7 @@ double precision, dimension(:), pointer :: cvara_var
 ivar = 0
 ivar1 = 0
 ivar2 = 0
-
+icl_max(1) = 0
 ! Une petite valeur pour eviter des valeurs exactement nulles.
 
 epz2 = epzero**2
@@ -258,7 +258,8 @@ do isou = 1, 7
     ivar = iep
   endif
   call log_iteration_clipping_field(ivarfl(ivar), iclrij(isou), 0,  &
-                                    vmin(isou:isou), vmax(isou:isou))
+                                    vmin(isou:isou), vmax(isou:isou),iclrij(isou),&
+                                    icl_max)
 
 enddo
 return
@@ -340,9 +341,10 @@ integer          nvar, ncelet, ncel
 integer          iclip
 
 ! Local variables
-
-integer          iel, ivar, ivar1, ivar2, isou, iclrij, iclpep
+character(len=16) :: fname
+integer          iel, ivar, ivar1, ivar2, isou, icltot, iclpep(1)
 integer          is_clipped
+integer          iclrij(6),iclrij_max(6), iclep_max(1)
 double precision vmin(7), vmax(7), rijmin, varrel, und0, epz2,cvar_var1, cvar_var2
 
 double precision, dimension(:), pointer :: cvar_ep, cvara_ep
@@ -372,9 +374,11 @@ do isou = 1, 7
   vmax(isou) = -grand
   do iel = 1, ncel
     if (isou.lt.7) then
+      iclrij_max(isou) = 0
       vmin(isou) = min(vmin(isou),cvar_rij(isou,iel))
       vmax(isou) = max(vmax(isou),cvar_rij(isou,iel))
     else
+      iclep_max(1) = 0
       vmin(isou) = min(vmin(isou),cvar_ep(iel))
       vmax(isou) = max(vmax(isou),cvar_ep(iel))
     endif
@@ -387,8 +391,11 @@ varrel = 1.1d0
 
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 call field_get_val_prev_v(ivarfl(irij), cvara_rij)
-iclrij = 0
-iclpep = 0
+icltot = 0
+iclpep(1) = 0
+do isou = 1, 6
+  iclrij(isou) = 0
+enddo
 
 do iel = 1, ncel
 
@@ -402,15 +409,16 @@ do iel = 1, ncel
       if (cvar_rij(isou,iel).le.epz2) then
         is_clipped = 1
         cvar_rij(isou,iel) = epz2
+        iclrij(isou) = iclrij(isou) + 1
       endif
     enddo
 
     ! Epsilon
     if (abs(cvar_ep(iel)).le.epz2) then
-      iclpep = iclpep + 1
+      iclpep(1) = iclpep(1) + 1
       cvar_ep(iel) = max(cvar_ep(iel),epz2)
     elseif(cvar_ep(iel).le.0.d0) then
-      iclpep = iclpep + 1
+      iclpep(1) = iclpep(1) + 1
       cvar_ep(iel) = abs(cvar_ep(iel))
     endif
 
@@ -430,10 +438,10 @@ do iel = 1, ncel
 
     ! Epsilon
     if (abs(cvar_ep(iel)).lt.epz2) then
-      iclpep = iclpep + 1
+      iclpep(1) = iclpep(1) + 1
       cvar_ep(iel) = max(cvar_ep(iel),epz2)
     elseif(cvar_ep(iel).le.0.d0) then
-      iclpep = iclpep + 1
+      iclpep(1) = iclpep(1) + 1
       cvar_ep(iel) = min(abs(cvar_ep(iel)), varrel*abs(cvara_ep(iel)))
     endif
 
@@ -457,20 +465,17 @@ do iel = 1, ncel
     if (rijmin.lt.abs(cvar_rij(isou,iel))) then
       is_clipped = 1
       cvar_rij(isou,iel) = sign(und0,cvar_rij(isou,iel)) * rijmin
+      iclrij(isou) = iclrij(isou) + 1
     endif
   enddo
 
-  iclrij = iclrij + is_clipped
+  icltot = icltot + is_clipped
 enddo
 
-
-! ---> Stockage nb de clippings pour listing
-
-call log_iteration_clipping_field(ivarfl(irij), iclrij, 0,  &
-                                    vmin(1:6), vmax(1:6))
-
-call log_iteration_clipping_field(ivarfl(iep), iclpep, 0,  &
-                                    vmin(7), vmax(7))
+call log_iteration_clipping_field(ivarfl(irij), icltot, 0,  &
+                                       vmin, vmax,iclrij,iclrij_max)
+call log_iteration_clipping_field(ivarfl(iep), iclpep(1), 0,  &
+                                    vmin(7), vmax(7),iclpep, iclep_max)
 
 return
 
