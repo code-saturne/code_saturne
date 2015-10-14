@@ -2316,6 +2316,7 @@ if (idilat.eq.4) then
   do ifac = 1, nfac
     ii = ifacel(1, ifac)
     jj = ifacel(2, ifac)
+    ! FIXME: should be coherent with the convective scheme of the species...
     rho = pond(ifac)*crom(ii)+(1.d0-pond(ifac))*crom(jj)
     imasfl(ifac) = imasfl(ifac) * rho
   enddo
