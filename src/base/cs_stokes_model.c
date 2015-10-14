@@ -99,8 +99,8 @@ BEGIN_C_DECLS
         - 0: false
   \var  cs_stokes_model_t::iccvfg
         calculation with a fixed velocity field
-        - 1: true (default)
-        - 0: false
+        - 1: true
+        - 0: false (default)
   \var  cs_stokes_model_t::idilat
         algorithm to take into account the density variation in time
         - 1: dilatable steady algorithm (default)
