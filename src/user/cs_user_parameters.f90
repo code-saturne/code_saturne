@@ -270,6 +270,19 @@ if (ixmlpu.eq.0) then
 
 endif
 
+! --- eos: equation of state for compressible flows
+! ========
+
+!        if = 1    ideal gas with constant gamma
+!        if = 2    stiffened gas
+!        if = 3    ideal gas mix
+
+if (ixmlpu.eq.0.and.ippmod(icompf).ge.0) then
+
+  ieos = 1
+
+endif
+
 ! --- eljou: Joule effect
 ! ==========
 
@@ -1279,7 +1292,11 @@ endif
 if (.false.) then
 
   ! For thermal scalar
-  if (iscalt.gt.0) call field_set_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)
+  if (ippmod(icompf).ge.0) then
+    call field_set_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
+  else if (iscalt.gt.0) then
+    call field_set_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)
+  endif
 
   do iscal = 1, nscaus
     if (iscavr(iscal).le.0) then
@@ -2068,12 +2085,8 @@ subroutine uscfx1
 !    User subroutine.
 
 !    Initialize non standard options for the compressible flow scheme such
-!    what kind of equation of state must be used.
-
-!    In addition to options set in the user subroutine 'uscfx2' (or in
-!    the GUI): this subroutine allows to set switches to indicate if the
-!    volumetric viscosity and the conductivity are constants, their
-!    values being given in the subroutine 'uscfx2'.
+!    as the variability of the thermal conductivity and the volume viscosity.
+!    Their values can be given in the subroutine 'uscfx2'.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -2151,26 +2164,21 @@ endif
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 1. Scheme options
+! 1. Properties options
 !===============================================================================
 
 if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
 
-! Equation of state choice
-! --> ieos = 1: Perfect gas with constant Gamma
-! --> ieos = 2: Stiffened gas
-  ieos = 1
-
-! --> Molecular thermal conductivity
-!       constant  : ifcvsl = -1
-!       variable  : ifcvsl = 0
+  ! --> Molecular thermal conductivity
+  !       constant  : ifcvsl = -1
+  !       variable  : ifcvsl = 0
 
   ifcvsl = -1
   call field_set_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
 
-! --> Volumetric molecular viscosity
-!       iviscv = 0 : uniform  in space and constant in time
-!              = 1 : variable in space and time
+  ! --> Volumetric molecular viscosity
+  !       iviscv = 0 : uniform  in space and constant in time
+  !              = 1 : variable in space and time
 
   iviscv = 0
 
@@ -2313,14 +2321,14 @@ if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
 ! --> Molar mass of the gas (kg/mol)
 
 !       For example with dry air, xmasml is around 28.8d-3 kg/mol
-  if (ieos.eq.1) then
-    xmasmr = 0.028966
-  endif
+
+  xmasmr = 0.028966
 
 ! --> Hydrostatic equilibrium
 
 !       Specify if the hydrostatic equilibrium must be accounted for
 !         (yes = 1 , no = 0)
+
   icfgrp = 1
 
 endif
@@ -2733,5 +2741,3 @@ end subroutine user_darcy_ini1
 
 
 !===============================================================================
-
-

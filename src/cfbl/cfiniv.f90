@@ -20,7 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-!> \file cfxtcl.f90
+!> \file cfiniv.f90
 !> \brief Initialisation of the variables if the compressible flow model is
 !> enabled.
 !>
@@ -66,6 +66,7 @@ use optcal
 use cstphy
 use cstnum
 use entsor
+use field
 use parall
 use period
 use ppppar
@@ -84,18 +85,33 @@ double precision dt(ncelet)
 
 ! Local variables
 
+double precision, dimension(:), pointer :: cpro_cp, cpro_cv, mix_mol_mas
+
 !===============================================================================
 
 !===============================================================================
-! Initialisation of the variables only if this not a resumed computation
+! User initialisation of the variables only if this not a resumed computation
+! and if it has not already been done in gas mix initialization
 !===============================================================================
 
-if (isuite.eq.0) then
+if (isuite.eq.0.and.ippmod(igmix).lt.0) then
   call cs_user_initialization(nvar, nscal, dt)
-else
-  ! Initialisation of the isochoric specific heat
-  call cs_cf_thermo_default_init(isuite)
 endif
+
+!===============================================================================
+! Computation of variable Cv in order to have a correct initialization
+! of the total energy (computed in inivar by a call to a thermodynamic
+! function), now that initial gas mixture composition is known.
+! Note that the only eos with a variable Cv is the ideal gas mix (ieos=3).
+!===============================================================================
+
+if (icv.gt.0) then
+  call field_get_val_s(iprpfl(icp), cpro_cp)
+  call field_get_val_s(iprpfl(icv), cpro_cv)
+  call field_get_val_s(iprpfl(igmxml), mix_mol_mas)
+
+  call cs_cf_thermo_cv(cpro_cp, mix_mol_mas, cpro_cv, ncel)
+endif ! Constant cv computed in iniusi
 
 !----
 ! FORMATS

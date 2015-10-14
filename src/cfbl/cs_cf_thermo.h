@@ -42,6 +42,56 @@
 
 BEGIN_C_DECLS
 
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute \f$\gamma\f$.
+ *
+ * \param[in]     cp      array of isobaric specific heat values
+ * \param[in]     cv      array of isochoric specific heat values
+ * \param[out]    gamma   array of values of ratio of specific heat
+ * \param[in]     l_size  size of the array
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_cf_thermo_gamma(cs_real_t *cp,
+                   cs_real_t *cv,
+                   cs_real_t *gamma,
+                   cs_lnum_t l_size)
+{
+  /*  Local variables */
+  int ieos = cs_glob_fluid_properties->ieos;
+
+  /*  Gamma is supposed to be superior or equal to 1.
+      It is computed at each call, even if this may seem costly,
+      to be coherent with the "constant gamma" case for which this
+      constant is not saved. */
+
+  /* single ideal gas - constant gamma
+     or ideal gas mix - gamma for the mixture */
+  if (ieos == 1 || ieos == 3) {
+    for (cs_lnum_t ii = 0; ii < l_size; ii++) {
+      gamma[ii] = cp[ii]/cv[ii];
+      if (gamma[ii] < 1.)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error in thermodynamics computations for "
+                    "compressible flows:\n"
+                    "Value of gamma smaller to 1. encountered.\n"
+                    "Gamma (specific heat ratio) must be a real number "
+                    "greater or equal to 1.\n"));
+    }
+  }
+  /* stiffened gas - constant gamma (parameter of the law) */
+  else if (ieos == 2) {
+    for (cs_lnum_t ii = 0; ii < l_size; ii++)
+      gamma[ii] = cs_glob_fluid_properties->gammasg;
+  }
+}
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -55,36 +105,12 @@ void
 cs_cf_set_thermo_options(void);
 
 /*----------------------------------------------------------------------------
- * Retrieve molar mass.
- *
- * parameters:
- *   xmasml --> molar mass
- *----------------------------------------------------------------------------*/
-
-void
-cs_cf_get_molar_mass(cs_real_t *xmasml);
-
-/*----------------------------------------------------------------------------
- * Compute gamma.
- *
- * parameters:
- *   gamma --> ratio of specific heat
- *----------------------------------------------------------------------------*/
-
-void
-cs_cf_thermo_gamma(cs_real_t *gamma);
-
-/*----------------------------------------------------------------------------
  * Initialize density, total energy and isochoric specific heat
  * according to the chosen thermodynamic law using the default parameters.
- *
- * parameters:
- *   isuite <-- indicator of resumed computation
- *   l_size <-- local size
  *----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_default_init(int isuite);
+cs_cf_thermo_default_init(void);
 
 // TODO: the check function should be generalized (pass the name as argument).
 
@@ -142,6 +168,8 @@ cs_cf_check_temperature(cs_real_t *temp,
  * Compute temperature and total energy from density and pressure.
  *
  * parameters:
+ *   cp     <-- array of isobaric specific heat values
+ *   cv     <-- array of isochoric specific heat values
  *   pres   <-- array of pressure values
  *   dens   <-- array of density values
  *   temp   --> array of temperature values
@@ -151,7 +179,9 @@ cs_cf_check_temperature(cs_real_t *temp,
  *----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_te_from_dp(cs_real_t   *pres,
+cs_cf_thermo_te_from_dp(cs_real_t   *cp,
+                        cs_real_t   *cv,
+                        cs_real_t   *pres,
                         cs_real_t   *dens,
                         cs_real_t   *temp,
                         cs_real_t   *ener,
@@ -162,6 +192,8 @@ cs_cf_thermo_te_from_dp(cs_real_t   *pres,
  * Compute density and total energy from pressure and temperature
  *
  * parameters:
+ *   cp     <-- array of isobaric specific heat values
+ *   cv     <-- array of isochoric specific heat values
  *   pres   <-- array of pressure values
  *   temp   <-- array of temperature values
  *   dens   --> array of density values
@@ -171,7 +203,9 @@ cs_cf_thermo_te_from_dp(cs_real_t   *pres,
  *----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_de_from_pt(cs_real_t   *pres,
+cs_cf_thermo_de_from_pt(cs_real_t   *cp,
+                        cs_real_t   *cv,
+                        cs_real_t   *pres,
                         cs_real_t   *temp,
                         cs_real_t   *dens,
                         cs_real_t   *ener,
@@ -182,6 +216,8 @@ cs_cf_thermo_de_from_pt(cs_real_t   *pres,
  * Compute density and temperature from pressure and total energy.
  *
  * parameters:
+ *   cp     <-- array of isobaric specific heat values
+ *   cv     <-- array of isochoric specific heat values
  *   pres   <-- array of pressure values
  *   ener   <-- array of total energy values
  *   dens   --> array of density values
@@ -191,7 +227,9 @@ cs_cf_thermo_de_from_pt(cs_real_t   *pres,
  *----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_dt_from_pe(cs_real_t   *pres,
+cs_cf_thermo_dt_from_pe(cs_real_t   *cp,
+                        cs_real_t   *cv,
+                        cs_real_t   *pres,
                         cs_real_t   *ener,
                         cs_real_t   *dens,
                         cs_real_t   *temp,
@@ -202,6 +240,8 @@ cs_cf_thermo_dt_from_pe(cs_real_t   *pres,
  * Compute pressure and total energy from density and temperature
  *
  * parameters:
+ *   cp     <-- array of isobaric specific heat values
+ *   cv     <-- array of isochoric specific heat values
  *   dens   <-- array of density values
  *   temp   <-- array of temperature values
  *   pres   --> array of pressure values
@@ -211,7 +251,9 @@ cs_cf_thermo_dt_from_pe(cs_real_t   *pres,
  *----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_pe_from_dt(cs_real_t   *dens,
+cs_cf_thermo_pe_from_dt(cs_real_t   *cp,
+                        cs_real_t   *cv,
+                        cs_real_t   *dens,
                         cs_real_t   *temp,
                         cs_real_t   *pres,
                         cs_real_t   *ener,
@@ -222,6 +264,8 @@ cs_cf_thermo_pe_from_dt(cs_real_t   *dens,
  * Compute pressure and temperature from density and total energy.
  *
  * parameters:
+ *   cp     <-- array of isobaric specific heat values
+ *   cv     <-- array of isochoric specific heat values
  *   dens   <-- array of density values
  *   ener   <-- array of total energy values
  *   pres   --> array of pressure values
@@ -231,7 +275,9 @@ cs_cf_thermo_pe_from_dt(cs_real_t   *dens,
  *----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_pt_from_de(cs_real_t   *dens,
+cs_cf_thermo_pt_from_de(cs_real_t   *cp,
+                        cs_real_t   *cv,
+                        cs_real_t   *dens,
                         cs_real_t   *ener,
                         cs_real_t   *pres,
                         cs_real_t   *temp,
@@ -242,6 +288,8 @@ cs_cf_thermo_pt_from_de(cs_real_t   *dens,
  * Compute square of sound velocity for perfect gas.
  *
  * parameters:
+ *   cp     <-- array of isobaric specific heat values
+ *   cv     <-- array of isochoric specific heat values
  *   pres   <-- array of pressure values
  *   dens   <-- array of density values
  *   c2     --> array of the values of the square of sound velocity
@@ -249,22 +297,28 @@ cs_cf_thermo_pt_from_de(cs_real_t   *dens,
  *----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_c_square(cs_real_t *pres,
+cs_cf_thermo_c_square(cs_real_t *cp,
+                      cs_real_t *cv,
+                      cs_real_t *pres,
                       cs_real_t *dens,
                       cs_real_t *c2,
-                      cs_lnum_t l_size);
+                      cs_lnum_t  l_size);
 
 /*----------------------------------------------------------------------------
  * Compute the thermal expansion coefficient for a perfect gas.
  *
  * parameters:
+ *   cp     <-- array of isobaric specific heat values
+ *   cv     <-- array of isochoric specific heat values
  *   dens   <-- array of density values
  *   beta   --> array of beta values
  *   l_size <-- l_size of the array
  *----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_beta(cs_real_t *dens,
+cs_cf_thermo_beta(cs_real_t *cp,
+                  cs_real_t *cv,
+                  cs_real_t *dens,
                   cs_real_t *beta,
                   cs_lnum_t  l_size);
 
@@ -273,12 +327,14 @@ cs_cf_thermo_beta(cs_real_t *dens,
  *
  * parameters:
  *   cp     <-- array of isobaric specific heat values
+ *   xmasml <-- array of molar mass values
  *   cv     --> array of isochoric specific heat values
  *   l_size <-- l_size of the array
  *----------------------------------------------------------------------------*/
 
 void
 cs_cf_thermo_cv(cs_real_t *cp,
+                cs_real_t *xmasml,
                 cs_real_t *cv,
                 cs_lnum_t  l_size);
 
@@ -286,6 +342,8 @@ cs_cf_thermo_cv(cs_real_t *cp,
  * Compute entropy from pressure and density:
  *
  * parameters:
+ *   cp     <-- array of isobaric specific heat values
+ *   cv     <-- array of isochoric specific heat values
  *   dens   <-- array of density values
  *   pres   <-- array of pressure values
  *   entr   --> array of total energy values
@@ -293,7 +351,9 @@ cs_cf_thermo_cv(cs_real_t *cp,
  *----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_s_from_dp(cs_real_t *dens,
+cs_cf_thermo_s_from_dp(cs_real_t *cp,
+                       cs_real_t *cv,
+                       cs_real_t *dens,
                        cs_real_t *pres,
                        cs_real_t *entr,
                        cs_lnum_t  l_size);

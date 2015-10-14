@@ -217,13 +217,19 @@ static cs_solving_info_t _solving_info =
 
 static cs_gas_mix_species_prop_t _gas_mix_species_prop =
 {
-  -1.,   /* molar mass             */
-  -1.,   /* specific heat          */
-  -1.,   /* volume diffusion       */
-  -1.,   /* dynamic viscosity a    */
-  -1.,   /* dynamic viscosity b    */
-  -1.,   /* thermal conductivity a */
-  -1.,   /* thermal conductivity b */
+  -1.,   /* molar mass                              */
+  -1.,   /* specific heat                           */
+  -1.,   /* volume diffusion                        */
+  -1.,   /* dynamic viscosity a                     */
+  -1.,   /* dynamic viscosity b                     */
+  -1.,   /* thermal conductivity a                  */
+  -1.,   /* thermal conductivity b                  */
+  -1.,   /* reference viscosity (Sutherland)        */
+  -1.,   /* reference conductivity (Sutherland)     */
+  -1.,   /* reference temperature for viscosity     */
+  -1.,   /* reference temperature for conductivity  */
+  -1.,   /* Sutherland temperature for viscosity    */
+  -1.,   /* Sutherland temperature for conductivity */
 };
 
 /*============================================================================
@@ -291,6 +297,13 @@ _log_func_gas_mix_species_prop(const void *t)
   cs_log_printf(CS_LOG_SETUP, _(fmt), "dynamic viscosity b   ", _t->mu_b);
   cs_log_printf(CS_LOG_SETUP, _(fmt), "thermal conductivity a", _t->lambda_a);
   cs_log_printf(CS_LOG_SETUP, _(fmt), "thermal conductivity b", _t->lambda_b);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "reference thermal viscosity (Sutherland)", _t->muref);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "reference thermal conductivity (Sutherland)", _t->lamref);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "reference temperature (Sutherland for viscosity)", _t->trefmu);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "reference temperature (Sutherland conductivity)", _t->treflam);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "Sutherland temperature for viscosity", _t->smu);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "Sutherland tempertaure for conductivity", _t->slam);
+
 }
 
 /*============================================================================

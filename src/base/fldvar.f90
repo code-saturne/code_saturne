@@ -25,11 +25,6 @@
 !> selected by the user.
 !
 !------------------------------------------------------------------------------
-!
-!> \brief Variables definition initialization, according to calculation type
-!> selected by the user.
-!
-!------------------------------------------------------------------------------
 ! Arguments
 !------------------------------------------------------------------------------
 !   mode          name          role
@@ -131,9 +126,18 @@ do ipp = 2, nmodmx
     ippok = ipp
   endif
 enddo
-if (nmodpp.gt.1) then
+if (nmodpp.gt.1.and.(ippmod(igmix).eq.-1.or.ippmod(icompf).eq.-1)) then
   write(nfecra,6000)
   iok = iok + 1
+endif
+
+! In case ideal gas mix specific physics was enabled by the user
+! together with the compressible module, the equation of state
+! indicator is reset to the approprate value automatically (ieos=3)
+! and the user is warned.
+if (ippmod(igmix).ge.0.and.ippmod(icompf).ge.0.and.ieos.ne.3) then
+  ieos = 3
+  write(nfecra,6002)
 endif
 
 if (nmodpp.eq.1) then
@@ -353,10 +357,12 @@ return
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@     PLUSIEURS MODELES PHYSIQUES PARTICULIERES ACTIVES      ',/,&
+'@     PLUSIEURS MODELES DE PHYSIQUES PARTICULIERES           ',/,&
+'@     INCOMPATIBLES SONT ACTIVES                             ',/,&
 '@                                                            ',/,&
-'@  Un seul modele physique particuliere peut etre active a la',/,&
-'@    fois.                                                   ',/,&
+'@  Seul les modeles de physiques particulieres compressible  ',/,&
+'@    et melange de gaz parfaits peuvent etre actives         ',/,&
+'@    simultanement.                                          ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -378,6 +384,25 @@ return
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
 '@  Modifier les indicateurs de IPPMOD dans usppmo.           ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 6002 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION :  A L''ENTREE DES DONNEES                    ',/,&
+'@    =========                                               ',/,&
+'@     EQUATION D''ETAT INCOMPATIBLE AVEC LES PHYSIQUES       ',/,&
+'@     PARTICULIERES SELECTIONNEES                            ',/,&
+'@                                                            ',/,&
+'@  Les modeles de physiques particulieres compressible et    ',/,&
+'@    et melange de gaz parfaits sont actives simultanement   ',/,&
+'@    mais l''equation d''etat selectionnee n''est pas melange',/,&
+'@    de gas parfait (ieos different de 3).                   ',/,&
+'@                                                            ',/,&
+'@  L''indicateur ieos a ete repositionne a 3 et le calcul    ',/,&
+'@  sera execute.                                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -457,10 +482,11 @@ return
 '@                                                            ',/,&
 '@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
 '@    =========                                               ',/,&
-'@     TOO MANY SPECIFIC PHYSICS MODULES ACTIVATED            ',/,&
+'@     SEVERAL INCOMPATIBLE MODELS OF SPECIFIC PHYSICS ARE    ',/,&
+'@     ARE ENABLED.                                           ',/,&
 '@                                                            ',/,&
-'@  Only one specific physics module can be active for one    ',/,&
-'@    given calculation.                                      ',/,&
+'@  Only the compressible and gas mix specific physics can be ',/,&
+'@    enabled simultaneously.                                 ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
@@ -482,6 +508,24 @@ return
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
 '@  Modify the indices of       IPPMOD in   usppmo.           ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 6002 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING   : AT THE INITIAL DATA VERIFICATION            ',/,&
+'@    =========                                               ',/,&
+'@     EQUATION OF STATE INCOMPATIBLE WITH SELECTED SPECIFIC  ',/,&
+'@     PHYSICS                                                ',/,&
+'@                                                            ',/,&
+'@  The specific physics compressible and gas mix are         ',/,&
+'@    simultaneously enabled but the selected equation of     ',/,&
+'@    state is not ideal gas mix (ieos different from 3).     ',/,&
+'@                                                            ',/,&
+'@  The indicator ieos has been reset to 3 and the calculation',/,&
+'@  will run.                                                 ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

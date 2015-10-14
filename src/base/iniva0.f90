@@ -112,6 +112,7 @@ double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_prtot
 double precision, dimension(:), pointer :: cpro_viscls, cproa_viscls, cvar_tempk
+double precision, dimension(:), pointer :: mix_mol_mas
 
 !===============================================================================
 
@@ -260,6 +261,15 @@ if (ippmod(icompf).lt.0) then
   enddo
 endif
 
+! Initialization of mix_mol_mas with default values (air)
+! (used in cs_cf_thermo_default_init)
+if(ippmod(igmix).ge.0) then
+  call field_get_val_s(iprpfl(igmxml), mix_mol_mas)
+  do iel =1, ncel
+    mix_mol_mas(iel) = xmasmr
+  enddo
+endif
+
 ! Default initialisations for the compressible model
 if (ippmod(icompf).ge.0) then
   ! In compressible, for now, the temperature is not solved but is a field of
@@ -271,7 +281,7 @@ if (ippmod(icompf).ge.0) then
 
   ! Default isochoric specific heat (cv0),
   ! total energy and density
-  call cs_cf_thermo_default_init(isuite)
+  call cs_cf_thermo_default_init
 
   ! Default diffusivity for total energy
   visls0(ienerg) = visls0(itempk)/cv0

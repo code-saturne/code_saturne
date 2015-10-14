@@ -65,36 +65,13 @@ module cs_cf_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function computing the molar mass.
-
-    subroutine cs_cf_get_molar_mass(xmasml) &
-      bind(C, name='cs_cf_get_molar_mass')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*) :: xmasml
-    end subroutine cs_cf_get_molar_mass
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function computing gamma.
-
-    subroutine cs_cf_thermo_gamma(gamma) &
-      bind(C, name='cs_cf_thermo_gamma')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*) :: gamma
-    end subroutine cs_cf_thermo_gamma
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function initializing density, total energy and isochoric
     ! specific heat.
 
-    subroutine cs_cf_thermo_default_init(isuite) &
+    subroutine cs_cf_thermo_default_init() &
       bind(C, name='cs_cf_thermo_default_init')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: isuite
     end subroutine cs_cf_thermo_default_init
 
     !---------------------------------------------------------------------------
@@ -151,12 +128,13 @@ module cs_cf_bindings
     ! Interface to C function computing temperature and total energy from
     ! density and pressure.
 
-    subroutine cs_cf_thermo_te_from_dp(pres, dens, temp, ener, vel, l_size) &
+    subroutine cs_cf_thermo_te_from_dp(cp, cv, pres, dens, temp, ener, vel, &
+                                       l_size) &
       bind(C, name='cs_cf_thermo_te_from_dp')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: l_size
-      real(kind=c_double), dimension(*) :: pres, dens, temp, ener
+      real(kind=c_double), dimension(*) :: cp, cv, pres, dens, temp, ener
       real(kind=c_double), dimension(3, *) :: vel
     end subroutine cs_cf_thermo_te_from_dp
 
@@ -165,12 +143,13 @@ module cs_cf_bindings
     ! Interface to C function computing density and total energy from pressure
     ! and temperature.
 
-    subroutine cs_cf_thermo_de_from_pt(pres, temp, dens, ener, vel, l_size) &
+    subroutine cs_cf_thermo_de_from_pt(cp, cv, pres, temp, dens, ener, vel, &
+                                       l_size) &
       bind(C, name='cs_cf_thermo_de_from_pt')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: l_size
-      real(kind=c_double), dimension(*) :: pres, temp, dens, ener
+      real(kind=c_double), dimension(*) :: cp, cv, pres, temp, dens, ener
       real(kind=c_double), dimension(3, *) :: vel
     end subroutine cs_cf_thermo_de_from_pt
 
@@ -179,12 +158,13 @@ module cs_cf_bindings
     ! Interface to C function computing density and temperature from pressure
     ! and total energy.
 
-    subroutine cs_cf_thermo_dt_from_pe(pres, ener, dens, temp, vel, l_size) &
+    subroutine cs_cf_thermo_dt_from_pe(cp, cv, pres, ener, dens, temp, vel, &
+                                       l_size) &
       bind(C, name='cs_cf_thermo_dt_from_pe')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: l_size
-      real(kind=c_double), dimension(*) :: pres, ener, dens, temp
+      real(kind=c_double), dimension(*) :: cp, cv, pres, ener, dens, temp
       real(kind=c_double), dimension(3, *) :: vel
     end subroutine cs_cf_thermo_dt_from_pe
 
@@ -193,12 +173,13 @@ module cs_cf_bindings
     ! Interface to C function computing pressure and total energy from
     ! density and temperature.
 
-    subroutine cs_cf_thermo_pe_from_dt(dens, temp, pres, ener, vel, l_size) &
+    subroutine cs_cf_thermo_pe_from_dt(cp, cv, dens, temp, pres, ener, vel, &
+                                       l_size) &
       bind(C, name='cs_cf_thermo_pe_from_dt')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: l_size
-      real(kind=c_double), dimension(*) :: dens, temp, pres, ener
+      real(kind=c_double), dimension(*) :: cp, cv, dens, temp, pres, ener
       real(kind=c_double), dimension(3, *) :: vel
     end subroutine cs_cf_thermo_pe_from_dt
 
@@ -207,12 +188,13 @@ module cs_cf_bindings
     ! Interface to C function computing pressure and temperature from
     ! from density and total energy.
 
-    subroutine cs_cf_thermo_pt_from_de(dens, ener, pres, temp, vel, l_size) &
+    subroutine cs_cf_thermo_pt_from_de(cp, cv, dens, ener, pres, temp, vel, &
+                                       l_size) &
       bind(C, name='cs_cf_thermo_pt_from_de')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: l_size
-      real(kind=c_double), dimension(*) :: dens, ener, pres, temp
+      real(kind=c_double), dimension(*) :: cp, cv, dens, ener, pres, temp
       real(kind=c_double), dimension(3, *) :: vel
     end subroutine cs_cf_thermo_pt_from_de
 
@@ -220,36 +202,36 @@ module cs_cf_bindings
 
     ! Interface to C function computing the sound velocity square
 
-    subroutine cs_cf_thermo_c_square(pres, dens, c2, l_size) &
+    subroutine cs_cf_thermo_c_square(cp, cv, pres, dens, c2, l_size) &
       bind(C, name='cs_cf_thermo_c_square')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: l_size
-      real(kind=c_double), dimension(*) :: pres, dens, c2
+      real(kind=c_double), dimension(*) :: cp, cv, pres, dens, c2
     end subroutine cs_cf_thermo_c_square
 
     !---------------------------------------------------------------------------
 
     ! Interface to C function computing the thermal expansion coefficient.
 
-    subroutine cs_cf_thermo_beta(dens, beta, l_size) &
+    subroutine cs_cf_thermo_beta(cp, cv, dens, beta, l_size) &
       bind(C, name='cs_cf_thermo_beta')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: l_size
-      real(kind=c_double), dimension(*) :: dens, beta
+      real(kind=c_double), dimension(*) :: cp, cv, dens, beta
     end subroutine cs_cf_thermo_beta
 
     !---------------------------------------------------------------------------
 
     ! Interface to C function computing the isochoric specific heat.
 
-    subroutine cs_cf_thermo_cv(cp, cv, l_size) &
+    subroutine cs_cf_thermo_cv(cp, xmasml, cv, l_size) &
       bind(C, name='cs_cf_thermo_cv')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: l_size
-      real(kind=c_double), dimension(*) :: cp, cv
+      real(kind=c_double), dimension(*) :: cp, xmasml, cv
     end subroutine cs_cf_thermo_cv
 
     !---------------------------------------------------------------------------
@@ -257,12 +239,12 @@ module cs_cf_bindings
     ! Interface to C function computing the entropy from the density and the
     ! pressure.
 
-    subroutine cs_cf_thermo_s_from_dp(dens, pres, entr, l_size) &
+    subroutine cs_cf_thermo_s_from_dp(cp, cv, dens, pres, entr, l_size) &
       bind(C, name='cs_cf_thermo_s_from_dp')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: l_size
-      real(kind=c_double), dimension(*) :: dens, pres, entr
+      real(kind=c_double), dimension(*) :: cp, cv, dens, pres, entr
     end subroutine cs_cf_thermo_s_from_dp
 
     !---------------------------------------------------------------------------

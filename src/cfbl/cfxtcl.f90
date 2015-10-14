@@ -72,6 +72,7 @@ subroutine cfxtcl &
 ! Module files
 !===============================================================================
 
+use dimens, only : nscal
 use paramx
 use numvar
 use optcal
@@ -114,7 +115,7 @@ integer          nvcfmx
 parameter       (nvcfmx=6)
 integer          ivarcf(nvcfmx)
 
-double precision hint
+double precision hint, cpb(1), cvb(1)
 
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: w4, w5, w6
@@ -125,7 +126,7 @@ double precision, allocatable, dimension(:,:) :: bc_vel
 
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:), pointer :: coefbp
-double precision, dimension(:), pointer :: crom, brom, cpro_cv, cvar_en
+double precision, dimension(:), pointer :: crom, brom, cpro_cp, cpro_cv, cvar_en
 double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
@@ -157,6 +158,7 @@ call field_get_val_s(ibrom, brom)
 
 call field_get_val_s(ivarfl(ien), cvar_en)
 
+if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 if (icv.gt.0) call field_get_val_s(iprpfl(icv), cpro_cv)
 
 ! list of the variables of the compressible model
@@ -439,8 +441,13 @@ do ifac = 1, nfabor
     bc_vel(2,ifac) = vel(2,iel)
     bc_vel(3,ifac) = vel(3,iel)
 
+    cpb(1) = 0.d0
+    cvb(1) = 0.d0
+    if (icp.gt.0) cpb(1) = cpro_cp(iel)
+    if (icv.gt.0) cvb(1) = cpro_cv(iel)
+
     l_size = 1
-    call cs_cf_thermo_pt_from_de(brom(ifac:ifac), bc_en(ifac:ifac),  &
+    call cs_cf_thermo_pt_from_de(cpb, cvb, brom(ifac:ifac), bc_en(ifac:ifac), &
                                  bc_pr(ifac:ifac), bc_tk(ifac:ifac), &
                                  bc_vel(:,ifac:ifac), l_size)
 
@@ -556,8 +563,6 @@ do ifac = 1, nfabor
       endif
     enddo
 
-!     IRUNH = ISCA(IENER)
-!     (aliases pour simplifier uscfcl)
 
 !===============================================================================
 ! 5. Unexpected boundary condition type
@@ -703,9 +708,14 @@ do ifac = 1, nfabor
       elseif(iturb.eq.70) then
         icodcl(ifac,inusa) = 3
       endif
-      if(nscaus.gt.0) then
+      if (nscaus.gt.0) then
         do ii = 1, nscaus
           icodcl(ifac,isca(ii)) = 3
+        enddo
+      endif
+      if (nscasp.gt.0) then
+        do ii = 1, nscasp
+          icodcl(ifac,iscasp(ii)) = 3
         enddo
       endif
     else
@@ -773,12 +783,21 @@ do ifac = 1, nfabor
            icodcl(ifac,inusa) = 3
          endif
        endif
-       if(nscaus.gt.0) then
+       if (nscaus.gt.0) then
          do ii = 1, nscaus
            if(rcodcl(ifac,isca(ii),1).gt.-rinfin*0.5d0) then
              icodcl(ifac,isca(ii)) = 1
            else
              icodcl(ifac,isca(ii)) = 3
+           endif
+         enddo
+       endif
+       if (nscasp.gt.0) then
+         do ii = 1, nscasp
+           if(rcodcl(ifac,iscasp(ii),1).gt.-rinfin*0.5d0) then
+             icodcl(ifac,iscasp(ii)) = 1
+           else
+             icodcl(ifac,iscasp(ii)) = 3
            endif
          enddo
        endif

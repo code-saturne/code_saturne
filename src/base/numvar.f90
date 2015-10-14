@@ -254,7 +254,10 @@ module numvar
   integer, save :: ibeta
 
   !> pointer for deduced mass fraction in case of gas mix
-  integer, save :: igasdd
+  integer, save :: iddgas
+
+  !> pointer for gas mix molar mass
+  integer, save :: igmxml
 
   !> field id of the stresses at boundary  (if post-processed)
   integer, save :: iforbr

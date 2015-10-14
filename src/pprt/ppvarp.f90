@@ -79,6 +79,22 @@ double precision scmaxp, scminp
 
 !===============================================================================
 
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_field_pointer_map_gas_mix()  &
+    bind(C, name='cs_field_pointer_map_gas_mix')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_field_pointer_map_gas_mix
+
+end interface
+
+!===============================================================================
+
 ! Key ids for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
@@ -169,45 +185,74 @@ endif
 !--------------------------
 
 if (ippmod(igmix).ge.0) then
-  itherm = 2
-  call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
-  iscalt = ihm
+
+  if (ippmod(icompf).lt.0) then
+    itherm = 2
+    call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
+    iscalt = ihm
+  else
+    call field_set_key_int(ivarfl(isca(itempk)), kivisl, 0)
+  endif
+
   call field_set_key_int(ivarfl(isca(iscalt)), kivisl, 0)
 
   ! Clipping of mass fractions
   scminp = 0.d0
   scmaxp = 1.d0
 
-  call add_model_scalar_field('y_o2', 'Y_O2', iscasp(1))
-  f_id = ivarfl(isca(iscasp(1)))
-  call field_set_key_int(f_id, kivisl, 0)
-  call field_set_key_double(f_id, kscmin, scminp)
-  call field_set_key_double(f_id, kscmax, scmaxp)
-
-  call add_model_scalar_field('y_n2', 'Y_N2', iscasp(2))
-  f_id = ivarfl(isca(iscasp(2)))
-  call field_set_key_int(f_id, kivisl, 0)
-  call field_set_key_double(f_id, kscmin, scminp)
-  call field_set_key_double(f_id, kscmax, scmaxp)
-
-  nscasp = 2
-  if (ippmod(igmix).eq.3) then
-    call add_model_scalar_field('y_he', 'Y_He', iscasp(3))
-    f_id = ivarfl(isca(iscasp(3)))
+  if (ippmod(igmix).lt.5) then
+    call add_model_scalar_field('y_o2', 'Y_O2', iscasp(1))
+    f_id = ivarfl(isca(iscasp(1)))
     call field_set_key_int(f_id, kivisl, 0)
     call field_set_key_double(f_id, kscmin, scminp)
     call field_set_key_double(f_id, kscmax, scmaxp)
 
-    nscasp = 3
-  elseif (ippmod(igmix).eq.4) then
-    call add_model_scalar_field('y_h2', 'Y_H2', iscasp(3))
-    f_id = ivarfl(isca(iscasp(3)))
+    call add_model_scalar_field('y_n2', 'Y_N2', iscasp(2))
+    f_id = ivarfl(isca(iscasp(2)))
     call field_set_key_int(f_id, kivisl, 0)
     call field_set_key_double(f_id, kscmin, scminp)
     call field_set_key_double(f_id, kscmax, scmaxp)
 
-    nscasp = 3
+    nscasp = 2
+
+    if (ippmod(igmix).eq.3) then
+      call add_model_scalar_field('y_he', 'Y_He', iscasp(3))
+      f_id = ivarfl(isca(iscasp(3)))
+      call field_set_key_int(f_id, kivisl, 0)
+      call field_set_key_double(f_id, kscmin, scminp)
+      call field_set_key_double(f_id, kscmax, scmaxp)
+
+      nscasp = 3
+
+    elseif (ippmod(igmix).eq.4) then
+      call add_model_scalar_field('y_h2', 'Y_H2', iscasp(3))
+      f_id = ivarfl(isca(iscasp(3)))
+      call field_set_key_int(f_id, kivisl, 0)
+      call field_set_key_double(f_id, kscmin, scminp)
+      call field_set_key_double(f_id, kscmax, scmaxp)
+
+      nscasp = 3
+    endif
+  else ! ippmod(igmix).eq.5
+
+    call add_model_scalar_field('y_n2', 'Y_N2', iscasp(1))
+    f_id = ivarfl(isca(iscasp(1)))
+    call field_set_key_int(f_id, kivisl, 0)
+    call field_set_key_double(f_id, kscmin, scminp)
+    call field_set_key_double(f_id, kscmax, scmaxp)
+
+    call add_model_scalar_field('y_he', 'Y_He', iscasp(2))
+    f_id = ivarfl(isca(iscasp(2)))
+    call field_set_key_int(f_id, kivisl, 0)
+    call field_set_key_double(f_id, kscmin, scminp)
+    call field_set_key_double(f_id, kscmax, scmaxp)
+
+    nscasp = 2
+
   endif
+
+  ! MAP to C API
+  call cs_field_pointer_map_gas_mix
 endif
 
 return

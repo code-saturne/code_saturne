@@ -476,6 +476,22 @@ cs_field_pointer_map_compressible(void)
 
   cs_field_pointer_map(CS_ENUMF_(t),
                        cs_field_by_name_try("temperature"));
+
+  cs_field_pointer_map(CS_ENUMF_(cv),
+                       cs_field_by_name_try("specific_heat_const_vol"));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map base fields to enumerated pointers for gas mix model
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_gas_mix(void)
+{
+  cs_field_pointer_map(CS_ENUMF_(mol_mass),
+                       cs_field_by_name_try("mix_mol_mas"));
 }
 
 /*----------------------------------------------------------------------------*/

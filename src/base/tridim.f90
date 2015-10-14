@@ -958,7 +958,7 @@ do while (iterns.le.nterup)
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
     timpat, timpcp, tkent ,  fment, distch, nvarcl, rcodcl)
 
-    if (ippmod(iphpar).eq.0) then
+    if (ippmod(iphpar).eq.0.or.ippmod(igmix).ge.0.or.ippmod(icompf).ge.0) then
 
     ! ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE
 

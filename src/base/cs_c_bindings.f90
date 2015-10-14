@@ -102,6 +102,12 @@ module cs_c_bindings
     real(c_double) :: mu_b
     real(c_double) :: lambda_a
     real(c_double) :: lambda_b
+    real(c_double) :: muref
+    real(c_double) :: lamref
+    real(c_double) :: trefmu
+    real(c_double) :: treflam
+    real(c_double) :: smu
+    real(c_double) :: slam
   end type gas_mix_species_prop
 
   !=============================================================================

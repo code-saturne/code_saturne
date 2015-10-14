@@ -73,6 +73,7 @@ subroutine cfdttv &
 !===============================================================================
 
 use paramx
+use pointe, only:rvoid1
 use numvar
 use cstnum
 use cstphy
@@ -114,7 +115,7 @@ double precision, allocatable, dimension(:) :: coefbt, cofbft
 double precision, allocatable, dimension(:) :: w1, c2
 
 double precision, dimension(:,:), pointer :: vela
-double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: crom, cpro_cp, cpro_cv
 double precision, dimension(:), pointer :: cvar_pr
 
 !===============================================================================
@@ -140,6 +141,20 @@ call field_get_val_s(ivarfl(ipr), cvar_pr)
 !===============================================================================
 ! 1. COMPUTATION OF THE CFL CONDITION ASSOCIATED TO THE PRESSURE EQUATION
 !===============================================================================
+
+! Map specific heats fields for sound celerity computation
+
+if (icp.gt.0) then
+  call field_get_val_s(iprpfl(icp), cpro_cp)
+else
+  cpro_cp => rvoid1
+endif
+
+if (icv.gt.0) then
+  call field_get_val_s(iprpfl(icv), cpro_cv)
+else
+  cpro_cv => rvoid1
+endif
 
 ! Computation of the convective flux associated to the density
 
@@ -184,7 +199,7 @@ call matrdt &
 
 allocate(c2(ncelet))
 
-call cs_cf_thermo_c_square(cvar_pr, crom, c2, ncel)
+call cs_cf_thermo_c_square(cpro_cp, cpro_cv, cvar_pr, crom, c2, ncel)
 !=========================
 
 ! Compute the coefficient CFL/dt

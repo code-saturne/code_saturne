@@ -231,7 +231,7 @@ if (nscapp.gt.0) then
    ncepdc , ncetsm ,                                              &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , propce ,                                              &
+   dt     ,                                                       &
    ckupdc , smacel )
 
       endif

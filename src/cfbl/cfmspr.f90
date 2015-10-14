@@ -63,6 +63,7 @@ subroutine cfmspr &
 !===============================================================================
 
 use paramx
+use pointe, only:rvoid1
 use numvar
 use entsor
 use optcal
@@ -133,7 +134,7 @@ double precision, allocatable, dimension(:) :: c2
 double precision, dimension(:), pointer :: coefaf_p, coefbf_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: rhopre, crom
-double precision, dimension(:), pointer :: cvar_pr, cvara_pr
+double precision, dimension(:), pointer :: cvar_pr, cvara_pr, cpro_cp, cpro_cv
 
 !===============================================================================
 !===============================================================================
@@ -170,7 +171,7 @@ call field_get_val_prev_s(icrom, rhopre)
 call field_get_val_s(ivarfl(ipr), cvar_pr)
 call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
-call field_get_label(ivarfl(ivar), chaine)
+call field_get_label(ivarfl(ipr), chaine)
 
 if(iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)
@@ -178,6 +179,18 @@ endif
 
 call field_get_coefaf_s(ivarfl(ipr), coefaf_p)
 call field_get_coefbf_s(ivarfl(ipr), coefbf_p)
+
+if (icp.gt.0) then
+  call field_get_val_s(iprpfl(icp), cpro_cp)
+else
+  cpro_cp => rvoid1
+endif
+
+if (icv.gt.0) then
+  call field_get_val_s(iprpfl(icv), cpro_cv)
+else
+  cpro_cv => rvoid1
+endif
 
 ! Computation of the boundary coefficients for the pressure gradient
 ! recontruction in accordance with the diffusion boundary coefficients (coefaf_p,
@@ -224,7 +237,7 @@ endif
 
 allocate(c2(ncelet))
 
-call cs_cf_thermo_c_square(cvar_pr, crom, c2, ncel)
+call cs_cf_thermo_c_square(cpro_cp, cpro_cv, cvar_pr, crom, c2, ncel)
 !=========================
 
 do iel = 1, ncel

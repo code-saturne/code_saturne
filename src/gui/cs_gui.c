@@ -2432,7 +2432,8 @@ void CS_PROCF (csivis, CSIVIS) (void)
     if (cs_gui_strcmp(prop_choice, "variable"))
       d_f_id = 0;
     BFT_FREE(prop_choice);
-    cs_field_set_key_int(CS_F_(t_kelvin), kivisl, d_f_id);
+    cs_field_t *c_temp = cs_field_by_name("temperature");
+    cs_field_set_key_int(c_temp, kivisl, d_f_id);
   }
 }
 

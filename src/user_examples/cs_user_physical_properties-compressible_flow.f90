@@ -144,7 +144,7 @@ double precision xvart
 
 double precision, dimension(:), pointer :: cpro_viscl, cpro_viscv
 double precision, dimension(:), pointer :: cpro_vtmpk, cpro_vscal
-double precision, dimension(:), pointer :: cpro_cp, cpro_cv
+double precision, dimension(:), pointer :: cpro_cp, cpro_cv, mix_mol_mas
 double precision, dimension(:), pointer :: cvar_scalt
 !< [loc_var_dec]
 
@@ -315,7 +315,9 @@ enddo
 ! --- The isochoric specific heat is deduced from the isobaric specific heat
 
 call field_get_val_s(iprpfl(icv), cpro_cv)
-call cs_cf_thermo_cv(cpro_cp, cpro_cv, ncel)
+call field_get_val_s(iprpfl(igmxml), mix_mol_mas)
+call cs_cf_thermo_cv(cpro_cp, mix_mol_mas, cpro_cv, ncel)
+
 !< [example_3]
 
 !===============================================================================

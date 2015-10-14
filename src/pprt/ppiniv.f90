@@ -155,15 +155,6 @@ if  (ippmod(icfuel).ge.0) then
   !==================
 endif
 
-! ---> Compressible
-
-if (ippmod(icompf).ge.0) then
-  call cfiniv                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   dt     )
-endif
-
 ! ---> Version electrique
 !      Effet Joule
 !      Conduction ionique
@@ -206,6 +197,17 @@ if (ippmod(igmix).ge.0) then
     dt     )
 
 endif
+
+! Compressible
+! Has to be called AFTER the gas mix initialization because the
+! mixture composition is taken into account in the thermodynamic
+! law, if gas mix specific physics is enabled.
+if (ippmod(icompf).ge.0) then
+
+  call cfiniv(nvar, nscal, dt)
+
+endif
+
 
 !----
 ! Formats

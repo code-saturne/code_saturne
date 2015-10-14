@@ -55,6 +55,7 @@ subroutine cfrusb &
 !===============================================================================
 
 use paramx
+use pointe, only:rvoid1
 use numvar
 use optcal
 use cstphy
@@ -93,16 +94,18 @@ double precision, dimension(:,:), pointer :: cofacv
 double precision, dimension(:), pointer :: coface
 double precision, dimension(:), pointer :: crom, brom
 double precision, dimension(:,:), pointer :: vel
-double precision, dimension(:), pointer :: cvar_pr, cvar_en
+double precision, dimension(:), pointer :: cvar_pr, cvar_en, cpro_cp, cpro_cv
+
+double precision cpi(1), cvi(1)
 
 !===============================================================================
-
-! Map field arrays
-call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 ! 0. INITIALISATION
 !===============================================================================
+
+! Map field arrays
+call field_get_val_v(ivarfl(iu), vel)
 
 ien = isca(ienerg)
 
@@ -120,6 +123,24 @@ call field_get_coefac_s(ivarfl(ien), coface)
 
 iel   = ifabor(ifac)
 
+! Initialize local specific heat values and handle uniform cases
+
+if (icp.gt.0) then
+  call field_get_val_s(iprpfl(icp), cpro_cp)
+  cpi(1) = cpro_cp(iel)
+else
+  cpro_cp => rvoid1
+  cpi(1) = 0.d0
+endif
+
+if (icv.gt.0) then
+  call field_get_val_s(iprpfl(icv), cpro_cv)
+  cvi(1) = cpro_cv(iel)
+else
+  cpro_cv => rvoid1
+  cvi(1) = 0.d0
+endif
+
 !===============================================================================
 ! 1. COMPUTE VALUES NEEDED FOR RUSANOV SCHEME
 !===============================================================================
@@ -134,8 +155,12 @@ rund  = brom(ifac)*und
 runi  = crom(iel)     *uni
 
 l_size = 1
-call cs_cf_thermo_c_square(bc_pr(ifac:ifac), brom(ifac:ifac), cd2, l_size)
-call cs_cf_thermo_c_square(cvar_pr(iel:iel), crom(iel:iel), ci2, l_size)
+
+
+call cs_cf_thermo_c_square(cpi, cvi, &
+                           bc_pr(ifac:ifac), brom(ifac:ifac), cd2, l_size)
+call cs_cf_thermo_c_square(cpi, cvi, &
+                           cvar_pr(iel:iel), crom(iel:iel), ci2, l_size)
 
 cd    = sqrt(cd2(1))
 ci    = sqrt(ci2(1))

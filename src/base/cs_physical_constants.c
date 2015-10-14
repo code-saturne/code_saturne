@@ -103,10 +103,11 @@ BEGIN_C_DECLS
   \var  cs_fluid_properties_t::ieos
         indicator of equation of state
 
-        useful only for the compressible module. Only perfect gas with a
-        constant adiabatic coefficient, \ref ieos=1 is available, but the
-        user can complete the file \ref cs_cf_thermo.h, which is not a user
-        source, to add new equations of state.
+        useful only for the compressible module. Ideal gas with a constant
+        adiabatic coefficient (\ref ieos=1), stiffened gas (\ref ieos=2) and
+        mix of ideal gas (\ref ieos=3) are available, but the user can complete
+        the file \ref cs_cf_thermo.h, which is not a user source, to add new
+        equations of state.
   \var  cs_fluid_properties_t::icp
         property index of the isobaric specific heat
         - 0: uniform isobaric specific heat (no property field defined)
@@ -121,6 +122,11 @@ BEGIN_C_DECLS
         variable viscosity field \f$ \rho \f$:
         - 0: false
         - 1: true
+  \var  cs_fluid_properties_t::ivsuth
+        Sutherland law for laminar viscosity and thermal conductivity
+        Only useful in gas mix (igmix) specific physics
+        - 1: Sutherland law
+        - 0: low temperature law (linear except for helium)
   \var  cs_fluid_properties_t::ro0
         reference density
 
@@ -277,6 +283,7 @@ static cs_fluid_properties_t  _fluid_properties = {
   .icv      = 0,
   .irovar   = 0,
   .ivivar   = 0,
+  .ivsuth   = 0,
   .ro0      = 1.17862,
   .viscl0   = 1.83337e-5,
   .p0       = 1.01325e5,
@@ -285,7 +292,7 @@ static cs_fluid_properties_t  _fluid_properties = {
   .t0       = 293.15,
   .cp0      = 1017.24,
   .cv0      = 0.,
-  .xmasmr   = 0.,
+  .xmasmr   = 0.028966, /* air molar mass */
   .psginf   = 0.,
   .gammasg  = 1.4,
   .pther    = 1.013e5,
@@ -323,6 +330,7 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    int     **icv,
                                    int     **irovar,
                                    int     **ivivar,
+                                   int     **ivsuth,
                                    double  **ro0,
                                    double  **viscl0,
                                    double  **p0,
@@ -387,6 +395,7 @@ cs_f_physical_constants_get_pointers(double  **r,
  *   icv      --> pointer to cs_glob_fluid_properties->icv
  *   irovar   --> pointer to cs_glob_fluid_properties->irovar
  *   ivivar   --> pointer to cs_glob_fluid_properties->ivivar
+ *   ivsuth   --> pointer to cs_glob_fluid_properties->ivsuth
  *   ro0      --> pointer to cs_glob_fluid_properties->ro0
  *   viscl0   --> pointer to cs_glob_fluid_properties->viscl0
  *   p0       --> pointer to cs_glob_fluid_properties->p0
@@ -410,6 +419,7 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    int     **icv,
                                    int     **irovar,
                                    int     **ivivar,
+                                   int     **ivsuth,
                                    double  **ro0,
                                    double  **viscl0,
                                    double  **p0,
@@ -431,6 +441,7 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
   *icv      = &(_fluid_properties.icv);
   *irovar   = &(_fluid_properties.irovar);
   *ivivar   = &(_fluid_properties.ivivar);
+  *ivsuth   = &(_fluid_properties.ivsuth);
   *ro0      = &(_fluid_properties.ro0);
   *viscl0   = &(_fluid_properties.viscl0);
   *p0       = &(_fluid_properties.p0);

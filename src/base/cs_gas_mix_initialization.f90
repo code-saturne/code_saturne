@@ -105,8 +105,10 @@ else
   call csexit (1)
 endif
 
-! Enthalpy
-call field_get_val_s(ivarfl(isca(iscalt)), cvar_enth)
+if (ippmod(icompf).lt.0) then
+  ! Enthalpy
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_enth)
+endif
 
 !Deduced species (h2o_g) with steam gas
 ! or Helium or Hydrogen  with noncondensable gases
@@ -114,14 +116,16 @@ if (ippmod(igmix).eq.0) then
   name_d = "y_he"
 elseif (ippmod(igmix).eq.1) then
   name_d = "y_h2"
-elseif (ippmod(igmix).ge.2) then
+elseif (ippmod(igmix).ge.2.and.ippmod(igmix).lt.5) then
   name_d = "y_h2o_g"
+else ! ippmod(igmix).eq.5
+  name_d = "y_o2"
 endif
 call field_get_val_s_by_name(name_d, y_d)
 call field_get_id(name_d, f_id)
 call field_get_key_struct_gas_mix_species_prop(f_id, s_d)
 
-call field_get_val_s_by_name("mix_mol_mas", mix_mol_mas)
+call field_get_val_s(iprpfl(igmxml), mix_mol_mas)
 
 !===============================================================================
 ! 2. User initialization
@@ -181,8 +185,10 @@ if (isuite.eq.0) then
     ! specific heat (Cp_m0) of the gas mixture
     cpro_cp(iel) = cpro_cp(iel) + y_d(iel)*s_d%cp
 
-    ! Enthalpy initialization
-    cvar_enth(iel) = cpro_cp(iel)*t0
+    if (ippmod(icompf).lt.0) then
+      ! Enthalpy initialization
+      cvar_enth(iel) = cpro_cp(iel)*t0
+    endif
 
     mix_mol_mas(iel) = mix_mol_mas(iel) + y_d(iel)/s_d%mol_mas
     mix_mol_mas(iel) = 1.d0/mix_mol_mas(iel)

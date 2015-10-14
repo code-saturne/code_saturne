@@ -97,7 +97,8 @@ typedef enum {
   CS_ENUMF_(rho),          /*!< density (at cells) */
   CS_ENUMF_(rho_b),        /*!< density (at boundary faces) */
 
-  CS_ENUMF_(cp),           /*!< specific heat */
+  CS_ENUMF_(cp),           /*!< isobaric specific heat */
+  CS_ENUMF_(cv),           /*!< isochoric specific heat */
 
   CS_ENUMF_(mu),           /*!< molecular viscosity */
   CS_ENUMF_(mu_t),         /*!< turbulent dynamic viscosity */
@@ -166,6 +167,8 @@ typedef enum {
   CS_ENUMF_(fnet),         /*!< Boundary radiative flux */
   CS_ENUMF_(fconv),        /*!< Boundary radiative convective flux */
   CS_ENUMF_(hconv),        /*!< radiative exchange coefficient */
+
+  CS_ENUMF_(mol_mass),     /*!< gas mix molar max */
 
   /* End of attributes */
 
@@ -283,6 +286,13 @@ cs_field_pointer_map_coal_combustion(int  n_coals,
 
 void
 cs_field_pointer_map_compressible(void);
+
+/*----------------------------------------------------------------------------*
+ * Map base fields to enumerated pointers for gas mix model
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_gas_mix(void);
 
 /*----------------------------------------------------------------------------
  * Map base fields to enumerated pointers for electric arcs

@@ -68,7 +68,6 @@ implicit none
 
 character(len=80) :: name_d, label_d
 
-integer          f_id
 integer          idim1
 logical       :: has_previous
 
@@ -131,7 +130,7 @@ endif
 
 ! Add the mixture molar mass fraction field
 if (ippmod(igmix).ge.0) then
-  call add_property_field('mix_mol_mas', 'Mix_mol_mass', f_id)
+  call add_property_field('mix_mol_mas', 'Mix_mol_mass', igmxml)
 
   ! Gas mixtures with Air/Helium and the Helium gas deduced
   if (ippmod(igmix).eq.0) then
@@ -143,14 +142,18 @@ if (ippmod(igmix).ge.0) then
     label_d = 'Y_H2'
   ! Gas mixtures with steam with/without condensation modelling
   ! the steam gas will be deduced from the gas species transported
-  else if (ippmod(igmix).ge.2) then
+  else if (ippmod(igmix).ge.2.and.ippmod(igmix).le.4) then
     name_d = 'y_h2o_g'
     label_d = 'Y_H2O_g'
+  ! Gas mixtures with Helium/Air Helium and the O2 from the air deduced
+  else if (ippmod(igmix).eq.5) then
+    name_d = 'y_o2'
+    label_d = 'Y_O2'
   endif
 
   idim1 =  1
   has_previous = .true.
-  call add_property_field_owner(name_d, label_d, idim1, has_previous, igasdd)
+  call add_property_field_owner(name_d, label_d, idim1, has_previous, iddgas)
 endif
 
 end subroutine ppprop

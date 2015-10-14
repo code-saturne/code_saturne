@@ -41,7 +41,6 @@
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for the variables
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] propce        physical properties at cell centers
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
@@ -52,7 +51,7 @@ subroutine cfener &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , propce ,                                              &
+   dt     ,                                                       &
    ckupdc , smacel )
 
 !===============================================================================
@@ -62,6 +61,7 @@ subroutine cfener &
 !===============================================================================
 
 use paramx
+use pointe, only:rvoid1
 use numvar
 use entsor
 use optcal
@@ -75,6 +75,7 @@ use ppincl
 use cfpoin
 use mesh
 use field
+use field_operator
 use cs_c_bindings
 use cs_cf_bindings
 
@@ -90,15 +91,15 @@ integer          iscal
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
+integer          use_previous
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
 
 character(len=80) :: chaine
-integer          ivar
+integer          ivar  , ivarsp, iesp
 integer          ifac  , iel
 integer          init  , iii
 integer          ifcvsl, iflmas, iflmab
@@ -110,33 +111,40 @@ double precision epsrgp, climgp, extrap, blencp, epsilp
 double precision sclnor, thetap, epsrsp, relaxp
 
 integer          inc    , iccocg , imucpp , idftnp , iswdyp
-integer          f_id0  , ii , jj
+integer          f_id0  , ii, jj
 integer          iel1  , iel2
 integer          iterns, irecpt
 
-double precision flux, flui, fluj
+double precision flux, flui, fluj, yip, yjp, gradnb, tip
 double precision dijpfx, dijpfy, dijpfz, pnd  , pip   , pjp
 double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 
+double precision mk, cpk, cvk
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: wb, iprtfl, bprtfl, viscf, viscb
+double precision, allocatable, dimension(:) :: viscfk, viscbk
 double precision, allocatable, dimension(:) :: dpvar, smbrs, rovsdt
 double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:) :: grad_dd
 double precision, allocatable, dimension(:) :: gapinj
 double precision, allocatable, dimension(:) :: w1, w7, w9
+double precision, allocatable, dimension(:) :: kspe, btemp
 
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, cromo
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
+double precision, dimension(:), pointer :: coefat, coefbt, coefayk, coefbyk
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:,:), pointer :: vel
 
 double precision, dimension(:), pointer :: cvar_pr, cvar_energ, cvara_energ
-double precision, dimension(:), pointer :: cvar_tempk
-double precision, dimension(:), pointer :: visct, cpro_cp, cpro_viscls
+double precision, dimension(:), pointer :: cvar_tempk, cvar_yk
+double precision, dimension(:), pointer :: visct, cpro_cp, cpro_cv, cpro_viscls
+
+type(gas_mix_species_prop) :: s_k
 
 !===============================================================================
 
@@ -148,6 +156,18 @@ call field_get_val_prev_s(ivarfl(ivar), cvara_energ)
 call field_get_val_s(ivarfl(ivar), cvar_energ)
 call field_get_val_s(ivarfl(isca(itempk)), cvar_tempk)
 call field_get_val_v(ivarfl(iu), vel)
+
+if (icp.gt.0) then
+  call field_get_val_s(iprpfl(icp), cpro_cp)
+else
+  cpro_cp => rvoid1
+endif
+
+if (icv.gt.0) then
+  call field_get_val_s(iprpfl(icv), cpro_cv)
+else
+  cpro_cv => rvoid1
+endif
 
 !===============================================================================
 ! 1. Initialization
@@ -392,6 +412,8 @@ enddo
 !     FACE DIFFUSION "VELOCITY" : --------- avec K = ------ + -- .------
 !     =========================    IJ.nij              Cv     Cv  SIGMAS
 
+! Only SGDH available
+
 allocate(w1(ncelet))
 allocate(viscf(nfac))
 allocate(viscb(nfabor))
@@ -404,7 +426,6 @@ if( idiff(ivar).ge. 1 ) then
   enddo
 !     CP*MUT/SIGMAS
   if(icp.gt.0) then
-    call field_get_val_s(iprpfl(icp), cpro_cp)
     do iel = 1, ncel
       w1(iel) = w1(iel)*cpro_cp(iel)
     enddo
@@ -416,7 +437,7 @@ if( idiff(ivar).ge. 1 ) then
 !     (CP/CV)*MUT/SIGMAS
   if(icv.gt.0) then
     do iel = 1, ncel
-      w1(iel) = w1(iel)/propce(iel,ipproc(icv))
+      w1(iel) = w1(iel)/cpro_cv(iel)
     enddo
   else
     do iel = 1, ncel
@@ -536,6 +557,102 @@ if( idiff(ivar).ge. 1 ) then
 
   enddo
 
+  if (ippmod(igmix).gt.0) then
+
+    ! Diffusion flux for the species at internal faces
+
+    allocate(kspe(ncelet),viscfk(nfac),viscbk(nfabor))
+
+    ! Diffusion coefficient  T*lambda*Cvk/Cv
+    do iel =1, ncel
+      kspe(iel) = w1(iel)* cvar_tempk(iel)
+    enddo
+
+    call viscfa(imvisf, kspe, viscfk, viscbk)
+
+    deallocate(kspe)
+
+    allocate(grad_dd(nfac))
+
+    do ifac = 1, nfac
+      grad_dd(ifac) = 0.d0
+    enddo
+
+    do iesp = 1, nscasp
+
+      ivarsp = isca(iscasp(iesp))
+      call field_get_val_s(ivarfl(ivarsp), cvar_yk)
+      call field_get_key_struct_gas_mix_species_prop(ivarfl(ivarsp), s_k)
+
+      mk =  s_k%mol_mas
+      cpk = s_k%cp
+      cvk = cpk - cs_physical_constants_r/mk
+
+      use_previous = 0
+      call field_gradient_scalar(ivarfl(ivarsp), use_previous, imrgra, inc, &
+                                 iccocg, grad)
+
+      do ifac = 1, nfac
+
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
+
+        dijpfx = dijpf(1,ifac)
+        dijpfy = dijpf(2,ifac)
+        dijpfz = dijpf(3,ifac)
+
+        pnd   = pond(ifac)
+
+        ! Computation of II' and JJ'
+        diipfx = cdgfac(1,ifac) - (xyzcen(1,ii) + (1.d0-pnd) * dijpfx)
+        diipfy = cdgfac(2,ifac) - (xyzcen(2,ii) + (1.d0-pnd) * dijpfy)
+        diipfz = cdgfac(3,ifac) - (xyzcen(3,ii) + (1.d0-pnd) * dijpfz)
+        djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj) +  pnd  * dijpfx
+        djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj) +  pnd  * dijpfy
+        djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj) +  pnd  * dijpfz
+
+        yip = cvar_yk(ii) + grad(1,ii)*diipfx &
+                          + grad(2,ii)*diipfy &
+                          + grad(3,ii)*diipfz
+        yjp = cvar_yk(jj) + grad(1,jj)*djjpfx &
+                          + grad(2,jj)*djjpfy &
+                          + grad(3,jj)*djjpfz
+
+        ! Gradient of deduced species
+        grad_dd(ifac) = grad_dd(ifac)-(yjp-yip)
+
+        flux = viscfk(ifac)*cvk*(yip-yjp)
+
+        smbrs(ii) = smbrs(ii) + flux
+        smbrs(jj) = smbrs(jj) - flux
+
+      enddo
+
+    enddo
+
+    ! Diffusion flux for the deduced species
+
+    call field_get_key_struct_gas_mix_species_prop(iddgas, s_k)
+    mk =  s_k%mol_mas
+    cpk = s_k%cp
+    cvk = cpk - cs_physical_constants_r/mk
+
+    do ifac = 1, nfac
+
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
+
+      flux = viscf(ifac)*grad_dd(ifac)*cvk
+
+      smbrs(ii) = smbrs(ii) + flux
+      smbrs(jj) = smbrs(jj) - flux
+
+    enddo
+
+    deallocate(grad_dd)
+
+  endif ! ippmod(igmix)
+
   ! Assembling based on boundary faces
   ! for the faces where a flux or a temperature is imposed,
   ! all is taken into account by the energy diffusion term.
@@ -570,11 +687,87 @@ if( idiff(ivar).ge. 1 ) then
               )**2                                               &
             ))
 
-
       smbrs(iel) = smbrs(iel) + flux
+
     endif
 
   enddo
+
+  if (ippmod(igmix).gt.0) then
+
+    call field_get_coefa_s(ivarfl(isca(itempk)), coefat)
+    call field_get_coefb_s(ivarfl(isca(itempk)), coefbt)
+
+    allocate(grad_dd(nfabor), btemp(nfabor))
+
+    use_previous = 0
+    call field_gradient_scalar(ivarfl(isca(itempk)), use_previous, imrgra, inc,&
+                               iccocg, grad)
+
+    do ifac = 1, nfabor
+      grad_dd(ifac) = 0.d0
+
+      tip = cvar_tempk(iel) + grad(1,iel)*diipb(1,ifac) &
+                            + grad(2,iel)*diipb(2,ifac) &
+                            + grad(3,iel)*diipb(3,ifac)
+      btemp(ifac) = coefat(ifac)+coefbt(ifac)*tip
+    enddo
+
+    do iesp = 1, nscasp
+      ivarsp = isca(iscasp(iesp))
+      call field_get_coefa_s(ivarfl(ivarsp), coefayk)
+      call field_get_coefb_s(ivarfl(ivarsp), coefbyk)
+      call field_get_val_s(ivarfl(ivarsp), cvar_yk)
+      call field_get_key_struct_gas_mix_species_prop(ivarfl(ivarsp), s_k)
+
+      mk =  s_k%mol_mas
+      cpk = s_k%cp
+      cvk = cpk - cs_physical_constants_r/mk
+
+      use_previous = 0
+      call field_gradient_scalar(ivarfl(ivarsp), use_previous, imrgra, inc, &
+                                 iccocg, grad)
+
+      do ifac = 1, nfabor
+        if (ifbet(ifac).eq.0) then
+          iel = ifabor(ifac)
+
+          yip = cvar_yk(iel) + grad(1,iel)*diipb(1,ifac) &
+                             + grad(2,iel)*diipb(2,ifac) &
+                             + grad(3,iel)*diipb(3,ifac)
+
+          gradnb = coefayk(ifac)+(coefbyk(ifac)-1)*yip
+
+          grad_dd(ifac) =  grad_dd(ifac) - gradnb
+
+          flux = viscbk(ifac)*w1(iel)*btemp(ifac)*cvk/distb(ifac)*(-gradnb)
+
+          smbrs(iel) = smbrs(iel) + flux
+        endif
+      enddo ! end ifac loop
+    enddo ! end iesp loop
+
+    ! Boundary diffusion flux for the deduced species
+    call field_get_key_struct_gas_mix_species_prop(iddgas, s_k)
+
+    mk =  s_k%mol_mas
+    cpk = s_k%cp
+    cvk = cpk - cs_physical_constants_r/mk
+
+    do ifac = 1, nfabor
+      if (ifbet(ifac).eq.0) then
+        iel = ifabor(ifac)
+
+        flux = viscbk(ifac)*w1(iel)*btemp(ifac)*cvk/distb(ifac)*grad_dd(ifac)
+
+        smbrs(iel) = smbrs(iel) + flux
+      endif
+    enddo
+
+    deallocate(grad_dd, btemp)
+    deallocate(viscfk, viscbk)
+
+  endif ! ippmod(igmix)
 
 else
 
@@ -674,7 +867,8 @@ endif
 ! The state equation is used P   =P(RHO   ,H   )
 
 ! Computation of P and T at cell centers
-call cs_cf_thermo_pt_from_de(crom, cvar_energ, cvar_pr, cvar_tempk, vel, ncel)
+call cs_cf_thermo_pt_from_de(cpro_cp, cpro_cv, crom, cvar_energ, cvar_pr, &
+                             cvar_tempk, vel, ncel)
 
 !===============================================================================
 ! 7. Communication of pressure, energy and temperature

@@ -1641,9 +1641,21 @@ if (ippmod(icompf).ge.0) then
     write(nfecra,8020) viscv0
     iok = iok + 1
   endif
-  if (ieos.ne.1.and.ieos.ne.2) then
+  if (ieos.lt.1.or.ieos.gt.3) then
     write(nfecra,8030) 'IEOS (Equation of state. )',ieos
-  iok = iok + 1
+    iok = iok + 1
+  endif
+  if (ieos.eq.2.and.gammasg.lt.1.d0) then
+    write(nfecra,8040) gammasg
+    iok = iok + 1
+  endif
+  if (ieos.eq.1.and.cp0.lt.cv0) then
+    write(nfecra,8050) cp0, cv0
+    iok = iok + 1
+  endif
+  if ((ieos.eq.1.or.ieos.eq.3).and.psginf.ne.0.d0) then
+    write(nfecra,8060) psginf
+    iok = iok + 1
   endif
 endif
 
@@ -4111,7 +4123,7 @@ endif
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
 '@',    a33,                          ' DOIT ETRE UN ENTIER',   /,&
-'@    EGAL A 1 OU 2',                                           /,&
+'@    ENTRE 1 ET 3',                                            /,&
 '@    IL VAUT ICI', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
@@ -4121,6 +4133,58 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+ 8040 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========   MODULE COMPRESSIBLE                         ',/,&
+'@                                                            ',/,&
+'@    LE COEFFICIENT POLYTROPIQUE DE LA LOI ''STIFFENED GAS'' ',/,&
+'@    DOIT ETRE UN REEL SUPERIEUR A 1.                        ',/,&
+'@    IL A POUR VALEUR ',E12.4                                 ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier uscfx2.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8050 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========   MODULE COMPRESSIBLE                         ',/,&
+'@                                                            ',/,&
+'@    LE RAPPORT DES CHALEURS SPECIFIQUES (CP0 / CV0)         ',/,&
+'@    DOIT ETRE UN REEL STRICTEMENT SUPERIEUR A 1.            ',/,&
+'@    CP0 A POUR VALEUR ',E12.4                                ,/,&
+'@    CV0 A POUR VALEUR ',E12.4                                ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier uscfx2.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8060 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========   MODULE COMPRESSIBLE                         ',/,&
+'@                                                            ',/,&
+'@    LA PRESSION LIMITE DE LA LOI ''STIFFENED GAS'' DOIT ETRE',/,&
+'@    NULLE EN GAZ PARFAIT OU MELANGE DE GAZ PARFAIT          ',/,&
+'@    PSGINF A POUR VALEUR ',E12.4                            ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier uscfx2.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  9000 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -6647,7 +6711,7 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
 '@',    a33,                          ' MUST BE AN INTEGER',   /, &
-'@    EQUAL TO 1 OR 2',                                         /,&
+'@    BETWEEN 1 and 3',                                         /,&
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
@@ -6657,6 +6721,61 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+ 8040 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@               COMPRESSIBLE FLOW MODULE',                     /,&
+'@                                                            ',/,&
+'@    THE POLYTROPIC COEFFICIENT FOR THE STIFFENED GAS LAW    ',/,&
+'@    MUST BE A REAL NUMBER SUPERIOR TO 1.                    ',/,&
+'@    IT HAS VALUE ',E12.4                                     ,/,&
+'@                                                            ',/,&
+'@  Computation CAN NOT run                                   ',/,&
+'@                                                            ',/,&
+'@  Check uscfx2.                                             ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8050 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@               COMPRESSIBLE FLOW MODULE',                     /,&
+'@                                                            ',/,&
+'@    THE SPECIFIC HEAT RATIO (CP0 / CV0)                     ',/,&
+'@    MUST BE A REAL NUMBER STRICTLY SUPERIOR TO 1.           ',/,&
+'@    CP0 HAS VALUE ',E12.4                                    ,/,&
+'@    CV0 HAS VALUE ',E12.4                                    ,/,&
+'@                                                            ',/,&
+'@  Computation CAN NOT run                                   ',/,&
+'@                                                            ',/,&
+'@  Check uscfx2.                                             ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8060 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@               COMPRESSIBLE FLOW MODULE',                     /,&
+'@                                                            ',/,&
+'@    THE LIMIT PRESSSURE OF THE STIFFENED GAS LAW MUST BE    ',/,&
+'@    ZERO IN IDEAL GAS OR IDEAL GAS MIX.                     ',/,&
+'@    PSGINF HAS VALUE ',E12.4                                 ,/,&
+'@                                                            ',/,&
+'@  Computation CAN NOT run                                   ',/,&
+'@                                                            ',/,&
+'@  Check uscfx2.                                             ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  9000 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

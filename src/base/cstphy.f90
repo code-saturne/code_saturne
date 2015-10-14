@@ -96,6 +96,12 @@ module cstphy
   !>    - 0: false
   integer(c_int), pointer, save :: ivivar
 
+  !> Sutherland law for laminar viscosity and thermal conductivity
+  !> Only useful in gas mix (igmix) specific physics
+  !> - 1: Sutherland law
+  !> - 0: low temperature law (linear except for helium)
+  integer(c_int), pointer, save :: ivsuth
+
   !> reference density.
   !> Negative value: not initialized.
   !> Its value is not used in gas or coal combustion modelling (it will be
@@ -716,7 +722,7 @@ module cstphy
     ! global fluid properties structure
 
     subroutine cs_f_fluid_properties_get_pointers(ixyzp0, ieos, icp, icv,      &
-                                                  irovar, ivivar, ro0,         &
+                                                  irovar, ivivar, ro0, ivsuth, &
                                                   viscl0, p0, pred0, xyzp0, t0,&
                                                   cp0, cv0, xmasmr, psginf,    &
                                                   gammasg, pther, pthera,      &
@@ -724,7 +730,7 @@ module cstphy
       bind(C, name='cs_f_fluid_properties_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ixyzp0, ieos, icp, icv, irovar, ivivar
+      type(c_ptr), intent(out) :: ixyzp0, ieos, icp, icv, irovar, ivivar, ivsuth
       type(c_ptr), intent(out) :: ro0, viscl0, p0, pred0
       type(c_ptr), intent(out) :: xyzp0, t0, cp0, cv0, xmasmr, psginf, gammasg
       type(c_ptr), intent(out) :: pther, pthera, pthermax
@@ -808,12 +814,12 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_ixyzp0, c_ieos, c_icp, c_icv, c_irovar, c_ivivar
-    type(c_ptr) :: c_ro0, c_viscl0, c_p0
+    type(c_ptr) :: c_ivsuth, c_ro0, c_viscl0, c_p0
     type(c_ptr) :: c_pred0, c_xyzp0, c_t0, c_cp0, c_cv0, c_xmasmr, c_psginf
     type(c_ptr) :: c_gammasg, c_pther, c_pthera, c_pthermax
 
     call cs_f_fluid_properties_get_pointers(c_ixyzp0, c_ieos, c_icp, c_icv, &
-                                            c_irovar, c_ivivar,             &
+                                            c_irovar, c_ivivar, c_ivsuth,   &
                                             c_ro0, c_viscl0, c_p0, c_pred0, &
                                             c_xyzp0, c_t0, c_cp0, c_cv0,    &
                                             c_xmasmr, c_psginf, c_gammasg,  &
@@ -826,6 +832,7 @@ contains
     call c_f_pointer(c_icv, icv)
     call c_f_pointer(c_irovar, irovar)
     call c_f_pointer(c_ivivar, ivivar)
+    call c_f_pointer(c_ivsuth, ivsuth)
     call c_f_pointer(c_ro0, ro0)
     call c_f_pointer(c_viscl0, viscl0)
     call c_f_pointer(c_p0, p0)

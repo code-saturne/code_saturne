@@ -20,32 +20,20 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cfphyv &
-!================
+!> \file cfphyv.f90
+!> \brief Computation of variable physical properties for the specific physics
+!> compressible.
+!>
+!-------------------------------------------------------------------------------
 
- ( propce )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! ROUTINE PHYSIQUE PARTICULIERE : COMPRESSIBLE SANS CHOC
-
-! Calcul des proprietes physiques variables
-
-
+!------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-!__________________!____!_____!________________________________________________!
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!______________________________________________________________________________
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+subroutine cfphyv
 
 !===============================================================================
 ! Module files
@@ -62,6 +50,7 @@ use ppthch
 use ppincl
 use mesh
 use field
+use cs_cf_bindings
 
 !===============================================================================
 
@@ -69,12 +58,12 @@ implicit none
 
 ! Arguments
 
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer :: iel, ifcven, ifclam
 double precision, dimension(:), pointer :: cpro_venerg, cpro_lambda
+double precision, dimension(:), pointer :: cpro_cp, cpro_cv
+double precision, dimension(:), pointer :: mix_mol_mas
 
 !===============================================================================
 
@@ -82,15 +71,11 @@ double precision, dimension(:), pointer :: cpro_venerg, cpro_lambda
 ! 1. Update Lambda/Cv
 !===============================================================================
 
-! On a vérifié auparavant que CV0 était non nul.
-! Si CV variable est nul, c'est une erreur utilisateur. On fait
-!     un test à tous les passages (pas optimal), sachant que pour
-!     le moment, on est en gaz parfait avec CV constant : si quelqu'un
-!     essaye du CV variable, ce serait dommage que cela lui explose à la
-!     figure pour de mauvaises raisons.
-! Si la diffusivite de ienerg est constante, celle de itempk est forcement
-!     constante ainsi que ICV.EQ.0, par construction dans
-!     le sous-programme cfvarp
+! It has been checked before this subroutine that cv0 was non zero.
+! If Cv is variable and zero, it is an error due to the user.
+! Here a test is performed at each call (not optimal).
+! If the diffusivity of the total energy is constant, then the thermal
+! conductivity and the isochoric specific heat should be constant.
 
 call field_get_key_int (ivarfl(isca(ienerg)), kivisl, ifcven)
 if (ifcven.ge.0) then
@@ -107,23 +92,26 @@ if (ifcven.ge.0) then
     do iel = 1, ncel
       cpro_venerg(iel) = visls0(itempk)
     enddo
-
   endif
 
   if (icv.gt.0) then
+    call field_get_val_s(iprpfl(icp), cpro_cp)
+    call field_get_val_s(iprpfl(icv), cpro_cv)
+    call field_get_val_s_by_name("mix_mol_mas", mix_mol_mas)
+
+    call cs_cf_thermo_cv(cpro_cp, mix_mol_mas, cpro_cv, ncel)
 
     do iel = 1, ncel
-      if(propce(iel,ipproc(icv)).le.0.d0) then
-        write(nfecra,2000)iel,propce(iel,ipproc(icv))
+      if(cpro_cv(iel).le.0.d0) then
+        write(nfecra,2000)iel,cpro_cv(iel)
         call csexit (1)
         !==========
       endif
     enddo
 
     do iel = 1, ncel
-      cpro_venerg(iel) = cpro_venerg(iel) / propce(iel,ipproc(icv))
+      cpro_venerg(iel) = cpro_venerg(iel) / cpro_cv(iel)
     enddo
-
   else
 
     do iel = 1, ncel
@@ -138,6 +126,7 @@ else
 
 endif
 
+
 !--------
 ! Formats
 !--------
@@ -146,16 +135,16 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION (MODULE COMPRESSIBLE)  ',/,&
-'@    =========                                               ',/,&
+'@ @@ WARNING : STOP DURING EXECUTION (COMPRESSIBLE MODULE)   ',/,&
+'@    =======                                                 ',/,&
 '@                                                            ',/,&
-'@  La capacité calorifique à volume constant présente (au    ',/,&
-'@    moins) une valeur négative ou nulle :                   ',/,&
-'@    cellule ',I10,   '  Cv = ',E18.9                         ,/,&
+'@  The isochoric specific heat has at leat one value         ',/,&
+'@    negative or zero:                                       ',/,&
+'@    cell    ',I10,   '  Cv = ',E18.9                         ,/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  The computation will not run further.                     ',/,&
 '@                                                            ',/,&
-'@  Verifier usphyv.                                          ',/,&
+'@  Check usphyv.                                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

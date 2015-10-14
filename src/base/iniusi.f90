@@ -74,6 +74,7 @@ use ppcpfu
 use radiat
 use cs_coal_incl
 use cs_c_bindings
+use cs_cf_bindings
 use field
 
 !===============================================================================
@@ -86,8 +87,8 @@ implicit none
 
 integer          nmodpp, ifcvsl
 integer          nscmax, nscusi
-integer          iihmpu
-double precision relaxp, extrap
+integer          iihmpu, l_size
+double precision relaxp, extrap, l_cp(1), l_xmasm(1), l_cv(1)
 
 !===============================================================================
 
@@ -219,24 +220,6 @@ nscmax = nscamx
 nscusi = nscaus
 iihmpu = iihmpr
 
-if (ippmod(icompf).ge.0) then
-
-  ! For the compressible model, call to uscfx1 to get ieos as well as
-  ! scalar_diffusivity_id for itempk and iviscv.
-  ! With the GUI, ieos has been read above in the call to uippmo, and
-  ! iviscv has been read below in the call to fldvar (csvvva).
-
-  call uscfx1
-  ! Dynamic viscosity of reference of the scalar total energy (ienerg).
-  call field_get_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
-  if (ifcvsl.ge.0 .or. icv.gt.0) then
-    call field_set_key_int(ivarfl(isca(ienerg)), kivisl, 0)
-  else
-    call field_set_key_int(ivarfl(isca(ienerg)), kivisl, -1)
-  endif
-endif
-
-
 ! ---> Physique particuliere : darcy
 
 if (ippmod(idarcy).ge.0) then
@@ -345,12 +328,25 @@ endif
 
 call indsui(isuite)
 
+! Default values of physical properties for the compressible model
 if (ippmod(icompf).ge.0) then
-!      For compressible model, call to uscfx2 to get visls0(itempk), viscv0,
-!      xmasmr, ivivar and  psginf, gammasg, cv0 in stiffened gas thermodynamic
-!      With GUI, visls0(itempk), viscv0, xmasmr and ivivar have been read
-!      below in the call to csphys.
+  ! ieos has been set above in uippmo with the GUI or in usppmo without the GUI.
+  ! The variability of the thermal conductivity
+  ! (scalar_diffusivity_id for itempk) and the volume viscosity (iviscv) has
+  ! been set in fldprp.
+
+  ! Here call to uscfx2 to get visls0(itempk), viscv0, xmasmr, ivivar and
+  ! psginf, gammasg, cv0 in stiffened gas thermodynamic.
+  ! With GUI, visls0(itempk), viscv0, xmasmr and ivivar have already been read
+  ! above in the call to csphys.
   call uscfx2
+
+  ! Compute cv0 according to chosen EOS.
+  l_size = 1
+  l_cp(1) = cp0 ! dummy argument in stiffened gas
+  l_xmasm(1) = xmasmr ! dummy argument in stiffened gas
+  call cs_cf_thermo_cv(l_cp, l_xmasm, l_cv, l_size)
+  cv0 = l_cv(1)
 endif
 
 ! Choose which 3x3 cocg matrixes are computed for gradient algorithms.

@@ -103,8 +103,13 @@ typedef struct {
   double  mu_b;
   double  lambda_a;
   double  lambda_b;
+  double  muref;     /* ref. viscosity for Sutherland law                */
+  double  lamref;    /* ref. thermal conductivity for Sutherland law     */
+  double  trefmu;    /* ref. temperature for viscosity in Sutherland law */
+  double  treflam;   /* ref. temperature for conductivity Sutherland law */
+  double  smu;       /* Sutherland temperature for viscosity             */
+  double  slam;      /* Sutherland temperature for conductivity          */
 } cs_gas_mix_species_prop_t;
-
 
 /*----------------------------------------------------------------------------
  * Boundary condition types

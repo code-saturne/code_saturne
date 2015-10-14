@@ -78,27 +78,28 @@ implicit none
 
 ! Local variables
 
-integer          iel   , iscal, ifcvsl, iesp, jesp, ierror
-integer          f_id
+integer          iel   , iscal, ifcvsl, iesp, jesp, ierror, f_id
 
 character(len=80) :: name_i, name_j, name_d
 
-double precision xsum_mu, xsum_lambda, phi_mu, phi_lambda, tk, x_k
+double precision xsum_mu, xsum_lambda, phi_mu, phi_lambda, x_k
 double precision mu_i, mu_j, lambda_i, lambda_j
 
 type(gas_mix_species_prop), pointer :: s_j, s_i
 type(gas_mix_species_prop), target :: s_d
 type(gas_mix_species_prop), dimension(:), allocatable, target :: s_k
 
-double precision, allocatable, dimension(:) :: lambd_m
+double precision, allocatable, dimension(:), target :: lam_loc
+double precision, allocatable, dimension(:), target :: tk_loc
 
 double precision, dimension(:), pointer :: cpro_rho
 double precision, dimension(:), pointer :: cpro_viscl, cpro_cp
 double precision, dimension(:), pointer :: cpro_venth, cpro_vyk
-double precision, dimension(:), pointer :: cvar_enth , cvar_yk
+double precision, dimension(:), pointer :: cvar_enth , cvar_yk, tempk
 double precision, dimension(:), pointer :: cvar_yi, cvar_yj
 double precision, dimension(:), pointer :: y_d, ya_d
 double precision, dimension(:), pointer :: mix_mol_mas
+double precision, dimension(:), pointer :: lambda
 
 !===============================================================================
 
@@ -115,10 +116,17 @@ if (ierror.gt.0) then
   call csexit(1)
 endif
 
-call field_get_val_s(ivarfl(isca(iscalt)), cvar_enth)
+! In compressible, the density is updated after the pressure step (cfmspr)
+if (ippmod(icompf).lt.0) then
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_enth)
+  ! Density value
+  call field_get_val_s(icrom, cpro_rho)
+  allocate(tk_loc(ncel))
+  tempk => tk_loc
+else
+  call field_get_val_s(ivarfl(isca(itempk)), tempk)
+endif
 
-! Density value
-call field_get_val_s(icrom, cpro_rho)
 ! Molecular dynamic viscosity value
 call field_get_val_s(iprpfl(iviscl), cpro_viscl)
 ! Specific heat value
@@ -132,10 +140,10 @@ else
 endif
 
 ! Lambda/Cp value
-call field_get_key_int (ivarfl(isca(iscalt)), kivisl, ifcvsl)
+call field_get_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)
 call field_get_val_s(ifcvsl, cpro_venth)
 
-call field_get_val_s_by_name("mix_mol_mas", mix_mol_mas)
+call field_get_val_s(iprpfl(igmxml), mix_mol_mas)
 
 ! Deduce mass fraction (y_d) which is
 ! y_h2o_g in presence of steam or
@@ -144,15 +152,24 @@ if (ippmod(igmix).eq.0) then
   name_d = "y_he"
 elseif (ippmod(igmix).eq.1) then
   name_d = "y_h2"
-elseif (ippmod(igmix).ge.2) then
+elseif (ippmod(igmix).ge.2.and.ippmod(igmix).lt.5) then
   name_d = "y_h2o_g"
+else ! ippmod(igmix).eq.5
+  name_d = "y_o2"
 endif
 call field_get_val_s_by_name(name_d, y_d)
 call field_get_val_prev_s_by_name(name_d, ya_d)
 call field_get_id(name_d, f_id)
 call field_get_key_struct_gas_mix_species_prop(f_id, s_d)
 
-allocate(lambd_m(ncelet))
+if (ippmod(icompf).lt.0) then
+  allocate(lam_loc(ncelet))
+  lambda => lam_loc
+else
+  call field_get_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
+  call field_get_val_s(ifcvsl, lambda)
+endif
+
 allocate(s_k(nscasp+1))
 
 !===============================================================================
@@ -187,7 +204,8 @@ do iel = 1, ncel
   ! Mixture molecular diffusivity
   cpro_viscl(iel) = 0.d0
 
-  lambd_m(iel) = 0.d0
+  ! Thermal conductivity
+  lambda(iel) = 0.d0
 enddo
 
 do iesp = 1, nscasp
@@ -242,7 +260,7 @@ do iel = 1, ncel
   cpro_cp(iel) = cpro_cp(iel) + y_d(iel)*s_d%cp
 enddo
 
-!==================================================================
+!===========================================================
 ! gas mixture density function of the temperature, pressure
 ! and the species scalars with taking into account the
 ! dilatable effects, as below:
@@ -259,17 +277,19 @@ enddo
 !         p0            : atmos. pressure (Pa)
 !         pther         : pressure (Pa) integrated on the
 !                         fluid domain
-!==================================================================
+!===========================================================
 
-do iel = 1, ncel
-  ! Evaluate the temperature thanks to the enthalpy
-  tk = cvar_enth(iel)/ cpro_cp(iel)
-  if (idilat.eq.3) then
-    cpro_rho(iel) = pther*mix_mol_mas(iel)/(cs_physical_constants_r*tk)
-  else
-    cpro_rho(iel) = p0*mix_mol_mas(iel)/(cs_physical_constants_r*tk)
-  endif
-enddo
+if (ippmod(icompf).lt.0) then
+  do iel = 1, ncel
+    ! Evaluate the temperature thanks to the enthalpy
+    tempk(iel) = cvar_enth(iel)/ cpro_cp(iel)
+    if (idilat.eq.3) then
+      cpro_rho(iel) = pther*mix_mol_mas(iel)/(cs_physical_constants_r*tempk(iel))
+    else
+      cpro_rho(iel) = p0*mix_mol_mas(iel)/(cs_physical_constants_r*tempk(iel))
+    endif
+  enddo
+endif
 
 !==================================================
 ! Dynamic viscosity and conductivity coefficient
@@ -295,12 +315,20 @@ do iesp = 1, nscasp+1
 
   do iel = 1, ncel
 
-    tk = cvar_enth(iel) / cpro_cp(iel)
     ! Viscosity and conductivity laws
     ! for each mass fraction species
+
+    if (ivsuth.eq.0) then
+	! With a linear law
     call cs_local_physical_properties &
     !================================
-   ( mu_i, lambda_i, tk, tkelvi, s_i, name_i)
+   ( mu_i, lambda_i, tempk(iel), tkelvi, s_i, name_i)
+    else
+      ! Or : with a Sutherland law
+      call cs_local_physical_properties_suth                        &
+      !================================
+     ( mu_i, lambda_i, tempk(iel), s_i, name_i)
+    endif
 
     xsum_mu = 0.d0
     xsum_lambda = 0.d0
@@ -321,20 +349,28 @@ do iesp = 1, nscasp+1
         call field_get_name (ivarfl(isca(iscasp(jesp))), name_j)
       endif
 
+      if (ivsuth.eq.0) then
+	  ! With a linear law
       call cs_local_physical_properties &
       !================================
-    ( mu_j, lambda_j, tk, tkelvi, s_j, name_j)
+     ( mu_j, lambda_j, tempk(iel), tkelvi, s_j, name_j)
+      else
+        ! Or : with a Sutherland law
+        call cs_local_physical_properties_suth                        &
+        !================================
+       ( mu_j, lambda_j, tempk(iel), s_j, name_j)
+      endif
 
       phi_mu = (1.d0/sqrt(8.d0))                              &
-          *(1.d0 +  s_i%mol_mas / s_j%mol_mas)**(-0.5d0)      &
-          *(1.d0 + (mu_i        / mu_j       )**(+0.5d0)      &
-                 * (s_j%mol_mas / s_i%mol_mas)**(+0.25d0))**2
+           *(1.d0 +  s_i%mol_mas / s_j%mol_mas)**(-0.5d0)     &
+           *(1.d0 + (mu_i        / mu_j       )**(+0.5d0)     &
+           * (s_j%mol_mas / s_i%mol_mas)**(+0.25d0))**2
 
 
       phi_lambda = (1.d0/sqrt(8.d0))                          &
-          *(1.d0 +  s_i%mol_mas / s_j%mol_mas)**(-0.5d0)      &
-          *(1.d0 + (lambda_i    / lambda_j   )**(+0.5d0)      &
-                 * (s_j%mol_mas / s_i%mol_mas)**(+0.25d0))**2
+           *(1.d0 +  s_i%mol_mas / s_j%mol_mas)**(-0.5d0)     &
+           *(1.d0 + (lambda_i    / lambda_j   )**(+0.5d0)     &
+           * (s_j%mol_mas / s_i%mol_mas)**(+0.25d0))**2
 
       x_k = cvar_yj(iel)*mix_mol_mas(iel)/s_j%mol_mas
       xsum_mu = xsum_mu + x_k * phi_mu
@@ -348,8 +384,7 @@ do iesp = 1, nscasp+1
     x_k = cvar_yi(iel)*mix_mol_mas(iel)/s_i%mol_mas
     cpro_viscl(iel) = cpro_viscl(iel) + x_k * mu_i / xsum_mu
 
-
-    lambd_m(iel) = lambd_m(iel) + x_k * lambda_i / xsum_lambda
+    lambda(iel) = lambda(iel) + x_k * lambda_i / xsum_lambda
 
   enddo
 enddo
@@ -372,12 +407,19 @@ do iesp = 1, nscasp
 
 enddo
 
-! --- Lambda/Cp of the thermal scalar
-do iel = 1, ncel
-  cpro_venth(iel) = lambd_m(iel)/cpro_cp(iel)
-enddo
+if(ippmod(icompf).lt.0) then
+  ! --- Lambda/Cp of the thermal scalar
+  do iel = 1, ncel
+    cpro_venth(iel) = lambda(iel)/cpro_cp(iel)
+  enddo
 
-deallocate(lambd_m)
+  ! deallocate local arrays if not compressible
+  deallocate(tk_loc)
+  deallocate(lam_loc)
+  tempk => null()
+  lambda => null()
+endif
+
 deallocate(s_k)
 
 !===============================================================================
@@ -505,3 +547,70 @@ return
 
 end subroutine cs_local_physical_properties
 
+subroutine cs_local_physical_properties_suth(mu, lambda, tk,spro,name)
+!===============================================================================
+use field
+use cs_c_bindings
+use cstphy
+use ppthch
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision mu, lambda
+double precision tk
+
+character(len=80) :: name
+type(gas_mix_species_prop)  spro
+
+! Local variables
+
+integer          f_id
+double precision muref, lamref
+double precision trefmu, treflam, smu, slam
+
+!===============================================================================
+! Sutherland law for viscosity and thermal conductivity
+! The viscosity law for each specie is defined
+! as below:
+!              ----------------------------------
+! mu = muref*(T/Tref)**(3/2)*(Tref+S1)/(T+S1)
+
+! The conductivity expression for each specie is
+! defined as:
+!              ----------------------------------
+!  lambda = lambdaref*(T/Tref)**(3/2)*(Tref+S2)/(T+S2)
+!             ------------------------------------
+! S1 and S2 are respectively Sutherland temperature for conductivity and
+! Sutherland temperature for viscosity of the considered specie
+! Tref is a reference temperature, equal to 273K for a perfect gas.
+! For steam (H20), Tref has not the same value in the two formulae.
+! Available species : O2, N2, H2, H20 and  He
+! The values for the parameters come from F.M. White's book "Viscous Fluid Flow"
+!================================================================================
+
+if (name.ne.'y_h2o_g' .and. name.ne.'y_he' .and. name.ne.'y_o2'         &
+     .and. name.ne.'y_n2' .and. name.ne.'y_h2') then
+  call csexit(1)
+endif
+
+muref = spro%muref
+lamref = spro%lamref
+trefmu = spro%trefmu
+treflam = spro%treflam
+smu = spro%smu
+slam = spro%slam
+
+mu =  muref * (tk / trefmu)**1.5d0                              &
+     * ((trefmu+smu) / (tk+smu))
+lambda = lamref  * (tk / treflam)**1.5d0                        &
+     * ((treflam+slam) / (tk+slam))
+
+!----
+! End
+!----
+return
+
+end subroutine cs_local_physical_properties_suth

@@ -55,10 +55,10 @@ subroutine cfmsfp &
 ! ckupdc           ! tr ! <-- ! work array for the head loss                   !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! variable value associated to the mass source   !
-! (ncesmp,*   )    !    !     ! term (for ivar=ipr, smacel is the mass flux    !
+! (ncesmp,*)       !    !     ! term (for ivar=ipr, smacel is the mass flux    !
 !                  !    !     ! \f$ \Gamma^n \f$)                              !
 ! flumas(nfac)     ! tr ! --> ! flux de masse aux faces internes               !
-! flumab(nfabor    ! tr ! --> ! flux de masse aux faces de bord                !
+! flumab(nfabor)   ! tr ! --> ! flux de masse aux faces de bord                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -123,6 +123,7 @@ double precision, allocatable, dimension(:) :: w10, w11, w12
 double precision, dimension(:), pointer :: crom, brom
 double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:,:), allocatable :: tsexp, gavinj
+double precision, allocatable, dimension(:,:) :: vel0
 double precision, dimension(:,:,:), allocatable :: tsimp
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:,:) :: viscce
@@ -151,6 +152,7 @@ allocate(tsexp(3,ncelet))
 allocate(gavinj(3,ncelet))
 allocate(tsimp(3,3,ncelet))
 allocate(coefbv(3,3,nfabor))
+allocate(vel0(3,ncelet))
 
 if (idften(iu).eq.1) then
   allocate(viscf(1, 1, nfac), viscb(nfabor))
@@ -223,7 +225,7 @@ enddo
 itsqdm = 0
 if (itsqdm.ne.0) then
 
-  ! --- User soure term
+  ! --- User source term
   call ustsnv &
   !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
@@ -307,7 +309,7 @@ if (itsqdm.ne.0) then
 
      endif
 
-  ! --- If no dissusion, viscosity is set to 0.
+  ! --- If no diffusion, viscosity is set to 0.
   else
 
      do ifac = 1, nfac
@@ -354,27 +356,37 @@ if (itsqdm.ne.0) then
   icvflb , icvfli ,                                              &
   tsexp  )
 
-  if (ncesmp.gt.0) then
-    ! --- Mass sourceterm
-    !     All is explicit for the moment... to be changed when this
-    !      term is tested (see remark at the begining of this file)
-    call catsmv &
-    !==========
- ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
-   icetsm , itypsm(1,iu),                                      &
-   cell_f_vol   , vela , smacel(1,iu) ,smacel(1,ipr) ,         &
-   tsexp  , tsimp , gavinj )
+endif
 
-    do iel = 1, ncel
-      do isou = 1, 3
-        tsexp(isou,iel) = tsexp(isou,iel) + gavinj(isou,iel)
-      enddo
+! End of the test on momentum source terms
+
+! Mass source term
+if (ncesmp.gt.0) then
+
+  ! The momentum balance is used in its conservative form here
+  ! so the mass source term is only composed of gamma*uinj
+  ! => array of previous velocity has to be set to zero
+
+  do iel = 1, ncel
+    do isou = 1,3
+      vel0(isou,iel) = 0.d0
     enddo
+  enddo
 
-  endif
+  call catsmv &
+       !==========
+     ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
+       icetsm , itypsm(1,iu),                                      &
+       cell_f_vol   , vel0 , smacel(1,iu) ,smacel(1,ipr) ,         &
+       tsexp  , tsimp , gavinj )
+
+  do iel = 1, ncel
+    do isou = 1, 3
+      tsexp(isou,iel) = tsexp(isou,iel) + gavinj(isou,iel)
+    enddo
+  enddo
 
 endif
-!     End of the test on momentum source terms
 
 ! --- Volumic forces term (gravity)
 do iel = 1, ncel
@@ -450,6 +462,7 @@ deallocate(viscf, viscb)
 if (allocated(secvif)) deallocate(secvif, secvib)
 if (allocated(viscce)) deallocate(viscce)
 deallocate(coefbv)
+deallocate(vel0)
 
 !--------
 ! FORMATS

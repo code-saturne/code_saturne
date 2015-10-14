@@ -260,13 +260,6 @@ double precision propce(ncelet,*)
 ! 2. Fill properties depending on the model
 !===============================================================================
 
-! Compressible
-if (ippmod(icompf).ge.0) then
-
-  call cfphyv(propce)
-
-endif
-
 ! Gas mixture modelling in presence of noncondensable gases or/and
 ! condensable gas as stream.
 if (ippmod(igmix).ge.0) then
@@ -274,6 +267,17 @@ if (ippmod(igmix).ge.0) then
   call cs_gas_mix_physical_properties
 
 endif
+
+! Compressible
+! Has to be called AFTER the gas mix physical properties the isobaric specific
+! heat (Cp) is computed in cs_gas_mix_physical_properties and used in cfphyv to
+! compute the isochoric specific heat, if gas mix specific physics is enabled.
+if (ippmod(icompf).ge.0) then
+
+  call cfphyv
+
+endif
+
 
 !----
 ! End

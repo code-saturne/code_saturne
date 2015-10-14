@@ -70,6 +70,8 @@ typedef struct {
                                  heat */
   int           irovar;       /* variable density field */
   int           ivivar;       /* variable viscosity field */
+  int           ivsuth;       /* Sutherland law for laminar viscosity and
+                                 thermal conductivity in gas mix spec. phys. */
   double        ro0;          /* reference density */
   double        viscl0;       /* reference molecular dynamic viscosity */
   double        p0;           /* reference pressure for the total pressure */

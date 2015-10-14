@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file cfvarp.f90
-!> \brief Variables location initialization for the compressible module,
+!> \brief Variables definition initialization for the compressible module,
 !> according to calculation type selected by the user.
 !>
 !------------------------------------------------------------------------------
@@ -63,28 +63,6 @@ implicit none
 
 !===============================================================================
 
-!===============================================================================
-! Interfaces
-!===============================================================================
-
-interface
-
-  subroutine cs_field_pointer_map_compressible()  &
-    bind(C, name='cs_field_pointer_map_compressible')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_field_pointer_map_compressible
-
-  subroutine cs_gui_labels_compressible()  &
-    bind(C, name='cs_gui_labels_compressible')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_gui_labels_compressible
-
-end interface
-
-!===============================================================================
-
 if (ippmod(icompf).ge.0) then
 
   ! Pointers and reference values definition
@@ -95,7 +73,7 @@ if (ippmod(icompf).ge.0) then
   iscalt = ienerg
 
   ! Alias for B.C.
-  irunh = ienerg
+  irunh = isca(ienerg)
 
   ! Temperature (post)
   call add_model_scalar_field('temperature', 'TempK', itempk)
@@ -114,27 +92,7 @@ if (ippmod(icompf).ge.0) then
   iviscv = 0
   viscv0 = 0.d0
 
-  ! MAP to C API
-  call cs_field_pointer_map_compressible
-
-  ! Mapping for GUI
-  if (iihmpr.eq.1) then
-    call cs_gui_labels_compressible
-  endif
-
-  ! Computation parameters
-
-  ! Variability of specific heat at constant volume Cv (constant by default)
-  cv0 = 0.d0
-  call cs_cf_set_thermo_options
-
-  ! Variability of volumetric molecular viscosity (gui setting)
-  if (iihmpr.eq.1) then
-    call csvvva(iviscv)
-  endif
-
 endif
-
 !--------
 ! Formats
 !--------

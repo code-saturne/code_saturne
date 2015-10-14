@@ -509,6 +509,12 @@ if (ippmod(igmix).ge.0) then
       sasp%mu_b = 5.512391d-6
       sasp%lambda_a = 6.2d-5
       sasp%lambda_b = 8.1d-3
+      sasp%muref = 1.919d-5
+      sasp%lamref = 0.0244d0
+      sasp%trefmu = 273.d0
+      sasp%treflam = 273.d0
+      sasp%smu = 139.d0
+      sasp%slam = 240.d0
 
       call field_set_key_struct_gas_mix_species_prop(f_id, sasp)
 
@@ -521,6 +527,12 @@ if (ippmod(igmix).ge.0) then
       sasp%mu_b = 5.494348d-6
       sasp%lambda_a = 6.784141d-5
       sasp%lambda_b = 5.564317d-3
+      sasp%muref = 1.663d-5
+      sasp%lamref = 0.0242d0
+      sasp%trefmu = 273.d0
+      sasp%treflam = 273.d0
+      sasp%smu = 107.d0
+      sasp%slam = 150.d0
 
       call field_set_key_struct_gas_mix_species_prop(f_id, sasp)
 
@@ -533,6 +545,12 @@ if (ippmod(igmix).ge.0) then
       sasp%mu_b = 0.0d0
       sasp%lambda_a = 0.144d0
       sasp%lambda_b = 0.0d0
+      sasp%muref = 1.874d-5
+      sasp%lamref = 0.647d0
+      sasp%trefmu = 273.d0
+      sasp%treflam = 273.d0
+      sasp%smu = 78.d0
+      sasp%slam = 78.d0
 
       call field_set_key_struct_gas_mix_species_prop(f_id, sasp)
 
@@ -545,6 +563,12 @@ if (ippmod(igmix).ge.0) then
       sasp%mu_b = 8.40d-6
       sasp%lambda_a = 4.431d-4
       sasp%lambda_b = 5.334d-2
+      sasp%muref = 8.411d-6
+      sasp%lamref = 0.0168d0
+      sasp%trefmu = 273.d0
+      sasp%treflam = 273.d0
+      sasp%smu = 97.d0
+      sasp%slam = 120.d0
 
       call field_set_key_struct_gas_mix_species_prop(f_id, sasp)
 
@@ -557,6 +581,12 @@ if (ippmod(igmix).ge.0) then
       sasp%mu_b = 8.2997d-6
       sasp%lambda_a = 7.6209d-5
       sasp%lambda_b = 0.016949d0
+      sasp%muref = 1.12d-5
+      sasp%lamref = 0.0181d0
+      sasp%trefmu = 350.d0
+      sasp%treflam = 300.d0
+      sasp%smu = 1064.d0
+      sasp%slam = 2200.d0
 
       call field_set_key_struct_gas_mix_species_prop(f_id, sasp)
 
