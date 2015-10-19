@@ -219,7 +219,7 @@ _periodic_is_test(int                       ordered_gnum,
 }
 
 /*----------------------------------------------------------------------------
- * Fonction d'impression d'un message sur la sortie standard
+ * Print message on standard output
  *----------------------------------------------------------------------------*/
 
 static int _bft_printf_proxy_o
@@ -273,16 +273,16 @@ static int _bft_printf_proxy_u
  *----------------------------------------------------------------------------*/
 
 static void
-_bft_error_handler(const char  *nom_fic,
-                   int          num_ligne,
-                   int          code_err_sys,
+_bft_error_handler(const char  *filename,
+                   int          line_num,
+                   int          sys_err_code,
                    const char  *format,
                    va_list      arg_ptr)
 {
   bft_printf_flush();
 
-  if (code_err_sys != 0)
-    fprintf(stderr, "\nSystem error: %s\n", strerror(code_err_sys));
+  if (sys_err_code != 0)
+    fprintf(stderr, "\nSystem error: %s\n", strerror(sys_err_code));
 
   vfprintf(stderr, format, arg_ptr);
 }
