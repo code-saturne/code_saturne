@@ -693,7 +693,7 @@ LAYOUT_FILE            = $(srcdir)/docs/doxygen/DoxygenLayout.xml
 # search path. Do not use file names with spaces, bibtex cannot handle them. See
 # also \cite for info how to create references.
 
-CITE_BIB_FILES         =
+CITE_BIB_FILES         = $(srcdir)/docs/style/csbiblio.bib
 
 #---------------------------------------------------------------------------
 # Configuration options related to warning and progress messages
