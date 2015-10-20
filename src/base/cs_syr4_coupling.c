@@ -677,6 +677,12 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   /* Initialize post-processing */
 
+  /* Precaution: deactivate visualization for time-dependent meshes,
+     as this would require regenerating visualization at each time step */
+
+  if (cs_post_get_writer_time_dep(-1) != FVM_WRITER_FIXED_MESH)
+    syr_coupling->visualization = 0;
+
   if (syr_coupling->visualization != 0)
     _post_init(syr_coupling, coupling_ent);
 
@@ -694,7 +700,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   if (coupling_ent->n_elts > 0) {
 
-    if (syr_coupling->visualization >= 0)
+    if (syr_coupling->visualization != 0)
       BFT_MALLOC(cs_to_syr_dist, coupling_ent->n_elts, float);
 
     BFT_MALLOC(elt_centers,
@@ -790,9 +796,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   if (elt_centers != NULL)
     BFT_FREE(elt_centers);
 
-  if (syr_coupling->visualization >= 0) {
+  if (syr_coupling->visualization != 0) {
 
-    cs_post_activate_writer(0, 1);
+    cs_post_activate_writer(-1, 1);
     cs_post_write_meshes(cs_glob_time_step);
 
     cs_post_write_var(coupling_ent->post_mesh_id,
@@ -865,8 +871,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                    1,
                                    writer_ids);
 
-      cs_post_activate_writer(0, 1);
-      cs_post_write_meshes(NULL);
+      cs_post_activate_writer(-1, 1);
+      cs_post_write_meshes(cs_glob_time_step);
 
       cs_post_write_vertex_var(mesh_id,
                                _("distance_to_fluid"),
@@ -945,8 +951,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                  1,
                                  writer_ids);
 
-    cs_post_activate_writer(0, 1);
-    cs_post_write_meshes(NULL);
+    cs_post_activate_writer(writer_ids[0], 1);
+    cs_post_write_meshes(cs_glob_time_step);
     cs_post_free_mesh(mesh_id);
 
     if (cs_glob_n_ranks > 1)
