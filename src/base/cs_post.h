@@ -670,12 +670,25 @@ cs_post_writer_exists(int  writer_id);
  * parameters:
  *   writer_id <-- associated writer id
  *
- * Returns:
+ * returns:
  *  a pointer to a fvm_writer_t structure
  *----------------------------------------------------------------------------*/
 
 fvm_writer_t *
 cs_post_get_writer(int  writer_id);
+
+/*----------------------------------------------------------------------------
+ * Return time dependency associated to a writer_id.
+ *
+ * parameters:
+ *   writer_id <-- associated writer id
+ *
+ * returns:
+ *   associated writer's time dependency
+ *----------------------------------------------------------------------------*/
+
+fvm_writer_time_dep_t
+cs_post_get_writer_time_dep(int  writer_id);
 
 /*----------------------------------------------------------------------------
  * Add an activation time step for a specific writer or for all writers.

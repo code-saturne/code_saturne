@@ -5,6 +5,9 @@ Version 4.1.2 (unreleased)
 Bug fixes:
 ----------
 
+- Disable SYRTHES coupling visualization when the default writer
+  allows non-fixed meshes, to avoid output consistency issues.
+
 - Fixes for coupling with Code_Aster.
 
 - Fix example in uselrc.f90.

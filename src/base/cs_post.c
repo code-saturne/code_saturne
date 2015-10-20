@@ -4090,6 +4090,35 @@ cs_post_get_writer(int  writer_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return time dependency associated to a writer_id.
+ *
+ * \param[in]  writer_id  associated writer id
+ *
+ * \return  associated writer's time dependency
+ */
+/*----------------------------------------------------------------------------*/
+
+fvm_writer_time_dep_t
+cs_post_get_writer_time_dep(int  writer_id)
+{
+  int  id;
+  cs_post_writer_t  *writer = NULL;
+
+  fvm_writer_time_dep_t   time_dep = FVM_WRITER_FIXED_MESH;
+
+  id = _cs_post_writer_id(writer_id);
+  writer = _cs_post_writers + id;
+
+  if (writer->wd != NULL)
+    time_dep = writer->wd->time_dep;
+  else if (writer->writer != NULL)
+    time_dep = fvm_writer_get_time_dep(writer->writer);
+
+  return time_dep;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Add an activation time step for a specific writer or for all writers.
  *
  * If a negative value is provided, a previously added activation time
