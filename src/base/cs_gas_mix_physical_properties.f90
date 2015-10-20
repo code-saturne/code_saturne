@@ -319,7 +319,7 @@ do iesp = 1, nscasp+1
     ! for each mass fraction species
 
     if (ivsuth.eq.0) then
-	! With a linear law
+        ! With a linear law
     call cs_local_physical_properties &
     !================================
    ( mu_i, lambda_i, tempk(iel), tkelvi, s_i, name_i)
@@ -350,7 +350,7 @@ do iesp = 1, nscasp+1
       endif
 
       if (ivsuth.eq.0) then
-	  ! With a linear law
+          ! With a linear law
       call cs_local_physical_properties &
       !================================
      ( mu_j, lambda_j, tempk(iel), tkelvi, s_j, name_j)
