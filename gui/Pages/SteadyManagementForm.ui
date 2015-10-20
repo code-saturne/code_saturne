@@ -1,133 +1,134 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>SteadyManagementForm</class>
- <widget class="QWidget" name="SteadyManagementForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="SteadyManagementForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>450</width>
-    <height>155</height>
+    <width>366</width>
+    <height>159</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" >
-   <item row="0" column="0" >
-    <widget class="QGroupBox" name="groupBox" >
-     <property name="title" >
+  <layout class="QGridLayout" name="gridLayout_3">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
       <string>Steady flow algorithm management</string>
      </property>
-     <layout class="QGridLayout" >
-      <item row="0" column="0" >
-       <layout class="QHBoxLayout" >
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" stdset="0" >
+          <property name="sizeHint" stdset="0">
            <size>
-            <width>20</width>
-            <height>20</height>
+            <width>13</width>
+            <height>94</height>
            </size>
           </property>
          </spacer>
         </item>
         <item>
-         <layout class="QGridLayout" >
-          <item row="0" column="0" >
-           <widget class="QLabel" name="labelRELXST" >
-            <property name="minimumSize" >
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="0" column="0">
+           <widget class="QLabel" name="labelRELXST">
+            <property name="minimumSize">
              <size>
               <width>200</width>
               <height>0</height>
              </size>
             </property>
-            <property name="toolTip" >
+            <property name="toolTip">
              <string>Code_Saturne key word: RELXST</string>
             </property>
-            <property name="text" >
+            <property name="text">
              <string>Relaxation coefficient</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="1" >
-           <widget class="QLineEdit" name="lineEditRELXST" >
-            <property name="minimumSize" >
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="lineEditRELXST">
+            <property name="minimumSize">
              <size>
               <width>60</width>
               <height>0</height>
              </size>
             </property>
-            <property name="maximumSize" >
+            <property name="maximumSize">
              <size>
               <width>100</width>
               <height>16777215</height>
              </size>
             </property>
-            <property name="toolTip" >
+            <property name="toolTip">
              <string>Code_Saturne key word: RELXST</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="0" >
-           <widget class="QLabel" name="labelNTMABS" >
-            <property name="minimumSize" >
+          <item row="1" column="0">
+           <widget class="QLabel" name="labelNTMABS">
+            <property name="minimumSize">
              <size>
               <width>200</width>
               <height>0</height>
              </size>
             </property>
-            <property name="toolTip" >
+            <property name="toolTip">
              <string>Code_Saturne key word: NTMABS</string>
             </property>
-            <property name="text" >
+            <property name="text">
              <string>Number of iterations (restart included) </string>
             </property>
            </widget>
           </item>
-          <item row="1" column="1" >
-           <widget class="QLineEdit" name="lineEditNTMABS" >
-            <property name="minimumSize" >
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="lineEditNTMABS">
+            <property name="minimumSize">
              <size>
-              <width>60</width>
+              <width>100</width>
               <height>0</height>
              </size>
             </property>
-            <property name="maximumSize" >
+            <property name="maximumSize">
              <size>
               <width>100</width>
               <height>16777215</height>
              </size>
             </property>
-            <property name="toolTip" >
+            <property name="toolTip">
              <string>Code_Saturne key word: NTMABS</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="0" >
-           <widget class="QLabel" name="labelINPDT0" >
-            <property name="minimumSize" >
+          <item row="2" column="0">
+           <widget class="QLabel" name="labelINPDT0">
+            <property name="minimumSize">
              <size>
               <width>200</width>
               <height>0</height>
              </size>
             </property>
-            <property name="toolTip" >
+            <property name="toolTip">
              <string>Code_Saturne key word: INPDT0</string>
             </property>
-            <property name="text" >
+            <property name="text">
              <string>Zero iterations option</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="1" >
-           <widget class="QCheckBox" name="checkBoxINPDT0" >
-            <property name="toolTip" >
+          <item row="2" column="1">
+           <widget class="QCheckBox" name="checkBoxINPDT0">
+            <property name="toolTip">
              <string/>
             </property>
-            <property name="text" >
+            <property name="text">
              <string/>
             </property>
            </widget>
@@ -136,13 +137,13 @@
         </item>
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" stdset="0" >
+          <property name="sizeHint" stdset="0">
            <size>
-            <width>20</width>
-            <height>20</height>
+            <width>13</width>
+            <height>94</height>
            </size>
           </property>
          </spacer>
@@ -152,12 +153,12 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="0" >
+   <item row="1" column="0">
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" stdset="0" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>16</width>
        <height>16</height>
