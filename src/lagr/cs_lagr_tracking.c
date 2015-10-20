@@ -2214,8 +2214,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
      /* Deposition criterion: E_kin > E_barr */
     if (energ > energt * 0.5 * particle_diameter) {
 
-     cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                               CS_LAGR_PART_DEPOSITED);
+      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
+                                CS_LAGR_PART_DEPOSITED);
 
       /* The particle deposits*/
       if (!cs_glob_lagr_params->clogging && !cs_glob_lagr_params->resuspension) {
@@ -3845,8 +3845,14 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
       _tracking_info(particles, i)->state = CS_LAGR_PART_STUCK;
     else if (cur_part_cell_num == 0)
       _tracking_info(particles, i)->state = CS_LAGR_PART_TO_DELETE;
-    else
+    else {
       _tracking_info(particles, i)->state = CS_LAGR_PART_TO_SYNC;
+      if (am->size[CS_LAGR_DEPOSITION_FLAG] > 0) {
+        if(    cs_lagr_particles_get_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG)
+            == CS_LAGR_PART_DEPOSITED)
+          _tracking_info(particles, i)->state = CS_LAGR_PART_TREATED;
+      }
+    }
 
     _tracking_info(particles, i)->last_face_num = 0;
 
