@@ -716,7 +716,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
             self.connect(self.actionWall, SIGNAL("triggered()"), self.slotSelectBoudaries)
             fileMenu.addAction(self.actionWall)
 
-            self.actionSymmetry = QAction(self.tr("Select all symmeties"), self.tableView)
+            self.actionSymmetry = QAction(self.tr("Select all symmetries"), self.tableView)
             self.connect(self.actionSymmetry, SIGNAL("triggered()"), self.slotSelectBoudaries)
             fileMenu.addAction(self.actionSymmetry)
 
