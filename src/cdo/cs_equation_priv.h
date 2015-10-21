@@ -43,7 +43,7 @@ BEGIN_C_DECLS
 #define  CS_EQUATION_UNSTEADY   (1 <<  0)  /*  1: unsteady term */
 #define  CS_EQUATION_CONVECTION (1 <<  1)  /*  2: convection term */
 #define  CS_EQUATION_DIFFUSION  (1 <<  2)  /*  4: diffusion term */
-#define  CS_EQUATION_SOURCETERM (1 <<  3)  /*  8: source term */
+#define  CS_EQUATION_REACTION   (1 <<  3)  /*  8: reaction term */
 
 /* Post flag */
 #define  CS_EQUATION_POST_PECLET      (1 << 0)
@@ -136,6 +136,10 @@ typedef struct {
 
   /* Advection term */
   cs_param_advection_t  advection;
+
+  /* Reaction term */
+  bool                  reaction_lumping; // Mass lumping for the reaction term
+  cs_param_hodge_t      reaction_hodge;
 
   /* Source term(s) */
   int                      n_source_terms;

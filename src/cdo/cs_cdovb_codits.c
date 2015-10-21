@@ -1428,7 +1428,8 @@ cs_cdovb_codits_build_system(const cs_mesh_t             *m,
   const cs_equation_param_t  *eqp = sys_builder->eqp;
   const bool  do_diffusion = (eqp->flag & CS_EQUATION_DIFFUSION) ? true : false;
   const bool  do_advection = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
-  const bool  do_unsteady  = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
+  const bool  do_unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
+  const bool  do_reaction = (eqp->flag & CS_EQUATION_REACTION) ? true : false;
 
   /* Allocate and initialize a matrix with the larger stencil (that related
      to diffusion => all vertices of a cell are potentially in interaction)
@@ -1457,6 +1458,12 @@ cs_cdovb_codits_build_system(const cs_mesh_t             *m,
                                       eqp->advection,
                                       do_diffusion,
                                       eqp->diffusion_hodge);
+
+  /* Preparatory step for reaction term */
+  cs_hodge_builder_t  *reac_builder = NULL;
+  if (do_reaction)
+    reac_builder = cs_hodge_builder_init(connect, time_step,
+                                         eqp->reaction_hodge);
 
   /* Preparatory step for unsteady term */
   cs_sla_matrix_t  *time_mat = _init_time_matrix(sys_builder);
@@ -1487,12 +1494,22 @@ cs_cdovb_codits_build_system(const cs_mesh_t             *m,
                                     diff, adr_loc);
 
     if (do_advection) {
+
       cs_locmat_t  *adv_loc = cs_convection_build_local_op(c_id,
                                                            connect, quant,
                                                            sys_builder->vtag,
                                                            conv);
 
       cs_locmat_add(adr_loc, adv_loc);
+    }
+
+    if (do_reaction) { /* Build mass matrix to take into account reaction term */
+
+      cs_locmat_t  *rea_loc = cs_hodge_build_local(c_id,
+                                                   connect, quant,
+                                                   reac_builder);
+
+      cs_locmat_add(adr_loc, rea_loc);
     }
 
     if (do_unsteady) { /* Build mass matrix to take into account time effect */
@@ -1519,6 +1536,8 @@ cs_cdovb_codits_build_system(const cs_mesh_t             *m,
   /* Free temporary buffers and structures */
   adr_loc = cs_locmat_free(adr_loc);
 
+  if (do_reaction)
+    reac_builder = cs_hodge_builder_free(reac_builder);
   if (do_unsteady)
     time_builder = cs_hodge_builder_free(time_builder);
 
@@ -1537,14 +1556,27 @@ cs_cdovb_codits_build_system(const cs_mesh_t             *m,
      TODO: do the analogy for Neumann BC */
   _compute_dir_values(m, time_step, field_val, sys_builder);
 
-  /* Apply boundary conditions */
-  if (do_diffusion)
+  if (do_diffusion) { /* Last treatment for the diffusion term */
+
+    /* Apply boundary conditions */
     _add_diffusion_bc(m, connect, quant, time_step,
                       sys_builder, full_rhs, sys_mat);
 
-  if (do_advection)
+    /* Free associated builder structure */
+    diff = _free_diffusion(diff);
+
+  }
+
+  if (do_advection) { /* Last treatment for the advection term */
+
+    /* Apply boundary conditions */
     _add_advection_bc(m, connect, quant,
                       conv, sys_builder, full_rhs, sys_mat);
+
+    /* Free associated builder structure */
+    conv = cs_convection_builder_free(conv);
+
+  }
 
   /* Unsteady terms have to be considered at the end in order to deal with
      the system matrix fullfilled with diffusion, convection and reaction terms
@@ -1560,19 +1592,14 @@ cs_cdovb_codits_build_system(const cs_mesh_t             *m,
   }
 
   /* Final step in BC management.
-     Apply the strong or penalized enforcement.
+     Apply the strong or penalized enforcement. In case of Nitsche enforcement,
+     there is nothing to do.
      Must be call after the application of the time scheme */
   _enforce_bc(sys_builder, &full_rhs, &sys_mat);
 
   bool do_cleaning = false; // Advanced option
   if (do_cleaning)
     cs_sla_matrix_clean(sys_mat, 10*cs_get_eps_machine());
-
-  /* Free remaining buffers and structures */
-  if (do_diffusion)
-    diff = _free_diffusion(diff);
-  if (do_advection)
-    conv = cs_convection_builder_free(conv);
 
   /* Return pointers */
   *rhs = full_rhs;

@@ -67,6 +67,7 @@ typedef struct _cs_equation_t cs_equation_t;
  * \param[in] is_steady        add an unsteady term or not
  * \param[in] do_convection    add a convection term
  * \param[in] do_diffusion     add a diffusion term
+ * \param[in] do_reaction      add a reaction term
  * \param[in] default_bc       type of boundary condition set by default
  *
  * \return  a pointer to the new allocated cs_equation_t structure
@@ -81,6 +82,7 @@ cs_equation_create(const char            *name,
                    bool                   is_steady,
                    bool                   do_convection,
                    bool                   do_diffusion,
+                   bool                   do_reaction,
                    cs_param_bc_type_t     default_bc);
 
 /*----------------------------------------------------------------------------*/

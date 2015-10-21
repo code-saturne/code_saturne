@@ -396,6 +396,7 @@ cs_user_cdo_setup_domain(cs_domain_t   *domain)
                               true,          // steady ?
                               true,          // convection ?
                               true,          // diffusion ?
+                              false,         // reaction ?
                               "zero_value"); // default boundary condition
 
 }

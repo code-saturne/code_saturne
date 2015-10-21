@@ -249,6 +249,8 @@ typedef enum {
   EQKEY_HODGE_DIFF_COEF,
   EQKEY_HODGE_TIME_ALGO,
   EQKEY_HODGE_TIME_COEF,
+  EQKEY_HODGE_REAC_ALGO,
+  EQKEY_HODGE_REAC_COEF,
   EQKEY_ITSOL,
   EQKEY_ITSOL_EPS,
   EQKEY_ITSOL_MAX_ITER,
@@ -670,6 +672,10 @@ _print_eqkey(eqkey_t  key)
     return "hodge_time_algo";
   case EQKEY_HODGE_TIME_COEF:
     return "hodge_time_coef";
+  case EQKEY_HODGE_REAC_ALGO:
+    return "hodge_reac_algo";
+  case EQKEY_HODGE_REAC_COEF:
+    return "hodge_reac_coef";
   case EQKEY_ITSOL:
     return "itsol";
   case EQKEY_ITSOL_EPS:
@@ -766,6 +772,10 @@ _get_eqkey(const char *keyname)
       key = EQKEY_HODGE_TIME_COEF;
     else if (strcmp(keyname, "hodge_time_algo") == 0)
       key = EQKEY_HODGE_TIME_ALGO;
+    else if (strcmp(keyname, "hodge_reac_coef") == 0)
+      key = EQKEY_HODGE_REAC_COEF;
+    else if (strcmp(keyname, "hodge_reac_algo") == 0)
+      key = EQKEY_HODGE_REAC_ALGO;
   }
 
   else if (strncmp(keyname, "itsol", 5) == 0) { /* key begins with itsol */
@@ -859,6 +869,7 @@ _get_stkey(const char *keyname)
  * \param[in] is_steady        add an unsteady term or not
  * \param[in] do_convection    add a convection term
  * \param[in] do_diffusion     add a diffusion term
+ * \param[in] do_diffusion     add a reaction term
  * \param[in] default_bc       type of boundary condition set by default
  *
  * \return a pointer to a new allocated cs_equation_param_t structure
@@ -871,6 +882,7 @@ _create_equation_param(cs_equation_status_t   status,
                        bool                   is_steady,
                        bool                   do_convection,
                        bool                   do_diffusion,
+                       bool                   do_reaction,
                        cs_param_bc_type_t     default_bc)
 {
   cs_param_var_type_t  var_type = CS_PARAM_N_VAR_TYPES;
@@ -893,6 +905,8 @@ _create_equation_param(cs_equation_status_t   status,
     eqp->flag |= CS_EQUATION_CONVECTION;
   if (do_diffusion)
     eqp->flag |= CS_EQUATION_DIFFUSION;
+  if (do_reaction)
+    eqp->flag |= CS_EQUATION_REACTION;
 
   eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
 
@@ -903,6 +917,12 @@ _create_equation_param(cs_equation_status_t   status,
   eqp->time_hodge.inv_pty = false; // inverse property ?
   eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
   eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+
+  eqp->reaction_lumping = false;
+  eqp->reaction_hodge.pty_id = 0;      // Unity (default property)
+  eqp->reaction_hodge.inv_pty = false; // inverse property ?
+  eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
+  eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
 
   eqp->diffusion_hodge.pty_id = 0;      // Unity (default property)
   eqp->diffusion_hodge.inv_pty = false; // inverse property ?
@@ -972,6 +992,7 @@ _create_equation_param(cs_equation_status_t   status,
  * \param[in] is_steady        add an unsteady term or not
  * \param[in] do_convection    add a convection term
  * \param[in] do_diffusion     add a diffusion term
+ * \param[in] do_reaction      add a reaction term
  * \param[in] default_bc       type of boundary condition set by default
  *
  * \return  a pointer to the new allocated cs_equation_t structure
@@ -986,6 +1007,7 @@ cs_equation_create(const char            *eqname,
                    bool                   is_steady,
                    bool                   do_convection,
                    bool                   do_diffusion,
+                   bool                   do_reaction,
                    cs_param_bc_type_t     default_bc)
 {
   int  len = strlen(eqname)+1;
@@ -1026,6 +1048,7 @@ cs_equation_create(const char            *eqname,
                                      is_steady,
                                      do_convection,
                                      do_diffusion,
+                                     do_reaction,
                                      default_bc);
 
   /* Algebraic system: allocated later */
@@ -1129,12 +1152,14 @@ cs_equation_summary(const cs_equation_t  *eq)
   bool  unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
   bool  convection = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
   bool  diffusion = (eqp->flag & CS_EQUATION_DIFFUSION) ? true : false;
+  bool  reaction = (eqp->flag & CS_EQUATION_REACTION) ? true : false;
   bool  source_term = (eqp->n_source_terms > 0) ? true : false;
 
   bft_printf("  <%s/Terms>  unsteady [%s], convection [%s], diffusion [%s],"
-             " source term [%s]\n",
+             " reaction [%s], source term [%s]\n",
              eq->name, cs_base_strtf(unsteady), cs_base_strtf(convection),
-             cs_base_strtf(diffusion), cs_base_strtf(source_term));
+             cs_base_strtf(diffusion), cs_base_strtf(reaction),
+             cs_base_strtf(source_term));
 
   /* Boundary conditions */
   if (eqp->verbosity > 0) {
@@ -1156,7 +1181,7 @@ cs_equation_summary(const cs_equation_t  *eq)
     }
   }
 
-  if (eqp->flag & CS_EQUATION_UNSTEADY) {
+  if (unsteady) {
 
     const cs_param_time_t  t_info = eqp->time_info;
     const cs_param_hodge_t  h_info = eqp->time_hodge;
@@ -1201,7 +1226,7 @@ cs_equation_summary(const cs_equation_t  *eq)
 
   }
 
-  if (eqp->flag & CS_EQUATION_DIFFUSION) {
+  if (diffusion) {
 
     const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
 
@@ -1222,7 +1247,7 @@ cs_equation_summary(const cs_equation_t  *eq)
 
   } // Diffusion term
 
-  if (eqp->flag & CS_EQUATION_CONVECTION) {
+  if (convection) {
 
     const cs_param_advection_t  a_info = eqp->advection;
 
@@ -1288,7 +1313,30 @@ cs_equation_summary(const cs_equation_t  *eq)
 
   } // Advection term
 
-  if (eqp->n_source_terms > 0) {
+  if (reaction) {
+
+    const cs_param_hodge_t  h_info = eqp->reaction_hodge;
+
+    bft_printf("\n  <%s/Reaction term>\n", eq->name);
+    bft_printf("    <Reaction> Mass lumping: %s\n",
+               cs_base_strtf(eqp->reaction_lumping));
+    bft_printf("    <Reaction> Property: %s\n",
+               cs_param_pty_get_name(h_info.pty_id));
+
+    if (eqp->verbosity > 0) {
+      bft_printf("    <Reaction> Hodge operator: %s / %s\n",
+                 cs_param_hodge_get_type_name(h_info),
+                 cs_param_hodge_get_algo_name(h_info));
+      bft_printf("    <Reaction> Inversion of property: %s\n",
+                 cs_base_strtf(h_info.inv_pty));
+      if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
+        bft_printf("    <Reaction> Value of the Hodge coefficient: %.3e\n",
+                   h_info.coef);
+    }
+
+  }
+
+  if (source_term) {
 
     bft_printf("\n  <%s/Source terms>\n", eq->name);
     for (int s_id = 0; s_id < eqp->n_source_terms; s_id++) {
@@ -1744,6 +1792,23 @@ cs_equation_set(cs_equation_t       *eq,
       eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
     else if (strcmp(val, "voronoi") == 0)
       eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+    else if (strcmp(val, "whitney_bary") == 0)
+      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid val %s related to key %s\n"
+                  " Choice between cost or voronoi"), _val, keyname);
+    }
+    break;
+
+  case EQKEY_HODGE_REAC_ALGO:
+    if (strcmp(val,"cost") == 0)
+      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
+    else if (strcmp(val, "voronoi") == 0)
+      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+    else if (strcmp(val, "whitney_bary") == 0)
+      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -1764,7 +1829,7 @@ cs_equation_set(cs_equation_t       *eq,
     break;
 
   case EQKEY_HODGE_TIME_COEF:
-    if (strcmp(val, "") == 0)
+    if (strcmp(val, "dga") == 0)
       eqp->time_hodge.coef = 1./3.;
     else if (strcmp(val, "sushi") == 0)
       eqp->time_hodge.coef = 1./sqrt(3.);
@@ -1772,6 +1837,17 @@ cs_equation_set(cs_equation_t       *eq,
       eqp->time_hodge.coef = 1.0;
     else
       eqp->time_hodge.coef = atof(val);
+    break;
+
+  case EQKEY_HODGE_REAC_COEF:
+    if (strcmp(val, "dga") == 0)
+      eqp->reaction_hodge.coef = 1./3.;
+    else if (strcmp(val, "sushi") == 0)
+      eqp->reaction_hodge.coef = 1./sqrt(3.);
+    else if (strcmp(val, "gcr") == 0)
+      eqp->reaction_hodge.coef = 1.0;
+    else
+      eqp->reaction_hodge.coef = atof(val);
     break;
 
   case EQKEY_SOLVER_FAMILY:
@@ -2006,10 +2082,10 @@ cs_equation_set(cs_equation_t       *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Associate a material property or an advection field with an equation
- *         for a given term (diffusion, time, convection)
+ *         for a given term (diffusion, time, convection, reaction)
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       keyword   "time", "diffusion", "advection"...
+ * \param[in]       keyword   "time", "diffusion", "advection", "reaction"
  * \param[in]       name      name of the property to associate
  */
 /*----------------------------------------------------------------------------*/
@@ -2030,6 +2106,8 @@ cs_equation_link(cs_equation_t       *eq,
     eqp->diffusion_hodge.pty_id = cs_param_pty_get_id_by_name(name);
   else if (strcmp("time", keyword) == 0)
     eqp->time_hodge.pty_id = cs_param_pty_get_id_by_name(name);
+  else if (strcmp("reaction", keyword) == 0)
+    eqp->reaction_hodge.pty_id = cs_param_pty_get_id_by_name(name);
   else if (strcmp("advection", keyword) == 0)
     eqp->advection.adv_id = cs_param_adv_get_id_by_name(name);
   else
