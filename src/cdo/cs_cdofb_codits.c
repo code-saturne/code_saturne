@@ -760,6 +760,27 @@ cs_cdofb_codits_update_field(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve a pointer to a buffer of size at least the number of unknows
+ *
+ * \param[in]  builder    pointer to a cs_cdofb_codits_t structure
+ *
+ * \return  a pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdofb_codits_get_tmpbuf(void          *builder)
+{
+  cs_cdofb_codits_t  *bld = (cs_cdofb_codits_t  *)builder;
+
+  /* Sanity checks */
+  assert(bld != NULL && bld->work != NULL);
+
+  return bld->work;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Get the computed values at each face
  *
  * \param[in]  builder    pointer to a cs_cdofb_codits_t structure

@@ -135,6 +135,19 @@ cs_cdovb_codits_build_system(const cs_mesh_t             *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve a pointer to a buffer of size at least the number of unknows
+ *
+ * \param[in]  builder    pointer to a cs_cdovb_codits_t structure
+ *
+ * \return  a pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovb_codits_get_tmpbuf(void          *builder);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Post-process the solution of a scalar convection/diffusion equation
  *         solved with a CDO vertex-based scheme.
  *

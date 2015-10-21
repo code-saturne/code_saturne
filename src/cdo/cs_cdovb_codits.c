@@ -1581,6 +1581,27 @@ cs_cdovb_codits_build_system(const cs_mesh_t             *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve a pointer to a buffer of size at least the number of unknows
+ *
+ * \param[in]  builder    pointer to a cs_cdovb_codits_t structure
+ *
+ * \return  a pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovb_codits_get_tmpbuf(void          *builder)
+{
+  cs_cdovb_codits_t  *bld = (cs_cdovb_codits_t  *)builder;
+
+  /* Sanity checks */
+  assert(bld != NULL && bld->work != NULL);
+
+  return bld->work;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Post-process the solution of a scalar convection/diffusion equation
  *         solved with a CDO vertex-based scheme.
  *
@@ -1604,7 +1625,6 @@ cs_cdovb_codits_update_field(const cs_cdo_connect_t     *connect,
   int  i;
 
   cs_cdovb_codits_t  *_builder = (cs_cdovb_codits_t  *)builder;
-  const cs_cdo_bc_list_t  *v_dir = _builder->vtx_dir;
 
   /* Sanity checks (avoid a warning in debug mode) */
   assert(connect != NULL);
@@ -1613,19 +1633,24 @@ cs_cdovb_codits_update_field(const cs_cdo_connect_t     *connect,
 
   /* Set computed solution in field array */
   if (_builder->n_dof_vertices < _builder->n_vertices) {
+
+    const cs_cdo_bc_list_t  *v_dir = _builder->vtx_dir;
+
+    /* Sanity check */
+    assert(_builder->enforce == CS_PARAM_BC_ENFORCE_STRONG);
+
     for (i = 0; i < _builder->n_vertices; i++)
-      field_val[i] = 0;
+      field_val[i] = 0; // To tag unset values
     for (i = 0; i < _builder->n_dof_vertices; i++)
       field_val[_builder->v_z2i_ids[i]] = solu[i];
+    for (i = 0; i < v_dir->n_nhmg_elts; i++)
+      field_val[v_dir->elt_ids[i]] = _builder->dir_val[i];
+
   }
   else
     for (i = 0; i < _builder->n_vertices; i++)
       field_val[i] = solu[i];
 
-  /* Set BC in field array if we have this knowledge */
-  if (_builder->enforce == CS_PARAM_BC_ENFORCE_STRONG)
-    for (i = 0; i < v_dir->n_nhmg_elts; i++)
-      field_val[v_dir->elt_ids[i]] = _builder->dir_val[i];
 }
 
 /*----------------------------------------------------------------------------*/

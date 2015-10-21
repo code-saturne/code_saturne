@@ -173,7 +173,7 @@ typedef void
 /*!
  * \brief  Get the computed values at each face
  *
- * \param[in]  builder    pointer to a cs_cdofb_codits_t structure
+ * \param[in]  builder    pointer to a builder structure
  * \param[in]  field      pointer to a cs_field_t structure
  *
  * \return  a pointer to an array of double (size n_faces)
@@ -183,6 +183,19 @@ typedef void
 typedef const double *
 (cs_equation_get_f_values_t)(const void          *builder,
                              const cs_field_t    *field);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a pointer to a buffer of size at least the number of unknows
+ *
+ * \param[in, out]  builder    pointer to a builder structure
+ *
+ * \return  a pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef cs_real_t *
+(cs_equation_get_tmpbuf_t)(void          *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -312,6 +325,7 @@ struct _cs_equation_t {
   cs_equation_build_system_t    *build_system;
   cs_equation_update_field_t    *update_field;
   cs_equation_get_f_values_t    *get_f_values;
+  cs_equation_get_tmpbuf_t      *get_tmpbuf;
   cs_equation_free_builder_t    *free_builder;
 
 };
@@ -1025,6 +1039,7 @@ cs_equation_create(const char            *eqname,
   eq->build_system = NULL;
   eq->update_field = NULL;
   eq->get_f_values = NULL;
+  eq->get_tmpbuf = NULL;
   eq->free_builder = NULL;
 
   eq->builder = NULL;
@@ -1375,6 +1390,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
     eq->compute_source = cs_cdovb_codits_compute_source;
     eq->build_system = cs_cdovb_codits_build_system;
     eq->update_field = cs_cdovb_codits_update_field;
+    eq->get_tmpbuf = cs_cdovb_codits_get_tmpbuf;
     eq->get_f_values = NULL;
     break;
 
@@ -1384,6 +1400,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
     eq->compute_source = cs_cdofb_codits_compute_source;
     eq->build_system = cs_cdofb_codits_build_system;
     eq->update_field = cs_cdofb_codits_update_field;
+    eq->get_tmpbuf = cs_cdofb_codits_get_tmpbuf;
     eq->get_f_values = cs_cdofb_codits_get_face_values;
     break;
 
@@ -2688,16 +2705,14 @@ cs_equation_build_system(const cs_mesh_t            *m,
   /* Get information on the matrix related to this linear system */
   cs_sla_matrix_info_t  minfo = cs_sla_matrix_analyse(sla_mat);
 
-  if (eqp->verbosity > 1) {
-    if (time_step->nt_cur % eqp->output_freq == 0) {
-      bft_printf("\n Sparse Linear Algebra (SLA) sumup:\n");
-      bft_printf("  <%s/sla> A.size         %d\n", eqn, sla_mat->n_rows);
-      bft_printf("  <%s/sla> A.nnz          %lu\n", eqn, minfo.nnz);
-      bft_printf("  <%s/sla> A.FillIn       %5.2e %%\n", eqn, minfo.fillin);
-      bft_printf("  <%s/sla> A.StencilMin   %d\n", eqn, minfo.stencil_min);
-      bft_printf("  <%s/sla> A.StencilMax   %d\n", eqn, minfo.stencil_max);
-      bft_printf("  <%s/sla> A.StencilMean  %5.2e\n", eqn, minfo.stencil_mean);
-    }
+  if (eqp->verbosity > 1 && time_step->nt_cur == 0) {
+    bft_printf("\n Sparse Linear Algebra (SLA) sumup:\n");
+    bft_printf("  <%s/sla> A.size         %d\n", eqn, sla_mat->n_rows);
+    bft_printf("  <%s/sla> A.nnz          %lu\n", eqn, minfo.nnz);
+    bft_printf("  <%s/sla> A.FillIn       %5.2e %%\n", eqn, minfo.fillin);
+    bft_printf("  <%s/sla> A.StencilMin   %d\n", eqn, minfo.stencil_min);
+    bft_printf("  <%s/sla> A.StencilMax   %d\n", eqn, minfo.stencil_max);
+    bft_printf("  <%s/sla> A.StencilMean  %5.2e\n", eqn, minfo.stencil_mean);
   }
 
   /* Map a cs_sla_matrix_t structure into a cs_matrix_t structure */
@@ -2773,8 +2788,9 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
 
   cs_halo_rotation_t  halo_rota = CS_HALO_ROTATION_IGNORE;
 
-  cs_real_t  *x = NULL;
+  cs_real_t  *x = eq->get_tmpbuf(eq->builder);
   cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
+  cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(eq->matrix);
   const cs_param_itsol_t  itsol_info = eq->param->itsol_info;
@@ -2789,9 +2805,10 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
   else
     r_norm = 1.0;
 
-  BFT_MALLOC(x, n_rows, cs_real_t);
-  for (int i = 0; i < n_rows; i++)
-    x[i] = 0.;
+  /* Sanity check (up to now, only scalar field are handled) */
+  assert(fld->dim == 1);
+  for (cs_lnum_t  i = 0; i < n_rows; i++)
+    x[i] = fld->val[i];
 
   cvg = cs_sles_solve(sles,
                       eq->matrix,
@@ -2823,8 +2840,6 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
   if (eq->post_ts_id > -1)
     cs_timer_stats_start(eq->post_ts_id);
 
-  cs_field_t  *fld = cs_field_by_id(eq->field_id);
-
   /* Copy current field values to previous values */
   cs_field_current_to_previous(fld);
 
@@ -2836,7 +2851,6 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
 
   /* Free memory */
   cs_sles_free(sles);
-  BFT_FREE(x);
 }
 
 /*----------------------------------------------------------------------------*/
