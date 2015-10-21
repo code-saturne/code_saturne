@@ -74,6 +74,7 @@ pkginclude_HEADERS = \
 cs_ale.h \
 cs_all_to_all.h \
 cs_array_reduce.h \
+cs_assert.h \
 cs_ast_coupling.h \
 cs_base.h \
 cs_base_fortran.h \
