@@ -437,8 +437,9 @@ _init_time_matrix(cs_cdovb_codits_t          *builder)
   cs_sla_matrix_t  *time_mat = NULL;
 
   const cs_equation_param_t  *eqp = builder->eqp;
+  const bool  is_unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
 
-  if (!eqp->flag & CS_EQUATION_UNSTEADY) // Steady-state eq. => Nothing to do
+  if (!is_unsteady) // Steady-state eq. => Nothing to do
     return time_mat;
 
   const cs_param_hodge_t  h_info = eqp->time_hodge;
