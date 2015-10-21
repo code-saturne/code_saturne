@@ -1128,6 +1128,9 @@ cs_equation_summary(const cs_equation_t  *eq)
       case CS_PARAM_ADVECTION_WEIGHT_ALGO_SG:
         bft_printf(" Scharfetter-Gummel\n");
         break;
+      case CS_PARAM_ADVECTION_WEIGHT_ALGO_D10G5:
+        bft_printf(" Specific with delta=10 and gamma=5\n");
+        break;
       default:
         bft_error(__FILE__, __LINE__, 0,
                   " Invalid weight algorithm for advection.");
@@ -1798,6 +1801,8 @@ cs_equation_set(cs_equation_t       *eq,
       eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_SAMARSKII;
     else if (strcmp(val, "sg") == 0)
       eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_SG;
+    else if (strcmp(val, "d10g5") == 0)
+      eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_D10G5;
     else if (strcmp(val, "centered") == 0)
       eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED;
     else {

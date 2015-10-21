@@ -149,6 +149,17 @@ _upwind_weight(cs_real_t                   criterion,
       weight = 1 - 0.5*exp(-criterion);
     break;
 
+  case CS_PARAM_ADVECTION_WEIGHT_ALGO_D10G5: // Specific (JB)
+    {
+      cs_real_t  x = fabs(criterion);
+
+      if (x > 0)
+        weight = 0.5 + 0.5*( x*(x + 1) / ( x*(x + 5) + 10) );
+      else
+        weight = 0.5 - 0.5*( x*(x + 1) / ( x*(x + 5) + 10) );
+    }
+    break;
+
   case CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED:
     weight = 0.5;
     break;
