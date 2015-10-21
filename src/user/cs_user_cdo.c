@@ -119,37 +119,26 @@ cs_user_cdo_set_properties(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify which type of boundaries closed the computational domain
+ * \brief  Specify for the computational domain:
+ *         -- which type of boundaries closed the computational domain
+ *         -- which equations are to be solved
+ *         -- the settings for the time step
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_setup_domain_boundary(cs_domain_t   *domain)
+cs_user_cdo_setup_domain(cs_domain_t   *domain)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify which are the equatinos to be solved in this computational
- *         domain
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_add_domain_equations(cs_domain_t   *domain)
-{
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Associate material property to user-defined equations and specify
- *         boundary conditions, source terms for thes additional equations
+ * \brief  Associate material property and/or convection field to user-defined
+ *         equations and specify boundary conditions, source terms, initial
+ *         values for these additional equations
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */

@@ -102,15 +102,36 @@ typedef void *
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the contribution of source terms for the current time
+ *
+ * \param[in]      m          pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  time_step structure
+ * \param[in, out] builder    pointer to builder structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_compute_source_t)(const cs_mesh_t            *mesh,
+                               const cs_cdo_connect_t     *connect,
+                               const cs_cdo_quantities_t  *cdoq,
+                               const cs_time_step_t       *time_step,
+                               void                       *builder);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build a linear system within the CDO framework
  *
- * \param[in]      m        pointer to a cs_mesh_t structure
- * \param[in]      connect  pointer to a cs_cdo_connect_t structure
- * \param[in]      quant    pointer to a cs_cdo_quantities_t structure
- * \param[in]      tcur     current physical time of the simulation
- * \param[in, out] builder  pointer to builder structure
- * \param[in, out] rhs      pointer to a right-hand side array pointer
- * \param[in, out] sla_mat  pointer to cs_sla_matrix_t structure pointer
+ * \param[in]      m          pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a time_step structure
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      field_val  pointer to the current value of the field
+ * \param[in, out] builder    pointer to builder structure
+ * \param[in, out] rhs        pointer to a right-hand side array pointer
+ * \param[in, out] sla_mat    pointer to cs_sla_matrix_t structure pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -118,7 +139,9 @@ typedef void
 (cs_equation_build_system_t)(const cs_mesh_t            *mesh,
                              const cs_cdo_connect_t     *connect,
                              const cs_cdo_quantities_t  *cdoq,
-                             double                      tcur,
+                             const cs_time_step_t       *time_step,
+                             double                      dt_cur,
+                             const cs_real_t            *field_val,
                              void                       *builder,
                              cs_real_t                 **rhs,
                              cs_sla_matrix_t           **sla_mat);
@@ -127,20 +150,22 @@ typedef void
 /*!
  * \brief  Store solution(s) of the linear system into a field structure
  *
- * \param[in]      connect  pointer to a cs_cdo_connect_t struct.
- * \param[in]      quant    pointer to a cs_cdo_quantities_t struct.
- * \param[in]      solu     solution array
- * \param[in, out] builder  pointer to builder structure
- * \param[in, out] field    pointer to a cs_field_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
+ * \param[in]      time_step  pointer to a time step structure
+ * \param[in]      solu       solution array
+ * \param[in, out] builder    pointer to builder structure
+ * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_update_field_t)(const cs_cdo_connect_t       *connect,
-                             const cs_cdo_quantities_t    *cdoq,
-                             const cs_real_t              *solu,
-                             void                         *builder,
-                             cs_field_t                   *field);
+(cs_equation_update_field_t)(const cs_cdo_connect_t     *connect,
+                             const cs_cdo_quantities_t  *cdoq,
+                             const cs_time_step_t       *time_step,
+                             const cs_real_t            *solu,
+                             void                       *builder,
+                             cs_real_t                  *field_val);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -219,12 +244,15 @@ typedef enum {
   EQKEY_VERBOSITY,
   EQKEY_BC_ENFORCEMENT,
   EQKEY_BC_QUADRATURE,
+  EQKEY_OUTPUT_FREQ,
   EQKEY_POST_FREQ,
   EQKEY_POST,
   EQKEY_ADV_OP_TYPE,
   EQKEY_ADV_WEIGHT_ALGO,
   EQKEY_ADV_WEIGHT_CRIT,
   EQKEY_ADV_FLUX_QUADRA,
+  EQKEY_TIME_SCHEME,
+  EQKEY_TIME_THETA,
   EQKEY_ERROR
 
 } eqkey_t;
@@ -277,11 +305,12 @@ struct _cs_equation_t {
   void                     *builder;
 
   /* Pointer to functions */
-  cs_equation_init_builder_t   *init_builder;
-  cs_equation_build_system_t   *build_system;
-  cs_equation_update_field_t   *update_field;
-  cs_equation_get_f_values_t   *get_f_values;
-  cs_equation_free_builder_t   *free_builder;
+  cs_equation_init_builder_t    *init_builder;
+  cs_equation_compute_source_t  *compute_source;
+  cs_equation_build_system_t    *build_system;
+  cs_equation_update_field_t    *update_field;
+  cs_equation_get_f_values_t    *get_f_values;
+  cs_equation_free_builder_t    *free_builder;
 
 };
 
@@ -567,11 +596,9 @@ _bicg_ilu_setup_hook(void    *context,
 
 static void
 _bicg_bjacobi_setup_hook(void    *context,
-                        KSP      ksp)
+                         KSP      ksp)
 {
   PC pc;
-
-  const int  n_max_restart = 30;
 
   KSPSetType(ksp, KSPBCGS);   /* Preconditioned BICGStab */
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
@@ -647,6 +674,8 @@ _print_eqkey(eqkey_t  key)
     return "bc_enforcement";
   case EQKEY_BC_QUADRATURE:
     return "bc_quadrature";
+  case EQKEY_OUTPUT_FREQ:
+    return "output_freq";
   case EQKEY_POST_FREQ:
     return "post_freq";
   case EQKEY_POST:
@@ -659,6 +688,10 @@ _print_eqkey(eqkey_t  key)
     return "adv_weight_criterion";
   case EQKEY_ADV_FLUX_QUADRA:
     return "adv_flux_quad";
+  case EQKEY_TIME_SCHEME:
+    return "time_scheme";
+  case EQKEY_TIME_THETA:
+    return "time_theta";
 
   default:
     assert(0);
@@ -753,6 +786,8 @@ _get_eqkey(const char *keyname)
     key = EQKEY_POST;
   else if (strcmp(keyname, "post_freq") == 0)
     key = EQKEY_POST_FREQ;
+  else if (strcmp(keyname, "output_freq") == 0)
+    key = EQKEY_OUTPUT_FREQ;
 
   else if (strncmp(keyname, "adv_", 4) == 0) {
     if (strcmp(keyname, "adv_formulation") == 0)
@@ -763,6 +798,13 @@ _get_eqkey(const char *keyname)
       key = EQKEY_ADV_WEIGHT_ALGO;
     else if (strcmp(keyname, "adv_flux_quad") == 0)
       key = EQKEY_ADV_FLUX_QUADRA;
+  }
+
+  else if (strncmp(keyname, "time_", 5) == 0) {
+    if (strcmp(keyname, "time_scheme") == 0)
+      key = EQKEY_TIME_SCHEME;
+    else if (strcmp(keyname, "time_theta") == 0)
+      key = EQKEY_TIME_THETA;
   }
 
   return key;
@@ -815,16 +857,17 @@ _create_equation_param(cs_equation_status_t   status,
                        bool                   do_diffusion,
                        cs_param_bc_type_t     default_bc)
 {
-
+  cs_param_var_type_t  var_type = CS_PARAM_N_VAR_TYPES;
   cs_equation_param_t  *eqp = NULL;
 
   BFT_MALLOC(eqp, 1, cs_equation_param_t);
 
   eqp->status = status;
   eqp->type = type;
-  eqp->verbosity = 0;
-  eqp->post_freq = 5;
-  eqp->post_flag = 0;
+  eqp->verbosity =  0;
+  eqp->output_freq = 1;
+  eqp->post_freq = 10;
+  eqp->post_flag =  0;
 
   /* Build the equation flag */
   eqp->flag = 0;
@@ -840,10 +883,10 @@ _create_equation_param(cs_equation_status_t   status,
   /* Vertex-based schemes imply the two following discrete Hodge operators
      Default initialization is made in accordance with this choice */
   eqp->is_multiplied_by_rho = true;
-  eqp->unsteady_hodge.pty_id = 0;      // Unity (default property)
-  eqp->unsteady_hodge.inv_pty = false; // inverse property ?
-  eqp->unsteady_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
-  eqp->unsteady_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+  eqp->time_hodge.pty_id = 0;      // Unity (default property)
+  eqp->time_hodge.inv_pty = false; // inverse property ?
+  eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
+  eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
 
   eqp->diffusion_hodge.pty_id = 0;      // Unity (default property)
   eqp->diffusion_hodge.inv_pty = false; // inverse property ?
@@ -860,6 +903,31 @@ _create_equation_param(cs_equation_status_t   status,
   /* Boundary conditions structure.
      One assigns a boundary condition by default */
   eqp->bc = cs_param_bc_create(default_bc);
+
+  /* Description of the time discretization (default values) */
+  eqp->time_info.scheme = CS_TIME_SCHEME_IMPLICIT;
+  eqp->time_info.theta = 1.0;
+  eqp->time_info.do_lumping = false;
+
+  /* Initial condition (zero value by default) */
+  eqp->time_info.ic_def_type = CS_PARAM_DEF_BY_VALUE;
+
+  switch (type) {
+  case CS_EQUATION_TYPE_SCAL:
+    var_type = CS_PARAM_VAR_SCAL;
+    break;
+  case CS_EQUATION_TYPE_VECT:
+    var_type = CS_PARAM_VAR_VECT;
+    break;
+  case CS_EQUATION_TYPE_TENS:
+    var_type = CS_PARAM_VAR_TENS;
+    break;
+  default:
+    break;
+  }
+
+  cs_param_set_def(eqp->time_info.ic_def_type, var_type, NULL,
+                   &(eqp->time_info.ic_def));
 
   /* Settings for driving the linear algebra */
   eqp->algo_info = _algo_info_by_default;
@@ -951,6 +1019,7 @@ cs_equation_create(const char            *eqname,
 
   /* Pointer of function */
   eq->init_builder = NULL;
+  eq->compute_source = NULL;
   eq->build_system = NULL;
   eq->update_field = NULL;
   eq->get_f_values = NULL;
@@ -1030,8 +1099,7 @@ cs_equation_summary(const cs_equation_t  *eq)
 
   const cs_equation_param_t  *eqp = eq->param;
 
-  bft_printf("\n");
-  bft_printf("%s", lsepline);
+  bft_printf("\n%s", lsepline);
   bft_printf("\tSummary of settings for %s eq. (variable %s)\n",
              eq->name, eq->varname);
   bft_printf("%s", lsepline);
@@ -1056,19 +1124,64 @@ cs_equation_summary(const cs_equation_t  *eq)
     cs_param_bc_t  *bcp = eqp->bc;
 
     bft_printf("  <%s/Boundary Conditions>\n", eq->name);
-    bft_printf("\t<bc> Default BC: %s\n",
+    bft_printf("  <bc> Default BC: %s\n",
                cs_param_get_bc_name(bcp->default_bc));
     if (eqp->verbosity > 1)
-      bft_printf("\t<bc> Enforcement: %s\n",
+      bft_printf("  <bc> Enforcement: %s\n",
                  cs_param_get_bc_enforcement_name(bcp->enforcement));
-    bft_printf("\t<bc> Number of BCs defined: %d\n", bcp->n_defs);
+    bft_printf("  <bc> Number of BCs defined: %d\n", bcp->n_defs);
     if (eqp->verbosity > 1) {
       for (int id = 0; id < bcp->n_defs; id++)
-        bft_printf("\t<bc> Location: %s; Type: %s; Definition type: %s\n",
+        bft_printf("  <bc> Location: %s; Type: %s; Definition type: %s\n",
                    cs_mesh_location_get_name(bcp->defs[id].loc_id),
                    cs_param_get_bc_name(bcp->defs[id].bc_type),
                    cs_param_get_def_type_name(bcp->defs[id].def_type));
     }
+  }
+
+  if (eqp->flag & CS_EQUATION_UNSTEADY) {
+
+    const cs_param_time_t  t_info = eqp->time_info;
+    const cs_param_hodge_t  h_info = eqp->time_hodge;
+
+    bft_printf("\n  <%s/Unsteady term>\n", eq->name);
+    bft_printf("    <Time> scheme: ");
+    switch (t_info.scheme) {
+    case CS_TIME_SCHEME_IMPLICIT:
+      bft_printf("implicit\n");
+      break;
+    case CS_TIME_SCHEME_EXPLICIT:
+      bft_printf("explicit\n");
+      break;
+    case CS_TIME_SCHEME_CRANKNICH:
+      bft_printf("Crank-Nicholson\n");
+      break;
+    case CS_TIME_SCHEME_THETA:
+      bft_printf("theta scheme with value %f\n", t_info.theta);
+      break;
+    default:
+      bft_error(__FILE__, __LINE__, 0, " Invalid time scheme.");
+      break;
+    }
+
+    bft_printf("    <Time> Initial condition definition type: %s\n",
+               cs_param_get_def_type_name(t_info.ic_def_type));
+    bft_printf("    <Unsteady> Mass lumping: %s\n",
+               cs_base_strtf(t_info.do_lumping));
+    bft_printf("    <Unsteady> Property: %s\n",
+               cs_param_pty_get_name(h_info.pty_id));
+
+    if (eqp->verbosity > 0) {
+      bft_printf("    <Unsteady> Hodge operator: %s / %s\n",
+                 cs_param_hodge_get_type_name(h_info),
+                 cs_param_hodge_get_algo_name(h_info));
+      bft_printf("    <Unsteady> Inversion of property: %s\n",
+                 cs_base_strtf(h_info.inv_pty));
+      if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
+        bft_printf("    <Unsteady> Value of the Hodge coefficient: %.3e\n",
+                   h_info.coef);
+    }
+
   }
 
   if (eqp->flag & CS_EQUATION_DIFFUSION) {
@@ -1076,17 +1189,17 @@ cs_equation_summary(const cs_equation_t  *eq)
     const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
 
     bft_printf("\n  <%s/Diffusion term>\n", eq->name);
-    bft_printf("\t<Diffusion> Property: %s\n",
+    bft_printf("    <Diffusion> Property: %s\n",
                cs_param_pty_get_name(h_info.pty_id));
 
     if (eqp->verbosity > 0) {
-      bft_printf("\t<Diffusion> Hodge operator: %s / %s\n",
+      bft_printf("    <Diffusion> Hodge operator: %s / %s\n",
                  cs_param_hodge_get_type_name(h_info),
                  cs_param_hodge_get_algo_name(h_info));
-      bft_printf("\t<Diffusion> Inversion of property: %s\n",
+      bft_printf("    <Diffusion> Inversion of property: %s\n",
                  cs_base_strtf(h_info.inv_pty));
       if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
-        bft_printf("\t<Diffusion> Value of the Hodge coefficient: %.3e\n",
+        bft_printf("    <Diffusion> Value of the Hodge coefficient: %.3e\n",
                    h_info.coef);
     }
 
@@ -1097,11 +1210,11 @@ cs_equation_summary(const cs_equation_t  *eq)
     const cs_param_advection_t  a_info = eqp->advection;
 
     bft_printf("\n  <%s/Advection term>\n", eq->name);
-    bft_printf("\t<Advection field>  %s\n",
+    bft_printf("    <Advection field>  %s\n",
                cs_param_adv_field_get_name(a_info.adv_id));
 
     if (eqp->verbosity > 0) {
-      bft_printf("\t<Advection operator>");
+      bft_printf("    <Advection operator>");
       switch(a_info.form) {
       case CS_PARAM_ADVECTION_FORM_CONSERV:
         bft_printf(" Conservative formulation");
@@ -1137,7 +1250,7 @@ cs_equation_summary(const cs_equation_t  *eq)
       }
 
       if (eqp->verbosity > 1) {
-        bft_printf("\t<Evaluation of lambda function>");
+        bft_printf("    <Evaluation of lambda function>");
         switch(a_info.weight_criterion) {
         case CS_PARAM_ADVECTION_WEIGHT_FLUX:
           bft_printf(" Quadrature on the flux");
@@ -1165,15 +1278,15 @@ cs_equation_summary(const cs_equation_t  *eq)
 
       cs_param_source_term_t  st_info = eqp->source_terms[s_id];
 
-      bft_printf("\t<st> name: %s\n", cs_param_source_term_get_name(st_info));
-      bft_printf("\t<st> mesh location: %s\n",
+      bft_printf("    <st> name: %s\n", cs_param_source_term_get_name(st_info));
+      bft_printf("    <st> mesh location: %s\n",
                  cs_mesh_location_get_name(st_info.ml_id));
-      bft_printf("\t<st> Type: %s; Variable type: %s; Definition type: %s\n",
+      bft_printf("    <st> Type: %s; Variable type: %s; Definition type: %s\n",
                  cs_param_source_term_get_type_name(st_info),
                  cs_param_get_var_type_name(st_info.var_type),
                  cs_param_get_def_type_name(st_info.def_type));
       if (eqp->verbosity > 0)
-        bft_printf("\t<st> Quadrature type: %s; Use subdivision: %s\n",
+        bft_printf("    <st> Quadrature type: %s; Use subdivision: %s\n",
                    cs_quadrature_get_type_name(st_info.quad_type),
                    cs_base_strtf(st_info.use_subdiv));
 
@@ -1189,34 +1302,15 @@ cs_equation_summary(const cs_equation_t  *eq)
     bft_printf(" Code_Saturne iterative solvers\n");
   else if (eqp->algo_info.type == CS_EQUATION_ALGO_PETSC_ITSOL)
     bft_printf(" PETSc iterative solvers\n");
-  bft_printf("\t<sla> Solver.MaxIter     %d\n", itsol.n_max_iter);
-  bft_printf("\t<sla> Solver.Name        %s\n",
+  bft_printf("    <sla> Solver.MaxIter     %d\n", itsol.n_max_iter);
+  bft_printf("    <sla> Solver.Name        %s\n",
              cs_param_get_solver_name(itsol.solver));
-  bft_printf("\t<sla> Solver.Precond     %s\n",
+  bft_printf("    <sla> Solver.Precond     %s\n",
              cs_param_get_precond_name(itsol.precond));
-  bft_printf("\t<sla> Solver.Eps        % -10.6e\n", itsol.eps);
-  bft_printf("\t<sla> Solver.Normalized  %s\n",
+  bft_printf("    <sla> Solver.Eps        % -10.6e\n", itsol.eps);
+  bft_printf("    <sla> Solver.Normalized  %s\n",
              cs_base_strtf(itsol.resid_normalized));
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Create and initialize a builder structure
- *
- * \param[in]       mesh     pointer to a cs_mesh_t structure
- * \param[in, out]  eq       pointer to a cs_equation_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_create_builder(const cs_mesh_t   *mesh,
-                           cs_equation_t     *eq)
-{
-  if (eq == NULL)
-    return;
-
-  eq->builder = eq->init_builder(eq->param, mesh);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1229,7 +1323,7 @@ cs_equation_create_builder(const cs_mesh_t   *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_last_init(cs_equation_t  *eq)
+cs_equation_last_setup(cs_equation_t  *eq)
 {
   if (eq == NULL)
     return;
@@ -1276,6 +1370,7 @@ cs_equation_last_init(cs_equation_t  *eq)
   case CS_SPACE_SCHEME_CDOVB:
     eq->init_builder = cs_cdovb_codits_init;
     eq->free_builder = cs_cdovb_codits_free;
+    eq->compute_source = cs_cdovb_codits_compute_source;
     eq->build_system = cs_cdovb_codits_build_system;
     eq->update_field = cs_cdovb_codits_update_field;
     eq->get_f_values = NULL;
@@ -1284,6 +1379,7 @@ cs_equation_last_init(cs_equation_t  *eq)
   case CS_SPACE_SCHEME_CDOFB:
     eq->init_builder = cs_cdofb_codits_init;
     eq->free_builder = cs_cdofb_codits_free;
+    eq->compute_source = cs_cdofb_codits_compute_source;
     eq->build_system = cs_cdofb_codits_build_system;
     eq->update_field = cs_cdofb_codits_update_field;
     eq->get_f_values = cs_cdofb_codits_get_face_values;
@@ -1595,12 +1691,12 @@ cs_equation_set(cs_equation_t       *eq,
   case EQKEY_SPACE_SCHEME:
     if (strcmp(val, "cdo_vb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
-      eqp->unsteady_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
     }
     else if (strcmp(val, "cdo_fb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
-      eqp->unsteady_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
     }
     else {
@@ -1626,9 +1722,9 @@ cs_equation_set(cs_equation_t       *eq,
 
   case EQKEY_HODGE_TIME_ALGO:
     if (strcmp(val,"cost") == 0)
-      eqp->unsteady_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
+      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
     else if (strcmp(val, "voronoi") == 0)
-      eqp->unsteady_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -1650,13 +1746,13 @@ cs_equation_set(cs_equation_t       *eq,
 
   case EQKEY_HODGE_TIME_COEF:
     if (strcmp(val, "") == 0)
-      eqp->unsteady_hodge.coef = 1./3.;
+      eqp->time_hodge.coef = 1./3.;
     else if (strcmp(val, "sushi") == 0)
-      eqp->unsteady_hodge.coef = 1./sqrt(3.);
+      eqp->time_hodge.coef = 1./sqrt(3.);
     else if (strcmp(val, "gcr") == 0)
-      eqp->unsteady_hodge.coef = 1.0;
+      eqp->time_hodge.coef = 1.0;
     else
-      eqp->unsteady_hodge.coef = atof(val);
+      eqp->time_hodge.coef = atof(val);
     break;
 
   case EQKEY_SOLVER_FAMILY:
@@ -1768,6 +1864,10 @@ cs_equation_set(cs_equation_t       *eq,
     }
     break;
 
+  case EQKEY_OUTPUT_FREQ:
+    eqp->output_freq = atoi(val);
+    break;
+
   case EQKEY_POST_FREQ:
     eqp->post_freq = atoi(val);
     break;
@@ -1846,6 +1946,34 @@ cs_equation_set(cs_equation_t       *eq,
     }
     break;
 
+  case EQKEY_TIME_SCHEME:
+    if (strcmp(val, "implicit") == 0) {
+      eqp->time_info.scheme = CS_TIME_SCHEME_IMPLICIT;
+      eqp->time_info.theta = 1.;
+    }
+    else if (strcmp(val, "explicit") == 0) {
+      eqp->time_info.scheme = CS_TIME_SCHEME_EXPLICIT;
+      eqp->time_info.theta = 0.;
+    }
+    else if (strcmp(val, "crank_nicholson") == 0) {
+      eqp->time_info.scheme = CS_TIME_SCHEME_CRANKNICH;
+      eqp->time_info.theta = 0.5;
+    }
+    else if (strcmp(val, "theta_scheme") == 0)
+      eqp->time_info.scheme = CS_TIME_SCHEME_THETA;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid key value %s for setting the time scheme.\n"
+                  " Choices are among implicit, explicit, crank_nicholson"
+                  " and theta_scheme"), _val);
+    }
+    break;
+
+  case EQKEY_TIME_THETA:
+    eqp->time_info.theta = atof(val);
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Key %s is not implemented yet."), keyname);
@@ -1882,7 +2010,7 @@ cs_equation_link(cs_equation_t       *eq,
   if (strcmp("diffusion", keyword) == 0)
     eqp->diffusion_hodge.pty_id = cs_param_pty_get_id_by_name(name);
   else if (strcmp("time", keyword) == 0)
-    eqp->unsteady_hodge.pty_id = cs_param_pty_get_id_by_name(name);
+    eqp->time_hodge.pty_id = cs_param_pty_get_id_by_name(name);
   else if (strcmp("advection", keyword) == 0)
     eqp->advection.adv_id = cs_param_adv_get_id_by_name(name);
   else
@@ -1890,6 +2018,66 @@ cs_equation_link(cs_equation_t       *eq,
               _(" Invalid key for setting a property.\n"
                 " Current value: %s\n"
                 " Possible choice: diffusion or time\n"), keyword);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition of the unknown related to this equation
+ *         def_key is among "value", "analytic", "user"
+ *
+ * \param[in, out]  eq        pointer to a cs_equation_t structure
+ * \param[in]       def_key   way of defining the value of the bc
+ * \param[in]       val       pointer to the value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_ic(cs_equation_t    *eq,
+                   const char       *def_key,
+                   void             *val)
+{
+  cs_param_var_type_t  var_type = CS_PARAM_N_VAR_TYPES;
+
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" cs_equation_t structure is NULL\n"
+                " Cannot set the initial condition"));
+
+  cs_equation_param_t  *eqp = eq->param;
+
+  /* Get the type of variable */
+  switch (eqp->type) {
+  case CS_EQUATION_TYPE_SCAL:
+    var_type = CS_PARAM_VAR_SCAL;
+    break;
+  case CS_EQUATION_TYPE_VECT:
+    var_type = CS_PARAM_VAR_VECT;
+    break;
+  case CS_EQUATION_TYPE_TENS:
+    var_type = CS_PARAM_VAR_TENS;
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid type of equation for equation %s.\n"), eq->name);
+    break;
+  }
+
+  /* Get the type of definition */
+  if (strcmp(def_key, "value") == 0)
+    eqp->time_info.ic_def_type = CS_PARAM_DEF_BY_VALUE;
+  else if (strcmp(def_key, "analytic") == 0)
+    eqp->time_info.ic_def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid key for setting the initial condition.\n"
+                " Given key: %s\n"
+                " Choice among value and analytic.\n"
+                " Please modify your settings."), def_key);
+
+  /* Get the definition */
+  cs_param_set_def(eqp->time_info.ic_def_type, var_type, val,
+                   &(eqp->time_info.ic_def));
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2026,12 +2214,12 @@ cs_equation_add_bc(cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_source_term(cs_equation_t    *eq,
-                            const char       *st_name,
-                            const char       *ml_name,
-                            const char       *st_key,
-                            const char       *def_key,
-                            const void       *val)
+cs_equation_add_source_term(cs_equation_t   *eq,
+                            const char      *st_name,
+                            const char      *ml_name,
+                            const char      *st_key,
+                            const char      *def_key,
+                            const void      *val)
 {
   int  ml_id;
   char *_st_name = NULL;
@@ -2234,7 +2422,7 @@ cs_equation_source_term_set(cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_create_field(cs_equation_t    *eq)
+cs_equation_create_field(cs_equation_t     *eq)
 {
   int  dim = 0, location_id = -1; // initialize values to avoid a warning
 
@@ -2306,26 +2494,142 @@ cs_equation_create_field(cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if one has to solve this equation now
+ * \brief  Initialize the values of a field according to the initial condition
+ *         related to its equation
  *
- * \param[in]  eq          pointer to a cs_equation_t structure
- * \param[in]  time_iter   id of the time iteration
- * \param[in]  tcur        current physical time
- *
- * \return true or false
+ * \param[in]       mesh       pointer to the mesh structure
+ * \param[in]       connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]       cdoq       pointer to a cs_cdo_quantities_t struct.
+ * \param[in]       time_step  pointer to a time step structure
+ * \param[in, out]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_equation_needs_solve(const cs_equation_t   *eq,
-                        int                    time_iter,
-                        double                 tcur)
+void
+cs_equation_init_system(const cs_mesh_t            *mesh,
+                        const cs_cdo_connect_t     *connect,
+                        const cs_cdo_quantities_t  *cdoq,
+                        const cs_time_step_t       *time_step,
+                        cs_equation_t              *eq)
 {
-  if (time_iter == -1) // pre-stage after the loop in time
-    if (eq->param->flag & CS_EQUATION_UNSTEADY)
-      return false;
+  if (eq == NULL)
+    return;
 
-  return true;
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  const double t_ini = 0;
+  const cs_equation_param_t  *eqp = eq->param;
+
+  /* Allocate and initialize a system builder */
+  eq->builder = eq->init_builder(eqp, mesh);
+
+  /* Compute the (initial) source term */
+  eq->compute_source(mesh, connect, cdoq, time_step, eq->builder);
+
+  /* Initialize the associated field to the initial conditino */
+  if (!(eqp->flag & CS_EQUATION_UNSTEADY)) // Steady equation do not need this
+    return;
+
+  int  k, l, stride;
+  cs_lnum_t  i, n_elts;
+  cs_get_t  get;
+
+  /* Retrieve the associated field */
+  cs_field_t  *field = cs_field_by_id(eq->field_id);
+
+  /* Define dim */
+  switch (eqp->type) {
+  case CS_EQUATION_TYPE_SCAL:
+    stride = 1;
+    break;
+  case CS_EQUATION_TYPE_VECT:
+    stride = 3;
+    break;
+  case CS_EQUATION_TYPE_TENS:
+    stride = 9;
+    break;
+  default:
+    stride = 0; // avoid a warning
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Type of equation for eq. %s is incompatible with the"
+                " creation of a field structure.\n"), eq->name);
+    break;
+  }
+
+  /* Associate a predefined mesh_location_id to this field */
+  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB)
+    n_elts = cdoq->n_vertices;
+  else {
+    assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOFB);
+    n_elts = cdoq->n_faces;
+  }
+
+  /* Get the definition of the initial condition */
+  cs_def_t  def = eqp->time_info.ic_def;
+
+  if (eqp->time_info.ic_def_type == CS_PARAM_DEF_BY_VALUE) {
+
+    if (stride == 1)
+      for (i = 0; i < n_elts; i++)
+        field->val[i] = def.get.val;
+    else if (stride == 3) { // Interleave by construction
+      for (i = 0; i < n_elts; i++)
+        for (k = 0; k < 3; k++)
+          field->val[3*i+k] = def.get.vect[k];
+    }
+    else if (stride == 9) {
+      for (i = 0; i < n_elts; i++)
+        for (k = 0; k < 3; k++)
+          for (l = 0; l < 3; l++)
+          field->val[9*i+3*k+l] = def.get.tens[k][l];
+    }
+
+  }
+  else if (eqp->time_info.ic_def_type == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION) {
+
+    if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB) {
+
+      for (i = 0; i < n_elts; i++)  {
+        def.analytic(t_ini, &(mesh->vtx_coord[3*i]), &get);
+        if (stride == 1)
+          field->val[i] = def.get.val;
+        else if (stride == 3) { // Interleave by construction
+          for (k = 0; k < 3; k++)
+            field->val[3*i+k] = get.vect[k];
+        }
+        else { // stride = 9
+          for (k = 0; k < 3; k++)
+            for (l = 0; l < 3; l++)
+              field->val[9*i+3*k+l] = get.tens[k][l];
+        }
+      } // Loop on vertices
+
+    }
+    else { // Face-based schemes
+
+      for (i = 0; i < n_elts; i++)  {
+        def.analytic(t_ini, cdoq->face[i].center, &get);
+        if (stride == 1)
+          field->val[i] = get.val;
+        else if (stride == 3) { // Interleave by construction
+          for (k = 0; k < 3; k++)
+            field->val[3*i+k] = get.vect[k];
+        }
+        else {
+          for (k = 0; k < 3; k++)
+            for (l = 0; l < 3; l++)
+              field->val[9*i+3*k+l] = get.tens[k][l];
+        }
+
+      } // Loop on faces
+
+    } // Test on discretization scheme
+
+  } /* Definition using an analytical function */
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2348,11 +2652,12 @@ cs_equation_needs_build(const cs_equation_t    *eq)
 /*!
  * \brief  Build the linear system for this equation
  *
- * \param[in]       m        pointer to a cs_mesh_t structure
- * \param[in]       connect  pointer to a cs_cdo_connect_t structure
- * \param[in]       cdoq     pointer to a cs_cdo_quantities_t structure
- * \param[in]       tcur     current physical time of the simulation
- * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \param[in]       m          pointer to a cs_mesh_t structure
+ * \param[in]       connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]       time_step  pointer to a time step structure
+ * \param[in]       dt_cur     value of the current time step
+ * \param[in, out]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2360,17 +2665,20 @@ void
 cs_equation_build_system(const cs_mesh_t            *m,
                          const cs_cdo_connect_t     *connect,
                          const cs_cdo_quantities_t  *cdoq,
-                         double                      tcur,
+                         const cs_time_step_t       *time_step,
+                         double                      dt_cur,
                          cs_equation_t              *eq)
 {
   cs_sla_matrix_t  *sla_mat = NULL;
 
   const char *eqn = eq->name;
+  const cs_equation_param_t  *eqp = eq->param;
+  const cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
   if (eq->pre_ts_id > -1)
     cs_timer_stats_start(eq->pre_ts_id);
 
-  eq->build_system(m, connect, cdoq, tcur,
+  eq->build_system(m, connect, cdoq, time_step, dt_cur, fld->val,
                    eq->builder,
                    &(eq->rhs),
                    &(sla_mat));
@@ -2378,29 +2686,35 @@ cs_equation_build_system(const cs_mesh_t            *m,
   /* Get information on the matrix related to this linear system */
   cs_sla_matrix_info_t  minfo = cs_sla_matrix_analyse(sla_mat);
 
-  bft_printf("\n Sparse Linear Algebra (SLA) sumup:\n");
-  bft_printf("\t<%s/SLA> A.size         %d\n", eqn, sla_mat->n_rows);
-  bft_printf("\t<%s/SLA> A.nnz          %lu\n", eqn, minfo.nnz);
-  bft_printf("\t<%s/SLA> A.FillIn       %5.2e %%\n", eqn, minfo.fillin);
-  bft_printf("\t<%s/SLA> A.StencilMin   %d\n", eqn, minfo.stencil_min);
-  bft_printf("\t<%s/SLA> A.StencilMax   %d\n", eqn, minfo.stencil_max);
-  bft_printf("\t<%s/SLA> A.StencilMean  %5.2e\n", eqn, minfo.stencil_mean);
+  if (eqp->verbosity > 1) {
+    if (time_step->nt_cur % eqp->output_freq == 0) {
+      bft_printf("\n Sparse Linear Algebra (SLA) sumup:\n");
+      bft_printf("  <%s/sla> A.size         %d\n", eqn, sla_mat->n_rows);
+      bft_printf("  <%s/sla> A.nnz          %lu\n", eqn, minfo.nnz);
+      bft_printf("  <%s/sla> A.FillIn       %5.2e %%\n", eqn, minfo.fillin);
+      bft_printf("  <%s/sla> A.StencilMin   %d\n", eqn, minfo.stencil_min);
+      bft_printf("  <%s/sla> A.StencilMax   %d\n", eqn, minfo.stencil_max);
+      bft_printf("  <%s/sla> A.StencilMean  %5.2e\n", eqn, minfo.stencil_mean);
+    }
+  }
 
   /* Map a cs_sla_matrix_t structure into a cs_matrix_t structure */
   assert(sla_mat->type == CS_SLA_MAT_MSR);
 
-    /* First step: create a matrix structure */
-  eq->ms =  cs_matrix_structure_create_msr(CS_MATRIX_MSR,      // type
-                                           true,               // transfer
-                                           true,               // have_diag
-                                           sla_mat->n_rows,    // n_rows
-                                           sla_mat->n_cols,    // n_cols_ext
-                                           &(sla_mat->idx),    // row_index
-                                           &(sla_mat->col_id), // col_id
-                                           NULL,               // halo
-                                           NULL);              // numbering
+  /* First step: create a matrix structure */
+  if (eq->ms == NULL)
+    eq->ms = cs_matrix_structure_create_msr(CS_MATRIX_MSR,      // type
+                                            true,               // transfer
+                                            true,               // have_diag
+                                            sla_mat->n_rows,    // n_rows
+                                            sla_mat->n_cols,    // n_cols_ext
+                                            &(sla_mat->idx),    // row_index
+                                            &(sla_mat->col_id), // col_id
+                                            NULL,               // halo
+                                            NULL);              // numbering
 
-  eq->matrix = cs_matrix_create(eq->ms); // ms is also stored inside matrix
+  if (eq->matrix == NULL)
+    eq->matrix = cs_matrix_create(eq->ms); // ms is also stored inside matrix
 
   const cs_lnum_t  *row_index, *col_id;
   cs_matrix_get_msr_arrays(eq->matrix, &row_index, &col_id, NULL, NULL);
@@ -2418,6 +2732,11 @@ cs_equation_build_system(const cs_mesh_t            *m,
   /* Free non-transferred parts of sla_mat */
   sla_mat = cs_sla_matrix_free(sla_mat);
 
+  eq->do_build = false;
+  if (eqp->flag & CS_EQUATION_UNSTEADY)
+    eq-> do_build = true; /* Improvement: exhibit cases where a new build
+                             is not needed */
+
   if (eq->pre_ts_id > -1)
     cs_timer_stats_stop(eq->pre_ts_id);
 }
@@ -2426,15 +2745,17 @@ cs_equation_build_system(const cs_mesh_t            *m,
 /*!
  * \brief  Solve the linear system for this equation
  *
- * \param[in]       connect  pointer to a cs_cdo_connect_t structure
- * \param[in]       cdoq     pointer to a cs_cdo_quantities_t structure
- * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \param[in]       connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]       time_step  pointer to a time step structure
+ * \param[in, out]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_solve(const cs_cdo_connect_t     *connect,
                   const cs_cdo_quantities_t  *cdoq,
+                  const cs_time_step_t       *time_step,
                   cs_equation_t              *eq)
 {
   double  r_norm;
@@ -2452,10 +2773,10 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(eq->matrix);
   const cs_param_itsol_t  itsol_info = eq->param->itsol_info;
 
-  printf("\n# Solve Ax = b for %s with %s\n"
+  printf("\n# <<ITER %5d >> Solve Ax = b for %s with %s\n"
          "# System size: %8d ; eps: % -8.5e ;\n",
-         eq->name, cs_param_get_solver_name(itsol_info.solver),
-         n_rows, itsol_info.eps);
+         time_step->nt_cur, eq->name,
+         cs_param_get_solver_name(itsol_info.solver), n_rows, itsol_info.eps);
 
   if (itsol_info.resid_normalized)
     r_norm = cs_euclidean_norm(n_rows, eq->rhs) / n_rows;
@@ -2478,9 +2799,13 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
                       0,      // aux. size
                       NULL);  // aux. buffers
 
-  bft_printf("\t<%s/SLA> code        %d\n", eq->name, cvg);
-  bft_printf("\t<%s/SLA> n_iters     %d\n", eq->name, ret.iter);
-  bft_printf("\t<%s/SLA> residual    % -8.4e\n", eq->name, ret.residual);
+  if (eq->param->verbosity > 1) {
+    if (time_step->nt_cur % eq->param->output_freq == 0) {
+      bft_printf("  <%s/sla> code           %d\n", eq->name, cvg);
+      bft_printf("  <%s/sla> n_iters        %d\n", eq->name, ret.iter);
+      bft_printf("  <%s/sla> residual      % -8.4e\n", eq->name, ret.residual);
+    }
+  }
 
   printf("# n_iters = %d with a residual norm = %8.5e for %s\n",
          ret.iter, ret.residual, eq->name);
@@ -2494,7 +2819,11 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
 
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
-  eq->update_field(connect, cdoq, x, eq->builder, fld);
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(fld);
+
+  /* Define the new field value for the current time */
+  eq->update_field(connect, cdoq, time_step, x, eq->builder, fld->val);
 
   if (eq->post_ts_id > -1)
     cs_timer_stats_stop(eq->post_ts_id);
@@ -2510,8 +2839,7 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
  *
  * \param[in]  mesh       pointer to the mesh structure
  * \param[in]  cdoq       pointer to a cs_cdo_quantities_t struct.
- * \param[in]  time_iter  id of the time iteration
- * \param[in]  tcur       current physical time
+ * \param[in]  time_step  pointer to a time step structure
  * \param[in]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -2519,12 +2847,12 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
 void
 cs_equation_post(const cs_mesh_t            *mesh,
                  const cs_cdo_quantities_t  *cdoq,
-                 int                         time_iter,
-                 cs_real_t                   tcur,
+                 const cs_time_step_t       *time_step,
                  const cs_equation_t        *eq)
 {
   int  len;
 
+  const int  nt_cur = time_step->nt_cur;
   char *postlabel = NULL;
 
   const cs_field_t  *field = cs_field_by_id(eq->field_id);
@@ -2533,11 +2861,18 @@ cs_equation_post(const cs_mesh_t            *mesh,
   /* Cases where a post-processing is not required */
   if (eqp->post_freq == -1)
     return;
-  if (eqp->post_freq % time_iter > 0)
-    return;
-  if (time_iter > 0 && eqp->post_freq == 0)
-    return;
-
+  if (nt_cur == 0) {
+    if (eqp->flag & CS_EQUATION_UNSTEADY)
+      return;
+  }
+  else { /* nt_cur > 0 */
+    if (!(eqp->flag & CS_EQUATION_UNSTEADY))
+      return;
+    if (eqp->post_freq == 0)
+      return;
+    if (nt_cur % eqp->post_freq > 0)
+      return;
+  }
   bft_printf(" <post/var> %s\n", field->name);
 
   /* Perform the post-processing */
@@ -2554,7 +2889,7 @@ cs_equation_post(const cs_mesh_t            *mesh,
                              true,            // true = original mesh
                              CS_POST_TYPE_cs_real_t,
                              field->val,      // values on vertices
-                             NULL);           // time step management structure
+                             time_step);      // time step management structure
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
@@ -2571,7 +2906,7 @@ cs_equation_post(const cs_mesh_t            *mesh,
                         field->val,         // values on cells
                         NULL,               // values at internal faces
                         NULL,               // values at border faces
-                        NULL);              // time step management structure
+                        time_step);         // time step management structure
 
 
       len = strlen(field->name) + 8 + 1;
@@ -2586,7 +2921,7 @@ cs_equation_post(const cs_mesh_t            *mesh,
                         NULL,                  // values on cells
                         NULL,                  // values at internal faces
                         face_pdi + n_i_faces,  // values at border faces
-                        NULL);                 // time step management structure
+                        time_step);            // time step management structure
 
 
       BFT_FREE(postlabel);
@@ -2634,7 +2969,7 @@ cs_equation_post(const cs_mesh_t            *mesh,
                                     a_info,
                                     d_info,
                                     base_vect,
-                                    tcur,
+                                    time_step->t_cur,
                                     &work_c);
 
       if (eqp->post_flag & CS_EQUATION_POST_PECLET)
@@ -2647,7 +2982,7 @@ cs_equation_post(const cs_mesh_t            *mesh,
                           work_c,       // values on cells
                           NULL,         // values at internal faces
                           NULL,         // values at border faces
-                          NULL);        // time step management structure
+                          time_step);   // time step management structure
 
       if (eqp->post_flag & CS_EQUATION_POST_UPWIND_COEF) {
 
@@ -2671,7 +3006,7 @@ cs_equation_post(const cs_mesh_t            *mesh,
                           work_c,       // values on cells
                           NULL,         // values at internal faces
                           NULL,         // values at border faces
-                          NULL);        // time step management structure
+                          time_step);   // time step management structure
 
       } /* Post upwinding coefficient */
 
@@ -2685,6 +3020,27 @@ cs_equation_post(const cs_mesh_t            *mesh,
   if (eq->post_ts_id > -1)
     cs_timer_stats_stop(eq->post_ts_id);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true is the given equation is steady otherwise false
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_is_steady(const cs_equation_t    *eq)
+{
+  bool  is_steady = true;
+
+  if (eq->param->flag & CS_EQUATION_UNSTEADY)
+    is_steady = false;
+
+  return is_steady;
 }
 
 /*----------------------------------------------------------------------------*/

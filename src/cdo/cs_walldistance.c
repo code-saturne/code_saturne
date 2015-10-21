@@ -336,6 +336,9 @@ cs_walldistance_setup(cs_equation_t   *eq,
                               "1.0");          // value to set
 
 
+  /* Post-processing of the computed unknown only at the beginning */
+  cs_equation_set(eq, "post_freq", "0");
+
 #if defined(HAVE_PETSC)  /* Modify the default settings */
   cs_equation_set(eq, "solver_family", "petsc");
 #endif

@@ -83,8 +83,23 @@ static const double  one_third = 1./3.;
  *============================================================================*/
 
 /* ---------------------------------------------------------------------------
- * FVAC6: TEST 1 -- Boundary conditions
- * Tbc =  1 + sin(pi*x_fac) * sin(pi*(y_fac+0.5)) * sin(pi*(z_fac+1/3))
+ * TEST 1 -- Boundary conditions
+ * -------------------------------------------------------------------------- */
+
+static void
+_define_adv_field(cs_real_t     time,
+                  cs_real_3_t   xyz,
+                  cs_get_t     *get)
+{
+  const double  x = xyz[0], y = xyz[1], z = xyz[2];
+
+  (*get).vect[0] = y - 0.5;
+  (*get).vect[1] = 0.5 - x;
+  (*get).vect[2] = z;
+}
+
+/* ---------------------------------------------------------------------------
+ * TEST 1 -- Boundary conditions
  * -------------------------------------------------------------------------- */
 
 static void
@@ -103,8 +118,7 @@ _define_bcs(cs_real_t     time,
 }
 
 /* ---------------------------------------------------------------------------
- * FVAC6: TEST 1 -- Source term
- * material property is constant
+ * TEST 1 -- Source term
  * -------------------------------------------------------------------------- */
 
 static void
@@ -112,12 +126,8 @@ _define_source_term(cs_real_t     time,
                     cs_real_3_t   xyz,
                     cs_get_t     *get)
 {
+  cs_real_t  gx, gy, gz, gxx, gyy, gzz, gxy, gxz, gyz;
   cs_real_33_t  cond;
-
-  double  stval = 0.0;
-  double  sx = DBL_MAX, sy = DBL_MAX, sz = DBL_MAX;
-  double  sxx = DBL_MAX, syy = DBL_MAX, szz = DBL_MAX;
-  double  sxy = DBL_MAX, sxz = DBL_MAX, syz = DBL_MAX;
 
   const double  x = xyz[0], y = xyz[1], z = xyz[2];
   const double  pi = 4.0*atan(1.0), pi2 = pi*pi;
@@ -125,22 +135,25 @@ _define_source_term(cs_real_t     time,
   const double  cpy = cos(pi*(y+0.5)), spy = sin(pi*(y+0.5));
   const double  cpz = cos(pi*(z+one_third)), spz = sin(pi*(z+one_third));
 
+  /* first derivatives */
+  gx = pi*cpx*spy*spz, gy = pi*spx*cpy*spz, gz = pi*spx*spy*cpz;
+
+  /* second derivatives */
+  gxx = gyy = gzz = -pi2*spx*spy*spz;
+  gxy = pi2*cpx*cpy*spz, gxz = pi2*cpx*spy*cpz, gyz = pi2*spx*cpy*cpz;
+
+  /* Material property */
   cond[0][0] = 1.0, cond[0][1] = 0.5, cond[0][2] = 0.0;
   cond[1][0] = 0.5, cond[1][1] = 1.0, cond[1][2] = 0.5;
   cond[2][0] = 0.0, cond[2][1] = 0.5, cond[2][2] = 1.0;
 
-  /* first derivatives */
-  sx = pi*cpx*spy*spz, sy = pi*spx*cpy*spz, sz = pi*spx*spy*cpz;
+  /* Contribution of the diffusive part */
+  (*get).val = cond[0][0]*gxx + cond[1][1]*gyy + cond[2][2]*gzz +
+    2*( cond[0][1]*gxy + cond[0][2]*gxz + cond[1][2]*gyz);
+  (*get).val *= -1;
 
-  /* second derivatives */
-  sxx = syy = szz = -pi2*spx*spy*spz;
-  sxy = pi2*cpx*cpy*spz, sxz = pi2*cpx*spy*cpz, syz = pi2*spx*cpy*cpz;
-
-  stval = cond[0][0]*sxx + cond[1][1]*syy + cond[2][2]*szz +
-    2*(cond[0][1]*sxy + cond[0][2]*sxz + cond[1][2]*syz);
-  stval *= -1;
-
-  (*get).val = stval;
+  /* Contribution of the advection term */
+  (*get).val += (y - 0.5)*gx + (0.5 - x)*gy + z*gz + 1 + spx*spy*spz;
 }
 
 /*============================================================================
@@ -170,7 +183,8 @@ cs_user_cdo_add_mesh_locations(void)
 
  */
 
-  //  cs_mesh_location_add("Bottom", CS_MESH_LOCATION_BOUNDARY_FACES, "x < 1e-6");
+  cs_mesh_location_add("in", CS_MESH_LOCATION_BOUNDARY_FACES, "x < 1e-5");
+  cs_mesh_location_add("out", CS_MESH_LOCATION_BOUNDARY_FACES, "x > 0.9999");
 
   return;
 }
@@ -209,6 +223,10 @@ cs_user_cdo_add_properties(void)
                    "anisotropic",   // type of material property
                    -1);             // frequency of post-processing
 
+  cs_param_pty_add("rho.cp",      // property name
+                   "isotropic",   // type of material property
+                   -1);           // frequency of post-processing
+
   /* =============================
      User-defined advection fields
      =============================
@@ -229,7 +247,8 @@ cs_user_cdo_add_properties(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Specify the definition of additional material properties and/or
- *         advection fields
+ *         advection fields (This is a second step after having added the
+ *         material properties and/or advection fields).
  */
 /*----------------------------------------------------------------------------*/
 
@@ -238,14 +257,17 @@ cs_user_cdo_set_properties(void)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
-  /* In a second step, please set the value of the material property.
+  /* ================================
+     User-defined material properties
+     ================================
 
      1) Give the name of the property
      2) Set the type of definition among the following choices:
         >> "value", "analytic", "user"
      3) Set the value
-        >> "1.0"     for an isotropic property set by value
-        >> _my_func  name of the function for a property set by analytic
+        >> "1.0"        for instance for an isotropic property set by value
+        >> "0.5 0.1 1." for instance for an orthotropic property set by value
+        >> _my_func     name of the function for a property set by analytic
   */
 
   cs_param_pty_set("conductivity", // property name
@@ -254,7 +276,13 @@ cs_user_cdo_set_properties(void)
                    "0.5  1.0  0.5\n"
                    "0.0  0.5  1.0\n");
 
-  /* In a second step, please set the value of the advection field.
+  cs_param_pty_set("rho.cp", // property name
+                   "value",
+                   "1.0");   // value of the material property
+
+  /* =============================
+     User-defined advection fields
+     =============================
 
      1) Give the name of the property
      2) Set the type of definition among the following choices:
@@ -265,23 +293,30 @@ cs_user_cdo_set_properties(void)
   */
 
   cs_param_adv_field_set("adv_field",        // property name
-                         "value",            // type of definition
-                         "1.0  0.0  0.0\n"); // value of the advection field
+                         "analytic",         // type of definition
+                         _define_adv_field); // value of the advection field
 
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify which type of boundaries closed the computational domain
+ * \brief  Specify for the computational domain:
+ *         -- which type of boundaries closed the computational domain
+ *         -- which equations are to be solved
+ *         -- the settings for the time step
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_setup_domain_boundary(cs_domain_t   *domain)
+cs_user_cdo_setup_domain(cs_domain_t   *domain)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+
+  /* =========================================
+     Define boundary of the domain
+     =========================================
 
   /* Choose a boundary by default
      boundary keyword is one of the following keyword
@@ -302,23 +337,28 @@ cs_user_cdo_setup_domain_boundary(cs_domain_t   *domain)
      >> wall, inlet, outlet, symmetry
   */
 
-  //  cs_domain_add_boundary(domain, "Top", "wall");
+  cs_domain_add_boundary(domain, "in", "inlet");
+  cs_domain_add_boundary(domain, "out", "outlet");
 
-}
+  /* =========================================
+     Time step management
+     =========================================
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Specify which are the equatinos to be solved in this computational
- *         domain
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
+     If there is an inconsistency between the max. number of iteration in
+     time and the final physical time, the first condition encountered stops
+     the calculation.
 
-void
-cs_user_cdo_add_domain_equations(cs_domain_t   *domain)
-{
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+     Type of definition is among the following choices:
+     >> "value", "time_func", "user"
+     By value, the time step is constant
+
+  */
+
+  cs_domain_set_time_step(domain,
+                          100,     /* Max. number of time iteration */
+                          10.,     /* Final time of the simulation */
+                          "value", /* How time step is define */
+                          "1");    /* Value of the time step */
 
   /* =========================================
      Activate predefined equations
@@ -334,7 +374,8 @@ cs_user_cdo_add_domain_equations(cs_domain_t   *domain)
      Define additional user equations to solve
      =========================================
 
-     cs_domain_add_user_equation
+     cs_domain_add_user_equation(...)
+
      >> arguements: domain,
                     equation name,
                     associated field name,
@@ -343,20 +384,14 @@ cs_user_cdo_add_domain_equations(cs_domain_t   *domain)
                     do_convection ?   true or false
                     do_diffusion ?    true or false
                     default_bc:       "zero_value" or "zero_flux"
+
+     By default, initial values are set to zero (or the value given by the
+     restart file in case of restart).
   */
 
   cs_domain_add_user_equation(domain,
-                              "FVCA6.1",     // equation name
+                              "AdvDiff",
                               "Potential",   // associated field name
-                              "scalar",      // type of equation
-                              true,         // steady ?
-                              false,         // convection ?
-                              true,          // diffusion ?
-                              "zero_value"); // default boundary condition
-
-  cs_domain_add_user_equation(domain,
-                              "CODITS.FVCA", // equation name
-                              "Pot2",        // associated field name
                               "scalar",      // type of equation
                               true,          // steady ?
                               true,          // convection ?
@@ -379,118 +414,80 @@ cs_user_cdo_setup_equations(cs_domain_t   *domain)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
-  cs_equation_t  *eq = NULL;
+  cs_equation_t  *eq = cs_domain_get_equation(domain, "AdvDiff");
 
-  eq = cs_domain_get_equation(domain, "FVCA6.1");
+  /* Define the boundary conditions (BCs) for each additional equation eq
 
-  if (eq != NULL) { // Equation has been found
+     Boundary conditions are among the following choices:
+     >> "dirichlet", "neumann" or "robin"
+     Type of definition is among the following choices:
+     >> "value", "analytic", "user"
 
-    /* Define the boundary conditions (BCs) for equation eq
+  */
 
-       boundary conditions are among the following choices:
-       >> "dirichlet", "neumann" or "robin"
+  cs_equation_add_bc(eq,                // equation
+                     "boundary_faces",  // name of the mesh location
+                     "dirichlet",       // BC type
+                     "analytic",        // type of definition
+                     _define_bcs);      // pointer to the analytic function
 
-       type of definition is among the following choices:
-       >> "value", "analytic", "user"
+  /* Link properties to different terms of this equation */
+  cs_equation_link(eq, "time", "rho.cp");
+  cs_equation_link(eq, "advection", "adv_field");
+  cs_equation_link(eq, "diffusion", "conductivity");
 
-     */
+  /* Add a source term: There are several types of source terms
 
-    cs_equation_add_bc(eq,                // equation
-                       "boundary_faces",  // name of the mesh location
-                       "dirichlet",       // BC type
-                       "analytic",        // type of definition
-                       _define_bcs);      // pointer to the analytic function
+     Label of the source term is optional (i.e. NULL is possible)
+     This label is mandatory if additional settings are requested
 
-    /* Associate properties with terms at play in the equation */
+     Type of the source is among the following choices:
+     >> "implicit", "explicit", "imex"
+       >> "implicit" means that the source term is added to the diagonal of
+       the linear system
+       >> "explicit" means that the source term is added to the right-hand
+       side of the linear system
+       >> "imex" means that there are two contributions: the first one is
+       implicit and the second one is explicit (Not implemented yet)
 
-    cs_equation_link(eq,              // equation
-                     "diffusion",     // for the diffusion term
-                     "conductivity"); // property name
+     Type of definition is among the following choices:
+     >> "value", "analytic", "user"
 
-    /* Add a source term: There are several types of source terms
+   */
 
-       label of the source term is optional (i.e. NULL is possible)
+  cs_equation_add_source_term(eq,
+                              "SourceTerm",    // label of the source term
+                              "cells",         // name of the mesh location
+                              "explicit",      // type of source term
+                              "analytic",      // type of definition
+                              _define_source_term); // analytic function
 
-       type of the source is among the following choices:
-       >> "implicit", "explicit", "imex"
-          >> "implicit" means that the source term is added to the diagonal of
-          the linear system
-          >> "explicit" means that the source term is added to the right-hand
-          side of the linear system
-          >> "imex" means that there are two contributions: the first one is
-          implicit and the second one is explicit (Not implemented yet)
+  /* Optional: specify additional settings for a source term
 
-       type of definition is among the following choices:
-       >> "value", "analytic", "user"
+       cs_equation_source_term_set(eq,       // equation
+                                   st_label, // label of the source term
+                                   key,      // name of the key
+                                   val)      // value of the key to set
 
-     */
+     Available keys are the following: "post", "quadrature"
 
-    cs_equation_add_source_term(eq,
-                                "SourceTerm",    // label of the source term
-                                "cells",         // name of the mesh location
-                                "explicit",      // type of source term
-                                "analytic",      // type of definition
-                                _define_source_term); // analytic function
+       >> key: "post" Set the behaviour related to post-processing
+       >> val: "-1" no post-processing,
+               "0"  at the beginning of the computation,
+               "n"  at each n iterations
 
-  } /* eq != NULL */
+       >> key: "quadrature" Set the algortihm used for quadrature
+       >> val: "subdiv"  used a subdivision into tetrahedra
+               "bary"    used the barycenter approximation
+               "higher"  used 4 Gauss points for approximating the integral
+               "highest" used 5 Gauss points for approximating the integral
 
-  eq = cs_domain_get_equation(domain, "CODITS.FVCA");
+     Remark: "higher" and "highest" implies automatically a subdivision
+             into tetrahedra
+  */
 
-  if (eq != NULL) { // Equation has been found
-
-    /* Define the boundary conditions (BCs) for equation eq
-
-       boundary conditions are among the following choices:
-       >> "dirichlet", "neumann" or "robin"
-
-       type of definition is among the following choices:
-       >> "value", "analytic", "user"
-
-     */
-
-    cs_equation_add_bc(eq,                // equation
-                       "boundary_faces",  // name of the mesh location
-                       "dirichlet",       // BC type
-                       "analytic",        // type of definition
-                       _define_bcs);      // pointer to the analytic function
-
-    /* Associate properties with terms at play in the equation */
-
-    cs_equation_link(eq,              // equation
-                     "diffusion",     // for the diffusion term
-                     "conductivity"); // property name
-
-    cs_equation_link(eq,
-                     "advection",
-                     "adv_field");
-
-    /* Add a source term: There are several types of source terms
-
-       label of the source term is optional (i.e. NULL is possible)
-
-       type of the source is among the following choices:
-       >> "implicit", "explicit", "imex"
-          >> "implicit" means that the source term is added to the diagonal of
-          the linear system
-          >> "explicit" means that the source term is added to the right-hand
-          side of the linear system
-          >> "imex" means that there are two contributions: the first one is
-          implicit and the second one is explicit (Not implemented yet)
-
-       type of definition is among the following choices:
-       >> "value", "analytic", "user"
-
-     */
-
-    cs_equation_add_source_term(eq,
-                                "SourceTerm",    // label of the source term
-                                "cells",         // name of the mesh location
-                                "explicit",      // type of source term
-                                "analytic",      // type of definition
-                                _define_source_term); // analytic function
-
-  } /* eq != NULL */
-
+  cs_equation_source_term_set(eq, "SourceTerm", "quadrature", "bary");
+  cs_equation_source_term_set(eq, "SourceTerm", "quadrature", "subdiv");
 }
 
 /*----------------------------------------------------------------------------*/

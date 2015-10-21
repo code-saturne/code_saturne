@@ -94,47 +94,72 @@ cs_cdofb_codits_free(void   *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build the linear system arising from a scalar convection/diffusion
- *         equation with a CDO face-based scheme.
+ * \brief   Compute the contributions of source terms (store inside builder)
  *
- * \param[in]      m        pointer to a cs_mesh_t structure
- * \param[in]      connect  pointer to a cs_cdo_connect_t structure
- * \param[in]      quant    pointer to a cs_cdo_quantities_t structure
- * \param[in]      tcur     current physical time of the simulation
- * \param[in, out] builder  pointer to cs_cdofb_codits_t structure
- * \param[in, out] rhs      pointer to a right-hand side array pointer
- * \param[in, out] sla_mat  pointer to cs_sla_matrix_t structure pointer
+ * \param[in]      m           pointer to a cs_mesh_t structure
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step   pointer to a time step structure
+ * \param[in, out] builder     pointer to a cs_cdofb_codits_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_codits_build_system(const cs_mesh_t            *m,
-                             const cs_cdo_connect_t     *connect,
-                             const cs_cdo_quantities_t  *quant,
-                             double                      tcur,
-                             void                       *builder,
-                             cs_real_t                 **rhs,
-                             cs_sla_matrix_t           **sla_mat);
+cs_cdofb_codits_compute_source(const cs_mesh_t            *m,
+                               const cs_cdo_connect_t     *connect,
+                               const cs_cdo_quantities_t  *quant,
+                               const cs_time_step_t       *time_step,
+                               void                       *builder);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build the linear system arising from a scalar convection/diffusion
+ *         equation with a CDO face-based scheme.
+ *
+ * \param[in]      m          pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a time step structure
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      field_val  pointer to the current value of the field
+ * \param[in, out] builder    pointer to cs_cdofb_codits_t structure
+ * \param[in, out] rhs        pointer to a right-hand side array pointer
+ * \param[in, out] sla_mat    pointer to cs_sla_matrix_t structure pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_codits_build_system(const cs_mesh_t             *m,
+                             const cs_cdo_connect_t      *connect,
+                             const cs_cdo_quantities_t   *quant,
+                             const cs_time_step_t        *time_step,
+                             double                       dt_cur,
+                             const cs_real_t             *field_val,
+                             void                        *builder,
+                             cs_real_t                  **rhs,
+                             cs_sla_matrix_t            **sla_mat);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Post-process the solution of a scalar convection/diffusion equation
  *         solved with a CDO face-based scheme
  *
- * \param[in]      connect  pointer to a cs_cdo_connect_t struct.
- * \param[in]      quant    pointer to a cs_cdo_quantities_t struct.
- * \param[in]      solu     solution array
- * \param[in, out] builder  pointer to cs_cdofb_codits_t structure
- * \param[in, out] field    pointer to a cs_field_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
+ * \param[in]      time_step  pointer to a time step structure
+ * \param[in]      solu       solution array
+ * \param[in, out] builder    pointer to cs_cdofb_codits_t structure
+ * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_codits_update_field(const cs_cdo_connect_t     *connect,
                              const cs_cdo_quantities_t  *quant,
+                             const cs_time_step_t       *time_step,
                              const cs_real_t            *solu,
                              void                       *builder,
-                             cs_field_t                 *field);
+                             cs_real_t                  *field_val);
 
 /*----------------------------------------------------------------------------*/
 /*!

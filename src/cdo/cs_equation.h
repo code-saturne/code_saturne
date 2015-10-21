@@ -30,6 +30,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_mesh.h"
+#include "cs_time_step.h"
+
 #include "cs_param.h"
 #include "cs_field.h"
 #include "cs_cdo_quantities.h"
@@ -128,7 +130,7 @@ cs_equation_create_builder(const cs_mesh_t   *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_last_init(cs_equation_t  *eq);
+cs_equation_last_setup(cs_equation_t  *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -161,6 +163,22 @@ void
 cs_equation_link(cs_equation_t       *eq,
                  const char          *keyword,
                  const char          *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition of the unknown related to this equation
+ *         def_key is among "value", "analytic"
+ *
+ * \param[in, out]  eq        pointer to a cs_equation_t structure
+ * \param[in]       def_key   way of defining the value of the bc
+ * \param[in]       val       pointer to the value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_ic(cs_equation_t    *eq,
+                   const char       *def_key,
+                   void             *val);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -236,24 +254,27 @@ cs_equation_source_term_set(cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_create_field(cs_equation_t    *eq);
+cs_equation_create_field(cs_equation_t      *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if one has to solve this equation now
+ * \brief  Initialize the values of a field according to the initial condition
+ *         related to its equation
  *
- * \param[in]  eq          pointer to a cs_equation_t structure
- * \param[in]  time_iter   id of the time iteration
- * \param[in]  tcur        current physical time
- *
- * \return true or false
+ * \param[in]       mesh       pointer to the mesh structure
+ * \param[in]       connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]       cdoq       pointer to a cs_cdo_quantities_t struct.
+ * \param[in]       time_step  pointer to a time step structure
+ * \param[in, out]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_equation_needs_solve(const cs_equation_t   *eq,
-                        int                    time_iter,
-                        double                 tcur);
+void
+cs_equation_init_system(const cs_mesh_t            *mesh,
+                        const cs_cdo_connect_t     *connect,
+                        const cs_cdo_quantities_t  *cdoq,
+                        const cs_time_step_t       *time_step,
+                        cs_equation_t              *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -272,11 +293,12 @@ cs_equation_needs_build(const cs_equation_t    *eq);
 /*!
  * \brief  Build the linear system for this equation
  *
- * \param[in]       m        pointer to a cs_mesh_t structure
- * \param[in]       connect  pointer to a cs_cdo_connect_t structure
- * \param[in]       cdoq     pointer to a cs_cdo_quantities_t structure
- * \param[in]       tcur     current physical time of the simulation
- * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \param[in]       m          pointer to a cs_mesh_t structure
+ * \param[in]       connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]       time_step  pointer to a time step structure
+ * \param[in]       dt_cur     value of the current time step
+ * \param[in, out]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -284,22 +306,25 @@ void
 cs_equation_build_system(const cs_mesh_t            *m,
                          const cs_cdo_connect_t     *connect,
                          const cs_cdo_quantities_t  *cdoq,
-                         double                      tcur,
+                         const cs_time_step_t       *time_step,
+                         double                      dt_cur,
                          cs_equation_t              *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve the linear system for this equation
  *
- * \param[in]       connect  pointer to a cs_cdo_connect_t structure
- * \param[in]       cdoq     pointer to a cs_cdo_quantities_t structure
- * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \param[in]       connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]       time_step  pointer to a time step structure
+ * \param[in, out]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_solve(const cs_cdo_connect_t     *connect,
                   const cs_cdo_quantities_t  *cdoq,
+                  const cs_time_step_t       *time_step,
                   cs_equation_t              *eq);
 
 /*----------------------------------------------------------------------------*/
@@ -308,8 +333,7 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
  *
  * \param[in]  mesh       pointer to the mesh structure
  * \param[in]  cdoq       pointer to a cs_cdo_quantities_t struct.
- * \param[in]  time_iter  id of the time iteration
- * \param[in]  tcur       current physical time
+ * \param[in]  time_step  pointer to a time step structure
  * \param[in]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -317,9 +341,21 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
 void
 cs_equation_post(const cs_mesh_t            *mesh,
                  const cs_cdo_quantities_t  *cdoq,
-                 int                         time_iter,
-                 cs_real_t                   tcur,
+                 const cs_time_step_t       *time_step,
                  const cs_equation_t        *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true is the given equation is steady otherwise false
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_is_steady(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!

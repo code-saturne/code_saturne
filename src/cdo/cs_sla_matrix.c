@@ -3557,14 +3557,16 @@ cs_sla_system_dump(const char              *name,
  *          --> We assume that the local matrices are symmetric
  *          --> We assume that the assembled matrix has its columns sorted
  *
- * \param[in]       loc     pointer to a local matrix
- * \param[in, out]  ass     pointer to a cs_sla_matrix_t struct. collecting data
+ * \param[in]       loc        pointer to a local matrix
+ * \param[in, out]  ass        pointer to a cs_sla_matrix_t struct.
+ * \param[in]       only_diag  true if assembly is only for diagonal terms
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_sla_assemble_msr_sym(const cs_toolbox_locmat_t  *loc,
-                        cs_sla_matrix_t            *ass)
+                        cs_sla_matrix_t            *ass,
+                        bool                        only_diag)
 {
   int  i, j, k_ij, k_ji;
 
@@ -3576,37 +3578,42 @@ cs_sla_assemble_msr_sym(const cs_toolbox_locmat_t  *loc,
   /* Assemble local contributions into ass */
   for (i = 0; i < n_ent; i++) {
 
-    short int  pos_i = i*n_ent;
-    cs_lnum_t  i_id = loc->ids[i];
-    cs_lnum_t  start_i = ass->idx[i_id];
-    size_t  n_i_ents = ass->idx[i_id+1] - start_i; // arg. binary search
+    const short int  pos_i = i*n_ent;
+    const cs_lnum_t  i_id = loc->ids[i];
 
     /* Add diagonal term : loc(i,i) */
     ass->diag[i_id] += loc->mat[pos_i+i];
 
-    for (j = i + 1; j < n_ent; j++) {
+    if (!only_diag) {
 
-      double  val_ij = loc->mat[pos_i+j];
+      const cs_lnum_t  start_i = ass->idx[i_id];
+      const size_t  n_i_ents = ass->idx[i_id+1] - start_i; // arg. binary search
 
-      if (fabs(val_ij) > cs_base_zthreshold) { /* Not zero */
+      for (j = i + 1; j < n_ent; j++) {
 
-        int  j_id = loc->ids[j];
-        cs_lnum_t  start_j = ass->idx[j_id];
-        size_t  n_j_ents = ass->idx[j_id+1] - start_j;
+        double  val_ij = loc->mat[pos_i+j];
 
-        /* First add: loc(i,j) */
-        k_ij = cs_search_binary(n_i_ents, j_id, &(ass->col_id[start_i]));
-        assert(k_ij > -1);
-        ass->val[start_i+k_ij] += val_ij;
+        if (fabs(val_ij) > cs_base_zthreshold) { /* Not zero */
 
-        /* Second add: loc(j,i) */
-        k_ji = cs_search_binary(n_j_ents, i_id, &(ass->col_id[start_j]));
-        assert(k_ji > -1);
-        ass->val[start_j+k_ji] += val_ij;
+          int  j_id = loc->ids[j];
+          cs_lnum_t  start_j = ass->idx[j_id];
+          size_t  n_j_ents = ass->idx[j_id+1] - start_j;
 
-      } /* loc[ij] != 0.0 */
+          /* First add: loc(i,j) */
+          k_ij = cs_search_binary(n_i_ents, j_id, &(ass->col_id[start_i]));
+          assert(k_ij > -1);
+          ass->val[start_i+k_ij] += val_ij;
 
-    } /* Loop on j (Add extra-diag terms) */
+          /* Second add: loc(j,i) */
+          k_ji = cs_search_binary(n_j_ents, i_id, &(ass->col_id[start_j]));
+          assert(k_ji > -1);
+          ass->val[start_j+k_ji] += val_ij;
+
+        } /* loc[ij] != 0.0 */
+
+      } /* Loop on j (Add extra-diag terms) */
+
+    } /* Not only diagonal terms */
 
   } /* Loop on i (Add diagonal term) */
 

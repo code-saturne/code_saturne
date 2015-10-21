@@ -104,35 +104,38 @@ typedef struct {
    equation with term sources */
 typedef struct {
 
-  cs_equation_status_t  status;  /* predefined, user... */
-  cs_equation_type_t    type;    /* scalar, vector, tensor... */
-  int                   verbosity;  /* Level of detail to output */
-
-  int                   post_freq; /* Move this option to cs_field_t ? */
-  cs_flag_t             post_flag; /* Type of post-treatment to do */
+  cs_equation_status_t  status;       /* predefined, user... */
+  cs_equation_type_t    type;         /* scalar, vector, tensor... */
+  int                   verbosity;    /* Level of detail to output */
+  int                   output_freq;  /* Write log at this frequency */
 
   /* Unsteady-Diffusion-Convection-Source term activated or not */
   int                   flag;
 
-  /* Boundary conditions */
-  cs_param_bc_t        *bc;
+  /* Post-treatment */
+  int                   post_freq; /* Move this option to cs_field_t ? */
+  cs_flag_t             post_flag; /* Type of post-treatment to do */
 
   /* Numerical settings */
   cs_space_scheme_t     space_scheme;
 
+  /* Boundary conditions */
+  cs_param_bc_t        *bc;
+
   /* High-level structure to manage/monitor the resolution of this equation */
-  cs_equation_algo_t       algo_info;
-  cs_param_itsol_t         itsol_info;
+  cs_equation_algo_t    algo_info;
+  cs_param_itsol_t      itsol_info;
 
-  /* Unsteady term */
-  cs_param_hodge_t         unsteady_hodge;
-  bool                     is_multiplied_by_rho;  /* true or false */
+  /* Unsteady term discretization and description of the time discretization */
+  cs_param_time_t       time_info;
+  cs_param_hodge_t      time_hodge;
+  bool                  is_multiplied_by_rho;  /* true or false */
 
-  /* Diffusion parameters */
-  cs_param_hodge_t         diffusion_hodge;
+  /* Diffusion term */
+  cs_param_hodge_t      diffusion_hodge;
 
   /* Advection term */
-  cs_param_advection_t     advection;
+  cs_param_advection_t  advection;
 
   /* Source term(s) */
   int                      n_source_terms;

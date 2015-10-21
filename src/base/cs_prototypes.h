@@ -500,29 +500,6 @@ cs_user_cdo_add_mesh_locations(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify which type of boundaries closed the computational domain
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_setup_domain_boundary(cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Specify which are the equatinos to be solved in this computational
- *         domain
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_add_domain_equations(cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Add user-defined material properties and/or advection fields
  */
 /*----------------------------------------------------------------------------*/
@@ -542,8 +519,23 @@ cs_user_cdo_set_properties(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Associate material property to user-defined equations and specify
- *         boundary conditions, source terms for thes additional equations
+ * \brief  Specify for the computational domain:
+ *         -- which type of boundaries closed the computational domain
+ *         -- which equations are to be solved
+ *         -- the settings for the time step
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_setup_domain(cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate material property and/or convection field to user-defined
+ *         equations and specify boundary conditions, source terms, initial
+ *         values for these additional equations
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
@@ -582,15 +574,11 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain);
  *         Define advanced post-processing and/or analysis for instance.
  *
  * \param[in]  domain   pointer to a cs_domain_t structure
- * \param[in]  t_iter   current iteration of the simulation
- * \param[in]  t_cur    current physical time of the simulation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_extra_op(const cs_domain_t           *domain,
-                     int                          t_iter,
-                     double                       t_cur);
+cs_user_cdo_extra_op(const cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 

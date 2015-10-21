@@ -31,6 +31,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_time_step.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_cdo_connect.h"
@@ -72,11 +73,19 @@ typedef struct {
   /* Physical boundary conditions on the computational domain */
   cs_domain_boundary_t          *boundaries;
 
+  /* Time step management */
+  double                   dt_cur;             // current time step
+  cs_param_def_type_t      time_step_def_type; // Way of defining the time step
+  cs_def_t                 time_step_def;      // Definition of the time_step
+  cs_time_step_t          *time_step;          // time step descriptor
+  cs_time_step_options_t   time_options;       // time step options
+
   /* Overview of pre-defined equations to solve
       - Navier-Stokes equations (named NavierStokes)
       - Wall distance (named WallDistance)
   */
   bool             do_navsto;
+
   // TODO: add a specific equation for solving Navier-Stokes
 
   /* Number of equations defined on this domain splitted into
@@ -88,10 +97,15 @@ typedef struct {
   int              n_user_equations;
   cs_equation_t  **equations;
 
+  bool             only_steady;
+
   /* Predefined equations
-     If *_eq_id = -1, then this equation is not activated */
+     If xxxxx_eq_id = -1, then this equation is not activated */
 
   int              wall_distance_eq_id;
+
+  /* Output options */
+  int              output_freq;
 
 } cs_domain_t;
 
@@ -120,14 +134,14 @@ cs_domain_init(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Proceed to the last initializiation of a cs_domain_t structure
+ * \brief  Proceed to the last settings of a cs_domain_t structure
  *
  * \param[in, out]  domain    pointer to the cs_domain_t structure to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_last_init(cs_domain_t    *domain);
+cs_domain_last_setup(cs_domain_t    *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -144,14 +158,85 @@ cs_domain_free(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summarize a cs_domain_t structure
+ * \brief  Summary of a cs_domain_t structure
  *
- * \param[in, out]   domain    pointer to the cs_domain_t structure to free
+ * \param[in]   domain    pointer to the cs_domain_t structure to summarize
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_summary(cs_domain_t   *domain);
+cs_domain_summary(const cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the boundary type by default
+ *
+ * \param[in, out]   domain        pointer to a cs_domain_t structure
+ * \param[in]        bdy_name      key name of the default boundary
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_default_boundary(cs_domain_t               *domain,
+                               const char                *bdy_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a boundary type defined on a mesh location
+ *
+ * \param[in, out]   domain       pointer to a cs_domain_t structure
+ * \param[in]        ml_name      mesh location name
+ * \param[in]        bdy_name     key name of boundary to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_add_boundary(cs_domain_t               *domain,
+                       const char                *ml_name,
+                       const char                *bdy_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the frequency at which output is done in listing
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ * \param[in]        freq     each freq iterations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_output_freq(cs_domain_t   *domain,
+                          int            freq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Setup the time step structure related to a domain
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ * \param[in]        t_end     final physical time
+ * \param[in]        nt_max    max. number of temporal iterations
+ * \param[in]        defkey    way of defining the time step
+ * \param[in]        defval    definition of the time step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_time_step(cs_domain_t   *domain,
+                        double         t_end,
+                        int            nt_max,
+                        const char    *defkey,
+                        void          *defval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the current time step for this new time iteration
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_define_current_time_step(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -219,34 +304,6 @@ cs_domain_add_user_equation(cs_domain_t         *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the boundary type by default
- *
- * \param[in, out]   domain        pointer to a cs_domain_t structure
- * \param[in]        bdy_name      key name of the default boundary
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_set_default_boundary(cs_domain_t               *domain,
-                               const char                *bdy_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add a boundary type defined on a mesh location
- *
- * \param[in, out]   domain       pointer to a cs_domain_t structure
- * \param[in]        ml_name      mesh location name
- * \param[in]        bdy_name     key name of boundary to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_add_boundary(cs_domain_t               *domain,
-                       const char                *ml_name,
-                       const char                *bdy_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Create a cs_field_t structure for each equation defined in the
  *         domain
  *
@@ -259,46 +316,38 @@ cs_domain_create_fields(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a builder structure specific for each type of equation
+ * \brief  Check if one needs to continue iterations in time
  *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ *
+ * \return  true or false
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_domain_create_builders(cs_domain_t  *domain);
+bool
+cs_domain_needs_iterate(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve all the equations of a computational domain for a time
- *         step
+ * \brief  Update time step after one temporal iteration
  *
  * \param[in, out]  domain     pointer to a cs_domain_t structure
- * \param[in]       time_iter  id of the time iteration
- * \param[in]       tcur       current physical time
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_solve(cs_domain_t  *domain,
-                int           time_iter,
-                double        tcur);
+cs_domain_increment_time(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Perform additional operations after the resolution of the linear
- *         systems
+ * \brief  Solve all the equations of a computational domain for one time step
  *
  * \param[in, out]  domain     pointer to a cs_domain_t structure
- * \param[in]       time_iter  id of the time iteration
- * \param[in]       tcur       current physical time
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_extra_operations(cs_domain_t   *domain,
-                           int            time_iter,
-                           double         tcur);
+cs_domain_solve(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 

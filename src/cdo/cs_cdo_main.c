@@ -104,6 +104,13 @@ static cs_domain_t *
 _setup(cs_mesh_t             *m,
        cs_mesh_quantities_t  *mq)
 {
+  /* Output information */
+  bft_printf("\n");
+  bft_printf("%s", lsepline);
+  bft_printf("\tStart CDO Module  *** Experimental ***\n");
+  bft_printf("%s", lsepline);
+  bft_printf("\n -msg- Version.Tag  %s\n", cs_cdoversion);
+
   /* Initialization of several modules */
   cs_set_eps_machine();      /* Compute and set epsilon machine */
   cs_quadrature_setup();     /* Compute constant used in quadrature rules */
@@ -167,14 +174,12 @@ _setup(cs_mesh_t             *m,
                                      => Time-idenpendent output is considered */
 
   /* Last setup stage */
-  cs_domain_last_init(domain);
+  cs_domain_last_setup(domain);
 
   /* Sumary of the settings */
   cs_cdo_connect_summary(domain->connect);
   cs_param_pty_summary_all();
   cs_domain_summary(domain);
-
-  cs_domain_create_builders(domain);
 
   return domain;
 }
@@ -215,27 +220,13 @@ void
 cs_cdo_main(cs_mesh_t             *m,
             cs_mesh_quantities_t  *mq)
 {
-  int  time_iter;
   cs_timer_t  t0, t1;
   cs_timer_counter_t  time_count;
-
-  // TODO: add time managment
-  int  n_time_steps = 0;
-  double  dt = 0.;
 
   /* Build high-level structures */
   t0 = cs_timer_time();
 
-  /* Output information */
-  bft_printf("\n");
-  bft_printf("%s", lsepline);
-  bft_printf("\tStart CDO Module  *** Experimental ***\n");
-  bft_printf("%s", lsepline);
-  bft_printf("\n -msg- Version.Tag  %s\n", cs_cdoversion);
-
   /* Create algebraic systems */
-  t0 = cs_timer_time();
-
   cs_domain_t  *domain = _setup(m, mq);
 
   t1 = cs_timer_time();
@@ -244,52 +235,29 @@ cs_cdo_main(cs_mesh_t             *m,
                 "  -t-    CDO setup runtime                    %12.3f s\n",
                 time_count.wall_nsec*1e-9);
 
-  /* Solve equations: Loop on time iterations */
-  for (time_iter = -1; time_iter < n_time_steps; time_iter++) {
+  while (cs_domain_needs_iterate(domain)) {
 
-    double  tcur = time_iter*dt; // TODO: get current time
-
-    if (time_iter == -1) { // Steady-state equation solver
-
-      /* Solve steady-state equations */
-      t0 = cs_timer_time();
-
-      cs_domain_solve(domain, time_iter, 0.0); // time_iter = -1, tcur = 0.0
-
-      t1 = cs_timer_time();
-      time_count = cs_timer_diff(&t0, &t1);
-      cs_log_printf(CS_LOG_PERFORMANCE,
-                    "  -t-    CDO steady-state solver runtime      %12.3f s\n",
-                    time_count.wall_nsec*1e-9);
-
-    } // timer_iter == -1
-    else {
-
-      /* Solve linear systems */
-      t0 = cs_timer_time();
-
-      cs_domain_solve(domain, time_iter, tcur);
-
-      t1 = cs_timer_time();
-      time_count = cs_timer_diff(&t0, &t1);
-      cs_log_printf(CS_LOG_PERFORMANCE,
-                    "  -t-    CDO solver runtime (iter: %d)        %12.3f s\n",
-                    time_iter, time_count.wall_nsec*1e-9);
-
-    } // timer_iter != -1
-
-    /* Extra operations */
     t0 = cs_timer_time();
 
-    cs_domain_extra_operations(domain, time_iter, tcur);
+    /* Define the current time step */
+    cs_domain_define_current_time_step(domain);
+
+    /* Solve equations */
+    cs_domain_solve(domain);
 
     t1 = cs_timer_time();
     time_count = cs_timer_diff(&t0, &t1);
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  -t-    CDO extra op. (iter: %d)             %12.3f s\n",
-                  time_iter, time_count.wall_nsec*1e-9);
 
-  } /* Loop on time steps */
+    /* Output */
+    if (domain->time_step->nt_cur % domain->output_freq == 0)
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    "  -t-    CDO solver runtime (iter: %d)        %12.3f s\n",
+                    domain->time_step->nt_cur, time_count.wall_nsec*1e-9);
+
+    /* Increment time */
+    cs_domain_increment_time(domain);
+
+  } // Time loop
 
   /* Free main CDO structures */
   t0 = cs_timer_time();
@@ -303,8 +271,7 @@ cs_cdo_main(cs_mesh_t             *m,
                 _("  -t-    Free CDO structures                  %12.3f s\n"),
                 time_count.wall_nsec*1e-9);
 
-  bft_printf("\n");
-  bft_printf("%s", lsepline);
+  bft_printf("\n%s", lsepline);
   bft_printf("\tExit CDO Module\n");
   bft_printf("%s", lsepline);
   printf("\n  --> Exit CDO module\n\n");

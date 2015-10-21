@@ -104,7 +104,6 @@ typedef struct {
   double    cflmmx; /* Maximum Courant number for the continuity equation
                        in compressible model. */
 
-
   double    foumax; /* Maximum Fourier number (when idtvar is different from 0). */
 
   double    varrdt; /* Relative allowed variation of dt (when idtvar is

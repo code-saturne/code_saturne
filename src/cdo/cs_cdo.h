@@ -49,7 +49,7 @@ BEGIN_C_DECLS
 
 typedef unsigned short int cs_flag_t;
 
-/* Type of numerical scheme */
+/* Type of numerical scheme for the discretization in space */
 typedef enum {
 
   CS_SPACE_SCHEME_CDOVB,   /* CDO scheme with vertex-based positionning */
@@ -75,9 +75,12 @@ typedef union {
 
 /* Analytic definition through a function */
 typedef void
-(cs_analytic_func_t)(cs_real_t           time,
-                     const cs_real_3_t   xyz,
-                     cs_get_t           *retval);
+(cs_analytic_func_t) (cs_real_t           time,
+                      const cs_real_3_t   xyz,
+                      cs_get_t           *retval);
+
+typedef cs_real_t
+(cs_timestep_func_t) (int    time_iter);
 
 typedef void
 (cs_user_func_t) (const void         *input1,

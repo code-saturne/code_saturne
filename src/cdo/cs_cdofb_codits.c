@@ -111,7 +111,7 @@ struct  _cs_cdofb_codits_t {
 
   /* Work buffer */
   cs_real_t  *source_terms;  /* size: n_cells (sum of the contribution in each
-                                cell of all the volumic source terms */
+                                cell of all the volumic source terms) */
   cs_real_t  *face_values;   /* DoF unknowns (x) + BCs */
   double     *work;          /* temporary buffers (size: 3*n_faces) */
 
@@ -201,12 +201,12 @@ _init_diffusion_matrix(const cs_cdo_connect_t     *connect,
  *           - Neumann boundary conditions
  *           - Dirichlet boundary conditions
  *
- * \param[in]      m         pointer to a cs_mesh_t structure
- * \param[in]      connect   pointer to a cs_cdo_connect_t struct.
- * \param[in]      quant     pointer to a cs_cdo_quantities_t struct.
- * \param[in]      tcur      current physical time of the simulation
- * \param[in, out] rhs       right-hand side
- * \param[in, out] builder   pointer to a cs_cdofb_codits_t struct.
+ * \param[in]      m           pointer to a cs_mesh_t structure
+ * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
+ * \param[in]      time_step   pointer to a time step structure
+ * \param[in, out] rhs         right-hand side
+ * \param[in, out] builder     pointer to a cs_cdofb_codits_t struct.
  *
  * \return a pointer to the full stiffness matrix
  */
@@ -216,7 +216,7 @@ static cs_sla_matrix_t *
 _build_diffusion_system(const cs_mesh_t             *m,
                         const cs_cdo_connect_t      *connect,
                         const cs_cdo_quantities_t   *quant,
-                        cs_real_t                    tcur,
+                        const cs_time_step_t        *time_step,
                         cs_real_t                   *rhs,
                         cs_cdofb_codits_t           *builder)
 {
@@ -225,16 +225,17 @@ _build_diffusion_system(const cs_mesh_t             *m,
 
   double  *BHCtc = NULL; // local size arrays
   cs_sla_matrix_t  *final_matrix = NULL;
-
+  cs_toolbox_locmat_t  *_h = NULL;
   cs_sla_matrix_t  *full_matrix = _init_diffusion_matrix(connect, quant);
-  cs_toolbox_locmat_t  *_h = cs_toolbox_locmat_create(connect->n_max_fbyc);
   cs_toolbox_locmat_t  *_a = cs_toolbox_locmat_create(connect->n_max_fbyc);
-  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect->n_max_fbyc);
 
   const cs_lnum_t  n_cells = quant->n_cells;
   const cs_cdo_bc_list_t  *dir_faces = builder->face_bc->dir;
   const cs_equation_param_t  *eqp = builder->eqp;
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+
+  /* Define a builder for the related discrete Hodge operator */
+  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, time_step, h_info);
 
   /* Sanity check */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
@@ -246,40 +247,6 @@ _build_diffusion_system(const cs_mesh_t             *m,
 
   for (i = 0; i < 2*builder->n_faces; i++)
     builder->work[i] = 0;
-
-  for (i = 0; i < n_cells; i++)
-    builder->source_terms[i] = 0;
-
-  /* Compute the contribution from source terms */
-  if (eqp->n_source_terms) { /* Add contribution from source term */
-
-    for (i = 0; i < eqp->n_source_terms; i++) {
-
-      const cs_param_source_term_t  st = eqp->source_terms[i];
-
-      cs_flag_t  dof_flag =
-        CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
-
-      /* Sanity check */
-      assert(st.var_type == CS_PARAM_VAR_SCAL);
-      assert(st.type == CS_PARAM_SOURCE_TERM_EXPLICIT);
-
-      cs_evaluate(m, quant, connect,  // geometrical and topological info.
-                  tcur,
-                  dof_flag,
-                  st.ml_id,
-                  st.def_type,
-                  st.quad_type,
-                  st.use_subdiv,
-                  st.def,             // definition of the explicit part
-                  &contrib);          // updated inside this function
-
-      for (c_id = 0; c_id < builder->n_cells; c_id++)
-        builder->source_terms[c_id] += contrib[c_id];
-
-    } // Loop on source terms
-
-  } /* There is at least one source term which is defined */
 
   /*  Build full-size operators:
 
@@ -303,8 +270,8 @@ _build_diffusion_system(const cs_mesh_t             *m,
   /* Build the remaining discrete operators */
   for (c_id = 0; c_id < n_cells; c_id++) {
 
-    /* Build a local discrete Hodge operator */
-    cs_hodge_cost_build_local(c_id, connect, quant, h_info, _h, hb);
+    /* Build a local discrete Hodge operator and return a local dense matrix */
+    _h = cs_hodge_build_local(c_id, connect, quant, hb);
 
     /* Compute dsum = Dc*_H*Uc where Uc = transpose(Dc) */
     dsum = 0;
@@ -332,8 +299,8 @@ _build_diffusion_system(const cs_mesh_t             *m,
       }
     }
 
-    /* Assemble local matrices */
-    cs_sla_assemble_msr_sym(_a, full_matrix);
+    /* Assemble local stiffness matrix */
+    cs_sla_assemble_msr_sym(_a, full_matrix, false); // Not only diag. terms
 
     /* Assemble RHS (source term contribution) */
     for (i = 0; i < _a->n_ent; i++)
@@ -346,7 +313,6 @@ _build_diffusion_system(const cs_mesh_t             *m,
 
   /* Free memory */
   BFT_FREE(BHCtc);
-  _h = cs_toolbox_locmat_free(_h);
   _a = cs_toolbox_locmat_free(_a);
   hb = cs_hodge_builder_free(hb);
 
@@ -357,7 +323,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
       CS_PARAM_FLAG_FACE | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
 
     cs_cdo_bc_dirichlet_set(dof_flag,
-                            tcur,
+                            time_step,
                             quant,
                             eqp->bc,
                             dir_faces,
@@ -417,10 +383,6 @@ _build_diffusion_system(const cs_mesh_t             *m,
       for (i = 0; i < dir_faces->n_nhmg_elts; i++)
         full_matrix->diag[dir_faces->elt_ids[i]] += pena_coef;
 
-      // DBG
-      printf(" Weak enforcement with penalization coefficient %5.3e\n",
-             pena_coef);
-
     }
     break;
 
@@ -447,7 +409,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
 /*!
  * \brief  Initialize a cs_cdofb_codits_t structure
  *
- * \param[in] eqp      pointer to a cs_equation_param_t structure
+ * \param[in]  eqp     pointer to a cs_equation_param_t structure
  * \param[in]  m       pointer to a mesh structure
  *
  * \return a pointer to a new allocated cs_cdovb_codits_t structure
@@ -543,6 +505,8 @@ cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
 
   /* Values at each face (interior and border) i.e. take into account BCs */
   BFT_MALLOC(builder->face_values, builder->n_faces, cs_real_t);
+  for (i = 0; i < builder->n_cells; i++)
+    builder->source_terms[i] = 0;
 
   /* Work buffers */
   if (builder->enforce == CS_PARAM_BC_ENFORCE_STRONG)
@@ -594,27 +558,92 @@ cs_cdofb_codits_free(void   *builder)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build the linear system arising from a scalar convection/diffusion
- *         equation with a CDO face-based scheme.
+ * \brief   Compute the contributions of source terms (store inside builder)
  *
- * \param[in]      m        pointer to a cs_mesh_t structure
- * \param[in]      connect  pointer to a cs_cdo_connect_t structure
- * \param[in]      quant    pointer to a cs_cdo_quantities_t structure
- * \param[in]      tcur     current physical time of the simulation
- * \param[in, out] builder  pointer to cs_cdofb_codits_t structure
- * \param[in, out] rhs      pointer to a right-hand side array pointer
- * \param[in, out] sla_mat  pointer to cs_sla_matrix_t structure pointer
+ * \param[in]      m           pointer to a cs_mesh_t structure
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step   pointer to a time step structure
+ * \param[in, out] builder     pointer to a cs_cdofb_codits_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_codits_build_system(const cs_mesh_t            *m,
-                             const cs_cdo_connect_t     *connect,
-                             const cs_cdo_quantities_t  *quant,
-                             double                      tcur,
-                             void                       *builder,
-                             cs_real_t                 **rhs,
-                             cs_sla_matrix_t           **sla_mat)
+cs_cdofb_codits_compute_source(const cs_mesh_t            *m,
+                               const cs_cdo_connect_t     *connect,
+                               const cs_cdo_quantities_t  *quant,
+                               const cs_time_step_t       *time_step,
+                               void                       *builder)
+{
+  cs_lnum_t  i;
+
+  cs_cdofb_codits_t  *bld = (cs_cdofb_codits_t *)builder;
+  double  *contrib = bld->work;
+
+  const cs_equation_param_t  *eqp = bld->eqp;
+
+  if (eqp->n_source_terms > 0) { /* Add contribution from source terms */
+
+    for (i = 0; i < bld->n_cells; i++)
+      bld->source_terms[i] = 0;
+
+    for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
+
+      const cs_param_source_term_t  st = eqp->source_terms[st_id];
+
+      cs_flag_t  dof_flag =
+        CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
+
+      /* Sanity check */
+      assert(st.var_type == CS_PARAM_VAR_SCAL);
+
+      cs_evaluate(m, quant, connect,  // geometrical and topological info.
+                  time_step,
+                  dof_flag,
+                  st.ml_id,
+                  st.def_type,
+                  st.quad_type,
+                  st.use_subdiv,
+                  st.def,             // definition of the explicit part
+                  &contrib);          // updated inside this function
+
+      /* Update source term array */
+      for (i = 0; i < bld->n_cells; i++)
+        bld->source_terms[i] += contrib[i];
+
+    } // Loop on source terms
+
+  } /* There is at least one source term which is defined */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build the linear system arising from a scalar convection/diffusion
+ *         equation with a CDO face-based scheme.
+ *
+ * \param[in]      m          pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a time step structure
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      field_val  pointer to the current value of the field
+ * \param[in, out] builder    pointer to cs_cdofb_codits_t structure
+ * \param[in, out] rhs        pointer to a right-hand side array pointer
+ * \param[in, out] sla_mat    pointer to cs_sla_matrix_t structure pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_codits_build_system(const cs_mesh_t             *m,
+                             const cs_cdo_connect_t      *connect,
+                             const cs_cdo_quantities_t   *quant,
+                             const cs_time_step_t        *time_step,
+                             double                       dt_cur,
+                             const cs_real_t             *field_val,
+                             void                        *builder,
+                             cs_real_t                  **rhs,
+                             cs_sla_matrix_t            **sla_mat)
 {
   cs_sla_matrix_t  *diffusion_mat = NULL;
   cs_cdofb_codits_t   *_builder  = (cs_cdofb_codits_t *)builder;
@@ -634,8 +663,7 @@ cs_cdofb_codits_build_system(const cs_mesh_t            *m,
 
   /* Build diffusion system: stiffness matrix */
   if (eqp->flag & CS_EQUATION_DIFFUSION)
-    diffusion_mat = _build_diffusion_system(m, connect, quant,
-                                            tcur,
+    diffusion_mat = _build_diffusion_system(m, connect, quant, time_step,
                                             *rhs,
                                             _builder);
 
@@ -651,20 +679,22 @@ cs_cdofb_codits_build_system(const cs_mesh_t            *m,
  * \brief  Post-process the solution of a scalar convection/diffusion equation
  *         solved with a CDO face-based scheme
  *
- * \param[in]      connect  pointer to a cs_cdo_connect_t struct.
- * \param[in]      quant    pointer to a cs_cdo_quantities_t struct.
- * \param[in]      solu     solution array
- * \param[in, out] builder  pointer to cs_cdofb_codits_t structure
- * \param[in, out] field    pointer to a cs_field_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
+ * \param[in]      time_step  pointer to a time step structure
+ * \param[in]      solu       solution array
+ * \param[in, out] builder    pointer to cs_cdofb_codits_t structure
+ * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_codits_update_field(const cs_cdo_connect_t     *connect,
                              const cs_cdo_quantities_t  *quant,
+                             const cs_time_step_t       *time_step,
                              const cs_real_t            *solu,
                              void                       *builder,
-                             cs_field_t                 *field)
+                             cs_real_t                  *field_val)
 {
   int  i, j, l, c_id, f_id;
 
@@ -691,8 +721,7 @@ cs_cdofb_codits_update_field(const cs_cdo_connect_t     *connect,
         = _builder->dir_val[i];
 
   /* Compute now the value at each cell center */
-  cs_toolbox_locmat_t  *_h = cs_toolbox_locmat_create(connect->n_max_fbyc);
-  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect->n_max_fbyc);
+  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, time_step, h_info);
 
   /* Build the remaining discrete operators */
   for (c_id = 0; c_id < _builder->n_cells; c_id++) {
@@ -701,7 +730,7 @@ cs_cdofb_codits_update_field(const cs_cdo_connect_t     *connect,
     double _wf_val = 0.0, dsum = 0.0, rowsum = 0.0;
 
     /* Build a local discrete Hodge operator */
-    cs_hodge_cost_build_local(c_id, connect, quant, h_info, _h, hb);
+    cs_toolbox_locmat_t  *_h = cs_hodge_build_local(c_id, connect, quant, hb);
 
     /* Compute dsum: the sum of all the entries of the local discrete Hodge
        operator */
@@ -714,12 +743,11 @@ cs_cdofb_codits_update_field(const cs_cdo_connect_t     *connect,
       _wf_val += _builder->face_values[f_id] * rowsum;
     }
 
-    field->val[c_id] = 1/dsum*(_builder->source_terms[c_id] + _wf_val);
+    field_val[c_id] = 1/dsum*(_builder->source_terms[c_id] + _wf_val);
 
   } // loop on cells
 
   /* Free memory */
-  _h = cs_toolbox_locmat_free(_h);
   hb = cs_hodge_builder_free(hb);
 }
 

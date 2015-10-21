@@ -68,6 +68,7 @@ typedef union {
 
   cs_get_t              get;       // definition by value
   cs_analytic_func_t   *analytic;  // definition by an analytic function
+  cs_timestep_func_t   *time_func; // definition of the time step by a function
   cs_user_func_t       *user_func; // definition by an user-defined function
 
 } cs_def_t;
@@ -78,6 +79,7 @@ typedef enum {
   CS_PARAM_DEF_BY_FIELD,
   CS_PARAM_DEF_BY_EVALUATOR,
   CS_PARAM_DEF_BY_ANALYTIC_FUNCTION,
+  CS_PARAM_DEF_BY_TIME_FUNCTION,
   CS_PARAM_DEF_BY_USER_FUNCTION,
   CS_PARAM_DEF_BY_LAW,
   CS_PARAM_DEF_BY_FILE,
@@ -95,6 +97,33 @@ typedef enum {
   CS_PARAM_N_VAR_TYPES
 
 } cs_param_var_type_t;
+
+/* TIME SCHEME */
+/* =========== */
+
+/* Type of numerical scheme for the discretization in time */
+typedef enum {
+
+  CS_TIME_SCHEME_IMPLICIT,  // fully implicit (forward Euler/theta-scheme = 1)
+  CS_TIME_SCHEME_EXPLICIT,  // fully explicit (backward Euler/theta-scheme = 0)
+  CS_TIME_SCHEME_CRANKNICH, // Crank-Nicholson (theta-scheme = 0.5)
+  CS_TIME_SCHEME_THETA,     // theta-scheme
+  CS_TIME_N_SCHEMES
+
+} cs_time_scheme_t;
+
+/* Parameters related to time discretization */
+typedef struct {
+
+  cs_time_scheme_t   scheme;     // numerical scheme
+  cs_real_t          theta;      // used in theta-scheme
+  bool               do_lumping; // perform mass lumping ?
+
+  /* Initial conditions */
+  cs_param_def_type_t   ic_def_type;  // type of definition
+  cs_def_t              ic_def;       // definition
+
+} cs_param_time_t;
 
 /* MATERIAL PROPERTIES */
 /* =================== */
@@ -135,6 +164,7 @@ typedef struct {
   cs_def_t             def;
 
 } cs_param_pty_t;
+
 
 /* DISCRETE HODGE OPERATORS */
 /* ======================== */
@@ -391,6 +421,23 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set a cs_def_t structure
+ *
+ * \param[in]      def_type   type of definition (by value, function...)
+ * \param[in]      var_type   type of variables (scalar, vector, tensor...)
+ * \param[in]      val        value to set
+ * \param[in, out] def        pointer to cs_def_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_set_def(cs_param_def_type_t      def_type,
+                 cs_param_var_type_t      var_type,
+                 void                    *val,
+                 cs_def_t                *def);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve a cs_param_pty_t structure from its id
  *
  * \param[in]  pty_id   id related to a property
@@ -453,7 +500,7 @@ cs_param_pty_add(const char      *name,
 void
 cs_param_pty_set(const char     *name,
                  const char     *def_key,
-                 const void     *val);
+                 void           *val);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -467,6 +514,19 @@ cs_param_pty_set(const char     *name,
 
 bool
 cs_param_pty_is_uniform(int       pty_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Query to know the type of material property
+ *
+ * \param[in]    pty_id    id related to the material property to deal with
+ *
+ * \return  the type of material property
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_pty_type_t
+cs_param_pty_get_type(int       pty_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -573,8 +633,8 @@ cs_param_adv_get_id_by_name(const char  *ref_name);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_adv_field_add(const char      *name,
-                       int              post_freq);
+cs_param_adv_field_add(const char    *name,
+                       int            post_freq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -587,9 +647,9 @@ cs_param_adv_field_add(const char      *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_adv_field_set(const char     *name,
-                       const char     *def_key,
-                       const void     *val);
+cs_param_adv_field_set(const char   *name,
+                       const char   *def_key,
+                       void         *val);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -638,13 +698,13 @@ cs_param_bc_create(cs_param_bc_type_t  default_bc);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_bc_def_set(cs_param_bc_def_t       *bcpd,
-                    int                      loc_id,
-                    cs_param_bc_type_t       bc_type,
-                    cs_param_var_type_t      var_type,
-                    cs_param_def_type_t      def_type,
-                    const void              *coef1,
-                    const void              *coef2);
+cs_param_bc_def_set(cs_param_bc_def_t      *bcpd,
+                    int                     loc_id,
+                    cs_param_bc_type_t      bc_type,
+                    cs_param_var_type_t     var_type,
+                    cs_param_def_type_t     def_type,
+                    void                    *coef1,
+                    void                    *coef2);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -670,7 +730,7 @@ cs_param_source_term_add(cs_param_source_term_t       *stp,
                          cs_param_var_type_t           var_type,
                          cs_quadra_type_t              quad_type,
                          cs_param_def_type_t           def_type,
-                         const void                   *val);
+                         void                         *val);
 
 /*----------------------------------------------------------------------------*/
 /*!

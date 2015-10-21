@@ -118,6 +118,7 @@ struct _cs_cdovb_codits_t {
   cs_lnum_t          *v_i2z_ids;  // Mapping n_vertices     -> n_dof_vertices
 
   /* Work buffer */
+  cs_real_t          *source_terms;
   cs_real_t          *work;
 
 };
@@ -209,6 +210,7 @@ _add_transpose(cs_toolbox_locmat_t  *loc,
   }
 
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Update the stiffness matrix "Ad" for the diffusion term and
@@ -223,7 +225,7 @@ _add_transpose(cs_toolbox_locmat_t  *loc,
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
  * \param[in]      builder      pointer to a cs_cdovb_codits_t structure
- * \param[in]      tcur         current physical time of the simulation
+ * \param[in]      time_step    pointer to a time step structure
  * \param[in, out] full_matrix  matrix of the linear system
  * \param[in, out] full_rhs     right-hand side
  */
@@ -234,7 +236,7 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
                       const cs_cdo_connect_t     *connect,
                       const cs_cdo_quantities_t  *quant,
                       const cs_cdovb_codits_t    *builder,
-                      cs_real_t                   tcur,
+                      const cs_time_step_t       *time_step,
                       cs_sla_matrix_t            *full_matrix,
                       cs_real_t                   full_rhs[])
 {
@@ -250,6 +252,7 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
   cs_toolbox_locmat_t  *ntrgrd = cs_toolbox_locmat_create(connect->n_max_vbyc);
   cs_toolbox_locmat_t  *transp = NULL;
 
+  const double  tcur = time_step->t_cur;
   const cs_sla_matrix_t  *e2v = connect->e2v;
   const cs_sla_matrix_t  *f2e = connect->f2e;
   const cs_cdo_bc_list_t  *face_dir = builder->face_bc->dir;
@@ -435,7 +438,7 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
       /* ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) */
       _add_transpose(ntrgrd, transp);
 
-      cs_sla_assemble_msr_sym(ntrgrd, full_matrix);
+      cs_sla_assemble_msr_sym(ntrgrd, full_matrix, false); // Not only diagonal
 
       /* Modify RHS according to the add of transp */
       for (j = 0; j < ntrgrd->n_ent; j++)
@@ -487,76 +490,6 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
   BFT_FREE(pev);
   BFT_FREE(over_pec_vol);
 }
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the (full) right hand side (rhs) from the contributions of
- *          source terms
- *
- * \param[in]      m         pointer to a cs_mesh_t structure
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]      tcur      current physical time of the simulation
- * \param[in, out] builder   pointer to a cs_cdovb_codits_t structure
- * \param[in, out] rhs       pointer to a pointer of rhs values
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_compute_st_rhs(const cs_mesh_t            *m,
-                const cs_cdo_connect_t     *connect,
-                const cs_cdo_quantities_t  *quant,
-                double                      tcur,
-                cs_cdovb_codits_t          *builder,
-                cs_real_t                 **rhs)
-{
-  int  i;
-
-  const cs_equation_param_t  *eqp = builder->eqp;
-
-  if (*rhs == NULL)
-    BFT_MALLOC(*rhs, builder->n_vertices, cs_real_t);
-
-  /* Initialize rhs */
-  double *full_rhs = *rhs;
-
-  for (i = 0; i < builder->n_vertices; i++)
-    full_rhs[i] = 0.0;
-
-  if (eqp->n_source_terms > 0) { /* Add contribution from source terms */
-
-    for (i = 0; i < eqp->n_source_terms; i++) {
-
-      const cs_param_source_term_t  st = eqp->source_terms[i];
-
-      double  *contrib = builder->work + builder->n_vertices;
-      cs_flag_t  dof_flag =
-        CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_SCAL;
-
-      /* Sanity check */
-      assert(st.var_type == CS_PARAM_VAR_SCAL);
-      assert(st.type == CS_PARAM_SOURCE_TERM_EXPLICIT);
-
-      cs_evaluate(m, quant, connect,  // geometrical and topological info.
-                  tcur,
-                  dof_flag,
-                  st.ml_id,
-                  st.def_type,
-                  st.quad_type,
-                  st.use_subdiv,
-                  st.def,             // definition of the explicit part
-                  &contrib);          // updated inside this function
-
-      /* Update full rhs */
-      for (i = 0; i < builder->n_vertices; i++)
-        full_rhs[i] += contrib[i];
-
-    } // Loop on source terms
-
-  } /* There is at least one source term which is defined */
-
-}
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -681,6 +614,7 @@ _encode_edge_masks(cs_lnum_t                c_id,
  *
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
+ * \param[in]      time_step   pointer to a time step structure
  * \param[in, out] builder     pointer to a cs_cdovb_codits_t struct.
  * \param[in, out] s           pointer to a cs_sla_matrix_t struct.
  */
@@ -689,32 +623,32 @@ _encode_edge_masks(cs_lnum_t                c_id,
 static void
 _build_diffusion(const cs_cdo_connect_t     *connect,
                  const cs_cdo_quantities_t  *quant,
+                 const cs_time_step_t       *time_step,
                  cs_cdovb_codits_t          *builder,
                  cs_sla_matrix_t            *s)
 {
-  int  i, j, n_ent, n_blocks, n_bits, mask_size;
+  int  i, j, n_ent;
   cs_lnum_t  c_id, v_id;
 
   short int  *vtag = NULL;
   cs_flag_t  *emsk = NULL;
-
-  cs_toolbox_locmat_t  *hloc = cs_toolbox_locmat_create(connect->n_max_ebyc);
   cs_toolbox_locmat_t  *sloc = cs_toolbox_locmat_create(connect->n_max_vbyc);
-  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect->n_max_ebyc);
 
   const cs_connect_index_t  *c2v = connect->c2v;
   const cs_equation_param_t  *eqp = builder->eqp;
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+
+  /* Define a builder for the related discrete Hodge operator */
+  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, time_step, h_info);
 
   /* Sanity check */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
 
   /* Initialize mask features */
-  n_bits = sizeof(cs_flag_t)*CHAR_BIT;
-  n_blocks = connect->n_max_ebyc/n_bits;
+  const int  n_bits = sizeof(cs_flag_t)*CHAR_BIT;
+  int  n_blocks = connect->n_max_ebyc/n_bits;
   if (connect->n_max_ebyc % n_bits != 0) n_blocks++;
-  mask_size = n_blocks*n_bits;
 
   BFT_MALLOC(emsk, n_blocks*connect->n_max_vbyc, cs_flag_t);
   for (i = 0; i < n_blocks*connect->n_max_vbyc; i++)
@@ -729,8 +663,8 @@ _build_diffusion(const cs_cdo_connect_t     *connect,
 
     short int  ek, el, vi, sgn_ik, sgn_jl;
 
-    /* Build the local Hodge op. */
-    cs_hodge_cost_build_local(c_id, connect, quant, h_info, hloc, hb);
+    /* Build a local discrete Hodge operator and return a local dense matrix */
+    cs_toolbox_locmat_t  *hloc = cs_hodge_build_local(c_id, connect, quant, hb);
 
     /* Initialize vertex tag and the local stiffness matrix */
     for (i = 0, j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; i++, j++) {
@@ -738,8 +672,7 @@ _build_diffusion(const cs_cdo_connect_t     *connect,
       vtag[v_id] = i;
       sloc->ids[i] = v_id;
     }
-    n_ent = i;
-    sloc->n_ent = n_ent;
+    n_ent = sloc->n_ent = i;
 
     for (i = 0; i < n_ent*n_ent; i++)
       sloc->mat[i] = 0;
@@ -748,18 +681,18 @@ _build_diffusion(const cs_cdo_connect_t     *connect,
     _encode_edge_masks(c_id, n_bits, n_blocks, connect, vtag, emsk);
 
     /* Build local stiffness matrix */
-    for (vi = 0; vi < sloc->n_ent; vi++) {
+    for (vi = 0; vi < n_ent; vi++) {
 
-      short int pos_i = vi*sloc->n_ent;
+      const short int pos_i = vi*n_ent;
 
       for (ek = 0; ek < hloc->n_ent; ek++) {  /* Find edges attached to vi */
 
-        short int b = ek/n_bits, r = ek % n_bits;
+        const short int b = ek/n_bits, r = ek % n_bits;
 
         if (emsk[vi*n_blocks+b] & (1 << r)) { // ek in E_i
 
-          cs_lnum_t  ek_shft = 2*hloc->ids[ek];
-          int  pos_ek = ek*hloc->n_ent;
+          const cs_lnum_t  ek_shft = 2*hloc->ids[ek];
+          const int  pos_ek = ek*hloc->n_ent;
 
           if (connect->e2v->col_id[ek_shft] == sloc->ids[vi])
             sgn_ik = connect->e2v->sgn[ek_shft];
@@ -793,15 +726,13 @@ _build_diffusion(const cs_cdo_connect_t     *connect,
     } /* Loop on vertices vi */
 
     /* Assemble stiffness matrix */
-    cs_sla_assemble_msr_sym(sloc, s);
+    cs_sla_assemble_msr_sym(sloc, s, false); // Not only diag. terms
 
   } /* Loop on cells */
 
   /* Free temporary buffers and structures */
   BFT_FREE(vtag);
   BFT_FREE(emsk);
-
-  hloc = cs_toolbox_locmat_free(hloc);
   sloc = cs_toolbox_locmat_free(sloc);
   hb = cs_hodge_builder_free(hb);
 }
@@ -811,13 +742,13 @@ _build_diffusion(const cs_cdo_connect_t     *connect,
  * \brief   Update the matrix of the linear system and the right hand side to
  *          take into account the BCs for the diffusion term
  *
- * \param[in]      m         pointer to a cs_mesh_t structure
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]      tcur      current physical time of the simulation
- * \param[in, out] builder   pointer to a cs_cdovb_codits_t structure
- * \param[in, out] rhs       pointer of pointer to the right-hand side
- * \param[in, out] matrix    pointer to the pointer of a matrix structure
+ * \param[in]      m          pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a time step structure
+ * \param[in, out] builder    pointer to a cs_cdovb_codits_t structure
+ * \param[in, out] rhs        pointer of pointer to the right-hand side
+ * \param[in, out] matrix     pointer to the pointer of a matrix structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -825,7 +756,7 @@ static void
 _update_diffusion_with_bc(const cs_mesh_t            *m,
                           const cs_cdo_connect_t     *connect,
                           const cs_cdo_quantities_t  *quant,
-                          double                      tcur,
+                          const cs_time_step_t       *time_step,
                           cs_cdovb_codits_t          *builder,
                           cs_real_t                 **rhs,
                           cs_sla_matrix_t           **matrix)
@@ -868,13 +799,15 @@ _update_diffusion_with_bc(const cs_mesh_t            *m,
         for (i = 0; i < builder->n_dof_vertices; i++)
           final_rhs[i] = _rhs[builder->v_z2i_ids[i]];
 
-        /* Reduce size. Extract block with degrees of freedom */
-        final_matrix = cs_sla_matrix_pack(builder->n_dof_vertices, // n_pack_rows
-                                          builder->n_dof_vertices, // n_pack_cols
-                                          full_matrix,             // full matrix
-                                          builder->v_z2i_ids,      // row_z2i_ids
-                                          builder->v_i2z_ids,      // col_i2z_ids
-                                          true);                   // keep sym.
+        /* Reduce the system size from n_vertices to n_dof_vertices.
+           Vertices attached to a Dirichlet BC are removed.
+           Extract block with degrees of freedom */
+        final_matrix = cs_sla_matrix_pack(builder->n_dof_vertices,
+                                          builder->n_dof_vertices,
+                                          full_matrix,
+                                          builder->v_z2i_ids,
+                                          builder->v_i2z_ids,
+                                          true); // keep sym.
 
         /* Free buffers */
         full_matrix = cs_sla_matrix_free(full_matrix);
@@ -896,16 +829,13 @@ _update_diffusion_with_bc(const cs_mesh_t            *m,
       for (i = 0; i < vtx_dir->n_nhmg_elts; i++)
         full_rhs[vtx_dir->elt_ids[i]] += pena_coef * builder->dir_val[i];
 
-      // DBG
-      printf(" Weak enforcement with penalization coefficient %5.3e\n",
-             pena_coef);
     }
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
     assert(builder->n_vertices == builder->n_dof_vertices); /* Sanity check */
-    _enforce_weak_nitsche(m, connect, quant, builder, tcur,
+    _enforce_weak_nitsche(m, connect, quant, builder, time_step,
                           full_matrix,
                           full_rhs);
     break;
@@ -938,7 +868,7 @@ _update_diffusion_with_bc(const cs_mesh_t            *m,
  * \param[in]      m            pointer to a cs_mesh_t structure
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
- * \param[in]      tcur         current physical time of the simulation
+ * \param[in]      time_step    pointer to a time step structure
  * \param[in, out] sys_builder  pointer to a cs_cdovb_codits_t structure
  * \param[in, out] rhs          pointer of pointer to the right-hand side
  * \param[in, out] matrix       pointer to a matrix structure
@@ -949,7 +879,7 @@ static void
 _build_convection(const cs_mesh_t            *m,
                   const cs_cdo_connect_t     *connect,
                   const cs_cdo_quantities_t  *quant,
-                  double                      tcur,
+                  const cs_time_step_t       *time_step,
                   cs_cdovb_codits_t          *sys_builder,
                   cs_real_t                  *rhs,
                   cs_sla_matrix_t            *matrix)
@@ -961,6 +891,7 @@ _build_convection(const cs_mesh_t            *m,
 
   cs_lnum_t  *pos_dir = NULL;
 
+  const double  tcur = time_step->t_cur;
   const cs_real_t  one_third = 1./3;
   const cs_real_t  *xyz = m->vtx_coord;
   const cs_sla_matrix_t  *e2v = connect->e2v;
@@ -978,14 +909,12 @@ _build_convection(const cs_mesh_t            *m,
   /* Build the first part of the cellwise convection operator and assemble
      it into the system matrix */
   if (with_diffusion)
-    cs_convection_with_diffusion(connect, quant,
-                                 tcur,
+    cs_convection_with_diffusion(connect, quant, time_step,
                                  a_info, h_info,
                                  adv_builder,
                                  matrix);
   else
-    cs_convection(connect, quant,
-                  tcur,
+    cs_convection(connect, quant, time_step,
                   a_info,
                   adv_builder,
                   matrix);
@@ -1092,6 +1021,208 @@ _build_convection(const cs_mesh_t            *m,
   BFT_FREE(pos_dir);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the contribution of source terms to the rhs for this
+ *          time step
+ *
+ * \param[in]      m            pointer to a cs_mesh_t structure
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      builder      pointer to a cs_cdovb_codits_t structure
+ * \param[in]      time_step    pointer to a time step structure
+ * \param[in, out] full_rhs     right-hand side
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_source_terms(const cs_mesh_t            *m,
+                  const cs_cdo_connect_t     *connect,
+                  const cs_cdo_quantities_t  *quant,
+                  const cs_time_step_t       *time_step,
+                  cs_cdovb_codits_t          *builder,
+                  cs_real_t                   full_rhs[])
+{
+  cs_lnum_t  i;
+
+  const cs_equation_param_t  *eqp = builder->eqp;
+
+  if (eqp->flag & CS_EQUATION_UNSTEADY) {
+
+    const cs_param_time_t  t_info = eqp->time_info;
+
+    /* Previous values are stored inside builder->source_terms i.e.
+       values of the source terms related to t_prev */
+    if (t_info.scheme == CS_TIME_SCHEME_EXPLICIT)
+      for (i = 0; i < builder->n_vertices; i++)
+        full_rhs[i] += builder->source_terms[i];
+
+    else if (t_info.scheme == CS_TIME_SCHEME_CRANKNICH ||
+             t_info.scheme == CS_TIME_SCHEME_THETA) {
+
+      const double  tcoef = 1 - t_info.theta;
+
+      for (i = 0; i < builder->n_vertices; i++)
+        full_rhs[i] += tcoef * builder->source_terms[i];
+
+    }
+
+    /* Update builder->source_term with the value attached to t_cur */
+    cs_cdovb_codits_compute_source(m, connect, quant, time_step, builder);
+
+    if (t_info.scheme == CS_TIME_SCHEME_IMPLICIT)
+      for (i = 0; i < builder->n_vertices; i++)
+        full_rhs[i] += builder->source_terms[i];
+
+    else if (t_info.scheme == CS_TIME_SCHEME_CRANKNICH ||
+             t_info.scheme == CS_TIME_SCHEME_THETA) {
+
+      for (i = 0; i < builder->n_vertices; i++)
+        full_rhs[i] += t_info.theta * builder->source_terms[i];
+
+    }
+
+  }
+  else { /* Steady case: source terms have already been computed during
+            the initialization step */
+
+    for (i = 0; i < builder->n_vertices; i++)
+      full_rhs[i] += builder->source_terms[i];
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Apply the time discretization to all the terms of the equation
+ *          excepted for the unsteady term and the source term
+ *
+ * \param[in]      field_val  pointer to the current value of the field
+ * \param[in, out] builder    pointer to a cs_cdovb_codits_t structure
+ * \param[in, out] rhs        pointer of pointer to the right-hand side
+ * \param[in, out] matrix     pointer to the pointer of a matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_split_time_contrib(const cs_real_t          *field_val,
+                    cs_cdovb_codits_t        *builder,
+                    cs_real_t                *rhs,
+                    cs_sla_matrix_t          *matrix)
+
+{
+  cs_lnum_t  i;
+
+  cs_real_t  *mvres = builder->work;
+  cs_real_t  *fn = builder->work + builder->n_vertices;
+
+  const cs_equation_param_t  *eqp = builder->eqp;
+  const cs_param_time_t  t_info = eqp->time_info;
+
+  /* Sanity check */
+  assert(eqp->flag & CS_EQUATION_UNSTEADY);
+  assert(matrix->type == CS_SLA_MAT_MSR);
+
+  /* Previous values of the unknown are stored inside field_val (iter n) */
+  if (t_info.scheme == CS_TIME_SCHEME_EXPLICIT) {
+
+    /* A_{diff,conv,reac} * p^(n) --> RHS */
+    cs_sla_matvec(matrix, field_val, &mvres, true);
+
+    for (i = 0; i < builder->n_vertices; i++)
+      rhs[i] += mvres[i];
+
+    /* No implicit part -> reset matrix */
+    for (i = 0; i < matrix->n_rows; i++)
+      matrix->diag[i] = 0.;
+    for (i = 0; i < matrix->idx[matrix->n_rows]; i++)
+      matrix->val[i] = 0.;
+
+  }
+  else if (t_info.scheme == CS_TIME_SCHEME_CRANKNICH ||
+           t_info.scheme == CS_TIME_SCHEME_THETA) {
+
+    const double  tcoef = 1 - t_info.theta;
+
+    for (i = 0; i < builder->n_vertices; i++)
+      fn[i] += tcoef * field_val[i];
+
+    cs_sla_matvec(matrix, fn, &mvres, true);
+
+    for (i = 0; i < builder->n_vertices; i++)
+      rhs[i] += mvres[i];
+
+    /* matrix --> theta*matrix */
+    for (i = 0; i < matrix->n_rows; i++)
+      matrix->diag[i] *= t_info.theta;
+    for (i = 0; i < matrix->idx[matrix->n_rows]; i++)
+      matrix->val[i] *= t_info.theta;
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Define the unsteady contribution (matrix and rhs)
+ *
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a time step structure
+ * \param[in]      field_val  pointer to the current value of the field
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      builder    pointer to a cs_cdovb_codits_t structure
+ * \param[in, out] rhs        pointer of pointer to the right-hand side
+ * \param[in, out] matrix     pointer to the pointer of a matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_unsteady_term(const cs_cdo_connect_t     *connect,
+                     const cs_cdo_quantities_t  *quant,
+                     const cs_time_step_t       *time_step,
+                     const cs_real_t            *field_val,
+                     double                      dt_cur,
+                     cs_cdovb_codits_t          *builder,
+                     cs_real_t                  *rhs,
+                     cs_sla_matrix_t            *matrix)
+{
+  int  i;
+
+  const cs_equation_param_t  *eqp = builder->eqp;
+  const cs_param_hodge_t  h_info = eqp->time_hodge;
+  const double inv_dt = 1/dt_cur;
+
+  switch (h_info.algo) {
+
+  case CS_PARAM_HODGE_ALGO_VORONOI:
+    {
+      /* Get the discrete Hodge operator (only diagonal in this case) */
+      cs_sla_matrix_t  *hodge = cs_hodge_compute(connect, quant, time_step,
+                                                 h_info);
+
+      /* Update the system matrix */
+      for (i = 0; i < builder->n_vertices; i++)
+        matrix->diag[i] += inv_dt * hodge->diag[i];
+
+      /* Update rhs */
+      for (i = 0; i < builder->n_vertices; i++)
+        rhs[i] += inv_dt * hodge->diag[i] * field_val[i];
+
+      hodge = cs_sla_matrix_free(hodge);
+    }
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid type of algorithm to build the discrete Hodge op."
+                " related to time.\n"
+                " Avalaible algorithms are: voronoi and lvconf"));
+
+  } /* Switch on algorithm to define the discrete Hodge operator */
+
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -1157,6 +1288,13 @@ cs_cdovb_codits_init(const cs_equation_param_t  *eqp,
   if (builder->enforce == CS_PARAM_BC_ENFORCE_STRONG &&
       builder->vtx_dir->n_elts > 0) {
 
+    if (eqp->flag & CS_EQUATION_CONVECTION || eqp->flag & CS_EQUATION_UNSTEADY)
+      bft_error(__FILE__, __LINE__, 0,
+                " Invalid choice of enforcement of the boundary conditions.\n"
+                " Strong enforcement is not implemented when convection or"
+                " unsteady terms are activated.\n"
+                " Please modify your settings.");
+
     cs_lnum_t  cur_id = 0;
     bool  *is_kept = NULL;
 
@@ -1187,6 +1325,8 @@ cs_cdovb_codits_init(const cs_equation_param_t  *eqp,
   } /* Strong enforcement of BCs */
 
   /* Work buffer */
+  BFT_MALLOC(builder->source_terms, builder->n_vertices, cs_real_t);
+
   if (builder->enforce == CS_PARAM_BC_ENFORCE_STRONG)
     BFT_MALLOC(builder->work, 3*builder->n_vertices, cs_real_t);
   else
@@ -1226,6 +1366,7 @@ cs_cdovb_codits_free(void   *builder)
     BFT_FREE(_builder->v_i2z_ids);
   }
 
+  BFT_FREE(_builder->source_terms);
   BFT_FREE(_builder->work);
   BFT_FREE(_builder);
 
@@ -1234,53 +1375,120 @@ cs_cdovb_codits_free(void   *builder)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build the linear system arising from a scalar convection/diffusion
- *         equation with a CDO vertex-based scheme.
+ * \brief   Compute the contributions of source terms (store inside builder)
  *
- * \param[in]      m        pointer to a cs_mesh_t structure
- * \param[in]      connect  pointer to a cs_cdo_connect_t structure
- * \param[in]      quant    pointer to a cs_cdo_quantities_t structure
- * \param[in]      tcur     current physical time of the simulation
- * \param[in, out] builder  pointer to cs_cdovb_codits_t structure
- * \param[in, out] rhs      right-hand side
- * \param[in, out] sla_mat  pointer to cs_sla_matrix_t structure pointer
+ * \param[in]      m           pointer to a cs_mesh_t structure
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step   pointer to a time step structure
+ * \param[in, out] builder     pointer to a cs_cdovb_codits_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_codits_build_system(const cs_mesh_t            *m,
-                             const cs_cdo_connect_t     *connect,
-                             const cs_cdo_quantities_t  *quant,
-                             double                      tcur,
-                             void                       *builder,
-                             cs_real_t                 **rhs,
-                             cs_sla_matrix_t           **sla_mat)
+cs_cdovb_codits_compute_source(const cs_mesh_t            *m,
+                               const cs_cdo_connect_t     *connect,
+                               const cs_cdo_quantities_t  *quant,
+                               const cs_time_step_t       *time_step,
+                               void                       *builder)
 {
+  cs_lnum_t  i;
+  cs_cdovb_codits_t  *bld = (cs_cdovb_codits_t *)builder;
+
+  const cs_equation_param_t  *eqp = bld->eqp;
+
+  if (eqp->n_source_terms > 0) { /* Add contribution from source terms */
+
+    for (i = 0; i < bld->n_vertices; i++)
+      bld->source_terms[i] = 0;
+
+    for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
+
+      const cs_param_source_term_t  st = eqp->source_terms[st_id];
+
+      double  *contrib = bld->work + bld->n_vertices;
+      cs_flag_t  dof_flag =
+        CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_SCAL;
+
+      /* Sanity check */
+      assert(st.var_type == CS_PARAM_VAR_SCAL);
+
+      cs_evaluate(m, quant, connect,  // geometrical and topological info.
+                  time_step,
+                  dof_flag,
+                  st.ml_id,
+                  st.def_type,
+                  st.quad_type,
+                  st.use_subdiv,
+                  st.def,             // definition of the explicit part
+                  &contrib);          // updated inside this function
+
+      /* Update source term array */
+      for (i = 0; i < bld->n_vertices; i++)
+        bld->source_terms[i] += contrib[i];
+
+    } // Loop on source terms
+
+  } /* There is at least one source term which is defined */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build the linear system arising from a scalar convection/diffusion
+ *         equation with a CDO vertex-based scheme.
+ *
+ * \param[in]      m          pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a time step structure
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      field_val  pointer to the current value of the field
+ * \param[in, out] builder    pointer to cs_cdovb_codits_t structure
+ * \param[in, out] rhs        right-hand side
+ * \param[in, out] sla_mat    pointer to cs_sla_matrix_t structure pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_codits_build_system(const cs_mesh_t             *m,
+                             const cs_cdo_connect_t      *connect,
+                             const cs_cdo_quantities_t   *quant,
+                             const cs_time_step_t        *time_step,
+                             double                       dt_cur,
+                             const cs_real_t             *field_val,
+                             void                        *builder,
+                             cs_real_t                  **rhs,
+                             cs_sla_matrix_t            **sla_mat)
+{
+  cs_lnum_t  i;
+
   cs_cdovb_codits_t  *sys_builder = (cs_cdovb_codits_t *)builder;
+  cs_real_t  *full_rhs = *rhs;
 
   const cs_cdo_bc_list_t  *vtx_dir = sys_builder->vtx_dir;
   const cs_equation_param_t  *eqp = sys_builder->eqp;
-
-  /* Test to remove */
-  if (eqp->flag & CS_EQUATION_UNSTEADY)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Unsteady terms are not handled yet.\n"));
 
   /* Allocate and initialize a matrix with the larger stencil (that related
      to diffusion => all vertices of a cell are potentially in interaction) */
   cs_sla_matrix_t  *system_mat = _init_matrix(quant->n_vertices, connect);
 
-  /* Compute contribution of (explicit) source terms to the rhs */
-  _compute_st_rhs(m, connect, quant, tcur, sys_builder, rhs);
+  /* Initialize full rhs */
+  if (full_rhs == NULL)
+    BFT_MALLOC(full_rhs, sys_builder->n_vertices, cs_real_t);
 
-  /* Update builder with the current values of Dirchlet BCs */
+  for (i = 0; i < sys_builder->n_vertices; i++)
+    full_rhs[i] = 0.0;
+
+  /* Update builder with the current values of Dirchlet BCs
+     TODO: do the analogy for Neumann BCs */
   if (vtx_dir->n_nhmg_elts > 0) {
 
     cs_flag_t  dof_flag =
       CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
 
     cs_cdo_bc_dirichlet_set(dof_flag,
-                            tcur,
+                            time_step,
                             m,
                             eqp->bc,
                             vtx_dir,
@@ -1288,21 +1496,8 @@ cs_cdovb_codits_build_system(const cs_mesh_t            *m,
 
   } // Dirichlet BCs */
 
-  /* Build diffusion system: stiffness matrix */
-  if (eqp->flag & CS_EQUATION_DIFFUSION) {
-
-    /* Build the (full) stiffness matrix i.e. without taking into account BCs */
-    _build_diffusion(connect, quant, sys_builder, system_mat);
-
-    /* Treatment differs according to the enforcement of BCs
-       In case of a strong enforcement of the BCs, rhs and matrix are resized */
-    _update_diffusion_with_bc(m, connect, quant,
-                              tcur,
-                              sys_builder,
-                              rhs,
-                              &system_mat);
-
-  }
+  /* Compute the contribution of source terms to the rhs for this time step */
+  _add_source_terms(m, connect, quant, time_step, sys_builder, full_rhs);
 
   if (eqp->flag & CS_EQUATION_CONVECTION) {
 
@@ -1310,8 +1505,7 @@ cs_cdovb_codits_build_system(const cs_mesh_t            *m,
     assert(sys_builder->n_dof_vertices == sys_builder->n_vertices);
 
     /* Build convection system (BCs are always weakly enforced) */
-    _build_convection(m, connect, quant,
-                      tcur,
+    _build_convection(m, connect, quant, time_step,
                       sys_builder,
                       *rhs,
                       system_mat);
@@ -1322,6 +1516,39 @@ cs_cdovb_codits_build_system(const cs_mesh_t            *m,
 
   }
 
+  /* Build diffusion system: stiffness matrix */
+  if (eqp->flag & CS_EQUATION_DIFFUSION) {
+
+    /* Build the (full) stiffness matrix i.e. without taking into account BCs */
+    _build_diffusion(connect, quant, time_step, sys_builder, system_mat);
+
+    /* Treatment differs according to the enforcement of BCs
+       In case of a strong enforcement of the BCs, rhs and matrix are resized */
+    _update_diffusion_with_bc(m, connect, quant, time_step,
+                              sys_builder,
+                              &full_rhs,
+                              &system_mat);
+
+  }
+
+  /* Unsteady terms have to be considered at the end in order to deal with
+     the system matrix fullfilled with diffusion, convection and reaction terms
+  */
+  if (eqp->flag & CS_EQUATION_UNSTEADY) {
+
+    /* Apply the time discretization */
+    _split_time_contrib(field_val, sys_builder, full_rhs, system_mat);
+
+    /* Build mass matrix to take into account time effect */
+    _build_unsteady_term(connect, quant, time_step, field_val, dt_cur,
+                         sys_builder,
+                         full_rhs,
+                         system_mat);
+
+  }
+
+  /* Return pointers */
+  *rhs = full_rhs;
   *sla_mat = system_mat;
 }
 
@@ -1330,41 +1557,48 @@ cs_cdovb_codits_build_system(const cs_mesh_t            *m,
  * \brief  Post-process the solution of a scalar convection/diffusion equation
  *         solved with a CDO vertex-based scheme.
  *
- * \param[in]      connect  pointer to a cs_cdo_connect_t struct.
- * \param[in]      quant    pointer to a cs_cdo_quantities_t struct.
- * \param[in]      solu     solution array
- * \param[in, out] builder  pointer to cs_cdovb_codits_t structure
- * \param[in, out] field    pointer to a cs_field_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
+ * \param[in]      time_step  pointer to a time step structure
+ * \param[in]      solu       solution array
+ * \param[in, out] builder    pointer to cs_cdovb_codits_t structure
+ * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdovb_codits_update_field(const cs_cdo_connect_t     *connect,
                              const cs_cdo_quantities_t  *quant,
+                             const cs_time_step_t       *time_step,
                              const cs_real_t            *solu,
                              void                       *builder,
-                             cs_field_t                 *field)
+                             cs_real_t                  *field_val)
 {
   int  i;
 
   cs_cdovb_codits_t  *_builder = (cs_cdovb_codits_t  *)builder;
   const cs_cdo_bc_list_t  *v_dir = _builder->vtx_dir;
 
+  /* Sanity checks (avoid a warning in debug mode) */
+  assert(connect != NULL);
+  assert(quant != NULL);
+  assert(time_step != NULL);
+
   /* Set computed solution in field array */
   if (_builder->n_dof_vertices < _builder->n_vertices) {
     for (i = 0; i < _builder->n_vertices; i++)
-      field->val[i] = 0;
+      field_val[i] = 0;
     for (i = 0; i < _builder->n_dof_vertices; i++)
-      field->val[_builder->v_z2i_ids[i]] = solu[i];
+      field_val[_builder->v_z2i_ids[i]] = solu[i];
   }
   else
     for (i = 0; i < _builder->n_vertices; i++)
-      field->val[i] = solu[i];
+      field_val[i] = solu[i];
 
   /* Set BC in field array if we have this knowledge */
   if (_builder->enforce == CS_PARAM_BC_ENFORCE_STRONG)
     for (i = 0; i < v_dir->n_nhmg_elts; i++)
-      field->val[v_dir->elt_ids[i]] = _builder->dir_val[i];
+      field_val[v_dir->elt_ids[i]] = _builder->dir_val[i];
 }
 
 /*----------------------------------------------------------------------------*/

@@ -178,6 +178,10 @@ _check_adv_field_id(int   id)
               id, cs_param_n_adv_fields);
 }
 
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set a cs_def_t structure
@@ -189,11 +193,11 @@ _check_adv_field_id(int   id)
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_set_def(cs_param_def_type_t      def_type,
-         cs_param_var_type_t      var_type,
-         const void              *val,
-         cs_def_t                *def)
+void
+cs_param_set_def(cs_param_def_type_t      def_type,
+                 cs_param_var_type_t      var_type,
+                 void                    *val,
+                 cs_def_t                *def)
 {
   assert(var_type != CS_PARAM_N_VAR_TYPES);
 
@@ -250,6 +254,13 @@ _set_def(cs_param_def_type_t      def_type,
       def->analytic = (cs_analytic_func_t *)val;
     break;
 
+  case CS_PARAM_DEF_BY_TIME_FUNCTION:
+    if (val == NULL)
+      def->time_func = NULL;
+    else
+      def->time_func = (cs_timestep_func_t *)val;
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               " This type of definition is not handled yet.\n"
@@ -259,10 +270,6 @@ _set_def(cs_param_def_type_t      def_type,
   } /* end of switch on def_type */
 
 }
-
-/*============================================================================
- * Public function prototypes
- *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -450,7 +457,7 @@ cs_param_pty_add(const char      *name,
 void
 cs_param_pty_set(const char     *name,
                  const char     *def_key,
-                 const void     *val)
+                 void           *val)
 {
   int  pty_id = cs_param_pty_get_id_by_name(name);
 
@@ -488,13 +495,13 @@ cs_param_pty_set(const char     *name,
   switch (pty->type) {
 
   case CS_PARAM_PTY_ISO:
-    _set_def(pty->def_type, CS_PARAM_VAR_SCAL, val, &(pty->def));
+    cs_param_set_def(pty->def_type, CS_PARAM_VAR_SCAL, val, &(pty->def));
     break;
   case CS_PARAM_PTY_ORTHO:
-    _set_def(pty->def_type, CS_PARAM_VAR_VECT, val, &(pty->def));
+    cs_param_set_def(pty->def_type, CS_PARAM_VAR_VECT, val, &(pty->def));
     break;
   case CS_PARAM_PTY_ANISO:
-    _set_def(pty->def_type, CS_PARAM_VAR_TENS, val, &(pty->def));
+    cs_param_set_def(pty->def_type, CS_PARAM_VAR_TENS, val, &(pty->def));
 
     if (pty->def_type == CS_PARAM_DEF_BY_VALUE) { /* Check the symmetry */
 
@@ -540,6 +547,26 @@ cs_param_pty_is_uniform(int       pty_id)
     return true;
   else
     return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Query to know the type of material property
+ *
+ * \param[in]    pty_id    id related to the material property to deal with
+ *
+ * \return  the type of material property
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_pty_type_t
+cs_param_pty_get_type(int       pty_id)
+{
+  _check_pty_id(pty_id);
+
+  cs_param_pty_t  *pty = cs_param_properties + pty_id;
+
+  return  pty->type;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -829,9 +856,9 @@ cs_param_adv_field_add(const char      *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_adv_field_set(const char     *name,
-                       const char     *def_key,
-                       const void     *val)
+cs_param_adv_field_set(const char   *name,
+                       const char   *def_key,
+                       void         *val)
 {
   int  adv_id = cs_param_adv_get_id_by_name(name);
 
@@ -864,7 +891,7 @@ cs_param_adv_field_set(const char     *name,
                 " or file\n"
                 " Please modify your settings."), def_key);
 
-  _set_def(adv->def_type, CS_PARAM_VAR_VECT, val, &(adv->def));
+  cs_param_set_def(adv->def_type, CS_PARAM_VAR_VECT, val, &(adv->def));
 
 }
 
@@ -1018,13 +1045,13 @@ cs_param_bc_create(cs_param_bc_type_t  default_bc)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_bc_def_set(cs_param_bc_def_t       *bcpd,
-                    int                      loc_id,
-                    cs_param_bc_type_t       bc_type,
-                    cs_param_var_type_t      var_type,
-                    cs_param_def_type_t      def_type,
-                    const void              *coef1,
-                    const void              *coef2)
+cs_param_bc_def_set(cs_param_bc_def_t      *bcpd,
+                    int                     loc_id,
+                    cs_param_bc_type_t      bc_type,
+                    cs_param_var_type_t     var_type,
+                    cs_param_def_type_t     def_type,
+                    void                   *coef1,
+                    void                   *coef2)
 {
   if (bcpd == NULL)
     return;
@@ -1038,8 +1065,8 @@ cs_param_bc_def_set(cs_param_bc_def_t       *bcpd,
   bcpd->bc_type = bc_type;
   bcpd->def_type = def_type;
 
-  _set_def(def_type, var_type, coef1, &(bcpd->def_coef1));
-  _set_def(def_type, var_type, coef2, &(bcpd->def_coef2));
+  cs_param_set_def(def_type, var_type, coef1, &(bcpd->def_coef1));
+  cs_param_set_def(def_type, var_type, coef2, &(bcpd->def_coef2));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1066,7 +1093,7 @@ cs_param_source_term_add(cs_param_source_term_t       *stp,
                          cs_param_var_type_t           var_type,
                          cs_quadra_type_t              quad_type,
                          cs_param_def_type_t           def_type,
-                         const void                   *val)
+                         void                         *val)
 {
   if (stp == NULL)
     return;
@@ -1082,7 +1109,7 @@ cs_param_source_term_add(cs_param_source_term_t       *stp,
   stp->def_type = def_type;
   stp->use_subdiv = false; // default behaviour
 
-  _set_def(def_type, var_type, val, &(stp->def));
+  cs_param_set_def(def_type, var_type, val, &(stp->def));
 }
 
 /*----------------------------------------------------------------------------*/

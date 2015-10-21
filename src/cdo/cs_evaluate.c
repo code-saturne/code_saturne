@@ -516,7 +516,7 @@ _scp_by_val(const cs_cdo_quantities_t    *quant,
  * \param[in]      m          pointer to a cs_mesh_t struct.
  * \param[in]      quant      additional mesh quantities struct.
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]      tcur      current physical time of the simulation
+ * \param[in]      time_step  pointer to a time step structure
  * \param[in]      dof_flag   indicate where the evaluation has to be done
  * \param[in]      loc_id     id related to a cs_mesh_location_t struct.
  * \param[in]      def_type   type of definition
@@ -531,7 +531,7 @@ void
 cs_evaluate(const cs_mesh_t              *m,
             const cs_cdo_quantities_t    *quant,
             const cs_cdo_connect_t       *connect,
-            double                        tcur,
+            const cs_time_step_t         *time_step,
             cs_flag_t                     dof_flag,
             int                           loc_id,
             cs_param_def_type_t           def_type,
@@ -579,23 +579,26 @@ cs_evaluate(const cs_mesh_t              *m,
     break;
 
   case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION: // constant value (simple case)
+    {
+      const double  tcur = time_step->t_cur;
 
-    if (dof_flag == scd)
-      _scd_by_analytic_func(m, quant, connect,
-                            def.analytic,
-                            tcur,
-                            loc_id, quad_type, use_subdiv,
-                            values);
-    else if (dof_flag == scp)
-      _scp_by_analytic_func(m, quant, connect,
-                            def.analytic,
-                            tcur,
-                            loc_id, quad_type, use_subdiv,
-                            values);
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid type of definition. Stop evaluation.\n"
-                  " This case is not handled yet.\n"));
+      if (dof_flag == scd)
+        _scd_by_analytic_func(m, quant, connect,
+                              def.analytic,
+                              tcur,
+                              loc_id, quad_type, use_subdiv,
+                              values);
+      else if (dof_flag == scp)
+        _scp_by_analytic_func(m, quant, connect,
+                              def.analytic,
+                              tcur,
+                              loc_id, quad_type, use_subdiv,
+                              values);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Invalid type of definition. Stop evaluation.\n"
+                    " This case is not handled yet.\n"));
+    }
     break;
 
   default:

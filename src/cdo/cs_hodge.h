@@ -34,8 +34,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_time_step.h"
 
-#include "cs_cdo_toolbox.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_param.h"
@@ -57,57 +57,26 @@ typedef struct _hodge_builder_t cs_hodge_builder_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Add or associate a discrete Hodge operator to a given setting
- *
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
- * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]  param     set of parameters related a discrete Hodge operator
- *
- * \return  an id to the cs_hodge_t structure related to the given setting
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_hodge_add(const cs_cdo_connect_t     *connect,
-             const cs_cdo_quantities_t  *quant,
-             cs_param_hodge_t            param);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Allocate and initialize by default the matrix related to a discrete
- *          Hodge operator
- *
- * \param[in]    connect  pointer to a cs_cdo_connect_t structure
- * \param[in]    quant    pointer to a cs_cdo_quantities_t structure
- * \param[in]    type     type of the discrete Hodge op. to initiliaze
- *
- * \return a pointer to a cs_sla_matrix_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_sla_matrix_t *
-cs_hodge_init_matrix(const cs_cdo_connect_t      *connect,
-                     const cs_cdo_quantities_t   *quant,
-                     const cs_param_hodge_type_t  type);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Allocate and initialize a cs_hodge_builder_t structure
  *
- * \param[in]  n_max_ent    max number of entities by primal cell
+ * \param[in]  connect       pointer to a cs_cdo_connect_t struct.
+ * \param[in]  time_step     pointer to a time step structure
+ * \param[in]  h_info        algorithm used to build the discrete Hodge op.
  *
  * \return  a new allocated cs_hodge_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_hodge_builder_t *
-cs_hodge_builder_init(int   n_max_ent);
+cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
+                      const cs_time_step_t     *time_step,
+                      cs_param_hodge_t          h_info);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Free a cs_hodge_builder_t structure
  *
- * \param[in]  hb     pointer to the cs_hodge_builder_t struct. to free
+ * \param[in]  hb    pointer to the cs_hodge_builder_t struct. to free
  *
  * \return  a NULL pointer
  */
@@ -118,34 +87,30 @@ cs_hodge_builder_free(cs_hodge_builder_t  *hb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local discrete Hodge operator using the generic COST algo.
+ * \brief   Build a local discrete Hodge
  *
- * \param[in]     cid        cell id
- * \param[in]     connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]     quant      pointer to a cs_cdo_quantities_t struct.
- * \param[in]     h_info     pointer to a cs_param_hodge_t struct.
- * \param[in,out] hl         pointer to a cs_toolbox_locmat_t struct.
- * \param[in,out] hb         pointer to a cs_hodge_builder_t struct.
+ * \param[in]      c_id       cell id
+ * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
+ * \param[in, out] hb         pointer to a cs_hodge_builder_t struct.
+ *
+ * \return a pointer to a cs_toolbox_locmat_t struct. (local dense matrix)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_hodge_cost_build_local(int                         cid,
-                          const cs_cdo_connect_t     *connect,
-                          const cs_cdo_quantities_t  *quant,
-                          const cs_param_hodge_t      h_info,
-                          cs_toolbox_locmat_t        *hl,
-                          cs_hodge_builder_t         *hb);
+cs_toolbox_locmat_t *
+cs_hodge_build_local(int                         c_id,
+                     const cs_cdo_connect_t     *connect,
+                     const cs_cdo_quantities_t  *quant,
+                     cs_hodge_builder_t         *hb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a discrete Hodge operator using a generic reconstruction
- *          algorithm: Reconstruction with Consistent and Coercive part
- *          stabilized by Beta (COST)
- *          A call to cs_hodge_builder_init() should have been done before.
+ * \brief   Build a discrete Hodge operator
  *
  * \param[in]  connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]  quant      pointer to a cs_cdo_quantities_t struct.
+ * \param[in]  time_step  pointer to a time step structure
  * \param[in]  h_info     pointer to a cs_param_hodge_t struct.
  *
  * \return a pointer to a cs_sla_matrix_t structure
@@ -153,28 +118,10 @@ cs_hodge_cost_build_local(int                         cid,
 /*----------------------------------------------------------------------------*/
 
 cs_sla_matrix_t *
-cs_hodge_cost_build(const cs_cdo_connect_t      *connect,
-                    const cs_cdo_quantities_t   *quant,
-                    const cs_param_hodge_t       h_info);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   H is an operator from primal edges to dual faces. It mimics a Hodge
- *          operator from primal mesh to dual mesh.
- *          Use voronoi algorithm.
- *
- * \param[in]   connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]   quant       pointer to a cs_cdo_quantities_t struct.
- * \param[in]    h_info     pointer to a cs_param_hodge_t struct.
- *
- * \return a pointer to a cs_sla_matrix_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_sla_matrix_t *
-cs_hodge_voronoi_build(const cs_cdo_connect_t      *connect,
-                       const cs_cdo_quantities_t   *quant,
-                       const cs_param_hodge_t       h_info);
+cs_hodge_compute(const cs_cdo_connect_t      *connect,
+                 const cs_cdo_quantities_t   *quant,
+                 const cs_time_step_t        *time_step,
+                 const cs_param_hodge_t       h_info);
 
 /*----------------------------------------------------------------------------*/
 

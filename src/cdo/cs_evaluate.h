@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_time_step.h"
 
 #include "cs_cdo.h"
 #include "cs_cdo_quantities.h"
@@ -62,7 +63,7 @@ BEGIN_C_DECLS
  * \param[in]      m          pointer to a cs_mesh_t struct.
  * \param[in]      quant      additional mesh quantities struct.
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]      tcur      current physical time of the simulation
+ * \param[in]      time_step  pointer to a time step structure
  * \param[in]      dof_flag   indicate where the evaluation has to be done
  * \param[in]      loc_id     id related to a cs_mesh_location_t struct.
  * \param[in]      def_type   type of definition
@@ -77,7 +78,7 @@ void
 cs_evaluate(const cs_mesh_t              *m,
             const cs_cdo_quantities_t    *quant,
             const cs_cdo_connect_t       *connect,
-            double                        tcur,
+            const cs_time_step_t         *time_step,
             cs_flag_t                     dof_flag,
             int                           loc_id,
             cs_param_def_type_t           def_type,

@@ -490,7 +490,7 @@ cs_cdo_bc_vtx_dir_create(const cs_mesh_t    *m,
  * \brief  Set the Dirichlet values to enforce on the corresponding entities
  *
  * \param[in]      dof_flag  information about the corresponding DoF to treat
- * \param[in]      tcur      current physical time of the simulation
+ * \param[in]      time_step  pointer to a time step structure
  * \param[in]      geom      structure storing geometric information
  * \param[in]      bc        pointer to a cs_param_bc_t structure
  * \param[in]      ent_dir   pointer to a cs_cdo_bc_list_t
@@ -500,7 +500,7 @@ cs_cdo_bc_vtx_dir_create(const cs_mesh_t    *m,
 
 void
 cs_cdo_bc_dirichlet_set(cs_flag_t                dof_flag,
-                        double                   tcur,
+                        const cs_time_step_t    *time_step,
                         const void              *geom,
                         const cs_param_bc_t     *bc,
                         const cs_cdo_bc_list_t  *ent_dir,
@@ -509,6 +509,8 @@ cs_cdo_bc_dirichlet_set(cs_flag_t                dof_flag,
   cs_lnum_t  i, k, stride;
   cs_real_3_t  xyz;
   cs_get_t  get;
+
+  const double  tcur = time_step->t_cur;
 
   if (ent_dir->n_nhmg_elts == 0) /* Nothing to compute */
     return;

@@ -731,24 +731,26 @@ cs_convection_builder_free(cs_convection_builder_t  *b)
 /*!
  * \brief   Compute the convection operator for pure convection
  *
- * \param[in]      connect  pointer to the connectivity structure
- * \param[in]      quant    pointer to the cdo quantities structure
- * \param[in]      tcur     value of the current time
- * \param[in]      a_info   set of options for the advection term
- * \param[in, out] builder  pointer to a builder structure
- * \param[in, out] matrix   pointer to the matrix structure of the system
+ * \param[in]      connect    pointer to the connectivity structure
+ * \param[in]      quant      pointer to the cdo quantities structure
+ * \param[in]      time_step  pointer to a time step structure
+ * \param[in]      a_info     set of options for the advection term
+ * \param[in, out] builder    pointer to a builder structure
+ * \param[in, out] matrix     pointer to the matrix structure of the system
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_convection(const cs_cdo_connect_t      *connect,
               const cs_cdo_quantities_t   *quant,
-              double                       tcur,
+              const cs_time_step_t        *time_step,
               const cs_param_advection_t   a_info,
               cs_convection_builder_t     *builder,
               cs_sla_matrix_t             *matrix)
 {
   cs_lnum_t  c_id;
+
+  double  tcur = time_step->t_cur;
 
   if (a_info.form == CS_PARAM_ADVECTION_FORM_NONCONS) {
 
@@ -793,26 +795,28 @@ cs_convection(const cs_cdo_connect_t      *connect,
 /*!
  * \brief   Compute the convection operator when diffusion is activated
  *
- * \param[in]      connect  pointer to the connectivity structure
- * \param[in]      quant    pointer to the cdo quantities structure
- * \param[in]      tcur     value of the current time
- * \param[in]      a_info   set of options for the advection term
- * \param[in]      d_info   set of options for the diffusion term
- * \param[in, out] builder  pointer to a builder structure
- * \param[in, out] matrix   pointer to the matrix structure of the system
+ * \param[in]      connect    pointer to the connectivity structure
+ * \param[in]      quant      pointer to the cdo quantities structure
+ * \param[in]      time_step  pointer to a time step structure
+ * \param[in]      a_info     set of options for the advection term
+ * \param[in]      d_info     set of options for the diffusion term
+ * \param[in, out] builder    pointer to a builder structure
+ * \param[in, out] matrix     pointer to the matrix structure of the system
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_convection_with_diffusion(const cs_cdo_connect_t      *connect,
                              const cs_cdo_quantities_t   *quant,
-                             double                       tcur,
+                             const cs_time_step_t        *time_step,
                              const cs_param_advection_t   a_info,
                              const cs_param_hodge_t       d_info,
                              cs_convection_builder_t     *builder,
                              cs_sla_matrix_t             *matrix)
 {
   cs_lnum_t   c_id;
+
+  double  tcur = time_step->t_cur;
 
   if (a_info.form == CS_PARAM_ADVECTION_FORM_NONCONS) {
 
