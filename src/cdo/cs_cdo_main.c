@@ -136,8 +136,12 @@ _setup(cs_mesh_t             *m,
   cs_param_pty_set_default();
   cs_user_cdo_add_properties();
 
-  /* Create and initialize a new computational domain
-     Add predefined and user-defined equations */
+  /* - Create and initialize a new computational domain
+     - Set the default boundary and potentially add new boundary to the
+     computational domain
+     - Add predefined and user-defined equations
+     - Set the time step
+  */
   cs_domain_t  *domain = cs_domain_init(m, mq);
 
   /* Build all new mesh locations which are not set yet */

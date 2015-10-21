@@ -1153,8 +1153,8 @@ cs_equation_summary(const cs_equation_t  *eq)
     case CS_TIME_SCHEME_EXPLICIT:
       bft_printf("explicit\n");
       break;
-    case CS_TIME_SCHEME_CRANKNICH:
-      bft_printf("Crank-Nicholson\n");
+    case CS_TIME_SCHEME_CRANKNICO:
+      bft_printf("Crank-Nicolson\n");
       break;
     case CS_TIME_SCHEME_THETA:
       bft_printf("theta scheme with value %f\n", t_info.theta);
@@ -1955,8 +1955,8 @@ cs_equation_set(cs_equation_t       *eq,
       eqp->time_info.scheme = CS_TIME_SCHEME_EXPLICIT;
       eqp->time_info.theta = 0.;
     }
-    else if (strcmp(val, "crank_nicholson") == 0) {
-      eqp->time_info.scheme = CS_TIME_SCHEME_CRANKNICH;
+    else if (strcmp(val, "crank_nicolson") == 0) {
+      eqp->time_info.scheme = CS_TIME_SCHEME_CRANKNICO;
       eqp->time_info.theta = 0.5;
     }
     else if (strcmp(val, "theta_scheme") == 0)
@@ -1965,7 +1965,7 @@ cs_equation_set(cs_equation_t       *eq,
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid key value %s for setting the time scheme.\n"
-                  " Choices are among implicit, explicit, crank_nicholson"
+                  " Choices are among implicit, explicit, crank_nicolson"
                   " and theta_scheme"), _val);
     }
     break;

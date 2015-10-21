@@ -168,9 +168,43 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
         "as"     additive schwarz method
 
      >> key: "itsol_max_iter"
+        >> val: "2000" for instance
      >> key: "itsol_eps"
+        >> val:  "1e-10" for instance
      >> key: "itsol_resnorm"
         >> val: "true" or "false"
+
+     Set the type of enforcement of the boundary conditions
+     >> key: "bc_enforcement"
+     >> available values: "strong", "penalization", "nitsche", "sym_nitsche"
+     "strong"       remove unknowns attached to a BC
+     "penalization" weak enforcement using a huge penalization coefficient
+     "weak"         weak enforcement using the Nitsche method
+     "weak_sym"     weak enforcement keeping the symmetry of the system
+
+     Set the quadrature algorithm used for evaluating boundary conditions
+     >> key: "bc_quadrature"
+     >> available values: "subdiv", "bary", "higher", "highest"
+     "subdiv"  used a subdivision into tetrahedra
+     "bary"    used the barycenter approximation
+     "higher"  used 4 Gauss points for approximating the integral
+     "highest" used 5 Gauss points for approximating the integral
+
+     Remark: "higher" and "highest" implies automatically a subdivision into
+             tetrahedra
+
+     Set time scheme:
+     >> key: "time_scheme"
+     >> available values among:
+     "implicit": first-order in time (inconditionnally stable)
+     "explicit":
+     "crank_nicolson": second_order in time
+     "theta_scheme": generic time scheme. One recovers "implicit" with theta=1,
+                     "explicit" with theta=0 and "crank_nicolson" with theta=0.5
+
+     >> key: "time_theta" (only useful if "time_scheme" is set to "theta_scheme"
+       >> val: "0.75" for instance (must be between 0..1)
+
   */
 
   cs_equation_t  *eq = cs_domain_get_equation(domain, "FVCA6.1");

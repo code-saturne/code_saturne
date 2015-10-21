@@ -1057,7 +1057,7 @@ _add_source_terms(const cs_mesh_t            *m,
       for (i = 0; i < builder->n_vertices; i++)
         full_rhs[i] += builder->source_terms[i];
 
-    else if (t_info.scheme == CS_TIME_SCHEME_CRANKNICH ||
+    else if (t_info.scheme == CS_TIME_SCHEME_CRANKNICO ||
              t_info.scheme == CS_TIME_SCHEME_THETA) {
 
       const double  tcoef = 1 - t_info.theta;
@@ -1074,7 +1074,7 @@ _add_source_terms(const cs_mesh_t            *m,
       for (i = 0; i < builder->n_vertices; i++)
         full_rhs[i] += builder->source_terms[i];
 
-    else if (t_info.scheme == CS_TIME_SCHEME_CRANKNICH ||
+    else if (t_info.scheme == CS_TIME_SCHEME_CRANKNICO ||
              t_info.scheme == CS_TIME_SCHEME_THETA) {
 
       for (i = 0; i < builder->n_vertices; i++)
@@ -1140,7 +1140,7 @@ _split_time_contrib(const cs_real_t          *field_val,
       matrix->val[i] = 0.;
 
   }
-  else if (t_info.scheme == CS_TIME_SCHEME_CRANKNICH ||
+  else if (t_info.scheme == CS_TIME_SCHEME_CRANKNICO ||
            t_info.scheme == CS_TIME_SCHEME_THETA) {
 
     const double  tcoef = 1 - t_info.theta;
@@ -1496,8 +1496,10 @@ cs_cdovb_codits_build_system(const cs_mesh_t             *m,
 
   } // Dirichlet BCs */
 
-  /* Compute the contribution of source terms to the rhs for this time step */
+  /* Compute the contribution of source terms to the full rhs for this
+     time step */
   _add_source_terms(m, connect, quant, time_step, sys_builder, full_rhs);
+
 
   if (eqp->flag & CS_EQUATION_CONVECTION) {
 

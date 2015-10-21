@@ -106,7 +106,7 @@ typedef enum {
 
   CS_TIME_SCHEME_IMPLICIT,  // fully implicit (forward Euler/theta-scheme = 1)
   CS_TIME_SCHEME_EXPLICIT,  // fully explicit (backward Euler/theta-scheme = 0)
-  CS_TIME_SCHEME_CRANKNICH, // Crank-Nicholson (theta-scheme = 0.5)
+  CS_TIME_SCHEME_CRANKNICO, // Crank-Nicolson (theta-scheme = 0.5)
   CS_TIME_SCHEME_THETA,     // theta-scheme
   CS_TIME_N_SCHEMES
 
