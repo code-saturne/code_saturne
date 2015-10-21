@@ -83,7 +83,17 @@ typedef struct {
   cs_lnum_t  *ids;        // list of entity ids (size = n_max_ent)
   double     *mat;        // local matrix (size: n_max_ent*n_max_ent)
 
-} cs_toolbox_locmat_t;
+} cs_locmat_t;
+
+/* Index to scan a mesh connectivity */
+typedef struct {
+
+  bool     owner;
+  int      n;
+  int     *idx;   /* from 0, size = n+1 */
+  int     *ids;   /* ids from 0 to n-1 (there is no multifold entry) */
+
+} cs_connect_index_t;
 
 /* ============= *
  * DATA ANALYSIS *
@@ -231,6 +241,28 @@ _invmat33(const cs_real_33_t   in,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a private structure for this file used for
+ *         reducing round-off errors during summation
+ *
+ *  \param[in] ref_size    reference array dimension
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_toolbox_init(cs_lnum_t      ref_size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a private structure for this file used for reducing round-off
+ *         errors during summation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_toolbox_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -410,67 +442,6 @@ cs_tmpbuf_free(cs_tmpbuf_t    *tb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize a private structure for this file used for
- *         reducing round-off errors during summation
- *
- *  \param[in] ref_size    reference array dimension
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_init(cs_lnum_t      ref_size);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a private structure for this file used for reducing round-off
- *         errors during summation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_finalize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Allocate and initialize a cs_toolbox_locmat_t structure
- *
- * \param[in]  n_max_ent    max number of entities
- *
- * \return  a new allocated cs_toolbox_locmat_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_toolbox_locmat_t *
-cs_toolbox_locmat_create(int   n_max_ent);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Dump a local discrete Hodge operator
- *
- * \param[in]    parent_id  id of the related parent entity
- * \param[in]    lm         pointer to the cs_sla_locmat_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_locmat_dump(int                         parent_id,
-                       const cs_toolbox_locmat_t  *lm);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Free a cs_toolbox_locmat_t structure
- *
- * \param[in]  lm    pointer to a cs_toolbox_locmat_t struct. to free
- *
- * \return  a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_toolbox_locmat_t *
-cs_toolbox_locmat_free(cs_toolbox_locmat_t  *lm);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Compute some simple statistics from an array
  *
  * \param[in]  n_elts      number of couples in data
@@ -508,6 +479,202 @@ cs_data_info_dump(const char              *name,
                   cs_lnum_t                n_elts,
                   cs_datatype_t            datatype,
                   const cs_data_info_t     dinfo);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Create an index structure of size n
+ *
+ * \param[in]  n     number of entries of the indexed list
+ *
+ * \return  a pointer to a cs_connect_index_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_connect_index_t *
+cs_index_create(int  n);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Map arrays into an index structure of size n (owner = false)
+ *
+ * \param[in]  n     number of entries of the indexed list
+ * \param[in]  idx   array of size n+1
+ * \param[in]  ids   array of size idx[n]
+ *
+ * \return  a pointer to a cs_connect_index_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_connect_index_t *
+cs_index_map(int    n,
+             int   *idx,
+             int   *ids);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Destroy a cs_connect_index_t structure
+ *
+ * \param[in]  pidx     pointer of pointer to a cs_connect_index_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_index_free(cs_connect_index_t   **pidx);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   From 2 indexes : A -> B and B -> C create a new index A -> C
+ *
+ * \param[in]  nc      number of elements in C set
+ * \param[in]  a2b     pointer to the index A -> B
+ * \param[in]  b2c     pointer to the index B -> C
+ *
+ *\return  a pointer to the cs_connect_index_t structure A -> C
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_connect_index_t *
+cs_index_compose(int                        nc,
+                 const cs_connect_index_t  *a2b,
+                 const cs_connect_index_t  *b2c);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   From a cs_connect_index_t struct. A -> B create a new index B -> A
+ *
+ * \param[in]  nb     size of the "b" set
+ * \param[in]  a2b    pointer to the index A -> B
+ *
+ *\return  a new pointer to the cs_connect_index_t structure B -> A
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_connect_index_t *
+cs_index_transpose(int                         nb,
+                   const cs_connect_index_t   *a2b);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Sort each list related to an entry in a cs_connect_index_t structure
+ *
+ * \param[in]  x     pointer to a cs_connect_index_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_index_sort(cs_connect_index_t   *x);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Dump a cs_connect_index_t structure to a file or into the standard
+ *          output
+ *
+ * \param[in]  name  name of the dump file. Can be set to NULL
+ * \param[in]  _f    pointer to a FILE structure. Can be set to NULL.
+ * \param[in]  x     pointer to a cs_connect_index_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_index_dump(const char          *name,
+              FILE                *_f,
+              cs_connect_index_t  *x);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Allocate and initialize a cs_locmat_t structure
+ *
+ * \param[in]  n_max_ent    max number of entities
+ *
+ * \return  a new allocated cs_locmat_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_locmat_t *
+cs_locmat_create(int   n_max_ent);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Free a cs_locmat_t structure
+ *
+ * \param[in]  lm    pointer to a cs_locmat_t struct. to free
+ *
+ * \return  a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_locmat_t *
+cs_locmat_free(cs_locmat_t  *lm);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Copy a cs_locmat_t structure into another cs_locmat_t structure
+ *          which has been already allocated
+ *
+ * \param[in, out]  recv    pointer to a cs_locmat_t struct.
+ * \param[in]       send    pointer to a cs_locmat_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_locmat_copy(cs_locmat_t        *recv,
+               const cs_locmat_t  *send);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute a local dense matrix-vector product
+ *          matvec has been previously allocated
+ *
+ * \param[in]      loc    local matrix to use
+ * \param[in]      vec    local vector to use
+ * \param[in, out] matvec result of the local matrix-vector product
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_locmat_matvec(const cs_locmat_t   *loc,
+                 const cs_real_t     *vec,
+                 cs_real_t           *matvec);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Add two local dense matrices: loc += add
+ *
+ * \param[in, out] loc   local matrix storing the result
+ * \param[in]      add   values to add to loc
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_locmat_add(cs_locmat_t        *loc,
+              const cs_locmat_t  *add);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Define a new matrix by adding a local matrix with its transpose.
+ *          Keep the transposed matrix for future use.
+ *
+ * \param[in, out] loc   local matrix to transpose and add
+ * \param[in, out] tr    transposed of the local matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_locmat_add_transpose(cs_locmat_t  *loc,
+                        cs_locmat_t  *tr);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Dump a local discrete Hodge operator
+ *
+ * \param[in]    parent_id  id of the related parent entity
+ * \param[in]    lm         pointer to the cs_sla_locmat_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_locmat_dump(int                 parent_id,
+               const cs_locmat_t  *lm);
 
 /*----------------------------------------------------------------------------*/
 

@@ -84,22 +84,22 @@ struct _hodge_builder_t {
   int         n_maxloc_ent;      /* Max local number of entities by primal
                                     cells (use for allocation) */
 
-  cs_param_hodge_t     h_info;   /* Pointer the set of parameters related
-                                    to the discrete Hodge op. to build.
-                                    Not owned by this structure. */
+  cs_param_hodge_t  h_info;   /* Pointer the set of parameters related
+                                 to the discrete Hodge op. to build.
+                                 Not owned by this structure. */
 
-  cs_real_t             t_cur;   /* Current physical time */
-  bool                  uniform; /* True if material property is uniform */
-  cs_real_33_t          matval;  /* Tensor related to the material property */
+  cs_real_t         t_cur;   /* Current physical time */
+  bool              uniform; /* True if material property is uniform */
+  cs_real_33_t      matval;  /* Tensor related to the material property */
 
 
-  cs_toolbox_locmat_t  *hloc;    /* Local dense matrix related to a local
-                                    discrete Hodge op. */
+  cs_locmat_t      *hloc;    /* Local dense matrix related to a local
+                                discrete Hodge op. */
 
-  void                 *algoq;   /* Quantities used during the definition of
-                                    the local discrete Hodge op.
-                                    This structure is attached to each type
-                                    of algorithm */
+  void             *algoq;   /* Quantities used during the definition of
+                                the local discrete Hodge op.
+                                This structure is attached to each type
+                                of algorithm */
 
 };
 
@@ -563,7 +563,7 @@ _build_using_cost(int                         cid,
   double  invsurf;
 
   int  n_ent = 0;
-  cs_toolbox_locmat_t  *hloc = hb->hloc;
+  cs_locmat_t  *hloc = hb->hloc;
 
   const cs_param_hodge_t  h_info = hb->h_info;
   const cs_real_33_t ptyval = {
@@ -898,7 +898,7 @@ _build_using_wbs(int                         cid,
   cs_real_3_t  un;
   cs_lnum_t  ii, jj, v_id;
 
-  cs_toolbox_locmat_t  *hl = hb->hloc;
+  cs_locmat_t  *hl = hb->hloc;
 
   const double  volc = quant->cell_vol[cid];
   const double  ovcell = 1/volc;
@@ -1077,7 +1077,7 @@ _build_using_voronoi(cs_lnum_t                    c_id,
   double  contrib;
   cs_real_3_t  un, mv;
 
-  cs_toolbox_locmat_t  *hl = hb->hloc;
+  cs_locmat_t  *hl = hb->hloc;
 
   const cs_param_hodge_t  h_info = hb->h_info;
   const cs_real_33_t ptymat = {
@@ -1222,7 +1222,7 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
 
   /* Allocate the local dense matrix storing the coefficient of the local
      discrete Hodge op. associated to a cell */
-  hb->hloc = cs_toolbox_locmat_create(hb->n_maxloc_ent);
+  hb->hloc = cs_locmat_create(hb->n_maxloc_ent);
 
   /* Allocate the structure used to stored quantities used during the build
      of the local discrete Hodge op. */
@@ -1283,7 +1283,7 @@ cs_hodge_builder_free(cs_hodge_builder_t  *hb)
   if (hb == NULL)
     return hb;
 
-  hb->hloc = cs_toolbox_locmat_free(hb->hloc);
+  hb->hloc = cs_locmat_free(hb->hloc);
 
   switch (hb->h_info.algo) {
   case CS_PARAM_HODGE_ALGO_COST:
@@ -1313,11 +1313,11 @@ cs_hodge_builder_free(cs_hodge_builder_t  *hb)
  * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
  * \param[in, out] hb         pointer to a cs_hodge_builder_t struct.
  *
- * \return a pointer to a cs_toolbox_locmat_t struct. (local dense matrix)
+ * \return a pointer to a cs_locmat_t struct. (local dense matrix)
  */
 /*----------------------------------------------------------------------------*/
 
-cs_toolbox_locmat_t *
+cs_locmat_t *
 cs_hodge_build_local(int                         c_id,
                      const cs_cdo_connect_t     *connect,
                      const cs_cdo_quantities_t  *quant,
@@ -1362,7 +1362,7 @@ cs_hodge_build_local(int                         c_id,
   }
 
 #if CS_HODGE_DBG > 2
-  cs_toolbox_locmat_dump(c_id, hb->hloc);
+  cs_locmat_dump(c_id, hb->hloc);
 #endif
 
   return hb->hloc;

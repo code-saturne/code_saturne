@@ -35,6 +35,7 @@
 #include <assert.h>
 #include <float.h>
 #include <limits.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -44,6 +45,7 @@
 #include <bft_printf.h>
 
 #include "cs_cdo.h"
+#include "cs_sort.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -391,6 +393,49 @@ _invmat33(const cs_real_33_t   in,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a private structure for this file used for
+ *         reducing round-off errors during summation
+ *
+ *  \param[in] ref_size    reference array dimension
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_toolbox_init(cs_lnum_t      ref_size)
+{
+  double  invln2 = 1/log(2);
+  double  estimate = log(ref_size)*invln2;
+  int  power = floor(log(estimate)*invln2);
+  int  size = (1 << power);
+
+  /* Compute a number of sub sums according to a reference size */
+  _op_subsum.size = CS_MAX(2, size);
+
+  BFT_MALLOC(_op_subsum.idx, _op_subsum.size + 1, int);
+  BFT_MALLOC(_op_subsum.sums, _op_subsum.size, double);
+
+  printf("# N_SUB_SUMS      %d\n", _op_subsum.size);
+  bft_printf(" -sla- n_subsums      %d\n", _op_subsum.size);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a private structure for this file used for reducing round-off
+ *         errors during summation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_toolbox_finalize(void)
+{
+  assert(_op_subsum.size > 0);
+
+  BFT_FREE(_op_subsum.idx);
+  BFT_FREE(_op_subsum.sums);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -906,147 +951,6 @@ cs_tmpbuf_free(cs_tmpbuf_t  *tb)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize a private structure for this file used for
- *         reducing round-off errors during summation
- *
- *  \param[in] ref_size    reference array dimension
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_init(cs_lnum_t      ref_size)
-{
-  double  invln2 = 1/log(2);
-  double  estimate = log(ref_size)*invln2;
-  int  power = floor(log(estimate)*invln2);
-  int  size = (1 << power);
-
-  /* Compute a number of sub sums according to a reference size */
-  _op_subsum.size = CS_MAX(2, size);
-
-  BFT_MALLOC(_op_subsum.idx, _op_subsum.size + 1, int);
-  BFT_MALLOC(_op_subsum.sums, _op_subsum.size, double);
-
-  printf("# N_SUB_SUMS      %d\n", _op_subsum.size);
-  bft_printf(" -sla- n_subsums      %d\n", _op_subsum.size);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a private structure for this file used for reducing round-off
- *         errors during summation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_finalize(void)
-{
-  assert(_op_subsum.size > 0);
-
-  BFT_FREE(_op_subsum.idx);
-  BFT_FREE(_op_subsum.sums);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Allocate and initialize a cs_toolbox_locmat_t structure
- *
- * \param[in]  n_max_ent    max number of entities
- *
- * \return  a new allocated cs_toolbox_locmat_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_toolbox_locmat_t *
-cs_toolbox_locmat_create(int   n_max_ent)
-{
-  int  i;
-
-  cs_toolbox_locmat_t  *lm = NULL;
-
-  BFT_MALLOC(lm, 1, cs_toolbox_locmat_t);
-
-  lm->n_max_ent = n_max_ent;
-  lm->n_ent = 0;
-  lm->ids = NULL;
-  lm->mat = NULL;
-
-  if (n_max_ent > 0) {
-
-    int  msize = n_max_ent*n_max_ent;
-
-    BFT_MALLOC(lm->ids, n_max_ent, cs_lnum_t);
-    for (i = 0; i < n_max_ent; i++)
-      lm->ids[i] = 0;
-
-    BFT_MALLOC(lm->mat, msize, double);
-    for (i = 0; i < msize; i++)
-      lm->mat[i] = 0;
-
-  }
-
-  return lm;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Dump a local discrete Hodge operator
- *
- * \param[in]    parent_id  id of the related parent entity
- * \param[in]    lm         pointer to the cs_sla_locmat_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_locmat_dump(int                         parent_id,
-                       const cs_toolbox_locmat_t  *lm)
-{
-  int  i, j;
-
-  bft_printf("\n  << parent id: %d >>\n", parent_id);
-
-  /* List sub-entity ids */
-  for (i = 0; i < lm->n_ent; i++)
-    bft_printf(" %9d", lm->ids[i]);
-  bft_printf("\n");
-
-  for (i = 0; i < lm->n_ent; i++) {
-    bft_printf(" %5d", lm->ids[i]);
-    for (j = 0; j < lm->n_ent; j++)
-      bft_printf(" % .4e", lm->mat[i*lm->n_ent+j]);
-    bft_printf("\n");
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Free a cs_toolbox_locmat_t structure
- *
- * \param[in]  lm    pointer to a cs_toolbox_locmat_t struct. to free
- *
- * \return  a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_toolbox_locmat_t *
-cs_toolbox_locmat_free(cs_toolbox_locmat_t  *lm)
-{
-  if (lm == NULL)
-    return lm;
-
-  if (lm->n_max_ent > 0) {
-    BFT_FREE(lm->ids);
-    BFT_FREE(lm->mat);
-  }
-
-  BFT_FREE(lm);
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Compute some simple statistics from an array
  *
  * \param[in]  n_elts      number of couples in data
@@ -1193,6 +1097,517 @@ cs_data_info_dump(const char              *name,
 
   fflush(_f);
   if (close_file)  fclose(_f);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Create an index structure of size n
+ *
+ * \param[in]  n     number of entries of the indexed list
+ *
+ * \return  a pointer to a cs_connect_index_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_connect_index_t *
+cs_index_create(int  n)
+{
+  int  i;
+
+  cs_connect_index_t  *x = NULL;
+
+  BFT_MALLOC(x, 1, cs_connect_index_t);
+
+  x->n = n;
+  x->owner = true;
+  x->ids = NULL;
+
+  BFT_MALLOC(x->idx, n+1, int);
+  for (i = 0; i < x->n + 1; i++)  x->idx[i] = 0;
+
+  return x;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Map arrays into an index structure of size n (owner = false)
+ *
+ * \param[in]  n     number of entries of the indexed list
+ * \param[in]  idx   array of size n+1
+ * \param[in]  ids   array of size idx[n]
+ *
+ * \return  a pointer to a cs_connect_index_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_connect_index_t *
+cs_index_map(int    n,
+             int   *idx,
+             int   *ids)
+{
+  cs_connect_index_t  *x = NULL;
+
+  BFT_MALLOC(x, 1, cs_connect_index_t);
+
+  x->n = n;
+  x->owner = false;
+  x->idx = idx;
+  x->ids = ids;
+
+  return x;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Destroy a cs_connect_index_t structure
+ *
+ * \param[in]  pidx     pointer of pointer to a cs_connect_index_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_index_free(cs_connect_index_t   **pidx)
+{
+  cs_connect_index_t  *x = *pidx;
+
+  if (x == NULL)
+    return;
+
+  if (x->owner) {
+    BFT_FREE(x->idx);
+    BFT_FREE(x->ids);
+  }
+
+  BFT_FREE(x);
+  *pidx = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   From 2 indexes : A -> B and B -> C create a new index A -> C
+ *
+ * \param[in]  nc      number of elements in C set
+ * \param[in]  a2b     pointer to the index A -> B
+ * \param[in]  b2c     pointer to the index B -> C
+ *
+ *\return  a pointer to the cs_connect_index_t structure A -> C
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_connect_index_t *
+cs_index_compose(int                        nc,
+                 const cs_connect_index_t  *a2b,
+                 const cs_connect_index_t  *b2c)
+{
+  int  i, pos_a, pos_b, a_id, b_id, c_id, shift;
+
+  int  *ctag = NULL;
+  cs_connect_index_t  *a2c = cs_index_create(a2b->n);
+
+  BFT_MALLOC(ctag, nc, int);
+  for (i = 0; i < nc; i++)
+    ctag[i] = -1;
+
+  /* Build index */
+  for (a_id = 0; a_id < a2b->n; a_id++) {
+
+    for (pos_a = a2b->idx[a_id]; pos_a < a2b->idx[a_id+1]; pos_a++) {
+
+      b_id = a2b->ids[pos_a];
+      for (pos_b = b2c->idx[b_id]; pos_b < b2c->idx[b_id+1]; pos_b++) {
+
+        c_id = b2c->ids[pos_b];
+        if (ctag[c_id] != a_id) { /* Not tagged yet */
+          ctag[c_id] = a_id;
+          a2c->idx[a_id+1] += 1;
+        }
+
+      } /* End of loop on C elements */
+    } /* End of loop on B elements */
+  } /* End of loop on A elements */
+
+  for (i = 0; i < a2c->n; i++)
+    a2c->idx[i+1] += a2c->idx[i];
+
+  BFT_MALLOC(a2c->ids, a2c->idx[a2c->n], int);
+
+  /* Reset ctag */
+  for (i = 0; i < nc; i++)
+    ctag[i] = -1;
+
+  /* Fill ids */
+  shift = 0;
+  for (a_id = 0; a_id < a2b->n; a_id++) {
+
+    for (pos_a = a2b->idx[a_id]; pos_a < a2b->idx[a_id+1]; pos_a++) {
+
+      b_id = a2b->ids[pos_a];
+      for (pos_b = b2c->idx[b_id]; pos_b < b2c->idx[b_id+1]; pos_b++) {
+
+        c_id = b2c->ids[pos_b];
+        if (ctag[c_id] != a_id) { /* Not tagged yet */
+          ctag[c_id] = a_id;
+          a2c->ids[shift++] = c_id;
+        }
+
+      } /* End of loop on C elements */
+    } /* End of loop on B elements */
+  } /* End of loop on A elements */
+
+  assert(shift == a2c->idx[a2c->n]);
+
+  BFT_FREE(ctag);
+
+  return a2c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   From a cs_connect_index_t A -> B create a new index B -> A
+ *
+ * \param[in]  nb     size of the "b" set
+ * \param[in]  a2b    pointer to the index A -> B
+ *
+ * \return  a new pointer to the cs_connect_index_t structure B -> A
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_connect_index_t *
+cs_index_transpose(int                        nb,
+                   const cs_connect_index_t  *a2b)
+{
+  int  i, j, b_id, shift;
+  int  *count = NULL;
+
+  cs_connect_index_t  *b2a = cs_index_create(nb);
+
+  if (nb == 0)
+    return b2a;
+
+  /* Build idx */
+  for (i = 0; i < a2b->n; i++)
+    for (j = a2b->idx[i]; j < a2b->idx[i+1]; j++)
+      b2a->idx[a2b->ids[j]+1] += 1;
+
+  for (i = 0; i < b2a->n; i++)
+    b2a->idx[i+1] += b2a->idx[i];
+
+  /* Allocate and initialize temporary buffer */
+  BFT_MALLOC(count, nb, int);
+  for (i = 0; i < nb; i++) count[i] = 0;
+
+  /* Build ids */
+  BFT_MALLOC(b2a->ids, b2a->idx[b2a->n], int);
+
+  for (i = 0; i < a2b->n; i++) {
+    for (j = a2b->idx[i]; j < a2b->idx[i+1]; j++) {
+      b_id = a2b->ids[j];
+      shift = count[b_id] + b2a->idx[b_id];
+      b2a->ids[shift] = i;
+      count[b_id] += 1;
+    }
+  }
+
+  /* Free temporary buffer */
+  BFT_FREE(count);
+
+  return b2a;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Sort each sub-list related to an entry in a cs_connect_index_t
+ *          structure
+ *
+ * \param[in]  x     pointer to a cs_connect_index_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_index_sort(cs_connect_index_t   *x)
+{
+  if (x == NULL)
+    return;
+
+  for (int i = 0; i < x->n; i++)
+    cs_sort_shell(x->idx[i], x->idx[i+1], x->ids);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Dump a cs_connect_index_t structure to a file or into the
+ *          standard output
+ *
+ * \param[in]  name  name of the dump file. Can be set to NULL
+ * \param[in]  _f    pointer to a FILE structure. Can be set to NULL.
+ * \param[in]  x     pointer to a cs_connect_index_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_index_dump(const char           *name,
+              FILE                 *_f,
+              cs_connect_index_t   *x)
+{
+  FILE  *f = _f;
+  _Bool  close_file = false;
+
+  if (f == NULL) {
+    if (name == NULL)
+      f = stdout;
+    else {
+      f = fopen(name,"w");
+      close_file = true;
+    }
+  }
+
+  fprintf(f, "\n Dump cs_connect_index_t struct: %p (%s)\n",
+          (const void *)x, name);
+
+  if (x == NULL) {
+    if (close_file) fclose(f);
+    return;
+  }
+
+  fprintf(f, "  owner:             %6d\n", x->owner);
+  fprintf(f, "  n_elts:            %6d\n", x->n);
+  fprintf(f, "  ids_size:          %6d\n", x->idx[x->n]);
+
+  for (int i = 0; i < x->n; i++) {
+    fprintf(f, "\n[%4d] ", i);
+    for (int j = x->idx[i]; j < x->idx[i+1]; j++)
+      fprintf(f, "%5d |", x->ids[j]);
+  }
+
+  if (close_file)
+    fclose(f);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Allocate and initialize a cs_locmat_t structure
+ *
+ * \param[in]  n_max_ent    max number of entities
+ *
+ * \return  a new allocated cs_locmat_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_locmat_t *
+cs_locmat_create(int   n_max_ent)
+{
+  int  i;
+
+  cs_locmat_t  *lm = NULL;
+
+  BFT_MALLOC(lm, 1, cs_locmat_t);
+
+  lm->n_max_ent = n_max_ent;
+  lm->n_ent = 0;
+  lm->ids = NULL;
+  lm->mat = NULL;
+
+  if (n_max_ent > 0) {
+
+    int  msize = n_max_ent*n_max_ent;
+
+    BFT_MALLOC(lm->ids, n_max_ent, cs_lnum_t);
+    for (i = 0; i < n_max_ent; i++)
+      lm->ids[i] = 0;
+
+    BFT_MALLOC(lm->mat, msize, double);
+    for (i = 0; i < msize; i++)
+      lm->mat[i] = 0;
+
+  }
+
+  return lm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Free a cs_locmat_t structure
+ *
+ * \param[in]  lm    pointer to a cs_locmat_t struct. to free
+ *
+ * \return  a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_locmat_t *
+cs_locmat_free(cs_locmat_t  *lm)
+{
+  if (lm == NULL)
+    return lm;
+
+  if (lm->n_max_ent > 0) {
+    BFT_FREE(lm->ids);
+    BFT_FREE(lm->mat);
+  }
+
+  BFT_FREE(lm);
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Copy a cs_locmat_t structure into another cs_locmat_t structure
+ *          which has been already allocated
+ *
+ * \param[in, out]  recv    pointer to a cs_locmat_t struct.
+ * \param[in]       send    pointer to a cs_locmat_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_locmat_copy(cs_locmat_t        *recv,
+               const cs_locmat_t  *send)
+{
+  /* Sanity check */
+  assert(recv->n_max_ent >= send->n_max_ent);
+
+  recv->n_ent = send->n_ent;
+
+  /* Copy ids */
+  for (int  i = 0; i < send->n_ent; i++)
+    recv->ids[i] = send->ids[i];
+
+  /* Copy values */
+  memcpy(recv->mat, send->mat, sizeof(double)*send->n_ent*send->n_ent);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute a local dense matrix-vector product
+ *          matvec has been previously allocated
+ *
+ * \param[in]      loc    local matrix to use
+ * \param[in]      vec    local vector to use
+ * \param[in, out] matvec result of the local matrix-vector product
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_locmat_matvec(const cs_locmat_t   *loc,
+                 const cs_real_t     *vec,
+                 cs_real_t           *matvec)
+{
+  /* Sanity checks */
+  assert(loc != NULL && vec != NULL && matvec != NULL);
+
+  const int  n = loc->n_ent;
+
+  /* Init. matvec */
+  cs_real_t  v = vec[0];
+  for (int i = 0; i < n; i++)
+    matvec[i] = v*loc->mat[i*n];
+
+  /* Increment matvec */
+  for (int i = 0; i < n; i++) {
+    int shift =  i*n;
+    for (int j = 1; j < n; j++)
+      matvec[i] += vec[j]*loc->mat[shift + j];
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Add two local dense matrices: loc += add
+ *
+ * \param[in, out] loc   local matrix storing the result
+ * \param[in]      add   values to add to loc
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_locmat_add(cs_locmat_t        *loc,
+              const cs_locmat_t  *add)
+{
+  /* Sanity checks */
+  assert(loc != NULL && add != NULL);
+  assert(loc->n_max_ent <= add->n_max_ent);
+
+  for (int i = 0; i < loc->n_ent*loc->n_ent; i++)
+    loc->mat[i] += add->mat[i];
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Define a new matrix by adding a local matrix with its transpose.
+ *          Keep the transposed matrix for future use.
+ *
+ * \param[in, out] loc   local matrix to transpose and add
+ * \param[in, out] tr    transposed of the local matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_locmat_add_transpose(cs_locmat_t  *loc,
+                        cs_locmat_t  *tr)
+{
+  /* Sanity check */
+  assert(loc != NULL && tr != NULL && tr->n_max_ent == loc->n_max_ent);
+
+  if (loc->n_ent < 1)
+    return;
+
+  tr->n_ent = loc->n_ent;
+
+  for (int i = 0; i < loc->n_ent; i++) {
+
+    int  ii = i*loc->n_ent + i;
+
+    tr->ids[i] = loc->ids[i];
+    tr->mat[ii] = loc->mat[ii];
+    loc->mat[ii] *= 2;
+
+    for (int j = i+1; j < loc->n_ent; j++) {
+
+      int  ij = i*loc->n_ent + j;
+      int  ji = j*loc->n_ent + i;
+
+      tr->mat[ji] = loc->mat[ij];
+      tr->mat[ij] = loc->mat[ji];
+      loc->mat[ij] += tr->mat[ij];
+      loc->mat[ji] += tr->mat[ji];
+
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Dump a local discrete Hodge operator
+ *
+ * \param[in]    parent_id  id of the related parent entity
+ * \param[in]    lm         pointer to the cs_sla_locmat_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_locmat_dump(int                 parent_id,
+               const cs_locmat_t  *lm)
+{
+  int  i, j;
+
+  bft_printf("\n  << parent id: %d >>\n", parent_id);
+
+  /* List sub-entity ids */
+  for (i = 0; i < lm->n_ent; i++)
+    bft_printf(" %9d", lm->ids[i]);
+  bft_printf("\n");
+
+  for (i = 0; i < lm->n_ent; i++) {
+    bft_printf(" %5d", lm->ids[i]);
+    for (j = 0; j < lm->n_ent; j++)
+      bft_printf(" % .4e", lm->mat[i*lm->n_ent+j]);
+    bft_printf("\n");
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

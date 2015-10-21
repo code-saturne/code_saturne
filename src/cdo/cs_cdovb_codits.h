@@ -59,16 +59,18 @@ typedef struct _cs_cdovb_codits_t cs_cdovb_codits_t;
 /*!
  * \brief  Initialize a cs_cdovb_codits_t structure
  *
- * \param[in] eqp      pointer to a cs_equation_param_t structure
- * \param[in] m        pointer to a mesh structure
+ * \param[in] eqp       pointer to a cs_equation_param_t structure
+ * \param[in] mesh      pointer to a cs_mesh_t structure
+ * \param[in] connect   pointer to a cs_cdo_connect_t structure
  *
  * \return a pointer to a new allocated cs_cdovb_codits_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void *
+void  *
 cs_cdovb_codits_init(const cs_equation_param_t  *eqp,
-                     const cs_mesh_t            *m);
+                     const cs_mesh_t            *mesh,
+                     const cs_cdo_connect_t     *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -106,13 +108,14 @@ cs_cdovb_codits_compute_source(const cs_mesh_t            *m,
 /*!
  * \brief  Build the linear system arising from a scalar convection/diffusion
  *         equation with a CDO vertex-based scheme.
+ *         One works cellwise and then process to the assembly
  *
  * \param[in]      m          pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      time_step  pointer to a time step structure
  * \param[in]      dt_cur     current value of the time step
- * \param[in]      field_val  pointer to the current value of the field
  * \param[in, out] builder    pointer to cs_cdovb_codits_t structure
  * \param[in, out] rhs        right-hand side
  * \param[in, out] sla_mat    pointer to cs_sla_matrix_t structure pointer
@@ -123,9 +126,9 @@ void
 cs_cdovb_codits_build_system(const cs_mesh_t             *m,
                              const cs_cdo_connect_t      *connect,
                              const cs_cdo_quantities_t   *quant,
+                             const cs_real_t             *field_val,
                              const cs_time_step_t        *time_step,
                              double                       dt_cur,
-                             const cs_real_t             *field_val,
                              void                        *builder,
                              cs_real_t                  **rhs,
                              cs_sla_matrix_t            **sla_mat);

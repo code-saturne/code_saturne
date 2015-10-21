@@ -2827,7 +2827,7 @@ cs_sla_matrix_create(int                   n_rows,
  *
  * \param[in]  ref      pointer to a reference matrix with the same pattern
  * \param[in]  type     type of the matrix to create
- * \param[in]  stride   true or false
+ * \param[in]  stride   number of values for each entry
  *
  * \return  a pointer to new allocated matrix structure
  */
@@ -2869,6 +2869,73 @@ cs_sla_matrix_create_from_pattern(const cs_sla_matrix_t  *ref,
     for (i = 0; i < stride*m->n_cols; i++)
       m->diag[i] = 0.0;
   }
+
+  return m;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Create a cs_sla_matrix_t structure from an existing connectivity
+ *          index. If the matrix type is MSR, be aware of removing the diagonal
+ *          entry before the call to this routine.
+ *          Not useful for DEC matrices.
+ *
+ * \param[in]  conidx      pointer to a connectivity index
+ * \param[in]  type        type of the matrix to create
+ * \param[in]  sorted_idx  true if the connectivity index is sorted
+ * \param[in]  stride      number of values for each entry
+ *
+ * \return  a pointer to new (shared) matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sla_matrix_t *
+cs_sla_matrix_create_from_index(cs_connect_index_t    *conidx,
+                                cs_sla_matrix_type_t   type,
+                                bool                   sorted_idx,
+                                int                    stride)
+{
+  cs_sla_matrix_t  *m = NULL;
+
+  /* Sanity check */
+  assert(conidx != NULL);
+
+  if (type == CS_SLA_MAT_DEC)
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid matrix type for creating a matrix from a connectivity"
+              " index.");
+
+  BFT_MALLOC(m, 1, cs_sla_matrix_t);
+
+  m->properties = _get_default_matrix_properties();
+
+  m->type = type;
+  m->n_rows = conidx->n;
+  m->n_cols = conidx->n;
+  m->stride = stride;
+  m->diag = NULL;
+  m->sgn = NULL;
+  m->val = NULL;
+
+  m->flag = CS_SLA_MATRIX_SHARED;
+  if (sorted_idx)
+    m->flag |= CS_SLA_MATRIX_SORTED;
+  m->idx = conidx->idx;
+  m->col_id = conidx->ids;
+  m->didx = NULL;
+
+  /* Initialize diagonal */
+  if (m->type == CS_SLA_MAT_MSR) {
+    assert(m->n_rows == m->n_cols);
+    BFT_MALLOC(m->diag, stride*m->n_rows, cs_real_t);
+    for (cs_lnum_t  i = 0; i < stride*m->n_cols; i++)
+      m->diag[i] = 0.0;
+  }
+
+  /* Initialize values */
+  BFT_MALLOC(m->val, m->idx[m->n_rows], cs_real_t);
+  for (cs_lnum_t  i = 0; i < m->idx[m->n_rows]; i++)
+    m->val[i] = 0.0;
 
   return m;
 }
@@ -3564,9 +3631,9 @@ cs_sla_system_dump(const char              *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sla_assemble_msr_sym(const cs_toolbox_locmat_t  *loc,
-                        cs_sla_matrix_t            *ass,
-                        bool                        only_diag)
+cs_sla_assemble_msr_sym(const cs_locmat_t   *loc,
+                        cs_sla_matrix_t     *ass,
+                        bool                 only_diag)
 {
   int  i, j, k_ij, k_ji;
 
@@ -3630,8 +3697,8 @@ cs_sla_assemble_msr_sym(const cs_toolbox_locmat_t  *loc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sla_assemble_msr(const cs_toolbox_locmat_t  *loc,
-                    cs_sla_matrix_t            *ass)
+cs_sla_assemble_msr(const cs_locmat_t   *loc,
+                    cs_sla_matrix_t     *ass)
 {
   int  i, j, k_ij, k_ji;
 

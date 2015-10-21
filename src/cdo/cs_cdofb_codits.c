@@ -225,9 +225,9 @@ _build_diffusion_system(const cs_mesh_t             *m,
 
   double  *BHCtc = NULL; // local size arrays
   cs_sla_matrix_t  *final_matrix = NULL;
-  cs_toolbox_locmat_t  *_h = NULL;
+  cs_locmat_t  *_h = NULL;
   cs_sla_matrix_t  *full_matrix = _init_diffusion_matrix(connect, quant);
-  cs_toolbox_locmat_t  *_a = cs_toolbox_locmat_create(connect->n_max_fbyc);
+  cs_locmat_t  *_a = cs_locmat_create(connect->n_max_fbyc);
 
   const cs_lnum_t  n_cells = quant->n_cells;
   const cs_cdo_bc_list_t  *dir_faces = builder->face_bc->dir;
@@ -313,7 +313,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
 
   /* Free memory */
   BFT_FREE(BHCtc);
-  _a = cs_toolbox_locmat_free(_a);
+  _a = cs_locmat_free(_a);
   hb = cs_hodge_builder_free(hb);
 
   /* Take into account Dirichlet BCs to update RHS */
@@ -409,16 +409,18 @@ _build_diffusion_system(const cs_mesh_t             *m,
 /*!
  * \brief  Initialize a cs_cdofb_codits_t structure
  *
- * \param[in]  eqp     pointer to a cs_equation_param_t structure
- * \param[in]  m       pointer to a mesh structure
+ * \param[in]  eqp       pointer to a cs_equation_param_t structure
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  *
- * \return a pointer to a new allocated cs_cdovb_codits_t structure
+ * \return a pointer to a new allocated cs_cdofb_codits_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void *
 cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
-                     const cs_mesh_t            *m)
+                     const cs_mesh_t            *mesh,
+                     const cs_cdo_connect_t     *connect)
 {
   cs_lnum_t  i;
 
@@ -429,6 +431,11 @@ cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
 
   cs_cdofb_codits_t  *builder = NULL;
 
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  n_faces = connect->f_info->n_ent;
+  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
+
   BFT_MALLOC(builder, 1, cs_cdofb_codits_t);
 
   /* Set of parameters related to this algebraic system */
@@ -436,9 +443,9 @@ cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
 
   /* Dimensions: By default, we set number of DoFs as if there is no
      strong enforcement of the BCs */
-  builder->n_cells = m->n_cells;
-  builder->n_faces = m->n_i_faces + m->n_b_faces;
-  builder->n_dof_faces = builder->n_faces;
+  builder->n_cells = n_cells;
+  builder->n_faces = n_faces;
+  builder->n_dof_faces = n_faces;
 
   /* Set members and structures related to the management of the BCs */
   const cs_param_bc_t  *bc_param = eqp->bc;
@@ -447,7 +454,7 @@ cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
      for computation. We make the distinction between homogeneous and
      non-homogeneous BCs.
   */
-  builder->face_bc = cs_cdo_bc_init(bc_param, m->n_b_faces);
+  builder->face_bc = cs_cdo_bc_init(bc_param, n_b_faces);
 
   /* Strong enforcement means that we need an indirection list between the
      compress (or zip) and initial numbering of vertices */
@@ -480,7 +487,7 @@ cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
     for (i = 0; i < builder->n_faces; i++)
       is_kept[i] = true;
     for (i = 0; i < dir_faces->n_elts; i++) // i_faces then b_faces
-      is_kept[m->n_i_faces + dir_faces->elt_ids[i]] = false;
+      is_kept[n_i_faces + dir_faces->elt_ids[i]] = false;
 
     /* Build builder->v_z2i_ids and builder->i2i_ids */
     BFT_MALLOC(builder->f_z2i_ids, builder->n_dof_faces, cs_lnum_t);
@@ -625,9 +632,9 @@ cs_cdofb_codits_compute_source(const cs_mesh_t            *m,
  * \param[in]      m          pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      time_step  pointer to a time step structure
  * \param[in]      dt_cur     current value of the time step
- * \param[in]      field_val  pointer to the current value of the field
  * \param[in, out] builder    pointer to cs_cdofb_codits_t structure
  * \param[in, out] rhs        pointer to a right-hand side array pointer
  * \param[in, out] sla_mat    pointer to cs_sla_matrix_t structure pointer
@@ -638,9 +645,9 @@ void
 cs_cdofb_codits_build_system(const cs_mesh_t             *m,
                              const cs_cdo_connect_t      *connect,
                              const cs_cdo_quantities_t   *quant,
+                             const cs_real_t             *field_val,
                              const cs_time_step_t        *time_step,
                              double                       dt_cur,
-                             const cs_real_t             *field_val,
                              void                        *builder,
                              cs_real_t                  **rhs,
                              cs_sla_matrix_t            **sla_mat)
@@ -730,7 +737,7 @@ cs_cdofb_codits_update_field(const cs_cdo_connect_t     *connect,
     double _wf_val = 0.0, dsum = 0.0, rowsum = 0.0;
 
     /* Build a local discrete Hodge operator */
-    cs_toolbox_locmat_t  *_h = cs_hodge_build_local(c_id, connect, quant, hb);
+    cs_locmat_t  *_h = cs_hodge_build_local(c_id, connect, quant, hb);
 
     /* Compute dsum: the sum of all the entries of the local discrete Hodge
        operator */

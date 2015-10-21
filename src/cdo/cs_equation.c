@@ -91,14 +91,16 @@ BEGIN_C_DECLS
 /*!
  * \brief  Initialize a builder structure
  *
- * \param[in] eq       pointer to a cs_equation_param_t structure
- * \param[in] m        pointer to a mesh structure
+ * \param[in] eq        pointer to a cs_equation_param_t structure
+ * \param[in] mesh      pointer to a cs_mesh_t structure
+ * \param[in] connect   pointer to a cs_cdo_conncet_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void *
 (cs_equation_init_builder_t)(const cs_equation_param_t  *eqp,
-                             const cs_mesh_t            *mesh);
+                             const cs_mesh_t            *mesh,
+                             const cs_cdo_connect_t     *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -126,9 +128,9 @@ typedef void
  * \param[in]      m          pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      time_step  pointer to a time_step structure
  * \param[in]      dt_cur     current value of the time step
- * \param[in]      field_val  pointer to the current value of the field
  * \param[in, out] builder    pointer to builder structure
  * \param[in, out] rhs        pointer to a right-hand side array pointer
  * \param[in, out] sla_mat    pointer to cs_sla_matrix_t structure pointer
@@ -139,9 +141,9 @@ typedef void
 (cs_equation_build_system_t)(const cs_mesh_t            *mesh,
                              const cs_cdo_connect_t     *connect,
                              const cs_cdo_quantities_t  *cdoq,
+                             const cs_real_t            *field_val,
                              const cs_time_step_t       *time_step,
                              double                      dt_cur,
-                             const cs_real_t            *field_val,
                              void                       *builder,
                              cs_real_t                 **rhs,
                              cs_sla_matrix_t           **sla_mat);
@@ -2522,7 +2524,7 @@ cs_equation_init_system(const cs_mesh_t            *mesh,
   const cs_equation_param_t  *eqp = eq->param;
 
   /* Allocate and initialize a system builder */
-  eq->builder = eq->init_builder(eqp, mesh);
+  eq->builder = eq->init_builder(eqp, mesh, connect);
 
   /* Compute the (initial) source term */
   eq->compute_source(mesh, connect, cdoq, time_step, eq->builder);
@@ -2678,7 +2680,7 @@ cs_equation_build_system(const cs_mesh_t            *m,
   if (eq->pre_ts_id > -1)
     cs_timer_stats_start(eq->pre_ts_id);
 
-  eq->build_system(m, connect, cdoq, time_step, dt_cur, fld->val,
+  eq->build_system(m, connect, cdoq, fld->val, time_step, dt_cur,
                    eq->builder,
                    &(eq->rhs),
                    &(sla_mat));
@@ -2701,10 +2703,14 @@ cs_equation_build_system(const cs_mesh_t            *m,
   /* Map a cs_sla_matrix_t structure into a cs_matrix_t structure */
   assert(sla_mat->type == CS_SLA_MAT_MSR);
 
+  bool  do_transfer = true;
+  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB)
+    do_transfer = false;
+
   /* First step: create a matrix structure */
   if (eq->ms == NULL)
     eq->ms = cs_matrix_structure_create_msr(CS_MATRIX_MSR,      // type
-                                            true,               // transfer
+                                            do_transfer,        // transfer
                                             true,               // have_diag
                                             sla_mat->n_rows,    // n_rows
                                             sla_mat->n_cols,    // n_cols_ext

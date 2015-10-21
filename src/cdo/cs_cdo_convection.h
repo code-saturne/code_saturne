@@ -32,9 +32,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_mesh.h"
+
 #include "cs_cdo.h"
 #include "cs_sla.h"
 #include "cs_param.h"
+#include "cs_cdo_toolbox.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 
@@ -89,14 +91,22 @@ cs_convection_vbflux_compute(const cs_cdo_quantities_t   *quant,
 /*!
  * \brief   Initialize a builder structure for the convection operator
  *
- * \param[in]      connect  pointer to the connectivity structure
+ * \param[in]  connect       pointer to the connectivity structure
+ * \param[in]  time_step     pointer to a time step structure
+ * \param[in]  a_info        set of options for the advection term
+ * \param[in]  do_diffusion  true is diffusion is activated
+ * \param[in]  d_info        set of options for the diffusion term
  *
  * \return a pointer to a new allocated builder structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_convection_builder_t *
-cs_convection_builder_init(const cs_cdo_connect_t      *connect);
+cs_convection_builder_init(const cs_cdo_connect_t      *connect,
+                           const cs_time_step_t        *time_step,
+                           const cs_param_advection_t   a_info,
+                           bool                         do_diffusion,
+                           const cs_param_hodge_t       d_info);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -115,45 +125,45 @@ cs_convection_builder_free(cs_convection_builder_t  *b);
 /*!
  * \brief   Compute the convection operator for pure convection
  *
+ * \param[in]      c_id       cell id
  * \param[in]      connect    pointer to the connectivity structure
  * \param[in]      quant      pointer to the cdo quantities structure
- * \param[in]      time_step  pointer to a time step structure
- * \param[in]      a_info     set of options for the advection term
- * \param[in, out] builder    pointer to a builder structure
- * \param[in, out] matrix     pointer to the matrix structure of the system
+ * \param[in]      loc_ids    store the local entity ids for this cell
+ * \param[in, out] builder    pointer to a convection builder structure
+ *
+ * \return a pointer to a local dense matrix structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_convection(const cs_cdo_connect_t      *connect,
-              const cs_cdo_quantities_t   *quant,
-              const cs_time_step_t        *time_step,
-              const cs_param_advection_t   a_info,
-              cs_convection_builder_t     *builder,
-              cs_sla_matrix_t             *matrix);
+cs_locmat_t *
+cs_convection_build_local_op(cs_lnum_t                    c_id,
+                             const cs_cdo_connect_t      *connect,
+                             const cs_cdo_quantities_t   *quant,
+                             const cs_lnum_t             *loc_ids,
+                             cs_convection_builder_t     *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the convection operator when diffusion is activated
+ * \brief   Compute the convection operator for pure convection
  *
- * \param[in]      connect    pointer to the connectivity structure
- * \param[in]      quant      pointer to the cdo quantities structure
- * \param[in]      time_step  pointer to a time step structure
- * \param[in]      a_info     set of options for the advection term
- * \param[in]      d_info     set of options for the diffusion term
- * \param[in, out] builder    pointer to a builder structure
- * \param[in, out] matrix     pointer to the matrix structure of the system
+ * \param[in]      mesh         pointer to a cs_msesh_t structure
+ * \param[in]      connect      pointer to the connectivity structure
+ * \param[in]      quant        pointer to the cdo quantities structure
+ * \param[in]      dir_vals     values of the Dirichlet boundary condition
+ * \param[in, out] builder      pointer to a convection builder structure
+ * \param[in, out] rhs_contrib  array storing the contribution for the rhs
+ * \param[in, out] diag_contrib array storing the contribution for the diagonal
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_convection_with_diffusion(const cs_cdo_connect_t      *connect,
+cs_convection_get_bc_contrib(const cs_mesh_t             *mesh,
+                             const cs_cdo_connect_t      *connect,
                              const cs_cdo_quantities_t   *quant,
-                             const cs_time_step_t        *time_step,
-                             const cs_param_advection_t   a_info,
-                             const cs_param_hodge_t       d_info,
+                             const cs_real_t             *dir_vals,
                              cs_convection_builder_t     *builder,
-                             cs_sla_matrix_t             *matrix);
+                             cs_real_t                    rhs_contrib[],
+                             cs_real_t                    diag_contrib[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -442,6 +442,28 @@ cs_sla_matrix_create_from_pattern(const cs_sla_matrix_t  *ref,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Create a cs_sla_matrix_t structure from an existing connectivity
+ *          index. If the matrix type is MSR, be aware of removing the diagonal
+ *          entry before the call to this routine.
+ *          Not useful for DEC matrices.
+ *
+ * \param[in]  conidx      pointer to a connectivity index
+ * \param[in]  type        type of the matrix to create
+ * \param[in]  sorted_idx  true if the connectivity index is sorted
+ * \param[in]  stride      number of values for each entry
+ *
+ * \return  a pointer to new (shared) matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sla_matrix_t *
+cs_sla_matrix_create_from_index(cs_connect_index_t    *conidx,
+                                cs_sla_matrix_type_t   type,
+                                bool                   sorted_idx,
+                                int                    stride);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Create a new matrix structure from the copy of an existing one.
  *
  * \param[in] a       matrix to copy
@@ -579,9 +601,9 @@ cs_sla_system_dump(const char              *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sla_assemble_msr_sym(const cs_toolbox_locmat_t  *loc,
-                        cs_sla_matrix_t            *ass,
-                        bool                        only_diag);
+cs_sla_assemble_msr_sym(const cs_locmat_t  *loc,
+                        cs_sla_matrix_t    *ass,
+                        bool                only_diag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -594,8 +616,8 @@ cs_sla_assemble_msr_sym(const cs_toolbox_locmat_t  *loc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sla_assemble_msr(const cs_toolbox_locmat_t  *loc,
-                    cs_sla_matrix_t            *ass);
+cs_sla_assemble_msr(const cs_locmat_t  *loc,
+                    cs_sla_matrix_t    *ass);
 
 /*----------------------------------------------------------------------------*/
 

@@ -216,7 +216,7 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
 
   double  num_l2d = 0, denum_l2d = 0, num_end = 0, denum_end = 0;
   double  *gexc = NULL, *dgc = NULL;
-  cs_toolbox_locmat_t  *_h = NULL;
+  cs_locmat_t  *_h = NULL;
   cs_hodge_builder_t  *hb = cs_hodge_builder_init(topo, time_step, h_info);
 
   const double  _over3 = 1./3.;

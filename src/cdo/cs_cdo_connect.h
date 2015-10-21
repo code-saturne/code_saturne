@@ -33,9 +33,9 @@
 
 #include "cs_base.h"
 #include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
 
 #include "cs_cdo.h"
+#include "cs_cdo_toolbox.h"
 #include "cs_sla.h"
 
 /*----------------------------------------------------------------------------*/
@@ -53,15 +53,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-typedef struct {
-
-  bool     owner;
-  int      n;
-  int     *idx;   /* from 0, size = n+1 */
-  int     *ids;   /* ids from 0 to n-1 (there is no multifold entry) */
-
-} cs_connect_index_t;
 
 typedef struct {
 
@@ -174,106 +165,6 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect);
 
 void
 cs_cdo_connect_dump(const cs_cdo_connect_t  *connect);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Create an index structure of size n
- *
- * \param[in]  n     number of entries of the indexed list
- *
- * \return  a pointer to a cs_connect_index_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_connect_index_t *
-cs_index_create(int  n);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Map arrays into an index structure of size n (owner = false)
- *
- * \param[in]  n     number of entries of the indexed list
- * \param[in]  idx   array of size n+1
- * \param[in]  ids   array of size idx[n]
- *
- * \return  a pointer to a cs_connect_index_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_connect_index_t *
-cs_index_map(int    n,
-             int   *idx,
-             int   *ids);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Destroy a cs_connect_index_t structure
- *
- * \param[in]  pidx     pointer of pointer to a cs_connect_index_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_index_free(cs_connect_index_t   **pidx);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   From 2 indexes : A -> B and B -> C create a new index A -> C
- *
- * \param[in]  nc      number of elements in C set
- * \param[in]  a2b     pointer to the index A -> B
- * \param[in]  b2c     pointer to the index B -> C
- *
- *\return  a pointer to the cs_connect_index_t structure A -> C
- */
-/*----------------------------------------------------------------------------*/
-
-cs_connect_index_t *
-cs_index_compose(int                        nc,
-                 const cs_connect_index_t  *a2b,
-                 const cs_connect_index_t  *b2c);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   From a cs_connect_index_t struct. A -> B create a new index B -> A
- *
- * \param[in]  nb     size of the "b" set
- * \param[in]  a2b    pointer to the index A -> B
- *
- *\return  a new pointer to the cs_connect_index_t structure B -> A
- */
-/*----------------------------------------------------------------------------*/
-
-cs_connect_index_t *
-cs_index_transpose(int                         nb,
-                   const cs_connect_index_t   *a2b);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Sort each list related to an entry in a cs_connect_index_t structure
- *
- * \param[in]  x     pointer to a cs_connect_index_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_index_sort(cs_connect_index_t   *x);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Dump a cs_connect_index_t structure to a file or into the standard
- *          output
- *
- * \param[in]  name  name of the dump file. Can be set to NULL
- * \param[in]  _f    pointer to a FILE structure. Can be set to NULL.
- * \param[in]  x     pointer to a cs_connect_index_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_index_dump(const char          *name,
-              FILE                *_f,
-              cs_connect_index_t  *x);
 
 /*----------------------------------------------------------------------------*/
 

@@ -36,6 +36,7 @@
 #include "cs_base.h"
 #include "cs_time_step.h"
 
+#include "cs_cdo_toolbox.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_param.h"
@@ -94,11 +95,11 @@ cs_hodge_builder_free(cs_hodge_builder_t  *hb);
  * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
  * \param[in, out] hb         pointer to a cs_hodge_builder_t struct.
  *
- * \return a pointer to a cs_toolbox_locmat_t struct. (local dense matrix)
+ * \return a pointer to a cs_locmat_t struct. (local dense matrix)
  */
 /*----------------------------------------------------------------------------*/
 
-cs_toolbox_locmat_t *
+cs_locmat_t *
 cs_hodge_build_local(int                         c_id,
                      const cs_cdo_connect_t     *connect,
                      const cs_cdo_quantities_t  *quant,
