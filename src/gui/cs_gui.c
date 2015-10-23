@@ -5432,7 +5432,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
 
   /* check values */
 
-  cw[0] = 0; cw[1] = 0;
+  cw[0] = 0; cw[1] = 0; cw[2] = 0;
 
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
     if (saturation_field[iel] > 1. || saturation_field[iel] < 0.)
@@ -5451,7 +5451,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
 
   if (cw[0] > 0)
     bft_printf(_("soil_tracer_law, WARNING:\n"
-                 "  saturation must is outside [0, 1] in %llu cells.\n"),
+                 "  saturation is outside [0, 1] in %llu cells.\n"),
                (unsigned long long)(cw[0]));
 
   if (cw[1] > 0)
