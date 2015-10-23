@@ -5,6 +5,20 @@ Trunk (unreleased)
 Changes:
 --------
 
+ - Add gas mix thermo. and fix mass source term with the compressible module (internship of A. Menasria):
+    * allow to select both gas mix (igmix) specific physics with compressible (icompf) spec. physics
+    * add property field for deduced mass fraction (iddgas) and mixture molar mass (igmxml)
+    * add a field pointer mapping for gas mix (mapping mix molar mass field)
+    * add mapping of specific heat at constant volume field pointer
+    * add one gas mix composed of helium, N2 and O2 (i.e. Helium+Air), O2 is the deduced species
+    * add Sutherland behavior law for viscosity and thermal conductivity of gas mix (ivsuth option)
+    * move setting of ieos from uscfx1 to usppmo
+    * add thermo. relations for perfect gas mix in compressible thermo. (also for BCs),
+    * igmix specific physics triggers switch of ieos to 3
+    * treat conduction term in total energy equation correctly in gas mix (Cv depends on species)
+    * fix mass source term in compressible (momentum source term coming from added mass has to
+      be accounted for in simplified momentum equation during mass balance step).
+
  - Implement handling of point and element tags so as to ignore location
    on elements sharing tag.
 
