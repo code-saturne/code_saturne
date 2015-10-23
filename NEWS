@@ -5,6 +5,8 @@ Version 4.1.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix negative permeability cells counter in GUI reader (ground water flow).
+
 - Disable SYRTHES coupling visualization when the default writer
   allows non-fixed meshes, to avoid output consistency issues.
 
