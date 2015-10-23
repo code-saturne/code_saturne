@@ -65,7 +65,7 @@ implicit none
 write(nfecra,1000)
 
 if (almax.le.0.d0) then
-  almax = voltot**.333d0
+  almax = voltot**(1.d0/3.d0)
   write(nfecra,1100) almax
   write(nfecra,1102)
   if(itytur.eq.2.or.itytur.eq.3                   &
