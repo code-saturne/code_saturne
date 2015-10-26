@@ -995,6 +995,18 @@ if (.false.) then
 
 endif
 
+! --- Advanced re-initialization for EBRSM or k-omega models
+
+!     - 0: switch off (default
+!     - 1: switch on
+
+if (.false.) then
+
+  reinit_turb = 1
+
+endif
+
+
 ! --- Turbulent diffusion model for second moment closure (iturb = 3x)
 !      0: scalar diffusivity (Shir model)
 !      1: tensorial diffusivity (Daly and Harlow model, default model)
