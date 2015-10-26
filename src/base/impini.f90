@@ -482,10 +482,10 @@ elseif(iturb.eq.30) then
        irijnu,irijrb,irijec,                                    &
        idifre,igrari,iclsyr,iclptr
 elseif(iturb.eq.31) then
-  write(nfecra,2520) almax, uref, irijnu,irijrb, igrari,iclsyr,iclptr
+  write(nfecra,2520) almax, uref,irijco, irijnu,irijrb, igrari,iclsyr,iclptr
 elseif(iturb.eq.32) then
   write(nfecra,2525)                                            &
-    almax, uref,                                                &
+    almax, uref,reinit_turb, irijco,                            &
     irijnu,irijrb,                                              &
     igrari,iclsyr,iclptr
 elseif(itytur.eq.4) then
@@ -672,6 +672,7 @@ write(nfecra,9900)
 '   - Rij-epsilon SSG     (ITURB = 31)',                        /,&
 '       ALMAX  = ', e14.5,    ' (Longueur caracteristique    )',/,&
 '       UREF   = ', e14.5,    ' (Vitesse  caracteristique    )',/,&
+'       IRIJCO = ',4x,i10,    ' (Resolution couplee          )',/,&
 '       IRIJNU = ',4x,i10,    ' (Stabilisation matricielle   )',/,&
 '       IRIJRB = ',4x,i10,    ' (Reconstruction aux bords    )',/,&
 '       IGRARI = ',4x,i10,    ' (Prise en compte de gravite  )',/,&
@@ -721,6 +722,9 @@ write(nfecra,9900)
 '   - Rij-epsilon EBRSM     (ITURB = 32)',                      /,&
 '       ALMAX  = ', e14.5,    ' (Longueur caracteristique    )',/,&
 '       UREF   = ', e14.5,    ' (Vitesse  caracteristique    )',/,&
+'       REINIT_                 (Reinitialisation de la',       /,&
+'        TURB  = ',4x,i10,    '  turbulence                  )',/,&
+'       IRIJCO = ',4x,i10,    ' (Resolution couplee          )',/,&
 '       IRIJNU = ',4x,i10,    ' (Stabilisation matricielle   )',/,&
 '       IRIJRB = ',4x,i10,    ' (Reconstruction aux bords    )',/,&
 '       IGRARI = ',4x,i10,    ' (Prise en compte de gravite  )',/,&
@@ -931,6 +935,7 @@ write(nfecra,9900)
 '   - SSG Rij-epsilon     (ITURB = 31)',                        /,&
 '       ALMAX  = ', e14.5,    ' (Characteristic length       )',/,&
 '       UREF   = ', e14.5,    ' (Characteristic velocity     )',/,&
+'       IRIJCO = ',4x,i10,    ' (Coupled resolution          )',/,&
 '       IRIJNU = ',4x,i10,    ' (Matrix stabilization        )',/,&
 '       IRIJRB = ',4x,i10,    ' (Reconstruct at boundaries   )',/,&
 '       IGRARI = ',4x,i10,    ' (Account for gravity         )',/,&
@@ -980,6 +985,9 @@ write(nfecra,9900)
 '   - Rij-epsilon EBRSM     (ITURB = 32)',                      /,&
 '       ALMAX  = ', e14.5,    ' (Characteristic length       )',/,&
 '       UREF   = ', e14.5,    ' (Characteristic velocity     )',/,&
+'       REINIT_                 (Reinitialization of the',      /,&
+'        TURB  = ',4x,i10,    '  turbulence                  )',/,&
+'       IRIJCO = ',4x,i10,    ' (Coupled resolution          )',/,&
 '       IRIJNU = ',4x,i10,    ' (Matrix stabilization        )',/,&
 '       IRIJRB = ',4x,i10,    ' (Reconstruct at boundaries   )',/,&
 '       IGRARI = ',4x,i10,    ' (Account for gravity         )',/,&
