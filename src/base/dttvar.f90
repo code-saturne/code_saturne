@@ -20,53 +20,48 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine dttvar &
-!================
+!===============================================================================
+! Purpose:
+! -------
 
+!> \file dttvar.f90
+!> \brief Compute the local time step and add the Courant and Fourier number to
+!the log.
+!>
+!> This function has access to the boundary face type, except for the first time
+!> step.
+
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss terms
+!> \param[in]     ncesmp        number of cells with mass source terms
+!> \param[in]     iwarnp        verbosity
+!> \param[in]     icepdc        index number of cells with head loss terms
+!> \param[in]     icetsm        index number of cells with mass source terms
+!> \param[in]     itypsm        type of mass source term for each variable
+!>                               (see \ref cs_user_mass_source_terms)
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     ckupdc        head loss coefficient
+!> \param[in]     smacel        value associated to each variable in the mass
+!>                               source terms or mass rate (see
+!>                               \ref cs_user_mass_source_terms)
+!_______________________________________________________________________________
+
+subroutine dttvar &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , propce ,                                              &
    ckupdc , smacel )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! CALCUL DU PAS DE TEMPS LOCAL
-! AFFICHAGE DES NOMBRES DE COURANT + FOURIER MINIMUM, MAXIMUM
-! On dispose des types de faces de bord au pas de temps
-!   precedent (sauf au premier pas de temps, ou les tableaux
-!   ITYPFB et ITRIFB n'ont pas ete renseignes)
-
-! Sous programme utilise dans le cas une seule phase (ou
-! si seule la phase 1 pilote le pas de temps)
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! iwarnp           ! i  ! <-- ! verbosity                                      !
-! icepdc(ncelet)   ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp)   ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. cs_user_mass_source_terms)     !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,nvar)    !    !     !  source de masse                               !
-!                  !    !     ! pour ivar=ipr, smacel=flux de masse            !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
