@@ -44,7 +44,6 @@
 !> \param[in]     itypsm        type of mass source term for each variable
 !>                               (see uttsma.f90)
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     vela          velocity value at time step beginning
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        variable value associated to the mass source
@@ -55,7 +54,7 @@
 subroutine cfmspr &
  ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , propce , vela   ,                                     &
+   dt     , vela   ,                                              &
    ckupdc , smacel )
 
 !===============================================================================
@@ -93,7 +92,6 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision vela  (3  ,ncelet)
 
@@ -256,7 +254,7 @@ call cfmsfp                                                                     
 !==========
 ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                                  &
   icepdc , icetsm , itypsm ,                                                    &
-  dt     , propce , vela   ,                                                    &
+  dt     , vela   ,                                                             &
   ckupdc , smacel ,                                                             &
   wflmas , wflmab )
 

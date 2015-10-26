@@ -25,7 +25,7 @@ subroutine cfmsfp &
 
  ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , propce , vela   ,                                     &
+   dt     , vela   ,                                              &
    ckupdc , smacel ,                                              &
    flumas , flumab )
 
@@ -50,7 +50,6 @@ subroutine cfmsfp &
 ! icetsm(ncesmp)   ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! vela             ! ra ! <-- ! variable value at time step beginning          !
 ! ckupdc           ! tr ! <-- ! work array for the head loss                   !
 !  (ncepdp,6)      !    !     !                                                !
@@ -99,7 +98,6 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision flumas(nfac), flumab(nfabor)
 double precision vela  (3  ,ncelet)
@@ -324,9 +322,7 @@ if (itsqdm.ne.0) then
   if (ivisse.eq.1) then
 
     call visecv &
-    !==========
- ( propce ,                             &
-   secvif , secvib )
+ ( secvif , secvib )
 
   endif
 

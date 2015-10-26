@@ -47,14 +47,12 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] secvif        lambda*surface at interior faces
 !> \param[in,out] secvib        lambda*surface at boundary faces
 !______________________________________________________________________________
 
 subroutine visecv &
- ( propce ,                            &
-   secvif , secvib )
+ ( secvif , secvib )
 
 !===============================================================================
 ! Module files
@@ -79,13 +77,12 @@ implicit none
 
 ! Arguments
 
-double precision propce(ncelet,*)
 double precision secvif(nfac), secvib(nfabor)
 
 ! Local variables
 
 integer          iel, ifac, ii, jj
-integer          ipcvis, ipcvst
+integer          ipcvst
 integer          ipcvsv
 
 double precision d2s3m
@@ -93,6 +90,8 @@ double precision d2s3m
 double precision, allocatable, dimension(:) :: secvis
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:), pointer :: cpro_viscv
+double precision, dimension(:), pointer :: cproa_viscl, cproa_visct
 
 !===============================================================================
 
@@ -109,6 +108,7 @@ call field_get_val_s(iprpfl(ivisct), visct)
 if(ippmod(icompf).ge.0) then
   if(iviscv.gt.0) then
     ipcvsv = ipproc(iviscv)
+    call field_get_val_s(iprpfl(iviscv), cpro_viscv)
   else
     ipcvsv = 0
   endif
@@ -120,7 +120,6 @@ endif
 ! time n FIXME check if it is consistent with viscfa.f90
 if(isno2t.gt.0) then
   if(iviext.gt.0) then
-    ipcvis = ipproc(ivisla)
     ipcvst = ipproc(ivista)
   endif
 endif
@@ -135,8 +134,9 @@ d2s3m = -2.d0/3.d0
 
 ! Laminar viscosity
 if(isno2t.gt.0 .and. iviext.gt.0) then
+  call field_get_val_prev_s(iprpfl(iviscl), cproa_viscl)
   do iel = 1, ncel
-    secvis(iel) = d2s3m*propce(iel,ipcvis)
+    secvis(iel) = d2s3m*cproa_viscl(iel)
   enddo
 else
   do iel = 1, ncel
@@ -147,7 +147,7 @@ endif
 ! Volume viscosity if present
 if (ipcvsv.gt.0) then
   do iel = 1, ncel
-    secvis(iel) = secvis(iel) + propce(iel,ipcvsv)
+    secvis(iel) = secvis(iel) + cpro_viscv(iel)
   enddo
 elseif (ipcvsv.eq.0) then
   do iel = 1, ncel
@@ -158,8 +158,9 @@ endif
 ! Turbulent viscosity (if not in Rij or LES)
 if (itytur.ne.3 .and. itytur.ne.4) then
   if(isno2t.gt.0 .and. iviext.gt.0) then
+    call field_get_val_prev_s(iprpfl(ivisct), cproa_visct)
     do iel = 1, ncel
-      secvis(iel) = secvis(iel) + d2s3m*propce(iel,ipcvst)
+      secvis(iel) = secvis(iel) + d2s3m*cproa_visct(iel)
     enddo
   else
     do iel = 1, ncel

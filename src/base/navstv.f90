@@ -402,7 +402,7 @@ if ( ippmod(icompf).ge.0 ) then
   call cfmspr &
   ( nvar   , nscal  , iterns ,                                     &
     ncepdc , ncetsm , icepdc , icetsm , itypsm ,                   &
-    dt     , propce , vela   ,                                     &
+    dt     , vela   ,                                              &
     ckupdc , smacel )
 
 endif

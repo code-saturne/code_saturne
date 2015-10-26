@@ -828,7 +828,7 @@ endif
 
 if (ivisse.eq.1) then
 
-  call visecv(propce, secvif, secvib)
+  call visecv(secvif, secvib)
 
 endif
 

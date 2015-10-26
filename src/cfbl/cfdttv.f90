@@ -25,7 +25,7 @@ subroutine cfdttv &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , propce ,                                              &
+   dt     ,                                                       &
    ckupdc , smacel ,                                              &
    wcf    ,                                                       &
    wflmas , wflmab , viscb  )
@@ -50,7 +50,6 @@ subroutine cfdttv &
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. cs_user_mass_source_terms)                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
@@ -100,7 +99,6 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision wcf(ncelet)
 double precision wflmas(nfac), wflmab(nfabor), viscb(nfabor)
@@ -170,7 +168,7 @@ call cfmsfp                                                       &
 !==========
  ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , propce , vela   ,                                     &
+   dt     , vela   ,                                              &
    ckupdc , smacel ,                                              &
    wflmas , wflmab )
 

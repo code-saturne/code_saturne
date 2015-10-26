@@ -48,7 +48,6 @@
 !> \param[in]     itypsm        type of mass source term for each variable
 !>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
 !>                               source terms or mass rate (see
@@ -59,7 +58,7 @@ subroutine dttvar &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , propce ,                                              &
+   dt     ,                                                       &
    ckupdc , smacel )
 
 !===============================================================================
@@ -98,7 +97,6 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
@@ -206,7 +204,7 @@ if (ippmod(icompf).ge.0) then
   !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                          &
    icepdc , icetsm , itypsm ,                                   &
-   dt     , propce ,                                            &
+   dt     ,                                                     &
    ckupdc , smacel ,                                            &
    wcf    ,                                                     &
    viscf  , viscb  , cofbft )

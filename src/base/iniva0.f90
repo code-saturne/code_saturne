@@ -85,8 +85,7 @@ double precision dt(ncelet), propce(ncelet,*)
 integer          iis   , iscal , iprop
 integer          iel   , ifac  , isou
 integer          iclip , ii    , jj    , idim
-integer          iivisa, iivism
-integer          iicpa
+integer          iivism
 integer          ifcvsl
 integer          nn
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
@@ -112,6 +111,7 @@ double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_prtot
 double precision, dimension(:), pointer :: cpro_viscls, cproa_viscls, cvar_tempk
+double precision, dimension(:), pointer :: cproa_viscl, cproa_cp
 double precision, dimension(:), pointer :: mix_mol_mas
 
 !===============================================================================
@@ -231,9 +231,9 @@ do iel = 1, ncel
   viscl(iel) = viscl0
 enddo
 if(iviext.gt.0) then
-  iivisa = ipproc(ivisla)
+  call field_get_val_prev_s(iprpfl(iviscl), cproa_viscl)
   do iel = 1, ncel
-    propce(iel,iivisa) = viscl(iel)
+    cproa_viscl(iel) = viscl(iel)
   enddo
 endif
 
@@ -244,9 +244,9 @@ if(icp.gt.0) then
     cpro_cp(iel) = cp0
   enddo
   if(icpext.gt.0) then
-    iicpa  = ipproc(icpa)
+    call field_get_val_prev_s(iprpfl(icp), cproa_cp)
     do iel = 1, ncel
-      propce(iel,iicpa ) = cpro_cp(iel)
+      cproa_cp(iel) = cpro_cp(iel)
     enddo
   endif
 endif

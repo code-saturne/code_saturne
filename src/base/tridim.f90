@@ -762,7 +762,7 @@ call dttvar &
  ( nvar   , nscal  , ncepdc , ncetsm ,                            &
    iwarni(iu)   ,                                                 &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , propce ,                                              &
+   dt     ,                                                       &
    ckupdc , smacel )
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
