@@ -806,7 +806,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         runcase = self.case['runcase']
 
         if self.mdl.getRunType() == "standard":
-            runcase.set_run_id(run_id=run_id)
+            runcase.set_run_id(run_id=run_id, run_id_prefix="")
         else:
             runcase.set_run_id(run_id=run_id, run_id_prefix="prepro_")
         runcase.save()
