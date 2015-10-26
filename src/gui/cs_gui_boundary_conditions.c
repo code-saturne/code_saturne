@@ -1788,19 +1788,25 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
               ifbr = faces_list[ifac];
               for (i = 0; i < f->dim; i++) {
                 icodcl[(ivar + i) *(*nfabor) + ifbr] = 5;
-                char *name = NULL;
-                BFT_MALLOC(name, strlen(f->name) + 4, char);
-                sprintf(name, "%s[%d]", f->name, i);
                 mei_tree_t *ev_formula = boundaries->scalar[f->id][izone * f->dim + i];
                 mei_tree_insert(ev_formula, "t", *ttcabs);
                 mei_tree_insert(ev_formula, "dt", *dtref);
                 mei_tree_insert(ev_formula, "iter", *ntcabs);
                 mei_evaluate(ev_formula);
-                rcodcl[0 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
-                  = mei_tree_lookup(ev_formula, name);
+                if (f->dim > 1)
+                {
+                  char *name = NULL;
+                  BFT_MALLOC(name, strlen(f->name) + 4, char);
+                  sprintf(name, "%s[%d]", f->name, i);
+                  rcodcl[0 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
+                      = mei_tree_lookup(ev_formula, name);
+                  BFT_FREE(name);
+                } else {
+                  rcodcl[0 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
+                      = mei_tree_lookup(ev_formula, f->name);
+                }
                 rcodcl[1 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
-                  = mei_tree_lookup(ev_formula, "hc");
-                BFT_FREE(name);
+                    = mei_tree_lookup(ev_formula, "hc");
               }
             }
             break;

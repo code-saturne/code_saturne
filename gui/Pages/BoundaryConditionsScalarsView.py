@@ -440,7 +440,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         elif self.thermal_type == 'neumann_formula':
             req = [("flux", "flux")]
         elif self.thermal_type == 'exchange_coefficient_formula':
-            req = [(name, str(nameal)),("hc", "heat coefficient")]
+            req = [(name, str(name)),("hc", "heat coefficient")]
 
         sym = [('x', "X face's gravity center"),
                ('y', "Y face's gravity center"),
