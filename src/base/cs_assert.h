@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
-/* \brief Abort the program if the given assertion is false.
+ * \brief Abort the program if the given assertion is false.
  *
  * Contrary to the standard C assert macro, this is always defined, so
  * the standard C assert macro should be use for debug build-only checking,
