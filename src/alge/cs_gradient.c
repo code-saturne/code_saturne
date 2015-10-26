@@ -436,7 +436,6 @@ _compute_ani_dc(double wi[],
  *   wi   <-- Weight coefficient of cell i
  *   wj   <-- Weight coefficient of cell j
  *   w    <-- R.H.S.
- *   a    <-- J'F/I'J'
  *   resi --> Updated R.H.S. for cell i
  *   resj --> Updated R.H.S. for cell j
  *----------------------------------------------------------------------------*/
@@ -2132,6 +2131,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
                                          _cocg);
        cocg = _cocg;
        cocgb = _cocgb;
+       recompute_cocg = true;
      }
    }
 

@@ -5672,7 +5672,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     if (f_id != -1) {
       /* Get the calculation option from the field */
       if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        if (var_cal_opt.idiff > 0) {
+        if (var_cal_opt.idifft > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
@@ -7770,7 +7770,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
       cs_var_cal_opt_t var_cal_opt;
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
       if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        if (var_cal_opt.idiff > 0) {
+        if (var_cal_opt.idifft > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
@@ -8619,7 +8619,7 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
       cs_var_cal_opt_t var_cal_opt;
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
       if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        if (var_cal_opt.idiff > 0) {
+        if (var_cal_opt.idifft > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
