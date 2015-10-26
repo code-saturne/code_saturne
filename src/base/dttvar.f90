@@ -115,7 +115,7 @@ integer          ipccou, ipcfou, ntcam1
 
 double precision epsrgp, climgp, extrap
 double precision cfmax,cfmin, w1min, w2min, w3min
-double precision unpvdt, rom, dtloc
+double precision unpvdt, dtloc
 double precision xyzmax(3), xyzmin(3), vmin(1), vmax(1)
 double precision dtsdtm
 double precision hint
@@ -135,7 +135,7 @@ double precision, dimension(:), pointer :: viscl, visct, cpro_cour, cpro_four
 !===============================================================================
 
 !===============================================================================
-! 0.  INITIALISATION
+! 0. Initialisation
 !===============================================================================
 
 ! Pointers to the mass fluxes
@@ -192,11 +192,9 @@ if (                                                             &
 endif
 
 !===============================================================================
-! 1.  CALCUL DE LA LIMITATION EN COMPRESSIBLE
+! 1. Compute CFL like condition on the time step for positive density for the
+!    compressible module
 !===============================================================================
-
-!     On commence par cela afin de disposer de VISCF VISCB comme
-!       tableaux de travail.
 
 if (ippmod(icompf).ge.0) then
 
@@ -215,16 +213,12 @@ endif
 ! 2. Compute the diffusivity at the faces
 !===============================================================================
 
-!     On s'en sert dans les divers matrdt suivants
-
-!     "VITESSE" DE DIFFUSION FACETTE
-
 if (idiff(iu).ge. 1) then
   do iel = 1, ncel
     w1(iel) = viscl(iel) + idifft(iu)*visct(iel)
   enddo
   call viscfa(imvisf, w1, viscf, viscb)
-  !==========
+
 else
   do ifac = 1, nfac
     viscf(ifac) = 0.d0
@@ -235,7 +229,7 @@ else
 endif
 
 !===============================================================================
-! 3.  CONDITION LIMITE POUR MATRDT
+! 3. Boundary condition for matrdt
 !===============================================================================
 
 if (idtvar.ge.0) then
@@ -261,7 +255,7 @@ else
   !      (algorithm was probably broken since velocity components are
   !      coupled)
 
-  mult = 1.0d0 / 3.0d0
+  mult = 1.d0 / 3.d0
 
   call field_get_coefb_v (ivarfl(iu), coefbv)
   call field_get_coefbf_v(ivarfl(iu), cofbfv)
@@ -274,17 +268,17 @@ else
 endif
 
 !===============================================================================
-! 4.  ALGORITHME INSTATIONNAIRE
+! 4. Steady algorithme
 !===============================================================================
 
 if (idtvar.ge.0) then
 
 !===============================================================================
-! 4.1  PAS DE TEMPS VARIABLE A PARTIR DE COURANT ET FOURIER IMPOSES
+! 4.1 Variable time step from imposed Courant and Fourier
 !===============================================================================
 
   ! On calcule le pas de temps thermique max (meme en IDTVAR=0, pour affichage)
-  ! DTTMAX = 1/SQRT(MAX(0+,gradRO.g/RO) -> W3
+  ! dttmax = 1/sqrt(max(0+,gradRO.g/RO) -> w3
 
   if (iptlro.eq.1) then
 
@@ -307,7 +301,7 @@ if (idtvar.ge.0) then
     inc   = 1
     iccocg = 1
 
-    call gradient_s                                               &
+    call gradient_s &
  ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , epsrgp , climgp , extrap ,                            &
    crom, brom, coefbr ,                                           &
@@ -315,7 +309,7 @@ if (idtvar.ge.0) then
 
     do iel = 1, ncel
       w3(iel) = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz)&
-           /crom(iel)
+              / crom(iel)
       w3(iel) = 1.d0/sqrt(max(epzero,w3(iel)))
 
     enddo
@@ -331,15 +325,15 @@ if (idtvar.ge.0) then
     icou = 0
     ifou = 0
 
-! 4.1.1 LIMITATION PAR LE COURANT
-! =============================
+    ! 4.1.1 Courant limitation
+    ! ========================
 
     if (coumax.gt.0.d0.and.iconv(iu).ge.1) then
 
       ! ICOU = 1 marque l'existence d'une limitation par le COURANT
       icou = 1
 
-      ! CONSTRUCTION DE U/DX           (COURANT       ) =W1
+      ! CONSTRUCTION DE U/DX (COURANT) = W1
 
       idiff0 = 0
 
@@ -347,19 +341,17 @@ if (idtvar.ge.0) then
       isym = 2
 
       call matrdt &
-      !==========
- (iconv(iu), idiff0, isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
+     ( iconv(iu), idiff0, isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
       do iel = 1, ncel
-        rom = crom(iel)
-        w1    (iel) = dam(iel)/(rom*volume(iel))
+        w1(iel) = dam(iel)/(crom(iel)*volume(iel))
       enddo
 
-      ! ---> CALCUL DE W1     = PAS DE TEMPS VARIABLE VERIFIANT
-      !       LE NOMBRE DE COURANT         MAXIMUM PRESCRIT PAR L'UTILISATEUR
+      ! ---> CALCUL DE W1 = PAS DE TEMPS VARIABLE VERIFIANT
+      !       LE NOMBRE DE COURANT MAXIMUM PRESCRIT PAR L'UTILISATEUR
 
       do iel = 1, ncel
-        w1    (iel) = coumax/max(w1    (iel), epzero)
+        w1(iel) = coumax/max(w1(iel), epzero)
       enddo
 
       ! PAS DE TEMPS UNIFORME : ON PREND LE MINIMUM DE LA CONTRAINTE
@@ -370,8 +362,7 @@ if (idtvar.ge.0) then
           w1min = min(w1min,w1(iel))
         enddo
         if (irangp.ge.0) then
-          call parmin (w1min)
-          !==========
+          call parmin(w1min)
         endif
         do iel = 1, ncel
           w1(iel) = w1min
@@ -380,8 +371,8 @@ if (idtvar.ge.0) then
 
     endif
 
-    ! 4.1.2 LIMITATION PAR LE FOURIER
-    ! =============================
+    ! 4.1.2 Fourier limitation
+    ! ========================
 
     if (foumax.gt.0.d0.and.idiff(iu).ge.1) then
 
@@ -391,7 +382,6 @@ if (idtvar.ge.0) then
       iconv0 = 0
       !                              2
       ! CONSTRUCTION DE      +2.NU/DX  (       FOURIER) =W2
-
       ! Matrice a priori symetrique
       isym = 1
 
@@ -400,15 +390,15 @@ if (idtvar.ge.0) then
  (iconv0, idiff(iu), isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
       do iel = 1, ncel
-        rom = crom(iel)
-        w2    (iel) = dam(iel)/(rom*volume(iel))
+        w2(iel) = dam(iel)/(crom(iel)*volume(iel))
       enddo
+
 
       ! ---> CALCUL DE W2     = PAS DE TEMPS VARIABLE VERIFIANT
       !       LE NOMBRE DE         FOURIER MAXIMUM PRESCRIT PAR L'UTILISATEUR
 
       do iel = 1, ncel
-        w2    (iel) = foumax/max(w2    (iel), epzero)
+        w2(iel) = foumax/max(w2(iel), epzero)
       enddo
 
       ! ---> PAS DE TEMPS UNIFORME : ON PREND LE MINIMUM DE LA CONTRAINTE
@@ -455,7 +445,6 @@ if (idtvar.ge.0) then
         enddo
         if (irangp.ge.0) then
           call parmin (w3min)
-          !==========
         endif
         do iel = 1, ncel
           dam(iel) = w3min
@@ -495,7 +484,7 @@ if (idtvar.ge.0) then
     !              DESCENTE  IMMEDIATE   DU PAS DE TEMPS
 
     do iel = 1, ncel
-      if (w1    (iel).ge.dt(iel)) then
+      if (w1(iel).ge.dt(iel)) then
         unpvdt = 1.d0+varrdt
         dt(iel) = min(unpvdt*dt(iel), w1(iel))
       else
@@ -665,8 +654,7 @@ if (idtvar.ge.0) then
  (iconv(iu), idiff0, isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
     do iel = 1, ncel
-      rom = crom(iel)
-      w1    (iel) = dam(iel)/(rom*volume(iel))
+      w1(iel) = dam(iel)/(crom(iel)*volume(iel))
     enddo
 
     ! CALCUL DU NOMBRE DE COURANT/FOURIER MAXIMUM ET MINIMUM
@@ -736,8 +724,7 @@ if (idtvar.ge.0) then
  (iconv0, idiff(iu), isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
     do iel = 1, ncel
-      rom = crom(iel)
-      w1    (iel) = dam(iel)/(rom*volume(iel))
+      w1(iel) = dam(iel)/(crom(iel)*volume(iel))
     enddo
 
     ! CALCUL DU NOMBRE DE COURANT/FOURIER MAXIMUM ET MINIMUM
@@ -810,8 +797,7 @@ if (idtvar.ge.0) then
  (iconv(iu), idiff(iu), isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
 
     do iel = 1, ncel
-      rom = crom(iel)
-      w1    (iel) = dam(iel)/(rom*volume(iel))
+      w1(iel) = dam(iel)/(crom(iel)*volume(iel))
     enddo
 
     ! CALCUL DU NOMBRE DE COURANT/FOURIER MAXIMUM ET MINIMUM
