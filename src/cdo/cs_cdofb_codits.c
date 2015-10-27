@@ -567,7 +567,6 @@ cs_cdofb_codits_free(void   *builder)
 /*!
  * \brief   Compute the contributions of source terms (store inside builder)
  *
- * \param[in]      m           pointer to a cs_mesh_t structure
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_step   pointer to a time step structure
@@ -576,8 +575,7 @@ cs_cdofb_codits_free(void   *builder)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_codits_compute_source(const cs_mesh_t            *m,
-                               const cs_cdo_connect_t     *connect,
+cs_cdofb_codits_compute_source(const cs_cdo_connect_t     *connect,
                                const cs_cdo_quantities_t  *quant,
                                const cs_time_step_t       *time_step,
                                void                       *builder)
@@ -604,7 +602,7 @@ cs_cdofb_codits_compute_source(const cs_mesh_t            *m,
       /* Sanity check */
       assert(st.var_type == CS_PARAM_VAR_SCAL);
 
-      cs_evaluate(m, quant, connect,  // geometrical and topological info.
+      cs_evaluate(quant, connect,    // geometrical and topological info.
                   time_step,
                   dof_flag,
                   st.ml_id,

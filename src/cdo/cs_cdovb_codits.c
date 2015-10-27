@@ -396,7 +396,7 @@ _add_source_terms(const cs_mesh_t            *m,
     }
 
     /* Update builder->source_term with the value attached to t_cur */
-    cs_cdovb_codits_compute_source(m, connect, quant, time_step, builder);
+    cs_cdovb_codits_compute_source(connect, quant, time_step, builder);
 
     if (t_info.scheme == CS_TIME_SCHEME_IMPLICIT)
       for (i = 0; i < builder->n_vertices; i++)
@@ -1336,7 +1336,6 @@ cs_cdovb_codits_free(void   *builder)
 /*!
  * \brief   Compute the contributions of source terms (store inside builder)
  *
- * \param[in]      m           pointer to a cs_mesh_t structure
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_step   pointer to a time step structure
@@ -1345,8 +1344,7 @@ cs_cdovb_codits_free(void   *builder)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_codits_compute_source(const cs_mesh_t            *m,
-                               const cs_cdo_connect_t     *connect,
+cs_cdovb_codits_compute_source(const cs_cdo_connect_t     *connect,
                                const cs_cdo_quantities_t  *quant,
                                const cs_time_step_t       *time_step,
                                void                       *builder)
@@ -1372,7 +1370,7 @@ cs_cdovb_codits_compute_source(const cs_mesh_t            *m,
       /* Sanity check */
       assert(st.var_type == CS_PARAM_VAR_SCAL);
 
-      cs_evaluate(m, quant, connect,  // geometrical and topological info.
+      cs_evaluate(quant, connect,  // geometrical and topological info.
                   time_step,
                   dof_flag,
                   st.ml_id,

@@ -60,7 +60,6 @@ BEGIN_C_DECLS
  * \brief  Compute the contribution related to a source term or a
  *         boundary condition for instance
  *
- * \param[in]      m          pointer to a cs_mesh_t struct.
  * \param[in]      quant      additional mesh quantities struct.
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]      time_step  pointer to a time step structure
@@ -75,8 +74,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate(const cs_mesh_t              *m,
-            const cs_cdo_quantities_t    *quant,
+cs_evaluate(const cs_cdo_quantities_t    *quant,
             const cs_cdo_connect_t       *connect,
             const cs_time_step_t         *time_step,
             cs_flag_t                     dof_flag,

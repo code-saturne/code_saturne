@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_HODGE_DBG 2
+#define CS_HODGE_DBG 0
 
 /* Main structure used to define a discrete Hodge operator */
 struct _hodge_builder_t {

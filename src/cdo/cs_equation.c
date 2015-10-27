@@ -106,7 +106,6 @@ typedef void *
 /*!
  * \brief  Compute the contribution of source terms for the current time
  *
- * \param[in]      m          pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_step  time_step structure
@@ -115,8 +114,8 @@ typedef void *
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_compute_source_t)(const cs_mesh_t            *mesh,
-                               const cs_cdo_connect_t     *connect,
+(cs_equation_compute_source_t)(const cs_cdo_connect_t     *connect,
+
                                const cs_cdo_quantities_t  *cdoq,
                                const cs_time_step_t       *time_step,
                                void                       *builder);
@@ -2622,7 +2621,7 @@ cs_equation_init_system(const cs_mesh_t            *mesh,
   eq->builder = eq->init_builder(eqp, mesh, connect);
 
   /* Compute the (initial) source term */
-  eq->compute_source(mesh, connect, cdoq, time_step, eq->builder);
+  eq->compute_source(connect, cdoq, time_step, eq->builder);
 
   /* Initialize the associated field to the initial conditino */
   if (!(eqp->flag & CS_EQUATION_UNSTEADY)) // Steady equation do not need this

@@ -57,7 +57,15 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_EVALLUATE_DBG 0
+#define CS_EVALUATE_DBG 0
+
+/* Cases currently handled */
+static const cs_flag_t scd_tag =
+  CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_DUAL;
+static const cs_flag_t scp_tag =
+  CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL;
+static const cs_flag_t pvp_tag =
+  CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL;
 
 /*============================================================================
  * Private function prototypes
@@ -193,12 +201,11 @@ _analytic_quad_tet5(double              tcur,
  * \brief  Compute the integral over a dual cell (or a portion) of a variable
  *         defined by a user function on a selection of (primal) cells
  *
- * \param[in]      m          pointer to a cs_mesh_t struct.
  * \param[in]      quant      additional mesh quantities struct.
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]      ana        pointer to the analytic function
  * \param[in]      tcur       current physical time of the simulation
- * \param[in]      loc_id     id related to a cs_mesh_location_t struct.
+ * \param[in]      ml_id      id related to a cs_mesh_location_t struct.
  * \param[in]      quad_type  type of quadrature to use
  * \param[in]      use_subdiv consider or not the subdivision into tetrahedra
  * \param[in, out] values     pointer to the computed values
@@ -206,12 +213,11 @@ _analytic_quad_tet5(double              tcur,
 /*----------------------------------------------------------------------------*/
 
 static void
-_scd_by_analytic_func(const cs_mesh_t              *m,
-                      const cs_cdo_quantities_t    *quant,
+_scd_by_analytic_func(const cs_cdo_quantities_t    *quant,
                       const cs_cdo_connect_t       *connect,
                       cs_analytic_func_t           *ana,
                       double                        tcur,
-                      int                           loc_id,
+                      int                           ml_id,
                       cs_quadra_type_t              quad_type,
                       bool                          use_subdiv,
                       double                        values[])
@@ -222,8 +228,8 @@ _scd_by_analytic_func(const cs_mesh_t              *m,
 
   double  add1 = 0.0, add2 = 0.0;
 
-  const cs_lnum_t  *n_loc_elts = cs_mesh_location_get_n_elts(loc_id);
-  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(loc_id);
+  const cs_lnum_t  *n_loc_elts = cs_mesh_location_get_n_elts(ml_id);
+  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
   const cs_sla_matrix_t  *c2f = connect->c2f;
   const cs_sla_matrix_t  *f2e = connect->f2e;
 
@@ -263,8 +269,8 @@ _scd_by_analytic_func(const cs_mesh_t              *m,
         v2_id = connect->e2v->col_id[2*e_id+1];
 
         for (k = 0; k < 3; k++) {
-          xv1[k] = m->vtx_coord[3*v1_id+k];
-          xv2[k] = m->vtx_coord[3*v2_id+k];
+          xv1[k] = quant->vtx_coord[3*v1_id+k];
+          xv2[k] = quant->vtx_coord[3*v2_id+k];
         }
 
         switch(quad_type) {
@@ -301,12 +307,11 @@ _scd_by_analytic_func(const cs_mesh_t              *m,
  * \brief  Compute the integral over primal cells (or a portion) of a variable
  *         defined by a analytical function
  *
- * \param[in]      m          pointer to a cs_mesh_t struct.
  * \param[in]      quant      additional mesh quantities struct.
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]      ana        pointer to the analytic function
  * \param[in]      tcur       current physical time of the simulation
- * \param[in]      loc_id     id related to a cs_mesh_location_t struct.
+ * \param[in]      ml_id      id related to a cs_mesh_location_t struct.
  * \param[in]      quad_type  type of quadrature to use
  * \param[in]      use_subdiv consider or not the subdivision into tetrahedra
  * \param[in, out] values     pointer to the computed values
@@ -314,12 +319,11 @@ _scd_by_analytic_func(const cs_mesh_t              *m,
 /*----------------------------------------------------------------------------*/
 
 static void
-_scp_by_analytic_func(const cs_mesh_t              *m,
-                      const cs_cdo_quantities_t    *quant,
+_scp_by_analytic_func(const cs_cdo_quantities_t    *quant,
                       const cs_cdo_connect_t       *connect,
                       cs_analytic_func_t           *ana,
                       double                        tcur,
-                      int                           loc_id,
+                      int                           ml_id,
                       cs_quadra_type_t              quad_type,
                       bool                          use_subdiv,
                       double                        values[])
@@ -330,8 +334,8 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
 
   double  add = 0.0;
 
-  const cs_lnum_t  *n_loc_elts = cs_mesh_location_get_n_elts(loc_id);
-  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(loc_id);
+  const cs_lnum_t  *n_loc_elts = cs_mesh_location_get_n_elts(ml_id);
+  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
   const cs_sla_matrix_t  *c2f = connect->c2f;
   const cs_sla_matrix_t  *f2e = connect->f2e;
 
@@ -365,8 +369,8 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
           v2_id = connect->e2v->col_id[2*e_id+1];
 
           for (k = 0; k < 3; k++) {
-            xv1[k] = m->vtx_coord[3*v1_id+k];
-            xv2[k] = m->vtx_coord[3*v2_id+k];
+            xv1[k] = quant->vtx_coord[3*v1_id+k];
+            xv2[k] = quant->vtx_coord[3*v2_id+k];
           }
 
           switch(quad_type) {
@@ -421,7 +425,7 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
  * \param[in]     quant      additional mesh quantities struct.
  * \param[in]     connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]     const_val  constant value
- * \param[in]     loc_id     id related to a cs_mesh_location_t struct.
+ * \param[in]     ml_id      id related to a cs_mesh_location_t struct.
  * \param[in,out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -430,13 +434,13 @@ static void
 _scd_by_val(const cs_cdo_quantities_t    *quant,
             const cs_cdo_connect_t       *connect,
             const double                  const_val,
-            int                           loc_id,
+            int                           ml_id,
             double                        values[])
 {
   cs_lnum_t  i, j, c_id;
 
-  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(loc_id);
-  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(loc_id);
+  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
+  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
   const cs_connect_index_t  *c2v = connect->c2v;
 
   /* Compute dual volumes */
@@ -469,7 +473,7 @@ _scd_by_val(const cs_cdo_quantities_t    *quant,
  *
  * \param[in]     quant      additional mesh quantities struct.
  * \param[in]     const_val  constant value
- * \param[in]     loc_id     id related to a cs_mesh_location_t struct.
+ * \param[in]     ml_id      id related to a cs_mesh_location_t struct.
  * \param[in,out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -477,15 +481,13 @@ _scd_by_val(const cs_cdo_quantities_t    *quant,
 static void
 _scp_by_val(const cs_cdo_quantities_t    *quant,
             const double                  const_val,
-            int                           loc_id,
+            int                           ml_id,
             double                        values[])
 {
   cs_lnum_t  i, c_id;
 
-  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(loc_id);
-  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(loc_id);
-
-  /* Compute dual volumes */
+  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
+  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
 
   if (elt_ids == NULL) { // All cells are selected
 
@@ -513,12 +515,11 @@ _scp_by_val(const cs_cdo_quantities_t    *quant,
  * \brief  Compute the contribution related to a source term or a
  *         boundary condition for instance
  *
- * \param[in]      m          pointer to a cs_mesh_t struct.
  * \param[in]      quant      additional mesh quantities struct.
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]      time_step  pointer to a time step structure
  * \param[in]      dof_flag   indicate where the evaluation has to be done
- * \param[in]      loc_id     id related to a cs_mesh_location_t struct.
+ * \param[in]      ml_id      id related to a cs_mesh_location_t struct.
  * \param[in]      def_type   type of definition
  * \param[in]      quad_type  type of quadrature (not always used)
  * \param[in]      use_subdiv consider or not the subdivision into tetrahedra
@@ -528,12 +529,11 @@ _scp_by_val(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate(const cs_mesh_t              *m,
-            const cs_cdo_quantities_t    *quant,
+cs_evaluate(const cs_cdo_quantities_t    *quant,
             const cs_cdo_connect_t       *connect,
             const cs_time_step_t         *time_step,
             cs_flag_t                     dof_flag,
-            int                           loc_id,
+            int                           ml_id,
             cs_param_def_type_t           def_type,
             cs_quadra_type_t              quad_type,
             bool                          use_subdiv,
@@ -545,14 +545,10 @@ cs_evaluate(const cs_mesh_t              *m,
 
   double  *values = *p_values;
 
-  /* Cases currently handled */
-  cs_flag_t  scd = CS_PARAM_FLAG_SCAL|CS_PARAM_FLAG_CELL|CS_PARAM_FLAG_DUAL;
-  cs_flag_t  scp = CS_PARAM_FLAG_SCAL|CS_PARAM_FLAG_CELL|CS_PARAM_FLAG_PRIMAL;
-
   stride = 0, n_ent = 0;
-  if (dof_flag == scd)
+  if (dof_flag == scd_tag || dof_flag == pvp_tag)
     stride = 1, n_ent = quant->n_vertices;
-  else if (dof_flag == scp)
+  else if (dof_flag == scp_tag)
     stride = 1, n_ent = quant->n_cells;
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -568,10 +564,12 @@ cs_evaluate(const cs_mesh_t              *m,
 
   case CS_PARAM_DEF_BY_VALUE: // constant value (simple case)
 
-    if (dof_flag == scd)
-      _scd_by_val(quant, connect, def.get.val, loc_id, values);
-    else if (dof_flag == scp)
-      _scp_by_val(quant, def.get.val, loc_id, values);
+    if (dof_flag == scd_tag)
+      _scd_by_val(quant, connect, def.get.val, ml_id, values);
+    else if (dof_flag == scp_tag)
+      _scp_by_val(quant, def.get.val, ml_id, values);
+    else if (dof_flag == pvp_tag)
+      _pvp_by_val(quant, def.get.val, ml_id, values);
     else
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid type of definition. Stop evaluation.\n"
@@ -582,17 +580,18 @@ cs_evaluate(const cs_mesh_t              *m,
     {
       const double  tcur = time_step->t_cur;
 
-      if (dof_flag == scd)
-        _scd_by_analytic_func(m, quant, connect,
+      if (dof_flag == scd_tag)
+        _scd_by_analytic_func(quant, connect,
                               def.analytic,
                               tcur,
-                              loc_id, quad_type, use_subdiv,
+                              ml_id, quad_type, use_subdiv,
                               values);
-      else if (dof_flag == scp)
-        _scp_by_analytic_func(m, quant, connect,
+
+      else if (dof_flag == scp_tag)
+        _scp_by_analytic_func(quant, connect,
                               def.analytic,
                               tcur,
-                              loc_id, quad_type, use_subdiv,
+                              ml_id, quad_type, use_subdiv,
                               values);
       else
         bft_error(__FILE__, __LINE__, 0,

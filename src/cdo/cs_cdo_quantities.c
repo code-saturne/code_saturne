@@ -855,6 +855,7 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   cdoq->n_b_faces = m->n_b_faces;
   cdoq->n_faces = m->n_i_faces + m->n_b_faces;
   cdoq->n_vertices = m->n_vertices;
+  cdoq->vtx_coord = m->vtx_coord;
 
   if (topo->e2v != NULL)
     cdoq->n_edges = topo->e2v->n_rows;
@@ -986,6 +987,8 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *q)
   BFT_FREE(q->dface);
 
   BFT_FREE(q->dcell_vol);
+
+  /* vtx_coord is free when the structure cs_mesh_t is destroyed */
 
   BFT_FREE(q);
 

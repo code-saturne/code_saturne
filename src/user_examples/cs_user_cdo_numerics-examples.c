@@ -130,14 +130,17 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
         "1" detailed setup resume and coarse grain timer stats
         "2" fine grain timer stats
 
-     >> key: "hodge_diff_algo" or "hodge_time_algo"
-       >> val: "voronoi" or "cost" (default)
+     >> key: "hodge_diff_algo" or "hodge_time_algo" or "hodge_reac_algo"
+       >> val: "voronoi" (default for time), "cost" (default for diffusion)
+               or "whitney_bary" (only for time and reaction term)
        "voronoi" leads to diagonal discrete Hodge operator but is not
        consistent for all meshes
        "cost" is more robust (i.e. it handles more general meshes but is is
        less efficient)
+       "whitney_bary" is robust and accurate but is limited to the
+       reconstruction of potential-like degrees of freedom
 
-     >> key: "hodge_diff_coef" or "hodge_time_coef"
+     >> key: "hodge_diff_coef" or "hodge_time_coef" or "hodge_reac_coef"
         This key is only useful if "cost" is set as algorithm
         >> val: "dga", "sushi", "gcr" or "1.5", "9"..
         val is either a name or a value. Notice that

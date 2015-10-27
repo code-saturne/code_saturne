@@ -92,6 +92,7 @@ typedef struct { /* Specific mesh quantities */
   cs_lnum_t   n_vertices;
   double     *dcell_vol;    /* dual volume related to each vertex.
                                Scan with the c2v connectivity */
+  const cs_real_t  *vtx_coord; /* Pointer to the one stored in cs_mesh_t */
 
   /* Cell-based quantities */
   cs_lnum_t   n_cells;
