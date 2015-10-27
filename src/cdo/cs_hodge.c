@@ -125,14 +125,20 @@ struct _cost_quant_t {
 
 struct _wbs_quant_t {
 
-  cs_connect_index_t  *f2v; /* face (border or interior) to vertices connect. */
+  /* Link between local and non-local vertex ids */
+  short int  *vtag; /* size = n_vertices; default value = -1 (not used)
+                       otherwise local id in [0, n_ent] */
 
-  short int           *tag; /* size = n_vertices; default value = -1 (not used)
-                               otherwise local id in [0, n_ent] */
+  /* Buffers storing the weights for each vertex (size: n_max_vbyc) */
+  double   *wf;     /* weights related to each vertex of a given face */
+  double   *wc;     /* weights related to each vertex of a given cell */
 
-  double   *wf;    /* weights related to each vertex of a given face */
-  double   *wc;    /* weights related to each vertex of a given cell */
-  double   *cumul; /* sum of temporary contribution (same size of wf and wc) */
+
+  int          bufsize;   /* size of the two following buffers */
+  short int   *_v_ids;    /* List of couples of local vertex ids
+                             for all the edges of a face */
+  cs_lnum_t   *v_ids;     /* List of couples of vertex ids
+                             for all the edges of a face */
 
 };
 
@@ -663,8 +669,9 @@ _build_using_cost(int                         cid,
 
   } /* End of switch */
 
+  /* Sanity checks */
   assert(n_ent < hloc->n_max_ent + 1);
-  hloc->n_ent = n_ent;
+  assert(n_ent == hloc->n_ent);
 
   /* Compute additional geometrical quantities: invsvol, qmq and T
      Switch arguments between discrete Hodge operator from PRIMAL->DUAL space
@@ -678,10 +685,6 @@ _build_using_cost(int                         cid,
   /* DUAL --> PRIMAL */
   else if (h_info.type == CS_PARAM_HODGE_TYPE_EDFP)
     _compute_cost_quant(n_ent, ptyval, hq->dq, hq->pq, hq);
-
-  /* Initialize local Hodge matrix */
-  for (i = 0; i < n_ent*n_ent; i++)
-    hloc->mat[i] = 0.0;
 
   /* Coefficients related to the value of beta */
   const double  beta = h_info.coef;
@@ -747,50 +750,46 @@ _build_using_cost(int                         cid,
  * \brief   Build a structure used to compute a discrete Hodge op. when using
  *          WBS algo.
  *
- * \param[in]   n_ent_max    max number of local entities
- * \param[in]   n_entities   number of entities associated to the mesh
- * \param[in]   connect      pointer to a cs_cdo_connect_t struct.
+ * \param[in]   n_ent_max     max number of local entities
+ * \param[in]   aux_bufsize   size of the auxiliary buffers
+ * \param[in]   n_vertices    number of vertices in this mesh
  *
  * \return a pointer to a _wbs_quant_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static struct _wbs_quant_t *
-_init_wbs_quant(int                       n_ent_max,
-                cs_lnum_t                 n_entities,
-                const cs_cdo_connect_t   *connect)
+_init_wbs_quant(int        n_ent_max,
+                int        aux_bufsize,
+                cs_lnum_t  n_vertices)
 {
   cs_lnum_t  i;
 
-  cs_connect_index_t  *f2e = NULL, *e2v = NULL;
   struct _wbs_quant_t  *hq = NULL;
-
-  const cs_sla_matrix_t  *mf2e = connect->f2e;
-  const cs_sla_matrix_t  *me2v = connect->e2v;
 
   /* Allocate structure */
   BFT_MALLOC(hq, 1, struct _wbs_quant_t);
 
-  /* Weights and cumulators */
-  BFT_MALLOC(hq->wf, 3*n_ent_max, double);
-  for (i = 0; i < 3*n_ent_max; i++)
+  /* Weights */
+  BFT_MALLOC(hq->wf, 2*n_ent_max, double);
+  for (i = 0; i < 2*n_ent_max; i++)
     hq->wf[i] = 0;
   hq->wc = hq->wf + n_ent_max;
-  hq->cumul = hq->wf + 2*n_ent_max;
 
-  /* Tag */
-  BFT_MALLOC(hq->tag, n_entities, short int);
-  for (i = 0; i < n_entities; i++)
-    hq->tag[i] = -1;
+  /* Correspondance between local and non-local vertex ids */
+  BFT_MALLOC(hq->vtag, n_vertices, short int);
+  for (i = 0; i < n_vertices; i++)
+    hq->vtag[i] = -1;
 
-  /* Build f2v connect (both interior and border faces) */
-  f2e = cs_index_map(mf2e->n_rows, mf2e->idx, mf2e->col_id);
-  e2v = cs_index_map(me2v->n_rows, me2v->idx, me2v->col_id);
-  hq->f2v = cs_index_compose(n_entities, f2e, e2v);
+  /* Store local and non local Vertex ids */
+  hq->bufsize = aux_bufsize;
+  BFT_MALLOC(hq->_v_ids, 2*aux_bufsize, short int);
+  BFT_MALLOC(hq->v_ids, 2*aux_bufsize, cs_lnum_t);
 
-  /* Free mapping */
-  cs_index_free(&f2e);
-  cs_index_free(&e2v);
+  for (i = 0; i < 2*aux_bufsize; i++) {
+    hq->v_ids[i] = -1;
+    hq->_v_ids[i] = -1;
+  }
 
   return  hq;
 }
@@ -813,8 +812,9 @@ _free_wbs_quant(struct _wbs_quant_t  *hq)
     return hq;
 
   BFT_FREE(hq->wf); /* Deallocate in the same time hvq->wc and hvq->cumul */
-  BFT_FREE(hq->tag);
-  cs_index_free(&(hq->f2v));
+  BFT_FREE(hq->vtag);
+  BFT_FREE(hq->v_ids);
+  BFT_FREE(hq->_v_ids);
 
   BFT_FREE(hq);
 
@@ -826,6 +826,7 @@ _free_wbs_quant(struct _wbs_quant_t  *hq)
  * \brief  Compute for each face a weight related to each vertex w_{v,f}
  *         This weight is equal to |dc(v) cap f|/|f| so that the sum of the
  *         weights is equal to 1.
+ *         Set also the local and local numbering of the vertices of this face
  *
  * \param[in]      f_id      id of the face
  * \param[in]      connect   pointer to a cs_cdo_connect_t structure
@@ -835,18 +836,18 @@ _free_wbs_quant(struct _wbs_quant_t  *hq)
 /*----------------------------------------------------------------------------*/
 
 static void
-_get_face_weights(cs_lnum_t                   f_id,
-                  const cs_cdo_connect_t     *connect,
-                  const cs_cdo_quantities_t  *quant,
-                  struct _wbs_quant_t        *hq)
+_compute_wbs_face_quant(cs_lnum_t                   f_id,
+                        const cs_cdo_connect_t     *connect,
+                        const cs_cdo_quantities_t  *quant,
+                        struct _wbs_quant_t        *hq)
 {
-  cs_lnum_t  i;
+  cs_lnum_t  i, shift = 0;
   double  contrib, len;
   cs_real_3_t  un, cp;
 
-  const short int  *loc_ids = hq->tag;
+  const short int  *loc_ids = hq->vtag;
   const cs_quant_t  fq = quant->face[f_id];
-  const double  invsurf = 1/fq.meas;
+  const double  f_coef = 0.25/fq.meas;
 
   /* Reset weights */
   for (i = 0; i < connect->n_max_vbyc; i++) hq->wf[i] = 0;
@@ -854,18 +855,26 @@ _get_face_weights(cs_lnum_t                   f_id,
   /* Compute a weight for each vertex of the current face */
   for (i = connect->f2e->idx[f_id]; i < connect->f2e->idx[f_id+1]; i++) {
 
-    cs_lnum_t  e_id = connect->f2e->col_id[i];
-    cs_lnum_t  v1_id = connect->e2v->col_id[2*e_id];
-    cs_lnum_t  v2_id = connect->e2v->col_id[2*e_id+1];
-    cs_quant_t  eq = quant->edge[e_id];
+    const cs_lnum_t  e_id = connect->f2e->col_id[i];
+    const cs_quant_t  eq = quant->edge[e_id];
+
+    const cs_lnum_t  v1_id = connect->e2v->col_id[2*e_id];
+    const cs_lnum_t  v2_id = connect->e2v->col_id[2*e_id+1];
+    const short int  _v1 = loc_ids[v1_id];
+    const short int  _v2 = loc_ids[v2_id];
 
     _lenunit3(eq.center, fq.center, &len, &un);
     _cp3(un, eq.unitv, &cp);
+    contrib = eq.meas * len * _n3(cp) * f_coef;
 
-    contrib = 0.25 * eq.meas * len * _n3(cp) * invsurf;
+    hq->wf[_v1] += contrib;
+    hq->wf[_v2] += contrib;
+    hq->v_ids[2*shift] = v1_id;
+    hq->v_ids[2*shift+1] = v2_id;
+    hq->_v_ids[2*shift] = _v1;
+    hq->_v_ids[2*shift+1] = _v2;
 
-    hq->wf[loc_ids[v1_id]] += contrib;
-    hq->wf[loc_ids[v2_id]] += contrib;
+    shift++;
 
   } /* End of loop on face edges */
 
@@ -893,164 +902,128 @@ _build_using_wbs(int                         cid,
                  cs_hodge_builder_t         *hb,
                  struct _wbs_quant_t        *hq)
 {
-  int  i, j, l;
-  double  contrib, len;
-  cs_real_3_t  un;
+  short int  i, j, k, n_ent;
+  double  val, wic, wjc, wif, wjf;
+  cs_real_3_t  xc;
   cs_lnum_t  ii, jj, v_id;
 
   cs_locmat_t  *hl = hb->hloc;
 
   const double  volc = quant->cell_vol[cid];
+  const double  c_coef = 0.1*volc;
   const double  ovcell = 1/volc;
-  const cs_connect_index_t  *c2v = connect->c2v, *c2e = connect->c2e;
-  const cs_sla_matrix_t  *c2f = connect->c2f;
+  const cs_real_t  *xyz = quant->vtx_coord;
+  const cs_connect_index_t  *c2v = connect->c2v;
   const cs_lnum_t  vshift = c2v->idx[cid];
+  const cs_sla_matrix_t  *c2f = connect->c2f;
+  const cs_sla_matrix_t  *f2e = connect->f2e;
 
   /* Local initializations */
-  for (i = 0, j = vshift; j < c2v->idx[cid+1]; i++, j++) {
-    v_id = c2v->ids[j];
-    hl->ids[i] = v_id;
-    hq->tag[v_id] = i;
-    hq->wc[i] = ovcell*quant->dcell_vol[j];
+  for (n_ent = 0, ii = vshift; ii < c2v->idx[cid+1]; n_ent++, ii++) {
+    v_id = c2v->ids[ii];
+    hl->ids[n_ent] = v_id;
+    hq->vtag[v_id] = n_ent;
+    hq->wc[n_ent] = ovcell*quant->dcell_vol[ii];
   }
-  hl->n_ent = i;
+
+  /* Sanity checks */
+  assert(hl->n_ent == n_ent);
   assert(hl->n_ent <= hl->n_max_ent);
 
-  /* Reset local matrix */
-  for (i = 0; i < hl->n_ent*hl->n_ent; i++)
-    hl->mat[i] = 0.;
+  for (k = 0; k < 3; k++)
+    xc[k] = quant->cell_centers[3*cid+k];
 
-  /* Contributions on extra-diag entries resulting from edges.
-     The diagonal contribution can be computed more efficiently when one
-     considers the contribution of each vertex */
-  for (l = c2e->idx[cid]; l < c2e->idx[cid+1]; l++) {
+  /* Initialize the upper part of the local Hodge matrix */
+  for (i = 0; i < n_ent; i++) {
 
-    cs_lnum_t  e_id = c2e->ids[l];
-    cs_lnum_t  v1_id = connect->e2v->col_id[2*e_id];
-    cs_lnum_t  v2_id = connect->e2v->col_id[2*e_id+1];
-    int  _v1 = hq->tag[v1_id], _v2 = hq->tag[v2_id];
+    int  shift_i = i*n_ent;
 
-    const cs_quant_t  peq = quant->edge[e_id];
-    const cs_dface_t  dfq = quant->dface[l];
+    /* Diagonal entry */
+    wic = hq->wc[i];
+    hl->mat[shift_i+i] = c_coef*wic*wic;
 
-    /* Sanity checks */
-    assert(_v1 > -1 && _v1 < hl->n_max_ent);
-    assert(_v2 > -1 && _v2 < hl->n_max_ent);
+    /* Extra-diagonal entries */
+    for (j = i+1; j < n_ent; j++) {
+      wjc = hq->wc[j];
+      hl->mat[shift_i+j] = c_coef*wic*wjc;
+    }
 
-    /* Compute pvol_{e,c} */
-    contrib  = dfq.meas[0] * _dp3(peq.unitv, &(dfq.unitv[0]));
-    contrib += dfq.meas[1] * _dp3(peq.unitv, &(dfq.unitv[3]));
+  } // Loop on cell vertices
 
-    double  pvol_ec = invdim * peq.meas * contrib;
+  /* Loop on each pef and add the contribution */
+  for (ii = c2f->idx[cid]; ii < c2f->idx[cid+1]; ii++) {
 
-    i = _v1, j = _v2;
-    if (_v1 > _v2)  i = _v2, j = _v1;
+    const cs_lnum_t  f_id = c2f->col_id[ii];
+    const cs_quant_t  pfq = quant->face[f_id];
 
-    /* Extra-diag contribution:
-       e-e: 1/10*1/4 sur |p_ec|
-       v-e: 1/20*1/2 sur 1/2|p_ec| for v and v' i.e (x2) => same contrib. as e-e
-       e-e + e-v => 1/10 * 1/2 * |p_ec|
-     */
-    hl->mat[i*hl->n_ent+j] += 0.5*pvol_ec;
-
-  } /* End of loop on cell edges */
-
-  /* Contributions resulting from faces */
-  for (l = c2f->idx[cid]; l < c2f->idx[cid+1]; l++) {
-
-    cs_lnum_t  f_id = c2f->col_id[l];
-    cs_quant_t  pfq = quant->face[f_id];
-
-    /* Compute pvol_{f,c} */
-    _lenunit3(&(quant->cell_centers[3*cid]), pfq.center, &len, &un);
-
-    double  pvol_fc = invdim * len * pfq.meas * _dp3(pfq.unitv, un);
+    int  e_shift = 0;
 
     /* Compute a weight for each vertex of the current face */
-    _get_face_weights(f_id, connect, quant, hq);
+    _compute_wbs_face_quant(f_id, connect, quant, hq);
 
-    /* Compute contributions */
-    for (ii = hq->f2v->idx[f_id]; ii < hq->f2v->idx[f_id+1]; ii++) {
+    for (jj = f2e->idx[f_id]; jj < f2e->idx[f_id+1]; jj++, e_shift++) {
 
-      cs_lnum_t  v1_id = hq->f2v->ids[ii];
-      int  _v1 = hq->tag[v1_id];
-      double  w1f = hq->wf[_v1];
+      const cs_lnum_t  v1_id = hq->v_ids[2*e_shift];
+      const cs_lnum_t  v2_id = hq->v_ids[2*e_shift+1];
+      const short int  _v1 = hq->_v_ids[2*e_shift];
+      const short int  _v2 = hq->_v_ids[2*e_shift+1];
 
-      hq->cumul[_v1] += pvol_fc*w1f;
+      /* Sanity check */
+      assert(_v1 > -1 && _v2 > -1);
 
-      /* Diagonal contributions:
-         v-f: 1/10*w_v1f^2 sur |pvol_fc|
-         e-f: 1/10*w_v1f^2 sur |pvol_fc|
-         f-f: 1/10*w_v1f^2 sur |pvol_fc|
-         v-f + f-f + e-f => x3
-      */
-      hl->mat[_v1*hl->n_ent+_v1] += 3*pvol_fc*w1f*w1f;
+      const cs_real_t  pef_vol = cs_voltet(&(xyz[3*v1_id]),
+                                     &(xyz[3*v2_id]),
+                                     pfq.center,
+                                     xc);
+      const cs_real_t  w_vol = 0.05*pef_vol;
 
-      for (jj = ii+1; jj < hq->f2v->idx[f_id+1]; jj++) {
+      /* Add local contribution */
+      for (i = 0; i < n_ent; i++) {
 
-        cs_lnum_t  v2_id = hq->f2v->ids[jj];
-        int  _v2 = hq->tag[v2_id];
-        double  w2f = hq->wf[_v2];
+        const int  shift_i = i*n_ent;
+        const bool  iyes = (i == _v1 || i == _v2) ? true : false;
 
-        i = _v1, j = _v2;
-        if (_v1 > _v2) i = _v2, j = _v1;
+        wic = hq->wc[i];
+        wif = hq->wf[i];
+        val = 2*wif*(wif + wic);
+        if (iyes)
+          val += 2*(1 + wic + wif);
+        val *= w_vol;    /* 1/20 * |tet| (cf. Rapport HI-A7/7561 in 1991) */
 
-        /* Extra-diag. contributions
-           v-f: 1/10*(w_v1f*w_v2f) sur |pvol_fc|
-           e-f: 1/10*(w_v1f*w_v2f) sur |pvol_fc|
-           f-f: 1/10*(w_v1f*w_v2f) sur |pvol_fc|
-         */
-        hl->mat[i*hl->n_ent+j] += 3*w1f*w2f*pvol_fc;
+        /* Diagonal entry: i=j */
+        hl->mat[shift_i+i] += val;
 
-      } /* End of loop on face vertices ii != jj */
+        /* Extra-diagonal entries */
+        for (j = i+1; j < n_ent; j++) {
 
-    } /* End of loop on face vertices */
+          const bool  jyes = (j == _v1 || j == _v2) ? true : false;
 
-  } /* End of loop on cell faces */
+          wjc = hq->wc[j];
+          wjf = hq->wf[j];
+          val = 2*wif*wjf + wif*wjc + wic*wjf;
+          if (iyes)
+            val += wjf + wjc;
+          if (jyes)
+            val += wif + wic;
+          if (iyes && jyes)
+            val += 1;
+          val *= w_vol;
 
-  /* Other contributions (cell bubble, vertices, edges for diagonal term...) */
-  for (i = 0; i < hl->n_ent; i++) {
+          hl->mat[shift_i+j] += val;
 
-    /* Diagonal:
-       v-v: 1/10*w_vc*|c|
-       e-e: 1/10*1/2*w_vc*|c|
-       e-v+v-e: 1/20*w_vc*|c|
-       v-v + e-e + e-v => 1/10*2*w_vc*|c|
+        } // Extra-diag entries
 
-       v-c: 1/10*w_vc^2*|c|
-       e-c: 1/10*w_vc^2*|c|
-       c-c: 1/10*w_vc^2*|c|
-       e-c + v-c + c-c => 1/10*3*w_vc*w_vc*|c|
+      } // Loop on cell vertices
 
-       f-c: 1/10*Cumul*wc
+    } // Loop on face edges
 
-    */
-    contrib = hq->cumul[i]*hq->wc[i];
-    hl->mat[i*hl->n_ent+i] += volc*hq->wc[i]*(2 + 3*hq->wc[i]) + contrib;
+  } // Loop on cell faces
 
-    /* Extra-diag. contribution
-       c-c: 1/10*w1c*w2c sur |c|
-       v-c: 1/20*w1c*w2c sur |c| (x2)
-       e-c: 1/20*w1c*w2c sur |c| (x2)
-
-       f-c: 1/10* 1/2*(w1c*Cumul_2 + w2c*Cumul_1)
-     */
-    for (j = i+1; j < hl->n_ent; j++) {
-
-      contrib = 0.5*(hq->cumul[i]*hq->wc[j] + hq->cumul[j]*hq->wc[i]);
-      hl->mat[i*hl->n_ent+j] += 3*volc*hq->wc[i]*hq->wc[j] + contrib;
-
-    } /* End of loop vtx_j */
-
-  } /* End of loop vtx_i */
-
-  /* Matrix is symmetric by construction */
-  for (i = 0; i < hl->n_ent; i++) {
-    hl->mat[i*hl->n_ent+i] *= 0.1; /* => int_tetra Theta_LAG = 1/10 |tet| */
-    for (j = i+1; j < hl->n_ent; j++) {
-      hl->mat[i*hl->n_ent+j] *= 0.1;
-      hl->mat[j*hl->n_ent+i] = hl->mat[i*hl->n_ent+j];
-    }
+  /* Local matrix is symmetric by construction. Set the lower part. */
+  for (j = 0; j < n_ent; j++) {
+    int  shift_j = j*n_ent;
+    for (i = j+1; i < n_ent; i++)
+      hl->mat[i*n_ent+j] = hl->mat[shift_j+i];
   }
 
 }
@@ -1090,13 +1063,9 @@ _build_using_voronoi(cs_lnum_t                    c_id,
   case CS_PARAM_HODGE_TYPE_EPFD:
     {
       const cs_connect_index_t  *c2e = connect->c2e;
-      const cs_lnum_t  start = c2e->idx[c_id];
-      const cs_lnum_t  end = c2e->idx[c_id+1];
-
-      hl->n_ent = end - start;
 
       /* Loop on cell edges */
-      for (i = start, ii = 0; i < end; i++, ii++) {
+      for (i = c2e->idx[c_id], ii = 0; i < c2e->idx[c_id+1]; i++, ii++) {
 
         cs_dface_t  dfq = quant->dface[i];
         cs_lnum_t  e_id = c2e->ids[i];
@@ -1120,12 +1089,8 @@ _build_using_voronoi(cs_lnum_t                    c_id,
   case CS_PARAM_HODGE_TYPE_FPED:
     {
       const cs_sla_matrix_t *c2f = connect->c2f;
-      const cs_lnum_t  start = c2f->idx[c_id];
-      const cs_lnum_t  end = c2f->idx[c_id+1];
 
-      hl->n_ent = end - start;
-
-      for (i = start, ii = 0; i < end; i++, ii++) {
+      for (i = c2f->idx[c_id], ii = 0; i < c2f->idx[c_id+1]; i++, ii++) {
 
         cs_real_t  len = quant->dedge[4*i];
         cs_lnum_t  f_id = c2f->col_id[i];
@@ -1148,17 +1113,10 @@ _build_using_voronoi(cs_lnum_t                    c_id,
     {
       const cs_real_t  ptyval = ptymat[0][0]; // Must be isotropic
       const cs_connect_index_t  *c2v = connect->c2v;
-      const cs_lnum_t  start = c2v->idx[c_id];
-      const cs_lnum_t  end = c2v->idx[c_id+1];
 
-      hl->n_ent = end - start;
+      for (i = c2v->idx[c_id], ii = 0; i < c2v->idx[c_id+1]; i++, ii++) {
 
-      for (i = start, ii = 0; i < end; i++, ii++) {
-
-        cs_lnum_t  v_id = c2v->ids[i];
-
-        hl->ids[ii] = v_id;
-
+        hl->ids[ii] = c2v->ids[i];
         /* Only a diagonal term */
         hl->mat[ii*hl->n_ent+ii] = ptyval * quant->dcell_vol[i];
 
@@ -1234,7 +1192,9 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
 
   case CS_PARAM_HODGE_ALGO_WBS:
     assert(h_info.type == CS_PARAM_HODGE_TYPE_VPCD);
-    hb->algoq = _init_wbs_quant(hb->n_maxloc_ent, hb->n_ent, connect);
+    hb->algoq = _init_wbs_quant(hb->n_maxloc_ent,
+                                2*connect->n_max_ebyc,
+                                hb->n_ent);
     break;
 
   default:
@@ -1323,8 +1283,12 @@ cs_hodge_build_local(int                         c_id,
                      const cs_cdo_quantities_t  *quant,
                      cs_hodge_builder_t         *hb)
 {
+  int n_ent;
+
   /* Sanity check */
   assert(hb != NULL);
+
+  const cs_param_hodge_t  h_info = hb->h_info;
 
   if (!hb->uniform) { /* Material property is not uniform */
 
@@ -1332,15 +1296,41 @@ cs_hodge_build_local(int                         c_id,
     for (int k = 0; k < 3; k++)
       xc[k] = quant->cell_centers[3*c_id+k];
 
-    cs_evaluate_pty(hb->h_info.pty_id,
+    cs_evaluate_pty(h_info.pty_id,
                     hb->t_cur,          // When ?
                     xc,                 // Where ?
-                    hb->h_info.inv_pty,
+                    h_info.inv_pty,
                     &(hb->matval));
 
   }
 
-  switch (hb->h_info.algo) {
+  /* Set n_ent and reset local hodge matrix */
+  switch (h_info.type) {
+
+  case CS_PARAM_HODGE_TYPE_VPCD:
+    n_ent = connect->c2v->idx[c_id+1] - connect->c2v->idx[c_id];
+    break;
+  case CS_PARAM_HODGE_TYPE_EPFD:
+    n_ent = connect->c2e->idx[c_id+1] - connect->c2e->idx[c_id];
+    break;
+  case CS_PARAM_HODGE_TYPE_FPED:
+  case CS_PARAM_HODGE_TYPE_EDFP:
+    n_ent = connect->c2f->idx[c_id+1] - connect->c2f->idx[c_id];
+    break;
+  case CS_PARAM_HODGE_TYPE_CPVD:
+    n_ent = 1;
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid type of discrete Hodge operator.");
+  }
+
+  hb->hloc->n_ent = n_ent;
+  for (int i = 0; i < n_ent*n_ent; i++)
+    hb->hloc->mat[i] = 0;
+
+  /* Switch according to the requested type of algorithm to use */
+  switch (h_info.algo) {
 
   case CS_PARAM_HODGE_ALGO_COST:
     _build_using_cost(c_id, connect, quant, hb,

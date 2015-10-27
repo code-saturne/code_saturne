@@ -44,6 +44,7 @@ BEGIN_C_DECLS
 #define  CS_EQUATION_CONVECTION (1 <<  1)  /*  2: convection term */
 #define  CS_EQUATION_DIFFUSION  (1 <<  2)  /*  4: diffusion term */
 #define  CS_EQUATION_REACTION   (1 <<  3)  /*  8: reaction term */
+#define  CS_EQUATION_HCONF_ST   (1 <<  4)  /* 16: special treatment of the source
 
 /* Post flag */
 #define  CS_EQUATION_POST_PECLET      (1 << 0)

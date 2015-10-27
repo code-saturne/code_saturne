@@ -419,6 +419,73 @@ _scp_by_analytic_func(const cs_cdo_quantities_t    *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the values at each primal vertices of a variable defined by a
+ *         analytical function
+ *
+ * \param[in]      quant      additional mesh quantities struct.
+ * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]      ana        pointer to the analytic function
+ * \param[in]      tcur       current physical time of the simulation
+ * \param[in]      ml_id      id related to a cs_mesh_location_t struct.
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pvp_by_analytic_func(const cs_cdo_quantities_t    *quant,
+                      const cs_cdo_connect_t       *connect,
+                      cs_analytic_func_t           *ana,
+                      double                        tcur,
+                      int                           ml_id,
+                      double                        values[])
+{
+  cs_lnum_t  i, j, v_id, c_id;
+  cs_get_t  evaluation;
+
+  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
+  const cs_connect_index_t  *c2v = connect->c2v;
+
+  if (elt_ids == NULL) {
+
+    for (v_id = 0; v_id < quant->n_vertices; v_id++) {
+      ana(tcur, &(quant->vtx_coord[3*v_id]), &evaluation);
+      values[v_id] = evaluation.val;
+    }
+
+  }
+  else {
+
+    bool  *todo = NULL;
+
+    const cs_lnum_t  *n_loc_elts = cs_mesh_location_get_n_elts(ml_id);
+
+    BFT_MALLOC(todo, quant->n_vertices, bool);
+    for (v_id = 0; v_id < quant->n_vertices; v_id++)
+      todo[v_id] = true;
+
+    for (i = 0; i < n_loc_elts[0]; i++) { // Loop on selected cells
+
+      c_id = elt_ids[i];
+
+      for (j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+        v_id = c2v->ids[j];
+        if (todo[v_id]) {
+          ana(tcur, &(quant->vtx_coord[3*v_id]), &evaluation);
+          values[v_id] = evaluation.val;
+          todo[v_id] = false;
+        }
+
+      } // Loop on cell vertices
+
+    } // Loop on selected cells
+
+  } // elt_ids ?
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the integral over a dual cell (or a portion) of a value
  *         defined on a selection of (primal) cells
  *
@@ -503,6 +570,36 @@ _scp_by_val(const cs_cdo_quantities_t    *quant,
     }
 
   }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the values at each primal vertices of a variable defined by a
+ *         constant value
+ *
+ * \param[in]     quant      additional mesh quantities struct.
+ * \param[in]     const_val  constant value
+ * \param[in]     ml_id      id related to a cs_mesh_location_t struct.
+ * \param[in,out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pvp_by_val(const cs_cdo_quantities_t    *quant,
+            const double                  const_val,
+            int                           ml_id,
+            double                        values[])
+{
+  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
+
+  if (elt_ids != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " This situation is not handled yet.\n"
+              " Please use a mesh location over the full mesh.");
+
+  for (cs_lnum_t  v_id = 0; v_id < quant->n_vertices; v_id++)
+    values[v_id] = const_val;
 
 }
 
@@ -593,10 +690,19 @@ cs_evaluate(const cs_cdo_quantities_t    *quant,
                               tcur,
                               ml_id, quad_type, use_subdiv,
                               values);
+
+      else if (dof_flag == pvp_tag)
+        _pvp_by_analytic_func(quant, connect,
+                              def.analytic,
+                              tcur,
+                              ml_id,
+                              values);
+
       else
         bft_error(__FILE__, __LINE__, 0,
                   _(" Invalid type of definition. Stop evaluation.\n"
                     " This case is not handled yet.\n"));
+
     }
     break;
 

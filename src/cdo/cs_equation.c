@@ -628,6 +628,263 @@ _bicg_bjacobi_setup_hook(void    *context,
 
 #endif /* defined(HAVE_PETSC) */
 
+/*----------------------------------------------------------------------------
+ * \brief Initialize SLES strcuture for the resolution of the linear system
+ *
+ * \param[in] eq  pointer to an cs_equation_t structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_sles_initialization(const cs_equation_t  *eq)
+{
+  const cs_equation_param_t  *eqp = eq->param;
+  const cs_equation_algo_t  algo = eqp->algo_info;
+  const cs_param_itsol_t  itsol = eqp->itsol_info;
+
+  switch (algo.type) {
+  case CS_EQUATION_ALGO_CS_ITSOL:
+    {
+      int  poly_degree = 0; // by default: Jacobi preconditioner
+
+      if (itsol.precond == CS_PARAM_PRECOND_POLY1)
+        poly_degree = 1;
+
+      if (itsol.precond != CS_PARAM_PRECOND_POLY1 &&
+          itsol.precond != CS_PARAM_PRECOND_DIAG)
+        bft_error(__FILE__, __LINE__, 0,
+                  " Incompatible preconditioner with Code_Saturne solvers.\n"
+                  " Please change your settings (try PETSc ?)");
+
+      switch (itsol.solver) { // Type of iterative solver
+      case CS_PARAM_ITSOL_CG:
+        cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_PCG,
+                          poly_degree,
+                          itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_BICG:
+        cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_BICGSTAB2,
+                          poly_degree,
+                          itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_GMRES:
+        cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_GMRES,
+                          poly_degree,
+                          itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_AMG:
+        {
+          cs_multigrid_t  *mg = cs_multigrid_define(eq->field_id,
+                                                    NULL);
+
+          /* Advanced setup (default is specified inside the brackets) */
+          cs_multigrid_set_solver_options
+            (mg,
+             CS_SLES_JACOBI,   // descent smoother type (CS_SLES_PCG)
+             CS_SLES_JACOBI,   // ascent smoother type (CS_SLES_PCG)
+             CS_SLES_PCG,      // coarse solver type (CS_SLES_PCG)
+             itsol.n_max_iter, // n max cycles (100)
+             5,                // n max iter for descent (10)
+             5,                // n max iter for asscent (10)
+             1000,             // n max iter coarse solver (10000)
+             0,                // polynomial precond. degree descent (0)
+             0,                // polynomial precond. degree ascent (0)
+             0,                // polynomial precond. degree coarse (0)
+             1.0,    // precision multiplier descent (< 0 forces max iters)
+             1.0,    // precision multiplier ascent (< 0 forces max iters)
+             1);     // requested precision multiplier coarse (default 1)
+
+        }
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Undefined iterative solver for solving %s equation.\n"
+                    " Please modify your settings."), eq->name);
+        break;
+      } // end of switch
+
+    } // Solver provided by Code_Saturne
+    break;
+
+  case CS_EQUATION_ALGO_PETSC_ITSOL:
+    {
+#if defined(HAVE_PETSC)
+
+      /* Initialization must be called before setting options;
+         it does not need to be called before calling
+         cs_sles_petsc_define(), as this is handled automatically. */
+
+      PetscBool is_initialized;
+      PetscInitialized(&is_initialized);
+      if (is_initialized == PETSC_FALSE) {
+        PETSC_COMM_WORLD = cs_glob_mpi_comm;
+        PetscInitializeNoArguments();
+      }
+
+      switch (eqp->itsol_info.solver) {
+
+      case CS_PARAM_ITSOL_CG:
+        switch (eqp->itsol_info.precond) {
+
+        case CS_PARAM_PRECOND_DIAG:
+          cs_sles_petsc_define(eq->field_id,
+                               NULL,
+                               MATMPIAIJ,
+                               _cg_diag_setup_hook,
+                               NULL);
+          break;
+        case CS_PARAM_PRECOND_SSOR:
+          cs_sles_petsc_define(eq->field_id,
+                               NULL,
+                               MATSEQAIJ, // Warning SEQ not MPI
+                               _cg_ssor_setup_hook,
+                               NULL);
+          break;
+        case CS_PARAM_PRECOND_ICC0:
+          cs_sles_petsc_define(eq->field_id,
+                               NULL,
+                               MATSEQAIJ, // Warning SEQ not MPI
+                               _cg_icc_setup_hook,
+                               NULL);
+          break;
+
+        case CS_PARAM_PRECOND_AMG:
+          {
+            int  amg_type = 1;
+
+            if (amg_type == 0) { // GAMG
+
+              PetscOptionsSetValue("-pc_gamg_agg_nsmooths", "1");
+              PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
+              PetscOptionsSetValue("-mg_levels_pc_type", "sor");
+              PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
+              PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
+              PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
+              PetscOptionsSetValue("-pc_gamg_square_graph", "4");
+
+              cs_sles_petsc_define(eq->field_id,
+                                   NULL,
+                                   MATMPIAIJ,
+                                   _cg_gamg_setup_hook,
+                                   NULL);
+
+            }
+            else if (amg_type == 1) { // Boomer AMG (hypre)
+
+              PetscOptionsSetValue("-pc_type", "hypre");
+              PetscOptionsSetValue("-pc_hypre_type","boomeramg");
+              PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
+              PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type","ext+i-cc");
+              PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl","2");
+              PetscOptionsSetValue("-pc_hypre_boomeramg_P_max","4");
+              PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
+              PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
+
+              cs_sles_petsc_define(eq->field_id,
+                                   NULL,
+                                   MATMPIAIJ,
+                                   _cg_bamg_setup_hook,
+                                   NULL);
+
+            }
+
+          }
+          break;
+        case CS_PARAM_PRECOND_AS:
+          cs_sles_petsc_define(eq->field_id,
+                               NULL,
+                               MATMPIAIJ,
+                               _cg_as_setup_hook,
+                               NULL);
+          break;
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    " Couple (solver, preconditioner) not handled with PETSc.");
+          break;
+
+        } // switch on PETSc preconditionner
+        break;
+
+      case CS_PARAM_ITSOL_GMRES:
+
+        switch (eqp->itsol_info.precond) {
+        case CS_PARAM_PRECOND_ILU0:
+          cs_sles_petsc_define(eq->field_id,
+                               NULL,
+                               MATSEQAIJ, // Warning SEQ not MPI
+                               _gmres_ilu_setup_hook,
+                               NULL);
+          break;
+        case CS_PARAM_PRECOND_DIAG:
+          cs_sles_petsc_define(eq->field_id,
+                               NULL,
+                               MATMPIAIJ,
+                               _gmres_bjacobi_setup_hook,
+                               NULL);
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    " Couple (solver, preconditioner) not handled with PETSc.");
+          break;
+
+        } // switch on PETSc preconditionner
+        break;
+
+      case CS_PARAM_ITSOL_BICG:
+
+        switch (eqp->itsol_info.precond) {
+        case CS_PARAM_PRECOND_ILU0:
+          cs_sles_petsc_define(eq->field_id,
+                               NULL,
+                               MATSEQAIJ, // Warning SEQ not MPI
+                               _bicg_ilu_setup_hook,
+                               NULL);
+          break;
+        case CS_PARAM_PRECOND_DIAG:
+          cs_sles_petsc_define(eq->field_id,
+                               NULL,
+                               MATMPIAIJ,
+                               _bicg_bjacobi_setup_hook,
+                               NULL);
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    " Couple (solver, preconditioner) not handled with PETSc.");
+          break;
+
+        } // switch on PETSc preconditionner
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, " Solver not handled.");
+        break;
+
+      } // switch on PETSc solver
+#else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" PETSC algorithms used to solve %s are not linked.\n"
+                  " Please install Code_Saturne with PETSc."), eq->name);
+
+#endif // HAVE_PETSC
+    } // Solver provided by PETSc
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Algorithm requested to solve %s is not implemented yet.\n"
+                " Please modify your settings."), eq->name);
+    break;
+
+  } // end switch on algorithms
+
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Given its name, get the id related to a cs_mesh_location_t structure
@@ -1392,7 +1649,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
   if (eq == NULL)
     return;
 
-  const cs_equation_param_t  *eqp = eq->param;
+  cs_equation_param_t  *eqp = eq->param;
 
   /* Set timer statistics */
   if (eqp->verbosity > 0) {
@@ -1458,252 +1715,17 @@ cs_equation_last_setup(cs_equation_t  *eq)
     break;
   }
 
+  /* Advanced setup according to the type of discretization */
+  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB) {
+
+    if (eqp->flag & CS_EQUATION_REACTION)
+      if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_WBS)
+        eqp->flag |= CS_EQUATION_HCONF_ST;
+
+  }
 
   /* Initialize cs_sles_t structure */
-  const cs_equation_algo_t  algo = eqp->algo_info;
-  const cs_param_itsol_t  itsol = eqp->itsol_info;
-
-  switch (algo.type) {
-  case CS_EQUATION_ALGO_CS_ITSOL:
-    {
-      int  poly_degree = 0; // by default: Jacobi preconditioner
-
-      if (itsol.precond == CS_PARAM_PRECOND_POLY1)
-        poly_degree = 1;
-
-      if (itsol.precond != CS_PARAM_PRECOND_POLY1 &&
-          itsol.precond != CS_PARAM_PRECOND_DIAG)
-        bft_error(__FILE__, __LINE__, 0,
-                  " Incompatible preconditioner with Code_Saturne solvers.\n"
-                  " Please change your settings (try PETSc ?)");
-
-      switch (itsol.solver) { // Type of iterative solver
-      case CS_PARAM_ITSOL_CG:
-        cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
-                          NULL,
-                          CS_SLES_PCG,
-                          poly_degree,
-                          itsol.n_max_iter);
-        break;
-      case CS_PARAM_ITSOL_BICG:
-        cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
-                          NULL,
-                          CS_SLES_BICGSTAB2,
-                          poly_degree,
-                          itsol.n_max_iter);
-        break;
-      case CS_PARAM_ITSOL_GMRES:
-        cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
-                          NULL,
-                          CS_SLES_GMRES,
-                          poly_degree,
-                          itsol.n_max_iter);
-        break;
-      case CS_PARAM_ITSOL_AMG:
-        {
-          cs_multigrid_t  *mg = cs_multigrid_define(eq->field_id,
-                                                    NULL);
-
-          /* Advanced setup (default is specified inside the brackets) */
-          cs_multigrid_set_solver_options
-            (mg,
-             CS_SLES_JACOBI,   // descent smoother type (CS_SLES_PCG)
-             CS_SLES_JACOBI,   // ascent smoother type (CS_SLES_PCG)
-             CS_SLES_PCG,      // coarse solver type (CS_SLES_PCG)
-             itsol.n_max_iter, // n max cycles (100)
-             5,                // n max iter for descent (10)
-             5,                // n max iter for asscent (10)
-             1000,             // n max iter coarse solver (10000)
-             0,                // polynomial precond. degree descent (0)
-             0,                // polynomial precond. degree ascent (0)
-             0,                // polynomial precond. degree coarse (0)
-             1.0,    // precision multiplier descent (< 0 forces max iters)
-             1.0,    // precision multiplier ascent (< 0 forces max iters)
-             1);     // requested precision multiplier coarse (default 1)
-
-        }
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" Undefined iterative solver for solving %s equation.\n"
-                    " Please modify your settings."), eq->name);
-        break;
-      } // end of switch
-
-    } // Solver provided by Code_Saturne
-    break;
-
-  case CS_EQUATION_ALGO_PETSC_ITSOL:
-    {
-#if defined(HAVE_PETSC)
-
-      /* Initialization must be called before setting options;
-         it does not need to be called before calling
-         cs_sles_petsc_define(), as this is handled automatically. */
-
-      PetscBool is_initialized;
-      PetscInitialized(&is_initialized);
-      if (is_initialized == PETSC_FALSE) {
-        PETSC_COMM_WORLD = cs_glob_mpi_comm;
-        PetscInitializeNoArguments();
-      }
-
-      switch (eqp->itsol_info.solver) {
-
-      case CS_PARAM_ITSOL_CG:
-        switch (eqp->itsol_info.precond) {
-
-        case CS_PARAM_PRECOND_DIAG:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATMPIAIJ,
-                               _cg_diag_setup_hook,
-                               NULL);
-          break;
-        case CS_PARAM_PRECOND_SSOR:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATSEQAIJ,
-                               _cg_ssor_setup_hook,
-                               NULL);
-          break;
-        case CS_PARAM_PRECOND_ICC0:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATSEQAIJ, // Warning SEQ not MPI
-                               _cg_icc_setup_hook,
-                               NULL);
-          break;
-
-        case CS_PARAM_PRECOND_AMG:
-          {
-            int  amg_type = 1;
-
-            if (amg_type == 0) { // GAMG
-
-              PetscOptionsSetValue("-pc_gamg_agg_nsmooths", "1");
-              PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
-              PetscOptionsSetValue("-mg_levels_pc_type", "sor");
-              PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
-              PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
-              PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
-              PetscOptionsSetValue("-pc_gamg_square_graph", "4");
-
-              cs_sles_petsc_define(eq->field_id,
-                                   NULL,
-                                   MATMPIAIJ,
-                                   _cg_gamg_setup_hook,
-                                   NULL);
-
-            }
-            else if (amg_type == 1) { // Boomer AMG (hypre)
-
-              PetscOptionsSetValue("-pc_type", "hypre");
-              PetscOptionsSetValue("-pc_hypre_type","boomeramg");
-              PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
-              PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type","ext+i-cc");
-              PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl","2");
-              PetscOptionsSetValue("-pc_hypre_boomeramg_P_max","4");
-              PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
-              PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
-
-              cs_sles_petsc_define(eq->field_id,
-                                   NULL,
-                                   MATMPIAIJ,
-                                   _cg_bamg_setup_hook,
-                                   NULL);
-
-            }
-
-          }
-          break;
-        case CS_PARAM_PRECOND_AS:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATMPIAIJ,
-                               _cg_as_setup_hook,
-                               NULL);
-          break;
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    " Couple (solver, preconditioner) not handled with PETSc.");
-          break;
-
-        } // switch on PETSc preconditionner
-        break;
-
-      case CS_PARAM_ITSOL_GMRES:
-
-        switch (eqp->itsol_info.precond) {
-        case CS_PARAM_PRECOND_ILU0:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATSEQAIJ, // Warning SEQ not MPI
-                               _gmres_ilu_setup_hook,
-                               NULL);
-          break;
-        case CS_PARAM_PRECOND_DIAG:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATMPIAIJ,
-                               _gmres_bjacobi_setup_hook,
-                               NULL);
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    " Couple (solver, preconditioner) not handled with PETSc.");
-          break;
-
-        } // switch on PETSc preconditionner
-        break;
-
-      case CS_PARAM_ITSOL_BICG:
-
-        switch (eqp->itsol_info.precond) {
-        case CS_PARAM_PRECOND_ILU0:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATSEQAIJ, // Warning SEQ not MPI
-                               _bicg_ilu_setup_hook,
-                               NULL);
-          break;
-        case CS_PARAM_PRECOND_DIAG:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATMPIAIJ,
-                               _bicg_bjacobi_setup_hook,
-                               NULL);
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    " Couple (solver, preconditioner) not handled with PETSc.");
-          break;
-
-        } // switch on PETSc preconditionner
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, " Solver not handled.");
-        break;
-
-      } // switch on PETSc solver
-#else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" PETSC algorithms used to solve %s are not linked.\n"
-                  " Please install Code_Saturne with PETSc."), eq->name);
-
-#endif // HAVE_PETSC
-    } // Solver provided by PETSc
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Algorithm requested to solve %s is not implemented yet.\n"
-                " Please modify your settings."), eq->name);
-    break;
-
-  } // end switch on algorithms
+  _sles_initialization(eq);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);

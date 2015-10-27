@@ -119,10 +119,17 @@ struct _cs_cdovb_codits_t {
   cs_lnum_t          *v_z2i_ids;  // Mapping n_dof_vertices -> n_vertices
   cs_lnum_t          *v_i2z_ids;  // Mapping n_vertices     -> n_dof_vertices
 
+  /* Source terms */
+  cs_real_t          *source_terms;
+
+  /* Hodge^{VpCd,Conf} : only if reaction with the same algo for the discrete
+     Hodge is used (in all cases, the matrix index is shared) */
+  bool                build_hvpcd_conf;
+  cs_sla_matrix_t    *hvpcd_conf;
+
   /* Work buffer */
   cs_lnum_t          *vtag;       /* size: n_vertices, store the local vertex id
                                      or -1 if not activated */
-  cs_real_t          *source_terms;
   cs_real_t          *work;
 
 };
@@ -419,6 +426,50 @@ _add_source_terms(const cs_mesh_t            *m,
 
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute a discrete Hodge op. Vp-->Cd using conforming reco. op.
+ *
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step   pointer to a time step structure
+ * \param[in, out] builder     pointer to a cs_cdovb_codits_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_hvpcd_conf(const cs_cdo_connect_t     *connect,
+                  const cs_cdo_quantities_t  *quant,
+                  const cs_time_step_t       *time_step,
+                  cs_cdovb_codits_t          *builder)
+{
+  cs_param_hodge_t  h_info = {.pty_id = 0, // unity
+                              .inv_pty = false,
+                              .type = CS_PARAM_HODGE_TYPE_VPCD,
+                              .algo = CS_PARAM_HODGE_ALGO_WBS,
+                              .coef = 1}; // not useful in this context
+  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, time_step, h_info);
+
+  builder->build_hvpcd_conf = true;
+
+  /* Initialize matrix structure */
+  builder->hvpcd_conf = cs_sla_matrix_create_from_index(builder->v2v,
+                                                        CS_SLA_MAT_MSR,
+                                                        true,  // sorted
+                                                        1);    // stride
+
+  for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    cs_locmat_t  *hloc = cs_hodge_build_local(c_id, connect, quant, hb);
+
+    cs_sla_assemble_msr_sym(hloc, builder->hvpcd_conf, false);
+
+  }
+
+  /* Free memory */
+  hb = cs_hodge_builder_free(hb);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1277,15 +1328,17 @@ cs_cdovb_codits_init(const cs_equation_param_t  *eqp,
 
   } /* Strong enforcement of BCs */
 
-  /* Work buffer */
+  /* Members of the structure related to source terms */
   BFT_MALLOC(builder->source_terms, builder->n_vertices, cs_real_t);
+  builder->build_hvpcd_conf = false;
+  builder->hvpcd_conf = NULL;
 
+  /* Work buffers */
+  BFT_MALLOC(builder->work, 3*n_vertices, cs_real_t);
   /* Initialize tags */
   BFT_MALLOC(builder->vtag, n_vertices, cs_lnum_t);
   for (i = 0; i < n_vertices; i++)
     builder->vtag[i] = -1;
-
-  BFT_MALLOC(builder->work, 3*n_vertices, cs_real_t);
 
   return builder;
 }
@@ -1317,6 +1370,9 @@ cs_cdovb_codits_free(void   *builder)
 
   /* Free connectivity index */
   cs_index_free(&(_builder->v2v));
+
+  /* Free Hodge operator defined from conforming reconstruction op. */
+  _builder->hvpcd_conf = cs_sla_matrix_free(_builder->hvpcd_conf);
 
   /* Renumbering (if strong enforcement of BCs for instance) */
   if (_builder->n_vertices > _builder->n_dof_vertices) {
@@ -1350,39 +1406,59 @@ cs_cdovb_codits_compute_source(const cs_cdo_connect_t     *connect,
                                void                       *builder)
 {
   cs_lnum_t  i;
+  cs_flag_t  stag;
   cs_cdovb_codits_t  *bld = (cs_cdovb_codits_t *)builder;
 
   const cs_equation_param_t  *eqp = bld->eqp;
 
-  if (eqp->n_source_terms > 0) { /* Add contribution from source terms */
+  double  *st_eval = bld->work;
 
-    for (i = 0; i < bld->n_vertices; i++)
-      bld->source_terms[i] = 0;
+  for (i = 0; i < bld->n_vertices; i++)
+    bld->source_terms[i] = 0;
+
+  if (eqp->flag & CS_EQUATION_HCONF_ST) {
+    stag = CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
+
+    if (!bld->build_hvpcd_conf)
+      _build_hvpcd_conf(connect, quant, time_step, bld);
+
+  }
+  else
+    stag = CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_SCAL;
+
+  if (eqp->n_source_terms > 0) { /* Add contribution from source terms */
 
     for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
 
       const cs_param_source_term_t  st = eqp->source_terms[st_id];
-
-      double  *contrib = bld->work + bld->n_vertices;
-      cs_flag_t  dof_flag =
-        CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_SCAL;
 
       /* Sanity check */
       assert(st.var_type == CS_PARAM_VAR_SCAL);
 
       cs_evaluate(quant, connect,  // geometrical and topological info.
                   time_step,
-                  dof_flag,
+                  stag,
                   st.ml_id,
                   st.def_type,
                   st.quad_type,
                   st.use_subdiv,
                   st.def,             // definition of the explicit part
-                  &contrib);          // updated inside this function
+                  &st_eval);          // updated inside this function
 
       /* Update source term array */
-      for (i = 0; i < bld->n_vertices; i++)
-        bld->source_terms[i] += contrib[i];
+      if (eqp->flag & CS_EQUATION_HCONF_ST) {
+
+        double  *mv = bld->work + bld->n_vertices;
+
+        cs_sla_matvec(bld->hvpcd_conf, st_eval, &mv, true);
+        for (i = 0; i < bld->n_vertices; i++)
+          bld->source_terms[i] += mv[i];
+
+      }
+      else {
+        for (i = 0; i < bld->n_vertices; i++)
+          bld->source_terms[i] += st_eval[i];
+      }
 
     } // Loop on source terms
 
