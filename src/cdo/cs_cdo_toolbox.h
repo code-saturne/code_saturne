@@ -208,9 +208,9 @@ _cp3(const cs_real_3_t    u,
 /*----------------------------------------------------------------------------*/
 
 void
-_mv3(const cs_real_33_t   m,
-     const cs_real_3_t    v,
-     cs_real_3_t         *mv);
+_mv3(const cs_real_t     m[3][3],
+     const cs_real_t     v[3],
+     cs_real_t           mv[3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -223,7 +223,7 @@ _mv3(const cs_real_33_t   m,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-_detmat33(const cs_real_33_t   m);
+_detmat33(const cs_real_t   m[3][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -235,8 +235,8 @@ _detmat33(const cs_real_33_t   m);
 /*----------------------------------------------------------------------------*/
 
 void
-_invmat33(const cs_real_33_t   in,
-          cs_real_33_t        *inv);
+_invmat33(const cs_real_t   in[3][3],
+          cs_real_t         inv[3][3]);
 
 /*============================================================================
  * Public function prototypes
@@ -291,7 +291,7 @@ cs_qvect(const cs_real_3_t    v,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_eigen_mat33(const cs_real_33_t  m,
+cs_eigen_mat33(const cs_real_t     m[3][3],
                cs_real_t          *eig_ratio,
                cs_real_t          *eig_max);
 

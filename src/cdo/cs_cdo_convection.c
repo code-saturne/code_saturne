@@ -87,7 +87,7 @@ struct _convection_builder_t {
   bool                    with_diffusion;
 
   /* Diffusion parameters is used if needed to compute the Peclet number */
-  cs_real_33_t            matpty;
+  cs_real_t               matpty[3][3];
   int                     diff_pty_id;  /* Diffusion property id */
   bool                    diff_uniform; /* True if diffusion pty is uniform */
   bool                    inv_diff_pty; /* True if one needs to invert the
@@ -379,7 +379,7 @@ _init_with_diffusion(cs_lnum_t                    c_id,
         dface.unitv[k] = inv_val*qdf.vect[k];
 
       _crit = b->adv_field.meas * _dp3(b->adv_field.unitv, dface.unitv);
-      _mv3(b->matpty, dface.unitv, &matnu);
+      _mv3((const cs_real_t (*)[3])b->matpty, dface.unitv, matnu);
       inv_diff = 1/_dp3(dface.unitv, matnu);
       b->criter[id] = quant->edge[e_id].meas * _crit * inv_diff;
       b->fluxes[id] = dface.meas *_crit;
@@ -425,7 +425,7 @@ _init_with_diffusion(cs_lnum_t                    c_id,
                   " criterion.");
       }
 
-      _mv3(b->matpty, dface.unitv, &matnu);
+      _mv3((const cs_real_t (*)[3])b->matpty, dface.unitv, matnu);
       inv_diff = 1/_dp3(dface.unitv, matnu);
       b->criter[id] = qe.meas * _crit * inv_diff;
       b->fluxes[id] = beta_flx;
@@ -1019,7 +1019,7 @@ cs_convection_get_peclet_cell(const cs_cdo_quantities_t   *cdoq,
                               cs_real_t                    t_cur,
                               cs_real_t                   *p_peclet[])
 {
-  cs_real_33_t  matpty;
+  cs_real_t  matpty[3][3];
   cs_real_3_t  beta_c, ptydir;
 
   cs_real_3_t  xc = {0, 0, 0};
@@ -1054,7 +1054,7 @@ cs_convection_get_peclet_cell(const cs_cdo_quantities_t   *cdoq,
     cs_real_t  hc = pow(cdoq->cell_vol[c_id], one_third);
     cs_real_t  dp = _dp3(beta_c, dir_vect);
 
-    _mv3(matpty, dir_vect, &ptydir);
+    _mv3((const cs_real_t (*)[3])matpty, dir_vect, ptydir);
 
     cs_real_t  inv_denum = 1/(_dp3(dir_vect, ptydir));
 

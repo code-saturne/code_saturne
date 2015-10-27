@@ -324,13 +324,13 @@ _cp3(const cs_real_3_t   u,
 /*----------------------------------------------------------------------------*/
 
 inline void
-_mv3(const cs_real_33_t  m,
-     const cs_real_3_t   v,
-     cs_real_3_t        *mv)
+_mv3(const cs_real_t     m[3][3],
+     const cs_real_t     v[3],
+     cs_real_t           mv[3])
 {
-  mv[0][0] = m[0][0]*v[0] + m[0][1]*v[1] + m[0][2]*v[2];
-  mv[0][1] = m[1][0]*v[0] + m[1][1]*v[1] + m[1][2]*v[2];
-  mv[0][2] = m[2][0]*v[0] + m[2][1]*v[1] + m[2][2]*v[2];
+  mv[0] = m[0][0]*v[0] + m[0][1]*v[1] + m[0][2]*v[2];
+  mv[1] = m[1][0]*v[0] + m[1][1]*v[1] + m[1][2]*v[2];
+  mv[2] = m[2][0]*v[0] + m[2][1]*v[1] + m[2][2]*v[2];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -344,7 +344,7 @@ _mv3(const cs_real_33_t  m,
 /*----------------------------------------------------------------------------*/
 
 inline cs_real_t
-_detmat33(const cs_real_33_t   m)
+_detmat33(const cs_real_t   m[3][3])
 {
   cs_real_t  com0 = m[1][1]*m[2][2] - m[2][1]*m[1][2];
   cs_real_t  com1 = m[2][1]*m[0][2] - m[0][1]*m[2][2];
@@ -363,31 +363,31 @@ _detmat33(const cs_real_33_t   m)
 /*----------------------------------------------------------------------------*/
 
 inline void
-_invmat33(const cs_real_33_t   in,
-          cs_real_33_t        *inv)
+_invmat33(const cs_real_t   in[3][3],
+          cs_real_t         inv[3][3])
 {
   int  k, l;
   double  det, invdet;
 
-  inv[0][0][0] = in[1][1]*in[2][2] - in[2][1]*in[1][2];
-  inv[0][0][1] = in[2][1]*in[0][2] - in[0][1]*in[2][2];
-  inv[0][0][2] = in[0][1]*in[1][2] - in[1][1]*in[0][2];
+  inv[0][0] = in[1][1]*in[2][2] - in[2][1]*in[1][2];
+  inv[0][1] = in[2][1]*in[0][2] - in[0][1]*in[2][2];
+  inv[0][2] = in[0][1]*in[1][2] - in[1][1]*in[0][2];
 
-  inv[0][1][0] = in[2][0]*in[1][2] - in[1][0]*in[2][2];
-  inv[0][1][1] = in[0][0]*in[2][2] - in[2][0]*in[0][2];
-  inv[0][1][2] = in[1][0]*in[0][2] - in[0][0]*in[1][2];
+  inv[1][0] = in[2][0]*in[1][2] - in[1][0]*in[2][2];
+  inv[1][1] = in[0][0]*in[2][2] - in[2][0]*in[0][2];
+  inv[1][2] = in[1][0]*in[0][2] - in[0][0]*in[1][2];
 
-  inv[0][2][0] = in[1][0]*in[2][1] - in[2][0]*in[1][1];
-  inv[0][2][1] = in[2][0]*in[0][1] - in[0][0]*in[2][1];
-  inv[0][2][2] = in[0][0]*in[1][1] - in[1][0]*in[0][1];
+  inv[2][0] = in[1][0]*in[2][1] - in[2][0]*in[1][1];
+  inv[2][1] = in[2][0]*in[0][1] - in[0][0]*in[2][1];
+  inv[2][2] = in[0][0]*in[1][1] - in[1][0]*in[0][1];
 
-  det = in[0][0]*inv[0][0][0] + in[1][0]*inv[0][0][1] + in[2][0]*inv[0][0][2];
+  det = in[0][0]*inv[0][0] + in[1][0]*inv[0][1] + in[2][0]*inv[0][2];
   assert(fabs(det) > DBL_MIN*1e3);  /* inversibility ? */
   invdet = 1 / det;
 
   for (k = 0; k < 3; k++)
     for (l = 0; l < 3; l++)
-      inv[0][k][l] *= invdet;
+      inv[k][l] *= invdet;
 }
 
 /*============================================================================
@@ -481,7 +481,7 @@ cs_qvect(const cs_real_3_t    v,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_eigen_mat33(const cs_real_33_t  m,
+cs_eigen_mat33(const cs_real_t     m[3][3],
                cs_real_t          *eig_ratio,
                cs_real_t          *eig_max)
 {
@@ -506,7 +506,7 @@ cs_eigen_mat33(const cs_real_33_t  m,
   else { // m is not diagonal
 
     cs_real_t  theta;
-    cs_real_33_t  n;
+    cs_real_t  n[3][3];
 
     cs_real_t  tr = _overdim*(m[0][0] + m[1][1] + m[2][2]);
 
@@ -527,7 +527,7 @@ cs_eigen_mat33(const cs_real_33_t  m,
 
     /* r should be between -1 and 1 but truncation error and bad conditionning
        can lead to slighty under/over-shoot */
-    cs_real_t  r = 0.5 * _detmat33(n);
+    cs_real_t  r = 0.5 * _detmat33((const cs_real_t (*)[3])n);
     cs_real_t  pi = 4*atan(1.0);
 
     if (r <= -1)

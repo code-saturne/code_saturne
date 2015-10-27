@@ -517,7 +517,7 @@ _compute_cost_quant(int                     n_loc_ent,
     hq->invsvol[i] = 3./dpq; /* 1/subvol where subvol = 1/d * dpq */
 
     /* Compute diagonal entries */
-    _mv3(matval, dq[i].unitv, &mdq_i);
+    _mv3(matval, dq[i].unitv, mdq_i);
     ii = i*n_loc_ent+i;
     hq->qmq[ii] = dq[i].meas * dq[i].meas * _dp3(dq[i].unitv, mdq_i);
     hq->T[ii] = dpq;
@@ -1080,7 +1080,7 @@ _build_using_voronoi(cs_lnum_t                    c_id,
   cs_locmat_t  *hl = hb->hloc;
 
   const cs_param_hodge_t  h_info = hb->h_info;
-  const cs_real_33_t ptymat = {
+  const cs_real_t ptymat[3][3] = {
     {hb->matval[0][0], hb->matval[0][1], hb->matval[0][2]},
     {hb->matval[1][0], hb->matval[1][1], hb->matval[1][2]},
     {hb->matval[2][0], hb->matval[2][1], hb->matval[2][2]}};
@@ -1105,10 +1105,10 @@ _build_using_voronoi(cs_lnum_t                    c_id,
         hl->ids[ii] = e_id;
 
         /* First sub-triangle contribution */
-        _mv3(ptymat, dfq.unitv, &mv);
+        _mv3(ptymat, dfq.unitv, mv);
         contrib = dfq.meas[0] * _dp3(mv, dfq.unitv);
         /* Second sub-triangle contribution */
-        _mv3(ptymat, dfq.unitv + 3, &mv);
+        _mv3(ptymat, dfq.unitv + 3, mv);
         contrib += dfq.meas[1] * _dp3(mv, dfq.unitv + 3);
 
         /* Only a diagonal term */
@@ -1135,7 +1135,7 @@ _build_using_voronoi(cs_lnum_t                    c_id,
 
         for (k = 0; k < 3; k++)
           un[k] = quant->dedge[1+4*i+k];
-        _mv3(ptymat, un, &mv);
+        _mv3(ptymat, un, mv);
 
         /* Only a diagonal term */
         hl->mat[ii*hl->n_ent+ii] = len * _dp3(mv, un) / surf;

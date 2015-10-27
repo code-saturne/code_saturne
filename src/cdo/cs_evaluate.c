@@ -730,7 +730,7 @@ cs_evaluate_pty(int                pty_id,
         {matval[0][1][0], matval[0][1][1], matval[0][1][2]},
         {matval[0][2][0], matval[0][2][1], matval[0][2][2]}};
 
-      _invmat33(ptyval, &invmat);
+      _invmat33(ptyval, invmat);
       for (k = 0; k < 3; k++)
         for (l = 0; l < 3; l++)
           matval[0][k][l] = invmat[k][l];

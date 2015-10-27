@@ -764,7 +764,7 @@ _add_diffusion_bc(const cs_mesh_t            *m,
   cs_lnum_t  i, ie, j, k, _id, v_id;
   cs_real_t  surf, eig_ratio, eig_max, pena_coef;
   cs_real_3_t  xyz, mn, reco_val;
-  cs_real_33_t  matpty;
+  cs_real_t  matpty[3][3];
 
   short int  *loc_e_id = NULL;
   cs_real_t  *over_pec_vol = NULL, *_vec = NULL, *_matvec = NULL;
@@ -818,7 +818,7 @@ _add_diffusion_bc(const cs_mesh_t            *m,
                     h_info.inv_pty,
                     &matpty);
 
-    cs_eigen_mat33(matpty, &eig_ratio, &eig_max);
+    cs_eigen_mat33((const cs_real_t (*)[3])matpty, &eig_ratio, &eig_max);
   }
 
   const double  beta = h_info.coef;
@@ -846,13 +846,13 @@ _add_diffusion_bc(const cs_mesh_t            *m,
                       h_info.inv_pty,
                       &matpty);
 
-      cs_eigen_mat33(matpty, &eig_ratio, &eig_max);
+      cs_eigen_mat33((const cs_real_t (*)[3])matpty, &eig_ratio, &eig_max);
     }
 
     cs_real_t  f_coef = pow(qf.meas, -0.5) * eig_ratio * eig_max;
 
     /* Compute the product: matpty*face unit normal */
-    _mv3(matpty, qf.unitv, &mn);
+    _mv3((const cs_real_t (*)[3])matpty, qf.unitv, mn);
 
     /* Define an id local to this cell for each vertex */
     for (j = c2v->idx[c_id], _id = 0; j < c2v->idx[c_id+1]; j++, _id++) {
