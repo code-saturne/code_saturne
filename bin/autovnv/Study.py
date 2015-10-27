@@ -1107,6 +1107,12 @@ class Studies(object):
         Stop if you try to make a comparison with a file which does not exist.
         """
         for l, s in self.studies:
+            # reference directory passed in autovnv command line overwrites
+            # destination in all cases (even if compare is defined by a compare
+            # markup with a non empty destination)
+            ref = None
+            if self.__ref:
+                ref = os.path.join(self.__ref, s.label)
             for case in s.Cases:
                 if case.compare == 'on' and case.is_run != "KO":
                     compare, nodes, repo, dest, threshold, args = self.__parser.getCompare(case.node)
@@ -1117,16 +1123,13 @@ class Studies(object):
                                 is_checked = True
                                 if destination == False:
                                     dest[i]= None
-                                case.check_dirs(self, nodes[i], repo[i], dest[i])
+                                case.check_dirs(self, nodes[i], repo[i], dest[i], reference=ref)
                     if not compare or not is_checked:
                         node = None
                         repo = ""
                         dest = ""
                         if destination == False:
                             dest = None
-                        ref = None
-                        if self.__ref:
-                            ref = os.path.join(self.__ref, s.label)
                         case.check_dirs(self, node, repo, dest, reference=ref)
 
 
@@ -1137,6 +1140,12 @@ class Studies(object):
         if self.__compare:
             for l, s in self.studies:
                 self.reporting('  o Compare study: ' + l)
+                # reference directory passed in autovnv command line overwrites
+                # destination in all cases (even if compare is defined by a
+                # compare markup with a non empty destination)
+                ref = None
+                if self.__ref:
+                    ref = os.path.join(self.__ref, s.label)
                 for case in s.Cases:
                     if case.compare == 'on' and case.is_run != "KO":
                         is_compare, nodes, repo, dest, t, args = self.__parser.getCompare(case.node)
@@ -1144,17 +1153,18 @@ class Studies(object):
                             for i in range(len(nodes)):
                                 if is_compare[i]:
                                     case.is_compare = "done"
-                                    self.reporting('    - compare %s (with args: %s)' % (case.label, args[i]))
-                                    case.diff_value += case.runCompare(self, repo[i], dest[i], t[i], args[i])
+                                    diff_value = case.runCompare(self, repo[i], dest[i], t[i], args[i], reference=ref)
+                                    case.diff_value += diff_value
+                                    if diff_value:
+                                        self.reporting('    - compare %s (with args: %s) --> DIFFERENCES FOUND' % (case.label, args[i]))
+                                    else:
+                                        self.reporting('    - compare %s (with args: %s) --> NO DIFFERENCES FOUND' % (case.label, args[i]))
                         if not is_compare or case.is_compare != "done":
                             repo = ""
                             dest = ""
                             t    = None
                             args = None
                             case.is_compare = "done"
-                            ref = None
-                            if self.__ref:
-                                ref = os.path.join(self.__ref, s.label)
                             case.diff_value += case.runCompare(self, repo, dest, t, args, reference=ref)
                             if case.diff_value:
                                 self.reporting('    - compare %s (default mode) --> DIFFERENCES FOUND' % (case.label))
