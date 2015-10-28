@@ -81,7 +81,6 @@ character(len=80) :: chaine
 integer          ivar  , iscal
 integer          iel
 integer          iclip , iok   , ii
-integer          ifcven, ifclam
 integer          kscmin, kscmax, keyvar, n_fields
 integer          f_id, f_id_prv, c_id, f_dim
 integer          iflid, iflidp
@@ -109,8 +108,8 @@ double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
 double precision, dimension(:), pointer :: cvar_phi, cvar_omg, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:,:), pointer :: cvar_rij
-double precision, dimension(:), pointer :: cvar_tempk, cvar_var
-double precision, dimension(:), pointer :: cpro_prtot, cpro_venerg, cpro_lambda
+double precision, dimension(:), pointer :: cvar_var
+double precision, dimension(:), pointer :: cpro_prtot
 
 !===============================================================================
 
@@ -408,21 +407,15 @@ if(iusini.eq.1.or.isuite.eq.1) then
     endif
     if (irangp.ge.0) then
       call parmin (x11min)
-      !==========
       call parmin (x22min)
-      !==========
       call parmin (x33min)
-      !==========
       call parmin (xepmin)
-      !==========
     endif
     if (x11min.ge.0.d0.and.x22min.ge.0.d0.and.                  &
          x33min.ge.0.d0.and.xepmin.ge.0.d0 ) then
       iclip = 1
       if (irijco.eq.0) then
-        call clprij( ncelet , ncel   , nvar   ,          &
-        !==========
-                     iclip  )
+        call clprij(ncelet, ncel, iclip)
       endif
     else
       write(nfecra,3030) x11min,x22min,x33min,xepmin

@@ -4861,11 +4861,6 @@ void CS_PROCF (cgdcel, CGDCEL)
        cs_real_3_t       grad[]       /* <-> gradient                         */
 )
 {
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_halo_t  *halo = mesh->halo;
-
-  cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
-
   cs_real_t *c_weight = (*ipond > 0) ? ktvar : NULL;
 
   bool recompute_cocg = (*iccocg) ? true : false;

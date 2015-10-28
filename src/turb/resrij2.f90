@@ -128,11 +128,10 @@ integer          ii    , jj    , kk    , iiun
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
-integer          nswrsp, ircflp, ischcp, isstpp, iescap
+integer          nswrsp, ircflp, ischcp, isstpp
 integer          st_prv_id
 integer          isoluc
-integer          imucpp, idftnp, iswdyp
-integer          ivar_r(3,3)
+integer          idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
 integer          dimrij
@@ -146,8 +145,6 @@ double precision ccorio, matrot(3,3)
 double precision rctse
 
 logical interleaved
-
-double precision rvoid(1)
 
 character(len=80) :: label
 double precision, allocatable, dimension(:) :: w1
@@ -597,9 +594,8 @@ if (igrari.eq.1) then
     enddo
   enddo
 
-  call rijthe2(nscal, ivar, gradro, w7)
+  call rijthe2(nscal, gradro, w7)
 
-  !==========
   do isou = 1, dimrij
     ! If we extrapolate the source terms: previous ST
     if (st_prv_id.ge.0) then

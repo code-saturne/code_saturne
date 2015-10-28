@@ -472,13 +472,13 @@ cs_gradient_perio_update_mesh(void)
 
 void
 cs_gradient_perio_init_rij(const cs_field_t  *f,
-                                  int               *tr_dim,
-                                  cs_real_3_t        grad[])
+                           int               *tr_dim,
+                           cs_real_3_t        grad[])
 {
   cs_lnum_t  d_var = -1;
   cs_mesh_t  *mesh = cs_glob_mesh;
 
-  if (f->name[0] == "r") {
+  if (f->name[0] == 'r') {
     if (strlen(f->name) == 3) {
       if (f->name[1] == '1') {
         if (f->name[2] == '1')

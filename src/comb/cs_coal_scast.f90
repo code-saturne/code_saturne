@@ -109,7 +109,6 @@ integer          ivar , iel
 integer          numcla , numcha , icla
 integer          ipcgch , ipcgd1 , ipcgd2 , ipcght , ipcsec
 integer          ipghco2 , ipghh2o
-integer          ixchcl , ixckcl
 integer          ipcro2 , ipcte1 , ipcte2 , ifcvsl
 integer          ipcdia
 integer          mode, ige

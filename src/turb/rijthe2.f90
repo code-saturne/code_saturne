@@ -37,14 +37,12 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     ivar          variable number
 !> \param[in]     gradro        work array for \f$ \grad{rom} \f$
 !> \param[in,out] smbr          work array for second member
 !______________________________________________________________________________!
 
 subroutine rijthe2 &
  ( nscal  ,                                                       &
-   ivar   ,                                                       &
    gradro , smbr   )
 
 !===============================================================================
@@ -66,7 +64,6 @@ implicit none
 ! Arguments
 
 integer          nscal
-integer          ivar
 
 double precision gradro(3,ncelet)
 double precision smbr(6,ncelet)
@@ -80,12 +77,11 @@ logical          interleaved
 double precision uns3, const, kseps, csttmp
 double precision prdtur, r1t, r2t, r3t
 double precision g11, g22, g33, g12, g13, g23, gkks3
-double precision g11p, g22p, g33p
 double precision phit11, phit22, phit33, phit12, phit13, phit23
-double precision aa, bb
 
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:,:), pointer :: cvara_rij
+
 !===============================================================================
 
 !===============================================================================
@@ -316,14 +312,12 @@ end subroutine rijthe2
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     ivar          variable number
 !> \param[in]     gradro        work array for \f$ \grad{rom} \f$
 !> \param[in,out] smbr          work array for second member
 !______________________________________________________________________________!
 
 subroutine rijtheps &
  ( nscal  ,                                                       &
-   ivar   ,                                                       &
    gradro , smbr   )
 
 !===============================================================================
@@ -345,26 +339,22 @@ implicit none
 ! Arguments
 
 integer          nscal
-integer          ivar
 
 double precision gradro(3,ncelet)
 double precision smbr(ncelet)
 
 ! Local variables
 
-integer          iel, dimrij, isou
+integer          iel
 
-logical          interleaved
-
-double precision uns3, const, kseps, csttmp
+double precision uns3, const, csttmp
 double precision prdtur, r1t, r2t, r3t
-double precision g11, g22, g33, g12, g13, g23, gkks3
 double precision g11p, g22p, g33p
-double precision phit11, phit22, phit33, phit12, phit13, phit23
 double precision aa, bb
 
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:,:), pointer :: cvara_rij
+
 !===============================================================================
 
 !===============================================================================

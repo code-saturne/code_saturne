@@ -461,7 +461,7 @@ if (igrari.eq.1) then
   enddo
 
   if(irijco.eq.1) then
-    call rijtheps(nscal, ivar, gradro, w7)
+    call rijtheps(nscal, gradro, w7)
   else
     call rijthe(nscal, ivar, gradro, w7)
   endif

@@ -134,8 +134,7 @@ integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp
 integer          st_prv_id
 integer          iprev , inc, iccocg, ll
-integer          imucpp, idftnp, iswdyp
-integer          ivar_r(3,3)
+integer          idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
 integer          dimrij
@@ -156,8 +155,6 @@ double precision pij, phiij1, phiij2, epsij
 double precision phiijw, epsijw
 double precision ccorio
 double precision rctse
-
-double precision rvoid(1)
 
 character(len=80) :: label
 double precision, allocatable, dimension(:,:) :: grad
@@ -691,8 +688,8 @@ if (igrari.eq.1) then
       w7(isou,iel) = 0.d0
     enddo
   enddo
-  call rijthe2(nscal, ivar, gradro, w7)
-  !==========
+  call rijthe2(nscal, gradro, w7)
+
   do isou = 1, dimrij
     ! If we extrapolate the source terms: previous ST
     if (st_prv_id.ge.0) then

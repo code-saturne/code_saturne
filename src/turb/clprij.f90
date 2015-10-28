@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 subroutine clprij &
- ( ncelet , ncel   , nvar   ,                                     &
+ ( ncelet , ncel   ,                                              &
    iclip  )
 
 !===============================================================================
@@ -38,7 +38,6 @@ subroutine clprij &
 !__________________!____!_____!________________________________________________!
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
-! nvar             ! e  ! <-- ! nombre de variables                            !
 ! iclip            ! e  ! <-- ! indicateur = 1 on n'utilise pas les champs au  !
 !                  !    !     !     pas de temps precedent (inivar)            !
 !                  !    !     !            sinon on peut (turrij)              !
@@ -68,7 +67,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar, ncelet, ncel
+integer          ncelet, ncel
 integer          iclip
 
 ! Local variables
@@ -288,9 +287,7 @@ end subroutine clprij
 !-------------------------------------------------------------------------------
 
 subroutine clprij2 &
-!================
-
- ( ncelet , ncel   , nvar   ,                                     &
+ ( ncelet , ncel   ,                                              &
    iclip  )
 
 !===============================================================================
@@ -307,7 +304,6 @@ subroutine clprij2 &
 !__________________!____!_____!________________________________________________!
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
-! nvar             ! e  ! <-- ! nombre de variables                            !
 ! iclip            ! e  ! <-- ! indicateur = 1 on n'utilise pas les champs au  !
 !                  !    !     !     pas de temps precedent (inivar)            !
 !                  !    !     !            sinon on peut (turrij)              !
@@ -337,11 +333,10 @@ implicit none
 
 ! Arguments
 
-integer          nvar, ncelet, ncel
+integer          ncelet, ncel
 integer          iclip
 
 ! Local variables
-character(len=16) :: fname
 integer          iel, ivar, ivar1, ivar2, isou, icltot, iclpep(1)
 integer          is_clipped
 integer          iclrij(6),iclrij_max(6), iclep_max(1)
@@ -472,10 +467,10 @@ do iel = 1, ncel
   icltot = icltot + is_clipped
 enddo
 
-call log_iteration_clipping_field(ivarfl(irij), icltot, 0,  &
-                                       vmin, vmax,iclrij,iclrij_max)
-call log_iteration_clipping_field(ivarfl(iep), iclpep(1), 0,  &
-                                    vmin(7), vmax(7),iclpep, iclep_max)
+call log_iteration_clipping_field(ivarfl(irij), icltot, 0,      &
+                                  vmin, vmax,iclrij,iclrij_max)
+call log_iteration_clipping_field(ivarfl(iep), iclpep(1), 0,    &
+                                  vmin(7), vmax(7),iclpep, iclep_max)
 
 return
 

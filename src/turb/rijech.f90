@@ -74,13 +74,13 @@ double precision smbr(ncelet)
 
 ! Local variables
 
-integer          ifacpt, iel   , ii    , jj    , kk    , mm
+integer          iel   , ii    , jj    , kk    , mm
 integer          iskm  , iski  , iskj
 integer          ifac
 integer          inc   , iccocg, f_id0
 
 double precision cmu075, distxn, d2s3  , trrij , xk
-double precision unssur, vnk   , vnm   , vni   , vnj
+double precision vnk   , vnm   , vni   , vnj
 double precision deltki, deltkj, deltkm, deltij
 double precision aa    , bb    , xnorme
 
@@ -475,13 +475,13 @@ double precision smbr(6,ncelet)
 
 ! Local variables
 
-integer          ifacpt, iel   , ii    , jj    , kk    , mm
+integer          iel   , ii    , jj    , kk    , mm
 integer          iskm  , iski  , iskj
 integer          ifac
 integer          inc   , iccocg, f_id0
 
 double precision cmu075, distxn, d2s3  , trrij , xk
-double precision unssur, vnk   , vnm   , vni   , vnj
+double precision vnk   , vnm   , vni   , vnj
 double precision deltki, deltkj, deltkm, deltij(6)
 double precision aa    , bb    , xnorme
 

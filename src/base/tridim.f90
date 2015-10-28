@@ -1320,7 +1320,7 @@ do while (iterns.le.nterup)
 
     ! Pas d'amortissement si pas de paroi
     if (infpar.gt.0) then
-      call vandri(itypfb, visvdr, yplpar)
+      call vandri(visvdr, yplpar)
     endif
 
   endif

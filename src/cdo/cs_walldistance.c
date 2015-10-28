@@ -144,7 +144,7 @@ _compute_cdofb(const cs_cdo_connect_t     *connect,
   bft_printf("\n -bnd- WallDistance.Max   % 10.6e\n", dinfo.max.value);
   bft_printf(" -bnd- WallDistance.Mean  % 10.6e\n", dinfo.mean);
   bft_printf(" -bnd- WallDistance.Sigma % 10.6e\n", dinfo.sigma);
-  bft_printf(msepline);
+  bft_printf("%s", msepline);
 }
 
 /*----------------------------------------------------------------------------*/

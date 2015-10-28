@@ -447,8 +447,7 @@ elseif(itytur.eq.3) then
         cvar_ep(iel) = xxk**1.5d0*cmu/almax
       enddo
       iclip = 1
-      call clprij2(ncelet , ncel   , nvar    ,     &
-                  iclip  )
+      call clprij2(ncelet, ncel, iclip)
 
     else
 
@@ -494,8 +493,7 @@ elseif(itytur.eq.3) then
         cvar_ep(iel) = xxk**1.5d0*cmu/almax
       enddo
       iclip = 1
-      call clprij(ncelet , ncel   , nvar    ,     &
-                  iclip  )
+      call clprij(ncelet, ncel, iclip)
 
     else
 

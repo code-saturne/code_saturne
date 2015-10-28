@@ -68,8 +68,7 @@ implicit none
 
 ! Local variables
 
-integer          iel, ifac
-integer          ivar
+integer          iel
 integer          f_id
 integer          icla
 integer          iscdri, keydri, iflid, nfld, keyccl
@@ -90,7 +89,7 @@ character(len=80) :: fname
 double precision, allocatable, dimension(:) :: visco
 
 double precision, dimension(:), pointer :: cpro_rom1, cpro_rom2, cpro_diam2
-double precision, dimension(:), pointer :: cpro_temp1, cpro_x2, cpro_x1
+double precision, dimension(:), pointer :: cpro_temp1, cpro_x2
 double precision, dimension(:), pointer :: cpro_ym1_3, cpro_ym1_5, cpro_ym1_7
 double precision, dimension(:), pointer :: cpro_ym1_8
 double precision, dimension(:), pointer :: cpro_ym1_9, cpro_ym1_11, cpro_ym1_12

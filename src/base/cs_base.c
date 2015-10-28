@@ -1978,13 +1978,13 @@ void
 cs_base_check_bool(bool *b)
 {
   if (sizeof(bool) == 1) {
-    char *pb = b;
+    char *pb = (char *)b;
     int i = *pb;
     if (i != 0 && i != 1)
       *b = true;
   }
   else if (sizeof(bool) == sizeof(int)) {
-    int *pb = b;
+    int *pb = (int *)b;
     if (*pb != 0 && *pb != 1)
       *b = true;
   }

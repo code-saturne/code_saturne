@@ -114,7 +114,7 @@ double precision tuexpn
 double precision cofbnu
 double precision chi  , chi3, taussa, nusa, distbf, fw, fv1, fv2
 double precision gsa , rsa , dsigma, cv13
-double precision surfn, nu0, dsa0, hssa, omega, sbar, cst2, cst3
+double precision nu0, dsa0, hssa, omega, sbar, cst2, cst3
 
 double precision rvoid(1)
 

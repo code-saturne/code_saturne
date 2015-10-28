@@ -592,7 +592,7 @@ _sles_pc_poly_free(void  *context)
 static void *
 _sles_pc_poly_clone(const void  *context)
 {
-  cs_sles_pc_poly_t  *c = context;
+  const cs_sles_pc_poly_t *c = (const cs_sles_pc_poly_t *)context;
 
   cs_sles_pc_poly_t *pc = _sles_pc_poly_create();
 
@@ -993,6 +993,8 @@ cs_sles_pc_none_create(void)
                                        NULL,
                                        _sles_pc_poly_clone,
                                        _sles_pc_poly_destroy);
+
+  return pc;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1019,6 +1021,8 @@ cs_sles_pc_jacobi_create(void)
                                        NULL,
                                        _sles_pc_poly_clone,
                                        _sles_pc_poly_destroy);
+
+  return pc;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1045,6 +1049,8 @@ cs_sles_pc_poly_1_create(void)
                                        NULL,
                                        _sles_pc_poly_clone,
                                        _sles_pc_poly_destroy);
+
+  return pc;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1071,6 +1077,8 @@ cs_sles_pc_poly_2_create(void)
                                        NULL,
                                        _sles_pc_poly_clone,
                                        _sles_pc_poly_destroy);
+
+  return pc;
 }
 
 /*----------------------------------------------------------------------------*/

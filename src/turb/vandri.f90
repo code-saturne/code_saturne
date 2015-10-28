@@ -36,14 +36,13 @@
 !______________________________________________________________________________.
 ! modename        name          role
 !______________________________________________________________________________!
-!> \param[in]     itypfb        boundary face types
 !> \param[in]     visvdr        dynamic viscosity in edge cells after
 !>                               driest velocity amortization
 !> \param[in]     yplusc        \f$ y^+\f$ value in cells
 !______________________________________________________________________________!
 
 subroutine vandri &
- (itypfb, visvdr, yplusc)
+ (visvdr, yplusc)
 
 !===============================================================================
 ! Module files
@@ -55,7 +54,6 @@ use optcal
 use entsor
 use cstphy
 use parall
-use pointe, only: uetbor
 use mesh
 use field
 
@@ -65,15 +63,13 @@ implicit none
 
 ! Arguments
 
-integer          itypfb(nfabor)
-
 double precision visvdr(ncelet)
 double precision yplusc(ncelet)
 
 ! Local variables
 
-integer          iel   , ifac
-double precision yplus , yminpa, viscos
+integer          iel
+double precision yplus
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct
 

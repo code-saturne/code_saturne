@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine cplph1 &
-!================
-
  ( ncelet , ncel   ,                                              &
    nitbcp , nrtbcp , nitbmc , nrtbmc , nitbwo , nrtbwo ,          &
    f1m    , f2m    , f3m    , f4m    , f3p2m  , f4p2m  ,          &
