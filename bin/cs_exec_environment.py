@@ -839,6 +839,13 @@ class resource_info(batch_info):
         self.n_nodes = None
         self.n_threads = None
 
+        # Pre-set the number of threads if OMP_NUM_THREADS given
+
+        if n_threads == None:
+            s = os.getenv('OMP_NUM_THREADS')
+            if s != None:
+                n_threads = int(s)
+
         # If obtained from an environment variable, express
         # the hosts file using a shell variable rather than
         # an absolute name (for use in generated scripts).
@@ -920,8 +927,11 @@ class resource_info(batch_info):
             if self.n_nodes and not self.n_procs:
                 if n_procs:
                     self.n_procs = n_procs
-                elif os.getenv('LOADL_BG_SIZE'): # Blue Gene
+                elif os.getenv('LOADL_BG_SIZE'): # Blue Gene/Q
                     self.n_procs = self.n_nodes*16
+                    if n_threads:
+                        if n_threads > 4:
+                            self.n_procs = self.n_nodes*16*4/n_threads
             s = os.getenv('LOADL_HOSTFILE')
             if s != None:
                 self.manager = 'LOADL'
@@ -997,11 +1007,6 @@ class resource_info(batch_info):
             self.n_procs = n_procs_default
 
         # Check and possibly set number of threads
-
-        if n_threads == None:
-            s = os.getenv('OMP_NUM_THREADS')
-            if s != None:
-                n_threads = int(s)
 
         if n_threads != None:
             if self.n_threads != None and n_threads != self.n_threads:
