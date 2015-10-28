@@ -904,17 +904,24 @@ class resource_info(batch_info):
 
         if self.manager == None and self.batch_type == 'LOADL':
             s = os.getenv('LOADL_TOTAL_TASKS')
-            if s == None:
-                s = os.getenv('LOADL_BG_SIZE')
             if s != None:
                 self.manager = 'LOADL'
                 self.n_procs = int(s)
-            else:
+            s = os.getenv('LOADL_BG_SIZE')
+            if s != None:
+                self.manager = 'LOADL'
+                self.n_nodes = int(s)
+            if not self.n_procs:
                 s = os.getenv('LOADL_PROCESSOR_LIST')
                 if s != None:
                     self.manager = 'LOADL'
                     hl = s.strip().split(' ')
                     self.n_procs_from_hosts_list(hl, True)
+            if self.n_nodes and not self.n_procs:
+                if n_procs:
+                    self.n_procs = n_procs
+                elif os.getenv('LOADL_BG_SIZE'): # Blue Gene
+                    self.n_procs = self.n_nodes*16
             s = os.getenv('LOADL_HOSTFILE')
             if s != None:
                 self.manager = 'LOADL'

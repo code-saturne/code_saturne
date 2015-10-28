@@ -507,17 +507,9 @@ else
 endif
 
 if (irijco.eq.1) then
-  call clprij2 &
-  !==========
-   ( ncelet , ncel   , nvar   ,                                     &
-     iclip  )
-
+  call clprij2(ncelet, ncel, iclip)
 else
-
-  call clprij &
-  !==========
-   ( ncelet , ncel   , nvar   ,                                     &
-     iclip  )
+  call clprij(ncelet, ncel, iclip)
 endif
 
 !===============================================================================
