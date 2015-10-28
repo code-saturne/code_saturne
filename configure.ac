@@ -416,6 +416,9 @@ AC_SUBST(cs_have_long_gnum)
 # Check for Fortran module generation
 CS_AC_TEST_FC_MOD
 
+# First determination of Fortran libraries (before OpenMP test)
+AC_FC_LIBRARY_LDFLAGS
+
 #------------------------------------------------------------------------------
 # Determine OpenMP support
 #------------------------------------------------------------------------------
@@ -429,6 +432,7 @@ CS_AC_TEST_FC_MOD
 # compiler install paths, such as may happen with gcc's libgomp.
 
 cs_have_openmp=no
+cs_have_openmp_f=no
 
 AC_ARG_ENABLE(openmp,
   [AS_HELP_STRING([--disable-openmp], [disable OpenMP support])],
@@ -476,15 +480,18 @@ if test "x$cs_have_openmp" = "xyes" ; then
       integer n
       n = omp_get_num_threads()
 ]])],
-                   [cs_have_openmp=yes],
-                   [cs_have_openmp=no])
-    AC_MSG_RESULT($cs_have_openmp)
+                   [cs_have_openmp_f=yes],
+                   [cs_have_openmp_f=no])
+    AC_MSG_RESULT($cs_have_openmp_f)
     AC_LANG_POP([Fortran])
   fi
   if test "x$cs_have_openmp" = "xyes" ; then
     AC_DEFINE([HAVE_OPENMP], 1, [openmp support])
     if test "x$cs_have_openmp_simd" = "xyes" ; then
       AC_DEFINE([HAVE_OPENMP_SIMD], 1, [openmp simd support])
+    fi
+    if test "x$cs_have_openmp_f" = "xno" ; then
+      FCFLAGS="$saved_FCFLAGS"
     fi
   else
     cs_have_openmp=no
@@ -494,6 +501,13 @@ if test "x$cs_have_openmp" = "xyes" ; then
   fi
 fi
 AC_SUBST(cs_have_openmp)
+
+# Now that compiler options are determined (relative notably to OpenMP),
+# update Fortran libraries necessary to link.
+
+if "x$cs_have_openmp_f" = "xyes" ; then
+  AC_FC_LIBRARY_LDFLAGS
+fi
 
 #------------------------------------------------------------------------------
 # Checks for Python support.
@@ -572,10 +586,6 @@ AC_SUBST(cs_version_short)
 #------------------------------------------------------------------------------
 # Checks for libraries.
 #------------------------------------------------------------------------------
-
-# Now that compiler options are determined (relative notably to OpenMP),
-# determine which Fortran libraries are necessary to link.
-AC_FC_LIBRARY_LDFLAGS
 
 CS_AC_TEST_PLE(["2.0.0"])
 
@@ -1054,6 +1064,9 @@ if (test x$cs_have_mpi = xyes) ; then
   echo "   MPI3 neighborhood collectives support: "$cs_have_mpi_one_sided""
 fi
 echo " OpenMP support: "$cs_have_openmp""
+if test x$cs_have_openmp = xyes ; then
+  echo " OpenMP Fortran support: "$cs_have_openmp_f""
+fi
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
 echo " Libxml2 (XML Reader) support: "$cs_have_libxml2""
 echo " ParMETIS (Parallel Graph Partitioning) support: "$cs_have_parmetis""
