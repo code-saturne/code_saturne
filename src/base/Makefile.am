@@ -84,6 +84,7 @@ cs_boundary_conditions.h \
 cs_calcium.h \
 cs_control.h \
 cs_coupling.h \
+cs_crystal_router.h \
 cs_defs.h \
 cs_ext_neighborhood.h \
 cs_fan.h \
@@ -160,6 +161,7 @@ libcscore_la_SOURCES = \
 cs_all_to_all.c \
 cs_block_dist.c \
 cs_block_to_part.c \
+cs_crystal_router.c \
 cs_defs.c \
 cs_file.c \
 cs_fp_exception.c \

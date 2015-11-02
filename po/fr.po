@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-10-05 11:15+0200\n"
+"POT-Creation-Date: 2015-11-02 10:31+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4241,22 +4241,16 @@ msgid "MPI_Alltoall and MPI_Alltoallv"
 msgstr "MPI_Alltoall et MPI_Alltoallv"
 
 msgid "Crystal Router algorithm"
-msgstr "algorithme \"Crystel Router\""
+msgstr "algorithme \"Crystal Router\""
 
-msgid "Construction/destruction:"
-msgstr "Construction/destruction :"
+msgid "Total:"
+msgstr "Total :"
 
-msgid "Exchange:"
-msgstr "Échange :"
+msgid "Metadata exchange:"
+msgstr "Échange métadonnées :"
 
-msgid "Swap source and destination:"
-msgstr "Inversion source et destination :"
-
-msgid "Sort by source rank:"
-msgstr "Tri par rang source :"
-
-msgid "Copy exchanged data:"
-msgstr "Copie de données échangées :"
+msgid "Data exchange:"
+msgstr "Échange données :"
 
 #, c-format
 msgid ""
@@ -4265,7 +4259,7 @@ msgid ""
 "\n"
 msgstr ""
 "\n"
-"Opérations \"all-to-all\" instrumentées (avec %s):\n"
+"Opérations \"all-to-all\" instrumentées (avec %s) :\n"
 "\n"
 
 #, c-format
@@ -4763,6 +4757,27 @@ msgid ""
 "\n"
 "Application \"%s\" (%s) requested last iteration.\n"
 msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Crystal router: %llu %s\n"
+msgstr ""
+"\n"
+"Crystal router: %llu %s\n"
+
+msgid "calls"
+msgstr "appels"
+
+#, c-format
+msgid ""
+"                      mean           minimum        maximum\n"
+"  wall clock:    %12.5f s %12.5f s %12.5f s\n"
+"  communication: %12.5f s %12.5f s %12.5f s\n"
+msgstr ""
+"                      moyen          minimum        maximum\n"
+"  temps horloge: %12.5f s %12.5f s %12.5f s\n"
+"  communication: %12.5f s %12.5f s %12.5f s\n"
 
 #, c-format
 msgid "EOS error in call function %s\n"
@@ -5622,9 +5637,6 @@ msgstr "Erreur à l'ouverture du fichier journal : %s"
 
 msgid "time"
 msgstr "temps"
-
-msgid "calls"
-msgstr "appels"
 
 msgid "field"
 msgstr "champ"
@@ -7939,16 +7951,7 @@ msgid ""
 " Please modify your settings."
 msgstr ""
 
-#, c-format
-msgid ""
-" Invalid type of equation: %s\n"
-" Choices are scalar, vector or tensor."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid type of boundary condition by default: %s\n"
-" Choices are zero_value or zero_flux."
+msgid " Invalid idtvar value for the CDO module.\n"
 msgstr ""
 
 #, c-format
@@ -7969,19 +7972,24 @@ msgid ""
 " Available choices are: wall, inlet, outlet or symmetry."
 msgstr ""
 
+#, c-format
 msgid ""
-" No variable name associated to an equation structure.\n"
-" Check your initialization."
+" Invalid key for setting the type of definition.\n"
+" Given key: %s\n"
+" Choice among value, field, evaluator, analytic, user, law or file\n"
+" Please modify your settings."
 msgstr ""
 
+#, c-format
 msgid ""
-" No equation name associated to an equation structure.\n"
-" Check your initialization."
+" Invalid type of equation: %s\n"
+" Choices are scalar, vector or tensor."
 msgstr ""
 
+#, c-format
 msgid ""
-" Invalid scheme for the space discretization.\n"
-" Please check your settings."
+" Invalid type of boundary condition by default: %s\n"
+" Choices are zero_value or zero_flux."
 msgstr ""
 
 #, c-format
@@ -8000,6 +8008,21 @@ msgstr ""
 msgid ""
 " Algorithm requested to solve %s is not implemented yet.\n"
 " Please modify your settings."
+msgstr ""
+
+msgid ""
+" No variable name associated to an equation structure.\n"
+" Check your initialization."
+msgstr ""
+
+msgid ""
+" No equation name associated to an equation structure.\n"
+" Check your initialization."
+msgstr ""
+
+msgid ""
+" Invalid scheme for the space discretization.\n"
+" Please check your settings."
 msgstr ""
 
 msgid ""
@@ -8086,6 +8109,12 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid ""
+" Invalid key value %s for setting the time scheme.\n"
+" Choices are among implicit, explicit, crank_nicolson and theta_scheme"
+msgstr ""
+
+#, c-format
 msgid " Key %s is not implemented yet."
 msgstr " La clé %s n'est pas encore gérée."
 
@@ -8100,10 +8129,9 @@ msgid ""
 " Possible choice: diffusion or time\n"
 msgstr ""
 
-#, c-format
 msgid ""
 " cs_equation_t structure is NULL\n"
-" Cannot add a boundary condition related to mesh location %s"
+" Cannot set the initial condition"
 msgstr ""
 
 #, c-format
@@ -8112,10 +8140,16 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key for setting the type of definition.\n"
+" Invalid key for setting the initial condition.\n"
 " Given key: %s\n"
-" Choice among value, field, evaluator, analytic, user, law or file\n"
+" Choice among value and analytic.\n"
 " Please modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" cs_equation_t structure is NULL\n"
+" Cannot add a boundary condition related to mesh location %s"
 msgstr ""
 
 #, c-format
@@ -8194,9 +8228,6 @@ msgid " Invalid type of definition for an advection field."
 msgstr ""
 
 msgid " This type of discrete Hodge operator is not covered.\n"
-msgstr ""
-
-msgid " Invalid type of discrete Hodge operator\n"
 msgstr ""
 
 msgid " Invalid type of Hodge operator.\n"
@@ -8359,14 +8390,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Error in thermodynamics computations for compressible flows:\n"
-"the thermodynamic law is perfect gas with constant Gamma\n"
-"with Gamma=%12.4e <= 1.\n"
-"Gamma must be a real number greater or equal to 1."
-msgstr ""
-
-#, c-format
-msgid ""
 "Error in thermodynamics computations for compressible flows\n"
 ":\n"
 "Negative values of the pressure were encountered in %lu cells.\n"
@@ -8395,8 +8418,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Error in thermodynamics computations for compressible flows\n"
-"(perfect gas with constant Gamma):\n"
+"Error in thermodynamics computations for compressible flows:\n"
 "The computation of the subsonic inlet boundary condition\n"
 "with imposed total pressure and total enthalpy failed at\n"
 "boundary face %i. The direction vector given by the user\n"
@@ -9693,7 +9715,7 @@ msgstr ""
 #, c-format
 msgid ""
 "soil_tracer_law, WARNING:\n"
-"  saturation must is outside [0, 1] in %llu cells.\n"
+"  saturation is outside [0, 1] in %llu cells.\n"
 msgstr ""
 
 #, c-format
@@ -11954,3 +11976,15 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
+
+#~ msgid "Construction/destruction:"
+#~ msgstr "Construction/destruction :"
+
+#~ msgid "Swap source and destination:"
+#~ msgstr "Inversion source et destination :"
+
+#~ msgid "Sort by source rank:"
+#~ msgstr "Tri par rang source :"
+
+#~ msgid "Copy exchanged data:"
+#~ msgstr "Copie de données échangées :"

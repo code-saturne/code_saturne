@@ -407,6 +407,7 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   _Bool       may_be_shared = false;
 
+  cs_lnum_t  *b_nsub = NULL;
   int         have_sub_loc = 0, have_sub_glob = 0;
 
   int         local_rank, size;
@@ -432,28 +433,7 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   this_io_num->global_count = _fvm_io_num_global_max(this_io_num, comm);
 
-  /* Do we have sub-entities ? */
-
-  if (n_sub_entities != NULL)
-    have_sub_loc = 1;
-
-  const cs_lnum_t *n_sub = n_sub_entities;
-  cs_lnum_t *_n_sub = NULL;
-
-  MPI_Allreduce(&have_sub_loc, &have_sub_glob, 1, MPI_INT, MPI_MAX, comm);
-
-  if (have_sub_glob > 0) {
-
-    if (n_sub_entities == NULL) {
-      BFT_MALLOC(_n_sub, this_io_num->global_num_size, cs_lnum_t);
-      for (cs_lnum_t i = 0; i < this_io_num->global_num_size; i++)
-        _n_sub[i] = 1;
-      n_sub = _n_sub;
-    }
-
-  }
-
-  /* block_info */
+  /* block_size = ceil(this_io_num->global_count/size) */
 
   cs_block_dist_info_t
     bi = cs_block_dist_compute_sizes(local_rank,
@@ -463,65 +443,65 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
                                      this_io_num->global_count);
 
   cs_all_to_all_t
-    *d = cs_all_to_all_create_from_block_s(this_io_num->global_num_size,
-                                           have_sub_glob,
-                                           CS_LNUM_TYPE,
-                                           CS_GNUM_TYPE,
-                                           true, /* source id */
-                                           n_sub,
-                                           this_io_num->_global_num,
-                                           bi,
-                                           comm);
+    *d = cs_all_to_all_create_from_block(this_io_num->global_num_size,
+                                         0, /* flags */
+                                         this_io_num->global_num,
+                                         bi,
+                                         comm);
 
-  cs_all_to_all_exchange(d);
+  cs_gnum_t *b_gnum = cs_all_to_all_copy_array(d,
+                                               CS_GNUM_TYPE,
+                                               1,
+                                               false, /* reverse */
+                                               this_io_num->global_num,
+                                               NULL);
 
-  if (_n_sub != NULL)
-    n_sub = NULL;
+  cs_lnum_t b_size = cs_all_to_all_n_elts_dest(d);
 
-  BFT_FREE(_n_sub);
+  /* Do we have sub-entities ? */
 
-  size_t gnum_stride;
-  cs_gnum_t *recv_gnum;
+  if (n_sub_entities != NULL)
+    have_sub_loc = 1;
 
-  cs_all_to_all_get_gnum_pointer(d, &gnum_stride, &recv_gnum);
+  MPI_Allreduce(&have_sub_loc, &have_sub_glob, 1, MPI_INT, MPI_MAX, comm);
 
-  cs_lnum_t n_ent_recv = cs_all_to_all_n_elts(d);
+  if (have_sub_glob > 0)
+    b_nsub = cs_all_to_all_copy_array(d,
+                                      CS_LNUM_TYPE,
+                                      1,
+                                      false, /* reverse */
+                                      n_sub_entities,
+                                      NULL);
 
-  /* As data is sorted by increasing base global numbering, we do not
-     need to build an extra array, but only to send the correct parts
-     of the n_sub_entities[] array to the correct processors */
+  if (b_size > 0) {
 
-  if (n_ent_recv > 0) {
+    cs_lnum_t *b_order;
 
-    cs_lnum_t *recv_order;
+    BFT_MALLOC(b_order, b_size, cs_lnum_t);
 
-    BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
+    cs_order_gnum_allocated(NULL,
+                            b_gnum,
+                            b_order,
+                            b_size);
 
-    cs_all_to_all_order_by_gnum_allocated(d, recv_order);
-
-    /* We build an initial global order based on the initial global numbering,
+    /* Determine global order; requires ordering to loop through buffer by
+       increasing number (blocks associated with each process are
+       already sorted, but the whole "gathered" block is not).
+       We build an initial global order based on the initial global numbering,
        such that for each block, the global number of an entity is equal to
        the cumulative number of sub-entities */
 
     if (have_sub_glob > 0) {
 
-      size_t data_stride;
-      unsigned char *data;
+      current_gnum = b_nsub[b_order[0]];
+      num_prev = b_gnum[b_order[0]];
+      b_gnum[b_order[0]] = current_gnum;
 
-      cs_all_to_all_get_data_pointer(d, &data_stride, &data);
-
-      const cs_lnum_t  lnum_stride = data_stride / sizeof(cs_lnum_t);
-      const cs_lnum_t *recv_n_sub = (const cs_lnum_t *)data;
-
-      current_gnum = recv_n_sub[recv_order[0]*lnum_stride];
-      num_prev = recv_gnum[recv_order[0]*gnum_stride];
-      recv_gnum[recv_order[0]*gnum_stride] = current_gnum;
-
-      for (cs_lnum_t i = 1; i < n_ent_recv; i++) {
-        num_cur = recv_gnum[recv_order[i]*gnum_stride];
+      for (cs_lnum_t i = 1; i < b_size; i++) {
+        num_cur = b_gnum[b_order[i]];
         if (num_cur > num_prev)
-          current_gnum += recv_n_sub[recv_order[i]*gnum_stride];
-        recv_gnum[recv_order[i]*gnum_stride] = current_gnum;
+          current_gnum += b_nsub[b_order[i]];
+        b_gnum[b_order[i]] = current_gnum;
         num_prev = num_cur;
       }
 
@@ -529,23 +509,28 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
     else { /* if (have_sub_glob == 0) */
 
       current_gnum = 1;
-      num_prev = recv_gnum[recv_order[0]*gnum_stride];
-      recv_gnum[recv_order[0]*gnum_stride] = current_gnum;
+      num_prev = b_gnum[b_order[0]];
+      b_gnum[b_order[0]] = current_gnum;
 
-      for (cs_lnum_t i = 1; i < n_ent_recv; i++) {
-        num_cur = recv_gnum[recv_order[i]*gnum_stride];
+      for (cs_lnum_t i = 1; i < b_size; i++) {
+        num_cur = b_gnum[b_order[i]];
         if (num_cur > num_prev)
           current_gnum += 1;
-        recv_gnum[recv_order[i]*gnum_stride] = current_gnum;
+        b_gnum[b_order[i]] = current_gnum;
         num_prev = num_cur;
       }
 
     }
 
-    BFT_FREE(recv_order);
+    BFT_FREE(b_order);
+
   }
 
-  /* At this stage, recv_gnum[] is valid for this process, and
+  /* Partial clean-up */
+
+  BFT_FREE(b_nsub);
+
+  /* At this stage, b_gnum[] is valid for this process, and
      current_gnum indicates the total number of entities handled
      by this process; we must now shift global numberings on different
      processes by the cumulative total number of entities handled by
@@ -555,33 +540,27 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
            MPI_SUM, comm);
   gnum_shift -= current_gnum;
 
-  for (cs_lnum_t i = 0; i < n_ent_recv; i++)
-    recv_gnum[i*gnum_stride] += gnum_shift;
+  for (cs_lnum_t i = 0; i < b_size; i++)
+    b_gnum[i] += gnum_shift;
 
-  /* Return global order to all processes */
+  /* Return global order to all processors */
 
-  cs_all_to_all_swap_src_dest(d);
-  cs_all_to_all_exchange(d);
+  cs_all_to_all_copy_array(d,
+                           CS_GNUM_TYPE,
+                           1,
+                           true, /* reverse */
+                           b_gnum,
+                           this_io_num->_global_num);
 
-  /* Get id pointer, as data may have been rearranged */
+  /* Free memory */
 
-  size_t      id_stride;
-  cs_lnum_t  *src_id;
-
-  cs_all_to_all_get_id_pointers(d, &id_stride, NULL, &src_id);
-
-  /* Get returned global number */
-
-  cs_all_to_all_get_gnum_pointer(d, &gnum_stride, &recv_gnum);
-
-  for (cs_lnum_t i = 0; i < this_io_num->global_num_size; i++) {
-    cs_lnum_t j = src_id[i*id_stride];
-    this_io_num->_global_num[j] = recv_gnum[i*gnum_stride];
-  }
-
-  /* Distributor may now be destroyed */
+  BFT_FREE(b_gnum);
 
   cs_all_to_all_destroy(&d);
+
+  /* Get final maximum global number value */
+
+  this_io_num->global_count = _fvm_io_num_global_max(this_io_num, comm);
 
   /* When sub-entities have been added, now switch from a numbering on
      the initial entities (shifted by number of sub-entities) to
@@ -589,17 +568,16 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   if (n_sub_entities != NULL) {
 
+    cs_lnum_t i, j, k;
     cs_gnum_t *_global_num;
 
-    cs_lnum_t j = 0;
-    for (cs_lnum_t i = 0; i < this_io_num->global_num_size; i++)
+    for (i = 0, j = 0; i < this_io_num->global_num_size; i++)
       j += n_sub_entities[i];
 
     BFT_MALLOC(_global_num, j, cs_gnum_t);
 
-    j = 0;
-    for (cs_lnum_t i = 0; i < this_io_num->global_num_size; i++) {
-      for (cs_lnum_t k = 0; k < n_sub_entities[i]; j++, k++)
+    for (i = 0, j = 0; i < this_io_num->global_num_size; i++) {
+      for (k = 0; k < n_sub_entities[i]; j++, k++)
         _global_num[j] = this_io_num->_global_num[i] - n_sub_entities[i] + k + 1;
     }
 
@@ -656,7 +634,7 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
   int  local_rank, size;
   cs_gnum_t current_gnum = 0, gnum_shift = 0;
 
-  const cs_lnum_t _stride = stride;
+  cs_gnum_t *r_gnum = NULL;
 
   /* Initialization */
 
@@ -696,112 +674,69 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
   }
 
   cs_all_to_all_t
-    *d = cs_all_to_all_create_with_ids_s(this_io_num->global_num_size,
-                                         stride,
-                                         CS_GNUM_TYPE,
-                                         CS_DATATYPE_NULL,
-                                         true, /* source id */
-                                         global_num,
-                                         NULL,
-                                         dest_rank,
-                                         comm);
+    *d = cs_all_to_all_create(this_io_num->global_num_size,
+                              0,      /* flags */
+                              NULL,  /* dest_id */
+                              dest_rank,
+                              comm);
 
-  BFT_FREE(dest_rank);
+  cs_all_to_all_transfer_dest_rank(d, &dest_rank);
 
-  cs_all_to_all_exchange(d);
+  cs_gnum_t *b_gnum = cs_all_to_all_copy_array(d,
+                                               CS_GNUM_TYPE,
+                                               stride,
+                                               false, /* reverse */
+                                               global_num,
+                                               NULL);
 
-  cs_lnum_t n_ent_recv = cs_all_to_all_n_elts(d);
-
-  /* strided global numbers are handled as data here */
-
-  size_t data_stride;
-  unsigned char *data;
-
-  cs_all_to_all_get_data_pointer(d, &data_stride, &data);
-
-  cs_lnum_t  gnum_stride = data_stride/sizeof(cs_gnum_t);
-  cs_gnum_t *gnum = (cs_gnum_t * )data;
-  cs_gnum_t *dest_gnum = NULL;
-  cs_lnum_t *dest_id = NULL;
-
-  dest_rank = NULL;
-
-  size_t  rank_stride, id_stride;
-  int     *src_rank = NULL;
-  cs_lnum_t *src_id = NULL, *recv_order = NULL;
+  cs_lnum_t b_size = cs_all_to_all_n_elts_dest(d);
 
   /* Order received data based on global number sets */
 
-  if (n_ent_recv > 0) {
+  if (b_size > 0) {
 
-    BFT_MALLOC(dest_gnum, n_ent_recv, cs_gnum_t);
-    BFT_MALLOC(dest_rank, n_ent_recv, int);
-    BFT_MALLOC(dest_id, n_ent_recv, cs_lnum_t);
+    cs_lnum_t *b_order = NULL;
 
-    cs_all_to_all_get_rank_pointers(d,
-                                    &rank_stride,
-                                    &src_rank,
-                                    NULL);
-
-    cs_all_to_all_get_id_pointers(d,
-                                  &id_stride,
-                                  NULL,
-                                  &src_id);
-
-    for (cs_lnum_t i = 0; i < n_ent_recv; i++) {
-      dest_rank[i] = src_rank[i*rank_stride];
-      dest_id[i] = src_id[i*id_stride];
-    }
-
-    BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
-
-    cs_gnum_t *gnum_o;
-    if (gnum_stride == 1)
-      gnum_o = gnum;
-    else {
-      BFT_MALLOC(gnum_o, n_ent_recv*stride, cs_gnum_t);
-      for (cs_lnum_t i = 0; i < n_ent_recv; i++) {
-        for (cs_lnum_t j = 0; j < _stride; j++)
-          gnum_o[i*stride + j] = gnum[i*gnum_stride + j];
-      }
-    }
+    BFT_MALLOC(r_gnum, b_size, cs_gnum_t);
+    BFT_MALLOC(b_order, b_size, cs_lnum_t);
 
     cs_order_gnum_allocated_s(NULL,
-                              gnum_o,
+                              b_gnum,
                               stride,
-                              recv_order,
-                              n_ent_recv);
+                              b_order,
+                              b_size);
 
     /* We build an initial global order based on the initial global numbering,
        such that for each block, the global number of an entity is equal to
        the cumulative number of sub-entities */
 
     current_gnum = 1;
-    cs_lnum_t prev_id = recv_order[0];
-    dest_gnum[recv_order[0]] = current_gnum;
+    cs_lnum_t prev_id = b_order[0];
+    r_gnum[b_order[0]] = current_gnum;
 
-    for (cs_lnum_t i = 1; i < n_ent_recv; i++) {
+    const cs_lnum_t _stride = stride;
+
+    for (cs_lnum_t i = 1; i < b_size; i++) {
       bool greater_than_prev = false;
-      cs_lnum_t cur_id = recv_order[i];
+      cs_lnum_t cur_id = b_order[i];
       for (cs_lnum_t j = 0; j < _stride; j++) {
-        if (  gnum_o[cur_id*_stride + j]
-            > gnum_o[prev_id*_stride + j])
+        if (  b_gnum[cur_id*_stride + j]
+            > b_gnum[prev_id*_stride + j])
           greater_than_prev = true;
       }
       if (greater_than_prev)
         current_gnum += 1;
-      dest_gnum[recv_order[i]] = current_gnum;
+      r_gnum[b_order[i]] = current_gnum;
       prev_id = cur_id;
     }
 
-    if (gnum_o != gnum)
-      BFT_FREE(gnum_o);
-
-    BFT_FREE(recv_order);
+    BFT_FREE(b_order);
 
   }
 
-  /* At this stage, dest_gnum[] is valid for this process, and
+  BFT_FREE(b_gnum);
+
+  /* At this stage, r_gnum[] is valid for this process, and
      current_gnum indicates the total number of entities handled
      by this process; we must now shift global numberings on different
      processes by the cumulative total number of entities handled by
@@ -811,51 +746,21 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
            MPI_SUM, comm);
   gnum_shift -= current_gnum;
 
-  for (cs_lnum_t i = 0; i < n_ent_recv; i++)
-    dest_gnum[i] += gnum_shift;
+  for (cs_lnum_t i = 0; i < b_size; i++)
+    r_gnum[i] += gnum_shift;
 
-  /* Replace distributor with a new one. This adds extra creation/destruction
-     overhead, but the return data is smaller than the input data,
-     so communication itself should be faster */
+  /* Return global order to all ranks */
 
-  cs_all_to_all_destroy(&d);
-
-  d = cs_all_to_all_create_with_ids_s(n_ent_recv,
-                                      1,
-                                      CS_GNUM_TYPE,
-                                      CS_LNUM_TYPE,
-                                      false, /* source id */
-                                      dest_gnum,
-                                      dest_id,
-                                      dest_rank,
-                                      comm);
-
-  cs_all_to_all_exchange(d);
-
-  BFT_FREE(dest_gnum);
-  BFT_FREE(dest_id);
-  BFT_FREE(dest_rank);
-
-  n_ent_recv = cs_all_to_all_n_elts(d);
-  assert(n_ent_recv == this_io_num->global_num_size);
-
-  /* strided global numbers are handled as data here */
-
-  cs_all_to_all_get_data_pointer(d, &data_stride, &data);
-
-  gnum_stride = data_stride/sizeof(cs_gnum_t);
-  gnum = (cs_gnum_t * )data;
-
-  cs_all_to_all_get_id_pointers(d, &id_stride, &dest_id, NULL);
-
-  /* Now retrieve global numbers */
-
-  for (cs_lnum_t i = 0; i < n_ent_recv; i++) {
-    cs_lnum_t j = dest_id[i*id_stride];
-    this_io_num->_global_num[j] = gnum[i*gnum_stride];
-  }
+  cs_all_to_all_copy_array(d,
+                           CS_GNUM_TYPE,
+                           1,
+                           true, /* reverse */
+                           r_gnum,
+                           this_io_num->_global_num);
 
   /* Partial clean-up */
+
+  BFT_FREE(r_gnum);
 
   cs_all_to_all_destroy(&d);
 

@@ -5,19 +5,27 @@ Trunk (unreleased)
 Changes:
 --------
 
- - Add gas mix thermo. and fix mass source term with the compressible module (internship of A. Menasria):
-    * allow to select both gas mix (igmix) specific physics with compressible (icompf) spec. physics
-    * add property field for deduced mass fraction (iddgas) and mixture molar mass (igmxml)
+ - Add gas mix thermo. and fix mass source term with the compressible module
+   (internship of A. Menasria):
+    * allow to select both gas mix (igmix) specific physics with compressible
+      (icompf) spec. physics
+    * add property field for deduced mass fraction (iddgas) and mixture molar
+      mass (igmxml)
     * add a field pointer mapping for gas mix (mapping mix molar mass field)
     * add mapping of specific heat at constant volume field pointer
-    * add one gas mix composed of helium, N2 and O2 (i.e. Helium+Air), O2 is the deduced species
-    * add Sutherland behavior law for viscosity and thermal conductivity of gas mix (ivsuth option)
+    * add one gas mix composed of helium, N2 and O2 (i.e. Helium+Air), O2 is the
+      deduced species
+    * add Sutherland behavior law for viscosity and thermal conductivity of
+      gas mix (ivsuth option)
     * move setting of ieos from uscfx1 to usppmo
-    * add thermo. relations for perfect gas mix in compressible thermo. (also for BCs),
+    * add thermo. relations for perfect gas mix in compressible thermo.
+      (also for BCs),
     * igmix specific physics triggers switch of ieos to 3
-    * treat conduction term in total energy equation correctly in gas mix (Cv depends on species)
-    * fix mass source term in compressible (momentum source term coming from added mass has to
-      be accounted for in simplified momentum equation during mass balance step).
+    * treat conduction term in total energy equation correctly in gas mix
+      (Cv depends on species)
+    * fix mass source term in compressible (momentum source term coming from
+      added mass has to be accounted for in simplified momentum equation during
+      mass balance step).
 
  - Implement handling of point and element tags so as to ignore location
    on elements sharing tag.
@@ -74,18 +82,26 @@ Changes:
 
  - Add a coupled component solver for symmetric tensors for the Reynolds
    stress model (irijco=1).
-   * Convection diffusion brick for tensors
-   * Add a gradient of a tensor field
-   * Only iterative methode up to now, least square gradients not yet
+   * convection diffusion brick for tensors
+   * add a gradient of a tensor field
+   * only iterative methode up to now, least square gradients not yet
      available
-   * Add the advection/diffusion matrix for a tensor field
-   * Adapt matrix tuning fill and Jacobi and other linear solvers
-   * Update rotation functions
-   * Restart from an uncoupled Rij tensor is possible
+   * add the advection/diffusion matrix for a tensor field
+   * adapt matrix tuning fill and Jacobi and other linear solvers
+   * update rotation functions
+   * restart from an uncoupled Rij tensor is possible
    * Daly Harlow and Shir models are available
 
 Architectural changes
 ---------------------
+
+ - Major changes to all_to_all API, so as to make its usage easier.
+  * new API is similar to cs_part_to_block / cs_block_to_part, so
+    as to be aligned more with sparse or neighborhod collectives
+    then Crystal Router in the future.
+  * place Crystal Router code in separate files from cs_all_to_all,
+    to allow lower-level use. Also simplify its usage, and make its
+    data access logic higher level.
 
 - Added cs_debug_wrapper.py debugger wrapper, to assist in running the code
   under a gdb-based debugger, under Valgrind, or a combination of the two.

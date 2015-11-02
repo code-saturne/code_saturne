@@ -661,15 +661,11 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
                         cs_gnum_t          init_max_vtx_gnum,
                         cs_gnum_t         *p_o2n_vtx_gnum[])
 {
-  cs_lnum_t i, n_block_vtx;
-
   cs_lnum_t n_tot_vertices = mesh->n_vertices;
 
-  size_t data_stride = 0;
   int *dest_rank = NULL;
   cs_gnum_t *new_gnum_by_block = *p_o2n_vtx_gnum;
   cs_gnum_t *new_local_gnum = NULL;
-  unsigned char *p = NULL;
   cs_all_to_all_t *d = NULL;
 
   const int  n_ranks = cs_glob_n_ranks;
@@ -691,14 +687,14 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
   BFT_MALLOC(new_local_gnum, n_tot_vertices, cs_gnum_t);
   BFT_MALLOC(dest_rank, n_tot_vertices, int);
 
-  for (i = 0; i < mesh->n_vertices; i++) {
+  for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
     dest_rank[i] = (mesh->global_vtx_num[i] - 1)/(cs_gnum_t)(bi.block_size);
     assert(dest_rank[i] >= 0 && dest_rank[i] < n_ranks);
     new_local_gnum[i] = mesh->global_vtx_num[i];
   }
 
   if (param.perio_type != FVM_PERIODICITY_NULL) {
-    for (i = 0; i < select->n_vertices; i++) {
+    for (cs_lnum_t i = 0; i < select->n_vertices; i++) {
       const cs_lnum_t j = mesh->n_vertices + i;
       dest_rank[j] =   (select->per_v_couples[2*i+1] - 1)
                      / (cs_gnum_t)(bi.block_size);
@@ -709,57 +705,43 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   /* Send old vtx gnum to matching block */
 
-  d = cs_all_to_all_create_s(n_tot_vertices,
-                             1,
-                             CS_GNUM_TYPE,
-                             new_local_gnum,
-                             dest_rank,
-                             comm);
+  d = cs_all_to_all_create(n_tot_vertices,
+                           0,     /* flags */
+                           NULL,  /* dest_id */
+                           dest_rank,
+                           comm);
 
-  BFT_FREE(dest_rank);
+  cs_all_to_all_transfer_dest_rank(d, &dest_rank);
 
-  cs_all_to_all_exchange(d);
+  cs_gnum_t *b_data = cs_all_to_all_copy_array(d,
+                                               CS_GNUM_TYPE,
+                                               1,
+                                               false,  /* reverse */
+                                               new_local_gnum,
+                                               NULL);
 
   /* Request the new vtx gnum related to the initial vtx gnum */
 
-  n_block_vtx = cs_all_to_all_n_elts(d);
+  cs_lnum_t n_b_vtx = cs_all_to_all_n_elts_dest(d);
 
-  cs_all_to_all_get_data_pointer(d,
-                                 &data_stride,
-                                 &p);
-
-  for (i = 0; i < n_block_vtx; i++) {
-
-    unsigned char *p1 = p + i*data_stride;
-    cs_gnum_t *n = (cs_gnum_t *)p1;
+  for (cs_lnum_t i = 0; i < n_b_vtx; i++) {
 
     /* Transform old to new vertex number */
-    cs_gnum_t o_shift = *n - bi.gnum_range[0];
-    *n = new_gnum_by_block[o_shift];
+    cs_gnum_t o_shift = b_data[i] - bi.gnum_range[0];
+    b_data[i] = new_gnum_by_block[o_shift];
 
   }
-
-  cs_all_to_all_swap_src_dest(d);
 
   /* Send data back */
 
-  cs_all_to_all_exchange(d);
+  cs_all_to_all_copy_array(d,
+                           CS_GNUM_TYPE,
+                           1,
+                           true,  /* reverse */
+                           b_data,
+                           new_local_gnum);
 
-  /* Sort by initial destination rank, then retreive values */
-
-  cs_all_to_all_sort_by_source_rank(d);
-
-  assert(cs_all_to_all_n_elts(d) == n_tot_vertices);
-
-  cs_all_to_all_get_data_pointer(d,
-                                 &data_stride,
-                                 &p);
-
-  for (i = 0; i < n_tot_vertices; i++) {
-    unsigned char *p1 = p + i*data_stride;
-    cs_gnum_t *n = (cs_gnum_t *)p1;
-    new_local_gnum[i] = n[0];
-  }
+  BFT_FREE(b_data);
 
   cs_all_to_all_destroy(&d);
 

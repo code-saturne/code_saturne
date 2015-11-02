@@ -44,7 +44,9 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_assert.h"
 #include "cs_block_dist.h"
+#include "cs_crystal_router.h"
 #include "cs_log.h"
 #include "cs_order.h"
 #include "cs_timer.h"
@@ -79,6 +81,15 @@ BEGIN_C_DECLS
 
   \var CS_ALL_TO_ALL_CRYSTAL_ROUTER
        Use crystal router algorithm
+
+  \paragraph all_to_all_flags Using flags
+  \parblock
+
+  Flags are defined as a sum (bitwise or) of constants, which may include
+  \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID, \ref CS_ALL_TO_ALL_ORDER_BY_SRC_RANK,
+  \ref CS_ALL_TO_ALL_NO_REVERSE, and \ref CS_ALL_TO_ALL_USE_SRC_RANK.
+
+  \endparblock
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -87,46 +98,41 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/*
- * Metadata flags
- */
-
-#define CS_ALL_TO_ALL_USE_GNUM           (1 << 0)
-#define CS_ALL_TO_ALL_USE_DEST_ID        (1 << 1)
-#define CS_ALL_TO_ALL_USE_SRC_ID         (1 << 2)
-
 /*=============================================================================
  * Local type definitions
  *============================================================================*/
 
 #if defined(HAVE_MPI)
 
+typedef enum {
+
+  CS_ALL_TO_ALL_TIME_TOTAL,
+  CS_ALL_TO_ALL_TIME_METADATA,
+  CS_ALL_TO_ALL_TIME_EXCHANGE
+
+} cs_all_to_all_timer_t;
+
 typedef struct {
 
   cs_datatype_t   datatype;          /* associated datatype */
-  cs_datatype_t   dest_id_datatype;  /* type of destination id (CS_GNUM_TYPE,
-                                        CS_LNUM_TYPE or CS_DATATYPE_NULL) */
-  bool            add_src_id;        /* add source id ? */
+  cs_datatype_t   dest_id_datatype;  /* type of destination id (CS_LNUM_TYPE,
+                                        or CS_DATATYPE_NULL) */
 
   size_t          stride;            /* stride if strided, 0 otherwise */
 
-  size_t          src_id_shift;      /* starting byte for source id */
   size_t          elt_shift;         /* starting byte for element data */
   size_t          comp_size;         /* Composite element size, with padding */
 
-  size_t          send_size;
-  size_t          recv_size;
+  size_t          send_size;         /* Send buffer element count */
+  size_t          recv_size;         /* Receive buffer element count */
 
-  unsigned char  *send_buffer;
-  unsigned char  *recv_buffer;
+  const void     *send_buffer;       /* Send buffer */
+  unsigned char  *_send_buffer;      /* Send buffer */
 
   int            *send_count;        /* Send counts for MPI_Alltoall */
   int            *recv_count;        /* Receive counts for MPI_Alltoall */
   int            *send_displ;        /* Send displs for MPI_Alltoall */
   int            *recv_displ;        /* Receive displs for MPI_Alltoall */
-
-  int            *src_rank;          /* Source rank, or NULL */
-  int            *dest_rank;         /* Destination rank, or NULL */
 
   MPI_Comm        comm;              /* Associated MPI communicator */
   MPI_Datatype    comp_type;         /* Associated MPI datatype */
@@ -137,35 +143,6 @@ typedef struct {
 
 } _mpi_all_to_all_caller_t;
 
-/* Crystal router management structure */
-
-typedef struct { /* Structure used to manage crystal router information */
-
-  cs_datatype_t   datatype;          /* associated datatype */
-  cs_datatype_t   dest_id_datatype;  /* type of destination id (CS_GNUM_TYPE,
-                                        CS_LNUM_TYPE or CS_DATATYPE_NULL) */
-  bool            add_src_id;        /* add source id ? */
-
-  size_t          stride;            /* stride if strided, 0 otherwise */
-
-  size_t          dest_id_shift;     /* starting byte for destination id */
-  size_t          src_id_shift;      /* starting byte for source id */
-  size_t          elt_shift;         /* starting byte for element data */
-
-  size_t          elt_size;          /* element size if strided, 0 otherwise */
-  size_t          comp_size;         /* composite metadata + element size if
-                                        strided, 0 otherwise */
-  size_t          n_elts[2];
-  size_t          buffer_size[2];
-  unsigned char  *buffer[2];
-
-  MPI_Comm        comm;              /* associated MPI communicator */
-  MPI_Datatype    comp_type;         /* Associated MPI datatype */
-  int             rank_id;           /* local rank id in comm */
-  int             n_ranks;           /* comm size */
-
-} _crystal_router_t;
-
 #endif /* defined(HAVE_MPI) */
 
 /* Structure used to redistribute data */
@@ -174,10 +151,44 @@ typedef struct { /* Structure used to manage crystal router information */
 
 struct _cs_all_to_all_t {
 
-  bool                       strided;  /* True if strided, false otherwise */
+  cs_lnum_t                  n_elts_src;   /* Number of source elements */
+  cs_lnum_t                  n_elts_dest;  /* Number of destination elements
+                                              (-1 before metadata available) */
+
+  int                        flags;        /* option flags */
+
+  /* Send metadata */
+
+  const int                 *dest_rank;    /* optional element destination
+                                              rank (possibly shared) */
+  int                       *_dest_rank;   /* dest_rank if owner, or NULL */
+
+  const cs_lnum_t           *dest_id;      /* optional element destination id
+                                              (possibly shared) */
+  cs_lnum_t                 *_dest_id;     /* dest_id if owner, or NULL */
+
+  /* Receive metadata */
+
+  cs_lnum_t                 *recv_id;      /* received match for dest_id */
+
+  /* Data needed only for Crystal Router reverse communication */
+
+  cs_lnum_t                 *src_id;       /* received match for dest_id */
+  int                       *src_rank;     /* received source rank */
+
+  /* Sub-structures */
 
   _mpi_all_to_all_caller_t  *dc;       /* Default MPI_Alltoall(v) caller */
-  _crystal_router_t         *cr;       /* associated crystal-router */
+  cs_crystal_router_t       *cr;       /* associated crystal-router */
+
+  /* MPI data */
+
+  int                        n_ranks;      /* Number of associated ranks */
+  MPI_Comm                   comm;         /* associated communicator */
+
+  /* Other metadata */
+
+  cs_all_to_all_type_t       type;         /* Communication protocol */
 
 };
 
@@ -193,11 +204,10 @@ static cs_all_to_all_type_t _all_to_all_type = CS_ALL_TO_ALL_MPI_DEFAULT;
 
 #if defined(HAVE_MPI)
 
-/* Call counter and timer: 0: setup, 1: exchange,
-   2: swap source and destination, 3: sort by source rank, 4: copy data */
+/* Call counter and timer: 0: total, 1: metadata comm, 2: data comm */
 
-static size_t              _all_to_all_calls[5] = {0, 0, 0, 0, 0};
-static cs_timer_counter_t  _all_to_all_timers[5];
+static size_t              _all_to_all_calls[3] = {0, 0, 0};
+static cs_timer_counter_t  _all_to_all_timers[3];
 
 #endif /* defined(HAVE_MPI) */
 
@@ -206,6 +216,77 @@ static cs_timer_counter_t  _all_to_all_timers[5];
  *============================================================================*/
 
 #if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Common portion of different all-to-all distributor contructors.
+ *
+ * arguments:
+ *   n_elts <-- number of elements
+ *   flags  <-- sum of ordering and metadata flag constants
+ *   comm   <-- associated MPI communicator
+ *
+ * returns:
+ *   pointer to new all-to-all distributor
+ *----------------------------------------------------------------------------*/
+
+static cs_all_to_all_t *
+_all_to_all_create_base(size_t    n_elts,
+                        int       flags,
+                        MPI_Comm  comm)
+{
+  cs_all_to_all_t *d;
+
+  /* Initialize timers if required */
+
+  if (_all_to_all_calls[0] == 0) {
+    int i;
+    int n_timers = sizeof(_all_to_all_timers)/sizeof(_all_to_all_timers[0]);
+    for (i = 0; i < n_timers; i++)
+      CS_TIMER_COUNTER_INIT(_all_to_all_timers[i]);
+  }
+
+  /* Check flags */
+
+  if (   (flags & CS_ALL_TO_ALL_ORDER_BY_DEST_ID)
+      && (flags & CS_ALL_TO_ALL_ORDER_BY_SRC_RANK))
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: flags may not match both\n"
+              "CS_ALL_TO_ALL_ORDER_BY_DEST_ID and\n"
+              "CS_ALL_TO_ALL_ORDER_BY_SRC_RANK.",
+              __func__);
+
+  /* Allocate structure */
+
+  BFT_MALLOC(d, 1, cs_all_to_all_t);
+
+  /* Create associated sub-structure */
+
+  d->n_elts_src = n_elts;
+  d->n_elts_dest = -1; /* undetermined as yet */
+
+  d->flags = flags;
+
+  d->dest_rank = NULL;
+  d->_dest_rank = NULL;
+
+  d->dest_id = NULL;
+  d->_dest_id = NULL;
+
+  d->recv_id = NULL;
+
+  d->src_id = NULL;
+  d->src_rank = NULL;
+
+  d->cr = NULL;
+  d->dc = NULL;
+
+  d->comm = comm;
+  MPI_Comm_size(comm, &(d->n_ranks));
+
+  d->type = _all_to_all_type;
+
+  return d;
+}
 
 /*----------------------------------------------------------------------------
  * Compute rank displacement based on count.
@@ -241,64 +322,39 @@ _compute_displ(int        n_ranks,
  * First stage of creation for an MPI_Alltoall(v) caller for strided data.
  *
  * parameters:
- *   stride           <-- number of values per entity (interlaced)
- *   datatype         <-- type of data considered
- *   dest_id_datatype <-- type of destination id (CS_GNUM_TYPE, CS_LNUM_TYPE
- *                        or CS_DATATYPE_NULL depending on elt_id values)
- *   add_src_id       <-- add source id metadata (id in elt array)
- *   comm             <-- associated MPI communicator
+ *   flags     <-- metadata flags
+ *   comm      <-- associated MPI communicator
  *---------------------------------------------------------------------------*/
 
 static _mpi_all_to_all_caller_t *
-_alltoall_caller_create_meta_s(int            stride,
-                               cs_datatype_t  datatype,
-                               cs_datatype_t  dest_id_datatype,
-                               bool           add_src_id,
-                               MPI_Comm       comm)
+_alltoall_caller_create_meta(int        flags,
+                             MPI_Comm   comm)
 {
-  int rank_id, n_ranks;
-  size_t elt_size = cs_datatype_size[datatype]*stride;
-  size_t align_size = sizeof(cs_lnum_t);
-
-  if (cs_datatype_size[datatype] > align_size)
-    align_size = cs_datatype_size[datatype];
-
-  if (cs_datatype_size[dest_id_datatype] > align_size)
-    align_size = cs_datatype_size[dest_id_datatype];
-
-  _mpi_all_to_all_caller_t *dc = NULL;
-
-  /* Communicator info */
-
-  MPI_Comm_rank(comm, &rank_id);
-  MPI_Comm_size(comm, &n_ranks);
+  _mpi_all_to_all_caller_t *dc;
 
   /* Allocate structure */
 
   BFT_MALLOC(dc, 1, _mpi_all_to_all_caller_t);
 
-  if (datatype == CS_GNUM_TYPE || datatype == CS_LNUM_TYPE)
-    dc->datatype = datatype;
-  else
-    dc->datatype = CS_DATATYPE_NULL;
+  dc->datatype = CS_DATATYPE_NULL;
 
-  dc->dest_id_datatype = dest_id_datatype;
-  dc->add_src_id = add_src_id;
+  dc->dest_id_datatype = CS_DATATYPE_NULL;
 
-  dc->stride = stride;
+  if (flags & CS_ALL_TO_ALL_ORDER_BY_DEST_ID)
+    dc->dest_id_datatype = CS_LNUM_TYPE;
+
+  dc->stride = 0;
 
   dc->send_size = 0;
   dc->recv_size = 0;
 
-  dc->src_rank = NULL;
-  dc->dest_rank = NULL;
-
   dc->comm = comm;
-  dc->rank_id = rank_id;
-  dc->n_ranks = n_ranks;
+
+  MPI_Comm_rank(comm, &(dc->rank_id));
+  MPI_Comm_size(comm, &(dc->n_ranks));
 
   dc->send_buffer = NULL;
-  dc->recv_buffer = NULL;
+  dc->_send_buffer = NULL;
 
   BFT_MALLOC(dc->send_count, dc->n_ranks, int);
   BFT_MALLOC(dc->recv_count, dc->n_ranks, int);
@@ -307,19 +363,61 @@ _alltoall_caller_create_meta_s(int            stride,
 
   /* Compute data size and alignment */
 
-  if (dc->dest_id_datatype == CS_GNUM_TYPE) {
-    dc->src_id_shift = sizeof(cs_gnum_t);
-    align_size = sizeof(cs_gnum_t);
-  }
-  else if (dc->dest_id_datatype == CS_LNUM_TYPE)
-    dc->src_id_shift = sizeof(cs_lnum_t);
+  if (dc->dest_id_datatype == CS_LNUM_TYPE)
+    dc->elt_shift = sizeof(cs_lnum_t);
   else
-    dc->src_id_shift = 0;
+    dc->elt_shift = 0;
 
-  if (dc->add_src_id)
-    dc->elt_shift = dc->src_id_shift + cs_datatype_size[CS_LNUM_TYPE];
+  size_t align_size = sizeof(cs_lnum_t);
+
+  if (dc->elt_shift % align_size)
+    dc->elt_shift += align_size - (dc->elt_shift % align_size);
+
+  dc->comp_size = dc->elt_shift;
+
+  dc->comp_type = MPI_BYTE;
+
+  /* Return pointer to structure */
+
+  return dc;
+}
+
+/*----------------------------------------------------------------------------
+ * Update all MPI_Alltoall(v) caller metadata for strided data.
+ *
+ * parameters:
+ *   dc        <-> distributor caller
+ *   datatype  <-- associated datatype
+ *   stride    <-- associated stride
+ *---------------------------------------------------------------------------*/
+
+static void
+_alltoall_caller_update_meta_s(_mpi_all_to_all_caller_t  *dc,
+                               cs_datatype_t              datatype,
+                               int                        stride)
+{
+  size_t elt_size = cs_datatype_size[datatype]*stride;
+
+  /* Free previous associated datatype if needed */
+
+  if (dc->comp_type != MPI_BYTE)
+    MPI_Type_free(&(dc->comp_type));
+
+  /* Now update metadata */
+
+  dc->datatype = datatype;
+  dc->stride = stride;
+
+  /* Recompute data size and alignment */
+
+  size_t align_size = sizeof(cs_lnum_t);
+  if (cs_datatype_size[datatype] > align_size)
+    align_size = cs_datatype_size[datatype];
+
+  if (dc->dest_id_datatype == CS_LNUM_TYPE)
+    dc->elt_shift = sizeof(cs_lnum_t);
   else
-    dc->elt_shift = dc->src_id_shift;
+    dc->elt_shift = 0;
 
   if (dc->elt_shift % align_size)
     dc->elt_shift += align_size - (dc->elt_shift % align_size);
@@ -329,279 +427,125 @@ _alltoall_caller_create_meta_s(int            stride,
   if (elt_size % align_size)
     dc->comp_size += align_size - (elt_size % align_size);;
 
-  /* Create associated MPI datatype */
+  /* Update associated MPI datatype */
 
   MPI_Type_contiguous(dc->comp_size, MPI_BYTE, &(dc->comp_type));
   MPI_Type_commit(&(dc->comp_type));
-
-  /* Return pointer to structure */
-
-  return dc;
 }
 
 /*----------------------------------------------------------------------------
- * Create a MPI_Alltoall(v) caller for strided data.
+ * Swap source and destination ranks of all-to-all distributor.
+ *
+ * parameters:
+ *   d <->  pointer to associated all-to-all distributor
+ *----------------------------------------------------------------------------*/
+
+static void
+_alltoall_caller_swap_src_dest(_mpi_all_to_all_caller_t  *dc)
+{
+  size_t tmp_size[2] = {dc->send_size, dc->recv_size};
+  int *tmp_count = dc->recv_count;
+  int *tmp_displ = dc->recv_displ;
+
+  dc->send_size = tmp_size[1];
+  dc->recv_size = tmp_size[0];
+
+  dc->recv_count = dc->send_count;
+  dc->recv_displ = dc->send_displ;
+
+  dc->send_count = tmp_count;
+  dc->send_displ = tmp_displ;
+}
+
+/*----------------------------------------------------------------------------
+ * Prepare a MPI_Alltoall(v) caller for strided data.
  *
  * parameters:
  *   n_elts           <-- number of elements
  *   stride           <-- number of values per entity (interlaced)
  *   datatype         <-- type of data considered
- *   dest_id_datatype <-- type of destination id (CS_GNUM_TYPE, CS_LNUM_TYPE
- *                        or CS_DATATYPE_NULL depending on elt_id values)
- *   add_src_id       <-- add source id metadata (id in elt array)
  *   elt              <-- element values
- *   dest_id          <-- element destination id, global number, or NULL
+ *   dest_id          <-- element destination id, or NULL
+ *   recv_id          <-- element receive id (for reverse mode), or NULL
  *   dest_rank        <-- destination rank for each element
- *   comm             <-- associated MPI communicator
  *---------------------------------------------------------------------------*/
 
-static _mpi_all_to_all_caller_t *
-_alltoall_caller_create_s(size_t         n_elts,
-                          int            stride,
-                          cs_datatype_t  datatype,
-                          cs_datatype_t  dest_id_datatype,
-                          bool           add_src_id,
-                          const void    *elt,
-                          const void    *elt_id,
-                          const int      dest_rank[],
-                          MPI_Comm       comm)
+static void
+_alltoall_caller_prepare_s(_mpi_all_to_all_caller_t  *dc,
+                           size_t                     n_elts,
+                           int                        stride,
+                           cs_datatype_t              datatype,
+                           bool                       reverse,
+                           const void                *data,
+                           const cs_lnum_t           *dest_id,
+                           const cs_lnum_t           *recv_id,
+                           const int                  dest_rank[])
 {
   int i;
-  size_t j, k;
 
   size_t elt_size = cs_datatype_size[datatype]*stride;
 
-  unsigned const char *_elt = elt;
-  unsigned const char *_elt_id = elt_id;
+  unsigned const char *_data = data;
 
-  assert(elt != NULL || (n_elts == 0 || stride == 0));
+  assert(data != NULL || (n_elts == 0 || stride == 0));
 
-  /* Create base data */
-
-  _mpi_all_to_all_caller_t *dc = _alltoall_caller_create_meta_s(stride,
-                                                                datatype,
-                                                                dest_id_datatype,
-                                                                add_src_id,
-                                                                comm);
-
-  /* Count values to send and receive */
-
-  for (i = 0; i < dc->n_ranks; i++)
-    dc->send_count[i] = 0;
-
-  for (j = 0; j < n_elts; j++)
-    dc->send_count[dest_rank[j]] += 1;
-
-  dc->send_size = _compute_displ(dc->n_ranks, dc->send_count, dc->send_displ);
+  _alltoall_caller_update_meta_s(dc, datatype, stride);
 
   /* Allocate send buffer */
 
-  BFT_MALLOC(dc->send_buffer, dc->send_size*dc->comp_size, unsigned char);
-  memset(dc->send_buffer, 0, dc->send_size*dc->comp_size);
+  if (reverse && recv_id == NULL) {
+    BFT_FREE(dc->_send_buffer);
+    dc->send_buffer = data;
+  }
+  else {
+    BFT_REALLOC(dc->_send_buffer, dc->send_size*dc->comp_size, unsigned char);
+    dc->send_buffer = dc->_send_buffer;
+  }
 
   /* Copy metadata */
 
-  if (dc->dest_id_datatype != CS_DATATYPE_NULL) {
-    const size_t id_size =   (dc->dest_id_datatype == CS_GNUM_TYPE)
-                           ? sizeof(cs_gnum_t) : sizeof(cs_lnum_t);
-    for (j = 0; j < n_elts; j++) {
+  if (dc->dest_id_datatype == CS_LNUM_TYPE) {
+    unsigned const char *_dest_id = (unsigned const char *)dest_id;
+    const size_t id_size = sizeof(cs_lnum_t);
+    for (size_t j = 0; j < n_elts; j++) {
       size_t w_displ = dc->send_displ[dest_rank[j]]*dc->comp_size;
       size_t r_displ = j*id_size;
       dc->send_displ[dest_rank[j]] += 1;
-      for (k = 0; k < id_size; k++)
-        dc->send_buffer[w_displ + k] = _elt_id[r_displ + k];
+      for (size_t k = 0; k < id_size; k++)
+        dc->_send_buffer[w_displ + k] = _dest_id[r_displ + k];
     }
     /* Reset send_displ */
     for (i = 0; i < dc->n_ranks; i++)
       dc->send_displ[i] -= dc->send_count[i];
   }
 
-  if (dc->add_src_id) {
-    const size_t id_size = sizeof(cs_lnum_t);
-    for (j = 0; j < n_elts; j++) {
-      cs_lnum_t src_id = j;
-      unsigned char *_src_id = (unsigned char *)(&src_id);
+  /* Copy data; in case of reverse send with destination ids, the
+     matching indirection must be applied here. */
+
+  if (!reverse) {
+    for (size_t j = 0; j < n_elts; j++) {
       size_t w_displ =   dc->send_displ[dest_rank[j]]*dc->comp_size
-                       + dc->src_id_shift;
+                       + dc->elt_shift;
+      size_t r_displ = j*elt_size;
       dc->send_displ[dest_rank[j]] += 1;
-      for (k = 0; k < id_size; k++)
-        dc->send_buffer[w_displ + k] = _src_id[k];
+      for (size_t k = 0; k < elt_size; k++)
+        dc->_send_buffer[w_displ + k] = _data[r_displ + k];
     }
     /* Reset send_displ */
     for (i = 0; i < dc->n_ranks; i++)
       dc->send_displ[i] -= dc->send_count[i];
   }
-
-  /* Copy data */
-
-  for (j = 0; j < n_elts; j++) {
-
-    size_t w_displ =   dc->send_displ[dest_rank[j]]*dc->comp_size
-                     + dc->elt_shift;
-    size_t r_displ = j*elt_size;
-
-    dc->send_displ[dest_rank[j]] += 1;
-
-    for (k = 0; k < elt_size; k++)
-      dc->send_buffer[w_displ + k] = _elt[r_displ + k];
-
-  }
-  /* Reset send_displ */
-  for (i = 0; i < dc->n_ranks; i++)
-    dc->send_displ[i] -= dc->send_count[i];
-
-  /* Return pointer to structure */
-
-  return dc;
-}
-
-/*----------------------------------------------------------------------------
- * Create a MPI_Alltoall(v) caller for strided data using block information.
- *
- * parameters:
- *   n_elts           <-- number of elements
- *   stride           <-- number of values per entity (interlaced)
- *   datatype         <-- type of data considered
- *   dest_id_datatype <-- type of destination id (CS_GNUM_TYPE, CS_LNUM_TYPE
- *                        or CS_DATATYPE_NULL)
- *   add_src_id       <-- add source id metadata (id in elt array)
- *   elt              <-- element values
- *   elt_gnum         <-- global element numbers
- *   bi               <-- destination block distribution info
- *   comm             <-- associated MPI communicator
- *---------------------------------------------------------------------------*/
-
-static _mpi_all_to_all_caller_t *
-_alltoall_caller_create_from_block_s(size_t                 n_elts,
-                                     int                    stride,
-                                     cs_datatype_t          datatype,
-                                     cs_datatype_t          dest_id_datatype,
-                                     bool                   add_src_id,
-                                     const void            *elt,
-                                     const cs_gnum_t       *elt_gnum,
-                                     cs_block_dist_info_t   bi,
-                                     MPI_Comm               comm)
-{
-  int i;
-  size_t j, k;
-
-  size_t elt_size = cs_datatype_size[datatype]*stride;
-
-  unsigned const char *_elt = elt;
-
-  const int rank_step = bi.rank_step;
-  const cs_gnum_t block_size = bi.block_size;
-
-  assert(elt != NULL || (n_elts == 0 || stride == 0));
-
-  /* Create base data */
-
-  _mpi_all_to_all_caller_t *dc = _alltoall_caller_create_meta_s(stride,
-                                                                datatype,
-                                                                dest_id_datatype,
-                                                                add_src_id,
-                                                                comm);
-
-  /* Count values to send and receive */
-
-  for (i = 0; i < dc->n_ranks; i++)
-    dc->send_count[i] = 0;
-
-  for (j = 0; j < n_elts; j++) {
-    cs_gnum_t g_elt_id = elt_gnum[j] -1;
-    cs_gnum_t _dest_rank = g_elt_id / block_size;
-    int dest_rank = _dest_rank*rank_step;
-    dc->send_count[dest_rank] += 1;
-  }
-
-  dc->send_size = _compute_displ(dc->n_ranks, dc->send_count, dc->send_displ);
-
-  /* Allocate send buffer */
-
-  BFT_MALLOC(dc->send_buffer, dc->send_size*dc->comp_size, unsigned char);
-  memset(dc->send_buffer, 0, dc->send_size*dc->comp_size);
-
-  /* Copy metadata */
-
-  if (dc->dest_id_datatype == CS_GNUM_TYPE) {
-    const size_t id_size = sizeof(cs_gnum_t);
-    for (j = 0; j < n_elts; j++) {
-      cs_gnum_t g_elt_num = elt_gnum[j];
-      cs_gnum_t g_elt_id = g_elt_num -1;
-      cs_gnum_t _dest_rank = g_elt_id / block_size;
-      int dest_rank = _dest_rank*rank_step;
-      size_t w_displ = dc->send_displ[dest_rank]*dc->comp_size;
-      unsigned char *_g_elt_num = (unsigned char *)(&g_elt_num);
-      dc->send_displ[dest_rank] += 1;
-      for (k = 0; k < id_size; k++)
-        dc->send_buffer[w_displ + k] = _g_elt_num[k];
+  else if (recv_id != NULL) { /* reverse here */
+    for (size_t j = 0; j < dc->send_size; j++) {
+      size_t w_displ = dc->comp_size*j + dc->elt_shift;
+      size_t r_displ = recv_id[j]*elt_size;
+      for (size_t k = 0; k < elt_size; k++)
+        dc->_send_buffer[w_displ + k] = _data[r_displ + k];
     }
-    /* Reset send_displ */
-    for (i = 0; i < dc->n_ranks; i++)
-      dc->send_displ[i] -= dc->send_count[i];
   }
-  else if (dc->dest_id_datatype == CS_LNUM_TYPE) {
-    const size_t id_size = sizeof(cs_lnum_t);
-    for (j = 0; j < n_elts; j++) {
-      cs_gnum_t g_elt_id = elt_gnum[j] -1;
-      cs_gnum_t _dest_rank = g_elt_id / block_size;
-      cs_lnum_t b_elt_id = g_elt_id % block_size;;
-      int dest_rank = _dest_rank*rank_step;
-      size_t w_displ = dc->send_displ[dest_rank]*dc->comp_size;
-      unsigned char *_b_elt_id = (unsigned char *)(&b_elt_id);
-      dc->send_displ[dest_rank] += 1;
-      for (k = 0; k < id_size; k++)
-        dc->send_buffer[w_displ + k] = _b_elt_id[k];
-    }
-    /* Reset send_displ */
-    for (i = 0; i < dc->n_ranks; i++)
-      dc->send_displ[i] -= dc->send_count[i];
+  else { /* If revert and no recv_id */
+    assert(dc->send_buffer == data);
   }
-
-  if (dc->add_src_id) {
-    const size_t id_size = sizeof(cs_lnum_t);
-    for (j = 0; j < n_elts; j++) {
-      cs_gnum_t g_elt_id = elt_gnum[j] -1;
-      cs_gnum_t _dest_rank = g_elt_id / block_size;
-      int dest_rank = _dest_rank*rank_step;
-      cs_lnum_t src_id = j;
-      unsigned char *_src_id = (unsigned char *)(&src_id);
-      size_t w_displ =   dc->send_displ[dest_rank]*dc->comp_size
-                       + dc->src_id_shift;
-      dc->send_displ[dest_rank] += 1;
-      for (k = 0; k < id_size; k++)
-        dc->send_buffer[w_displ + k] = _src_id[k];
-    }
-    /* Reset send_displ */
-    for (i = 0; i < dc->n_ranks; i++)
-      dc->send_displ[i] -= dc->send_count[i];
-  }
-
-  /* Copy data */
-
-  for (j = 0; j < n_elts; j++) {
-
-    cs_gnum_t g_elt_id = elt_gnum[j] -1;
-    cs_gnum_t _dest_rank = g_elt_id / block_size;
-    int dest_rank = _dest_rank*rank_step;
-
-    size_t w_displ =   dc->send_displ[dest_rank]*dc->comp_size
-                     + dc->elt_shift;
-    size_t r_displ = j*elt_size;
-
-    dc->send_displ[dest_rank] += 1;
-
-    for (k = 0; k < elt_size; k++)
-      dc->send_buffer[w_displ + k] = _elt[r_displ + k];
-
-  }
-  /* Reset send_displ */
-  for (i = 0; i < dc->n_ranks; i++)
-    dc->send_displ[i] -= dc->send_count[i];
-
-  /* Return pointer to structure */
-
-  return dc;
 }
 
 /*----------------------------------------------------------------------------
@@ -618,10 +562,7 @@ _alltoall_caller_destroy(_mpi_all_to_all_caller_t **dc)
     _mpi_all_to_all_caller_t *_dc = *dc;
     if (_dc->comp_type != MPI_BYTE)
       MPI_Type_free(&(_dc->comp_type));
-    BFT_FREE(_dc->recv_buffer);
-    BFT_FREE(_dc->send_buffer);
-    BFT_FREE(_dc->dest_rank);
-    BFT_FREE(_dc->src_rank);
+    BFT_FREE(_dc->_send_buffer);
     BFT_FREE(_dc->recv_displ);
     BFT_FREE(_dc->send_displ);
     BFT_FREE(_dc->recv_count);
@@ -631,592 +572,126 @@ _alltoall_caller_destroy(_mpi_all_to_all_caller_t **dc)
 }
 
 /*----------------------------------------------------------------------------
- * Exchange strided data with a MPI_Alltoall(v) caller.
+ * Exchange metadata for an MPI_Alltoall(v) caller.
  *
  * Order of data from a same source rank is preserved.
  *
  * parameters:
- *   dc <-> associated MPI_Alltoall(v) caller structure
+ *   dc        <-> associated MPI_Alltoall(v) caller structure
+ *   n_elts    <-- number of elements
+ *   dest_rank <-- destination rank for each element
  *---------------------------------------------------------------------------*/
 
 static  void
-_alltoall_caller_exchange_strided(_mpi_all_to_all_caller_t  *dc)
+_alltoall_caller_exchange_meta(_mpi_all_to_all_caller_t  *dc,
+                               size_t                     n_elts,
+                               const int                  dest_rank[])
 {
+  /* Count values to send and receive */
+
+  for (int i = 0; i < dc->n_ranks; i++)
+    dc->send_count[i] = 0;
+
+  for (size_t j = 0; j < n_elts; j++)
+    dc->send_count[dest_rank[j]] += 1;
+
+  dc->send_size = _compute_displ(dc->n_ranks, dc->send_count, dc->send_displ);
+
   /* Exchange counts */
+
+  cs_timer_t t0 = cs_timer_time();
 
   MPI_Alltoall(dc->send_count, 1, MPI_INT,
                dc->recv_count, 1, MPI_INT,
                dc->comm);
 
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_METADATA,
+                            &t0, &t1);
+  _all_to_all_calls[CS_ALL_TO_ALL_TIME_METADATA] += 1;
+
   dc->recv_size = _compute_displ(dc->n_ranks, dc->recv_count, dc->recv_displ);
-
-  /* Exchange data */
-
-  BFT_REALLOC(dc->recv_buffer, dc->recv_size*dc->comp_size, unsigned char);
-
-  MPI_Alltoallv(dc->send_buffer, dc->send_count, dc->send_displ, dc->comp_type,
-                dc->recv_buffer, dc->recv_count, dc->recv_displ, dc->comp_type,
-                dc->comm);
 }
 
 /*----------------------------------------------------------------------------
- * First stage of creation for a crystal router for strided data.
+ * Exchange strided data with a MPI_Alltoall(v) caller.
  *
  * parameters:
- *   n_elts           <-- number of elements
- *   stride           <-- number of values per entity (interlaced)
- *   datatype         <-- type of data considered
- *   dest_id_datatype <-- type of destination id (CS_GNUM_TYPE, CS_LNUM_TYPE
- *                        or CS_DATATYPE_NULL depending on elt_id values)
- *   add_src_id       <-- add source id metadata (id in elt array)
- *   comm             <-- associated MPI communicator
- *---------------------------------------------------------------------------*/
-
-static _crystal_router_t *
-_crystal_create_meta_s(size_t         n_elts,
-                       int            stride,
-                       cs_datatype_t  datatype,
-                       cs_datatype_t  dest_id_datatype,
-                       bool           add_src_id,
-                       MPI_Comm       comm)
-{
-  int rank_id, n_ranks;
-  _crystal_router_t *cr = NULL;
-
-  size_t comp_size = 0;
-  size_t elt_size = cs_datatype_size[datatype]*stride;
-  size_t align_size = sizeof(cs_lnum_t);
-
-  if (cs_datatype_size[datatype] > align_size)
-    align_size = cs_datatype_size[datatype];
-
-  if (cs_datatype_size[dest_id_datatype] > align_size)
-    align_size = cs_datatype_size[dest_id_datatype];
-
-  /* Ensure alignement on integer size at least */
-
-  if (elt_size % sizeof(int) > 0)
-    comp_size += sizeof(int) - elt_size % sizeof(int);
-
-  /* Communicator info */
-
-  MPI_Comm_rank(comm, &rank_id);
-  MPI_Comm_size(comm, &n_ranks);
-
-  /* Allocate structure */
-
-  BFT_MALLOC(cr, 1, _crystal_router_t);
-
-  if (datatype == CS_GNUM_TYPE || datatype == CS_LNUM_TYPE)
-    cr->datatype = datatype;
-  else
-    cr->datatype = CS_DATATYPE_NULL;
-
-  cr->dest_id_datatype = dest_id_datatype;
-  cr->add_src_id = add_src_id;
-
-  cr->stride = stride;
-  cr->elt_size = elt_size;
-  cr->comp_size = comp_size;
-  cr->n_elts[0] = n_elts;
-  cr->n_elts[1] = 0;
-
-  cr->comm = comm;
-  cr->rank_id = rank_id;
-  cr->n_ranks = n_ranks;
-
-  /* Compute data size and alignment */
-
-  cr->dest_id_shift = 2*sizeof(int);
-
-  if (cr->dest_id_shift % sizeof(cs_gnum_t) != 0)
-    cr->dest_id_shift
-      += (sizeof(cs_gnum_t) - (cr->dest_id_shift % sizeof(cs_gnum_t)));
-
-  if (cr->dest_id_datatype == CS_GNUM_TYPE) {
-    cr->src_id_shift = cr->dest_id_shift + sizeof(cs_gnum_t);
-    align_size = sizeof(cs_gnum_t);
-  }
-  else if (cr->dest_id_datatype == CS_LNUM_TYPE)
-    cr->src_id_shift = cr->dest_id_shift + sizeof(cs_lnum_t);
-  else
-    cr->src_id_shift = cr->dest_id_shift;
-
-  if (cr->add_src_id)
-    cr->elt_shift = cr->src_id_shift + cs_datatype_size[CS_LNUM_TYPE];
-  else
-    cr->elt_shift = cr->src_id_shift;
-
-  if (cr->elt_shift % align_size)
-    cr->elt_shift += align_size - (cr->elt_shift % align_size);
-
-  cr->comp_size = cr->elt_shift + elt_size;
-
-  if (elt_size % align_size)
-    cr->comp_size += align_size - (elt_size % align_size);;
-
-  /* Create associated MPI datatype */
-
-  MPI_Type_contiguous(cr->comp_size, MPI_BYTE, &(cr->comp_type));
-  MPI_Type_commit(&(cr->comp_type));
-
-  /* Allocate buffers */
-
-  cr->buffer_size[0] = n_elts*cr->comp_size;
-  cr->buffer_size[1] = 0;
-  BFT_MALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
-  memset(cr->buffer[0], 0, cr->buffer_size[0]);
-  cr->buffer[1] = NULL;
-
-  return cr;
-}
-
-/*----------------------------------------------------------------------------
- * Create a crystal router for strided data.
- *
- * parameters:
- *   n_elts           <-- number of elements
- *   stride           <-- number of values per entity (interlaced)
- *   datatype         <-- type of data considered
- *   dest_id_datatype <-- type of destination id (CS_GNUM_TYPE, CS_LNUM_TYPE
- *                        or CS_DATATYPE_NULL)
- *   add_src_id       <-- add source id metadata (id in elt array)
- *   elt              <-- element values
- *   dest_id          <-- element destination id, global number, or NULL
- *   dest_rank        <-- destination rank for each element
- *   comm             <-- associated MPI communicator
- *---------------------------------------------------------------------------*/
-
-static _crystal_router_t *
-_crystal_create_s(size_t           n_elts,
-                  int              stride,
-                  cs_datatype_t    datatype,
-                  cs_datatype_t    dest_id_datatype,
-                  bool             add_src_id,
-                  const void      *elt,
-                  const void      *dest_id,
-                  const int        dest_rank[],
-                  MPI_Comm         comm)
-{
-  size_t i, j;
-  unsigned const char *_elt = elt;
-  unsigned const char *_dest_id = dest_id;
-
-  /* Allocate structure */
-
-  _crystal_router_t *cr = _crystal_create_meta_s(n_elts,
-                                                 stride,
-                                                 datatype,
-                                                 dest_id_datatype,
-                                                 add_src_id,
-                                                 comm);
-  /* Copy data */
-
-  for (i = 0; i < n_elts; i++) {
-
-    int *pr = (int *)(cr->buffer[0] + i*cr->comp_size);
-    unsigned char *pe = cr->buffer[0] + i*cr->comp_size + cr->elt_shift;
-    unsigned const char *_psrc = _elt + i*cr->elt_size;
-
-    pr[0] = dest_rank[i];
-    pr[1] = cr->rank_id;
-    for (j = 0; j < cr->elt_size; j++)
-      pe[j] = _psrc[j];
-
-  }
-
-  /* Add metadata */
-
-  if (cr->dest_id_datatype != CS_DATATYPE_NULL) {
-    const size_t id_size =   (cr->dest_id_datatype == CS_GNUM_TYPE)
-                           ? sizeof(cs_gnum_t) : sizeof(cs_lnum_t);
-    for (i = 0; i < n_elts; i++) {
-      unsigned char *pi = cr->buffer[0] + cr->comp_size + cr->dest_id_shift;
-      unsigned const char *_p_dest_id = _dest_id + i*id_size;
-      for (j = 0; j < id_size; j++)
-        pi[j] = _p_dest_id[j];
-    }
-  }
-
-  if (cr->add_src_id) {
-    const size_t id_size = sizeof(cs_lnum_t);
-    for (i = 0; i < n_elts; i++) {
-      cs_lnum_t src_id = i;
-      unsigned char *_src_id = (unsigned char *)(&src_id);
-      unsigned char *pi = cr->buffer[0] + i*cr->comp_size + cr->src_id_shift;
-      for (j = 0; j < id_size; j++)
-        pi[j] = _src_id[j];
-    }
-  }
-
-  return cr;
-}
-
-/*----------------------------------------------------------------------------
- * Create a crystal router for strided data using block information.
- *
- * parameters:
- *   n_elts           <-- number of elements
- *   stride           <-- number of values per entity (interlaced)
- *   datatype         <-- type of data considered
- *   dest_id_datatype <-- type of destination id (CS_GNUM_TYPE, CS_LNUM_TYPE
- *                        or CS_DATATYPE_NULL)
- *   add_src_id       <-- add source id metadata (id in elt array)
- *   elt              <-- element values
- *   elt_gnum         <-- global element numbers
- *   bi               <-- destination block distribution info
- *   comm             <-- associated MPI communicator
- *---------------------------------------------------------------------------*/
-
-static _crystal_router_t *
-_crystal_create_from_block_s(size_t                 n_elts,
-                             int                    stride,
-                             cs_datatype_t          datatype,
-                             cs_datatype_t          dest_id_datatype,
-                             bool                   add_src_id,
-                             const void            *elt,
-                             const cs_gnum_t       *elt_gnum,
-                             cs_block_dist_info_t   bi,
-                             MPI_Comm               comm)
-{
-  size_t i, j;
-  unsigned const char *_elt = elt;
-
-  /* Allocate structure */
-
-  _crystal_router_t *cr = _crystal_create_meta_s(n_elts,
-                                                 stride,
-                                                 datatype,
-                                                 dest_id_datatype,
-                                                 add_src_id,
-                                                 comm);
-  /* Copy data */
-
-  const int rank_step = bi.rank_step;
-  const cs_gnum_t block_size = bi.block_size;
-
-  for (i = 0; i < n_elts; i++) {
-
-    int *pr = (int *)(cr->buffer[0] + i*cr->comp_size);
-    unsigned char *pe = cr->buffer[0] + i*cr->comp_size + cr->elt_shift;
-    unsigned const char *_psrc = _elt + i*cr->elt_size;
-
-    cs_gnum_t g_elt_id = elt_gnum[i] -1;
-    cs_gnum_t _dest_rank = g_elt_id / block_size;
-    int dest_rank = _dest_rank*rank_step;
-
-    pr[0] = dest_rank;
-    pr[1] = cr->rank_id;
-    for (j = 0; j < cr->elt_size; j++)
-      pe[j] = _psrc[j];
-
-  }
-
-  /* Add metadata */
-
-  if (cr->dest_id_datatype == CS_GNUM_TYPE) {
-    const size_t gnum_size = sizeof(cs_gnum_t);
-    for (i = 0; i < n_elts; i++) {
-      cs_gnum_t g_elt_num = elt_gnum[j];
-      unsigned char *_g_elt_num = (unsigned char *)(&g_elt_num);
-      unsigned char *pi = cr->buffer[0] + cr->comp_size + cr->dest_id_shift;
-      for (j = 0; j < gnum_size; j++)
-        pi[j] = _g_elt_num[j];
-    }
-  }
-
-  else if (cr->dest_id_datatype == CS_LNUM_TYPE) {
-    const size_t id_size = sizeof(cs_lnum_t);
-    for (i = 0; i < n_elts; i++) {
-      cs_gnum_t g_elt_id = elt_gnum[i] -1;
-      cs_lnum_t b_elt_id = g_elt_id % block_size;;
-      unsigned char *_b_elt_id = (unsigned char *)(&b_elt_id);
-      unsigned char *pi = cr->buffer[0] + cr->comp_size + cr->dest_id_shift;
-      for (j = 0; j < id_size; j++)
-        pi[j] = _b_elt_id[j];
-    }
-  }
-
-  if (cr->add_src_id) {
-    const size_t id_size = sizeof(cs_lnum_t);
-    for (i = 0; i < n_elts; i++) {
-      cs_lnum_t src_id = j;
-      unsigned char *_src_id = (unsigned char *)(&src_id);
-      unsigned char *pi = cr->buffer[0] + i*cr->comp_size + cr->src_id_shift;
-      for (j = 0; j < id_size; j++)
-        pi[j] = _src_id[j];
-    }
-  }
-
-  return cr;
-}
-
-/*----------------------------------------------------------------------------
- * Destroy a crystal router.
- *
- * parameters:
- *   cr <-> pointer to pointer to crystal router structure
- *---------------------------------------------------------------------------*/
-
-static void
-_crystal_destroy(_crystal_router_t **cr)
-{
-  if (cr != NULL) {
-    _crystal_router_t *_cr = *cr;
-    if (_cr->comp_type != MPI_BYTE)
-      MPI_Type_free(&(_cr->comp_type));
-    BFT_FREE(_cr->buffer[1]);
-    BFT_FREE(_cr->buffer[0]);
-    BFT_FREE(_cr);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Partition strided data for exchange with a crystal router.
- *
- * parameters:
- *   cr      <-> associated crystal router structure
- *   send_id <-> id of "send" buffer" (1 if low = buf0, 0 if low = buf1)
- *   cutoff  <-- cutoff rank
- *---------------------------------------------------------------------------*/
-
-static void
-_crystal_partition_strided(_crystal_router_t  *cr,
-                           int                 send_id,
-                           int                 cutoff)
-{
-  cs_lnum_t i;
-
-  cs_lnum_t n0 = 0, n1 = 0;
-
-  const cs_lnum_t n = cr->n_elts[0];
-  const int id0 = (send_id + 1) % 2;
-  const int id1 = send_id;
-  const size_t comp_size = cr->comp_size;
-
-  assert(send_id == 0 || send_id == 1);
-
-  if (cr->buffer_size[1] < cr->buffer_size[0]) {
-    cr->buffer_size[1] = cr->buffer_size[0];
-    BFT_REALLOC(cr->buffer[1], cr->buffer_size[1], unsigned char);
-  }
-
-  for (i = 0; i < n; i++) {
-    unsigned char *src = cr->buffer[0] + i*comp_size;
-    int *r = (int *)src;
-    if (r[0] < cutoff) {
-      unsigned char *dest = cr->buffer[id0] + n0*comp_size;
-      memmove(dest, src, comp_size);
-      n0++;
-    }
-    else {
-      unsigned char *dest = cr->buffer[id1] + n1*comp_size;
-      memmove(dest, src, comp_size);
-      n1++;
-    }
-  }
-
-  assert(n0 + n1 == n);
-
-  cr->n_elts[id0] = n0;
-  cr->n_elts[id1] = n1;
-}
-
-/*----------------------------------------------------------------------------
- * Send and receive strided data with a crystal router for one stage.
- *
- * parameters:
- *   cr        <-> associated crystal router structure
- *   target    <-- base target rank to send/receive from
- *   n_recv    <-- number of ranks to receive from
- *---------------------------------------------------------------------------*/
-
-static  void
-_crystal_sendrecv_strided(_crystal_router_t  *cr,
-                          int                 target,
-                          int                 n_recv)
-{
-  int send_size;
-  cs_lnum_t i;
-  size_t loc_size;
-  uint64_t test_size;
-
-  MPI_Status status[3];
-  MPI_Request request[3] = {MPI_REQUEST_NULL,
-                            MPI_REQUEST_NULL,
-                            MPI_REQUEST_NULL};
-  int recv_size[2] = {0, 0};
-
-  /* Send message to target process */
-
-  send_size = cr->n_elts[1];
-
-  test_size = (uint64_t)cr->n_elts[1];
-  if ((uint64_t)send_size != test_size)
-    bft_error(__FILE__, __LINE__, 0,
-              "Crystal router:"
-              "  Message to send would have size too large for C int: %llu",
-              (unsigned long long)test_size);
-
-  MPI_Isend(&send_size, 1, MPI_INT, target, cr->rank_id,
-            cr->comm, &request[0]);
-
-  for (i = 0; i < n_recv; i++)
-    MPI_Irecv(recv_size+i, 1, MPI_INT, target+i, target+i,
-              cr->comm, request+i+1);
-
-  MPI_Waitall(n_recv + 1, request, status);
-
-  loc_size = cr->n_elts[0]*cr->comp_size;
-  for (i=0; i < n_recv; i++)
-    loc_size += recv_size[i]*cr->comp_size;
-
-  if (loc_size > cr->buffer_size[0]) {
-    cr->buffer_size[0] = loc_size;
-    BFT_REALLOC(cr->buffer[0], cr->buffer_size[0], unsigned char);
-  }
-
-  MPI_Isend(cr->buffer[1], cr->n_elts[1], cr->comp_type,
-            target, cr->rank_id, cr->comm, request);
-
-  cr->n_elts[1] = 0;
-
-  if (n_recv) {
-
-    unsigned char *r_ptr = cr->buffer[0] + (cr->n_elts[0]*cr->comp_size);
-
-    MPI_Irecv(r_ptr, recv_size[0], cr->comp_type,
-              target, target, cr->comm, request+1);
-
-    cr->n_elts[0] += recv_size[0];
-
-    if (n_recv == 2) {
-
-      r_ptr += recv_size[0]*cr->comp_size;
-
-      MPI_Irecv(r_ptr, recv_size[1], cr->comp_type,
-                target+1, target+1, cr->comm, request+2);
-
-      cr->n_elts[0] += recv_size[1];
-
-    }
-
-  }
-
-  MPI_Waitall(n_recv+1, request, status);
-}
-
-/*----------------------------------------------------------------------------
- * Exchange strided data with a crystal router.
- *
- * Order of data from a same source rank is preserved.
- *
- * parameters:
- *   cr <-> associated crystal router structure
- *---------------------------------------------------------------------------*/
-
-static  void
-_crystal_exchange_strided(_crystal_router_t  *cr)
-{
-  int target = -1;
-  int send_part = 0;
-  int b_low = 0;
-  int n_sub_ranks = cr->n_ranks;
-
-  while (n_sub_ranks > 1) {
-
-    int n_recv = 1;
-    int n_low = n_sub_ranks / 2;
-    int b_high = b_low + n_low;
-
-    if (cr->rank_id < b_high) {
-      target = cr->rank_id + n_low;
-      if ((n_sub_ranks & 1) && (cr->rank_id == b_high - 1))
-        n_recv = 2;
-      send_part = 1;
-    }
-    else {
-      target = cr->rank_id - n_low;
-      if (target == b_high) {
-        target--;
-        n_recv = 0;
-      }
-      send_part = 0;
-    }
-
-    /* Partition data */
-
-    _crystal_partition_strided(cr, send_part, b_high);
-
-    /* Send message to target process */
-
-    _crystal_sendrecv_strided(cr, target, n_recv);
-
-    /* Ready for next exchange */
-
-    if (cr->rank_id < b_high)
-      n_sub_ranks = n_low;
-    else {
-      n_sub_ranks -= n_low;
-      b_low = b_high;
-    }
-
-  }
-
-  cr->n_elts[1] = 0;
-  cr->buffer_size[1] = 0;
-  BFT_FREE(cr->buffer[1]);
-}
-
-/*----------------------------------------------------------------------------
- * Compare strided elements from crystal router (qsort function).
- *
- * parameters:
- *   x <-> pointer to first element
- *   y <-> pointer to second element
+ *   d         <-> pointer to associated all-to-all distributor
+ *   dc        <-> associated MPI_Alltoall(v) caller structure
+ *   dest_data <-> destination data buffer, or NULL
  *
  * returns:
- *   -1 if x < y, 0 if x = y, or 1 if x > y
- *----------------------------------------------------------------------------*/
-
-static int _compare_strided(const void *x, const void *y)
-{
-  int retval = 1;
-
-  const int *c0 = x;
-  const int *c1 = y;
-
-  if (c0[1] < c1[1])
-    retval = -1;
-
-  /* For same rank, preserve relative positions, so compare pointer */
-
-  else if (c0[1] == c1[1]) {
-    if (c0 < c1)
-      retval = -1;
-    else if (c0 == c1)
-      retval = 0;
-  }
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Sort strided crystal router data by source rank.
- *
- * parameters:
- *   cr      <-> associated crystal router structure
- *   send_id <-> id of "send" buffer" (1 if low = buf0, 0 if low = buf1)
- *   cutoff  <-- cutoff rank
+ *   pointer to dest_data, or newly allocated buffer
  *---------------------------------------------------------------------------*/
 
-static void
-_crystal_sort_by_source_rank_strided(_crystal_router_t  *cr)
+static  void *
+_alltoall_caller_exchange_s(cs_all_to_all_t           *d,
+                            _mpi_all_to_all_caller_t  *dc,
+                            void                      *dest_data)
 {
-  const cs_lnum_t n = cr->n_elts[0];
+  size_t elt_size = cs_datatype_size[dc->datatype]*dc->stride;
+  unsigned char *_dest_data = dest_data, *_recv_data = dest_data;
 
-  if (n > 0)
-    qsort(cr->buffer[0], n, cr->comp_size, &_compare_strided);
+  /* Final data buffer */
+
+  if (_dest_data == NULL && dc->recv_size*elt_size > 0)
+    BFT_MALLOC(_dest_data, dc->recv_size*elt_size, unsigned char);
+
+  /* Data buffer for MPI exchange (may merge data and metadata) */
+  if (dc->dest_id_datatype == CS_LNUM_TYPE || d->dest_id != NULL)
+    BFT_MALLOC(_recv_data, dc->recv_size*dc->comp_size, unsigned char);
+  else
+    _recv_data = _dest_data;
+
+  cs_timer_t t0 = cs_timer_time();
+
+  MPI_Alltoallv(dc->send_buffer, dc->send_count, dc->send_displ, dc->comp_type,
+                _recv_data, dc->recv_count, dc->recv_displ, dc->comp_type,
+                dc->comm);
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_EXCHANGE,
+                            &t0, &t1);
+  _all_to_all_calls[CS_ALL_TO_ALL_TIME_EXCHANGE] += 1;
+
+  /* dest id datatype only used for first exchange */
+
+  if (dc->dest_id_datatype == CS_LNUM_TYPE) {
+    assert(d->recv_id == NULL);
+    BFT_MALLOC(d->recv_id, d->dc->recv_size, cs_lnum_t);
+    const unsigned char *sp = _recv_data;
+    for (size_t i = 0; i < d->dc->recv_size; i++)
+      memcpy(d->recv_id + i,
+             sp + d->dc->comp_size*i,
+             sizeof(cs_lnum_t));
+    dc->dest_id_datatype = CS_DATATYPE_NULL;
+  }
+
+  /* Now handle main data buffer */
+
+  if (_dest_data != _recv_data) {
+    const unsigned char *sp = _recv_data + d->dc->elt_shift;
+    if (d->recv_id != NULL) {
+      for (size_t i = 0; i < d->dc->recv_size; i++) {
+        size_t w_displ = d->recv_id[i]*elt_size;
+        size_t r_displ = d->dc->comp_size*i;
+        for (size_t j = 0; j < elt_size; j++)
+          _dest_data[w_displ + j] = sp[r_displ + j];
+      }
+    }
+    else {
+      for (size_t i = 0; i < d->dc->recv_size; i++) {
+        size_t w_displ = i*elt_size;
+        size_t r_displ = dc->comp_size*i;
+        for (size_t j = 0; j < elt_size; j++)
+          _dest_data[w_displ + j] = sp[r_displ + j];
+      }
+    }
+    BFT_FREE(_recv_data);
+  }
+
+  return _dest_data;
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -1231,266 +706,157 @@ _crystal_sort_by_source_rank_strided(_crystal_router_t  *cr)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create an all-to-all distributor for strided data.
+ * \brief Create an all-to-all distributor based on destination rank.
  *
- * \param[in]  n_elts     number of elements
- * \param[in]  stride     number of values per entity (interlaced)
- * \param[in]  datatype   type of data considered
- * \param[in]  elt        element values
- * \param[in]  dest_rank  destination rank for each element
- * \param[in]  comm       associated MPI communicator
+ * This is a collective operation on communicator comm.
+ *
+ * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID,
+ * data exchanged will be ordered by the array passed to the
+ * \c dest_id argument. For \c n total values received on a rank
+ * (as given by \ref cs_all_to_all_n_elts_dest), those destination ids
+ * must be in the range [0, \c n[.
+ *
+ * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_SRC_RANK,
+ * data exchanged will be ordered by source rank (this is incompatible
+ * with \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID.
+ *
+ * \attention
+ * The \c dest_rank and \c dest_id arrays are only referenced by
+ * the distributor, not copied, and must remain available throughout
+ * the distributor's lifetime. \They may be fully transferred to
+ * the structure if not needed elsewhere using the
+ * \ref cs_all_to_all_transfer_dest_rank and
+ * \ref cs_all_to_all_transfer_dest_id functions.
+ *
+ * \param[in]  n_elts       number of elements
+ * \param[in]  flags        sum of ordering and metadata flag constants
+ * \param[in]  dest_id      element destination id (required if flags
+ *                          contain \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID),
+ *                          or NULL
+ * \param[in]  dest_rank    destination rank for each element
+ * \param[in]  comm         associated MPI communicator
  *
  * \return  pointer to new all-to-all distributor
  */
 /*----------------------------------------------------------------------------*/
 
 cs_all_to_all_t *
-cs_all_to_all_create_s(size_t          n_elts,
-                       int             stride,
-                       cs_datatype_t   datatype,
-                       const void     *elt,
-                       const int       dest_rank[],
-                       MPI_Comm        comm)
+cs_all_to_all_create(size_t            n_elts,
+                     int               flags,
+                     const cs_lnum_t  *dest_id,
+                     const int         dest_rank[],
+                     MPI_Comm          comm)
 {
-  cs_all_to_all_t *d;
-
   cs_timer_t t0, t1;
 
   t0 = cs_timer_time();
 
-  /* Initialize timers if required */
+  cs_all_to_all_t *d = _all_to_all_create_base(n_elts,
+                                               flags,
+                                               comm);
 
-  if (_all_to_all_calls[0] == 0) {
-    int i;
-    int n_timers = sizeof(_all_to_all_timers)/sizeof(_all_to_all_timers[0]);
-    for (i = 0; i < n_timers; i++)
-      CS_TIMER_COUNTER_INIT(_all_to_all_timers[i]);
-  }
+  d->dest_id = dest_id;
+  d->dest_rank = dest_rank;
 
-  /* Allocate structure */
+  /* Create substructures based on info available at this stage
+     (for Crystal Router, delay creation as data is not passed yet) */
 
-  BFT_MALLOC(d, 1, cs_all_to_all_t);
-
-  /* Create associated sub-structure */
-
-  d->strided = true;
-  d->cr = NULL;
-  d->dc = NULL;
-
-  if (_all_to_all_type == CS_ALL_TO_ALL_CRYSTAL_ROUTER)
-    d->cr = _crystal_create_s(n_elts,
-                              stride,
-                              datatype,
-                              CS_DATATYPE_NULL,
-                              false,
-                              elt,
-                              NULL,
-                              dest_rank,
-                              comm);
-
-  else
-    d->dc = _alltoall_caller_create_s(n_elts,
-                                      stride,
-                                      datatype,
-                                      CS_DATATYPE_NULL,
-                                      false,
-                                      elt,
-                                      NULL,
-                                      dest_rank,
-                                      comm);
+  if (d->type == CS_ALL_TO_ALL_MPI_DEFAULT)
+    d->dc = _alltoall_caller_create_meta(flags, comm);
 
   t1 = cs_timer_time();
-  cs_timer_counter_add_diff(_all_to_all_timers, &t0, &t1);
-  _all_to_all_calls[0] += 1;
+  cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_TOTAL,
+                            &t0, &t1);
+  _all_to_all_calls[CS_ALL_TO_ALL_TIME_TOTAL] += 1;
 
   return d;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create an all-to-all distributor for strided data with additional
- *  metadata.
+ * \brief Create an all-to-all distributor for elements whose destination
+ * rank is determined from global numbers and block distribution information.
  *
- * This variant allows optional tracking of destination ids or global
- * numbers associated with elements, as well as their source ids.
+ * This is a collective operation on communicator comm.
  *
- * In cases where those arrays are required and already available, this
- * may avoid the need for a specific element values buffer mixing actual
- * data values and numbering metadata. It also makes extraction of the
- * metadata easier using \ref cs_all_to_all_get_id_pointers.
+ * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID,
+ * data exchanged will be ordered by global element number.
  *
- * \param[in]  n_elts            number of elements
- * \param[in]  stride            number of values per entity (interlaced)
- * \param[in]  datatype          type of data considered
- * \param[in]  dest_id_datatype  type of destination id (CS_GNUM_TYPE,
- *                               CS_LNUM_TYPE or CS_DATATYPE_NULL depending
- *                               on elt_id values)
- * \param[in]  add_src_id        add source id metadata (id in elt array)
- * \param[in]  elt               element values
- * \param[in]  dest_id           element destination id, global number, or NULL
- * \param[in]  dest_rank         destination rank for each element
- * \param[in]  comm              associated MPI communicator
+ * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_SRC_RANK,
+ * data exchanged will be ordered by source rank (this is incompatible
+ * with \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID.
+ *
+ * \param[in]  n_elts       number of elements
+ * \param[in]  flags        sum of ordering and metadata flag constants
+ * \param[in]  src_gnum     global source element numbers
+ * \param[in]  bi           destination block distribution info
+ * \param[in]  comm         associated MPI communicator
  *
  * \return  pointer to new all-to-all distributor
  */
 /*----------------------------------------------------------------------------*/
 
 cs_all_to_all_t *
-cs_all_to_all_create_with_ids_s(size_t            n_elts,
-                                int               stride,
-                                cs_datatype_t     datatype,
-                                cs_datatype_t     dest_id_datatype,
-                                bool              add_src_id,
-                                const void       *elt,
-                                const void       *dest_id,
-                                const int         dest_rank[],
-                                MPI_Comm          comm)
+cs_all_to_all_create_from_block(size_t                 n_elts,
+                                int                    flags,
+                                const cs_gnum_t       *src_gnum,
+                                cs_block_dist_info_t   bi,
+                                MPI_Comm               comm)
 {
-  cs_all_to_all_t *d;
-
   cs_timer_t t0, t1;
 
   t0 = cs_timer_time();
 
-  /* Initialize timers if required */
+  cs_all_to_all_t *d = _all_to_all_create_base(n_elts,
+                                               flags,
+                                               comm);
 
-  if (_all_to_all_calls[0] == 0) {
-    int i;
-    int n_timers = sizeof(_all_to_all_timers)/sizeof(_all_to_all_timers[0]);
-    for (i = 0; i < n_timers; i++)
-      CS_TIMER_COUNTER_INIT(_all_to_all_timers[i]);
+  /* Compute arrays based on block distribution
+     (using global ids and block info at lower levels could
+     save some memory, but would make things less modular;
+     in addition, rank is an int, while global ids are usually
+     64-bit uints, so the overhead is only 50%, and access should
+     be faster). */
+
+  BFT_MALLOC(d->_dest_rank, n_elts, int);
+  d->dest_rank = d->_dest_rank;
+
+  if (flags & CS_ALL_TO_ALL_ORDER_BY_DEST_ID) {
+    BFT_MALLOC(d->_dest_id, n_elts, cs_lnum_t);
+    d->dest_id = d->_dest_id;
   }
 
-  /* Allocate structure */
+  const int rank_step = bi.rank_step;
+  const cs_gnum_t block_size = bi.block_size;
 
-  BFT_MALLOC(d, 1, cs_all_to_all_t);
-
-  /* Create associated sub-structure */
-
-  d->strided = true;
-  d->cr = NULL;
-  d->dc = NULL;
-
-  if (_all_to_all_type == CS_ALL_TO_ALL_CRYSTAL_ROUTER)
-    d->cr = _crystal_create_s(n_elts,
-                              stride,
-                              datatype,
-                              dest_id_datatype,
-                              add_src_id,
-                              elt,
-                              dest_id,
-                              dest_rank,
-                              comm);
-
-  else
-    d->dc = _alltoall_caller_create_s(n_elts,
-                                      stride,
-                                      datatype,
-                                      dest_id_datatype,
-                                      add_src_id,
-                                      elt,
-                                      dest_id,
-                                      dest_rank,
-                                      comm);
-
-  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(_all_to_all_timers, &t0, &t1);
-  _all_to_all_calls[0] += 1;
-
-  return d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Create an all-to-all distributor for strided data with additional
- * metadata, with destination rank determined from global numbers and block
- * distribution information.
- *
- * This variant allows optional tracking of destination ids or global
- * numbers associated with elements, as well as their source ids.
- *
- * In cases where those arrays are required and already available, this
- * may avoid the need for a specific element values buffer mixing actual
- * data values and numbering metadata. It also makes extraction of the
- * metadata easier using \ref cs_all_to_all_get_id_pointers.
- *
- * \param[in]  n_elts            number of elements
- * \param[in]  stride            number of values per entity (interlaced)
- * \param[in]  datatype          type of data considered
- * \param[in]  dest_id_datatype  type of destination id (CS_GNUM_TYPE,
- *                               CS_LNUM_TYPE or CS_DATATYPE_NULL depending
- *                               on elt_id values)
- * \param[in]  add_src_id        add source id metadata (id in elt array)
- * \param[in]  elt               element values
- * \param[in]  elt_gnum          global element numbers
- * \param[in]  bi                destination block distribution info
- * \param[in]  comm              associated MPI communicator
- *
- * \return  pointer to new all-to-all distributor
- */
-/*----------------------------------------------------------------------------*/
-
-cs_all_to_all_t *
-cs_all_to_all_create_from_block_s(size_t                 n_elts,
-                                  int                    stride,
-                                  cs_datatype_t          datatype,
-                                  cs_datatype_t          dest_id_datatype,
-                                  bool                   add_src_id,
-                                  const void            *elt,
-                                  const cs_gnum_t       *elt_gnum,
-                                  cs_block_dist_info_t   bi,
-                                  MPI_Comm               comm)
-{
-  cs_all_to_all_t *d;
-
-  cs_timer_t t0, t1;
-
-  t0 = cs_timer_time();
-
-  /* Initialize timers if required */
-
-  if (_all_to_all_calls[0] == 0) {
-    int i;
-    int n_timers = sizeof(_all_to_all_timers)/sizeof(_all_to_all_timers[0]);
-    for (i = 0; i < n_timers; i++)
-      CS_TIMER_COUNTER_INIT(_all_to_all_timers[i]);
+  if (d->_dest_id != NULL) {
+    #pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (size_t i = 0; i < n_elts; i++) {
+      cs_gnum_t g_elt_id = src_gnum[i] -1;
+      cs_gnum_t _dest_rank = g_elt_id / block_size;
+      d->_dest_rank[i] = _dest_rank*rank_step;
+      d->_dest_id[i]   = g_elt_id % block_size;;
+    }
+  }
+  else {
+    #pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (size_t i = 0; i < n_elts; i++) {
+      cs_gnum_t g_elt_id = src_gnum[i] -1;
+      cs_gnum_t _dest_rank = g_elt_id / block_size;
+      d->_dest_rank[i] = _dest_rank*rank_step;
+    }
   }
 
-  /* Allocate structure */
+  /* Create substructures based on info available at this stage
+     (for Crystal Router, delay creation as data is not passed yet) */
 
-  BFT_MALLOC(d, 1, cs_all_to_all_t);
-
-  /* Create associated sub-structure */
-
-  d->strided = true;
-  d->cr = NULL;
-  d->dc = NULL;
-
-  if (_all_to_all_type == CS_ALL_TO_ALL_CRYSTAL_ROUTER)
-    d->cr = _crystal_create_from_block_s(n_elts,
-                                         stride,
-                                         datatype,
-                                         dest_id_datatype,
-                                         add_src_id,
-                                         elt,
-                                         elt_gnum,
-                                         bi,
-                                         comm);
-
-  else
-    d->dc = _alltoall_caller_create_from_block_s(n_elts,
-                                                 stride,
-                                                 datatype,
-                                                 dest_id_datatype,
-                                                 add_src_id,
-                                                 elt,
-                                                 elt_gnum,
-                                                 bi,
-                                                 comm);
+  if (d->type == CS_ALL_TO_ALL_MPI_DEFAULT)
+    d->dc = _alltoall_caller_create_meta(flags, comm);
 
   t1 = cs_timer_time();
-  cs_timer_counter_add_diff(_all_to_all_timers, &t0, &t1);
-  _all_to_all_calls[0] += 1;
+  cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_TOTAL,
+                            &t0, &t1);
+  _all_to_all_calls[CS_ALL_TO_ALL_TIME_TOTAL] += 1;
 
   return d;
 }
@@ -1514,15 +880,21 @@ cs_all_to_all_destroy(cs_all_to_all_t **d)
 
     cs_all_to_all_t *_d = *d;
     if (_d->cr != NULL)
-      _crystal_destroy(&(_d->cr));
+      cs_crystal_router_destroy(&(_d->cr));
     else if (_d->dc != NULL) {
       _alltoall_caller_destroy(&(_d->dc));
     }
 
+    BFT_FREE(_d->src_rank);
+    BFT_FREE(_d->src_id);
+
+    BFT_FREE(_d->_dest_id);
+    BFT_FREE(_d->_dest_rank);
     BFT_FREE(_d);
 
     t1 = cs_timer_time();
-    cs_timer_counter_add_diff(_all_to_all_timers, &t0, &t1);
+    cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_TOTAL,
+                              &t0, &t1);
 
     /* no increment to _all_to_all_calls[0] as create/destroy are grouped */
   }
@@ -1530,63 +902,63 @@ cs_all_to_all_destroy(cs_all_to_all_t **d)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Exchange data with an all-to-all distributor.
+ * \brief Transfer ownership of destination rank to an all-to-all distributor.
  *
- * Order of data from a same source rank is preserved.
+ * The dest_rank array should be the same as the one used for the creation of
+ * the distributor.
  *
- * \param[in, out]  d   pointer to associated all-to-all distributor
+ * \param[in, out]  d          pointer to associated all-to-all distributor
+ * \param[in, out]  dest_rank  pointer to element destination rank
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_all_to_all_exchange(cs_all_to_all_t  *d)
+cs_all_to_all_transfer_dest_rank(cs_all_to_all_t   *d,
+                                 cs_lnum_t        **dest_rank)
 {
-  if (d == NULL)
-    return;
+  cs_assert(d != NULL);
 
-  cs_timer_t t0, t1;
-
-  t0 = cs_timer_time();
-
-  if (d->cr != NULL) {
-    if (d->strided)
-      _crystal_exchange_strided(d->cr);
+  if (d->dest_rank == *dest_rank) {
+    d->_dest_rank = *dest_rank;
+    *dest_rank  = NULL;
   }
-  else if (d->dc != NULL) {
-    if (d->strided)
-      _alltoall_caller_exchange_strided(d->dc);
+  else {
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: array transferred (%p)does not match the one used\n"
+              "for all-to-all distributor creation (%p).",
+              __func__, (void *)*dest_rank, (const void *)d->dest_rank);
   }
-
-  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(_all_to_all_timers+1, &t0, &t1);
-  _all_to_all_calls[1] += 1;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Sort stride crystal router data by source rank.
+ * \brief Transfer ownership of destination ids to an
+ *        all-to-all distributor.
  *
- * \param[in, out]  d   pointer to associated all-to-all distributor
+ * The dest_id array should be the same as the one used for the creation of
+ * the distributor.
+ *
+ * \param[in, out]  d        pointer to associated all-to-all distributor
+ * \param[in, out]  dest_id  pointer to element destination id
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_all_to_all_sort_by_source_rank(cs_all_to_all_t  *d)
+cs_all_to_all_transfer_dest_id(cs_all_to_all_t   *d,
+                               cs_lnum_t        **dest_id)
 {
-  if (d->cr != NULL) {
+  cs_assert(d != NULL);
 
-    cs_timer_t t0, t1;
-
-    t0 = cs_timer_time();
-
-    if (d->strided)
-      _crystal_sort_by_source_rank_strided(d->cr);
-
-    t1 = cs_timer_time();
-    cs_timer_counter_add_diff(_all_to_all_timers+1, &t0, &t1);
-    _all_to_all_calls[3] += 1;
+  if (d->dest_id == *dest_id) {
+    d->_dest_id = *dest_id;
+    *dest_id  = NULL;
   }
-  /* For MPI_Alltoall/MPI_Alltoallv, data is already sorted */
+  else {
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: array transferred (%p)does not match the one used\n"
+              "for all-to-all distributor creation (%p).",
+              __func__, (void *)*dest_id, (const void *)d->dest_id);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1595,6 +967,9 @@ cs_all_to_all_sort_by_source_rank(cs_all_to_all_t  *d)
  *
  * The number of elements is the number of elements received after exchange.
  *
+ * If no exchange has been done yet (depending on the communication protocol),
+ * metadata will be exchanged by this call, so it is a collective operation.
+ *
  * \param[in]  d   pointer to associated all-to-all distributor
  *
  * \return  number of elements associated with distributor.
@@ -1602,410 +977,437 @@ cs_all_to_all_sort_by_source_rank(cs_all_to_all_t  *d)
 /*----------------------------------------------------------------------------*/
 
 cs_lnum_t
-cs_all_to_all_n_elts(const cs_all_to_all_t  *d)
+cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d)
 {
-  cs_lnum_t retval = 0;
+  cs_assert(d != NULL);
 
-  if (d != NULL) {
-    if (d->cr != NULL)
-      retval = d->cr->n_elts[0];
-    else if (d->dc != NULL)
-      retval = d->dc->recv_size;
+  /* Obtain count if not available yet */
+
+  if (d->n_elts_dest < 0) {
+
+    cs_timer_t t0, t1;
+
+    t0 = cs_timer_time();
+
+    switch(d->type) {
+    case CS_ALL_TO_ALL_MPI_DEFAULT:
+      {
+        _alltoall_caller_exchange_meta(d->dc,
+                                       d->n_elts_src,
+                                       d->dest_rank);
+        d->n_elts_dest = d->dc->recv_size;
+      }
+      break;
+
+    case CS_ALL_TO_ALL_CRYSTAL_ROUTER:
+      {
+        cs_crystal_router_t *cr
+          = cs_crystal_router_create_s(d->n_elts_src,
+                                       0,
+                                       CS_DATATYPE_NULL,
+                                       0,
+                                       NULL,
+                                       NULL,
+                                       d->dest_rank,
+                                       d->comm);
+
+        cs_timer_t tcr0 = cs_timer_time();
+
+        cs_crystal_router_exchange(cr);
+
+        cs_timer_t tcr1 = cs_timer_time();
+        cs_timer_counter_add_diff
+          (_all_to_all_timers + CS_ALL_TO_ALL_TIME_METADATA, &tcr0, &tcr1);
+        _all_to_all_calls[CS_ALL_TO_ALL_TIME_METADATA] += 1;
+
+        d->n_elts_dest = cs_crystal_router_n_elts(cr);
+        cs_crystal_router_destroy(&cr);
+      }
+      break;
+
+    }
+
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_TOTAL,
+                              &t0, &t1);
+    _all_to_all_calls[CS_ALL_TO_ALL_TIME_TOTAL] += 1;
+
   }
 
-  return retval;
+  return d->n_elts_dest;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Build ordering array of elements associated with an all-to-all
- *        distributor based on their global number.
+ * \brief Communicate array data using all-to-all distributor.
  *
- * \param[in]  d      pointer to associated all-to-all distributor
- * \param[out] order  pointer to pre-allocated ordering table
- *                    (size: cs_all_to_all_n_elts(d))
+ * If a destination buffer is provided, it should be of sufficient size for
+ * the number of elements returned by \ref cs_all_to_all_n_elts_dest
+ * (multiplied by stride and datatype size).
+ *
+ * If no buffer is provided, one is allocated automatically, and transferred
+ * to the caller (who is responsible for freeing it when no longer needed).
+ *
+ * If used in reverse mode, data is still communicated from src_data
+ * to dest_buffer or an internal buffer, but communication direction
+ * (i.e. source and destination ranks) are reversed.
+ *
+ * This is obviously a collective operation, and all ranks must provide
+ * the same datatype, stride, and reverse values.
+ *
+ * \param[in, out]  d          pointer to associated all-to-all distributor
+ * \param[in]       datatype   type of data considered
+ * \param[in]       stride     number of values per entity (interlaced),
+ * \param[in]       reverse    if true, communicate in reverse direction
+ * \param[in]       src_data   source data
+ * \param[out]      dest_data  pointer to destination data, or NULL
+ *
+ * \return pointer to destination data (dest_buffer if non-NULL)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_all_to_all_order_by_gnum_allocated(cs_all_to_all_t  *d,
-                                      cs_lnum_t        *order)
+void *
+cs_all_to_all_copy_array(cs_all_to_all_t   *d,
+                         cs_datatype_t      datatype,
+                         int                stride,
+                         bool               reverse,
+                         const void        *src_data,
+                         void              *dest_data)
 {
-  size_t gnum_stride;
-  cs_gnum_t *gnum;
+  cs_assert(d != NULL);
 
-  cs_lnum_t n_ent = cs_all_to_all_n_elts(d);
-
-  cs_all_to_all_get_gnum_pointer(d, &gnum_stride, &gnum);
-
-  cs_gnum_t *gnum_o;
-  if (gnum_stride == 1)
-    gnum_o = gnum;
-  else {
-    BFT_MALLOC(gnum_o, n_ent, cs_gnum_t);
-    for (cs_lnum_t i = 0; i < n_ent; i++)
-      gnum_o[i] = gnum[i*gnum_stride];
-  }
-
-  cs_order_gnum_allocated(NULL,
-                          gnum_o,
-                          order,
-                          n_ent);
-
-  if (gnum_o != gnum)
-    BFT_FREE(gnum_o);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Swap source and destination ranks of all-to-all distributor.
- *
- * \param[in, out]  d   pointer to associated all-to-all distributor
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_all_to_all_swap_src_dest(cs_all_to_all_t  *d)
-{
-  if (d == NULL)
-    return;
+  void  *_dest_data = NULL;
 
   cs_timer_t t0, t1;
 
   t0 = cs_timer_time();
 
-  /* Case for Crystal router */
+  /* Reverse can only be called after direct exchange in most cases
+     (this case should be rare, and requires additional echanges,
+     but let's play it safe and make sure it works if needed) */
 
-  if (d->cr != NULL) {
+  if (d->n_elts_dest < 0 && reverse)
+    cs_all_to_all_copy_array(d,
+                             CS_DATATYPE_NULL,
+                             0,
+                             false,
+                             NULL,
+                             NULL);
 
-    size_t i;
-    size_t comp_size = d->cr->comp_size;
-    unsigned char *p = d->cr->buffer[0];
+  /* Now do regular exchange */
 
-    for (i = 0; i < d->cr->n_elts[0]; i++) {
-      unsigned char *p1 = p + i*comp_size;
-      int *r = (int *)p1;
-      int t = r[0];
-      r[0] = r[1];
-      r[1] = t;
+  switch(d->type) {
+
+  case CS_ALL_TO_ALL_MPI_DEFAULT:
+    {
+      if (d->n_elts_dest < 0) { /* Exchange metadata if not done yet */
+        _alltoall_caller_exchange_meta(d->dc,
+                                       d->n_elts_src,
+                                       d->dest_rank);
+        d->n_elts_dest = d->dc->recv_size;
+      }
+      size_t n_elts = (reverse) ? d->n_elts_dest : d->n_elts_src;
+      if (reverse)
+        _alltoall_caller_swap_src_dest(d->dc);
+      _alltoall_caller_update_meta_s(d->dc,
+                                     d->dc->datatype,
+                                     stride);
+      _alltoall_caller_prepare_s(d->dc,
+                                 n_elts,
+                                 stride,
+                                 datatype,
+                                 reverse,
+                                 src_data,
+                                 d->dest_id,
+                                 d->recv_id,
+                                 d->dest_rank);
+      _dest_data = _alltoall_caller_exchange_s(d, d->dc, dest_data);
+      if (reverse) {
+        _alltoall_caller_swap_src_dest(d->dc);
+        if (d->dc->send_buffer == src_data)
+          d->dc->send_buffer = NULL;
+      }
     }
+    break;
 
-  }
-
-  /* Case for MPI_Alltoall/MPI_Alltoallv */
-
-  else if (d->dc != NULL) {
-
-    size_t tmp_size[2] = {d->dc->send_size, d->dc->recv_size};
-    unsigned char  *tmp_buffer = d->dc->recv_buffer;
-    int *tmp_count = d->dc->recv_count;
-    int *tmp_displ = d->dc->recv_displ;
-    int *tmp_rank = d->dc->src_rank;
-
-    d->dc->send_size = tmp_size[1];
-    d->dc->recv_size = tmp_size[0];
-
-    d->dc->recv_buffer = d->dc->send_buffer;
-    d->dc->recv_count = d->dc->send_count;
-    d->dc->recv_displ = d->dc->send_displ;
-    d->dc->src_rank = d->dc->dest_rank;
-
-    d->dc->send_buffer = tmp_buffer;
-    d->dc->send_count = tmp_count;
-    d->dc->send_displ = tmp_displ;
-    d->dc->dest_rank = tmp_rank;
+  case CS_ALL_TO_ALL_CRYSTAL_ROUTER:
+    {
+      int cr_flags = 0;
+      _dest_data = dest_data;
+      cs_timer_t tcr0, tcr1;
+      cs_crystal_router_t *cr;
+      if (!reverse) {
+        /* Additional flags for metadata (some on first exchange only) */
+        if (d->n_elts_dest < 0) {
+          if (d->flags & CS_ALL_TO_ALL_ORDER_BY_DEST_ID)
+            cr_flags = cr_flags | CS_CRYSTAL_ROUTER_USE_DEST_ID;
+          if (! (d->flags & CS_ALL_TO_ALL_NO_REVERSE)) {
+            cr_flags = cr_flags | CS_CRYSTAL_ROUTER_ADD_SRC_ID;
+            cr_flags = cr_flags | CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
+          }
+          if (d->flags & CS_ALL_TO_ALL_USE_SRC_RANK)
+            cr_flags = cr_flags | CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
+        }
+        if (d->flags & CS_ALL_TO_ALL_ORDER_BY_SRC_RANK)
+          cr_flags = cr_flags | CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
+        cr = cs_crystal_router_create_s(d->n_elts_src,
+                                        stride,
+                                        datatype,
+                                        cr_flags,
+                                        src_data,
+                                        d->dest_id,
+                                        d->dest_rank,
+                                        d->comm);
+        tcr0 = cs_timer_time();
+        cs_crystal_router_exchange(cr);
+        tcr1 = cs_timer_time();
+        if (d->n_elts_dest < 0)
+          d->n_elts_dest = cs_crystal_router_n_elts(cr);
+        int **p_src_rank = (d->src_rank == NULL) ? &(d->src_rank) : NULL;
+        cs_crystal_router_get_data(cr,
+                                   p_src_rank,
+                                   &(d->recv_id),
+                                   &(d->src_id),
+                                   NULL, /* dest_index */
+                                   &_dest_data);
+      }
+      else {
+        cr_flags = cr_flags | CS_CRYSTAL_ROUTER_USE_DEST_ID;
+        cr = cs_crystal_router_create_s(d->n_elts_dest,
+                                        stride,
+                                        datatype,
+                                        cr_flags,
+                                        src_data,
+                                        d->src_id,
+                                        d->src_rank,
+                                        d->comm);
+        tcr0 = cs_timer_time();
+        cs_crystal_router_exchange(cr);
+        tcr1 = cs_timer_time();
+        cs_crystal_router_get_data(cr,
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   NULL, /* dest_index */
+                                   &_dest_data);
+      }
+      cs_crystal_router_destroy(&cr);
+      cs_timer_counter_add_diff
+        (_all_to_all_timers + CS_ALL_TO_ALL_TIME_EXCHANGE, &tcr0, &tcr1);
+      _all_to_all_calls[CS_ALL_TO_ALL_TIME_EXCHANGE] += 1;
+    }
+    break;
 
   }
 
   t1 = cs_timer_time();
-  cs_timer_counter_add_diff(_all_to_all_timers+1, &t0, &t1);
-  _all_to_all_calls[2] += 1;
+  cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_TOTAL,
+                            &t0, &t1);
+  _all_to_all_calls[CS_ALL_TO_ALL_TIME_TOTAL] += 1;
+
+  return _dest_data;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get pointer to data elements associated with an all-to-all
- * distributor.
+ * \brief Communicate local index using all-to-all distributor.
  *
- * This allows modification and/or extraction of those elements.
+ * If a destination buffer is provided, it should be of sufficient size for
+ * the number of elements returned by \ref cs_all_to_all_n_elts_dest.
  *
- * Note that depending on the distributor type used, the rank metadata
- * and data may be interleaved, so the corresponding pointers point
- * to strided, interleaved data.
+ * If no buffer is provided, one is allocated automatically, and transferred
+ * to the caller (who is responsible for freeing it when no longer needed).
  *
- * \param[in]   d            pointer to associated all-to-all distributor
- * \param[out]  data_stride  stride (in bytes) between data items
- * \param[out]  data         pointer to data items
+ * If used in reverse mode, data is still communicated from src_index
+ * to dest_index or an internal buffer, but communication direction
+ * (i.e. source and destination ranks) are reversed.
+ *
+ * This is obviously a collective operation, and all ranks must provide
+ * the same value for the reverse parameter.
+ *
+ * \param[in, out]  d           pointer to associated all-to-all distributor
+ * \param[in]       reverse     if true, communicate in reverse direction
+ * \param[in]       src_index   source index
+ * \param[out]      dest_index  pointer to destination index, or NULL
+ *
+ * \return pointer to destination data (dest_buffer if non-NULL)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_all_to_all_get_data_pointer(cs_all_to_all_t   *d,
-                               size_t            *data_stride,
-                               unsigned char    **data)
+cs_lnum_t *
+cs_all_to_all_copy_index(cs_all_to_all_t  *d,
+                         bool              reverse,
+                         cs_lnum_t        *src_index,
+                         cs_lnum_t        *dest_index)
 {
-  *data_stride = 0;
-  *data  = NULL;
+  cs_timer_t t0, t1;
 
-  if (d == NULL)
-    return;
+  cs_assert(d != NULL);
 
-  if (d->strided) {
+  cs_lnum_t *src_count = NULL;
+  cs_lnum_t *_dest_index = dest_index;
 
-    /* Case for Crystal router */
+  cs_lnum_t n_dest = cs_all_to_all_n_elts_dest(d);
 
-    if (d->cr != NULL) {
-      *data_stride = d->cr->comp_size;
-      *data = d->cr->buffer[0] + d->cr->elt_shift;
-    }
+  t0 = cs_timer_time();
 
-    /* Case for MPI_Alltoall/MPI_Alltoallv */
+  if (dest_index == NULL)
+    BFT_MALLOC(_dest_index, n_dest + 1, cs_lnum_t);
 
-    else if (d->dc != NULL) {
-      *data_stride = d->dc->comp_size;
-      *data = d->dc->recv_buffer + d->dc->elt_shift;
-    }
+  /* Convert send index to count, then exchange */
 
-  }
+  BFT_MALLOC(src_count, d->n_elts_src, cs_lnum_t);
 
-  else
+  for (cs_lnum_t i = 0; i < d->n_elts_src; i++)
+    src_count[i] = src_index[i+1] - src_index[i];
+
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_TOTAL,
+                            &t0, &t1);
+
+  cs_all_to_all_copy_array(d,
+                           CS_LNUM_TYPE,
+                           1,
+                           reverse,
+                           src_count,
+                           _dest_index + 1);
+
+  t0 = cs_timer_time();
+
+  BFT_FREE(src_count);
+
+  _dest_index[0] = 0;
+
+  for (cs_lnum_t i = 0; i < n_dest; i++)
+    _dest_index[i+1] += _dest_index[i];
+
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_TOTAL,
+                            &t0, &t1);
+
+  return _dest_index;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Communicate local index using all-to-all distributor.
+ *
+ * If a destination buffer is provided, it should be of sufficient size for
+ * the number of elements indicated by
+ * dest_index[\ref cs_all_to_all_n_elts_dest(d)];
+ *
+ * If no buffer is provided, one is allocated automatically, and transferred
+ * to the caller (who is responsible for freeing it when no longer needed).
+ *
+ * If used in reverse mode, data is still communicated from src_index
+ * to dest_index or an internal buffer, but communication direction
+ * (i.e. source and destination ranks) are reversed.
+ *
+ * This is obviously a collective operation, and all ranks must provide
+ * the same value for the reverse parameter.
+ *
+ * \param[in, out]  d           pointer to associated all-to-all distributor
+ * \param[in]       datatype    type of data considered
+ * \param[in]       reverse     if true, communicate in reverse direction
+ * \param[in]       src_index   source index
+ * \param[in]       src_data    source data
+ * \param[in]       dest_index  destination index
+ * \param[out]      dest_data   pointer to destination data, or NULL
+ *
+ * \return pointer to destination data (dest_buffer if non-NULL)
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
+                           cs_datatype_t     datatype,
+                           bool              reverse,
+                           const cs_lnum_t  *src_index,
+                           const void       *src_data,
+                           const cs_lnum_t  *dest_index,
+                           void             *dest_data)
+{
+  cs_assert(d != NULL);
+
+  cs_assert(false);
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get array of source element ranks associated with an
+ *        all-to-all distributor.
+ *
+ * This function should be called only after \ref cs_all_to_all_exchange,
+ * and allocates and returns an array of source element ranks matching the
+ * exchanged data elements.
+ *
+ * It should also be called only if the distributor creation flags match
+ * CS_ALL_TO_ALL_USE_SRC_RANK or CS_ALL_TO_ALL_ORDER_BY_SRC_RANK.
+ *
+ * The returned data is owned by the caller, who is responsible for freeing
+ * it when no longer needed.
+ *
+ * If source ranks are not available (depending on the distributor
+ * creation function and options), the matching pointer will
+ * be set to NULL.
+ *
+ * \param[in]  d   pointer to associated all-to-all distributor
+ *
+ * \return  array of source ranks (or NULL)
+ */
+/*----------------------------------------------------------------------------*/
+
+int *
+cs_all_to_all_get_src_rank(cs_all_to_all_t  *d)
+{
+  cs_timer_t t0 = cs_timer_time();
+
+  int *src_rank = NULL;
+
+  cs_assert(d != NULL);
+
+  if (! (   d->flags & CS_ALL_TO_ALL_USE_SRC_RANK
+         || d->flags & CS_ALL_TO_ALL_ORDER_BY_SRC_RANK))
     bft_error(__FILE__, __LINE__, 0,
-              "%s is only available for strided (not indexed) data.",
-              __func__);
-}
+              "%s: is called for a distributor with flags %d, which does not\n"
+              "match masks CS_ALL_TO_ALL_USE_SRC_RANK (%d) or "
+              "CS_ALL_TO_ALL_ORDER_BY_SRC_RANK (%d).",
+              __func__, d->flags,
+              CS_ALL_TO_ALL_USE_SRC_RANK,
+              CS_ALL_TO_ALL_ORDER_BY_SRC_RANK);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get pointer to ranks of elements associated with an all-to-all
- *  distributor.
- *
- * This allows modification and/or extraction of those ranks.
- *
- * Note that depending on the distributor type used, the rank metadata
- * and data may be interleaved, so the corresponding pointers point
- * to strided, interleaved data.
- *
- * \param[in]   d            pointer to associated all-to-all distributor
- * \param[out]  rank_stride  stride (in integers) between rank values
- * \param[out]  src_rank     pointer to source rank values (or NULL)
- * \param[out]  dest_rank    pointer to destination rank values (or NULL)
- */
-/*----------------------------------------------------------------------------*/
+  BFT_MALLOC(src_rank, d->n_elts_dest, int);
 
-void
-cs_all_to_all_get_rank_pointers(cs_all_to_all_t   *d,
-                                size_t            *rank_stride,
-                                int              **src_rank,
-                                int              **dest_rank)
-{
-  *rank_stride = 0;
-  if (src_rank != NULL)
-    *src_rank = NULL;
-  if (dest_rank != NULL)
-    *dest_rank = NULL;
+  switch(d->type) {
 
-  if (d == NULL)
-    return;
-
-  if (d->strided) {
-
-    /* Case for Crystal router */
-
-    if (d->cr != NULL) {
-      const size_t comp_size = d->cr->comp_size;
-      unsigned char *buffer = d->cr->buffer[0];
-      if (rank_stride != NULL)
-        *rank_stride = comp_size / sizeof(int);
-      if (src_rank != NULL)
-        *src_rank = (int *)(buffer + sizeof(int));
-      if (dest_rank != NULL)
-        *dest_rank = (int *)buffer;
-    }
-
-    /* Case for MPI_Alltoall/MPI_Alltoallv (build arrays upon request) */
-
-    else if (d->dc != NULL) {
-
+  case CS_ALL_TO_ALL_MPI_DEFAULT:
+    {
       int i;
       cs_lnum_t j;
       _mpi_all_to_all_caller_t *dc = d->dc;
 
-      if (rank_stride != NULL)
-        *rank_stride = 1;
-
-      if (src_rank != NULL) {
-        if (dc->src_rank == NULL) {
-          BFT_MALLOC(dc->src_rank, dc->recv_size, int);
-          for (i = 0; i < dc->n_ranks; i++) {
-            for (j = dc->recv_displ[i]; j < dc->recv_displ[i+1]; j++)
-              dc->src_rank[j] = i;
-          }
-        }
-        *src_rank = dc->src_rank;
+      for (i = 0; i < dc->n_ranks; i++) {
+        for (j = dc->recv_displ[i]; j < dc->recv_displ[i+1]; j++)
+          src_rank[j] = i;
       }
+    }
+    break;
 
-      if (dest_rank != NULL) {
-        if (dc->dest_rank == NULL) {
-          BFT_MALLOC(dc->dest_rank, dc->send_size, int);
-          for (i = 0; i < dc->n_ranks; i++) {
-            for (j = dc->send_displ[i]; j < dc->send_displ[i+1]; j++)
-              dc->dest_rank[j] = i;
-          }
-        }
-        *dest_rank = dc->dest_rank;
-      }
-
+  case CS_ALL_TO_ALL_CRYSTAL_ROUTER:
+    {
+      if (d->src_rank != NULL)
+        memcpy(src_rank, d->src_rank, d->n_elts_dest*sizeof(int));
     }
 
   }
 
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              "%s is only available for strided (not indexed) data.",
-              __func__);
-}
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(_all_to_all_timers + CS_ALL_TO_ALL_TIME_TOTAL,
+                            &t0, &t1);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get pointer to source or destination rank element ids associated
- *  with an all-to-all distributor.
- *
- * If a requested type of id is not available (depending on the all-to-all
- * distributor creation function and options), the matching pointer will
- * be set to NULL.
- *
- * This allows modification and/or extraction of those ids, though it is
- * intended primarily for identification.
- *
- * Note that depending on the distributor type used, the rank metadata
- * and data may be interleaved, so the corresponding pointers point
- * to strided, interleaved data.
- *
- * \param[in]   d          pointer to associated all-to-all distributor
- * \param[out]  id_stride  stride (in integers) between id items
- * \param[out]  dest_id    pointer to destination ids (or NULL)
- * \param[out]  src_id     pointer to source ids (or NULL)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_all_to_all_get_id_pointers(cs_all_to_all_t   *d,
-                              size_t            *id_stride,
-                              cs_lnum_t        **dest_id,
-                              cs_lnum_t        **src_id)
-{
-  *id_stride = 0;
-  if (dest_id != NULL)
-    *dest_id = NULL;
-  if (src_id != NULL)
-    *src_id = NULL;
-
-  if (d == NULL)
-    return;
-
-  if (d->strided) {
-
-    /* Case for Crystal router */
-
-    if (d->cr != NULL) {
-      *id_stride = d->cr->comp_size / sizeof(cs_lnum_t);
-      if (dest_id != NULL) {
-        if (d->cr->dest_id_datatype == CS_LNUM_TYPE)
-          *dest_id = (cs_lnum_t *)(d->cr->buffer[0] + d->cr->dest_id_shift);
-        else
-          *dest_id = NULL;
-      }
-      if (src_id != NULL) {
-        if (d->cr->add_src_id)
-          *src_id = (cs_lnum_t *)(d->cr->buffer[0] + d->cr->src_id_shift);
-        else
-          *src_id = NULL;
-      }
-    }
-
-    /* Case for MPI_Alltoall/MPI_Alltoallv */
-
-    else if (d->dc != NULL) {
-      *id_stride = d->dc->comp_size / sizeof(cs_lnum_t);
-      if (dest_id != NULL) {
-        if (d->dc->dest_id_datatype == CS_LNUM_TYPE)
-          *dest_id = (cs_lnum_t *)(d->dc->recv_buffer);
-        else
-          *dest_id = NULL;
-      }
-      if (src_id != NULL) {
-        if (d->dc->add_src_id)
-          *src_id = (cs_lnum_t *)(d->dc->recv_buffer + d->dc->src_id_shift);
-        else
-          *src_id = NULL;
-      }
-    }
-  }
-
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              "%s is only available for strided (not indexed) data.",
-              __func__);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get pointer to element global numbers associated  with an all-to-all
- *  distributor.
- *
- * If this data is not available (depending on the all-to-all distributor
- * creation function and options), the matching pointer will
- * be set to NULL.
- *
- * This allows modification and/or extraction of those numbers.
- *
- * Note that depending on the distributor type used, the rank metadata
- * and data may be interleaved, so the corresponding pointers point
- * to strided, interleaved data.
- *
- * \param[in]   d            pointer to associated all-to-all distributor
- * \param[out]  gnum_stride  stride (in integers) between element global numbers
- * \param[out]  gnum         pointer to global numbers
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_all_to_all_get_gnum_pointer(cs_all_to_all_t   *d,
-                               size_t            *gnum_stride,
-                               cs_gnum_t        **gnum)
-{
-  *gnum_stride = 0;
-  *gnum = NULL;
-
-  if (d == NULL)
-    return;
-
-  if (d->strided) {
-
-    /* Case for Crystal router */
-
-    if (d->cr != NULL) {
-      *gnum_stride = d->cr->comp_size / sizeof(cs_gnum_t);
-      if (d->cr->dest_id_datatype == CS_GNUM_TYPE)
-        *gnum = (cs_gnum_t *)(d->cr->buffer[0] + d->cr->dest_id_shift);
-      else
-        *gnum = NULL;
-    }
-
-    /* Case for MPI_Alltoall/MPI_Alltoallv */
-
-    else if (d->dc != NULL) {
-      *gnum_stride = d->dc->comp_size / sizeof(cs_gnum_t);
-      if (d->dc->dest_id_datatype == CS_GNUM_TYPE)
-        *gnum = (cs_gnum_t *)(d->dc->recv_buffer);
-    }
-
-  }
-
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              "%s is only available for strided (not indexed) data.",
-              __func__);
+  return src_rank;
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -2048,6 +1450,8 @@ cs_all_to_all_set_type(cs_all_to_all_type_t  t)
 void
 cs_all_to_all_log_finalize(void)
 {
+  cs_crystal_router_log_finalize();
+
 #if defined(HAVE_MPI)
 
   int i;
@@ -2055,11 +1459,9 @@ cs_all_to_all_log_finalize(void)
 
   const char *method_name[] = {N_("MPI_Alltoall and MPI_Alltoallv"),
                                N_("Crystal Router algorithm")};
-  const char *operation_name[] = {N_("Construction/destruction:"),
-                                  N_("Exchange:"),
-                                  N_("Swap source and destination:"),
-                                  N_("Sort by source rank:"),
-                                  N_("Copy exchanged data:")};
+  const char *timer_name[] = {N_("Total:"),
+                              N_("Metadata exchange:"),
+                              N_("Data exchange:")};
 
   if (_all_to_all_calls[0] <= 0)
     return;
@@ -2070,9 +1472,9 @@ cs_all_to_all_log_finalize(void)
 
   /* Determine width */
 
-  for (i = 0; i < 5; i++) {
+  for (i = 0; i < 3; i++) {
     if (_all_to_all_calls[i] > 0) {
-      size_t l = cs_log_strlen(_(operation_name[i]));
+      size_t l = cs_log_strlen(_(timer_name[i]));
       name_width = CS_MAX(name_width, l);
     }
   }
@@ -2080,14 +1482,14 @@ cs_all_to_all_log_finalize(void)
 
   /* Print times */
 
-  for (i = 0; i < 5; i++) {
+  for (i = 0; i < 3; i++) {
 
     if (_all_to_all_calls[i] > 0) {
 
       char tmp_s[64];
       double wtimes = (_all_to_all_timers[i]).wall_nsec*1e-9;
 
-      cs_log_strpad(tmp_s, _(operation_name[i]), name_width, 64);
+      cs_log_strpad(tmp_s, _(timer_name[i]), name_width, 64);
 
       cs_log_printf(CS_LOG_PERFORMANCE,
                     _("  %s %12.5f s, %lu calls\n"),

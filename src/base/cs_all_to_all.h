@@ -46,6 +46,16 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/*!
+ * All-to-all distributor ordering and metadata flags.
+ */
+
+#define CS_ALL_TO_ALL_ORDER_BY_DEST_ID        (1 << 0)
+#define CS_ALL_TO_ALL_ORDER_BY_SRC_RANK       (1 << 1)
+
+#define CS_ALL_TO_ALL_NO_REVERSE              (1 << 2)
+#define CS_ALL_TO_ALL_USE_SRC_RANK            (1 << 3)
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -73,296 +83,308 @@ typedef struct _cs_all_to_all_t  cs_all_to_all_t;
 
 #if defined(HAVE_MPI)
 
-/*----------------------------------------------------------------------------
- * Create an all-to-all distributor for strided data.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create an all-to-all distributor based on destination rank.
  *
- * parameters:
- *   n_elts      <-- number of elements
- *   stride      <-- number of values per entity (interlaced)
- *   datatype    <-- type of data considered
- *   elt         <-- element values
- *   dest_rank   <-- destination rank for each element
- *   comm        <-- associated MPI communicator
+ * This is a collective operation on communicator comm.
  *
- * returns:
- *   pointer to new all-to-all distributor
- *---------------------------------------------------------------------------*/
+ * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID,
+ * data exchanged will be ordered by the array passed to the
+ * \c dest_id argument. For \c n total values received on a rank
+ * (as given by \ref cs_all_to_all_n_elts_dest), those destination ids
+ * must be in the range [0, \c n[.
+ *
+ * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_SRC_RANK,
+ * data exchanged will be ordered by source rank (this is incompatible
+ * with \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID.
+ *
+ * \attention
+ * The \c dest_rank and \c dest_id arrays are only referenced by
+ * the distributor, not copied, and must remain available throughout
+ * the distributor's lifetime. \They may be fully transferred to
+ * the structure if not needed elsewhere using the
+ * \ref cs_all_to_all_transfer_dest_rank and
+ * \ref cs_all_to_all_transfer_dest_id functions.
+ *
+ * \param[in]  n_elts       number of elements
+ * \param[in]  flags        sum of ordering and metadata flag constants
+ * \param[in]  dest_id      element destination id (required if flags
+ *                          contain \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID),
+ *                          or NULL
+ * \param[in]  dest_rank    destination rank for each element
+ * \param[in]  comm         associated MPI communicator
+ *
+ * \return  pointer to new all-to-all distributor
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_all_to_all_t *
-cs_all_to_all_create_s(size_t          n_elts,
-                       int             stride,
-                       cs_datatype_t   datatype,
-                       const void     *elt,
-                       const int       dest_rank[],
-                       MPI_Comm        comm);
+cs_all_to_all_create(size_t            n_elts,
+                     int               flags,
+                     const cs_lnum_t  *dest_id,
+                     const int         dest_rank[],
+                     MPI_Comm          comm);
 
-/*----------------------------------------------------------------------------
- * Create an all-to-all distributor for strided data with additional metadata.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create an all-to-all distributor for elements whose destination
+ * rank is determined from global numbers and block distribution information.
  *
- * This variant allows optional tracking of destination ids or global
- * numbers associated with elements, as well as their source ids.
+ * This is a collective operation on communicator comm.
  *
- * In cases where those arrays are required and already available, this
- * may avoid the need for a specific element values buffer mixing actual
- * data values and numbering metadata. It also makes extraction of the
- * metadata easier using cs_all_to_all_get_id_pointers().
+ * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID,
+ * data exchanged will be ordered by global element number.
  *
- * parameters:
- *   n_elts           <-- number of elements
- *   stride           <-- number of values per entity (interlaced)
- *   datatype         <-- type of data considered
- *   dest_id_datatype <-- type of destination id (CS_GNUM_TYPE, CS_LNUM_TYPE
- *                        or CS_DATATYPE_NULL depending on elt_id values)
- *   add_src_id       <-- add source id metadata (id in elt array)
- *   elt              <-- element values
- *   dest_id          <-- element destination id, global number, or NULL
- *   dest_rank        <-- destination rank for each element
- *   comm             <-- associated MPI communicator
+ * If the flags bit mask matches \ref CS_ALL_TO_ALL_ORDER_BY_SRC_RANK,
+ * data exchanged will be ordered by source rank (this is incompatible
+ * with \ref CS_ALL_TO_ALL_ORDER_BY_DEST_ID.
  *
- * returns:
- *   pointer to new all-to-all distributor
- *---------------------------------------------------------------------------*/
+ * \param[in]  n_elts       number of elements
+ * \param[in]  flags        sum of ordering and metadata flag constants
+ * \param[in]  src_gnum     global source element numbers
+ * \param[in]  bi           destination block distribution info
+ * \param[in]  comm         associated MPI communicator
+ *
+ * \return  pointer to new all-to-all distributor
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_all_to_all_t *
-cs_all_to_all_create_with_ids_s(size_t            n_elts,
-                                int               stride,
-                                cs_datatype_t     datatype,
-                                cs_datatype_t     dest_id_datatype,
-                                bool              add_src_id,
-                                const void       *elt,
-                                const void       *dest_id,
-                                const int         dest_rank[],
-                                MPI_Comm          comm);
+cs_all_to_all_create_from_block(size_t                 n_elts,
+                                int                    flags,
+                                const cs_gnum_t       *src_gnum,
+                                cs_block_dist_info_t   bi,
+                                MPI_Comm               comm);
 
-/*----------------------------------------------------------------------------
- * Create an all-to-all distributor for strided data with additional metadata,
- * with destination rank determined from global numbers and block distribution
- * information.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy an all-to-all distributor.
  *
- * This variant allows optional tracking of destination ids or global
- * numbers associated with elements, as well as their source ids.
- *
- * In cases where those arrays are required and already available, this
- * may avoid the need for a specific element values buffer mixing actual
- * data values and numbering metadata. It also makes extraction of the
- * metadata easier using cs_all_to_all_get_id_pointers().
- *
- * parameters:
- *   n_elts           <-- number of elements
- *   stride           <-- number of values per entity (interlaced)
- *   datatype         <-- type of data considered
- *   dest_id_datatype <-- type of destination id (CS_GNUM_TYPE, CS_LNUM_TYPE
- *                        or CS_DATATYPE_NULL)
- *   add_src_id       <-- add source id metadata (id in elt array)
- *   elt              <-- element values
- *   elt_gnum         <-- global element numbers
- *   bi               <-- destination block distribution info
- *   comm             <-- associated MPI communicator
- *
- * returns:
- *   pointer to new all-to-all distributor
- *---------------------------------------------------------------------------*/
-
-cs_all_to_all_t *
-cs_all_to_all_create_from_block_s(size_t                 n_elts,
-                                  int                    stride,
-                                  cs_datatype_t          datatype,
-                                  cs_datatype_t          dest_id_datatype,
-                                  bool                   add_src_id,
-                                  const void            *elt,
-                                  const cs_gnum_t       *elt_gnum,
-                                  cs_block_dist_info_t   bi,
-                                  MPI_Comm               comm);
-
-/*----------------------------------------------------------------------------
- * Destroy an all-to-all distributor.
- *
- * parameters:
- *   d <-> pointer to associated all-to-all distributor
- *---------------------------------------------------------------------------*/
+ * \param[in, out]  d   pointer to associated all-to-all distributor
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_all_to_all_destroy(cs_all_to_all_t **d);
 
-/*----------------------------------------------------------------------------
- * Exchange data with an all-to-all distributor.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Transfer ownership of destination rank to an all-to-all distributor.
  *
- * Order of data from a same source rank is preserved.
+ * The dest_rank array should be the same as the one used for the creation of
+ * the distributor.
  *
- * parameters:
- *   d <-> pointer to associated all-to-all distributor
- *---------------------------------------------------------------------------*/
+ * \param[in, out]  d          pointer to associated all-to-all distributor
+ * \param[in, out]  dest_rank  pointer to element destination rank
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_all_to_all_exchange(cs_all_to_all_t  *d);
+cs_all_to_all_transfer_dest_rank(cs_all_to_all_t   *d,
+                                 cs_lnum_t        **dest_rank);
 
-/*----------------------------------------------------------------------------
- * Sort stride crystal router data by source rank.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Transfer ownership of destination ids to an
+ *        all-to-all distributor.
  *
- * parameters:
- *   d <-> pointer to associated all-to-all distributor
- *---------------------------------------------------------------------------*/
+ * The dest_id array should be the same as the one used for the creation of
+ * the distributor.
+ *
+ * \param[in, out]  d        pointer to associated all-to-all distributor
+ * \param[in, out]  dest_id  pointer to element destination id
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_all_to_all_sort_by_source_rank(cs_all_to_all_t  *d);
+cs_all_to_all_transfer_dest_id(cs_all_to_all_t   *d,
+                               cs_lnum_t        **dest_id);
 
-/*----------------------------------------------------------------------------
- * Get number of elements associated with all-to-all distributor.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get number of elements associated with all-to-all distributor.
  *
  * The number of elements is the number of elements received after exchange.
  *
- * parameters:
- *   d <-- pointer to associated all-to-all distributor
- *---------------------------------------------------------------------------*/
+ * If no exchange has been done yet (depending on the communication protocol),
+ * metadata will be exchanged by this call, so it is a collective operation.
+ *
+ * \param[in]  d   pointer to associated all-to-all distributor
+ *
+ * \return  number of elements associated with distributor.
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t
-cs_all_to_all_n_elts(const cs_all_to_all_t  *d);
+cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d);
 
-/*----------------------------------------------------------------------------
- * Build ordering array of elements associated with an all-to-all
- * distributor based on their global number.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Communicate array data using all-to-all distributor.
  *
- * parameters:
- *   d     <-- pointer to associated all-to-all distributor
- *   order --> pointer to pre-allocated ordering table
- *             (size: cs_all_to_all_n_elts(d))
- *----------------------------------------------------------------------------*/
+ * If a destination buffer is provided, it should be of sufficient size for
+ * the number of elements returned by \ref cs_all_to_all_n_elts_dest
+ * (multiplied by stride and datatype size).
+ *
+ * If no buffer is provided, one is allocated automatically, and transferred
+ * to the caller (who is responsible for freeing it when no longer needed).
+ *
+ * If used in reverse mode, data is still communicated from src_data
+ * to dest_buffer or an internal buffer, but communication direction
+ * (i.e. source and destination ranks) are reversed.
+ *
+ * This is obviously a collective operation, and all ranks must provide
+ * the same datatype, stride, and reverse values.
+ *
+ * \param[in, out]  d          pointer to associated all-to-all distributor
+ * \param[in]       datatype   type of data considered
+ * \param[in]       stride     number of values per entity (interlaced),
+ * \param[in]       reverse    if true, communicate in reverse direction
+ * \param[in]       src_data   source data
+ * \param[out]      dest_data  pointer to destination data, or NULL
+ *
+ * \return pointer to destination data (dest_buffer if non-NULL)
+ */
+/*----------------------------------------------------------------------------*/
 
-void
-cs_all_to_all_order_by_gnum_allocated(cs_all_to_all_t  *d,
-                                      cs_lnum_t        *order);
+void *
+cs_all_to_all_copy_array(cs_all_to_all_t   *d,
+                         cs_datatype_t      datatype,
+                         int                stride,
+                         bool               reverse,
+                         const void        *src_data,
+                         void              *dest_data);
 
-/*----------------------------------------------------------------------------
- * Swap source and destination ranks of all-to-all distributor.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Communicate local index using all-to-all distributor.
  *
- * parameters:
- *   d <-> associated all-to-all distributor pointer
- *---------------------------------------------------------------------------*/
+ * If a destination buffer is provided, it should be of sufficient size for
+ * the number of elements returned by \ref cs_all_to_all_n_elts_dest.
+ *
+ * If no buffer is provided, one is allocated automatically, and transferred
+ * to the caller (who is responsible for freeing it when no longer needed).
+ *
+ * If used in reverse mode, data is still communicated from src_index
+ * to dest_index or an internal buffer, but communication direction
+ * (i.e. source and destination ranks) are reversed.
+ *
+ * This is obviously a collective operation, and all ranks must provide
+ * the same value for the reverse parameter.
+ *
+ * \param[in, out]  d           pointer to associated all-to-all distributor
+ * \param[in]       reverse     if true, communicate in reverse direction
+ * \param[in]       src_index   source index
+ * \param[out]      dest_index  pointer to destination index, or NULL
+ *
+ * \return pointer to destination data (dest_buffer if non-NULL)
+ */
+/*----------------------------------------------------------------------------*/
 
-void
-cs_all_to_all_swap_src_dest(cs_all_to_all_t  *d);
+cs_lnum_t *
+cs_all_to_all_copy_index(cs_all_to_all_t  *d,
+                         bool              reverse,
+                         cs_lnum_t        *src_index,
+                         cs_lnum_t        *dest_index);
 
-/*----------------------------------------------------------------------------
- * Get pointer to data elements associated with an all-to-all distributor.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Communicate local index using all-to-all distributor.
  *
- * This allows modification and/or extraction of those elements.
+ * If a destination buffer is provided, it should be of sufficient size for
+ * the number of elements indicated by
+ * dest_index[\ref cs_all_to_all_n_elts_dest(d)];
  *
- * Note that depending on the distributor type used, the rank metadata
- * and data may be interleaved, so the corresponding pointers point
- * to strided, interleaved data.
+ * If no buffer is provided, one is allocated automatically, and transferred
+ * to the caller (who is responsible for freeing it when no longer needed).
  *
- * parameters:
- *   d           <-- pointer to associated all-to-all distributor
- *   data_stride --> stride (in bytes) between data items
- *   data_ptr    --> pointer to data items
- *---------------------------------------------------------------------------*/
+ * If used in reverse mode, data is still communicated from src_index
+ * to dest_index or an internal buffer, but communication direction
+ * (i.e. source and destination ranks) are reversed.
+ *
+ * This is obviously a collective operation, and all ranks must provide
+ * the same value for the reverse parameter.
+ *
+ * \param[in, out]  d           pointer to associated all-to-all distributor
+ * \param[in]       datatype    type of data considered
+ * \param[in]       reverse     if true, communicate in reverse direction
+ * \param[in]       src_index   source index
+ * \param[in]       src_data    source data
+ * \param[in]       dest_index  destination index
+ * \param[out]      dest_data   pointer to destination data, or NULL
+ *
+ * \return pointer to destination data (dest_buffer if non-NULL)
+ */
+/*----------------------------------------------------------------------------*/
 
-void
-cs_all_to_all_get_data_pointer(cs_all_to_all_t   *d,
-                               size_t            *data_stride,
-                               unsigned char    **data);
+void *
+cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
+                           cs_datatype_t     datatype,
+                           bool              reverse,
+                           const cs_lnum_t  *src_index,
+                           const void       *src_data,
+                           const cs_lnum_t  *dest_index,
+                           void             *dest_data);
 
-/*----------------------------------------------------------------------------
- * Get pointer to ranks of elements associated with an all-to-all distributor.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get array of source element ranks associated with an
+ *        all-to-all distributor.
  *
- * This allows modification and/or extraction of those ranks.
+ * This function should be called only after \ref cs_all_to_all_exchange,
+ * and allocates and returns an array of source element ranks matching the
+ * exchanged data elements.
  *
- * Note that depending on the distributor type used, the rank metadata
- * and data may be interleaved, so the corresponding pointers point
- * to strided, interleaved data.
+ * It should also be called only if the distributor creation flags match
+ * CS_ALL_TO_ALL_USE_SRC_RANK or CS_ALL_TO_ALL_ORDER_BY_SRC_RANK.
  *
- * parameters:
- *   d           <-- pointer to associated all-to-all distributor
- *   rank_stride --> stride (in integers) between rank values
- *   src_rank    --> pointer to source rank values (or NULL)
- *   dest_rank   --> pointer to destination rank values (or NULL)
- *---------------------------------------------------------------------------*/
-
-void
-cs_all_to_all_get_rank_pointers(cs_all_to_all_t   *d,
-                                size_t            *rank_stride,
-                                int              **src_rank,
-                                int              **dest_rank);
-
-/*----------------------------------------------------------------------------
- * Get pointer to source or destination rank element ids associated with an
- * all-to-all distributor.
+ * The returned data is owned by the caller, who is responsible for freeing
+ * it when no longer needed.
  *
- * If a requested type of id is not available (depending on the all-to-all
- * distributor creation function and options), the matching pointer will
- * be set to NULL.
- *
- * This allows modification and/or extraction of those ids, though it is
- * intended primarily for identification.
- *
- * Note that depending on the distributor type used, the rank metadata
- * and data may be interleaved, so the corresponding pointers point
- * to strided, interleaved data.
- *
- * parameters:
- *   d         <-- pointer to associated all-to-all distributor
- *   id_stride --> stride (in integers) between id items
- *   dest_id   --> pointer to destination ids (or NULL)
- *   src_id    --> pointer to source ids (or NULL)
- *---------------------------------------------------------------------------*/
-
-void
-cs_all_to_all_get_id_pointers(cs_all_to_all_t   *d,
-                              size_t            *id_stride,
-                              cs_lnum_t        **dest_id,
-                              cs_lnum_t        **src_id);
-
-/*----------------------------------------------------------------------------
- * Get pointer to element global numbers associated with an all-to-all
- * distributor.
- *
- * If this data is not available (depending on the all-to-all distributor
+ * If source ranks are not available (depending on the distributor
  * creation function and options), the matching pointer will
  * be set to NULL.
  *
- * This allows modification and/or extraction of those numbers.
+ * \param[in]  d   pointer to associated all-to-all distributor
  *
- * Note that depending on the distributor type used, the rank metadata
- * and data may be interleaved, so the corresponding pointers point
- * to strided, interleaved data.
- *
- * parameters:
- *   d           <-- pointer to associated all-to-all distributor
- *   gnum_stride --> stride (in integers) between element global numbers
- *   gnum        --> pointer to global numbers
- *---------------------------------------------------------------------------*/
+ * \return  array of source ranks (or NULL)
+ */
+/*----------------------------------------------------------------------------*/
 
-void
-cs_all_to_all_get_gnum_pointer(cs_all_to_all_t   *d,
-                               size_t            *gnum_stride,
-                               cs_gnum_t        **gnum);
+int *
+cs_all_to_all_get_src_rank(cs_all_to_all_t  *d);
 
-/*----------------------------------------------------------------------------
- * Get current type of all-to-all distributor algorithm choice.
+#endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get current type of all-to-all distributor algorithm choice.
  *
- * returns:
- *   current type of all-to-all distributor algorithm choice
- *---------------------------------------------------------------------------*/
+ * \return  current type of all-to-all distributor algorithm choice
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_all_to_all_type_t
 cs_all_to_all_get_type(void);
 
-/*----------------------------------------------------------------------------
- * Set current type of all-to-all distributor algorithm choice.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set current type of all-to-all distributor algorithm choice.
  *
- * parameters:
- *   t <-- type of all-to-all distributor algorithm choice to select
- *---------------------------------------------------------------------------*/
+ * \param  t  type of all-to-all distributor algorithm choice to select
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_all_to_all_set_type(cs_all_to_all_type_t  t);
 
-#endif /* defined(HAVE_MPI) */
-
-/*----------------------------------------------------------------------------
- * Log performance information relative to instrumented all-to-all
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log performance information relative to instrumented all-to-all
  * distribution.
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_all_to_all_log_finalize(void);
