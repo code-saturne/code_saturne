@@ -154,7 +154,7 @@ _get_fspec(cs_lnum_t                    f_id,
     for (k = 0; k < 3; k++)
       P[k] *= inv_n;
 
-    cs_qvect(&(mq->i_face_normal[3*f+k]), &(fspec.q));
+    cs_qvect(&(mq->i_face_normal[3*f]), &(fspec.q));
 
   }
   else { /* Border face */
@@ -177,7 +177,7 @@ _get_fspec(cs_lnum_t                    f_id,
     for (k = 0; k < 3; k++)
       P[k] *= inv_n;
 
-    cs_qvect(&(mq->b_face_normal[3*f+k]), &(fspec.q));
+    cs_qvect(&(mq->b_face_normal[3*f]), &(fspec.q));
 
   }
 
