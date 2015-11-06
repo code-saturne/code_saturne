@@ -265,8 +265,7 @@ if (iplar.eq.1) then
 
            if ( uetbor(ifac).gt.1.d-15) then
 
-              ustarmoy = (surftot * ustarmoy +  surfb * uetbor(ifac))   &
-                       / (surftot + surfb)
+              ustarmoy =  ustarmoy +  surfb * uetbor(ifac)
               surftot = surftot +  surfb
               vislen(ifac) = visccf / uetbor(ifac)
 
@@ -276,9 +275,14 @@ if (iplar.eq.1) then
 
      enddo
 
-!  Average friction velocity display
+     if (irangp .ge. 0) then
+        call parsom(ustarmoy)
+        call parsom(surftot)
+     endif
+     ustarmoy = ustarmoy/surftot
 
-     write(nfecra,4100) ustarmoy
+!  Average friction velocity display
+if (irangp .le. 0)   write(nfecra,4100) ustarmoy
 !
   endif
 

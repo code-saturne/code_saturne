@@ -94,7 +94,7 @@ double precision norm_velocity, norm_face
 
 double precision omep, domep
 double precision v_part_t, v_part_t_dt, v_part_inst
-double precision sub_dt
+double precision sub_dt, temp
 
 double precision, dimension(:), pointer :: cvar_scalt
 
@@ -114,12 +114,26 @@ do ip = 1, nbpart
 
    iel = ipepa(jisor,ip)
 
+   if (iscalt.gt.0) then
+
+      if (itherm.eq.1 .and. itpscl.eq.2) then
+         temp = cvar_scalt(iel) + tkelvi
+      else if (itherm.eq.1 .and. itpscl.eq.2) then
+         temp = cvar_scalt(iel)
+      else if (itherm.eq.2) then
+         call usthht(1,cvar_scalt(iel),temp)
+      endif
+
+   else
+      temp = t0
+   endif
+
    if (ipepa(jdepo,ip).eq.1) then
 
       ! The particle has just deposited
       ! The adhesion force is calculated
 
-      call lagadh(ip, cvar_scalt(iel), adhesion_energ)
+      call lagadh(ip, temp , adhesion_energ)
 
    elseif (ipepa(jdepo,ip).eq.2) then
 
@@ -139,7 +153,7 @@ do ip = 1, nbpart
 
          pepa(jndisp,ip) = 0.d0
 
-         call lagadh(ip, cvar_scalt(iel), adhesion_energ)
+         call lagadh(ip, temp, adhesion_energ)
 
             if ((test_colli.eq.1) .and. (ipepa(jnbasg,ip).gt.0)) then
 
@@ -197,7 +211,7 @@ do ip = 1, nbpart
 
          do while ((ii.le.ndiam).and.(ipepa(jdepo,ip).eq.2))
 
-            call lagadh(ip, cvar_scalt(iel), adhesion_energ)
+            call lagadh(ip, temp , adhesion_energ)
 
             ! Reconstruct an estimate of the particle velocity
             ! at the current sub-time-step assuming linear variation

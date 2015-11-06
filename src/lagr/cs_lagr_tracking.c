@@ -2093,10 +2093,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO1) {
       particles->n_part_dep += 1;
       particles->weight_dep += particle_stat_weight;
+      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
+                                CS_LAGR_PART_DEPOSITED);
     }
-
-    cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                              CS_LAGR_PART_DEPOSITED);
 
     bdy_conditions->particle_flow_rate[boundary_zone]
       -= particle_stat_weight * particle_mass;

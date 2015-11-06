@@ -290,22 +290,22 @@ if (idepst.eq.1) then
     ! No deposited particles at the injection
     ipepa(jdepo,npt) = 0
 
-  enddo
+    ! Initialization of the additional "pointers"
+    ! for the resuspension model
 
-  ! Initialization of the additional "pointers"
-  ! for the resuspension model
+    if (ireent.gt.0) then
 
-  if (ireent.gt.0) then
+      pepa(jfadh,npt) = 0.d0
+      pepa(jmfadh,npt) = 0.d0
 
-    pepa(jfadh,npt) = 0.d0
-    pepa(jmfadh,npt) = 0.d0
+      ipepa(jnbasg,npt) = 0
+      ipepa(jnbasp,npt) = 0
 
-    ipepa(jnbasg,npt) = 0
-    ipepa(jnbasp,npt) = 0
+      pepa(jndisp,npt) = 0.d0
 
-    pepa(jndisp,npt) = 0.d0
+   endif
 
-  endif
+ enddo
 
 endif
 

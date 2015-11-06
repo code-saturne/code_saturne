@@ -24,7 +24,7 @@ subroutine lagadh &
 !================
 
  ( ip     ,                                                       &
-   cvar_scalt_iel , adhesion_energ)
+   tempf , adhesion_energ)
 
 !===============================================================================
 
@@ -79,7 +79,7 @@ implicit none
 
 integer          ip
 
-double precision cvar_scalt_iel
+double precision tempf
 double precision adhesion_energ
 
 ! Local variables
@@ -96,7 +96,6 @@ double precision fadhes
 double precision dismom, omsurf
 
 integer mode
-double precision tempf
 
 ! ==========================================================================
 ! 0.    initialization
@@ -109,25 +108,6 @@ step = 1.0d-11
 
 scovap = denasp * pi * rayasp**2
 scovag = pi * rayasg**2 / espasg**2
-
-! Determination of the temperature
-
-
-if (iscalt.gt.0) then
-  if (itherm.eq.1) then
-    if (itpscl.eq.2) then
-      tempf = cvar_scalt_iel + tkelvi
-    else if (itpscl.eq. 1) then
-      tempf = cvar_scalt_iel
-    endif
-  else if (itherm.eq.2) then
-    mode = 1
-    call usthht(mode,cvar_scalt_iel,tempf)
-  endif
-else
-  tempf = t0
-endif
-
 
 ! ==========================================================================
 ! 3.    calculation of the adhesion force
@@ -346,7 +326,8 @@ else
    !which is close to our approach
 
    omsurf = cstham / (24.0d0 * pi * dcutof**2)
-   dismom = (12.0d0 * pi * omsurf * (rpart**2)/modyeq)**(1.0d0/3.0d0)
+   dismom = (4.0d0*pi*omsurf*(rpart**2.0d0)/modyeq)**(1.0d0/3.0d0)
+   !dismom = (12.0d0 * pi * omsurf * (rpart**2)/modyeq)**(1.0d0/3.0d0)
 
 endif
 
