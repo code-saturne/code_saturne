@@ -121,6 +121,7 @@ Valgrind options:
 
   --valgrind             Indicates the program should be run under Valgrind
   --valgrind=VALGRIND    Allows selection of the valgrind path
+  VALGRIND               Same as above
 
   Other valgrind options may be used. Most importantly, when the
   --vgdb-errors=<num> option is used, the progam is run under a Valgrind
@@ -546,17 +547,40 @@ def run_vgdb_debug(path,
     cmd = None
     p1 = None
 
+    vgdb_pid = None
+
     while p0.poll() == None:
         output = p0.stderr.readline()
         if not cmd:
             idx = output.find("target remote")
             if idx > -1:
                 cmd = output[idx:].rstrip()
+                try:
+                    vgdb_pid = int(cmd[cmd.index("--pid")+6:])
+                except Exception:
+                    pass
                 cmds.insert(0, cmd)
                 p1 = run_gdb_debug(path, args, cmds,
                                    debugger, debugger_opts,
                                    debugger_ui)
         print(output.rstrip())
+        if p1:
+            if p1.poll() != None:
+                break
+
+    if p1:
+        if p1.returncode != None: # Debugger has finished/exited
+            p0.poll()
+            if p0.returncode == None:
+                if vgdb_pid:
+                    # make sure vgdb is from the same path as Valgrind
+                    if os.path.isabs(valgrind):
+                        vgdb = os.path.join(os.path.dirname(valgrind), "vgdb")
+                    else:
+                        vgdb = "vgdb"
+                    subprocess.call([vgdb, "--pid="+str(vgdb_pid), "v.kill"])
+                else:
+                    p0.kill()
 
     p0.communicate()
 
