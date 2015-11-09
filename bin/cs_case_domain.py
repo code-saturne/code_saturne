@@ -148,7 +148,7 @@ class base_domain:
         if self.n_procs_max != None:
             self.n_procs = min(self.n_procs, self.n_procs_max)
 
-        self.valgrind = None
+        self.debug = None
 
         # Error reporting
         self.error = ''
@@ -328,6 +328,25 @@ class base_domain:
         if exec_dir != result_dir:
             s.write('    exec. dir.   : ' + self.exec_dir + '\n')
 
+    #---------------------------------------------------------------------------
+
+    def debug_wrapper_args(self, debug_cmd):
+        """
+        Additional arguments to use debug wrapper
+        """
+        debug_args = ''
+        python_exec = self.package.config.python
+        if os.path.isfile(python_exec) or os.path.islink(python_exec):
+            debug_args += python_exec + ' '
+        else:
+            debug_args += 'python '
+        dbg_wrapper_path = os.path.join(self.package.get_dir('pkgpythondir'),
+                                        'cs_debug_wrapper.py')
+        debug_args += dbg_wrapper_path + ' '
+        for a in separate_args(debug_cmd):
+            debug_args += enquote_arg(a) + ' '
+        return debug_args
+
 #-------------------------------------------------------------------------------
 
 class domain(base_domain):
@@ -383,7 +402,7 @@ class domain(base_domain):
         self.logging_args = logging_args
         self.solver_args = None
 
-        self.valgrind = None
+        self.debug = None
 
         # Additional data
 
@@ -832,13 +851,11 @@ class domain(base_domain):
             if os.path.isfile(salome_module):
                 args += ' --yacs-module=' + enquote_arg(salome_module)
 
-        # Adjust for Valgrind if used
+        # Adjust for debugger if used
 
-        if self.valgrind != None:
+        if self.debug != None:
             args = enquote_arg(self.solver_path) + ' ' + args
-            exec_path = ''
-            for a in separate_args(self.valgrind):
-               exec_path += enquote_arg(a) + ' '
+            exec_path = self.debug_wrapper_args(self.debug)
 
         return wd, exec_path, args
 
@@ -1086,13 +1103,11 @@ class syrthes_domain(base_domain):
         # Output to a logfile
         args += ' --log ' + enquote_arg(self.logfile)
 
-        # Adjust for Valgrind if used
+        # Adjust for Debug if used
 
-        if self.valgrind != None:
+        if self.debug != None:
             args = enquote_arg(self.solver_path) + ' ' + args
-            exec_path = ''
-            for a in separate_args(self.valgrind):
-               exec_path += enquote_arg(a) + ' '
+            exec_path = self.debug_wrapper_args(self.debug)
 
         return wd, exec_path, args
 

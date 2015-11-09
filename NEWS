@@ -105,6 +105,8 @@ Architectural changes
 
 - Added cs_debug_wrapper.py debugger wrapper, to assist in running the code
   under a gdb-based debugger, under Valgrind, or a combination of the two.
+  * replaces the "valgrind" only debug in the GUI advanced options for execution.
+  * may also be used in standalone mode.
 
 - Do not build with BLAS by default, as only MKL is used outside of unit tests, and
   using it requires providing its path to "--with-blas" anyways.

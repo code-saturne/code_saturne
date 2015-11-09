@@ -42,7 +42,7 @@ import subprocess
 
 rank_id = -1
 
-# List of support ted debuggers
+# List of supported debuggers
 
 debuggers = {"gdb": "GNU gdb debugger",
              "ddd": "Data Display Debugger",
@@ -102,6 +102,7 @@ Debugger options:
 
   --debugger             Indicates the program should be debugged
   --debugger=DEBUGGER    Allows selection of the debugger
+  DEBUGGER               Same as above (if debugger in known list)
   --debugger=list        Lists debuggers supported by this script
   --asan-bp              Adds a breakpoint for gcc's Address-Sanitizer
   --back-end=GDB         Path to debugger back-end (for graphical front-ends)
@@ -203,6 +204,8 @@ def process_cmd_line(argv, pkg):
         b = os.path.basename(f[0]).split('.')[0]
         if b in ['mpiexec', 'mpirun', 'srun', 'aprun', 'poe']:
             positions['mpiexec'] = f[1]
+        elif b in debuggers.keys():
+            positions['debugger'] = f[1]
         elif b == 'valgrind' and positions['valgrind'] == -1:
             positions['valgrind'] = f[1]
 
@@ -210,7 +213,7 @@ def process_cmd_line(argv, pkg):
 
     if positions['program'] == -1:
         s_id = -1
-        for k in ['mpiexec', 'valgrind']:
+        for k in ['mpiexec', 'debugger', 'valgrind']:
             if positions[k] > s_id:
                 s_id = positions[k]
         for f in files:
@@ -605,10 +608,14 @@ def run_valgrind(path, args=None, valgrind='valgrind', valgrind_opts=None):
     # Add valgrind options, with a specific handling of
     # existing debugger command files
 
-    debugger_command_file = None
+    debugger_attach = False
 
     if valgrind_opts:
         cmd += valgrind_opts
+        for o in valgrind_opts:
+            if o[0:5] == '--db-':
+                debugger_attach = True
+                break
 
     cmd += [path]
 
@@ -621,16 +628,28 @@ def run_valgrind(path, args=None, valgrind='valgrind', valgrind_opts=None):
         return subprocess.call(cmd)
 
     else:
-        term = os.getenv('TERM')
-        if not term:
-            term = xterm
+        if debugger_attach:
+            term = os.getenv('TERM')
+            if not term:
+                term = xterm
 
-        cmd_line = term + ' -e "' + valgrind
-        for c in cmd[1:]:
-            cmd_line += ' ' + enquote_arg(str(c))
-        cmd_line += ' ; read"'
+            cmd_line = term + ' -e "' + valgrind
+            for c in cmd[1:]:
+                cmd_line += ' ' + enquote_arg(str(c))
+            cmd_line += ' ; read"'
 
-        return subprocess.call(cmd_line, shell=True)
+            return subprocess.call(cmd_line, shell=True)
+
+        else:
+            if rank_id > 0:
+                vg_f = open('valgrind.out.r' + str(rank_id), 'w')
+                returncode = subprocess.call(cmd,
+                                             stdout=vg_f,
+                                             stderr=subprocess.STDOUT)
+                vg_f.close()
+                return returncode
+            else:
+                return subprocess.call(cmd)
 
 #-------------------------------------------------------------------------------
 # Run debugger

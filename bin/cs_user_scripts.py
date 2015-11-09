@@ -217,15 +217,20 @@ def define_domain_parameters(domain):
     # Debugging options
     #------------------
 
-    # The solver may be run through Valgrind if this memory-checking tool
-    # is available. In this case, domain.valgrind should contain the matching
+    # The solver may be run through Debug if this memory-checking tool
+    # is available. In this case, domain.debug should contain the matching
     # command-line arguments, such as:
-    #   domain.valgrind = 'valgrind --tool=memcheck'
-    # or (with a debugger attached):
-    #   domain.valgrind = 'valgrind --tool=memcheck --db-attach=yes'
+    #   domain.debug = '--debugger=dddvalgrind --tool=memcheck'
+    #   domain.debug = 'valgrind --tool=memcheck'
+    # or (for Valgrind < 3.11):
+    #   domain.debug = 'valgrind --tool=memcheck --db-attach=yes'
+    # or (for Valgrind > 3.6):
+    #   domain.debug = 'valgrind --tool=memcheck --vgdb-error=1'
+    # or (for Valgrind > 3.6 and ddd ):
+    #   domain.debug = '--debugger=ddd valgrind --tool=memcheck --vgdb-error=1'
 
     if domain.param == None:
-        domain.valgrind = None
+        domain.debug = None
 
     # import pprint
     # pprint.pprint(domain.__dict__)

@@ -64,6 +64,7 @@ import cs_runcase
 
 from code_saturne.Pages.BatchRunningForm import Ui_BatchRunningForm
 from code_saturne.Pages.BatchRunningAdvancedOptionsDialogForm import Ui_BatchRunningAdvancedOptionsDialogForm
+from code_saturne.Pages.BatchRunningDebugOptionsHelpDialogForm import Ui_BatchRunningDebugOptionsHelpDialogForm
 from code_saturne.Pages.BatchRunningStopByIterationDialogForm import Ui_BatchRunningStopByIterationDialogForm
 
 from code_saturne.Base.Toolbox import GuiParam
@@ -81,6 +82,41 @@ from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 logging.basicConfig()
 log = logging.getLogger("BatchRunningView")
 log.setLevel(GuiParam.DEBUG)
+
+#-------------------------------------------------------------------------------
+# Popup advanced options
+#-------------------------------------------------------------------------------
+
+class BatchRunningDebugOptionsHelpDialogView(QDialog, Ui_BatchRunningDebugOptionsHelpDialogForm):
+    """
+    Help dialog
+    """
+    def __init__(self, parent):
+        """
+        Constructor
+        """
+        QDialog.__init__(self, parent)
+
+        Ui_BatchRunningAdvancedOptionsDialogForm.__init__(self)
+        self.setupUi(self)
+        self.retranslateUi(self)
+
+        self.setWindowTitle(self.tr("Debugger syntax help"))
+        self.parent = parent
+
+        # Connections
+        self.connect(self.pushButtonClose, SIGNAL("clicked()"), self.slotDebugclose)
+
+
+    @pyqtSignature("")
+    def slotDebugclose(self):
+        """
+        Close debugging page
+        """
+
+        QDialog.accept(self)
+        return
+
 
 #-------------------------------------------------------------------------------
 # Popup advanced options
@@ -116,25 +152,25 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.modelCSOUT2.addItem(self.tr("to listing_r<r>"), 'listing')
 
         # Connections
-        self.connect(self.toolButton_2, SIGNAL("clicked()"), self.slotSearchFile)
-        self.connect(self.lineEdit_3, SIGNAL("textChanged(const QString &)"), self.slotValgrind)
+        self.connect(self.toolButton_2, SIGNAL("clicked()"), self.slotDebugHelp)
+        self.connect(self.lineEdit_3, SIGNAL("textChanged(const QString &)"), self.slotDebug)
         self.connect(self.comboBox_6, SIGNAL("activated(const QString&)"), self.slotLogType)
         self.connect(self.comboBox_7, SIGNAL("activated(const QString&)"), self.slotLogType)
 
         # Previous values
-        self.valgrind = self.parent.mdl.getString('valgrind')
-        if self.valgrind is not None:
-            self.lineEdit_3.setText(str(self.valgrind))
+        self.debug = self.parent.mdl.getString('debug')
+        if self.debug is not None:
+            self.lineEdit_3.setText(str(self.debug))
 
         self.setLogType()
 
 
     @pyqtSignature("const QString &")
-    def slotValgrind(self, text):
+    def slotDebug(self, text):
         """
-        Input for Valgrind.
+        Input for Debug.
         """
-        self.valgrind = str(text)
+        self.debug = str(text)
 
 
     def setLogType(self):
@@ -156,31 +192,15 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
 
 
     @pyqtSignature("")
-    def slotSearchFile(self):
+    def slotDebugHelp(self):
         """
-        Choice temporary directory for batch
+        Show help page for debugging
         """
-        file_name = ""
 
-        title = self.tr("Select file for use VALGRIND option")
-        path  = os.getcwd()
-        filetypes = self.tr("All Files (*)")
-        file_name = QFileDialog.getOpenFileName(self, title, path, filetypes)
-        file_name = str(file_name)
+        dialog = BatchRunningDebugOptionsHelpDialogView(self)
+        dialog.show()
 
-        # TO CHECK ...
-        if file_name:
-            self.valgrind = str(self.lineEdit_3.text())
-            if not self.valgrind:
-                new = file_name + " --tool=memcheck"
-            else:
-                new = ""
-                for i in self.valgrind.split():
-                    if i == self.valgrind.split()[0]:
-                        i = file_name
-                        new = new + i + ' '
-            self.valgrind = new
-            self.lineEdit_3.setText(str(self.valgrind))
+        return
 
 
     def get_result(self):
@@ -195,7 +215,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         Method called when user clicks 'OK'
         """
 
-        self.parent.mdl.setString('valgrind', self.valgrind.strip())
+        self.parent.mdl.setString('debug', self.debug.strip())
 
         self.parent.mdl.setLogType(self.log_type)
 

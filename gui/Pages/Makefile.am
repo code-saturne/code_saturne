@@ -140,6 +140,7 @@ UIFILES = \
 AnalysisFeaturesForm.ui \
 AtmosphericFlowsForm.ui \
 BatchRunningAdvancedOptionsDialogForm.ui \
+BatchRunningDebugOptionsHelpDialogForm.ui \
 BatchRunningForm.ui \
 BatchRunningStopByIterationDialogForm.ui \
 BodyForcesForm.ui \

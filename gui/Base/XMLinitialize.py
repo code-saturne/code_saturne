@@ -1085,6 +1085,17 @@ class XMLinit(Variables):
                     if s:
                         nn.xmlInitNode('postprocessing_recording')['status']= s
 
+        # renames
+
+        node = self.case.xmlGetNode('calculation_management')
+        if node:
+            cmd = node.xmlGetString('valgrind')
+            if cmd:
+                node.xmlSetData('debug', cmd)
+                nn = node.xmlGetChildNode('valgrind')
+                if nn:
+                    nn.xmlRemoveNode()
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

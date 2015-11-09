@@ -91,7 +91,8 @@ def getDataFromNode(node, tag):
 
     if (list.length == 1):
         current = list.item(0)
-        data = current.firstChild.data
+        if current.firstChild:
+            data = current.firstChild.data
 
     return data
 
@@ -332,9 +333,9 @@ class Parser:
         if logging_args:
             self.dict['logging_args'] = logging_args
 
-        val = getDataFromNode(calc_node, 'valgrind')
+        val = getDataFromNode(calc_node, 'debug')
         if val:
-            self.dict['valgrind'] = val
+            self.dict['debug'] = val
 
     #---------------------------------------------------------------------------
 
