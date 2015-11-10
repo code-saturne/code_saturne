@@ -5,6 +5,37 @@ Trunk (unreleased)
 Changes:
 --------
 
+User changes:
+-------------
+
+ - Automatic initialization of the Turbulence for EBRSM and k-omega models.
+   From a reference velocity (uref), the turbulence profiles are reset
+   after the first iteration. The velocity magnitude is also changed
+   so that the Reichard profile is imposed next to walls.
+   Activate it with reinit_turb=1 (in usipsu).
+
+ - Merge the bad cell and the mesh quality criterion for offsetting.
+
+ - Merge general boundary temperature handling with the radiative
+   "wall temperature", for unified logging and post-processing.
+
+ - Added optional saving of scalar variable boundary values as fields
+   (also done for temperature when a property).
+
+ - GUI: "check mesh" option is replaced by a new "preprocessor view": when
+   building a new case, the GUI only shows sections relative to mesh
+   selection and preprocessing, showing only the steps necessary up to
+   preprocessing. "Tools"  menu entries and toolbar icons allow switching
+   from the preprocessing mode to the computation mode.
+   This new view encourages users to use the "preprocessing" run type,
+   which was previously available at the end of the GUI options,
+   instead of the "check mesh" option, which did not handle batch runs
+   or user subroutines.
+
+
+Physical modelling:
+-------------------
+
  - Add gas mix thermo. and fix mass source term with the compressible module
    (internship of A. Menasria):
     * allow to select both gas mix (igmix) specific physics with compressible
@@ -27,41 +58,14 @@ Changes:
       added mass has to be accounted for in simplified momentum equation during
       mass balance step).
 
- - Implement handling of point and element tags so as to ignore location
-   on elements sharing tag.
-
- - Automatic initialization of the Turbulence for EBRSM and k-omega models.
-   From a reference velocity (uref), the turbulence profiles are reset
-   after the first iteration. The velocity magnitude is also changed
-   so that the Reichard profile is imposed next to walls.
-   Activate it with reinit_turb=1 (in usipsu).
-
- - Add precipitation/dissulotion modeling for particle tracking.
-
- - Simplify Lagrangian particle tracking, removing a linked list.
-   This is transparent for the user, except for a possible differences
-   in particle numbering.
-
- - Merge the bad cell and the mesh quality criterion for offsetting.
-
- - Merge general boundary temperature handling with the radiative
-   "wall temperature", for unified logging and post-processing.
-
- - When using old (non-parallel) algorithm to compute wall distance, save
-   distance in same array as for main algorithm.
-
- - Added optional saving of scalar variable boundary values as fields
-   (also done for temperature when a property).
-
- - Some renames and simplifications in matrix fill types:
-   * to make things more generic, CS_MATRIX_33_BLOCK* is replaced by
-     CS_MATRIX_BLOCK*
-   * tuning for blocks assumes 3x3 blocks, but a specific CS_MATRIX_BLOCK_D_66
-     type is added (as a subcase of CS_MATRIX_BLOCK_D) to allow for specific
-     tuning for RSM coupled component matrixes.
+ - Add precipitation/dissolution modeling for particle tracking.
 
  - Add the added-mass term in Lagrangian particle tracking (activate it
    with iadded_mass=1).
+
+
+Numerics:
+---------
 
  - Add new preconditioning management layer to allow for use of multigrid
    as a preconditioner.
@@ -69,16 +73,6 @@ Changes:
  - Extend weighted coefficients for lsq gradient calculation in case of
    anisotropic diffusion (this option can be enabled with the option
    iwgrec(ivar) = 1).
-
- - GUI: "check mesh" option is replaced by a new "preprocessor view": when
-   building a new case, the GUI only shows sections relative to mesh
-   selection and preprocessing, showing only the steps necessary up to
-   preprocessing. "Tools"  menu entries and toolbar icons allow switching
-   from the preprocessing mode to the computation mode.
-   This new view encourages users to use the "preprocessing" run type,
-   which was previously available at the end of the GUI options,
-   instead of the "check mesh" option, which did not handle batch runs
-   or user subroutines.
 
  - Add a coupled component solver for symmetric tensors for the Reynolds
    stress model (irijco=1).
@@ -92,8 +86,49 @@ Changes:
    * restart from an uncoupled Rij tensor is possible
    * Daly Harlow and Shir models are available
 
+ - CDO module:
+   * Add reaction term to CDO module.
+     Improve the computation of discrete Hodge op. when using
+     conforming reconstruction function.
+     Adapt the computation of the source term when using this king of discrete
+     Hodge operator.
+   * Add time scheme and make some factorizations in vertex-based schemes.
+     Add functionalities to cs_locmat_t structure.
+   * Add convection for CDO vertex-based schemes.
+     Add advection field along with its post-processing.
+     Two advection operators are available related to the conservative or
+     non-conservative form of the advection operator.
+     Add post-processing of an equation (i.e. that of the related field).
+   * Add different ways to enforce boundary conditions for CDO vertex-based
+     schemes. Weak (Nitsche) enforcement, penalization and strong enforcement.
+   * Add a domain and an equation structures
+     Move cs_param_eq_t structure as a member of the cs_equation_t structure
+   * Add the computation of the wall distance for CDO vertex-based schemes
+   * Add the computation of the wall distance for face-based CDO schemes
+   * Change the way user sets the paramters of a computation
+   * Integrate PETSc solver calls
+   * Add face-based CDO schemes for pure diffusion problem.
+
+
 Architectural changes
 ---------------------
+
+ - Some renames and simplifications in matrix fill types:
+   * to make things more generic, CS_MATRIX_33_BLOCK* is replaced by
+     CS_MATRIX_BLOCK*
+   * tuning for blocks assumes 3x3 blocks, but a specific CS_MATRIX_BLOCK_D_66
+     type is added (as a subcase of CS_MATRIX_BLOCK_D) to allow for specific
+     tuning for RSM coupled component matrixes.
+
+ - When using old (non-parallel) algorithm to compute wall distance, save
+   distance in same array as for main algorithm.
+
+ - Implement handling of point and element tags so as to ignore location
+   on elements sharing tag.
+
+ - Simplify Lagrangian particle tracking, removing a linked list.
+   This is transparent for the user, except for a possible differences
+   in particle numbering.
 
  - Major changes to all_to_all API, so as to make its usage easier.
   * new API is similar to cs_part_to_block / cs_block_to_part, so
@@ -114,15 +149,41 @@ Architectural changes
 Release 4.1.0 (July 31 2015)
 ============================
 
-Changes:
---------
-
- - Add 2-scales wall function (with V. Driest mixing length) and its consistant
-   wall function on scalars (keyword iwallf in the doc.).
+User changes:
+-------------
 
  - Renamed 'efforts' to 'stress', which should be less confusing.
 
- - Change multigrid default settings based on recent performance benchmarks.
+ - Add simple fan effects modeling as explicit momentum source term in
+   regions defined by fan characteristics.
+
+ - Add a code icodcl=11, allowing to easily impose a boundary value
+   consisting in an affine function of the next cell value
+   (used at wall faces in the compressible module).
+
+ - Add timer statistics and plots for different stages and operators.
+   * Base timers for each time step (with initialization as time step 0)
+     are now available in the timer_stats.csv file (or timer_stats.dat
+     if the default format is changed).
+   * Final performance data is also moved from listing to performance.log.
+
+ - Allow condensation model to use zone-based definitions. The examples
+   are updated so as to recommend the zone-based setup, though previous
+   single-zone setups definitions remain compatible.
+
+ - Add "--import-only" option to "code_saturne create" command so as to
+   rebuild SaturneGUI and runcase scripts for a case which was copied
+   from a different system.
+
+ - Add higher level functions for turbulent boundary condition settings.
+   This allows moving tests on the current turbulence model inside
+   the user-callable functions, for more concise and safer programming.
+
+Physical modelling:
+-------------------
+
+ - Add 2-scales wall function (with V. Driest mixing length) and its consistant
+   wall function on scalars (keyword iwallf in the doc.).
 
  - Changes in Lagrangian Particle tracking.
    * modification of multi-layer model (iclogst = 1)
@@ -134,64 +195,44 @@ Changes:
      smooth wall/irough = 0, and cs_lagr_roughness_barrier for rough wall/
      irough = 1).
 
-- Add simple fan effects modeling as explicit momentum source term in
-  regions defined by fan characteristics.
+ - Add stiffened gas thermodynamic law for the compressible module (ieos=2).
+   Two new parameters are accessible in the user subroutine uscfx2:
+   gammasg ("pseudo" specific heat ratio) and psginf (infinite pressure).
 
-- Add 3-layer conjugate directions (residual) algorithm for non-symmetric
-  linear systems (this algorithm was used in older EDF codes, and is
-  different from the "standard" conjugate residual, which is limited to
-  Hermitian matrixes).
+ - Add ADF models for radiative transfers.
 
-- Add support for using PETSc in linear solvers.
+Numerics and linear solvers:
+----------------------------
 
-- Add vertex-based CDO (Compatible Discrete Operator) numerical scheme
-  for diffusion problems. This is a first step, and does not handle
-  parallelism yet. Integration with the rest of the code will be improved
-  progressively.
+ - Add vertex-based CDO (Compatible Discrete Operator) numerical scheme
+   for diffusion problems. This is a first step, and does not handle
+   parallelism yet. Integration with the rest of the code will be improved
+   progressively.
 
-- Add stiffened gas thermodynamic law for the compressible module (ieos=2).
-  Two new parameters are accessible in the user subroutine uscfx2:
-  gammasg ("pseudo" specific heat ratio) and psginf (infinite pressure).
+ - Change multigrid default settings based on recent performance benchmarks.
 
-- Add a code icodcl=11, allowing to easily impose a boundary value
-  consisting in an affine function of the next cell value
-  (used at wall faces in the compressible module).
+ - Add 3-layer conjugate directions (residual) algorithm for non-symmetric
+   linear systems (this algorithm was used in older EDF codes, and is
+   different from the "standard" conjugate residual, which is limited to
+   Hermitian matrixes).
 
-- Add timer statistics and plots for different stages and operators.
-  * Base timers for each time step (with initialization as time step 0)
-    are now available in the timer_stats.csv file (or timer_stats.dat
-    if the default format is changed).
-  * Final performance data is also moved from listing to performance.log.
+ - Add support for using PETSc in linear solvers.
 
-- Allow condensation model to use zone-based definitions. The examples
-  are updated so as to recommend the zone-based setup, though previous
-  single-zone setups definitions remain compatible.
-
-- Add "--import-only" option to "code_saturne create" command so as to
-  rebuild SaturneGUI and runcase scripts for a case which was copied
-  from a different system.
-
-- Only trap floating-point exceptions by default for code compiled in
-  debug mode, to avoid interfering with optimizer speculation.
-  Exception trapping can be enabled or disabled locally using the
-  cs_fp_exception_...() functions.
-
-- Add --sig-defaults option to cs_solver executable to allow use of
-  default signal handlers.
-
-- Add higher level functions for turbulent boundary condition settings.
-  This allows moving tests on the current turbulence model inside
-  the user-callable functions, for more concise and safer programming.
-
-- Add ADF models for radiative transfers.
-
-- Convergence of linear solvers may now be plotted using CSV files.
-  When solver verbosity is high, residues are not printed anymore
-  (except in case of non-convergence), as plotting provides the same
-  info in a more usable manner.
+ - Convergence of linear solvers may now be plotted using CSV files.
+   When solver verbosity is high, residues are not printed anymore
+   (except in case of non-convergence), as plotting provides the same
+   info in a more usable manner.
 
 Architectural changes
 ---------------------
+
+ - Add --sig-defaults option to cs_solver executable to allow use of
+   default signal handlers.
+
+ - Only trap floating-point exceptions by default for code compiled in
+   debug mode, to avoid interfering with optimizer speculation.
+   Exception trapping can be enabled or disabled locally using the
+   cs_fp_exception_...() functions.
 
 - Remove support for some older MPI libraries or process managers
   (which can still be used if needed using post-install settings).
