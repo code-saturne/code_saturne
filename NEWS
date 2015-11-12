@@ -32,6 +32,8 @@ User changes
    instead of the "check mesh" option, which did not handle batch runs
    or user subroutines.
 
+ - Add boundary cell thickness computation to mesh quality criteria.
+
 Physical modelling
 ------------------
 

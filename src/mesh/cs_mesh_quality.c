@@ -102,12 +102,12 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_local_minmax(cs_int_t         n_vals,
+_compute_local_minmax(cs_lnum_t        n_vals,
                       const cs_real_t  var[],
                       cs_real_t       *min,
                       cs_real_t       *max)
 {
-  cs_int_t  i;
+  cs_lnum_t  i;
   cs_real_t  _min = DBL_MAX, _max = -DBL_MAX;
 
   for (i = 0; i < n_vals; i++) {
@@ -198,11 +198,11 @@ _display_histograms(int        n_steps,
  *----------------------------------------------------------------------------*/
 
 static void
-_histogram(cs_int_t         n_vals,
+_histogram(cs_lnum_t        n_vals,
            const cs_real_t  var[])
 {
-  cs_int_t  i;
-  int       j, k;
+  cs_lnum_t  i;
+  int        j, k;
 
   cs_real_t  step;
   cs_real_t  max, min, _max, _min;
@@ -273,8 +273,8 @@ static void
 _int_face_histogram(const cs_mesh_t  *mesh,
                     const cs_real_t   var[])
 {
-  cs_int_t  i;
-  int       j, k;
+  cs_lnum_t  i;
+  int        j, k;
 
   cs_real_t  step;
   cs_real_t  max, min, _max, _min;
@@ -353,14 +353,14 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
                               cs_real_t                    weighting[],
                               cs_real_t                    offsetting[])
 {
-  cs_int_t  i, face_id, cell1, cell2;
+  cs_lnum_t  i, face_id, cell1, cell2;
   cs_real_t  cell_center1[3], cell_center2[3];
   cs_real_t  face_center[3], face_normal[3];
   cs_real_t  v0[3], v1[3], v2[3];
 
   double  coef0 = 0, coef1 = 0, coef2 = 0;
 
-  const cs_int_t  dim = mesh->dim;
+  const cs_lnum_t  dim = mesh->dim;
 
   /* Compute weighting coefficient */
   /*-------------------------------*/
@@ -444,14 +444,14 @@ _compute_orthogonality(const cs_mesh_t             *mesh,
                        cs_real_t                    i_face_ortho[],
                        cs_real_t                    b_face_ortho[])
 {
-  cs_int_t  i, face_id, cell1, cell2;
+  cs_lnum_t  i, face_id, cell1, cell2;
   double  cos_alpha;
   cs_real_t  cell_center1[3], cell_center2[3];
   cs_real_t  face_center[3];
   cs_real_t  face_normal[3], vect[3];
 
   const double  rad_to_deg = 180. / acos(-1.);
-  const cs_int_t  dim = mesh->dim;
+  const cs_lnum_t  dim = mesh->dim;
 
   /* Loop on internal faces */
   /*------------------------*/
@@ -552,14 +552,14 @@ _compute_orthogonality(const cs_mesh_t             *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_get_face_warping(cs_int_t         idx_start,
-                  cs_int_t         idx_end,
+_get_face_warping(cs_lnum_t        idx_start,
+                  cs_lnum_t        idx_end,
                   const cs_real_t  face_normal[],
-                  const cs_int_t   face_vertex_id[],
+                  const cs_lnum_t  face_vertex_id[],
                   const cs_real_t  vertex_coords[],
                   double           face_warping[])
 {
-  cs_int_t  i, idx, vertex_id1, vertex_id2;
+  cs_lnum_t  i, idx, vertex_id1, vertex_id2;
   double  edge_cos_alpha;
   cs_real_t  vect[3];
 
@@ -626,7 +626,7 @@ _cell_from_max_face(const cs_mesh_t      *mesh,
                     const cs_real_t       b_face_val[],
                     cs_real_t             cell_val[])
 {
-  cs_int_t  i, j, cell_id;
+  cs_lnum_t  i, j, cell_id;
 
   /* Default initialization */
 
@@ -682,7 +682,7 @@ _vtx_from_max_face(const cs_mesh_t     *mesh,
                    const cs_real_t      b_face_val[],
                    cs_real_t            vtx_val[])
 {
-  cs_int_t  i, j, idx_start, idx_end, vtx_id;
+  cs_lnum_t  i, j, idx_start, idx_end, vtx_id;
 
   /* Default initialization */
 
@@ -734,6 +734,39 @@ _vtx_from_max_face(const cs_mesh_t     *mesh,
                          vtx_val);
 }
 
+/*----------------------------------------------------------------------------
+ * Evaluate boundary thickness.
+ *
+ * parameters:
+ *   mesh             <-- pointer to mesh structure
+ *   mesh_quantities  <-- pointer to mesh quantities structures.
+ *   b_thickness      --> boundary thickness
+ *----------------------------------------------------------------------------*/
+
+static void
+_get_boundary_thickness(const cs_mesh_t             *mesh,
+                        const cs_mesh_quantities_t  *mesh_quantities,
+                        cs_real_t                    b_thickness[])
+{
+  const cs_real_3_t  *cell_cen
+    = (const cs_real_3_t  *)(mesh_quantities->cell_cen);
+  const cs_real_3_t  *b_face_cog
+    = (const cs_real_3_t  *)(mesh_quantities->b_face_cog);
+  const cs_real_3_t  *b_face_normal
+    = (const cs_real_3_t  *)(mesh_quantities->b_face_normal);
+  const cs_real_t  *b_face_surf
+    = (const cs_real_t *)(mesh_quantities->b_face_surf);
+
+  for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++) {
+    cs_lnum_t c_id = mesh->b_face_cells[f_id];
+    b_thickness[f_id]
+      = (  (b_face_cog[f_id][0] - cell_cen[c_id][0])*b_face_normal[f_id][0]
+         + (b_face_cog[f_id][1] - cell_cen[c_id][1])*b_face_normal[f_id][1]
+         + (b_face_cog[f_id][2] - cell_cen[c_id][2])*b_face_normal[f_id][2])
+        * 2.0 / b_face_surf[f_id];
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -760,12 +793,12 @@ cs_mesh_quality_compute_warping(const cs_mesh_t    *mesh,
                                 cs_real_t           i_face_warping[],
                                 cs_real_t           b_face_warping[])
 {
-  cs_int_t  i, face_id, idx_start, idx_end;
+  cs_lnum_t  i, face_id, idx_start, idx_end;
   cs_real_t  this_face_normal[3];
 
-  const cs_int_t  dim = mesh->dim;
-  const cs_int_t  *i_face_vtx_idx = mesh->i_face_vtx_idx;
-  const cs_int_t  *b_face_vtx_idx = mesh->b_face_vtx_idx;
+  const cs_lnum_t  dim = mesh->dim;
+  const cs_lnum_t  *i_face_vtx_idx = mesh->i_face_vtx_idx;
+  const cs_lnum_t  *b_face_vtx_idx = mesh->b_face_vtx_idx;
 
   assert(dim == 3);
 
@@ -831,12 +864,13 @@ void
 cs_mesh_quality(const cs_mesh_t             *mesh,
                 const cs_mesh_quantities_t  *mesh_quantities)
 {
-  cs_int_t  i;
+  cs_lnum_t  i;
 
   bool  compute_volume = true;
   bool  compute_weighting = true;
   bool  compute_orthogonality = true;
   bool  compute_warping = true;
+  bool  compute_thickness = true;
   bool  vol_fields = false;
   bool  brd_fields = false;
 
@@ -845,11 +879,11 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
   double  *working_array = NULL;
 
-  const cs_int_t  n_vertices = mesh->n_vertices;
-  const cs_int_t  n_i_faces = mesh->n_i_faces;
-  const cs_int_t  n_b_faces = mesh->n_b_faces;
-  const cs_int_t  n_cells = mesh->n_cells;
-  const cs_int_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  n_vertices = mesh->n_vertices;
+  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
 
   /* Check input data */
 
@@ -1180,6 +1214,39 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
   } /* End of cell volume treatment */
 
+  /*-------------------------*/
+  /* boundary cell thickness */
+  /*-------------------------*/
+
+  if (compute_thickness == true && mesh->n_g_b_faces > 0) {
+
+    cs_real_t *b_thickness;
+    BFT_MALLOC(b_thickness, mesh->n_b_faces, cs_real_t);
+
+    _get_boundary_thickness(mesh, mesh_quantities, b_thickness);
+
+    /* Display histograms */
+
+    bft_printf(_("\n  Histogram of boundary cell thickness:\n\n"));
+    _histogram(mesh->n_b_faces, b_thickness);
+
+    /* Post processing */
+
+    if (vol_fields == true)
+      cs_post_write_var(-2,
+                        "Boundary_Cell_Thickness",
+                        1,
+                        false,
+                        true,
+                        CS_POST_TYPE_cs_real_t,
+                        NULL,
+                        NULL,
+                        b_thickness,
+                        NULL);
+
+    BFT_FREE(b_thickness);
+
+  } /* End of boundary cell thickness treatment */
 }
 
 /*----------------------------------------------------------------------------*/
