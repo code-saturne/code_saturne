@@ -104,7 +104,7 @@ double precision fextla(nbpart,3)
 
 ! Local variables
 
-integer          iel , ip , id , i0 , mode
+integer          iel , ifac, ip , id , i0 , mode
 
 double precision aa , bb , cc , dd , ee
 double precision aux1 , aux2 ,aux3 , aux4 , aux5 , aux6
@@ -388,12 +388,18 @@ call field_get_val_s(iprpfl(iviscl), viscl)
 
             endif
 
-            lvisq = vislen(ipepa(jdfac,ip))
-            tvisq = lvisq / uetbor(ipepa(jdfac,ip))
+            ifac = ipepa(jdfac,ip)
+
+            ustar = uetbor(ifac)
+            lvisq = vislen(ifac)
+            if (ustar.gt.0.d0) then
+              tvisq = lvisq / ustar
+            else
+              tvisq = grand
+            endif
 
             call lagesd                                                    &
-            !==========
-            ( ipepa(jdfac,ip) , ip     ,                                   &
+            ( ifac   , ip     ,                                            &
               taup   , piil   ,                                            &
               vagaus , gradpr , romp   ,                                   &
               tempf  , romf   , ustar  , lvisq  ,tvisq   , depint )

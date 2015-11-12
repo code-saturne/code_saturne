@@ -789,7 +789,7 @@ if (iensi3.eq.1 .and. isttio.eq.1) then
     iok = iok + 1
   endif
 else
-  nstbor = 1
+  nstbor = ntpabs + 1
 endif
 if (iensi3.eq.1) then
   if (seuilf.lt.0.d0) then

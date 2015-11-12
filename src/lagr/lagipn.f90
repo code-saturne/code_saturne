@@ -89,9 +89,8 @@ double precision tu , d2s3
 
 double precision, allocatable, dimension(:) :: w1
 
-double precision  lvisq
 double precision  px , py , pz , distp , d1
-double precision  dismin,dismax, ustar, visccf, romf
+double precision  dismin,dismax, visccf, romf
 double precision  unif1(1)
 
 double precision, dimension(:), pointer :: cromf
@@ -242,9 +241,6 @@ if (idepst.eq.1) then
           romf = cromf(iel)
           visccf = viscl(iel) / romf
 
-          ustar = uetbor(ifac)
-          lvisq = visccf / ustar
-
           px = eptp(jxp,npt)
           py = eptp(jyp,npt)
           pz = eptp(jzp,npt)
@@ -257,7 +253,7 @@ if (idepst.eq.1) then
 
           if (d1.lt.distp) then
             distp = d1
-            pepa(jryplu,npt) = distp/lvisq
+            pepa(jryplu,npt) = distp * uetbor(ifac) / visccf
             ipepa(jdfac,npt) = ifac
           endif
         endif

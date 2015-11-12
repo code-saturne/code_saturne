@@ -104,6 +104,7 @@ integer          ifac
 
 double precision visccf, romf
 double precision ustarmoy, surftot, surfb
+double precision dtmp(3)
 
 double precision, allocatable, dimension(:) :: taup
 double precision, allocatable, dimension(:,:) :: tlag, piil
@@ -233,6 +234,7 @@ if (iplar.eq.1) then
 
      ustarmoy = 0.d0
      surftot = 0.d0
+     dtmp(1) = 0.d0
 
     ! boundary faces data
 
@@ -263,11 +265,12 @@ if (iplar.eq.1) then
            romf = cromf(iel)
            visccf = viscl(iel) / romf
 
-           if ( uetbor(ifac).gt.1.d-15) then
+           if (uetbor(ifac).gt.1.d-15) then
 
               ustarmoy =  ustarmoy +  surfb * uetbor(ifac)
-              surftot = surftot +  surfb
+              surftot = surftot + surfb
               vislen(ifac) = visccf / uetbor(ifac)
+              dtmp(1) = dtmp(1) + 1.d0
 
            endif
 
@@ -276,10 +279,13 @@ if (iplar.eq.1) then
      enddo
 
      if (irangp .ge. 0) then
-        call parsom(ustarmoy)
-        call parsom(surftot)
+       dtmp(2) = ustarmoy
+       dtmp(3) = surftot
+       call parrsm(3, dtmp)
+       ustarmoy = dtmp(2)
+       surftot = dtmp(3)
      endif
-     ustarmoy = ustarmoy/surftot
+     if (dtmp(1).gt.0.d0) ustarmoy = ustarmoy/surftot
 
 !  Average friction velocity display
 if (irangp .le. 0)   write(nfecra,4100) ustarmoy

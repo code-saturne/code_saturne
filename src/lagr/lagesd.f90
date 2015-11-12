@@ -203,9 +203,15 @@ else if (pepa(jryplu,ip).gt.30.d0.and.pepa(jryplu,ip).lt.100.d0) then
    norm_vit = (2.5d0 * log(pepa(jryplu,ip)) + 5.5d0) * ustar
 endif
 
-vit(1) = norm_vit * vela(1,iel) / norm
-vit(2) = norm_vit * vela(2,iel) / norm
-vit(3) = norm_vit * vela(3,iel) / norm
+if (ustar.gt.0.d0) then
+  vit(1) = norm_vit * vela(1,iel) / norm
+  vit(2) = norm_vit * vela(2,iel) / norm
+  vit(3) = norm_vit * vela(3,iel) / norm
+else
+  vit(1) = 0.d0
+  vit(2) = 0.d0
+  vit(3) = 0.d0
+endif
 
 ! Turbulent kinetic energy and dissipation w.r.t y+
 if (pepa(jryplu,ip).le.5.d0) then
@@ -307,8 +313,12 @@ call  lagprj                                                        &
 
 ! 2.7 - tlag
 
-tlp = cl * energi / dissip
-tlp = max(tlp,epzero)
+if (energi.gt.0.d0) then
+  tlp = cl * energi / dissip
+  tlp = max(tlp,epzero)
+else
+  tlp = epzero
+endif
 
 ! 2.8 - bx
 
