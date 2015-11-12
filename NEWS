@@ -2,11 +2,11 @@
 Trunk (unreleased)
 ==================
 
-Changes:
---------
+Changes
+-------
 
-User changes:
--------------
+User changes
+------------
 
  - Automatic initialization of the Turbulence for EBRSM and k-omega models.
    From a reference velocity (uref), the turbulence profiles are reset
@@ -32,9 +32,8 @@ User changes:
    instead of the "check mesh" option, which did not handle batch runs
    or user subroutines.
 
-
-Physical modelling:
--------------------
+Physical modelling
+------------------
 
  - Add gas mix thermo. and fix mass source term with the compressible module
    (internship of A. Menasria):
@@ -63,9 +62,8 @@ Physical modelling:
  - Add the added-mass term in Lagrangian particle tracking (activate it
    with iadded_mass=1).
 
-
-Numerics:
----------
+Numerics
+--------
 
  - Add new preconditioning management layer to allow for use of multigrid
    as a preconditioner.
@@ -109,7 +107,6 @@ Numerics:
    * Integrate PETSc solver calls
    * Add face-based CDO schemes for pure diffusion problem.
 
-
 Architectural changes
 ---------------------
 
@@ -146,11 +143,12 @@ Architectural changes
 - Do not build with BLAS by default, as only MKL is used outside of unit tests, and
   using it requires providing its path to "--with-blas" anyways.
 
+
 Release 4.1.0 (July 31 2015)
 ============================
 
-User changes:
--------------
+User changes
+------------
 
  - Renamed 'efforts' to 'stress', which should be less confusing.
 
@@ -179,8 +177,8 @@ User changes:
    This allows moving tests on the current turbulence model inside
    the user-callable functions, for more concise and safer programming.
 
-Physical modelling:
--------------------
+Physical modelling
+------------------
 
  - Add 2-scales wall function (with V. Driest mixing length) and its consistant
    wall function on scalars (keyword iwallf in the doc.).
@@ -201,8 +199,8 @@ Physical modelling:
 
  - Add ADF models for radiative transfers.
 
-Numerics and linear solvers:
-----------------------------
+Numerics and linear solvers
+---------------------------
 
  - Add vertex-based CDO (Compatible Discrete Operator) numerical scheme
    for diffusion problems. This is a first step, and does not handle
@@ -244,11 +242,12 @@ Architectural changes
   The fvm_gather_...(*) API is now removed, and using parallel APIs
   for MED and CGNS should now be relatively straightforward.
 
+
 Release 4.0.0 (April 30 2015)
 =============================
 
-Changes:
---------
+Changes
+-------
 
 - Added boundary condition to flow mapping (feedback) functionnality
   (see boundary_conditions_map and boundary_conditions_mapped_set functions).
@@ -392,8 +391,8 @@ Architectural changes
   are replaced by functions, which allow similar read-only access, but not
   modification, which must be done through the field API.
 
-Bug fixes:
-----------
+Bug fixes
+---------
 
 - Fix bug introduced in rev. 4491 (before release of 3.0.0):
 
@@ -406,11 +405,12 @@ Bug fixes:
 
 - Many more bug changes (see ChangeLog for details)
 
+
 Release 3.3.0 (16 May 2014)
 ===========================
 
-Changes:
---------
+Changes
+-------
 
 - Add 2 order backward Euler scheme in time for velocity prediction.
   Set ibdtso = 2 in usipsu to activate it.
@@ -486,8 +486,8 @@ Architectural changes
 - Finalized cleanup of handling of boundary condition coefficients. Fields now allocate
   their coefficients, rather than map them from a common array.
 
-Bug fixes:
-----------
+Bug fixes
+---------
 
  - Fix bug in the Generalized Gradient Diffusion Hypothesis (GGDH).
       - swich between two components (R13 and R23): this is not impacting the validation
@@ -497,11 +497,12 @@ Bug fixes:
         because from this version, the Daly Harlow model is passed by default on Rij
         (this model induces a GGDH on Rij and epsilon).
 
+
 Release 3.2.0 (4 Dec 2013)
 ==========================
 
-Changes:
---------
+Changes
+-------
 
 - Documentation:
    * moved tutorials outside the codebase, and into a separate base.
@@ -600,8 +601,8 @@ Architectural changes
 
 - Move the convection-diffusion balance (bilsc2.f90) to C.
 
-Bug fixes:
-----------
+Bug fixes
+---------
 
 - Fixes in the wall boundary conditions (validation cases re-run for safety,
   and were not impacted by these changes)
@@ -618,8 +619,8 @@ Bug fixes:
 Release 3.1.0 (11 Jun 2013)
 ===========================
 
-Changes:
---------
+Changes
+-------
 
 - Many documentation updates
 
@@ -743,8 +744,8 @@ Architectural changes
 
 - Add CS_LOG_DEFAULT type to use logging API to listing file.
 
-Bug fixes:
-----------
+Bug fixes
+---------
 
 - Many bug fixes (see ChangeLog for details).
 
@@ -752,8 +753,8 @@ Bug fixes:
 Release 3.0.0 (22 Mar 2013)
 ===========================
 
-Changes:
---------
+Changes
+-------
 
 - Many documentation updates.
 
@@ -1046,8 +1047,8 @@ Architectural changes
 
 - Rewrite gradient quality tests in C.
 
-Bug fixes:
-----------
+Bug fixes
+---------
 
 - Many bug fixes (see ChangeLog for details).
 
@@ -1055,8 +1056,8 @@ Bug fixes:
 Release 2.3.0 (23 Jul 2012)
 ===========================
 
-Changes:
---------
+Changes
+-------
 
 - Set the coupled velocity component solver as default option (ivelco=1).
 
@@ -1289,8 +1290,8 @@ Architectural changes
 - Move definition of parallel rank and thread status from cs_base.*
   to cs_defs.*.
 
-Bug fixes:
-----------
+Bug fixes
+---------
 
 - Many bug fixes (see ChangeLog for details).
 
@@ -1298,8 +1299,8 @@ Bug fixes:
 Release 2.2.0 (30 Mar 2012)
 ===========================
 
-Changes:
---------
+Changes
+-------
 
 - Add a porosity formulation.
   The transport equations (espacially in turbulence) have to be checked.
@@ -1501,8 +1502,8 @@ Architectural changes
 
 - Add logging API, which is used for improved multigrid performance information.
 
-Bug fixes:
-----------
+Bug fixes
+---------
 
 - Many bug fixes (see ChangeLog for details).
 
@@ -1510,8 +1511,8 @@ Bug fixes:
 Release 2.1.0 (20 Oct 2011)
 ===========================
 
-Changes:
---------
+Changes
+-------
 
 - Add thermochemistry reference files for the unified combustion modeling.
 
@@ -1959,8 +1960,8 @@ Architectural changes
   partitionning is done, but parallel partitioning may be selected with
   the user script.
 
-Bug fixes:
-----------
+Bug fixes
+---------
 
 - Many bug fixes (see ChangeLog for details).
 
