@@ -1823,7 +1823,7 @@ _intersect_face(cs_lnum_t                       face_num,
  *   visc_length   <--
  *   dlgeo         <-- array with various geometry values for particles
  *   yplus         --> associated yplus value
- *   face_id       --> associated neighbor wll face, or -1
+ *   face_id       --> associated neighbor wall face, or -1
  *----------------------------------------------------------------------------*/
 
 static void
@@ -2288,7 +2288,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
           cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
                                     cs_glob_mesh->b_face_cells[face_id] + 1);
           cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_NEIGHBOR_FACE_ID ,
-                                     face_id);
+                                    face_id);
 
           particles->n_part_dep += 1;
           particles->weight_dep += particle_stat_weight;
@@ -2704,6 +2704,23 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     bft_error(__FILE__, __LINE__, 0,
               _(" Boundary condition %d not recognized.\n"),
               bdy_conditions->b_zone_natures[boundary_zone]);
+
+  /* Ensure some fields are updated */
+
+  if (p_am->size[CS_LAGR_DEPOSITION_FLAG] > 0) {
+
+    cs_lnum_t depo_flag
+      = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
+
+    if (   depo_flag == CS_LAGR_PART_ROLLING
+        || depo_flag == CS_LAGR_PART_DEPOSITED) {
+      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
+                                cs_glob_mesh->b_face_cells[face_id] + 1);
+      cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_NEIGHBOR_FACE_ID ,
+                                face_id);
+    }
+
+  }
 
   /* Return pointer */
 
