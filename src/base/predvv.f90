@@ -26,7 +26,7 @@
 
 !> \file predvv.f90
 !>
-!> \brief This subroutine perform the velocity prediction step of the Navier
+!> \brief This subroutine performs the velocity prediction step of the Navier
 !> Stokes equations for incompressible or slightly compressible flows for
 !> the coupled velocity components solver.
 !>

@@ -105,7 +105,9 @@ double precision, dimension(:), pointer :: cvar_fsm
 ! 0 - Initialization
 !===============================================================================
 
-if (imodak.eq.1.or.imoadf.ge.1) allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+if (imodak.eq.1.or.imoadf.ge.1.or.imfsck.eq.1) then
+  allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+endif
 
 call field_get_val_s(icrom, crom)
 
@@ -158,20 +160,19 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
 
 else if ( ippmod(iccoal) .ge. 0 ) then
 
-! ---->  Charbon
+  ! ---->  Coal
 
   if (imodak.eq.1) then
 
-    do iel = 1,ncel
-! concentration volumique en CO2
+    do iel = 1, ncel
+      ! CO2 volume concentration
       w1(iel) = propce(iel,ipproc(immel))/wmole(ico2)             &
-               *propce(iel,ipproc(iym1(ico2)))
-! concentration volumique en H20
+      *propce(iel,ipproc(iym1(ico2)))
+      ! H2O volume concentration
       w2(iel) = propce(iel,ipproc(immel))/wmole(ih2o)             &
-               *propce(iel,ipproc(iym1(ih2o)))
-! fraction volumique de suies
+      *propce(iel,ipproc(iym1(ih2o)))
+      ! Soot volume fraction
       w3(iel) = 0.d0
-
     enddo
 
     call raydak(ncel,ncelet,                                      &
@@ -180,14 +181,14 @@ else if ( ippmod(iccoal) .ge. 0 ) then
 
   else if (imoadf.ge.1) then
 
-    do iel = 1,ncel
-! concentration volumique en CO2
+    do iel = 1, ncel
+      ! CO2 volume concentration
       w1(iel) = propce(iel,ipproc(immel))/wmole(ico2)             &
-               *propce(iel,ipproc(iym1(ico2)))
-! concentration volumique en H20
+      *propce(iel,ipproc(iym1(ico2)))
+      ! H2O volume concentration
       w2(iel) = propce(iel,ipproc(immel))/wmole(ih2o)             &
-               *propce(iel,ipproc(iym1(ih2o)))
-! fraction volumique de suies
+      *propce(iel,ipproc(iym1(ih2o)))
+      ! Soot volume fraction
       w3(iel) = 0.d0
     enddo
 
@@ -197,6 +198,20 @@ else if ( ippmod(iccoal) .ge. 0 ) then
       call radf50 (w1,w2,w3,tempk(1,1),kgas,agas,agasbo)
     endif
 
+  else if (imfsck.eq.1) then
+
+    do iel = 1, ncel
+      ! CO2 volume concentration
+      w1(iel) = propce(iel,ipproc(immel))/wmole(ico2)             &
+      *propce(iel,ipproc(iym1(ico2)))
+      ! H2O volume concentration
+      w2(iel) = propce(iel,ipproc(immel))/wmole(ih2o)             &
+      *propce(iel,ipproc(iym1(ih2o)))
+      ! Soot volume fraction
+      w3(iel) = 0.d0
+    enddo
+
+    call rafsck (w1,w2,w3,tempk(1,1),kgas,agas,agasbo)
   else
 
     do iel = 1, ncel

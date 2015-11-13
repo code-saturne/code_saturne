@@ -77,6 +77,11 @@ module radiat
   !> - 2 ADF model with 50 intervals of wave length
   integer, save :: imoadf
 
+  !>FSCK model:
+  !> - 0 no FSCK model
+  !> - 1 FSCK model activated
+  integer, save :: imfsck
+
   !--> pointeur dans le macrotableau propce :
 
   !                       ITSRE --> Terme source explicite
@@ -177,8 +182,11 @@ module radiat
   !> Useful if and only if the radiation module is activated}
   integer, save ::           nfreqr
 
-  !--> ADF radiation model
+  !> Spectral radiation models (ADF and FSCK)
+  !> Number of ETRs to solve
   integer, save ::           nwsgg
+  !> Weights of the Gaussian quadrature
+  double precision, dimension(:), allocatable :: wq
 
   !--> Informations sur les zones frontieres
 

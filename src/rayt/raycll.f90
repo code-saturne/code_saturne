@@ -140,7 +140,7 @@ double precision, dimension(:,:), pointer     :: qinspe
 ! 0 - Initialization
 !===============================================================================
 
-if (imoadf.ge.1) then
+if (imoadf.ge.1.or.imfsck.eq.1) then
   ! Pointer to the table
   ! which contains the spectral flux density
   call field_get_val_v(iqinsp,qinspe)
@@ -168,7 +168,7 @@ if (iirayo.eq.1) then
     ! Copy the appropriate flux density to the local variable qpatmp
 
     ! Value of the flux density at the boundary face
-    if (imoadf.ge.1) then
+    if (imoadf.ge.1.or.imfsck.eq.1) then
       qpatmp = qinspe(iband,ifac)
     else
       qpatmp = qincid(ifac)

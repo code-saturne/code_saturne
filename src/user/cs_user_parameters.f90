@@ -2069,12 +2069,25 @@ if (.false.) then
   iimlum = 0
 endif
 
-! Compute the absorption coefficient through Modak (if 1), or do not use
+! Compute the absorption coefficient through Modak (if 1 or 2), or do not use
 ! Modak (if 0)
 ! Useful ONLY when gas or coal combustion is activated
+! imodak = 1: ADF model with 8 wave length intervals
+! imodak = 2: ADF model with 50 wave length intervals
 
 if (.false.) then
-  imodak = 0
+  imodak = 2
+endif
+
+!-->  IMFSCK = 0 on n'utilise pas le model FSCK
+!            = 1 Model FSCK active
+! Compute the absorption coefficient through FSCK model (if 1)
+! Useful ONLY when coal combustion is activated
+! imfsck = 1: activated
+! imfsck = 0: not activated
+
+if (.false.) then
+  imfsck = 1
 endif
 
 !===============================================================================

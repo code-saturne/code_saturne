@@ -1182,7 +1182,7 @@ if (iirayo.gt.0) then
   write(nfecra,2640) iirayo
 
   write(nfecra,2650) isuird, nfreqr, i_quadrature,ndirec,          &
-                     idiver, imodak, iimpar, iimlum
+                     idiver, imodak, iimpar, iimlum, imoadf, imfsck
 
   write(nfecra,9900)
 
@@ -1212,7 +1212,9 @@ endif
 '       IDIVER = ',4x,i10,    ' (0 1 ou 2: calcul TS radiatif)',/,&
 '       IMODAK = ',4x,i10,    ' (1: modak coef absor; 0 sinon)',/,&
 '       IIMPAR = ',4x,i10,    ' (0 1 ou 2: impr Tempera paroi)',/,&
-'       IIMLUM = ',4x,i10,    ' (0 1 ou 2: impr infos solveur)',/)
+'       IIMLUM = ',4x,i10,    ' (0 1 ou 2: impr infos solveur)',/,&
+'       IMOADF = ',4x,i10,    ' (0 1 ou 2: non,ADF08,ADF50   )',/,&
+'       IMFSCK = ',4x,i10,    ' (0 1 : pas de FSCK, FSCK     )',/)
 
 #else
 
@@ -1238,7 +1240,9 @@ endif
 '       IDIVER = ',4x,i10,    ' (0 1 or 2: compute radiat. ST)',/,&
 '       IMODAK = ',4x,i10,    ' (1: modak absor coef; 0 else )',/,&
 '       IIMPAR = ',4x,i10,    ' (0 1 or 2: print wall temp.  )',/,&
-'       IIMLUM = ',4x,i10,    ' (0 1 or 2: print solver info )',/)
+'       IIMLUM = ',4x,i10,    ' (0 1 or 2: print solver info )',/,&
+'       IMOADF = ',4x,i10,    ' (0 1 or 2: none,ADF08,ADF50  )',/,&
+'       IMFSCK = ',4x,i10,    ' (0 1 : no FSCK, FSCK         )',/)
 
 #endif
 

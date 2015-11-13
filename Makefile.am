@@ -279,6 +279,12 @@ data/thch/dp_C4P \
 data/thch/dp_ELE \
 data/thch/dp_FCP.xml \
 data/thch/dp_FUE \
+data/thch/dp_radiat_ADF50 \
+data/thch/dp_radiat_ADF8 \
+data/thch/dp_radiat_MFS.tar.xz \
+data/thch/dp_radiat_Planck_CO2 \
+data/thch/dp_radiat_Planck_H2O \
+data/thch/dp_radiat_wave \
 data/thch/dp_transfo \
 data/thch/JANAF \
 data/thch/meteo

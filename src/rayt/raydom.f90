@@ -140,6 +140,8 @@ save       ipadom
 !===============================================================================
 ! 0. GESTION MEMOIRE
 !===============================================================================
+!---> Number of passes
+ipadom = ipadom + 1
 
 ! Allocate temporary arrays for the radiative equations resolution
 allocate(viscf(nfac), viscb(ndimfb))
@@ -168,7 +170,7 @@ if (icp.gt.0) then
   call field_get_val_s(iprpfl(icp), cpro_cp)
 endif
 ! ADF model parameters
-if (imoadf.ge.1) then
+if (imoadf.ge.1.or.imfsck.eq.1) then
   call field_get_val_v(iqinsp,bqinsp)   ! Irradiating spectral flux density
 endif
 
@@ -207,12 +209,16 @@ do ifac = 1, nfabor
   endif
 enddo
 
+! FSCK model parameters
+if (ipadom.eq.1) then
+  ! Weight of the i-the gaussian quadrature
+  allocate(wq(nwsgg))
+endif
+
 !===============================================================================
 ! 1. Initializations
 !===============================================================================
 
-!---> Number of passes
-ipadom = ipadom + 1
 if (ipadom.gt.1 .and. mod(ntcabs,nfreqr).ne.0) return
 
 write(nfecra,1000)
@@ -270,6 +276,12 @@ do iel = 1,ncel
   enddo
 enddo
 
+if (ipadom.eq.1) then
+  do i = 1,nwsgg
+    wq(i) = 1.d0      ! Must be set to 1 in case of using the standard as well as
+                      ! the ADF radiation models
+  enddo
+endif
 !=============================================================================
 ! 2. Temperature storing (in Kelvin) in tempk(iel, irphas)
 !=============================================================================
@@ -399,7 +411,7 @@ else
   ! Only necessary when grey gas radiation properties are applied.
   ! In case of the ADF model this test doesnt make sence.
 
-  if (imoadf.eq.0) then
+  if (imoadf.eq.0.and.imfsck.eq.0) then
     call usray3 &
   ( nvar   , nscal  , iappel ,                                     &
     itypfb ,                                                       &
@@ -414,7 +426,7 @@ endif
 
 !--> Test if the radiation coeffcient has been assigned
 if (iirayo.ge.1) then
-  if (imoadf.eq.0) then
+  if (imoadf.eq.0.and.imfsck.eq.0) then
     ckmin = propce(1,ipproc(icak(1)))
     do iel = 1, ncel
       ckmin = min(ckmin,propce(iel,ipproc(icak(1))))
@@ -455,6 +467,8 @@ if (iirayo.ge.1) then
   endif
 endif
 
+!---> Check of a transparent case
+idverl = idiver
 !=============================================================================
 ! 4. Solving the ETR
 !=============================================================================
@@ -462,10 +476,8 @@ endif
 ! Code_Saturne nwsgg=1
 
 do ngg = 1, nwsgg
-  !---> Check of a transparent case
-  idverl = idiver
 
-  if (imoadf.ge.1) then
+  if (imoadf.ge.1.or.imfsck.eq.1) then
     do iel = 1, ncel
       propce(iel, ipproc(icak(1))) = kgi(iel, ngg) ! TODO merge the two arrays
     enddo
@@ -723,7 +735,8 @@ do ngg = 1, nwsgg
 
     ! Absorption
     iabgaz(iel) = iabgaz(iel)+(propce(iel,ipproc(icak(1))) *          &
-                               propce(iel,ipproc(itsre(1))))
+                               propce(iel,ipproc(itsre(1)))*          &
+                               wq(ngg))
   enddo
 
   if (ippmod(iccoal).ge.0) then
@@ -732,10 +745,12 @@ do ngg = 1, nwsgg
       do iel = 1, ncel
         iabpar(iel) = iabpar(iel) + (propce(iel,ipproc(ix2(icla)))  &
                                   * propce(iel,ipproc(icak(ipcla))) &
-                                  * propce(iel,ipproc(itsre(1))))
+                                  * propce(iel,ipproc(itsre(1)))    &
+                                  * wq(ngg))
         iabparh2(iel,icla)        = iabparh2(iel,icla)              &
-                                  + propce(iel,ipproc(icak(ipcla))) &
-                                  * propce(iel,ipproc(itsre(1)))
+                                  + (propce(iel,ipproc(icak(ipcla)))&
+                                  * propce(iel,ipproc(itsre(1)))    &
+                                  * wq(ngg))
       enddo
     enddo
   else if (ippmod(icfuel).ge.0) then
@@ -745,10 +760,12 @@ do ngg = 1, nwsgg
       do iel = 1, ncel
         iabpar(iel) = iabpar(iel) + (cvara_yfol(iel)                &
                                   * propce(iel,ipproc(icak(ipcla))) &
-                                  * propce(iel,ipproc(itsre(1))))
+                                  * propce(iel,ipproc(itsre(1)))    &
+                                  * wq(ngg))
         iabparh2(iel,icla)        = iabparh2(iel,icla)              &
-                                  + propce(iel,ipproc(icak(ipcla))) &
-                                  * propce(iel,ipproc(itsre(1)))
+                                  + (propce(iel,ipproc(icak(ipcla)))&
+                                  * propce(iel,ipproc(itsre(1)))    &
+                                  * wq(ngg))
       enddo
     enddo
   endif
@@ -757,9 +774,9 @@ do ngg = 1, nwsgg
   do iel = 1, ncel
     iemgex(iel)=iemgex(iel)-(propce(iel,ipproc(icak(1)))            &
                            *agi(iel,ngg)*4.d0*stephn                &
-                           *(tempk(iel,1)**4))
+                           *(tempk(iel,1)**4)*wq(ngg))
     iemgim(iel)=iemgim(iel)-(16.d0*dcp(iel)*propce(iel,ipproc(icak(1)))      &
-                           * agi(iel,ngg)*stephn*(tempk(iel,1)**3))
+                           * agi(iel,ngg)*stephn*(tempk(iel,1)**3)*wq(ngg))
 
   enddo
   if (ippmod(iccoal).ge.0) then
@@ -768,18 +785,18 @@ do ngg = 1, nwsgg
       do iel = 1, ncel
         iempex(iel) = iempex(iel) -(4.0d0*propce(iel,ipproc(ix2(icla)))      &
                                   *stephn * propce(iel,ipproc(icak(ipcla)))  &
-                                  *(tempk(iel,ipcla)**4)*agi(iel,ngg))
+                                  *(tempk(iel,ipcla)**4)*agi(iel,ngg)*wq(ngg))
         iempexh2(iel,icla) = iempexh2(iel,icla)                              &
                              -(4.0d0*stephn * propce(iel,ipproc(icak(ipcla)))&
-                             *(tempk(iel,ipcla)**4)*agi(iel,ngg))
-        iempim(iel) = iempim(iel) -16.d0*propce(iel,ipproc(icak(ipcla)))     &
+                             *(tempk(iel,ipcla)**4)*agi(iel,ngg)*wq(ngg))
+        iempim(iel) = iempim(iel) -(16.d0*propce(iel,ipproc(icak(ipcla)))    &
                                   *propce(iel,ipproc(ix2(icla)))             &
                                   *stephn*(tempk(iel,ipcla)**3)*agi(iel,ngg) &
-                                  /cp2ch(ichcor(icla))
+                                  /cp2ch(ichcor(icla))*wq(ngg))
         iempimh2(iel,icla) = iempimh2(iel,icla)                              &
-                             -16.d0*propce(iel,ipproc(icak(ipcla)))          &
+                             -(16.d0*propce(iel,ipproc(icak(ipcla)))         &
                              *stephn*(tempk(iel,ipcla)**3)*agi(iel,ngg)      &
-                             /cp2ch(ichcor(icla))
+                             /cp2ch(ichcor(icla))*wq(ngg))
 
       enddo
     enddo
@@ -788,36 +805,38 @@ do ngg = 1, nwsgg
       ipcla = 1+icla
       call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
       do iel = 1, ncel
-        iempex(iel) = iempex(iel)   -(4.0d0*cvara_yfol(iel)                   &
-                                    *stephn * propce(iel,ipproc(icak(ipcla))) &
-                                    *(tempk(iel,ipcla)**4)*agi(iel,ngg))
+        iempex(iel) = iempex(iel)  -(4.0d0*cvara_yfol(iel)                    &
+                                   *stephn * propce(iel,ipproc(icak(ipcla)))  &
+                                   *(tempk(iel,ipcla)**4)*agi(iel,ngg)*wq(ngg))
         iempexh2(iel,icla) = iempexh2(iel,icla)                               &
                              -(4.0d0*stephn * propce(iel,ipproc(icak(ipcla))) &
-                             *(tempk(iel,ipcla)**4)*agi(iel,ngg))
-        iempim(iel) = iempim(iel) -16.d0*propce(iel,ipproc(icak(ipcla)))      &
+                             *(tempk(iel,ipcla)**4)*agi(iel,ngg)*wq(ngg))
+        iempim(iel) = iempim(iel) -(16.d0*propce(iel,ipproc(icak(ipcla)))     &
                                   *cvara_yfol(iel)*stephn                     &
-                                  *(tempk(iel,ipcla)**3) *agi(iel,ngg)/cp2fol
+                                  *(tempk(iel,ipcla)**3)*agi(iel,ngg)/cp2fol  &
+                                  *wq(ngg))
         iempimh2(iel,icla) = iempimh2(iel,icla)                               &
-                             -16.d0*propce(iel,ipproc(icak(ipcla)))           &
-                             *stephn*(tempk(iel,ipcla)**3)*agi(iel,ngg)/cp2fol
+                             -(16.d0*propce(iel,ipproc(icak(ipcla)))          &
+                             *stephn*(tempk(iel,ipcla)**3)*agi(iel,ngg)/cp2fol&
+                             *wq(ngg))
       enddo
     enddo
   endif
 
   do iel = 1, ncel
     ! Emitted intensity
-    ilutot(iel)=ilutot(iel)+propce(iel,ipproc(itsre(1)))
+    ilutot(iel)=ilutot(iel)+(propce(iel,ipproc(itsre(1)))*wq(ngg))
 
     ! Flux vector components
-    propce(iel,ipproc(iqx))=propce(iel,ipproc(iqx))+iqxpar(iel)
-    propce(iel,ipproc(iqy))=propce(iel,ipproc(iqy))+iqypar(iel)
-    propce(iel,ipproc(iqz))=propce(iel,ipproc(iqz))+iqzpar(iel)
+    propce(iel,ipproc(iqx))=propce(iel,ipproc(iqx))+(iqxpar(iel)*wq(ngg))
+    propce(iel,ipproc(iqy))=propce(iel,ipproc(iqy))+(iqypar(iel)*wq(ngg))
+    propce(iel,ipproc(iqz))=propce(iel,ipproc(iqz))+(iqzpar(iel)*wq(ngg))
   enddo
 
   ! If the ADF model is activated we have to sum up the spectral flux densities
   if (imoadf.ge.1) then
     do ifac =1, nfabor
-      iqpato(ifac)=iqpato(ifac)+bqinsp(ngg,ifac)
+      iqpato(ifac)=iqpato(ifac)+(bqinsp(ngg,ifac)*wq(ngg))
     enddo
   endif
 enddo
@@ -1143,7 +1162,7 @@ deallocate(iqxpar,iqypar,iqzpar)
 deallocate(iabgaz,iabpar,iemgex,iempex,ilutot)
 deallocate(iemgim,iempim)
 deallocate(iabparh2,iempexh2,iempimh2)
-
+if (ntcabs.eq.ntmabs) deallocate(wq)
 !--------
 ! Formats
 !--------

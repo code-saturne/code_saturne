@@ -64,6 +64,9 @@ Physical modelling
  - Add the added-mass term in Lagrangian particle tracking (activate it
    with iadded_mass=1).
 
+ - Add FSCK radiative model for coal combustion.
+   Activate it in cs_user_parameters.f90 with imfsck=1.
+
 Numerics
 --------
 

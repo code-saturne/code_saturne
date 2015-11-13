@@ -114,6 +114,11 @@ imodak = 0
 
 imoadf = 0
 
+!-->  IMFSCK = 0 switch off FSCK model
+!            = 1 switch on FSCK model
+
+imfsck = 0
+
 !-->  INDICATEUR SUITE DE CALCUL (LECTURE DU FICHIER SUITE)
 
 isuird = isuite
@@ -169,6 +174,10 @@ if (imoadf.eq.1) then
   nwsgg = 8
 elseif (imoadf.eq.2) then
   nwsgg = 50
+endif
+
+if (imfsck.eq.1) then
+  nwsgg=7
 endif
 
 !===============================================================================
