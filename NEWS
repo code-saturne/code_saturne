@@ -90,7 +90,7 @@ Numerics
    * Add reaction term to CDO module.
      Improve the computation of discrete Hodge op. when using
      conforming reconstruction function.
-     Adapt the computation of the source term when using this king of discrete
+     Adapt the computation of the source term when using this kind of discrete
      Hodge operator.
    * Add time scheme and make some factorizations in vertex-based schemes.
      Add functionalities to cs_locmat_t structure.
