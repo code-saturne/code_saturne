@@ -147,9 +147,6 @@ _setup(cs_mesh_t             *m,
   for (int  i = n_mesh_locations_ini; i < n_mesh_locations; i++)
     cs_mesh_location_build(m, i);
 
-  /* Advanced settings (numerical scheme, hodge operators, solvers...) */
-  cs_user_cdo_numeric_settings(domain);
-
   /* Add variables related to user-defined and predefined equations */
   cs_domain_create_fields(domain);
 
@@ -168,6 +165,9 @@ _setup(cs_mesh_t             *m,
 
   /* Initial setup of user equations */
   cs_user_cdo_setup_equations(domain);
+
+  /* Advanced settings (numerical scheme, hodge operators, solvers...) */
+  cs_user_cdo_numeric_settings(domain);
 
   /* Initialize post-processing */
   cs_post_activate_writer(-1,     /* default writer (volume mesh)*/
