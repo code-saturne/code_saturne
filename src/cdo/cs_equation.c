@@ -1898,6 +1898,8 @@ cs_equation_set(cs_equation_t       *eq,
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
     else if (strcmp(val, "voronoi") == 0)
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+    else if (strcmp(val, "wbs") == 0)
+      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,

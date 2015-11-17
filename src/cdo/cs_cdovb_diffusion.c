@@ -49,6 +49,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_hodge.h"
+#include "cs_evaluate.h"
 
 #include "cs_cdovb_diffusion.h"
 
@@ -86,15 +87,21 @@ struct _cs_cdovb_diff_t {
   cs_param_hodge_t      h_info;
   cs_hodge_builder_t   *hb;
 
+  /* Diffusion tensor */
+  double                t_cur;      /* Current physical time for evaluating the
+                                       diffusion tensor*/
+  bool                  is_uniform;
+  cs_real_t             matpty[3][3];
+
   /* Compact way to stored the edge --> vertices connect. related to a cell */
   int           n_bits;         // number of bits in a block
   int           n_blocks;       // number of blocks in a mask
   cs_flag_t    *emsk;           // list of masks to store the connectivity
 
-  /* Members related to the weak enforcement of BCs */
-  cs_real_3_t  *local_vect;  // set of local vectors
-  cs_real_t    *local_vol;   // set of local volumes
-  short int    *local_ids;   // set of local ids related to a cell
+  /* Temporary buffers */
+  cs_real_3_t  *tmp_vect;  // set of local vectors
+  cs_real_t    *tmp_real;   // set of local arrays of double
+  short int    *tmp_ids;   // set of local ids related to a cell
 
   /* Local matrix (stiffness or normal trace gradient) */
   cs_locmat_t   *loc;
@@ -165,6 +172,325 @@ _encode_edge_masks(cs_lnum_t                  c_id,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute and store the unit vector tangential to x_c --> x_v.
+ *          Store also the local weight related to each vertex wvc
+ *
+ * \param[in]      c_id        current cell id
+ * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
+ * \param[in, out] diff        auxiliary structure used to build the diff. term
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_define_wbs_builder(cs_lnum_t                    c_id,
+                    const cs_cdo_connect_t      *connect,
+                    const cs_cdo_quantities_t   *quant,
+                    cs_cdovb_diff_t             *diff)
+{
+  cs_lnum_t  i, _i;
+  cs_real_t  len;
+
+  cs_real_3_t  *unit_vc = diff->tmp_vect;
+  cs_real_t  *wvc = diff->tmp_real;
+  cs_real_t  *len_vc = diff->tmp_real + connect->n_max_vbyc;
+
+  const cs_real_t  over_cell_vol = 1/quant->cell_vol[c_id];
+  const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+  const cs_connect_index_t  *c2v = connect->c2v;
+
+  /* Matrix related to the material property */
+  if (!diff->is_uniform)
+    cs_evaluate_pty(diff->h_info.pty_id,
+                    diff->t_cur,
+                    xc,
+                    diff->h_info.inv_pty,
+                    &(diff->matpty));
+
+  /* Loop on cell vertices */
+  for (i = c2v->idx[c_id], _i = 0; i < c2v->idx[c_id+1]; i++, _i++) {
+
+    cs_lnum_t  v_id = c2v->ids[i];
+    const cs_real_t  *xv = quant->vtx_coord + 3*v_id;
+
+    wvc[_i] = over_cell_vol * quant->dcell_vol[i];
+
+    /* Define the segment x_c --> x_v */
+    _lenunit3(xc, xv, len_vc + _i, unit_vc + _i);
+
+  } // Loop on cell vertices
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the gradient of a Lagrange hat function related to a cell c
+ *          in a p_{f, c} subvolume of a cell where f is a face of c
+ *
+ * \param[in]       ifc        incidence number i_{f,c}
+ * \param[in]       pfq        primal face quantities
+ * \param[in]       deq        dual edge quantities
+ * \param[in, out]  grd_func   gradient of the Lagrange function related to c
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_grad_lagrange_cell_pfc(short int             ifc,
+                        const cs_quant_t      pfq,
+                        const cs_nvec3_t      deq,
+                        cs_real_3_t           grd_func)
+{
+  cs_real_t  ohf = -ifc/(deq.meas * fabs(_dp3(pfq.unitv, deq.unitv)));
+
+  for (int k = 0; k < 3; k++)
+    grd_func[k] = ohf * pfq.unitv[k];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the gradient of a Lagrange hat function related to primal
+ *          vertices in a p_{e,f, c} subvolume of a cell c where e is an edge
+ *          belonging to the face f with vertices v and v'
+ *
+ * \param[in]       ubase     unit vector from xc to xv' (opposite)
+ * \param[in]       udir      unit vector from xc to xv
+ * \param[in]       len_vc    lenght of the segment [xc, xv]
+ * \param[in]       peq       primal edge quantities
+ * \param[in]       deq       dual edge quantities
+ * \param[in, out]  grd_func  gradient of the Lagrange shape function
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_grad_lagrange_vtx_pef(const cs_real_3_t     ubase,
+                       const cs_real_3_t     udir,
+                       cs_real_t             len_vc,
+                       const cs_quant_t      peq,
+                       const cs_nvec3_t      deq,
+                       cs_real_3_t           grd_func)
+{
+  int  k;
+  cs_real_3_t  unormal;
+
+  /* Normal direction to the plane in opposition to xv */
+  _cp3(ubase, deq.unitv, &unormal);
+
+  /* Height from this plane to the vertex */
+  double  sgn = _dp3(udir, unormal);
+  double  height = len_vc * sgn;
+  assert(fabs(height) > cs_get_eps_machine()); /* Sanity check */
+  double  over_height = 1/height;
+
+  for (k = 0; k < 3; k++)
+    grd_func[k] = unormal[k]*over_height;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute for each face a weight related to each vertex w_{v,f}
+ *         This weight is equal to |dc(v) cap f|/|f| so that the sum of the
+ *         weights is equal to 1.
+ *         Set also the local and local numbering of the vertices of this face
+ *
+ * \param[in]      f_id      id of the face
+ * \param[in]      pfq       geometric quantities related to face f_id
+ * \param[in]      deq       geometric quantities related to the dual edge
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant     pointer to a cs_cdo_quantites_t structure
+ * \param[in]      loc_ids   local vertex numbering on a cell
+ * \param[in, out] wvf       pointer to an array storing the weight/vertex
+ * \param[in, out] pef_vol   pointer to an array storing the volume of pef
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_wvf_pefvol(cs_lnum_t                   f_id,
+                    const cs_quant_t            pfq,
+                    const cs_nvec3_t            deq,
+                    const cs_cdo_connect_t     *connect,
+                    const cs_cdo_quantities_t  *quant,
+                    const cs_lnum_t            *loc_ids,
+                    cs_real_t                  *wvf,
+                    cs_real_t                  *pef_vol)
+{
+  cs_lnum_t  i, j;
+  double  len;
+  cs_real_3_t  un, cp;
+
+  const double  f_coef = 0.25/pfq.meas;
+  const double  h_coef = 1/6.*_dp3(pfq.unitv, deq.unitv)*deq.meas;
+  const cs_sla_matrix_t  *f2e = connect->f2e;
+
+  assert(h_coef > 0);
+
+  /* Reset weights */
+  for (i = 0; i < connect->n_max_vbyc; i++) wvf[i] = 0;
+
+  /* Compute a weight for each vertex of the current face */
+  for (j = 0, i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++, j++) {
+
+    const cs_lnum_t  e_id = f2e->col_id[i];
+    const cs_quant_t  eq = quant->edge[e_id];
+
+    const cs_lnum_t  v1_id = connect->e2v->col_id[2*e_id];
+    const cs_lnum_t  v2_id = connect->e2v->col_id[2*e_id+1];
+    const short int  _v1 = loc_ids[v1_id];
+    const short int  _v2 = loc_ids[v2_id];
+
+    _lenunit3(eq.center, pfq.center, &len, &un);
+    _cp3(un, eq.unitv, &cp);
+
+    double  area = len * eq.meas * _n3(cp); // two times the area
+    double  contrib = area * f_coef;
+
+    pef_vol[j] = area * h_coef;
+    wvf[_v1] += contrib;
+    wvf[_v2] += contrib;
+
+  } /* End of loop on face edges */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the stiffness matrix on this cell using a Whitney
+ *          Barycentric Subdivision (WBS) algo.
+ *
+ * \param[in]      c_id        current cell id
+ * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
+ * \param[in]      loc_ids     local vertex numbering on a cell
+ * \param[in, out] diff        auxiliary structure used to build the diff. term
+ *
+ * \return a pointer to a local stiffness matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_locmat_t *
+_compute_wbs_stiffness(cs_lnum_t                    c_id,
+                       const cs_cdo_connect_t      *connect,
+                       const cs_cdo_quantities_t   *quant,
+                       const cs_lnum_t             *loc_ids,
+                       cs_cdovb_diff_t             *diff)
+{
+  cs_lnum_t  i, j, _j, k, ii, jj, ishft;
+  cs_real_3_t  grd_c, grd_f, grd_v1, grd_v2, matg;
+
+  cs_real_3_t  *unit_vc = diff->tmp_vect;
+  cs_real_3_t  *glv = diff->tmp_vect + connect->n_max_vbyc;
+  cs_real_t  *wvc     = diff->tmp_real;
+  cs_real_t  *len_vc  = diff->tmp_real +   connect->n_max_vbyc;
+  cs_real_t  *wvf     = diff->tmp_real + 2*connect->n_max_vbyc;
+  cs_real_t  *pef_vol = diff->tmp_real + 3*connect->n_max_vbyc;
+
+  cs_locmat_t  *sloc = diff->loc; // Local stiffness matrix to build
+
+  const cs_sla_matrix_t  *c2f = connect->c2f;
+  const cs_sla_matrix_t  *f2e = connect->f2e;
+  const cs_sla_matrix_t  *e2v = connect->e2v;
+
+  /* Loop on cell faces */
+  for (i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
+
+    short int  ifc = c2f->sgn[i];
+    cs_lnum_t  f_id = c2f->col_id[i];
+    cs_quant_t  pfq = quant->face[f_id];
+    cs_nvec3_t  deq = quant->dedge[i];
+
+    /* Gradient of the lagrange function related to a cell in each p_{f,c} */
+    _grad_lagrange_cell_pfc(ifc, pfq, deq, grd_c);
+
+    /* Weights related to each vertex attached to this face */
+    _compute_wvf_pefvol(f_id, pfq, deq, connect, quant, loc_ids, wvf, pef_vol);
+
+    /* Loop on face edges to scan p_{e,f,c} subvolumes */
+    for (j = f2e->idx[f_id], _j = 0; j < f2e->idx[f_id+1]; j++, _j++) {
+
+      const cs_lnum_t  e_id = f2e->col_id[j];
+      const cs_lnum_t  eshf = 2*e_id;
+      const cs_quant_t  peq = quant->edge[e_id];
+      const double  subvol = pef_vol[_j];
+
+      /* First vertex */
+      const cs_lnum_t  v1_id = e2v->col_id[eshf];
+      const short int  _v1 = loc_ids[v1_id];
+      const short int  iev1 = e2v->sgn[eshf];
+
+      /* Second vertex */
+      const cs_lnum_t  v2_id = e2v->col_id[eshf+1];
+      const short int  iev2 = e2v->sgn[eshf+1];
+      const short int  _v2 = loc_ids[v2_id];
+
+      /* Gradient of the lagrange function related to v1 */
+      _grad_lagrange_vtx_pef(unit_vc[_v2], unit_vc[_v1], len_vc[_v1],
+                             peq, deq,
+                             grd_v1);
+
+      /* Gradient of the lagrange function related to a v2 */
+      _grad_lagrange_vtx_pef(unit_vc[_v1], unit_vc[_v2], len_vc[_v2],
+                             peq, deq,
+                             grd_v2);
+
+      /* Gradient of the lagrange function related to a face.
+         This formula is a consequence of the Partition of the Unity */
+      for (k = 0; k < 3; k++)
+        grd_f[k] = -(grd_c[k] + grd_v1[k] + grd_v2[k]);
+
+      /* Compute the gradient of the conforming reconstruction functions for
+         each vertex of the cell in this subvol (pefc) */
+      for (ii = 0; ii < sloc->n_ent; ii++) {
+
+        for (k = 0; k < 3; k++)
+          glv[ii][k] = wvc[ii]*grd_c[k];
+
+        if (wvf[ii] > 0) // Face contrib.
+          for (k = 0; k < 3; k++)
+            glv[ii][k] += wvf[ii]*grd_f[k];
+
+        if (ii == _v1) // Vertex 1 contrib
+          for (k = 0; k < 3; k++)
+            glv[ii][k] += grd_v1[k];
+
+        if (ii == _v2) // Vertex 2 contrib
+          for (k = 0; k < 3; k++)
+            glv[ii][k] += grd_v2[k];
+
+      } // Loop on cell vertices
+
+      /* Build the upper right part */
+      for (ii = 0; ii < sloc->n_ent; ii++) {
+
+        ishft = ii*sloc->n_ent;
+        _mv3((const cs_real_t (*)[3])diff->matpty, glv[ii], matg);
+
+        /* Diagonal contribution */
+        sloc->mat[ishft+ii] += subvol * _dp3(matg, glv[ii]);
+
+        for (jj = ii+1; jj < sloc->n_ent; jj++) {
+
+          sloc->mat[ishft+jj] += subvol * _dp3(matg, glv[jj]);
+
+        } /* Loop on vertices v_j (j > i) */
+
+      } /* Loop on vertices v_i */
+
+    }
+
+  } // Loop on cell faces
+
+  /* Matrix is symmetric by construction */
+  for (ii = 0; ii < sloc->n_ent; ii++) {
+    ishft = ii*sloc->n_ent;
+    for (jj = ii+1; jj < sloc->n_ent; jj++)
+      sloc->mat[jj*sloc->n_ent+ii] = sloc->mat[ishft+jj];
+  }
+
+  return sloc;
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -197,6 +523,8 @@ cs_cdovb_diffusion_builder_init(const cs_cdo_connect_t       *connect,
 
   BFT_MALLOC(diff, 1, cs_cdovb_diff_t);
 
+  diff->t_cur = time_step->t_cur;
+
   /* Copy the data related to a discrete Hodge operator */
   diff->h_info.type = h_info.type;
   diff->h_info.pty_id = h_info.pty_id;
@@ -204,33 +532,53 @@ cs_cdovb_diffusion_builder_init(const cs_cdo_connect_t       *connect,
   diff->h_info.algo = h_info.algo;
   diff->h_info.coef = h_info.coef;
 
+  diff->is_uniform = cs_param_pty_is_uniform(h_info.pty_id);
+
+  if (diff->is_uniform) {
+    cs_real_3_t  xyz = {0., 0., 0.};
+
+    cs_evaluate_pty(h_info.pty_id,
+                    0.0,             // When ?
+                    xyz,             // Anywhere since uniform
+                    h_info.inv_pty,  // Need to inverse the tensor ?
+                    &(diff->matpty));
+
+  }
+
   diff->enforce = bc_enforce;
   bool  wnit = (bc_enforce == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE) ? true : false;
   bool  wsym = (bc_enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) ? true : false;
   bool  hwbs = (h_info.algo == CS_PARAM_HODGE_ALGO_WBS) ? true : false;
 
+  int  vect_size = 0;
+  int  vol_size = 0;
+
+  diff->tmp_ids = NULL;
+  diff->tmp_real = NULL;
+  diff->tmp_vect = NULL;
+  diff->emsk = NULL;
+  diff->hb = NULL;
+  diff->n_bits = 0;
+  diff->n_blocks = 0;
+
   if (wnit || wsym) {
 
-    BFT_MALLOC(diff->local_vect, 2*connect->n_max_ebyc, cs_real_3_t);
-    BFT_MALLOC(diff->local_vol, connect->n_max_ebyc, cs_real_t);
+    vect_size = 2*connect->n_max_ebyc;
+    vol_size = connect->n_max_ebyc;
 
     cs_lnum_t  n_ent = CS_MAX(connect->e_info->n_ent, connect->f_info->n_ent);
-    BFT_MALLOC(diff->local_ids, n_ent, short int);
+    BFT_MALLOC(diff->tmp_ids, n_ent, short int);
     for (i = 0; i < n_ent; i++)
-      diff->local_ids[i] = -1;
+      diff->tmp_ids[i] = -1;
 
   } // Weakly enforcement of Dirichlet BCs
 
   if (hwbs) {
-    if (!wnit && !wsym) {
-      BFT_MALLOC(diff->local_vect, 2*connect->n_max_vbyc, cs_real_3_t);
-      BFT_MALLOC(diff->local_vol, 2*connect->n_max_vbyc, cs_real_t);
-    }
-    else {
-      int  size = 2*connect->n_max_vbyc + connect->f2e->info.stencil_max;
-      if (size > connect->n_max_ebyc)
-        BFT_REALLOC(diff->local_vol, size, cs_real_t);
-    }
+
+    vect_size = CS_MAX(vect_size, 2*connect->n_max_vbyc);
+    vol_size = CS_MAX(vol_size,
+                      3*connect->n_max_vbyc + connect->f2e->info.stencil_max);
+
   }
   else {
 
@@ -248,6 +596,9 @@ cs_cdovb_diffusion_builder_init(const cs_cdo_connect_t       *connect,
       diff->emsk[i] = 0;
 
   }
+
+  if (vect_size > 0) BFT_MALLOC(diff->tmp_vect, vect_size, cs_real_3_t);
+  if (vol_size > 0) BFT_MALLOC(diff->tmp_real, vol_size, cs_real_t);
 
   /* Allocate the local stiffness matrix */
   diff->loc = cs_locmat_create(connect->n_max_vbyc);
@@ -277,10 +628,10 @@ cs_cdovb_diffusion_builder_free(cs_cdovb_diff_t   *diff)
   bool  hwbs = (diff->h_info.algo == CS_PARAM_HODGE_ALGO_WBS) ? true : false;
 
   if (hwbs || wnit || wsym) {
-    BFT_FREE(diff->local_vect);
-    BFT_FREE(diff->local_vol);
+    BFT_FREE(diff->tmp_vect);
+    BFT_FREE(diff->tmp_real);
     if (wnit || wsym)
-      BFT_FREE(diff->local_ids);
+      BFT_FREE(diff->tmp_ids);
   }
 
   if (!hwbs) {
@@ -395,7 +746,8 @@ cs_cdovb_diffusion_build_local(cs_lnum_t                    c_id,
     break;
 
   case CS_PARAM_HODGE_ALGO_WBS:
-    // TODO
+    _define_wbs_builder(c_id, connect, quant, diff);
+    sloc = _compute_wbs_stiffness(c_id, connect, quant, vtag, diff);
     break;
 
   default:
@@ -441,10 +793,10 @@ cs_cdovb_diffusion_ntrgrd_build(cs_lnum_t                    c_id,
                                 cs_cdovb_diff_t             *diff)
 {
   cs_locmat_t  *ntrgrd = diff->loc; // Local matrix to build
-  cs_real_3_t  *dfv = diff->local_vect;
-  cs_real_3_t  *pev = diff->local_vect + ntrgrd->n_ent;
-  cs_real_t  *over_pec_vol = diff->local_vol;
-  short int  *loc_e_ids = diff->local_ids;
+  cs_real_3_t  *dfv = diff->tmp_vect;
+  cs_real_3_t  *pev = diff->tmp_vect + ntrgrd->n_ent;
+  cs_real_t  *over_pec_vol = diff->tmp_real;
+  short int  *loc_e_ids = diff->tmp_ids;
 
   const cs_param_hodge_t  h_info = diff->h_info;
   const cs_param_hodge_algo_t  h_algo = h_info.algo;
@@ -565,9 +917,9 @@ cs_cdovb_diffusion_ntrgrd_build(cs_lnum_t                    c_id,
     }
     break;
 
-  /* case CS_PARAM_HODGE_ALGO_WBS: */
-  /*   // TODO */
-  /*   break; */
+  case CS_PARAM_HODGE_ALGO_WBS:
+
+    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
