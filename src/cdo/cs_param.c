@@ -132,9 +132,7 @@ cs_param_hodge_algo_desc[CS_PARAM_N_HODGE_ALGOS][CS_CDO_LEN_NAME] =
 
 static const char
 cs_param_source_term_type_name[CS_PARAM_N_SOURCE_TERM_TYPES][CS_CDO_LEN_NAME] =
-  { N_("standard (explicit)"),
-    N_("implicit"),
-    N_("implicit/explicit"),
+  { N_("user"),
     N_("mass"),
     N_("head loss") };
 
@@ -1071,6 +1069,48 @@ cs_param_bc_def_set(cs_param_bc_def_t      *bcpd,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a new reaction term. The strcuture related to this reaction
+ *         term has already been allocated among the list of reaction terms
+ *         associated to an equation
+ *
+ * \param[in, out] rp         pointer to cs_param_reaction_t structure
+ * \param[in]      r_name     name of the reaction term
+ * \param[in]      pty_id     id of the associated property
+ * \param[in]      h_type     type of discrete Hodge op. associated to this term
+ * \param[in]      h_algo     algorithm used to build the discrete Hodge op.
+ * \param[in]      r_type     type of reaction term
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_reaction_term_add(cs_param_reaction_t          *rp,
+                           const char                   *r_name,
+                           int                           pty_id,
+                           cs_param_hodge_type_t         h_type,
+                           cs_param_hodge_algo_t         h_algo,
+                           cs_param_source_term_type_t   r_type)
+{
+  if (rp == NULL)
+    return;
+
+  rp->type = r_type;
+  rp->do_lumping = false;   // No lumping by default
+
+  /* Name of the reaction term */
+  int len = strlen(r_name)+1;
+  BFT_MALLOC(rp->name, len, char);
+  strncpy(rp->name, r_name, len);
+
+  /* Initialiaze the related discrete Hodge operator */
+  rp->hodge.pty_id = pty_id;
+  rp->hodge.inv_pty = false;     // inverse property ?
+  rp->hodge.type = h_type;
+  rp->hodge.algo = h_algo;
+  rp->hodge.coef = 1/3.;         // Not used by default but set to DGA method
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define a source term. This source term is added to the list of
  *         source terms associated to an equation
  *
@@ -1110,6 +1150,50 @@ cs_param_source_term_add(cs_param_source_term_t       *stp,
   stp->use_subdiv = false; // default behaviour
 
   cs_param_set_def(def_type, var_type, val, &(stp->def));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name related to a reaction term
+ *
+ * \param[in] r_info     cs_param_reaction_t structure
+ *
+ * \return the name of the reaction term
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_reaction_get_name(const cs_param_reaction_t   r_info)
+{
+  return r_info.name;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the type of reaction term
+ *
+ * \param[in] r_info     set of parameters related to a reaction term
+ *
+ * \return the name associated with this type of reaction term
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_reaction_get_type_name(cs_param_reaction_t  r_info)
+{
+  switch (r_info.type) {
+  case CS_PARAM_REACTION_TYPE_LINEAR:
+    return  "Linear";
+    break;
+  case CS_PARAM_N_REACTION_TYPES:
+    return "Not set";
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid type of reaction term. Stop execution."));
+  }
+
+  return "NULL";
 }
 
 /*----------------------------------------------------------------------------*/

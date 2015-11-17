@@ -248,8 +248,6 @@ typedef enum {
   EQKEY_HODGE_DIFF_COEF,
   EQKEY_HODGE_TIME_ALGO,
   EQKEY_HODGE_TIME_COEF,
-  EQKEY_HODGE_REAC_ALGO,
-  EQKEY_HODGE_REAC_COEF,
   EQKEY_ITSOL,
   EQKEY_ITSOL_EPS,
   EQKEY_ITSOL_MAX_ITER,
@@ -272,6 +270,17 @@ typedef enum {
   EQKEY_ERROR
 
 } eqkey_t;
+
+/* List of keys for setting a reaction term */
+typedef enum {
+
+  REAKEY_LUMPING,
+  REAKEY_HODGE_ALGO,
+  REAKEY_HODGE_COEF,
+  REAKEY_INV_PTY,
+  REAKEY_ERROR
+
+} reakey_t;
 
 /* List of keys for setting a source term */
 typedef enum {
@@ -322,12 +331,13 @@ struct _cs_equation_t {
 
   /* Pointer to functions */
   cs_equation_init_builder_t    *init_builder;
-  cs_equation_compute_source_t  *compute_source;
+  cs_equation_free_builder_t    *free_builder;
   cs_equation_build_system_t    *build_system;
+  cs_equation_compute_source_t  *compute_source;
   cs_equation_update_field_t    *update_field;
   cs_equation_get_f_values_t    *get_f_values;
   cs_equation_get_tmpbuf_t      *get_tmpbuf;
-  cs_equation_free_builder_t    *free_builder;
+
 
 };
 
@@ -928,10 +938,6 @@ _print_eqkey(eqkey_t  key)
     return "hodge_time_algo";
   case EQKEY_HODGE_TIME_COEF:
     return "hodge_time_coef";
-  case EQKEY_HODGE_REAC_ALGO:
-    return "hodge_reac_algo";
-  case EQKEY_HODGE_REAC_COEF:
-    return "hodge_reac_coef";
   case EQKEY_ITSOL:
     return "itsol";
   case EQKEY_ITSOL_EPS:
@@ -971,6 +977,35 @@ _print_eqkey(eqkey_t  key)
   case EQKEY_TIME_THETA:
     return "time_theta";
 
+  default:
+    assert(0);
+  }
+
+  return NULL; // avoid a warning
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print the name of the corresponding reaction term key
+ *
+ * \param[in] key        name of the key
+ *
+ * \return a string
+ */
+/*----------------------------------------------------------------------------*/
+
+static const char *
+_print_reakey(reakey_t  key)
+{
+  switch (key) {
+  case REAKEY_LUMPING:
+    return "lumping";
+  case REAKEY_HODGE_ALGO:
+    return "hodge_algo";
+  case REAKEY_HODGE_COEF:
+    return "hodge_coef";
+  case REAKEY_INV_PTY:
+    return "inv_pty";
   default:
     assert(0);
   }
@@ -1028,10 +1063,6 @@ _get_eqkey(const char *keyname)
       key = EQKEY_HODGE_TIME_COEF;
     else if (strcmp(keyname, "hodge_time_algo") == 0)
       key = EQKEY_HODGE_TIME_ALGO;
-    else if (strcmp(keyname, "hodge_reac_coef") == 0)
-      key = EQKEY_HODGE_REAC_COEF;
-    else if (strcmp(keyname, "hodge_reac_algo") == 0)
-      key = EQKEY_HODGE_REAC_ALGO;
   }
 
   else if (strncmp(keyname, "itsol", 5) == 0) { /* key begins with itsol */
@@ -1094,6 +1125,34 @@ _get_eqkey(const char *keyname)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the corresponding enum from the name of a reaction term key.
+ *         If not found, print an error message
+ *
+ * \param[in] keyname    name of the key
+ *
+ * \return a reakey_t
+ */
+/*----------------------------------------------------------------------------*/
+
+static stkey_t
+_get_reakey(const char *keyname)
+{
+  reakey_t  key = REAKEY_ERROR;
+
+  if (strcmp(keyname, "lumping") == 0)
+    key = REAKEY_LUMPING;
+  else if (strcmp(keyname, "hodge_algo") == 0)
+    key = REAKEY_HODGE_ALGO;
+  else if (strcmp(keyname, "hodge_coef") == 0)
+    key = REAKEY_HODGE_COEF;
+  else if (strcmp(keyname, "inv_pty") == 0)
+    key = REAKEY_INV_PTY;
+
+  return key;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Get the corresponding enum from the name of a source term key.
  *         If not found, print an error message
  *
@@ -1125,7 +1184,6 @@ _get_stkey(const char *keyname)
  * \param[in] is_steady        add an unsteady term or not
  * \param[in] do_convection    add a convection term
  * \param[in] do_diffusion     add a diffusion term
- * \param[in] do_diffusion     add a reaction term
  * \param[in] default_bc       type of boundary condition set by default
  *
  * \return a pointer to a new allocated cs_equation_param_t structure
@@ -1138,7 +1196,6 @@ _create_equation_param(cs_equation_status_t   status,
                        bool                   is_steady,
                        bool                   do_convection,
                        bool                   do_diffusion,
-                       bool                   do_reaction,
                        cs_param_bc_type_t     default_bc)
 {
   cs_param_var_type_t  var_type = CS_PARAM_N_VAR_TYPES;
@@ -1161,8 +1218,6 @@ _create_equation_param(cs_equation_status_t   status,
     eqp->flag |= CS_EQUATION_CONVECTION;
   if (do_diffusion)
     eqp->flag |= CS_EQUATION_DIFFUSION;
-  if (do_reaction)
-    eqp->flag |= CS_EQUATION_REACTION;
 
   eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
 
@@ -1174,11 +1229,9 @@ _create_equation_param(cs_equation_status_t   status,
   eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
   eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
 
-  eqp->reaction_lumping = false;
-  eqp->reaction_hodge.pty_id = 0;      // Unity (default property)
-  eqp->reaction_hodge.inv_pty = false; // inverse property ?
-  eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
-  eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+  /* No reaction term by default */
+  eqp->n_reaction_terms = 0;
+  eqp->reaction_terms = NULL;
 
   eqp->diffusion_hodge.pty_id = 0;      // Unity (default property)
   eqp->diffusion_hodge.inv_pty = false; // inverse property ?
@@ -1186,11 +1239,11 @@ _create_equation_param(cs_equation_status_t   status,
   eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
   eqp->diffusion_hodge.coef = 1./3.;
 
-  eqp->advection.adv_id = -1; // No default value
-  eqp->advection.form = CS_PARAM_ADVECTION_FORM_CONSERV;
-  eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND;
-  eqp->advection.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
-  eqp->advection.quad_type = CS_QUADRATURE_BARY;
+  eqp->advection_info.adv_id = -1; // No default value
+  eqp->advection_info.form = CS_PARAM_ADVECTION_FORM_CONSERV;
+  eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND;
+  eqp->advection_info.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
+  eqp->advection_info.quad_type = CS_QUADRATURE_BARY;
 
   /* Boundary conditions structure.
      One assigns a boundary condition by default */
@@ -1248,7 +1301,6 @@ _create_equation_param(cs_equation_status_t   status,
  * \param[in] is_steady        add an unsteady term or not
  * \param[in] do_convection    add a convection term
  * \param[in] do_diffusion     add a diffusion term
- * \param[in] do_reaction      add a reaction term
  * \param[in] default_bc       type of boundary condition set by default
  *
  * \return  a pointer to the new allocated cs_equation_t structure
@@ -1263,7 +1315,6 @@ cs_equation_create(const char            *eqname,
                    bool                   is_steady,
                    bool                   do_convection,
                    bool                   do_diffusion,
-                   bool                   do_reaction,
                    cs_param_bc_type_t     default_bc)
 {
   int  len = strlen(eqname)+1;
@@ -1304,7 +1355,6 @@ cs_equation_create(const char            *eqname,
                                      is_steady,
                                      do_convection,
                                      do_diffusion,
-                                     do_reaction,
                                      default_bc);
 
   /* Algebraic system: allocated later */
@@ -1355,6 +1405,12 @@ cs_equation_free(cs_equation_t  *eq)
       BFT_FREE(eqp->bc->defs);
     BFT_FREE(eqp->bc);
     eqp->bc = NULL;
+  }
+
+  if (eqp->n_reaction_terms > 0) { // reaction terms
+    for (int i = 0; i< eqp->n_reaction_terms; i++)
+      BFT_FREE(eqp->reaction_terms[i].name);
+    BFT_FREE(eqp->reaction_terms);
   }
 
   if (eqp->n_source_terms > 0) { // Source terms
@@ -1505,7 +1561,7 @@ cs_equation_summary(const cs_equation_t  *eq)
 
   if (convection) {
 
-    const cs_param_advection_t  a_info = eqp->advection;
+    const cs_param_advection_t  a_info = eqp->advection_info;
 
     bft_printf("\n  <%s/Advection term>\n", eq->name);
     bft_printf("    <Advection field>  %s\n",
@@ -1571,26 +1627,33 @@ cs_equation_summary(const cs_equation_t  *eq)
 
   if (reaction) {
 
-    const cs_param_hodge_t  h_info = eqp->reaction_hodge;
+    for (int r_id = 0; r_id < eqp->n_reaction_terms; r_id++) {
 
-    bft_printf("\n  <%s/Reaction term>\n", eq->name);
-    bft_printf("    <Reaction> Mass lumping: %s\n",
-               cs_base_strtf(eqp->reaction_lumping));
-    bft_printf("    <Reaction> Property: %s\n",
-               cs_param_pty_get_name(h_info.pty_id));
+      const cs_param_reaction_t  r_info = eqp->reaction_terms[r_id];
+      const cs_param_hodge_t  h_info = r_info.hodge;
 
-    if (eqp->verbosity > 0) {
-      bft_printf("    <Reaction> Hodge operator: %s / %s\n",
-                 cs_param_hodge_get_type_name(h_info),
-                 cs_param_hodge_get_algo_name(h_info));
-      bft_printf("    <Reaction> Inversion of property: %s\n",
-                 cs_base_strtf(h_info.inv_pty));
-      if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
-        bft_printf("    <Reaction> Value of the Hodge coefficient: %.3e\n",
-                   h_info.coef);
-    }
+      bft_printf("\n  <%s/Reaction term> %s\n", eq->name,
+                 cs_param_reaction_get_name(r_info));
+      bft_printf("    <Reaction> Type: %s; Mass lumping: %s\n",
+                 cs_param_reaction_get_type_name(r_info),
+                 cs_base_strtf(r_info.do_lumping));
+      bft_printf("    <Reaction> Property: %s\n",
+                 cs_param_pty_get_name(h_info.pty_id));
 
-  }
+      if (eqp->verbosity > 0) {
+        bft_printf("    <Reaction> Hodge operator: %s / %s\n",
+                   cs_param_hodge_get_type_name(h_info),
+                   cs_param_hodge_get_algo_name(h_info));
+        bft_printf("    <Reaction> Inversion of property: %s\n",
+                   cs_base_strtf(h_info.inv_pty));
+        if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
+          bft_printf("    <Reaction> Value of the Hodge coefficient: %.3e\n",
+                     h_info.coef);
+      }
+
+    } // Loop on reaction terms
+
+  } // Reaction terms
 
   if (source_term) {
 
@@ -1691,8 +1754,8 @@ cs_equation_last_setup(cs_equation_t  *eq)
   case CS_SPACE_SCHEME_CDOVB:
     eq->init_builder = cs_cdovb_codits_init;
     eq->free_builder = cs_cdovb_codits_free;
-    eq->compute_source = cs_cdovb_codits_compute_source;
     eq->build_system = cs_cdovb_codits_build_system;
+    eq->compute_source = cs_cdovb_codits_compute_source;
     eq->update_field = cs_cdovb_codits_update_field;
     eq->get_tmpbuf = cs_cdovb_codits_get_tmpbuf;
     eq->get_f_values = NULL;
@@ -1701,8 +1764,8 @@ cs_equation_last_setup(cs_equation_t  *eq)
   case CS_SPACE_SCHEME_CDOFB:
     eq->init_builder = cs_cdofb_codits_init;
     eq->free_builder = cs_cdofb_codits_free;
-    eq->compute_source = cs_cdofb_codits_compute_source;
     eq->build_system = cs_cdofb_codits_build_system;
+    eq->compute_source = cs_cdofb_codits_compute_source;
     eq->update_field = cs_cdofb_codits_update_field;
     eq->get_tmpbuf = cs_cdofb_codits_get_tmpbuf;
     eq->get_f_values = cs_cdofb_codits_get_face_values;
@@ -1718,11 +1781,22 @@ cs_equation_last_setup(cs_equation_t  *eq)
   /* Advanced setup according to the type of discretization */
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB) {
 
-    if (eqp->flag & CS_EQUATION_REACTION)
-      if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_WBS)
-        eqp->flag |= CS_EQUATION_HCONF_ST;
+    if (eqp->flag & CS_EQUATION_REACTION) {
 
-  }
+      for (int r_id = 0; r_id < eqp->n_reaction_terms; r_id++) {
+
+        const cs_param_reaction_t  r_info = eqp->reaction_terms[r_id];
+
+        if (r_info.hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
+          eqp->flag |= CS_EQUATION_HCONF_ST;
+          break;
+        }
+
+      } // Loop on reaction terms
+
+    } // There is at least one reaction term
+
+  } // spatial scheme is vertex-based
 
   /* Initialize cs_sles_t structure */
   _sles_initialization(eq);
@@ -1804,7 +1878,7 @@ cs_equation_set(cs_equation_t       *eq,
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid val %s related to key %s\n"
-                  " Choice between cost or voronoi"), _val, keyname);
+                  " Choice between cost, wbs or voronoi"), _val, keyname);
     }
     break;
 
@@ -1819,24 +1893,10 @@ cs_equation_set(cs_equation_t       *eq,
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid val %s related to key %s\n"
-                  " Choice between cost or voronoi"), _val, keyname);
+                  " Choice between cost, wbs or voronoi"), _val, keyname);
     }
     break;
 
-  case EQKEY_HODGE_REAC_ALGO:
-    if (strcmp(val,"cost") == 0)
-      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
-    else if (strcmp(val, "voronoi") == 0)
-      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
-    else if (strcmp(val, "whitney_bary") == 0)
-      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key %s\n"
-                  " Choice between cost or voronoi"), _val, keyname);
-    }
-    break;
 
   case EQKEY_HODGE_DIFF_COEF:
     if (strcmp(val, "dga") == 0)
@@ -1858,17 +1918,6 @@ cs_equation_set(cs_equation_t       *eq,
       eqp->time_hodge.coef = 1.0;
     else
       eqp->time_hodge.coef = atof(val);
-    break;
-
-  case EQKEY_HODGE_REAC_COEF:
-    if (strcmp(val, "dga") == 0)
-      eqp->reaction_hodge.coef = 1./3.;
-    else if (strcmp(val, "sushi") == 0)
-      eqp->reaction_hodge.coef = 1./sqrt(3.);
-    else if (strcmp(val, "gcr") == 0)
-      eqp->reaction_hodge.coef = 1.0;
-    else
-      eqp->reaction_hodge.coef = atof(val);
     break;
 
   case EQKEY_SOLVER_FAMILY:
@@ -1997,9 +2046,9 @@ cs_equation_set(cs_equation_t       *eq,
 
   case EQKEY_ADV_OP_TYPE:
     if (strcmp(val, "conservative") == 0)
-      eqp->advection.form = CS_PARAM_ADVECTION_FORM_CONSERV;
+      eqp->advection_info.form = CS_PARAM_ADVECTION_FORM_CONSERV;
     else if (strcmp(val, "non_conservative") == 0)
-      eqp->advection.form = CS_PARAM_ADVECTION_FORM_NONCONS;
+      eqp->advection_info.form = CS_PARAM_ADVECTION_FORM_NONCONS;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -2012,15 +2061,15 @@ cs_equation_set(cs_equation_t       *eq,
 
   case EQKEY_ADV_WEIGHT_ALGO:
     if (strcmp(val, "upwind") == 0)
-      eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND;
+      eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND;
     else if (strcmp(val, "samarskii") == 0)
-      eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_SAMARSKII;
+      eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_SAMARSKII;
     else if (strcmp(val, "sg") == 0)
-      eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_SG;
+      eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_SG;
     else if (strcmp(val, "d10g5") == 0)
-      eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_D10G5;
+      eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_D10G5;
     else if (strcmp(val, "centered") == 0)
-      eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED;
+      eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -2033,9 +2082,9 @@ cs_equation_set(cs_equation_t       *eq,
 
   case EQKEY_ADV_WEIGHT_CRIT:
     if (strcmp(val, "xexc") == 0)
-      eqp->advection.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
+      eqp->advection_info.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
     else if (strcmp(val, "flux") == 0)
-      eqp->advection.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_FLUX;
+      eqp->advection_info.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_FLUX;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -2048,11 +2097,11 @@ cs_equation_set(cs_equation_t       *eq,
 
   case EQKEY_ADV_FLUX_QUADRA:
     if (strcmp(val, "bary") == 0)
-      eqp->advection.quad_type = CS_QUADRATURE_BARY;
+      eqp->advection_info.quad_type = CS_QUADRATURE_BARY;
     else if (strcmp(val, "higher") == 0)
-      eqp->advection.quad_type = CS_QUADRATURE_HIGHER;
+      eqp->advection_info.quad_type = CS_QUADRATURE_HIGHER;
     else if (strcmp(val, "highest") == 0)
-      eqp->advection.quad_type = CS_QUADRATURE_HIGHEST;
+      eqp->advection_info.quad_type = CS_QUADRATURE_HIGHEST;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -2106,7 +2155,7 @@ cs_equation_set(cs_equation_t       *eq,
  *         for a given term (diffusion, time, convection, reaction)
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       keyword   "time", "diffusion", "advection", "reaction"
+ * \param[in]       keyword   "time", "diffusion", "advection"
  * \param[in]       name      name of the property to associate
  */
 /*----------------------------------------------------------------------------*/
@@ -2127,10 +2176,8 @@ cs_equation_link(cs_equation_t       *eq,
     eqp->diffusion_hodge.pty_id = cs_param_pty_get_id_by_name(name);
   else if (strcmp("time", keyword) == 0)
     eqp->time_hodge.pty_id = cs_param_pty_get_id_by_name(name);
-  else if (strcmp("reaction", keyword) == 0)
-    eqp->reaction_hodge.pty_id = cs_param_pty_get_id_by_name(name);
   else if (strcmp("advection", keyword) == 0)
-    eqp->advection.adv_id = cs_param_adv_get_id_by_name(name);
+    eqp->advection_info.adv_id = cs_param_adv_get_id_by_name(name);
   else
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid key for setting a property.\n"
@@ -2318,15 +2365,264 @@ cs_equation_add_bc(cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define and initialize a new structure to store parameters related
+ *         to a reaction term
+ *
+ * \param[in, out] eq         pointer to a cs_equation_t structure
+ * \param[in]      r_name     name of the source term or NULL
+ * \param[in]      pty_name   this reaction term is linked to this property
+ * \param[in]      type_name  type of reaction term to add
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_reaction_term(cs_equation_t   *eq,
+                              const char      *r_name,
+                              const char      *pty_name,
+                              const char      *type_name)
+{
+  char *_r_name = NULL;
+
+  const char  *name;
+
+  /* Only this kind of reaction term is available up to now */
+  cs_param_reaction_type_t  r_type = CS_PARAM_N_REACTION_TYPES;
+  cs_param_hodge_type_t  h_type = CS_PARAM_N_HODGE_TYPES;
+  cs_param_hodge_algo_t  h_algo = CS_PARAM_N_HODGE_ALGOS;
+
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" cs_equation_t structure is NULL\n"
+                " Can not add a reaction term."));
+
+  int  pty_id = cs_param_pty_get_id_by_name(pty_name);
+  cs_equation_param_t  *eqp = eq->param;
+
+  /* Add a new source term */
+  int  r_id = eqp->n_reaction_terms;
+  eqp->n_reaction_terms += 1;
+  BFT_REALLOC(eqp->reaction_terms, eqp->n_reaction_terms, cs_param_reaction_t);
+
+  if (r_name == NULL) { /* Define a name by default */
+    assert(r_id < 100);
+    int len = strlen("reaction_00") + 1;
+    BFT_MALLOC(_r_name, len, char);
+    sprintf(_r_name, "reaction_%02d", r_id);
+    name = _r_name;
+  }
+  else
+    name = r_name;
+
+  /* Set the type of reaction term */
+  if (strcmp(type_name, "linear") == 0)
+    r_type = CS_PARAM_REACTION_TYPE_LINEAR;
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid type of reaction term for equation %s."), eq->name);
+
+  /* Set options associated to the related discrete Hodge operator */
+  switch (eqp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    h_algo = CS_PARAM_HODGE_ALGO_WBS;
+    h_type = CS_PARAM_HODGE_TYPE_VPCD;
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+    h_algo = CS_PARAM_HODGE_ALGO_WBS;
+    h_type = CS_PARAM_HODGE_TYPE_VPCD;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid type of discretization scheme.\n"
+                " Only CDO vertex-based and face-based scheme are handled.\n"
+                " Please modify your settings for equation %s."), eq->name);
+  }
+
+  /* Get the type of source term */
+  cs_param_reaction_term_add(eqp->reaction_terms + r_id,
+                             name,
+                             pty_id,
+                             h_type,
+                             h_algo,
+                             r_type);
+
+  /* Flag the equation with "reaction" */
+  eqp->flag |= CS_EQUATION_REACTION;
+
+  if (r_name == NULL)
+    BFT_FREE(_r_name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set advanced parameters related to a reaction term
+ *         keyname among "lumping", "hodge_algo", "hodge_coef"...
+ *         If r_name is NULL, all reaction terms of the given equation are set
+ *         according to the couple (keyname, keyval)
+ *
+ * \param[in, out]  eq        pointer to a cs_equation_t structure
+ * \param[in]       r_name    name of the reaction term
+ * \param[in]       keyname   name of the key
+ * \param[in]       keyval    pointer to the value to set to the key
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_reaction_term_set(cs_equation_t    *eq,
+                              const char       *r_name,
+                              const char       *keyname,
+                              const char       *keyval)
+{
+  int  i;
+
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Stop setting an empty cs_equation_t structure.\n"
+                " Please check your settings.\n"));
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  cs_equation_param_t  *eqp = eq->param;
+
+  /* Look for the requested source term */
+  int  r_id = -1;
+  if (r_name != NULL) { // Look for the related source term structure
+
+    for (i = 0; i < eqp->n_reaction_terms; i++) {
+      if (strcmp(eqp->reaction_terms[i].name, r_name) == 0) {
+        r_id = i;
+        break;
+      }
+    }
+
+    if (r_id == -1) // Error
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Cannot find the reaction term %s.\n"
+                  " Please check your settings.\n"), r_name);
+
+  } // r_name != NULL
+
+  reakey_t  key = _get_reakey(keyname);
+
+  if (key == REAKEY_ERROR) {
+    bft_printf("\n\n Current key: %s\n", keyname);
+    bft_printf(" Possible keys: ");
+    for (i = 0; i < STKEY_ERROR; i++) {
+      bft_printf("%s ", _print_reakey(i));
+      if (i > 0 && i % 3 == 0)
+        bft_printf("\n\t");
+    }
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid key for setting a reaction term %s.\n"
+                " Please read listing for more details and"
+                " modify your settings."), r_name);
+
+  } /* Error message */
+
+  switch(key) {
+
+  case REAKEY_HODGE_ALGO:
+    {
+      cs_param_hodge_algo_t  h_algo = CS_PARAM_N_HODGE_ALGOS;
+
+      if (strcmp(keyval,"cost") == 0)
+        h_algo = CS_PARAM_HODGE_ALGO_COST;
+      else if (strcmp(keyval, "voronoi") == 0)
+        h_algo = CS_PARAM_HODGE_ALGO_VORONOI;
+      else if (strcmp(keyval, "whitney_bary") == 0)
+        h_algo = CS_PARAM_HODGE_ALGO_WBS;
+      else {
+        const char *_val = keyval;
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Invalid val %s related to key %s\n"
+                    " Choice between cost, wbs or voronoi"), _val, keyname);
+      }
+
+      if (r_id != -1)
+        eqp->reaction_terms[r_id].hodge.algo = h_algo;
+      else
+        for (i = 0; i < eqp->n_reaction_terms; i++)
+          eqp->reaction_terms[i].hodge.algo = h_algo;
+
+    }
+    break;
+
+  case REAKEY_HODGE_COEF:
+    {
+      double  coef;
+
+      if (strcmp(keyval, "dga") == 0)
+        coef = 1./3.;
+      else if (strcmp(keyval, "sushi") == 0)
+        coef = 1./sqrt(3.);
+      else if (strcmp(keyval, "gcr") == 0)
+        coef = 1.0;
+      else
+        coef = atof(keyval);
+
+      if (r_id != -1)
+        eqp->reaction_terms[r_id].hodge.coef = coef;
+      else
+        for (i = 0; i < eqp->n_reaction_terms; i++)
+          eqp->reaction_terms[i].hodge.coef = coef;
+
+    }
+    break;
+
+  case REAKEY_INV_PTY:
+    {
+      bool  inv_pty = false;
+
+      if (strcmp(keyval, "true") == 0)
+        inv_pty = true;
+
+      if (r_id != -1)
+        eqp->reaction_terms[r_id].hodge.inv_pty = inv_pty;
+      else
+        for (i = 0; i < eqp->n_reaction_terms; i++)
+          eqp->reaction_terms[i].hodge.inv_pty = inv_pty;
+
+    }
+    break;
+
+  case REAKEY_LUMPING:
+    {
+      bool  do_lumping = false;
+
+      if (strcmp(keyval, "true") == 0)
+        do_lumping = true;
+
+      if (r_id != -1)
+        eqp->reaction_terms[r_id].do_lumping = do_lumping;
+      else
+        for (i = 0; i < eqp->n_reaction_terms; i++)
+          eqp->reaction_terms[i].do_lumping = do_lumping;
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Key %s is not implemented yet."), keyname);
+
+  } /* Switch on keys */
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to store parameters related
  *         to a source term
- *         st_key among "implicit", "explicit", "imex"...
  *         def_key among "value", "analytic", "user"...
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
  * \param[in]       st_name   name of the source term or NULL
  * \param[in]       ml_name   name of the related mesh location
- * \param[in]       st_key    type of boundary condition to add
- * \param[in]       def_key   way of defining the value of the bc
+ * \param[in]       def_key   way of defining the value of the source term
  * \param[in]       val       pointer to the value
  */
 /*----------------------------------------------------------------------------*/
@@ -2335,7 +2631,6 @@ void
 cs_equation_add_source_term(cs_equation_t   *eq,
                             const char      *st_name,
                             const char      *ml_name,
-                            const char      *st_key,
                             const char      *def_key,
                             const void      *val)
 {
@@ -2411,18 +2706,8 @@ cs_equation_add_source_term(cs_equation_t   *eq,
                 " Please modify your settings."), def_key);
 
   /* Get the type of source term */
-  if (strcmp(st_key, "implicit") == 0)
-    st_type = CS_PARAM_SOURCE_TERM_IMPLICIT;
-  else if (strcmp(st_key, "explicit") == 0)
-    st_type = CS_PARAM_SOURCE_TERM_EXPLICIT;
-  else if (strcmp(st_key, "imex") == 0)
-    st_type = CS_PARAM_SOURCE_TERM_IMEX;
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting the type of boundary condition.\n"
-                " Given key: %s\n"
-                " Choice among dirichlet, neumann or robin.\n"
-                " Please modify your settings."), st_key);
+  st_type = CS_PARAM_SOURCE_TERM_USER; /* only this kind of source term up to
+                                          now */
 
   cs_param_source_term_add(eqp->source_terms + st_id,
                            name,
@@ -2442,7 +2727,8 @@ cs_equation_add_source_term(cs_equation_t   *eq,
  * \brief  Set advanced parameters which are members defined by default in a
  *         source term structure.
  *         keyname among "quadrature", "post"...
-
+ *         If st_name is NULL, all source terms of the given equation are set
+ *         according to keyname/keyval
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
  * \param[in]       st_name   name of the source term
@@ -2457,6 +2743,8 @@ cs_equation_source_term_set(cs_equation_t    *eq,
                             const char       *keyname,
                             const char       *keyval)
 {
+  int  i;
+
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" Stop setting an empty cs_equation_t structure.\n"
@@ -2469,24 +2757,28 @@ cs_equation_source_term_set(cs_equation_t    *eq,
 
   /* Look for the requested source term */
   int  st_id = -1;
-  for (int id = 0; id < eqp->n_source_terms; id++) {
-    if (strcmp(eqp->source_terms[id].name, st_name) == 0) {
-      st_id = id;
-      break;
-    }
-  }
+  if (st_name != NULL) { // Look for the related source term structure
 
-  if (st_id == -1) // Error
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Cannot find source term %s.\n"
-                " Please check your settings.\n"), st_name);
+    for (i = 0; i < eqp->n_source_terms; i++) {
+      if (strcmp(eqp->source_terms[i].name, st_name) == 0) {
+        st_id = i;
+        break;
+      }
+    }
+
+    if (st_id == -1) // Error
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Cannot find source term %s.\n"
+                  " Please check your settings.\n"), st_name);
+
+  } // st_name != NULL
 
   stkey_t  key = _get_stkey(keyname);
 
   if (key == STKEY_ERROR) {
     bft_printf("\n\n Current key: %s\n", keyname);
     bft_printf(" Possible keys: ");
-    for (int i = 0; i < STKEY_ERROR; i++) {
+    for (i = 0; i < STKEY_ERROR; i++) {
       bft_printf("%s ", _print_stkey(i));
       if (i > 0 && i % 3 == 0)
         bft_printf("\n\t");
@@ -2501,23 +2793,49 @@ cs_equation_source_term_set(cs_equation_t    *eq,
   switch(key) {
 
   case STKEY_POST:
-    eqp->source_terms[st_id].post = atoi(keyval);
+    {
+      int  post_freq = atoi(keyval);
+
+      if (st_id != -1)
+        eqp->source_terms[st_id].post = post_freq;
+      else
+        for (i = 0; i < eqp->n_source_terms; i++)
+          eqp->source_terms[i].post = post_freq;
+
+    }
     break;
 
   case STKEY_QUADRATURE:
-    if (strcmp(keyval, "subdiv") == 0)
-      eqp->source_terms[st_id].use_subdiv = true;
-    else if (strcmp(keyval, "bary") == 0)
-      eqp->source_terms[st_id].quad_type = CS_QUADRATURE_BARY;
-    else if (strcmp(keyval, "higher") == 0)
-      eqp->source_terms[st_id].quad_type = CS_QUADRATURE_HIGHER;
-    else if (strcmp(keyval, "highest") == 0)
-      eqp->source_terms[st_id].quad_type = CS_QUADRATURE_HIGHEST;
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value for setting the quadrature behaviour"
-                  " of a source term.\n"
-                  " Choices are among subdiv, bary, higher, highest."));
+    if (strcmp(keyval, "subdiv") == 0) {
+      if (st_id != -1)
+        eqp->source_terms[st_id].use_subdiv = true;
+      else
+        for (i = 0; i < eqp->n_source_terms; i++)
+          eqp->source_terms[i].use_subdiv = true;
+    }
+    else {
+
+      cs_quadra_type_t  qtype = CS_QUADRATURE_NONE;
+
+      if (strcmp(keyval, "bary") == 0)
+        qtype = CS_QUADRATURE_BARY;
+      else if (strcmp(keyval, "higher") == 0)
+        qtype = CS_QUADRATURE_HIGHER;
+      else if (strcmp(keyval, "highest") == 0)
+        qtype = CS_QUADRATURE_HIGHEST;
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Invalid key value for setting the quadrature behaviour"
+                    " of a source term.\n"
+                    " Choices are among subdiv, bary, higher, highest."));
+
+      if (st_id != -1)
+        eqp->source_terms[st_id].quad_type = qtype;
+      else
+        for (i = 0; i < eqp->n_source_terms; i++)
+          eqp->source_terms[i].quad_type = qtype;
+
+    }
     break;
 
   default:
@@ -3063,7 +3381,7 @@ cs_equation_post(const cs_mesh_t            *mesh,
     cs_real_t  *work_c = NULL;
     cs_real_3_t  base_vect;
 
-    const cs_param_advection_t  a_info = eqp->advection;
+    const cs_param_advection_t  a_info = eqp->advection_info;
     const cs_param_hodge_t  d_info = eqp->diffusion_hodge;
 
     len = strlen(eq->name) + 9 + 1;

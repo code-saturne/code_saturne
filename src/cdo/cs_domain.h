@@ -287,7 +287,6 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain);
  * \param[in]      is_steady      add an unsteady term or not
  * \param[in]      do_convection  add a convection term or not
  * \param[in]      do_diffusion   add a diffusion term or not
- * \param[in]      do_reaction    add a reaction term or not
  * \param[in]      key_bc         type of boundary condition set by default
  *                                "zero_value" or "zero_flux"
  */
@@ -301,7 +300,6 @@ cs_domain_add_user_equation(cs_domain_t         *domain,
                             bool                 is_steady,
                             bool                 do_convection,
                             bool                 do_diffusion,
-                            bool                 do_reaction,
                             const char          *key_bc);
 
 /*----------------------------------------------------------------------------*/

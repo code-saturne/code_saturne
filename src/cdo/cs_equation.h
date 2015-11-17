@@ -67,7 +67,6 @@ typedef struct _cs_equation_t cs_equation_t;
  * \param[in] is_steady        add an unsteady term or not
  * \param[in] do_convection    add a convection term
  * \param[in] do_diffusion     add a diffusion term
- * \param[in] do_reaction      add a reaction term
  * \param[in] default_bc       type of boundary condition set by default
  *
  * \return  a pointer to the new allocated cs_equation_t structure
@@ -82,7 +81,6 @@ cs_equation_create(const char            *name,
                    bool                   is_steady,
                    bool                   do_convection,
                    bool                   do_diffusion,
-                   bool                   do_reaction,
                    cs_param_bc_type_t     default_bc);
 
 /*----------------------------------------------------------------------------*/
@@ -108,19 +106,6 @@ cs_equation_free(cs_equation_t  *eq);
 
 void
 cs_equation_summary(const cs_equation_t  *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Create and initialize a builder structure
- *
- * \param[in]       mesh     pointer to a cs_mesh_t structure
- * \param[in, out]  eq       pointer to a cs_equation_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_create_builder(const cs_mesh_t   *mesh,
-                           cs_equation_t     *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -207,26 +192,61 @@ cs_equation_add_bc(cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define and initialize a new structure to store parameters related
+ *         to a reaction term
+ *
+ * \param[in, out] eq         pointer to a cs_equation_t structure
+ * \param[in]      r_name     name of the source term or NULL
+ * \param[in]      pty_name   this reaction term is linked to this property
+ * \param[in]      type_name  type of reaction term to add
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_reaction_term(cs_equation_t   *eq,
+                              const char      *r_name,
+                              const char      *pty_name,
+                              const char      *type_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set advanced parameters related to a reaction term
+ *         keyname among "lumping", "hodge_algo", "hodge_coef"...
+ *         If r_name is NULL, all reaction terms of the given equation are set
+ *         according to the couple (keyname, keyval)
+ *
+ * \param[in, out]  eq        pointer to a cs_equation_t structure
+ * \param[in]       r_name    name of the reaction term
+ * \param[in]       keyname   name of the key
+ * \param[in]       keyval    pointer to the value to set to the key
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_reaction_term_set(cs_equation_t    *eq,
+                              const char       *r_name,
+                              const char       *keyname,
+                              const char       *keyval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to store parameters related
  *         to a source term
- *         st_key among "implicit", "explicit", "imex"...
  *         def_key among "value", "analytic", "user"...
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
  * \param[in]       st_name   name of the source term or NULL
  * \param[in]       ml_name   name of the related mesh location
- * \param[in]       st_key    type of boundary condition to add
- * \param[in]       def_key   way of defining the value of the bc
+ * \param[in]       def_key   way of defining the value of the source term
  * \param[in]       val       pointer to the value
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_source_term(cs_equation_t    *eq,
-                            const char       *st_name,
-                            const char       *ml_name,
-                            const char       *st_key,
-                            const char       *def_key,
-                            const void       *val);
+cs_equation_add_source_term(cs_equation_t   *eq,
+                            const char      *st_name,
+                            const char      *ml_name,
+                            const char      *def_key,
+                            const void      *val);
 
 /*----------------------------------------------------------------------------*/
 /*!

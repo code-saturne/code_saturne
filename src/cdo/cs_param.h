@@ -45,20 +45,18 @@ BEGIN_C_DECLS
 
 /* Tag to build parameter flag */
 #define CS_PARAM_FLAG_UNIFORM  (1 <<  0)  //    1: uniform (in space)
-#define CS_PARAM_FLAG_VERTEX   (1 <<  1)  //    2: on vertices
-#define CS_PARAM_FLAG_EDGE     (1 <<  2)  //    4: on edges
-#define CS_PARAM_FLAG_FACE     (1 <<  3)  //    8: on faces
-#define CS_PARAM_FLAG_CELL     (1 <<  4)  //   16: on cells
-#define CS_PARAM_FLAG_PRIMAL   (1 <<  5)  //   32: on primal mesh
-#define CS_PARAM_FLAG_DUAL     (1 <<  6)  //   64: on dual mesh
-#define CS_PARAM_FLAG_BORDER   (1 <<  7)  //  128: scalar-valued
-#define CS_PARAM_FLAG_SCAL     (1 <<  8)  //  256: scalar-valued
-#define CS_PARAM_FLAG_VECT     (1 <<  9)  //  512: vector-valued
-#define CS_PARAM_FLAG_TENS     (1 << 10)  // 1024: tensor-valued
-#define CS_PARAM_FLAG_SYMMET   (1 << 11)  // 2048: symmetric
-#define CS_PARAM_FLAG_IMPLICIT (1 << 12)  // 4096: implicit
-#define CS_PARAM_FLAG_EXPLICIT (1 << 13)  // 8192: explicit
-#define CS_PARAM_FLAG_UNSTEADY (1 << 14)  //16384: unsteady
+#define CS_PARAM_FLAG_UNSTEADY (1 <<  1)  //    2: unsteady
+#define CS_PARAM_FLAG_VERTEX   (1 <<  2)  //    4: on vertices
+#define CS_PARAM_FLAG_EDGE     (1 <<  3)  //    8: on edges
+#define CS_PARAM_FLAG_FACE     (1 <<  4)  //   16: on faces
+#define CS_PARAM_FLAG_CELL     (1 <<  5)  //   32: on cells
+#define CS_PARAM_FLAG_PRIMAL   (1 <<  6)  //   64: on primal mesh
+#define CS_PARAM_FLAG_DUAL     (1 <<  7)  //  128: on dual mesh
+#define CS_PARAM_FLAG_BORDER   (1 <<  8)  //  256: scalar-valued
+#define CS_PARAM_FLAG_SCAL     (1 <<  9)  //  512: scalar-valued
+#define CS_PARAM_FLAG_VECT     (1 << 10)  // 1024: vector-valued
+#define CS_PARAM_FLAG_TENS     (1 << 11)  // 2048: tensor-valued
+#define CS_PARAM_FLAG_SYMMET   (1 << 12)  // 4096: symmetric
 
 /*============================================================================
  * Type definitions
@@ -97,33 +95,6 @@ typedef enum {
   CS_PARAM_N_VAR_TYPES
 
 } cs_param_var_type_t;
-
-/* TIME SCHEME */
-/* =========== */
-
-/* Type of numerical scheme for the discretization in time */
-typedef enum {
-
-  CS_TIME_SCHEME_IMPLICIT,  // fully implicit (forward Euler/theta-scheme = 1)
-  CS_TIME_SCHEME_EXPLICIT,  // fully explicit (backward Euler/theta-scheme = 0)
-  CS_TIME_SCHEME_CRANKNICO, // Crank-Nicolson (theta-scheme = 0.5)
-  CS_TIME_SCHEME_THETA,     // theta-scheme
-  CS_TIME_N_SCHEMES
-
-} cs_time_scheme_t;
-
-/* Parameters related to time discretization */
-typedef struct {
-
-  cs_time_scheme_t   scheme;     // numerical scheme
-  cs_real_t          theta;      // used in theta-scheme
-  bool               do_lumping; // perform mass lumping ?
-
-  /* Initial conditions */
-  cs_param_def_type_t   ic_def_type;  // type of definition
-  cs_def_t              ic_def;       // definition
-
-} cs_param_time_t;
 
 /* MATERIAL PROPERTIES */
 /* =================== */
@@ -202,8 +173,35 @@ typedef struct {
 
 } cs_param_hodge_t;
 
-/* ADVECTION */
-/* ========= */
+/* TIME SCHEME */
+/* =========== */
+
+/* Type of numerical scheme for the discretization in time */
+typedef enum {
+
+  CS_TIME_SCHEME_IMPLICIT,  // fully implicit (forward Euler/theta-scheme = 1)
+  CS_TIME_SCHEME_EXPLICIT,  // fully explicit (backward Euler/theta-scheme = 0)
+  CS_TIME_SCHEME_CRANKNICO, // Crank-Nicolson (theta-scheme = 0.5)
+  CS_TIME_SCHEME_THETA,     // theta-scheme
+  CS_TIME_N_SCHEMES
+
+} cs_time_scheme_t;
+
+/* Parameters related to time discretization */
+typedef struct {
+
+  cs_time_scheme_t   scheme;     // numerical scheme
+  cs_real_t          theta;      // used in theta-scheme
+  bool               do_lumping; // perform mass lumping ?
+
+  /* Initial conditions */
+  cs_param_def_type_t   ic_def_type;  // type of definition
+  cs_def_t              ic_def;       // definition
+
+} cs_param_time_t;
+
+/* ADVECTION TERM PARAMETRIZATION */
+/* ============================== */
 
 /* Advection/convection field */
 typedef struct {
@@ -246,7 +244,6 @@ typedef enum {
 
 } cs_param_advection_weight_t;
 
-
   /* Contraction operator (also called interior product) */
 typedef struct {
 
@@ -258,6 +255,26 @@ typedef struct {
   cs_quadra_type_t                  quad_type; // barycentric, higher, highest
 
 } cs_param_advection_t;
+
+/* REACTION TERM PARAMETRIZATION */
+/* ============================= */
+
+typedef enum {
+
+  CS_PARAM_REACTION_TYPE_LINEAR,
+  CS_PARAM_N_REACTION_TYPES
+
+} cs_param_reaction_type_t;
+
+typedef struct {
+
+  char                      *name;
+  cs_param_reaction_type_t   type;
+
+  cs_param_hodge_t           hodge;
+  bool                       do_lumping;
+
+} cs_param_reaction_t;
 
 /* BOUNDARY CONDITIONS */
 /* =================== */
@@ -339,9 +356,7 @@ typedef struct {
 /* Types of source terms */
 typedef enum {
 
-  CS_PARAM_SOURCE_TERM_EXPLICIT, // in the right hand side
-  CS_PARAM_SOURCE_TERM_IMPLICIT, // in the matrix to invert
-  CS_PARAM_SOURCE_TERM_IMEX,     // implicit/explicit: two contributions
+  CS_PARAM_SOURCE_TERM_USER,     // user-defined
   CS_PARAM_SOURCE_TERM_MASS,     // specific treatment
   CS_PARAM_SOURCE_TERM_HEADLOSS, // specific treatment
   CS_PARAM_N_SOURCE_TERM_TYPES
@@ -708,6 +723,29 @@ cs_param_bc_def_set(cs_param_bc_def_t      *bcpd,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a new reaction term. The strcuture related to this reaction
+ *         term has already been allocated among the list of reaction terms
+ *         associated to an equation
+ *
+ * \param[in, out] rp         pointer to cs_param_reaction_t structure
+ * \param[in]      r_name     name of the reaction term
+ * \param[in]      pty_id     id of the associated property
+ * \param[in]      h_type     type of discrete Hodge op. associated to this term
+ * \param[in]      h_algo     algorithm used to build the discrete Hodge op.
+ * \param[in]      r_type     type of reaction term
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_reaction_term_add(cs_param_reaction_t          *rp,
+                           const char                   *r_name,
+                           int                           pty_id,
+                           cs_param_hodge_type_t         h_type,
+                           cs_param_hodge_algo_t         h_algo,
+                           cs_param_source_term_type_t   r_type);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define a source term. This source term is added to the list of
  *         source terms associated to an equation
  *
@@ -731,6 +769,32 @@ cs_param_source_term_add(cs_param_source_term_t       *stp,
                          cs_quadra_type_t              quad_type,
                          cs_param_def_type_t           def_type,
                          void                         *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name related to a reaction term
+ *
+ * \param[in] r_info     cs_param_reaction_t structure
+ *
+ * \return the name of the reaction term
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_reaction_get_name(const cs_param_reaction_t   r_info);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the type of reaction term
+ *
+ * \param[in] r_info     set of parameters related to a reaction term
+ *
+ * \return the name associated with this type of reaction term
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_reaction_get_type_name(cs_param_reaction_t  r_info);
 
 /*----------------------------------------------------------------------------*/
 /*!

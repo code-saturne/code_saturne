@@ -225,4 +225,35 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
     cs_equation_set(eq, "itsol_resnorm", "false");
   }
 
+  /* Optional: specify additional settings for a source term
+
+     cs_equation_source_term_set(eq,       // equation
+                                 st_label, // label of the source term
+                                 key,      // name of the key
+                                 val)      // value of the key to set
+
+     If st_label is set to NULL, all source terms of the equation are set
+     to the given parameters.
+     Available keys are the following: "post", "quadrature"
+
+       >> key: "post" Set the behaviour related to post-processing
+       >> val: "-1" no post-processing,
+               "0"  at the beginning of the computation,
+               "n"  at each n iterations
+
+       >> key: "quadrature" Set the algortihm used for quadrature
+       >> val: "subdiv"  used a subdivision into tetrahedra
+               "bary"    used the barycenter approximation
+               "higher"  used 4 Gauss points for approximating the integral
+               "highest" used 5 Gauss points for approximating the integral
+
+     Remark: "higher" and "highest" implies automatically a subdivision
+             into tetrahedra
+  */
+
+  if (eq != NULL) {
+    cs_equation_source_term_set(eq, "SourceTerm", "quadrature", "bary");
+    cs_equation_source_term_set(eq, "SourceTerm", "quadrature", "subdiv");
+  }
+
 }

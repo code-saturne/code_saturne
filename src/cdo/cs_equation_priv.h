@@ -44,8 +44,7 @@ BEGIN_C_DECLS
 #define  CS_EQUATION_CONVECTION (1 <<  1)  /*  2: convection term */
 #define  CS_EQUATION_DIFFUSION  (1 <<  2)  /*  4: diffusion term */
 #define  CS_EQUATION_REACTION   (1 <<  3)  /*  8: reaction term */
-#define  CS_EQUATION_HCONF_ST   (1 <<  4)  /* 16: special treatment of
-                                              the source */
+#define  CS_EQUATION_HCONF_ST   (1 <<  4)  /* 16: treatment of the source */
 
 /* Post flag */
 #define  CS_EQUATION_POST_PECLET      (1 << 0)
@@ -137,13 +136,13 @@ typedef struct {
   cs_param_hodge_t      diffusion_hodge;
 
   /* Advection term */
-  cs_param_advection_t  advection;
+  cs_param_advection_t  advection_info;
 
-  /* Reaction term */
-  bool                  reaction_lumping; // Mass lumping for the reaction term
-  cs_param_hodge_t      reaction_hodge;
+  /* Reaction term (always depend on the unkonws) */
+  int                   n_reaction_terms;
+  cs_param_reaction_t  *reaction_terms;
 
-  /* Source term(s) */
+  /* Source term(s) (always in the right-hand side) */
   int                      n_source_terms;
   cs_param_source_term_t  *source_terms;
 

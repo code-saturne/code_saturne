@@ -1530,15 +1530,20 @@ cs_cdovb_codits_build_system(const cs_mesh_t             *m,
   cs_convection_builder_t  *conv = NULL;
   if (do_advection)
     conv = cs_convection_builder_init(connect, time_step,
-                                      eqp->advection,
+                                      eqp->advection_info,
                                       do_diffusion,
                                       eqp->diffusion_hodge);
 
   /* Preparatory step for reaction term */
-  cs_hodge_builder_t  *reac_builder = NULL;
-  if (do_reaction)
-    reac_builder = cs_hodge_builder_init(connect, time_step,
-                                         eqp->reaction_hodge);
+  cs_hodge_builder_t  **reac_builder = NULL;
+  if (do_reaction) {
+
+    BFT_MALLOC(reac_builder, eqp->n_reaction_terms, cs_hodge_builder_t *);
+    for (i = 0; i < eqp->n_reaction_terms; i++)
+      reac_builder[i] = cs_hodge_builder_init(connect, time_step,
+                                              eqp->reaction_terms[i].hodge);
+
+  }
 
   /* Preparatory step for unsteady term */
   cs_sla_matrix_t  *time_mat = _init_time_matrix(sys_builder);
@@ -1580,11 +1585,15 @@ cs_cdovb_codits_build_system(const cs_mesh_t             *m,
 
     if (do_reaction) { /* Build mass matrix to take into account reaction term */
 
-      cs_locmat_t  *rea_loc = cs_hodge_build_local(c_id,
-                                                   connect, quant,
-                                                   reac_builder);
+      for (i = 0; i < eqp->n_reaction_terms; i++) {
 
-      cs_locmat_add(adr_loc, rea_loc);
+        cs_hodge_builder_t  *hb = reac_builder[i];
+        cs_locmat_t  *rea_loc = cs_hodge_build_local(c_id, connect, quant, hb);
+
+        cs_locmat_add(adr_loc, rea_loc);
+
+      }
+
     }
 
     if (do_unsteady) { /* Build mass matrix to take into account time effect */
@@ -1611,8 +1620,12 @@ cs_cdovb_codits_build_system(const cs_mesh_t             *m,
   /* Free temporary buffers and structures */
   adr_loc = cs_locmat_free(adr_loc);
 
-  if (do_reaction)
-    reac_builder = cs_hodge_builder_free(reac_builder);
+  if (do_reaction) {
+    for (i = 0; i < eqp->n_reaction_terms; i++)
+      reac_builder[i] = cs_hodge_builder_free(reac_builder[i]);
+    BFT_FREE(reac_builder);
+  }
+
   if (do_unsteady)
     time_builder = cs_hodge_builder_free(time_builder);
 

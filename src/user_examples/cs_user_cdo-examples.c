@@ -396,7 +396,6 @@ cs_user_cdo_setup_domain(cs_domain_t   *domain)
                               true,          // steady ?
                               true,          // convection ?
                               true,          // diffusion ?
-                              false,         // reaction ?
                               "zero_value"); // default boundary condition
 
 }
@@ -440,16 +439,8 @@ cs_user_cdo_setup_equations(cs_domain_t   *domain)
   /* Add a source term: There are several types of source terms
 
      Label of the source term is optional (i.e. NULL is possible)
-     This label is mandatory if additional settings are requested
-
-     Type of the source is among the following choices:
-     >> "implicit", "explicit", "imex"
-       >> "implicit" means that the source term is added to the diagonal of
-       the linear system
-       >> "explicit" means that the source term is added to the right-hand
-       side of the linear system
-       >> "imex" means that there are two contributions: the first one is
-       implicit and the second one is explicit (Not implemented yet)
+     This label is mandatory if additional settings are requested only for
+     this specific source term.
 
      Type of definition is among the following choices:
      >> "value", "analytic", "user"
@@ -459,36 +450,9 @@ cs_user_cdo_setup_equations(cs_domain_t   *domain)
   cs_equation_add_source_term(eq,
                               "SourceTerm",    // label of the source term
                               "cells",         // name of the mesh location
-                              "explicit",      // type of source term
                               "analytic",      // type of definition
                               _define_source_term); // analytic function
 
-  /* Optional: specify additional settings for a source term
-
-       cs_equation_source_term_set(eq,       // equation
-                                   st_label, // label of the source term
-                                   key,      // name of the key
-                                   val)      // value of the key to set
-
-     Available keys are the following: "post", "quadrature"
-
-       >> key: "post" Set the behaviour related to post-processing
-       >> val: "-1" no post-processing,
-               "0"  at the beginning of the computation,
-               "n"  at each n iterations
-
-       >> key: "quadrature" Set the algortihm used for quadrature
-       >> val: "subdiv"  used a subdivision into tetrahedra
-               "bary"    used the barycenter approximation
-               "higher"  used 4 Gauss points for approximating the integral
-               "highest" used 5 Gauss points for approximating the integral
-
-     Remark: "higher" and "highest" implies automatically a subdivision
-             into tetrahedra
-  */
-
-  cs_equation_source_term_set(eq, "SourceTerm", "quadrature", "bary");
-  cs_equation_source_term_set(eq, "SourceTerm", "quadrature", "subdiv");
 }
 
 /*----------------------------------------------------------------------------*/
