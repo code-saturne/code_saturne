@@ -194,7 +194,7 @@ _check_adv_field_id(int   id)
 void
 cs_param_set_def(cs_param_def_type_t      def_type,
                  cs_param_var_type_t      var_type,
-                 void                    *val,
+                 const void              *val,
                  cs_def_t                *def)
 {
   assert(var_type != CS_PARAM_N_VAR_TYPES);
@@ -455,7 +455,7 @@ cs_param_pty_add(const char      *name,
 void
 cs_param_pty_set(const char     *name,
                  const char     *def_key,
-                 void           *val)
+                 const void     *val)
 {
   int  pty_id = cs_param_pty_get_id_by_name(name);
 
@@ -856,7 +856,7 @@ cs_param_adv_field_add(const char      *name,
 void
 cs_param_adv_field_set(const char   *name,
                        const char   *def_key,
-                       void         *val)
+                       const void   *val)
 {
   int  adv_id = cs_param_adv_get_id_by_name(name);
 
@@ -1048,8 +1048,8 @@ cs_param_bc_def_set(cs_param_bc_def_t      *bcpd,
                     cs_param_bc_type_t      bc_type,
                     cs_param_var_type_t     var_type,
                     cs_param_def_type_t     def_type,
-                    void                   *coef1,
-                    void                   *coef2)
+                    const void             *coef1,
+                    const void             *coef2)
 {
   if (bcpd == NULL)
     return;
@@ -1133,7 +1133,7 @@ cs_param_source_term_add(cs_param_source_term_t       *stp,
                          cs_param_var_type_t           var_type,
                          cs_quadra_type_t              quad_type,
                          cs_param_def_type_t           def_type,
-                         void                         *val)
+                         const void                   *val)
 {
   if (stp == NULL)
     return;

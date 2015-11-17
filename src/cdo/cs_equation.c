@@ -57,13 +57,11 @@
 #include "cs_cdo.h"
 #include "cs_mesh_location.h"
 #include "cs_field.h"
-#include "cs_post.h"
 #include "cs_multigrid.h"
 #include "cs_timer_stats.h"
 #include "cs_param.h"
-#include "cs_cdovb_codits.h"
-#include "cs_cdofb_codits.h"
-#include "cs_cdo_convection.h"
+#include "cs_cdovb_scaleq.h"
+#include "cs_cdofb_scaleq.h"
 
 #if defined(HAVE_PETSC)
 #include "cs_sles_petsc.h"
@@ -93,7 +91,7 @@ BEGIN_C_DECLS
  *
  * \param[in] eq        pointer to a cs_equation_param_t structure
  * \param[in] mesh      pointer to a cs_mesh_t structure
- * \param[in] connect   pointer to a cs_cdo_conncet_t structure
+ * \param[in] connect   pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -167,6 +165,28 @@ typedef void
                              const cs_real_t            *solu,
                              void                       *builder,
                              cs_real_t                  *field_val);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Post-processing related to this equation
+ *
+ * \param[in]       eqname     name of the equation
+ * \param[in]       mesh       pointer to the mesh structure
+ * \param[in]       cdoq       pointer to a cs_cdo_quantities_t struct.
+ * \param[in]       time_step  pointer to a time step structure
+ * \param[in]       field      pointer to a field strufcture
+ * \param[in, out]  builder    pointer to builder structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_post_t)(const char                 *eqname,
+                     const cs_mesh_t            *mesh,
+                     const cs_cdo_quantities_t  *cdoq,
+                     const cs_time_step_t       *time_step,
+                     const cs_field_t           *field,
+                     void                       *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -335,6 +355,7 @@ struct _cs_equation_t {
   cs_equation_build_system_t    *build_system;
   cs_equation_compute_source_t  *compute_source;
   cs_equation_update_field_t    *update_field;
+  cs_equation_post_t            *postprocess;
   cs_equation_get_f_values_t    *get_f_values;
   cs_equation_get_tmpbuf_t      *get_tmpbuf;
 
@@ -1367,6 +1388,7 @@ cs_equation_create(const char            *eqname,
   eq->compute_source = NULL;
   eq->build_system = NULL;
   eq->update_field = NULL;
+  eq->postprocess = NULL;
   eq->get_f_values = NULL;
   eq->get_tmpbuf = NULL;
   eq->free_builder = NULL;
@@ -1752,23 +1774,25 @@ cs_equation_last_setup(cs_equation_t  *eq)
   switch(eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
-    eq->init_builder = cs_cdovb_codits_init;
-    eq->free_builder = cs_cdovb_codits_free;
-    eq->build_system = cs_cdovb_codits_build_system;
-    eq->compute_source = cs_cdovb_codits_compute_source;
-    eq->update_field = cs_cdovb_codits_update_field;
-    eq->get_tmpbuf = cs_cdovb_codits_get_tmpbuf;
+    eq->init_builder = cs_cdovb_scaleq_init;
+    eq->free_builder = cs_cdovb_scaleq_free;
+    eq->build_system = cs_cdovb_scaleq_build_system;
+    eq->compute_source = cs_cdovb_scaleq_compute_source;
+    eq->update_field = cs_cdovb_scaleq_update_field;
+    eq->postprocess = cs_cdovb_scaleq_post;
+    eq->get_tmpbuf = cs_cdovb_scaleq_get_tmpbuf;
     eq->get_f_values = NULL;
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
-    eq->init_builder = cs_cdofb_codits_init;
-    eq->free_builder = cs_cdofb_codits_free;
-    eq->build_system = cs_cdofb_codits_build_system;
-    eq->compute_source = cs_cdofb_codits_compute_source;
-    eq->update_field = cs_cdofb_codits_update_field;
-    eq->get_tmpbuf = cs_cdofb_codits_get_tmpbuf;
-    eq->get_f_values = cs_cdofb_codits_get_face_values;
+    eq->init_builder = cs_cdofb_scaleq_init;
+    eq->free_builder = cs_cdofb_scaleq_free;
+    eq->build_system = cs_cdofb_scaleq_build_system;
+    eq->compute_source = cs_cdofb_scaleq_compute_source;
+    eq->update_field = cs_cdofb_scaleq_update_field;
+    eq->postprocess = cs_cdofb_scaleq_post;
+    eq->get_tmpbuf = cs_cdofb_scaleq_get_tmpbuf;
+    eq->get_f_values = cs_cdofb_scaleq_get_face_values;
     break;
 
   default:
@@ -3287,11 +3311,7 @@ cs_equation_post(const cs_mesh_t            *mesh,
                  const cs_time_step_t       *time_step,
                  const cs_equation_t        *eq)
 {
-  int  len;
-
   const int  nt_cur = time_step->nt_cur;
-  char *postlabel = NULL;
-
   const cs_field_t  *field = cs_field_by_id(eq->field_id);
   const cs_equation_param_t  *eqp = eq->param;
 
@@ -3316,147 +3336,10 @@ cs_equation_post(const cs_mesh_t            *mesh,
   if (eq->post_ts_id > -1)
     cs_timer_stats_start(eq->post_ts_id);
 
-  switch (eqp->space_scheme) {
-
-  case CS_SPACE_SCHEME_CDOVB:
-    cs_post_write_vertex_var(-1,              // id du maillage de post
-                             field->name,
-                             field->dim,
-                             true,            // interlace
-                             true,            // true = original mesh
-                             CS_POST_TYPE_cs_real_t,
-                             field->val,      // values on vertices
-                             time_step);      // time step management structure
-    break;
-
-  case CS_SPACE_SCHEME_CDOFB:
-    {
-      const cs_lnum_t  n_i_faces = mesh->n_i_faces;
-      const cs_real_t  *face_pdi = cs_equation_get_face_values(eq);
-
-      cs_post_write_var(-1,              // id du maillage de post
-                        field->name,
-                        field->dim,
-                        field->interleaved, // interlace
-                        true,               // true = original mesh
-                        CS_POST_TYPE_cs_real_t,
-                        field->val,         // values on cells
-                        NULL,               // values at internal faces
-                        NULL,               // values at border faces
-                        time_step);         // time step management structure
-
-
-      len = strlen(field->name) + 8 + 1;
-      BFT_MALLOC(postlabel, len, char);
-      sprintf(postlabel, "%s.Border", field->name);
-      cs_post_write_var(-2,                    // id du maillage de post
-                        postlabel,
-                        field->dim,
-                        field->interleaved,
-                        true,                  // true = original mesh
-                        CS_POST_TYPE_cs_real_t,
-                        NULL,                  // values on cells
-                        NULL,                  // values at internal faces
-                        face_pdi + n_i_faces,  // values at border faces
-                        time_step);            // time step management structure
-
-
-      BFT_FREE(postlabel);
-    }
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Space scheme for eq. %s is incompatible with a field.\n"
-                " Stop adding a cs_field_t structure.\n"), eq->name);
-    break;
-
-  } // Switch on space_scheme
-
-  if ( (eqp->flag & CS_EQUATION_CONVECTION) &&
-       (eqp->flag & CS_EQUATION_DIFFUSION) &&
-       (eqp->post_flag & CS_EQUATION_POST_PECLET ||
-        eqp->post_flag & CS_EQUATION_POST_UPWIND_COEF) ) {
-
-    cs_real_t  *work_c = NULL;
-    cs_real_3_t  base_vect;
-
-    const cs_param_advection_t  a_info = eqp->advection_info;
-    const cs_param_hodge_t  d_info = eqp->diffusion_hodge;
-
-    len = strlen(eq->name) + 9 + 1;
-    BFT_MALLOC(postlabel, len, char);
-
-    for (int k = 0; k < 3; k++) {
-
-      if (k == 0) {
-        sprintf(postlabel, "%s.Peclet.X", eq->name);
-        base_vect[0] = 1, base_vect[1] = base_vect[2] = 0;
-      }
-      else if (k == 1) {
-        sprintf(postlabel, "%s.Peclet.Y", eq->name);
-        base_vect[1] = 1, base_vect[0] = base_vect[2] = 0;
-      }
-      else {
-        sprintf(postlabel, "%s.Peclet.Z", eq->name);
-        base_vect[2] = 1, base_vect[1] = base_vect[0] = 0;
-      }
-
-      cs_convection_get_peclet_cell(cdoq,
-                                    a_info,
-                                    d_info,
-                                    base_vect,
-                                    time_step->t_cur,
-                                    &work_c);
-
-      if (eqp->post_flag & CS_EQUATION_POST_PECLET)
-        cs_post_write_var(-1,           // id du maillage de post
-                          postlabel,
-                          1,
-                          true,         // interlace
-                          true,         // true = original mesh
-                          CS_POST_TYPE_cs_real_t,
-                          work_c,       // values on cells
-                          NULL,         // values at internal faces
-                          NULL,         // values at border faces
-                          time_step);   // time step management structure
-
-      if (eqp->post_flag & CS_EQUATION_POST_UPWIND_COEF) {
-
-        if (k == 0)
-          sprintf(postlabel, "%s.UpwCoefX", eq->name);
-        else if (k == 1)
-          sprintf(postlabel, "%s.UpwCoefY", eq->name);
-        else
-          sprintf(postlabel, "%s.UpwCoefZ", eq->name);
-
-        cs_convection_get_upwind_coef_cell(cdoq,
-                                           a_info,
-                                           work_c);
-
-        cs_post_write_var(-1,           // id du maillage de post
-                          postlabel,
-                          1,
-                          true,         // interlace
-                          true,         // true = original mesh
-                          CS_POST_TYPE_cs_real_t,
-                          work_c,       // values on cells
-                          NULL,         // values at internal faces
-                          NULL,         // values at border faces
-                          time_step);   // time step management structure
-
-      } /* Post upwinding coefficient */
-
-    } // Loop on space dimension
-
-    BFT_FREE(postlabel);
-    BFT_FREE(work_c);
-
-  } // Post a Peclet attached to cells
+  eq->postprocess(eq->name, mesh, cdoq, time_step, field, eq->builder);
 
   if (eq->post_ts_id > -1)
     cs_timer_stats_stop(eq->post_ts_id);
-
 }
 
 /*----------------------------------------------------------------------------*/

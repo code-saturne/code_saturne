@@ -47,6 +47,7 @@
 
 #include "cs_log.h"
 #include "cs_search.h"
+#include "cs_post.h"
 #include "cs_quadrature.h"
 #include "cs_evaluate.h"
 #include "cs_cdo_bc.h"
@@ -56,7 +57,7 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdofb_codits.h"
+#include "cs_cdofb_scaleq.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -66,11 +67,11 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CDOFB_CODITS_DBG 0
+#define CDOFB_SCALEQ_DBG 0
 
 /* Algebraic system for CDO face-based discretization */
 
-struct  _cs_cdofb_codits_t {
+struct  _cs_cdofb_scaleq_t {
 
   /* Pointer to a cs_equation_param_t structure shared with a cs_equation_t
      structure. This structure is not owner. */
@@ -206,7 +207,7 @@ _init_diffusion_matrix(const cs_cdo_connect_t     *connect,
  * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
  * \param[in]      time_step   pointer to a time step structure
  * \param[in, out] rhs         right-hand side
- * \param[in, out] builder     pointer to a cs_cdofb_codits_t struct.
+ * \param[in, out] builder     pointer to a cs_cdofb_scaleq_t struct.
  *
  * \return a pointer to the full stiffness matrix
  */
@@ -218,7 +219,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
                         const cs_cdo_quantities_t   *quant,
                         const cs_time_step_t        *time_step,
                         cs_real_t                   *rhs,
-                        cs_cdofb_codits_t           *builder)
+                        cs_cdofb_scaleq_t           *builder)
 {
   int  i, j, ij, c_id;
   double  dsum, rowsum, invdsum;
@@ -407,18 +408,18 @@ _build_diffusion_system(const cs_mesh_t             *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdofb_codits_t structure
+ * \brief  Initialize a cs_cdofb_scaleq_t structure
  *
  * \param[in]  eqp       pointer to a cs_equation_param_t structure
  * \param[in]  mesh      pointer to a cs_mesh_t structure
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  *
- * \return a pointer to a new allocated cs_cdofb_codits_t structure
+ * \return a pointer to a new allocated cs_cdofb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
+cs_cdofb_scaleq_init(const cs_equation_param_t  *eqp,
                      const cs_mesh_t            *mesh,
                      const cs_cdo_connect_t     *connect)
 {
@@ -429,14 +430,14 @@ cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOFB);
   assert(eqp->type == CS_EQUATION_TYPE_SCAL);
 
-  cs_cdofb_codits_t  *builder = NULL;
+  cs_cdofb_scaleq_t  *builder = NULL;
 
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_faces = connect->f_info->n_ent;
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
   const cs_lnum_t  n_b_faces = mesh->n_b_faces;
 
-  BFT_MALLOC(builder, 1, cs_cdofb_codits_t);
+  BFT_MALLOC(builder, 1, cs_cdofb_scaleq_t);
 
   /* Set of parameters related to this algebraic system */
   builder->eqp = eqp;
@@ -526,18 +527,18 @@ cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a cs_cdofb_codits_t structure
+ * \brief  Destroy a cs_cdofb_scaleq_t structure
  *
- * \param[in, out]  builder   pointer to a cs_cdovb_codits_t structure
+ * \param[in, out]  builder   pointer to a cs_cdovb_scaleq_t structure
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_codits_free(void   *builder)
+cs_cdofb_scaleq_free(void   *builder)
 {
-  cs_cdofb_codits_t   *_builder  = (cs_cdofb_codits_t *)builder;
+  cs_cdofb_scaleq_t   *_builder  = (cs_cdofb_scaleq_t *)builder;
 
   if (_builder == NULL)
     return _builder;
@@ -570,19 +571,19 @@ cs_cdofb_codits_free(void   *builder)
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_step   pointer to a time step structure
- * \param[in, out] builder     pointer to a cs_cdofb_codits_t structure
+ * \param[in, out] builder     pointer to a cs_cdofb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_codits_compute_source(const cs_cdo_connect_t     *connect,
+cs_cdofb_scaleq_compute_source(const cs_cdo_connect_t     *connect,
                                const cs_cdo_quantities_t  *quant,
                                const cs_time_step_t       *time_step,
                                void                       *builder)
 {
   cs_lnum_t  i;
 
-  cs_cdofb_codits_t  *bld = (cs_cdofb_codits_t *)builder;
+  cs_cdofb_scaleq_t  *bld = (cs_cdofb_scaleq_t *)builder;
   double  *contrib = bld->work;
 
   const cs_equation_param_t  *eqp = bld->eqp;
@@ -633,14 +634,14 @@ cs_cdofb_codits_compute_source(const cs_cdo_connect_t     *connect,
  * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      time_step  pointer to a time step structure
  * \param[in]      dt_cur     current value of the time step
- * \param[in, out] builder    pointer to cs_cdofb_codits_t structure
+ * \param[in, out] builder    pointer to cs_cdofb_scaleq_t structure
  * \param[in, out] rhs        pointer to a right-hand side array pointer
  * \param[in, out] sla_mat    pointer to cs_sla_matrix_t structure pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_codits_build_system(const cs_mesh_t             *m,
+cs_cdofb_scaleq_build_system(const cs_mesh_t             *m,
                              const cs_cdo_connect_t      *connect,
                              const cs_cdo_quantities_t   *quant,
                              const cs_real_t             *field_val,
@@ -651,7 +652,7 @@ cs_cdofb_codits_build_system(const cs_mesh_t             *m,
                              cs_sla_matrix_t            **sla_mat)
 {
   cs_sla_matrix_t  *diffusion_mat = NULL;
-  cs_cdofb_codits_t   *_builder  = (cs_cdofb_codits_t *)builder;
+  cs_cdofb_scaleq_t   *_builder  = (cs_cdofb_scaleq_t *)builder;
 
   const cs_equation_param_t  *eqp = _builder->eqp;
 
@@ -688,13 +689,13 @@ cs_cdofb_codits_build_system(const cs_mesh_t             *m,
  * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
  * \param[in]      time_step  pointer to a time step structure
  * \param[in]      solu       solution array
- * \param[in, out] builder    pointer to cs_cdofb_codits_t structure
+ * \param[in, out] builder    pointer to cs_cdofb_scaleq_t structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_codits_update_field(const cs_cdo_connect_t     *connect,
+cs_cdofb_scaleq_update_field(const cs_cdo_connect_t     *connect,
                              const cs_cdo_quantities_t  *quant,
                              const cs_time_step_t       *time_step,
                              const cs_real_t            *solu,
@@ -703,7 +704,7 @@ cs_cdofb_codits_update_field(const cs_cdo_connect_t     *connect,
 {
   int  i, j, l, c_id, f_id;
 
-  cs_cdofb_codits_t  *_builder = (cs_cdofb_codits_t *)builder;
+  cs_cdofb_scaleq_t  *_builder = (cs_cdofb_scaleq_t *)builder;
 
   const cs_cdo_bc_list_t  *dir_faces = _builder->face_bc->dir;
   const cs_equation_param_t  *eqp = _builder->eqp;
@@ -758,18 +759,78 @@ cs_cdofb_codits_update_field(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Post-processing related to this equation
+ *
+ * \param[in]       eqname     name of the equation
+ * \param[in]       mesh       pointer to the mesh structure
+ * \param[in]       cdoq       pointer to a cs_cdo_quantities_t struct.
+ * \param[in]       time_step  pointer to a time step structure
+ * \param[in]       field      pointer to a field strufcture
+ * \param[in, out]  builder    pointer to builder structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_post(const char                 *eqname,
+                     const cs_mesh_t            *mesh,
+                     const cs_cdo_quantities_t  *cdoq,
+                     const cs_time_step_t       *time_step,
+                     const cs_field_t           *field,
+                     void                       *builder)
+{
+  int  len;
+
+  char *postlabel = NULL;
+  cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t  *)builder;
+
+  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const cs_real_t  *face_pdi = cs_cdofb_scaleq_get_face_values(builder, field);
+
+  /* field post-processing */
+  cs_post_write_var(-1,              // id du maillage de post
+                    field->name,
+                    field->dim,
+                    field->interleaved, // interlace
+                    true,               // true = original mesh
+                    CS_POST_TYPE_cs_real_t,
+                    field->val,         // values on cells
+                    NULL,               // values at internal faces
+                    NULL,               // values at border faces
+                    time_step);         // time step management structure
+
+  
+  len = strlen(field->name) + 8 + 1;
+  BFT_MALLOC(postlabel, len, char);
+  sprintf(postlabel, "%s.Border", field->name);
+  cs_post_write_var(-2,                    // id du maillage de post
+                    postlabel,
+                    field->dim,
+                    field->interleaved,
+                    true,                  // true = original mesh
+                    CS_POST_TYPE_cs_real_t,
+                    NULL,                  // values on cells
+                    NULL,                  // values at internal faces
+                    face_pdi + n_i_faces,  // values at border faces
+                    time_step);            // time step management structure
+
+
+  BFT_FREE(postlabel);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve a pointer to a buffer of size at least the number of unknows
  *
- * \param[in]  builder    pointer to a cs_cdofb_codits_t structure
+ * \param[in]  builder    pointer to a cs_cdofb_scaleq_t structure
  *
  * \return  a pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdofb_codits_get_tmpbuf(void          *builder)
+cs_cdofb_scaleq_get_tmpbuf(void          *builder)
 {
-  cs_cdofb_codits_t  *bld = (cs_cdofb_codits_t  *)builder;
+  cs_cdofb_scaleq_t  *bld = (cs_cdofb_scaleq_t  *)builder;
 
   /* Sanity checks */
   assert(bld != NULL && bld->work != NULL);
@@ -781,7 +842,7 @@ cs_cdofb_codits_get_tmpbuf(void          *builder)
 /*!
  * \brief  Get the computed values at each face
  *
- * \param[in]  builder    pointer to a cs_cdofb_codits_t structure
+ * \param[in]  builder    pointer to a cs_cdofb_scaleq_t structure
  * \param[in]  field      pointer to a cs_field_t structure
  *
  * \return  a pointer to an array of double (size n_faces)
@@ -789,12 +850,12 @@ cs_cdofb_codits_get_tmpbuf(void          *builder)
 /*----------------------------------------------------------------------------*/
 
 const double *
-cs_cdofb_codits_get_face_values(const void         *builder,
+cs_cdofb_scaleq_get_face_values(const void         *builder,
                                 const cs_field_t   *field)
 {
   assert(field != NULL); // avoid a warning in debug mode
 
-  const cs_cdofb_codits_t  *_builder = (const cs_cdofb_codits_t *)builder;
+  const cs_cdofb_scaleq_t  *_builder = (const cs_cdofb_scaleq_t *)builder;
 
   if (_builder == NULL)
     return NULL;

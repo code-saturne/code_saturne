@@ -59,8 +59,6 @@
 #include "cs_quadrature.h"
 #include "cs_sla.h"
 #include "cs_param.h"
-#include "cs_cdovb_codits.h"
-#include "cs_cdofb_codits.h"
 #include "cs_equation.h"
 #include "cs_domain.h"
 #include "cs_walldistance.h"

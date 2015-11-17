@@ -1,5 +1,5 @@
-#ifndef __CS_CDOFB_CODITS_H__
-#define __CS_CDOFB_CODITS_H__
+#ifndef __CS_CDOFB_SCALEQ_H__
+#define __CS_CDOFB_SCALEQ_H__
 
 /*============================================================================
  * Build an algebraic CDO face-based system for convection/diffusion equation
@@ -58,7 +58,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Algebraic system for CDO face-based discretization */
-typedef struct _cs_cdofb_codits_t cs_cdofb_codits_t;
+typedef struct _cs_cdofb_scaleq_t cs_cdofb_scaleq_t;
 
 /*============================================================================
  * Public function prototypes
@@ -66,33 +66,33 @@ typedef struct _cs_cdofb_codits_t cs_cdofb_codits_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdofb_codits_t structure
+ * \brief  Initialize a cs_cdofb_scaleq_t structure
  *
  * \param[in]  eqp       pointer to a cs_equation_param_t structure
  * \param[in]  mesh      pointer to a cs_mesh_t structure
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  *
- * \return a pointer to a new allocated cs_cdofb_codits_t structure
+ * \return a pointer to a new allocated cs_cdofb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
+cs_cdofb_scaleq_init(const cs_equation_param_t  *eqp,
                      const cs_mesh_t            *mesh,
                      const cs_cdo_connect_t     *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a cs_cdofb_codits_t structure
+ * \brief  Destroy a cs_cdofb_scaleq_t structure
  *
- * \param[in, out]  builder   pointer to a cs_cdovb_codits_t structure
+ * \param[in, out]  builder   pointer to a cs_cdovb_scaleq_t structure
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_codits_free(void   *builder);
+cs_cdofb_scaleq_free(void   *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -101,12 +101,12 @@ cs_cdofb_codits_free(void   *builder);
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
  * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_step   pointer to a time step structure
- * \param[in, out] builder     pointer to a cs_cdofb_codits_t structure
+ * \param[in, out] builder     pointer to a cs_cdofb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_codits_compute_source(const cs_cdo_connect_t     *connect,
+cs_cdofb_scaleq_compute_source(const cs_cdo_connect_t     *connect,
                                const cs_cdo_quantities_t  *quant,
                                const cs_time_step_t       *time_step,
                                void                       *builder);
@@ -122,14 +122,14 @@ cs_cdofb_codits_compute_source(const cs_cdo_connect_t     *connect,
  * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      time_step  pointer to a time step structure
  * \param[in]      dt_cur     current value of the time step
- * \param[in, out] builder    pointer to cs_cdofb_codits_t structure
+ * \param[in, out] builder    pointer to cs_cdofb_scaleq_t structure
  * \param[in, out] rhs        pointer to a right-hand side array pointer
  * \param[in, out] sla_mat    pointer to cs_sla_matrix_t structure pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_codits_build_system(const cs_mesh_t             *m,
+cs_cdofb_scaleq_build_system(const cs_mesh_t             *m,
                              const cs_cdo_connect_t      *connect,
                              const cs_cdo_quantities_t   *quant,
                              const cs_real_t             *field_val,
@@ -148,13 +148,13 @@ cs_cdofb_codits_build_system(const cs_mesh_t             *m,
  * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
  * \param[in]      time_step  pointer to a time step structure
  * \param[in]      solu       solution array
- * \param[in, out] builder    pointer to cs_cdofb_codits_t structure
+ * \param[in, out] builder    pointer to cs_cdofb_scaleq_t structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_codits_update_field(const cs_cdo_connect_t     *connect,
+cs_cdofb_scaleq_update_field(const cs_cdo_connect_t     *connect,
                              const cs_cdo_quantities_t  *quant,
                              const cs_time_step_t       *time_step,
                              const cs_real_t            *solu,
@@ -163,22 +163,43 @@ cs_cdofb_codits_update_field(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Post-processing related to this equation
+ *
+ * \param[in]       eqname     name of the equation
+ * \param[in]       mesh       pointer to the mesh structure
+ * \param[in]       cdoq       pointer to a cs_cdo_quantities_t struct.
+ * \param[in]       time_step  pointer to a time step structure
+ * \param[in]       field      pointer to a field strufcture
+ * \param[in, out]  builder    pointer to builder structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_post(const char                 *eqname,
+                     const cs_mesh_t            *mesh,
+                     const cs_cdo_quantities_t  *cdoq,
+                     const cs_time_step_t       *time_step,
+                     const cs_field_t           *field,
+                     void                       *builder);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve a pointer to a buffer of size at least the number of unknows
  *
- * \param[in]  builder    pointer to a cs_cdofb_codits_t structure
+ * \param[in]  builder    pointer to a cs_cdofb_scaleq_t structure
  *
  * \return  a pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdofb_codits_get_tmpbuf(void          *builder);
+cs_cdofb_scaleq_get_tmpbuf(void          *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Get the computed values at each face
  *
- * \param[in]  builder    pointer to a cs_cdofb_codits_t structure
+ * \param[in]  builder    pointer to a cs_cdofb_scaleq_t structure
  * \param[in]  field      pointer to a cs_field_t structure
  *
  * \return  a pointer to an array of double (size n_faces)
@@ -186,11 +207,11 @@ cs_cdofb_codits_get_tmpbuf(void          *builder);
 /*----------------------------------------------------------------------------*/
 
 const double *
-cs_cdofb_codits_get_face_values(const void         *builder,
+cs_cdofb_scaleq_get_face_values(const void         *builder,
                                 const cs_field_t   *field);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_CDOFB_CODITS_H__ */
+#endif /* __CS_CDOFB_SCALEQ_H__ */

@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_CONVECTION_H__
-#define __CS_CDO_CONVECTION_H__
+#ifndef __CS_CDOVB_ADVECTION_H__
+#define __CS_CDOVB_ADVECTION_H__
 
 /*============================================================================
  * Build discrete convection operators for CDO schemes
@@ -31,10 +31,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_mesh.h"
-
+#include "cs_time_step.h"
 #include "cs_cdo.h"
-#include "cs_sla.h"
 #include "cs_param.h"
 #include "cs_cdo_toolbox.h"
 #include "cs_cdo_connect.h"
@@ -52,7 +50,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef struct _convection_builder_t  cs_convection_builder_t;
+typedef struct _cs_cdovb_adv_t  cs_cdovb_adv_t;
 
 /*============================================================================
  * Global variables
@@ -64,7 +62,7 @@ typedef struct _convection_builder_t  cs_convection_builder_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the convection flux accross the dual face df(e) lying
+ * \brief   Compute the advective flux accross the dual face df(e) lying
  *          inside the cell c and associated to the edge e.
  *          This function is associated to vertex-based discretization.
  *
@@ -80,12 +78,12 @@ typedef struct _convection_builder_t  cs_convection_builder_t;
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_convection_vbflux_compute(const cs_cdo_quantities_t   *quant,
-                             const cs_param_advection_t   a_info,
-                             double                       tcur,
-                             const cs_real_3_t            xc,
-                             const cs_quant_t             qe,
-                             const cs_dface_t             qdf);
+cs_cdovb_advection_vbflux_compute(const cs_cdo_quantities_t   *quant,
+                                  const cs_param_advection_t   a_info,
+                                  double                       tcur,
+                                  const cs_real_3_t            xc,
+                                  const cs_quant_t             qe,
+                                  const cs_dface_t             qdf);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -101,25 +99,25 @@ cs_convection_vbflux_compute(const cs_cdo_quantities_t   *quant,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_convection_builder_t *
-cs_convection_builder_init(const cs_cdo_connect_t      *connect,
-                           const cs_time_step_t        *time_step,
-                           const cs_param_advection_t   a_info,
-                           bool                         do_diffusion,
-                           const cs_param_hodge_t       d_info);
+cs_cdovb_adv_t *
+cs_cdovb_advection_builder_init(const cs_cdo_connect_t      *connect,
+                                const cs_time_step_t        *time_step,
+                                const cs_param_advection_t   a_info,
+                                bool                         do_diffusion,
+                                const cs_param_hodge_t       d_info);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Destroy a builder structure for the convection operator
  *
- * \param[in, out] b   pointer to a cs_convection_builder_t struct. to free
+ * \param[in, out] b   pointer to a cs_cdovb_adv_t struct. to free
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
-cs_convection_builder_t *
-cs_convection_builder_free(cs_convection_builder_t  *b);
+cs_cdovb_adv_t *
+cs_cdovb_advection_builder_free(cs_cdovb_adv_t  *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -136,17 +134,16 @@ cs_convection_builder_free(cs_convection_builder_t  *b);
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_convection_build_local_op(cs_lnum_t                    c_id,
-                             const cs_cdo_connect_t      *connect,
-                             const cs_cdo_quantities_t   *quant,
-                             const cs_lnum_t             *loc_ids,
-                             cs_convection_builder_t     *builder);
+cs_cdovb_advection_build_local(cs_lnum_t                    c_id,
+                               const cs_cdo_connect_t      *connect,
+                               const cs_cdo_quantities_t   *quant,
+                               const cs_lnum_t             *loc_ids,
+                               cs_cdovb_adv_t              *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the convection operator for pure convection
  *
- * \param[in]      mesh         pointer to a cs_msesh_t structure
  * \param[in]      connect      pointer to the connectivity structure
  * \param[in]      quant        pointer to the cdo quantities structure
  * \param[in]      dir_vals     values of the Dirichlet boundary condition
@@ -157,13 +154,12 @@ cs_convection_build_local_op(cs_lnum_t                    c_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_convection_get_bc_contrib(const cs_mesh_t             *mesh,
-                             const cs_cdo_connect_t      *connect,
-                             const cs_cdo_quantities_t   *quant,
-                             const cs_real_t             *dir_vals,
-                             cs_convection_builder_t     *builder,
-                             cs_real_t                    rhs_contrib[],
-                             cs_real_t                    diag_contrib[]);
+cs_cdovb_advection_get_bc_contrib(const cs_cdo_connect_t      *connect,
+                                  const cs_cdo_quantities_t   *quant,
+                                  const cs_real_t             *dir_vals,
+                                  cs_cdovb_adv_t              *builder,
+                                  cs_real_t                    rhs_contrib[],
+                                  cs_real_t                    diag_contrib[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -179,12 +175,12 @@ cs_convection_get_bc_contrib(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_convection_get_peclet_cell(const cs_cdo_quantities_t   *cdoq,
-                              const cs_param_advection_t   a_info,
-                              const cs_param_hodge_t       d_info,
-                              const cs_real_3_t            dir_vect,
-                              cs_real_t                    tcur,
-                              cs_real_t                   *p_peclet[]);
+cs_cdovb_advection_get_peclet_cell(const cs_cdo_quantities_t   *cdoq,
+                                   const cs_param_advection_t   a_info,
+                                   const cs_param_hodge_t       d_info,
+                                   const cs_real_3_t            dir_vect,
+                                   cs_real_t                    tcur,
+                                   cs_real_t                   *p_peclet[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -199,12 +195,12 @@ cs_convection_get_peclet_cell(const cs_cdo_quantities_t   *cdoq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_convection_get_upwind_coef_cell(const cs_cdo_quantities_t   *cdoq,
-                                   const cs_param_advection_t   a_info,
-                                   cs_real_t                    coefval[]);
+cs_cdovb_advection_get_upwind_coef_cell(const cs_cdo_quantities_t   *cdoq,
+                                        const cs_param_advection_t   a_info,
+                                        cs_real_t                    coefval[]);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_CDO_CONVECTION_H__ */
+#endif /* __CS_CDOVB_ADVECTION_H__ */
