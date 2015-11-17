@@ -114,8 +114,8 @@ struct _cost_quant_t {
   double     *qmq;        /* symmetric dense matrix of size n_ent */
   double     *T;          /* dense matrix of size n_ent (not symmetric) */
 
-  cs_qvect_t   *pq;       /* primal geometric quantity (size: n_ent) */
-  cs_qvect_t   *dq;       /* dual geometric quantity (size: n_ent) */
+  cs_nvec3_t   *pq;       /* primal geometric quantity (size: n_ent) */
+  cs_nvec3_t   *dq;       /* dual geometric quantity (size: n_ent) */
 
 };
 
@@ -458,8 +458,8 @@ _init_cost_quant(int    n_max_ent)
     hq->qmq = hq->invsvol + n_max_ent;
     hq->T = hq->invsvol + n_max_ent + msize;
 
-    BFT_MALLOC(hq->pq, n_max_ent, cs_qvect_t);
-    BFT_MALLOC(hq->dq, n_max_ent, cs_qvect_t);
+    BFT_MALLOC(hq->pq, n_max_ent, cs_nvec3_t);
+    BFT_MALLOC(hq->dq, n_max_ent, cs_nvec3_t);
 
   }
 
@@ -507,8 +507,8 @@ _free_cost_quant(struct _cost_quant_t  *hq)
 static void
 _compute_cost_quant(int                     n_loc_ent,
                     const cs_real_33_t      matval,
-                    const cs_qvect_t       *pq,
-                    const cs_qvect_t       *dq,
+                    const cs_nvec3_t       *pq,
+                    const cs_nvec3_t       *dq,
                     struct _cost_quant_t   *hq)
 {
   int  i, j, ii, ij, ji, jj;
@@ -589,13 +589,15 @@ _build_using_cost(int                         cid,
         const cs_lnum_t  e_id = c2e->ids[i];
         const cs_dface_t  fd = quant->dface[i];   /* Dual face quantities */
         const cs_quant_t  ep = quant->edge[e_id]; /* Edge quantities */
+        const cs_nvec3_t  df0q = fd.sface[0];
+        const cs_nvec3_t  df1q = fd.sface[1];
 
         hloc->ids[n_ent] = e_id;
 
         /* Primal and dual vector quantities are split into
            a measure and a unit vector in order to achieve a better accuracy */
         hq->pq[n_ent].meas = ep.meas;
-        hq->dq[n_ent].meas = fd.meas[0] + fd.meas[1];
+        hq->dq[n_ent].meas = df0q.meas + df1q.meas;
         invsurf = 1/hq->dq[n_ent].meas;
         for (k = 0; k < 3; k++) {
           hq->dq[n_ent].unitv[k] = invsurf * fd.vect[k];
@@ -615,18 +617,18 @@ _build_using_cost(int                         cid,
       for (i = c2f->idx[cid]; i < c2f->idx[cid+1]; i++) {
 
         const cs_lnum_t  f_id = c2f->col_id[i];
-        const double  *ed = &(quant->dedge[4*i]); /* Dual edge quantities */
+        const cs_nvec3_t  ed = quant->dedge[i]; /* Dual edge quantities */
         const cs_quant_t  fp = quant->face[f_id];  /* Face quantities */
 
         hloc->ids[n_ent] = f_id;
 
         /* Primal and dual vector quantities are split into
            a measure and a unit vector in order to achieve a better accuracy */
-        hq->dq[n_ent].meas = ed[0];
+        hq->dq[n_ent].meas = ed.meas;
         hq->pq[n_ent].meas = fp.meas;
         for (k = 0; k < 3; k++) {
           hq->pq[n_ent].unitv[k] = fp.unitv[k];
-          hq->dq[n_ent].unitv[k] = ed[1+k];
+          hq->dq[n_ent].unitv[k] = ed.unitv[k];
         }
         n_ent++;
 
@@ -643,18 +645,18 @@ _build_using_cost(int                         cid,
 
         const cs_lnum_t  f_id = c2f->col_id[i];
         const short int  sgn = c2f->sgn[i];
-        const double  *ed = &(quant->dedge[4*i]);  /* Dual edge quantities */
+        const cs_nvec3_t  ed = quant->dedge[i];    /* Dual edge quantities */
         const cs_quant_t  fp = quant->face[f_id];  /* Face quantities */
 
         hloc->ids[n_ent] = f_id;
 
         /* Primal and dual vector quantities are split into
            a measure and a unit vector in order to achieve a better accuracy */
-        hq->dq[n_ent].meas = ed[0];
+        hq->dq[n_ent].meas = ed.meas;
         hq->pq[n_ent].meas = fp.meas;
         for (k = 0; k < 3; k++) {
           hq->pq[n_ent].unitv[k] = sgn*fp.unitv[k];
-          hq->dq[n_ent].unitv[k] = sgn*ed[1+k];
+          hq->dq[n_ent].unitv[k] = sgn*ed.unitv[k];
         }
         n_ent++;
 
@@ -1045,10 +1047,10 @@ _build_using_voronoi(cs_lnum_t                    c_id,
                      const cs_cdo_quantities_t   *quant,
                      cs_hodge_builder_t          *hb)
 {
-  int  ii, k;
+  int  ii;
   cs_lnum_t  i;
   double  contrib;
-  cs_real_3_t  un, mv;
+  cs_real_3_t  mv;
 
   cs_locmat_t  *hl = hb->hloc;
 
@@ -1068,17 +1070,18 @@ _build_using_voronoi(cs_lnum_t                    c_id,
       for (i = c2e->idx[c_id], ii = 0; i < c2e->idx[c_id+1]; i++, ii++) {
 
         cs_dface_t  dfq = quant->dface[i];
+        cs_nvec3_t  df0q = dfq.sface[0], df1q = dfq.sface[1];
         cs_lnum_t  e_id = c2e->ids[i];
         cs_real_t  len = quant->edge[e_id].meas;
 
         hl->ids[ii] = e_id;
 
         /* First sub-triangle contribution */
-        _mv3(ptymat, dfq.unitv, mv);
-        contrib = dfq.meas[0] * _dp3(mv, dfq.unitv);
+        _mv3(ptymat, df0q.unitv, mv);
+        contrib = df0q.meas * _dp3(mv, df0q.unitv);
         /* Second sub-triangle contribution */
-        _mv3(ptymat, dfq.unitv + 3, mv);
-        contrib += dfq.meas[1] * _dp3(mv, dfq.unitv + 3);
+        _mv3(ptymat, df1q.unitv, mv);
+        contrib += df1q.meas * _dp3(mv, df1q.unitv);
 
         /* Only a diagonal term */
         hl->mat[ii*hl->n_ent+ii] = contrib/len;
@@ -1092,18 +1095,14 @@ _build_using_voronoi(cs_lnum_t                    c_id,
 
       for (i = c2f->idx[c_id], ii = 0; i < c2f->idx[c_id+1]; i++, ii++) {
 
-        cs_real_t  len = quant->dedge[4*i];
+        cs_nvec3_t  deq = quant->dedge[i];
         cs_lnum_t  f_id = c2f->col_id[i];
         cs_real_t  surf = quant->face[f_id].meas;
 
         hl->ids[ii] = f_id;
-
-        for (k = 0; k < 3; k++)
-          un[k] = quant->dedge[1+4*i+k];
-        _mv3(ptymat, un, mv);
-
         /* Only a diagonal term */
-        hl->mat[ii*hl->n_ent+ii] = len * _dp3(mv, un) / surf;
+        _mv3(ptymat, deq.unitv, mv);
+        hl->mat[ii*hl->n_ent+ii] = deq.meas * _dp3(mv, deq.unitv) / surf;
 
       } /* End of loop on cell faces */
 

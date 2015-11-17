@@ -52,7 +52,7 @@ typedef struct {
   double  meas;
   double  unitv[3];
 
-} cs_qvect_t;
+} cs_nvec3_t;
 
 typedef enum {
 
@@ -266,16 +266,16 @@ cs_toolbox_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_qvect_t structure from a cs_real_3_t
+ * \brief  Define a cs_nvec3_t structure from a cs_real_3_t
  *
  * \param[in]  v     vector of size 3
- * \param[out] qv    pointer to a cs_qvect_t structure
+ * \param[out] qv    pointer to a cs_nvec3_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_qvect(const cs_real_3_t    v,
-         cs_qvect_t          *qv);
+cs_nvec3(const cs_real_3_t    v,
+         cs_nvec3_t          *qv);
 
 /*----------------------------------------------------------------------------*/
 /*!

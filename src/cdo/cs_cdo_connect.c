@@ -867,15 +867,24 @@ cs_cdo_connect_build(const cs_mesh_t      *m)
   /* Build the connectivity structure */
   BFT_MALLOC(connect, 1, cs_cdo_connect_t);
 
-  /* Build DEC matrices related to connectivity */
+  /* Build DEC matrices related to connectivity
+     cell / face connectivity */
   connect->c2f = _build_c2f_connect(m);
+  cs_sla_matrix_set_info(connect->c2f);
   connect->f2c = cs_sla_matrix_transpose(connect->c2f);
+  cs_sla_matrix_set_info(connect->f2c);
 
+  /* face / edge conncetivity */
   connect->f2e = _build_f2e_connect(m, builder);
+  cs_sla_matrix_set_info(connect->f2e);
   connect->e2f = cs_sla_matrix_transpose(connect->f2e);
+  cs_sla_matrix_set_info(connect->e2f);
 
+  /* edge / vertex connectivity */
   connect->e2v = _build_e2v_connect(builder);
+  cs_sla_matrix_set_info(connect->e2v);
   connect->v2e = cs_sla_matrix_transpose(connect->e2v);
+  cs_sla_matrix_set_info(connect->v2e);
 
   _free_edge_builder(&builder);
 
@@ -889,9 +898,6 @@ cs_cdo_connect_build(const cs_mesh_t      *m)
   /* Max number of entities (vertices, edges and faces) by cell */
   _compute_max_ent(connect);
 
-  connect->max_set_size = CS_MAX(connect->v2e->n_rows, connect->e2v->n_rows);
-  connect->max_set_size = CS_MAX(connect->f2e->n_rows, connect->max_set_size);
-  connect->max_set_size = CS_MAX(connect->c2f->n_rows, connect->max_set_size);
 
   return connect;
 }

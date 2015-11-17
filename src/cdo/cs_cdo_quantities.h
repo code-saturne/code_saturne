@@ -76,10 +76,10 @@ typedef struct {
 typedef struct { /* TODO: remove what is the less necessary in order to
                     save memory comsumption */
 
-  cs_lnum_t  parent_id[2];  /* parent entity id of (primal) faces */
-  double     meas[2];       /* length or area related to each parent */
-  double     unitv[6];      /* unitary vector related to each parent */
-  double     vect[3];       /* dual face vector */
+  cs_lnum_t   parent_id[2];  /* parent entity id of (primal) faces f0 and f1 */
+  cs_nvec3_t  sface[2];      /* area and unit normal vector for each
+                                triangle s(e,f,c) for f in {f0, f1} */
+  double      vect[3];       /* dual face vector */
 
 } cs_dface_t;
 
@@ -88,34 +88,34 @@ typedef struct { /* Specific mesh quantities */
   /* Global mesh quantities */
   double      vol_tot;
 
-  /* Vertex-based quantities */
-  cs_lnum_t   n_vertices;
-  double     *dcell_vol;    /* dual volume related to each vertex.
-                               Scan with the c2v connectivity */
-  const cs_real_t  *vtx_coord; /* Pointer to the one stored in cs_mesh_t */
-
   /* Cell-based quantities */
-  cs_lnum_t   n_cells;
-  cs_real_t  *cell_centers;
-  cs_real_t  *cell_vol;
+  cs_lnum_t     n_cells;
+  cs_real_t    *cell_centers;
+  cs_real_t    *cell_vol;
 
   /* Face-based quantities */
   cs_lnum_t     n_i_faces;
   cs_lnum_t     n_b_faces;
   cs_lnum_t     n_faces;    /* n_i_faces + n_b_faces */
-  cs_quant_t   *face;       /* face quantities */
-  double       *dedge;      /* dual edge quantities. 4 values by entry
-                               length and unitv[3].
+  cs_quant_t   *face;       /* Face quantities */
+  cs_nvec3_t   *dedge;      /* Dual edge quantities (length and unit vector)
                                Scan with the c2f connectivity */
 
   /* Edge-based quantities */
   cs_lnum_t     n_edges;
-  cs_quant_t   *edge;       /* edge quantities */
-  cs_dface_t   *dface;      /* for each edge belonging to a cell, two
+  cs_quant_t   *edge;       /* Edge quantities */
+  cs_dface_t   *dface;      /* For each edge belonging to a cell, two
                                contributions coming from 2 triangles
                                s(x_cell, x_face, x_edge) for face in Face_edge
                                are considered.
                                Scan with the c2e connectivity */
+
+  /* Vertex-based quantities */
+  cs_lnum_t   n_vertices;
+  double     *dcell_vol;       /* Dual volume related to each vertex.
+                                  Scan with the c2v connectivity */
+  const cs_real_t  *vtx_coord; /* Pointer to the one stored in cs_mesh_t */
+
 
 } cs_cdo_quantities_t;
 

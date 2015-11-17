@@ -82,7 +82,7 @@ struct _cs_cdovb_adv_t {
  /* Settings for the advection operator */
   cs_param_advection_t    a_info;
   bool                    adv_uniform;
-  cs_qvect_t              adv_field;
+  cs_nvec3_t              adv_field;
 
   bool                    with_diffusion;
 
@@ -294,7 +294,7 @@ _compute_adv_flux_dface(const cs_cdo_quantities_t   *quant,
         xg[k] = one_third * (xc[k] + qe.center[k] + qf.center[k]);
 
       cs_evaluate_adv_field(a_info.adv_id, t_cur, xg, &beta_g);
-      adv_flx += qdf.meas[j] * _dp3(beta_g, &(qdf.unitv[3*j]));
+      adv_flx += qdf.sface[j].meas * _dp3(beta_g, qdf.sface[j].unitv);
 
     } // Loop on the two triangles composing the dual face inside a cell
     break;
@@ -305,13 +305,13 @@ _compute_adv_flux_dface(const cs_cdo_quantities_t   *quant,
       cs_lnum_t  f_id = qdf.parent_id[j];
       cs_quant_t  qf = quant->face[f_id];
 
-      cs_quadrature_tria_3pts(qe.center, qf.center, xc, qdf.meas[j],
+      cs_quadrature_tria_3pts(qe.center, qf.center, xc, qdf.sface[j].meas,
                               gpts, &w);
 
       cs_real_t  add = 0;
       for (int p = 0; p < 3; p++) {
         cs_evaluate_adv_field(a_info.adv_id, t_cur, gpts[p], &beta_g);
-        add += _dp3(beta_g, &(qdf.unitv[3*j]));
+        add += _dp3(beta_g, qdf.sface[j].unitv);
       }
       adv_flx += add * w;
 
@@ -348,7 +348,7 @@ _init_with_diffusion(cs_lnum_t                    c_id,
   cs_lnum_t  i, k, id;
   cs_real_t  _crit, beta_flx, inv_val, inv_diff;
   cs_real_3_t  xc, xg, beta_g, matnu;
-  cs_qvect_t  dface;
+  cs_nvec3_t  dface;
 
   const cs_param_advection_t  a_info = b->a_info;
   const cs_connect_index_t  *c2e = connect->c2e;
@@ -373,7 +373,7 @@ _init_with_diffusion(cs_lnum_t                    c_id,
       cs_dface_t  qdf = quant->dface[i];
 
       /* Compute dual face vector split into a unit vector and its measure */
-      dface.meas = qdf.meas[0] + qdf.meas[1];
+      dface.meas = qdf.sface[0].meas + qdf.sface[1].meas;
       inv_val = 1/dface.meas;
       for (k = 0; k < 3; k++)
         dface.unitv[k] = inv_val*qdf.vect[k];
@@ -397,7 +397,7 @@ _init_with_diffusion(cs_lnum_t                    c_id,
       cs_dface_t  qdf = quant->dface[i];
 
       /* Compute dual face vector split into a unit vector and its measure */
-      dface.meas = qdf.meas[0] + qdf.meas[1];
+      dface.meas = qdf.sface[0].meas + qdf.sface[1].meas;
       inv_val = 1/dface.meas;
       for (k = 0; k < 3; k++)
         dface.unitv[k] = inv_val*qdf.vect[k];
@@ -457,7 +457,7 @@ _init(cs_lnum_t                    c_id,
   cs_lnum_t  i, k, id;
   cs_real_t  _crit, beta_flx, invval;
   cs_real_3_t  xc, xg, beta_g;
-  cs_qvect_t  dface;
+  cs_nvec3_t  dface;
 
   const cs_param_advection_t  a_info = b->a_info;
   const cs_connect_index_t  *c2e = connect->c2e;
@@ -472,7 +472,7 @@ _init(cs_lnum_t                    c_id,
       cs_dface_t  qdf = quant->dface[i];
 
       /* Compute dual face vector split into a unit vector and its measure */
-      dface.meas = qdf.meas[0] + qdf.meas[1];
+      dface.meas = qdf.sface[0].meas + qdf.sface[1].meas;
       invval = 1/dface.meas;
       for (k = 0; k < 3; k++)
         dface.unitv[k] = invval*qdf.vect[k];
@@ -498,7 +498,7 @@ _init(cs_lnum_t                    c_id,
       cs_dface_t  qdf = quant->dface[i];
 
       /* Compute dual face vector split into a unit vector and its measure */
-      dface.meas = qdf.meas[0] + qdf.meas[1];
+      dface.meas = qdf.sface[0].meas + qdf.sface[1].meas;
       invval = 1/dface.meas;
       for (k = 0; k < 3; k++)
         dface.unitv[k] = invval*qdf.vect[k];
@@ -745,7 +745,7 @@ cs_cdovb_advection_builder_init(const cs_cdo_connect_t      *connect,
     cs_real_3_t  beta;
 
     cs_evaluate_adv_field(a_info.adv_id, b->t_cur, xyz, &beta);
-    cs_qvect(beta, &(b->adv_field));
+    cs_nvec3(beta, &(b->adv_field));
 
   }
 
@@ -892,7 +892,7 @@ cs_cdovb_advection_get_bc_contrib(const cs_cdo_connect_t      *connect,
      the advection field points inward */
   if (builder->adv_uniform) {
 
-    cs_qvect_t  advf = builder->adv_field;
+    cs_nvec3_t  advf = builder->adv_field;
 
     for (f_id = quant->n_i_faces; f_id < quant->n_faces; f_id++) {
 

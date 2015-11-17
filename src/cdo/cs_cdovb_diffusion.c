@@ -97,7 +97,7 @@ struct _cs_cdovb_diff_t {
   short int    *local_ids;   // set of local ids related to a cell
 
   /* Local matrix (stiffness or normal trace gradient) */
-  cs_locmat_t   *loc;    
+  cs_locmat_t   *loc;
 
 };
 
@@ -204,20 +204,13 @@ cs_cdovb_diffusion_builder_init(const cs_cdo_connect_t       *connect,
   diff->h_info.algo = h_info.algo;
   diff->h_info.coef = h_info.coef;
 
-  /* Initialize mask features */
-  diff->n_bits = sizeof(cs_flag_t)*CHAR_BIT;
-  diff->n_blocks = connect->n_max_ebyc/diff->n_bits;
-  if (connect->n_max_ebyc % diff->n_bits != 0)
-    diff->n_blocks += 1;
-
-  BFT_MALLOC(diff->emsk, diff->n_blocks*connect->n_max_vbyc, cs_flag_t);
-  for (i = 0; i < diff->n_blocks*connect->n_max_vbyc; i++)
-    diff->emsk[i] = 0;
-
   diff->enforce = bc_enforce;
-  if (bc_enforce == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-      bc_enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
-    
+  bool  wnit = (bc_enforce == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE) ? true : false;
+  bool  wsym = (bc_enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) ? true : false;
+  bool  hwbs = (h_info.algo == CS_PARAM_HODGE_ALGO_WBS) ? true : false;
+
+  if (wnit || wsym) {
+
     BFT_MALLOC(diff->local_vect, 2*connect->n_max_ebyc, cs_real_3_t);
     BFT_MALLOC(diff->local_vol, connect->n_max_ebyc, cs_real_t);
 
@@ -228,8 +221,33 @@ cs_cdovb_diffusion_builder_init(const cs_cdo_connect_t       *connect,
 
   } // Weakly enforcement of Dirichlet BCs
 
-  /* Define a builder for the related discrete Hodge operator */
-  diff->hb = cs_hodge_builder_init(connect, time_step, h_info);
+  if (hwbs) {
+    if (!wnit && !wsym) {
+      BFT_MALLOC(diff->local_vect, 2*connect->n_max_vbyc, cs_real_3_t);
+      BFT_MALLOC(diff->local_vol, 2*connect->n_max_vbyc, cs_real_t);
+    }
+    else {
+      int  size = 2*connect->n_max_vbyc + connect->f2e->info.stencil_max;
+      if (size > connect->n_max_ebyc)
+        BFT_REALLOC(diff->local_vol, size, cs_real_t);
+    }
+  }
+  else {
+
+    /* Define a builder for the related discrete Hodge operator */
+    diff->hb = cs_hodge_builder_init(connect, time_step, h_info);
+
+    /* Initialize mask features */
+    diff->n_bits = sizeof(cs_flag_t)*CHAR_BIT;
+    diff->n_blocks = connect->n_max_ebyc/diff->n_bits;
+    if (connect->n_max_ebyc % diff->n_bits != 0)
+      diff->n_blocks += 1;
+
+    BFT_MALLOC(diff->emsk, diff->n_blocks*connect->n_max_vbyc, cs_flag_t);
+    for (i = 0; i < diff->n_blocks*connect->n_max_vbyc; i++)
+      diff->emsk[i] = 0;
+
+  }
 
   /* Allocate the local stiffness matrix */
   diff->loc = cs_locmat_create(connect->n_max_vbyc);
@@ -253,18 +271,24 @@ cs_cdovb_diffusion_builder_free(cs_cdovb_diff_t   *diff)
   if (diff == NULL)
     return diff;
 
-  BFT_FREE(diff->emsk);
+  cs_param_bc_enforce_t  bc_enforce = diff->enforce;
+  bool  wnit = (bc_enforce == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE) ? true : false;
+  bool  wsym = (bc_enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) ? true : false;
+  bool  hwbs = (diff->h_info.algo == CS_PARAM_HODGE_ALGO_WBS) ? true : false;
 
-  if (diff->enforce == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-      diff->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
-
+  if (hwbs || wnit || wsym) {
     BFT_FREE(diff->local_vect);
     BFT_FREE(diff->local_vol);
-    BFT_FREE(diff->local_ids);
-
+    if (wnit || wsym)
+      BFT_FREE(diff->local_ids);
   }
 
-  diff->hb = cs_hodge_builder_free(diff->hb);
+  if (!hwbs) {
+    BFT_FREE(diff->emsk);
+    diff->hb = cs_hodge_builder_free(diff->hb);
+  }
+
+  /* Local stiffness matrix */
   diff->loc = cs_locmat_free(diff->loc);
 
   BFT_FREE(diff);
@@ -330,7 +354,7 @@ cs_cdovb_diffusion_build_local(cs_lnum_t                    c_id,
         for (ek = 0; ek < hloc->n_ent; ek++) {  /* Find edges attached to vi */
 
           const short int b = ek/diff->n_bits, r = ek % diff->n_bits;
-        
+
           if (diff->emsk[vi*diff->n_blocks+b] & (1 << r)) { // ek in E_i
 
             const cs_lnum_t  ek_shft = 2*hloc->ids[ek];

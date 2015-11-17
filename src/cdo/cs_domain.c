@@ -161,7 +161,7 @@ _domain_post(const cs_mesh_t       *mesh,
       if (do_post) {
 
         cs_lnum_t  shft;
-        cs_qvect_t  v;
+        cs_nvec3_t  v;
         cs_real_3_t  advect;
 
         cs_field_t  *fld = cs_field_by_id(adv->field_id);
@@ -182,7 +182,7 @@ _domain_post(const cs_mesh_t       *mesh,
                                 t_cur,
                                 xyz + 3*v_id,
                                 &advect);
-          cs_qvect(advect, &v);
+          cs_nvec3(advect, &v);
           magnitude[v_id] = v.meas;
 
           shft = 3*v_id;

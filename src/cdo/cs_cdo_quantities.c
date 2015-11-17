@@ -66,7 +66,7 @@ typedef struct {
 
   int         XYZ[3]; /* Direct permutation of the ref. axis such that nZ
                          is maximal */
-  cs_qvect_t  q;      /* face surface and its unit normal */
+  cs_nvec3_t  q;      /* face surface and its unit normal */
   double      omega;  /* P = Point belonging to the face omega = - < n, P> */
 
 } _cdo_fspec_t;
@@ -154,7 +154,7 @@ _get_fspec(cs_lnum_t                    f_id,
     for (k = 0; k < 3; k++)
       P[k] *= inv_n;
 
-    cs_qvect(&(mq->i_face_normal[3*f]), &(fspec.q));
+    cs_nvec3(&(mq->i_face_normal[3*f]), &(fspec.q));
 
   }
   else { /* Border face */
@@ -177,7 +177,7 @@ _get_fspec(cs_lnum_t                    f_id,
     for (k = 0; k < 3; k++)
       P[k] *= inv_n;
 
-    cs_qvect(&(mq->b_face_normal[3*f]), &(fspec.q));
+    cs_nvec3(&(mq->b_face_normal[3*f]), &(fspec.q));
 
   }
 
@@ -518,11 +518,11 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
         iq->dface[shift].parent_id[parent] = f_id;
         if (orient < 0) {
           for (k = 0; k < 3; k++)
-            iq->dface[shift].unitv[3*parent+k] = -0.5 * trinorm[k];
+            iq->dface[shift].sface[parent].unitv[k] = -0.5 * trinorm[k];
         }
         else {
           for (k = 0; k < 3; k++)
-            iq->dface[shift].unitv[3*parent+k] =  0.5 * trinorm[k];
+            iq->dface[shift].sface[parent].unitv[k] =  0.5 * trinorm[k];
         }
 
       } /* Loop on face edges */
@@ -536,14 +536,15 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
     for (i = topo->c2e->idx[c_id]; i < topo->c2e->idx[c_id+1]; i++) {
 
       for (k = 0; k < 3; k++)
-        iq->dface[i].vect[k] = iq->dface[i].unitv[k] + iq->dface[i].unitv[3+k];
+        iq->dface[i].vect[k] = iq->dface[i].sface[0].unitv[k]
+                             + iq->dface[i].sface[1].unitv[k];
 
       for (parent = 0; parent < 2; parent++) {
-        area = _n3(&(iq->dface[i].unitv[3*parent]));
-        iq->dface[i].meas[parent] = area;
+        area = _n3(iq->dface[i].sface[parent].unitv);
+        iq->dface[i].sface[parent].meas = area;
         inv = 1 / area;
         for (k = 0; k < 3; k++)
-          iq->dface[i].unitv[3*parent+k] *= inv;
+          iq->dface[i].sface[parent].unitv[k] *= inv;
       }
 
     }
@@ -837,8 +838,9 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
                         const cs_cdo_connect_t      *topo)
 {
   short int  sgn;
-  int  i, j, k, ii, nnz, c_id, f_id;
-  double  mes, inv, vec[3], xc[3];
+  cs_lnum_t  i, j, k, c_id, f_id, idx_size;
+  double  vec[3];
+  cs_nvec3_t  v;
 
   cs_cdo_quantities_t  *cdoq = NULL;
   cs_cdo_cc_algo_t cc_algo = CS_CDO_CC_SATURNE; // default value
@@ -899,39 +901,26 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   /* Finalize definition of cs_quant_t struct. for faces.
      Define face normal with unitary norm and face area */
   for (i = 0; i < m->n_i_faces; i++) {
-
+    cs_nvec3((mq->i_face_normal + 3*i), &v);
+    cdoq->face[i].meas = v.meas;
     for (k = 0; k < 3; k++)
-      vec[k] = mq->i_face_normal[3*i+k];
-    mes = _n3(vec);
-    inv = 1.0/mes;
-
-    cdoq->face[i].meas = mes;
-    for (k = 0; k < 3; k++)
-      cdoq->face[i].unitv[k] = inv*vec[k];
-
+      cdoq->face[i].unitv[k] = v.unitv[k];
   }
 
   for (i = 0, j = m->n_i_faces; i < m->n_b_faces; i++, j++) {
-
+    cs_nvec3((mq->b_face_normal + 3*i), &v);
+    cdoq->face[j].meas = v.meas;
     for (k = 0; k < 3; k++)
-      vec[k] = mq->b_face_normal[3*i+k];
-    mes = _n3(vec);
-    inv = 1.0/mes;
-
-    cdoq->face[j].meas = mes;
-    for (k = 0; k < 3; k++)
-      cdoq->face[j].unitv[k] = inv*vec[k];
-
+      cdoq->face[j].unitv[k] = v.unitv[k];
   }
 
   /* Compute dual edge quantities */
-  nnz = topo->c2f->idx[cdoq->n_cells];
-  BFT_MALLOC(cdoq->dedge, 4*nnz, double);
+  idx_size = topo->c2f->idx[cdoq->n_cells];
+  BFT_MALLOC(cdoq->dedge, idx_size, cs_nvec3_t);
 
   for (c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-    for (k = 0; k < 3; k++)
-      xc[k] = cdoq->cell_centers[3*c_id+k];
+    cs_real_t  *xc = cdoq->cell_centers + 3*c_id;
 
     for (i = topo->c2f->idx[c_id]; i < topo->c2f->idx[c_id+1]; i++) {
 
@@ -939,23 +928,25 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
       sgn = topo->c2f->sgn[i];
       for (k = 0; k < 3; k++)
         vec[k] = cdoq->face[f_id].center[k] - xc[k];
-      mes = _n3(vec);
 
       /* Fill dedge */
-      cdoq->dedge[4*i] = mes;
-      ii = 4*i+1, inv = 1.0/mes;
+      double  meas = _n3(vec);
+      double  inv = 1.0/meas;
+
+      cdoq->dedge[i].meas = meas;
       for (k = 0; k < 3; k++)
-        cdoq->dedge[ii+k] = sgn*inv*vec[k];
+        cdoq->dedge[i].unitv[k] = sgn*inv*vec[k];
 
     }
 
   } /* End of loop on cells */
 
   /* Compute edge quantities if needed */
-  if (cdoq->n_edges > 0)
+  if (cdoq->n_edges > 0) {
     _compute_edge_quantities(m, topo, cdoq);
+    _compute_dface_quantities(topo, cdoq);
+  }
 
-  _compute_dface_quantities(topo, cdoq);
   _compute_dcell_quantities(topo, cdoq);
 
   return cdoq;
@@ -1144,12 +1135,13 @@ cs_compute_pvol_edge(const cs_cdo_connect_t      *connect,
     for (j = connect->c2e->idx[i]; j < connect->c2e->idx[i+1]; j++) {
 
       const cs_lnum_t  e_id = connect->c2e->ids[j];
-      const cs_quant_t  edgeq = quant->edge[e_id];
-      const cs_dface_t  dface = quant->dface[j];
+      const cs_quant_t  peq = quant->edge[e_id];
+      const cs_nvec3_t  df0q = quant->dface[j].sface[0];
+      const cs_nvec3_t  df1q = quant->dface[j].sface[1];
 
-      dvol  = dface.meas[0] * _dp3(edgeq.unitv, &(dface.unitv[0]));
-      dvol += dface.meas[1] * _dp3(edgeq.unitv, &(dface.unitv[3]));
-      pvol[e_id] += dvol * one_3 * edgeq.meas;
+      dvol  = df0q.meas * _dp3(peq.unitv, df0q.unitv);
+      dvol += df1q.meas * _dp3(peq.unitv, df1q.unitv);
+      pvol[e_id] += dvol * one_3 * peq.meas;
 
     }
   }
@@ -1174,9 +1166,7 @@ cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
                      const cs_cdo_quantities_t  *quant,
                      double                     *p_pvol[])
 {
-  cs_lnum_t  i, k, pos;
-  double  height;
-  cs_real_3_t  xfc, xc;
+  cs_lnum_t  i, j, c_id;
 
   double  *pvol = *p_pvol;
 
@@ -1188,23 +1178,16 @@ cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
   for (i = 0; i < quant->n_faces; i++)
     pvol[i] = 0;
 
-  for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
+  for (c_id = 0; c_id < quant->n_cells; c_id++) {
 
-    for (k = 0; k < 3; k++)
-      xc[k] = quant->cell_centers[3*c_id+k];
+    for (j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
 
-    for (pos = c2f->idx[c_id]; pos < c2f->idx[c_id+1]; pos++) {
+      const cs_lnum_t  f_id = c2f->col_id[j];
+      const cs_quant_t  pfq = quant->face[f_id];
+      const cs_nvec3_t  deq = quant->dedge[j];
 
-      cs_lnum_t  f_id = c2f->col_id[pos];
-      const cs_quant_t  fq = quant->face[f_id];
-
-      /* Step 1: Compute h_(f,c) the height of the pyramid of base face f */
-      for (k = 0; k < 3; k++)
-        xfc[k] = xc[k] - fq.center[k];
-      height = fabs(_dp3(fq.unitv, xfc));
-
-      /* Step 2: Compute volume of the pyramid */
-      pvol[f_id] += one_3 * fq.meas * height;
+      /* Compute volume of the pyramid p_fc */
+      pvol[f_id] += one_3 * pfq.meas * deq.meas * _dp3(pfq.unitv, deq.unitv);
 
     }
   }

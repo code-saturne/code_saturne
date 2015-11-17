@@ -3144,9 +3144,12 @@ cs_equation_build_system(const cs_mesh_t            *m,
                    &(sla_mat));
 
   /* Get information on the matrix related to this linear system */
-  cs_sla_matrix_info_t  minfo = cs_sla_matrix_analyse(sla_mat);
-
   if (eqp->verbosity > 1 && time_step->nt_cur == 0) {
+
+    cs_sla_matrix_set_info(sla_mat);
+
+    cs_sla_matrix_info_t  minfo = sla_mat->info;
+
     bft_printf("\n Sparse Linear Algebra (SLA) sumup:\n");
     bft_printf("  <%s/sla> A.size         %d\n", eqn, sla_mat->n_rows);
     bft_printf("  <%s/sla> A.nnz          %lu\n", eqn, minfo.nnz);

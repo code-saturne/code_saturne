@@ -781,7 +781,6 @@ cs_cdofb_scaleq_post(const char                 *eqname,
   int  len;
 
   char *postlabel = NULL;
-  cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t  *)builder;
 
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
   const cs_real_t  *face_pdi = cs_cdofb_scaleq_get_face_values(builder, field);
@@ -798,7 +797,7 @@ cs_cdofb_scaleq_post(const char                 *eqname,
                     NULL,               // values at border faces
                     time_step);         // time step management structure
 
-  
+
   len = strlen(field->name) + 8 + 1;
   BFT_MALLOC(postlabel, len, char);
   sprintf(postlabel, "%s.Border", field->name);

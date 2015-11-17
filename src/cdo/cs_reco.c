@@ -195,8 +195,8 @@ cs_reco_dga_edge_dof(cs_lnum_t                    cid,
       t2[k] += val * df2q.vect[k];
 
     /* Better accuracy for the dot product with normalized vectors */
-    e1df2  =  df2q.meas[0] * _dp3(e1q.unitv, &(df2q.unitv[0]));
-    e1df2 +=  df2q.meas[1] * _dp3(e1q.unitv, &(df2q.unitv[3]));
+    e1df2  =  df2q.sface[0].meas * _dp3(e1q.unitv, df2q.sface[0].unitv);
+    e1df2 +=  df2q.sface[1].meas * _dp3(e1q.unitv, df2q.sface[1].unitv);
     e1df2 *=  e1q.meas;
     sum_vale1df2 += e1df2 * val;
 

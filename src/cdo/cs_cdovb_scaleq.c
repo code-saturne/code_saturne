@@ -245,10 +245,9 @@ _build_hvpcd_conf(const cs_cdo_connect_t     *connect,
   builder->build_hvpcd_conf = true;
 
   /* Initialize matrix structure */
-  builder->hvpcd_conf = cs_sla_matrix_create_from_index(builder->v2v,
-                                                        CS_SLA_MAT_MSR,
-                                                        true,  // sorted
-                                                        1);    // stride
+  builder->hvpcd_conf =
+    cs_sla_matrix_create_msr_from_index(builder->v2v,
+                                        true, true, 1);// sym, sorted, stride
 
   for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
 
@@ -288,21 +287,23 @@ _init_time_matrix(cs_cdovb_scaleq_t          *builder)
   /* Sanity check */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_VPCD);
 
-  if (h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI)
+  if (h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI) {
     time_mat = cs_sla_matrix_create(builder->n_vertices, // n_rows
                                     builder->n_vertices, // n_cols
                                     1,                   // stride
                                     CS_SLA_MAT_MSR,      // type
                                     true);               // symmetric ?
-  else
-    time_mat = cs_sla_matrix_create_from_index(builder->v2v,
-                                               CS_SLA_MAT_MSR,   // type = MSR
-                                               true,             // sorted
-                                               1);               // stride
 
-  /* Set matrix flag */
-  time_mat->flag |= CS_SLA_MATRIX_SYM;
-  time_mat->flag |= CS_SLA_MATRIX_SORTED;
+    /* Set matrix flag */
+    time_mat->flag |= CS_SLA_MATRIX_SYM;
+    time_mat->flag |= CS_SLA_MATRIX_SORTED;
+
+  }
+  else
+    time_mat =
+      cs_sla_matrix_create_msr_from_index(builder->v2v,
+                                          true, true, 1); // sym, sorted, stride
+
 
   return time_mat;
 }
@@ -620,10 +621,6 @@ _weak_bc_enforcement(const cs_cdo_connect_t     *connect,
     for (i = 0; i < vtx_dir->n_nhmg_elts; i++)
       dir_vals[vtx_dir->elt_ids[i]] = builder->dir_val[i];
 
-    BFT_MALLOC(_vec, connect->n_max_vbyc, cs_real_t);
-    BFT_MALLOC(_matvec, connect->n_max_vbyc, cs_real_t);
-
-    transp = cs_locmat_create(connect->n_max_vbyc);
   }
 
   /* Parameters linked to the discrete Hodge operator used for diffusion */
@@ -671,6 +668,11 @@ _weak_bc_enforcement(const cs_cdo_connect_t     *connect,
 
     /* Assemble contributions coming from local normal trace operator */
     if (builder->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
+
+      /* Additional auxiliary buffers */
+      BFT_MALLOC(_vec, connect->n_max_vbyc, cs_real_t);
+      BFT_MALLOC(_matvec, connect->n_max_vbyc, cs_real_t);
+      transp = cs_locmat_create(connect->n_max_vbyc);
 
       /* ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) */
       cs_locmat_add_transpose(ntrgrd, transp);
@@ -1182,10 +1184,10 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *m,
      adr = advection/diffusion/reaction
   */
   cs_sla_matrix_t  *sys_mat =
-    cs_sla_matrix_create_from_index(sys_builder->v2v,
-                                    CS_SLA_MAT_MSR,   // type = MSR
-                                    true,             // sorted
-                                    1);               // stride
+    cs_sla_matrix_create_msr_from_index(sys_builder->v2v,
+                                        true,   // symmetric
+                                        true,   // sorted
+                                        1);     // stride
 
   if (!do_advection && sys_builder->enforce != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
     sys_mat->flag |= CS_SLA_MATRIX_SYM;
