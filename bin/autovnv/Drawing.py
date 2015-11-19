@@ -490,7 +490,7 @@ class Plotter(object):
 
                     f = os.path.join(self.parser.getDestination(),
                                      study_label,
-                                     case.label, "RESU",
+                                     case.label, case.resu,
                                      dest, "monitoring", file_name)
                     if not os.path.isfile(f):
                         raise ValueError("\n\nThis file does not exist: %s\n (call with path: %s)\n" % (file_name, f))
@@ -512,19 +512,29 @@ class Plotter(object):
                         d = repo
                         dd = self.parser.getRepository()
 
-                    f = os.path.join(dd,
-                                     study_label,
-                                     case.label, "RESU",
-                                     d, file_name)
+                    if case.subdomains:
+                        dom_list = case.subdomains
+                    else:
+                        dom_list = [""]
 
-                    if not os.path.isfile(f):
+                    iok = False
+                    for ddd in dom_list:
+
                         f = os.path.join(dd,
                                          study_label,
-                                         case.label, "RESU",
-                                         d, "monitoring", file_name)
+                                         case.label, case.resu,
+                                         d, ddd, file_name)
 
                         if not os.path.isfile(f):
-                            raise ValueError("\n\nThis file does not exist: %s\n (call with path: %s)\n" % (file_name, f))
+                            f = os.path.join(dd,
+                                             study_label,
+                                             case.label, case.resu,
+                                             d, ddd, "monitoring", file_name)
+
+                        iok = iok or os.path.isfile(f)
+
+                    if not iok:
+                        raise ValueError("\n\nThis file does not exist: %s\n (last call with path: %s)\n" % (file_name, f))
 
                     for nn in plots:
                         curve = Plot(nn, self.parser, f)
