@@ -5,6 +5,9 @@ Version 4.0.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix default initialization of temperature in compressible, it has to be done
+  before the eventual read of a restart file (issue #138).
+
 - Disable SYRTHES coupling visualization when the default writer
   allows non-fixed meshes, to avoid output consistency issues.
 

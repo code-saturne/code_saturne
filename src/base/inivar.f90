@@ -106,7 +106,7 @@ double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
 double precision, dimension(:), pointer :: cvar_phi, cvar_omg, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cvar_tempk, cvar_var
+double precision, dimension(:), pointer :: cvar_var
 double precision, dimension(:), pointer :: cpro_prtot, cpro_venerg, cpro_lambda
 
 !===============================================================================
@@ -139,12 +139,6 @@ ithvar = 0
 iusini = 1
 
 if  (ippmod(icompf).ge.0) then
-
-  call field_get_val_s(ivarfl(isca(itempk)), cvar_tempk)
-
-  do iel = 1, ncel
-    cvar_tempk(iel) = t0
-  enddo
 
   call cf_thermo_default_init(ncel, ncelet)
   !==========================

@@ -103,7 +103,7 @@ double precision, dimension(:,:), pointer :: porosf
 double precision, dimension(:), pointer :: field_s_v
 double precision, dimension(:,:), pointer :: field_v_v
 
-double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_pr, cvar_tempk
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
 double precision, dimension(:), pointer :: cvar_phi, cvar_fb, cvar_omg, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
@@ -217,6 +217,15 @@ do ifac = 1, nfabor
 enddo
 if (iroext.gt.0.or.icavit.ge.0) then
   call field_current_to_previous(ibrom)
+endif
+
+!     In compressible, initialize temperature with reference temperature
+!     (temperature is not solved but is a variable nevertheless)
+if (ippmod(icompf).ge.0) then
+  call field_get_val_s(ivarfl(isca(itempk)), cvar_tempk)
+  do iel = 1, ncel
+    cvar_tempk(iel) = t0
+  enddo
 endif
 
 !     Viscosite moleculaire
