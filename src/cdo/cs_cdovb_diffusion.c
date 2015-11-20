@@ -555,7 +555,7 @@ cs_cdovb_diffusion_builder_init(const cs_cdo_connect_t       *connect,
 
   if (wnit || wsym) {
 
-    vect_size = 2*connect->n_max_ebyc;
+    vect_size = connect->n_max_ebyc + connect->n_max_vbyc;
     vol_size = connect->n_max_ebyc;
 
     cs_lnum_t  n_ent = CS_MAX(connect->e_info->n_ent, connect->f_info->n_ent);
@@ -784,18 +784,45 @@ cs_cdovb_diffusion_ntrgrd_build(cs_lnum_t                    c_id,
                                 cs_real_t                   *v_coef,
                                 cs_cdovb_diff_t             *diff)
 {
+  cs_lnum_t  j, je, jv, k, _v, _e, v_id;
+  cs_real_3_t  mn;
+
   cs_locmat_t  *ntrgrd = diff->loc; // Local matrix to build
   cs_real_3_t  *dfv = diff->tmp_vect;
-  cs_real_3_t  *pev = diff->tmp_vect + ntrgrd->n_ent;
-  cs_real_t  *over_pec_vol = diff->tmp_real;
+  cs_real_3_t  *leg = diff->tmp_vect + connect->n_max_ebyc;
   short int  *loc_e_ids = diff->tmp_ids;
 
   const cs_param_hodge_t  h_info = diff->h_info;
   const cs_param_hodge_algo_t  h_algo = h_info.algo;
+  const cs_quant_t  pfq = quant->face[f_id];
+  const double  f_coef = pow(pfq.meas, -0.5) * eig_ratio * eig_max;
+  const cs_connect_index_t  *c2e = connect->c2e;
+  const cs_connect_index_t  *c2v = connect->c2v;
+
+  /*  Initialize buffers related to vertices.
+      Define an id local to this cell for each vertex */
+  const cs_lnum_t  start_v = c2v->idx[c_id];
+  const cs_lnum_t  end_v = c2v->idx[c_id+1];
+  const int  n_vbyc = end_v - start_v;
+  const cs_lnum_t  start_e = c2e->idx[c_id];
+  const cs_lnum_t  end_e = c2e->idx[c_id+1];
+
+  for (jv = start_v, _v = 0; jv < end_v; jv++, _v++) {
+    v_id = c2v->ids[jv];
+    loc_v_ids[v_id] = _v;
+    ntrgrd->ids[_v] = v_id;
+  }
+  ntrgrd->n_ent = n_vbyc;
+
+  /* Sanity check */
+  assert(ntrgrd->n_ent <= connect->n_max_vbyc);
 
   /* Initialize the local matrix */
-  for (int  i = 0; i < ntrgrd->n_ent*ntrgrd->n_ent; i++)
+  for (int  i = 0; i < n_vbyc*n_vbyc; i++)
     ntrgrd->mat[i] = 0;
+
+  /* Compute the product: matpty*face unit normal */
+  _mv3((const cs_real_t (*)[3])matpty, pfq.unitv, mn);
 
   /* Build the local "normal trace gradient" according to the choice of
      algorithm use to build the discrete Hodge operator */
@@ -803,44 +830,23 @@ cs_cdovb_diffusion_ntrgrd_build(cs_lnum_t                    c_id,
 
   case CS_PARAM_HODGE_ALGO_COST:
     {
-      cs_lnum_t   ie, j, k, _id, v_id;
-      cs_real_3_t  mn, reco_val;
+      short int _ek;
+      cs_real_3_t  lek;
 
+      const double  beta = h_info.coef;
+      const cs_real_t  over_c_vol = 1/quant->cell_vol[c_id];
       const cs_sla_matrix_t  *e2v = connect->e2v;
       const cs_sla_matrix_t  *f2e = connect->f2e;
-      const cs_connect_index_t  *c2e = connect->c2e;
-      const cs_connect_index_t  *c2v = connect->c2v;
-      const double  beta = h_info.coef;
-      const cs_quant_t  qf = quant->face[f_id];
-      const cs_real_t  over_c_vol = 1/quant->cell_vol[c_id];
-
-      double  f_coef = pow(qf.meas, -0.5) * eig_ratio * eig_max;
-
-      /* Compute the product: matpty*face unit normal */
-      _mv3((const cs_real_t (*)[3])matpty, qf.unitv, mn);
-
-      /*  Initialize buffers related to vertices.
-          Define an id local to this cell for each vertex */
-      for (j = c2v->idx[c_id], _id = 0; j < c2v->idx[c_id+1]; j++, _id++) {
-        v_id = c2v->ids[j];
-        loc_v_ids[v_id] = _id;
-        ntrgrd->ids[_id] = v_id;
-      }
-      ntrgrd->n_ent = _id;
 
       /* Store the local id and useful quantities for each edge */
-      for (j = c2e->idx[c_id], _id = 0; j < c2e->idx[c_id+1]; j++, _id++) {
+      for (je = start_e, _e = 0; je < end_e; je++, _e++) {
 
-        cs_lnum_t  e_id = c2e->ids[j];
-        cs_quant_t qpe = quant->edge[e_id];
-        cs_dface_t qdf = quant->dface[j];
+        cs_lnum_t  e_id = c2e->ids[je];
+        cs_dface_t  dfq = quant->dface[je];
 
-        loc_e_ids[e_id] = _id;
-        for (k = 0; k < 3; k++) {
-          pev[_id][k] = qpe.unitv[k]*qpe.meas;
-          dfv[_id][k] = qdf.vect[k];
-        }
-        over_pec_vol[_id] = 3./_dp3(pev[_id], dfv[_id]);
+        loc_e_ids[e_id] = _e;
+        for (k = 0; k < 3; k++)
+          dfv[_e][k] = dfq.vect[k];
 
       } // Loop on cell edges
 
@@ -848,63 +854,72 @@ cs_cdovb_diffusion_ntrgrd_build(cs_lnum_t                    c_id,
       for (j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
         cs_lnum_t  e_id = f2e->col_id[j];
-        cs_quant_t  qe = quant->edge[e_id];
+        cs_quant_t  peq = quant->edge[e_id];
         cs_lnum_t  e_shft = e2v->idx[e_id];
         cs_lnum_t  v1_id = e2v->col_id[e_shft];
         cs_lnum_t  v2_id = e2v->col_id[e_shft+1];
 
-        short int  _e = loc_e_ids[e_id];
         short int  _v1 = loc_v_ids[v1_id];
         short int  _v2 = loc_v_ids[v2_id];
+
+        _e = loc_e_ids[e_id];
 
         /* Sanity checks */
         assert(_e != -1 && _v1 != -1 && _v2 != -1);
 
-        double surf = cs_surftri(&(quant->vtx_coord[3*v1_id]),
-                                 qe.center,
-                                 qf.center);
+        const double  dp = _dp3(peq.unitv, dfv[_e]);
+        const double  tmp_val = peq.meas*dp;
+        const double  beta_pec_vol = 3.*beta/tmp_val;
+        const double  ecoef =  3*beta/dp;
+        const double  surf = cs_surftri(quant->vtx_coord + 3*v1_id,
+                                        peq.center,
+                                        pfq.center);
 
+        /* Penalization term */
         v_coef[v1_id] += surf*f_coef;
         v_coef[v2_id] += surf*f_coef;
 
-        for (ie = c2e->idx[c_id]; ie < c2e->idx[c_id+1]; ie++) {
+        /* Reset L_Ec(GRAD(p_j)) for each vertex of the cell */
+        for (int i = 0; i < n_vbyc; i++)
+          leg[i][0] = leg[i][1] = leg[i][2] = 0;
 
-          cs_lnum_t  ek_id = c2e->ids[ie];
+        /* Term related to the flux reconstruction:
+           Compute L_Ec(GRAD(p_j)) on t_{_e,f} for each vertex j of the cell */
+        for (je = start_e, _ek = 0; je < end_e; je++, _ek++) {
+
+          cs_lnum_t  ek_id = c2e->ids[je];
           cs_lnum_t  ek_shft = e2v->idx[ek_id];
           cs_lnum_t  vj1_id = e2v->col_id[ek_shft];
           short int  sgn_j1 = e2v->sgn[ek_shft];
           cs_lnum_t  vj2_id = e2v->col_id[ek_shft+1];
           short int  sgn_j2 = e2v->sgn[ek_shft+1];
 
-          short int  _ek = loc_e_ids[ek_id];
           short int  _vj1 = loc_v_ids[vj1_id];
           short int  _vj2 = loc_v_ids[vj2_id];
 
-          /* Compute L_Ec(GRAD(p_j)) on t_{ek,f} */
-          if (_ek == _e)
-            for (k = 0; k < 3; k++)
-              reco_val[k] = dfv[_ek][k]*beta*over_pec_vol[_ek];
-          else
-            for (k = 0; k < 3; k++)
-              reco_val[k] = 0.0;
-
-          cs_real_t  dp = beta*over_pec_vol[_e]*_dp3(dfv[_ek], pev[_e]);
+          /* Compute l_(ek,c)|p(_ef,c) */
+          const double  eek_part = ecoef * _dp3(dfv[_ek], peq.unitv);
 
           for (k = 0; k < 3; k++)
-            reco_val[k] += over_c_vol*(dfv[_ek][k] - dp*dfv[_e][k]);
+            lek[k] = over_c_vol*(dfv[_ek][k] - eek_part*dfv[_e][k]);
+          if (_ek == _e)
+            for (k = 0; k < 3; k++)
+              lek[k] += dfv[_ek][k]*beta_pec_vol;
 
-          cs_real_t  contrib = _dp3(mn, reco_val)*surf;
-
-          /* Update the coefficients of the local normal trace operator */
-          ntrgrd->mat[_v1*ntrgrd->n_ent + _vj1] += sgn_j1 * contrib;
-          ntrgrd->mat[_v1*ntrgrd->n_ent + _vj2] += sgn_j2 * contrib;
-          ntrgrd->mat[_v2*ntrgrd->n_ent + _vj1] += sgn_j1 * contrib;
-          ntrgrd->mat[_v2*ntrgrd->n_ent + _vj2] += sgn_j2 * contrib;
+          for (k = 0; k < 3; k++) {
+            leg[_vj1][k] += sgn_j1*lek[k];
+            leg[_vj2][k] += sgn_j2*lek[k];
+          }
 
         } // Loop on cell edges
 
-      } // border face edges
+        for (int _vj = 0; _vj < n_vbyc; _vj++) {
+          const double  contrib = _dp3(mn, leg[_vj])*surf;
+          ntrgrd->mat[_v1*n_vbyc+_vj] += contrib;
+          ntrgrd->mat[_v2*n_vbyc+_vj] += contrib;
+        }
 
+      } // border face edges
 
     }
     break;

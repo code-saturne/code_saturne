@@ -583,7 +583,7 @@ _weak_bc_enforcement(const cs_cdo_connect_t     *connect,
                      cs_real_t                   full_rhs[],
                      cs_sla_matrix_t            *full_matrix)
 {
-  if (builder->enforce !=  CS_PARAM_BC_ENFORCE_WEAK_SYM ||
+  if (builder->enforce !=  CS_PARAM_BC_ENFORCE_WEAK_SYM &&
       builder->enforce !=  CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
     return; // Nothing to do
 
