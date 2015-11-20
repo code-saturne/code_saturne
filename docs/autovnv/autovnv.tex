@@ -1368,6 +1368,43 @@ my_case.xml:86:12: not well-formed (invalid token)
 \end{verbatim}
 \normalsize
 
+\item How to render less-than and greater-than signs in legends, titles or axis labels ?
+
+The less-than $<$ and greater-than $>$ symbols are among the five predefined
+entities of the XML specification that represent special characters.
+
+In order to have one of the five predefined entities rendered in any legend, title or axis
+label, use the string ``\&name;'' . Refer to the following table \ref{table:XMLPredefEnt}
+for the name of the character to be rendered:
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{name} & \textbf{character} & \textbf{description} \\
+\hline
+quot & ``  & double quotation mark \\
+amp  & \&  & ampersand             \\
+apos & '   & apostrophe            \\
+lt   & $<$ & less-than sign        \\
+gt   & $>$ & greater-than sign     \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Some predefined entities of XML specification.}
+\label{table:XMLPredefEnt}
+\end{table}
+
+For any of this predefined entities, the XML parser will first replace the string ``\&name;''
+by the character, which will then allow LaTeX (or Mathtext if LaTeX is disabled) to process it.
+
+For example, in order to write ``$\lambda<1$'' in a legend, the following attribute will be used:
+\small
+\begin{verbatim}
+    <plot fig="4" fmt="k--" legend="solution for $\lambda &lt; 1$" xcol="1" ycol="2"/>
+\end{verbatim}
+\normalsize
+
 \item How to set a logarithmic scale ?
 
 The following raw commands have to be used:
