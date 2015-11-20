@@ -521,7 +521,6 @@ cs_user_cdo_set_properties(void);
 /*!
  * \brief  Specify for the computational domain:
  *         -- which type of boundaries closed the computational domain
- *         -- which equations are to be solved
  *         -- the settings for the time step
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
@@ -530,6 +529,17 @@ cs_user_cdo_set_properties(void);
 
 void
 cs_user_cdo_setup_domain(cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Specify which equations are to be solved in the computational domain
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_add_equations(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

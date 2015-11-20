@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_CDO_DIFFUSION_DBG 0
+#define CS_CDOVB_DIFFUSION_DBG 0
 
 /* Stiffness matrix builder */
 struct _cs_cdovb_diff_t {
@@ -191,7 +191,6 @@ _define_wbs_builder(cs_lnum_t                    c_id,
                     cs_cdovb_diff_t             *diff)
 {
   cs_lnum_t  i, _i;
-  cs_real_t  len;
 
   cs_real_3_t  *unit_vc = diff->tmp_vect;
   cs_real_t  *wvc = diff->tmp_real;
@@ -257,7 +256,6 @@ _grad_lagrange_cell_pfc(short int             ifc,
  * \param[in]       ubase     unit vector from xc to xv' (opposite)
  * \param[in]       udir      unit vector from xc to xv
  * \param[in]       len_vc    lenght of the segment [xc, xv]
- * \param[in]       peq       primal edge quantities
  * \param[in]       deq       dual edge quantities
  * \param[in, out]  grd_func  gradient of the Lagrange shape function
  */
@@ -267,7 +265,6 @@ static void
 _grad_lagrange_vtx_pef(const cs_real_3_t     ubase,
                        const cs_real_3_t     udir,
                        cs_real_t             len_vc,
-                       const cs_quant_t      peq,
                        const cs_nvec3_t      deq,
                        cs_real_3_t           grd_func)
 {
@@ -411,27 +408,22 @@ _compute_wbs_stiffness(cs_lnum_t                    c_id,
 
       const cs_lnum_t  e_id = f2e->col_id[j];
       const cs_lnum_t  eshf = 2*e_id;
-      const cs_quant_t  peq = quant->edge[e_id];
       const double  subvol = pef_vol[_j];
 
       /* First vertex */
       const cs_lnum_t  v1_id = e2v->col_id[eshf];
       const short int  _v1 = loc_ids[v1_id];
-      const short int  iev1 = e2v->sgn[eshf];
 
       /* Second vertex */
       const cs_lnum_t  v2_id = e2v->col_id[eshf+1];
-      const short int  iev2 = e2v->sgn[eshf+1];
       const short int  _v2 = loc_ids[v2_id];
 
       /* Gradient of the lagrange function related to v1 */
-      _grad_lagrange_vtx_pef(unit_vc[_v2], unit_vc[_v1], len_vc[_v1],
-                             peq, deq,
+      _grad_lagrange_vtx_pef(unit_vc[_v2], unit_vc[_v1], len_vc[_v1], deq,
                              grd_v1);
 
       /* Gradient of the lagrange function related to a v2 */
-      _grad_lagrange_vtx_pef(unit_vc[_v1], unit_vc[_v2], len_vc[_v2],
-                             peq, deq,
+      _grad_lagrange_vtx_pef(unit_vc[_v1], unit_vc[_v2], len_vc[_v2], deq,
                              grd_v2);
 
       /* Gradient of the lagrange function related to a face.
@@ -918,7 +910,9 @@ cs_cdovb_diffusion_ntrgrd_build(cs_lnum_t                    c_id,
     break;
 
   case CS_PARAM_HODGE_ALGO_WBS:
-
+    bft_error(__FILE__, __LINE__, 0,
+              " Nitsche enforcement of boundary conditions is not yet"
+              " compatible with WBS algorithm.");
     break;
 
   default:
@@ -926,6 +920,11 @@ cs_cdovb_diffusion_ntrgrd_build(cs_lnum_t                    c_id,
               "Invalid type of algorithm to weakly enforce Dirichlet BCs.");
 
   } // End of switch
+
+#if CS_CDOVB_DIFFUSION_DBG > 1
+  bft_printf(">> Local weak bc matrix (f_id: %d)", f_id);
+  cs_locmat_dump(c_id, ntrgrd);
+#endif
 
   return ntrgrd;
 }

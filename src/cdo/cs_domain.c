@@ -647,8 +647,8 @@ cs_domain_summary(const cs_domain_t   *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_default_boundary(cs_domain_t               *domain,
-                               const char                *bdy_name)
+cs_domain_set_default_boundary(cs_domain_t     *domain,
+                               const char      *bdy_name)
 {
   if (domain == NULL)
     bft_error(__FILE__, __LINE__, 0,

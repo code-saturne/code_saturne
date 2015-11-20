@@ -59,7 +59,7 @@
 #include "cs_equation.h"
 #include "cs_evaluate.h"
 #include "cs_hodge.h"
-#include "cs_cdofb_codits.h"
+#include "cs_cdofb_scaleq.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -115,6 +115,8 @@ _get_sol(cs_real_t    time,
   (*retval).val = solution;
 }
 
+static cs_analytic_func_t *get_sol = _get_sol;
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Dump information into resume file to specify the parameters of the
@@ -164,6 +166,9 @@ _dump_info(const cs_cdo_quantities_t   *cdoq,
       case CS_PARAM_HODGE_ALGO_VORONOI:
         fprintf(resume, " -hdg- Hodge.Op         EPFD:VORONOI\n");
         break;
+      case CS_PARAM_HODGE_ALGO_WBS:
+        fprintf(resume, " -hdg- Hodge.Op         EPFD:WHITNEY_BARY\n");
+        break;
       default:
         bft_error(__FILE__, __LINE__, 0,
                   _(" Invalid algorithm to define a discrete Hodge operator."));
@@ -175,7 +180,7 @@ _dump_info(const cs_cdo_quantities_t   *cdoq,
 
   } // Diffusion term is activated
 
-  fprintf(resume," -bc-   Enforcement    %s",
+  fprintf(resume," -bc-  Enforcement    %s",
           cs_param_get_bc_enforcement_name(eqp->bc->enforcement));
 
   fprintf(resume, "\n%s", msepline);
@@ -240,9 +245,7 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
     for (i = 0; i < _h->n_ent; i++) {
 
       cs_lnum_t  shift = topo->c2f->idx[c_id] + i;
-
-      const double  ed_meas =  cdoq->dedge[4*shift];  /* Dual edge quantities */
-      const double  *ed_uvec = &(cdoq->dedge[4*shift+1]);
+      const cs_nvec3_t  deq = cdoq->dedge[shift]; /* Dual edge quantities */
 
       f_id = _h->ids[i];
       assert(f_id == topo->c2f->col_id[shift]);
@@ -251,8 +254,8 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
       sgn = topo->c2f->sgn[shift];
 
       /* Compute pvol_{f,c} */
-      pvol = _over3 * ed_meas * fq.meas * _dp3(ed_uvec, fq.unitv);
-      gcontrib = pvol/(ed_meas*ed_meas);
+      pvol = _over3 * deq.meas * fq.meas * _dp3(deq.unitv, fq.unitv);
+      gcontrib = pvol/(deq.meas*deq.meas);
 
       gexc[i] = sgn*(face_rpex[f_id] - cell_rpex[c_id]);
       gdic = sgn*(face_pdi[f_id] - cell_pdi[c_id]);
@@ -372,7 +375,7 @@ _compute_vb_l2pot(const cs_mesh_t             *m,
                                voltet, gpts, weights);
 
         for (p = 0; p < 5; p++) {
-          _get_sol(tcur, gpts[p], &get);
+          get_sol(tcur, gpts[p], &get);
           rpex_gpts[p] = get.val;
         }
 
@@ -475,7 +478,7 @@ _cdovb_post(const cs_mesh_t            *m,
     BFT_MALLOC(rpex, n_vertices, double);
     BFT_MALLOC(ddip, n_vertices, double);
     for (i = 0; i < n_vertices; i++) {
-      _get_sol(tcur, &(m->vtx_coord[3*i]), &get);
+      get_sol(tcur, &(m->vtx_coord[3*i]), &get);
       rpex[i] = get.val;
       ddip[i] = rpex[i] - pdi[i];
     }
@@ -609,18 +612,27 @@ _cdovb_post(const cs_mesh_t            *m,
     printf(" >> l2dgrd = %7.4e\n", l2dgrd);
 
     /* Energy norm^2 = [ ddig, Hodge*ddig ]_EpFd / [ rgex, Hodge*rgex]_EpFd */
-    cs_sla_matrix_t  *H = cs_hodge_compute(connect, cdoq, time_step, h_info);
+    if (h_info.algo == CS_PARAM_HODGE_ALGO_WBS) {
 
-    cs_sla_matvec(H, ddig, &work, true);
-    num = cs_dp(n_edges, ddig, work);
-    cs_sla_matvec(H, rgex, &work, true);
-    denum = cs_dp(n_edges, rgex, work);
+      // TODO
+    }
+    else {
+
+      cs_sla_matrix_t  *H = cs_hodge_compute(connect, cdoq, time_step, h_info);
+
+      cs_sla_matvec(H, ddig, &work, true);
+      num = cs_dp(n_edges, ddig, work);
+      cs_sla_matvec(H, rgex, &work, true);
+      denum = cs_dp(n_edges, rgex, work);
+
+      H = cs_sla_matrix_free(H);
+    }
+
     if (fabs(denum) > cs_base_zthreshold)
       enerd = sqrt(num/denum);
     else
       enerd = sqrt(num);
 
-    H = cs_sla_matrix_free(H);
     printf(" >> enerd  = %7.4e\n", enerd);
 
     /* Output results */
@@ -643,7 +655,7 @@ _cdovb_post(const cs_mesh_t            *m,
                       work,            // values on cells
                       NULL,            // values at internal faces
                       NULL,            // values at border faces
-                      NULL);           // time step management structure
+                      time_step);      // time step management structure
 
     cs_reco_ccen_edge_dofs(connect, cdoq, ddig, &work);
 
@@ -657,7 +669,7 @@ _cdovb_post(const cs_mesh_t            *m,
                       work,            // values on cells
                       NULL,            // values at internal faces
                       NULL,            // values at border faces
-                      NULL);           // time step management structure
+                      time_step);      // time step management structure
 
     dinfo = cs_analysis_data(cdoq->n_cells,  // n_elts
                              3,               // stride
@@ -763,7 +775,7 @@ _cdofb_post(const cs_mesh_t            *m,
     face_dpdi = cell_dpdi + n_cells;
 
     for (i = 0; i < n_cells; i++) {
-      _get_sol(tcur, &(cdoq->cell_centers[3*i]), &get);
+      get_sol(tcur, &(cdoq->cell_centers[3*i]), &get);
       cell_rpex[i] = get.val;
       cell_dpdi[i] = cell_rpex[i] - cell_pdi[i];
     }
@@ -782,7 +794,7 @@ _cdofb_post(const cs_mesh_t            *m,
 
       cs_quant_t  fq = cdoq->face[i];
 
-      _get_sol(tcur, fq.center, &get);
+      get_sol(tcur, fq.center, &get);
       face_rpex[i] = get.val;
       face_dpdi[i] = face_rpex[i] - face_pdi[i];
     }
@@ -928,12 +940,12 @@ _cdofb_post(const cs_mesh_t            *m,
     */
 
     cs_def_t  def;
-    def.analytic = _get_sol;
+    def.analytic = get_sol;
 
     cs_flag_t  flag = CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL
       | CS_PARAM_FLAG_SCAL;
 
-    cs_evaluate(m, cdoq, connect, time_step,
+    cs_evaluate(cdoq, connect, time_step,
                 flag,  // DoF flag (where to compute the evaluation)
                 cs_mesh_location_get_id_by_name("cells"),
                 CS_PARAM_DEF_BY_ANALYTIC_FUNCTION,
@@ -1004,7 +1016,6 @@ cs_user_cdo_extra_op(const cs_domain_t          *domain)
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
   const cs_mesh_t  *m = domain->mesh;
-  const cs_mesh_quantities_t  *mq = domain->mesh_quantities;
   const cs_cdo_connect_t  *connect = domain->connect;
   const cs_cdo_quantities_t  *cdoq = domain->cdo_quantities;
   const cs_time_step_t  *time_step = domain->time_step;
@@ -1013,14 +1024,23 @@ cs_user_cdo_extra_op(const cs_domain_t          *domain)
   const char *eqname = cs_equation_get_name(eq);
   const cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid equation name. Stop extra operations.");
+
   /* Open a file */
   char  *filename = NULL;
   int len = strlen("Resume-.log")+strlen(eqname)+1;
 
   if (eqp->flag & CS_EQUATION_UNSTEADY) {
-    len += 5;
+    if (time_step->nt_cur == 0)
+      return;
+    if (time_step->nt_cur % eqp->post_freq > 0)
+      return;
+
+    len += 9;
     BFT_MALLOC(filename, len, char);
-    sprintf(filename, "Resume-%s-%04d.log", eqname, time_step->nt_cur);
+    sprintf(filename, "Resume-%s-t%.f.log", eqname, time_step->t_cur);
   }
   else {
     if (time_step->nt_cur > 0)
@@ -1032,8 +1052,7 @@ cs_user_cdo_extra_op(const cs_domain_t          *domain)
 
   resume = fopen(filename, "w");
 
-  bft_printf("\n");
-  bft_printf("%s", msepline);
+  bft_printf("\n%s", msepline);
   bft_printf("    Extra operations\n");
   bft_printf("%s", msepline);
 

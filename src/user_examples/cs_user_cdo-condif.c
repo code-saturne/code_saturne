@@ -48,6 +48,7 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_mesh_location.h"
 #include "cs_cdo_toolbox.h"
 
 /*----------------------------------------------------------------------------
@@ -87,9 +88,9 @@ static const double  one_third = 1./3.;
  * -------------------------------------------------------------------------- */
 
 static void
-_define_adv_field(cs_real_t     time,
-                  cs_real_3_t   xyz,
-                  cs_get_t     *get)
+_define_adv_field(cs_real_t           time,
+                  const cs_real_3_t   xyz,
+                  cs_get_t           *get)
 {
   const double  x = xyz[0], y = xyz[1], z = xyz[2];
 
@@ -103,9 +104,9 @@ _define_adv_field(cs_real_t     time,
  * -------------------------------------------------------------------------- */
 
 static void
-_define_bcs(cs_real_t     time,
-            cs_real_3_t   xyz,
-            cs_get_t     *get)
+_define_bcs(cs_real_t           time,
+            const cs_real_3_t   xyz,
+            cs_get_t           *get)
 {
   double  bcval = 0.0;
 
@@ -122,9 +123,9 @@ _define_bcs(cs_real_t     time,
  * -------------------------------------------------------------------------- */
 
 static void
-_define_source_term(cs_real_t     time,
-                    cs_real_3_t   xyz,
-                    cs_get_t     *get)
+_define_source_term(cs_real_t           time,
+                    const cs_real_3_t   xyz,
+                    cs_get_t           *get)
 {
   cs_real_t  gx, gy, gz, gxx, gyy, gzz, gxy, gxz, gyz;
   cs_real_33_t  cond;
@@ -177,8 +178,8 @@ cs_user_cdo_add_mesh_locations(void)
 
      By default several mesh locations are predefined
      >> "cells"
-     >> "interior faces"
-     >> "boundary faces"
+     >> "interior_faces"
+     >> "boundary_faces"
      >> "vertices"
 
  */
@@ -187,6 +188,123 @@ cs_user_cdo_add_mesh_locations(void)
   cs_mesh_location_add("out", CS_MESH_LOCATION_BOUNDARY_FACES, "x > 0.9999");
 
   return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Specify for the computational domain:
+ *         -- which type of boundaries closed the computational domain
+ *         -- the settings for the time step
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_setup_domain(cs_domain_t   *domain)
+{
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+
+  /* =========================================
+     Define boundary of the domain
+     =========================================
+
+     Choose a boundary by default.
+     Boundary keyword is one of the following keyword
+     >> wall or symmetry
+  */
+
+  cs_domain_set_default_boundary(domain, "wall");
+
+  /* Add a boundary
+     >>   cs_domain_add_boundary(domain,
+                                 mesh location name,
+                                 boundary keyword)
+
+     mesh location name is either a predefined mesh location or one defined
+     by user
+
+     boundary keyword is one of the following keyword
+     >> wall, inlet, outlet, symmetry
+  */
+
+  cs_domain_add_boundary(domain, "in", "inlet");
+  cs_domain_add_boundary(domain, "out", "outlet");
+
+  /* =========================================
+     Time step management
+     =========================================
+
+     If there is an inconsistency between the max. number of iteration in
+     time and the final physical time, the first condition encountered stops
+     the calculation.
+
+     Type of definition is among the following choices:
+     >> "value", "time_func", "user"
+     By value, the time step is constant
+
+  */
+
+  cs_domain_set_time_step(domain,
+                          100,     /* Max. number of time iteration */
+                          10.,     /* Final time of the simulation */
+                          "value", /* How time step is define */
+                          "1");    /* Value of the time step */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Specify which equations are to be solved in the computational domain
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_add_equations(cs_domain_t   *domain)
+{
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+
+  /* =========================================
+     Activate predefined equations
+     =========================================
+
+     For the wall distance:
+       cs_domain_activate_wall_distance(domain);
+
+  */
+
+  cs_domain_activate_wall_distance(domain);
+
+  /* =========================================
+     Define additional user equations to solve
+     =========================================
+
+     cs_domain_add_user_equation(...)
+
+     >> arguements: domain,
+                    equation name,
+                    associated field name,
+                    type of equation: "scalar", "vector" or "tensor"
+                    is steady ?       true or false
+                    do_convection ?   true or false
+                    do_diffusion ?    true or false
+                    default_bc:       "zero_value" or "zero_flux"
+
+     By default, initial values are set to zero (or the value given by the
+     restart file in case of restart).
+  */
+
+  cs_domain_add_user_equation(domain,
+                              "AdvDiff",
+                              "Potential",   // associated field name
+                              "scalar",      // type of equation
+                              true,          // steady ?
+                              true,          // convection ?
+                              true,          // diffusion ?
+                              "zero_value"); // default boundary condition
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -223,9 +341,9 @@ cs_user_cdo_add_properties(void)
                    "anisotropic",   // type of material property
                    -1);             // frequency of post-processing
 
-  cs_param_pty_add("rho.cp",      // property name
-                   "isotropic",   // type of material property
-                   -1);           // frequency of post-processing
+  cs_param_pty_add("rho.cp",       // property name
+                   "isotropic",    // type of material property
+                   -1);            // frequency of post-processing
 
   /* =============================
      User-defined advection fields
@@ -295,108 +413,6 @@ cs_user_cdo_set_properties(void)
   cs_param_adv_field_set("adv_field",        // property name
                          "analytic",         // type of definition
                          _define_adv_field); // value of the advection field
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Specify for the computational domain:
- *         -- which type of boundaries closed the computational domain
- *         -- which equations are to be solved
- *         -- the settings for the time step
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_setup_domain(cs_domain_t   *domain)
-{
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
-  /* =========================================
-     Define boundary of the domain
-     =========================================
-
-  /* Choose a boundary by default
-     boundary keyword is one of the following keyword
-     >> wall or symmetry
-  */
-
-  cs_domain_set_default_boundary(domain, "wall");
-
-  /* Add a boundary
-     >>   cs_domain_add_boundary(domain,
-                                 mesh location name,
-                                 boundary keyword)
-
-     mesh location name is either a predefined mesh location or one defined
-     by user
-
-     boundary keyword is one of the following keyword
-     >> wall, inlet, outlet, symmetry
-  */
-
-  cs_domain_add_boundary(domain, "in", "inlet");
-  cs_domain_add_boundary(domain, "out", "outlet");
-
-  /* =========================================
-     Time step management
-     =========================================
-
-     If there is an inconsistency between the max. number of iteration in
-     time and the final physical time, the first condition encountered stops
-     the calculation.
-
-     Type of definition is among the following choices:
-     >> "value", "time_func", "user"
-     By value, the time step is constant
-
-  */
-
-  cs_domain_set_time_step(domain,
-                          100,     /* Max. number of time iteration */
-                          10.,     /* Final time of the simulation */
-                          "value", /* How time step is define */
-                          "1");    /* Value of the time step */
-
-  /* =========================================
-     Activate predefined equations
-     =========================================
-
-     For the wall distance: cs_domain_activate_wall_distance(domain);
-
-  */
-
-  cs_domain_activate_wall_distance(domain);
-
-  /* =========================================
-     Define additional user equations to solve
-     =========================================
-
-     cs_domain_add_user_equation(...)
-
-     >> arguements: domain,
-                    equation name,
-                    associated field name,
-                    type of equation: "scalar", "vector" or "tensor"
-                    is steady ?       true or false
-                    do_convection ?   true or false
-                    do_diffusion ?    true or false
-                    default_bc:       "zero_value" or "zero_flux"
-
-     By default, initial values are set to zero (or the value given by the
-     restart file in case of restart).
-  */
-
-  cs_domain_add_user_equation(domain,
-                              "AdvDiff",
-                              "Potential",   // associated field name
-                              "scalar",      // type of equation
-                              true,          // steady ?
-                              true,          // convection ?
-                              true,          // diffusion ?
-                              "zero_value"); // default boundary condition
 
 }
 

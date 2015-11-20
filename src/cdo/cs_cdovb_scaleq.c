@@ -455,6 +455,8 @@ _compute_dir_values(const cs_mesh_t            *m,
                     const cs_real_t            *field_val,
                     const cs_cdovb_scaleq_t    *builder)
 {
+  cs_lnum_t  i;
+
   const cs_cdo_bc_list_t  *vtx_dir = builder->vtx_dir;
   const cs_equation_param_t  *eqp = builder->eqp;
 
@@ -475,8 +477,6 @@ _compute_dir_values(const cs_mesh_t            *m,
   if (builder->enforce == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
       builder->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
     if (eqp->flag & CS_EQUATION_UNSTEADY) {
-
-      cs_lnum_t  i;
 
       const cs_param_time_t  t_info = eqp->time_info;
 
@@ -676,6 +676,11 @@ _weak_bc_enforcement(const cs_cdo_connect_t     *connect,
 
       /* ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) */
       cs_locmat_add_transpose(ntrgrd, transp);
+
+#if CS_CDOVB_SCALEQ_DBG > 1
+      bft_printf(">> Local weak sym bc matrix (f_id: %d)", f_id);
+      cs_locmat_dump(c_id, ntrgrd);
+#endif
 
       cs_sla_assemble_msr_sym(ntrgrd, full_matrix, false); // Not only diagonal
 

@@ -49,10 +49,6 @@
 #include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_mesh_location.h"
-#include "cs_sles.h"
-#include "cs_sles_default.h"
-#include "cs_sles_it.h"
-#include "cs_multigrid.h"
 
 /* CDO module */
 #include "cs_cdo.h"
@@ -81,7 +77,7 @@ BEGIN_C_DECLS
  * Local constant and enum definitions
  *============================================================================*/
 
-static const char cs_cdoversion[] = "0.3";
+static const char cs_cdoversion[] = "0.4";
 
 /*============================================================================
  * Private function prototypes
@@ -130,13 +126,12 @@ _setup(cs_mesh_t             *m,
     cs_mesh_location_build(m, i);
   n_mesh_locations_ini = cs_mesh_location_n_locations();
 
-  /* Add material properties and.or advection fields */
+  /* Default property settings */
   cs_param_pty_set_default();
-  cs_user_cdo_add_properties();
 
   /* - Create and initialize a new computational domain
      - Set the default boundary and potentially add new boundary to the
-     computational domain
+       computational domain
      - Add predefined and user-defined equations
      - Set the time step
   */
@@ -146,6 +141,17 @@ _setup(cs_mesh_t             *m,
   n_mesh_locations = cs_mesh_location_n_locations();
   for (int  i = n_mesh_locations_ini; i < n_mesh_locations; i++)
     cs_mesh_location_build(m, i);
+
+  /* Add predefined equations and their related properties.
+     Add user-defined equations */
+  cs_user_cdo_add_equations(domain);
+
+  /* Sanity check */
+  assert(domain->n_equations ==
+         domain->n_user_equations + domain->n_predef_equations);
+
+  /* Add user-defined material properties and/or advection fields */
+  cs_user_cdo_add_properties();
 
   /* Add variables related to user-defined and predefined equations */
   cs_domain_create_fields(domain);

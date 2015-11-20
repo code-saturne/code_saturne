@@ -82,4 +82,4 @@ cs_walldistance_setup(cs_equation_t   *eq,
 
 END_C_DECLS
 
-#endif /* __CS_CDO_WALLDIST_H__ */
+#endif /* __CS_WALLDISTANCE_H__ */

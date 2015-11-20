@@ -2557,7 +2557,7 @@ cs_equation_reaction_term_set(cs_equation_t    *eq,
         h_algo = CS_PARAM_HODGE_ALGO_COST;
       else if (strcmp(keyval, "voronoi") == 0)
         h_algo = CS_PARAM_HODGE_ALGO_VORONOI;
-      else if (strcmp(keyval, "whitney_bary") == 0)
+      else if (strcmp(keyval, "wbs") == 0)
         h_algo = CS_PARAM_HODGE_ALGO_WBS;
       else {
         const char *_val = keyval;
