@@ -104,7 +104,6 @@ class Plot(object):
 
         # Read optional attributes
         self.legend = parser.getAttribute(node, "legend", "")
-        print self.legend
 
         self.fmt = parser.getAttribute(node, "fmt", "")
         xcol  = int(parser.getAttribute(node,   "xcol",  0))
