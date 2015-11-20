@@ -739,7 +739,7 @@ class Plotter(object):
     def __save(self, f, fmt):
         """method used to save the figure"""
         f = f + "." + fmt
-        plt.savefig(f, format=fmt)
+        plt.savefig(f, format=fmt, bbox_inches="tight", pad_inches=0.)
         plt.close()
 
 #-------------------------------------------------------------------------------
