@@ -354,7 +354,7 @@ mei_hash_table_init(hash_table_t *const htable)
   static const char *functions2_names[] = { "atan2", "min", "max", "mod" };
 
   /* predefined functions pointers to functions to calculate them */
-  static double (*functions2[]) (double, double) = { atan2, mei_min, mei_max, fmod };
+  static double (*functions2[]) (double, double) = { atan2, fmin, fmax, fmod };
 
   /* predefined functions names with two arguments*/
   static const char *interp1d_names[] = { "interp1d" };

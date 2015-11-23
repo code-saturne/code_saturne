@@ -199,15 +199,16 @@ struct item * mei_hash_table_lookup(hash_table_t *htable,
  */
 /*----------------------------------------------------------------------------*/
 
-void mei_hash_table_insert(hash_table_t *const htable,
-                           const char *const  key,
-                           const mei_flag_t type,
-                           const double value,
-                           const func1_t func,
-                           const func2_t f2,
-                           const func3_t f3,
-                           const func4_t f4,
-                           const interp1d_t i1d);
+void
+mei_hash_table_insert(hash_table_t *const htable,
+                      const char *const  key,
+                      const mei_flag_t type,
+                      const double value,
+                      const func1_t func,
+                      const func2_t f2,
+                      const func3_t f3,
+                      const func4_t f4,
+                      const interp1d_t i1d);
 
 /*----------------------------------------------------------------------------*/
 /*

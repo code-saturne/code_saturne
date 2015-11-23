@@ -100,13 +100,13 @@ _user_data_dump(const mei_user_data_t *d)
              (const void *)d);
 
   bft_printf("  name:              %s\n",   d->name);
-  bft_printf("  commentaries:\n%s\n",       d->commentaries);
-  bft_printf("  number of columns: %i\n",   d->col);
-  bft_printf("  number of lines:   %i\n\n", d->row);
+  bft_printf("  description:\n%s\n",        d->description);
+  bft_printf("  number of columns: %i\n",   d->ncols);
+  bft_printf("  number of lines:   %i\n\n", d->nrows);
 
-  for (int i = 0; i < d->row; i++) {
+  for (int i = 0; i < d->nrows; i++) {
     bft_printf("\nline #%i: ", i);
-    for (int j = 0; j < d->col; j++) {
+    for (int j = 0; j < d->ncols; j++) {
       bft_printf("%f ", d->values[i][j]);
     }
   }
@@ -234,10 +234,10 @@ _user_data_reader(const char *filename)
     bft_error(__FILE__, __LINE__, 0,
               _("At least two lines are expected in %s.\n"), filename);
 
-  data[data_length-1]->row = nb_line;
+  data[data_length-1]->nrows = nb_line;
 
   BFT_MALLOC(data[data_length-1]->values,
-             data[data_length-1]->row,
+             data[data_length-1]->nrows,
              double*);
 
   /* 2- searching the number of columns */
@@ -266,11 +266,11 @@ _user_data_reader(const char *filename)
     bft_error(__FILE__, __LINE__, 0,
               _("At least two columns are expected in %s.\n"), filename);
 
-  data[data_length-1]->col = nb_col;
+  data[data_length-1]->ncols = nb_col;
 
-  for (int i = 0; i < data[data_length-1]->row; i++)
+  for (int i = 0; i < data[data_length-1]->nrows; i++)
     BFT_MALLOC(data[data_length-1]->values[i],
-               data[data_length-1]->col,
+               data[data_length-1]->ncols,
                double);
 
   /* 3- data storing */
@@ -286,17 +286,17 @@ _user_data_reader(const char *filename)
     if (!_user_data_strcmp(line, "\n")) {
 
       if (!strncmp(line, "#", 1)) {
-        if (data[data_length-1]->commentaries == NULL) {
-          BFT_MALLOC(data[data_length-1]->commentaries,
+        if (data[data_length-1]->description == NULL) {
+          BFT_MALLOC(data[data_length-1]->description,
                      strlen(line)+1,
                      char);
-          strcpy(data[data_length-1]->commentaries, line);
+          strcpy(data[data_length-1]->description, line);
         }
         else {
-          BFT_REALLOC(data[data_length-1]->commentaries,
-                      strlen(data[data_length-1]->commentaries)+strlen(line)+1,
+          BFT_REALLOC(data[data_length-1]->description,
+                      strlen(data[data_length-1]->description)+strlen(line)+1,
                       char);
-          strcat(data[data_length-1]->commentaries, line);
+          strcat(data[data_length-1]->description, line);
         }
       }
       else {
@@ -377,11 +377,11 @@ _user_data_create(const char *filename)
   BFT_MALLOC(data[data_length - 1]->name, strlen(filename) + 1, char);
   strcpy(data[data_length - 1]->name, filename);
 
-  BFT_MALLOC(data[data_length-1]->commentaries, strlen(" ") + 1, char);
-  strcpy(data[data_length-1]->commentaries, "");
+  BFT_MALLOC(data[data_length-1]->description, strlen(" ") + 1, char);
+  strcpy(data[data_length-1]->description, "");
 
-  data[data_length-1]->col = -1;
-  data[data_length-1]->row = -1;
+  data[data_length-1]->ncols = -1;
+  data[data_length-1]->nrows = -1;
 
   _user_data_reader(filename);
   return;
@@ -410,7 +410,7 @@ _user_data_interp(const mei_user_data_t *d,
   int k = 0;
   int position = -1;
   double y;
-  int row = d->row;
+  int row = d->nrows;
   double **values = d->values;
 
   /* verification of the abscissa colomn */
@@ -474,10 +474,10 @@ _user_data_interp(const mei_user_data_t *d,
 /*-----------------------------------------------------------------------------*/
 
 double
-mei_interp1d(const char *filename,
-             const int c1,
-             const int c2,
-             const double x)
+mei_interp1d(const char  *filename,
+             int          c1,
+             int          c2,
+             double       x)
 {
   int data_index = -1;
 
@@ -508,12 +508,13 @@ mei_interp1d(const char *filename,
  */
 /*-----------------------------------------------------------------------------*/
 
-void mei_data_free(void)
+void
+mei_data_free(void)
 {
   for(int i = 0; i < data_length - 1; i++) {
     BFT_FREE(data[i]->name);
-    BFT_FREE(data[i]->commentaries);
-    for (int j = 0; j < data[i]->row; j++)
+    BFT_FREE(data[i]->description);
+    for (int j = 0; j < data[i]->nrows; j++)
       BFT_FREE(data[i]->values[i]);
     BFT_FREE(data[i]->values);
     BFT_FREE(data[i]);
@@ -522,44 +523,6 @@ void mei_data_free(void)
   BFT_FREE(data);
 
   data_length = 0;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return the max value from two doubles.
- *
- * \param [in] x1 double
- * \param [in] x2 double
- * \return max value
- */
-/*----------------------------------------------------------------------------*/
-
-double
-mei_max(const double x1, const double x2)
-{
-  if (x1 < x2)
-    return x2;
-  else
-    return x1;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return the min value from two doubles.
- *
- * \param [in] x1 double
- * \param [in] x2 double
- * \return min value
- */
-/*----------------------------------------------------------------------------*/
-
-double
-mei_min(const double x1, const double x2)
-{
-  if (x1 < x2)
-    return x1;
-  else
-    return x2;
 }
 
 /*-----------------------------------------------------------------------------*/

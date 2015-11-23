@@ -46,11 +46,13 @@
 /*----------------------------------------------------------------------------*/
 
 typedef struct {
-    int col;               /*!< number of columns                            */
-    int row;               /*!< number of lines                              */
-    double **values;       /*!< values for the data set                      */
-    char *name;            /*!< name of the file which contenbt the data set */
-    char *commentaries;    /*!< user commentaries                            */
+
+  int       ncols;           /*!< number of columns */
+  int       nrows;           /*!< number of lines */
+  double  **values;          /*!< values for the data set */
+  char     *name;            /*!< name of the data file */
+  char     *description;     /*!< user description */
+
 } mei_user_data_t;
 
 /*============================================================================
@@ -69,7 +71,10 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 double
-mei_interp1d(const char *filename, const int c1, const int c2, const double x);
+mei_interp1d(const char  *filename,
+             int          c1,
+             int          c2,
+             double       x);
 
 /*-----------------------------------------------------------------------------*/
 /*
@@ -78,28 +83,6 @@ mei_interp1d(const char *filename, const int c1, const int c2, const double x);
 /*-----------------------------------------------------------------------------*/
 
 void mei_data_free(void);
-
-/*----------------------------------------------------------------------------
- * Return the max value from two doubles.
- *
- * parameters:
- *   x1       <-- double
- *   x2       <-- double
- *----------------------------------------------------------------------------*/
-
-double
-mei_max(const double x1, const double x2);
-
-/*----------------------------------------------------------------------------
- * Return the min value from two doubles.
- *
- * parameters:
- *   x1       <-- double
- *   x2       <-- double
- *----------------------------------------------------------------------------*/
-
-double
-mei_min(const double x1, const double x2);
 
 /*-----------------------------------------------------------------------------*/
 
