@@ -57,6 +57,7 @@ from PyQt4.QtGui  import *
 import cs_case
 import cs_exec_environment
 import cs_runcase
+import cs_submit
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -771,25 +772,25 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         # Build command line
 
-        key = self.jmdl.batch.rm_type
+        rm_type = self.jmdl.batch.rm_type
 
         batch = self.case['runcase'].path
+        cmd = None
+        run_title = None
 
-        if key == None:
+        if rm_type == None:
             run_id, run_title = self.__suggest_run_id()
             self.__updateRuncase(run_id)
             cmd = batch
-            key = 'localhost'
         else:
-            cmd = self.jmdl.batch.submit_command_prefix() + batch
+            run_title = self.case['package'].code_name + ' - Job Submission'
+            cmd = cs_exec_environment.enquote_arg(sys.argv[0]) \
+                  + ' submit ' +  cs_exec_environment.enquote_arg(batch)
 
-        if self.case['salome'] or key == 'localhost':
-            dlg = ListingDialogView(self.parent, self.case, run_title, [cmd])
-            dlg.show()
-        else:
-            cs_exec_environment.run_command(cmd)
+        dlg = ListingDialogView(self.parent, self.case, run_title, [cmd])
+        dlg.show()
 
-        if self.case['salome'] or key == 'localhost':
+        if rm_type == None:
             self.__updateRuncase('')  # remove --id <id> from runcase
 
         os.chdir(prv_dir)
@@ -802,6 +803,9 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         cmd = os.path.join(self.case['package'].get_dir('bindir'),
                            self.case['package'].name)
         cmd = cs_exec_environment.enquote_arg(cmd) + " run --suggest-id"
+        if self.mdl.getRunType() != "standard":
+            cmd += " --id-prefix=preprocess"
+
         r_title = subprocess.Popen(cmd,
                                    shell=True,
                                    stdout=subprocess.PIPE,
@@ -810,11 +814,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         run_id = r_id
         run_title = r_title
-        j = 1
-        while os.path.isdir(run_id):
-            j += 1
-            run_id = r_id + "_" + str(j)
-            run_title = r_title + "(" + str(j) + ")"
 
         return os.path.basename(run_id), run_title
 
@@ -825,10 +824,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         runcase = self.case['runcase']
 
-        if self.mdl.getRunType() == "standard":
-            runcase.set_run_id(run_id=run_id, run_id_prefix="")
-        else:
-            runcase.set_run_id(run_id=run_id, run_id_prefix="prepro_")
+        runcase.set_run_id(run_id=run_id)
         runcase.save()
 
 

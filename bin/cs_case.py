@@ -470,20 +470,19 @@ class case:
 
         r = os.path.join(self.case_dir, 'RESU')
 
+        # Coupled case
+        if len(self.domains) + len(self.syr_domains) + len(self.ast_domains) > 1:
+            r += '_COUPLING'
+
         if os.path.isdir(r):
             self.result_dir = os.path.join(r, self.run_id)
         else:
-            r += '_COUPLING'
-            if os.path.isdir(r):
-                self.result_dir = os.path.join(r, self.run_id)
-            else:
-                r = os.path.join(self.case_dir, 'RESU')
-                err_str = \
+            r = os.path.join(self.case_dir, 'RESU')
+            err_str = \
                     '\nResults directory: ' + r + '\n' \
-                    + '               or: ' + r + '_COUPLING' + '\n' \
                     + 'does not exist.\n' \
                     + 'Calculation will not be run.\n'
-                raise RunCaseError(err_str)
+            raise RunCaseError(err_str)
 
     #---------------------------------------------------------------------------
 
@@ -491,12 +490,13 @@ class case:
 
         self.define_result_dir()
 
-        if os.path.isdir(self.result_dir) and not force:
-            err_str = \
-                '\nResults directory: ' + self.result_dir \
-                + ' already exists.\n' \
-                + 'Calculation will not be run.\n'
-            raise RunCaseError(err_str)
+        if os.path.isdir(self.result_dir):
+            if not force:
+                err_str = \
+                    '\nResults directory: ' + self.result_dir \
+                    + ' already exists.\n' \
+                    + 'Calculation will not be run.\n'
+                raise RunCaseError(err_str)
 
         else:
             os.mkdir(self.result_dir)
@@ -1354,8 +1354,7 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
     #---------------------------------------------------------------------------
 
     def set_run_id(self,
-                   run_id = None,
-                   force_id = False):
+                   run_id = None):
 
         """
         Set run id for calculation.
@@ -1363,18 +1362,18 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
 
         if run_id != None:
             self.run_id = run_id
+            self.define_result_dir()
+
+        # When id not assigned, choose an id not already present
 
         if self.run_id == None:
-            now = datetime.datetime.now()
-            run_id_base = now.strftime('%Y%m%d-%H%M')
-            self.run_id = run_id_base
-            # When id not forced, choose an id not already present
-            if not force_id:
+            self.run_id = self.suggest_id()
+            self.define_result_dir()
+            j = 1
+            run_id_base = self.run_id
+            while os.path.isdir(self.result_dir):
+                self.run_id = run_id_base + '_' + str(j)
                 self.define_result_dir()
-                j = 0
-                while os.path.isdir(self.result_dir):
-                    self.run_id = run_id_base + str(j)
-                    self.define_result_dir()
 
     #---------------------------------------------------------------------------
 
@@ -1562,9 +1561,8 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
         # Standard or error exit
 
         if len(self.error) > 0:
-            stage = {'preprocess':'preprocessing'}
-            if self.error in stage:
-                error_stage = stage[self.error]
+            if self.error == 'preprocess':
+                error_stage = 'preprocessing'
             else:
                 error_stage = self.error
             err_str = ' Error in ' + error_stage + ' stage.\n\n'
@@ -1728,13 +1726,19 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
             scratchdir = None,
             run_id = None,
             force_id = False,
-            prepare_data = True,
-            run_solver = True,
-            save_results = True):
+            stages = None):
 
         """
         Main script.
         """
+
+        # Define run stages if not provided
+
+        if not stages:
+            stages = {'prepare_data':True,
+                      'initialize':True,
+                      'run_solver':True,
+                      'save_results':True}
 
         # Define scratch directory
         # priority: argument, environment variable, preference setting.
@@ -1776,12 +1780,12 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
         # If preparation stage is not requested, it must have been done
         # previously, and the id must be forced.
 
-        if not prepare_data:
+        if not stages['prepare_data']:
             force_id = True
 
         # Run id and associated directories
 
-        self.set_run_id(run_id, force_id)
+        self.set_run_id(run_id)
 
         # Set result copy mode
 
@@ -1796,8 +1800,8 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
 
         msg = \
             '\n' \
-            + '                      ' + self.package.code_name + ' is running\n' \
-            + '                      ***********************\n' \
+            + '                      ' + self.package.code_name + '\n' \
+            + '                      ************\n' \
             + '\n' \
             + ' Version:   ' + self.package.version + '\n' \
             + ' Path:      ' + self.package.get_dir('exec_prefix') + '\n'
@@ -1821,17 +1825,17 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
 
         try:
             retcode = 0
-            if prepare_data:
+            if stages['prepare_data']:
                 retcode = self.prepare_data(force_id)
 
-            if prepare_data and  retcode == 0:
+            if stages['initialize'] and  retcode == 0:
                 retcode = self.preprocess(n_procs,
                                           n_threads,
                                           mpiexec_options)
-            if run_solver == True and retcode == 0:
+            if stages['run_solver'] == True and retcode == 0:
                 self.run_solver()
 
-            if save_results == True:
+            if stages['save_results'] == True:
                 self.save_results()
 
         finally:
@@ -1846,10 +1850,10 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
         # Standard or error exit
 
         if len(self.error) > 0:
-            stage = {'preprocess':'preprocessing',
-                     'solver':'calculation'}
-            if self.error in stage:
-                error_stage = stage[self.error]
+            check_stage = {'preprocess':'preprocessing',
+                           'solver':'calculation'}
+            if self.error in check_stage:
+                error_stage = check_stage[self.error]
             else:
                 error_stage = self.error
             err_str = ' Error in ' + error_stage + ' stage.\n\n'
@@ -1857,6 +1861,48 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
             return 1
         else:
             return 0
+
+    #---------------------------------------------------------------------------
+
+    def suggest_id(self,
+                   run_id_prefix = None,
+                   run_id_suffix = None):
+
+        """
+        Suggest run id.
+        """
+
+        now = datetime.datetime.now()
+        run_id_base = now.strftime('%Y%m%d-%H%M')
+
+        r = os.path.join(self.case_dir, 'RESU')
+
+        if len(self.domains) + len(self.syr_domains) + len(self.ast_domains) > 1:
+            r += '_COUPLING'
+
+        # Make sure directory does not exist already
+
+        j = 0
+
+        while True:
+
+            run_id = run_id_base
+            if j > 0:
+                run_id += '_' + str(j)
+
+            if run_id_prefix:
+                run_id = run_id_prefix + run_id
+            if run_id_suffix:
+                run_id = run_id_suffix + run_id
+
+            result_dir = os.path.join(r, run_id)
+
+            if os.path.isdir(result_dir):
+                j += 1
+            else:
+                break
+
+        return run_id
 
 #-------------------------------------------------------------------------------
 # End

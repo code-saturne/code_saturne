@@ -165,9 +165,12 @@ _code_saturne() {
                 --n|--nprocs)            COMPREPLY=( ); return 0;;
                 --nt|--threads-per-task) COMPREPLY=( ); return 0;;
                 *) cmdOpts="-p --param --case --id --id-prefix --id-suffix \
-                     --suggest-id --force --initialize --execute --finalize \
-                     -n --nprocs --nt --threads-per-task";;
+                     --suggest-id --force --stage --initialize --execute \
+                     --finalize -n --nprocs --nt --threads-per-task";;
             esac
+            ;;
+        submit)
+            _filedir; return 0
             ;;
         *)
             cmdOpts=""

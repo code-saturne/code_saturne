@@ -86,6 +86,8 @@ class batch:
 
         self.rm_type = None
 
+        self.submit_cmd = ''
+
         self.params = {}
 
         self.params['job_name'] = None
@@ -776,7 +778,7 @@ class batch:
 
         cmd_prefix = ''
 
-        rm_type = self.batch.rm_type
+        rm_type = self.rm_type
 
         if rm_type == 'SLURM':
             cmd_prefix = 'sbatch '

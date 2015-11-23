@@ -145,6 +145,24 @@ class runcase(object):
 
     #---------------------------------------------------------------------------
 
+    def get_run_args(self):
+        """
+        Get the run command and arguments, as a list
+        """
+
+        return separate_args(self.lines[self.run_cmd_line_id])
+
+    #---------------------------------------------------------------------------
+
+    def set_run_args(self, args):
+        """
+        Set the run command and arguments from a list
+        """
+
+        self.lines[self.run_cmd_line_id] = assemble_args(args)
+
+    #---------------------------------------------------------------------------
+
     def build_template(self, package=None, study_name=None, case_name=None):
         """
         Build batch file template

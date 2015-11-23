@@ -43,7 +43,8 @@ class master_script:
                          'gui':self.gui,
                          'info':self.info,
                          'run':self.run,
-                         'salome':self.salome}
+                         'salome':self.salome,
+                         'submit':self.submit}
 
         if package != None:
             sys.path.insert(1, package.get_dir('pythondir'))
@@ -107,6 +108,7 @@ Topics:
   info
   run
   salome
+  submit
 
 Options:
   -h, --help  show this help message and exit"""
@@ -152,6 +154,10 @@ Options:
     def salome(self, options = None):
         import cs_salome
         return cs_salome.main(options, self.package)
+
+    def submit(self, options = None):
+        import cs_submit
+        return cs_submit.main(options, self.package)
 
 #-------------------------------------------------------------------------------
 # End

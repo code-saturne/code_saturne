@@ -34,7 +34,6 @@ This module defines the following functions:
 # Import required Python modules
 #===============================================================================
 
-import datetime
 import os, sys
 import types, string, re, fnmatch
 from optparse import OptionParser
@@ -108,6 +107,10 @@ def process_cmd_line(argv, pkg):
                       help="run the data preparation stage even if " \
                            + "the matching execution directory exists")
 
+    parser.add_option("--stage", dest="stage",
+                      action="store_true",
+                      help="stage data prior to preparation and execution")
+
     parser.add_option("--initialize", dest="initialize",
                       action="store_true",
                       help="run the data preparation stage")
@@ -122,6 +125,7 @@ def process_cmd_line(argv, pkg):
 
     parser.set_defaults(compute_build=False)
     parser.set_defaults(suggest_id=False)
+    parser.set_defaults(stage=False)
     parser.set_defaults(initialize=False)
     parser.set_defaults(execute=False)
     parser.set_defaults(finalize=False)
@@ -213,57 +217,76 @@ def process_cmd_line(argv, pkg):
     # Stages to run (if no filter given, all are done).
 
     compute_build = options.compute_build
-    prepare_data = options.initialize
-    run_solver = options.execute
-    save_results = options.finalize
+
+    stages = {'prepare_data':options.stage,
+              'initialize':options.initialize,
+              'run_solver':options.execute,
+              'save_results':options.finalize}
 
     if not options.force:
         force_id = False
     else:
         force_id = True
 
-    if not (prepare_data or run_solver or save_results):
-        prepare_data = True
-        run_solver = True
-        save_results = True
+    # Stages to run (if no filter given, all are run; specific stages
+    # are given, all stages in thar range are run).
+
+    ordered_stages = ['prepare_data',
+                      'initialize',
+                      'run_solver',
+                      'save_results']
+
+    stages = {'prepare_data':options.stage,
+              'initialize':options.initialize,
+              'run_solver':options.execute,
+              'save_results':options.finalize}
+
+    stages_start = len(ordered_stages)
+    stages_end = -1
+
+    i = 0
+    for k in ordered_stages:
+        if stages[k] == True and stages_start > i:
+            stages_start = i
+        if stages[k] and stages_end < i+1:
+            stages_end = i + 1
+        i += 1
+
+    # Default if nothing provided, ensure range is filled otherwise
+
+    if stages_end < 0:
+        for k in ordered_stages:
+            stages[k] = True
+
+    else:
+        for i in range(stages_start + 1, stages_end -1):
+            stages[ordered_stages[i]] = True
+
+    # Forced number of ranks and threads
 
     n_procs = options.nprocs
     n_threads = options.nthreads
 
     return  (casedir, options.id, param, coupling,
              options.id_prefix, options.id_suffix, options.suggest_id, force_id,
-             n_procs, n_threads, prepare_data, run_solver, save_results,
-             compute_build)
+             n_procs, n_threads, stages, compute_build)
 
 #===============================================================================
 # Run the calculation
 #===============================================================================
 
-def main(argv, pkg):
+def run(argv, pkg):
     """
-    Main function.
+    Run calculation;
+    returns return code, run id, and results directory path when created.
     """
 
     (casedir, run_id, param, coupling,
      id_prefix, id_suffix, suggest_id, force, n_procs, n_threads,
-     prepare_data, run_solver, save_results,
-     compute_build) = process_cmd_line(argv, pkg)
+     stages, compute_build) = process_cmd_line(argv, pkg)
 
     if not casedir:
-        return 1
-
-    if not run_id or suggest_id:
-        now = datetime.datetime.now()
-        run_id = now.strftime('%Y%m%d-%H%M')
-
-    if id_prefix:
-        run_id = id_prefix + run_id
-    if id_suffix:
-        run_id += id_suffix
-
-    if suggest_id:
-        print(run_id)
-        return 0
+        return 1, None, None
 
     # Use alternate compute (back-end) package if defined
 
@@ -305,17 +328,34 @@ def main(argv, pkg):
                          case_dir=casedir,
                          domains=d)
 
+    # Determine run id if not forced
+
+    if not run_id or suggest_id:
+        run_id = c.suggest_id(id_prefix, id_suffix)
+
+        if suggest_id:
+            print(run_id)
+            return 0, run_id, None
+
     # Now run case
 
     retval = c.run(n_procs=n_procs,
                    n_threads=n_threads,
                    run_id=run_id,
                    force_id=force,
-                   prepare_data=prepare_data,
-                   run_solver=run_solver,
-                   save_results=save_results)
+                   stages=stages)
 
-    return retval
+    return retval, c.run_id, c.result_dir
+
+#===============================================================================
+# Main function
+#===============================================================================
+
+def main(argv, pkg):
+    """
+    Main function.
+    """
+    return run(argv, pkg)[0]
 
 #-------------------------------------------------------------------------------
 
