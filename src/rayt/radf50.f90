@@ -77,10 +77,13 @@ use field
 implicit none
 
 ! Arguments
+
 double precision pco2(ncelet),ph2o(ncelet),fv(ncelet),teloc(ncelet)
 double precision kloc(ncelet,nwsgg),aloc(ncelet,nwsgg),alocbo(nfabor,nwsgg)
 
 ! Local variables
+
+character(len=256) :: pathdatadir
 
 integer          iel,ifac,i,j,k,l,it,ix,ipass,ntsto,nxh2osto
 double precision tref,xh2oref,rt,rx,kco2loc,kh2oloc
@@ -118,7 +121,8 @@ endif
 ipass = ipass + 1
 ! The ADF data base is read only once during the very first iteration
 if(ipass.eq.1) then
-  open(unit=10,file='dp_radiat_ADF50')
+  call csdatadir(len(pathdatadir), pathdatadir)
+  open(unit=10,file=trim(pathdatadir)// '/data/thch/dp_radiat_ADF50')
   read(10,*)
   read(10,*)
   read(10,*)

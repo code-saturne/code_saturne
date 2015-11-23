@@ -74,11 +74,15 @@ use field
 implicit none
 
 ! Arguments
+
 double precision      pco2(ncelet), ph2o(ncelet), fv(ncelet), teloc(ncelet)
 double precision      kloc(ncelet,nwsgg), aloc(ncelet,nwsgg)
 double precision      alocbo(nfabor,nwsgg)
 
 ! Local variables
+
+character(len=256) :: pathdatadir
+
 integer               ipass
 integer               cco2, ch2o, it, itrad, ig, iwvnb
 integer               its, j, m, n, i
@@ -127,14 +131,17 @@ enddo
 !===============================================================================
 !  1 - Read the data base files
 !===============================================================================
+
 ipass = ipass + 1
 if (ipass.eq.1) then
+
+  call csdatadir(len(pathdatadir), pathdatadir)
 
   allocate(gi(ng),tt(nt),kpco2(nt),kph2o(nt),wv(nband),dwv(nband))
   allocate(kmfs(nconc,nconc,nt,nt,ng))
 
   ! Read k-distributions
-  open(unit = 100, file = 'dp_radiat_MFS')
+  open(unit=100, file=trim(pathdatadir)// '/data/thch/dp_radiat_MFS')
   do cco2 = 1, nconc
     do ch2o = 1, nconc
       do it = 1, nt
@@ -151,19 +158,19 @@ if (ipass.eq.1) then
   close(100)
 
   ! Read the Planck coefficients
-  open(unit = 101, file ='dp_radiat_Planck_CO2')
+  open(unit=101, file=trim(pathdatadir)//'/data/thch/dp_radiat_Planck_CO2')
   do it = 1, nt
     read(101,140) tt(it), kpco2(it)
   enddo
   close(101)
-  open(unit = 102, file ='dp_radiat_Planck_H2O')
+  open(unit=102, file=trim(pathdatadir)//'/data/thch/dp_radiat_Planck_H2O')
   do it = 1, nt
     read(102,140) tt(it), kph2o(it)
   enddo
   close(102)
 
   ! Read the wavelength intervall
-  open(unit = 103, file ='dp_radiat_wave')
+  open(unit=103, file=trim(pathdatadir)//'/data/thch/dp_radiat_wave')
   do iwvnb = 1, nband
     read(103,140) wv(iwvnb), dwv(iwvnb)
   enddo

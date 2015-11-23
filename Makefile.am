@@ -210,7 +210,8 @@ bin/code_saturne: $(srcdir)/bin/code_saturne.in
 bin/cs_package.py: $(srcdir)/bin/cs_package.py.in
 
 CLEANFILES = $(edit_scripts)
-EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in
+EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in \
+              data/thch/dp_radiat_MFS.tar.xz
 
 # Install binary scripts
 
@@ -282,7 +283,6 @@ data/thch/dp_FCP.xml \
 data/thch/dp_FUE \
 data/thch/dp_radiat_ADF50 \
 data/thch/dp_radiat_ADF8 \
-data/thch/dp_radiat_MFS.tar.xz \
 data/thch/dp_radiat_Planck_CO2 \
 data/thch/dp_radiat_Planck_H2O \
 data/thch/dp_radiat_wave \
@@ -390,3 +390,12 @@ all-local: bin/cs_package.py
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
+
+install-data-local:
+	@$(NORMAL_INSTALL)
+	test -z "$(pkgdatadir)/data/thch" || $(MKDIR_P) "$(DESTDIR)$(pkgdatadir)/data/thch"
+	cd "$(DESTDIR)$(pkgdatadir)/data/thch" && tar xvJf "$(top_srcdir)/data/thch/dp_radiat_MFS.tar.xz"
+
+uninstall-local:
+	rm -rf "$(DESTDIR)$(pkgdatadir)/data/thch/dp_radiat_MFS"
+	@$(NORMAL_UNINSTALL)

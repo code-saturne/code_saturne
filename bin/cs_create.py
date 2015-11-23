@@ -482,10 +482,7 @@ domains = [
             os.mkdir(ref)
             for f in ['dp_C3P', 'dp_C3PSJ', 'dp_C4P', 'dp_ELE',
                       'dp_FCP.xml',
-                      'dp_FUE', 'dp_radiat_ADF50', 'dp_radiat_ADF8',
-                      'dp_radiat_MFS.tar.xz', 'dp_radiat_Planck_CO2',
-                      'dp_radiat_Planck_H2O', 'dp_radiat_wave',
-                      'dp_transfo', 'meteo']:
+                      'dp_FUE', 'dp_transfo', 'meteo']:
                 abs_f = os.path.join(thch_distpath, f)
                 if os.path.isfile(abs_f):
                     shutil.copy(abs_f, ref)
