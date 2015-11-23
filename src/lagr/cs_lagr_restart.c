@@ -966,8 +966,8 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
               flag[j] = 1;
             else
               flag[j] = 0;
-            _section_name("particle_status_flag", comp_id, sec_name);
           }
+          _section_name("particle_status_flag", comp_id, sec_name);
         }
 
         cs_restart_write_section(r,
