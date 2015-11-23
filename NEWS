@@ -115,6 +115,9 @@ Numerics
 Architectural changes
 ---------------------
 
+ - Add --compute-build option to "code_saturne run" command to allow choosing
+   one of several compute builds at runtime.
+
  - Some renames and simplifications in matrix fill types:
    * to make things more generic, CS_MATRIX_33_BLOCK* is replaced by
      CS_MATRIX_BLOCK*

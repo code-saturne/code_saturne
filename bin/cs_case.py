@@ -1799,10 +1799,14 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
             + '                      ' + self.package.code_name + ' is running\n' \
             + '                      ***********************\n' \
             + '\n' \
-            + ' Version: ' + self.package.version + '\n' \
-            + ' Path:    ' + self.package.get_dir('exec_prefix') + '\n\n' \
-            + ' Result directory:\n' \
-            + '   ' +  str(self.result_dir) + '\n\n'
+            + ' Version:   ' + self.package.version + '\n' \
+            + ' Path:      ' + self.package.get_dir('exec_prefix') + '\n'
+        if self.package_compute != self.package:
+            msg += '   compute: ' + self.package_compute.get_dir('exec_prefix') + '\n\n'
+        else:
+            msg += '\n'
+        msg += ' Result directory:\n' \
+               + '   ' +  str(self.result_dir) + '\n\n'
 
         if self.exec_dir != self.result_dir:
             msg += ' Working directory (to be periodically cleaned):\n' \

@@ -238,6 +238,35 @@ class runcase(object):
 
     #---------------------------------------------------------------------------
 
+    def get_compute_build(self):
+        """
+        Get the compute-build option in the run command
+        """
+
+        args = separate_args(self.lines[self.run_cmd_line_id])
+
+        return get_command_single_value(args,
+                                        ('--compute-build',
+                                         '--compute-build='))
+
+    #---------------------------------------------------------------------------
+
+    def set_compute_build(self, parameters):
+        """
+        Set the compute-build option in the run command
+        """
+
+        line = self.lines[self.run_cmd_line_id]
+
+        args = update_command_single_value(separate_args(line),
+                                           ('--compute-build',
+                                            '--compute-build='),
+                                           enquote_arg(parameters))
+
+        self.lines[self.run_cmd_line_id] = assemble_args(args)
+
+    #---------------------------------------------------------------------------
+
     def get_coupling(self):
         """
         Get the coupling option in the run command

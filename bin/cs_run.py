@@ -64,6 +64,10 @@ def process_cmd_line(argv, pkg):
 
     parser = OptionParser(usage=usage)
 
+    parser.add_option("--compute-build", dest="compute_build", type="string",
+                      metavar="<case>",
+                      help="base name or full path to the compute build")
+
     parser.add_option("-n", "--nprocs", dest="nprocs", type="int",
                       metavar="<nprocs>",
                       help="number of MPI processes for the computation")
@@ -116,6 +120,7 @@ def process_cmd_line(argv, pkg):
                       action="store_true",
                       help="run the results copy/cleanup stage")
 
+    parser.set_defaults(compute_build=False)
     parser.set_defaults(suggest_id=False)
     parser.set_defaults(initialize=False)
     parser.set_defaults(execute=False)
@@ -139,6 +144,7 @@ def process_cmd_line(argv, pkg):
     coupling= None
     data = None
     src = None
+    compute_build = None
 
     if options.coupling:
 
@@ -206,6 +212,7 @@ def process_cmd_line(argv, pkg):
 
     # Stages to run (if no filter given, all are done).
 
+    compute_build = options.compute_build
     prepare_data = options.initialize
     run_solver = options.execute
     save_results = options.finalize
@@ -225,7 +232,8 @@ def process_cmd_line(argv, pkg):
 
     return  (casedir, options.id, param, coupling,
              options.id_prefix, options.id_suffix, options.suggest_id, force_id,
-             n_procs, n_threads, prepare_data, run_solver, save_results)
+             n_procs, n_threads, prepare_data, run_solver, save_results,
+             compute_build)
 
 #===============================================================================
 # Run the calculation
@@ -238,7 +246,8 @@ def main(argv, pkg):
 
     (casedir, run_id, param, coupling,
      id_prefix, id_suffix, suggest_id, force, n_procs, n_threads,
-     prepare_data, run_solver, save_results) = process_cmd_line(argv, pkg)
+     prepare_data, run_solver, save_results,
+     compute_build) = process_cmd_line(argv, pkg)
 
     if not casedir:
         return 1
@@ -262,10 +271,13 @@ def main(argv, pkg):
     config.read(pkg.get_global_configfile())
 
     pkg_compute = None
-    if config.has_option('install', 'compute_versions'):
-        compute_versions = config.get('install', 'compute_versions').split(':')
-        if compute_versions[0]:
-            pkg_compute = pkg.get_alternate_version(compute_versions[0])
+    if not compute_build:
+        if config.has_option('install', 'compute_versions'):
+            compute_versions = config.get('install', 'compute_versions').split(':')
+            if compute_versions[0]:
+                pkg_compute = pkg.get_alternate_version(compute_versions[0])
+    else:
+        pkg_compute = pkg.get_alternate_version(compute_build)
 
     if coupling:
 
