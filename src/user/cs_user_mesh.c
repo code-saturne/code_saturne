@@ -524,15 +524,18 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
     cs_selector_get_i_face_list(criteria,
                                 &n_selected_faces,
                                 selected_faces);
-    cs_create_thinwall(mesh,
-                       selected_faces,
-                       n_selected_faces);
 
     BFT_FREE(i_face_cog);
     BFT_FREE(i_face_normal);
 
     mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
     mesh->select_i_faces = fvm_selector_destroy(mesh->select_i_faces);
+
+    cs_create_thinwall(mesh,
+                       selected_faces,
+                       n_selected_faces);
+
+    BFT_FREE(selected_faces);
   }
 }
 
