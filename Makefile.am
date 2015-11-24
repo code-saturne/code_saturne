@@ -394,7 +394,7 @@ clean-local:
 install-data-local:
 	@$(NORMAL_INSTALL)
 	test -z "$(pkgdatadir)/data/thch" || $(MKDIR_P) "$(DESTDIR)$(pkgdatadir)/data/thch"
-	cd "$(DESTDIR)$(pkgdatadir)/data/thch" && tar xvJf "$(top_srcdir)/data/thch/dp_radiat_MFS.tar.xz"
+	tar xvJf "$(top_srcdir)/data/thch/dp_radiat_MFS.tar.xz" -C "$(DESTDIR)$(pkgdatadir)/data/thch"
 
 uninstall-local:
 	rm -rf "$(DESTDIR)$(pkgdatadir)/data/thch/dp_radiat_MFS"
