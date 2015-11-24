@@ -1061,7 +1061,7 @@ cs_turbomachinery_initialize(void)
 
   if (cs_glob_n_joinings > 0) {
     cs_real_t t_elapsed;
-    cs_turbomachinery_update_mesh(0., &t_elapsed);
+    cs_turbomachinery_update_mesh(cs_glob_time_step->t_cur, &t_elapsed);
   }
 
   /* Adapt postprocessing options if required;
