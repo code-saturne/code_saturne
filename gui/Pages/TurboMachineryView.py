@@ -98,7 +98,7 @@ class VelocityDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        vd = DoubleValidator(editor, min=0.)
+        vd = DoubleValidator(editor)
         editor.setValidator(vd)
         return editor
 
