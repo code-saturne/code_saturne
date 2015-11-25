@@ -987,6 +987,10 @@ msgid "Error %d reading map in STAR-CCM+ file."
 msgstr "Erreur %d à la lecture d'une numérotation dans un fichier STAR-CCM+"
 
 #, c-format
+msgid "Error %d opening STAR-CCM+ file: %s"
+msgstr "Erreur %d à l'ouverture du fichier STAR-CCM+ : %s"
+
+#, c-format
 msgid ""
 "\n"
 "\n"

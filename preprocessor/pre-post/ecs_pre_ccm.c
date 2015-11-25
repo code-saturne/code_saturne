@@ -891,6 +891,11 @@ ecs_pre_ccm__lit_maillage(const char  *nom_fic_maillage,
 
   err = CCMIOOpenFile(NULL, nom_fic_maillage, kCCMIORead, &root);
 
+  if (err != kCCMIONoErr)
+    ecs_error(__FILE__, __LINE__, 0,
+              _("Error %d opening STAR-CCM+ file: %s"),
+              (int)err, nom_fic_maillage);
+
   CCMIOGetVersion(&err, root.node, &version);
 
   maj_ver =  version / 10000;
