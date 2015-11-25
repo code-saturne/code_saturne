@@ -103,14 +103,13 @@ integer          nfmtsc, nfmtfl, nfmtch, nfmtcl
 integer          nfmtst
 integer          ilecec, iecr
 integer          ngbstr(2)
-integer          ifac, iel, istr
+integer          ifac, istr
 integer          iz, kk
 integer          ival(1)
 double precision rval(1), tmpstr(27)
 
 type(c_ptr) :: rp
 
-double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: tmurbf
 double precision, allocatable, dimension(:) :: tparbf
 double precision, pointer, dimension(:) :: dt_s
