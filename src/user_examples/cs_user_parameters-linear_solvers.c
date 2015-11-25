@@ -423,8 +423,6 @@ cs_user_linear_solvers(void)
   const cs_field_t *f = CS_F_(p);
   cs_sles_t *sles_p = cs_sles_find_or_add(f->id, NULL);
 
-  cs_sles_set_verbosity(sles_p, 4);
-
   bool use_iteration = true; /* use iteration or wall clock time for axis */
 
   if (strcmp(cs_sles_get_type(sles_p), "cs_sles_it_t") == 0) {
