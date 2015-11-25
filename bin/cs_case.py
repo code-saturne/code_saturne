@@ -1463,6 +1463,27 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
 
     #---------------------------------------------------------------------------
 
+    def init_prepared_data(self):
+
+        """
+        Initialize prepared data for calculation.
+        """
+
+        self.copy_script()
+
+        os.chdir(self.exec_dir)
+
+        for d in self.domains:
+            if os.path.isfile(os.path.join(d.exec_dir,
+                                           d.package_compute.solver)):
+               d.solver_path = os.path.join('.',
+                                            d.package_compute.solver)
+
+        for d in self.syr_domains:
+            d.solver_path = os.path.join('.', 'syrthes')
+
+    #---------------------------------------------------------------------------
+
     def preprocess(self,
                    n_procs = None,
                    n_threads = None,
@@ -1827,6 +1848,8 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
             retcode = 0
             if stages['prepare_data']:
                 retcode = self.prepare_data(force_id)
+            else:
+                self.init_prepared_data()
 
             if stages['initialize'] and  retcode == 0:
                 retcode = self.preprocess(n_procs,
