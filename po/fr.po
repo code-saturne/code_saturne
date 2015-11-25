@@ -4640,7 +4640,7 @@ msgid "current:"
 msgstr "courant :"
 
 #, c-format
-msgid "  flush logs at time step %12d\n"
+msgid "  flush logs and time plots at time step %12d\n"
 msgstr "  vidage des tampons des fichiers journaux au pas de temps %12d\n"
 
 msgid ""
@@ -11376,7 +11376,6 @@ msgstr ""
 "  Histogramme du volume des cellules :\n"
 "\n"
 
-#, fuzzy
 msgid ""
 "\n"
 "  Histogram of boundary cell thickness:\n"

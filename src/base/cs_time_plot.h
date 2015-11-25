@@ -329,6 +329,23 @@ cs_time_plot_vals_write(cs_time_plot_t  *p,
                         int              n_vals,
                         const cs_real_t  vals[]);
 
+/*----------------------------------------------------------------------------
+ * Flush buffered values to file if applicable
+ *
+ * parameters:
+ *   p <-> time plot values file handler
+ *----------------------------------------------------------------------------*/
+
+void
+cs_time_plot_flush(cs_time_plot_t  *p);
+
+/*----------------------------------------------------------------------------
+ * flush all time plots
+ *----------------------------------------------------------------------------*/
+
+void
+cs_time_plot_flush_all(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

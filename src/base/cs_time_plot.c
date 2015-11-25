@@ -1252,6 +1252,51 @@ cs_time_plot_vals_write(cs_time_plot_t  *p,
   _plot_file_check_or_write(p);
 }
 
+/*----------------------------------------------------------------------------
+ * Flush buffered values to file if applicable
+ *
+ * parameters:
+ *   p <-> time plot values file handler
+ *----------------------------------------------------------------------------*/
+
+void
+cs_time_plot_flush(cs_time_plot_t  *p)
+{
+  /* Force buffered variant output */
+
+  if (p->buffer_end > 0) {
+    if (p->buffer_steps[0] > 0)
+      p->buffer_steps[1] = p->buffer_steps[0];
+    _plot_file_check_or_write(p);
+  }
+
+  if (p->f != NULL) {
+    if (p->flush_times[0] > 0)
+      p->flush_times[1] = cs_timer_wtime();
+    fflush(p->f);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * flush all time plots
+ *----------------------------------------------------------------------------*/
+
+void
+cs_time_plot_flush_all(void)
+{
+  for (cs_time_plot_format_t fmt = CS_TIME_PLOT_DAT;
+       fmt <= CS_TIME_PLOT_CSV;
+       fmt++) {
+
+    for (size_t i = 0; i < _n_files_max[fmt]; i++) {
+      cs_time_plot_t *p = _plot_files[fmt][i];
+      if (p != NULL)
+        cs_time_plot_flush(p);
+    }
+
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

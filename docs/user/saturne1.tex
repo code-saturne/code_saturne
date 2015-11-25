@@ -791,7 +791,7 @@ indicate a required argument, $[ ]$ to indicate an optional argument).
 \hline
 \texttt{control\_file\_wtime\_interval}     & $<$wall\_time\_interval$>$ \\
 \hline
-\texttt{flush\_logs}                        & $[$time\_step\_number$]$ \\
+\texttt{flush}                              & $[$time\_step\_number$]$ \\
 \hline
 \texttt{postprocess\_time\_step}           & $<$time\_step\_number$>$ [writer\_id] \\
 \texttt{postprocess\_time\_value}          & $<$time\_step\_value$>$ [writer\_id] \\
@@ -811,8 +811,9 @@ is activated for all writers; if specified, only the writer with the specified
 id is affected. Also, postprocessing output by one ore more writers at a
 future time step may be cancelled using the negative value of that time step.
 
-For the \texttt{flush\_logs} option, the time step is also optional. If not
-specified, logs are updated at the beginning of the next time step.
+For the \texttt{flush} option, the time step is also optional. If not
+specified, logs and time plots are updated at the beginning of the
+next time step.
 
 Multiple entries may be defined in this file, with one line per entry.
 

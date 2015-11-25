@@ -54,6 +54,7 @@
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_restart.h"
+#include "cs_time_plot.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -88,7 +89,7 @@ BEGIN_C_DECLS
 static double  _control_file_wt_interval = 0.;
 static double  _control_file_wt_last = -1.;
 
-static int     _flush_log_nt = -1;
+static int     _flush_nt = -1;
 
 /*============================================================================
  * Private function definitions
@@ -442,17 +443,18 @@ _parse_control_file(char  *buffer,
 
     /* Force flush of logs */
 
-    else if (strncmp(s, "flush_logs", 10) == 0) {
+    else if (strncmp(s, "flush", 5) == 0) {
       int nt = -1;
       if (_read_next_int(cur_line, (const char **)&s, &nt) > 0) {
         if (nt > -1)
-          _flush_log_nt = CS_MAX(nt, ts->nt_cur);
+          _flush_nt = CS_MAX(nt, ts->nt_cur);
         else
-          _flush_log_nt = -1;
+          _flush_nt = -1;
       }
       else
-        _flush_log_nt = ts->nt_cur;
-      bft_printf(_("  flush logs at time step %12d\n"), _flush_log_nt);
+        _flush_nt = ts->nt_cur;
+      bft_printf(_("  flush logs and time plots at time step %12d\n"),
+                 _flush_nt);
     }
 
     /* Unhandled lines */
@@ -565,10 +567,11 @@ cs_control_check_file(void)
     BFT_FREE(buffer);
   }
 
-  if (_flush_log_nt == ts->nt_cur) {
-    _flush_log_nt = -1;
+  if (_flush_nt == ts->nt_cur) {
+    _flush_nt = -1;
     cs_log_printf_flush(CS_LOG_N_TYPES);
     bft_printf_flush();
+    cs_time_plot_flush_all();
   }
 }
 
