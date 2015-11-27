@@ -313,9 +313,14 @@ def run(argv, pkg):
             except Exception:
                 execfile(coupling)
 
+        verbose = True
+        if suggest_id:
+            verbose = False
+
         c = cs_case_coupling.coupling(pkg,
                                       domains,
                                       casedir,
+                                      verbose=verbose,
                                       package_compute=pkg_compute)
 
     else:

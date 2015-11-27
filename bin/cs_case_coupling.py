@@ -43,6 +43,7 @@ import cs_runcase
 def coupling(package,
              domains,
              casedir,
+             verbose=True,
              package_compute = None):
 
     use_saturne = False
@@ -199,17 +200,18 @@ def coupling(package,
              ast_domain = ast_domain,
              fsi_coupler = fsi_coupler)
 
-    msg = ' Coupling execution between: \n'
-    if use_saturne == True:
-        msg += '   o Code_Saturne [' + str(len(sat_domains)) + ' domain(s)];\n'
-    if use_syrthes == True:
-        msg += '   o SYRTHES      [' + str(len(syr_domains)) + ' domain(s)];\n'
-    if use_neptune == True:
-        msg += '   o NEPTUNE_CFD  [' + str(len(nep_domains)) + ' domain(s)];\n'
-    if ast_domain or fsi_coupler:
-        msg += '   o Code_Aster   [1 domain(s)];\n'
-        msg += '                  [1 coupler(s)];\n'
-    sys.stdout.write(msg+'\n')
+    if verbose:
+        msg = ' Coupling execution between: \n'
+        if use_saturne == True:
+            msg += '   o Code_Saturne [' + str(len(sat_domains)) + ' domain(s)];\n'
+        if use_syrthes == True:
+            msg += '   o SYRTHES      [' + str(len(syr_domains)) + ' domain(s)];\n'
+        if use_neptune == True:
+            msg += '   o NEPTUNE_CFD  [' + str(len(nep_domains)) + ' domain(s)];\n'
+        if ast_domain or fsi_coupler:
+            msg += '   o Code_Aster   [1 domain(s)];\n'
+            msg += '                  [1 coupler(s)];\n'
+        sys.stdout.write(msg+'\n')
 
     return c
 
