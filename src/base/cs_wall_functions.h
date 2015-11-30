@@ -779,7 +779,7 @@ cs_wall_functions_disabled(cs_real_t   l_visc,
   *ustar = sqrt(vel * l_visc / y);
   *yplus = *ustar * y / l_visc;
   *uk = *ustar;
-  *ypup = l_visc / (l_visc + t_visc);
+  *ypup = 1.;
   *cofimp = 0.;
   *iuntur = 0;
 
