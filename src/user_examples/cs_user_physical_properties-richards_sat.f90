@@ -56,23 +56,17 @@ double precision dt(ncelet)
 
 ! Local variables
 
-double precision darcy_h
-double precision thetar_param, thetas_param, ks_param
-double precision kr_param, m_param, n_param, se_param
-double precision alpha_param, l_param, tmp_1, tmp_2
-double precision darcy_anisotropic_dispersion_l, darcy_anisotropic_dispersion_t
 double precision darcy_isotropic_dispersion, molecular_diffusion
-double precision velocity_norm, rho, Kd
-double precision ks, ks_xx, ks_yy, ks_zz
+double precision velocity_norm
 integer          iel, ii, fid
 integer          ncelt, icelt, ifcvsl
 character*80     fname
 
 integer, allocatable, dimension(:) :: lstcel
 integer, allocatable, dimension(:) :: delay_id
-double precision, dimension(:), pointer :: delay, capacity, permeability, saturation
-double precision, dimension(:,:), pointer :: tensor_permeability, visten
-double precision, dimension(:), pointer :: cpro_vscalt
+double precision, dimension(:), pointer :: delay, capacity, permeability
+double precision, dimension(:,:), pointer :: tensor_permeability
+double precision, dimension(:), pointer :: cpro_vscalt, saturation
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_pr
 
