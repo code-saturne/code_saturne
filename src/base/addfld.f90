@@ -183,6 +183,12 @@ do ii = 1, nscal
   endif
 enddo
 
+! Boundary roughness
+if (iwallf.ge.5) then
+  call add_boundary_property_field_owner('boundary_roughness', 'Boundary Roughness', &
+                                         iflid)
+endif
+
 !===============================================================================
 ! 3. Additional postprocessing fields
 !===============================================================================

@@ -291,7 +291,7 @@ const double cs_turb_xkappa = 0.42;
 const double cs_turb_vdriest = 25.6;
 
 /*!
- * Constant of logarithmic law function:
+ * Constant of logarithmic smooth law function:
  * \f$ \dfrac{1}{\kappa} \ln(y^+) + cstlog \f$
  * (\f$ cstlog = 5.2 \f$).
  *
@@ -300,6 +300,27 @@ const double cs_turb_vdriest = 25.6;
  * \f$R_{ij}-\varepsilon\f$, LES, v2f or \f$k-\omega\f$).
  */
 const double cs_turb_cstlog = 5.2;
+
+/*!
+ * Constant of logarithmic rough law function:
+ * \f$ \dfrac{1}{\kappa} \ln(y/\xi) + cstlog_{rough} \f$
+ * (\f$ cstlog_{rough} = 8.5 \f$).
+ *
+ * Constant of the logarithmic wall function.
+ * Useful if and only if \ref iturb >= 10 (mixing length, \f$k-\varepsilon\f$,
+ * \f$R_{ij}-\varepsilon\f$, LES, v2f or \f$k-\omega\f$).
+ */
+const double cs_turb_cstlog_rough = 8.5;
+
+/*!
+ * Constant \f$ \alpha \f$ for logarithmic law function switching from rough to smooth:
+ * \f$ \dfrac{1}{\kappa} \ln(y u_k/(\nu + \alpha \xi u_k)) + cstlog \f$
+ * (\f$ \alpha = \exp \left( -\kappa (8.5 - 5.2) \right) \f$).
+ *
+ * Useful if and only if \ref iturb >= 10 (mixing length, \f$k-\varepsilon\f$,
+ * \f$R_{ij}-\varepsilon\f$, LES, v2f or \f$k-\omega\f$).
+ */
+double cs_turb_cstlog_alpha;
 
 /*! Werner and Wengle coefficient */
 const double cs_turb_apow = 8.3;
@@ -1009,6 +1030,9 @@ cs_f_turb_complete_constants(void)
 {
   cs_turb_dpow   = 1/(1.+cs_turb_bpow);
   cs_turb_cmu025 = pow(cs_turb_cmu,0.25);
+  cs_turb_cstlog_alpha = exp(-cs_turb_xkappa
+                             * (cs_turb_cstlog_rough - cs_turb_cstlog));
+
 
   if (   cs_glob_turb_model->iturb == 30
       || cs_glob_turb_model->iturb == 31)

@@ -156,6 +156,7 @@ integer          modntl
 integer          iuntur
 integer          nlogla, nsubla, iuiptn
 integer          ifccp
+integer          f_id_rough
 
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -170,7 +171,7 @@ double precision rcprod
 double precision hflui, hint, pimp, qimp
 double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodcn
-double precision visclc, visctc, romc  , distbf, srfbnf
+double precision visclc, visctc, romc  , distbf, srfbnf, efvisc
 double precision cofimp, ypup
 double precision bldr12
 double precision xkip
@@ -178,9 +179,11 @@ double precision rinfiv(3)
 double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
+double precision roughness
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr
+double precision, dimension(:), pointer :: bfpro_roughness
 double precision, dimension(:), allocatable :: byplus, bdplus, buk
 double precision, dimension(:), pointer :: cvar_k, cvar_ep
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
@@ -247,6 +250,10 @@ utau = 1.d0
 sqrcmu = sqrt(cmu)
 
 yplbr => null()
+bfpro_roughness => null()
+
+call field_get_id_try("boundary_roughness", f_id_rough)
+if (f_id_rough.ge.0) call field_get_val_s(f_id_rough, bfpro_roughness)
 
 if (iyplbr.ge.0) call field_get_val_s(iyplbr, yplbr)
 if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
@@ -702,6 +709,8 @@ do ifac = 1, nfabor
 
     if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
       ek = cvar_k(iel)
+      ! TODO: we could add 2*nu_T dv/dy to rnnb
+      rnnb = 2.d0 / 3.d0 * ek
     else if (itytur.eq.3) then
       if (irijco.eq.1) then
         ek = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
@@ -732,9 +741,15 @@ do ifac = 1, nfabor
       endif
     endif
 
+    if (f_id_rough.ge.0) then
+      roughness = bfpro_roughness(ifac)
+    else
+      roughness = 0.d0
+    endif
+
     call wallfunctions &
   ( iwallf, ifac  ,                                        &
-    xnuii , xnuit , utau  , distbf, rnnb  , ek    ,        &
+    xnuii , xnuit , utau  , distbf, roughness, rnnb, ek,   &
     iuntur, nsubla, nlogla,                                &
     uet   , uk    , yplus , ypup  , cofimp, dplus )
 
@@ -948,9 +963,10 @@ do ifac = 1, nfabor
 
       ! If yplus=0, uiptn is set to 0 to avoid division by 0.
       ! By the way, in this case: iuntur=0
-      if (yplus.gt.epzero.and.iuntur.eq.1) then !FIXME use only iuntur
-        pimp = distbf*4.d0*uk**5*romc**2/           &
-            (xkappa*visclc**2*(yplus+dplus)**2)
+      if (yplus.gt.epzero) then !.and.iuntur.eq.1) then !FIXME use only iuntur
+        efvisc = visclc/romc + exp(-xkappa*(8.5-5.2)) * roughness * uk
+        pimp = distbf*4.d0*uk**5/           &
+            (xkappa*efvisc**2*(yplus+dplus)**2)
 
         qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
       else
@@ -1206,8 +1222,9 @@ do ifac = 1, nfabor
         ! Si yplus=0, on met coefa a 0 directement pour eviter une division
         ! par 0.
         if (yplus.gt.epzero.and.iuntur.eq.1) then
-          pimp = distbf*4.d0*uk**5*romc**2/           &
-                (xkappa*visclc**2*(yplus+dplus)**2)
+          efvisc = visclc/romc + exp(-xkappa*(8.5-5.2)) * roughness * uk
+          pimp = distbf*4.d0*uk**5/           &
+                (xkappa*efvisc**2*(yplus+dplus)**2)
         else
           pimp = 0.d0
         endif

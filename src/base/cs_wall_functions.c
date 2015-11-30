@@ -189,6 +189,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
  const cs_real_t  *const t_visc,
  const cs_real_t  *const vel,
  const cs_real_t  *const y,
+ const cs_real_t  *const roughness,
  const cs_real_t  *const rnnb,
  const cs_real_t  *const kinetic_en,
        cs_int_t         *iuntur,
@@ -202,7 +203,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
        cs_real_t        *dplus
 )
 {
-  assert(*iwallf >= 0 && *iwallf <= 5);
+  assert(*iwallf >= 0 && *iwallf <= 6);
 
   cs_wall_functions_velocity((cs_wall_f_type_t)*iwallf,
                              *ifac,
@@ -210,6 +211,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
                              *t_visc,
                              *vel,
                              *y,
+                             *roughness,
                              *rnnb,
                              *kinetic_en,
                              iuntur,
@@ -280,6 +282,7 @@ cs_get_glob_wall_functions(void)
  * \param[in]     t_visc        turbulent kinematic viscosity
  * \param[in]     vel           wall projected cell center velocity
  * \param[in]     y             wall distance
+ * \param[in]     roughness     roughness
  * \param[in]     rnnb          \f$\vec{n}.(\tens{R}\vec{n})\f$
  * \param[in]     kinetic_en    turbulente kinetic energy
  * \param[in]     iuntur        indicator: 0 in the viscous sublayer
@@ -303,6 +306,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                            cs_real_t         t_visc,
                            cs_real_t         vel,
                            cs_real_t         y,
+                           cs_real_t         roughness,
                            cs_real_t         rnnb,
                            cs_real_t         kinetic_en,
                            int              *iuntur,
@@ -316,7 +320,6 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                            cs_real_t        *dplus)
 {
   cs_real_t lmk;
-  cs_real_t kr = 0.;
   bool wf = true;
 
   /* Pseudo shift of the wall, 0 by default */
@@ -414,8 +417,25 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                       ypup,
                                       cofimp,
                                       &lmk,
-                                      kr,
+                                      roughness,
                                       wf);
+    break;
+  case CS_WALL_F_2SCALES_SMOOTH_ROUGH:
+    cs_wall_functions_2scales_smooth_rough(l_visc,
+                                           t_visc,
+                                           vel,
+                                           y,
+                                           roughness,
+                                           kinetic_en,
+                                           iuntur,
+                                           nsubla,
+                                           nlogla,
+                                           ustar,
+                                           uk,
+                                           yplus,
+                                           dplus,
+                                           ypup,
+                                           cofimp);
     break;
   default:
     break;

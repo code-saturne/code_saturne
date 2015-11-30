@@ -614,7 +614,6 @@ if (.false.) then
 
 endif
 
-
 ! --- Thermal model
 !      0: none
 !      1: temperature
@@ -1016,6 +1015,14 @@ if (.false.) then
   if (itytur.eq.3) then
     idirsm = 1
   endif
+
+endif
+
+! --- Advanced choice of Wall function
+
+if (.false.) then
+
+  iwallf = 5
 
 endif
 

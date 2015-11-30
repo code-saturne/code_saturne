@@ -63,6 +63,7 @@ typedef enum {
   CS_WALL_F_2SCALES_LOG,
   CS_WALL_F_SCALABLE_2SCALES_LOG,
   CS_WALL_F_2SCALES_VDRIEST,
+  CS_WALL_F_2SCALES_SMOOTH_ROUGH,
 
 } cs_wall_f_type_t;
 
@@ -630,6 +631,112 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Two velocity scales wall function with automatic switch
+ *        from rough to smooth.
+ *
+ * \f$ u^+ \f$ is computed as follows:
+ *   \f[ u^+ = \dfrac{1}{\kappa}
+ *             \ln \left(\dfrac{(y+\xi) u_k}{\nu + \alpha \xi u_k} \right)
+ *            + Cst_{smooth} \f]
+ * with \f$ \alpha = \exp \left(- \kappa(Cst_{rough}-Cst_{smooth})\right) \f$.
+ *
+ * \param[in]     l_visc        kinematic viscosity
+ * \param[in]     t_visc        turbulent kinematic viscosity
+ * \param[in]     vel           wall projected cell center velocity
+ * \param[in]     y             wall distance
+ * \param[in]     kinetic_en    turbulent kinetic energy
+ * \param[out]    iuntur        indicator: 0 in the viscous sublayer
+ * \param[out]    nsubla        counter of cell in the viscous sublayer
+ * \param[out]    nlogla        counter of cell in the log-layer
+ * \param[out]    ustar         friction velocity
+ * \param[out]    uk            friction velocity
+ * \param[out]    yplus         dimensionless distance to the wall
+ * \param[out]    dplus         dimensionless shift to the wall for scalable
+ *                              wall functions
+ * \param[out]    ypup          yplus projected vel ratio
+ * \param[out]    cofimp        \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
+ *                              turbulence production
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
+                                       cs_real_t   t_visc,
+                                       cs_real_t   vel,
+                                       cs_real_t   y,
+                                       cs_real_t   roughness,
+                                       cs_real_t   kinetic_en,
+                                       int        *iuntur,
+                                       cs_lnum_t  *nsubla,
+                                       cs_lnum_t  *nlogla,
+                                       cs_real_t  *ustar,
+                                       cs_real_t  *uk,
+                                       cs_real_t  *yplus,
+                                       cs_real_t  *dplus,
+                                       cs_real_t  *ypup,
+                                       cs_real_t  *cofimp)
+{
+  const double ypluli = cs_glob_wall_functions->ypluli;
+
+  double rcprod, ml_visc, Re, g;
+
+  /* Compute the friction velocity ustar */
+
+  /* Shifting of the wall distance to be consistant with
+   * the fully rough wall function
+   *
+   * ln((y+y0)/y0) = ln((y+y0)/alpha xi) + kappa * 5.2
+   *
+   * y0 =  roughness * exp(-kappa * 8.5)
+   * */
+  double y0 = roughness*exp(-cs_turb_xkappa*cs_turb_cstlog_rough);
+
+  /* Blending for very low values of k */
+  Re = sqrt(kinetic_en) * (y + y0) / l_visc;
+  g = exp(-Re/11.);
+
+  *uk = sqrt( (1.-g) * cs_turb_cmu025 * cs_turb_cmu025 * kinetic_en
+            + g * l_visc * vel / (y + y0));
+
+  double effective_visc = (l_visc + cs_turb_cstlog_alpha * roughness * *uk);
+
+  *yplus = *uk * (y + y0) / effective_visc;
+
+  /* NB: tends to "y/xi" in rough regime, to "y.uk/nu" in smooth regime  */
+  double yk = *uk * y / l_visc;
+
+  /* As for scalable wall functions, "y*uk/effective_visc+ dplus = yplus" */
+  *dplus = *uk * y0 / effective_visc;
+
+  /* Log layer and shifted with the roughness */
+  if (yk > ypluli) {
+
+    *nlogla += 1;
+
+  /* Viscous sub-layer and therefore shift again */
+  } else {
+
+    *dplus = ypluli - *yplus;
+    *yplus = ypluli;
+    /* Count the cell as if it was in the viscous sub-layer */
+    *nsubla += 1;
+
+  }
+
+  double uplus = log(*yplus) / cs_turb_xkappa + cs_turb_cstlog;
+  *ustar = vel / uplus;
+  *ypup = yk / uplus;
+
+  /* Mixing length viscosity, compatible with both regimes */
+  ml_visc = cs_turb_xkappa * *uk * (y + y0);
+  rcprod = CS_MIN(cs_turb_xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / *yplus);
+  *cofimp = 1. - (*yplus - *dplus) / uplus
+          / cs_turb_xkappa * ( 2. * rcprod - 1. / (2. * *yplus - *dplus));
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief No wall function.
  *
  * \param[in]     l_visc        kinematic viscosity
@@ -869,6 +976,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
  const cs_real_t  *const t_visc,
  const cs_real_t  *const vel,
  const cs_real_t  *const y,
+ const cs_real_t  *const roughness,
  const cs_real_t  *const rnnb,
  const cs_real_t  *const kinetic_en,
        cs_int_t         *iuntur,
@@ -926,6 +1034,7 @@ cs_get_glob_wall_functions(void);
  * \param[in]     vel           wall projected
  *                              cell center velocity
  * \param[in]     y             wall distance
+ * \param[in]     roughness     roughness
  * \param[in]     rnnb          \f$\vec{n}.(\tens{R}\vec{n})\f$
  * \param[in]     kinetic_en    turbulent kinetic energy
  * \param[in]     iuntur        indicator:
@@ -951,6 +1060,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                            cs_real_t         t_visc,
                            cs_real_t         vel,
                            cs_real_t         y,
+                           cs_real_t         roughness,
                            cs_real_t         rnnb,
                            cs_real_t         kinetic_en,
                            int              *iuntur,

@@ -910,8 +910,8 @@ if (nscal.ge.1) then
 
 endif
 
-if (iwallf.lt.0.or.iwallf.gt.5) then
-  write(nfecra,2001)'IWALLF',5,iwallf
+if (iwallf.lt.0.or.iwallf.gt.6) then
+  write(nfecra,2001)'IWALLF',6,iwallf
   iok = iok + 1
 endif
 if (iwallf.gt.2 .and.                                    &

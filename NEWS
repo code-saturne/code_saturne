@@ -67,6 +67,14 @@ Physical modelling
  - Add FSCK radiative model for coal combustion.
    Activate it in cs_user_parameters.f90 with imfsck=1.
 
+ - Add a wall function for the velocity based on scalable wall function
+   which is valid for both rough and smooth walls (activate it with
+   iwallf = 6 in cs_user_parameters.f90).
+   Moreover, the continuous wall function based on Van Driest (iwallf=5)
+   is extended to Eddy Viscosity Models, and the use of roughness is allowed.
+   For both wall functions, roughness must be specified in the field nammed
+   "boundary_roughness" in cs_user_boundary_conditions.f90 for instance.
+
 Numerics
 --------
 

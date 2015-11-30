@@ -705,7 +705,7 @@ do ifac = 1, nfabor
     rugd=rcodcl(ifac,iu,3)
 
     ! NB: for rough walls, yplus is computed from the roughness and not uk.
-    yplus=distbf/rugd
+    yplus = distbf/rugd
 
     ! Pseudo shift of wall by rugd ((distbf+rugd)/rugd)
     uet = utau/log(yplus+1.d0)*xkappa
@@ -802,9 +802,8 @@ do ifac = 1, nfabor
         distb0=distbf+rugd
         xmutlm = xkappa*uk*distb0*romc
 
-        rcprod = max(distbf/distb0,                                &
-                     deuxd0*distbf/distb0*sqrt(xmutlm/visctc)      &
-                     - 1.d0/(2.d0+rugd/distb0))
+        rcprod = distbf/distb0*max(1.d0,                                &
+                     2.d0*sqrt(xmutlm/visctc) - distb0/distbf/(2.d0+rugd/distb0))
 
         rcflux = max(xmutlm,visctc)/(visclc+visctc)*distbf/distb0
 

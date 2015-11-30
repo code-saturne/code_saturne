@@ -633,6 +633,7 @@ write(nfecra,9900)
 '                               (3: deux echelles loi log    )',/,&
 '                               (4: loi de paroi scalable    )',/,&
 '                               (5: deux echelles V. Driest  )',/,&
+'                               (6: deux echelles lisse/rug. )',/,&
 '       IWALLT = ',4x,i10,    ' (correlation coeff. echange  )',/,&
 '                               (0: non activee              )',/,&
 '                               (1: activee                  )',/,&
@@ -897,6 +898,7 @@ write(nfecra,9900)
 '                               (3: two scales log law       )',/,&
 '                               (4: scalable wall function   )',/,&
 '                               (5: two scales V. Driest     )',/,&
+'                               (6: two scales smooth/rough  )',/,&
 '       IWALLT = ',4x,i10,    ' (Exch. coeff. correlation    )',/,&
 '                               (0: not activated            )',/,&
 '                               (1: activated                )',/,&

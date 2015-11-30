@@ -256,10 +256,10 @@ cs_user_time_moments(void)
     /*! [tmom_u] */
   }
 
+  /*! [tmom_rho_u] */
   {
     /* Moment <U> calculated starting from time step 1000. */
 
-    /*! [tmom_rho_u] */
     int moment_f_id[] = {CS_F_(rho)->id, CS_F_(u)->id};
     int moment_c_id[] = {-1, -1};
     int n_fields = 2;
@@ -272,8 +272,8 @@ cs_user_time_moments(void)
                                        -1,   /* t_start */
                                        CS_TIME_MOMENT_RESTART_AUTO,
                                        NULL);
-    /*! [tmom_rho_u] */
   }
+  /*! [tmom_rho_u] */
 
   {
     /* Moment <u v> is calculated from physical time 20 s
