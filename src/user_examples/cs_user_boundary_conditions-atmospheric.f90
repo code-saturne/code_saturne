@@ -335,21 +335,21 @@ do ilelt = 1, nlelt
   rcodcl(ifac,iu,3) = rugd
 
   ! Roughness for scalars (if required):
-  ! rcodcl(ifac,iv,3) = rugd
+  rcodcl(ifac,iv,3) = rugt
 
 
   if(iscalt.ne.-1) then
 
     ! If temperature prescribed to 20 with a rough wall law (scalar ii=1)
     ! (with thermal roughness specified in rcodcl(ifac,iv,3)) :
-    ! ii = 1
-    ! icodcl(ifac, isca(ii))    = 6
-    ! rcodcl(ifac, isca(ii),1)  = 293.15d0
+    ii = iscalt
+    icodcl(ifac, isca(ii))    = 6
+    rcodcl(ifac, isca(ii),1)  = 293.15d0
 
     ! If flux prescribed to 4.d0 (scalar ii=2):
-    ! ii = 2
-    ! icodcl(ifac, isca(ii))    = 3
-    ! rcodcl(ifac, isca(ii), 3) = 4.D0
+    ii = 2
+    icodcl(ifac, isca(ii))    = 3
+    rcodcl(ifac, isca(ii), 3) = 4.d0
 
   endif
 enddo
