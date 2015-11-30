@@ -395,7 +395,7 @@ _convergence_test(cs_sles_it_t              *c,
         if (verbosity == 1) /* Already output if verbosity > 1 */
           bft_printf("%s [%s]:\n", cs_sles_it_type_name[c->type],
                      convergence->name);
-        if (verbosity <= 2) { /* Already output if verbosity > 2 */
+        else {
           if (convergence->r_norm > 0.)
             bft_printf(_(final_fmt),
                        n_iter, residue, residue/convergence->r_norm);
@@ -414,7 +414,7 @@ _convergence_test(cs_sles_it_t              *c,
   /* If converged */
 
   else {
-    if (verbosity == 2) /* Already output if verbosity > 2 */
+    if (verbosity > 1)
       bft_printf(final_fmt, n_iter, residue, residue/convergence->r_norm);
     return CS_SLES_CONVERGED;
   }
@@ -2107,12 +2107,13 @@ _block_3_jacobi(cs_sles_it_t              *c,
     n_iter += 1;
     memcpy(rk, vx, n_rows * sizeof(cs_real_t));  /* rk <- vx */
 
-    /* Compute Vx <- Vx - (A-diag).Rk and residue. */
+    /* Compute vxx <- vx - (a-diag).rk and residue. */
 
     cs_matrix_exdiag_vector_multiply(rotation_mode, a, rk, vxx);
 
     res2 = 0.0;
 
+    /* Compute vx <- diag^-1 . (vxx - rhs) and residue. */
 #   pragma omp parallel for reduction(+:res2) if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
       _fw_and_bw_lu33(ad_inv + 9*ii,
