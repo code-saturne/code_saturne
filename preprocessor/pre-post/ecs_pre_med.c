@@ -316,7 +316,6 @@ ecs_loc_pre_med__lit_noeud(ecs_maillage_t   *maillage,
   med_bool     transformation = MED_FALSE;
 
   char         nom_maillage_med[MED_NAME_SIZE + 1];
-  char        *nom_noe_med;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -353,7 +352,6 @@ ecs_loc_pre_med__lit_noeud(ecs_maillage_t   *maillage,
   ECS_MALLOC(coord_med,   nbr_noe_med * mdim_med,            med_float);
   ECS_MALLOC(fam_noe_med, nbr_noe_med,                       med_int);
   ECS_MALLOC(num_noe_med, nbr_noe_med,                       med_int);
-  ECS_MALLOC(nom_noe_med, nbr_noe_med * MED_SNAME_SIZE + 1, char);
 
   ret_med = MEDmeshNodeCoordinateRd(fic_maillage->fid,
                                     nom_maillage_med,
@@ -370,7 +368,6 @@ ecs_loc_pre_med__lit_noeud(ecs_maillage_t   *maillage,
 
   ECS_FREE(fam_noe_med);
   ECS_FREE(num_noe_med);
-  ECS_FREE(nom_noe_med);
 
   /* Transformation du tableau des coord au type `med_float'   */
   /*             en un tableau des coord au type `ecs_coord_t' */
