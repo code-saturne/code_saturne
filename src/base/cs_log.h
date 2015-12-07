@@ -140,10 +140,23 @@ cs_log_strpadl(char        *dest,
  *   to end output strings
  *----------------------------------------------------------------------------*/
 
+#if defined(__GNUC__)
+
+int
+cs_log_printf(cs_log_t     log,
+              const char  *format,
+              ...)
+  __attribute__((format(printf, 2, 3)));
+
+#else
+
 int
 cs_log_printf(cs_log_t     log,
               const char  *format,
               ...);
+
+#endif
+
 
 /*----------------------------------------------------------------------------
  * Flush for output of cs_log_printf() with modifiable behavior.

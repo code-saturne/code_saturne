@@ -1422,11 +1422,11 @@ _join_performance_log(const cs_join_t  *this_join)
     cs_log_printf
       (CS_LOG_PERFORMANCE,
        _("%s      minimum      maximum\n"
-         "    depth:                        %10d | %10d | %10d\n"
+         "    depth:                        %10llu | %10llu | %10llu\n"
          "    number of leaves:             %10llu | %10llu | %10llu\n"
          "    number of boxes:              %10llu | %10llu | %10llu\n"
          "    leaves over threshold:        %10llu | %10llu | %10llu\n"
-         "    boxes per leaf:               %10d | %10d | %10d\n"
+         "    boxes per leaf:               %10llu | %10llu | %10llu\n"
          "    Memory footprint (kb):\n"
          "      final search structure:     %10llu | %10llu | %10llu\n"
          "      temporary search structure: %10llu | %10llu | %10llu\n\n"),
@@ -1457,11 +1457,11 @@ _join_performance_log(const cs_join_t  *this_join)
   else
     cs_log_printf
       (CS_LOG_PERFORMANCE,
-       _("    depth:                        %10d\n"
+       _("    depth:                        %10llu\n"
          "    number of leaves:             %10llu\n"
          "    number of boxes:              %10llu\n"
          "    leaves over threshold:        %10llu\n"
-         "    boxes per leaf:               %10d mean [%d min, %d max]\n"
+         "    boxes per leaf:               %10llu mean [%llu min, %llu max]\n"
          "    Memory footprint (kb):\n"
          "      final search structure:     %10llu\n"
          "      temporary search structure: %10llu\n\n"),
@@ -1470,6 +1470,8 @@ _join_performance_log(const cs_join_t  *this_join)
        (unsigned long long)stats->n_boxes[0],
        (unsigned long long)stats->n_th_leaves[0],
        (unsigned long long)stats->n_leaf_boxes[0],
+       (unsigned long long)stats->n_leaf_boxes[1],
+       (unsigned long long)stats->n_leaf_boxes[2],
        (unsigned long long)stats->box_mem_final[0],
        (unsigned long long)stats->box_mem_required[0]);
 
@@ -1521,6 +1523,7 @@ _join_performance_log(const cs_join_t  *this_join)
      _("\n"
        "  Complete treatment for joining %2d:\n"
        "    wall clock time:                                %10.3g\n"),
+     this_join->param.num,
      stats->t_total.wall_nsec*1e-9);
 
   cs_log_printf_flush(CS_LOG_PERFORMANCE);

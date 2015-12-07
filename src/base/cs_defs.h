@@ -389,6 +389,11 @@ typedef cs_real_66_t  cs_real_662_t[2];  /* vector of 2 6x6 matrices
 #  define CS_THR_MIN 128
 #endif
 
+/* Cache line size, or multiple thereof */
+/*--------------------------------------*/
+
+#define CS_CL_SIZE 64
+
 /*----------------------------------------------------------------------------
  * Type independent min an max (caution: the argument is evaluated)
  *----------------------------------------------------------------------------*/

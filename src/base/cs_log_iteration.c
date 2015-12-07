@@ -474,22 +474,22 @@ _log_clip_info(const char        *prefix,
                     tmp_s[0],
                     _vmin,
                     _vmax,
-                    _count_min,
-                    _count_max);
+                    (unsigned long long)_count_min,
+                    (unsigned long long)_count_max);
     else if (_count_min > 0)
       cs_log_printf(CS_LOG_DEFAULT,
                     "%s%s  %14.5g                  %12llu\n",
                     prefix,
                     tmp_s[0],
                     _vmin,
-                    _count_min);
+                    (unsigned long long)_count_min);
     else if (_count_max > 0)
       cs_log_printf(CS_LOG_DEFAULT,
                     "%s%s                  %14.5g                %12llu\n",
                     prefix,
                     tmp_s[0],
                     _vmax,
-                    _count_max);
+                    (unsigned long long)_count_max);
     else
       cs_log_printf(CS_LOG_DEFAULT,
                     "%s%s\n",
@@ -730,7 +730,7 @@ _log_fields(void)
                   _("\n"
                     "  ** Computed fields on %s\n"
                     "     -------------------%.*s\n"),
-                  loc_name, loc_name_w, _underline);
+                  loc_name, (int)loc_name_w, _underline);
 
     cs_log_strpad(tmp_s[0], _("field"), max_name_width, 64);
     cs_log_strpadl(tmp_s[1], _("minimum"), 14, 64);
@@ -971,7 +971,7 @@ _log_sstats(void)
                     _("\n"
                       "  ** Computed values on %s\n"
                       "     -------------------%.*s\n"),
-                    loc_name, loc_name_w, _underline);
+                    loc_name, (int)loc_name_w, _underline);
 
       cs_log_strpad(tmp_s[0], _(cat_name), max_name_width, 64);
       cs_log_strpadl(tmp_s[1], _("minimum"), 14, 64);

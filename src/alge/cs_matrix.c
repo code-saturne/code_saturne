@@ -103,7 +103,11 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-#define CS_THREAD_ALIGN(s) (((s-1)/64+1)*64)
+/* Cache line multiple, in cs_real_t units */
+
+#define CS_CL  CS_CL_SIZE/8
+
+#define CS_THREAD_ALIGN(s)  (((s-1)/CS_CL+1)*CS_CL)
 
 /*=============================================================================
  * Local Type Definitions
@@ -3911,6 +3915,114 @@ _mat_vec_p_l_msr(bool                exclude_diag,
 }
 
 /*----------------------------------------------------------------------------
+ * Local matrix.vector product y = A.x with MSR matrix.
+ *
+ * parameters:
+ *   exclude_diag <-- exclude diagonal if true
+ *   matrix       <-- pointer to matrix structure
+ *   x            <-- multipliying vector values
+ *   y            --> resulting vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_mat_vec_p_l_msr_omp_sched(bool                exclude_diag,
+                           const cs_matrix_t  *matrix,
+                           const cs_real_t    *restrict x,
+                           cs_real_t          *restrict y)
+{
+  const cs_matrix_struct_csr_t  *ms = matrix->structure;
+  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
+  cs_lnum_t  n_rows = ms->n_rows;
+
+  /* Standard case */
+
+  if (!exclude_diag && mc->d_val != NULL) {
+
+#   pragma omp parallel if(n_rows > CS_THR_MIN)
+    {
+
+      cs_lnum_t n_s_rows = CS_THREAD_ALIGN(n_rows * 0.9);
+
+#     pragma omp for nowait
+      for (cs_lnum_t ii = 0; ii < n_s_rows; ii++) {
+
+        const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
+        const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
+        cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+        cs_real_t sii = 0.0;
+
+        for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+          sii += (m_row[jj]*x[col_id[jj]]);
+
+        y[ii] = sii + mc->d_val[ii]*x[ii];
+
+      }
+
+#     pragma omp for schedule(dynamic, CS_CL)
+      for (cs_lnum_t ii = n_s_rows; ii < n_rows; ii++) {
+
+        const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
+        const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
+        cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+        cs_real_t sii = 0.0;
+
+        for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+          sii += (m_row[jj]*x[col_id[jj]]);
+
+        y[ii] = sii + mc->d_val[ii]*x[ii];
+
+      }
+
+    }
+
+  }
+
+  /* Exclude diagonal */
+
+  else {
+
+#   pragma omp parallel if(n_rows > CS_THR_MIN)
+    {
+
+      cs_lnum_t n_s_rows = CS_THREAD_ALIGN(n_rows * 0.9);
+
+#     pragma omp for
+      for (cs_lnum_t ii = 0; ii < n_s_rows; ii++) {
+
+        const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
+        const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
+        cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+        cs_real_t sii = 0.0;
+
+        for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+          sii += (m_row[jj]*x[col_id[jj]]);
+
+        y[ii] = sii;
+
+      }
+
+#     pragma omp for schedule(dynamic, CS_CL)
+      for (cs_lnum_t ii = n_s_rows; ii < n_rows; ii++) {
+
+        const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
+        const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
+        cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+        cs_real_t sii = 0.0;
+
+        for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+          sii += (m_row[jj]*x[col_id[jj]]);
+
+        y[ii] = sii;
+
+      }
+
+    }
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
  * Local matrix.vector product y = A.x with MSR matrix, blocked version.
  *
  * parameters:
@@ -4596,6 +4708,7 @@ _variant_add(const char                        *name,
  *
  *   CS_MATRIX_MSR     (all fill types except CS_MATRIX_33_BLOCK)
  *     standard
+ *     omp_sched       (Improved scheduling for OpenMP)
  *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *
  * parameters:
@@ -4846,6 +4959,18 @@ _set_spmv_func(cs_matrix_type_t             m_type,
 #else
       retcode = 2;
 #endif
+    }
+
+    else if (!strcmp(func_name, "omp_sched")) {
+      switch(fill_type) {
+      case CS_MATRIX_SCALAR:
+      case CS_MATRIX_SCALAR_SYM:
+        spmv[0] = _mat_vec_p_l_msr_omp_sched;
+        spmv[1] = _mat_vec_p_l_msr_omp_sched;
+        break;
+      default:
+        break;
+      }
     }
 
     break;
@@ -6614,6 +6739,18 @@ cs_matrix_variant_build_list(int                      n_fill_types,
                  m_variant);
 
 #endif /* defined(HAVE_MKL) */
+
+    _variant_add(_("MSR, OpenMP scheduling"),
+                 CS_MATRIX_MSR,
+                 n_fill_types,
+                 fill_types,
+                 2, /* ed_flag */
+                 _mat_vec_p_l_msr_omp_sched,
+                 NULL,
+                 NULL,
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
 
   }
 
