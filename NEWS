@@ -4,6 +4,9 @@ Version 3.0.8 (unreleased)
 Bug fixes:
 ----------
 
+- Remove unneeded allocation leading to crash for some large meshes when
+  reading MED files.
+
 - Fix bad argument in call of the user function for radiative bcs.
 
 - Fix in bad cell detection and mesh quality criterion for offsetting.
