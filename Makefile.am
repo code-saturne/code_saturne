@@ -112,9 +112,11 @@ m4/cs_blas.m4 \
 m4/cs_catalyst.m4 \
 m4/cs_ccm.m4 \
 m4/cs_cgns.m4 \
+m4/cs_coolprop.m4 \
 m4/cs_docs.m4 \
-m4/cs_freesteam.m4 \
+m4/cs_eos.m4 \
 m4/cs_fortran.m4 \
+m4/cs_freesteam.m4 \
 m4/cs_hdf5.m4 \
 m4/cs_libxml2.m4 \
 m4/cs_med.m4 \
@@ -122,6 +124,7 @@ m4/cs_metis.m4 \
 m4/cs_modules.m4 \
 m4/cs_mpi.m4 \
 m4/cs_omniorb.m4 \
+m4/cs_petsc.m4 \
 m4/cs_ple.m4 \
 m4/cs_salome.m4 \
 m4/cs_scotch.m4 \
