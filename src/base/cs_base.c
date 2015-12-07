@@ -322,6 +322,13 @@ _cs_base_exit(int status)
 
     if (mpi_flag != 0) {
 
+      /* For safety, flush all streams before calling MPI_Abort
+       * (should be done by exit, but in case we call MPI_Abort
+       * due to a SIGTERM received from another rank's MPI_Abort,
+       * make sure we avoid ill-defined behavior) */
+
+      fflush(NULL);
+
       if (status != EXIT_SUCCESS)
         MPI_Abort(cs_glob_mpi_comm, EXIT_FAILURE);
 
