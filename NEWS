@@ -8,6 +8,13 @@ Bug fixes:
 
 - Fix in bad cell detection and mesh quality criterion for offsetting.
 
+
+Architectural changes
+---------------------
+
+- Improve flushing of error* files in case of error to avoid empty error
+  files on some systems.
+
 Release 3.0.7 (15 May 2015)
 ===========================
 
