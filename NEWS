@@ -5,6 +5,9 @@ Version 4.0.4 (unreleased)
 Bug fixes:
 ----------
 
+- Remove unneeded allocation leading to crash for some large meshes when
+  reading MED files.
+
 - Fix for off-by-one postprocessing selection of interior faces.
 
 - Fix default initialization of temperature in compressible, it has to be done
