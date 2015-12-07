@@ -53,6 +53,9 @@ AC_ARG_WITH(petsc-lib,
 
 if test "x$with_petsc" != "xno" ; then
 
+  cs_prv_dir=`pwd`
+  cs_abs_srcdir=`cd $srcdir && pwd`
+
   if ! test -f ${PETSC_DIR}/conf/variables ; then
     AC_MSG_FAILURE([${PETSC_DIR}/conf/variables not found.
 Check --with-petsc or --with-petsc-lib option or PETSc directory structure
