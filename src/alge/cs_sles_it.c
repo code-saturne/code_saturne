@@ -4607,7 +4607,7 @@ cs_sles_it_get_pc(cs_sles_it_t  *context)
  *
  * The input pointer is set to NULL to make it clear the caller does not
  * own the preconditioner anymore, though the context can be accessed using
- * \ref cs_sles_it_get_cp.
+ * \ref cs_sles_it_get_pc.
  *
  * \param[in, out]  context   pointer to iterative solver info and context
  * \param[in, out]  pc        pointer to preconditoner context

@@ -35,8 +35,7 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     location_id     mesh location id (cells or boundary faces)
-!> \param[in]     ncel          number of cells
+!> \param[in]     location_id   mesh location id (cells or boundary faces)
 !> \param[in]     eh            gas enthalpy
 !>                              (\f$ j . kg \f$ of gaseous mixture)
 !> \param[in,out] tp            gas temperature (in kelvin)

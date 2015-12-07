@@ -470,7 +470,7 @@ _init_cost_quant(int    n_max_ent)
 /*!
  * \brief   Free a cs_hodge_costq_t structure
  *
- * \param[in]  hb    pointer to the cs_hodge_costq_t struct. to free
+ * \param[in]  hq    pointer to the cs_hodge_costq_t struct. to free
  *
  * \return  a NULL pointer
  */
@@ -1034,7 +1034,7 @@ _build_using_wbs(int                         cid,
 /*!
  * \brief   Build a local discrete Hodge op. using the Voronoi algo.
  *
- * \param[in]       cid       cell id
+ * \param[in]       c_id      cell id
  * \param[in]       connect   pointer to a cs_cdo_connect_t struct.
  * \param[in]       quant     pointer to a cs_cdo_quantities_t struct.
  * \param[in, out]  hb        pointer to a cs_hodge_builder_t struct.

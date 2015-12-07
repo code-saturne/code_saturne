@@ -300,9 +300,8 @@ end subroutine rijthe2
 !===============================================================================
 ! Function:
 ! ---------
-!> \brief Gravity terms
-!>        For \f$\epsilon\f$
-!>        \:\varepsilon \f]
+!> \brief Gravity terms for \f$\epsilon\f$
+!>
 
 !-------------------------------------------------------------------------------
 

@@ -44,7 +44,7 @@
 !>                              (see \ref cs_user_mass_source_terms)
 !> \param[in]     volume        cells volume
 !> \param[in]     pvara         variable value at time step beginning
-!> \param[in]     smcelt        value of the variable associated with mass source
+!> \param[in]     smcelp        value of the variable associated with mass source
 !> \param[in]     gamma         flow mass value
 !> \param[in,out] tsexp         explicit source term part linear in the variable
 !> \param[in,out] tsimp         associated value with \c tsexp

@@ -723,7 +723,7 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
  * \attention
  * The \c dest_rank and \c dest_id arrays are only referenced by
  * the distributor, not copied, and must remain available throughout
- * the distributor's lifetime. \They may be fully transferred to
+ * the distributor's lifetime. They may be fully transferred to
  * the structure if not needed elsewhere using the
  * \ref cs_all_to_all_transfer_dest_rank and
  * \ref cs_all_to_all_transfer_dest_id functions.
@@ -1339,7 +1339,7 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
  * \brief Get array of source element ranks associated with an
  *        all-to-all distributor.
  *
- * This function should be called only after \ref cs_all_to_all_exchange,
+ * This function should be called only after \ref cs_all_to_all_copy_array,
  * and allocates and returns an array of source element ranks matching the
  * exchanged data elements.
  *

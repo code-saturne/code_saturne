@@ -426,9 +426,9 @@ end subroutine rijech
 ! Function:
 ! ---------
 !> \file rijech.f90
-!> \brief Terms of wall echo for R_{ij}
+!> \brief Terms of wall echo for \f$ R_{ij} \f$
 !>        \f$var  = R_{11} \: R_{22} \: R_{33} \: R_{12} \: R_{13} \: R_{23}\f$
-!>        \f$isou =  1 \:  2 \:  3 \:  4 \:  5 \:  6\f$
+!>        \f$comp =  1 \:  2 \:  3 \:  4 \:  5 \:  6\f$
 
 !-------------------------------------------------------------------------------
 
@@ -437,7 +437,6 @@ end subroutine rijech
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     isou          passage numbero
 !> \param[in]     produc        production
 !> \param[in,out] smbr          work array for second member
 !______________________________________________________________________________!

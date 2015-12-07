@@ -1931,11 +1931,13 @@ contains
 
   !> \brief Add array not saved as permanent field to logging of fields.
 
-  !> \param[in]  f_id          associated dimension (interleaved)
-  !> \param[in]  n_clip_min    local number of clipped to min values
-  !> \param[in]  n_clip_max    local number of clipped to max values
-  !> \param[in]  min_pre_clip  min local value prior to clip
-  !> \param[in]  max_pre_clip  max local value prior to clip
+  !> \param[in]  f_id            associated dimension (interleaved)
+  !> \param[in]  n_clip_min      local number of clipped to min values
+  !> \param[in]  n_clip_max      local number of clipped to max values
+  !> \param[in]  min_pre_clip    min local value prior to clip
+  !> \param[in]  max_pre_clip    max local value prior to clip
+  !> \param[in]  n_clip_min_comp number of clip min by component
+  !> \param[in]  n_clip_max_comp number of clip max by component
 
   subroutine log_iteration_clipping_field(f_id, n_clip_min, n_clip_max,        &
                                           min_pre_clip, max_pre_clip,  &

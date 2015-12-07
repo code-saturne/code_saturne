@@ -68,7 +68,7 @@ typedef struct _cs_cdovb_adv_t  cs_cdovb_adv_t;
  *
  * \param[in]  quant    pointer to the cdo quantities structure
  * \param[in]  a_info   set of options for the advection term
- * \param[in]  tcur     value of the current time
+ * \param[in]  t_cur    value of the current time
  * \param[in]  xc       center of the cell c
  * \param[in]  qe       quantities related to edge e in E_c
  * \param[in]  qdf      quantities to the dual face df(e)
@@ -80,7 +80,7 @@ typedef struct _cs_cdovb_adv_t  cs_cdovb_adv_t;
 cs_real_t
 cs_cdovb_advection_vbflux_compute(const cs_cdo_quantities_t   *quant,
                                   const cs_param_advection_t   a_info,
-                                  double                       tcur,
+                                  double                       t_cur,
                                   const cs_real_3_t            xc,
                                   const cs_quant_t             qe,
                                   const cs_dface_t             qdf);

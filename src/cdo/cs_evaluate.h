@@ -113,7 +113,7 @@ cs_evaluate_pty(int                pty_id,
  * \param[in]     adv_id    id related to the advection field to deal with
  * \param[in]     tcur      time at which we evaluate the material property
  * \param[in]     xyz       location at which  we evaluate the material property
- * \param[in,out] matval    pointer to the 3x3 matrix to return
+ * \param[in,out] vect      pointer to the 3 vector to return
  */
 /*----------------------------------------------------------------------------*/
 

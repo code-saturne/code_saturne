@@ -66,7 +66,7 @@
            velocity. Moreover the displacement of corresponding nodes will
            automatically be set to 0 (for further information please
            read the paragraph dedicated to the description of \c impale array in the
-           cs_user_boundary_conditions-ale.f90 subroutine), unless the USER has modified the condition of
+           cs_user_boundary_conditions_ale.f90 subroutine), unless the USER has modified the condition of
            at least one mesh velocity component (modification of \c icodcl array,
            please read the following paragraph \ref non_std_bc_ale)
 
@@ -306,10 +306,10 @@ Here is the list of examples:
   \section init_fin_ale Initialization and finalization
 
   The following initialization block needs to be added for the following examples:
-   \snippet cs_user_boundary_conditions-ale.f90 allocate_ale
+   \snippet cs_user_boundary_conditions_ale-base.f90 allocate_ale
 
 At the end of the subroutine, it is recommended to deallocate the work array:
-   \snippet cs_user_boundary_conditions-ale.f90 deallocate_ale
+   \snippet cs_user_boundary_conditions_ale-base.f90 deallocate_ale
 
 In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their allocation is good pratice, and avoids using a different logic C and Fortran.
 
@@ -319,27 +319,27 @@ One may use selection criteria to filter boundary case subsets.\n Loop on faces 
 
    \subsection calcualtion_ale Calculation of displacement at current time step
 
-   \snippet  cs_user_boundary_conditions-ale.f90 calcul
+   \snippet  cs_user_boundary_conditions_ale-base.f90 calcul
 
    \subsection example1_ale Example 1
  Example : For boundary faces of color 4 assign a fixed velocity
 
-   \snippet  cs_user_boundary_conditions-ale.f90 example_1
+   \snippet  cs_user_boundary_conditions_ale-base.f90 example_1
 
    \subsection example2_ale Example 2
 Example: For boundary face of color 5 assign a fixed displacement on nodes
 
-   \snippet  cs_user_boundary_conditions-ale.f90 example_2
+   \snippet  cs_user_boundary_conditions_ale-base.f90 example_2
 
    \subsection  example3_ale Example 3
 Example : For boundary faces of color 6 assign a sliding boundary
 
-   \snippet  cs_user_boundary_conditions-ale.f90  example_3
+   \snippet  cs_user_boundary_conditions_ale-base.f90  example_3
 
    \subsection  example4_ale Example 4
 Example : Prescribe elsewhere a fixed boundary
 
-   \snippet  cs_user_boundary_conditions-ale.f90 example_4
+   \snippet  cs_user_boundary_conditions_ale-base.f90 example_4
 
 
 */

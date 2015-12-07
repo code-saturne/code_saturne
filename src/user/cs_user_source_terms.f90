@@ -786,7 +786,7 @@ end subroutine cs_user_turbulence_source_terms
 !> \brief Additional right-hand side source terms for turbulence models and
 !>irijco =1
 !>
-!> \section cs_user_turbulence_source_terms_use  Usage
+!> \section cs_user_rij_source_terms_use  Usage
 !>
 !> The additional source term is decomposed into an explicit part (crvexp) and
 !> an implicit part (crvimp) that must be provided here.

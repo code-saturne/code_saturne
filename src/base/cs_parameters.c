@@ -836,8 +836,6 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
 /*!
  * \brief Define a boundary values field for temperature, if applicable.
  *
- * \param[in, out]  f  pointer to field structure
- *
  * \return  pointer to boundary values field, or NULL if not applicable
  */
 /*----------------------------------------------------------------------------*/

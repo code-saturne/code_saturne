@@ -1581,11 +1581,13 @@ cs_log_iteration_clipping(const char       *name,
 /*!
  * \brief Add or update clipping info for a field
  *
- * \param[in]  f_id          associated field id
- * \param[in]  n_clip_min    number of local clippings to minimum value
- * \param[in]  n_clip_max    number of local clippings to maximum value
- * \param[in]  min_pre_clip  minimum values prior to clipping
- * \param[in]  max_pre_clip  maximum values prior to clipping
+ * \param[in]  f_id            associated field id
+ * \param[in]  n_clip_min      number of local clippings to minimum value
+ * \param[in]  n_clip_max      number of local clippings to maximum value
+ * \param[in]  min_pre_clip    minimum values prior to clipping
+ * \param[in]  max_pre_clip    maximum values prior to clipping
+ * \param[in]  n_clip_min_comp number of clip min by component
+ * \param[in]  n_clip_max_comp number of clip max by component
  */
 /*----------------------------------------------------------------------------*/
 

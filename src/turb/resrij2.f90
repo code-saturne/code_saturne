@@ -26,16 +26,16 @@
 
 !> \file resrij2.f90
 !>
-!> \brief This subroutine performs the solving of the coupled Reynolds stress components
-!> in \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
+!> \brief This subroutine performs the solving of the coupled Reynolds stress
+!> components in \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
 !>
 !> \remark
-!> - isou=1 for \f$ R_{11} \f$
-!> - isou=2 for \f$ R_{22} \f$
-!> - isou=3 for \f$ R_{33} \f$
-!> - isou=4 for \f$ R_{12} \f$
-!> - isou=5 for \f$ R_{23} \f$
-!> - isou=6 for \f$ R_{13} \f$
+!> - cvar_var(1,*) for \f$ R_{11} \f$
+!> - cvar_var(2,*) for \f$ R_{22} \f$
+!> - cvar_var(3,*) for \f$ R_{33} \f$
+!> - cvar_var(4,*) for \f$ R_{12} \f$
+!> - cvar_var(5,*) for \f$ R_{23} \f$
+!> - cvar_var(6,*) for \f$ R_{13} \f$
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -48,7 +48,6 @@
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     ivar          variable number
-!> \param[in]     isou          local variable number (7 here)
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for each variable
@@ -108,7 +107,7 @@ implicit none
 
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
-integer          ivar   , isou, jsou
+integer          ivar
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
@@ -124,6 +123,7 @@ double precision smbr(6,ncelet), rovsdt(6,6,ncelet)
 ! Local variables
 
 integer          iel
+integer          isou, jsou
 integer          ii    , jj    , kk    , iiun
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp

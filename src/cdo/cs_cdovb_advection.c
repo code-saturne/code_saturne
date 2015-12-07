@@ -193,11 +193,10 @@ _upwind_weight(cs_real_t                   criterion,
  * \brief   Compute the advective flux across an elementary triangle formed by
  *          xv (vertex), xe (middle of an edge), xf (face barycenter)
  *
- * \param[in]  quant      pointer to the cdo quantities structure
  * \param[in]  a_info     set of options to manage the advection term
  * \param[in]  t_cur      value of the current time
  * \param[in]  xv         vertex position
- * \param[in]  qe         edge center position
+ * \param[in]  xe         edge center position
  * \param[in]  qf         quantities related to a (primal) face
  *
  * \return the value of the flux
@@ -260,6 +259,7 @@ _compute_adv_flux_svef(const cs_param_advection_t   a_info,
  * \param[in]  quant      pointer to the cdo quantities structure
  * \param[in]  a_info     set of options to manage the advection term
  * \param[in]  t_cur      value of the current time
+ * \param[in]  xc         center of the cell
  * \param[in]  qe         quantities related to an edge
  * \param[in]  qdf        quantities related to a dual face
  *
@@ -1005,7 +1005,7 @@ cs_cdovb_advection_get_bc_contrib(const cs_cdo_connect_t      *connect,
  * \param[in]      d_info    set of options for the diffusion term
  * \param[in]      dir_vect  direction in which we estimate the Peclet number
  * \param[in]      t_cur     value of the current time
- * \param[in, out] peclet    pointer to the pointer of real numbers to fill
+ * \param[in, out] p_peclet  pointer to the pointer of real numbers to fill
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1070,6 +1070,7 @@ cs_cdovb_advection_get_peclet_cell(const cs_cdo_quantities_t   *cdoq,
  *          a related Peclet number
  *
  * \param[in]      cdoq      pointer to the cdo quantities structure
+ * \param[in]      a_info    set of options for the advection term
  * \param[in, out] coefval   pointer to the pointer of real numbers to fill
  *                           in: Peclet number in each cell
  *                           out: value of the upwind coefficient

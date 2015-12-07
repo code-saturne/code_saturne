@@ -161,7 +161,7 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
  *  \param[in]      c2e     cell -> edges connectivity
  *  \param[in]      quant   pointer to the additional quantities struct.
  *  \param[in]      dof     pointer to the field of edge-based DoFs
- *  \param[i, nout] reco    value of the reconstrcuted field in this sub-volume
+ *  \param[in, out] reco    value of the reconstrcuted field in this sub-volume
  */
 /*----------------------------------------------------------------------------*/
 

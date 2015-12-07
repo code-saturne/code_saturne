@@ -644,6 +644,7 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
  * \param[in]     t_visc        turbulent kinematic viscosity
  * \param[in]     vel           wall projected cell center velocity
  * \param[in]     y             wall distance
+ * \param[in]     roughness     roughness
  * \param[in]     kinetic_en    turbulent kinetic energy
  * \param[out]    iuntur        indicator: 0 in the viscous sublayer
  * \param[out]    nsubla        counter of cell in the viscous sublayer

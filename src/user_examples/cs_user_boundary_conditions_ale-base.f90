@@ -26,7 +26,7 @@
 ! Function:
 ! ---------
 
-!> \file cs_user_boundary_conditions-ale.f90
+!> \file cs_user_boundary_conditions_ale.f90
 !>
 !> \brief User subroutine dedicated the use of ALE (Arbitrary Lagrangian
 !> Eulerian) Method:

@@ -318,7 +318,7 @@ _init_time_matrix(cs_cdovb_scaleq_t          *builder)
  * \param[in]      dt_cur     current value of the time step
  * \param[in, out] builder    pointer to a cs_cdovb_scaleq_t structure
  * \param[in, out] rhs        pointer to the right-hand side array
- * \param[in, out] matrix     pointer to a cs_sla_matrix_t structure
+ * \param[in, out] sys_mat    pointer to a cs_sla_matrix_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -510,8 +510,8 @@ _compute_dir_values(const cs_mesh_t            *m,
  *
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
+ * \param[in, out] builder      pointer to a cs_cdovb_scaleq_t structure
  * \param[in, out] adv          pointer to an advection builder structure
- * \param[in, out] sys_builder  pointer to a cs_cdovb_scaleq_t structure
  * \param[in, out] rhs          pointer of pointer to the right-hand side
  * \param[in, out] matrix       pointer to a matrix structure
  */
@@ -794,8 +794,8 @@ _strong_bc_enforcement(cs_cdovb_scaleq_t       *builder,
  *          Nothing to do in case of weak enforcement.
  *
  * \param[in, out] builder      pointer to a cs_cdovb_scaleq_t structure
- * \param[in, out] full_matrix  matrix of the linear system
- * \param[in, out] full_rhs     right-hand side
+ * \param[in, out] rhs          right-hand side
+ * \param[in, out] matrix       matrix of the linear system
  */
 /*----------------------------------------------------------------------------*/
 

@@ -579,7 +579,7 @@ end subroutine interpolation4d
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     tgrad         Reference temperature
+!> \param[in]     trad          Reference temperature
 !> \param[in]     t             Local Temperature
 !> \param[in]     xco2          CO2 volume fraction
 !> \param[in]     xh2o          H2O volume fraction
