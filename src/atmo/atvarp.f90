@@ -19,29 +19,13 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file atvarp.f90
+!> \brief ATMOSPHERIC AEROSOL CHEMISTRY MODULE add necessary variables
 
+!> \brief INIT DES POSITIONS DES VARIABLES POUR LE MODULE ATMOSPHERIQUE
+!>    REMPLISSAGE DES PARAMETRES (DEJA DEFINIS) POUR LES SCALAIRES PP
 subroutine atvarp
 !================
-
-
-!===============================================================================
-!  FONCTION  :
-!  ---------
-
-!    INIT DES POSITIONS DES VARIABLES POUR LE MODULE ATMOSPHERIQUE
-!    REMPLISSAGE DES PARAMETRES (DEJA DEFINIS) POUR LES SCALAIRES PP
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
 !===============================================================================
 ! Module files

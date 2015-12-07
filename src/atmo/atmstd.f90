@@ -19,37 +19,26 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file atmstd.f90
+!> \brief Compute standard atmospheric profile
 
-subroutine atmstd(z,p,t,r)
-!
-!==============================================================================
-!       compute standard atmospheric profile (Holton p 374)
-!
-!==============================================================================
-
-!              (*)  (**)      arguments
-! .___________.____.____.________________________________________________________.
-! !    nom    !type!mode!                   role                                 !
-!_!___________!____!____!________________________________________________________!
-! ! z         !  r ! d  ! altitude absolue en m                                  !
-! ! p         !  r ! r  ! pression en pa                                         !
-! ! t         !  r ! r  ! temperature en k                                       !
-! ! r         !  r ! r  ! masse volumique en kg/m3                               !
-!_!___________!____!____!________________________________________________________!
-
-! (*)  type : e (entier), r (reel), a (alphanumerique), t (tableau)
-!             l (logique) et types composes (ex : tr = tableau reel)
-! (**) mode : d (donnee non modifiee), r (resultat), m (donnee modifiee)
-!             a (auxiliaire)
+!> \brief compute standard atmospheric profile (Holton p 374)
 !-------------------------------------------------------------------------------
-!===============================================================================
-
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]       z          absolute altitude in m
+!> \param[out]      p          pressure in pa
+!> \param[out]      t          temperature in k
+!> \param[out]      r          density in kg/m3
+!-------------------------------------------------------------------------------
+subroutine atmstd(z,p,t,r)
 
 implicit none
 
 double precision z,t,p,r
 double precision p0,t0,zt,rair,g,a,t11,p11
-
 
 p0 = 101325.d0
 t0 = 288.15d0

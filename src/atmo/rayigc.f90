@@ -19,49 +19,31 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file rayigc.f90
+!> \brief 1D Radiative scheme - IR CO2 + O3 absorbtion
 
-subroutine rayigc &
-!================
-
- (zbas,zz,pz,zzp,pzp,xa,xda,q,u,tco2,ro)
-
-!================================================================================
-!  Purpose:
-!  --------
-
-!    Atmospheric module subroutine.
-
-!
-!   calcul de l'absorption par le gaz carbonique et par l'ozone
-!   dans l'infra-rouge
-!
-!
-!---------------------------------------------------------------------------------
+!> \brief Compute carbonic gaz and ozone absorbtion in infrared
+!>
+!-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.__________________________________________________.
-! !    nom    !type!mode!                   role                                 !
-!_!___________!____!____!________________________________________________________!
-! !  zbas     ! r  ! d  ! altitude absolue au niveau k1                          !
-! !  zz       ! r  ! d  ! altitude (z ou zc suivant relief ou pas)               !
-! !  pz       ! r  ! d  ! pression normalisee a la pression au sol               !
-! !  zzp      ! r  ! d  ! altitude niveau intermediaire                          !
-! !  pzp      ! r  ! d  ! idem pz au niveau zzp                                  !
-! !  xa       ! r  ! r  ! absorption par le CO2 + O3                             !
-! !  xda      ! r  ! r  ! absorption differentielle par le CO2 + O3              !
-! !  q        ! r  ! d  ! quantite effective d'absorbant pour la vapeur          !
-! !           !    !              ! d'eau
-! !           !    !    ! de la pression                                         !
-! !  u        ! r  ! d  ! grandeur necessaire au calcul de la                    !
-! !           !    !    ! transmission par la vapeur d'eau                       !
-! !  tco2     ! r  ! d  ! fonction de la temperature                             !
-! !  ro       ! r  ! d  ! masse volumique                                        !
-!_!___________!____!____!________________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]       zbas    ground level altitude
+!> \param[in]       zz      height above ground level
+!> \param[in]       pz      pressure normalized by ground level pressure
+!> \param[in]       zzp     intermediate altitude for ozone
+!> \param[in]       pzp     corresponding pressure for zzp level
+!> \param[out]      xa      CO2 + O3 absorption
+!> \param[out]      xda     differential absorption for CO2 + O3
+!> \param[in]       q       effective concentration for absorption by water
+!>                          vapor
+!> \param[in]       u       water vapor optical depth (zz, zzp)
+!> \param[in]       tco2    temperature for high level
+!> \param[in]       ro      air density
+!_______________________________________________________________________________
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+subroutine rayigc (zbas,zz,pz,zzp,pzp,xa,xda,q,u,tco2,ro)
 
 !===============================================================================
 ! Module files
@@ -83,14 +65,13 @@ use atincl
 
 implicit none
 
-!... declaration des variables externes
+!... External variables
 
 double precision zbas
 double precision zz,pz,zzp,pzp,xa,xda,q,u,tco2,ro
 
-!... declaration des variables internes
+!... Local variables
 
-integer          iphas
 double precision x1,x2,x3,x4,x1c,x2c,x3c,x4c,y1,y2
 double precision tauv,dtauv,xx,exn,exnp1,conco2
 double precision uco2,duco2,ao,dao
@@ -105,12 +86,10 @@ data yo1,yo2/0.0749,0.0212/
 
 !===============================================================================
 
-iphas = 1
-
-!    concentration en gaz carbonique
+!    Concentration of CO2
 conco2 = 3.5d-2
 
-!   1-calcul de th2o dans la bande 15mu du co2
+!>   1-Computation of th2o within the range 15mu of Co2
 !   ------------------------------------------
 if(u.le.20.d0) then
   tauv = x1 + x2*(u + x4)**x3
@@ -120,7 +99,7 @@ else
   dtauv = -0.2754d0/log(10.d0)*ro*q/u
 endif
 
-!   2-calcul de l epaisseur optique pour le co2
+!>   2-Computation of the optical depth for Co2
 !   -------------------------------------------
 xx = 1.d0 - 0.0065d0*(zz - zbas)/288.15d0
 exn = 0.75d0
@@ -139,7 +118,7 @@ else
   dao = y2/log(10.d0)*duco2/uco2
 endif
 
-!   3-calcul de l epaisseur optique pour O3
+!>   3-Computation of the optical depth for O3
 !   ---------------------------------------
 uo3 = abs(rayuoz(zz) - rayuoz(zzp))
 duo3 = raydoz(zz)
@@ -151,7 +130,7 @@ else
   dao3 = yo2*duo3/log(10.d0)/uo3
 endif
 
-!   4- calcul de l'absorption totale (ozone et co2)
+!>   4- Compuation of the total absorption (Ozone and co2)
 !   -----------------------------------------------
 xa = tauv*ao + ao3
 xda = tauv*dao + dtauv*ao + dao3
@@ -165,6 +144,15 @@ contains
 
 ! 5.1. computes ozones concentration for the altitude zh
 !------------------------------------------------------
+!> \brief Internal function -
+!> computes ozones concentration for the altitude zh
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]       zh      altitude
+!_______________________________________________________________________________
 
 function rayuoz(zh)
 
@@ -184,6 +172,16 @@ end function rayuoz
 
 ! 5.2. computes dO3/dz for the altitude zh
 !-------------------------------------------------------
+!> \brief Internal function -
+!> computes dO3/dz for the altitude zh
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]       zh      altitude
+!_______________________________________________________________________________
+
 function raydoz(zh)
 
 implicit none

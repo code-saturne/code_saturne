@@ -19,18 +19,13 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file soliva.f90
+!> \brief Atmospheric soil module - soil variables initialisation
 
+!> \brief  Initialize soil model variables
+!>  NB : data structures are define in module atsoil.f90
+!-------------------------------------------------------------------------------
 subroutine soliva
-!================
-
-!==============================================================================
-! FUNCTION
-!==============================================================================
-!
-! Initialize soil model variables
-! NB : data structures in module atsoil.f90
-!
-!==============================================================================
 
 !===============================================================================
 ! Module files

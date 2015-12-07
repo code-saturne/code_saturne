@@ -101,8 +101,10 @@ double precision, allocatable, dimension(:) :: espnum
 double precision, allocatable, dimension(:) :: zproc
 !> time steps of the concentration profiles
 double precision, allocatable, dimension(:) :: tchem
-!> coordinates of concentration profiles
-double precision, allocatable, dimension(:) :: xchem,ychem
+!> X coordinates of concentration profiles
+double precision, allocatable, dimension(:) :: xchem
+!> Y coordinates of concentration profiles
+double precision, allocatable, dimension(:) :: ychem
 !> read zone boundary conditions from profile
 integer, save :: iprofc(nozppm)
 
@@ -111,7 +113,7 @@ integer, save :: iprofc(nozppm)
 contains
 
 !=============================================================================
-
+!> \brief Allocate space
 subroutine init_chemistry
 
 use mesh, only: ncel
@@ -152,7 +154,7 @@ allocate(ychem(nbchim))
 end subroutine init_chemistry
 
 !=============================================================================
-
+!> \brief deallocate the space
 subroutine finalize_chemistry
 
 implicit none

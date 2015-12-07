@@ -21,10 +21,10 @@
 !-------------------------------------------------------------------------------
 
 !> \file spefun.f90
-!> Module for specific math functions
+!> \brief Atmospheric module - Module for specific math functions
 
 module spefun
-
+!> \defgroup at_spefun
 !=============================================================================
 
 use entsor
@@ -37,8 +37,7 @@ contains
 
   !=============================================================================
 
-  ! Gamma function
-
+  !> \brief  Gamma function
   function tgamma(x)
 
     double precision, intent(in) :: x
@@ -50,8 +49,7 @@ contains
 
   !=============================================================================
 
-  ! Erf function
-
+  !> \brief Erf function
   function ferf(x)
 
     double precision, intent(in) :: x
@@ -63,9 +61,9 @@ contains
 
   !=============================================================================
 
-  ! Hypergeometric function
-  ! (see http://mathworld.wolfram.com/hypergeometricfunction.html for definition)
-
+  !> \brief Hypergeometric function
+  !> (see http://mathworld.wolfram.com/hypergeometricfunction.html
+  !>   for definition)
   function hypgeo (a, b, c, x)
 
     double precision, intent(in) :: a, b, c, x
@@ -112,9 +110,9 @@ contains
 
   !=============================================================================
 
-  ! Calcul de la fonction hypergeometrique pour |x| < 1 par une serie
-  !     (cf. pour la definition de cette fonction, voir par exemple :
-  !     http://mathworld.wolfram.com/hypergeometricfunction.html )
+  !> \brief  Calcul de la fonction hypergeometrique pour |x| < 1 par une serie
+  !>     (cf. pour la definition de cette fonction, voir par exemple :
+  !>     http://mathworld.wolfram.com/hypergeometricfunction.html )
 
   function hypser (a, b, c, x)
 
@@ -187,8 +185,7 @@ contains
 
   !=============================================================================
 
-  ! Beta function: beta(x,y) = gamma(x)*gamma(y)/gamma(x+y)
-
+  !> \brief Beta function: beta(x,y) = gamma(x)*gamma(y)/gamma(x+y)
   function beta(x, y)
 
     double precision, intent(in) :: x, y

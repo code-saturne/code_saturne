@@ -39,7 +39,6 @@
 !> \param[in]     dlrkf         kinetic rates for second iteration
 !______________________________________________________________________________
 
-
 subroutine roschem (dlconc,zcsourc,zcsourcf,conv_factor,                      &
                     dlstep,dlrki,dlrkf)
 

@@ -26,7 +26,7 @@
 
 !> \file atimbr.f90
 !>
-!> \brief Atmospheric Imbrication module
+!> \brief Atmospheric Imbrication module.
 !>  This module contains the data structure and subroutines to
 !>  perform atmospheric imbrication or nesting of a CFD domain within
 !>  a large scale meteorological field.
@@ -34,25 +34,28 @@
 !>  format of meteo files) an interpolation is performed for each
 !>  boundary face both spatially and temporally (using Cressman method)
 !>
-!>  This imbrication reads additional meteo files
+!>  This imbrication reads additional meteo files.
 !______________________________________________________________________________
 
 module atimbr
+!> \defgroup at_imbrication
 
 use entsor
 use atincl
 implicit none
 
+!> \addtogroup at_imbrication
+!> \{
 ! --------------------------------------------------------------
-! activation flag
+!> activation flag
 ! --------------------------------------------------------------
 logical imbrication_flag
 logical imbrication_verbose
 save imbrication_verbose
 
 ! --------------------------------------------------------------
-! flags for activating the cressman interpolation for the boundary
-! conditions
+!> Flags for activating the cressman interpolation for the boundary
+!> conditions
 ! --------------------------------------------------------------
 logical cressman_u
 logical cressman_v
@@ -63,13 +66,13 @@ logical cressman_qw
 logical cressman_nc
 
 ! --------------------------------------------------------------
-! numerical parameters for the cressman interpolation formulas
+!> numerical parameters for the cressman interpolation formulas
 ! --------------------------------------------------------------
 double precision :: horizontal_influence_radius
 double precision :: vertical_influence_radius
 
 ! --------------------------------------------------------------
-!
+!> Parameter for "meteo" files
 ! --------------------------------------------------------------
 integer line_len
 parameter(line_len = 132)
@@ -78,31 +81,34 @@ character(line_len), dimension(:), allocatable :: imbrication_files
 integer number_of_files
 character*(3) skip_chars
 parameter (skip_chars = "/#!")
-
+!> Profile dimension variable
 integer thermal_profile_dim
 integer dynamical_profile_dim
+!> Time sections per files
 integer sections_per_file
 data thermal_profile_dim /-1/
 data dynamical_profile_dim /-1/
 data sections_per_file /-1/
 
 ! --------------------------------------------------------------
-! read data
+!> read data from "meteo" files
 ! --------------------------------------------------------------
+!> Time variables
 integer, dimension(:,:), allocatable :: years
 integer, dimension(:,:), allocatable :: ordinals
 integer, dimension(:,:), allocatable :: hours
 integer, dimension(:,:), allocatable :: minutes
 double precision, dimension(:,:),allocatable :: seconds
-
+!> Positions
 double precision, dimension(:,:), allocatable :: xpos
 double precision, dimension(:,:), allocatable :: ypos
 double precision, dimension(:,:), allocatable :: ground_pressure
-
+!> Vertical grid for temperature and humidity variables
 double precision, dimension(:,:,:), allocatable :: zt
 double precision, dimension(:,:,:), allocatable :: tempC
 double precision, dimension(:,:,:), allocatable :: qw
 double precision, dimension(:,:,:), allocatable :: Nc
+!> Vertical grid for wind variables
 double precision, dimension(:,:,:), allocatable :: zd
 double precision, dimension(:,:,:), allocatable :: u
 double precision, dimension(:,:,:), allocatable :: v
@@ -110,7 +116,7 @@ double precision, dimension(:,:,:), allocatable :: tke
 double precision, dimension(:,:,:), allocatable :: eps
 
 ! --------------------------------------------------------------
-! derived data
+!> derived data
 ! --------------------------------------------------------------
 double precision, dimension(:,:), allocatable,target :: times
 double precision, dimension(:,:,:), allocatable :: pressure
@@ -118,7 +124,7 @@ double precision, dimension(:,:,:), allocatable :: theta
 double precision, dimension(:,:,:), allocatable :: density
 
 ! --------------------------------------------------------------
-! time interpolated profiles
+!> time interpolated profiles
 ! --------------------------------------------------------------
 double precision, dimension(:,:), allocatable :: ti_zt
 double precision, dimension(:,:), allocatable :: ti_tempC
@@ -134,7 +140,7 @@ double precision, dimension(:,:), allocatable :: ti_theta
 double precision, dimension(:,:), allocatable :: ti_density
 
 ! --------------------------------------------------------------
-! red tape for mesmap
+!> additional variables
 ! --------------------------------------------------------------
 double precision, dimension(:,:,:), allocatable :: coordinates_th
 double precision, dimension(:,:,:), allocatable :: influence_param_th
@@ -149,13 +155,15 @@ integer id_qw
 integer id_nc
 
 ! --------------------------------------------------------------
-! 1D array of times at which profiles are given
+!> 1D array of times at which profiles are given
 ! --------------------------------------------------------------
 double precision, dimension(:), pointer :: times_sequence=>null()
+!> \}
 contains
 
 ! ----------------------------------------------------------------
-!
+!> \brief Allocate variables adapted to the number of files
+!>  and time step to be considered
 ! ----------------------------------------------------------------
 subroutine allocate_all()
 implicit none
@@ -197,7 +205,7 @@ allocate(eps(dynamical_profile_dim,sections_per_file,number_of_files))
 end subroutine allocate_all
 
 ! ----------------------------------------------------------------
-!
+!> \brief  Final step for deallocation
 ! ----------------------------------------------------------------
 subroutine finalize_imbrication()
 implicit none
@@ -251,8 +259,14 @@ deallocate(influence_param_dyn)
 end subroutine finalize_imbrication
 
 ! ---------------------------------------------------------------------------
-! -
-! ---------------------------------------------------------------------------
+!> \brief Time interpolation of all profiles -
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   the_time    current time
+!-------------------------------------------------------------------------------
 subroutine interpolate_all_profiles(the_time)
 implicit none
 double precision the_time
@@ -512,6 +526,9 @@ endif
 
 end subroutine interpolate_all_profiles
 
+! ----------------------------------------------------------------
+!> \brief Print the interpolated profiles for checking purposes
+! ----------------------------------------------------------------
 subroutine dump_interpolated_profiles
 implicit none
 integer lb, ub
@@ -690,13 +707,21 @@ end subroutine dump_interpolated_profiles
 
 
 ! ----------------------------------------------------------------
-!
+!> \brief  Converts a (year,ordinal) date to julian calendar date
+!> for calculating time shifts
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   year
+!> \param[in]   ordinal     number of the day in the year
+!>                          e.g 1st january has ordinal 1
+!>                               31 december 365 or 366
 ! ----------------------------------------------------------------
 integer function yo2j(year,ordinal)
+!-------------------------------------------------------------------------------
 !
-! converts a year,ordinal day in julian day for calculating time shifts
-! ordinal is the number of the day in the year: e.g 1st january has ordinal 1
-!                                                   31 december 365 or 366
 implicit none
 integer year,ordinal
 ! I am puzzled by the (1-14)/12 : why not writing -1?
@@ -707,29 +732,30 @@ yo2j= ordinal + ((1461 * (year + 4800 + (1 - 14) / 12)) / 4 +   &
 end function yo2j
 
 
-! ***************************************************************
-!
-! ***************************************************************
+! ----------------------------------------------------------------
+!> \brief Reads a file having in each significative line a file name
+!>  it returns then as 'the_list' the list of lines read
+!>  a line is significative if it's first char is not / or # or !
+!>  The following 3 lines give an example from which one must remove the
+!>  first two characters.
+!>- /list of files
+!>- profile_one.txt
+!>- profile_two.txt
+!>
+!> Beware that blank lines or lines starting with blanks+ comment_char are
+!> NOT ignored.
+! ----------------------------------------------------------------
+! Arguments
+! ----------------------------------------------------------------
+!> \param[in]   a_file      the file with list of file names
+!> \param[out]  the_list    the list of file names
+! ----------------------------------------------------------------
 subroutine read_files_list(a_file,the_list)
-! ----------------------------------------------------------------
-!
-! ----------------------------------------------------------------
-! reads a file having in each significative line a file name
-! it returns then as 'the_list' the list of lines read
-! a line is significative if it's first char is not / or # or !
-! The following 3 lines give an example from which one must remove the
-! first two characters.
-! /list of files
-! profile_one.txt
-! profile_two.txt
-!
-! Beware that blank lines or lines starting with blanks+ comment_char are
-! NOT ignored.
 
+implicit none
 ! ----------------------------------------------------------------
 ! declarations
 ! ----------------------------------------------------------------
-implicit none
 character(line_len) :: a_file
 character(line_len), dimension(:), allocatable :: the_list
 integer unilog
@@ -767,8 +793,17 @@ end subroutine read_files_list
 
 
 ! ----------------------------------------------------------------
-!
-! ----------------------------------------------------------------
+!> \brief  Find next validated line
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   unilog          logical unit number of the reading file
+!> \param[out]  current_line    the characters of the line
+!> \param[in]   meteo_file      name of the 'meteo' file
+!> \param[out]  l_iostat        logical status of I/O following a read statement
+!-------------------------------------------------------------------------------
 subroutine find_next_line(unilog,current_line,meteo_file,l_iostat)
 implicit none
 integer unilog
@@ -799,31 +834,35 @@ end subroutine find_next_line
 
 
 ! ----------------------------------------------------------------
-!
-! ----------------------------------------------------------------
+!> \brief Reads a meteo_file for Code_Saturne Atmospheric Physics option
+!>
+!> They contain an arbitrary number (>=1) of sections having the following
+!> structure.
+!> Comment lines start with a slash / as first character
+!>
+!>- yyyy,dd,hh,mm,ss
+!>- xpos,ypos
+!>- ground pressure
+!>- nt (thermal profile dimension)
+!>- nt lines of
+!>- zt,tempC,qw(kg/kg),Ndrops(1/cm3)
+!>- nd (thermal profile dimension)
+!>- nd lines of
+!>- zd,u,v,k,eps
+!>
+!> WARNINGS:
+!> Beware that all dimensions nt,nd must be the same as the first one.
+!>
+!> Beware that blank lines or lines starting with blanks+ comment_char are
+!> NOT ignored.
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   meteo_file      "meteo" file name
+!-------------------------------------------------------------------------------
 subroutine read_meteo_file(meteo_file)
-!
-! reads a meteo_file for Code_Saturne Atmospheric Physics option
-!
-! They contain an arbitrary number>=1 of sections having the following
-! structure.
-! Comment lines start with a slash / as first character
-!
-! yyyy,dd,hh,mm,ss
-! xpos,ypos
-! ground pressure
-! nt (thermal profile dimension)
-! nt lines of
-! zt,tempC,qw(kg/kg),Ndrops(1/cm3)
-! nd (thermal profile dimension)
-! nd lines of
-! zd,u,v,k,eps
-!
-! WARNINGS:
-! Beware that all dimensions nt,nd must be the same as the first one.
-!
-! Beware that blank lines or lines starting with blanks+ comment_char are
-! NOT ignored.
 !
 character(line_len) :: meteo_file
 integer unilog
@@ -1079,7 +1118,7 @@ end subroutine read_meteo_file
 
 
 ! *****************************************************************************
-!
+!> \brief    Checks the time variables to ensure the chronology
 ! *****************************************************************************
 subroutine check_chronologies
 use atincl, sim_year=>syear
@@ -1190,7 +1229,7 @@ enddo
 end subroutine check_chronologies
 
 ! -----------------------------------------------------------------------------
-!
+!> \brief Check that the profiles position is the same over time
 ! -----------------------------------------------------------------------------
 subroutine check_positions
 implicit none
@@ -1247,7 +1286,8 @@ end subroutine check_positions
 
 
 ! -----------------------------------------------------------------------------
-!
+!> \brief Check that the profiles vertical grids heights
+!>      are strictly increasing
 ! -----------------------------------------------------------------------------
 subroutine check_altitudes
 implicit none
@@ -1294,12 +1334,10 @@ end subroutine check_altitudes
 
 
 ! -----------------------------------------------------------------------------
-!
+!> \brief Compute the hydrostastic pressure by Laplace integration
 ! -----------------------------------------------------------------------------
 subroutine hydrostatic_pressure
-!
-! compute the hydrostastic pressure by Laplace integration
-!
+
 use cstphy, only: tkelvi
 use cstphy, only: rair
 use cstphy, only: gz
@@ -1396,10 +1434,9 @@ enddo
 end subroutine hydrostatic_pressure
 
 ! -----------------------------------------------------------------------------
-!
+!> \brief Computes the potential_temperature_and_density profiles
 ! -----------------------------------------------------------------------------
 subroutine potential_temperature_and_density
-! computes the potential_temperature_and_density profiles
 use cstphy, only: rair
 use cstphy, only: tkelvi
 use cstphy, only: cp0
@@ -1458,17 +1495,30 @@ do i = 1, number_of_files, 1
  end subroutine potential_temperature_and_density
 
 ! -----------------------------------------------------------------------------
-!
-! -----------------------------------------------------------------------------
+!> \brief Search for the position of a value in an array,
+!> assuming that the array is sorted in a strictly increasing order
+!>
+!> return if possible lower,upper such that :
+!>-                    the_array(lower) <= the_value <= the_array(upper)
+!>        otherwise :
+!>          lower==upper if the_value<the_array(first)
+!>                       or if the_value>the_array(last)
+!>          lower> upper if none of the previous cases applies (anomaly)
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]       the_array   an array
+!> \param[in]       the_value   a particular value
+!> \param[in]       lower       the index of the first membre of the array
+!>                                  lower than the value
+!> \param[in]       upper       the index of the first membre of the array
+!>                                  greater than the value
+!-------------------------------------------------------------------------------
 subroutine get_index(the_array,the_value,lower,upper)
-! assuming the_array a sorted, strictly increasing array of values
-! return if possible lower,upper such that :
-!                    the_array(lower)<=the_value<=the_array(upper)
-!        otherwise :
-!          lower==upper if the_value<the_array(first)
-!                       or if the_value>the_array(last)
-!          lower> upper if none of the previous cases applies (anomaly)
 implicit none
+
 double precision,dimension(:),intent(in) :: the_array
 double precision,intent(in) :: the_value
 integer,intent(out) ::upper,lower
@@ -1500,14 +1550,22 @@ lower = dmax
 upper = dmin
 end subroutine get_index
 
-! *****************************************************************************
-! *
-! *****************************************************************************
+! -----------------------------------------------------------------------------
+!> \brief  Interpolates a "profile" at a given time.
+!> Given a series of profiles varying in time
+!> you get the profile interpolated from them at the given time.
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   the_time                current time
+!> \param[in]   the_times               times array
+!> \param[in]   the_profiles            input profiles
+!> \param[out]   interpolated_profile    output profile
+!-------------------------------------------------------------------------------
 subroutine time_interpolation(the_time,the_times, &
      the_profiles,interpolated_profile)
-! interpolates a "profile" at a given time.
-! given a series of profiles varying in time
-! you get the profile interpolated from them at the given time.
 implicit none
 double precision,intent(in) :: the_time
 double precision, dimension(:),intent(in) :: the_times
@@ -1541,12 +1599,20 @@ endif
 end subroutine time_interpolation
 
 
-! *****************************************************************************
-! *
-! *****************************************************************************
+!-------------------------------------------------------------------------------
+!> \brief interpolates in a profile at a given altitude
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   the_altitude        current height
+!> \param[in]   the_altitudes       height array
+!> \param[in]   the_profile         the profile
+!> \param[out]   interpolated_value  interpolated profile
+!-------------------------------------------------------------------------------
 subroutine altitude_interpolation(the_altitude,the_altitudes,the_profile, &
      interpolated_value)
-! interpolates in a profile at a given altitude
 implicit none
 double precision,intent(in) :: the_altitude
 double precision, dimension(:),intent(in) :: the_altitudes
@@ -1583,7 +1649,7 @@ end subroutine altitude_interpolation
 
 
 ! -----------------------------------------------------------------------------
-!
+!> \brief  Compute radius of influence
 ! -----------------------------------------------------------------------------
 subroutine red_tape
 implicit none
@@ -1609,13 +1675,19 @@ enddo
 end subroutine red_tape
 
 ! -----------------------------------------------------------------------------
-!
+!> \brief  Identification of the first and last non white character
+!>      of a string
 ! -----------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   string      the input string
+!> \param[in]   length      its length
+!> \param[out]  b           number of the first non white character
+!> \param[out]  e           number of the last non white character
+!-------------------------------------------------------------------------------
 subroutine bounds(string,length,b,e)
-! very low level for printing strings
-! length: input=the length of the input string
-! b=output=first non white from beginning of the string
-! e=output=first non white from end of the string
 !
 ! Being compelled to write such low level stuff because
 ! the designers of the language didn't bother to offer
@@ -1648,19 +1720,18 @@ return
 end subroutine bounds
 
 
-! ****************************************************************
-!
-! ****************************************************************
+! -----------------------------------------------------------------------------
+!> \brief Prepare data for imbrication by reading meteo files
+!>
+!> Warning : the list of files is supposed to be "imbrication_files_list.txt"
+!>
+! -----------------------------------------------------------------------------
 subroutine activate_imbrication
-! ----------------------------------------------------------------
-!
-! ----------------------------------------------------------------
 implicit none
+
 integer i,j,k
 integer first,last
-! ----------------------------------------------------------------
-!
-! ----------------------------------------------------------------
+
 write(nfecra,*)"*******************************"
 write(nfecra,*)"Atmospheric Imbrication:       "
 write(nfecra,*)"*******************************"
@@ -1742,8 +1813,14 @@ end subroutine activate_imbrication
 
 
 ! --------------------------------------------------------------
-!
-! --------------------------------------------------------------
+!> \brief Prepare for the cressman interpolation of the variables
+! -----------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   the_time        current time
+!-------------------------------------------------------------------------------
 subroutine summon_cressman(the_time)
 implicit none
 double precision the_time

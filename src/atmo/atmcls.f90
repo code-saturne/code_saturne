@@ -19,10 +19,50 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
+!> \file atmcls.f90
+!> \brief Compute u*, q0, e0, (momentum, sensible heat and latent heat fluxes)
+!>   for a non neutral atmospheric surface layer using the explicit formula
+!>   developed for the ECMWF by Louis (1982)
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+! mode               name       role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ifac      treated boundary face
+!> \param[in]     iel       boundary cell
+!> \param[in]     utau      tangentiel mean
+!> \param[in]     yplus     adim distance to he boundary faces
+!> \param[out]    uet       friction velocity
+!> \param[out]    gredu     reduced gravity for non horizontal wall
+!> \param[out]    q0        latent heat flux
+!> \param[out]    e0        sensible heat flux
+!> \param[out]    rib       Richardson number
+!> \param[out]    lmo       Monin-Obukhov length
+!> \param[out]    cfnnu     non neutral correction coefficients for profiles of wind
+!> \param[out]    cfnns     non neutral correction coefficients for profiles of scalar
+!> \param[out]    cfnnk     non neutral correction coefficients for profiles of k
+!> \param[out]    cfnne     non neutral correction coefficients for profiles of eps
+!> \param[out]    icodcl        code for boundary conditions at boundary faces
+!>                              (nfabor,nvarcl)
+!>-                           = 1   -> dirichlet
+!>-                           = 3   -> densite de flux
+!>-                           = 4   -> glissemt et u.n=0 (vitesse)
+!>-                           = 5   -> frottemt et u.n=0 (vitesse)
+!>-                           = 6   -> rugosite et u.n=0 (vitesse)
+!>-                           = 9   -> entree/sortie libre (vitesse
+!>                                      entrante eventuelle     bloquee
+!> \param[out]    rcodcl         valeur des conditions aux limites
+!>                                    (nfabor,nvarcl) aux faces de bord
+!>-                           rcodcl(1) = valeur du dirichlet
+!>-                           rcodcl(2) = valeur du coef. d'echange
+!>                              ext. (infinie si pas d'echange)
+!>-                           rcodcl(3) = valeur de la densite de
+!>           flux (negatif si gain) w/m2 ou hauteur de rugosite (m) si icodcl=6
+!>--                   pour les vitesses      (vistl+visct)*gradu
+!>--                   pour la pression       dt*gradp
+!>--                   pour les scalaires     cp*(viscls+visct/sigmas)*gradt
+! ______________________________________________________________________________!
 subroutine atmcls &
-!================
-
  ( ifac   , iel    ,                                              &
    utau   , yplus  ,                                              &
    uet    ,                                                       &
@@ -30,59 +70,6 @@ subroutine atmcls &
    cfnnu ,  cfnns  , cfnnk  , cfnne  ,                            &
    icodcl ,                                                       &
    rcodcl )
-
-!===============================================================================
-! FUNCTION :
-! --------
-! Compute u*, q0, e0, (momentum, sensible heat and latent heat fluxes)
-!   for a non neutral atmospheric surface layer using the explicit formula
-!   developed for the ECMWF by Louis (1982)
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ifac             ! e  ! <-- ! face de bord traitee                           !
-! iel              ! e  ! <-- ! cellule de bord en regard de la face           !
-!                  !    !     !  traitee                                       !
-! utau             ! r  ! <-- ! vitesse moyenne tangentielle                   !
-! yplus            ! r  ! <-- ! distance adim a la paroi                       !
-!                  !    !     !  calculee au moyen de uk                       !
-! uet              ! r  ! --> ! vitesse de frottement cf entete                !
-! gredu            ! r  ! --> ! reduced gravity for non horizontal wall        !
-! q0, e0           ! r  ! --> ! sensible and latent heat flux                  !
-! rib, lmo         ! r  ! --> ! Richardson number and Monin-Obukhov length     !
-! cfnnu,s,k,e      ! r  ! --> ! non neutral correction coefficients for        !
-!                  !    !     !   profiles of momentum scalar turbulence       !
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvarcl) !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle     bloquee               !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files

@@ -19,76 +19,24 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file atphyv.f90
+!> \brief Functions that compute physical variables for each cell
+!>  for the atmospheric module
+!
+!> \brief Initialise physical variables of the atmospheric module \n
+!> Remarques :
+!> This routine is called at the beginning of each time step
+!>
 
-subroutine atphyv &
-!================
-
-   ( propce )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! REMPLISSAGE DES VARIABLES PHYSIQUES : Atmospheric Version
-
-
-! ATTENTION :
-! =========
-
-! Il est INTERDIT de modifier la viscosite turbulente VISCT ici
-!        ========
-!  (une routine specifique est dediee a cela : usvist)
-
-!  Il FAUT AVOIR PRECISE ICP = 1
-!     ==================
-!    dans usipsu si on souhaite imposer une chaleur specifique
-!    CP variable (sinon: ecrasement memoire).
-
-
-! Remarques :
-! ---------
-
-! Cette routine est appelee au debut de chaque pas de temps
-
-!    Ainsi, AU PREMIER PAS DE TEMPS (calcul non suite), les seules
-!    grandeurs initialisees avant appel sont celles donnees
-!      - dans usipsu :
-!             . la masse volumique (initialisee a RO0)
-!             . la viscosite       (initialisee a VISCL0)
-!      - dans usiniv :
-!             . les variables de calcul  (initialisees a 0 par defaut
-!             ou a la valeur donnee dans usiniv)
-
-! On peut donner ici les lois de variation aux cellules
-!     - de la masse volumique                      ROM    kg/m3
-!         (et eventuellememt aux faces de bord     ROMB   kg/m3)
-!     - de la viscosite moleculaire                VISCL  kg/(m s)
-!     - de la chaleur specifique associee          CP     J/(kg degres)
-!     - des "diffusivites" associees aux scalaires VISCLS kg/(m s)
-
-
-! On dispose des types de faces de bord au pas de temps
-!   precedent (sauf au premier pas de temps, ou les tableaux
-!   ITYPFB et ITRIFB n'ont pas ete renseignes)
-
-
-! Il est conseille de ne garder dans ce sous programme que
-!    le strict necessaire.
-
-
-
+!-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   propce      physical properties at cell centers
+!_______________________________________________________________________________
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+subroutine atphyv ( propce )
 
 !===============================================================================
 ! Module files
@@ -284,9 +232,9 @@ return
 contains
 
 ! *******************************************************************
-! *
-! *******************************************************************
-
+!> \brief Internal function -
+!>      for all cells : initialise physical variables of the atmospheric module
+!-------------------------------------------------------------------------------
 subroutine all_or_nothing()
 
 lrhum = rhum
@@ -351,12 +299,11 @@ enddo ! iel = 1, ncel
 end subroutine all_or_nothing
 
 ! *******************************************************************
-! *
-! *******************************************************************
-
+!> \brief Internal function -
+!>   subgrid condensation scheme assuming a gaussian distribution for the
+!> fluctuations of both qw and thetal.
+!-------------------------------------------------------------------------------
 subroutine gaussian()
-! subgrid condensation scheme assuming a gaussian distribution for the
-! fluctuations of both qw and thetal.
 double precision, dimension(:,:), allocatable :: dtlsd
 double precision, dimension(:,:), allocatable :: dqsd
 
@@ -474,9 +421,15 @@ deallocate(dqsd)
 end subroutine gaussian
 
 ! *******************************************************************
-! *
-! *******************************************************************
-
+!> \brief Internal function -
+!> Computation of the gradient of the potential temperature
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]   dtlsd          gradient of potential temperature
+!-------------------------------------------------------------------------------
 subroutine grad_thetal(dtlsd)
 double precision dtlsd(3,ncelet)
 
@@ -484,8 +437,6 @@ integer    iccocg
 integer    iivar
 integer    inc
 integer    itpp
-
-! Computation of the gradient of the potential temperature
 
 itpp = isca(iscalt)
 
@@ -505,7 +456,15 @@ end subroutine grad_thetal
 ! *******************************************************************
 ! *
 ! *******************************************************************
-
+!> \brief Internal function -
+!> Compute the gradient of the total humiduty
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]      dqsd        gradient of total humidity
+!-------------------------------------------------------------------------------
 subroutine grad_qw(dqsd)
 double precision dqsd(3,ncelet)
 
@@ -514,15 +473,9 @@ integer    iivar
 integer    inc
 integer    iqw
 
-! ----------------------------------------------------------------
-! now gradient of total humidity
-! ----------------------------------------------------------------
-
 iccocg = 1
 inc = 1
-
 iqw = isca(itotwt)
-
 iivar = iqw
 
 call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &

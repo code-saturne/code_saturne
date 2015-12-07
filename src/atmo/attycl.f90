@@ -19,45 +19,29 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file attycl.f90
+!> \brief Automatic boundary conditions for atmospheric module
+!>   (based on meteo file)
 
-subroutine attycl &
-!================
-
- ( itypfb , izfppp ,                                              &
-   rcodcl )
-
-!===============================================================================
-! FONCTION :
-! --------
-!    CONDITIONS AUX LIMITES AUTOMATIQUES
-!           ECOULEMENTS ATMOSPHERIQUES
+!> \brief Automaticly compute the boundary conditions from the meteo file
+!>      or from the imbrication profiles
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! itypfb           ! ia ! <-- ! boundary face types                            !
-! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   itypfb          boundary face types
+!> \param[in]   izfppp          boundary face zone number for atmospheric module
+!> \param[out]  rcodcl          Boundary conditions value
+!>- rcodcl(1) = valeur du dirichlet
+!>- rcodcl(2) = valeur du coef. d'echange ext. (infinie si pas d'echange)
+!>- rcodcl(3) = valeur de la densite de flux (negatif si gain) w/m2 ou
+!> hauteur de rugosite (m) si icodcl=6  \n
+!>    pour les vitesses (vistl+visct)*gradu \n
+!>    pour la pression             dt*gradp \n
+!>    pour les scalaires cp*(viscls+visct/sigmas)*gradt
+!-------------------------------------------------------------------------------
+subroutine attycl ( itypfb, izfppp, rcodcl )
 
 !===============================================================================
 ! Module files

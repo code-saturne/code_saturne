@@ -19,12 +19,13 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
 !> \file atincl.f90
-!> Module for atmospheric models
-
+!> \brief Module for atmospheric models - main variables
+!>-   Nota : ippmod(iatmos) = 0 constante density, =1 --> Dry atmosphere,
+!>          = 2 --> Humid atmosphere
+!>-     A separate vertical grid is used for 1D radiative scheme
 module atincl
-
+!> \defgroup at_main
 !=============================================================================
 
 use mesh
@@ -32,6 +33,8 @@ use ppppar
 use ppincl
 
 implicit none
+!> \addtogroup at_main
+!> \{
 
 !=============================================================================
 
@@ -41,54 +44,62 @@ implicit none
 !-----------------------------------------------
 
 !   Arrays specific to values read in the input meteo file:
-!                    tmmet ---> time (in sec) of the meteo profile
-!                    zdmet ---> altitudes of the dynamic profiles
-!                    ztmet ---> altitudes of the temperature profile
-!                    umet, vmet, wmet  --> meteo u, v, w profiles
-!                    ekmet --->  meteo turbulent kinetic energy profile
-!                    epmet ---> meteo turbulent dissipation profile
-!                    ttmet --->  meteo temperature (Celsius) profile
-!                    qvmet ---> meteo specific humidity profile
-!                    ncmet ---> meteo specific humidity profile
-!                    pmer  ---> Sea level pressure
-!                    xmet, ymet --> cooordinates of the meteo profile
-
-!   Arrays specific to values calculated from the meteo file
-!   (cf atlecm.f90):
-!                    rmet -->  density profile
-!                    tpmet -->  potential temperature profile
-!                    phmet -->  hydro. pressure from Laplace integration
-
-double precision, allocatable, dimension(:) :: tmmet, zdmet, ztmet
-double precision, allocatable, dimension(:,:) :: umet, vmet, wmet
-double precision, allocatable, dimension(:,:) :: ekmet, epmet, ttmet, qvmet, ncmet
+!> tmmet ---> time (in sec) of the meteo profile
+double precision, allocatable, dimension(:) :: tmmet
+!> zdmet ---> altitudes of the dynamic profiles (read in the input meteo file)
+double precision, allocatable, dimension(:) :: zdmet
+!> ztmet --> altitudes of the temperature profile (read in the input meteo file)
+double precision, allocatable, dimension(:) :: ztmet
+!> umet --> meteo u  profiles (read in the input meteo file)
+double precision, allocatable, dimension(:,:) :: umet
+!> vmet --> meteo  v profiles (read in the input meteo file)
+double precision, allocatable, dimension(:,:) :: vmet
+!> wmet  --> meteo w profiles - unused
+double precision, allocatable, dimension(:,:) :: wmet
+!> ekmet --->  meteo turbulent kinetic energy profile (read in the input meteo file)
+double precision, allocatable, dimension(:,:) :: ekmet
+!> epmet ---> meteo turbulent dissipation profile (read in the input meteo file)
+double precision, allocatable, dimension(:,:) :: epmet
+!> ttmet --->  meteo temperature (Celsius) profile (read in the input meteo file)
+double precision, allocatable, dimension(:,:) :: ttmet
+!> qvmet ---> meteo specific humidity profile (read in the input meteo file)
+double precision, allocatable, dimension(:,:) :: qvmet
+!> ncmet ---> meteo specific drplet number profile (read in the input meteo file)
+double precision, allocatable, dimension(:,:) :: ncmet
+!> pmer  ---> Sea level pressure (read in the input meteo file)
 double precision, allocatable, dimension(:) :: pmer
-double precision, allocatable, dimension(:) :: xmet, ymet
-double precision, allocatable, dimension(:,:) :: rmet, tpmet, phmet
+!> xmet --> X axis cooordinates of the meteo profile (read in the input meteo file)
+double precision, allocatable, dimension(:) :: xmet
+!> ymet --> Y axis cooordinates of the meteo profile (read in the input meteo file)
+double precision, allocatable, dimension(:) :: ymet
 
-double precision, allocatable, dimension(:) :: nebdia, nn
+!   Arrays specific to values calculated from the meteo file (cf atlecm.f90):
+!> rmet -->  density profile
+double precision, allocatable, dimension(:,:) :: rmet
+!> tpmet -->  potential temperature profile
+double precision, allocatable, dimension(:,:) :: tpmet
+!> phmet -->  hydrostatic pressure from Laplace integration
+double precision, allocatable, dimension(:,:) :: phmet
+!> Diagnosed nebulosity
+double precision, allocatable, dimension(:) :: nebdia
+!> fractional nebulosity
+double precision, allocatable, dimension(:) :: nn
 
 ! 1.2 Pointers for the positions of the variables
 !------------------------------------------------
-
 !   Variables specific to the atmospheric physics:
-!   ippmod(iatmos) = 1 (Dry atmosphere):
-!   ippmod(iatmos) = 2 (Humid atmosphere):
-!                    itotwt---> total water content
-!                    intdrp---> total number of droplets
-
-integer, save :: itotwt, intdrp
+!> itotwt---> total water content (for humid atmosphere)
+integer, save :: itotwt
+!> intdrp---> total number of droplets (for humid atmosphere)
+integer, save :: intdrp
 
 ! 1.3 Pointers for the positions of the properties for the specific phys.
 !------------------------------------------------------------------------
-
 !   Properties specific to the atmospheric physics:
-!   ippmod(iatmos) = 1 or 2 (Dry or Humid atmosphere):
-!                    itempc---> temperature (in celsius)
-!   ippmod(iatmos) = 2 (Humid atmosphere):
-!                    iliqwt---> liquid water content
-
-integer, save :: itempc, iliqwt
+!> itempc---> temperature (in celsius)
+integer, save :: itempc
+!> iliqwt---> liquid water content
+integer, save :: iliqwt
 
 !----------------------------------------------------------------------------
 
@@ -96,135 +107,181 @@ integer, save :: itempc, iliqwt
 
 ! 2.1 Data specific to the input meteo profile
 !----------------------------------------------
-!                   imeteo --> flag for reading the meteo input file
-!                               = 0 -> no reading
-!                               = 1 -> reading
-!                   nbmetd --> numbers of altitudes for the dynamics
-!                   nbmett --> numbers of altitudes for the temperature
-!                                and specific humidity
-!                   nbmetm --> numbers of time steps for the meteo profiles
-!                   iprofm --> read zone boundary conditions from profile
-!                initmeteo --> use meteo profile for variables initialization
-!                              (0: not used; 1: used (default))
 
-integer, save :: imeteo, nbmetd, nbmett, nbmetm, iprofm(nozppm)
+!> imeteo --> flag for reading the meteo input file
+!>-        = 0 -> no reading
+!>-        = 1 -> reading
+integer, save :: imeteo
+!> nbmetd --> numbers of altitudes for the dynamics
+integer, save :: nbmetd
+!> nbmett --> numbers of altitudes for the temperature and specific humidity
+integer, save :: nbmett
+!> nbmetm --> numbers of time steps for the meteo profiles
+integer, save :: nbmetm
+!> iprofm --> read zone boundary conditions from profile
+integer, save :: iprofm(nozppm)
+!> initmeteo --> use meteo profile for variables initialization
+!>                  (0: not used; 1: used (default))
 integer, save :: initmeteo
 
 ! 2.1 Constant specific to the physics (defined in atini1.f90)
 !-------------------------------------------------------------------------------
-!                  ps     --> reference pressure (to comput potential temp: 1.0d+5
-!                  rvsra  --> ratio gaz constant h2o/ dry air: 1.608d0
-!                  cpvcpa --> ratio Cp h2o/ dry air: 1.866d0
-!                  clatev --> latent heat of evaporation: 2.501d+6
-!                  gammat --> temperature gradient for the standard atmosphere
-!                              ( -6.5d-03 K/m)
 
-double precision, save:: ps, rvsra, cpvcpa, clatev, gammat,rvap
+!> ps  --> reference pressure (to comput potential temp: 1.0d+5)
+double precision, save:: ps
+!> rvsra  --> ratio gaz constant h2o/ dry air: 1.608d0
+double precision, save:: rvsra
+!> cpvcpa --> ratio Cp h2o/ dry air: 1.866d0
+double precision, save:: cpvcpa
+!> clatev --> latent heat of evaporation: 2.501d+6
+double precision, save:: clatev
+!> gammat --> temperature gradient for the standard atmosphere (-6.5d-03 K/m)
+double precision, save:: gammat
+!> rvsra*rair
+double precision, save:: rvap
 
 ! 2.2. Space and time reference of the run
 !-------------------------------------------------------------------------------
-!                     syear --> starting year
-!                     squant --> starting quantile
-!                     shour --> starting hour
-!                     smin --> starting min
-!                     ssec --> starting second
-!                     xlon --> longitude of the domain origin
-!                     xlat --> latitude of the domain origin
-!                            defined in usati1
 
-integer, save:: syear, squant, shour, smin
+!> syear --> starting year
+integer, save:: syear
+!> squant --> starting quantile
+integer, save:: squant
+!> shour --> starting hour
+integer, save:: shour
+!> smin --> starting min
+integer, save:: smin
+!> ssec --> starting second
 double precision, save :: ssec
-double precision, save:: xlon, xlat
+!> xlon --> longitude of the domain origin
+double precision, save:: xlon
+!> xlat --> latitude of the domain origin
+double precision, save:: xlat
 
 ! 2.3 Data specific to the meteo profile above the domain
 !--------------------------------------------------------
-
-integer, save:: nbmaxt, ihpm
+!> Number of vertical levels (cf. 1D radiative scheme
+integer, save:: nbmaxt
+!> ihpm --> flag to compute the hydrostastic pressure by Laplace integration
+!>           in the meteo profiles
+!>-     = 0 : bottom to top Laplace integration, based on P(sea level) (default)
+!>-     = 1 : top to bottom Laplace integration based on P computed for
+!>            the standard atmosphere at z(nbmaxt)
+integer, save:: ihpm
 
 
 ! 2.4 Data specific to the 1D vertical grid:
 !-------------------------------------------
-!                  ivert  --> flag for the definition of the vertical grid
-!                              -1: no vertical grid (default)
-!                              0 : automatic definition
-!                              1 : definition by the user in usdefv
-!                   nvert  --> number of vertical arrays
-!                   kvert  --> number of levels (up to the top of the domain)
-!                   kmx    --> max number of levels (up to 11000 m if ray1d used)
-!                              (automatically computed)
 
-integer, save:: ivert, nvert, kvert, kmx
+!> ivert  --> flag for the definition of the vertical grid
+!>-      -1 : no vertical grid (default)
+!>-       0 : automatic definition
+!>-       1 : definition by the user in cs_user_atmospheric_model.f90
+integer, save:: ivert
+!> nvert  --> number of vertical arrays
+integer, save:: nvert
+!> kvert  --> number of levels (up to the top of the domain)
+integer, save:: kvert
+!> kmx    --> Number of levels (up to 11000 m if ray1d used)
+!>                    (automatically computed)
+integer, save:: kmx
 
 ! 2.5 Data specific to the 1d atmospheric radiative module:
 !-------------------------------------------------------------------------------
-!           iatra1 -->  flag for the use of the 1d atmo radiative model
-!                              = 0 no use (default)
-!                               = 1 use
-!                    nfatr1 --> 1d radiative model pass frequency
-!                   iqv0   --> flag for the standard atmo humidity profile
-!                              = 0 : q = 0 (default)
-!                              = 1 : q = decreasing exponential
-!                   should be defined in usati1
-
-integer, save:: iatra1, nfatr1, iqv0
-integer, save:: idrayi, idrayst, igrid
+!> iatra1 -->  flag for the use of the 1d atmo radiative model
+!>-      = 0 no use (default)
+!>-      = 1 use
+integer, save:: iatra1
+!> nfatr1 --> 1d radiative model pass frequency
+integer, save:: nfatr1
+!> iqv0   --> flag for the standard atmo humidity profile
+!>-      = 0 : q = 0 (default)
+!>-      = 1 : q = decreasing exponential
+integer, save:: iqv0
+!> pointer for 1D infrared profile
+integer, save:: idrayi
+!> pointer for 1D solar profile
+integer, save:: idrayst
+!> grid formed by 1D profiles
+integer, save:: igrid
 
 ! 2.6 Arrays specific to the 1d atmospheric radiative module
 !-------------------------------------------------------------------------------
 
-double precision, allocatable :: xyvert(:,:), zvert(:)
-double precision, allocatable :: acinfe(:), dacinfe(:), aco2(:, :)
-double precision, allocatable :: daco2(:,:), acsup(:), dacsup(:)
-double precision, allocatable :: tauzq(:), tauz(:), zq(:)
+!> horizontal coordinates of the vertical grid
+double precision, allocatable :: xyvert(:,:)
+!> vertical grid for 1D radiative scheme initialize in
+!>       cs_user_atmospheric_model.f90
+double precision, allocatable :: zvert(:)
+!> absorption for CO2 + 03
+double precision, allocatable :: acinfe(:)
+!> differential absorption for CO2 + 03
+double precision, allocatable :: dacinfe(:)
+!> absorption for CO2 only
+double precision, allocatable :: aco2(:, :)
+!> differential absorption for CO2 only
+double precision, allocatable :: daco2(:,:)
+!> idem acinfe, flux descendant
+double precision, allocatable :: acsup(:)
+!> internal variable for 1D radiative model
+double precision, allocatable :: dacsup(:)
+!> internal variable for 1D radiative model
+double precision, allocatable :: tauzq(:)
+!> internal variable for 1D radiative model
+double precision, allocatable :: tauz(:)
+!> internal variable for 1D radiative model
+double precision, allocatable :: zq(:)
+!> internal variable for 1D radiative model
 double precision, save :: tausup
+!> internal variable for 1D radiative model
 double precision, allocatable :: zray(:), rayi(:,:),rayst(:,:)
 
 ! 3.0 Data specific to the ground model
 !-------------------------------------------------------------------------------
-! iatsoil  --> flag to use the ground model
-
+!> iatsoil  --> flag to use the ground model
 integer, save:: iatsoil
-double precision, save:: w1ini,w2ini
+!> Water content of the first ground reservoir
+double precision, save:: w1ini
+!> Water content of the second ground reservoir
+double precision, save:: w2ini
 
 !  -------------------------------------------------------------------------------
 ! 4.0 Microphysics parameterization options
 !  -------------------------------------------------------------------------------
-!   --> Option for subgrid models
-!   modsub = 0 : the simplest parameterization (for numerical verifications)
-!   modsub = 1 : Bechtold et al. 1995 (Luc Musson-Genon)
-!   modsub = 2 : Bouzereau et al. 2004
-!   modsub = 3 : Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and
-!                Deardorff 1977
-!
-!   --> Option for liquid water content distribution models
-!   moddis = 1 : all or nothing
-!   moddis = 2 : Gaussian distribution
-!
-!   modnuc = 0 : without nucleation
-!   modnuc = 1 : Pruppacher and Klett 1997
-!   modnuc = 2 : Cohard et al. 1998,1999
-!   modnuc = 3 : Abdul-Razzak et al. 1998,2000 NOT IMPLEMENTED YET
-!
-!  logaritmic standard deviation of the log-normal law of the droplet spectrum
-!  adimensional  : sigc
-!
-!
-! sedimentation flag  : modsedi
-!
-! logaritmic standard deviation of the log-normal law of the droplet spectrum
-! adimensional :  sigc=0.53 other referenced values are 0.28, 0.15
 
-integer, save::  modsub,moddis,modnuc,modsedi
+!> Option for subgrid models
+!>-   modsub = 0 : the simplest parameterization (for numerical verifications)
+!>-   modsub = 1 : Bechtold et al. 1995 (Luc Musson-Genon)
+!>-   modsub = 2 : Bouzereau et al. 2004
+!>-   modsub = 3 : Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and
+!>                Deardorff 1977
+integer, save::  modsub
+!> Option for liquid water content distribution models
+!>-   moddis = 1 : all or nothing
+!>-   moddis = 2 : Gaussian distribution
+integer, save::  moddis
+!> Option for nucleation
+!>-   modnuc = 0 : without nucleation
+!>-   modnuc = 1 : Pruppacher and Klett 1997
+!>-   modnuc = 2 : Cohard et al. 1998,1999
+!>-   modnuc = 3 : Abdul-Razzak et al. 1998,2000 NOT IMPLEMENTED YET
+!>  logaritmic standard deviation of the log-normal law of the droplet spectrum
+integer, save::  modnuc
+!> sedimentation flag
+integer, save::  modsedi
+!> adimensional :  sigc=0.53 other referenced values are 0.28, 0.15
 double precision, save:: sigc
 
 !> force initilization in case of restart (this option is
 !> automatically set in lecamp)
 integer, save :: init_at_chem
 
+!> \}
+
 contains
 
   !=============================================================================
-
+!> \brief Initialisation of meteo data
 subroutine init_meteo
 
 use atsoil
@@ -244,9 +301,7 @@ if (imeteo.gt.0) then
 
   imode = 0
 
-  call atlecm &
-       !==========
-      ( imode )
+  call atlecm ( imode )
 
   ! NB : only ztmet,ttmet,qvmet,ncmet are extended to 11000m if iatr1=1
   !           rmet,tpmet,phmet
@@ -264,9 +319,7 @@ if (imeteo.gt.0) then
 
     imode = 0
 
-    call usatdv &
-        !==========
-        ( imode )
+    call usatdv ( imode )
 
     allocate(xyvert(nvert,3), zvert(kmx))
     allocate(acinfe(kmx), dacinfe(kmx), aco2(kmx,kmx))
@@ -276,15 +329,9 @@ if (imeteo.gt.0) then
 
     allocate(soilvert(nvert))
 
-    call mestcr &
-         !============
-         ("rayi", len("rayi"), 1, 0, idrayi)
-    call mestcr &
-         !============
-         ("rayst", len("rayst"), 1, 0, idrayst)
-    call gridcr &
-         !============
-         ("int_grid", len("int_grid"), igrid)
+    call mestcr  ("rayi",  len("rayi"), 1, 0, idrayi)
+    call mestcr  ("rayst", len("rayst"), 1, 0, idrayst)
+    call gridcr  ("int_grid", len("int_grid"), igrid)
 
   endif
 
@@ -293,7 +340,7 @@ endif
 end subroutine init_meteo
 
 !=============================================================================
-
+!> \brief Final step for deallocation
 subroutine finalize_meteo
 
 use atsoil

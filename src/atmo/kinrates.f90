@@ -24,8 +24,6 @@
 
 !> \file kinrates.f90
 !> \brief Calls the computation of reaction rates for atmospheric chemistry
-!
-!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -35,8 +33,7 @@
 !> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
-subroutine kinrates &
- (propce)
+subroutine kinrates (propce)
 
 !===============================================================================
 ! Module files

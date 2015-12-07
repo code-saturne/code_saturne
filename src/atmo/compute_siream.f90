@@ -34,8 +34,7 @@
 !> \param[in]     propce         physical properties at cell centers
 !______________________________________________________________________________
 
-subroutine compute_siream &
- ( dt     , propce)
+subroutine compute_siream ( dt , propce)
 
 !===============================================================================
 ! Module files

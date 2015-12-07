@@ -19,43 +19,24 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
-subroutine attssc &
-!================
-
-   ( iscal  ,                                                       &
-     propce ,                                                       &
-     crvexp )
-
-!===============================================================================
-! Purpose :
-! ----------
-
-!   Atmospheric physics subroutine.
-
-!   Additional right-hand side source terms for scalar equations
-
-!   if 1D atmospheric radiative module is used (iatra1 = 1) additional source terms
-!   for the thermal scalar equation to take into account the radiative forcing.
-
-
+!> \file attssc.f90
+!> \brief Additional right-hand side source terms for scalar equations
+!>    taking into account dry and humid atmospheric variables
+!
+!> \brief Additional right-hand side source terms for scalar equations
+!>   if 1D atmospheric radiative module is used (iatra1 = 1)
+!>    additional source terms
+!>   for the thermal scalar equation to take into account the radiative forcing.
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! iscal            ! i  ! <-- ! scalar number                                  !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! crvexp(ncelet)   ! tr ! --> ! second membre explicite                        !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   iscal           scalar number
+!> \param[in]   propce          physical properties at cell centers
+!> \param[in]   crvexp          explicit part of the second term
+!-------------------------------------------------------------------------------
+subroutine attssc ( iscal, propce, crvexp )
 
 !===============================================================================
 ! Module files
@@ -292,14 +273,15 @@ endif! ( ippmod(iatmos).eq.2 ) then ! for humid atmosphere physics only
 !--------
 
 return
+
+! ***********************************************************************
+
 contains
 
 ! ***********************************************************************
-! *
-! ***********************************************************************
+!> \brief Internal function -
+!>  computes the mean volumic radius of the droplets
 subroutine define_r3()
-
-!computes the mean volumic radius of the droplets
 
 double precision rho
 double precision qliq
@@ -330,6 +312,15 @@ end subroutine define_r3
 ! *******************************************************************
 ! *
 ! *******************************************************************
+!> \brief Internal function -
+!>   Compute the sedimentation speed from the radius for water dropplet
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]       r        radius
+!-------------------------------------------------------------------------------
 double precision function vit_sed(r)
 implicit none
 double precision r
@@ -339,10 +330,16 @@ end function vit_sed
 ! *******************************************************************
 ! *
 ! *******************************************************************
-
+!> \brief Internal function -
+!> Computation of the gradient of rho*qliq*V(r3)*exp(5*sc)
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]   grad        calculated gradient
+!-------------------------------------------------------------------------------
 subroutine grad_sed_ql(grad)
-
-! Computation of the gradient of rho*qliq*V(r3)*exp(5*sc)
 
 use cs_c_bindings
 implicit none
@@ -428,9 +425,17 @@ end subroutine grad_sed_ql
 ! *******************************************************************
 ! *
 ! *******************************************************************
+!> \brief Internal function -
+!> Computation of the gradient of rho*qliq*V(r3)*exp(5*sc)
+!> for sedimentation
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]   grad        calculated gradient
+!-------------------------------------------------------------------------------
 subroutine grad_sed_nc(grad)
-
-! Computation of the gradient of rho*qliq*V(r3)*exp(5*sc)
 
 use cs_c_bindings
 implicit none

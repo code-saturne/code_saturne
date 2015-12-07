@@ -19,43 +19,25 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file intprf.f90
+!> \brief Temporal and z-axis interpolation for meteorological profiles
 
-subroutine intprf &
-!================
-
- ( nprofz , nproft ,                                                            &
-   profz  , proft  , profv  , xz     , temps  , var    )
-
-!===============================================================================
-!  Purpose:
-!  ---------
-
-!      Temporal and z-axis optimized interpolation
-
+!> \brief Temporal and z-axis optimized linear interpolation
 !-------------------------------------------------------------------------------
-! arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nprofz           ! i  ! <-- ! total number of z-measure points               !
-! nproft           ! i  ! <-- ! total number of time dataset                   !
-! profz            ! tr ! <-- ! z coordonate of measure points                 !
-! proft            ! tr ! <-- ! physical time of dataset acquisition           !
-! profv            ! tr ! <-- ! measured values                                !
-! xz               ! tr ! <-- ! interpolation elevation                        !
-! temps            ! tr ! <-- ! interpolation time                             !
-! var              ! r  ! --> ! interpolation result                           !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-!===============================================================================
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   nprofz      total number of z-measure points
+!> \param[in]   nproft      total number of time dataset
+!> \param[in]   profz       z coordonate of measure points
+!> \param[in]   proft       physical time of dataset acquisition
+!> \param[in]   profv       measured values
+!> \param[in]   xz          interpolation elevation
+!> \param[in]   temps       interpolation time
+!> \param[out]  var         interpolation result
+!-------------------------------------------------------------------------------
+subroutine intprf ( nprofz, nproft, profz, proft, profv, xz, temps, var )
 
 implicit none
 
@@ -72,7 +54,6 @@ integer          it, it1, it2
 integer          iz, iz1, iz2
 double precision alphaz, alphat, var1, var2
 
-!===============================================================================
 
 !===============================================================================
 ! 1. Time interpolation

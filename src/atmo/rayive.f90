@@ -19,51 +19,28 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file rayive.f90
+!> \brief 1D Radiative scheme - IR H20 and dimere absorption
 
-subroutine rayive &
-!================
-
- (tauv,dtauv,qqqq,xqx,qqqqc,xqc,ro)
-
-!==============================================================================
-!  Purpose:
-!  --------
-
-!    Atmospheric module subroutine.
-
-! *                                                                    *
-! *  calcul de l'absorption par le gaz carbonique et par l'ozone       *
-! *  dans l'infra-rouge                                                *
-! *                                                                    *
-!
+!> \brief Compute in infrared spectral domain the emeissivity of H2O and dimere
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.__________________________________________________.
-! !    nom    !type!mode!                   role                                 !
-!_!___________!____!____!________________________________________________________!
-! ! tauv      ! r  ! r  ! transmission par la vapeur d'eau et                    !
-! !           !    !    ! ses dimeres                                            !
-! ! dtauv     ! r  ! r  ! derivee de la transmission par rapport                 !
-! !           !    !    ! a l'altitude                                           !
-! ! qqqq      ! r  ! d  ! quantite effective d'absorbant pour la vapeur          !
-! !           !    !    ! d'eau entre le sol et le niveau z                      !
-! ! xqx       ! r  ! d  ! quantite effective d'absorbant pour la vapeur          !
-! !           !    !    ! d'eau au niveau z'                                     !
-! ! qqqqc     ! r  ! d  ! idem qqqq pour les dimeres                             !
-! ! xqc       ! r  ! d  ! idem xqx pour les dimeres                              !
-! ! ro        ! r  ! d  ! masse volumique au niveau z                            !
-!_!___________!____!____!________________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[out]      tauv      transmission function for water vapor and dimers
+!> \param[out]      dtauv     d(tauv)/dz
+!> \param[in]       qqqq      optical dpeth for water vapor (z,z')
+!> \param[in]       xqx       effective concentration absorption by water vapor
+!> \param[in]       qqqqc     idem qqqq for dimers
+!> \param[in]       xqc       idem xqx for dimers
+!> \param[in]       ro        air density
+!-------------------------------------------------------------------------------
+subroutine rayive (tauv,dtauv,qqqq,xqx,qqqqc,xqc,ro)
 
 implicit none
 
 !===============================================================================
-
 !... declaration des variables externes
 
 double precision tauv,dtauv,qqqq,xqx,qqqqc,xqc,ro

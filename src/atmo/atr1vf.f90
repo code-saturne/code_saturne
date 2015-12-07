@@ -19,35 +19,21 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
-subroutine atr1vf &
-!================
-     ( propce )
-
-!===============================================================================
-!  Purpose:
-!  --------
-
-!    Atmospheric module subroutine.
-
-!    Computes the source term for scalar equations
-!    from radiative forcing (uv and ir radiative fluxes)
-!    computed with the 1d atmo radiative scheme.
+!> \file atr1vf.f90
+!> \brief 1D Radiative scheme - Compute radiative fluxes
 !
+!> \brief Atmospheric module subroutine. -
+!>    Computes the source term for scalar equations
+!>    from radiative forcing (uv and ir radiative fluxes)
+!>    computed with the 1d atmo radiative scheme.
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! propce           ! ra ! <-- ! properties cell centers                        !
-!  (ncelet, *)     !    !     !  (current time step)                           !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   propce   properties cell centers (current time step)
+!-------------------------------------------------------------------------------
+subroutine atr1vf ( propce )
 
 !===============================================================================
 ! Module files

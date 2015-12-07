@@ -19,53 +19,32 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file raysze.f90
+!> \brief 1D Radiative scheme - Solar data + zenithal angle)
 
-subroutine raysze &
-!================
-
- (xlat,xlong,jour,heurtu,imer,albe,muzero,fo)
-
-
-!================================================================================
-!  Purpose:
-!  --------
-
-!  Atmospheric module subroutine.
-
-!  fonction :
-!  --------
-!
-!   calcul : - du cosinus de l'angle zenithal
-!            - de la constante solaire
-!              (avec correction de distance terre-soleil)
-!            - de l'albedo si on est au-dessus de la mer
-!   ( utilisation des formules analytiques de paltrige et platt
-!                 dev.in atm. science no 5)
-!
-!---------------------------------------------------------------------------------
+!> \brief   Compute :
+!>-     - zenithal angle
+!>-     - solar contant (with correction for earth - solar length)
+!>-     - albedo if above the sea
+!>   ( utilisation des formules analytiques de paltrige et platt
+!>                 dev.in atm. science no 5)
+!-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! !    name   !type!mode!                   role                                 !
-!_!___________!____!____!________________________________________________________!
-! !  xlat     ! r  ! d  ! latitude                                               !
-! !  xlong    ! r  ! d  ! longitude                                              !
-! !  jour     ! r  ! d  ! quantieme                                              !
-! !  heurtu   ! r  ! d  ! heure TU                                               !
-! !  imer     ! e  ! d  ! indice de presence de mer                              !
-! !  albe     ! r  ! m  ! albedo (recalcule si imer=1)                           !
-! !  muzero   ! r  ! r  ! cosinus de l'angle zenithal                            !
-! !  fo       ! r  ! r  ! constante solaire                                      !
-!_!___________!____!____!________________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]   xlat        latitude
+!> \param[in]   xlong       longitude
+!> \param[in]   jour        day in the year
+!> \param[in]   heurtu      Universal time (hour)
+!> \param[in]   imer        sea index
+!> \param[in]   albe        albedo
+!> \param[out]  muzero      cosin of zenithal angle
+!> \param[out]  fo          solar constant
+!-------------------------------------------------------------------------------
+subroutine raysze  (xlat,xlong,jour,heurtu,imer,albe,muzero,fo)
 
 implicit none
-
-!===============================================================================
 
 ! Arguments
 

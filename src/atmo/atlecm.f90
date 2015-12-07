@@ -19,33 +19,17 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
-subroutine atlecm &
-     !================
-
-     ( imode )
-
-!===============================================================================
-!  Purpose:
-!  -------
-!             Reads the meteo profile data
-!             for the atmospheric module
-!
-!             IMODE = 0 : READING FOR DIMENSIONS ONLY
-!             IMODE = 1 : READING ACTUAL METEO DATA
-!
-!             WARNING : METEO DATA STRUCTURE CAN BE FOUND IN MODULE ATINCL
+!> \file atlecm.f90
+!> \brief Reads the meteo profile data for the atmospheric module
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   imode       IMODE = 0 : READING FOR DIMENSIONS ONLY
+!>                          IMODE = 1 : READING ACTUAL METEO DATA
+!-------------------------------------------------------------------------------
+subroutine atlecm ( imode )
 
 !===============================================================================
 ! Module files
@@ -823,30 +807,18 @@ end subroutine atlecm
 
 
 !===============================================================================
-
-subroutine comp_quantile(jour,mois,annee,quant)
-
-!===============================================================================
-!  Purpose:
-!  -------
-!             Computes quantile
+!> \brief Compute the calendar day number from the date
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-!===============================================================================
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]       jour        day
+!> \param[in]       mois        month
+!> \param[in]       annee       year
+!> \param[out]      quant       calendar day number
+!-------------------------------------------------------------------------------
+subroutine comp_quantile(jour,mois,annee,quant)
 
 implicit none
 
@@ -856,7 +828,6 @@ integer quant
 
 ! Local variables
 integer distrib, booll, retrait
-
 
 distrib = int(mois * 275 / 9.) - 30
 booll = int((mois + 9 ) / 12.) !boolean=0 for jan and feb and =1 for march to dec

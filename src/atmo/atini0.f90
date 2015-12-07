@@ -19,33 +19,14 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
+!> \file atini0.f90
+!> \brief Initialisation of variable options for Code_Saturne atmospheric
+!>     module in addition to what is done previously in iniini function
 subroutine atini0
-!================
-
-!===============================================================================
-!  FONCTION  :
-!  ---------
-
-!   INIT DES OPTIONS DES VARIABLES POUR LA VERSION ATMOSPHERIQUE
-!      EN COMPLEMENT DE CE QUI A DEJA ETE FAIT DANS INIINI
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
 !===============================================================================
 ! Module files
 !===============================================================================
-
 use paramx
 use dimens
 use ihmpre
@@ -77,7 +58,7 @@ implicit none
 !===============================================================================
 
 !--> constants used in the atmospheric physics module
-!    (see definition in atincl.h):
+!    (see definition in atincl.f90):
 
 ps = 1.0d5
 rvsra = 1.608d0
@@ -99,7 +80,6 @@ rvap = rvsra*rair
 !       = 0 : bottom to top Laplace integration, based on P(sea level) (default)
 !       = 1 : top to bottom Laplace integration based on P computed for
 !            the standard atmosphere at z(nbmaxt)
-
 ihpm = 0
 
 ! 1d radiative transfer model:

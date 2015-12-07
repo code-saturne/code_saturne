@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file atleca.f90
-!> \brief Reads intial aerosol concentrations and number
+!> \brief Reads initial aerosol concentration and number
 !>
 !------------------------------------------------------------------------------
 

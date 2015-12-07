@@ -19,43 +19,27 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
-subroutine solvar &
-!================
-   ( temp , qv , rom , dt ,                                                  &
-     rcodcl )
-
-
-!==============================================================================
-! FUNCTION
-!==============================================================================
-! *--------                                                            *
-! *  module d'interface sol/atmosphere                                 *
-! *  calcule les variables de surface (temperature et humidite):       *
-! *    - pour la temperature : avec une equation prognostique du type  *
-! *      "force-restore" (deardorff 1978)                              *
-! *    - pour l'humidite : par une methode a 2 reservoirs              *
-! *                                                                    *
-!==============================================================================
+!> \file solvar.f90
+!> \brief Atmospheric soil module - Compute ground level variables
+!
+!> \brief   Soil / atmosphere interface routine
+!>   Compute the following surface variables :
+!>-     temperature with a prognostic equation of the "force-restore" type
+!>                       (deardorff 1978)
+!>-     humidity with a two reservoirs method
+!
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!  temp            ! ra ! <-- ! temperature                                    !
-!  qv              ! ra ! <-- ! humidite specifique                            !
-!  pa              ! ra ! <-- ! pression projetee sur maillage vitesse         !
-!  rom             ! ra ! <-- ! masse volumique                                !
-!  dt              ! ra ! <-- ! rapport du pas de temps local au pas           !
-!                  !    !     ! de temps de reference                          !
+!______________________________________________________________________________.
+!  mode           name          role
 !______________________________________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
-
+!> \param[in]   temp    temperature
+!> \param[in]   qv      specific humidity
+!> \param[in]   rom     Density
+!> \param[in]   dt      ratio of the local time step to the reference one
+!> \param[in]   rcodcl  Boundary conditions type
+!-------------------------------------------------------------------------------
+subroutine solvar ( temp , qv ,rom , dt, rcodcl )
 
 !===============================================================================
 ! Module files
@@ -131,7 +115,6 @@ call field_get_val_v(ivarfl(iu), vel)
 !     ==========================
 !     1) initialisations locales
 !     ==========================
-
 
 b = 5.d0
 c = 5.d0

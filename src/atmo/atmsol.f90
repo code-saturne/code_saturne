@@ -19,19 +19,12 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
-subroutine atmsol
-!================
-
-!===============================================================================
-! FONCTION :
-! --------
-
-!    build constant and variable  to describe ground model
-!    NB : soil model structures defined in module atsoil.f90
+!> \file atmsol.f90
+!> \brief    build constants and variables to describe the ground model
 !
-!===============================================================================
-
+!> \brief    build constants and variables to describe ground model
+!>-     NB : soil model structures defined in module atsoil.f90
+subroutine atmsol
 !===============================================================================
 ! Module files
 !===============================================================================
@@ -52,9 +45,7 @@ use atsoil
 use mesh
 
 !===============================================================================
-
 implicit none
-
 !===============================================================================
 
 ! Local variables

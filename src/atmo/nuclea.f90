@@ -19,11 +19,24 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file nuclea.f90
+!> \brief Atmospheric module - humid atmosphere - cloud droplet nucleation
 
-subroutine nuclea &
-!================
-
- (nc,w,rom,tempc,qldia,pphy,refrad)
+!> \brief Compute aerosols nucleation source term
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]      nc       Dropplet number (scalar)in 1/cm**3
+!> \param[in]       w        Vertical wind speed in m/s
+!> \param[in]       rom      density of air in kg/m**3
+!> \param[in]       tempc    Temperature (scalar) in degre celsius
+!> \param[in]       qldia    masse fraction of liquid water in kg/kg
+!> \param[in]       pphy     true pressure in pascals
+!> \param[in]       refrad   radiative cooling
+!-------------------------------------------------------------------------------
+subroutine nuclea (nc,w,rom,tempc,qldia,pphy,refrad)
 
 !===============================================================================
 ! FONCTION :
@@ -37,27 +50,6 @@ subroutine nuclea &
 !      passe apres l'advection et la diffusion, on corrige donc nc
 !      si necessaire.
 !
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-!   nom     !type!mode!                  role                              !
-!___________!____!____!____________________________________________________!
-!  nc       ! tr ! m  ! scalaire 'nombre de gouttes'  en 1/cm**3           !
-!  w        ! tr ! d  ! vitesse du vent en m/s (seulement la 3eme
-!           !    !    ! composante est utilisee)
-!  rom      ! tr ! d  ! masse volumique de l'air en kg/m**3                !
-!  tempc    ! tr ! d  ! scalaire temperature en degre celsius              !
-!  qldia    ! tr ! d  ! scalaire fraction massique d'eau liquide en kg/kg  !
-!  pphy     ! tr ! d  ! pression physique en pascals                       !
-!  refrad   ! tr ! d  !                                                    !
-!___________!____!____!____________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            - TABLEAU DE TRAVAIL
-!===============================================================================
-
 !===============================================================================
 ! Module files
 !===============================================================================

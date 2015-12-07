@@ -19,37 +19,24 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
-subroutine atprke &
-!================
-
- ( nscal  ,                                                       &
-   tinstk ,                                                       &
-   smbrk  , smbre )
-
-!===============================================================================
-! FONCTION :
-! --------
-!  SPECIFIQUE AU CAS ATMOSPHERIQUE :
-!  CALCUL DU TERME DE PRODUCTION LIEE A LA FLOTTABILITE :
-!  G = G*GRAD(THETA)/PRDTUR/THETA
+!> \file atprke.f90
+!> \brief Modify the \f$k-\varepsilon\f$ turbulence model formulation (cf.: turbke)
+!>  for the atmospheric module
+!
+!>\brief Adjonction of a production term for buyancy in the \f$k-\varepsilon\f$ model
+!>  in the context of the atmospheric module \n
+!>  G = G*GRAD(THETA)/PRDTUR/THETA
 !-------------------------------------------------------------------------------
-! ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! tinstk(ncelet)   ! tr ! --> ! Implicit part of the buoyancy term (for k)     !
-! smbrk(ncelet)    ! tr ! --> ! Explicit part of the buoyancy term (for k)     !
-! smbre(ncelet)    ! tr ! --> ! Explicit part of the buoyancy term (for eps)   !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   nscal           total number of scalars
+!> \param[in]   tinstk          Implicit part of the buoyancy term (for k)
+!> \param[in]   smbrk           Explicit part of the buoyancy term (for k)
+!> \param[in]   smbre           Explicit part of the buoyancy term (for eps)
 !-------------------------------------------------------------------------------
-!===============================================================================
+subroutine atprke ( nscal, tinstk, smbrk, smbre )
 
 !===============================================================================
 ! Module files
@@ -140,6 +127,7 @@ endif
 deallocate(grad)
 
 return
+!**************************************************************************
 contains
 
 !**************************************************************************
@@ -148,11 +136,11 @@ contains
 !--------------------------------------------------------------------------
 !
 !--------------------------------------------------------------------------
-
+!> \brief Internal function -
+!> Computes the production term in case of dry atmosphere
+!> ie. when ippmod(iatmos) eq 1
+!--------------------------------------------------------------------------
 subroutine dry_atmosphere()
-
-! computes the production term in case of dry atmosphere
-! ie. when ippmod(iatmos) eq 1
 
 ! Computation of the gradient of the potential temperature
 
@@ -209,7 +197,10 @@ end subroutine dry_atmosphere
 !--------------------------------------------------------------------------
 !
 !--------------------------------------------------------------------------
-
+!> \brief Internal function -
+!> Computes the production term in case of humid atmosphere
+!> ie. when ippmod(iatmos) eq 2
+!--------------------------------------------------------------------------
 subroutine humid_atmosphere()
 
 ! computes the production term in case of humid atmosphere

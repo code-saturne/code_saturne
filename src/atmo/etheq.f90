@@ -19,41 +19,25 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file etheq.f90
+!> \brief Atmospheric module - humid atmosphere variables
 
-subroutine etheq &
-!================
-
- (pphy,thetal,qw,qldia,xnebdia,xnn,etheta,eq)
-
-!===============================================================================
-! FONCTION :
-! ----------
-! Calcul des coefficients etheta et eq dependant du degre de saturation
-
+!> \brief Compute of etheta and eq variable knowing the saturation
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!  pphy            !  tr! d  ! pression reelle en pascals                      !
-! thetal           !  tr! d  ! temperature potentielle liquide transportee     !
-!   qw             !  tr! d  ! quantite d'eau totale transportee               !
-!  qldia           !  tr! d  ! quantite moyenne d'eau liquide                  !
-! xnebdia          !  tr! d  ! nebulosite issue du diagnostique                !
-!   xnn            !    !    ! moment d'ordre 2 "n" <s'ql'>/(2*sigma_s**2)     !
-! etheta           !  tr! r  ! coefficient etheta                              !
-!   eq             !  tr! r  ! coefficient eq                                  !
-!------------------------------------------------------------------------------!
-!    e             !  tr! d  ! energie cinetique turbulente                    !
-!   eps            !  tr! d  ! dissipation                                     !
-!------------------------------------------------------------------------------!
-! model            !  e ! d  ! indice du modelisation des coef. etheta, eq     !
-!__________________!____!____!_________________________________________________!
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]       pphy        pressure [Pa]
+!> \param[in]       thetal      Liquid potential temperature
+!> \param[in]       qw          total water amount
+!> \param[in]       qldia       mean liquid water content
+!> \param[in]       xnebdia     nebulosity after the diagnostic
+!> \param[in]       xnn         second order moment "n" <s'ql'>/(2*sigma_s**2)
+!> \param[out]      etheta      sensible heat part of buoyancy flux
+!> \param[out]      eq          latent heat part of buoyancy flux
+!-------------------------------------------------------------------------------
+subroutine etheq (pphy,thetal,qw,qldia,xnebdia,xnn,etheta,eq)
 
 !===============================================================================
 ! Module files

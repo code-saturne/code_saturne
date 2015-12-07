@@ -19,29 +19,12 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
+!> \file atini1.f90
+!> \brief Initialisation of variable options for the atmospheric module in
+!>      addition to what is done in usipsu function
+!>
+!> Warning some initialisations are done twice ...
 subroutine atini1
-!================
-
-
-!===============================================================================
-!  FONCTION  :
-!  ---------
-
-!   INIT DES OPTIONS DES VARIABLES POUR LA VERSION ATMOSPHERIQUE
-!      EN COMPLEMENT DE CE QUI A DEJA ETE FAIT DANS USIPSU
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
 !===============================================================================
 ! Module files

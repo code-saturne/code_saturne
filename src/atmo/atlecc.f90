@@ -26,13 +26,11 @@
 
 !> \file atlecc.f90
 !> \brief Reads the chemistry profile data for the atmospheric chemistry
-!>
-!>             imode = 0 : reading of dimensions only
-!>             imode = 1 : reading of data
-!>
-!>             warning : arguments are defined only on second call
-!>             of the routine (imode = 1)
 !
+!> \brief Reads the chemistry profile data for the atmospheric chemistry
+!>-     imode = 0 : reading of dimensions only, imode = 1 : reading of data
+!>-     warning : arguments are defined only on second call
+!>             of the routine (imode = 1)
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -43,8 +41,7 @@
 !> \param[in]     imode         execution mode
 !_______________________________________________________________________________
 
-subroutine atlecc &
- ( imode)
+subroutine atlecc (imode )
 
 !===============================================================================
 ! Module files
@@ -447,7 +444,7 @@ call csexit (1)
 '@    MODULE DE CHIMIE (ICHEMISTRY) DEMANDE                   ',/,&
 '@                                                            ',/,&
 '@              Erreur  dans le fichier chimie :              ',/,&
-'@  le nombre de mesures de concentrations doit être          ',/,&
+'@  le nombre de mesures de concentrations doit etre          ',/,&
 '@  superieur a 2                                             ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&

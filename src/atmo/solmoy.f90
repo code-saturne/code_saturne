@@ -19,42 +19,33 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
-subroutine solmoy &
-     !================
-     ( ierreu )
-
-!==============================================================================
-! FUNCTION
-!==============================================================================
-! *                                                                    *
-! *   calcul des coefficients du modele d'interface sol-atmosphere     *
-! *                                                                    *
-! *   on connait :                                                     *
-! *    - la surface occupee par chaque categorie de sol (pourcentage)  *
-! *      dans chaque maille (tableau indsol)                           *
-! *    - les valeurs des coefficients du modele d'interface sol-atm.   *
-! *      pour chaque categorie de sol (tableaux rugdyn,...,csol)       *
-! *                                                                    *
-! *   on calcule pour chaque maille :                                  *
-! *      la moyenne des coefficients des categories de sol             *
-! *                 ponderee par la surface de chaque categorie        *
-! *                                                                    *
-! *   ainsi par exemple si on a 3 types de sol (eau, foret, bati)      *
-! *                                                                    *
-! *    albedo(i,j) = albedo(eau  ) * %_surface_eau  (i,j)              *
-! *                + albedo(foret) * %_surface_foret(i,j)              *
-! *                + albedo(bati ) * %_surface_bati (i,j)              *
-! *                                                                    *
-!==============================================================================
-
+!> \file solmoy.f90
+!> \brief Atmospheric soil module - Initialize ground level parameters from land use
+!
+!> \brief
+!>   calcul des coefficients du modele d'interface sol-atmosphere
+!>   on connait :
+!>-    - la surface occupee par chaque categorie de sol (pourcentage)
+!>       dans chaque maille (tableau indsol)
+!>-     - les valeurs des coefficients du modele d'interface sol-atm.
+!>       pour chaque categorie de sol (tableaux rugdyn,...,csol)
+!>
+!>    on calcule pour chaque maille :
+!>       la moyenne des coefficients des categories de sol
+!>                  ponderee par la surface de chaque categorie
+!>    ainsi par exemple si on a 3 types de sol (eau, foret, bati)
+!>-     albedo(i,j) = albedo(eau  ) * %_surface_eau  (i,j)
+!>                 + albedo(foret) * %_surface_foret(i,j)
+!>                 + albedo(bati ) * %_surface_bati (i,j)
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ierreu           ! i  ! --> ! error code
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[out]   ierreu   code error
+!-------------------------------------------------------------------------------
+
+subroutine solmoy ( ierreu )
 
 !===============================================================================
 ! Module files
@@ -74,7 +65,6 @@ use ppincl
 use atincl
 use atsoil
 use mesh
-
 
 implicit none
 
@@ -152,7 +142,6 @@ do ifac = 1, nfmodsol
   r1ij   = zero
   r2ij   = zero
 
-  ! en a-t-on encore besoin ??? z(2) = ??? z(km) = ???
   !          zrrel = z(2)*(z(km)-CDGFBO(3,IFAC))/z(km)
 
   do n = 1, nbrsol

@@ -31,6 +31,13 @@
 
 BEGIN_C_DECLS
 
+/*!
+  \file cs_at_plugin.h
+
+  \brief Plugin to get aerosol and compute_coagulation_coefficient functions
+    from SIREAM library (ENPC - INRIA - EDF R&D)
+*/
+
 /*============================================================================
  * Macro definitions
  *============================================================================*/

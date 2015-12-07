@@ -19,28 +19,13 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
+!> \file atprop.f90
+!> \brief Add if needed the variables fields for temperature and liquid water
+!>
+!> \brief Add if needed the variable field for temperature and liquid water \n
+!>    Nota : ippmod(iatmos) = 1 --> Dry atmosphere, = 2 --> Humid atmosphere
 subroutine atprop
-!================
 
-!===============================================================================
-!  FONCTION  :
-!  ---------
-
-!     INIT DES POSITIONS DES VARIABLES D'ETAT
-!            POUR LE MODULE ATMOSPHERIQUE
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
 !===============================================================================
 ! Module files

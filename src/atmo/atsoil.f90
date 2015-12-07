@@ -21,68 +21,110 @@
 !-------------------------------------------------------------------------------
 
 !> \file atsoil.f90
-!> Module for the atmospheric soil model structures.
+!> \brief Module for the atmospheric soil model adapted to the IGN "land use"
+!>      file format
 
 module atsoil
-
+!> \defgroup at_soil
 !=============================================================================
-
+!> \addtogroup at_soil
+!> \{
 implicit none
+!> Number of boundary faces with soil features
+integer, save :: nfmodsol
+!> Number of soil model's type
+integer, save :: nbrsol
 
-integer, save :: nfmodsol , nbrsol
-
+!> kind of soil (water, forest, urban ...) and associated constantes
 type categorie_sol
+!> Dynamic roughness length
   double precision  :: rugdyn
+!> Thermal roughness length
   double precision  :: rugthe
+!> Albedo
   double precision  :: albedo
+!> emissivity
   double precision  :: emissi
+!> Vegetation index
   double precision  :: vegeta
+!> maximum water capacity of shallow reservoir
   double precision  :: c1w
+!> ratio of the maximum water capacity of the shallow reservoir to the deep
+!> reservoir [0,1]
   double precision  :: c2w
+!> Thermal inertia of the soil
   double precision  :: csol
+!> Rij value for Rij1
   double precision  :: r1
+!> Rij value for Rij2
   double precision  :: r2
+!> deep soil temperture
   double precision  :: tprof
+!> Soil category name
   character(len=10) :: nomcat
 end type categorie_sol
 
+!> Class definition of soil_variables
 type variables_sol
   type(categorie_sol) :: constantes
-  double precision :: temp_sol      ! itempl
+!> soil temperature
+  double precision :: temp_sol
+!> deep soil temperature
   double precision :: tempp
-  double precision :: total_water   ! itotwt
-  double precision :: w1            ! sol water content
+!> total water content
+  double precision :: total_water
+!> ratio of the shallow reservoir water content to its maximum capacity
+  double precision :: w1
+!> ratio of the deep reservoir water content to its maximum capacity
   double precision :: w2
 end type variables_sol
 
 ! Initialisation values for soil variables (filled in usati1)
-double precision :: tsini   ! TSINI  : initial soil surface temperature
-double precision :: tprini  ! TPRINI : initial deep soil temperature
-double precision :: qvsini  ! QVSINI : initial soil specific humidity
-double precision :: tmer    ! sea temperature
 
+!> initial soil surface temperature
+double precision :: tsini
+!> initial deep soil temperature
+double precision :: tprini
+!> initial soil specific humidity
+double precision :: qvsini
+!> Sea surface temperature
+double precision :: tmer
+
+!> array of the different features of each soil category
 type(categorie_sol) , dimension(:) , allocatable :: tab_sol
+!> index of boundary faces with soil features
 integer , dimension(:) , allocatable, save       :: indsol
+!> percentage of soil's category in each boundary face
 integer , dimension(:,:) , allocatable           :: pourcent_sol
+!> Class soil variable dimension
 type(variables_sol) , dimension(:) , allocatable, save :: solution_sol
 
-! Defines the soil constants and variables of the vertical arrays
-! used for the 1D radiative model
-
+!> Defines the soil constants and variables of the vertical arrays
+!> used for the 1D radiative model
 type soil_tab
-  double precision :: albedo   ! albedo
-  double precision :: emissi   ! emissivity
-  double precision :: ttsoil   ! soil thermo temperature
-  double precision :: tpsoil   ! soil potential temperature
-  double precision :: totwat   ! total water content
-  double precision :: pressure ! surface pressure
-  double precision :: density  ! density
-  double precision :: foir     ! ir downcoming flux
-  double precision :: fos      ! solar radation absorbed by the soil
-end type soil_tab
+!> albedo
+  double precision :: albedo
+  !> emissivity
+  double precision :: emissi
+  !> soil thermo temperature
+  double precision :: ttsoil
+  !> soil potential temperature
+  double precision :: tpsoil
+  !> total water content
+  double precision :: totwat
+  !> surface pressure
+    double precision :: pressure
+  !> density
+  double precision :: density
+  !> ir downcoming flux
+  double precision :: foir
+  !> solar radation absorbed by the soil
+  double precision :: fos
+  end type soil_tab
 
+!> Class soilvert dimension
 type(soil_tab), dimension(:), allocatable, save :: soilvert
-
+!> \}
 !=============================================================================
 
 end module atsoil

@@ -19,66 +19,51 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file rayir.f90
+!> \brief 1D Radiative scheme - IR flux divergence profile and
+!>  downward flow to the ground
+!
+!>  \brief   calculation for Infrared (IR)  atmospheric radiation
+!>      - vertical profile of IR flux divergence,
+!>      - downward IR flux at the ground.
+!>      - upward and downward fluxes at different vertical levels for irdm=1 (option)
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]   k1          index corresponding to ground level
+!> \param[in]   kmray       number of vertical levels for radiation computation
+!> \param[in]   ico2        ico2=1 -> compute CO2 absorption
+!> \param[in]   emis        ground surface emissivity
+!> \param[in]   qqv         water vapor + dimers optical depth (0,z)
+!> \param[in]   qqqv        idem qqv but for intermediates vertical levels
+!> \param[in]   qqvinf      idem qqv but for contribution above 11000m
+!> \param[in]   zqq         vertical coordinate
+!> \param[in]   acinfe      absorption for CO2 + O3 (0,z)
+!> \param[in]   dacinfe     differential absorption for CO2 + 03 (0,z)
+!> \param[in]   aco2        idem acinfe but for CO2 only
+!> \param[in]   daco2       idem dacinfe but for CO2 only
+!> \param[in]   acsup       idem acinfe, for (z,0)
+!> \param[in]   dacsup      idem dacinfe, for (z,0)
+!> \param[in]   zray        altitude (physical mesh)
+!> \param[in]   temray      temperature in Celsius
+!> \param[in]   qvray       specific humidity for water vapor
+!> \param[in]   qlray       specific humidity for liquid water
+!> \param[in]   fnerir      cloud fraction
+!> \param[in]   romray      air density
+!> \param[in]   preray      pressure
+!> \param[in]   aeroso      aerosol concentration in micro-g/m3
+!> \param[out]  foir        downward IR flux at the ground
+!> \param[out]  rayi        IR flux divergence
+!-------------------------------------------------------------------------------
 
 subroutine rayir &
-!===============
-
  ( k1,kmray,ico2,emis,                            &
    qqv, qqqv, qqvinf, zqq,                        &
    acinfe, dacinfe, aco2, daco2, acsup, dacsup,   &
    zray,temray,qvray,qlray,fnerir,                &
    romray,preray,aeroso,foir,rayi )
-
-!==============================================================================
-!  Purpose:
-!  --------
-
-!    Atmospheric module subroutine.
-
-!
-!   calcul dans le domaine spectral infra-rouge:
-!      - du profil de la divergence du flux,
-!      - du flux descendant au sol.
-!
-!
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.__________________________________________________.
-! !    nom    !type!mode!                   role                                 !
-!_!___________!____!____!________________________________________________________!
-! !  k1       ! e  ! d  ! indice du premier point du segment vertical            !
-! !           !    !    ! considere                                              !
-! !  kmray    ! e  ! d  ! nombre de niveaux verticaux pour les modules           !
-! !           !    !    ! de rayonnement                                         !
-! !  ico2     ! e  ! d  ! ico2=1 -> calcul fct d'absorption par co2              !
-! !  emis     ! r  ! d  ! emissivite de la surface terrestre                     !
-! !  qqv      ! tr ! d  ! absorption par la vapeur d'eau + dimeres               !
-! !  qqqv     ! tr ! d  !   idem niveaux intermediaires                          !
-! !  qqvinf   ! tr ! d  !   idem mais contribution > 11000m                      !
-! !  zzq      ! tr ! d  ! vertical coordinate                                    !
-! !  acinfe   ! tr ! d  ! absorption par CO2 + 03                                !
-! !  dacinfe  ! tr ! d  ! absorption differentielle par CO2 + 03                 !
-! !  aco2     ! tr ! d  ! idem pour CO2 seul                                     !
-! !  daco2    ! tr ! d  ! idem pour CO2 seul                                     !
-! !  acsup    ! tr ! d  ! idem acinfe, flux descendant                           !
-! !  dacsup   ! tr ! d  ! idem acinfe, flux descendant                           !
-! !  zray     ! tr ! d  ! altitude (maillage physique)                           !
-! !  temray   ! tr ! d  ! temperature en Celsius                                 !
-! !  qvray    ! tr ! d  ! humidite                                               !
-! !  qlray    ! tr ! d  ! teneur en eau liquide                                  !
-! !  fnerir   ! tr ! d  ! nebulosite                                             !
-! !  romray   ! tr ! d  ! masse volumique                                        !
-! !  preray   ! tr ! d  ! pression sur maillage vitesse                          !
-! !  aeroso   ! tr ! d  ! contenu en aerosol                                     !
-! !  foir     ! r  ! r  ! flux IR descendant au sol                              !
-! !  rayi     ! tr ! r  ! divergence du flux IR                                  !
-!_!___________!____!____!________________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -174,8 +159,7 @@ qqqv(kmx+1) = 0.d0
 
 foir = 0.d0
 
-! contribution des couches superieures de l atmosphere (11000 a 44000)
-! aux quantites d'absorbant
+! uppper layers contribution (11000-44000) to optical depth
 
 qqvinf = 0.002515d0
 qqcinf = 2.98d-7
@@ -183,24 +167,27 @@ qqlinf = 0.d0
 
 cetyp = rvsra/1.134d0
 
-! coefficient pour prendre en compte l'ensemble des angles de diffusion
-! (deja pris en compte dans les fonctions d'emissivite)
+! diffusion coeficient integrated over all directions
+
 beta = 1.66d0
 
-! definition du coefficient d'absorption par l'eau nuageuse :
-! (on prend le meme rayon equivalent que dans le rayonnement solaire)
+! calculation for the liquid water absorption coefficient
+!  (same equivalent radius as solar radiation)
 !
 do k = k1, kmray
-! densite de l'eau liquide en g/m3 dans les couches considerees
+! liquid water content in g/m3 in the layers
   wh2ol = 1.d3*romray(k)*qlray(k)
-! coefficient d'absorption suppose constant pour des rayons de
-! particules allant de 0.01 a 10 microns
+! absorptiion coefficient depending on the equivalent radius
+! of the cloud droplets
   kliq(k) = 120.d0
 enddo
-
+! indexes for presence of clouds, aerosols
 inua = 0
 iaer = 0
-caero = 1.d-9
+! index to compute or not the downward and upward IR fluxes
+!irdm=1
+! constant for aerosol concentration which has to be in µg/m3
+caero=1.d-9
 
 do k = k1, kmray-1
  dz0(k) = zray(k+1) - zray(k)
@@ -209,7 +196,7 @@ enddo
 dz0(kmray) = 0.d0
 zbas = zray(k1)
 
-!   1- calcul des quantites d'absorbant pour la vapeur d'eau et les dime
+!   1- computation to estimate absorption for water vapor and its dimer
 !   --------------------------------------------------------------------
 do k = k1, kmray
   if(qlray(k).gt.1.d-8) inua = 1
@@ -223,14 +210,13 @@ do k = k1, kmray
   roc(k) = romray(k)*qc(k)
 enddo
 
-! en presence de couches nuageuse on calcule la quantite d'absorbant
-! pour l'eau liquide
-! on prend en compte les aerosols uniquement en ciel clair
-
+! idem for cloud layers (aerosol only for clear sky condition)
 if(inua.eq.1) then
   do k = k1, kmray
     rol(k) = romray(k)*(qlray(k) + caero*aeroso(k))
   enddo
+
+! idem for aerosol layers
 elseif(iaer.eq.1) then
   do k = k1, kmray
     rol(k) = caero*romray(k)*aeroso(k)
@@ -238,10 +224,9 @@ elseif(iaer.eq.1) then
   enddo
 endif
 
-!  2 -calcul des chemins optiques pour la vapeur d'eau et les dimeres
+!  2 - optcal depth calculation for water vapor and its dimer
 !  ------------------------------------------------------------------
-! les variables qqq correspondent aux niveaux standards, les variables
-! qq aux niveaux intermediaires
+! qqq corresponds to standard levels, qq to intermediate levels
 
 do k = k1+1, kmray
   dzs8 = dz0(k-1)/8.d0
@@ -260,8 +245,8 @@ pspoqq(k1) = pspo(k1)
 xqqvinf = qqqv(kmray) + qqvinf
 xqqcinf = qqqc(kmray) + qqcinf
 
-!   3 -en presence de nuages, calcul des chemins optiques pour l'eau
-!      nuageuse en utilisant les memes notations
+!   3 - optical depth calculation for liquid water in cloudy cases
+!       by using the same notation
 !   ----------------------------------------------------------------
 
 if(inua.eq.1) then
@@ -273,9 +258,9 @@ if(inua.eq.1) then
   xqqlinf = qqql(kmray) + qqlinf
 endif
 
-!   4 -au premier pas de temps, on calcule les fonctions d'absorption
-!      pour le CO2 et O3
-
+!   4 - in order to economize computation time, CO2 and O3 absorption are calculated only
+!       at the first time step and stocked in tables
+ico2=1
 if(ico2.eq.1) then
 
   do k = k1,kmray
@@ -313,7 +298,7 @@ if(ico2.eq.1) then
 
 endif
 
-!   5 -calcul du flux infrarouge descendant au sol
+!   5 - IR downward flux computation for the ground level:foir
 !   ----------------------------------------------
 
 fo = 0.d0
@@ -321,10 +306,10 @@ t4zt = (temray(kmray) + tkelvi)**4
 
 if(inua.ne.1) then
 
-!  cas du ciel clair
+!  for clear sky
 !  =================
   do k = k1+1, kmray
-! calcul de la transmission par la vapeur d'eau et ses dimeres
+! transmissivity for water vapor and its dimer
     call rayive(tauv,dtauv,qqv(k),qv0(k1),qqc(k),qc(k1),romray(k))
     fo = fo - (1.d0 - tauv + aco2(k1,k))*dt4dz(k)*dz0(k-1)
   enddo
@@ -333,12 +318,11 @@ if(inua.ne.1) then
   foir = sig*(fo + t4zt*(1.d0 - tauv + acsup(k1)))
 
 else
-
-!  cas du ciel nuageux
+!  for cloudy sky
 !  ===================
   fn = fnerir(k1+1)
   do k = k1+1, kmray
-! calcul de la nebulosite pour la couche consideree. on prend le maximum
+! cloud fraction estimation (we take the maximum)
     fn = max(fn,fnerir(k))
     if(fn.lt.1.d-3) then
       fn = 0.d0
@@ -355,18 +339,18 @@ else
   foir = sig*(fo + t4zt*(1.d0 - (1.d0 + fn*(taul - 1.d0))*(tauv - acsup(k1))))
 endif
 
-!   6 -calcul du refroidissement
+!   6 -IR cooling in the vertcal layers
 !   ----------------------------
 
 t41 = (temray(k1) + tkelvi)**4
 if(inua.ne.1) then
 
-!  par ciel clair
+!  for clear sky
 !  ==============
   do k = k1+1, kmray
 
     ctray = sig/romray(k)/(cp0*(1.d0 + (cpvcpa - 1.d0)*qvray(k)))
-! calcul de a1 contribution de 0 a z
+!  a1: contribution from  0 to z
     a1 = 0.d0
     do kk = k1+1, k
       qqqqv = qqqv(k) - qqv(kk)
@@ -375,7 +359,7 @@ if(inua.ne.1) then
       a1 = a1 + dt4dz(kk)*(daco2(k,kk) - dtauv)*dz0(kk-1)
     enddo
     kp1 = k+1
-! calcul de a2 contribution de z a ztop
+! a2: contribution from z to ztop
     a2 = 0.d0
     do kk = kp1, kmray
       qqqqv = qqv(kk) - qqqv(k)
@@ -397,12 +381,12 @@ if(inua.ne.1) then
   enddo
 else
 
-!  par ciel nuageux
+!  for cloudy sky
 !  ================
   do k =k1+1, kmray
 
     ctray = sig/romray(k)/(cp0*(1.d0 + (cpvcpa - 1.d0)*qvray(k)))
-! cacul de a1 contribution de 0 a z
+! a1: contribution from 0 to z
     a1 = 0.d0
     dul = kliq(k)*rol(k)
     do kk = k1+1, k
@@ -424,7 +408,7 @@ else
          + taul*dul*(tauv - aco2(k,kk)))*dz0(kk-1)
     enddo
     kp1 = k+1
-! calcul de a2 contribution de z a ztop
+! a2: contribution from z to ztop
     a2 = 0.d0
     do kk = kp1, kmray
       qqqqv = qqv(kk) - qqqv(k)
@@ -459,7 +443,7 @@ else
     else
       tlsup = exp(-kliq(k)*qqqql/fns)
     endif
-! contribution du sol transmise par les couches inferieures (0-z)
+!  ground contribution transmited by lower layers (0-z)
     qqqqv = qqqv(k)
     qqqqc = qqqc(k)
     qqqql = qqql(k)

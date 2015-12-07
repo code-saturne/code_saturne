@@ -58,6 +58,16 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_at_plugin.c
+
+  \brief Plugin to dynamically load(*.so) the aerosol model (SIREAM)
+*/
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================

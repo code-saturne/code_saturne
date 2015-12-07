@@ -19,65 +19,48 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file rayso.f90
+!> \brief 1D Radiative scheme - Solar flux
+!
+!> \brief This program computes solar fluxes for both clear and cloudy
+!>      atmosphere following Lacis and Hansen, 1974
+!>   - the multiple diffusion is taken into account by adding method and
+!>     overlapping between water vapor and liquid water
+!>      with k distribution method
+!>     Some improvments from original version concerns:
+!>     - introduction of cloud fraction with hazardeous recovering
+!>     - introduction of aerosol diffusion on the same way than cloud droplets
+!>       but with specific optical properties for aerosols
+!>
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]   k1          index for ground level
+!> \param[in]   kmray       vertical levels number for radiation
+!> \param[in]   heuray      Universal time (Hour)
+!> \param[in]   imer1       sea index
+!> \param[in]   albe        albedo
+!> \param[in]   qqv         optical depth for water vapor (0,z)
+!> \param[in]   qqqv        idem for intermediate levels
+!> \param[in]   qqvinf      idem qqv but for altitude above 11000m
+!> \param[in]   zqq         vertical levels
+!> \param[in]   zray        altitude (physical mesh)
+!> \param[in]   qvray       specific umidity for water vapor
+!> \param[in]   qlray       specific humidity for liquid water
+!> \param[in]   fneray      cloud fraction
+!> \param[in]   romray      air density
+!> \param[in]   aeroso      aerosol concentration in micro-g/m3
+!> \param[out]  fos         global downward solar flux at the ground
+!> \param[out]  rayst       flux divergence of solar radiation
+!_______________________________________________________________________________
 
-subroutine rayso &
-!===============
-
+subroutine rayso  &
  (k1, kmray, heuray, imer1, albe,                &
   qqv, qqqv, qqvinf, zqq,                        &
   zray, qvray, qlray, fneray,                    &
   romray, aeroso, fos, rayst)
-
-!==============================================================================
-!  Purpose:
-!  --------
-
-!    Atmospheric module subroutine.
-
-!
-!    - ce programme calcule les flux solaires en atmosphere claire et
-!    nuageuse suivant le schema de Lacis et Hansen 1974 (LH 74)
-!    - la diffusion multiple est prise en compte par la methode
-!    d'addition des couches adjacentes
-!    par rapport au schema original de LH 74 ont ete ajoutes:
-!    - la prise en compte d'un albedo de simple diffusion des gouttes
-!      suivant Fouquart et Bonnel, 1980
-!    - la prise en compte d'une nebulosite fractionnaire suivant la
-!      regle de recouvrememt maximum, Geleyn et Hollingworth,1979
-!
-!
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.__________________________________________________.
-! !    name   !type!mode!                   role                                 !
-!_!___________!____!____!________________________________________________________!
-! !  k1       ! e  ! d  ! indice du premier point du segment vertical            !
-! !           !    !    ! considere                                              !
-! !  kmray    ! e  ! d  ! nombre de niveaux verticaux pour les modules           !
-! !           !    !    ! de rayonnement                                         !
-! !  heuray   ! r  ! d  ! heure TU utilisee ds module de rayonnement             !
-! !  imer1    ! e  ! d  ! indice de presence de mer                              !
-! !  albe     ! r  ! m  ! albedo (modifie ds le cas ou imer=1)                   !
-! !  qqv      ! tr ! d  ! epaisseur optique vapeur eau                           !
-! !  qqqv     ! tr ! d  ! idem niveaux intermédiaires                            !
-! !  qqvinf   ! tr ! d  ! idem mais contribution > 11000m                        !
-! !  zqq      ! tr ! d  ! niveaux verticaux                                      !
-! !  zray     ! tr ! d  ! altitude (maillage physique)                           !
-! !  qvray    ! tr ! d  ! humidite specifique                                    !
-! !  qlray    ! tr ! d  ! teneur en eau liquide                                  !
-! !  fneray   ! tr ! d  ! nebulosite                                             !
-! !  romray   ! tr ! d  ! masse volumique                                        !
-! !  aeroso   ! tr ! d  ! contenu en aerosol                                     !
-! !  fos      ! r  ! r  ! rayonnement solaire absorbe par le sol                 !
-! !  rayst    ! tr ! r  ! divergence du flux de rayonnement solaire              !
-!_!___________!____!____!________________________________________________________!
-
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -154,7 +137,7 @@ allocate(refbs(kmx+1,8),fabso3c(kmx+1,2),tra(kmx+1,8))
 allocate(dow(kmx+1,8),atln(kmx+1,8),absn(kmx+1,8))
 allocate(fnebmax(kmx+1),fneba(kmx+1))
 
-!     1 - initialisations locales
+!     1 - local initializations
 !     ===========================
 
 inua = 0
@@ -199,8 +182,8 @@ do k = 1, kmx+1
   enddo
 enddo
 
-!  constantes caracteristiques des aerosols
-!  hauteur couche d'aerosols
+!  data for aerosol characteristics
+!  (aerosols depth, radius, single scattering albedo, refraction indexes)
 zaero  = 11000.d0
 raero  = 0.1d0
 ! Leighton 1980
@@ -211,38 +194,35 @@ gaero  = 0.66d0
 nraer  = 1.55d0
 niaer  = 0.01d0
 
-! caero = 0. pour annuler les aerosols
+! constant for units (use caero = 0. to cancel aerosol effects)
 caero = 1.d-9
 
 k1p1 = k1+1
 
-!  2 - calcul de muzero et de la constante solaire fo
+!  2 - calculation for muzero and solar constant fo
 !  ===================================================
-!        calcul de muzero et de la constante solaire fo
-!        muzero = cosinus de l*angle zenithal
-!        fo = constante solaire en watt/m2
+!        muzero = cosin of zenithal angle
+!        fo = solar constant in watt/m2
 
 !
-!  attention : 0. h < heuray < 24. h
+!  careful : 0. h < heuray < 24. h
 !  ---------
 
 qureel = float(squant)
 call raysze(xlat,xlon,qureel,heuray,imer1,albe,muzero,fo)
-
-! si muzero est negatif ou nul il fait nuit et les calculs
-! de rayonnement solaire ne sont pas effectues
+! if muzero is negative, it is night and solar radiation is not
+! computed
 
 if(muzero.gt.0.d0) then
 
-! correction pour les angles zenithal rasant
+! correction for very low zenithal angles
 
   rr1 = 0.1255d-2
   muzero = rr1/(sqrt(muzero**2 + rr1*(rr1 + 2.d0)) - muzero)
   m = 35.d0/sqrt(1224.d0*muzero*muzero + 1.d0)
   mbar = 1.9d0
 
-!  3 - calcul des differents albedos intervenant dans le rayonnement
-!      solaire pour l'ozone  et la diffusion rayleigh
+!  3 -  albedoes for O3 and Rayleigh diffusion
 !  ==================================================================
   rabar = 0.219d0/(1.d0 + 0.816d0*muzero)
   rabar2 = 0.144d0
@@ -250,27 +230,24 @@ if(muzero.gt.0.d0) then
   rrbar = 0.28d0/(1.d0 + 6.43d0*muzero)
   rrbar2s = 0.0685d0
 
-!  4 - ajout d'un niveau supplementaire pour le ryt solaire
-!  ========================================================   d0
+!  4 - addition of one level for solar radiation
+!  ========================================================
   zqq(kmray+1) = 16000.d0
   qqvtot = qqvinf + qqqv(kmray)
   qqv(kmray+1) = qqvtot - qqvinf/4.d0
 
-! test sur la presence des couches nuageuses ou d'aerosols
-
+! testing the presence of clouds or aerosols
   if((inua.eq.0).and.(iaer.eq.0)) then
-
-!   5 -  calcul du rayonnement solaire par ciel clair
-!       (ciel clair = sans particules (ni gouttes ni aero)
+!   5 -  solar radiatiobn calculation for clear atmosphere
+!       (without clouds and aerosols)
 !============================================================================
 
-! calcul du rechauffement solaire dans les couches par ciel clair
+! solar heating in the vertical layers for clear sky
 
     rayst(k1) = 0.d0
 
-! calcul pour la vapeur d'eau
-! dans ce cas on utilise les epaisseurs optiques pour la vapeur d'eau
-! qui ont ete calculees pour le rayonnement ir
+! for water vapor
+! in that case we use optical depth that has been calculated  for IR radiation
 
     do i = k1p1, kmray
       ym1 = m*(qqvtot - qqv(i))
@@ -282,7 +259,7 @@ if(muzero.gt.0.d0) then
       fabsh2o(i) = muzero*fo*(raysve(ym1) - raysve(y) + albe*(raysve(ystar)   &
                  - raysve(ystarm1)))
 
-! rechauffement par l ozone
+! for O3
 
       zqm1 = zqq(i)
       zq = zqq(i+1)
@@ -295,7 +272,7 @@ if(muzero.gt.0.d0) then
       fabso3(i) = muzero*fo*(raysoz(xm1) - raysoz(x) + rbar                  &
                  *(raysoz(xstar) - raysoz(xstarm1)))
 
-! rechauffement total
+! total heating
 
       fabs = fabsh2o(i) + fabso3(i)
       cphum = cp0*(1.d0 + (cpvcpa - 1.d0)*qvray(i))
@@ -303,7 +280,7 @@ if(muzero.gt.0.d0) then
 
     enddo
 
-! calcul du flux de rayonnement solaire au sol
+! global downward radiation flux at the ground
 
     foo3 = muzero*fo*(0.647d0 - rrbar - raysoz(m*rayuoz(zbas)))*             &
          (1.d0 - albe)/(1.d0 - rrbar2s*albe)
@@ -313,16 +290,14 @@ if(muzero.gt.0.d0) then
 
   else
 
-!     6 - calcul du rayonnement solaire par ciel nuageux
-!     la prise en compte de la nebulosite fractionnaire impose de
-!     realiser les calculs de diffusion multiple dans les cas de ciel
-!     couvert (indice 1 des tableaux de transmission tra et de reflexion
-!     ref) et de ciel clair (indice 2)
+!     6 - Solar radiation calculation for cloudy sky
+!     In order to take into account cloud fraction, multiple diffusion is achieved for
+!     both cloudy (index 1) and clear (index 2) sky
 
 !============================================================================
 
-!  6.1 recherche de la position du nuage, on determine le sommet du nuage
-!      le plus haut et la base du plus bas
+!  6.1 cloud level determination (top for the ttpo of the higher cloud,
+!  base for the bottom of the lower cloud)
 !      ........    .........................................................
 
     itop = 0
@@ -338,8 +313,8 @@ if(muzero.gt.0.d0) then
       endif
     enddo
 
-! si itop = 0 il n'y a pas de nuage mais on peut tout de meme executer
-! la methode d'addition des couches adjacentes
+! if itop = 0, there is no cloud but, nevertheless, it is possible to execute
+! the adding method
 
     if(itop.eq.0) then
       itop = k1
@@ -349,8 +324,8 @@ if(muzero.gt.0.d0) then
     itopp2 = itop +2
     ibasem1 = ibase -1
 
-! 6.2 calcul des parametres optiques du nuage, albedo de simple
-!     diffusion et epaisseur optique suivant Fouquart et Bonnel (1980)
+! 6.2 calculation for optical oparmaters of clouds
+! (single scattering albedo, optical depth)
 !     .........    .....................................................
 
     fnebmax(kmray+1) = 0.d0
@@ -358,12 +333,12 @@ if(muzero.gt.0.d0) then
     tauatot = 0.d0
     do i = kmray, k1p1, -1
       if((i.ge.ibasem1).and.(i.le.itopp1)) then
-! densite de l'eau liquide en g/m3 dans les couches considerees
-        wh2ol = 1.d3*(romray(i)*qlray(i)) + aeroso(i)
-! rayon moyen des gouttes en microns
+! liquid water density in g/m3 in the layers
+        wh2ol = 1.d3*(romray(i)*qlray(i))! + aeroso(i)
+! mean droplet radius in µm
         rm = 30.d0*wh2ol + 2.d0
-! on fixe le rayon moyen max a 10 microns ds le domaine etudie
-! et a 2 microns au-dessus
+!  the max of the mean radius is fixed at 10 µ in the considered domain
+!  and at 2 µ above
         if(i.le.nbmett) then
           rm = min(10.d0,rm)
         else
@@ -372,15 +347,15 @@ if(muzero.gt.0.d0) then
         req = 3.d0*rm/2.d0
         deltaz = zqq(i+1) - zqq(i)
         if(i.eq.k1p1) deltaz = zqq(i+1) - zray(k1)
-! le rayon req doit etre exprime en microns
+! req has to be in µm
         tauc(i) = 1.5d0*wh2ol*deltaz/req
         tauctot = tauctot + tauc(i)
       else
         tauc(i) = 0.d0
       endif
 
-! calcul des parametres optiques pour les aerosols que l'on assimile
-! a des couches de nuage de proprietes differentes
+! calculation for aerosol optical parameters treated as cloud layers but with
+! different optical properties
 
       fneba(i) = 0.d0
       if((iaer.eq.1).and.(zray(i).le.zaero)) then
@@ -388,32 +363,30 @@ if(muzero.gt.0.d0) then
         waero = 1.e3*romray(i)*caero*aeroso(i)
         deltaz = zqq(i+1) - zqq(i)
         if(i.eq.k1p1) deltaz=zqq(i+1) - zray(k1)
-! le rayon raero doit etre exprime en microns
+! reaero has to be in µm
         reaero = 3.d0*raero/2.d0
         taua(i) = 1.5d0*waero*deltaz/reaero
         tauatot = tauatot + taua(i)
       endif
-
-! calcul de la nebulosite maximum
+! estimation of the maw of the cloud fraction
 
       fnebmax(i) = max(fnebmax(i+1),fneray(i))
     enddo
 
     fnebmax(k1) = fnebmax(k1p1)
 
-! albedo de simple diffusion de l'ensemble du nuage
-!     par defaut (eau pure pioc=1)
+! single scattering albedo for all cloud layers
+!    ( for pure water pioc=1)
     pioc = 0.9988d0
     tauc(kmray+1) = 0.d0
 
-! 6.3 calcul de l'absorption par l'ozone en presence de nuages
+! 6.3 O3 absorption in presence of clouds
 !     .........    ...............................................
 
-! calcul des differents albedos intervenant dans le rayonnement
-! solaire pour l'ozone
-! (Stephens, 74)
+! calculation of the different albedoes for O3 (Stephens, 74)
 
-! facteur d'assymetrie
+! assymetric factor for liquid water
+
     gasym = 0.85d0
 
     s3 = sqrt(3.d0)
@@ -424,14 +397,13 @@ if(muzero.gt.0.d0) then
     rabar2a = rabara
     rbara = rabara + (1.d0 - rabara)*(1.d0 - rabar2a)*albe/(1.d0 - rabar2a*albe)
 
-! dans le cas d'un ciel totalement couvert,
-! on ne calcule l'absorption que pour les couches au dessus de la
-! surface reflective la plus haute, ici le sommet de la couche nuageuse
+! In the case were the sky is totaly cloudy, the absorption is computed
+! only for the layers above cloud top
 
-! l'absorption est calculee en ponderant la contribution des flux
-! suivant la nebulosite fractionnaire maximum rencontree selon le
-! chemin parcouru
-
+!
+! the absorption is computed with  weighting the fluxes by using the max
+! of the cloud fraction
+! calculation above the top of the cloud
     do i = itop, kmray
 
       zqm1 = zqq(i)
@@ -439,14 +411,15 @@ if(muzero.gt.0.d0) then
       zq = zqq(i+1)
       xm1 = m*rayuoz(zqm1)
       x = m*rayuoz(zq)
-!  ciel couvert
+! cloudy sky
       zbas = zray(itop)
       xstarm1 = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zqm1))
       xstar = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zq))
       fabso3c(i,1) = muzero*fo*(fnebmax(i-1)*                                &
                    (raysoz(xm1) - raysoz(x))                                 &
                    + fnebmax(k1p1)*rbarc*(raysoz(xstar) - raysoz(xstarm1)))
-!  ciel clair
+
+!  clear sky
       zbas = zray(k1)
       xstarm1 = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zqm1))
       xstar = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zq))
@@ -455,8 +428,8 @@ if(muzero.gt.0.d0) then
                    + (1.d0 - fnebmax(k1p1))*rbar                              &
                    * (raysoz(xstar) - raysoz(xstarm1)))
 
-!   les aerosols sont pris en compte dans les calculs ciel clair
-!   avec une nebulosite de 1
+!  Aerosols are taking into account in the clear sky calculations
+! with  aerosol fraction = 1
       if((iaer.eq.1).and.(zqm1.gt.zaero)) then
         zbas = zaero
         xstarm1 = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zqm1))
@@ -476,12 +449,14 @@ if(muzero.gt.0.d0) then
       fabso3(i) = fabso3c(i,1) + fabso3c(i,2)
 
     enddo
+! calculation under the top of the cloud
+!
 
     do i = k1p1, itop-1
 
-!  ciel couvert
+!  cloudy sky
       fabso3c(i,1) = 0.d0
-!  ciel clair
+!  clear sky
       zqm1 = zqq(i)
       if(i.eq.k1p1) zqm1 = zray(k1)
       zq = zqq(i+1)
@@ -512,31 +487,27 @@ if(muzero.gt.0.d0) then
       endif
 
       fabso3(i) = fabso3c(i,1) + fabso3c(i,2)
-
     enddo
 
-! 6.4 calcul de l'absorption par la vapeur d'eau et l'eau nuageuse
+! 6.4 Absorption by water vapor and liquid water
 !     .........    ...................................................
 
-! dans ce cas il faut resoudre le probleme de la diffusion multiple
-! ceci est realise par une methode d'addition des couches adjacentes
-! ou "adding method" suivant Lacis et Hansen, 1974
+! In that case we have to solve multiple diffusion. This is achieved by means
+! of the adding method following Lacis et Hansen, 1974
 
-! calcul des fonctions de reflexion et de transmission de chacune
-! des couches considerees
-
+! calculation of reflexivity and tarnsmissivity for each vertical layer
     do n = 1, 8
       do l = k1p1, kmray
         dqqv = kn(n)*(qqv(l+1) - qqv(l))/10.d0
         if(l.eq.k1p1) dqqv = kn(n)*qqv(l+1)/10.d0
-! ciel couvert
+! cloudy sky
         tau(l,n) = tauc(l) + dqqv + taua(l)
         if(tauc(l).ne.0.) then
           pioc = 0.9988d0
           pic(l,n) = (pioc*tauc(l) + piaero*taua(l))/tau(l,n)
           gas = (pioc*tauc(l)*gasym + piaero*taua(l)*gaero)               &
               /(pic(l,n)*tau(l,n))
-! correction Joseph, 1976 pour angle rasant
+! Joseph, 1976 correction for very low zenithal angle
           fas = gas*gas
           tau(l,n) = (1.d0 - pic(l,n)*fas)*tau(l,n)
           pic(l,n) = pic(l,n)*(1.d0 - fas)/(1.d0 - pic(l,n)*fas)
@@ -552,22 +523,24 @@ if(muzero.gt.0.d0) then
           ref(l,n) = fneray(l)*gama2*(extlnp - extlnm)/drt
           tra(l,n) = fneray(l)*2.d0*kt/drt                                &
                     + (1.d0 - fneray(l))*exp(-5.d0*dqqv/3.d0)
+
+!  trard transmissivity for direct radiation
           refs(l,n) = ref(l,n)
           tras(l,n) = tra(l,n)
         else
-! dans les couches ciel clair
+! in the clear sky layers
           ref(l,n) = 0.d0
           tra(l,n) = exp(-5.d0*tau(l,n)/3.d0)
           refs(l,n) = ref(l,n)
           tras(l,n) = tra(l,n)
           if(l.ge.itopp1) tra(l,n) = exp(-m*tau(l,n))
-! dans les couches d'aerosols
+! in the aerosol layers
           if((iaer.eq.1).and.(zray(l).le.zaero)) then
             tau(l,n) = taua(l) + dqqv
             pioc = piaero
             pic(l,n) = pioc*taua(l)/tau(l,n)
             gas = gaero
-! correction Joseph, 1976 pour angle rasant
+! Joseph, 1976 correction for very low zenithal angle
             fas = gas*gas
             tau(l,n) = (1.d0 - pic(l,n)*fas)*tau(l,n)
             pic(l,n) = pic(l,n)*(1.d0 - fas)/(1.d0 - pic(l,n)*fas)
@@ -586,8 +559,7 @@ if(muzero.gt.0.d0) then
         endif
 
       enddo
-
-! conditions aux limites
+! boundary conditions at the top of the atmosphere
 
       tau(kmray+1,n) = kn(n)*qqvinf/40.d0
       tra(kmray+1,n) = exp(-m*tau(kmray+1,n))
@@ -599,7 +571,7 @@ if(muzero.gt.0.d0) then
       tras(k1,n) = 0.d0
       refs(k1,n) = 0.d0
 
-! addition des couches en descendant
+! downward addition of layers
 
       trat(kmray+1,n) = tra(kmray+1,n)
       reft(kmray+1,n) = ref(kmray+1,n)
@@ -619,7 +591,7 @@ if(muzero.gt.0.d0) then
         endif
       enddo
 
-! addition des couches en montant
+! upward layer addition
       refb(k1,n) = ref(k1,n)
       refbs(k1,n) = refs(k1,n)
 
@@ -628,22 +600,23 @@ if(muzero.gt.0.d0) then
         refb(l,n) = ref(l,n) + tra(l,n)*refb(l-1,n)*tras(l,n)/dtrb1
       enddo
 
-! calcul des flux montant et descendant
+! calculation of downward and upward fluxes
 
       do l = kmray+1, k1p1, -1
         dud1 = 1.d0 - refts(l,n)*refb(l-1,n)
         upw(l,n) = trat(l,n)*refb(l-1,n)/dud1
         dow(l,n) = trat(l,n)/dud1
 
-! l'absorption est calculee en ponderant la contribution
-! des flux montants et descendants par la nebulosite maximale
-! rencontree entre l'infini et z
+! downward fluxes for direct radiation
+
+! the absorption is computed by weighting the downward and upward fluxes
+! contribution by the max of the cloud fraction between infinite and z
 
         atln(l,n) = pkn(n)*((1.d0 - reft(k1,n)) + upw(l,n)              &
                   - dow(l,n))
       enddo
 
-! calcul de l'absorption dans les couches individuelles
+! absorption in individual layers
 
       do l = kmray, k1p1, -1
         absn(l,n) = atln(l,n) - atln(l+1,n)
@@ -651,8 +624,9 @@ if(muzero.gt.0.d0) then
 
     enddo
 
-! sommation sur les frequences et calcul de l'absorption integree sur le
-! spectre
+! summation over frequencies and estimation of absorption integrated
+!  on the whole spectrum
+
 
     do l = kmray, k1p1, -1
       fabsh2o(l) = 0.d0
@@ -663,7 +637,7 @@ if(muzero.gt.0.d0) then
     enddo
 
 
-! 6.5 calcul du rechauffement dans les couches
+! 6.5 heating in the layers
 !     .........    ...............................
 
     rayst(k1) = 0.d0
@@ -674,9 +648,9 @@ if(muzero.gt.0.d0) then
       rayst(i) = (fabsh2o(i) + fabso3(i))/deltaz/romray(i)/cphum
     enddo
 
-! 6.6 calcul du flux solaire descendant au sol avec ponderation
-!     suivant la nebulosite fractionnaire
+! 6.6 calculation of downward solar flux with weighting by cloud fraction
 !     .........    .................................................
+! f for global radiatiojn, fd for direct radiation
 
     dowtot1 = 0.d0
     do n = 2, 8
@@ -698,7 +672,8 @@ if(muzero.gt.0.d0) then
 
   endif
 
-! si muzero est inferieur a zero il fait nuit
+
+! if muzero < 0, it is night
 else
 
   muzero = 0.d0
@@ -725,8 +700,16 @@ return
 contains
 
 
-! 7.1 Computes ozone concentration for the altitude zh
-!-------------------------------------------------------
+!> \brief Internal function -
+!>  Computes ozone concentration for the altitude zh
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]   zh          altitude
+!_______________________________________________________________________________
+
 function rayuoz(zh)
 
   implicit none
@@ -745,6 +728,16 @@ end function rayuoz
 ! 7.2 Aborption function of the solar radiation by water vapor
 !-------------------------------------------------------------------------
 
+!> \brief Internal function -
+!>  Aborption function of the solar radiation by water vapor
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]       y       optical depth for water vapor
+!_______________________________________________________________________________
+
 function raysve(y)
 
   implicit none
@@ -757,6 +750,16 @@ end function raysve
 
 ! 7.3 Aborption function of the solar radiation by ozone
 !--------------------------------------------------------
+
+!> \brief Internal function -
+!>  Aborption function of the solar radiation by ozone
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]       x       optical depth for ozone
+!_______________________________________________________________________________
 
 function raysoz(x)
   implicit none

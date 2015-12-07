@@ -19,53 +19,22 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
-subroutine atiniv &
-!================
-
- ( nvar   , nscal  ,                                              &
-   dt     )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! INITIALISATION DES VARIABLES DE CALCUL
-!    POUR LA PHYSIQUE PARTICULIERE : ECOULEMENTS ATMOSPHERIQUES
-!    PENDANT DE USINIV.F
-
-! Cette routine est appelee en debut de calcul (suite ou non)
-!     avant le debut de la boucle en temps
-
-! Elle permet d'INITIALISER ou de MODIFIER (pour les calculs suite)
-!     les variables de calcul,
-!     les valeurs du pas de temps
-
-
-! On dispose ici de ROM et VISCL initialises par RO0 et VISCL0
-!     ou relues d'un fichier suite
-! On ne dispose des variables VISCLS, CP (quand elles sont
-!     definies) que si elles ont pu etre relues dans un fichier
-!     suite de calcul
-
-! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
-!     SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
-!     ET PAS ICI
-
+!> \file atiniv.f90
+!> \brief   Initialisation of calculation variables for the atmospheric module,
+!>              it is the counterpart of usiniv.f90.
+!>      Initialise for example the meteorological field for each cell of
+!>    the domain by interpolation of the data from the meteo file
+!-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   nvar        total number of variables
+!> \param[in]   nscal       total number of scalars
+!> \param[in]   dt          time step value
+!-------------------------------------------------------------------------------
+subroutine atiniv  ( nvar, nscal, dt )
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files

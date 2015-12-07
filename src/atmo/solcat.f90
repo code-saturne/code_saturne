@@ -19,60 +19,42 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+!> \file solcat.f90
+!> \brief Atmo. - Ground level parameters computed from a "Land use" file
 
-subroutine solcat &
-     !================
-     ( ierreu )
-
-!==============================================================================
-! FUNCTION
-!==============================================================================
-! *                                                                    *
-! *   definition des types de sol et des constantes associees          *
-! *                                                                    *
-! *   par defaut, on travaille avec un fichier d'occupation du sol     *
-! *   fourni par l'ign.                                                *
-! *                                                                    *
-! *   le sol est classe soit en 7 categories :                         *
-! *                                                                    *
-! *    1) eau                                                          *
-! *    2) foret                                                        *
-! *    3) divers                                                       *
-! *    4) sol mineral nu                                               *
-! *    5) bati diffus                                                  *
-! *    6) bati mixte                                                   *
-! *    7) bati dense                                                   *
-! *                                                                    *
-! *   soit en 5 categories :                                           *
-! *                                                                    *
-! *    1) eau                                                          *
-! *    2) foret                                                        *
-! *    3) divers                                                       *
-! *    4) sol mineral nu                                               *
-! *    5) bati
-! *                                                                    *
-! *   l'utilisateur peut modifier :                                    *
-! *                                                                    *
-! *     - les valeurs des constantes prises par defaut                 *
-! *        (par exemple la rugosite de la foret)                       *
-! *     - les types de sol a utiliser                                  *
-! *        (dans le cas de donnees ne provenant pas de l'ign)          *
-! *                                                                    *
-!==============================================================================
+!> \brief ! *   definition des types de sol et des constantes associees
+!>   par defaut, on travaille avec un fichier d'occupation du sol
+!>   fourni par l'ign.
+!>
+!>-   le sol est classe soit en 7 categories :
+!>    1) eau
+!>    2) foret
+!>    3) divers
+!>    4) sol mineral nu
+!>    5) bati diffus
+!>    6) bati mixte
+!>    7) bati dense
+!>-   soit en 5 categories :
+!>    1) eau
+!>    2) foret
+!>    3) divers
+!>    4) sol mineral nu
+!>    5) bati
+!>
+!>   l'utilisateur peut modifier :
+!>     - les valeurs des constantes prises par defaut
+!>        (par exemple la rugosite de la foret)
+!>     - les types de sol a utiliser
+!>        (dans le cas de donnees ne provenant pas de l'ign)
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ierreu           ! i  ! --> ! erreur code                                    !
-!------------------!----!-----!------------------------------------------------!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[out]   ierreu   code error
+!-------------------------------------------------------------------------------
+subroutine solcat ( ierreu )
 
 !==============================================================================
 ! Module files

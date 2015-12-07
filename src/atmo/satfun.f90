@@ -19,14 +19,21 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-double precision function qsatliq (t,p)
-!-------------------------------------------------------------------------------
+!> \file satfun.f90
+!> \brief Computes the saturation mixing ratio (kg/kg) of water
+!>      in the atmosphere.
 
-! computes the saturation mixing ratio (kg/kg) of water in the atmosphere.
-!
-! t= thermodynamic temperature of the air parcel in Kelvin
-! p= pressure of the air parcel in Pascal
-!
+!> \brief Computes the saturation mixing ratio (kg/kg) of water
+!>      in the atmosphere.
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]   t   thermodynamic temperature of the air parcel in Kelvin
+!> \param[in]   p   pressure of the air parcel in Pascal
+!-------------------------------------------------------------------------------
+double precision function qsatliq (t,p)
 !-------------------------------------------------------------------------------
 
 use paramx ! needed by cstphy
@@ -50,15 +57,16 @@ qsatliq = esat/(rvsra*p + esat*(1d0 - rvsra))
 end function qsatliq
 
 !-------------------------------------------------------------------------------
+!> \brief computes the saturation water vapour pressure function of the
+!>      temperature (K)
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]   t   thermodynamic temperature of the air parcel in Kelvin
+!-------------------------------------------------------------------------------
 double precision function esatliq (t)
-
-!-------------------------------------------------------------------------------
-!
-! computes the saturation water vapour pressure function of the temperature (K)
-!
-! t= thermodynamic temperature of the air parcel in Kelvin
-!
-!-------------------------------------------------------------------------------
 
 use paramx !needed by cstphy
 use ppppar !needed by atincl

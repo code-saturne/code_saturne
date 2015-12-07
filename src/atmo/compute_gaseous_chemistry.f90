@@ -37,8 +37,7 @@
 !> \param[in]     dt            time step (per cell)
 !_______________________________________________________________________________
 
-subroutine compute_gaseous_chemistry &
-( dt )
+subroutine compute_gaseous_chemistry ( dt )
 
 !===============================================================================
 ! Module files
