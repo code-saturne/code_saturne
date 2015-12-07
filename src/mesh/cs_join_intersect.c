@@ -2263,11 +2263,11 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
       (CS_LOG_PERFORMANCE,
        _("                                   rank mean"
          "      minimum      maximum\n"
-         "    depth:                        %10d | %10d | %10d\n"
+         "    depth:                        %10llu | %10llu | %10llu\n"
          "    number of leaves:             %10llu | %10llu | %10llu\n"
          "    number of boxes:              %10llu | %10llu | %10llu\n"
          "    leaves over threshold:        %10llu | %10llu | %10llu\n"
-         "    boxes per leaf:               %10d | %10d | %10d\n"
+         "    boxes per leaf:               %10llu | %10llu | %10llu\n"
          "    Memory footprint (kb):\n"
          "      final search structure:     %10llu | %10llu | %10llu\n"
          "      temporary search structure: %10llu | %10llu | %10llu\n\n"),
@@ -2290,11 +2290,11 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
   if (cs_glob_n_ranks == 1)
     cs_log_printf
       (CS_LOG_PERFORMANCE,
-       _("    depth:                        %10d\n"
+       _("    depth:                        %10llu\n"
          "    number of leaves:             %10llu\n"
          "    number of boxes:              %10llu\n"
          "    leaves over threshold:        %10llu\n"
-         "    boxes per leaf:               %10d mean [%d min, %d max]\n"
+         "    boxes per leaf:               %10llu mean [%llu min, %llu max]\n"
          "    Memory footprint (kb):\n"
          "      final search structure:     %10llu\n"
          "      temporary search structure: %10llu\n\n"),

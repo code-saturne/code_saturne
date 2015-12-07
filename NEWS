@@ -5,6 +5,8 @@ Version 4.0.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix some message formats.
+
 - Remove unneeded allocation leading to crash for some large meshes when
   reading MED files.
 

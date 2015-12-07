@@ -3447,7 +3447,7 @@ cs_field_log_key_defs(void)
     else if (kd->type_id == 's') {
       cs_log_printf(CS_LOG_SETUP,
                     _("  %-24s %-12s string  %-4d "),
-                    key, kd->def_val.v_p, key_id);
+                    key, (char *)(kd->def_val.v_p), key_id);
     }
     if (kd->type_id != 't') {
       if (kd->type_flag == 0)
