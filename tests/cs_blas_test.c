@@ -188,6 +188,31 @@ _ddot_canonical(cs_lnum_t      n,
   return s;
 }
 
+/*----------------------------------------------------------------------------*/
+/* Return the dot product of 2 vectors using Kahan's sum: x.y                 */
+/*----------------------------------------------------------------------------*/
+
+static double
+_ddot_kahan(cs_lnum_t      n,
+            const double  *x,
+            const double  *y)
+{
+  cs_lnum_t  i;
+  double     s = 0, c = 0;
+
+  if (n < 1)
+    return s;
+
+  for (i = 0; i < n; i++) {
+    double z = (x[i] * y[i]) - c;
+    double t = s + z;
+    c = (t - s) - z;
+    s = t;
+  }
+
+  return s;
+}
+
 /*----------------------------------------------------------------------------
  * Count number of operations.
  *
@@ -2002,6 +2027,10 @@ main (int argc, char *argv[])
 
     s = _ddot_canonical(n, x, y);
     bft_printf("  Canonical  dot product error for n = %7d: %12.5e\n",
+               (int)n, ref_s - s);
+
+    s = _ddot_kahan(n, x, y);
+    bft_printf("  Kahan sum  dot product error for n = %7d: %12.5e\n",
                (int)n, ref_s - s);
 
     s = cs_dot(n, x, y);
