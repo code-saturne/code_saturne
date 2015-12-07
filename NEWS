@@ -21,6 +21,12 @@ Bug fixes:
 
 - Fix missing sum for parallel logging of clipping info.
 
+Architectural changes
+---------------------
+
+- Improve flushing of error* files in case of error to avoid empty error
+  files on some systems.
+
 Version 4.0.3 (23 Sep 2015)
 ===========================
 
