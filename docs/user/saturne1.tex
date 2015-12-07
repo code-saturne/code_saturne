@@ -791,7 +791,7 @@ indicate a required argument, $[ ]$ to indicate an optional argument).
 \hline
 \texttt{control\_file\_wtime\_interval}     & $<$wall\_time\_interval$>$ \\
 \hline
-\texttt{flush}                              & $[$time\_step\_number$]$ \\
+\texttt{flush}                             & $[$time\_step\_number$]$ \\
 \hline
 \texttt{postprocess\_time\_step}           & $<$time\_step\_number$>$ [writer\_id] \\
 \texttt{postprocess\_time\_value}          & $<$time\_step\_value$>$ [writer\_id] \\
@@ -813,7 +813,9 @@ future time step may be cancelled using the negative value of that time step.
 
 For the \texttt{flush} option, the time step is also optional. If not
 specified, logs and time plots are updated at the beginning of the
-next time step.
+next time step. Also, if the \texttt{control\_file} is empty (such as
+when created by the \texttt{touch control\_file} command on Unix/Linux
+systems, a \texttt{flush} request for the next time step.
 
 Multiple entries may be defined in this file, with one line per entry.
 

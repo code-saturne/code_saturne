@@ -468,6 +468,14 @@ _parse_control_file(char  *buffer,
 
   } /* End of loop on lines */
 
+  /* Empty control_file equivalent to flush request */
+
+  if (f_size < 1) {
+    _flush_nt = ts->nt_cur;
+    bft_printf(_("  flush logs and time plots at time step %12d\n"),
+               _flush_nt);
+  }
+
   bft_printf
     (_("\n"
        " Finished reading \"control_file\".\n\n"));
@@ -489,7 +497,7 @@ _parse_control_file(char  *buffer,
 void
 cs_control_check_file(void)
 {
-  long f_size = 0;
+  long f_size = -1;
   char *buffer = NULL;
   const cs_time_step_t  *ts = cs_glob_time_step;
 
@@ -529,7 +537,7 @@ cs_control_check_file(void)
 
   /* If file exists, handle it */
 
-  if (f_size > 0) {
+  if (f_size >= 0) {
 
     BFT_MALLOC(buffer, f_size + 1, char);
 

@@ -100,11 +100,16 @@ struct _cs_time_plot_t {
   size_t      buffer_end;       /* Current buffer end */
   char       *buffer;           /* Associated buffer if required */
 
+  struct _cs_time_plot_t  *prev;  /* Previous in flush list */
+  struct _cs_time_plot_t  *next;  /* Next in flush list */
+
 };
 
 /*============================================================================
  *  Global variables
  *============================================================================*/
+
+static cs_time_plot_t   *_plots_head = NULL, *_plots_tail = NULL;
 
 static size_t            _n_files[2] = {0, 0};
 static size_t            _n_files_max[2] = {0, 0};
@@ -545,6 +550,45 @@ _write_struct_header_csv(cs_time_plot_t  *p,
 }
 
 /*----------------------------------------------------------------------------
+ * Add a time plot to the global time plots array.
+ *----------------------------------------------------------------------------*/
+
+static void
+_time_plot_register(cs_time_plot_t  *p)
+{
+  p->prev = _plots_tail;
+  p->next = NULL;
+
+  if (_plots_head == NULL)
+    _plots_head = p;
+  else if (_plots_head->next == NULL)
+    _plots_head->next = p;
+
+  if (_plots_tail != NULL)
+    _plots_tail->next = p;
+
+  _plots_tail = p;
+}
+
+/*----------------------------------------------------------------------------
+ * Remove a time plot from the global time plots array.
+ *----------------------------------------------------------------------------*/
+
+static void
+_time_plot_unregister(cs_time_plot_t  *p)
+{
+  if (_plots_head == p)
+    _plots_head = p->next;
+  if (_plots_tail == p)
+    _plots_tail = p->prev;
+
+  if (p->prev != NULL)
+    p->prev->next = p->next;
+  if (p->next != NULL)
+    p->next->prev = p->prev;
+}
+
+/*----------------------------------------------------------------------------
  * Create time plot writer for a given variable
  *
  * parameters:
@@ -612,6 +656,8 @@ _plot_file_create(const char             *plot_name,
   p->buffer_end = 0;
 
   BFT_MALLOC(p->buffer, p->buffer_size, char);
+
+  _time_plot_register(p);
 
   return p;
 }
@@ -1159,6 +1205,8 @@ cs_time_plot_finalize(cs_time_plot_t  **p)
 
     cs_time_plot_t *_p = *p;
 
+    _time_plot_unregister(_p);
+
     if (_p->buffer_steps[0] > 0)
       _p->buffer_steps[1] = _p->buffer_steps[0] + 1;
 
@@ -1284,17 +1332,8 @@ cs_time_plot_flush(cs_time_plot_t  *p)
 void
 cs_time_plot_flush_all(void)
 {
-  for (cs_time_plot_format_t fmt = CS_TIME_PLOT_DAT;
-       fmt <= CS_TIME_PLOT_CSV;
-       fmt++) {
-
-    for (size_t i = 0; i < _n_files_max[fmt]; i++) {
-      cs_time_plot_t *p = _plot_files[fmt][i];
-      if (p != NULL)
-        cs_time_plot_flush(p);
-    }
-
-  }
+  for (cs_time_plot_t *p = _plots_head; p != NULL; p = p->next)
+    cs_time_plot_flush(p);
 }
 
 /*----------------------------------------------------------------------------*/
