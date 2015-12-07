@@ -465,10 +465,12 @@ cs_sles_petsc_create(MatType                      matrix_type,
 
   PetscInitialized(&is_initialized);
   if (is_initialized == PETSC_FALSE) {
+#if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1)
       PETSC_COMM_WORLD = cs_glob_mpi_comm;
     else
       PETSC_COMM_WORLD = MPI_COMM_SELF;
+#endif
     PetscInitializeNoArguments();
   }
 

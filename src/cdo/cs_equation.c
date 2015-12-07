@@ -752,7 +752,9 @@ _sles_initialization(const cs_equation_t  *eq)
       PetscBool is_initialized;
       PetscInitialized(&is_initialized);
       if (is_initialized == PETSC_FALSE) {
+#if defined(HAVE_MPI)
         PETSC_COMM_WORLD = cs_glob_mpi_comm;
+#endif
         PetscInitializeNoArguments();
       }
 
