@@ -1,4 +1,5 @@
-CPPFLAGS  = -I/home/yvan/Code_Saturne/ple/src -I/home/yvan/Code_Saturne/ple_build -I/usr/lib/openmpi/include
+CC = mpicc
+CPPFLAGS  = -I$(ple_srcdir)/src -I$(ple_build_dir)
 CFLAGS  = -O2 -g -Wall
 LDFLAGS = 
 
