@@ -681,8 +681,9 @@ _fact_lu33(cs_lnum_t         n_blocks,
 
   }
 }
+
 /*----------------------------------------------------------------------------
-* Compute inverses of dense P*P matrices.
+* Compute inverses of dense matrices.
 *
 * parameters:
 *   n_blocks <-- number of blocks
@@ -691,12 +692,11 @@ _fact_lu33(cs_lnum_t         n_blocks,
 *----------------------------------------------------------------------------*/
 
 static void
-_fact_lu_pp(cs_lnum_t         n_blocks,
-            const int         db_size,
-            const cs_real_t  *ad,
-            cs_real_t        *ad_inv)
+_fact_lu(cs_lnum_t         n_blocks,
+         const int         db_size,
+         const cs_real_t  *ad,
+         cs_real_t        *ad_inv)
 {
-  cs_lnum_t ii, jj, kk;
 # pragma omp parallel for if(n_blocks > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_blocks; i++) {
 
@@ -706,23 +706,23 @@ _fact_lu_pp(cs_lnum_t         n_blocks,
     _ad_inv[0] = _ad[0];
     // ad_inv(1,j) = ad(1,j)
     // ad_inv(j,1) = ad(j,1)/a(1,1)
-    for (ii = 1; ii < db_size; ii++) {
+    for (cs_lnum_t ii = 1; ii < db_size; ii++) {
       _ad_inv[ii] = _ad[ii];
       _ad_inv[ii*db_size] = _ad[ii*db_size]/_ad[0];
     }
     // ad_inv(i,i) = ad(i,i) - Sum( ad_inv(i,k)*ad_inv(k,i)) k=1 to i-1
-    for (ii = 1; ii < db_size - 1; ii++) {
+    for (cs_lnum_t ii = 1; ii < db_size - 1; ii++) {
       _ad_inv[ii + ii*db_size] = _ad[ii + ii*db_size];
-      for (kk = 0; kk < ii; kk++) {
+      for (cs_lnum_t kk = 0; kk < ii; kk++) {
         _ad_inv[ii + ii*db_size] -= _ad_inv[ii*db_size + kk]
                                    *_ad_inv[kk*db_size + ii];
       }
 
-      for (jj = ii + 1; jj < db_size; jj++) {
+      for (cs_lnum_t jj = ii + 1; jj < db_size; jj++) {
         _ad_inv[ii*db_size + jj] = _ad[ii*db_size + jj];
         _ad_inv[jj*db_size + ii] =   _ad[jj*db_size + ii]
                                    / _ad_inv[ii*db_size + ii];
-        for (kk = 0; kk < ii; kk++) {
+        for (cs_lnum_t kk = 0; kk < ii; kk++) {
           _ad_inv[ii*db_size + jj] -=  _ad_inv[ii*db_size + kk]
                                       *_ad_inv[kk*db_size + jj];
           _ad_inv[jj*db_size + ii] -=  _ad_inv[jj*db_size + kk]
@@ -732,7 +732,7 @@ _fact_lu_pp(cs_lnum_t         n_blocks,
       }
     }
     _ad_inv[db_size*db_size -1] = _ad[db_size*db_size - 1];
-    for (kk = 0; kk < db_size - 1; kk++) {
+    for (cs_lnum_t kk = 0; kk < db_size - 1; kk++) {
       _ad_inv[db_size*db_size - 1] -=  _ad_inv[(db_size-1) + kk]
                                       *_ad_inv[kk*db_size + db_size -1];
     }
@@ -851,7 +851,7 @@ _setup_sles_it(cs_sles_it_t       *c,
         const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
         const cs_lnum_t  n_blocks = sd->n_rows / diag_block_size;
 
-        _fact_lu_pp(n_blocks, diag_block_size, ad, sd->_ad_inv);
+        _fact_lu(n_blocks, diag_block_size, ad, sd->_ad_inv);
       }
 
     }
@@ -2004,23 +2004,24 @@ _fw_and_bw_lu33(const cs_real_t  mat[],
  *----------------------------------------------------------------------------*/
 
 inline static void
-_fw_and_bw_lu_pp(const cs_real_t  mat[],
-                 const int   db_size,
-                 cs_real_t        x[],
-                 const cs_real_t  b[],
-                 const cs_real_t  c[])
+_fw_and_bw_lu(const cs_real_t  mat[],
+              const int        db_size,
+              cs_real_t        x[],
+              const cs_real_t  b[],
+              const cs_real_t  c[])
 {
   cs_real_t  aux[db_size];
   int ii, jj;
 
-  //forward
+  /* forward */
   for (ii = 0; ii < db_size; ii++) {
     aux[ii] = (c[ii] - b[ii]);
     for (jj = 0; jj < ii; jj++) {
       aux[ii] -= aux[jj]*mat[ii*db_size + jj];
     }
   }
-  //backward
+
+  /* backward */
   for (ii = db_size - 1; ii >= 0; ii-=1) {
     x[ii] = aux[ii];
     for (jj = db_size - 1; jj > ii; jj-=1) {
@@ -2029,8 +2030,6 @@ _fw_and_bw_lu_pp(const cs_real_t  mat[],
     x[ii] /= mat[ii*(db_size + 1)];
   }
 }
-
-
 
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using block Jacobi.
@@ -2176,15 +2175,15 @@ _block_3_jacobi(cs_sles_it_t              *c,
  *----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_block_P_jacobi(cs_sles_it_t              *c,
-                const cs_matrix_t         *a,
-                int                        diag_block_size,
-                cs_halo_rotation_t         rotation_mode,
-                cs_sles_it_convergence_t  *convergence,
-                const cs_real_t           *rhs,
-                cs_real_t                 *restrict vx,
-                size_t                     aux_size,
-                void                      *aux_vectors)
+_block_jacobi(cs_sles_it_t              *c,
+              const cs_matrix_t         *a,
+              int                        diag_block_size,
+              cs_halo_rotation_t         rotation_mode,
+              cs_sles_it_convergence_t  *convergence,
+              const cs_real_t           *rhs,
+              cs_real_t                 *restrict vx,
+              size_t                     aux_size,
+              void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
   double  res2, residue;
@@ -2238,11 +2237,11 @@ _block_P_jacobi(cs_sles_it_t              *c,
 
 #   pragma omp parallel for reduction(+:res2) if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
-      _fw_and_bw_lu_pp(ad_inv + db_size[3]*ii,
-                      db_size[0],
-                      vx + db_size[1]*ii,
-                      vxx + db_size[1]*ii,
-                      rhs + db_size[1]*ii);
+      _fw_and_bw_lu(ad_inv + db_size[3]*ii,
+                    db_size[0],
+                    vx + db_size[1]*ii,
+                    vxx + db_size[1]*ii,
+                    rhs + db_size[1]*ii);
       for (cs_lnum_t jj = 0; jj < db_size[0]; jj++) {
         register double r = 0.0;
         for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
@@ -4377,15 +4376,15 @@ cs_sles_it_solve(void                *context,
                               aux_size,
                               aux_vectors);
       else
-        cvg = _block_P_jacobi(c,
-                              a,
-                              _diag_block_size,
-                              rotation_mode,
-                              &convergence,
-                              rhs,
-                              vx,
-                              aux_size,
-                              aux_vectors);
+        cvg = _block_jacobi(c,
+                            a,
+                            _diag_block_size,
+                            rotation_mode,
+                            &convergence,
+                            rhs,
+                            vx,
+                            aux_size,
+                            aux_vectors);
       break;
     case CS_SLES_BICGSTAB:
       cvg = _bi_cgstab(c,
