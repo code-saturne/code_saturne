@@ -5,6 +5,9 @@ Version 4.1.2 (unreleased)
 Bug fixes:
 ----------
 
+- Remove unneeded allocation leading to crash for some large meshes when
+  reading MDE files.
+
 - Fix for off-by-one postprocessing selection of interior faces.
 
 - Fix negative permeability cells counter in GUI reader (ground water flow).
