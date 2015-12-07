@@ -32,7 +32,7 @@
 !> (\c icodcl, \c rcodcl) for unknown variables.
 !>
 !>
-!> \section intro Introduction
+!> \section cs_user_boundary_conditions_intro Introduction
 !>
 !> Here one defines boundary conditions on a per-face basis.
 !>
@@ -325,15 +325,16 @@
 !>       entering the subroutine.
 !>
 !>
-!> \subsubsection cell_id Cell values of some variables
+!> \subsubsection cs_user_bc_cell_id Cell values of some variables
 !>
 !> Cell value field ids
 !>
-!> - Density:                          \c iprpfl(ipproc(irom))
-!> - Dynamic molecular viscosity:      \c iprpfl(ipproc(iviscl))
-!> - Turbulent viscosity:              \c iprpfl(ipproc(ivisct))
-!> - Specific heat:                    \c iprpfl(ipproc(icp)
-!> - Diffusivity(lambda):              \c field_get_key_int(ivarfl(isca(iscal)), kivisl, ...)
+!> - Density:                        \c iprpfl(irom)
+!> - Dynamic molecular viscosity:    \c iprpfl(iviscl)
+!> - Turbulent viscosity:            \c iprpfl(ivisct)
+!> - Specific heat:                  \c iprpfl(icp)
+!> - Diffusivity(lambda):            \c field_get_key_int(ivarfl(isca(iscal)), &
+!>                                      kivisl, ...)
 !>
 !>
 !> \subsubsection fac_id Faces identification
@@ -422,6 +423,8 @@ use cs_fuel_incl
 use mesh
 use field
 use turbomachinery
+use iso_c_binding
+use cs_c_bindings
 
 !===============================================================================
 

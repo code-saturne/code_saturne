@@ -106,7 +106,6 @@ integer          ncelps, nfacps, nfbrps
 integer          itypps(3)
 integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
 
-
 ! Local variables
 
 integer          ntindp, f_id
@@ -343,7 +342,6 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
 
   if (irangp.ge.0.or.iperio.eq.1) then
     call synvin(cvar_vel)
-    !==========
   endif
 
   allocate(vfac(3,nfacps), vfbr(3,nfbrps))
@@ -400,7 +398,6 @@ else if (ipart.eq.1 .or. ipart.eq.2) then
 
   if (irangp.ge.0.or.iperio.eq.1) then
     call synsca(cvar_var)
-    !==========
   endif
 
   allocate(sfac(nfacps), sfbr(nfbrps))
@@ -577,7 +574,6 @@ else if (ipart.ge.3 .and. ipart.le.4) then
 
   if (irangp.ge.0.or.iperio.eq.1) then
     call synvin(cvar_vel)
-    !==========
   endif
 
   allocate(vfac(3,nfacps), vfbr(3,nfbrps))
@@ -637,7 +633,6 @@ else if (ipart.ge.3 .and. ipart.le.4) then
 
   if (irangp.ge.0.or.iperio.eq.1) then
     call synsca(cvar_var)
-    !==========
   endif
 
   allocate(sfac(nfacps), sfbr(nfbrps))
