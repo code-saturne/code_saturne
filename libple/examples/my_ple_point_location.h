@@ -114,6 +114,7 @@ my_ple_mesh_extents(const void  *mesh,
  *                         of same element dimension if false
  *   n_points          <-- number of points to locate
  *   point_coords      <-- point coordinates
+ *   point_tag         <-- optional point tag (size: n_points, ignored here)
  *   location          <-> number of element containing or closest to each
  *                         point (size: n_points)
  *   distance          <-> distance from point to element indicated by
@@ -123,44 +124,14 @@ my_ple_mesh_extents(const void  *mesh,
  *----------------------------------------------------------------------------*/
 
 void
-my_ple_point_location_contain(const void            *mesh,
-                              double                 tolerance,
-                              _Bool                  locate_on_parents,
-                              ple_lnum_t             n_points,
-                              const ple_coord_t      point_coords[],
-                              ple_lnum_t             location[],
-                              float                  distance[]);
-
-/*----------------------------------------------------------------------------
- * Find elements in a given nodal mesh closest to points: updates the
- * location[] and distance[] arrays associated with a set of points
- * for points that are closer to an element of this mesh than to previously
- * encountered elements.
- *
- * This function currently only handles elements of lower dimension than
- * the spatial dimension.
- *
- * parameters:
- *   mesh              <-- pointer to mesh representation structure
- *   locate_on_parents <-- location relative to parent element numbers if
- *                         true, id of element + 1 in concatenated sections
- *                         of same element dimension if false
- *   n_points          <-- number of points to locate
- *   point_coords      <-- point coordinates
- *   location          <-> number of element containing or closest to each
- *                         point (size: n_points)
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated, or absolute
- *                         distance to a surface element (size: n_points)
- *----------------------------------------------------------------------------*/
-
-void
-my_ple_point_location_closest(const void         *mesh,
-                              _Bool               locate_on_parents,
-                              ple_lnum_t          n_points,
-                              const ple_coord_t   point_coords[],
-                              ple_lnum_t          location[],
-                              float               distance[]);
+my_ple_point_location_contain(const void          *mesh,
+                              double               tolerance,
+                              _Bool                locate_on_parents,
+                              ple_lnum_t           n_points,
+                              const ple_coord_t    point_coords[],
+                              const int            point_tag[],
+                              ple_lnum_t           location[],
+                              float                distance[]);
 
 /*----------------------------------------------------------------------------*/
 
