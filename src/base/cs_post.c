@@ -1594,7 +1594,7 @@ _define_mesh(cs_post_mesh_t        *post_mesh,
         n_i_faces = mesh->n_i_faces;
       else {
         BFT_MALLOC(i_face_list, mesh->n_i_faces, cs_lnum_t);
-        cs_selector_get_i_face_list(criteria, &n_i_faces, i_face_list);
+        cs_selector_get_i_face_num_list(criteria, &n_i_faces, i_face_list);
       }
     }
     else if (post_mesh->sel_func[1] != NULL) {
