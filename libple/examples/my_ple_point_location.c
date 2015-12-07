@@ -1850,6 +1850,8 @@ _build_octree_leaves(int                 level,
 
   if (level < _octree_max_levels) {
 
+    for (i = 0; i < 8; i++) {
+
       if (count[i] > _octree_threshold) {
 
         tmp_size++;
@@ -3807,115 +3809,6 @@ _polygons_section_locate_3d(const my_ple_mesh_section_t   *this_section,
 }
 
 /*----------------------------------------------------------------------------
- * Find elements in a given polygonal section closest to 3d points: updates
- * the location[] and distance[] arrays associated with a set of points
- * for points that are in an element of this section, or closer to one
- * than to previously encountered elements.
- *
- * parameters:
- *   this_section      <-- pointer to mesh section representation structure
- *   vertex_coords     <-- pointer to vertex coordinates
- *   base_element_num  <-- < 0 for location relative to parent element numbers,
- *                         number of elements in preceding sections of same
- *                         element dimension + 1 otherwise
- *   point_coords      <-- point coordinates
- *   n_point_ids       <-- number of points to locate
- *   point_id          <-- ids of points to locate (size: n_points)
- *   location          <-> number of element containing or closest to each
- *                         point (size: n_points)
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated, absolute distance
- *                         to element if located (size: n_points)
- *----------------------------------------------------------------------------*/
-
-static void
-_polygons_section_closest_3d(const my_ple_mesh_section_t  *this_section,
-                             const ple_coord_t             vertex_coords[],
-                             ple_lnum_t                    base_element_num,
-                             const ple_coord_t             point_coords[],
-                             ple_lnum_t                    n_point_ids,
-                             const ple_lnum_t              point_id[],
-                             ple_lnum_t                    location[],
-                             float                         distance[])
-{
-  ple_lnum_t  i, n_vertices, vertex_id, elt_num;
-  int n_triangles;
-
-  int n_vertices_max = 0;
-
-  ple_lnum_t *triangle_vertices = NULL;
-  _triangulate_state_t *state = NULL;
-
-  /* Return immediately if nothing to do for this rank */
-
-  if (this_section->n_elements == 0)
-    return;
-
-  /* Counting loop on elements */
-
-  for (i = 0; i < this_section->n_elements; i++) {
-
-    n_vertices = (  this_section->vertex_index[i + 1]
-                  - this_section->vertex_index[i]);
-
-    if (n_vertices > n_vertices_max)
-      n_vertices_max = n_vertices;
-
-  }
-
-  if (n_vertices_max < 3)
-    return;
-
-  PLE_MALLOC(triangle_vertices, (n_vertices_max-2)*3, int);
-  state = _triangulate_state_create(n_vertices_max);
-
-  /* Main loop on elements */
-
-  for (i = 0; i < this_section->n_elements; i++) {
-
-    if (base_element_num < 0) {
-      if (this_section->element_num != NULL)
-        elt_num = this_section->element_num[i];
-      else
-        elt_num = i + 1;
-    }
-    else
-      elt_num = base_element_num + i;
-
-    /* Triangulate polygon */
-
-    n_vertices = (  this_section->vertex_index[i + 1]
-                  - this_section->vertex_index[i]);
-    vertex_id = this_section->vertex_index[i];
-
-    n_triangles = _triangulate_polygon(3,
-                                       n_vertices,
-                                       vertex_coords,
-                                       (  this_section->vertex_num
-                                        + vertex_id),
-                                       triangle_vertices,
-                                       state);
-
-    /* Locate on triangulated polygon */
-
-    _locate_on_triangles_3d(elt_num,
-                            n_triangles,
-                            triangle_vertices,
-                            vertex_coords,
-                            point_coords,
-                            n_point_ids,
-                            point_id,
-                            -1.,
-                            location,
-                            distance);
-
-  } /* End of loop on elements */
-
-  PLE_FREE(triangle_vertices);
-  _triangulate_state_destroy(&state);
-}
-
-/*----------------------------------------------------------------------------
  * Find elements in a given section containing 3d points: updates the
  * location[] and distance[] arrays associated with a set of points
  * for points that are in an element of this section, or closer to one
@@ -4086,122 +3979,6 @@ _mesh_section_locate_3d(const my_ple_mesh_section_t  *this_section,
                            location,
                            distance);
 
-      }
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Find elements in a given section closest to 3d points: updates the
- * location[] and distance[] arrays associated with a set of points
- * for points that are in an element of this section, or closer to one
- * than to previously encountered elements.
- *
- * parameters:
- *   this_section      <-- pointer to mesh section representation structure
- *   vertex_coords     <-- pointer to vertex coordinates
- *   base_element_num  <-- < 0 for location relative to parent element numbers,
- *                         number of elements in preceding sections of same
- *                         element dimension + 1 otherwise
- *   point_coords      <-- point coordinates
- *   n_point_ids       <-- number of points to locate
- *   point_id          <-- ids of points to locate
- *   location          <-> number of element containing or closest to each
- *                         point (size: n_points)
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated, or absolute
- *                         distance to a surface element (size: n_points)
- *----------------------------------------------------------------------------*/
-
-static void
-_mesh_section_closest_3d(const my_ple_mesh_section_t  *this_section,
-                         const ple_coord_t             vertex_coords[],
-                         ple_lnum_t                    base_element_num,
-                         const ple_coord_t             point_coords[],
-                         ple_lnum_t                    n_point_ids,
-                         const ple_lnum_t              point_ids[],
-                         ple_lnum_t                    location[],
-                         float                         distance[])
-{
-  ple_lnum_t  i, j, elt_num, triangle_vertices[6];
-  int n_triangles;
-
-  /* If section contains polygons */
-
-  if (this_section->type == MY_PLE_FACE_POLY)
-
-    _polygons_section_closest_3d(this_section,
-                                 vertex_coords,
-                                 base_element_num,
-                                 point_coords,
-                                 n_point_ids,
-                                 point_ids,
-                                 location,
-                                 distance);
-
-  /* If section contains regular elements */
-
-  else {
-
-    for (i = 0; i < this_section->n_elements; i++) {
-
-      if (base_element_num < 0) {
-        if (this_section->element_num != NULL)
-          elt_num = this_section->element_num[i];
-        else
-          elt_num = i + 1;
-      }
-      else
-        elt_num = base_element_num + i;
-
-      if (this_section->entity_dim == 2) {
-
-        if (this_section->type == MY_PLE_FACE_QUAD)
-
-          n_triangles = _triangulate_quadrangle(3,
-                                                vertex_coords,
-                                                (  this_section->vertex_num
-                                                 + i*this_section->stride),
-                                                triangle_vertices);
-
-        else {
-
-          assert(this_section->type == MY_PLE_FACE_TRIA);
-
-          n_triangles = 1;
-          for (j = 0; j < 3; j++)
-            triangle_vertices[j]
-              = this_section->vertex_num[i*this_section->stride + j];
-
-
-        }
-
-        _locate_on_triangles_3d(elt_num,
-                                n_triangles,
-                                triangle_vertices,
-                                vertex_coords,
-                                point_coords,
-                                n_point_ids,
-                                point_ids,
-                                (HUGE_VAL / 4.),
-                                location,
-                                distance);
-      }
-
-      else if (this_section->entity_dim == 1) {
-
-        assert(this_section->type == MY_PLE_EDGE);
-
-        _locate_on_edge_3d(elt_num,
-                           this_section->vertex_num + i*this_section->stride,
-                           vertex_coords,
-                           point_coords,
-                           n_point_ids,
-                           point_ids,
-                           -1.,
-                           location,
-                           distance);
       }
     }
 
@@ -4430,76 +4207,6 @@ _mesh_section_locate_2d(const my_ple_mesh_section_t  *this_section,
 }
 
 /*----------------------------------------------------------------------------
- * Find elements in a given section closest to 3d points: updates the
- * location[] and distance[] arrays associated with a set of points
- * for points that are in an element of this section, or closer to one
- * than to previously encountered elements.
- *
- * parameters:
- *   this_section      <-- pointer to mesh section representation structure
- *   vertex_coords     <-- pointer to vertex coordinates
- *   base_element_num  <-- < 0 for location relative to parent element numbers,
- *                         number of elements in preceding sections of same
- *                         element dimension + 1 otherwise
- *   point_coords      <-- point coordinates
- *   n_point_ids       <-- number of points to locate
- *   point_id          <-- ids of points to locate
- *   location          <-> number of element containing or closest to each
- *                         point (size: n_points)
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated, or absolute
- *                         distance to a line element (size: n_points)
- *----------------------------------------------------------------------------*/
-
-static void
-_mesh_section_closest_2d(const my_ple_mesh_section_t  *this_section,
-                         const ple_coord_t             vertex_coords[],
-                         ple_lnum_t                    base_element_num,
-                         const ple_coord_t             point_coords[],
-                         ple_lnum_t                    n_point_ids,
-                         const ple_lnum_t              point_id[],
-                         ple_lnum_t                    location[],
-                         float                         distance[])
-{
-  ple_lnum_t  i, elt_num;
-
-  /* Return immediately if nothing to do for this rank */
-
-  if (   this_section->n_elements == 0
-      || this_section->entity_dim != 1)
-    return;
-
-  assert(this_section->type == MY_PLE_EDGE);
-
-  /* Main loop on elements */
-
-  for (i = 0; i < this_section->n_elements; i++) {
-
-    if (base_element_num < 0) {
-      if (this_section->element_num != NULL)
-        elt_num = this_section->element_num[i];
-      else
-        elt_num = i + 1;
-    }
-    else
-      elt_num = base_element_num + i;
-
-    /* Locate on edge */
-
-    _locate_on_edge_2d(elt_num,
-                       this_section->vertex_num + i*this_section->stride,
-                       vertex_coords,
-                       point_coords,
-                       n_point_ids,
-                       point_id,
-                       -1.0,
-                       location,
-                       distance);
-
-  } /* End of loop on elements */
-}
-
-/*----------------------------------------------------------------------------
  * Find elements in a given section containing 1d points: updates the
  * location[] and distance[] arrays associated with a set of points
  * for points that are in an element of this section, or closer to one
@@ -4681,6 +4388,7 @@ my_ple_mesh_extents(const void  *mesh,
  *                         of same element dimension if false
  *   n_points          <-- number of points to locate
  *   point_coords      <-- point coordinates
+ *   point_tag         <-- optional point tag (size: n_points, ignored here)
  *   location          <-> number of element containing or closest to each
  *                         point (size: n_points)
  *   distance          <-> distance from point to element indicated by
@@ -4695,6 +4403,7 @@ my_ple_point_location_contain(const void          *mesh,
                               _Bool                locate_on_parents,
                               ple_lnum_t           n_points,
                               const ple_coord_t    point_coords[],
+                              const int            point_tag[],
                               ple_lnum_t           location[],
                               float                distance[])
 {
@@ -4814,127 +4523,6 @@ my_ple_point_location_contain(const void          *mesh,
   }
 
   PLE_FREE(points_in_extents);
-}
-
-/*----------------------------------------------------------------------------
- * Find elements in a given nodal mesh closest to points: updates the
- * location[] and distance[] arrays associated with a set of points
- * for points that are closer to an element of this mesh than to previously
- * encountered elements.
- *
- * This function currently only handles elements of lower dimension than
- * the spatial dimension.
- *
- * parameters:
- *   mesh              <-- pointer to mesh representation structure
- *   locate_on_parents <-- location relative to parent element numbers if
- *                         true, id of element + 1 in concatenated sections
- *                         of same element dimension if false
- *   n_points          <-- number of points to locate
- *   point_coords      <-- point coordinates
- *   location          <-> number of element containing or closest to each
- *                         point (size: n_points)
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated, or absolute
- *                         distance to a surface element (size: n_points)
- *----------------------------------------------------------------------------*/
-
-void
-my_ple_point_location_closest(const void         *mesh,
-                              _Bool               locate_on_parents,
-                              ple_lnum_t          n_points,
-                              const ple_coord_t   point_coords[],
-                              ple_lnum_t          location[],
-                              float               distance[])
-{
-  int i;
-  int  max_entity_dim;
-  ple_lnum_t  base_element_num;
-  ple_lnum_t  *point_ids = NULL;
-  const my_ple_mesh_t  *m = mesh;
-
-  if (mesh == NULL)
-    return;
-
-  if (locate_on_parents == true)
-    base_element_num = -1;
-  else
-    base_element_num = 1;
-
-  max_entity_dim = my_ple_mesh_get_max_entity_dim(m);
-
-  if (max_entity_dim == m->dim)
-    ple_error(__FILE__, __LINE__, 0,
-              _("Locating volume elements closest to points not handled yet"));
-
-  if (m->dim > 1) {
-    ple_lnum_t j;
-    PLE_MALLOC(point_ids, n_points, ple_lnum_t);
-    for (j = 0; j < n_points; j++)
-      point_ids[j] = j;
-  }
-
-  /* Use brute force for closest 3d point location */
-
-  if (m->dim == 3) {
-
-    /* Locate for all sections */
-
-    for (i = 0; i < m->n_sections; i++) {
-
-      const my_ple_mesh_section_t  *this_section = m->sections[i];
-
-      if (this_section->entity_dim == max_entity_dim) {
-
-        _mesh_section_closest_3d(this_section,
-                                 m->vertex_coords,
-                                 base_element_num,
-                                 point_coords,
-                                 n_points,
-                                 point_ids,
-                                 location,
-                                 distance);
-
-        if (base_element_num > -1)
-          base_element_num += this_section->n_elements;
-
-      }
-
-    }
-  }
-
-  /* Use brute force for closest 2d point location */
-
-  else if (m->dim == 2) {
-
-    /* Locate for all sections */
-
-    for (i = 0; i < m->n_sections; i++) {
-
-      const my_ple_mesh_section_t  *this_section = m->sections[i];
-
-      if (this_section->entity_dim == max_entity_dim) {
-
-        _mesh_section_closest_2d(this_section,
-                                 m->vertex_coords,
-                                 base_element_num,
-                                 point_coords,
-                                 n_points,
-                                 point_ids,
-                                 location,
-                                 distance);
-
-        if (base_element_num > -1)
-          base_element_num += this_section->n_elements;
-
-      }
-
-    }
-
-  }
-
-  if (point_ids != NULL)
-    PLE_FREE(point_ids);
 }
 
 /*----------------------------------------------------------------------------*/
