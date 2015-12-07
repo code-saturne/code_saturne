@@ -5,6 +5,8 @@ Version 4.0.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix for off-by-one postprocessing selection of interior faces.
+
 - Fix default initialization of temperature in compressible, it has to be done
   before the eventual read of a restart file (issue #138).
 
