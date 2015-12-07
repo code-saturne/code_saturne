@@ -1808,6 +1808,12 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
 
         self.set_run_id(run_id)
 
+        # If preparation stage is missing, force it
+        if stages['initialize'] and not stages['prepare_data']:
+            self.define_exec_dir()
+            if not os.path.isdir(self.exec_dir):
+                stages['prepare_data'] = True
+
         # Set result copy mode
 
         self.set_result_dir(force_id)
