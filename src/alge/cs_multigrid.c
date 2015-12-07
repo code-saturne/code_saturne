@@ -368,12 +368,12 @@ _multigrid_setup_log(const cs_multigrid_t *mg)
                   "  Coarsening type:                   %s\n"
                   "    Max fine cells per coarse cell:  %d\n"
                   "    Maximum number of levels :       %d\n"
-                  "    Minimum number of coarse cells:  %d\n"
+                  "    Minimum number of coarse cells:  %llu\n"
                   "    P0/P1 relaxation parameter:      %g\n"
                   "  Maximum number of cycles:          %d\n"),
                 _(cs_grid_coarsening_type_name[mg->coarsening_type]),
                 mg->aggregation_limit,
-                mg->n_levels_max, mg->n_g_cells_min,
+                mg->n_levels_max, (unsigned long long)(mg->n_g_cells_min),
                 mg->p0p1_relax, mg->info.n_max_cycles);
 
   const char *stage_name[] = {"Descent smoother",

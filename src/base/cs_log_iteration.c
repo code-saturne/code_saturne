@@ -718,7 +718,7 @@ _log_fields(void)
                   _("\n"
                     "  ** Computed fields on %s\n"
                     "     -------------------%.*s\n"),
-                  loc_name, loc_name_w, _underline);
+                  loc_name, (int)loc_name_w, _underline);
 
     cs_log_strpad(tmp_s[0], _("field"), max_name_width, 64);
     cs_log_strpadl(tmp_s[1], _("minimum"), 14, 64);
@@ -959,7 +959,7 @@ _log_sstats(void)
                     _("\n"
                       "  ** Computed values on %s\n"
                       "     -------------------%.*s\n"),
-                    loc_name, loc_name_w, _underline);
+                    loc_name, (int)loc_name_w, _underline);
 
       cs_log_strpad(tmp_s[0], _(cat_name), max_name_width, 64);
       cs_log_strpadl(tmp_s[1], _("minimum"), 14, 64);
