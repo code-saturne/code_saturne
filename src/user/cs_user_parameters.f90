@@ -2086,8 +2086,16 @@ if (.false.) then
   imodak = 2
 endif
 
-!-->  IMFSCK = 0 on n'utilise pas le model FSCK
-!            = 1 Model FSCK active
+! Compute the absorption coefficient via ADF model
+! Useful ONLY when coal combustion is activated
+! imoadf = 0 switch off the ADF model
+!        = 1 switch on the ADF model (with 8 bands ADF08)
+!        = 2 switch on the ADF model (with 50 bands ADF50)
+
+if (.true.) then
+  imoadf = 1
+endif
+
 ! Compute the absorption coefficient through FSCK model (if 1)
 ! Useful ONLY when coal combustion is activated
 ! imfsck = 1: activated
