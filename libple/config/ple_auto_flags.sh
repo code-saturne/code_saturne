@@ -87,8 +87,6 @@ if test "x$GCC" = "xyes"; then
     ple_gcc=clang
   elif test -n "`$CC --version 2>&1 | grep PathScale`" ; then
     ple_gcc=pathcc
-  elif test -n "`$CC --version 2>&1 | grep Open64`" ; then
-    ple_gcc=open64
   else
     ple_gcc=gcc
   fi
@@ -236,31 +234,6 @@ elif test "x$ple_gcc" = "xpathcc"; then
 
     # Default compiler flags
     cflags_default="-c99 -noswitcherror"
-    cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
-    cflags_default_dbg="-g"
-    cflags_default_opt="-O2"
-    cflags_default_prf=""
-    cflags_default_omp="-openmp"
-
-  fi
-
-# Otherwise, are we using open64 ?
-#---------------------------------
-
-elif test "x$ple_gcc" = "xopen64"; then
-
-  $CC --version 2>&1 | grep 'Open64' > /dev/null
-  if test "$?" = "0" ; then
-
-    echo "compiler '$CC' is Open64 C compiler"
-
-    # Version strings for logging purposes and known compiler flag
-    $CC --version > $outfile 2>&1
-    ple_ac_cc_version=`grep -i Compiler $outfile`
-    ple_cc_compiler_known=yes
-
-    # Default compiler flags
-    cflags_default="-std=c99"
     cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
     cflags_default_dbg="-g"
     cflags_default_opt="-O2"
