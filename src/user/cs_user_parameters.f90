@@ -2092,7 +2092,7 @@ endif
 !        = 1 switch on the ADF model (with 8 bands ADF08)
 !        = 2 switch on the ADF model (with 50 bands ADF50)
 
-if (.true.) then
+if (.false.) then
   imoadf = 1
 endif
 
