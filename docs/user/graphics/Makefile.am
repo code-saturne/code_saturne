@@ -37,6 +37,14 @@ gui_ale_external.png \
 gui_ale_internal.png \
 gui_ale_mei.png \
 gui_atmo_read.png \
+gui_atmospheric_user_s_guide_v91.png \
+gui_atmospheric_user_s_guide_v92.pdf \
+gui_atmospheric_user_s_guide_v93.pdf \
+gui_atmospheric_user_s_guide_v94.pdf \
+gui_atmospheric_user_s_guide_v95.pdf \
+gui_atmospheric_user_s_guide_v96.pdf \
+gui_atmospheric_user_s_guide_v97.pdf \
+gui_atmospheric_user_s_guide_v98.pdf \
 gui_bc_parameters.png \
 gui_bc_regions.png \
 gui_calculation_features.png \
