@@ -307,10 +307,10 @@ class BatchRunningStopByIterationDialogView(QDialog, Ui_BatchRunningStopByIterat
 #-------------------------------------------------------------------------------
 
 class ListingDialogView(CommandMgrDialogView):
-    def __init__(self, parent, case, title, cmd_list):
+    def __init__(self, parent, case, title, cmd):
         self.case = case
 
-        CommandMgrDialogView.__init__(self, parent, title, cmd_list, self.case['scripts_path'], self.case['salome'])
+        CommandMgrDialogView.__init__(self, parent, title, cmd, self.case['scripts_path'], self.case['salome'])
 
         self.connect(self.pushButtonStop,   SIGNAL('clicked()'), self.__slotStop)
         self.connect(self.pushButtonStopAt, SIGNAL('clicked()'), self.__slotStopAt)
@@ -321,7 +321,7 @@ class ListingDialogView(CommandMgrDialogView):
         self.listing  = "listing"
         self.n_lines = 0
 
-        self.slotProcess()
+        self.proc.start(self.cmd)
 
 
     def slotReadFromStdout(self):
@@ -338,18 +338,16 @@ class ListingDialogView(CommandMgrDialogView):
             s = (ba.data()).decode("utf-8")[:-1]
             self.logText.append(s)
             self.n_lines += 1
-            self.__execDir(s)
+
+            # Work and result directories printed in first lines of log.
+            if self.n_lines < 16:
+                self.__execDir(s)
 
 
     def __execDir(self, s):
         """
         Private method. Find the directory of the code execution.
         """
-        # Work and result directories printed in first lines of log.
-
-        if self.n_lines > 15:
-            return
-
         # Read directly the run directory from the sdtout of the code.
 
         if "Working directory" in s:
@@ -787,7 +785,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             cmd = cs_exec_environment.enquote_arg(sys.argv[0]) \
                   + ' submit ' +  cs_exec_environment.enquote_arg(batch)
 
-        dlg = ListingDialogView(self.parent, self.case, run_title, [cmd])
+        dlg = ListingDialogView(self.parent, self.case, run_title, cmd)
         dlg.show()
 
         if rm_type == None:
