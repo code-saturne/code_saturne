@@ -195,7 +195,7 @@ typedef const double *
 /*----------------------------------------------------------------------------*/
 
 typedef cs_real_t *
-(cs_equation_get_tmpbuf_t)(void        *builder);
+(cs_equation_get_tmpbuf_t)(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3141,7 +3141,7 @@ cs_equation_solve(const cs_time_step_t    *time_step,
 
   cs_halo_rotation_t  halo_rota = CS_HALO_ROTATION_IGNORE;
 
-  cs_real_t  *x = eq->get_tmpbuf(eq->builder);
+  cs_real_t  *x = eq->get_tmpbuf();
   cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
@@ -3415,6 +3415,25 @@ cs_equation_get_space_scheme(const cs_equation_t    *eq)
     return CS_SPACE_N_SCHEMES;
   else
     return eq->param->space_scheme;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the type of variable solved by this equation
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  the type of variable (sclar, vector...) associated to this equation
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_var_type_t
+cs_equation_get_var_type(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return CS_PARAM_N_VAR_TYPES;
+  else
+    return eq->param->var_type;
 }
 
 /*----------------------------------------------------------------------------*/

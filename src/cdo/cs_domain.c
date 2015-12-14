@@ -56,8 +56,9 @@
 #include "cs_evaluate.h"
 #include "cs_walldistance.h"
 #include "cs_groundwater.h"
-
 #include "cs_prototypes.h"
+#include "cs_cdovb_scaleq.h"
+#include "cs_cdofb_scaleq.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -588,6 +589,9 @@ cs_domain_last_setup(cs_domain_t    *domain)
      - Setup the structure related to cs_sles_*
   */
 
+  bool  do_vbscal_scheme = false;
+  bool  do_fbscal_scheme = false;
+
   for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
 
     cs_equation_t  *eq = domain->equations[eq_id];
@@ -597,7 +601,25 @@ cs_domain_last_setup(cs_domain_t    *domain)
     if (!cs_equation_is_steady(eq))
       domain->only_steady = false;
 
+    cs_space_scheme_t  scheme = cs_equation_get_space_scheme(eq);
+    cs_param_var_type_t  vartype = cs_equation_get_var_type(eq);
+
+    if (vartype == CS_PARAM_VAR_SCAL && scheme == CS_SPACE_SCHEME_CDOVB)
+      do_vbscal_scheme = true;
+    else if (vartype == CS_PARAM_VAR_SCAL && scheme == CS_SPACE_SCHEME_CDOFB)
+      do_fbscal_scheme = true;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Undefined type of equation to solve for eq. %s."
+                  " Please check your settings."),
+                cs_equation_get_name(eq));
+
   } // Loop on equations
+
+  if (do_vbscal_scheme)
+    cs_cdovb_scaleq_init_buffer(domain->connect);
+  if (do_fbscal_scheme)
+    cs_cdofb_scaleq_init_buffer(domain->connect);
 
 }
 

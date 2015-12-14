@@ -138,8 +138,6 @@ struct _cs_cdovb_scaleq_t {
   /* Work buffer */
   cs_lnum_t          *vtag;       /* size: n_vertices, store the local vertex id
                                      or -1 if not activated */
-  size_t              work_size;  /* size of the temporary buffer called work */
-  cs_real_t          *work;
 
 };
 
@@ -150,6 +148,9 @@ struct _cs_cdovb_scaleq_t {
 // Advanced developper parameters (weakly enforced the boundary conditions)
 static const cs_real_t  cs_weak_nitsche_pena_coef = 500;
 static const cs_real_t  cs_weak_penalization_weight = 0.01;
+
+static size_t  _vbscal_work_size = 0;
+static cs_real_t  *_vbscal_work = NULL;
 
 /*============================================================================
  * Private function prototypes
@@ -330,8 +331,8 @@ _apply_time_scheme(const cs_real_t          *field_val,
 {
   cs_lnum_t  i;
 
-  cs_real_t  *mv_time = builder->work;
-  cs_real_t  *mv_sys = builder->work + builder->n_vertices;
+  cs_real_t  *mv_time = _vbscal_work;
+  cs_real_t  *mv_sys = _vbscal_work + builder->n_vertices;
   size_t  time_nnz = time_mat->idx[time_mat->n_rows];
   size_t  sys_nnz = sys_mat->idx[sys_mat->n_rows];
 
@@ -519,9 +520,9 @@ _add_advection_bc(cs_cdovb_scaleq_t           *builder,
   cs_lnum_t  i;
 
   /* temporary buffer */
-  cs_real_t  *dir_vals = builder->work;
-  cs_real_t  *rhs_contrib = builder->work + builder->n_vertices;
-  cs_real_t  *diag_contrib = builder->work + 2*builder->n_vertices;
+  cs_real_t  *dir_vals = _vbscal_work;
+  cs_real_t  *rhs_contrib = _vbscal_work + builder->n_vertices;
+  cs_real_t  *diag_contrib = _vbscal_work + 2*builder->n_vertices;
 
   const cs_cdo_bc_list_t  *vtx_dir = builder->vtx_dir;
   const cs_cdo_connect_t  *connect = builder->connect;
@@ -594,8 +595,8 @@ _weak_bc_enforcement(cs_cdovb_scaleq_t     *builder,
 
   /* Temporary buffers stored using builder */
   cs_lnum_t  *loc_v_id = builder->vtag;
-  cs_real_t  *dir_vals = builder->work;
-  cs_real_t  *v_coef = builder->work + builder->n_vertices;
+  cs_real_t  *dir_vals = _vbscal_work;
+  cs_real_t  *v_coef = _vbscal_work + builder->n_vertices;
 
   /* Initialize v_coef and loc_v_ids */
   for (i = 0; i < builder->n_vertices; i++) {
@@ -726,9 +727,9 @@ _strong_bc_enforcement(cs_cdovb_scaleq_t       *builder,
 
   cs_sla_matrix_t  *full_matrix = *matrix, *final_matrix = NULL;
   double  *full_rhs = *rhs, *final_rhs = NULL;
-  double  *tmp_rhs = builder->work;
-  double  *x_bc = builder->work + builder->n_vertices;
-  double  *contrib = builder->work + 2*builder->n_vertices;
+  double  *tmp_rhs = _vbscal_work;
+  double  *x_bc = _vbscal_work + builder->n_vertices;
+  double  *contrib = _vbscal_work + 2*builder->n_vertices;
 
   for (i = 0; i < builder->n_vertices; i++)
     x_bc[i] = 0.0;
@@ -845,6 +846,62 @@ _enforce_bc(cs_cdovb_scaleq_t          *builder,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate work buffer related to cdo vertex-based schemes
+ *
+ * \param[in] connect   pointer to a cs_cdo_connect_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_init_buffer(const cs_cdo_connect_t      *connect)
+{
+  /* Sanity check */
+  assert(_vbscal_work == NULL && _vbscal_work_size == 0);
+
+  const cs_lnum_t  n_vertices = connect->v_info->n_ent;
+  const cs_lnum_t  n_cells = connect->c_info->n_ent;
+
+  /* Work buffers */
+  _vbscal_work_size = CS_MAX(3*n_vertices, n_cells);
+  BFT_MALLOC(_vbscal_work, _vbscal_work_size, cs_real_t);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free work buffer related to cdo vertex-based schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_free_buffer(void)
+{
+  if (_vbscal_work == NULL)
+    return;
+
+  _vbscal_work_size = 0;
+  BFT_FREE(_vbscal_work );
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a pointer to a temporary buffer related to scalar equations
+ *         discretized with CDO vertex-based schemes
+ *
+ * \return  a pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovb_scaleq_get_tmpbuf(void)
+{
+  /* Sanity check */
+  assert(_vbscal_work != NULL);
+
+  return _vbscal_work;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -996,10 +1053,6 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   builder->build_hvpcd_conf = false;
   builder->hvpcd_conf = NULL;
 
-  /* Work buffers */
-  builder->work_size = CS_MAX(3*n_vertices, n_cells);
-  BFT_MALLOC(builder->work, builder->work_size, cs_real_t);
-
   /* Initialize tags */
   BFT_MALLOC(builder->vtag, n_vertices, cs_lnum_t);
   for (i = 0; i < n_vertices; i++)
@@ -1050,7 +1103,6 @@ cs_cdovb_scaleq_free(void   *builder)
 
   BFT_FREE(_builder->vtag);
   BFT_FREE(_builder->source_terms);
-  BFT_FREE(_builder->work);
   BFT_FREE(_builder);
 
   return NULL;
@@ -1076,7 +1128,7 @@ cs_cdovb_scaleq_compute_source(void    *builder)
   const cs_cdo_connect_t  *connect = bld->connect;
   const cs_cdo_quantities_t  *quant = bld->quant;
 
-  double  *st_eval = bld->work;
+  double  *st_eval = _vbscal_work;
 
   for (i = 0; i < bld->n_vertices; i++)
     bld->source_terms[i] = 0;
@@ -1113,7 +1165,7 @@ cs_cdovb_scaleq_compute_source(void    *builder)
       /* Update source term array */
       if (eqp->flag & CS_EQUATION_HCONF_ST) {
 
-        double  *mv = bld->work + bld->n_vertices;
+        double  *mv = _vbscal_work + bld->n_vertices;
 
         cs_sla_matvec(bld->hvpcd_conf, st_eval, &mv, true);
         for (i = 0; i < bld->n_vertices; i++)
@@ -1417,27 +1469,6 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve a pointer to a buffer of size at least the number of unknows
- *
- * \param[in]  builder    pointer to a cs_cdovb_scaleq_t structure
- *
- * \return  a pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdovb_scaleq_get_tmpbuf(void          *builder)
-{
-  cs_cdovb_scaleq_t  *bld = (cs_cdovb_scaleq_t  *)builder;
-
-  /* Sanity checks */
-  assert(bld != NULL && bld->work != NULL);
-
-  return bld->work;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Post-process the solution of a scalar convection/diffusion equation
  *         solved with a CDO vertex-based scheme.
  *
@@ -1518,7 +1549,7 @@ cs_cdovb_scaleq_post(const char                 *eqname,
 
   if (do_adv && do_diff && do_peclet_post) {
 
-    cs_real_t  *work_c = b->work;
+    cs_real_t  *work_c = _vbscal_work;
     cs_real_3_t  base_vect;
 
     len = strlen(eqname) + 9 + 1;

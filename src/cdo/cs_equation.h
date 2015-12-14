@@ -460,6 +460,19 @@ cs_equation_get_space_scheme(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return the type of variable solved by this equation
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  the type of variable (sclar, vector...) associated to this equation
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_var_type_t
+cs_equation_get_var_type(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the type of equation for the given equation structure
  *
  * \param[in]  eq       pointer to a cs_equation_t structure

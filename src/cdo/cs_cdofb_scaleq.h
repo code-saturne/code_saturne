@@ -66,6 +66,38 @@ typedef struct _cs_cdofb_scaleq_t cs_cdofb_scaleq_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Allocate work buffer related to cdo face-based schemes
+ *
+ * \param[in] connect   pointer to a cs_cdo_connect_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_init_buffer(const cs_cdo_connect_t      *connect);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free work buffer related to cdo face-based schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_free_buffer(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a pointer to a temporary buffer related to scalar equations
+ *         discretized with CDO face-based schemes
+ *
+ * \return  a pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdofb_scaleq_get_tmpbuf(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize a cs_cdofb_scaleq_t structure
  *
  * \param[in]  eqp        pointer to a cs_equation_param_t structure
@@ -161,19 +193,6 @@ void
 cs_cdofb_scaleq_post(const char                 *eqname,
                      const cs_field_t           *field,
                      void                       *builder);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve a pointer to a buffer of size at least the number of unknows
- *
- * \param[in]  builder    pointer to a cs_cdofb_scaleq_t structure
- *
- * \return  a pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdofb_scaleq_get_tmpbuf(void          *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!

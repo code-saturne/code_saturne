@@ -122,13 +122,15 @@ struct  _cs_cdofb_scaleq_t {
   cs_real_t  *source_terms;  /* size: n_cells (sum of the contribution in each
                                 cell of all the volumic source terms) */
   cs_real_t  *face_values;   /* DoF unknowns (x) + BCs */
-  double     *work;          /* temporary buffers (size: 3*n_faces) */
 
 };
 
 /*============================================================================
  * Private variables
  *============================================================================*/
+
+static size_t  _fbscal_work_size = 0;
+static cs_real_t  *_fbscal_work = NULL;
 
 /*============================================================================
  * Private function prototypes
@@ -248,12 +250,12 @@ _build_diffusion_system(const cs_mesh_t             *m,
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
 
-  /* Buffers stored in builder->work */
-  double  *contrib = builder->work;                     // size: n_faces
-  double  *face_rhs = builder->work + builder->n_faces; // size: n_faces
+  /* Buffers stored in _fbscal_work */
+  double  *contrib = _fbscal_work;                     // size: n_faces
+  double  *face_rhs = _fbscal_work + builder->n_faces; // size: n_faces
 
   for (i = 0; i < 2*builder->n_faces; i++)
-    builder->work[i] = 0;
+    _fbscal_work[i] = 0;
 
   /*  Build full-size operators:
 
@@ -345,7 +347,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
     {
       if (dir_faces->n_nhmg_elts > 0) {
 
-        double  *x_bc = builder->work + 2*builder->n_faces;  // size: n_faces
+        double  *x_bc = _fbscal_work + 2*builder->n_faces;  // size: n_faces
 
         for (i = 0; i < builder->n_faces; i++)
           x_bc[i] = 0;
@@ -411,6 +413,62 @@ _build_diffusion_system(const cs_mesh_t             *m,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate work buffer related to cdo face-based schemes
+ *
+ * \param[in] connect   pointer to a cs_cdo_connect_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_init_buffer(const cs_cdo_connect_t      *connect)
+{
+  /* Sanity check */
+  assert(_fbscal_work == NULL && _fbscal_work_size == 0);
+
+  const cs_lnum_t  n_faces = connect->f_info->n_ent;
+
+  /* Work buffers */
+  _fbscal_work_size = 3*n_faces;
+  BFT_MALLOC(_fbscal_work, _fbscal_work_size, cs_real_t);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free work buffer related to cdo face-based schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_free_buffer(void)
+{
+  if (_fbscal_work == NULL)
+    return;
+
+  _fbscal_work_size = 0;
+  BFT_FREE(_fbscal_work);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a pointer to a temporary buffer related to scalar equations
+ *         discretized with CDO face-based schemes
+ *
+ * \return  a pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdofb_scaleq_get_tmpbuf(void)
+{
+  /* Sanity check */
+  assert(_fbscal_work != NULL);
+
+  return _fbscal_work;
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -529,12 +587,6 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
   for (i = 0; i < builder->n_cells; i++)
     builder->source_terms[i] = 0;
 
-  /* Work buffers */
-  if (builder->enforce == CS_PARAM_BC_ENFORCE_STRONG)
-    BFT_MALLOC(builder->work, 3*builder->n_faces, double);
-  else
-    BFT_MALLOC(builder->work, 2*builder->n_faces, double);
-
   return builder;
 }
 
@@ -573,7 +625,6 @@ cs_cdofb_scaleq_free(void   *builder)
   /* Free temporary buffers */
   BFT_FREE(_builder->source_terms);
   BFT_FREE(_builder->face_values);
-  BFT_FREE(_builder->work);
 
   BFT_FREE(_builder);
 
@@ -597,7 +648,7 @@ cs_cdofb_scaleq_compute_source(void    *builder)
 
   const cs_equation_param_t  *eqp = b->eqp;
 
-  double  *contrib = b->work;
+  double  *contrib = _fbscal_work;
 
   if (eqp->n_source_terms > 0) { /* Add contribution from source terms */
 
@@ -808,27 +859,6 @@ cs_cdofb_scaleq_post(const char                 *eqname,
 
 
   BFT_FREE(postlabel);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve a pointer to a buffer of size at least the number of unknows
- *
- * \param[in]  builder    pointer to a cs_cdofb_scaleq_t structure
- *
- * \return  a pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdofb_scaleq_get_tmpbuf(void          *builder)
-{
-  cs_cdofb_scaleq_t  *bld = (cs_cdofb_scaleq_t  *)builder;
-
-  /* Sanity checks */
-  assert(bld != NULL && bld->work != NULL);
-
-  return bld->work;
 }
 
 /*----------------------------------------------------------------------------*/

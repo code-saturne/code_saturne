@@ -59,6 +59,8 @@
 #include "cs_domain.h"
 #include "cs_walldistance.h"
 #include "cs_groundwater.h"
+#include "cs_cdovb_scaleq.h"
+#include "cs_cdofb_scaleq.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -184,6 +186,10 @@ static void
 _finalize(cs_domain_t  **domain)
 {
   cs_toolbox_finalize();
+
+  /* Free temporary buffers allocated for each kind of numerical used */
+  cs_cdovb_scaleq_free_buffer();
+  cs_cdofb_scaleq_free_buffer();
 
   *domain = cs_domain_free(*domain);
 }

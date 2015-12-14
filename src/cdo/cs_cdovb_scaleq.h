@@ -58,6 +58,38 @@ typedef struct _cs_cdovb_scaleq_t cs_cdovb_scaleq_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Allocate work buffer related to cdo vertex-based schemes
+ *
+ * \param[in] connect   pointer to a cs_cdo_connect_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_init_buffer(const cs_cdo_connect_t      *connect);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free work buffer related to cdo vertex-based schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_free_buffer(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a pointer to a temporary buffer related to scalar equations
+ *         discretized with CDO vertex-based schemes
+ *
+ * \return  a pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovb_scaleq_get_tmpbuf(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize a cs_cdovb_scaleq_t structure
  *
  * \param[in] eqp       pointer to a cs_equation_param_t structure
@@ -123,19 +155,6 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
                              void                        *builder,
                              cs_real_t                  **rhs,
                              cs_sla_matrix_t            **sla_mat);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve a pointer to a buffer of size at least the number of unknows
- *
- * \param[in]  builder    pointer to a cs_cdovb_scaleq_t structure
- *
- * \return  a pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdovb_scaleq_get_tmpbuf(void          *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
