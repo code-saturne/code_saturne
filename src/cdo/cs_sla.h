@@ -227,6 +227,18 @@ cs_sla_matrix_free(cs_sla_matrix_t  *m);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Remove entries with zero values
+ *          Only available for CSR and MSR matrices with stride = 1
+ *
+ * \param[in, out] m       matrix to clean
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sla_matrix_rmzeros(cs_sla_matrix_t   *m);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Remove entries in a cs_sla_matrix_t structure below a given
  *          threshold. |a(i,j)| < eps * max|a(i,j)|
  *          Be careful when using this function since one can loose the symmetry

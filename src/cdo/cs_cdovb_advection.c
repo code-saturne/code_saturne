@@ -862,25 +862,24 @@ cs_cdovb_advection_build_local(cs_lnum_t                    c_id,
 /*!
  * \brief   Compute the convection operator for pure convection
  *
- * \param[in]      connect      pointer to the connectivity structure
- * \param[in]      quant        pointer to the cdo quantities structure
- * \param[in]      dir_vals     values of the Dirichlet boundary condition
- * \param[in, out] builder      pointer to a convection builder structure
- * \param[in, out] rhs_contrib  array storing the contribution for the rhs
- * \param[in, out] diag_contrib array storing the contribution for the diagonal
+ * \param[in]      connect       pointer to the connectivity structure
+ * \param[in]      quant         pointer to the cdo quantities structure
+ * \param[in]      dir_vals      values of the Dirichlet boundary condition
+ * \param[in, out] builder       pointer to a convection builder structure
+ * \param[in, out] rhs_contrib   array storing the rhs contribution
+ * \param[in, out] diag_contrib  array storing the diagonal contribution
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_advection_get_bc_contrib(const cs_cdo_connect_t      *connect,
-                                  const cs_cdo_quantities_t   *quant,
-                                  const cs_real_t             *dir_vals,
-                                  cs_cdovb_adv_t              *builder,
-                                  cs_real_t                    rhs_contrib[],
-                                  cs_real_t                    diag_contrib[])
+cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *quant,
+                          const cs_real_t             *dir_vals,
+                          cs_cdovb_adv_t              *builder,
+                          cs_real_t                    rhs_contrib[],
+                          cs_real_t                    diag_contrib[])
 {
   cs_lnum_t  i, f_id;
-  cs_real_t  dp = 0, flux_v1 = 0, flux_v2;
 
   const cs_param_advection_t  a_info = builder->a_info;
   const cs_real_t  *xyz = quant->vtx_coord;
@@ -901,43 +900,46 @@ cs_cdovb_advection_get_bc_contrib(const cs_cdo_connect_t      *connect,
       /* Sanity check (this is a border face) */
       assert(connect->f2c->idx[f_id+1] - connect->f2c->idx[f_id] == 1);
 
-      dp = _dp3(advf.unitv, qf.unitv);
+      const double  dp = _dp3(advf.unitv, qf.unitv);
+      if (fabs(dp) > 0.01*cs_get_eps_machine()) {
 
-      /* Loop on border face edges */
-      for (i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
+        /* Loop on border face edges */
+        for (i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
 
-        cs_lnum_t  e_id = f2e->col_id[i];
-        cs_quant_t  qe = quant->edge[e_id];
-        cs_lnum_t  e_shft = e2v->idx[e_id];
-        cs_lnum_t  v1_id = e2v->col_id[e_shft];
-        cs_lnum_t  v2_id = e2v->col_id[e_shft+1];
+          cs_lnum_t  e_id = f2e->col_id[i];
+          cs_lnum_t  e_shft = e2v->idx[e_id];
+          cs_lnum_t  v1_id = e2v->col_id[e_shft];
+          cs_lnum_t  v2_id = e2v->col_id[e_shft+1];
 
-        flux_v1 = dp * advf.meas * cs_surftri(&(xyz[3*v1_id]),
-                                              qe.center, qf.center);
-        flux_v2 = dp * advf.meas * cs_surftri(&(xyz[3*v2_id]),
-                                              qe.center, qf.center);
+          const cs_real_t  *xv1 = xyz + 3*v1_id;
+          const cs_real_t  *xv2 = xyz + 3*v2_id;
 
-        if (dp < 0) { // advection field is inward w.r.t. the face normal
+          const double  surf = 0.5*cs_surftri(xv1, xv2, qf.center);
+          const double  _flx = dp * advf.meas * surf;
 
-          rhs_contrib[v1_id] -= flux_v1 * dir_vals[v1_id];
-          rhs_contrib[v2_id] -= flux_v2 * dir_vals[v2_id];
+          if (dp < 0) { // advection field is inward w.r.t. the face normal
 
-          if (a_info.form == CS_PARAM_ADVECTION_FORM_NONCONS) {
-            diag_contrib[v1_id] -= flux_v1;
-            diag_contrib[v2_id] -= flux_v2;
+            rhs_contrib[v1_id] -= _flx * dir_vals[v1_id];
+            rhs_contrib[v2_id] -= _flx * dir_vals[v2_id];
+
+            if (a_info.form == CS_PARAM_ADVECTION_FORM_NONCONS) {
+              diag_contrib[v1_id] -= _flx;
+              diag_contrib[v2_id] -= _flx;
+            }
+
+          }
+          else { // advection is oriented outward
+
+            if (a_info.form == CS_PARAM_ADVECTION_FORM_CONSERV) {
+              diag_contrib[v1_id] += _flx;
+              diag_contrib[v2_id] += _flx;
+            }
+
           }
 
-        }
-        else { // advection is oriented outward
+        } // Loop on face edges
 
-          if (a_info.form == CS_PARAM_ADVECTION_FORM_CONSERV) {
-            diag_contrib[v1_id] += flux_v1;
-            diag_contrib[v2_id] += flux_v2;
-          }
-
-        }
-
-      } // Loop on face edges
+      } // abs(dp) > 0
 
     } // Loop on border faces
 
@@ -960,11 +962,13 @@ cs_cdovb_advection_get_bc_contrib(const cs_cdo_connect_t      *connect,
         cs_lnum_t  v1_id = e2v->col_id[e_shft];
         cs_lnum_t  v2_id = e2v->col_id[e_shft+1];
 
-        flux_v1 = _compute_adv_flux_svef(a_info, builder->t_cur,
-                                         &(xyz[3*v1_id]), qe.center, qf);
+        const cs_real_t  *xv1 = xyz + 3*v1_id;
+        const cs_real_t  *xv2 = xyz + 3*v2_id;
 
-        flux_v2 = _compute_adv_flux_svef(a_info, builder->t_cur,
-                                         &(xyz[3*v2_id]), qe.center, qf);
+        const double  flux_v1 = _compute_adv_flux_svef(a_info, builder->t_cur,
+                                                       xv1, qe.center, qf);
+        const double  flux_v2 = _compute_adv_flux_svef(a_info, builder->t_cur,
+                                                       xv2, qe.center, qf);
 
         if (flux_v1 < 0) { // advection field is inward w.r.t. the face normal
 

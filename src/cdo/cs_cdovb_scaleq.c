@@ -544,10 +544,8 @@ _add_advection_bc(const cs_cdo_connect_t     *connect,
     dir_vals[vtx_dir->elt_ids[i]] = builder->dir_val[i];
 
   /* Compute the contribution */
-  cs_cdovb_advection_get_bc_contrib(connect, quant, dir_vals,
-                                    adv,
-                                    rhs_contrib,
-                                    diag_contrib);
+  cs_cdovb_advection_add_bc(connect, quant, dir_vals, adv,
+                            rhs_contrib, diag_contrib);
 
   /* Add boundary contribution */
   for (i = 0; i < builder->n_vertices; i++) {
@@ -1013,6 +1011,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t  *eqp,
   /* Work buffers */
   builder->work_size = CS_MAX(3*n_vertices, n_cells);
   BFT_MALLOC(builder->work, builder->work_size, cs_real_t);
+
   /* Initialize tags */
   BFT_MALLOC(builder->vtag, n_vertices, cs_lnum_t);
   for (i = 0; i < n_vertices; i++)
@@ -1401,6 +1400,12 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *m,
   bool do_cleaning = false; // Advanced option
   if (do_cleaning)
     cs_sla_matrix_clean(sys_mat, 10*cs_get_eps_machine());
+  else
+    cs_sla_matrix_rmzeros(sys_mat);
+
+#if CS_CDOVB_SCALEQ_DBG > 1
+  cs_sla_system_dump("system.log", NULL, sys_mat, full_rhs);
+#endif
 
   /* Return pointers */
   *rhs = full_rhs;

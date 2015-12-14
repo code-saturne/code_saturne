@@ -1711,6 +1711,72 @@ cs_sla_matrix_free(cs_sla_matrix_t  *m)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Remove entries with zero values
+ *          Only available for CSR and MSR matrices with stride = 1
+ *
+ * \param[in, out] m       matrix to clean
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sla_matrix_rmzeros(cs_sla_matrix_t   *m)
+{
+  cs_lnum_t  i, j;
+
+  const double  threshold = 100*DBL_MIN;
+
+  if (m == NULL)
+    return;
+  if (m->type != CS_SLA_MAT_MSR && m->type != CS_SLA_MAT_CSR)
+    return;
+
+  if (m->stride > 1)
+    bft_error(__FILE__, __LINE__, 0, _sla_err_stride);
+
+  cs_lnum_t  init_nnz = m->idx[m->n_rows];
+
+  /* Find and delete null entries */
+  cs_lnum_t  shift = m->idx[0];
+  cs_lnum_t  start = m->idx[0];
+
+  for (i = 0; i < m->n_rows; i++) {
+
+    /* Delete too small entries */
+    for (j = start; j < m->idx[i+1]; j++) {
+
+      if (fabs(m->val[j]) > threshold) { /* Keep this value */
+        if (j != shift) { /* Need to copy */
+          m->val[shift] = m->val[j];
+          m->col_id[shift] = m->col_id[j];
+        }
+        shift++;
+      }
+
+    } /* End of loop on row entries */
+
+    start = m->idx[i+1];
+    m->idx[i+1] = shift;
+
+  } /* End of loop on rows */
+
+  if (init_nnz != shift) {
+    BFT_REALLOC(m->val, shift, double);
+    BFT_REALLOC(m->col_id, shift, cs_lnum_t);
+  }
+
+#if CS_SLA_MATRIX_DBG > 0 /* Output message */
+  bft_printf(" -dbg- cs_sla_matrix_clean >>"
+             " type: %s; n_rows: %6d; threshold: %6.3e; nnz: %d -> %d\n",
+             _sla_matrix_type[m->type], m->n_rows, threshold, init_nnz, shift);
+#endif
+
+  /* Update information about the structure of the matrix */
+  cs_sla_matrix_set_info(m);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Remove entries in a cs_sla_matrix_t structure below a given
  *          threshold. |a(i,j)| < eps * max|a(i,j)|
  *                                       i
@@ -1781,6 +1847,9 @@ cs_sla_matrix_clean(cs_sla_matrix_t   *m,
 #endif
 
   } /* MSR or CSR */
+
+  /* Update information about the structure of the matrix */
+  cs_sla_matrix_set_info(m);
 
 }
 

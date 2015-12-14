@@ -144,22 +144,22 @@ cs_cdovb_advection_build_local(cs_lnum_t                    c_id,
 /*!
  * \brief   Compute the convection operator for pure convection
  *
- * \param[in]      connect      pointer to the connectivity structure
- * \param[in]      quant        pointer to the cdo quantities structure
- * \param[in]      dir_vals     values of the Dirichlet boundary condition
- * \param[in, out] builder      pointer to a convection builder structure
- * \param[in, out] rhs_contrib  array storing the contribution for the rhs
- * \param[in, out] diag_contrib array storing the contribution for the diagonal
+ * \param[in]      connect       pointer to the connectivity structure
+ * \param[in]      quant         pointer to the cdo quantities structure
+ * \param[in]      dir_vals      values of the Dirichlet boundary condition
+ * \param[in, out] builder       pointer to a convection builder structure
+ * \param[in, out] rhs_contrib   array storing the rhs contribution
+ * \param[in, out] diag_contrib  array storing the diagonal contribution
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_advection_get_bc_contrib(const cs_cdo_connect_t      *connect,
-                                  const cs_cdo_quantities_t   *quant,
-                                  const cs_real_t             *dir_vals,
-                                  cs_cdovb_adv_t              *builder,
-                                  cs_real_t                    rhs_contrib[],
-                                  cs_real_t                    diag_contrib[]);
+cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *quant,
+                          const cs_real_t             *dir_vals,
+                          cs_cdovb_adv_t              *builder,
+                          cs_real_t                    rhs_contrib[],
+                          cs_real_t                    diag_contrib[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
