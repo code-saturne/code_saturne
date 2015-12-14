@@ -530,7 +530,7 @@ _add_advection_bc(const cs_cdo_connect_t     *connect,
   /* temporary buffer */
   cs_real_t  *dir_vals = builder->work;
   cs_real_t  *rhs_contrib = builder->work + builder->n_vertices;
-  cs_real_t  *diag_contrib = builder->work + builder->n_vertices;
+  cs_real_t  *diag_contrib = builder->work + 2*builder->n_vertices;
 
   const cs_cdo_bc_list_t  *vtx_dir = builder->vtx_dir;
 
@@ -1190,7 +1190,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *m,
   */
   cs_sla_matrix_t  *sys_mat =
     cs_sla_matrix_create_msr_from_index(sys_builder->v2v,
-                                        true,   // symmetric
+                                        false,  // symmetric
                                         true,   // sorted
                                         1);     // stride
 
