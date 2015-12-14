@@ -30,6 +30,7 @@ AC_DEFUN([CS_AC_TEST_PETSC], [
 cs_have_petsc=no
 cs_have_petsc_header=no
 petsc_prefix=""
+cs_abs_srcdir=`cd $srcdir && pwd`
 
 AC_ARG_WITH(petsc,
             [AS_HELP_STRING([--with-petsc=PATH],
@@ -52,20 +53,21 @@ AC_ARG_WITH(petsc-lib,
              fi])
 
 if test "x$with_petsc" != "xno" ; then
-
-  cs_prv_dir=`pwd`
-  cs_abs_srcdir=`cd $srcdir && pwd`
-
-  if ! test -f ${PETSC_DIR}/conf/variables ; then
-    AC_MSG_FAILURE([${PETSC_DIR}/conf/variables not found.
+  if test -f ${PETSC_DIR}/conf/variables ; then
+    PETSC_CPPFLAGS=$(make -s -f "$cs_abs_srcdir/build-aux/petsc-variables.makefile" PETSC_DIR="${PETSC_DIR}" getincludedirs)
+    PETSC_LDFLAGS=""
+    PETSC_LIBS=$(make -s -f "$cs_abs_srcdir/build-aux/petsc-variables.makefile"  PETSC_DIR="${PETSC_DIR}" getlinklibs)
+  elif test -f ${PETSC_DIR}/conf/petscvariables ; then
+    PETSC_CPPFLAGS=$(make -s -f "$cs_abs_srcdir/build-aux/petsc-petscvariables.makefile" PETSC_DIR="${PETSC_DIR}" getincludedirs)
+    PETSC_LDFLAGS=""
+    PETSC_LIBS=$(make -s -f "$cs_abs_srcdir/build-aux/petsc-petscvariables.makefile" PETSC_DIR="${PETSC_DIR}" getlinklibs)
+  else
+      AC_MSG_FAILURE([${PETSC_DIR}/conf/variables or ${PETSC_DIR}/conf/petscvariables not found.
 Check --with-petsc or --with-petsc-lib option or PETSc directory structure
-({--with-petsc}/lib/conf/variables or {--with-petsc_lib}/conf/variables
+({--with-petsc}/lib/conf/variables or {--with-petsc_lib}/conf/variables or
+ {--with-petsc}/lib/conf/petscvariables or {--with-petsc_lib}/conf/petscvariables
 should be present).])
   fi
-
-  PETSC_CPPFLAGS=$(make -s -f "$cs_abs_srcdir/build-aux/petsc-variables.makefile" PETSC_DIR="${PETSC_DIR}" getincludedirs)
-  PETSC_LDFLAGS=""
-  PETSC_LIBS=$(make -s -f "$cs_abs_srcdir/build-aux/petsc-variables.makefile"  PETSC_DIR="${PETSC_DIR}" getlinklibs)
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"

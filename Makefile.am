@@ -44,6 +44,8 @@ AUX_DIST = \
 build-aux/catalyst \
 build-aux/cs_config_test.py \
 build-aux/cs_version.py \
+build-aux/petsc-petscvariables.makefile \
+build-aux/petsc-variables.makefile \
 m4/codeset.m4 \
 m4/fcntl-o.m4 \
 m4/gettext.m4 \
