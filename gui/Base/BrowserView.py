@@ -421,8 +421,8 @@ Thermophysical models
     Turbomachinery
     Darcy
 Physical properties
-    Fluid properties
     Reference values
+    Fluid properties
     Gravity
 Volume conditions
     Volume regions definition

@@ -357,7 +357,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelPhas.addItem(self.tr('gas'), 'gas')
 
         if (self.freesteam == 0 and EOS == 0 and not coolprop_fluids) or \
-            self.m_th.getThermalScalarModel() == "off" or \
             mdl_joule != 'off' or mdl_comp != 'off':
             self.groupBoxTableChoice.hide()
         else:

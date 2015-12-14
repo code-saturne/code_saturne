@@ -133,22 +133,24 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         model = self.mdl.getParticularPhysical()
 
         self.groupBoxMassMolar.hide()
-        self.groupBoxTemperature.show()
 
         if model == "atmo":
             self.labelInfoT0.hide()
         elif model == "comp" or model == "coal":
             self.groupBoxMassMolar.show()
         elif model == "off":
+            thmodel = ThermalScalarModel(self.case).getThermalScalarModel()
+            if thmodel == "enthalpy":
+                self.labelT0.setText("enthalpy")
+                self.labelUnitT0.setText("J/kg")
+                self.groupBoxTemperature.setTitle("Reference enthalpy")
+            elif thmodel == "temperature_celsius":
+                self.labelUnitT0.setText("C")
+
             if FluidCharacteristicsModel(self.case).getMaterials() != "user_material":
-                thmodel = ThermalScalarModel(self.case).getThermalScalarModel()
-                if thmodel == "enthalpy":
-                    self.labelT0.setText("enthalpy")
-                    self.labelUnitT0.setText("J/kg")
-                    self.groupBoxTemperature.setTitle("Reference enthalpy")
-                elif thmodel == "temperature_celsius":
-                    self.labelUnitT0.setText("C")
                 self.labelInfoT0.hide()
+        else:
+            self.groupBoxTemperature.hide()
 
         gas_comb = GasCombustionModel(self.case).getGasCombustionModel()
         if gas_comb == 'd3p':
