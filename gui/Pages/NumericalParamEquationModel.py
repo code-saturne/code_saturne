@@ -102,7 +102,6 @@ class NumericalParamEquatModel(Model):
         """ Private method: return default values """
         self.default = {}
         self.default['time_step_factor'] = 1.0
-        self.default['max_iter_number'] = 10000
         self.default['solver_precision'] = 1e-8
         self.default['solver_precision_pressure'] = 1e-8
         if NumericalParamGlobalModel(self.case).getTimeSchemeOrder() == 2:
@@ -113,6 +112,8 @@ class NumericalParamEquatModel(Model):
 
         self.default['solver_choice_pressure'] = 'multigrid'
         self.default['solver_choice'] = 'automatic'
+        self.default['preconditioning_choice_pressure'] = 'none'
+        self.default['preconditioning_choice'] = 'none'
 
         if name not in self.var:
             self.default['order_scheme'] = 'upwind'
@@ -552,18 +553,6 @@ class NumericalParamEquatModel(Model):
 
 
 # Following methods for dependances of solver:
-
-    @Variables.undoLocal
-    def setMaxIterNumber(self, name, value):
-        """ Put number of maximum iterations for variable labelled name """
-        self.isInt(value)
-        node = self._getSolverNameNode(name)
-        if value != self._defaultValues()['max_iter_number']:
-            node.xmlSetData('max_iter_number', value)
-        else:
-            node.xmlRemoveChild('max_iter_number')
-
-
     @Variables.undoLocal
     def setSolverPrecision(self, name, value):
         """ Put value of solver precision for variable labelled name """
@@ -585,28 +574,21 @@ class NumericalParamEquatModel(Model):
     def setSolverChoice(self, name, value):
         """ Put choice of solver for variable labelled name """
         self.isInList(value, ('multigrid', 'conjugate_gradient', 'jacobi',
-                              'bi_cgstab', 'bi_cgstab2', 'gmres', 'automatic'))
+                              'bi_cgstab', 'bi_cgstab2', 'gmres', 'automatic',
+                              'gauss_seidel', 'PCR3'))
         node = self._getSolverNameNode(name)
-        if self._isPressure(node):
-            default = self._defaultValues()['solver_choice_pressure']
-        else:
-            default = self._defaultValues()['solver_choice']
-
-        if value != default:
-            n = node.xmlInitNode('solver_choice')
-            n['choice'] = value
-        else:
-            node.xmlRemoveChild('solver_choice')
+        n = node.xmlInitNode('solver_choice')
+        n['choice'] = value
 
 
-    @Variables.noUndo
-    def getMaxIterNumber(self, name):
-        """ Return number of maximum iterations for variable labelled name """
+    @Variables.undoLocal
+    def setPreconditioningChoice(self, name, value):
+        """ Put choice of preconditioning for variable labelled name """
+        self.isInList(value, ('multigrid', 'none', 'jacobi',
+                              'polynomial'))
         node = self._getSolverNameNode(name)
-        value = node.xmlGetInt('max_iter_number')
-        if value == None:
-            value = self._defaultValues()['max_iter_number']
-        return value
+        n = node.xmlInitNode('preconditioning_choice')
+        n['choice'] = value
 
 
     @Variables.noUndo
@@ -638,6 +620,23 @@ class NumericalParamEquatModel(Model):
                 default = self._defaultValues()['solver_choice_pressure']
             else:
                 default = self._defaultValues()['solver_choice']
+            value = default
+        return value
+
+
+    @Variables.noUndo
+    def getPreconditioningChoice(self, name):
+        """ Return choice of preconditioning for variable labelled name """
+        node = self._getSolverNameNode(name)
+        n = node.xmlGetNode('preconditioning_choice')
+
+        if n:
+            value = n['choice']
+        else:
+            if self._isPressure(node):
+                default = self._defaultValues()['preconditioning_choice_pressure']
+            else:
+                default = self._defaultValues()['preconditioning_choice']
             value = default
         return value
 
@@ -830,25 +829,6 @@ class NumericalParamEquatTestCase(ModelTest):
         assert model.getFluxReconstruction('VelocitW') == 'off',\
                 'Could not get status of flux reconstruction in NumericalParamEquationModel'
 
-    def checkSetAndGetMaxIterNumber(self):
-        """
-        Check whether the NumericalParamEquatModel class could set and get max of number of iterations
-        """
-        model = NumericalParamEquatModel(self.case)
-        model.setMaxIterNumber('Pressure', 22222)
-        doc = """<velocity_pressure>
-                    <variable label="Pressure" name="pressure">
-                            <max_iter_number>22222</max_iter_number>
-                    </variable>
-                    <variable label="Velocity" name="velocity"/>
-                    <property label="total_pressure" name="total_pressure"/>
-                    <property label="Yplus" name="yplus" support="boundary"/>
-                    <property label="Stress" name="stress" support="boundary"/>
-                 </velocity_pressure>"""
-        assert model.node_vitpre == self.xmlNodeFromString(doc),\
-                'Could not set max of number of iterations in NumericalParamEquationModel'
-        assert model.getMaxIterNumber('Pressure') == 22222,\
-                'Could not get max of number of iterations in NumericalParamEquationModel'
 
     def checkSetAndGetSolverPrecision(self):
         """

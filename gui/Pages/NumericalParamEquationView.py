@@ -123,6 +123,8 @@ class SolverChoiceDelegate(QItemDelegate):
         editor.addItem("BiCGstab")
         editor.addItem("BiCGstab2")
         editor.addItem("GMRES")
+        editor.addItem("Gauss Seidel")
+        editor.addItem("conjugate residual")
         if index.row() <= 0:
             editor.addItem("Multigrid")
         editor.installEventFilter(self)
@@ -131,7 +133,8 @@ class SolverChoiceDelegate(QItemDelegate):
 
     def setEditorData(self, comboBox, index):
         dico = {"automatic": 0, "conjugate_gradient": 1, "jacobi": 2,
-                "bi_cgstab": 3, "bi_cgstab2": 4, "gmres": 5, "multigrid": 6}
+                "bi_cgstab": 3, "bi_cgstab2": 4, "gmres": 5, "multigrid": 8,
+                "gauss_seidel": 6, "PCR3": 7}
         row = index.row()
         string = index.model().dataSolver[row]['iresol']
         idx = dico[string]
@@ -144,6 +147,45 @@ class SolverChoiceDelegate(QItemDelegate):
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
                 model.setData(idx, to_qvariant(value))
+
+#-------------------------------------------------------------------------------
+# Combo box delegate for preconditioning
+#-------------------------------------------------------------------------------
+
+class PreconditioningChoiceDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent=None, xml_model=None):
+        super(PreconditioningChoiceDelegate, self).__init__(parent)
+        self.parent = parent
+        self.mdl = xml_model
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+
+        editor.addItem("None")
+        editor.addItem("Multigrid")
+        editor.addItem("Jacobi")
+        editor.addItem("Polynomial")
+
+        solver = index.model().dataSolver[index.row()]['iresol']
+        if solver == 'multigrid':
+            editor.model().item(1).setEnabled(False)
+        editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        row = index.row()
+        string = index.model().dataSolver[row]['precond']
+        comboBox.setEditText(string)
+
+
+    def setModelData(self, comboBox, model, index):
+        value = comboBox.currentText()
+        model.setData(index, to_qvariant(value), Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for BLENCV
@@ -451,29 +493,38 @@ class StandardItemModelSolver(QStandardItemModel):
 
 
     def populateModel(self):
-        self.dicoV2M= {"Multigrid": 'multigrid',
+        self.dicoV2M= {"Multigrid"          : 'multigrid',
                        "Conjugate gradient" : 'conjugate_gradient',
-                       "Jacobi": 'jacobi',
-                       "BiCGstab": 'bi_cgstab',
-                       "BiCGstab2": 'bi_cgstab2',
-                       "GMRES": 'gmres',
-                       "Automatic": "automatic"}
-        self.dicoM2V= {"multigrid" : 'Multigrid',
+                       "Jacobi"             : 'jacobi',
+                       "BiCGstab"           : 'bi_cgstab',
+                       "BiCGstab2"          : 'bi_cgstab2',
+                       "GMRES"              : 'gmres',
+                       "Automatic"          : "automatic",
+                       "Gauss Seidel"       : "gauss_seidel",
+                       "conjugate residual" : "PCR3",
+                       "None"               : "none",
+                       "Polynomial"         : "polynomial"}
+        self.dicoM2V= {"multigrid"          : 'Multigrid',
                        "conjugate_gradient" : 'Conjugate gradient',
-                       "jacobi": 'Jacobi',
-                       "bi_cgstab": 'BiCGstab',
-                       "bi_cgstab2": 'BiCGstab2',
-                       'gmres': "GMRES",
-                       "automatic": "Automatic"}
+                       "jacobi"             : 'Jacobi',
+                       "bi_cgstab"          : 'BiCGstab',
+                       "bi_cgstab2"         : 'BiCGstab2',
+                       'gmres'              : "GMRES",
+                       "automatic"          : "Automatic",
+                       "gauss_seidel"       : "Gauss Seidel",
+                       "PCR3"               : "conjugate residual",
+                       "none"               : "None",
+                       "polynomial"         : "Polynomial"}
+
         for name in self.NPE.getSolverList():
             row = self.rowCount()
             self.setRowCount(row + 1)
 
-            dico           = {}
-            dico['name']   = name
-            dico['iresol'] = self.NPE.getSolverChoice(name)
-            dico['nitmax'] = self.NPE.getMaxIterNumber(name)
-            dico['epsilo'] = self.NPE.getSolverPrecision(name)
+            dico            = {}
+            dico['name']    = name
+            dico['iresol']  = self.NPE.getSolverChoice(name)
+            dico['precond'] = self.NPE.getPreconditioningChoice(name)
+            dico['epsilo']  = self.NPE.getSolverPrecision(name)
             if self.NPE.isScalar(name):
                 dico['cdtvar'] = self.NPE.getScalarTimeStepFactor(name)
             else:
@@ -504,7 +555,7 @@ class StandardItemModelSolver(QStandardItemModel):
             elif index.column() == 1:
                 return to_qvariant(self.dicoM2V[dico['iresol']])
             elif index.column() == 2:
-                return to_qvariant(dico['nitmax'])
+                return to_qvariant(self.dicoM2V[dico['precond']])
             elif index.column() == 3:
                 return to_qvariant(dico['epsilo'])
             elif index.column() == 4:
@@ -539,7 +590,7 @@ class StandardItemModelSolver(QStandardItemModel):
             elif section == 1:
                 return to_qvariant(self.tr("Solver\nChoice"))
             elif section == 2:
-                return to_qvariant(self.tr("Maximum\nIteration Number"))
+                return to_qvariant(self.tr("Preconditioning\nChoice"))
             elif section == 3:
                 return to_qvariant(self.tr("Solver\nPrecision"))
             elif section == 4:
@@ -558,8 +609,8 @@ class StandardItemModelSolver(QStandardItemModel):
             self.NPE.setSolverChoice(name, self.dataSolver[row]['iresol'])
 
         elif index.column() == 2:
-            self.dataSolver[row]['nitmax'] = from_qvariant(value, int)
-            self.NPE.setMaxIterNumber(name, self.dataSolver[row]['nitmax'])
+            self.dataSolver[row]['precond'] = self.dicoV2M[from_qvariant(value, to_text_string)]
+            self.NPE.setPreconditioningChoice(name, self.dataSolver[row]['precond'])
 
         elif index.column() == 3:
             self.dataSolver[row]['epsilo'] = from_qvariant(value, float)
@@ -571,6 +622,7 @@ class StandardItemModelSolver(QStandardItemModel):
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
+
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for minimum value
@@ -824,6 +876,9 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
 
         delegateSolverChoice = SolverChoiceDelegate(self.tableViewSolver)
         self.tableViewSolver.setItemDelegateForColumn(1, delegateSolverChoice)
+
+        delegatePrecondChoice = PreconditioningChoiceDelegate(self.tableViewSolver)
+        self.tableViewSolver.setItemDelegateForColumn(2, delegatePrecondChoice)
 
         # Clipping
         self.modelClipping = StandardItemModelClipping(self, self.NPE)
