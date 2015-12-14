@@ -39,6 +39,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_advection_field.h \
 cs_cdo.h \
 cs_cdo_bc.h \
 cs_cdo_connect.h \
@@ -53,8 +54,10 @@ cs_domain.h \
 cs_equation.h \
 cs_equation_priv.h \
 cs_evaluate.h \
+cs_groundwater.h \
 cs_hodge.h \
 cs_param.h \
+cs_property.h \
 cs_quadrature.h \
 cs_reco.h \
 cs_sla.h \
@@ -64,6 +67,7 @@ cs_walldistance.h
 
 noinst_LTLIBRARIES = libcscdo.la
 libcscdo_la_SOURCES = \
+cs_advection_field.c \
 cs_cdo.c \
 cs_cdo_bc.c \
 cs_cdo_connect.c \
@@ -77,8 +81,10 @@ cs_cdovb_scaleq.c \
 cs_domain.c \
 cs_equation.c \
 cs_evaluate.c \
+cs_groundwater.c \
 cs_hodge.c \
 cs_param.c \
+cs_property.c \
 cs_quadrature.c \
 cs_reco.c \
 cs_sla_matrix.c \

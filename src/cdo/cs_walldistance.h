@@ -69,13 +69,15 @@ cs_walldistance_compute(const cs_cdo_connect_t      *connect,
 /*!
  * \brief  Setup an new equation related to the wall distance
  *
- * \param[in]   eq          pointer to the associated cs_equation_t structure
- * \param[in]   wall_ml_id  id of the mesh location related to wall boundaries
+ * \param[in]  eq          pointer to the associated cs_equation_t structure
+ * \param[in]  diff_pty    pointer to a cs_property_t structure
+ * \param[in]  wall_ml_id  id of the mesh location related to wall boundaries
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_walldistance_setup(cs_equation_t   *eq,
+                      cs_property_t   *diff_pty,
                       int              wall_ml_id);
 
 /*----------------------------------------------------------------------------*/

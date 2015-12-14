@@ -35,6 +35,7 @@
 #include <string.h>
 #include <assert.h>
 #include <float.h>
+#include <math.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -57,8 +58,6 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
-double  cs_base_zthreshold = 100*DBL_MIN;
-
 /* Separation lines: long, medium, short */
 const char lsepline[] =
   " ========================================================================\n";
@@ -71,7 +70,8 @@ const char ssepline[] =
  * Local static variables
  *============================================================================*/
 
-static double cs_base_eps_machine;
+static double  cs_base_eps_machine;
+static double  cs_base_zthreshold = FLT_MIN;
 
 /*============================================================================
  * Private function prototypes
@@ -135,6 +135,47 @@ double
 cs_get_eps_machine(void)
 {
   return cs_base_eps_machine;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the threshold under which one considers it's zero
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_get_zero_threshold(void)
+{
+  return cs_base_zthreshold;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_nvec3_t structure from a cs_real_3_t
+ *
+ * \param[in]  v     vector of size 3
+ * \param[out] qv    pointer to a cs_nvec3_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_nvec3(const cs_real_3_t    v,
+         cs_nvec3_t          *qv)
+{
+  cs_real_t  magnitude = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+
+  qv->meas = magnitude;
+  if (fabs(magnitude) > cs_base_zthreshold) {
+
+    cs_real_t  inv = 1/magnitude;
+    for (int k = 0; k < 3; k++)
+      qv->unitv[k] = inv * v[k];
+
+  }
+  else
+    for (int k = 0; k < 3; k++)
+      qv->unitv[k] = 0;
+
 }
 
 /*----------------------------------------------------------------------------*/

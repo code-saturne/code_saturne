@@ -30,7 +30,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_time_step.h"
 #include "cs_cdo.h"
 #include "cs_param.h"
 #include "cs_cdo_connect.h"
@@ -58,10 +57,10 @@ typedef struct _cs_cdovb_diff_t  cs_cdovb_diff_t;
 /*!
  * \brief   Initialize a builder structure used to build the stiffness matrix
  *
- * \param[in] connect     pointer to a cs_cdo_connect_t struct.
- * \param[in] time_step   pointer to a time step structure
- * \param[in] h_info      cs_param_hodge_t struct.
- * \param[in] bc_enforce  type of boundary enforcement for Dirichlet values
+ * \param[in] connect      pointer to a cs_cdo_connect_t struct.
+ * \param[in] is_uniform   diffusion tensor is uniform ? (true or false)
+ * \param[in] h_info       cs_param_hodge_t struct.
+ * \param[in] bc_enforce   type of boundary enforcement for Dirichlet values
  *
  * \return a pointer to a new allocated cs_cdovb_diffusion_builder_t struc.
  */
@@ -69,7 +68,7 @@ typedef struct _cs_cdovb_diff_t  cs_cdovb_diff_t;
 
 cs_cdovb_diff_t *
 cs_cdovb_diffusion_builder_init(const cs_cdo_connect_t       *connect,
-                                const cs_time_step_t         *time_step,
+                                bool                          is_uniform,
                                 const cs_param_hodge_t        h_info,
                                 const cs_param_bc_enforce_t   bc_enforce);
 
@@ -94,6 +93,7 @@ cs_cdovb_diffusion_builder_free(cs_cdovb_diff_t   *diff);
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
  * \param[in]      vtag        pointer to a cs_cdovb_scaleq_t struct.
+ * \param[in]      tensor      3x3 matrix attached to the diffusion property
  * \param[in, out] diff        auxiliary structure used to build the diff. term
  *
  * \return a pointer to a local stiffness matrix
@@ -105,6 +105,7 @@ cs_cdovb_diffusion_build_local(cs_lnum_t                    c_id,
                                const cs_cdo_connect_t      *connect,
                                const cs_cdo_quantities_t   *quant,
                                const cs_lnum_t             *vtag,
+                               const cs_real_3_t           *tensor,
                                cs_cdovb_diff_t             *diff);
 
 /*----------------------------------------------------------------------------*/

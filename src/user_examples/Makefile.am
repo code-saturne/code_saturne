@@ -89,6 +89,7 @@ cs_user_boundary_conditions-richards.f90 \
 cs_user_boundary_mass_source_terms-condensation.f90 \
 cs_user_boundary_mass_source_terms-nzones_condensation.f90 \
 cs_user_cdo-condif.c \
+cs_user_cdo-groundwater.c \
 cs_user_cdo_extra_op-verif-diffusion.c \
 cs_user_cdo_numerics-examples.c \
 cs_user_extra_operations-energy_balance.f90 \

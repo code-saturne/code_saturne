@@ -1,6 +1,8 @@
 /*============================================================================
  * Manage a computational domain within the CDO framework
  *  - Physical boundary conditions attached to a domain
+ *  - Properties and advection fields attached to this domain
+ *  - Equations to solve on this domain
  *============================================================================*/
 
 /* VERS */
@@ -53,6 +55,7 @@
 #include "cs_post.h"
 #include "cs_evaluate.h"
 #include "cs_walldistance.h"
+#include "cs_groundwater.h"
 
 #include "cs_prototypes.h"
 
@@ -121,123 +124,22 @@ _domain_boundary_ml_name[CS_PARAM_N_BOUNDARY_TYPES][CS_CDO_LEN_NAME] =
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Postprocessing of quantities attached to the current domain s.t.
- *         material properties and/or advection fields
+ *         advection fields
  *
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  time_step  pointer to a time_step structure
+ * \param[in]  domain  pointer to a cs_domain_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_domain_post(const cs_mesh_t       *mesh,
-             const cs_time_step_t  *time_step)
+_domain_post(const cs_domain_t    *domain)
 {
-  cs_lnum_t  v_id, id;
+  /* Post-processing of the advection field(s) */
+  for (int id = 0; id < domain->n_adv_fields; id++)
+    cs_advection_field_post(domain->adv_fields[id]);
 
-  const double  t_cur = time_step->t_cur;
-  const int  nt_cur = time_step->nt_cur;
-  const int  n_adv_fields = cs_param_get_n_adv_fields();
-
-  /* Up to now, only advection field are post-processed */
-  for (id = 0; id < n_adv_fields; id++) {
-
-    cs_param_adv_field_t  *adv = cs_param_adv_field_get(id);
-
-    if (adv->post_freq > -1) { // Post-processing is requested
-
-      bool  do_post = true;
-
-      if (nt_cur == 0) {
-        if (adv->post_freq > 0)
-          do_post = false;
-      }
-      else { /* nt_cur > 0 */
-        if (adv->post_freq == 0)
-          do_post = false;
-        else if (nt_cur % adv->post_freq > 0)
-          do_post = false;
-      }
-
-      if (do_post) {
-
-        cs_lnum_t  shft;
-        cs_nvec3_t  v;
-        cs_real_3_t  advect;
-
-        cs_field_t  *fld = cs_field_by_id(adv->field_id);
-        cs_real_t  *val = fld->val;
-        cs_real_t  *unitv = NULL, *magnitude = NULL;
-
-        const  cs_real_t  *xyz = mesh->vtx_coord;
-
-        bft_printf(" <post/advection_field> %s\n", adv->name);
-
-        BFT_MALLOC(unitv, 3*mesh->n_vertices, cs_real_t);
-        BFT_MALLOC(magnitude, mesh->n_vertices, cs_real_t);
-
-        /* Evaluate the value of the advection field at each vertex */
-        for (v_id = 0; v_id < mesh->n_vertices; v_id++) {
-
-          cs_evaluate_adv_field(id,
-                                t_cur,
-                                xyz + 3*v_id,
-                                &advect);
-          cs_nvec3(advect, &v);
-          magnitude[v_id] = v.meas;
-
-          shft = 3*v_id;
-          for (int k = 0; k < 3; k++) {
-            val[shft+k] = advect[k];
-            unitv[shft+k] = v.unitv[k];
-          }
-
-        } // Loop on vertices
-
-        cs_post_write_vertex_var(-1,              // id du maillage de post
-                                 fld->name,
-                                 3,               // dim
-                                 true,            // interlace
-                                 true,            // true = original mesh
-                                 CS_POST_TYPE_cs_real_t,
-                                 val,             // values on vertices
-                                 time_step);      // time step structure
-
-        char  *label = NULL;
-        int  len = strlen(fld->name) + 1 + 10;
-
-        BFT_MALLOC(label, len, char);
-        sprintf(label, "%s.Magnitude", fld->name);
-
-        cs_post_write_vertex_var(-1,              // id du maillage de post
-                                 label,
-                                 1,               // dim
-                                 true,            // interlace
-                                 true,            // true = original mesh
-                                 CS_POST_TYPE_cs_real_t,
-                                 magnitude,       // values on vertices
-                                 time_step);      // time step structure
-
-        sprintf(label, "%s.Unit", fld->name);
-        cs_post_write_vertex_var(-1,              // id du maillage de post
-                                 label,
-                                 3,               // dim
-                                 true,            // interlace
-                                 true,            // true = original mesh
-                                 CS_POST_TYPE_cs_real_t,
-                                 unitv,           // values on vertices
-                                 time_step);      // time step structure
-
-        /* Free temporay buffers */
-        BFT_FREE(label);
-        BFT_FREE(unitv);
-        BFT_FREE(magnitude);
-
-      } // Do post
-
-    } // Post is potentially requested
-
-  } // Loop on advection fields
-
+  /* Predefined post-processing for the groundwater module */
+  if (domain->gw != NULL)
+    cs_groundwater_post(domain->time_step, domain->gw);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -392,6 +294,173 @@ _free_domain_boundaries(cs_domain_boundary_t   *bcs)
   return NULL;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the wall distance
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_wall_distance(cs_domain_t   *domain)
+{
+  if (domain->wall_distance_eq_id == -1)
+    return;
+
+  cs_equation_t  *wd_eq = domain->equations[domain->wall_distance_eq_id];
+
+  /* Sanity check */
+  assert(cs_equation_is_steady(wd_eq));
+
+  /* Initialize system before resolution for all equations
+     - create system builder
+     - initialize field according to initial conditions
+     - initialize source term */
+  cs_equation_init_system(domain->mesh,
+                          domain->connect,
+                          domain->cdo_quantities,
+                          domain->time_step,
+                          wd_eq);
+
+  /* Define the algebraic system */
+  cs_equation_build_system(domain->mesh,
+                           domain->time_step,
+                           domain->dt_cur,
+                           wd_eq);
+
+  /* Solve the algebraic system */
+  cs_equation_solve(domain->time_step, wd_eq);
+
+  /* Compute the wall distance */
+  cs_walldistance_compute(domain->connect,
+                          domain->cdo_quantities,
+                          wd_eq);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute equations which user-defined and steady-state
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_steady_user_equations(cs_domain_t   *domain)
+{
+  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
+
+    cs_equation_t  *eq = domain->equations[eq_id];
+
+    if (cs_equation_is_steady(eq)) {
+
+      cs_equation_type_t  type = cs_equation_get_type(eq);
+
+      if (type == CS_EQUATION_TYPE_USER) {
+
+        /* Initialize system before resolution for all equations
+           - create system builder
+           - initialize field according to initial conditions
+           - initialize source term */
+        cs_equation_init_system(domain->mesh,
+                                domain->connect,
+                                domain->cdo_quantities,
+                                domain->time_step,
+                                eq);
+
+        /* Define the algebraic system */
+        cs_equation_build_system(domain->mesh,
+                                 domain->time_step,
+                                 domain->dt_cur,
+                                 eq);
+
+        /* Solve the algebraic system */
+        cs_equation_solve(domain->time_step, eq);
+
+      } /* User-defined equation */
+
+    } /* Steady-state equation */
+
+  } // Loop on equations
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute user-defined equation which are time-dependent
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in]       nt_cur    current number of iteration done
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_unsteady_user_equations(cs_domain_t   *domain,
+                                 int            nt_cur)
+{
+  if (nt_cur == 0) { /* Initialization */
+
+    for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
+
+      cs_equation_t  *eq = domain->equations[eq_id];
+
+      if (!cs_equation_is_steady(eq)) { // Unsteady eq.
+
+        cs_equation_type_t  type = cs_equation_get_type(eq);
+
+        if (type == CS_EQUATION_TYPE_USER) {
+
+          /* Initialize system before resolution for all equations
+             - create system builder
+             - initialize field according to initial conditions
+             - initialize source term */
+          cs_equation_init_system(domain->mesh,
+                                  domain->connect,
+                                  domain->cdo_quantities,
+                                  domain->time_step,
+                                  eq);
+
+        } /* User-defined equation */
+
+      } /* Unsteady equations */
+
+    } /* Loop on equations */
+
+  } /* nt_cur == 0 */
+  else {
+
+    for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
+
+      cs_equation_t  *eq = domain->equations[eq_id];
+
+      if (!cs_equation_is_steady(eq)) {
+
+        cs_equation_type_t  type = cs_equation_get_type(eq);
+
+        if (type == CS_EQUATION_TYPE_USER) {
+
+          /* Define the algebraic system */
+          if (cs_equation_needs_build(eq))
+            cs_equation_build_system(domain->mesh,
+                                     domain->time_step,
+                                     domain->dt_cur,
+                                     eq);
+
+          /* Solve domain */
+          cs_equation_solve(domain->time_step, eq);
+
+        } /* User-defined equation */
+
+      } /* Unsteady equations */
+
+    } /* Loop on equations */
+
+  } /* nt_cur > 0 */
+
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -435,12 +504,12 @@ cs_domain_init(const cs_mesh_t             *mesh,
   BFT_MALLOC(domain->time_step, 1, cs_time_step_t);
   domain->time_step->is_variable = 0;
   domain->time_step->is_local = 0; // In CDO, this is always equal to 0
-  domain->time_step->nt_prev = 0; // Changed in case of restart
-  domain->time_step->nt_cur =  0; // Do not modify this value
+  domain->time_step->nt_prev = 0;  // Changed in case of restart
+  domain->time_step->nt_cur =  0;  // Do not modify this value
   domain->time_step->nt_max = 0;
-  domain->time_step->nt_ini = 2;  // Not useful in CDO module
+  domain->time_step->nt_ini = 2;   // Not useful in CDO module
   domain->time_step->t_prev = 0.;
-  domain->time_step->t_cur = 0.;  // Assume initial time is 0.0
+  domain->time_step->t_cur = 0.;   // Assume initial time is 0.0
   domain->time_step->t_max = -1.;
 
   domain->time_options.inpdt0 = 0; // standard calculation
@@ -456,7 +525,6 @@ cs_domain_init(const cs_mesh_t             *mesh,
   domain->time_options.relxst = 0.7; // Not useful in CDO schemes
 
   /* Equations */
-  domain->do_navsto = false;
   domain->n_equations = 0;
   domain->n_predef_equations = 0;
   domain->n_user_equations = 0;
@@ -466,23 +534,37 @@ cs_domain_init(const cs_mesh_t             *mesh,
   /* Other options */
   domain->output_freq = 10;
 
-  /* Predefined equations */
+  /* Predefined equations or modules */
+  domain->richards_eq_id = -1;
   domain->wall_distance_eq_id = -1;
+  domain->gw = NULL;
 
   /* Specify the "physical" domain boundaries. Define a mesh location for
      each boundary type */
   domain->boundaries = _init_domain_boundaries(mesh->n_b_faces);
 
-  /* User-defined settings for this domain */
-  cs_user_cdo_setup_domain(domain);
+  /* Initialize properties */
+  domain->n_properties = 0;
+  domain->properties = NULL;
+
+  /* Add predefined properties */
+  cs_domain_add_property(domain, "unity", "isotropic");
+  cs_property_t  *pty = cs_domain_get_property(domain, "unity");
+  cs_property_def_by_value(pty, "1.0");
+
+  /* Advection fields */
+  domain->n_adv_fields = 0;
+  domain->adv_fields = NULL;
+
+  /* User-defined settings for this domain
+      - time step
+      - boundary of the domain
+   */
+  cs_user_cdo_init_domain(domain);
 
   /* Update mesh locations */
   _add_mesh_locations(domain);
   _check_boundary_setup(domain);
-
-  /* Sanity check */
-  assert(domain->n_equations ==
-         domain->n_user_equations + domain->n_predef_equations);
 
   return domain;
 }
@@ -511,6 +593,7 @@ cs_domain_last_setup(cs_domain_t    *domain)
     cs_equation_t  *eq = domain->equations[eq_id];
 
     cs_equation_last_setup(eq);
+
     if (!cs_equation_is_steady(eq))
       domain->only_steady = false;
 
@@ -546,6 +629,21 @@ cs_domain_free(cs_domain_t   *domain)
 
   BFT_FREE(domain->time_step);
 
+  if (domain->gw != NULL)
+    domain->gw = cs_groundwater_finalize(domain->gw);
+
+  /* Free properties */
+  for (int i = 0; i < domain->n_properties; i++)
+    domain->properties[i] = cs_property_free(domain->properties[i]);
+  BFT_FREE(domain->properties);
+
+  /* Free advection fields */
+  if (domain->n_adv_fields > 0) {
+    for (int i = 0; i < domain->n_adv_fields; i++)
+      domain->adv_fields[i] = cs_advection_field_free(domain->adv_fields[i]);
+    BFT_FREE(domain->adv_fields);
+  }
+
   /* Free memory related to equations */
   for (int i = 0; i < domain->n_equations; i++)
     domain->equations[i] = cs_equation_free(domain->equations[i]);
@@ -579,10 +677,31 @@ cs_domain_summary(const cs_domain_t   *domain)
   bft_printf(" -msg- n_predefined_equations   %d\n",
              domain->n_predef_equations);
   bft_printf(" -msg- n_user_equations         %d\n", domain->n_user_equations);
+  bft_printf(" -msg- n_properties             %d\n", domain->n_properties);
 
+  /* Properties */
+  bft_printf("\n%s", lsepline);
+  bft_printf("\tSummary of the definition of properties\n");
+  bft_printf("%s", lsepline);
+
+  for (int i = 0; i < domain->n_properties; i++)
+    cs_property_summary(domain->properties[i]);
+
+  /* Advection fields */
+  if (domain->n_adv_fields > 0) {
+
+    bft_printf("\n%s", lsepline);
+    bft_printf("\tSummary of the advection field\n");
+    bft_printf("%s", lsepline);
+
+    for (int i = 0; i < domain->n_adv_fields; i++)
+      cs_advection_field_summary(domain->adv_fields[i]);
+
+  }
+
+  /* Boundary */
   cs_domain_boundary_t  *bdy = domain->boundaries;
 
-  /* Default boundary */
   bft_printf("\n  Domain boundary by default: ");
   switch (bdy->default_boundary) {
   case CS_PARAM_BOUNDARY_WALL:
@@ -630,6 +749,9 @@ cs_domain_summary(const cs_domain_t   *domain)
       bft_printf("\n");
   }
   bft_printf("\n");
+
+  /* Summary of the groundwater module */
+  cs_groundwater_summary(domain->gw);
 
   /* Summary for each equation */
   for (int  eq_id = 0; eq_id < domain->n_equations; eq_id++)
@@ -811,8 +933,7 @@ cs_domain_set_time_step(cs_domain_t   *domain,
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid key for setting the type of definition.\n"
                   " Given key: %s\n"
-                  " Choice among value, field, evaluator, analytic, user, law"
-                  " or file\n"
+                  " Choice among value, analytic, user, law.\n"
                   " Please modify your settings."), defkey);
 
 
@@ -888,6 +1009,133 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add a new property to the current computational domain
+ *
+ * \param[in, out]   domain       pointer to a cs_domain_t structure
+ * \param[in]        pty_name     name of the property to add
+ * \param[in]        type_name    key name related to the type of property
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_add_property(cs_domain_t     *domain,
+                       const char      *pty_name,
+                       const char      *type_name)
+{
+  if (domain == NULL)
+    return;
+
+  cs_property_t  *pty = cs_domain_get_property(domain, pty_name);
+
+  if (pty != NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_(" An existing property has already the name %s.\n"
+                 " Stop adding this property.\n"), pty_name);
+    return;
+  }
+
+  int  pty_id = domain->n_properties;
+
+  domain->n_properties += 1;
+  BFT_REALLOC(domain->properties, domain->n_properties, cs_property_t *);
+
+  domain->properties[pty_id] = cs_property_create(pty_name,
+                                                  type_name,
+                                                  domain->cdo_quantities,
+                                                  domain->connect,
+                                                  domain->time_step);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the related property definition from its name
+ *
+ * \param[in]  domain      pointer to a domain structure
+ * \param[in]  ref_name    name of the property to find
+ *
+ * \return NULL if not found otherwise the associated pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_domain_get_property(const cs_domain_t    *domain,
+                       const char           *ref_name)
+{
+  for (int i = 0; i < domain->n_properties; i++) {
+
+    cs_property_t  *pty = domain->properties[i];
+    if (cs_property_check_name(pty, ref_name))
+      return pty;
+
+  }
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new advection field to the current computational domain
+ *
+ * \param[in, out]   domain       pointer to a cs_domain_t structure
+ * \param[in]        adv_name     name of the advection field to add
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_add_advection_field(cs_domain_t     *domain,
+                              const char      *adv_name)
+{
+  if (domain == NULL)
+    return;
+
+  cs_adv_field_t  *adv = cs_domain_get_advection_field(domain, adv_name);
+
+  if (adv != NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_(" An existing advection field has already the name %s.\n"
+                 " Stop adding this advection field.\n"), adv_name);
+    return;
+  }
+
+  int  adv_id = domain->n_adv_fields;
+
+  domain->n_adv_fields += 1;
+  BFT_REALLOC(domain->adv_fields, domain->n_adv_fields, cs_adv_field_t *);
+
+  domain->adv_fields[adv_id] = cs_advection_field_create(adv_name,
+                                                         domain->cdo_quantities,
+                                                         domain->connect,
+                                                         domain->time_step);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the related advection field definition from its name
+ *
+ * \param[in]  domain      pointer to a domain structure
+ * \param[in]  ref_name    name of the adv_field to find
+ *
+ * \return NULL if not found otherwise the associated pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_domain_get_advection_field(const cs_domain_t    *domain,
+                              const char           *ref_name)
+{
+  for (int i = 0; i < domain->n_adv_fields; i++) {
+
+    cs_adv_field_t  *adv = domain->adv_fields[i];
+    if (cs_advection_field_check_name(adv, ref_name))
+      return adv;
+
+  }
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Find the cs_equation_t structure whith name eqname
  *         Return NULL if not find
  *
@@ -939,15 +1187,163 @@ cs_domain_activate_wall_distance(cs_domain_t   *domain)
   BFT_REALLOC(domain->equations, domain->n_equations, cs_equation_t *);
 
   domain->equations[domain->wall_distance_eq_id] =
-    cs_equation_create("WallDistance",           // equation name
-                       "WallDistance",           // variable name
-                       CS_EQUATION_PREDEFINED,   // status
-                       CS_EQUATION_TYPE_SCAL,    // type of equation
-                       true,                     // steady ?
-                       false,                    // convection term ?
-                       true,                     // diffusion term ?
-                       CS_PARAM_BC_HMG_NEUMANN); // default BC
+    cs_equation_create("WallDistance",              // equation name
+                       "WallDistance",              // variable name
+                       CS_EQUATION_TYPE_PREDEFINED, // type of equation
+                       CS_PARAM_VAR_SCAL,           // type of variable
+                       CS_PARAM_BC_HMG_NEUMANN);    // default BC
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Activate the computation of the Richards' equation
+ *
+ * \param[in, out]   domain         pointer to a cs_domain_t structure
+ * \param[in]        model          keyword related to the model used
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_activate_groundwater(cs_domain_t   *domain,
+                               const char    *model)
+{
+  if (domain == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" cs_domain_t structure is not allocated."));
+
+  cs_property_t  *permeability = NULL, *soil_capacity = NULL;
+  cs_adv_field_t  *adv_field = NULL;
+  int  richards_eq_id = domain->n_equations;
+
+  /* Allocate a new strcuture for managing groundwater module */
+  domain->gw = cs_groundwater_create();
+
+  /* Add a property related to the diffusion term of the Richards eq. */
+  cs_domain_add_property(domain, "permeability", "anisotropic");
+
+  /* Add a property related to the unsteady term of the Richards eq. */
+  if (strcmp(model, "saturated")) // not "saturated"
+    cs_domain_add_property(domain, "soil_capacity", "isotropic");
+
+  /* Add an advection field related to the darcian flux steming from the
+     Richards equation */
+  cs_domain_add_advection_field(domain, "darcian_flux");
+
+  adv_field = cs_domain_get_advection_field(domain, "darcian_flux");
+  permeability = cs_domain_get_property(domain, "permeability");
+  soil_capacity = cs_domain_get_property(domain, "soil_capacity");
+
+  /* Create a new equation */
+  cs_equation_t  *richards_eq = cs_groundwater_init(domain->connect,
+                                                    richards_eq_id,
+                                                    model,
+                                                    permeability,
+                                                    soil_capacity,
+                                                    adv_field,
+                                                    domain->gw);
+
+  domain->richards_eq_id = richards_eq_id;
+  domain->n_predef_equations += 1;
+  domain->n_equations += 1;
+  BFT_REALLOC(domain->equations, domain->n_equations, cs_equation_t *);
+  domain->equations[richards_eq_id] = richards_eq;
+
+  if (richards_eq == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " The module dedicated to groundwater flows is activated but"
+              " the Richards' equation is not set.");
+
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to a cs_groundwater_t structure related to this
+ *         domain
+ *
+ * \param[in]   domain         pointer to a cs_domain_t structure
+ *
+ * \return a pointer to a cs_groundwater_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_groundwater_t *
+cs_domain_get_groundwater(const cs_domain_t    *domain)
+{
+  if (domain == NULL)
+    return NULL;
+
+  return domain->gw;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new equation related to the groundwater flow module
+ *         This equation is a particular type of unsteady advection-diffusion
+ *         reaction eq.
+ *         Tracer is advected thanks to the darcian velocity and
+ *         diffusion/reaction parameters result from a physical modelling.
+ *
+ * \param[in, out]  domain         pointer to a cs_domain_t structure
+ * \param[in]       eqname         name of the equation
+ * \param[in]       varname        name of the related variable
+ * \param[in]       dispersivity   dispersivity for each axis (x, y, z]
+ * \param[in]       bulk_density   value of the bulk density
+ * \param[in]       distrib_coef   value of the distribution coefficient
+ * \param[in]       reaction_rate  value of the first order rate of reaction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
+                                 const char    *eq_name,
+                                 const char    *var_name,
+                                 cs_real_3_t    dispersivity,
+                                 double         bulk_density,
+                                 double         distrib_coef,
+                                 double         reaction_rate)
+{
+  /* Sanity checks */
+  if (domain->gw == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " Groundwater module is requested but is not activated.\n"
+              " Please first activate this module.");
+
+  /* Add a new property related to the diffusion property */
+  int  len = strlen(eq_name) + strlen("_diffusivity") + 1;
+  char  *pty_name = NULL;
+
+  BFT_MALLOC(pty_name, len, char);
+  sprintf(pty_name, "%s_diffusivity", eq_name);
+
+  cs_domain_add_property(domain, pty_name, "anisotropic");
+
+  cs_property_t *diff_pty = cs_domain_get_property(domain, pty_name);
+
+  BFT_FREE(pty_name);
+
+  /* Add a new equation */
+  BFT_REALLOC(domain->equations, domain->n_equations + 1, cs_equation_t *);
+
+  cs_equation_t  *tracer_eq = cs_groundwater_add_tracer(domain->gw,
+                                                        domain->n_equations,
+                                                        eq_name,
+                                                        var_name,
+                                                        diff_pty,
+                                                        dispersivity,
+                                                        bulk_density,
+                                                        distrib_coef,
+                                                        reaction_rate);
+
+  domain->equations[domain->n_equations] = tracer_eq;
+  domain->n_predef_equations += 1;
+  domain->n_equations += 1;
+
+  if (tracer_eq == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " Problem during the definition of a new tracer equation for"
+              " the groundwater module.");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -967,12 +1363,19 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
   cs_equation_t  *eq = NULL;
 
   if (domain->wall_distance_eq_id > -1) {
+
     eq = domain->equations[domain->wall_distance_eq_id];
 
     cs_domain_bdy_ml_t  wall_bdy_ml = bdy->bdy_ml[CS_PARAM_BOUNDARY_WALL];
 
-    cs_walldistance_setup(eq, wall_bdy_ml.id);
-  }
+    cs_walldistance_setup(eq,
+                          cs_domain_get_property(domain, "unity"),
+                          wall_bdy_ml.id);
+
+  } // Wall distance is activated
+
+  if (domain->richards_eq_id > -1)
+    cs_groundwater_automatic_settings(domain->equations, domain->gw);
 
 }
 
@@ -984,9 +1387,6 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
  * \param[in]      eqname         name of the equation
  * \param[in]      varname        name of the related variable
  * \param[in]      key_type       type of equation: "scalar", "vector", "tensor"
- * \param[in]      is_steady      add an unsteady term or not
- * \param[in]      do_convection  add a convection term or not
- * \param[in]      do_diffusion   add a diffusion term or not
  * \param[in]      key_bc         type of boundary condition set by default
  *                                "zero_value" or "zero_flux"
  */
@@ -997,12 +1397,9 @@ cs_domain_add_user_equation(cs_domain_t         *domain,
                             const char          *eqname,
                             const char          *varname,
                             const char          *key_type,
-                            bool                 is_steady,
-                            bool                 do_convection,
-                            bool                 do_diffusion,
                             const char          *key_bc)
 {
-  cs_equation_type_t  type = CS_EQUATION_N_TYPES;
+  cs_param_var_type_t  var_type = CS_PARAM_N_VAR_TYPES;
   cs_param_bc_type_t  default_bc = CS_PARAM_N_BC_TYPES;
 
   if (domain == NULL)
@@ -1013,11 +1410,11 @@ cs_domain_add_user_equation(cs_domain_t         *domain,
 
   /* Define the type of equation */
   if (strcmp(key_type, "scalar") == 0)
-    type = CS_EQUATION_TYPE_SCAL;
+    var_type = CS_PARAM_VAR_SCAL;
   else if (strcmp(key_type, "vector") == 0)
-    type = CS_EQUATION_TYPE_VECT;
+    var_type = CS_PARAM_VAR_VECT;
   else if (strcmp(key_type, "tensor") == 0)
-    type = CS_EQUATION_TYPE_TENS;
+    var_type = CS_PARAM_VAR_TENS;
   else
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid type of equation: %s\n"
@@ -1034,14 +1431,11 @@ cs_domain_add_user_equation(cs_domain_t         *domain,
                 " Choices are zero_value or zero_flux."), key_bc);
 
   domain->equations[domain->n_equations] =
-    cs_equation_create(eqname,           // equation name
-                       varname,          // variable name
-                       CS_EQUATION_USER, // status
-                       type,             // type of equation
-                       is_steady,        // steady ?
-                       do_convection,    // convection term ?
-                       do_diffusion,     // diffusion term ?
-                       default_bc);      // default BC
+    cs_equation_create(eqname,                // equation name
+                       varname,               // variable name
+                       CS_EQUATION_TYPE_USER, // type of equation
+                       var_type,              // type of equation
+                       default_bc);           // default BC
 
   domain->n_user_equations += 1;
   domain->n_equations += 1;
@@ -1059,9 +1453,13 @@ cs_domain_add_user_equation(cs_domain_t         *domain,
 void
 cs_domain_create_fields(cs_domain_t  *domain)
 {
-  /* Loop on user-defined equations */
+  /* Loop on all equations */
   for (int eq_id = 0; eq_id < domain->n_equations; eq_id++)
     cs_equation_create_field(domain->equations[eq_id]);
+
+  /* Loop on all advection fields */
+  for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
+    cs_advection_field_create_field(domain->adv_fields[adv_id]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1088,9 +1486,10 @@ cs_domain_needs_iterate(cs_domain_t  *domain)
 
     if (domain->only_steady)
       one_more_iter = false;
-    if (ts->t_cur > ts->t_max) /* Be careful to avoid wrong stop due to
-                                  an accumulation of small truncation error */
-      if (fabs(ts->t_cur - ts->t_max) > 0.1*domain->dt_cur)
+
+    /* Avoid a wrong stop due to an accumulation of small truncation errors */
+    if (ts->t_cur > ts->t_max)
+      if (ts->t_cur - ts->t_max > 0.01*domain->dt_cur)
         one_more_iter = false;
 
   } /* nt_cur > 0 */
@@ -1132,58 +1531,36 @@ cs_domain_solve(cs_domain_t  *domain)
 
   int  nt_cur = domain->time_step->nt_cur;
 
-  if (nt_cur == 0) { // Time loop has not yet begun
+  /* Setup step for all equations */
+  if (nt_cur == 0) {
 
     /* Output information */
     bft_printf("\n%s", lsepline);
-    bft_printf("    Initialize system and/or solve steady-state problem\n");
+    bft_printf("    Solve steady-state problem(s)\n");
     bft_printf("%s", lsepline);
 
-    /* Initialize system before resolution for all equations
-       - create system builder
-       - initialize field according to initial conditions
-       - initialize source term
-     */
-    for (eq_id = 0; eq_id < domain->n_equations; eq_id++) {
+    /* Predefined equation for the computation of the wall distance */
+    _compute_wall_distance(domain);
 
-      cs_equation_t  *eq = domain->equations[eq_id];
+    /* Only initialization is done if unsteady, otherwise make the whole
+       computation */
+    if (domain->richards_eq_id > -1)
+      cs_groundwater_compute(domain->mesh,
+                             domain->time_step,
+                             domain->dt_cur,
+                             domain->connect,
+                             domain->cdo_quantities,
+                             domain->equations,
+                             domain->gw);
 
-      cs_equation_init_system(domain->mesh,
-                              domain->connect,
-                              domain->cdo_quantities,
-                              domain->time_step,
-                              eq);
+    /* User-defined equations */
+    _compute_steady_user_equations(domain);
 
-      if (cs_equation_is_steady(eq)) {
-
-        /* Define the algebraic system */
-        cs_equation_build_system(domain->mesh,
-                                 domain->connect,
-                                 domain->cdo_quantities,
-                                 domain->time_step,
-                                 domain->dt_cur,
-                                 eq);
-
-        /* Solve the algebraic system */
-        cs_equation_solve(domain->connect,
-                          domain->cdo_quantities,
-                          domain->time_step,
-                          eq);
-
-      } /* for steady-state equations */
-
-    } // Loop on equations
-
-    /* Specific treatment for wall distance */
-    if (domain->wall_distance_eq_id > -1) {
-      eq_id = domain->wall_distance_eq_id;
-      cs_walldistance_compute(domain->connect,
-                              domain->cdo_quantities,
-                              domain->equations[eq_id]);
-    }
+    /* Only initialization is done */
+    _compute_unsteady_user_equations(domain, nt_cur);
 
   }
-  else { /* nt_cur > 0 */
+  else { /* nt_cur > 0: solve unsteady problems */
 
     /* Output information */
     if (nt_cur % domain->output_freq == 0) {
@@ -1193,42 +1570,29 @@ cs_domain_solve(cs_domain_t  *domain)
       bft_printf("%s", lsepline);
     }
 
-    for (eq_id = 0; eq_id < domain->n_equations; eq_id++) {
+    if (domain->richards_eq_id > -1)
+      cs_groundwater_compute(domain->mesh,
+                             domain->time_step,
+                             domain->dt_cur,
+                             domain->connect,
+                             domain->cdo_quantities,
+                             domain->equations,
+                             domain->gw);
 
-      cs_equation_t  *eq = domain->equations[eq_id];
+    /* User-defined equations */
+    _compute_unsteady_user_equations(domain, nt_cur);
 
-      if (!cs_equation_is_steady(eq)) { /* Unsteady equation */
+  }
 
-        /* Define the algebraic system */
-        if (cs_equation_needs_build(eq))
-          cs_equation_build_system(domain->mesh,
-                                   domain->connect,
-                                   domain->cdo_quantities,
-                                   domain->time_step,
-                                   domain->dt_cur,
-                                   eq);
-
-        /* Solve domain */
-        cs_equation_solve(domain->connect,
-                          domain->cdo_quantities,
-                          domain->time_step,
-                          eq);
-
-      } // unsteady eq.
-
-    } // Loop on equations
-
-  } /* test on nt_cur */
+  for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
+    cs_advection_field_update(domain->adv_fields[adv_id]);
 
   /* Generic post-processing */
-  _domain_post(domain->mesh, domain->time_step);
+  _domain_post(domain);
 
   /* Generic post-processing related to the equation structure */
   for (eq_id = 0; eq_id < domain->n_equations; eq_id++)
-    cs_equation_post(domain->mesh,
-                     domain->cdo_quantities,
-                     domain->time_step,
-                     domain->equations[eq_id]);
+    cs_equation_post(domain->time_step, domain->equations[eq_id]);
 
   /* User-defined extra operations */
   cs_user_cdo_extra_op(domain);

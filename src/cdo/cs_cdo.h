@@ -58,43 +58,80 @@ typedef enum {
 
 } cs_space_scheme_t;
 
+/* Vector-valued quantity stored using its measure (i.e. length) and
+   its direction given by a unitary vector */
+typedef struct {
+
+  double  meas;
+  double  unitv[3];
+
+} cs_nvec3_t;
+
 /* Values associated to the different ways to retrieve data */
 typedef union {
 
-  cs_flag_t              flag;      // flag
-  char                  *name;      // file name for instance
-  int                    id;        // identification number
-  cs_lnum_t              num;       // local number
-  cs_real_t              val;       // value
-  cs_real_2_t            couple;    // two values
-  cs_real_3_t            vect;      // vector: 3 values
-  cs_real_6_t            twovects;  // two vectors
-  cs_real_33_t           tens;      // tensor: 9 values
+  cs_flag_t           flag;       // flag
+  int                 id;         // identification number
+  cs_lnum_t           num;        // local number
+  cs_real_t           val;        // value
+  cs_real_2_t         couple;     // two values
+  cs_real_3_t         vect;       // vector: 3 values
+  cs_nvec3_t          nvec3;      // meas + unit vector
+  cs_real_6_t         twovects;   // two vectors
+  cs_real_33_t        tens;       // tensor: 9 values
 
 } cs_get_t;
 
-/* Analytic definition through a function */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Generic analytic function
+ *
+ * \param[in]      time       when ?
+ * \param[in]      xyz        where ?
+ * \param[in, out] retval     result of the function
+ */
+/*----------------------------------------------------------------------------*/
+
 typedef void
 (cs_analytic_func_t) (cs_real_t           time,
                       const cs_real_3_t   xyz,
                       cs_get_t           *retval);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Simple function to define the time step according to the number of
+ *         iteration already done
+ *
+ * \param[in]      time_iter  current number of iterations
+ *
+ * \return the value of the time step
+ */
+/*----------------------------------------------------------------------------*/
+
 typedef cs_real_t
 (cs_timestep_func_t) (int    time_iter);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of a quantity according to a law depending only
+ *         on one variable.
+ *         This law is described by a set of parameters stored in a structure.
+ *         result = law(var_value)
+ *
+ * \param[in]      var_value  value of the variable attached to this law
+ * \param[in]      law_param  set of paramters related to the current law
+ * \param[in, out] retval     result of the function
+ */
+/*----------------------------------------------------------------------------*/
+
 typedef void
-(cs_user_func_t) (const void         *input1,
-                  const void         *input2,
-                  cs_real_t           tcur,
-                  const cs_real_3_t   xyz,
-                  cs_get_t           *output);
+(cs_onevar_law_func_t) (double         var_value,
+                        const void    *law_param,
+                        cs_get_t      *retval);
 
 /*============================================================================
  * Global variables
  *============================================================================*/
-
-/* Zero threshold */
-extern double  cs_base_zthreshold;
 
 /* Separation lines: long, medium, short */
 extern const char lsepline[];
@@ -135,6 +172,28 @@ cs_set_eps_machine(void);
 
 double
 cs_get_eps_machine(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the threshold under which one considers it's zero
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_get_zero_threshold(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_nvec3_t structure from a cs_real_3_t
+ *
+ * \param[in]  v     vector of size 3
+ * \param[out] qv    pointer to a cs_nvec3_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_nvec3(const cs_real_3_t    v,
+         cs_nvec3_t          *qv);
 
 /*----------------------------------------------------------------------------*/
 

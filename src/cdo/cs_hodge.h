@@ -35,12 +35,12 @@
 
 #include "cs_base.h"
 #include "cs_time_step.h"
-
 #include "cs_cdo_toolbox.h"
+#include "cs_sla.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_param.h"
-#include "cs_sla.h"
+#include "cs_property.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -70,7 +70,6 @@ typedef struct _hodge_builder_t cs_hodge_builder_t;
 
 cs_hodge_builder_t *
 cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
-                      const cs_time_step_t     *time_step,
                       cs_param_hodge_t          h_info);
 
 /*----------------------------------------------------------------------------*/
@@ -85,6 +84,32 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
 
 cs_hodge_builder_t *
 cs_hodge_builder_free(cs_hodge_builder_t  *hb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Set the value of the property attached to a hodge builder
+ *
+ * \param[in, out]  hb       pointer to a cs_hodge_builder_t structure
+ * \param[in]       ptyval   value of the property
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_builder_set_val(cs_hodge_builder_t    *hb,
+                         cs_real_t              ptyval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Set the value of the property attached to a hodge builder
+ *
+ * \param[in, out]  hb       pointer to a cs_hodge_builder_t structure
+ * \param[in]       ptymat   values of the tensor related to a property
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_builder_set_tensor(cs_hodge_builder_t     *hb,
+                            const cs_real_33_t      ptymat);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -111,7 +136,7 @@ cs_hodge_build_local(int                         c_id,
  *
  * \param[in]  connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]  quant      pointer to a cs_cdo_quantities_t struct.
- * \param[in]  time_step  pointer to a time step structure
+ * \param[in]  pty        pointer to a cs_property_t struct.
  * \param[in]  h_info     pointer to a cs_param_hodge_t struct.
  *
  * \return a pointer to a cs_sla_matrix_t structure
@@ -121,7 +146,7 @@ cs_hodge_build_local(int                         c_id,
 cs_sla_matrix_t *
 cs_hodge_compute(const cs_cdo_connect_t      *connect,
                  const cs_cdo_quantities_t   *quant,
-                 const cs_time_step_t        *time_step,
+                 const cs_property_t         *pty,
                  const cs_param_hodge_t       h_info);
 
 /*----------------------------------------------------------------------------*/

@@ -73,10 +73,18 @@ BEGIN_C_DECLS
 
 struct  _cs_cdofb_scaleq_t {
 
-  /* Pointer to a cs_equation_param_t structure shared with a cs_equation_t
-     structure. This structure is not owner. */
+  /* Pointer to shared structures (i.e. not owned by this structure):
+     - Pointer to a cs_equation_param_t structure shared with a cs_equation_t
+       structure.
+     - Pointer to a cs_cdo_quantities_t  structure
+     - Pointer to a cs_cdo_connect_t  structure
+     - Pointer to a cs_time_step_t struture
+  */
 
   const cs_equation_param_t  *eqp;
+  const cs_cdo_quantities_t  *quant;
+  const cs_cdo_connect_t     *connect;
+  const cs_time_step_t       *time_step;
 
   /* Reduced system (known boundary entities may be removed --> Dirichlet) */
 
@@ -203,9 +211,6 @@ _init_diffusion_matrix(const cs_cdo_connect_t     *connect,
  *           - Dirichlet boundary conditions
  *
  * \param[in]      m           pointer to a cs_mesh_t structure
- * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
- * \param[in]      time_step   pointer to a time step structure
  * \param[in, out] rhs         right-hand side
  * \param[in, out] builder     pointer to a cs_cdofb_scaleq_t struct.
  *
@@ -215,9 +220,6 @@ _init_diffusion_matrix(const cs_cdo_connect_t     *connect,
 
 static cs_sla_matrix_t *
 _build_diffusion_system(const cs_mesh_t             *m,
-                        const cs_cdo_connect_t      *connect,
-                        const cs_cdo_quantities_t   *quant,
-                        const cs_time_step_t        *time_step,
                         cs_real_t                   *rhs,
                         cs_cdofb_scaleq_t           *builder)
 {
@@ -227,16 +229,20 @@ _build_diffusion_system(const cs_mesh_t             *m,
   double  *BHCtc = NULL; // local size arrays
   cs_sla_matrix_t  *final_matrix = NULL;
   cs_locmat_t  *_h = NULL;
-  cs_sla_matrix_t  *full_matrix = _init_diffusion_matrix(connect, quant);
-  cs_locmat_t  *_a = cs_locmat_create(connect->n_max_fbyc);
 
-  const cs_lnum_t  n_cells = quant->n_cells;
   const cs_cdo_bc_list_t  *dir_faces = builder->face_bc->dir;
+  const cs_time_step_t  *time_step = builder->time_step;
+  const cs_cdo_connect_t  *connect = builder->connect;
+  const cs_cdo_quantities_t  *quant = builder->quant;
+  const cs_lnum_t  n_cells = quant->n_cells;
   const cs_equation_param_t  *eqp = builder->eqp;
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
 
+  cs_sla_matrix_t  *full_matrix = _init_diffusion_matrix(connect, quant);
+  cs_locmat_t  *_a = cs_locmat_create(connect->n_max_fbyc);
+
   /* Define a builder for the related discrete Hodge operator */
-  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, time_step, h_info);
+  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, h_info);
 
   /* Sanity check */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
@@ -410,37 +416,44 @@ _build_diffusion_system(const cs_mesh_t             *m,
 /*!
  * \brief  Initialize a cs_cdofb_scaleq_t structure
  *
- * \param[in]  eqp       pointer to a cs_equation_param_t structure
- * \param[in]  mesh      pointer to a cs_mesh_t structure
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  eqp        pointer to a cs_equation_param_t structure
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_step  time_step structure
  *
  * \return a pointer to a new allocated cs_cdofb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_scaleq_init(const cs_equation_param_t  *eqp,
-                     const cs_mesh_t            *mesh,
-                     const cs_cdo_connect_t     *connect)
+cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
+                     const cs_mesh_t             *mesh,
+                     const cs_cdo_connect_t      *connect,
+                     const cs_cdo_quantities_t   *quant,
+                     const cs_time_step_t        *time_step)
 {
   cs_lnum_t  i;
 
   /* Sanity checks */
   assert(eqp != NULL);
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOFB);
-  assert(eqp->type == CS_EQUATION_TYPE_SCAL);
-
-  cs_cdofb_scaleq_t  *builder = NULL;
+  assert(eqp->var_type == CS_PARAM_VAR_SCAL);
 
   const cs_lnum_t  n_cells = mesh->n_cells;
-  const cs_lnum_t  n_faces = connect->f_info->n_ent;
+  const cs_lnum_t  n_faces = quant->n_faces;
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
   const cs_lnum_t  n_b_faces = mesh->n_b_faces;
 
+  cs_cdofb_scaleq_t  *builder = NULL;
+
   BFT_MALLOC(builder, 1, cs_cdofb_scaleq_t);
 
-  /* Set of parameters related to this algebraic system */
+  /* Shared pointers */
   builder->eqp = eqp;
+  builder->connect = connect;
+  builder->quant = quant;
+  builder->time_step = time_step;
 
   /* Dimensions: By default, we set number of DoFs as if there is no
      strong enforcement of the BCs */
@@ -543,6 +556,9 @@ cs_cdofb_scaleq_free(void   *builder)
   if (_builder == NULL)
     return _builder;
 
+  /* eqp, connect, quant, and time_step are only shared.
+     These quantities are freed later. */
+
   /* Free BC structure */
   if (_builder->face_bc->dir->n_nhmg_elts > 0)
     BFT_FREE(_builder->dir_val);
@@ -568,30 +584,25 @@ cs_cdofb_scaleq_free(void   *builder)
 /*!
  * \brief   Compute the contributions of source terms (store inside builder)
  *
- * \param[in]      connect     pointer to a cs_cdo_connect_t structure
- * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]      time_step   pointer to a time step structure
  * \param[in, out] builder     pointer to a cs_cdofb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_compute_source(const cs_cdo_connect_t     *connect,
-                               const cs_cdo_quantities_t  *quant,
-                               const cs_time_step_t       *time_step,
-                               void                       *builder)
+cs_cdofb_scaleq_compute_source(void    *builder)
 {
   cs_lnum_t  i;
 
-  cs_cdofb_scaleq_t  *bld = (cs_cdofb_scaleq_t *)builder;
-  double  *contrib = bld->work;
+  cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t *)builder;
 
-  const cs_equation_param_t  *eqp = bld->eqp;
+  const cs_equation_param_t  *eqp = b->eqp;
+
+  double  *contrib = b->work;
 
   if (eqp->n_source_terms > 0) { /* Add contribution from source terms */
 
-    for (i = 0; i < bld->n_cells; i++)
-      bld->source_terms[i] = 0;
+    for (i = 0; i < b->n_cells; i++)
+      b->source_terms[i] = 0;
 
     for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
 
@@ -603,8 +614,7 @@ cs_cdofb_scaleq_compute_source(const cs_cdo_connect_t     *connect,
       /* Sanity check */
       assert(st.var_type == CS_PARAM_VAR_SCAL);
 
-      cs_evaluate(quant, connect,    // geometrical and topological info.
-                  time_step,
+      cs_evaluate(b->quant, b->connect, b->time_step,
                   dof_flag,
                   st.ml_id,
                   st.def_type,
@@ -614,8 +624,8 @@ cs_cdofb_scaleq_compute_source(const cs_cdo_connect_t     *connect,
                   &contrib);          // updated inside this function
 
       /* Update source term array */
-      for (i = 0; i < bld->n_cells; i++)
-        bld->source_terms[i] += contrib[i];
+      for (i = 0; i < b->n_cells; i++)
+        b->source_terms[i] += contrib[i];
 
     } // Loop on source terms
 
@@ -628,11 +638,8 @@ cs_cdofb_scaleq_compute_source(const cs_cdo_connect_t     *connect,
  * \brief  Build the linear system arising from a scalar convection/diffusion
  *         equation with a CDO face-based scheme.
  *
- * \param[in]      m          pointer to a cs_mesh_t structure
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
- * \param[in]      time_step  pointer to a time step structure
  * \param[in]      dt_cur     current value of the time step
  * \param[in, out] builder    pointer to cs_cdofb_scaleq_t structure
  * \param[in, out] rhs        pointer to a right-hand side array pointer
@@ -641,20 +648,17 @@ cs_cdofb_scaleq_compute_source(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_build_system(const cs_mesh_t             *m,
-                             const cs_cdo_connect_t      *connect,
-                             const cs_cdo_quantities_t   *quant,
-                             const cs_real_t             *field_val,
-                             const cs_time_step_t        *time_step,
-                             double                       dt_cur,
-                             void                        *builder,
-                             cs_real_t                  **rhs,
-                             cs_sla_matrix_t            **sla_mat)
+cs_cdofb_scaleq_build_system(const cs_mesh_t        *mesh,
+                             const cs_real_t        *field_val,
+                             double                  dt_cur,
+                             void                   *builder,
+                             cs_real_t             **rhs,
+                             cs_sla_matrix_t       **sla_mat)
 {
   cs_sla_matrix_t  *diffusion_mat = NULL;
-  cs_cdofb_scaleq_t   *_builder  = (cs_cdofb_scaleq_t *)builder;
+  cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t *)builder;
 
-  const cs_equation_param_t  *eqp = _builder->eqp;
+  const cs_equation_param_t  *eqp = b->eqp;
 
   /* Test to remove */
   if (eqp->flag & CS_EQUATION_CONVECTION)
@@ -665,13 +669,11 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t             *m,
               _(" Unsteady terms are not handled yet.\n"));
 
   if (*rhs == NULL)
-    BFT_MALLOC(*rhs, _builder->n_dof_faces, cs_real_t);
+    BFT_MALLOC(*rhs, b->n_dof_faces, cs_real_t);
 
   /* Build diffusion system: stiffness matrix */
   if (eqp->flag & CS_EQUATION_DIFFUSION)
-    diffusion_mat = _build_diffusion_system(m, connect, quant, time_step,
-                                            *rhs,
-                                            _builder);
+    diffusion_mat = _build_diffusion_system(mesh, *rhs, b);
 
   *sla_mat = diffusion_mat;
 
@@ -685,9 +687,6 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t             *m,
  * \brief  Post-process the solution of a scalar convection/diffusion equation
  *         solved with a CDO face-based scheme
  *
- * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
- * \param[in]      time_step  pointer to a time step structure
  * \param[in]      solu       solution array
  * \param[in, out] builder    pointer to cs_cdofb_scaleq_t structure
  * \param[in, out] field_val  pointer to the current value of the field
@@ -695,42 +694,41 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t             *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_update_field(const cs_cdo_connect_t     *connect,
-                             const cs_cdo_quantities_t  *quant,
-                             const cs_time_step_t       *time_step,
-                             const cs_real_t            *solu,
+cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
                              void                       *builder,
                              cs_real_t                  *field_val)
 {
   int  i, j, l, c_id, f_id;
 
-  cs_cdofb_scaleq_t  *_builder = (cs_cdofb_scaleq_t *)builder;
+  cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t *)builder;
 
-  const cs_cdo_bc_list_t  *dir_faces = _builder->face_bc->dir;
-  const cs_equation_param_t  *eqp = _builder->eqp;
+  const cs_cdo_bc_list_t  *dir_faces = b->face_bc->dir;
+  const cs_equation_param_t  *eqp = b->eqp;
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_cdo_connect_t  *connect = b->connect;
+  const cs_cdo_quantities_t  *quant = b->quant;
 
   /* Set computed solution in builder->face_values */
-  if (_builder->n_dof_faces < _builder->n_faces) {
-    for (i = 0; i < _builder->n_faces; i++)
-      _builder->face_values[i] = 0;
-    for (i = 0; i < _builder->n_dof_faces; i++)
-      _builder->face_values[_builder->f_z2i_ids[i]] = solu[i];
+  if (b->n_dof_faces < b->n_faces) {
+    for (i = 0; i < b->n_faces; i++)
+      b->face_values[i] = 0;
+    for (i = 0; i < b->n_dof_faces; i++)
+      b->face_values[b->f_z2i_ids[i]] = solu[i];
   }
   else
-    memcpy(_builder->face_values, solu, _builder->n_faces*sizeof(cs_real_t));
+    memcpy(b->face_values, solu, b->n_faces*sizeof(cs_real_t));
 
   /* Take into account Dirichlet BCs */
-  if (_builder->enforce == CS_PARAM_BC_ENFORCE_STRONG)
+  if (b->enforce == CS_PARAM_BC_ENFORCE_STRONG)
     for (i = 0; i < dir_faces->n_nhmg_elts; i++) // interior then border faces
-      _builder->face_values[quant->n_i_faces + dir_faces->elt_ids[i]]
-        = _builder->dir_val[i];
+      b->face_values[quant->n_i_faces + dir_faces->elt_ids[i]]
+        = b->dir_val[i];
 
   /* Compute now the value at each cell center */
-  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, time_step, h_info);
+  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, h_info);
 
   /* Build the remaining discrete operators */
-  for (c_id = 0; c_id < _builder->n_cells; c_id++) {
+  for (c_id = 0; c_id < b->n_cells; c_id++) {
 
     int  shft = connect->c2f->idx[c_id];
     double _wf_val = 0.0, dsum = 0.0, rowsum = 0.0;
@@ -746,10 +744,10 @@ cs_cdofb_scaleq_update_field(const cs_cdo_connect_t     *connect,
       for (j = 0; j < _h->n_ent; j++)
         rowsum += _h->mat[i*_h->n_ent+j];
       dsum += rowsum;
-      _wf_val += _builder->face_values[f_id] * rowsum;
+      _wf_val += b->face_values[f_id] * rowsum;
     }
 
-    field_val[c_id] = 1/dsum*(_builder->source_terms[c_id] + _wf_val);
+    field_val[c_id] = 1/dsum*(b->source_terms[c_id] + _wf_val);
 
   } // loop on cells
 
@@ -762,9 +760,6 @@ cs_cdofb_scaleq_update_field(const cs_cdo_connect_t     *connect,
  * \brief  Post-processing related to this equation
  *
  * \param[in]       eqname     name of the equation
- * \param[in]       mesh       pointer to the mesh structure
- * \param[in]       cdoq       pointer to a cs_cdo_quantities_t struct.
- * \param[in]       time_step  pointer to a time step structure
  * \param[in]       field      pointer to a field strufcture
  * \param[in, out]  builder    pointer to builder structure
  */
@@ -772,18 +767,17 @@ cs_cdofb_scaleq_update_field(const cs_cdo_connect_t     *connect,
 
 void
 cs_cdofb_scaleq_post(const char                 *eqname,
-                     const cs_mesh_t            *mesh,
-                     const cs_cdo_quantities_t  *cdoq,
-                     const cs_time_step_t       *time_step,
                      const cs_field_t           *field,
                      void                       *builder)
 {
   int  len;
 
   char *postlabel = NULL;
+  cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t  *)builder;
 
-  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const cs_real_t  *face_pdi = cs_cdofb_scaleq_get_face_values(builder, field);
+  const cs_cdo_connect_t  *connect = b->connect;
+  const cs_lnum_t  n_i_faces = connect->f_info->n_ent_in;
+  const cs_real_t  *face_pdi = cs_cdofb_scaleq_get_face_values(b, field);
 
   /* field post-processing */
   cs_post_write_var(-1,              // id du maillage de post
@@ -795,7 +789,7 @@ cs_cdofb_scaleq_post(const char                 *eqname,
                     field->val,         // values on cells
                     NULL,               // values at internal faces
                     NULL,               // values at border faces
-                    time_step);         // time step management structure
+                    b->time_step);      // time step management structure
 
 
   len = strlen(field->name) + 8 + 1;
@@ -810,7 +804,7 @@ cs_cdofb_scaleq_post(const char                 *eqname,
                     NULL,                  // values on cells
                     NULL,                  // values at internal faces
                     face_pdi + n_i_faces,  // values at border faces
-                    time_step);            // time step management structure
+                    b->time_step);         // time step management structure
 
 
   BFT_FREE(postlabel);

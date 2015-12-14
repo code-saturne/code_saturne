@@ -49,7 +49,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_hodge.h"
-#include "cs_evaluate.h"
+#include "cs_property.h"
 
 #include "cs_cdovb_diffusion.h"
 
@@ -84,14 +84,10 @@ struct _cs_cdovb_diff_t {
 
   /* Data related to the discrete Hodge operator attached to the
      diffusion property */
-  cs_param_hodge_t      h_info;
+  bool                  is_uniform;  /* Diffusion tensor is uniform ? */
+  cs_param_hodge_t      h_info;      /* Set of parameters related to a discrete
+                                        Hodge operator */
   cs_hodge_builder_t   *hb;
-
-  /* Diffusion tensor */
-  double                t_cur;      /* Current physical time for evaluating the
-                                       diffusion tensor*/
-  bool                  is_uniform;
-  cs_real_t             matpty[3][3];
 
   /* Compact way to stored the edge --> vertices connect. related to a cell */
   int           n_bits;         // number of bits in a block
@@ -200,14 +196,6 @@ _define_wbs_builder(cs_lnum_t                    c_id,
   const cs_real_t  *xc = quant->cell_centers + 3*c_id;
   const cs_connect_index_t  *c2v = connect->c2v;
 
-  /* Matrix related to the material property */
-  if (!diff->is_uniform)
-    cs_evaluate_pty(diff->h_info.pty_id,
-                    diff->t_cur,
-                    xc,
-                    diff->h_info.inv_pty,
-                    &(diff->matpty));
-
   /* Loop on cell vertices */
   for (i = c2v->idx[c_id], _i = 0; i < c2v->idx[c_id+1]; i++, _i++) {
 
@@ -262,11 +250,11 @@ _grad_lagrange_cell_pfc(short int             ifc,
 /*----------------------------------------------------------------------------*/
 
 static void
-_grad_lagrange_vtx_pef(const cs_real_3_t     ubase,
-                       const cs_real_3_t     udir,
-                       cs_real_t             len_vc,
-                       const cs_nvec3_t      deq,
-                       cs_real_3_t           grd_func)
+_grad_lagrange_vtx_pefc(const cs_real_3_t     ubase,
+                        const cs_real_3_t     udir,
+                        cs_real_t             len_vc,
+                        const cs_nvec3_t      deq,
+                        cs_real_3_t           grd_func)
 {
   int  k;
   cs_real_3_t  unormal;
@@ -292,26 +280,26 @@ _grad_lagrange_vtx_pef(const cs_real_3_t     ubase,
  *         weights is equal to 1.
  *         Set also the local and local numbering of the vertices of this face
  *
- * \param[in]      f_id      id of the face
- * \param[in]      pfq       geometric quantities related to face f_id
- * \param[in]      deq       geometric quantities related to the dual edge
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in]      quant     pointer to a cs_cdo_quantites_t structure
- * \param[in]      loc_ids   local vertex numbering on a cell
- * \param[in, out] wvf       pointer to an array storing the weight/vertex
- * \param[in, out] pef_vol   pointer to an array storing the volume of pef
+ * \param[in]      f_id       id of the face
+ * \param[in]      pfq        geometric quantities related to face f_id
+ * \param[in]      deq        geometric quantities related to the dual edge
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantites_t structure
+ * \param[in]      loc_ids    local vertex numbering on a cell
+ * \param[in, out] wvf        pointer to an array storing the weight/vertex
+ * \param[in, out] pefc_vol   pointer to an array storing the volume of pefc
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_wvf_pefvol(cs_lnum_t                   f_id,
-                    const cs_quant_t            pfq,
-                    const cs_nvec3_t            deq,
-                    const cs_cdo_connect_t     *connect,
-                    const cs_cdo_quantities_t  *quant,
-                    const cs_lnum_t            *loc_ids,
-                    cs_real_t                  *wvf,
-                    cs_real_t                  *pef_vol)
+_compute_wvf_pefcvol(cs_lnum_t                   f_id,
+                     const cs_quant_t            pfq,
+                     const cs_nvec3_t            deq,
+                     const cs_cdo_connect_t     *connect,
+                     const cs_cdo_quantities_t  *quant,
+                     const cs_lnum_t            *loc_ids,
+                     cs_real_t                  *wvf,
+                     cs_real_t                  *pefc_vol)
 {
   cs_lnum_t  i, j;
   double  len;
@@ -343,7 +331,7 @@ _compute_wvf_pefvol(cs_lnum_t                   f_id,
     double  area = len * eq.meas * _n3(cp); // two times the area
     double  contrib = area * f_coef;
 
-    pef_vol[j] = area * h_coef;
+    pefc_vol[j] = area * h_coef;
     wvf[_v1] += contrib;
     wvf[_v2] += contrib;
 
@@ -360,6 +348,7 @@ _compute_wvf_pefvol(cs_lnum_t                   f_id,
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
  * \param[in]      loc_ids     local vertex numbering on a cell
+ * \param[in]      tensor      3x3 matrix attached to the diffusion property
  * \param[in, out] diff        auxiliary structure used to build the diff. term
  *
  * \return a pointer to a local stiffness matrix
@@ -371,6 +360,7 @@ _compute_wbs_stiffness(cs_lnum_t                    c_id,
                        const cs_cdo_connect_t      *connect,
                        const cs_cdo_quantities_t   *quant,
                        const cs_lnum_t             *loc_ids,
+                       const cs_real_3_t           *tensor,
                        cs_cdovb_diff_t             *diff)
 {
   cs_lnum_t  i, j, _j, k, ii, jj, ishft;
@@ -381,7 +371,7 @@ _compute_wbs_stiffness(cs_lnum_t                    c_id,
   cs_real_t  *wvc     = diff->tmp_real;
   cs_real_t  *len_vc  = diff->tmp_real +   connect->n_max_vbyc;
   cs_real_t  *wvf     = diff->tmp_real + 2*connect->n_max_vbyc;
-  cs_real_t  *pef_vol = diff->tmp_real + 3*connect->n_max_vbyc;
+  cs_real_t  *pefc_vol = diff->tmp_real + 3*connect->n_max_vbyc;
 
   cs_locmat_t  *sloc = diff->loc; // Local stiffness matrix to build
 
@@ -401,14 +391,14 @@ _compute_wbs_stiffness(cs_lnum_t                    c_id,
     _grad_lagrange_cell_pfc(ifc, pfq, deq, grd_c);
 
     /* Weights related to each vertex attached to this face */
-    _compute_wvf_pefvol(f_id, pfq, deq, connect, quant, loc_ids, wvf, pef_vol);
+    _compute_wvf_pefcvol(f_id, pfq, deq, connect, quant, loc_ids, wvf, pefc_vol);
 
     /* Loop on face edges to scan p_{e,f,c} subvolumes */
     for (j = f2e->idx[f_id], _j = 0; j < f2e->idx[f_id+1]; j++, _j++) {
 
       const cs_lnum_t  e_id = f2e->col_id[j];
       const cs_lnum_t  eshf = 2*e_id;
-      const double  subvol = pef_vol[_j];
+      const double  subvol = pefc_vol[_j];
 
       /* First vertex */
       const cs_lnum_t  v1_id = e2v->col_id[eshf];
@@ -419,11 +409,11 @@ _compute_wbs_stiffness(cs_lnum_t                    c_id,
       const short int  _v2 = loc_ids[v2_id];
 
       /* Gradient of the lagrange function related to v1 */
-      _grad_lagrange_vtx_pef(unit_vc[_v2], unit_vc[_v1], len_vc[_v1], deq,
+      _grad_lagrange_vtx_pefc(unit_vc[_v2], unit_vc[_v1], len_vc[_v1], deq,
                              grd_v1);
 
       /* Gradient of the lagrange function related to a v2 */
-      _grad_lagrange_vtx_pef(unit_vc[_v1], unit_vc[_v2], len_vc[_v2], deq,
+      _grad_lagrange_vtx_pefc(unit_vc[_v1], unit_vc[_v2], len_vc[_v2], deq,
                              grd_v2);
 
       /* Gradient of the lagrange function related to a face.
@@ -456,7 +446,7 @@ _compute_wbs_stiffness(cs_lnum_t                    c_id,
       for (ii = 0; ii < sloc->n_ent; ii++) {
 
         ishft = ii*sloc->n_ent;
-        _mv3((const cs_real_t (*)[3])diff->matpty, glv[ii], matg);
+        _mv3(tensor, glv[ii], matg);
 
         /* Diagonal contribution */
         sloc->mat[ishft+ii] += subvol * _dp3(matg, glv[ii]);
@@ -491,10 +481,10 @@ _compute_wbs_stiffness(cs_lnum_t                    c_id,
 /*!
  * \brief   Initialize a builder structure used to build the stiffness matrix
  *
- * \param[in] connect     pointer to a cs_cdo_connect_t struct.
- * \param[in] time_step   pointer to a time step structure
- * \param[in] h_info      cs_param_hodge_t struct.
- * \param[in] bc_enforce  type of boundary enforcement for Dirichlet values
+ * \param[in] connect      pointer to a cs_cdo_connect_t struct.
+ * \param[in] is_uniform   diffusion tensor is uniform ? (true or false)
+ * \param[in] h_info       cs_param_hodge_t struct.
+ * \param[in] bc_enforce   type of boundary enforcement for Dirichlet values
  *
  * \return a pointer to a new allocated cs_cdovb_diffusion_builder_t struc.
  */
@@ -502,7 +492,7 @@ _compute_wbs_stiffness(cs_lnum_t                    c_id,
 
 cs_cdovb_diff_t *
 cs_cdovb_diffusion_builder_init(const cs_cdo_connect_t       *connect,
-                                const cs_time_step_t         *time_step,
+                                bool                          is_uniform,
                                 const cs_param_hodge_t        h_info,
                                 const cs_param_bc_enforce_t   bc_enforce)
 {
@@ -510,32 +500,15 @@ cs_cdovb_diffusion_builder_init(const cs_cdo_connect_t       *connect,
 
   cs_cdovb_diff_t  *diff = NULL;
 
-  /* Sanity check */
-  assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
-
   BFT_MALLOC(diff, 1, cs_cdovb_diff_t);
 
-  diff->t_cur = time_step->t_cur;
+  diff->is_uniform = is_uniform;
 
   /* Copy the data related to a discrete Hodge operator */
-  diff->h_info.type = h_info.type;
-  diff->h_info.pty_id = h_info.pty_id;
+  diff->h_info.type    = h_info.type;
   diff->h_info.inv_pty = h_info.inv_pty;
-  diff->h_info.algo = h_info.algo;
-  diff->h_info.coef = h_info.coef;
-
-  diff->is_uniform = cs_param_pty_is_uniform(h_info.pty_id);
-
-  if (diff->is_uniform) {
-    cs_real_3_t  xyz = {0., 0., 0.};
-
-    cs_evaluate_pty(h_info.pty_id,
-                    0.0,             // When ?
-                    xyz,             // Anywhere since uniform
-                    h_info.inv_pty,  // Need to inverse the tensor ?
-                    &(diff->matpty));
-
-  }
+  diff->h_info.algo    = h_info.algo;
+  diff->h_info.coef    = h_info.coef;
 
   diff->enforce = bc_enforce;
   bool  wnit = (bc_enforce == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE) ? true : false;
@@ -575,7 +548,7 @@ cs_cdovb_diffusion_builder_init(const cs_cdo_connect_t       *connect,
   else {
 
     /* Define a builder for the related discrete Hodge operator */
-    diff->hb = cs_hodge_builder_init(connect, time_step, h_info);
+    diff->hb = cs_hodge_builder_init(connect, h_info);
 
     /* Initialize mask features */
     diff->n_bits = sizeof(cs_flag_t)*CHAR_BIT;
@@ -647,6 +620,7 @@ cs_cdovb_diffusion_builder_free(cs_cdovb_diff_t   *diff)
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
  * \param[in]      vtag        pointer to a cs_cdovb_scaleq_t struct.
+ * \param[in]      tensor      3x3 matrix attached to the diffusion property
  * \param[in, out] diff        auxiliary structure used to build the diff. term
  *
  * \return a pointer to a local stiffness matrix
@@ -658,6 +632,7 @@ cs_cdovb_diffusion_build_local(cs_lnum_t                    c_id,
                                const cs_cdo_connect_t      *connect,
                                const cs_cdo_quantities_t   *quant,
                                const cs_lnum_t             *vtag,
+                               const cs_real_3_t           *tensor,
                                cs_cdovb_diff_t             *diff)
 {
   cs_lnum_t  i, n_ent;
@@ -681,12 +656,16 @@ cs_cdovb_diffusion_build_local(cs_lnum_t                    c_id,
     {
       short int  ek, el, vi, sgn_ik, sgn_jl;
 
-      /* Build a local discrete Hodge operator and return a local dense matrix */
+      /* Set the diffusion tensor */
+      if (c_id == 0 || diff->is_uniform == false)
+        cs_hodge_builder_set_tensor(diff->hb, tensor);
+
+      /* Build a local discrete Hodge op. and return a local dense matrix */
       const cs_locmat_t  *hloc = cs_hodge_build_local(c_id,
                                                       connect, quant,
                                                       diff->hb);
 
-      /* Encode edge sets related to each vertex belonging to the current cell */
+      /* Encode edge sets related to each vertex belonging to this cell */
       _encode_edge_masks(c_id, connect, vtag, diff);
 
       /* Build local stiffness matrix */
@@ -739,7 +718,7 @@ cs_cdovb_diffusion_build_local(cs_lnum_t                    c_id,
 
   case CS_PARAM_HODGE_ALGO_WBS:
     _define_wbs_builder(c_id, connect, quant, diff);
-    sloc = _compute_wbs_stiffness(c_id, connect, quant, vtag, diff);
+    sloc = _compute_wbs_stiffness(c_id, connect, quant, vtag, tensor, diff);
     break;
 
   default:

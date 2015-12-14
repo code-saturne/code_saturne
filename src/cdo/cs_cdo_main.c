@@ -58,6 +58,7 @@
 #include "cs_equation.h"
 #include "cs_domain.h"
 #include "cs_walldistance.h"
+#include "cs_groundwater.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -126,9 +127,6 @@ _setup(cs_mesh_t             *m,
     cs_mesh_location_build(m, i);
   n_mesh_locations_ini = cs_mesh_location_n_locations();
 
-  /* Default property settings */
-  cs_param_pty_set_default();
-
   /* - Create and initialize a new computational domain
      - Set the default boundary and potentially add new boundary to the
        computational domain
@@ -142,38 +140,21 @@ _setup(cs_mesh_t             *m,
   for (int  i = n_mesh_locations_ini; i < n_mesh_locations; i++)
     cs_mesh_location_build(m, i);
 
-  /* Add predefined equations and their related properties.
-     Add user-defined equations */
-  cs_user_cdo_add_equations(domain);
-
-  /* Sanity check */
-  assert(domain->n_equations ==
-         domain->n_user_equations + domain->n_predef_equations);
-
-  /* Add user-defined material properties and/or advection fields */
-  cs_user_cdo_add_properties();
+  /* Advanced settings (numerical scheme, hodge operators, solvers...) */
+  cs_user_cdo_numeric_settings(domain);
 
   /* Add variables related to user-defined and predefined equations */
   cs_domain_create_fields(domain);
 
-  /* Set the definition of user-defined material properties and/or advection
-     fields */
-  cs_user_cdo_set_properties();
-
-  /* Add user-defined material properties and/or advection fields to fields */
-  cs_param_add_fields();
-
   /* According to the settings, add or not predefined equations:
       >> Wall distance
-      >> Underground flows
+      >> Groundwater flows
   */
   cs_domain_setup_predefined_equations(domain);
 
-  /* Initial setup of user equations */
-  cs_user_cdo_setup_equations(domain);
-
-  /* Advanced settings (numerical scheme, hodge operators, solvers...) */
-  cs_user_cdo_numeric_settings(domain);
+  /* Set the definition of user-defined properties and/or advection
+     fields */
+  cs_user_cdo_set_domain(domain);
 
   /* Initialize post-processing */
   cs_post_activate_writer(-1,     /* default writer (volume mesh)*/
@@ -186,7 +167,6 @@ _setup(cs_mesh_t             *m,
 
   /* Sumary of the settings */
   cs_cdo_connect_summary(domain->connect);
-  cs_param_pty_summary_all();
   cs_domain_summary(domain);
 
   return domain;
@@ -204,9 +184,6 @@ static void
 _finalize(cs_domain_t  **domain)
 {
   cs_toolbox_finalize();
-
-  cs_param_pty_finalize();
-  cs_param_adv_field_finalize();
 
   *domain = cs_domain_free(*domain);
 }

@@ -47,13 +47,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef struct {
-
-  double  meas;
-  double  unitv[3];
-
-} cs_nvec3_t;
-
 typedef enum {
 
   CS_TOOLBOX_SUM,        /* Sum of values*/
@@ -263,19 +256,6 @@ cs_toolbox_init(cs_lnum_t      ref_size);
 
 void
 cs_toolbox_finalize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a cs_nvec3_t structure from a cs_real_3_t
- *
- * \param[in]  v     vector of size 3
- * \param[out] qv    pointer to a cs_nvec3_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_nvec3(const cs_real_3_t    v,
-         cs_nvec3_t          *qv);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -870,6 +870,8 @@ _decdec_AtDA(const cs_sla_matrix_t  *At,
 
   int  size = 0, size_max = At->n_rows;
 
+  const double  zthreshold = cs_get_zero_threshold();
+
   /* Sanity check */
   assert(A->type == CS_SLA_MAT_DEC);
   assert(At->type == CS_SLA_MAT_DEC);
@@ -915,7 +917,7 @@ _decdec_AtDA(const cs_sla_matrix_t  *At,
 
     for (k = shift; k < C->idx[ii+1]; k++) {
       w[C->col_id[k]] = -1;
-      if (fabs(C->val[k]) > cs_base_zthreshold) { /* Clean zero entry */
+      if (fabs(C->val[k]) > zthreshold) { /* Clean zero entry */
         if (k != shift) {
           C->col_id[shift] = C->col_id[k];
           C->val[shift] = C->val[k];
@@ -955,6 +957,8 @@ _csrcsr_AtDA(const cs_sla_matrix_t  *At,
   double  val;
 
   int  size = 0, size_max = A->n_rows;
+
+  const double  zthreshold = cs_get_zero_threshold();
 
   /* Sanity check */
   assert(A->type == CS_SLA_MAT_CSR);
@@ -1001,7 +1005,7 @@ _csrcsr_AtDA(const cs_sla_matrix_t  *At,
 
     for (k = shift; k < C->idx[ii+1]; k++) {
       w[C->col_id[k]] = -1;
-      if (fabs(C->val[k]) > cs_base_zthreshold) { /* Clean zero entry */
+      if (fabs(C->val[k]) > zthreshold) { /* Clean zero entry */
         if (k != shift) {
           C->col_id[shift] = C->col_id[k];
           C->val[shift] = C->val[k];
@@ -2308,6 +2312,7 @@ cs_sla_assemble_msr_sym(const cs_locmat_t   *loc,
   int  i, j, k_ij, k_ji;
 
   const int  n_ent = loc->n_ent;
+  const double  zthreshold = cs_get_zero_threshold();
 
   assert(ass->type == CS_SLA_MAT_MSR);
   assert(ass->flag & (CS_SLA_MATRIX_SYM | CS_SLA_MATRIX_SORTED));
@@ -2330,7 +2335,7 @@ cs_sla_assemble_msr_sym(const cs_locmat_t   *loc,
 
         double  val_ij = loc->mat[pos_i+j];
 
-        if (fabs(val_ij) > cs_base_zthreshold) { /* Not zero */
+        if (fabs(val_ij) > zthreshold) { /* Not zero */
 
           int  j_id = loc->ids[j];
           cs_lnum_t  start_j = ass->idx[j_id];
@@ -2373,6 +2378,7 @@ cs_sla_assemble_msr(const cs_locmat_t   *loc,
   int  i, j, k_ij, k_ji;
 
   const int  n_ent = loc->n_ent;
+  const double  zthreshold = cs_get_zero_threshold();
 
   assert(ass->type == CS_SLA_MAT_MSR);
   assert(ass->flag & CS_SLA_MATRIX_SORTED);
@@ -2394,7 +2400,7 @@ cs_sla_assemble_msr(const cs_locmat_t   *loc,
       int  j_id = loc->ids[j];
       double  val_ij = loc->mat[pos_i+j];
 
-      if (fabs(val_ij) > cs_base_zthreshold) { /* Not zero */
+      if (fabs(val_ij) > zthreshold) { /* Not zero */
 
         /* First add: loc(i,j) */
         k_ij = cs_search_binary(n_i_ents, j_id, &(ass->col_id[start_i]));
@@ -2405,7 +2411,7 @@ cs_sla_assemble_msr(const cs_locmat_t   *loc,
 
       double  val_ji = loc->mat[j*n_ent+i];
 
-      if (fabs(val_ji) > cs_base_zthreshold) { /* Not zero */
+      if (fabs(val_ji) > zthreshold) { /* Not zero */
 
         cs_lnum_t  start_j = ass->idx[j_id];
         size_t  n_j_ents = ass->idx[j_id+1] - start_j;
@@ -3630,17 +3636,17 @@ cs_sla_system_dump(const char              *name,
         const cs_real_t  *val = m->val;
 
         if (diag != NULL) {
-          fprintf(_f, " <diag:");
+          fprintf(_f, " diag:");
           for (k = 0; k < m->stride; k++)
             fprintf(_f, " % -8.4e", diag[i*m->stride+k]);
-          fprintf(_f, ">\t");
+          fprintf(_f, "\t");
         }
 
         for (j = s; j < e; j++) {
-          fprintf(_f, " <col: %3d;", col_id[j]);
+          fprintf(_f, " (%4d,", col_id[j]);
           for (k = 0; k < m->stride; k++)
             fprintf(_f, " % -8.4e", val[j*m->stride+k]);
-          fprintf(_f, ">");
+          fprintf(_f, ")");
         }
       }
 

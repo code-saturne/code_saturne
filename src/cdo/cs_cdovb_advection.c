@@ -77,26 +77,14 @@ BEGIN_C_DECLS
 
 struct _cs_cdovb_adv_t {
 
-  double   t_cur; /* Current physical time */
-
- /* Settings for the advection operator */
+  /* Settings for the advection operator */
   cs_param_advection_t    a_info;
-  bool                    adv_uniform;
-  cs_nvec3_t              adv_field;
+  const cs_adv_field_t   *adv;   // shared pointer
 
   bool                    with_diffusion;
 
-  /* Diffusion parameters is used if needed to compute the Peclet number */
-  cs_real_t               matpty[3][3];
-  int                     diff_pty_id;  /* Diffusion property id */
-  bool                    diff_uniform; /* True if diffusion pty is uniform */
-  bool                    inv_diff_pty; /* True if one needs to invert the
-                                           3x3 matrix related to the diffusion
-                                           property */
-
   cs_real_t  *fluxes;  /* flux of the advection field across each dual
                           face (size: number of edges in a cell) */
-
   cs_real_t  *criter;  /* criterion used to evaluate how to upwind
                           (size: number of edges in a cell) */
 
@@ -190,151 +178,13 @@ _upwind_weight(cs_real_t                   criterion,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the advective flux across an elementary triangle formed by
- *          xv (vertex), xe (middle of an edge), xf (face barycenter)
- *
- * \param[in]  a_info     set of options to manage the advection term
- * \param[in]  t_cur      value of the current time
- * \param[in]  xv         vertex position
- * \param[in]  xe         edge center position
- * \param[in]  qf         quantities related to a (primal) face
- *
- * \return the value of the flux
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_real_t
-_compute_adv_flux_svef(const cs_param_advection_t   a_info,
-                       double                       t_cur,
-                       const cs_real_3_t            xv,
-                       const cs_real_3_t            xe,
-                       const cs_quant_t             qf)
-{
-  int  k;
-  cs_real_t  w;
-  cs_real_3_t  beta_g, gpts[3], xg;
-
-  cs_real_t  adv_flx = 0;
-  cs_real_t  surf = cs_surftri(xv, xe, qf.center);
-
-  /* Compute the flux of beta accros the dual face */
-  switch (a_info.quad_type) {
-
-  case CS_QUADRATURE_BARY:
-    for (k = 0; k < 3; k++)
-      xg[k] = one_third * (xv[k] + xe[k] + qf.center[k]);
-
-    cs_evaluate_adv_field(a_info.adv_id, t_cur, xg, &beta_g);
-
-
-    adv_flx = surf * _dp3(beta_g, qf.unitv);
-    break;
-
-  case CS_QUADRATURE_HIGHER:
-
-    cs_quadrature_tria_3pts(xe, qf.center, xv, surf, gpts, &w);
-
-    cs_real_t  add = 0;
-    for (int p = 0; p < 3; p++) {
-      cs_evaluate_adv_field(a_info.adv_id, t_cur, gpts[p], &beta_g);
-      add += _dp3(beta_g, qf.unitv);
-    }
-    adv_flx += add * w;
-    break;
-
-  case CS_QUADRATURE_HIGHEST: // Not yet implemented
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid type of quadrature for computing the advected flux.");
-  }
-
-  return adv_flx;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the advective flux across dual faces lying inside the
- *          computational domain (only when the advective field is not uniform)
- *
- * \param[in]  quant      pointer to the cdo quantities structure
- * \param[in]  a_info     set of options to manage the advection term
- * \param[in]  t_cur      value of the current time
- * \param[in]  xc         center of the cell
- * \param[in]  qe         quantities related to an edge
- * \param[in]  qdf        quantities related to a dual face
- *
- * \return the value of the flux
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_real_t
-_compute_adv_flux_dface(const cs_cdo_quantities_t   *quant,
-                        const cs_param_advection_t   a_info,
-                        double                       t_cur,
-                        const cs_real_3_t            xc,
-                        const cs_quant_t             qe,
-                        const cs_dface_t             qdf)
-{
-  int  j, k;
-  cs_real_t  w;
-  cs_real_3_t  beta_g, gpts[3], xg;
-
-  cs_real_t  adv_flx = 0;
-
-  /* Compute the flux of beta accros the dual face */
-  switch (a_info.quad_type) {
-
-  case CS_QUADRATURE_BARY:
-    for (j = 0; j < 2; j++) {
-
-      cs_lnum_t  f_id = qdf.parent_id[j];
-      cs_quant_t  qf = quant->face[f_id];
-
-      for (k = 0; k < 3; k++)
-        xg[k] = one_third * (xc[k] + qe.center[k] + qf.center[k]);
-
-      cs_evaluate_adv_field(a_info.adv_id, t_cur, xg, &beta_g);
-      adv_flx += qdf.sface[j].meas * _dp3(beta_g, qdf.sface[j].unitv);
-
-    } // Loop on the two triangles composing the dual face inside a cell
-    break;
-
-  case CS_QUADRATURE_HIGHER:
-    for (j = 0; j < 2; j++) {
-
-      cs_lnum_t  f_id = qdf.parent_id[j];
-      cs_quant_t  qf = quant->face[f_id];
-
-      cs_quadrature_tria_3pts(qe.center, qf.center, xc, qdf.sface[j].meas,
-                              gpts, &w);
-
-      cs_real_t  add = 0;
-      for (int p = 0; p < 3; p++) {
-        cs_evaluate_adv_field(a_info.adv_id, t_cur, gpts[p], &beta_g);
-        add += _dp3(beta_g, qdf.sface[j].unitv);
-      }
-      adv_flx += add * w;
-
-    } // Loop on the two triangles composing the dual face inside a cell
-    break;
-
-  case CS_QUADRATURE_HIGHEST: // Not yet implemented
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid type of quadrature for computing the advected flux.");
-  }
-
-  return adv_flx;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Initialize the builder structure and the local matrix related to
  *          the convection operator when diffusion is also activated
  *
  * \param[in]      c_id      cell id
  * \param[in]      connect   pointer to the connectivity structure
  * \param[in]      quant     pointer to the cdo quantities structure
+ * \param[in]      matpty    tensor related to the diffusion property
  * \param[in, out] b         pointer to a convection builder structure
  */
 /*----------------------------------------------------------------------------*/
@@ -343,96 +193,38 @@ static void
 _init_with_diffusion(cs_lnum_t                    c_id,
                      const cs_cdo_connect_t      *connect,
                      const cs_cdo_quantities_t   *quant,
+                     const cs_real_33_t           matpty,
                      cs_cdovb_adv_t              *b)
 {
   cs_lnum_t  i, k, id;
-  cs_real_t  _crit, beta_flx, inv_val, inv_diff;
-  cs_real_3_t  xc, xg, beta_g, matnu;
+  cs_real_3_t  matnu;
   cs_nvec3_t  dface;
 
-  const cs_param_advection_t  a_info = b->a_info;
   const cs_connect_index_t  *c2e = connect->c2e;
 
-  /* Retrieve cell center */
-  for (k = 0; k < 3; k++)
-    xc[k] = quant->cell_centers[3*c_id+k];
+  /* Compute the flux across the dual face attached to each edge of the cell */
+  cs_advection_field_get_flux_dfaces(c_id, b->a_info, b->adv, b->fluxes);
 
-  /* Get the value of the material property at the cell center */
-  if (!b->diff_uniform)
-    cs_evaluate_pty(b->diff_pty_id, b->t_cur, xc, b->inv_diff_pty, &(b->matpty));
-
-  /* Compute the flux induced by the advection field along with the criterion
+  /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
+  for (i = c2e->idx[c_id], id = 0; i < c2e->idx[c_id+1]; i++, id++) {
 
-  if (b->adv_uniform) {
+    const cs_lnum_t  e_id = c2e->ids[i];
+    const cs_dface_t  qdf = quant->dface[i];
 
-    /* Loop on cell edges */
-    for (i = c2e->idx[c_id], id = 0; i < c2e->idx[c_id+1]; i++, id++) {
+    /* Compute dual face vector split into a unit vector and its measure */
+    const double  dfmeas = qdf.sface[0].meas + qdf.sface[1].meas;
+    const double  inv_dfmeas = 1/dfmeas;
+    const double  mean_flux = inv_dfmeas * b->fluxes[id];
 
-      cs_lnum_t  e_id = c2e->ids[i];
-      cs_dface_t  qdf = quant->dface[i];
+    for (k = 0; k < 3; k++)
+      dface.unitv[k] = inv_dfmeas*qdf.vect[k];
 
-      /* Compute dual face vector split into a unit vector and its measure */
-      dface.meas = qdf.sface[0].meas + qdf.sface[1].meas;
-      inv_val = 1/dface.meas;
-      for (k = 0; k < 3; k++)
-        dface.unitv[k] = inv_val*qdf.vect[k];
+    _mv3((const cs_real_t (*)[3])matpty, dface.unitv, matnu);
 
-      _crit = b->adv_field.meas * _dp3(b->adv_field.unitv, dface.unitv);
-      _mv3((const cs_real_t (*)[3])b->matpty, dface.unitv, matnu);
-      inv_diff = 1/_dp3(dface.unitv, matnu);
-      b->criter[id] = quant->edge[e_id].meas * _crit * inv_diff;
-      b->fluxes[id] = dface.meas *_crit;
+    b->criter[id] = quant->edge[e_id].meas * mean_flux /_dp3(dface.unitv, matnu);
 
-    } // Loop on cell edges
-
-  }
-  else { // advection is not uniform
-
-    /* Loop on cell edges */
-    for (i = c2e->idx[c_id], id = 0; i < c2e->idx[c_id+1]; i++, id++) {
-
-      cs_lnum_t  e_id = c2e->ids[i];
-      cs_quant_t  qe = quant->edge[e_id];
-      cs_dface_t  qdf = quant->dface[i];
-
-      /* Compute dual face vector split into a unit vector and its measure */
-      dface.meas = qdf.sface[0].meas + qdf.sface[1].meas;
-      inv_val = 1/dface.meas;
-      for (k = 0; k < 3; k++)
-        dface.unitv[k] = inv_val*qdf.vect[k];
-
-      beta_flx = _compute_adv_flux_dface(quant, a_info, b->t_cur, xc, qe, qdf);
-
-      /* Compute the criterion for evaluating the weight of upwinding */
-      switch (a_info.weight_criterion) {
-
-      case CS_PARAM_ADVECTION_WEIGHT_FLUX:
-        _crit = beta_flx * inv_val;
-        break;
-
-      case CS_PARAM_ADVECTION_WEIGHT_XEXC:
-        for (k = 0; k < 3; k++)
-          xg[k] = 0.5 * (qe.center[k] + xc[k]);
-        cs_evaluate_adv_field(a_info.adv_id, b->t_cur, xg, &beta_g);
-        _crit = _dp3(beta_g, dface.unitv);
-        break;
-
-      default:
-        _crit = -1; // To avoid a warning at the compilation stage
-        bft_error(__FILE__, __LINE__, 0,
-                  " Invalid choice of algorithm for computing the weight"
-                  " criterion.");
-      }
-
-      _mv3((const cs_real_t (*)[3])b->matpty, dface.unitv, matnu);
-      inv_diff = 1/_dp3(dface.unitv, matnu);
-      b->criter[id] = qe.meas * _crit * inv_diff;
-      b->fluxes[id] = beta_flx;
-
-    } // Loop on cell edges
-
-  } // advection uniform or not ?
+  } // Loop on cell edges
 
 }
 
@@ -454,84 +246,25 @@ _init(cs_lnum_t                    c_id,
       const cs_cdo_quantities_t   *quant,
       cs_cdovb_adv_t              *b)
 {
-  cs_lnum_t  i, k, id;
-  cs_real_t  _crit, beta_flx, invval;
-  cs_real_3_t  xc, xg, beta_g;
-  cs_nvec3_t  dface;
+  cs_lnum_t  i, id;
 
-  const cs_param_advection_t  a_info = b->a_info;
   const cs_connect_index_t  *c2e = connect->c2e;
 
-  /* Compute the flux induced by the advection field along with the criterion
+  /* Compute the flux across the dual face attached to each edge of the cell */
+  cs_advection_field_get_flux_dfaces(c_id, b->a_info, b->adv, b->fluxes);
+
+  /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
-  if (b->adv_uniform) {
+  for (i = c2e->idx[c_id], id = 0; i < c2e->idx[c_id+1]; i++, id++) {
 
-    /* Loop on cell edges */
-    for (i = c2e->idx[c_id], id = 0; i < c2e->idx[c_id+1]; i++, id++) {
+    cs_dface_t  qdf = quant->dface[i];
 
-      cs_dface_t  qdf = quant->dface[i];
+    /* Compute dual face vector split into a unit vector and its measure */
+    const double  inv_dfmeas = 1/(qdf.sface[0].meas + qdf.sface[1].meas);
 
-      /* Compute dual face vector split into a unit vector and its measure */
-      dface.meas = qdf.sface[0].meas + qdf.sface[1].meas;
-      invval = 1/dface.meas;
-      for (k = 0; k < 3; k++)
-        dface.unitv[k] = invval*qdf.vect[k];
+    b->criter[id] = inv_dfmeas * b->fluxes[id];
 
-      _crit = b->adv_field.meas * _dp3(b->adv_field.unitv, dface.unitv);
-      b->criter[id] = _crit;
-      b->fluxes[id] = dface.meas *_crit;
-
-    } // Loop on cell edges
-
-  }
-  else { // advection is not uniform
-
-    /* Retrieve cell center */
-    for (k = 0; k < 3; k++)
-      xc[k] = quant->cell_centers[3*c_id+k];
-
-    /* Loop on cell edges */
-    for (i = c2e->idx[c_id], id = 0; i < c2e->idx[c_id+1]; i++, id++) {
-
-      cs_lnum_t  e_id = c2e->ids[i];
-      cs_quant_t  qe = quant->edge[e_id];
-      cs_dface_t  qdf = quant->dface[i];
-
-      /* Compute dual face vector split into a unit vector and its measure */
-      dface.meas = qdf.sface[0].meas + qdf.sface[1].meas;
-      invval = 1/dface.meas;
-      for (k = 0; k < 3; k++)
-        dface.unitv[k] = invval*qdf.vect[k];
-
-      beta_flx = _compute_adv_flux_dface(quant, a_info, b->t_cur, xc, qe, qdf);
-
-      /* Compute the criterion for evaluating the weight of upwinding */
-      switch (a_info.weight_criterion) {
-
-      case CS_PARAM_ADVECTION_WEIGHT_FLUX:
-        _crit = beta_flx * invval;
-        break;
-
-      case CS_PARAM_ADVECTION_WEIGHT_XEXC:
-        for (k = 0; k < 3; k++)
-          xg[k] = 0.5 * (qe.center[k] + xc[k]);
-        cs_evaluate_adv_field(a_info.adv_id, b->t_cur, xg, &beta_g);
-        _crit = _dp3(beta_g, dface.unitv);
-        break;
-
-      default:
-        _crit = 0; // To avoid a warning at the compilation stage
-        bft_error(__FILE__, __LINE__, 0,
-                  " Invalid choice of algorithm for computing the weight"
-                  " criterion.");
-      }
-
-      b->criter[id] = _crit;
-      b->fluxes[id] = beta_flx;
-
-    } // Loop on cell edges
-
-  } // advection uniform or not ?
+  } // Loop on cell edges
 
 }
 
@@ -670,45 +403,12 @@ _build_local_vpfd(cs_lnum_t                   c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the convection flux accross the dual face df(e) lying
- *          inside the cell c and associated to the edge e.
- *          This function is associated to vertex-based discretization.
- *
- * \param[in]  quant    pointer to the cdo quantities structure
- * \param[in]  a_info   set of options for the advection term
- * \param[in]  t_cur    value of the current time
- * \param[in]  xc       center of the cell c
- * \param[in]  qe       quantities related to edge e in E_c
- * \param[in]  qdf      quantities to the dual face df(e)
- *
- * \return the value of the convective flux accross the triangle
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_cdovb_advection_vbflux_compute(const cs_cdo_quantities_t   *quant,
-                                  const cs_param_advection_t   a_info,
-                                  double                       t_cur,
-                                  const cs_real_3_t            xc,
-                                  const cs_quant_t             qe,
-                                  const cs_dface_t             qdf)
-{
-  cs_real_t  beta_flx = 0;
-
-  beta_flx = _compute_adv_flux_dface(quant, a_info, t_cur, xc, qe, qdf);
-
-  return beta_flx;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Initialize a builder structure for the convection operator
  *
  * \param[in]  connect       pointer to the connectivity structure
- * \param[in]  time_step     pointer to a time step structure
+ * \param[in]  adv_field     pointer to a cs_adv_field_t structure
  * \param[in]  a_info        set of options for the advection term
  * \param[in]  do_diffusion  true is diffusion is activated
- * \param[in]  d_info        set of options for the diffusion term
  *
  * \return a pointer to a new allocated builder structure
  */
@@ -716,57 +416,29 @@ cs_cdovb_advection_vbflux_compute(const cs_cdo_quantities_t   *quant,
 
 cs_cdovb_adv_t *
 cs_cdovb_advection_builder_init(const cs_cdo_connect_t      *connect,
-                                const cs_time_step_t        *time_step,
+                                const cs_adv_field_t        *adv,
                                 const cs_param_advection_t   a_info,
-                                bool                         do_diffusion,
-                                const cs_param_hodge_t       d_info)
+                                bool                         do_diffusion)
 {
-  cs_lnum_t  i;
-
   cs_cdovb_adv_t  *b = NULL;
-
-  cs_real_3_t  xyz = {0., 0., 0.};
   cs_lnum_t  n_max_ec = connect->n_max_ebyc;
 
   BFT_MALLOC(b, 1, cs_cdovb_adv_t);
 
-  b->t_cur = time_step->t_cur;
+  b->adv = adv; // share the pointer to an advection field structure
 
   /* Copy a cs_param_convection_t structure */
-  b->a_info.adv_id = a_info.adv_id;
-  b->a_info.form = a_info.form;
+  b->a_info.formulation = a_info.formulation;
   b->a_info.weight_algo = a_info.weight_algo;
   b->a_info.weight_criterion = a_info.weight_criterion;
   b->a_info.quad_type = a_info.quad_type;
 
-  b->adv_uniform = cs_param_adv_field_is_uniform(a_info.adv_id);
-
-  if (b->adv_uniform) {
-    cs_real_3_t  beta;
-
-    cs_evaluate_adv_field(a_info.adv_id, b->t_cur, xyz, &beta);
-    cs_nvec3(beta, &(b->adv_field));
-
-  }
-
   b->with_diffusion = do_diffusion;
-
-  /* Diffusion property */
-  b->diff_pty_id = d_info.pty_id;
-  b->inv_diff_pty = d_info.inv_pty;
-  b->diff_uniform = cs_param_pty_is_uniform(d_info.pty_id);
-
-  if (b->diff_uniform) /* Material property is uniform */
-    cs_evaluate_pty(d_info.pty_id,
-                    b->t_cur,        // When ?
-                    xyz,             // Anywhere since uniform
-                    d_info.inv_pty,  // Need to inverse the tensor ?
-                    &(b->matpty));
 
   /* Allocate and initialize buffers */
   BFT_MALLOC(b->fluxes, n_max_ec, cs_real_t);
   BFT_MALLOC(b->criter, n_max_ec, cs_real_t);
-  for (i = 0; i < n_max_ec; i++) {
+  for (int i = 0; i < n_max_ec; i++) {
     b->fluxes[i] = 0;
     b->criter[i] = 0;
   }
@@ -810,6 +482,7 @@ cs_cdovb_advection_builder_free(cs_cdovb_adv_t  *b)
  * \param[in]      connect    pointer to the connectivity structure
  * \param[in]      quant      pointer to the cdo quantities structure
  * \param[in]      loc_ids    store the local entity ids for this cell
+ * \param[in]      diffmat    tensor related to the diffusion property
  * \param[in, out] builder    pointer to a convection builder structure
  *
  * \return a pointer to a local dense matrix structure
@@ -821,10 +494,11 @@ cs_cdovb_advection_build_local(cs_lnum_t                    c_id,
                                const cs_cdo_connect_t      *connect,
                                const cs_cdo_quantities_t   *quant,
                                const cs_lnum_t             *loc_ids,
+                               const cs_real_33_t           diffmat,
                                cs_cdovb_adv_t              *builder)
 {
   cs_lnum_t  i;
-  short int  n;
+  short int  n_cell_vertices = 0;
 
   const cs_connect_index_t  *c2v = connect->c2v;
   const cs_param_advection_t  a_info = builder->a_info;
@@ -832,28 +506,35 @@ cs_cdovb_advection_build_local(cs_lnum_t                    c_id,
   /* Initialize the builder structure and compute geometrical quantities */
   /* Keep the link between local cell numbering and vertex numbering */
   if (builder->with_diffusion)
-    _init_with_diffusion(c_id, connect, quant, builder);
+    _init_with_diffusion(c_id, connect, quant, diffmat, builder);
   else
     _init(c_id, connect, quant, builder);
 
   /* Initialize local matrix structure */
-  for (i = c2v->idx[c_id], n = 0; i < c2v->idx[c_id+1]; i++, n++)
-    builder->loc->ids[n] = c2v->ids[i];
-  builder->loc->n_ent = n;
-  for (i = 0; i < n*n; i++)
+  for (i = c2v->idx[c_id]; i < c2v->idx[c_id+1]; i++)
+    builder->loc->ids[n_cell_vertices++] = c2v->ids[i];
+  builder->loc->n_ent = n_cell_vertices;
+  for (i = 0; i < n_cell_vertices*n_cell_vertices; i++)
     builder->loc->mat[i] = 0;
 
   /* Build the local convection operator */
-  if (a_info.form == CS_PARAM_ADVECTION_FORM_NONCONS)
+  switch (a_info.formulation) {
+
+  case CS_PARAM_ADVECTION_FORM_NONCONS:
     _build_local_epcd(c_id, connect->c2e, connect->e2v, loc_ids,  builder);
+    break;
 
-  else if (a_info.form == CS_PARAM_ADVECTION_FORM_CONSERV)
+  case CS_PARAM_ADVECTION_FORM_CONSERV:
     _build_local_vpfd(c_id, connect->c2e, connect->e2v, loc_ids, builder);
+    break;
 
-  else
+  default:
     bft_error(__FILE__, __LINE__, 0,
               " Invalid type of advection operation.\n"
               " Choices are the following: conservative or not");
+    break;
+
+  } // Switch on the formulation
 
   return builder->loc;
 }
@@ -880,7 +561,9 @@ cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
                           cs_real_t                    diag_contrib[])
 {
   cs_lnum_t  i, f_id;
+  cs_nvec3_t  advf;
 
+  const cs_adv_field_t  *adv = builder->adv;
   const cs_param_advection_t  a_info = builder->a_info;
   const cs_real_t  *xyz = quant->vtx_coord;
   const cs_sla_matrix_t  *e2v = connect->e2v;
@@ -889,31 +572,32 @@ cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
   /* Loop on border faces.
      Add diagonal term for vertices attached to a boundary face where
      the advection field points inward */
-  if (builder->adv_uniform) {
-
-    cs_nvec3_t  advf = builder->adv_field;
+  if (cs_advection_field_is_cellwise(builder->adv)) {
 
     for (f_id = quant->n_i_faces; f_id < quant->n_faces; f_id++) {
 
-      cs_quant_t  qf = quant->face[f_id];
+      const cs_quant_t  qf = quant->face[f_id];
 
       /* Sanity check (this is a border face) */
       assert(connect->f2c->idx[f_id+1] - connect->f2c->idx[f_id] == 1);
 
+      const cs_lnum_t  c_id = connect->f2c->col_id[connect->f2c->idx[f_id]];
+
+      /* Retrieve the value of the advection field in the current cell */
+      cs_advection_field_get_cell_vector(c_id, builder->adv, &advf);
+
       const double  dp = _dp3(advf.unitv, qf.unitv);
-      if (fabs(dp) > 0.01*cs_get_eps_machine()) {
+      if (fabs(dp) > cs_get_zero_threshold()) {
 
         /* Loop on border face edges */
         for (i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
 
-          cs_lnum_t  e_id = f2e->col_id[i];
-          cs_lnum_t  e_shft = e2v->idx[e_id];
-          cs_lnum_t  v1_id = e2v->col_id[e_shft];
-          cs_lnum_t  v2_id = e2v->col_id[e_shft+1];
-
+          const cs_lnum_t  e_id = f2e->col_id[i];
+          const cs_lnum_t  e_shft = e2v->idx[e_id];
+          const cs_lnum_t  v1_id = e2v->col_id[e_shft];
+          const cs_lnum_t  v2_id = e2v->col_id[e_shft+1];
           const cs_real_t  *xv1 = xyz + 3*v1_id;
           const cs_real_t  *xv2 = xyz + 3*v2_id;
-
           const double  surf = 0.5*cs_surftri(xv1, xv2, qf.center);
           const double  _flx = dp * advf.meas * surf;
 
@@ -922,7 +606,7 @@ cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
             rhs_contrib[v1_id] -= _flx * dir_vals[v1_id];
             rhs_contrib[v2_id] -= _flx * dir_vals[v2_id];
 
-            if (a_info.form == CS_PARAM_ADVECTION_FORM_NONCONS) {
+            if (a_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS) {
               diag_contrib[v1_id] -= _flx;
               diag_contrib[v2_id] -= _flx;
             }
@@ -930,7 +614,7 @@ cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
           }
           else { // advection is oriented outward
 
-            if (a_info.form == CS_PARAM_ADVECTION_FORM_CONSERV) {
+            if (a_info.formulation == CS_PARAM_ADVECTION_FORM_CONSERV) {
               diag_contrib[v1_id] += _flx;
               diag_contrib[v2_id] += _flx;
             }
@@ -948,48 +632,42 @@ cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
 
     for (f_id = quant->n_i_faces; f_id < quant->n_faces; f_id++) {
 
-      cs_quant_t  qf = quant->face[f_id];
-
       /* Sanity check (this is a border face) */
       assert(connect->f2c->idx[f_id+1] - connect->f2c->idx[f_id] == 1);
 
       /* Loop on border face edges */
       for (i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
 
-        cs_lnum_t  e_id = f2e->col_id[i];
-        cs_quant_t  qe = quant->edge[e_id];
-        cs_lnum_t  e_shft = e2v->idx[e_id];
-        cs_lnum_t  v1_id = e2v->col_id[e_shft];
-        cs_lnum_t  v2_id = e2v->col_id[e_shft+1];
+        const cs_lnum_t  e_id = f2e->col_id[i];
+        const cs_lnum_t  e_shft = e2v->idx[e_id];
+        const cs_lnum_t  v1_id = e2v->col_id[e_shft];
+        const cs_lnum_t  v2_id = e2v->col_id[e_shft+1];
 
-        const cs_real_t  *xv1 = xyz + 3*v1_id;
-        const cs_real_t  *xv2 = xyz + 3*v2_id;
-
-        const double  flux_v1 = _compute_adv_flux_svef(a_info, builder->t_cur,
-                                                       xv1, qe.center, qf);
-        const double  flux_v2 = _compute_adv_flux_svef(a_info, builder->t_cur,
-                                                       xv2, qe.center, qf);
+        const double  flux_v1 =
+          cs_advection_field_get_flux_svef(v1_id, e_id, f_id, a_info, adv);
+        const double  flux_v2 =
+          cs_advection_field_get_flux_svef(v2_id, e_id, f_id, a_info, adv);
 
         if (flux_v1 < 0) { // advection field is inward w.r.t. the face normal
 
           rhs_contrib[v1_id] -= flux_v1 * dir_vals[v1_id];
-          if (a_info.form == CS_PARAM_ADVECTION_FORM_NONCONS)
+          if (a_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS)
             diag_contrib[v1_id] -= flux_v1;
 
         }
         else  // advection is oriented outward
-          if (a_info.form == CS_PARAM_ADVECTION_FORM_CONSERV)
+          if (a_info.formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
             diag_contrib[v1_id] += flux_v1;
 
         if (flux_v2 < 0) { // advection field is inward w.r.t. the face normal
 
           rhs_contrib[v2_id] -= flux_v2 * dir_vals[v2_id];
-          if (a_info.form == CS_PARAM_ADVECTION_FORM_NONCONS)
+          if (a_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS)
             diag_contrib[v2_id] -= flux_v2;
 
         }
         else  // advection is oriented outward
-          if (a_info.form == CS_PARAM_ADVECTION_FORM_CONSERV)
+          if (a_info.formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
             diag_contrib[v2_id] += flux_v2;
 
       } // Loop on face edges
@@ -1004,59 +682,43 @@ cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
 /*!
  * \brief   Compute the Peclet number in each cell in a given direction
  *
- * \param[in]      cdoq      pointer to the cdo quantities structure
- * \param[in]      a_info    set of options for the advection term
- * \param[in]      d_info    set of options for the diffusion term
- * \param[in]      dir_vect  direction in which we estimate the Peclet number
- * \param[in]      t_cur     value of the current time
- * \param[in, out] p_peclet  pointer to the pointer of real numbers to fill
+ * \param[in]      cdoq           pointer to the cdo quantities structure
+ * \param[in]      adv            pointer to the advection field struct.
+ * \param[in]      diff_property  pointer to the diffusion property struct.
+ * \param[in]      dir_vect       direction for estimating the Peclet number
+ * \param[in, out] peclet         pointer to the pointer of real numbers to fill
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdovb_advection_get_peclet_cell(const cs_cdo_quantities_t   *cdoq,
-                                   const cs_param_advection_t   a_info,
-                                   const cs_param_hodge_t       d_info,
+                                   const cs_adv_field_t        *adv,
+                                   const cs_property_t         *diff_property,
                                    const cs_real_3_t            dir_vect,
-                                   cs_real_t                    t_cur,
                                    cs_real_t                   *p_peclet[])
 {
-  cs_real_t  matpty[3][3];
-  cs_real_3_t  beta_c, ptydir;
+  cs_real_t  ptymat[3][3];
+  cs_real_3_t  ptydir;
+  cs_nvec3_t  adv_field;
 
-  cs_real_3_t  xc = {0, 0, 0};
   cs_real_t  *peclet = *p_peclet;
-
-  bool  pty_uniform = cs_param_pty_is_uniform(d_info.pty_id);
-  bool  adv_uniform = cs_param_adv_field_is_uniform(a_info.adv_id);
+  bool  pty_uniform = cs_property_is_uniform(diff_property);
 
   if (peclet == NULL)
     BFT_MALLOC(peclet, cdoq->n_cells, cs_real_t);
 
-  if (pty_uniform)
-    cs_evaluate_pty(d_info.pty_id, t_cur, xc, false, &matpty);
-  if (adv_uniform)
-    cs_evaluate_adv_field(a_info.adv_id, t_cur, xc, &beta_c);
-
   for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-    if (!pty_uniform || !adv_uniform) { /* Retrieve cell center */
-      for (int k = 0; k < 3; k++)
-        xc[k] = cdoq->cell_centers[3*c_id+k];
+    /* Get the value of the material property at the cell center */
+    if (!pty_uniform || c_id == 0)
+      cs_property_get_cell_tensor(c_id, diff_property, false, ptymat);
 
-      /* Get the value of the material property at the cell center */
-      if (!pty_uniform)
-        cs_evaluate_pty(d_info.pty_id, t_cur, xc, false, &matpty);
-
-      if (!adv_uniform)
-        cs_evaluate_adv_field(a_info.adv_id, t_cur, xc, &beta_c);
-
-    } // not uniform
+    cs_advection_field_get_cell_vector(c_id, adv, &adv_field);
 
     cs_real_t  hc = pow(cdoq->cell_vol[c_id], one_third);
-    cs_real_t  dp = _dp3(beta_c, dir_vect);
+    cs_real_t  dp = adv_field.meas * _dp3(adv_field.unitv, dir_vect);
 
-    _mv3((const cs_real_t (*)[3])matpty, dir_vect, ptydir);
+    _mv3((const cs_real_t (*)[3])ptymat, dir_vect, ptydir);
 
     cs_real_t  inv_denum = 1/(_dp3(dir_vect, ptydir));
 

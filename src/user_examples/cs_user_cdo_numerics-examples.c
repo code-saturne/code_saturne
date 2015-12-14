@@ -1,5 +1,6 @@
 /*============================================================================
- * Set advanced numerical parameters for the current simulation
+ * Set advanced numerical parameters for the current simulation when the CDO
+ * kernel is used
  *============================================================================*/
 
 /* VERS */
@@ -117,75 +118,77 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
 
   /* Modify the setting of an equation using a generic process
 
-     ***********    cs_equation_set(eq, key, val)     ************
+     ***********  cs_equation_set_option(eq, key, val)   ************
 
      the couple (key,val) are strings among the following choices:
-     <KEY>: "scheme_space"
-         >> val: "cdo_vb" for CDO vertex-based scheme
-         >> val: "cdo_fb" for CDO face-based scheme
 
-     <KEY>: "verbosity"
-        >> val: "0" (default), "1", "2", ...
-        The higher the more detailed information is displayed
-        "1" detailed setup resume and coarse grain timer stats
-        "2" fine grain timer stats
+     KEY = "scheme_space"
+     >> val: "cdo_vb" for CDO vertex-based scheme
+     >> val: "cdo_fb" for CDO face-based scheme
 
-     <KEY>: "hodge_diff_algo" or "hodge_time_algo"
-        >> val: "voronoi" (default for time), "cost" (default for diffusion)
-               or "wbs"
-     "voronoi" leads to diagonal discrete Hodge operator but is not
+     KEY = "verbosity"
+     >> val: "0" (default), "1", "2", ...
+     The higher the more detailed information is displayed
+     - "1" detailed setup resume and coarse grain timer stats
+     - "2" fine grain timer stats
+
+     KEY = "hodge_diff_algo" or "hodge_time_algo"
+     >> val: "voronoi" (default for time), "cost" (default for diffusion)
+             or "wbs"
+     - "voronoi" leads to diagonal discrete Hodge operator but is not
      consistent for all meshes
-     "cost" is more robust (i.e. it handles more general meshes but is is
+     - "cost" is more robust (i.e. it handles more general meshes but is is
      less efficient)
-     "wbs" is robust and accurate but is limited to the
-       reconstruction of potential-like degrees of freedom
+     - "wbs" is robust and accurate but is limited to the reconstruction of
+     potential-like degrees of freedom
 
-     <KEY>: "hodge_diff_coef" or "hodge_time_coef"
+     KEY = "hodge_diff_coef" or "hodge_time_coef"
      This key is only useful if "cost" is set as algorithm
-        >> val: "dga", "sushi", "gcr" or "1.5", "9"..
+     >> val: "dga", "sushi", "gcr" or "1.5", "9"..
      val is either a name or a value. Notice that
-     "dga" corresponds to the value 1./3.
-     "sushi" corresponds to the value 1./sqrt(3.)
-     "gcr" corresponds to the value 1.
+     - "dga" corresponds to the value 1./3.
+     - "sushi" corresponds to the value 1./sqrt(3.)
+     - "gcr" corresponds to the value 1.
 
-     <KEY>: "solver_family"
-        >> val: "cs" (default), "petsc", "newton" (not implemented yet)
-        For using "petsc" one needs to compile Code_Saturne with the PETSc
-        library
+     KEY = "solver_family"
+     >> val: "cs" (default), "petsc", "newton" (not implemented yet)
+     For using "petsc" one needs to compile Code_Saturne with the PETSc
+     library
 
-     <KEY>: "itsol"
-        >> val: "cg" (default), "bicg", "gmres", "amg"
-        "cg" is the standard conjuguate gradient algorithm
-        "bicg" is BiCG-Stab2 algorithm (for non-symmetric linear systems)
-        "gmres" is a robust iterative solver but not as efficient
-        "amg" is an algebraic multigrid iterative solver
+     KEY = "itsol"
+     >> val: "cg" (default), "bicg", "gmres", "amg"
+     - "cg" is the standard conjuguate gradient algorithm
+     - "bicg" is BiCG-Stab2 algorithm (for non-symmetric linear systems)
+     - "gmres" is a robust iterative solver but not as efficient
+     - "amg" is an algebraic multigrid iterative solver
 
-     <KEY>: "precond"
-        >> val: "jacobi", "poly1", "ssor", "ilu0", "icc0", "amg", "as"
-        "jacobi" diagonal preconditoner
-        "poly1"  neumann polynomial of order 1
-        "ssor"   symmetric successive over-relaxation
-        "ilu0"   incomplete LU factorization
-        "icc0"   incomplete Cholesky factorization (for symmetric matrices)
-        "amg"    algebraic multigrid
-        "as"     additive schwarz method
+     KEY = "precond"
+     >> val: "jacobi", "poly1", "ssor", "ilu0", "icc0", "amg", "as"
+     - "jacobi" diagonal preconditoner
+     - "poly1"  neumann polynomial of order 1
+     - "ssor"   symmetric successive over-relaxation (only with PETSC)
+     - "ilu0"   incomplete LU factorization
+     - "icc0"   incomplete Cholesky factorization (for symmetric matrices)
+     - "amg"    algebraic multigrid
 
-     <KEY>: "itsol_max_iter"
-        >> val: "2000" for instance
-     <KEY>: "itsol_eps"
-        >> val:  "1e-10" for instance
-     <KEY>: "itsol_resnorm"
-        >> val: "true" or "false"
+     KEY = "itsol_max_iter"
+     >> val: "2000" for instance
+
+     KEY = "itsol_eps"
+     >> val:  "1e-10" for instance
+
+     KEY = "itsol_resnorm"
+     >> val: "true" or "false"
 
      Set the type of enforcement of the boundary conditions
-     <KEY>: "bc_enforcement"
+     KEY = "bc_enforcement"
         >> val: "strong", "penalization", "nitsche", "sym_nitsche"
      "strong"       remove unknowns attached to a BC
      "penalization" weak enforcement using a huge penalization coefficient
      "weak"         weak enforcement using the Nitsche method
      "weak_sym"     weak enforcement keeping the symmetry of the system
 
-     <KEY>: "bc_quadrature"
+     KEY = "bc_quadrature"
         >> val: "subdiv", "bary", "higher", "highest"
      Set the quadrature algorithm used for evaluating boundary conditions
      "subdiv"  used a subdivision into tetrahedra
@@ -197,106 +200,48 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      tetrahedra
 
      Set time scheme:
-     <KEY>: "time_scheme"
-        >> val: "implicit", "explicit", "crank_nicolson", "theta_scheme"
+     KEY = "time_scheme"
+     >> val: "implicit", "explicit", "crank_nicolson", "theta_scheme"
      "implicit": first-order in time (inconditionnally stable)
      "explicit":
      "crank_nicolson": second_order in time
-     "theta_scheme": generic time scheme. One recovers "implicit" with theta=1,
-                     "explicit" with theta=0 and "crank_nicolson" with theta=0.5
+     "theta_scheme": generic time scheme. One recovers:
+                     - "implicit" with theta = 1,
+                     - "explicit" with theta = 0
+                     - "crank_nicolson" with theta = 0.5
 
-         <KEY>: "time_theta" (only useful if "time_scheme" is set to "theta_scheme"
-        >> val: "0.75" for instance (must be between 0 <=val<= 1)
+     KEY = "time_theta" (only useful if "time_scheme" is set to "theta_scheme"
+     >> val: "0.75" for instance (must be between 0 <=val<= 1)
 
      Post-processing options:
-     <KEY>: "post_freq"
-        >> val: "10" for instance  ("0" for only the initial state)
-     <KEY>: "post"
-       >> val: "peclet", "upwind_coef"
+     KEY = "post_freq"
+     >> val: "10" for instance  ("0" for only the initial state)
+
+     KEY = "post"
+     >> val: "peclet", "upwind_coef"
      "peclet" to post-process an estimation of the Peclet number in each cell
      "upwind_coef" to post-process an estimation of the upwinding coefficient
      related a given Peclet number
 
      Advection options:
-     <KEY>: "adv_weight"
-        >> val: "upwind", "centered", "samarskii", "sg", "d10g5"
-     <KEY>: "adv_weight_criterion"
-        >> val: "xexc" or "flux"
+     KEY = "adv_weight"
+     >> val: "upwind", "centered", "samarskii", "sg", "d10g5"
+
+     KEY = "adv_weight_criterion"
+     >> val: "xexc" or "flux"
   */
 
   cs_equation_t  *eq = cs_domain_get_equation(domain, "FVCA6.1");
 
-  if (eq != NULL) {
-    cs_equation_set(eq, "space_scheme", "cdo_fb");
-    cs_equation_set(eq, "verbosity", "2");
-    cs_equation_set(eq, "hodge_diff_algo", "cost");
-    cs_equation_set(eq, "hodge_diff_coef", "dga");
-    cs_equation_set(eq, "solver_family", "petsc");
-    cs_equation_set(eq, "itsol", "cg");
-    cs_equation_set(eq, "precond", "amg");
-    cs_equation_set(eq, "itsol_max_iter", "2500");
-    cs_equation_set(eq, "itsol_eps", "1e-12");
-    cs_equation_set(eq, "itsol_resnorm", "false");
-  }
-
-  /* Optional: specify additional settings for a source term
-
-     cs_equation_source_term_set(eq,       // equation
-                                 st_label, // label of the source term
-                                 key,      // name of the key
-                                 val)      // value of the key to set
-
-     If st_label is set to NULL, all source terms of the equation are set
-     to the given parameters.
-     Available keys are the following: "post", "quadrature"
-
-       <KEY>: "post" Set the behaviour related to post-processing
-       >> val: "-1" no post-processing,
-               "0"  at the beginning of the computation,
-               "n"  at each n iterations
-
-       <KEY>: "quadrature" Set the algortihm used for quadrature
-       >> val: "subdiv"  used a subdivision into tetrahedra
-               "bary"    used the barycenter approximation
-               "higher"  used 4 Gauss points for approximating the integral
-               "highest" used 5 Gauss points for approximating the integral
-
-     Remark: "higher" and "highest" implies automatically a subdivision
-             into tetrahedra
-  */
-
-  if (eq != NULL) {
-    cs_equation_source_term_set(eq, "SourceTerm", "quadrature", "bary");
-    cs_equation_source_term_set(eq, "SourceTerm", "quadrature", "subdiv");
-  }
-
-  /* Optional: specify additional settings for a reaction term
-
-     cs_equation_reaction_term_set(eq,       // equation
-                                   r_name,   // label of the source term
-                                   key,      // name of the key
-                                   val)      // value of the key to set
-
-     If r_name is set to NULL, all reaction terms of the equation are set
-     to the given parameters.
-     Available keys are the following:
-       "lumping", "inv_pty", "hodge_algo", "hodge_coef"
-
-     <KEY>: "hodge_algo"
-        >> val: "voronoi", "cost" or "whitney_bary"
-     "voronoi" leads to diagonal discrete Hodge operator but is not
-     consistent for all meshes
-     "cost" is more robust (i.e. it handles more general meshes but is is
-     less efficient)
-     "wbs" is robust and accurate but is limited to the reconstruction of
-     potential-like degrees of freedom
-
-     <KEY>: "hodge_coef" (only useful if "hodge_algo" is set to "cost")
-        >> val: "dga", "sushi", "gcr" or any strictly positive value
-     <KEY>: "lumping"
-        >> val: "true" or "false"
-     <KEY>: "inv_pty" (inverse the value of the related property ?)
-        >> val: "true" or "false"
-  */
+  cs_equation_set_option(eq, "space_scheme", "cdo_fb");
+  cs_equation_set_option(eq, "verbosity", "2");
+  cs_equation_set_option(eq, "hodge_diff_algo", "cost");
+  cs_equation_set_option(eq, "hodge_diff_coef", "dga");
+  cs_equation_set_option(eq, "solver_family", "petsc");
+  cs_equation_set_option(eq, "itsol", "cg");
+  cs_equation_set_option(eq, "precond", "amg");
+  cs_equation_set_option(eq, "itsol_max_iter", "2500");
+  cs_equation_set_option(eq, "itsol_eps", "1e-12");
+  cs_equation_set_option(eq, "itsol_resnorm", "false");
 
 }

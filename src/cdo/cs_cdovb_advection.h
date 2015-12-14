@@ -37,6 +37,8 @@
 #include "cs_cdo_toolbox.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
+#include "cs_property.h"
+#include "cs_advection_field.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -62,38 +64,12 @@ typedef struct _cs_cdovb_adv_t  cs_cdovb_adv_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the advective flux accross the dual face df(e) lying
- *          inside the cell c and associated to the edge e.
- *          This function is associated to vertex-based discretization.
- *
- * \param[in]  quant    pointer to the cdo quantities structure
- * \param[in]  a_info   set of options for the advection term
- * \param[in]  t_cur    value of the current time
- * \param[in]  xc       center of the cell c
- * \param[in]  qe       quantities related to edge e in E_c
- * \param[in]  qdf      quantities to the dual face df(e)
- *
- * \return the value of the convective flux accross the triangle
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_cdovb_advection_vbflux_compute(const cs_cdo_quantities_t   *quant,
-                                  const cs_param_advection_t   a_info,
-                                  double                       t_cur,
-                                  const cs_real_3_t            xc,
-                                  const cs_quant_t             qe,
-                                  const cs_dface_t             qdf);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Initialize a builder structure for the convection operator
  *
  * \param[in]  connect       pointer to the connectivity structure
- * \param[in]  time_step     pointer to a time step structure
+ * \param[in]  adv_field     pointer to a cs_adv_field_t structure
  * \param[in]  a_info        set of options for the advection term
  * \param[in]  do_diffusion  true is diffusion is activated
- * \param[in]  d_info        set of options for the diffusion term
  *
  * \return a pointer to a new allocated builder structure
  */
@@ -101,10 +77,9 @@ cs_cdovb_advection_vbflux_compute(const cs_cdo_quantities_t   *quant,
 
 cs_cdovb_adv_t *
 cs_cdovb_advection_builder_init(const cs_cdo_connect_t      *connect,
-                                const cs_time_step_t        *time_step,
+                                const cs_adv_field_t        *adv,
                                 const cs_param_advection_t   a_info,
-                                bool                         do_diffusion,
-                                const cs_param_hodge_t       d_info);
+                                bool                         do_diffusion);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -127,6 +102,7 @@ cs_cdovb_advection_builder_free(cs_cdovb_adv_t  *b);
  * \param[in]      connect    pointer to the connectivity structure
  * \param[in]      quant      pointer to the cdo quantities structure
  * \param[in]      loc_ids    store the local entity ids for this cell
+ * \param[in]      diffmat    tensor related to the diffusion property
  * \param[in, out] builder    pointer to a convection builder structure
  *
  * \return a pointer to a local dense matrix structure
@@ -138,6 +114,7 @@ cs_cdovb_advection_build_local(cs_lnum_t                    c_id,
                                const cs_cdo_connect_t      *connect,
                                const cs_cdo_quantities_t   *quant,
                                const cs_lnum_t             *loc_ids,
+                               const cs_real_33_t           diffmat,
                                cs_cdovb_adv_t              *builder);
 
 /*----------------------------------------------------------------------------*/
@@ -165,21 +142,19 @@ cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
 /*!
  * \brief   Compute the Peclet number in each cell in a given direction
  *
- * \param[in]      cdoq      pointer to the cdo quantities structure
- * \param[in]      a_info   set of options for the advection term
- * \param[in]      d_info   set of options for the diffusion term
- * \param[in]      dir_vect  direction in which we estimate the Peclet number
- * \param[in]      tcur      value of the current time
- * \param[in, out] peclet    pointer to the pointer of real numbers to fill
+ * \param[in]      cdoq           pointer to the cdo quantities structure
+ * \param[in]      adv            pointer to the advection field struct.
+ * \param[in]      diff_property  pointer to the diffusion property struct.
+ * \param[in]      dir_vect       direction for estimating the Peclet number
+ * \param[in, out] peclet         pointer to the pointer of real numbers to fill
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdovb_advection_get_peclet_cell(const cs_cdo_quantities_t   *cdoq,
-                                   const cs_param_advection_t   a_info,
-                                   const cs_param_hodge_t       d_info,
+                                   const cs_adv_field_t        *adv,
+                                   const cs_property_t         *diff_property,
                                    const cs_real_3_t            dir_vect,
-                                   cs_real_t                    tcur,
                                    cs_real_t                   *p_peclet[]);
 
 /*----------------------------------------------------------------------------*/

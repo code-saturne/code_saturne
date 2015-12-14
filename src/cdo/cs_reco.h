@@ -73,6 +73,90 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute for each p_{f,c} the value of the gradient of the Lagrange
+ *         shape function attached to x_c
+ *
+ *  \param[in]      connect  pointer to the connectivity struct.
+ *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      c_id     cell id
+ *  \param[in, out] grdc     allocated buffer of size 3*n_max_fbyc
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_conf_grdc(const cs_cdo_connect_t     *connect,
+                  const cs_cdo_quantities_t  *quant,
+                  cs_lnum_t                   c_id,
+                  cs_real_3_t                *grdc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value at the cell center from an array of values
+ *         defined on primal vertices.
+ *
+ *  \param[in]      c_id     cell id
+ *  \param[in]      c2v      cell -> vertices connectivity
+ *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      array    pointer to the array of values
+ *  \param[in, out] val_xc   value of the reconstruction at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
+                          const cs_connect_index_t    *c2v,
+                          const cs_cdo_quantities_t   *quant,
+                          const double                *array,
+                          cs_real_t                   *val_xc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct a constant vector at the cell center from an array of
+ *         values defined on dual faces lying inside each cell.
+ *         This array is scanned thanks to the c2e connectivity.
+ *
+ *  \param[in]      c_id     cell id
+ *  \param[in]      c2e      cell -> edges connectivity
+ *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      array    pointer to the array of values
+ *  \param[in, out] val_xc   value of the reconstruction at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_dfbyc_at_cell_center(cs_lnum_t                    c_id,
+                             const cs_connect_index_t    *c2e,
+                             const cs_cdo_quantities_t   *quant,
+                             const double                *array,
+                             cs_real_3_t                  val_xc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct a constant vector inside pec which is a volume
+ *         surrounding the edge e inside the cell c.
+ *         array is scanned thanks to the c2e connectivity.
+ *         Reconstruction used is based on DGA (stabilization = 1/d where d is
+ *         the space dimension)
+ *
+ *  \param[in]      c_id      cell id
+ *  \param[in]      e_id      edge id
+ *  \param[in]      c2e       cell -> edges connectivity
+ *  \param[in]      quant     pointer to the additional quantities struct.
+ *  \param[in]      array     pointer to the array of values
+ *  \param[in, out] val_pec   value of the reconstruction in pec
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_dfbyc_in_pec(cs_lnum_t                    c_id,
+                     cs_lnum_t                    e_id,
+                     const cs_connect_index_t    *c2e,
+                     const cs_cdo_quantities_t   *quant,
+                     const double                *array,
+                     cs_real_3_t                  val_pec);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct by a constant vector a field of edge-based DoFs
  *         in a volume surrounding an edge
  *
@@ -81,17 +165,17 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
  *  \param[in]      c2e     cell -> edges connectivity
  *  \param[in]      quant   pointer to the additional quantities struct.
  *  \param[in]      dof     pointer to the field of edge-based DoFs
- *  \param[in, out] reco    value of the reconstrcuted field in this sub-volume
+ *  \param[in, out] reco    value of the reconstructed field in this sub-volume
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_dga_edge_dof(cs_lnum_t                    cid,
-                     cs_lnum_t                    e1_id,
-                     const cs_connect_index_t    *c2e,
-                     const cs_cdo_quantities_t   *quant,
-                     const double                *dof,
-                     double                       reco[]);
+cs_reco_cost_edge_dof(cs_lnum_t                    cid,
+                      cs_lnum_t                    e1_id,
+                      const cs_connect_index_t    *c2e,
+                      const cs_cdo_quantities_t   *quant,
+                      const double                *dof,
+                      double                       reco[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -101,7 +185,7 @@ cs_reco_dga_edge_dof(cs_lnum_t                    cid,
  *  \param[in]      c2e     cell -> edges connectivity
  *  \param[in]      quant   pointer to the additional quantities struct.
  *  \param[in]      dof     pointer to the field of edge-based DoFs
- *  \param[in, out] reco    value of the reconstrcuted field at cell center
+ *  \param[in, out] reco    value of the reconstructed field at cell center
  */
 /*----------------------------------------------------------------------------*/
 

@@ -62,11 +62,8 @@ typedef struct _cs_equation_t cs_equation_t;
  *
  * \param[in] eqname           name of the equation
  * \param[in] varname          name of the variable associated to this equation
- * \param[in] status           user or predefined equations
- * \param[in] type             type of equation (scalar, vector, tensor...)
- * \param[in] is_steady        add an unsteady term or not
- * \param[in] do_convection    add a convection term
- * \param[in] do_diffusion     add a diffusion term
+ * \param[in] eqtype           type of equation (user, predefined...)
+ * \param[in] vartype          type of variable (scalar, vector, tensor...)
  * \param[in] default_bc       type of boundary condition set by default
  *
  * \return  a pointer to the new allocated cs_equation_t structure
@@ -74,13 +71,10 @@ typedef struct _cs_equation_t cs_equation_t;
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_create(const char            *name,
+cs_equation_create(const char            *eqname,
                    const char            *varname,
-                   cs_equation_status_t   status,
-                   cs_equation_type_t     type,
-                   bool                   is_steady,
-                   bool                   do_convection,
-                   bool                   do_diffusion,
+                   cs_equation_type_t     eqtype,
+                   cs_param_var_type_t    vartype,
                    cs_param_bc_type_t     default_bc);
 
 /*----------------------------------------------------------------------------*/
@@ -121,19 +115,18 @@ cs_equation_last_setup(cs_equation_t  *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to an equation
+ * \brief  Set a parameter in a cs_equation_t structure attached to keyname
  *
- * \param[in, out]  eq       pointer to a cs_equation_t structure
- * \param[in]       keyname  key related to the member of eq to set
- * \param[in]       val      accessor to the value to set
+ * \param[in, out]  eq        pointer to a cs_equation_t structure
+ * \param[in]       keyname   name of key related to the member of eq to set
+ * \param[in]       val       accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set(cs_equation_t       *eq,
-                const char          *keyname,
-                const void          *val);
+cs_equation_set_option(cs_equation_t       *eq,
+                       const char          *keyname,
+                       const void          *val);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -141,15 +134,15 @@ cs_equation_set(cs_equation_t       *eq,
  *         for a given term (diffusion, time, convection)
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       keyword   "time", "diffusion", "advection"...
- * \param[in]       name      name of the property to associate
+ * \param[in]       keyword   "time", "diffusion", "advection"
+ * \param[in]       pointer   pointer to a given structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_link(cs_equation_t       *eq,
                  const char          *keyword,
-                 const char          *name);
+                 void                *pointer);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -196,16 +189,16 @@ cs_equation_add_bc(cs_equation_t    *eq,
  *
  * \param[in, out] eq         pointer to a cs_equation_t structure
  * \param[in]      r_name     name of the source term or NULL
- * \param[in]      pty_name   this reaction term is linked to this property
  * \param[in]      type_name  type of reaction term to add
+ * \param[in]      property   pointer to a cs_property_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_reaction_term(cs_equation_t   *eq,
-                              const char      *r_name,
-                              const char      *pty_name,
-                              const char      *type_name);
+cs_equation_add_reaction(cs_equation_t   *eq,
+                         const char      *r_name,
+                         const char      *type_name,
+                         cs_property_t   *property);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -222,10 +215,10 @@ cs_equation_add_reaction_term(cs_equation_t   *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_reaction_term_set(cs_equation_t    *eq,
-                              const char       *r_name,
-                              const char       *keyname,
-                              const char       *keyval);
+cs_equation_set_reaction_option(cs_equation_t    *eq,
+                                const char       *r_name,
+                                const char       *keyname,
+                                const char       *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -261,10 +254,10 @@ cs_equation_add_source_term(cs_equation_t   *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_source_term_set(cs_equation_t    *eq,
-                            const char       *st_name,
-                            const char       *keyname,
-                            const char       *keyval);
+cs_equation_set_source_term_option(cs_equation_t    *eq,
+                                   const char       *st_name,
+                                   const char       *keyname,
+                                   const char       *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -315,19 +308,15 @@ cs_equation_needs_build(const cs_equation_t    *eq);
 /*!
  * \brief  Build the linear system for this equation
  *
- * \param[in]       m          pointer to a cs_mesh_t structure
- * \param[in]       connect    pointer to a cs_cdo_connect_t structure
- * \param[in]       cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in]       time_step  pointer to a time step structure
- * \param[in]       dt_cur     value of the current time step
- * \param[in, out]  eq         pointer to a cs_equation_t structure
+ * \param[in]       m           pointer to a cs_mesh_t structure
+ * \param[in]       time_step   pointer to a time step structure
+ * \param[in]       dt_cur      value of the current time step
+ * \param[in, out]  eq          pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_build_system(const cs_mesh_t            *m,
-                         const cs_cdo_connect_t     *connect,
-                         const cs_cdo_quantities_t  *cdoq,
                          const cs_time_step_t       *time_step,
                          double                      dt_cur,
                          cs_equation_t              *eq);
@@ -336,34 +325,26 @@ cs_equation_build_system(const cs_mesh_t            *m,
 /*!
  * \brief  Solve the linear system for this equation
  *
- * \param[in]       connect    pointer to a cs_cdo_connect_t structure
- * \param[in]       cdoq       pointer to a cs_cdo_quantities_t structure
  * \param[in]       time_step  pointer to a time step structure
  * \param[in, out]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(const cs_cdo_connect_t     *connect,
-                  const cs_cdo_quantities_t  *cdoq,
-                  const cs_time_step_t       *time_step,
-                  cs_equation_t              *eq);
+cs_equation_solve(const cs_time_step_t    *time_step,
+                  cs_equation_t           *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Post-processing related to this equation
  *
- * \param[in]  mesh       pointer to the mesh structure
- * \param[in]  cdoq       pointer to a cs_cdo_quantities_t struct.
  * \param[in]  time_step  pointer to a time step structure
  * \param[in]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_post(const cs_mesh_t            *mesh,
-                 const cs_cdo_quantities_t  *cdoq,
-                 const cs_time_step_t       *time_step,
+cs_equation_post(const cs_time_step_t       *time_step,
                  const cs_equation_t        *eq);
 
 /*----------------------------------------------------------------------------*/
@@ -437,6 +418,34 @@ cs_equation_get_param(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return a pointer to the cs_property_t structure associated to the
+ *         diffusion term for this equation (NULL if not activated).
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_equation_get_diffusion_property(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a pointer to the cs_property_t structure associated to the
+ *         unsteady term for this equation (NULL if not activated).
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_equation_get_time_property(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the type of numerical scheme used for the discretization in
  *         space
  *
@@ -448,6 +457,19 @@ cs_equation_get_param(const cs_equation_t    *eq);
 
 cs_space_scheme_t
 cs_equation_get_space_scheme(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the type of equation for the given equation structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  the type of the given equation
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_type_t
+cs_equation_get_type(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 

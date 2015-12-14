@@ -439,38 +439,6 @@ cs_toolbox_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_nvec3_t structure from a cs_real_3_t
- *
- * \param[in]  v     vector of size 3
- * \param[out] qv    pointer to a cs_nvec3_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_nvec3(const cs_real_3_t    v,
-         cs_nvec3_t          *qv)
-{
-  int  k;
-
-  cs_real_t  magnitude = _n3(v);
-
-  qv->meas = magnitude;
-  if (fabs(magnitude) > cs_get_eps_machine()) {
-
-    cs_real_t  inv = 1/magnitude;
-
-    for (k = 0; k < 3; k++)
-      qv->unitv[k] = inv * v[k];
-
-  }
-  else
-    for (k = 0; k < 3; k++)
-      qv->unitv[k] = 0;
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the eigenvalues of a 3x3 matrix which is symmetric and real
  *         -> Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
  *         Communication of the ACM (April 1961)

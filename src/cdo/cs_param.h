@@ -44,43 +44,51 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Tag to build parameter flag */
-#define CS_PARAM_FLAG_UNIFORM  (1 <<  0)  //    1: uniform (in space)
-#define CS_PARAM_FLAG_UNSTEADY (1 <<  1)  //    2: unsteady
-#define CS_PARAM_FLAG_VERTEX   (1 <<  2)  //    4: on vertices
-#define CS_PARAM_FLAG_EDGE     (1 <<  3)  //    8: on edges
-#define CS_PARAM_FLAG_FACE     (1 <<  4)  //   16: on faces
-#define CS_PARAM_FLAG_CELL     (1 <<  5)  //   32: on cells
-#define CS_PARAM_FLAG_PRIMAL   (1 <<  6)  //   64: on primal mesh
-#define CS_PARAM_FLAG_DUAL     (1 <<  7)  //  128: on dual mesh
-#define CS_PARAM_FLAG_BORDER   (1 <<  8)  //  256: scalar-valued
-#define CS_PARAM_FLAG_SCAL     (1 <<  9)  //  512: scalar-valued
-#define CS_PARAM_FLAG_VECT     (1 << 10)  // 1024: vector-valued
-#define CS_PARAM_FLAG_TENS     (1 << 11)  // 2048: tensor-valued
-#define CS_PARAM_FLAG_SYMMET   (1 << 12)  // 4096: symmetric
+#define CS_PARAM_FLAG_UNIFORM  (1 <<  0) //    1: uniform (in space)
+#define CS_PARAM_FLAG_CELLWISE (1 <<  1) //    2: cellwise uniform
+#define CS_PARAM_FLAG_UNSTEADY (1 <<  2) //    4: unsteady
+#define CS_PARAM_FLAG_VERTEX   (1 <<  3) //    8: on vertices
+#define CS_PARAM_FLAG_EDGE     (1 <<  4) //   16: on edges
+#define CS_PARAM_FLAG_FACE     (1 <<  5) //   32: on faces
+#define CS_PARAM_FLAG_CELL     (1 <<  6) //   64: on cells
+#define CS_PARAM_FLAG_PRIMAL   (1 <<  7) //  128: on primal mesh
+#define CS_PARAM_FLAG_DUAL     (1 <<  8) //  256: on dual mesh
+#define CS_PARAM_FLAG_BORDER   (1 <<  9) //  512: scalar-valued
+#define CS_PARAM_FLAG_SCAL     (1 << 10) // 1024: scalar-valued
+#define CS_PARAM_FLAG_VECT     (1 << 11) // 2048: vector-valued
+#define CS_PARAM_FLAG_TENS     (1 << 12) // 4096: tensor-valued
+#define CS_PARAM_FLAG_BY_CELL  (1 << 13) // 8192: by cell (c2e, c2f, c2v)
 
 /*============================================================================
  * Type definitions
  *============================================================================*/
 
+/* User-defined function */
+typedef void (cs_user_func_t) (const void         *input1,
+                               const void         *input2,
+                               cs_real_t           tcur,
+                               const cs_real_3_t   xyz,
+                               cs_get_t           *output);
+
 typedef union {
 
-  cs_get_t              get;       // definition by value
-  cs_analytic_func_t   *analytic;  // definition by an analytic function
-  cs_timestep_func_t   *time_func; // definition of the time step by a function
-  cs_user_func_t       *user_func; // definition by an user-defined function
+  cs_get_t               get;       // definition by value
+  cs_analytic_func_t    *analytic;  // definition by an analytic function
+  cs_timestep_func_t    *time_func; // definition of the time step by a function
+  cs_user_func_t        *user_func; // definition by an user-defined function
+  cs_onevar_law_func_t  *law1_func; // definition by law depending one variable
 
 } cs_def_t;
 
 typedef enum {
 
-  CS_PARAM_DEF_BY_VALUE,
-  CS_PARAM_DEF_BY_FIELD,
-  CS_PARAM_DEF_BY_EVALUATOR,
   CS_PARAM_DEF_BY_ANALYTIC_FUNCTION,
+  CS_PARAM_DEF_BY_ARRAY,
+  CS_PARAM_DEF_BY_FIELD,
+  CS_PARAM_DEF_BY_ONEVAR_LAW,
   CS_PARAM_DEF_BY_TIME_FUNCTION,
   CS_PARAM_DEF_BY_USER_FUNCTION,
-  CS_PARAM_DEF_BY_LAW,
-  CS_PARAM_DEF_BY_FILE,
+  CS_PARAM_DEF_BY_VALUE,
   CS_PARAM_N_DEF_TYPES
 
 } cs_param_def_type_t;
@@ -96,64 +104,23 @@ typedef enum {
 
 } cs_param_var_type_t;
 
-/* MATERIAL PROPERTIES */
-/* =================== */
-
-/* Material property: parametrization for conductivity, diffusion coef.
-   or viscosity */
-typedef enum {
-
-  CS_PARAM_PTY_ISO,
-  CS_PARAM_PTY_ORTHO,
-  CS_PARAM_PTY_ANISO,
-  CS_PARAM_N_PTY_TYPES
-
-} cs_param_pty_type_t;
-
-/* Material parameter definitions */
-typedef struct {
-
-  char        *restrict name;
-  cs_flag_t             flag;  /* Short descriptor (mask of bits) */
-
-  int        post_freq; /* -1 (no post-processing), 0 (at the beginning)
-                           otherwise every post_freq iteration(s) */
-  int        field_id;  /* If post-processing is required (-1 if not used) */
-
-  /* Material properties:
-     Uniform material. The number of values to set depends on the material
-     definition.
-       - isotropic   = 1
-       - orthotropic = 3
-       - anisotropic = 9
-     Not uniform or not steady material. Values have to be defined by a
-     user function.
-  */
-
-  cs_param_pty_type_t  type;
-  cs_param_def_type_t  def_type;
-  cs_def_t             def;
-
-} cs_param_pty_t;
-
-
 /* DISCRETE HODGE OPERATORS */
 /* ======================== */
 
 typedef enum {
 
-  CS_PARAM_HODGE_TYPE_VPCD,
-  CS_PARAM_HODGE_TYPE_EPFD,
-  CS_PARAM_HODGE_TYPE_FPED,
-  CS_PARAM_HODGE_TYPE_EDFP,
-  CS_PARAM_HODGE_TYPE_CPVD,
+  CS_PARAM_HODGE_TYPE_VPCD, // from primal vertices to dual cells
+  CS_PARAM_HODGE_TYPE_EPFD, // from primal edges to dual faces
+  CS_PARAM_HODGE_TYPE_FPED, // from primal faces to dual edges
+  CS_PARAM_HODGE_TYPE_EDFP, // from dual edges to primal faces
+  CS_PARAM_HODGE_TYPE_CPVD, // from primal cells to dual vertices
   CS_PARAM_N_HODGE_TYPES
 
 } cs_param_hodge_type_t;
 
 typedef enum {
 
-  CS_PARAM_HODGE_ALGO_VORONOI,
+  CS_PARAM_HODGE_ALGO_VORONOI, // Under othogonality condition gives a diag. op.
   CS_PARAM_HODGE_ALGO_WBS,     // WBS: Whitney Barycentric Subdivision
   CS_PARAM_HODGE_ALGO_COST,    // COST: COnsistency & STabilization splitting
   CS_PARAM_N_HODGE_ALGOS
@@ -162,14 +129,13 @@ typedef enum {
 
 typedef struct {
 
-  int                     pty_id;  /* id of the related material property */
-  bool                    inv_pty; /* Definition based on material property
+  bool                    inv_pty; /* Definition based on the property
                                       or its inverse */
 
-  cs_param_hodge_type_t   type;
-  cs_param_hodge_algo_t   algo;
-  double                  coef;    /* Value of the stabilization parameter
-                                      if the COST algo. is used, other 0. */
+  cs_param_hodge_type_t   type;  /* type of discrete Hodge operator */
+  cs_param_hodge_algo_t   algo;  /* type of algorithm used to build this op. */
+  double                  coef;  /* Value of the stabilization parameter
+                                    if the COST algo. is used, otherwise 0. */
 
 } cs_param_hodge_t;
 
@@ -200,22 +166,8 @@ typedef struct {
 
 } cs_param_time_t;
 
-/* ADVECTION TERM PARAMETRIZATION */
-/* ============================== */
-
-/* Advection/convection field */
-typedef struct {
-
-  char       *restrict name;
-  cs_flag_t   flag;  /* Short descriptor (mask of bits) */
-  int         post_freq; /* -1 (no post-processing), 0 (at the beginning)
-                            otherwise every post_freq iteration(s) */
-  int         field_id;  /* If post-processing is required (-1 if not used) */
-
-  cs_param_def_type_t    def_type;
-  cs_def_t               def;
-
-} cs_param_adv_field_t;
+/* ADVECTION OPERATOR PARAMETRIZATION */
+/* ================================== */
 
 typedef enum {
 
@@ -225,6 +177,7 @@ typedef enum {
 
 } cs_param_advection_form_t;
 
+/* Type of weight functions considered */
 typedef enum {
 
   CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED,
@@ -236,6 +189,8 @@ typedef enum {
 
 } cs_param_advection_weight_algo_t;
 
+/* Choice on the type of algo. used to set the argument used in
+   the weight function */
 typedef enum {
 
   CS_PARAM_ADVECTION_WEIGHT_FLUX,
@@ -244,12 +199,11 @@ typedef enum {
 
 } cs_param_advection_weight_t;
 
-  /* Contraction operator (also called interior product) */
+/* Set of options for building a contraction operator (also called interior
+   product) which is closely related to the advection operator */
 typedef struct {
 
-  int                               adv_id;  // id of the related advection field
-
-  cs_param_advection_form_t         form;
+  cs_param_advection_form_t         formulation; // conservative or not
   cs_param_advection_weight_algo_t  weight_algo;
   cs_param_advection_weight_t       weight_criterion;
   cs_quadra_type_t                  quad_type; // barycentric, higher, highest
@@ -453,240 +407,6 @@ cs_param_set_def(cs_param_def_type_t      def_type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve a cs_param_pty_t structure from its id
- *
- * \param[in]  pty_id   id related to a property
- *
- * \return a pointer to a cs_param_pty_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_param_pty_t *
-cs_param_pty_get(int  pty_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Find the id related to a property definition from its name
- *
- * \param[in]  ref_name    name of the property to find
- *
- * \return -1 if not found otherwise the associated id
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_param_pty_get_id_by_name(const char  *ref_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add by default several material properties
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_set_default(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Create and initialize a material property structure
- *
- * \param[in]  name        name of the material property
- * \param[in]  key_type    keyname of the type of property
- * \param[in]  post_freq   -1 (no post-processing), 0 (at the beginning)
- *                         otherwise every post_freq iteration(s)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_add(const char      *name,
-                 const char      *key_type,
-                 int              post_freq);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assign a way to compute the value of a material property
- *
- * \param[in]  name      name of the material property
- * \param[in]  def_key   way of defining the value of the property
- * \param[in]  val       pointer to the value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_set(const char     *name,
-                 const char     *def_key,
-                 const void     *val);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Query to know if the material property is uniform
- *
- * \param[in]    pty_id    id related to the material property to deal with
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_param_pty_is_uniform(int       pty_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Query to know the type of material property
- *
- * \param[in]    pty_id    id related to the material property to deal with
- *
- * \return  the type of material property
- */
-/*----------------------------------------------------------------------------*/
-
-cs_param_pty_type_t
-cs_param_pty_get_type(int       pty_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the name of a material property from its id
- *
- * \param[in]    pty_id    id related to the material property to deal with
- *
- * \return  the name of the related property
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_pty_get_name(int            pty_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Summary of all the cs_param_pty_t structures
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_summary_all(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free structures dedicated to the definition of material properties
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_finalize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the number of advection fields defined
- *
- * \return the number of advection fields defined
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_param_get_n_adv_fields(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Query to know if an advection field is uniform
- *
- * \param[in]    adv_id    id related to the advection field to deal with
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_param_adv_field_is_uniform(int   adv_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the name of an advection field from its id
- *
- * \param[in]    adv_id    id related to the advection field to deal with
- *
- * \return  the name of the advection field
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_adv_field_get_name(int    adv_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve a cs_param_adv_field_t structure from its id
- *
- * \param[in]  adv_id   id related to an advection field
- *
- * \return a pointer to a cs_param_adv_field_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_param_adv_field_t *
-cs_param_adv_field_get(int  adv_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Find the id related to an advection field definition from its name
- *
- * \param[in]  ref_name    name of the advection field to find
- *
- * \return -1 if not found otherwise the associated id
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_param_adv_get_id_by_name(const char  *ref_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Create and initialize an advection field structure
- *
- * \param[in]  name        name of the advection field
- * \param[in]  post_freq   -1 (no post-processing), 0 (at the beginning)
- *                         otherwise every post_freq iteration(s)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_adv_field_add(const char    *name,
-                       int            post_freq);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assign a way to compute the value of an advection field
- *
- * \param[in]  name      name of the advection field
- * \param[in]  def_key   way of defining the value of the advection field
- * \param[in]  val       pointer to the value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_adv_field_set(const char   *name,
-                       const char   *def_key,
-                       const void   *val);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free structures dedicated to the definition of advection fields
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_adv_field_finalize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Create a field related to a material property and/or advection
- *         fields
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_add_fields(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Allocate and initialize a new cs_param_bc_t structure
  *
  * \param[in]  default_bc     default boundary condition
@@ -723,13 +443,12 @@ cs_param_bc_def_set(cs_param_bc_def_t      *bcpd,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a new reaction term. The strcuture related to this reaction
+ * \brief  Define a new reaction term. The structure related to this reaction
  *         term has already been allocated among the list of reaction terms
  *         associated to an equation
  *
  * \param[in, out] rp         pointer to cs_param_reaction_t structure
  * \param[in]      r_name     name of the reaction term
- * \param[in]      pty_id     id of the associated property
  * \param[in]      h_type     type of discrete Hodge op. associated to this term
  * \param[in]      h_algo     algorithm used to build the discrete Hodge op.
  * \param[in]      r_type     type of reaction term
@@ -737,12 +456,11 @@ cs_param_bc_def_set(cs_param_bc_def_t      *bcpd,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_reaction_term_add(cs_param_reaction_t          *rp,
-                           const char                   *r_name,
-                           int                           pty_id,
-                           cs_param_hodge_type_t         h_type,
-                           cs_param_hodge_algo_t         h_algo,
-                           cs_param_source_term_type_t   r_type);
+cs_param_reaction_add(cs_param_reaction_t          *rp,
+                      const char                   *r_name,
+                      cs_param_hodge_type_t         h_type,
+                      cs_param_hodge_algo_t         h_algo,
+                      cs_param_source_term_type_t   r_type);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -38,6 +38,9 @@
 #include "cs_cdo_quantities.h"
 #include "cs_param.h"
 #include "cs_equation.h"
+#include "cs_property.h"
+#include "cs_advection_field.h"
+#include "cs_groundwater.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -80,13 +83,15 @@ typedef struct {
   cs_time_step_t          *time_step;          // time step descriptor
   cs_time_step_options_t   time_options;       // time step options
 
-  /* Overview of pre-defined equations to solve
-      - Navier-Stokes equations (named NavierStokes)
-      - Wall distance (named WallDistance)
+  /* Properties attached to the computational domain.
+     "unity" is created by default
   */
-  bool             do_navsto;
+  int               n_properties;
+  cs_property_t   **properties;
 
-  // TODO: add a specific equation for solving Navier-Stokes
+  /* Advection fields attached to the computational domain */
+  int               n_adv_fields;
+  cs_adv_field_t  **adv_fields;
 
   /* Number of equations defined on this domain splitted into
      predefined equations and user equations.
@@ -99,10 +104,19 @@ typedef struct {
 
   bool             only_steady;
 
-  /* Predefined equations
+  /* Overview of pre-defined equations to solve
+      - Navier-Stokes equations (named NavierStokes)
+      - Groundwater module (named Richards)
+      - Wall distance (named WallDistance)
+
+     Predefined equations
      If xxxxx_eq_id = -1, then this equation is not activated */
 
-  int              wall_distance_eq_id;
+  int   richards_eq_id;       // Main equation of the groundwater module
+  int   wall_distance_eq_id;  // Wall distance computation
+
+  /* Groundwater flow module (NULL if not used) */
+  cs_groundwater_t  *gw;
 
   /* Output options */
   int              output_freq;
@@ -240,6 +254,64 @@ cs_domain_define_current_time_step(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add a new property to the current computational domain
+ *
+ * \param[in, out]   domain       pointer to a cs_domain_t structure
+ * \param[in]        pty_name     name of the property to add
+ * \param[in]        type_name    key name related to the type of property
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_add_property(cs_domain_t     *domain,
+                       const char      *pty_name,
+                       const char      *type_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the related property definition from its name
+ *
+ * \param[in]  domain      pointer to a domain structure
+ * \param[in]  ref_name    name of the property to find
+ *
+ * \return NULL if not found otherwise the associated pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_domain_get_property(const cs_domain_t    *domain,
+                       const char           *ref_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new advection field to the current computational domain
+ *
+ * \param[in, out]   domain       pointer to a cs_domain_t structure
+ * \param[in]        adv_name     name of the advection field to add
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_add_advection_field(cs_domain_t     *domain,
+                              const char      *adv_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the related advection field definition from its name
+ *
+ * \param[in]  domain      pointer to a domain structure
+ * \param[in]  ref_name    name of the adv_field to find
+ *
+ * \return NULL if not found otherwise the associated pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_domain_get_advection_field(const cs_domain_t    *domain,
+                              const char           *ref_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Find the cs_equation_t structure whith name eqname
  *         Return NULL if not find
  *
@@ -267,6 +339,59 @@ cs_domain_activate_wall_distance(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Activate the computation of the Richards' equation
+ *
+ * \param[in, out]   domain         pointer to a cs_domain_t structure
+ * \param[in]        model          keyword related to the model used
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_activate_groundwater(cs_domain_t   *domain,
+                               const char    *model);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new equation related to the groundwater flow module
+ *         This equation is a specific unsteady advection/diffusion/reaction eq.
+ *         Tracer is advected thanks to the darcian velocity and
+ *         diffusion/reaction parameters result from a physical modelling.
+ *
+ * \param[in, out]  domain         pointer to a cs_domain_t structure
+ * \param[in]       eqname         name of the equation
+ * \param[in]       varname        name of the related variable
+ * \param[in]       dispersivity   dispersivity for each axis (x, y, z]
+ * \param[in]       bulk_density   value of the bulk density
+ * \param[in]       distrib_coef   value of the distribution coefficient
+ * \param[in]       reaction_rate  value of the first order rate of reaction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
+                                 const char    *eq_name,
+                                 const char    *var_name,
+                                 cs_real_3_t    dispersivity,
+                                 double         bulk_density,
+                                 double         distribution_coef,
+                                 double         reaction_rate);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to a cs_groundwater_t structure related to this
+ *         domain
+ *
+ * \param[in]   domain         pointer to a cs_domain_t structure
+ *
+ * \return a pointer to a cs_groundwater_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_groundwater_t *
+cs_domain_get_groundwater(const cs_domain_t    *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Setup predefined equations which are activated
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
@@ -284,9 +409,6 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain);
  * \param[in]      eqname         name of the equation
  * \param[in]      varname        name of the related variable
  * \param[in]      key_type       type of equation: "scalar", "vector", "tensor"
- * \param[in]      is_steady      add an unsteady term or not
- * \param[in]      do_convection  add a convection term or not
- * \param[in]      do_diffusion   add a diffusion term or not
  * \param[in]      key_bc         type of boundary condition set by default
  *                                "zero_value" or "zero_flux"
  */
@@ -297,9 +419,6 @@ cs_domain_add_user_equation(cs_domain_t         *domain,
                             const char          *eqname,
                             const char          *varname,
                             const char          *key_type,
-                            bool                 is_steady,
-                            bool                 do_convection,
-                            bool                 do_diffusion,
                             const char          *key_bc);
 
 /*----------------------------------------------------------------------------*/

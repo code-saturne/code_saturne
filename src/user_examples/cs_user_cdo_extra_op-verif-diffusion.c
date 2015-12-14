@@ -101,9 +101,9 @@ static cs_real_t  one_third = 1./3;
  * ---------------------------------------------------------------------------*/
 
 static inline void
-_get_sol(cs_real_t    time,
-         cs_real_3_t  xyz,
-         cs_get_t    *retval)
+_get_sol(cs_real_t          time,
+         const cs_real_3_t  xyz,
+         cs_get_t          *retval)
 {
   double  solution;
 
@@ -194,7 +194,6 @@ _dump_info(const cs_cdo_quantities_t   *cdoq,
  *
  * \param[in] topo       pointer to the connectivity struct.
  * \param[in] cdoq       pointer to the additional quantities struct.
- * \param[in] time_step  pointer to a time step structure
  * \param[in] h_info     information about the discrete Hodge op.
  * \param[in] cell_rpex  reduction of the exact solution at cell centers
  * \param[in] face_rpex  reduction of the exact solution at face centers
@@ -206,7 +205,6 @@ _dump_info(const cs_cdo_quantities_t   *cdoq,
 static void
 _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
                    const cs_cdo_quantities_t   *cdoq,
-                   const cs_time_step_t        *time_step,
                    const cs_param_hodge_t       h_info,
                    const double                 cell_rpex[],
                    const double                 face_rpex[],
@@ -222,8 +220,9 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
   double  num_l2d = 0, denum_l2d = 0, num_end = 0, denum_end = 0;
   double  *gexc = NULL, *dgc = NULL;
   cs_locmat_t  *_h = NULL;
-  cs_hodge_builder_t  *hb = cs_hodge_builder_init(topo, time_step, h_info);
+  cs_hodge_builder_t  *hb = cs_hodge_builder_init(topo, h_info);
 
+  const double  zthreshold = cs_get_zero_threshold();
   const double  _over3 = 1./3.;
 
   /* Initialize local buffers */
@@ -282,14 +281,14 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
   } /* Loop on cells */
 
   /* Compute the L2 discrete norm on gradient */
-  if (fabs(denum_l2d) > cs_base_zthreshold)
+  if (fabs(denum_l2d) > zthreshold)
     l2dgrd = sqrt(num_l2d/denum_l2d);
   else
     l2dgrd = sqrt(num_l2d);
   printf(" >> l2dgrd       % 10.6e\n", l2dgrd);
 
   /* Compute the discrete energy norm */
-  if (fabs(denum_end) > cs_base_zthreshold)
+  if (fabs(denum_end) > zthreshold)
     enerd = sqrt(num_end/denum_end);
   else
     enerd = sqrt(num_end);
@@ -442,6 +441,7 @@ _cdovb_post(const cs_mesh_t            *m,
   double  *ddip = NULL, *ddig = NULL, *rpex = NULL, *gdi = NULL, *rgex = NULL;
   double  *pvol = NULL, *work = NULL;
 
+  const double  zthreshold = cs_get_zero_threshold();
   const double  tcur = time_step->t_cur;
   const cs_lnum_t  n_vertices = cdoq->n_vertices, n_edges = cdoq->n_edges;
   const cs_equation_param_t  *eqp = cs_equation_get_param(eq);
@@ -548,7 +548,7 @@ _cdovb_post(const cs_mesh_t            *m,
     /* Compute discrete L2 error norm on the potential */
     num = cs_sum(n_vertices, ddip, pvol, CS_TOOLBOX_WSUM2);
     denum = cs_sum(n_vertices, rpex, pvol, CS_TOOLBOX_WSUM2);
-    if (fabs(denum) > cs_base_zthreshold)
+    if (fabs(denum) > zthreshold)
       l2dpot = sqrt(num/denum);
     else
       l2dpot = sqrt(num);
@@ -561,7 +561,7 @@ _cdovb_post(const cs_mesh_t            *m,
     */
 
     _compute_vb_l2pot(m, connect, cdoq, time_step, pdi, &num, &denum);
-    if (fabs(denum) > cs_base_zthreshold)
+    if (fabs(denum) > zthreshold)
       l2pot = sqrt(num/denum);
     else
       l2pot = sqrt(num);
@@ -605,7 +605,7 @@ _cdovb_post(const cs_mesh_t            *m,
     for (i = 0; i < n_edges; i++)
       work[i] = rgex[i]/cdoq->edge[i].meas;
     denum = cs_sum(cdoq->n_edges, work, pvol, CS_TOOLBOX_WSUM2);
-    if (fabs(denum) > cs_base_zthreshold)
+    if (fabs(denum) > zthreshold)
       l2dgrd = sqrt(num/denum);
     else
       l2dgrd = sqrt(num);
@@ -618,7 +618,9 @@ _cdovb_post(const cs_mesh_t            *m,
     }
     else {
 
-      cs_sla_matrix_t  *H = cs_hodge_compute(connect, cdoq, time_step, h_info);
+      cs_sla_matrix_t  *H = cs_hodge_compute(connect, cdoq,
+                                             eqp->diffusion_property,
+                                             h_info);
 
       cs_sla_matvec(H, ddig, &work, true);
       num = cs_dp(n_edges, ddig, work);
@@ -628,7 +630,7 @@ _cdovb_post(const cs_mesh_t            *m,
       H = cs_sla_matrix_free(H);
     }
 
-    if (fabs(denum) > cs_base_zthreshold)
+    if (fabs(denum) > zthreshold)
       enerd = sqrt(num/denum);
     else
       enerd = sqrt(num);
@@ -726,6 +728,7 @@ _cdofb_post(const cs_mesh_t            *m,
   double  *cell_rpex = NULL, *face_rpex = NULL;
   double  *pvol = NULL, *work = NULL;
 
+  const double  zthreshold = cs_get_zero_threshold();
   const double  tcur = time_step->t_cur;
   const cs_lnum_t  n_cells = cdoq->n_cells;
   const cs_lnum_t  n_faces = cdoq->n_faces;
@@ -853,7 +856,7 @@ _cdofb_post(const cs_mesh_t            *m,
        which approximates the normalized L2 norm */
     num = cs_sum(n_cells, cell_dpdi, cdoq->cell_vol, CS_TOOLBOX_WSUM2);
     denum = cs_sum(n_cells, cell_rpex, cdoq->cell_vol, CS_TOOLBOX_WSUM2);
-    if (fabs(denum) > cs_base_zthreshold)
+    if (fabs(denum) > zthreshold)
       l2dpotc = sqrt(num/denum);
     else
       l2dpotc = sqrt(num);
@@ -903,7 +906,7 @@ _cdofb_post(const cs_mesh_t            *m,
     /* Compute discrete L2 error norm on the potential */
     num = cs_sum(n_faces, face_dpdi, pvol, CS_TOOLBOX_WSUM2);
     denum = cs_sum(n_faces, face_rpex, pvol, CS_TOOLBOX_WSUM2);
-    if (fabs(denum) > cs_base_zthreshold)
+    if (fabs(denum) > zthreshold)
       l2dpotf = sqrt(num/denum);
     else
       l2dpotf = sqrt(num);
@@ -961,7 +964,7 @@ _cdofb_post(const cs_mesh_t            *m,
 
     num = cs_sum(n_cells, cell_dpdi, cdoq->cell_vol, CS_TOOLBOX_WSUM2);
     denum = cs_sum(n_cells, work, cdoq->cell_vol, CS_TOOLBOX_WSUM2);
-    if (fabs(denum) > cs_base_zthreshold)
+    if (fabs(denum) > zthreshold)
       l2r0potc = sqrt(num/denum);
     else
       l2r0potc = sqrt(num);
@@ -982,7 +985,7 @@ _cdofb_post(const cs_mesh_t            *m,
     fprintf(resume, " -cvg- l2r0potc            % 10.6e\n", l2r0potc);
 
     /* Compute the L2 discrete norm on the gradient error */
-    _compute_fb_errgrd(connect, cdoq, time_step, h_info,
+    _compute_fb_errgrd(connect, cdoq, h_info,
                        cell_rpex, face_rpex, cell_pdi, face_pdi);
 
     fprintf(resume, "%s", msepline);

@@ -89,44 +89,40 @@ BEGIN_C_DECLS
 /*!
  * \brief  Initialize a builder structure
  *
- * \param[in] eq        pointer to a cs_equation_param_t structure
- * \param[in] mesh      pointer to a cs_mesh_t structure
- * \param[in] connect   pointer to a cs_cdo_connect_t structure
+ * \param[in] eq         pointer to a cs_equation_param_t structure
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] connect    pointer to a cs_cdo_connect_t structure
+ * \param[in] quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in] time_step  time_step structure
+ *
+ * \return a pointer to a new allocated builder structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void *
 (cs_equation_init_builder_t)(const cs_equation_param_t  *eqp,
                              const cs_mesh_t            *mesh,
-                             const cs_cdo_connect_t     *connect);
+                             const cs_cdo_connect_t     *connect,
+                             const cs_cdo_quantities_t  *cdoq,
+                             const cs_time_step_t       *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the contribution of source terms for the current time
  *
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]      time_step  time_step structure
  * \param[in, out] builder    pointer to builder structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_compute_source_t)(const cs_cdo_connect_t     *connect,
-
-                               const cs_cdo_quantities_t  *cdoq,
-                               const cs_time_step_t       *time_step,
-                               void                       *builder);
+(cs_equation_compute_source_t)(void    *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build a linear system within the CDO framework
  *
  * \param[in]      m          pointer to a cs_mesh_t structure
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]      field_val  pointer to the current value of the field
- * \param[in]      time_step  pointer to a time_step structure
  * \param[in]      dt_cur     current value of the time step
  * \param[in, out] builder    pointer to builder structure
  * \param[in, out] rhs        pointer to a right-hand side array pointer
@@ -136,10 +132,7 @@ typedef void
 
 typedef void
 (cs_equation_build_system_t)(const cs_mesh_t            *mesh,
-                             const cs_cdo_connect_t     *connect,
-                             const cs_cdo_quantities_t  *cdoq,
                              const cs_real_t            *field_val,
-                             const cs_time_step_t       *time_step,
                              double                      dt_cur,
                              void                       *builder,
                              cs_real_t                 **rhs,
@@ -149,9 +142,6 @@ typedef void
 /*!
  * \brief  Store solution(s) of the linear system into a field structure
  *
- * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
- * \param[in]      time_step  pointer to a time step structure
  * \param[in]      solu       solution array
  * \param[in, out] builder    pointer to builder structure
  * \param[in, out] field_val  pointer to the current value of the field
@@ -159,10 +149,7 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_update_field_t)(const cs_cdo_connect_t     *connect,
-                             const cs_cdo_quantities_t  *cdoq,
-                             const cs_time_step_t       *time_step,
-                             const cs_real_t            *solu,
+(cs_equation_update_field_t)(const cs_real_t            *solu,
                              void                       *builder,
                              cs_real_t                  *field_val);
 
@@ -172,9 +159,6 @@ typedef void
  * \brief  Post-processing related to this equation
  *
  * \param[in]       eqname     name of the equation
- * \param[in]       mesh       pointer to the mesh structure
- * \param[in]       cdoq       pointer to a cs_cdo_quantities_t struct.
- * \param[in]       time_step  pointer to a time step structure
  * \param[in]       field      pointer to a field strufcture
  * \param[in, out]  builder    pointer to builder structure
  */
@@ -182,9 +166,6 @@ typedef void
 
 typedef void
 (cs_equation_post_t)(const char                 *eqname,
-                     const cs_mesh_t            *mesh,
-                     const cs_cdo_quantities_t  *cdoq,
-                     const cs_time_step_t       *time_step,
                      const cs_field_t           *field,
                      void                       *builder);
 
@@ -214,7 +195,7 @@ typedef const double *
 /*----------------------------------------------------------------------------*/
 
 typedef cs_real_t *
-(cs_equation_get_tmpbuf_t)(void          *builder);
+(cs_equation_get_tmpbuf_t)(void        *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -326,7 +307,7 @@ struct _cs_equation_t {
   char *restrict         varname;
   int                    field_id;
 
-  /* Timer statistic for a light profiling */
+  /* Timer statistic for a "light" profiling */
   int     main_ts_id;     /* Id of the main timer states structure related
                              to this equation */
   int     pre_ts_id;      /* Id of the timer stats structure gathering all
@@ -358,7 +339,6 @@ struct _cs_equation_t {
   cs_equation_post_t            *postprocess;
   cs_equation_get_f_values_t    *get_f_values;
   cs_equation_get_tmpbuf_t      *get_tmpbuf;
-
 
 };
 
@@ -1157,7 +1137,7 @@ _get_eqkey(const char *keyname)
  */
 /*----------------------------------------------------------------------------*/
 
-static stkey_t
+static reakey_t
 _get_reakey(const char *keyname)
 {
   reakey_t  key = REAKEY_ERROR;
@@ -1202,11 +1182,8 @@ _get_stkey(const char *keyname)
 /*!
  * \brief  Create a cs_equation_param_t
  *
- * \param[in] status
- * \param[in] type             type of equation (scalar, vector, tensor...)
- * \param[in] is_steady        add an unsteady term or not
- * \param[in] do_convection    add a convection term
- * \param[in] do_diffusion     add a diffusion term
+ * \param[in] type             type of equation
+ * \param[in] var_type         type of variable (scalar, vector, tensor...)
  * \param[in] default_bc       type of boundary condition set by default
  *
  * \return a pointer to a new allocated cs_equation_param_t structure
@@ -1214,20 +1191,16 @@ _get_stkey(const char *keyname)
 /*----------------------------------------------------------------------------*/
 
 static cs_equation_param_t *
-_create_equation_param(cs_equation_status_t   status,
-                       cs_equation_type_t     type,
-                       bool                   is_steady,
-                       bool                   do_convection,
-                       bool                   do_diffusion,
+_create_equation_param(cs_equation_type_t     type,
+                       cs_param_var_type_t    var_type,
                        cs_param_bc_type_t     default_bc)
 {
-  cs_param_var_type_t  var_type = CS_PARAM_N_VAR_TYPES;
   cs_equation_param_t  *eqp = NULL;
 
   BFT_MALLOC(eqp, 1, cs_equation_param_t);
 
-  eqp->status = status;
   eqp->type = type;
+  eqp->var_type = var_type;
   eqp->verbosity =  0;
   eqp->output_freq = 1;
   eqp->post_freq = 10;
@@ -1235,42 +1208,14 @@ _create_equation_param(cs_equation_status_t   status,
 
   /* Build the equation flag */
   eqp->flag = 0;
-  if (!is_steady)
-    eqp->flag |= CS_EQUATION_UNSTEADY;
-  if (do_convection)
-    eqp->flag |= CS_EQUATION_CONVECTION;
-  if (do_diffusion)
-    eqp->flag |= CS_EQUATION_DIFFUSION;
-
   eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
 
   /* Vertex-based schemes imply the two following discrete Hodge operators
      Default initialization is made in accordance with this choice */
-  eqp->is_multiplied_by_rho = true;
-  eqp->time_hodge.pty_id = 0;      // Unity (default property)
   eqp->time_hodge.inv_pty = false; // inverse property ?
   eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
   eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
-
-  /* No reaction term by default */
-  eqp->n_reaction_terms = 0;
-  eqp->reaction_terms = NULL;
-
-  eqp->diffusion_hodge.pty_id = 0;      // Unity (default property)
-  eqp->diffusion_hodge.inv_pty = false; // inverse property ?
-  eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
-  eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
-  eqp->diffusion_hodge.coef = 1./3.;
-
-  eqp->advection_info.adv_id = -1; // No default value
-  eqp->advection_info.form = CS_PARAM_ADVECTION_FORM_CONSERV;
-  eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND;
-  eqp->advection_info.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
-  eqp->advection_info.quad_type = CS_QUADRATURE_BARY;
-
-  /* Boundary conditions structure.
-     One assigns a boundary condition by default */
-  eqp->bc = cs_param_bc_create(default_bc);
+  eqp->time_property = NULL;
 
   /* Description of the time discretization (default values) */
   eqp->time_info.scheme = CS_TIME_SCHEME_IMPLICIT;
@@ -1280,19 +1225,28 @@ _create_equation_param(cs_equation_status_t   status,
   /* Initial condition (zero value by default) */
   eqp->time_info.ic_def_type = CS_PARAM_DEF_BY_VALUE;
 
-  switch (type) {
-  case CS_EQUATION_TYPE_SCAL:
-    var_type = CS_PARAM_VAR_SCAL;
-    break;
-  case CS_EQUATION_TYPE_VECT:
-    var_type = CS_PARAM_VAR_VECT;
-    break;
-  case CS_EQUATION_TYPE_TENS:
-    var_type = CS_PARAM_VAR_TENS;
-    break;
-  default:
-    break;
-  }
+  /* Diffusion term */
+  eqp->diffusion_property = NULL;
+  eqp->diffusion_hodge.inv_pty = false; // inverse property ?
+  eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
+  eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
+  eqp->diffusion_hodge.coef = 1./3.;
+
+  /* Advection term */
+  eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
+  eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND;
+  eqp->advection_info.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
+  eqp->advection_info.quad_type = CS_QUADRATURE_BARY;
+  eqp->advection_field = NULL;
+
+  /* No reaction term by default */
+  eqp->n_reaction_terms = 0;
+  eqp->reaction_terms = NULL;
+  eqp->reaction_properties = NULL;
+
+  /* Boundary conditions structure.
+     One assigns a boundary condition by default */
+  eqp->bc = cs_param_bc_create(default_bc);
 
   cs_param_set_def(eqp->time_info.ic_def_type, var_type, NULL,
                    &(eqp->time_info.ic_def));
@@ -1319,11 +1273,8 @@ _create_equation_param(cs_equation_status_t   status,
  *
  * \param[in] eqname           name of the equation
  * \param[in] varname          name of the variable associated to this equation
- * \param[in] status           user or predefined equations
- * \param[in] type             type of equation (scalar, vector, tensor...)
- * \param[in] is_steady        add an unsteady term or not
- * \param[in] do_convection    add a convection term
- * \param[in] do_diffusion     add a diffusion term
+ * \param[in] eqtype           type of equation (user, predefined...)
+ * \param[in] vartype          type of variable (scalar, vector, tensor...)
  * \param[in] default_bc       type of boundary condition set by default
  *
  * \return  a pointer to the new allocated cs_equation_t structure
@@ -1333,11 +1284,8 @@ _create_equation_param(cs_equation_status_t   status,
 cs_equation_t *
 cs_equation_create(const char            *eqname,
                    const char            *varname,
-                   cs_equation_status_t   status,
-                   cs_equation_type_t     type,
-                   bool                   is_steady,
-                   bool                   do_convection,
-                   bool                   do_diffusion,
+                   cs_equation_type_t     eqtype,
+                   cs_param_var_type_t    vartype,
                    cs_param_bc_type_t     default_bc)
 {
   int  len = strlen(eqname)+1;
@@ -1366,19 +1314,13 @@ cs_equation_create(const char            *eqname,
   BFT_MALLOC(eq->varname, len, char);
   strncpy(eq->varname, varname, len);
 
+  eq->param = _create_equation_param(eqtype, vartype, default_bc);
+
   eq->field_id = -1;    // field is created in a second step
+  eq->do_build = true;  // Force the construction of the algebraic system
 
   /* Set timer statistic structure to a default value */
   eq->main_ts_id = eq->pre_ts_id = eq->solve_ts_id = eq->post_ts_id = -1;
-
-  eq->do_build = true;  // Force the construction of the algebraic system
-
-  eq->param = _create_equation_param(status,
-                                     type,
-                                     is_steady,
-                                     do_convection,
-                                     do_diffusion,
-                                     default_bc);
 
   /* Algebraic system: allocated later */
   eq->ms = NULL;
@@ -1435,6 +1377,9 @@ cs_equation_free(cs_equation_t  *eq)
     for (int i = 0; i< eqp->n_reaction_terms; i++)
       BFT_FREE(eqp->reaction_terms[i].name);
     BFT_FREE(eqp->reaction_terms);
+    /* Free only the array of pointers and tnot the pointers themselves
+       since they are stored in a cs_domain_t structure */
+    BFT_FREE(eqp->reaction_properties);
   }
 
   if (eqp->n_source_terms > 0) { // Source terms
@@ -1480,10 +1425,26 @@ cs_equation_summary(const cs_equation_t  *eq)
              eq->name, eq->varname);
   bft_printf("%s", lsepline);
 
+  switch (eqp->type) {
+  case CS_EQUATION_TYPE_USER:
+    bft_printf("  <%s/type> User-defined\n", eq->name);
+    break;
+  case CS_EQUATION_TYPE_PREDEFINED:
+    bft_printf("  <%s/type> Predefined\n", eq->name);
+    break;
+  case CS_EQUATION_TYPE_GROUNDWATER:
+    bft_printf("  <%s/type> Associated to groundwater flows\n", eq->name);
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " Eq. %s has no type.\n"
+              " Please check your settings.", eq->name);
+  }
+
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB)
-    bft_printf("  <%s/Space scheme>  CDO vertex-based\n", eq->name);
+    bft_printf("  <%s/space scheme>  CDO vertex-based\n", eq->name);
   else if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB)
-    bft_printf("  <%s/Space scheme>  CDO face-based\n", eq->name);
+    bft_printf("  <%s/space scheme>  CDO face-based\n", eq->name);
 
   bool  unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
   bool  convection = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
@@ -1547,7 +1508,7 @@ cs_equation_summary(const cs_equation_t  *eq)
     bft_printf("    <Unsteady> Mass lumping: %s\n",
                cs_base_strtf(t_info.do_lumping));
     bft_printf("    <Unsteady> Property: %s\n",
-               cs_param_pty_get_name(h_info.pty_id));
+               cs_property_get_name(eqp->time_property));
 
     if (eqp->verbosity > 0) {
       bft_printf("    <Unsteady> Hodge operator: %s / %s\n",
@@ -1568,7 +1529,7 @@ cs_equation_summary(const cs_equation_t  *eq)
 
     bft_printf("\n  <%s/Diffusion term>\n", eq->name);
     bft_printf("    <Diffusion> Property: %s\n",
-               cs_param_pty_get_name(h_info.pty_id));
+               cs_property_get_name(eqp->diffusion_property));
 
     if (eqp->verbosity > 0) {
       bft_printf("    <Diffusion> Hodge operator: %s / %s\n",
@@ -1589,11 +1550,11 @@ cs_equation_summary(const cs_equation_t  *eq)
 
     bft_printf("\n  <%s/Advection term>\n", eq->name);
     bft_printf("    <Advection field>  %s\n",
-               cs_param_adv_field_get_name(a_info.adv_id));
+               cs_advection_field_get_name(eqp->advection_field));
 
     if (eqp->verbosity > 0) {
       bft_printf("    <Advection operator>");
-      switch(a_info.form) {
+      switch(a_info.formulation) {
       case CS_PARAM_ADVECTION_FORM_CONSERV:
         bft_printf(" Conservative formulation");
         break;
@@ -1662,7 +1623,7 @@ cs_equation_summary(const cs_equation_t  *eq)
                  cs_param_reaction_get_type_name(r_info),
                  cs_base_strtf(r_info.do_lumping));
       bft_printf("    <Reaction> Property: %s\n",
-                 cs_param_pty_get_name(h_info.pty_id));
+                 cs_property_get_name(eqp->reaction_properties[r_id]));
 
       if (eqp->verbosity > 0) {
         bft_printf("    <Reaction> Hodge operator: %s / %s\n",
@@ -1834,8 +1795,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to an equation
+ * \brief  Set a parameter in a cs_equation_t structure attached to keyname
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
  * \param[in]       keyname   name of key related to the member of eq to set
@@ -1844,9 +1804,9 @@ cs_equation_last_setup(cs_equation_t  *eq)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set(cs_equation_t       *eq,
-                const char          *keyname,
-                const void          *val)
+cs_equation_set_option(cs_equation_t       *eq,
+                       const char          *keyname,
+                       const void          *val)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -1915,7 +1875,7 @@ cs_equation_set(cs_equation_t       *eq,
       eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
     else if (strcmp(val, "voronoi") == 0)
       eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
-    else if (strcmp(val, "whitney_bary") == 0)
+    else if (strcmp(val, "wbs") == 0)
       eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
     else {
       const char *_val = val;
@@ -1924,7 +1884,6 @@ cs_equation_set(cs_equation_t       *eq,
                   " Choice between cost, wbs or voronoi"), _val, keyname);
     }
     break;
-
 
   case EQKEY_HODGE_DIFF_COEF:
     if (strcmp(val, "dga") == 0)
@@ -2074,9 +2033,9 @@ cs_equation_set(cs_equation_t       *eq,
 
   case EQKEY_ADV_OP_TYPE:
     if (strcmp(val, "conservative") == 0)
-      eqp->advection_info.form = CS_PARAM_ADVECTION_FORM_CONSERV;
+      eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
     else if (strcmp(val, "non_conservative") == 0)
-      eqp->advection_info.form = CS_PARAM_ADVECTION_FORM_NONCONS;
+      eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -2180,37 +2139,50 @@ cs_equation_set(cs_equation_t       *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Associate a material property or an advection field with an equation
- *         for a given term (diffusion, time, convection, reaction)
+ *         for a given term (diffusion, time, convection)
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
  * \param[in]       keyword   "time", "diffusion", "advection"
- * \param[in]       name      name of the property to associate
+ * \param[in]       pointer   pointer to a given structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_link(cs_equation_t       *eq,
                  const char          *keyword,
-                 const char          *name)
+                 void                *pointer)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _(" cs_equation_t structure to set with property %s is NULL\n"),
-              name);
+              _(" Cannot link an empty cs_equation_t structure"));
 
   cs_equation_param_t  *eqp = eq->param;
 
-  if (strcmp("diffusion", keyword) == 0)
-    eqp->diffusion_hodge.pty_id = cs_param_pty_get_id_by_name(name);
-  else if (strcmp("time", keyword) == 0)
-    eqp->time_hodge.pty_id = cs_param_pty_get_id_by_name(name);
-  else if (strcmp("advection", keyword) == 0)
-    eqp->advection_info.adv_id = cs_param_adv_get_id_by_name(name);
+  if (strcmp("diffusion", keyword) == 0) {
+
+    eqp->flag |= CS_EQUATION_DIFFUSION;
+    eqp->diffusion_property = (cs_property_t *)pointer;
+
+  }
+  else if (strcmp("time", keyword) == 0) {
+
+    eqp->flag |= CS_EQUATION_UNSTEADY;
+    eqp->time_property = (cs_property_t *)pointer;
+
+  }
+  else if (strcmp("advection", keyword) == 0) {
+
+    eqp->flag |= CS_EQUATION_CONVECTION;
+    eqp->advection_field = (cs_adv_field_t *)pointer;
+
+  }
   else
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting a property.\n"
+              _(" Invalid keyword for linking an equation.\n"
                 " Current value: %s\n"
-                " Possible choice: diffusion or time\n"), keyword);
+                " Possible choices: diffusion, time, advection\n"),
+              keyword);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2229,31 +2201,12 @@ cs_equation_set_ic(cs_equation_t    *eq,
                    const char       *def_key,
                    void             *val)
 {
-  cs_param_var_type_t  var_type = CS_PARAM_N_VAR_TYPES;
-
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" cs_equation_t structure is NULL\n"
                 " Cannot set the initial condition"));
 
   cs_equation_param_t  *eqp = eq->param;
-
-  /* Get the type of variable */
-  switch (eqp->type) {
-  case CS_EQUATION_TYPE_SCAL:
-    var_type = CS_PARAM_VAR_SCAL;
-    break;
-  case CS_EQUATION_TYPE_VECT:
-    var_type = CS_PARAM_VAR_VECT;
-    break;
-  case CS_EQUATION_TYPE_TENS:
-    var_type = CS_PARAM_VAR_TENS;
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of equation for equation %s.\n"), eq->name);
-    break;
-  }
 
   /* Get the type of definition */
   if (strcmp(def_key, "value") == 0)
@@ -2268,7 +2221,7 @@ cs_equation_set_ic(cs_equation_t    *eq,
                 " Please modify your settings."), def_key);
 
   /* Get the definition */
-  cs_param_set_def(eqp->time_info.ic_def_type, var_type, val,
+  cs_param_set_def(eqp->time_info.ic_def_type, eqp->var_type, val,
                    &(eqp->time_info.ic_def));
 
 }
@@ -2297,10 +2250,6 @@ cs_equation_add_bc(cs_equation_t    *eq,
 {
   int  ml_id;
 
-  cs_param_bc_type_t  bc_type = CS_PARAM_N_BC_TYPES;
-  cs_param_def_type_t  def_type = CS_PARAM_N_DEF_TYPES;
-  cs_param_var_type_t  var_type = CS_PARAM_N_VAR_TYPES;
-
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" cs_equation_t structure is NULL\n"
@@ -2309,6 +2258,8 @@ cs_equation_add_bc(cs_equation_t    *eq,
 
   cs_equation_param_t  *eqp = eq->param;
   cs_param_bc_t  *bc = eqp->bc;
+  cs_param_bc_type_t  bc_type = CS_PARAM_N_BC_TYPES;
+  cs_param_def_type_t  def_type = CS_PARAM_N_DEF_TYPES;
 
   /* Sanity checks */
   assert(bc != NULL);
@@ -2321,30 +2272,13 @@ cs_equation_add_bc(cs_equation_t    *eq,
   /* Get the mesh location id from its name */
   _check_ml_name(ml_name, &ml_id);
 
-  /* Get the type of variable */
-  switch (eqp->type) {
-  case CS_EQUATION_TYPE_SCAL:
-    var_type = CS_PARAM_VAR_SCAL;
-    break;
-  case CS_EQUATION_TYPE_VECT:
-    var_type = CS_PARAM_VAR_VECT;
-    break;
-  case CS_EQUATION_TYPE_TENS:
-    var_type = CS_PARAM_VAR_TENS;
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of equation for equation %s.\n"), eq->name);
-    break;
-  }
-
   /* Get the type of definition */
   if (strcmp(def_key, "value") == 0)
     def_type = CS_PARAM_DEF_BY_VALUE;
   else if (strcmp(def_key, "field") == 0)
     def_type = CS_PARAM_DEF_BY_FIELD;
-  else if (strcmp(def_key, "evaluator") == 0)
-    def_type = CS_PARAM_DEF_BY_EVALUATOR;
+  else if (strcmp(def_key, "array") == 0)
+    def_type = CS_PARAM_DEF_BY_ARRAY;
   else if (strcmp(def_key, "analytic") == 0)
     def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
   else if (strcmp(def_key, "user") == 0)
@@ -2372,7 +2306,7 @@ cs_equation_add_bc(cs_equation_t    *eq,
                 " Please modify your settings."), bc_key);
 
   /* Check if this is a homogeneous boundary condition */
-  if (def_type == CS_PARAM_DEF_BY_VALUE && var_type == CS_PARAM_VAR_SCAL) {
+  if (def_type == CS_PARAM_DEF_BY_VALUE && eqp->var_type == CS_PARAM_VAR_SCAL) {
     cs_real_t  value = atof(val);
     if (fabs(value) < DBL_MIN) {
       if (bc_type == CS_PARAM_BC_DIRICHLET)
@@ -2385,7 +2319,7 @@ cs_equation_add_bc(cs_equation_t    *eq,
   cs_param_bc_def_set(bc->defs + def_id,
                       ml_id,
                       bc_type,
-                      var_type,
+                      eqp->var_type,
                       def_type,
                       val, NULL); // coef2 is not used up to now
 }
@@ -2397,38 +2331,41 @@ cs_equation_add_bc(cs_equation_t    *eq,
  *
  * \param[in, out] eq         pointer to a cs_equation_t structure
  * \param[in]      r_name     name of the source term or NULL
- * \param[in]      pty_name   this reaction term is linked to this property
  * \param[in]      type_name  type of reaction term to add
+ * \param[in]      property   pointer to a cs_property_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_reaction_term(cs_equation_t   *eq,
-                              const char      *r_name,
-                              const char      *pty_name,
-                              const char      *type_name)
+cs_equation_add_reaction(cs_equation_t   *eq,
+                         const char      *r_name,
+                         const char      *type_name,
+                         cs_property_t   *property)
 {
-  char *_r_name = NULL;
-
-  const char  *name;
-
-  /* Only this kind of reaction term is available up to now */
-  cs_param_reaction_type_t  r_type = CS_PARAM_N_REACTION_TYPES;
-  cs_param_hodge_type_t  h_type = CS_PARAM_N_HODGE_TYPES;
-  cs_param_hodge_algo_t  h_algo = CS_PARAM_N_HODGE_ALGOS;
-
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" cs_equation_t structure is NULL\n"
                 " Can not add a reaction term."));
 
-  int  pty_id = cs_param_pty_get_id_by_name(pty_name);
+  /* Only this kind of reaction term is available up to now */
+  cs_param_reaction_type_t  r_type = CS_PARAM_N_REACTION_TYPES;
+  cs_param_hodge_type_t  h_type = CS_PARAM_N_HODGE_TYPES;
+  cs_param_hodge_algo_t  h_algo = CS_PARAM_N_HODGE_ALGOS;
   cs_equation_param_t  *eqp = eq->param;
 
   /* Add a new source term */
   int  r_id = eqp->n_reaction_terms;
   eqp->n_reaction_terms += 1;
   BFT_REALLOC(eqp->reaction_terms, eqp->n_reaction_terms, cs_param_reaction_t);
+
+  /* Associate a property to this reaction term */
+  BFT_REALLOC(eqp->reaction_properties, eqp->n_reaction_terms,
+              cs_property_t *);
+  eqp->reaction_properties[r_id] = property;
+
+  /* Associate a name to this reaction term */
+  const char  *name;
+  char *_r_name = NULL;
 
   if (r_name == NULL) { /* Define a name by default */
     assert(r_id < 100);
@@ -2456,8 +2393,7 @@ cs_equation_add_reaction_term(cs_equation_t   *eq,
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
-    h_algo = CS_PARAM_HODGE_ALGO_WBS;
-    h_type = CS_PARAM_HODGE_TYPE_VPCD;
+    bft_error(__FILE__, __LINE__, 0, "This case is not implemented yet.");
     break;
 
   default:
@@ -2468,12 +2404,11 @@ cs_equation_add_reaction_term(cs_equation_t   *eq,
   }
 
   /* Get the type of source term */
-  cs_param_reaction_term_add(eqp->reaction_terms + r_id,
-                             name,
-                             pty_id,
-                             h_type,
-                             h_algo,
-                             r_type);
+  cs_param_reaction_add(eqp->reaction_terms + r_id,
+                        name,
+                        h_type,
+                        h_algo,
+                        r_type);
 
   /* Flag the equation with "reaction" */
   eqp->flag |= CS_EQUATION_REACTION;
@@ -2497,10 +2432,10 @@ cs_equation_add_reaction_term(cs_equation_t   *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_reaction_term_set(cs_equation_t    *eq,
-                              const char       *r_name,
-                              const char       *keyname,
-                              const char       *keyval)
+cs_equation_set_reaction_option(cs_equation_t    *eq,
+                                const char       *r_name,
+                                const char       *keyname,
+                                const char       *keyval)
 {
   int  i;
 
@@ -2667,16 +2602,14 @@ cs_equation_add_source_term(cs_equation_t   *eq,
 
   const char  *name;
 
-  cs_param_source_term_type_t  st_type = CS_PARAM_N_SOURCE_TERM_TYPES;
-  cs_param_def_type_t  def_type = CS_PARAM_N_DEF_TYPES;
-  cs_param_var_type_t  var_type = CS_PARAM_N_VAR_TYPES;
-
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" cs_equation_t structure is NULL\n"
                 " Can not add a source term related to mesh location %s"),
               ml_name);
 
+  cs_param_source_term_type_t  st_type = CS_PARAM_N_SOURCE_TERM_TYPES;
+  cs_param_def_type_t  def_type = CS_PARAM_N_DEF_TYPES;
   cs_equation_param_t  *eqp = eq->param;
 
   /* Add a new source term */
@@ -2697,30 +2630,13 @@ cs_equation_add_source_term(cs_equation_t   *eq,
   /* Get the mesh location id from its name */
   _check_ml_name(ml_name, &ml_id);
 
-  /* Get the type of variable */
-  switch (eqp->type) {
-  case CS_EQUATION_TYPE_SCAL:
-    var_type = CS_PARAM_VAR_SCAL;
-    break;
-  case CS_EQUATION_TYPE_VECT:
-    var_type = CS_PARAM_VAR_VECT;
-    break;
-  case CS_EQUATION_TYPE_TENS:
-    var_type = CS_PARAM_VAR_TENS;
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of equation for equation %s.\n"), eq->name);
-    break;
-  }
-
   /* Get the type of definition */
   if (strcmp(def_key, "value") == 0)
     def_type = CS_PARAM_DEF_BY_VALUE;
   else if (strcmp(def_key, "field") == 0)
     def_type = CS_PARAM_DEF_BY_FIELD;
-  else if (strcmp(def_key, "evaluator") == 0)
-    def_type = CS_PARAM_DEF_BY_EVALUATOR;
+  else if (strcmp(def_key, "array") == 0)
+    def_type = CS_PARAM_DEF_BY_ARRAY;
   else if (strcmp(def_key, "analytic") == 0)
     def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
   else if (strcmp(def_key, "user") == 0)
@@ -2741,7 +2657,7 @@ cs_equation_add_source_term(cs_equation_t   *eq,
                            name,
                            ml_id,
                            st_type,
-                           var_type,
+                           eqp->var_type,
                            CS_QUADRATURE_BARY,    // default value
                            def_type,
                            val);
@@ -2766,10 +2682,10 @@ cs_equation_add_source_term(cs_equation_t   *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_source_term_set(cs_equation_t    *eq,
-                            const char       *st_name,
-                            const char       *keyname,
-                            const char       *keyval)
+cs_equation_set_source_term_option(cs_equation_t    *eq,
+                                   const char       *st_name,
+                                   const char       *keyname,
+                                   const char       *keyval)
 {
   int  i;
 
@@ -2903,14 +2819,14 @@ cs_equation_create_field(cs_equation_t     *eq)
     cs_timer_stats_start(eq->main_ts_id);
 
   /* Define dim */
-  switch (eqp->type) {
-  case CS_EQUATION_TYPE_SCAL:
+  switch (eqp->var_type) {
+  case CS_PARAM_VAR_SCAL:
     dim = 1;
     break;
-  case CS_EQUATION_TYPE_VECT:
+  case CS_PARAM_VAR_VECT:
     dim = 3;
     break;
-  case CS_EQUATION_TYPE_TENS:
+  case CS_PARAM_VAR_TENS:
     dim = 9;
     break;
   default:
@@ -2982,14 +2898,14 @@ cs_equation_init_system(const cs_mesh_t            *mesh,
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
 
-  const double t_ini = 0;
+  const double  t_ini = 0;
   const cs_equation_param_t  *eqp = eq->param;
 
   /* Allocate and initialize a system builder */
-  eq->builder = eq->init_builder(eqp, mesh, connect);
+  eq->builder = eq->init_builder(eqp, mesh, connect, cdoq, time_step);
 
   /* Compute the (initial) source term */
-  eq->compute_source(connect, cdoq, time_step, eq->builder);
+  eq->compute_source(eq->builder);
 
   /* Initialize the associated field to the initial conditino */
   if (!(eqp->flag & CS_EQUATION_UNSTEADY)) // Steady equation do not need this
@@ -3003,14 +2919,14 @@ cs_equation_init_system(const cs_mesh_t            *mesh,
   cs_field_t  *field = cs_field_by_id(eq->field_id);
 
   /* Define dim */
-  switch (eqp->type) {
-  case CS_EQUATION_TYPE_SCAL:
+  switch (eqp->var_type) {
+  case CS_PARAM_VAR_SCAL:
     stride = 1;
     break;
-  case CS_EQUATION_TYPE_VECT:
+  case CS_PARAM_VAR_VECT:
     stride = 3;
     break;
-  case CS_EQUATION_TYPE_TENS:
+  case CS_PARAM_VAR_TENS:
     stride = 9;
     break;
   default:
@@ -3055,9 +2971,9 @@ cs_equation_init_system(const cs_mesh_t            *mesh,
     if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB) {
 
       for (i = 0; i < n_elts; i++)  {
-        def.analytic(t_ini, &(mesh->vtx_coord[3*i]), &get);
+        def.analytic(t_ini, mesh->vtx_coord + 3*i, &get);
         if (stride == 1)
-          field->val[i] = def.get.val;
+          field->val[i] = get.val;
         else if (stride == 3) { // Interleave by construction
           for (k = 0; k < 3; k++)
             field->val[3*i+k] = get.vect[k];
@@ -3116,19 +3032,15 @@ cs_equation_needs_build(const cs_equation_t    *eq)
 /*!
  * \brief  Build the linear system for this equation
  *
- * \param[in]       m          pointer to a cs_mesh_t structure
- * \param[in]       connect    pointer to a cs_cdo_connect_t structure
- * \param[in]       cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in]       time_step  pointer to a time step structure
- * \param[in]       dt_cur     value of the current time step
- * \param[in, out]  eq         pointer to a cs_equation_t structure
+ * \param[in]       m           pointer to a cs_mesh_t structure
+ * \param[in]       time_step   pointer to a time step structure
+ * \param[in]       dt_cur      value of the current time step
+ * \param[in, out]  eq          pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_build_system(const cs_mesh_t            *m,
-                         const cs_cdo_connect_t     *connect,
-                         const cs_cdo_quantities_t  *cdoq,
+cs_equation_build_system(const cs_mesh_t            *mesh,
                          const cs_time_step_t       *time_step,
                          double                      dt_cur,
                          cs_equation_t              *eq)
@@ -3142,7 +3054,7 @@ cs_equation_build_system(const cs_mesh_t            *m,
   if (eq->pre_ts_id > -1)
     cs_timer_stats_start(eq->pre_ts_id);
 
-  eq->build_system(m, connect, cdoq, fld->val, time_step, dt_cur,
+  eq->build_system(mesh, fld->val, dt_cur,
                    eq->builder,
                    &(eq->rhs),
                    &(sla_mat));
@@ -3202,9 +3114,6 @@ cs_equation_build_system(const cs_mesh_t            *m,
   sla_mat = cs_sla_matrix_free(sla_mat);
 
   eq->do_build = false;
-  if (eqp->flag & CS_EQUATION_UNSTEADY)
-    eq-> do_build = true; /* Improvement: exhibit cases where a new build
-                             is not needed */
 
   if (eq->pre_ts_id > -1)
     cs_timer_stats_stop(eq->pre_ts_id);
@@ -3214,18 +3123,14 @@ cs_equation_build_system(const cs_mesh_t            *m,
 /*!
  * \brief  Solve the linear system for this equation
  *
- * \param[in]       connect    pointer to a cs_cdo_connect_t structure
- * \param[in]       cdoq       pointer to a cs_cdo_quantities_t structure
  * \param[in]       time_step  pointer to a time step structure
  * \param[in, out]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(const cs_cdo_connect_t     *connect,
-                  const cs_cdo_quantities_t  *cdoq,
-                  const cs_time_step_t       *time_step,
-                  cs_equation_t              *eq)
+cs_equation_solve(const cs_time_step_t    *time_step,
+                  cs_equation_t           *eq)
 {
   double  r_norm;
   cs_sles_convergence_state_t  cvg;
@@ -3243,7 +3148,7 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(eq->matrix);
   const cs_param_itsol_t  itsol_info = eq->param->itsol_info;
 
-  printf("\n# <<ITER %5d >> Solve Ax = b for %s with %s\n"
+  printf("\n# <<ITER %d>> Solve Ax = b for %s with %s\n"
          "# System size: %8d ; eps: % -8.5e ;\n",
          time_step->nt_cur, eq->name,
          cs_param_get_solver_name(itsol_info.solver), n_rows, itsol_info.eps);
@@ -3292,11 +3197,14 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
   cs_field_current_to_previous(fld);
 
   /* Define the new field value for the current time */
-  eq->update_field(connect, cdoq, time_step, x, eq->builder, fld->val);
+  eq->update_field(x, eq->builder, fld->val);
 
   if (eq->post_ts_id > -1)
     cs_timer_stats_stop(eq->post_ts_id);
 
+  if (eq->param->flag & CS_EQUATION_UNSTEADY)
+    eq->do_build = true; /* Improvement: exhibit cases where a new build
+                            is not needed */
   /* Free memory */
   cs_sles_free(sles);
 }
@@ -3305,19 +3213,18 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
 /*!
  * \brief  Post-processing related to this equation
  *
- * \param[in]  mesh       pointer to the mesh structure
- * \param[in]  cdoq       pointer to a cs_cdo_quantities_t struct.
  * \param[in]  time_step  pointer to a time step structure
  * \param[in]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_post(const cs_mesh_t            *mesh,
-                 const cs_cdo_quantities_t  *cdoq,
-                 const cs_time_step_t       *time_step,
+cs_equation_post(const cs_time_step_t       *time_step,
                  const cs_equation_t        *eq)
 {
+  if (eq == NULL)
+    return;
+
   const int  nt_cur = time_step->nt_cur;
   const cs_field_t  *field = cs_field_by_id(eq->field_id);
   const cs_equation_param_t  *eqp = eq->param;
@@ -3343,7 +3250,7 @@ cs_equation_post(const cs_mesh_t            *mesh,
   if (eq->post_ts_id > -1)
     cs_timer_stats_start(eq->post_ts_id);
 
-  eq->postprocess(eq->name, mesh, cdoq, time_step, field, eq->builder);
+  eq->postprocess(eq->name, field, eq->builder);
 
   if (eq->post_ts_id > -1)
     cs_timer_stats_stop(eq->post_ts_id);
@@ -3452,6 +3359,46 @@ cs_equation_get_param(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return a pointer to the cs_property_t structure associated to the
+ *         diffusion term for this equation (NULL if not activated).
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_equation_get_diffusion_property(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+  else
+    return eq->param->diffusion_property;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a pointer to the cs_property_t structure associated to the
+ *         unsteady term for this equation (NULL if not activated).
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_equation_get_time_property(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+  else
+    return eq->param->time_property;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the type of numerical scheme used for the discretization in
  *         space
  *
@@ -3468,6 +3415,25 @@ cs_equation_get_space_scheme(const cs_equation_t    *eq)
     return CS_SPACE_N_SCHEMES;
   else
     return eq->param->space_scheme;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the type of equation for the given equation structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  the type of the given equation
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_type_t
+cs_equation_get_type(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return CS_EQUATION_N_TYPES;
+  else
+    return eq->param->type;
 }
 
 /*----------------------------------------------------------------------------*/

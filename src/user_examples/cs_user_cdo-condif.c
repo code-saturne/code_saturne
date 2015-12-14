@@ -50,6 +50,8 @@
 
 #include "cs_mesh_location.h"
 #include "cs_cdo_toolbox.h"
+#include "cs_property.h"
+#include "cs_advection_field.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -123,9 +125,9 @@ _define_bcs(cs_real_t           time,
  * -------------------------------------------------------------------------- */
 
 static void
-_define_source_term(cs_real_t           time,
-                    const cs_real_3_t   xyz,
-                    cs_get_t           *get)
+_define_source(cs_real_t           time,
+               const cs_real_3_t   xyz,
+               cs_get_t           *get)
 {
   cs_real_t  gx, gy, gz, gxx, gyy, gzz, gxy, gxz, gyz;
   cs_real_33_t  cond;
@@ -195,13 +197,16 @@ cs_user_cdo_add_mesh_locations(void)
  * \brief  Specify for the computational domain:
  *         -- which type of boundaries closed the computational domain
  *         -- the settings for the time step
+ *         -- activate predefined equations or modules
+ *         -- add user-defined properties and/or advection fields
+ *         -- add user-defined equations
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_setup_domain(cs_domain_t   *domain)
+cs_user_cdo_init_domain(cs_domain_t   *domain)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
@@ -251,21 +256,6 @@ cs_user_cdo_setup_domain(cs_domain_t   *domain)
                           "value", /* How time step is define */
                           "1");    /* Value of the time step */
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Specify which equations are to be solved in the computational domain
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_add_equations(cs_domain_t   *domain)
-{
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
   /* =========================================
      Activate predefined equations
      =========================================
@@ -283,14 +273,11 @@ cs_user_cdo_add_equations(cs_domain_t   *domain)
 
      cs_domain_add_user_equation(...)
 
-     >> arguements: domain,
-                    equation name,
-                    associated field name,
-                    type of equation: "scalar", "vector" or "tensor"
-                    is steady ?       true or false
-                    do_convection ?   true or false
-                    do_diffusion ?    true or false
-                    default_bc:       "zero_value" or "zero_flux"
+     >> arguments: domain,
+                   equation name,
+                   associated field name,
+                   type of equation: "scalar", "vector" or "tensor"
+                   default_bc:       "zero_value" or "zero_flux"
 
      By default, initial values are set to zero (or the value given by the
      restart file in case of restart).
@@ -300,146 +287,143 @@ cs_user_cdo_add_equations(cs_domain_t   *domain)
                               "AdvDiff",
                               "Potential",   // associated field name
                               "scalar",      // type of equation
-                              true,          // steady ?
-                              true,          // convection ?
-                              true,          // diffusion ?
                               "zero_value"); // default boundary condition
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add user-defined material properties and/or advection fields
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_add_properties(void)
-{
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
   /* ================================
      User-defined material properties
      ================================
 
-     By default, several material properties are defined:
-     >> "unity"
-     >> "mass_density"
-     >> "laminar_viscosity"
+     By default, one material property is defined:
+     >> "unity" (isotropic and value equal 1.0)
 
      Users can also define additional material properties
-     1) Set a name specific to this material property
-     2) Set a type among the following choices:
+     cs_domain_add_property(domain,
+                            "name_of_property",
+                            "type_keyword");
+
+      type_keyword has predefined values among:
         >> "isotropic", "orthotropic" or "anisotropic"
-     3) Set the frequency of post-processing:
-        >> -1: no post-processing
-        >>  0: at the beginning of the simulation
-        >>  n: at each n iteration(s)
   */
 
-  cs_param_pty_add("conductivity",  // property name
-                   "anisotropic",   // type of material property
-                   -1);             // frequency of post-processing
+  cs_domain_add_property(domain,
+                         "conductivity",  // property name
+                         "anisotropic");  // type of material property
 
-  cs_param_pty_add("rho.cp",       // property name
-                   "isotropic",    // type of material property
-                   -1);            // frequency of post-processing
+  cs_domain_add_property(domain,
+                         "rho.cp",       // property name
+                         "isotropic");   // type of material property
 
   /* =============================
      User-defined advection fields
      =============================
 
-     Users can also define additional material properties
-     1) Set a name specific to this convection field
-     3) Set the frequency of post-processing:
-        >> -1: no post-processing
-        >>  0: at the beginning of the simulation
-        >>  n: at each n iteration(s)
+     Users can also define advection fields
+     cs_domain_add_advection_field(domain,
+                                   "name_of_advection_field");
+
   */
 
-  cs_param_adv_field_add("adv_field",  // property name
-                         0);           // frequency of post-processing
+  cs_domain_add_advection_field(domain,
+                                "adv_field");
 
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify the definition of additional material properties and/or
- *         advection fields (This is a second step after having added the
- *         material properties and/or advection fields).
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_set_properties(void)
-{
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
-  /* ================================
-     User-defined material properties
-     ================================
-
-     1) Give the name of the property
-     2) Set the type of definition among the following choices:
-        >> "value", "analytic", "user"
-     3) Set the value
-        >> "1.0"        for instance for an isotropic property set by value
-        >> "0.5 0.1 1." for instance for an orthotropic property set by value
-        >> _my_func     name of the function for a property set by analytic
-  */
-
-  cs_param_pty_set("conductivity", // property name
-                   "value",
-                   "1.0  0.5  0.0\n" // value of the material property
-                   "0.5  1.0  0.5\n"
-                   "0.0  0.5  1.0\n");
-
-  cs_param_pty_set("rho.cp", // property name
-                   "value",
-                   "1.0");   // value of the material property
-
-  /* =============================
-     User-defined advection fields
-     =============================
-
-     1) Give the name of the property
-     2) Set the type of definition among the following choices:
-        >> "value", "analytic", "user"
-     3) Set the value
-        >> "1.0"     for an isotropic property set by value
-        >> _my_func  name of the function for a property set by analytic
-  */
-
-  cs_param_adv_field_set("adv_field",        // property name
-                         "analytic",         // type of definition
-                         _define_adv_field); // value of the advection field
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Associate material property to user-defined equations and specify
- *         boundary conditions, source terms for thes additional equations
+ * \brief  - Specify the elements such as properties, advection fields,
+ *           user-defined equations and modules which have been previously
+ *           added.
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
+*/
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_setup_equations(cs_domain_t   *domain)
+cs_user_cdo_set_domain(cs_domain_t   *domain)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
-  cs_equation_t  *eq = cs_domain_get_equation(domain, "AdvDiff");
+  /* =======================
+     User-defined properties
+     =======================
 
-  /* Define the boundary conditions (BCs) for each additional equation eq
+     Retrieve the property to set
+     cs_property_t  *pty = cs_domain_get_property(domain, "pty_name");
 
-     Boundary conditions are among the following choices:
-     >> "dirichlet", "neumann" or "robin"
-     Type of definition is among the following choices:
-     >> "value", "analytic", "user"
+    Several ways exist to define a property
+      >> cs_property_def_by_value(pty, value);
+         -- pty is the structure related to the property to set
+         -- value is "1.0" for instance for an isotropic property
+            or "0.5 0.1 1." for instance for an orthotropic property
+
+      >> cs_property_def_by_analytic(pty, func);
+         -- pty is the structure related to the property to set
+         -- func is a function with a predefined prototype
+
+      >> cs_property_def_by_law(pty, func);
+         -- pty is the structure related to the property to set
+         -- func is a function with a predefined prototype
 
   */
+
+  cs_property_t  *conductivity = cs_domain_get_property(domain, "conductivity");
+
+  cs_property_def_by_value(conductivity,     // property structure
+                           "1.0  0.5  0.0\n" // values of the property
+                           "0.5  1.0  0.5\n"
+                           "0.0  0.5  1.0\n");
+
+  cs_property_t  *rhocp = cs_domain_get_property(domain, "rho.cp");
+
+  cs_property_def_by_value(rhocp,    // property structure
+                           "1.0");   // value of the property
+
+  /* =============================
+     User-defined advection fields
+     =============================
+
+     Retrieve the advection field to set
+     cs_adv_field_t  *adv = cs_domain_get_advection_field(domain, "adv_name");
+
+     Several ways exist to define an advection field
+      >> cs_advection_field_def_by_value(adv, values);
+         -- adv is the structure related to the advection field to set
+         -- values is "0.5 0.1 1." for instance
+
+      >> cs_property_def_by_analytic(adv, func);
+         -- adv is the structure related to the advection field to set
+         -- func is a function with a predefined prototype
+
+  */
+
+  cs_adv_field_t  *adv = cs_domain_get_advection_field(domain, "adv_field");
+
+  cs_advection_field_def_by_analytic(adv, _define_adv_field);
+
+  /* ======================
+     User-defined equations
+     ======================
+
+     Retrieve the equation to set
+     cs_equation_t  *eq = cs_domain_get_equation(domain, "eq_name");
+
+     Define the boundary conditions
+     >> cs_equation_add_bc(eq,
+                           "mesh_location_name",
+                           "bc_type_keyword",
+                           "definition_type_keyword",
+                           pointer to the definition);
+
+     -- eq is the structure related to the equation to set
+     -- Keyword related to the boundary condition type is a choice among:
+        >> "dirichlet", "neumann" or "robin"
+     -- Keyword related to the type of definition is a choice among:
+        >> "value", "analytic"
+
+  */
+
+  /* Retrieve an equation to set */
+  cs_equation_t  *eq = cs_domain_get_equation(domain, "AdvDiff");
 
   cs_equation_add_bc(eq,                // equation
                      "boundary_faces",  // name of the mesh location
@@ -447,12 +431,28 @@ cs_user_cdo_setup_equations(cs_domain_t   *domain)
                      "analytic",        // type of definition
                      _define_bcs);      // pointer to the analytic function
 
-  /* Link properties to different terms of this equation */
-  cs_equation_link(eq, "time", "rho.cp");
-  cs_equation_link(eq, "advection", "adv_field");
-  cs_equation_link(eq, "diffusion", "conductivity");
+  /* Link properties to different terms of this equation
+     >> cs_equation_link(eq,
+                         "term_keyword",
+                         structure_to_link);
 
-  /* Add a source term: There are several types of source terms
+     -- eq is the structure related to the equation to set
+     -- Keyword related to the term to set is a choice among:
+        >> "diffusion", "time" or "advection"
+     -- If keyword is "time" or "diffusion", the structure to link is a
+        property.
+        If keyword is "advection", the structure to link is an advection field
+
+  */
+
+  /* Activate unsteady effect */
+  cs_equation_link(eq, "time", rhocp);
+  /* Activate diffusion effect */
+  cs_equation_link(eq, "diffusion", conductivity);
+  /* Activate advection effect */
+  cs_equation_link(eq, "advection", adv);
+
+  /* Add a source term:
 
      Label of the source term is optional (i.e. NULL is possible)
      This label is mandatory if additional settings are requested only for
@@ -464,10 +464,67 @@ cs_user_cdo_setup_equations(cs_domain_t   *domain)
    */
 
   cs_equation_add_source_term(eq,
-                              "SourceTerm",    // label of the source term
-                              "cells",         // name of the mesh location
-                              "analytic",      // type of definition
-                              _define_source_term); // analytic function
+                              "SourceTerm",     // label of the source term
+                              "cells",          // name of the mesh location
+                              "analytic",       // type of definition
+                              _define_source);  // analytic function
+
+  /* Optional: specify additional settings for a source term
+
+     cs_equation_set_source_term_option(eq,      // equation
+                                        stlabel, // label of the source term
+                                        key,     // name of the key
+                                        val)     // value of the key to set
+
+     If st_label is set to NULL, all source terms of the equation are set
+     to the given parameters.
+
+     KEY = "post" Set the behaviour related to post-processing
+     >> VAL = "-1" no post-processing,
+            = "0"  at the beginning of the computation,
+            = "n"  at each n iterations
+
+     KEY = "quadrature" Set the algortihm used for quadrature
+     >> VAL = "subdiv"  used a subdivision into tetrahedra
+            = "bary"    used the barycenter approximation
+            = "higher"  used 4 Gauss points for approximating the integral
+            = "highest" used 5 Gauss points for approximating the integral
+
+     Remark: "higher" and "highest" implies automatically a subdivision
+             into tetrahedra
+  */
+
+  cs_equation_set_source_term_option(eq, "SourceTerm", "quadrature", "bary");
+  cs_equation_set_source_term_option(eq, "SourceTerm", "quadrature", "subdiv");
+
+  /* Optional: specify additional settings for a reaction term
+
+     cs_equation_reaction_term_set(eq,       // equation
+                                   r_name,   // label of the reaction term
+                                   key,      // name of the key
+                                   val)      // value of the key to set
+
+     If r_name is set to NULL, all reaction terms of the equation are set
+     to the given parameters.
+
+     KEY = "hodge_algo"
+     >> val: "voronoi", "cost" or "whitney_bary"
+     - "voronoi" leads to diagonal discrete Hodge operator but is not
+     consistent for all meshes
+     - "cost" is more robust (i.e. it handles more general meshes but is is
+     less efficient)
+     - "wbs" is robust and accurate but is limited to the reconstruction of
+     potential-like degrees of freedom
+
+     KEY = "hodge_coef" (only useful if "hodge_algo" is set to "cost")
+     >> val: "dga", "sushi", "gcr" or any strictly positive value
+
+     KEY = "lumping"
+     >> val: "true" or "false"
+
+     KEY = "inv_pty" (inverse the value of the related property ?)
+     >> val: "true" or "false"
+  */
 
 }
 

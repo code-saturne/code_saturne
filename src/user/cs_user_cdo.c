@@ -97,69 +97,32 @@ cs_user_cdo_add_mesh_locations(void)
  * \brief  Specify for the computational domain:
  *         -- which type of boundaries closed the computational domain
  *         -- the settings for the time step
+ *         -- activate predefined equations or modules
+ *         -- add user-defined properties and/or advection fields
+ *         -- add user-defined equations
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_setup_domain(cs_domain_t   *domain)
+cs_user_cdo_init_domain(cs_domain_t   *domain)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify which equations are to be solved in the computational domain
+ * \brief  - Specify the elements such as properties, advection fields,
+ *           user-defined equations and modules which have been previously
+ *           added.
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
+*/
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_add_equations(cs_domain_t   *domain)
-{
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add user-defined material properties and/or advection fields
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_add_properties(void)
-{
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Specify the definition of additional material properties and/or
- *         advection fields
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_set_properties(void)
-{
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-}
-
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Associate material property and/or convection field to user-defined
- *         equations and specify boundary conditions, source terms, initial
- *         values for these additional equations
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_setup_equations(cs_domain_t   *domain)
+cs_user_cdo_set_domain(cs_domain_t   *domain)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }

@@ -31,6 +31,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <math.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -57,6 +58,8 @@ BEGIN_C_DECLS
 /*============================================================================
  * Static global variables
  *============================================================================*/
+
+static const double  invdim = 1./3.;
 
 /*============================================================================
  * Private function prototypes
@@ -153,6 +156,51 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute for each p_{f,c} the value of the gradient of the Lagrange
+ *         shape function attached to x_c
+ *
+ *  \param[in]      connect  pointer to the connectivity struct.
+ *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      c_id     cell id
+ *  \param[in, out] grdc     allocated buffer of size 3*n_max_fbyc
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_conf_grdc(const cs_cdo_connect_t     *connect,
+                  const cs_cdo_quantities_t  *quant,
+                  cs_lnum_t                   c_id,
+                  cs_real_3_t                *grdc)
+{
+  cs_lnum_t  j, l;
+  cs_real_t  len;
+  cs_real_3_t  unitv;
+
+  if (grdc == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " Buffer must be pre-allocated.");
+
+  const cs_sla_matrix_t  *c2f = connect->c2f;
+
+  for (j = c2f->idx[c_id], l = 0; j < c2f->idx[c_id+1]; j++, l++) {
+
+    cs_lnum_t  f_id = c2f->col_id[j];
+    short int  sgn = c2f->sgn[j];
+    cs_quant_t  fq = quant->face[f_id];
+
+    _lenunit3(fq.center, &(quant->cell_centers[3*c_id]), &len, &unitv);
+
+    cs_real_t  ohf = -sgn/(len * fabs(_dp3(fq.unitv, unitv)));
+
+    for (int k = 0; k < 3; k++)
+      grdc[l][k] = ohf * fq.unitv[k];
+
+  } // Loop on cell faces
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct by a constant vector a field of edge-based DoFs
  *         in a volume surrounding an edge
  *
@@ -161,17 +209,17 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
  *  \param[in]      c2e     cell -> edges connectivity
  *  \param[in]      quant   pointer to the additional quantities struct.
  *  \param[in]      dof     pointer to the field of edge-based DoFs
- *  \param[in, out] reco    value of the reconstrcuted field in this sub-volume
+ *  \param[in, out] reco    value of the reconstructed field in this sub-volume
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_dga_edge_dof(cs_lnum_t                    cid,
-                     cs_lnum_t                    e1_id,
-                     const cs_connect_index_t    *c2e,
-                     const cs_cdo_quantities_t   *quant,
-                     const double                *dof,
-                     double                       reco[])
+cs_reco_cost_edge_dof(cs_lnum_t                    cid,
+                      cs_lnum_t                    e1_id,
+                      const cs_connect_index_t    *c2e,
+                      const cs_cdo_quantities_t   *quant,
+                      const double                *dof,
+                      double                       reco[])
 {
   int  i, k;
   double  inv_e1df1, e1df2;
@@ -221,13 +269,172 @@ cs_reco_dga_edge_dof(cs_lnum_t                    cid,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct the value at the cell center from an array of values
+ *         defined on primal vertices.
+ *
+ *  \param[in]      c_id     cell id
+ *  \param[in]      c2v      cell -> vertices connectivity
+ *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      array    pointer to the array of values
+ *  \param[in, out] val_xc   value of the reconstruction at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
+                          const cs_connect_index_t    *c2v,
+                          const cs_cdo_quantities_t   *quant,
+                          const double                *array,
+                          cs_real_t                   *val_xc)
+{
+  cs_real_t  reco_val = 0;
+
+  if (array == NULL) {
+    *val_xc = reco_val;
+    return;
+  }
+
+  /* Sanity checks */
+  assert(c2v != NULL && quant != NULL && c_id > -1);
+
+  const double  invvol = 1/quant->cell_vol[c_id];
+  const cs_real_t  *dcvol = quant->dcell_vol;
+
+  for (cs_lnum_t jv = c2v->idx[c_id]; jv < c2v->idx[c_id+1]; jv++) {
+
+    const cs_lnum_t  v_id = c2v->ids[jv];
+
+    reco_val += dcvol[jv] * array[v_id];
+
+  } // Loop on cell vertices;
+
+  *val_xc = invvol * reco_val;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct a constant vector at the cell center from an array of
+ *         values defined on dual faces lying inside each cell.
+ *         This array is scanned thanks to the c2e connectivity.
+ *
+ *  \param[in]      c_id     cell id
+ *  \param[in]      c2e      cell -> edges connectivity
+ *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      array    pointer to the array of values
+ *  \param[in, out] val_xc   value of the reconstruction at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_dfbyc_at_cell_center(cs_lnum_t                    c_id,
+                             const cs_connect_index_t    *c2e,
+                             const cs_cdo_quantities_t   *quant,
+                             const double                *array,
+                             cs_real_3_t                  val_xc)
+{
+  int  k;
+
+  /* Initialization */
+  val_xc[0] = val_xc[1] = val_xc[2] = 0.;
+
+  if (array == NULL)
+    return;
+
+  const double  invvol = 1/quant->cell_vol[c_id];
+
+  for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++) {
+
+    const cs_lnum_t  e_id = c2e->ids[j];
+    const cs_quant_t  peq = quant->edge[e_id];
+    const cs_real_t  edge_contrib = array[j]*peq.meas;
+
+    for (k = 0; k < 3; k++)
+      val_xc[k] += edge_contrib * peq.unitv[k];
+
+  } // Loop on cell edges
+
+  for (k = 0; k < 3; k++)
+    val_xc[k] *= invvol;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct a constant vector inside pec which is a volume
+ *         surrounding the edge e inside the cell c.
+ *         array is scanned thanks to the c2e connectivity.
+ *         Reconstruction used is based on DGA (stabilization = 1/d where d is
+ *         the space dimension)
+ *
+ *  \param[in]      c_id      cell id
+ *  \param[in]      e_id      edge id
+ *  \param[in]      c2e       cell -> edges connectivity
+ *  \param[in]      quant     pointer to the additional quantities struct.
+ *  \param[in]      array     pointer to the array of values
+ *  \param[in, out] val_pec   value of the reconstruction in pec
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_dfbyc_in_pec(cs_lnum_t                    c_id,
+                     cs_lnum_t                    e_id,
+                     const cs_connect_index_t    *c2e,
+                     const cs_cdo_quantities_t   *quant,
+                     const double                *array,
+                     cs_real_3_t                  val_pec)
+{
+  int  k;
+  double  val_fd, ecoef;
+  cs_dface_t  dfq;
+
+  /* Initialize values */
+  val_pec[0] = val_pec[1] = val_pec[2] = 0.;
+
+  if (array == NULL)
+    return;
+
+  cs_real_3_t  val_c = {0., 0., 0.};
+
+  const double  invvol = 1/quant->cell_vol[c_id];
+  const cs_quant_t  peq = quant->edge[e_id];
+
+  /* Compute val_c */
+  for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++) {
+
+    const cs_lnum_t  ej_id = c2e->ids[j];
+    const cs_quant_t  pejq = quant->edge[e_id];
+    const cs_real_t  ej_contrib = array[j]*peq.meas;
+
+    if (e_id == ej_id) {
+      val_fd = array[j];
+      dfq = quant->dface[j];
+      ecoef = 1/(peq.meas * _dp3(dfq.vect, peq.unitv));
+    }
+
+    for (k = 0; k < 3; k++)
+      val_c[k] += ej_contrib * pejq.unitv[k];
+
+  } // Loop on cell edges
+
+  for (k = 0; k < 3; k++)
+    val_c[k] *= invvol;
+
+  /* Compute the reconstruction inside pec */
+  const double  e_contrib = ecoef*peq.meas * (val_fd - _dp3(dfq.vect,val_c));
+  for (k = 0; k < 3; k++)
+    val_pec[k] = val_c[k] + e_contrib*peq.unitv[k];
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct at the cell center a field of edge-based DoFs
  *
  *  \param[in]      cid     cell id
  *  \param[in]      c2e     cell -> edges connectivity
  *  \param[in]      quant   pointer to the additional quantities struct.
  *  \param[in]      dof     pointer to the field of edge-based DoFs
- *  \param[in, out] reco    value of the reconstrcuted field at cell center
+ *  \param[in, out] reco    value of the reconstructed field at cell center
  */
 /*----------------------------------------------------------------------------*/
 

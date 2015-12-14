@@ -30,6 +30,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_param.h"
+#include "cs_property.h"
+#include "cs_advection_field.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -57,18 +59,9 @@ BEGIN_C_DECLS
 /* Type of equations managed by the solver */
 typedef enum {
 
-  CS_EQUATION_PREDEFINED,
-  CS_EQUATION_USER,
-  CS_EQUATION_N_STATUS
-
-} cs_equation_status_t;
-
-/* Type of equations managed by the solver */
-typedef enum {
-
-  CS_EQUATION_TYPE_SCAL,
-  CS_EQUATION_TYPE_VECT,
-  CS_EQUATION_TYPE_TENS,
+  CS_EQUATION_TYPE_USER,         // User-defined equation
+  CS_EQUATION_TYPE_GROUNDWATER,  // Equation specific to groundwater flows
+  CS_EQUATION_TYPE_PREDEFINED,   // General predefined equation
   CS_EQUATION_N_TYPES
 
 } cs_equation_type_t;
@@ -105,42 +98,45 @@ typedef struct {
    equation with term sources */
 typedef struct {
 
-  cs_equation_status_t  status;       /* predefined, user... */
-  cs_equation_type_t    type;         /* scalar, vector, tensor... */
-  int                   verbosity;    /* Level of detail to output */
-  int                   output_freq;  /* Write log at this frequency */
+  cs_equation_type_t     type;         /* predefined, user... */
+  cs_param_var_type_t    var_type;     /* scalar, vector, tensor... */
+  int                    verbosity;    /* Level of detail to output */
+  int                    output_freq;  /* Write log at this frequency */
 
   /* Unsteady-Diffusion-Convection-Source term activated or not */
-  int                   flag;
+  int                    flag;
 
   /* Post-treatment */
-  int                   post_freq; /* Move this option to cs_field_t ? */
-  cs_flag_t             post_flag; /* Type of post-treatment to do */
+  int                    post_freq;   /* Move this option to cs_field_t ? */
+  cs_flag_t              post_flag;   /* Type of post-treatment to do */
 
   /* Numerical settings */
-  cs_space_scheme_t     space_scheme;
+  cs_space_scheme_t      space_scheme;
 
   /* Boundary conditions */
-  cs_param_bc_t        *bc;
+  cs_param_bc_t         *bc;
 
   /* High-level structure to manage/monitor the resolution of this equation */
-  cs_equation_algo_t    algo_info;
-  cs_param_itsol_t      itsol_info;
+  cs_equation_algo_t     algo_info;
+  cs_param_itsol_t       itsol_info;
 
   /* Unsteady term discretization and description of the time discretization */
-  cs_param_time_t       time_info;
-  cs_param_hodge_t      time_hodge;
-  bool                  is_multiplied_by_rho;  /* true or false */
+  cs_param_time_t        time_info;
+  cs_param_hodge_t       time_hodge;
+  cs_property_t         *time_property;
 
   /* Diffusion term */
-  cs_param_hodge_t      diffusion_hodge;
+  cs_param_hodge_t       diffusion_hodge;
+  cs_property_t         *diffusion_property;
 
   /* Advection term */
-  cs_param_advection_t  advection_info;
+  cs_param_advection_t   advection_info;
+  cs_adv_field_t        *advection_field;
 
   /* Reaction term (always depend on the unkonws) */
-  int                   n_reaction_terms;
-  cs_param_reaction_t  *reaction_terms;
+  int                    n_reaction_terms;
+  cs_param_reaction_t   *reaction_terms;
+  cs_property_t        **reaction_properties;
 
   /* Source term(s) (always in the right-hand side) */
   int                      n_source_terms;

@@ -84,14 +84,16 @@ struct _hodge_builder_t {
   int         n_maxloc_ent;      /* Max local number of entities by primal
                                     cells (use for allocation) */
 
-  cs_param_hodge_t  h_info;   /* Pointer the set of parameters related
-                                 to the discrete Hodge op. to build.
-                                 Not owned by this structure. */
+  cs_param_hodge_t  h_info;   /* Set of parameters related to the discrete
+                                 Hodge operator to build. */
 
-  cs_real_t         t_cur;   /* Current physical time */
-  bool              uniform; /* True if material property is uniform */
-  cs_real_33_t      matval;  /* Tensor related to the material property */
+  cs_real_33_t      ptymat;   /* Tensor related to the material property.
+                                 for EpFd, FpEd, EdFp Hodge op.
+                                 Set by default to identity */
 
+  cs_real_t         ptyval;   /* Value related to the material property
+                                 for VpCd or CpVd hodge op.
+                                 Set by default to unity */
 
   cs_locmat_t      *hloc;    /* Local dense matrix related to a local
                                 discrete Hodge op. */
@@ -497,7 +499,7 @@ _free_cost_quant(struct _cost_quant_t  *hq)
  *          Hodge for COST algo. and edge/face quantities
  *
  * \param[in]      n_loc_ent  number of local entities
- * \param[in]      matval     values of the tensor related to the material pty
+ * \param[in]      ptymat     values of the tensor related to the material pty
  * \param[in]      pq         pointer to the first set of quantities
  * \param[in]      dq         pointer to the second set of quantities
  * \param[in, out] hq         pointer to a _cost_quant_t structure
@@ -506,7 +508,7 @@ _free_cost_quant(struct _cost_quant_t  *hq)
 
 static void
 _compute_cost_quant(int                     n_loc_ent,
-                    const cs_real_33_t      matval,
+                    const cs_real_33_t      ptymat,
                     const cs_nvec3_t       *pq,
                     const cs_nvec3_t       *dq,
                     struct _cost_quant_t   *hq)
@@ -523,7 +525,7 @@ _compute_cost_quant(int                     n_loc_ent,
     hq->invsvol[i] = 3./dpq; /* 1/subvol where subvol = 1/d * dpq */
 
     /* Compute diagonal entries */
-    _mv3(matval, dq[i].unitv, mdq_i);
+    _mv3(ptymat, dq[i].unitv, mdq_i);
     ii = i*n_loc_ent+i;
     hq->qmq[ii] = dq[i].meas * dq[i].meas * _dp3(dq[i].unitv, mdq_i);
     hq->T[ii] = dpq;
@@ -572,10 +574,6 @@ _build_using_cost(int                         cid,
   cs_locmat_t  *hloc = hb->hloc;
 
   const cs_param_hodge_t  h_info = hb->h_info;
-  const cs_real_33_t ptyval = {
-    {hb->matval[0][0], hb->matval[0][1], hb->matval[0][2]},
-    {hb->matval[1][0], hb->matval[1][1], hb->matval[1][2]},
-    {hb->matval[2][0], hb->matval[2][1], hb->matval[2][2]}};
 
   /* Set numbering and geometrical quantities Hodge builder */
   switch (h_info.type) {
@@ -682,11 +680,13 @@ _build_using_cost(int                         cid,
   /* PRIMAL --> DUAL */
   if (h_info.type == CS_PARAM_HODGE_TYPE_FPED ||
       h_info.type == CS_PARAM_HODGE_TYPE_EPFD)
-    _compute_cost_quant(n_ent, ptyval, hq->pq, hq->dq, hq);
+    _compute_cost_quant(n_ent, (const cs_real_3_t *)hb->ptymat,
+                        hq->pq, hq->dq, hq);
 
   /* DUAL --> PRIMAL */
   else if (h_info.type == CS_PARAM_HODGE_TYPE_EDFP)
-    _compute_cost_quant(n_ent, ptyval, hq->dq, hq->pq, hq);
+    _compute_cost_quant(n_ent, (const cs_real_3_t *)hb->ptymat,
+                        hq->dq, hq->pq, hq);
 
   /* Coefficients related to the value of beta */
   const double  beta = h_info.coef;
@@ -920,6 +920,10 @@ _build_using_wbs(int                         cid,
   const cs_sla_matrix_t  *c2f = connect->c2f;
   const cs_sla_matrix_t  *f2e = connect->f2e;
 
+  /* Sanity check */
+  assert(hb->h_info.algo == CS_PARAM_HODGE_ALGO_WBS);
+  assert(hb->h_info.type == CS_PARAM_HODGE_TYPE_VPCD);
+
   /* Local initializations */
   for (n_ent = 0, ii = vshift; ii < c2v->idx[cid+1]; n_ent++, ii++) {
     v_id = c2v->ids[ii];
@@ -1021,6 +1025,15 @@ _build_using_wbs(int                         cid,
 
   } // Loop on cell faces
 
+  /* Take into account the value of the associated property */
+  if (fabs(hb->ptyval - 1.0) > cs_get_eps_machine()) {
+    for (i = 0; i < n_ent; i++) {
+      int  shift_i = i*n_ent;
+      for (j = i; j < n_ent; j++)
+        hl->mat[shift_i + j] *= hb->ptyval;
+    }
+  }
+
   /* Local matrix is symmetric by construction. Set the lower part. */
   for (j = 0; j < n_ent; j++) {
     int  shift_j = j*n_ent;
@@ -1055,10 +1068,6 @@ _build_using_voronoi(cs_lnum_t                    c_id,
   cs_locmat_t  *hl = hb->hloc;
 
   const cs_param_hodge_t  h_info = hb->h_info;
-  const cs_real_t ptymat[3][3] = {
-    {hb->matval[0][0], hb->matval[0][1], hb->matval[0][2]},
-    {hb->matval[1][0], hb->matval[1][1], hb->matval[1][2]},
-    {hb->matval[2][0], hb->matval[2][1], hb->matval[2][2]}};
 
   switch (h_info.type) {
 
@@ -1077,10 +1086,10 @@ _build_using_voronoi(cs_lnum_t                    c_id,
         hl->ids[ii] = e_id;
 
         /* First sub-triangle contribution */
-        _mv3(ptymat, df0q.unitv, mv);
+        _mv3((const cs_real_3_t *)hb->ptymat, df0q.unitv, mv);
         contrib = df0q.meas * _dp3(mv, df0q.unitv);
         /* Second sub-triangle contribution */
-        _mv3(ptymat, df1q.unitv, mv);
+        _mv3((const cs_real_3_t *)hb->ptymat, df1q.unitv, mv);
         contrib += df1q.meas * _dp3(mv, df1q.unitv);
 
         /* Only a diagonal term */
@@ -1101,7 +1110,7 @@ _build_using_voronoi(cs_lnum_t                    c_id,
 
         hl->ids[ii] = f_id;
         /* Only a diagonal term */
-        _mv3(ptymat, deq.unitv, mv);
+        _mv3((const cs_real_3_t *)hb->ptymat, deq.unitv, mv);
         hl->mat[ii*hl->n_ent+ii] = deq.meas * _dp3(mv, deq.unitv) / surf;
 
       } /* End of loop on cell faces */
@@ -1110,14 +1119,13 @@ _build_using_voronoi(cs_lnum_t                    c_id,
 
   case CS_PARAM_HODGE_TYPE_VPCD:
     {
-      const cs_real_t  ptyval = ptymat[0][0]; // Must be isotropic
       const cs_connect_index_t  *c2v = connect->c2v;
 
       for (i = c2v->idx[c_id], ii = 0; i < c2v->idx[c_id+1]; i++, ii++) {
 
         hl->ids[ii] = c2v->ids[i];
         /* Only a diagonal term */
-        hl->mat[ii*hl->n_ent+ii] = ptyval * quant->dcell_vol[i];
+        hl->mat[ii*hl->n_ent+ii] = hb->ptyval * quant->dcell_vol[i];
 
       } // Loop on cell vertices
 
@@ -1138,7 +1146,6 @@ _build_using_voronoi(cs_lnum_t                    c_id,
  * \brief   Allocate and initialize a cs_hodge_builder_t structure
  *
  * \param[in]  connect       pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step     pointer to a time step structure
  * \param[in]  h_info        algorithm used to build the discrete Hodge op.
  *
  * \return  a new allocated cs_hodge_builder_t structure
@@ -1147,7 +1154,6 @@ _build_using_voronoi(cs_lnum_t                    c_id,
 
 cs_hodge_builder_t *
 cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
-                      const cs_time_step_t     *time_step,
                       cs_param_hodge_t          h_info)
 {
   cs_hodge_builder_t  *hb = NULL;
@@ -1157,7 +1163,6 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
   switch (h_info.type) {
 
   case CS_PARAM_HODGE_TYPE_VPCD:
-    assert(cs_param_pty_get_type(h_info.pty_id) == CS_PARAM_PTY_ISO);
     hb->n_maxloc_ent = connect->n_max_vbyc;
     hb->n_ent = connect->v_info->n_ent;
     break;
@@ -1202,26 +1207,16 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
 
   }
 
-  hb->t_cur = time_step->t_cur;
-  hb->uniform = cs_param_pty_is_uniform(h_info.pty_id);
-
-  if (hb->uniform) { /* Material property is uniform */
-
-    cs_real_3_t  xyz = {0., 0., 0.};
-
-    cs_evaluate_pty(h_info.pty_id,
-                    hb->t_cur,       // When ?
-                    xyz,             // Anywhere since uniform
-                    h_info.inv_pty,  // Need to inverse the tensor ?
-                    &(hb->matval));
-  }
-
-  /* Copy h_info */
-  hb->h_info.pty_id = h_info.pty_id;
   hb->h_info.inv_pty = h_info.inv_pty;
-  hb->h_info.type = h_info.type;
-  hb->h_info.algo = h_info.algo;
-  hb->h_info.coef = h_info.coef;
+  hb->h_info.type    = h_info.type;
+  hb->h_info.algo    = h_info.algo;
+  hb->h_info.coef    = h_info.coef;
+
+  /* Initialize by default the property values */
+  hb->ptymat[0][0] = 1., hb->ptymat[0][1] = hb->ptymat[0][2] = 0.;
+  hb->ptymat[1][1] = 1., hb->ptymat[1][0] = hb->ptymat[1][2] = 0.;
+  hb->ptymat[2][2] = 1., hb->ptymat[2][1] = hb->ptymat[2][0] = 0.;
+  hb->ptyval = 1.0; /* for VpCd, CpVd */
 
   return hb;
 }
@@ -1265,6 +1260,46 @@ cs_hodge_builder_free(cs_hodge_builder_t  *hb)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Set the value of the property attached to a hodge builder
+ *
+ * \param[in, out]  hb       pointer to a cs_hodge_builder_t structure
+ * \param[in]       ptyval   value of the property
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_builder_set_val(cs_hodge_builder_t    *hb,
+                         cs_real_t              ptyval)
+{
+  if (hb == NULL)
+    return;
+
+  hb->ptyval = ptyval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Set the value of the property attached to a hodge builder
+ *
+ * \param[in, out]  hb       pointer to a cs_hodge_builder_t structure
+ * \param[in]       ptymat   values of the tensor related to a property
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_builder_set_tensor(cs_hodge_builder_t     *hb,
+                            const cs_real_33_t      ptymat)
+{
+  if (hb == NULL)
+    return;
+
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < 3; j++)
+      hb->ptymat[i][j] = ptymat[i][j];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build a local discrete Hodge
  *
  * \param[in]      c_id       cell id
@@ -1288,20 +1323,6 @@ cs_hodge_build_local(int                         c_id,
   assert(hb != NULL);
 
   const cs_param_hodge_t  h_info = hb->h_info;
-
-  if (!hb->uniform) { /* Material property is not uniform */
-
-    cs_real_3_t  xc;
-    for (int k = 0; k < 3; k++)
-      xc[k] = quant->cell_centers[3*c_id+k];
-
-    cs_evaluate_pty(h_info.pty_id,
-                    hb->t_cur,          // When ?
-                    xc,                 // Where ?
-                    h_info.inv_pty,
-                    &(hb->matval));
-
-  }
 
   /* Set n_ent and reset local hodge matrix */
   switch (h_info.type) {
@@ -1363,7 +1384,7 @@ cs_hodge_build_local(int                         c_id,
  *
  * \param[in]  connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]  quant      pointer to a cs_cdo_quantities_t struct.
- * \param[in]  time_step  pointer to a time step structure
+ * \param[in]  pty        pointer to a cs_property_t struct.
  * \param[in]  h_info     pointer to a cs_param_hodge_t struct.
  *
  * \return a pointer to a cs_sla_matrix_t structure
@@ -1373,14 +1394,22 @@ cs_hodge_build_local(int                         c_id,
 cs_sla_matrix_t *
 cs_hodge_compute(const cs_cdo_connect_t      *connect,
                  const cs_cdo_quantities_t   *quant,
-                 const cs_time_step_t        *time_step,
+                 const cs_property_t         *pty,
                  const cs_param_hodge_t       h_info)
 {
   bool  only_diag = (h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI) ? true : false;
   cs_sla_matrix_t  *h_mat = NULL;
 
   /* Allocate and initialize a cs_hodge_builder_t structure */
-  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, time_step, h_info);
+  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, h_info);
+
+  bool  update_pty = true;
+  bool  pty_is_uniform = true;
+
+  if (pty == NULL)
+    update_pty = false;
+  else
+    pty_is_uniform = cs_property_is_uniform(pty);
 
   switch (h_info.type) {
 
@@ -1419,6 +1448,17 @@ cs_hodge_compute(const cs_cdo_connect_t      *connect,
   /* Fill the matrix related to the discrete Hodge operator.
      Proceed cellwise and then perform an assembly. */
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    /* Update the value of the property if needed */
+    if (update_pty) {
+      if (h_info.type == CS_PARAM_HODGE_TYPE_VPCD)
+        hb->ptyval = cs_property_get_cell_value(c_id, pty);
+      else
+        cs_property_get_cell_tensor(c_id, pty, h_info.inv_pty, hb->ptymat);
+
+      if (pty_is_uniform)
+        update_pty = false;
+    }
 
     /* The local (dense) matrix is stored inside hloc
        n_ent = number of entities related to the current cell */

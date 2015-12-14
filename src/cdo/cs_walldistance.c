@@ -302,23 +302,22 @@ cs_walldistance_compute(const cs_cdo_connect_t      *connect,
 /*!
  * \brief  Setup an new equation related to the wall distance
  *
- * \param[in]   eq          pointer to the associated cs_equation_t structure
- * \param[in]   wall_ml_id  id of the mesh location related to wall boundaries
+ * \param[in]  eq          pointer to the associated cs_equation_t structure
+ * \param[in]  diff_pty    pointer to a cs_property_t structure
+ * \param[in]  wall_ml_id  id of the mesh location related to wall boundaries
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_walldistance_setup(cs_equation_t   *eq,
+                      cs_property_t   *diff_pty,
                       int              wall_ml_id)
 {
   /* Sanity check */
   assert(!strcmp(cs_equation_get_name(eq), "WallDistance"));
 
-  /* By default: vertex-based CDO schemes and a unitary material property
-     are set */
-
   /* Unity is a material property defined by default */
-  cs_equation_link(eq, "diffusion", "unity");
+  cs_equation_link(eq, "diffusion", diff_pty);
 
   /* Add boundary conditions */
   cs_equation_add_bc(eq,
@@ -334,21 +333,20 @@ cs_walldistance_setup(cs_equation_t   *eq,
                               "value",         // type of definition
                               "1.0");          // value to set
 
-
   /* Post-processing of the computed unknown only at the beginning */
-  cs_equation_set(eq, "post_freq", "0");
+  cs_equation_set_option(eq, "post_freq", "0");
 
   /* Enforcement of the Dirichlet boundary conditions */
-  cs_equation_set(eq, "bc_enforcement", "penalization");
+  cs_equation_set_option(eq, "bc_enforcement", "penalization");
 
   /* System to solve is SPD by construction */
-  cs_equation_set(eq, "itsol", "cg");
+  cs_equation_set_option(eq, "itsol", "cg");
 
 #if defined(HAVE_PETSC)  /* Modify the default settings */
-  cs_equation_set(eq, "solver_family", "petsc");
-  cs_equation_set(eq, "precond", "amg");
+  cs_equation_set_option(eq, "solver_family", "petsc");
+  cs_equation_set_option(eq, "precond", "amg");
 #else
-  cs_equation_set(eq, "precond", "jacobi");
+  cs_equation_set_option(eq, "precond", "jacobi");
 #endif
 
 }

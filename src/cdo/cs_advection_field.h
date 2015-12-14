@@ -1,0 +1,334 @@
+#ifndef __CS_ADVECTION_FIELD_H__
+#define __CS_ADVECTION_FIELD_H__
+
+/*============================================================================
+ * Manage the definition/setting of advection fields
+ *============================================================================*/
+
+/*
+  This file is part of Code_Saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2015 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_cdo.h"
+#include "cs_param.h"
+#include "cs_cdo_connect.h"
+#include "cs_cdo_quantities.h"
+#include "cs_time_step.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+typedef struct _cs_adv_field_t cs_adv_field_t;
+
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and initialize a new advection field structure
+ *
+ * \param[in]  name        name of the advection field
+ * \param[in]  cdoq        pointer to a cs_cdo_quantities_t struct.
+ * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in]  time_step   pointer to a cs_time_step_t struct.
+ *
+ * \return a pointer to a new allocated cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_advection_field_create(const char                  *name,
+                          const cs_cdo_quantities_t   *cdoq,
+                          const cs_cdo_connect_t      *connect,
+                          const cs_time_step_t        *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_adv_field_t structure
+ *
+ * \param[in, out]  adv      pointer to a cs_adv_field_t structure to free
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_advection_field_free(cs_adv_field_t   *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if the given advection field has the name ref_name
+ *
+ * \param[in]  adv         pointer to a cs_adv_field_t structure to test
+ * \param[in]  ref_name    name of the advection field to find
+ *
+ * \return true if the name of the advection field is ref_name otherwise false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_advection_field_check_name(const cs_adv_field_t   *adv,
+                              const char             *ref_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  returns true if the advection field is uniform, otherwise false
+ *
+ * \param[in]    adv    pointer to a property to test
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_advection_field_is_uniform(const cs_adv_field_t   *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  returns true if the advection field is uniform in each cell
+ *         otherwise false
+ *
+ * \param[in]    adv    pointer to a property to test
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_advection_field_is_cellwise(const cs_adv_field_t   *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the name of an advection field
+ *
+ * \param[in]    adv    pointer to an advection field structure
+ *
+ * \return  the name of the related advection field
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_advection_field_get_name(const cs_adv_field_t   *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print a summary of a cs_adv_field_t structure
+ *
+ * \param[in]  adv      pointer to a cs_adv_field_t structure to summarize
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_summary(const cs_adv_field_t   *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set optional parameters related to a cs_adv_field_t structure
+ *
+ * \param[in, out]  adv       pointer to a cs_adv_field_t structure
+ * \param[in]       keyname   name of key related to the member of adv to set
+ * \param[in]       keyval    accessor to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_set_option(cs_adv_field_t   *adv,
+                              const char       *keyname,
+                              const char       *keyval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the value of a cs_adv_field_t structure
+ *
+ * \param[in, out]  adv       pointer to a cs_adv_field_t structure
+ * \param[in]       keyval    accessor to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_def_by_value(cs_adv_field_t    *adv,
+                                const char        *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_adv_field_t structure thanks to an analytic function
+ *
+ * \param[in, out]  adv     pointer to a cs_adv_field_t structure
+ * \param[in]       func    pointer to a function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
+                                   cs_analytic_func_t    *func);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_adv_field_t structure thanks to an array of values
+ *
+ * \param[in, out]  adv       pointer to a cs_adv_field_t structure
+ * \param[in]       support   flag to know where is defined the values
+ * \param[in]       array     pointer to an array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_def_by_array(cs_adv_field_t     *adv,
+                                cs_flag_t           support,
+                                const cs_real_t    *array);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create a cs_field_t structure related to an advection field
+ *
+ * \param[in, out] adv     pointer to a cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_create_field(cs_adv_field_t   *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the advection field at the cell center
+ *
+ * \param[in]      c_id    id of the current cell
+ * \param[in]      adv     pointer to a cs_adv_field_t structure
+ * \param[in, out] vect    pointer to a cs_nvec3_t structure (meas + unitv)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_get_cell_vector(cs_lnum_t              c_id,
+                                   const cs_adv_field_t  *adv,
+                                   cs_nvec3_t            *vect);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the advection field at cell centers
+ *
+ * \param[in]      adv           pointer to a cs_adv_field_t structure
+ * \param[in, out] cell_values   array of values at cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_at_cells(const cs_adv_field_t  *adv,
+                            cs_real_t             *cell_values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the advection field at vertices
+ *
+ * \param[in]      adv     pointer to a cs_adv_field_t structure
+ * \param[in, out] vect    pointer to a cs_nvec3_t structure (meas/unitv)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
+                               cs_real_t             *vtx_values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the flux of the advection field across the
+ *         the dual faces of a cell
+ *
+ * \param[in]      c_id     id of the current cell
+ * \param[in]      a_info   set of parameters for the advection operator
+ * \param[in]      adv      pointer to a cs_adv_field_t structure
+ * \param[in, out] fluxes   array of values attached to dual faces of a cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
+                                   const cs_param_advection_t    a_info,
+                                   const cs_adv_field_t         *adv,
+                                   cs_real_t                    *fluxes);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the flux of the advection field across the
+ *         triangle defined by a vertex, the face and edge barycenters
+ *
+ * \param[in]  v_id     id of the current vertex
+ * \param[in]  e_id     id of the current edge
+ * \param[in]  f_id     id of the current face
+ * \param[in]  a_info   set of parameters for the advection operator
+ * \param[in]  adv      pointer to a cs_adv_field_t structure
+ *
+ * \return the value of the flux across s(v,e,f)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
+                                 cs_lnum_t                    e_id,
+                                 cs_lnum_t                    f_id,
+                                 const cs_param_advection_t   a_info,
+                                 const cs_adv_field_t        *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the values of the related field(s)
+ *
+ * \param[in, out]     adv     pointer to a cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_update(cs_adv_field_t   *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Perform the postprocessing if needed
+ *
+ * \param[in]      adv     pointer to a cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_post(const cs_adv_field_t  *adv);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+#endif /* __CS_ADVECTION_FIELD_H__ */

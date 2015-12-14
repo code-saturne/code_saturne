@@ -452,7 +452,10 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
 
 /*----------------------------------------------------------------------------
  * Compute dual face normals (face crossed by primal edges).
- * Given a cell, a face and an edge, there are two dual face normals
+ * Given a cell and an edge, there are two faces attached to the
+ * couple (cell, edge)
+ * The triplet (edge, face, cell) induces an elementary triangle s(e,f,c)
+ * The dual face is the union of these two triangles.
  * Storage based on c2e connectivity
  * ---------------------------------------------------------------------------*/
 
@@ -461,8 +464,8 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
                           cs_cdo_quantities_t     *iq)  /* In/out */
 {
   cs_lnum_t  c_id, i, j, k, size, shift, parent;
-  double orient, area, inv;
-  cs_real_3_t  trinorm, xexf, xexc, xc;
+  cs_nvec3_t  nvec;
+  cs_real_3_t  trinorm, xexf, xexc;
 
   cs_lnum_t  *tag_shift = NULL;
 
@@ -471,8 +474,10 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
   assert(topo->f2c != NULL);
   assert(topo->c2e != NULL);
 
+  const cs_connect_index_t  *c2e = topo->c2e;
+
   /* Allocate and initialize arrays */
-  size = topo->c2e->idx[iq->n_cells];
+  size = c2e->idx[iq->n_cells];
   BFT_MALLOC(iq->dface, size, cs_dface_t);
 
   BFT_MALLOC(tag_shift, iq->n_edges, cs_lnum_t);
@@ -482,12 +487,11 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
   for (c_id = 0; c_id < iq->n_cells; c_id++) {
 
     /* Tag cell edges */
-    for (i = topo->c2e->idx[c_id]; i < topo->c2e->idx[c_id+1]; i++)
-      tag_shift[topo->c2e->ids[i]] = i+1;
+    for (i = c2e->idx[c_id]; i < c2e->idx[c_id+1]; i++)
+      tag_shift[c2e->ids[i]] = i+1;
 
     /* Get cell center */
-    for (k = 0; k < 3; k++)
-      xc[k] = iq->cell_centers[3*c_id+k];
+    const cs_real_t  *xc = iq->cell_centers + 3*c_id;
 
     for (i = topo->c2f->idx[c_id]; i < topo->c2f->idx[c_id+1]; i++) {
 
@@ -505,9 +509,10 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
           xexc[k] = xc[k] - e_q.center[k];
         }
         _cp3(xexf, xexc, &trinorm);
+        cs_nvec3(trinorm, &nvec);
 
         /* One should have (trinorm, te) > 0 */
-        orient = _dp3(trinorm, e_q.unitv);
+        const double  orient = _dp3(nvec.unitv, e_q.unitv);
         assert(fabs(orient) > 0);
 
         if (tag_shift[e_id] > 0) /* First time */
@@ -515,15 +520,15 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
         else /* Second time (<0) */
           tag_shift[e_id] *= -1, shift = tag_shift[e_id]-1, parent = 1;
 
+        /* Store the computed data */
         iq->dface[shift].parent_id[parent] = f_id;
-        if (orient < 0) {
+        iq->dface[shift].sface[parent].meas = 0.5*nvec.meas;
+        if (orient < 0)
           for (k = 0; k < 3; k++)
-            iq->dface[shift].sface[parent].unitv[k] = -0.5 * trinorm[k];
-        }
-        else {
+            iq->dface[shift].sface[parent].unitv[k] = -nvec.unitv[k];
+        else
           for (k = 0; k < 3; k++)
-            iq->dface[shift].sface[parent].unitv[k] =  0.5 * trinorm[k];
-        }
+            iq->dface[shift].sface[parent].unitv[k] =  nvec.unitv[k];
 
       } /* Loop on face edges */
 
@@ -531,26 +536,21 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
 
   } /* Loop on cells */
 
-  /* Normalize dual face normal and fill dual face area  */
+  BFT_FREE(tag_shift);
+
+  /* Compute the dual face normal from the two elementary contributions */
   for (c_id = 0; c_id < iq->n_cells; c_id++) {
-    for (i = topo->c2e->idx[c_id]; i < topo->c2e->idx[c_id+1]; i++) {
+    for (i = c2e->idx[c_id]; i < c2e->idx[c_id+1]; i++) {
+
+      cs_nvec3_t  t1 = iq->dface[i].sface[0];
+      cs_nvec3_t  t2 = iq->dface[i].sface[1];
 
       for (k = 0; k < 3; k++)
-        iq->dface[i].vect[k] = iq->dface[i].sface[0].unitv[k]
-                             + iq->dface[i].sface[1].unitv[k];
-
-      for (parent = 0; parent < 2; parent++) {
-        area = _n3(iq->dface[i].sface[parent].unitv);
-        iq->dface[i].sface[parent].meas = area;
-        inv = 1 / area;
-        for (k = 0; k < 3; k++)
-          iq->dface[i].sface[parent].unitv[k] *= inv;
-      }
+        iq->dface[i].vect[k] = t1.meas*t1.unitv[k] + t2.meas*t2.unitv[k];
 
     }
   } /* End of loop on cells */
 
-  BFT_FREE(tag_shift);
 }
 
 /*----------------------------------------------------------------------------
