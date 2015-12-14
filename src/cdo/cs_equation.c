@@ -1788,6 +1788,9 @@ cs_equation_last_setup(cs_equation_t  *eq)
   /* Initialize cs_sles_t structure */
   _sles_initialization(eq);
 
+  /* Flag this equation such that parametrization is not modifiable anymore */
+  eqp->flag |= CS_EQUATION_LOCKED;
+
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
 
@@ -1833,6 +1836,11 @@ cs_equation_set_option(cs_equation_t       *eq,
                 " modify your settings."), eq->name);
 
   } /* Error message */
+
+  if (eqp->flag & CS_EQUATION_LOCKED)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Equation %s is not modifiable anymore.\n"
+                " Please check your settings."), eq->name);
 
   switch(key) {
 
