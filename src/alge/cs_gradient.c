@@ -4078,19 +4078,18 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
 
       /* Periodicity and parallelism treatment */
 
-                        ///FIXME
       if (m->halo != NULL) {
-                          cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 18);
-               if (cs_glob_mesh->n_init_perio > 0)
-        cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)grad);
-                        }
+        cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 18);
+        if (cs_glob_mesh->n_init_perio > 0)
+          cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)grad);
+      }
 
       /* Convergence test (L2 norm) */
 
-                        ///FIXME
+      ///FIXME
       l2_residual = _l2_norm_1(18*n_cells, (cs_real_t *)rhs);
 
-                 } /* End of the iterative process */
+    } /* End of the iterative process */
 
     /* Printing */
 
@@ -4115,7 +4114,6 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
 
   BFT_FREE(rhs);
 }
-
 
 /*----------------------------------------------------------------------------
  * Initialize gradient and right-hand side for scalar gradient reconstruction.
