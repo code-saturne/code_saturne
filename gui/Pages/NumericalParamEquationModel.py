@@ -577,9 +577,17 @@ class NumericalParamEquatModel(Model):
                               'bi_cgstab', 'bi_cgstab2', 'gmres', 'automatic',
                               'gauss_seidel', 'PCR3'))
         node = self._getSolverNameNode(name)
-        n = node.xmlInitNode('solver_choice')
-        n['choice'] = value
 
+        if self._isPressure(node):
+            default = self._defaultValues()['solver_choice_pressure']
+        else:
+            default = self._defaultValues()['solver_choice']
+
+        if value != default:
+            n = node.xmlInitNode('solver_choice')
+            n['choice'] = value
+        else:
+            node.xmlRemoveChild('solver_choice')
 
     @Variables.undoLocal
     def setPreconditioningChoice(self, name, value):
@@ -587,8 +595,17 @@ class NumericalParamEquatModel(Model):
         self.isInList(value, ('multigrid', 'none', 'jacobi',
                               'polynomial'))
         node = self._getSolverNameNode(name)
-        n = node.xmlInitNode('preconditioning_choice')
-        n['choice'] = value
+
+        if self._isPressure(node):
+            default = self._defaultValues()['preconditioning_choice_pressure']
+        else:
+            default = self._defaultValues()['preconditioning_choice']
+
+        if value != default:
+            n = node.xmlInitNode('preconditioning_choice')
+            n['choice'] = value
+        else:
+            node.xmlRemoveChild('preconditioning_choice')
 
 
     @Variables.noUndo
