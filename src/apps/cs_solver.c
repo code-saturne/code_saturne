@@ -206,6 +206,8 @@ cs_run(void)
 
   cs_preprocessor_data_read_headers(cs_glob_mesh,
                                     cs_glob_mesh_builder);
+  if (!opts.cdo)
+    opts.cdo = cs_user_cdo_activated();
 
   /* Initialize Fortran API and calculation setup */
 
@@ -325,10 +327,13 @@ cs_run(void)
 
       if (cs_user_solver_set() == 0) {
 
-        if (opts.cdo) { /* CDO kernel mode */
+        if (opts.cdo) {
 
-          cs_cdo_main(cs_glob_mesh,
-                      cs_glob_mesh_quantities);
+          /*----------------------------------------------
+           * Call main calculation function (CDO Kernel)
+           *----------------------------------------------*/
+
+          cs_cdo_main(cs_glob_mesh, cs_glob_mesh_quantities);
 
         }
         else {
