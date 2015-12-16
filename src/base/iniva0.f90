@@ -461,13 +461,6 @@ elseif(itytur.eq.3) then
         cvar_ep(iel)  = -grand
       enddo
 
-      if(iturb.eq.32)then
-        call field_get_val_s(ivarfl(ial), cvar_al)
-        do iel = 1, ncel
-          cvar_al(iel) = 1.d0
-        enddo
-      endif
-
     endif
   else
       call field_get_val_s(ivarfl(ir11), cvar_r11)
@@ -506,16 +499,15 @@ elseif(itytur.eq.3) then
         cvar_r23(iel) = -grand
         cvar_ep(iel)  = -grand
       enddo
-
-      if(iturb.eq.32)then
-        call field_get_val_s(ivarfl(ial), cvar_al)
-        do iel = 1, ncel
-          cvar_al(iel) = 1.d0
-        enddo
-      endif
-
     endif
   endif
+  if(iturb.eq.32)then
+    call field_get_val_s(ivarfl(ial), cvar_al)
+    do iel = 1, ncel
+      cvar_al(iel) = 1.d0
+    enddo
+  endif
+
 elseif(iturb.eq.60) then
 
   call field_get_val_s(ivarfl(ik), cvar_k)
