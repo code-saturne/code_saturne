@@ -20,32 +20,28 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine clpalp &
- ( ncelet , ncel   , nvar   )
-
 !===============================================================================
-! FONCTION :
+! Function :
 ! ----------
+!> \file clpalp.f90
+!> \brief Clipping of alpha in the framwork of the Rij-EBRSM model.
 
-! Clipping of Alpha
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre de cellules                             !
-! nvar             ! e  ! <-- ! nombre de variables                            !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           nom           role
+!______________________________________________________________________________!
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     alpha_min     minimum acceptable value for alpha
+!______________________________________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 
-!-------------------------------------------------------------------------------
+subroutine clpalp &
+ ( ncelet , ncel  , alpha_min)
+
 !===============================================================================
 
 !===============================================================================
@@ -66,7 +62,8 @@ implicit none
 
 ! Arguments
 
-integer          nvar, ncelet, ncel
+integer          ncelet, ncel
+double precision alpha_min(ncelet)
 
 ! VARIABLES LOCALES
 
@@ -97,9 +94,9 @@ enddo
 iclpmn(1) = 0
 iclpmx(1) = 0
 do iel = 1, ncel
-  if (cvar_al(iel).lt.0.d0) then
+  if (cvar_al(iel).lt.alpha_min(iel)) then
     iclpmn(1) = iclpmn(1) + 1
-    cvar_al(iel) = 0.d0
+    cvar_al(iel) = alpha_min(iel)
   elseif(cvar_al(iel).gt.1.d0) then
     iclpmx(1) = iclpmx(1) + 1
     cvar_al(iel) = 1.d0

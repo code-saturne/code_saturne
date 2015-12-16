@@ -35,11 +35,9 @@
 !______________________________________________________________________________.
 !  mode           nom           role
 !______________________________________________________________________________!
-!> \param[in]     nvar          total numver of variables
 !______________________________________________________________________________!
 
-subroutine resalp &
- ( nvar   )
+subroutine resalp( )
 
 !===============================================================================
 ! Module files
@@ -63,11 +61,10 @@ implicit none
 
 ! Arguments
 
-integer          nvar
-
 ! Local variables
 
 integer          ivar  , iel
+integer          ii    , jj    , ifac
 integer          ipcvlo
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
@@ -86,6 +83,7 @@ double precision rvoid(1)
 
 character(len=80) :: label
 double precision, allocatable, dimension(:) :: viscf, viscb
+double precision, allocatable, dimension(:) :: alpha_min
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: dpvar
@@ -204,7 +202,7 @@ do iel=1,ncel
   ! For automatic initialization, the length scale is fixed at L^+ =50
   if (ntcabs.eq.1) xlldrb=50.d0*viscl0/(0.05d0*uref)
 
-  l2      = xlldrb**2
+  l2 = xlldrb**2
 
   ! Explicit term
   smbr(iel) = volume(iel)*(1.d0 -cvara_al(iel)) / l2
@@ -273,11 +271,41 @@ call codits &
 ! 3. Clipping
 !===============================================================================
 
-call clpalp(ncelet, ncel, nvar)
+allocate(alpha_min(ncelet))
+
+! Compute a first estimator of the minimal value of alpha per cell.
+! This is deduced from "alpha/L^2 - div(grad alpha) = 1/L^2" and assuming that
+! boundary cell values are 0. This value is thefore non zero but
+! much smaller than the wanted value.
+do iel = 1, ncel
+  alpha_min(iel) = rovsdt(iel)
+enddo
+
+do iel = ncel +1, ncelet
+  alpha_min(iel) = 0.d0
+enddo
+
+do ifac = 1, nfac
+  ii = ifacel(1, ifac)
+  jj = ifacel(2, ifac)
+  alpha_min(ii) = alpha_min(ii) + viscf(ifac)
+  alpha_min(jj) = alpha_min(jj) + viscf(ifac)
+enddo
+
+do ifac = 1, nfabor
+  ii = ifabor(ifac)
+  alpha_min(ii) = alpha_min(ii) + viscb(ifac)/distb(ifac)
+enddo
+
+do iel = 1, ncel
+  alpha_min(iel) = rovsdt(iel)/alpha_min(iel)
+enddo
+
+call clpalp(ncelet, ncel, alpha_min)
 
 ! Free memory
 deallocate(smbr, rovsdt, w1)
-deallocate(viscf, viscb)
+deallocate(viscf, viscb,alpha_min)
 deallocate(dpvar)
 
 !--------

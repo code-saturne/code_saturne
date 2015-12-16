@@ -1673,10 +1673,10 @@ if (iccvfg.eq.0) then
 
   else if(itytur.eq.3) then
 
-    ! Calcul de Alpha pour l'EBRSM
+    ! Compute Alpha for EBRSM
     if (iturb.eq.32) then
 
-      call resalp(nvar)
+      call resalp()
 
     endif
 
