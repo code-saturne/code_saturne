@@ -178,22 +178,21 @@ BEGIN_C_DECLS
         partial implicitation of wall BCs of \f$ \tens{R} \f$
         - 1: true
         - 0: false (default)
-  \var  cs_turb_rans_model_t::almax
+  \var  cs_turb_ref_values_t::almax
         characteristic macroscopic length of the domain, used for the
         initialization of the turbulence and the potential clipping (with
         \ref iclkep=1)
         - Negative value: not initialized (the code then uses the cubic root of
           the domain volume).
 
-        Useful if and only if \ref iturb = 20, 21, 30, 31, 50 or 60
-        (RANS models).
-  \var  cs_turb_rans_model_t::uref
+        Useful mainly for RANS models.
+  \var  cs_turb_ref_values_t:uref
         characteristic flow velocity, used for the initialization of the
         turbulence
         - Negative value: not initialized.
 
-        Useful if and only if \ref iturb= 20, 21, 30, 31, 50 or 60 (RANS model)
-        and the turbulence is not initialized somewhere else (restart file or
+        Useful mainly for RANS models and if
+        the turbulence is not initialized somewhere else (restart file or
         subroutine \ref cs\_user\_initialization).
   \var  cs_turb_rans_model_t::xlomlg
         mixing length for the mixing length model
@@ -232,9 +231,25 @@ BEGIN_C_DECLS
 
 /* main turbulence model structure and associated pointer */
 
-static cs_turb_model_t  _turb_model = {-999, -999, 0};
+static cs_turb_model_t  _turb_model =
+{
+  .iturb  = -999,
+  .itytur = -999,
+  .nvarcl = 0
+};
 
 const cs_turb_model_t  *cs_glob_turb_model = &_turb_model;
+
+/* Reference values for turbulence structure and associated pointer */
+
+static cs_turb_ref_values_t
+_turb_ref_values =
+{
+  .almax      = -999,
+  .uref       =-1e13
+};
+
+const cs_turb_ref_values_t  *cs_glob_turb_ref_values = &_turb_ref_values;
 
 /* RANS turbulence model structure and associated pointer */
 
@@ -257,8 +272,6 @@ _turb_rans_model =
   .idifre     =    1,
   .iclsyr     =    1,
   .iclptr     =    0,
-  .almax      = -999,
-  .uref       =-1e13,
   .xlomlg      =-1e13
 };
 
@@ -1006,8 +1019,8 @@ cs_f_turb_les_model_get_pointers(int     **idries,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   almax  --> pointer to cs_glob_turb_rans_model->almax
- *   uref   --> pointer to cs_glob_turb_rans_model->uref
+ *   almax  --> pointer to cs_glob_turb_ref_values->almax
+ *   uref   --> pointer to cs_glob_turb_ref_values->uref
  *   xlomlg --> pointer to cs_glob_turb_rans_model->xlomlg
  *----------------------------------------------------------------------------*/
 
@@ -1016,8 +1029,8 @@ cs_f_turb_reference_values(double  **almax,
                            double  **uref,
                            double  **xlomlg)
 {
-  *almax  = &(_turb_rans_model.almax);
-  *uref   = &(_turb_rans_model.uref);
+  *almax  = &(_turb_ref_values.almax);
+  *uref   = &(_turb_ref_values.uref);
   *xlomlg = &(_turb_rans_model.xlomlg);
 }
 
@@ -1075,6 +1088,19 @@ cs_turb_model_t *
 cs_get_glob_turb_model(void)
 {
   return &_turb_model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide acces to cs_glob_turb_ref_values
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_turb_ref_values_t *
+cs_get_glob_turb_ref_values(void)
+{
+  return &_turb_ref_values;
 }
 
 /*----------------------------------------------------------------------------*/

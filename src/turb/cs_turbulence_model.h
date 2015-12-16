@@ -74,6 +74,17 @@ typedef struct {
 
 } cs_turb_model_t;
 
+
+/* Reference values for turbulence structure and associated pointer */
+/*------------------------------------------------------------------*/
+
+typedef struct {
+  double        almax;        /* characteristic macroscopic length of the
+                                 domain */
+  double        uref;         /* characteristic flow velocity */
+} cs_turb_ref_values_t;
+
+
 /* rans turbulence model descriptor */
 /*----------------------------------*/
 
@@ -139,9 +150,6 @@ typedef struct {
   int           iclptr;       /* partial implicitation of wall BCs of R
                                  - 1: true
                                  - 0: false (default) */
-  double        almax;        /* characteristic macroscopic length of the
-                                 domain */
-  double        uref;         /* characteristic flow velocity */
   double        xlomlg;       /* mixing length */
 
 } cs_turb_rans_model_t;
@@ -168,6 +176,10 @@ typedef struct {
 /* Pointer to main turbulence model descriptor structure */
 
 extern const cs_turb_model_t         *cs_glob_turb_model;
+
+/* Pointer to reference values for turbulence descriptor structure */
+
+extern const cs_turb_ref_values_t    *cs_glob_turb_ref_values;
 
 /* Pointer to RANS turbulence model descriptor structure */
 
@@ -291,6 +303,16 @@ extern const double cs_turb_cthdfm;
 
 cs_turb_model_t *
 cs_get_glob_turb_model(void);
+
+/*----------------------------------------------------------------------------
+ * Provide acces to cs_glob_turb_ref_values
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_turb_ref_values_t *
+cs_get_glob_turb_ref_values(void);
+
 
 /*----------------------------------------------------------------------------
  * Provide acces to cs_glob_turb_rans_model

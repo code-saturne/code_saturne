@@ -3085,24 +3085,24 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
 void CS_PROCF (cstini, CSTINI) (void)
 {
   char* length_choice = NULL;
-  cs_turb_rans_model_t *rans_mdl = cs_get_glob_turb_rans_model();
+  cs_turb_ref_values_t *ref_values = cs_get_glob_turb_ref_values();
 
-  rans_mdl->uref = 1.; /* default if not specified */
+  ref_values->uref = 1.; /* default if not specified */
 
-  cs_gui_reference_initialization("velocity", &(rans_mdl->uref));
+  cs_gui_reference_initialization("velocity", &(ref_values->uref));
 
   length_choice = _reference_length_initialization_choice();
 
   if (length_choice != NULL) {
     if (cs_gui_strcmp(length_choice, "prescribed"))
-      cs_gui_reference_initialization("length", &(rans_mdl->almax));
+      cs_gui_reference_initialization("length", &(ref_values->almax));
     BFT_FREE(length_choice);
   }
 
 #if _XML_DEBUG_
   bft_printf("==>CSTINI\n");
-  bft_printf("--almax = %f\n", rans_mdl->almax);
-  bft_printf("--uref  = %f\n", rans_mdl->uref);
+  bft_printf("--almax = %f\n", ref_values->almax);
+  bft_printf("--uref  = %f\n", ref_values->uref);
 #endif
 }
 
@@ -3847,8 +3847,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             mei_tree_insert(ev_formula_turb, "rho0", cs_glob_fluid_properties->ro0);
             mei_tree_insert(ev_formula_turb, "mu0", cs_glob_fluid_properties->viscl0);
             mei_tree_insert(ev_formula_turb, "cp0", cs_glob_fluid_properties->cp0);
-            mei_tree_insert(ev_formula_turb, "uref", cs_glob_turb_rans_model->uref);
-            mei_tree_insert(ev_formula_turb, "almax", cs_glob_turb_rans_model->almax);
+            mei_tree_insert(ev_formula_turb, "uref", cs_glob_turb_ref_values->uref);
+            mei_tree_insert(ev_formula_turb, "almax", cs_glob_turb_ref_values->almax);
             mei_tree_insert(ev_formula_turb, "x", 0.0);
             mei_tree_insert(ev_formula_turb, "y", 0.0);
             mei_tree_insert(ev_formula_turb, "z", 0.0);
