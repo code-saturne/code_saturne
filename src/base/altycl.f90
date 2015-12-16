@@ -185,7 +185,7 @@ do ifac = 1, nfabor
     ddepy = ddepy + disale(2,inod)+xyzno0(2,inod)-xyznod(2,inod)
     ddepz = ddepz + disale(3,inod)+xyzno0(3,inod)-xyznod(3,inod)
   enddo
-  ! For Slinding walls, no imposed velocity
+  ! For Sliding walls, no imposed velocity
   if (iecrw.eq.0.and.ialtyb(ifac).ne.igliss) then
     iel = ifabor(ifac)
     ialtyb(ifac) = ivimpo

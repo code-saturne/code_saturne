@@ -2147,7 +2147,7 @@ endif
 '       ITBRRB = ',4x,i10,    ' (Reconstruction T ou H au brd)',/)
  6011 format(                                                            &
 '-------------------------------------------------------------',       /,&
-' Variable         Numero ISCACP ITURT      VISLS0      SIGMAS',       /,&
+' Variable         Numero ISCACP  ITURT     VISLS0      SIGMAS',       /,&
 '-------------------------------------------------------------'  )
  6021 format( &
  1x,    a16,    i7,    i7,    i7,      e12.4,      e12.4  )
@@ -2215,7 +2215,7 @@ endif
 '       ITBRRB = ',4x,i10,    ' (T or H reconstruction at bdy)',/)
  6011 format(                                                     &
 '-------------------------------------------------------------',/,&
-' Variable         Number ISCACP ITURT      VISLS0      SIGMAS',/,&
+' Variable         Number ISCACP  ITURT     VISLS0      SIGMAS',/,&
 '-------------------------------------------------------------'  )
  6021 format( &
  1x,    a16,    i7,    i7,    i7,     e12.4,      e12.4  )
