@@ -304,17 +304,17 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         # Combo models
 
-        self.modelRho      = ComboModel(self.comboBoxRho, 3, 1)
-        self.modelMu       = ComboModel(self.comboBoxMu, 3, 1)
-        self.modelCp       = ComboModel(self.comboBoxCp, 3, 1)
-        self.modelAl       = ComboModel(self.comboBoxAl, 3, 1)
-        self.modelDiff     = ComboModel(self.comboBoxDiff, 2, 1)
-        self.modelNameDiff = ComboModel(self.comboBoxNameDiff,1,1)
-        self.modelViscv0   = ComboModel(self.comboBoxViscv0, 3, 1)
-        self.modelDiftl0   = ComboModel(self.comboBoxDiftl0, 3, 1)
+        self.modelRho      = ComboModel(self.comboBoxRho,      3, 1)
+        self.modelMu       = ComboModel(self.comboBoxMu,       3, 1)
+        self.modelCp       = ComboModel(self.comboBoxCp,       3, 1)
+        self.modelAl       = ComboModel(self.comboBoxAl,       3, 1)
+        self.modelDiff     = ComboModel(self.comboBoxDiff,     2, 1)
+        self.modelNameDiff = ComboModel(self.comboBoxNameDiff, 1, 1)
+        self.modelViscv0   = ComboModel(self.comboBoxViscv0,   3, 1)
+        self.modelDiftl0   = ComboModel(self.comboBoxDiftl0,   3, 1)
         self.modelMaterial = ComboModel(self.comboBoxMaterial, 1, 1)
-        self.modelMethod   = ComboModel(self.comboBoxMethod, 1, 1)
-        self.modelPhas     = ComboModel(self.comboBoxPhas, 2, 1)
+        self.modelMethod   = ComboModel(self.comboBoxMethod,   1, 1)
+        self.modelPhas     = ComboModel(self.comboBoxPhas,     2, 1)
 
         self.modelRho.addItem(self.tr('constant'), 'constant')
         self.modelRho.addItem(self.tr('variable'), 'variable')
@@ -356,12 +356,51 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelPhas.addItem(self.tr('liquid'), 'liquid')
         self.modelPhas.addItem(self.tr('gas'), 'gas')
 
-        if (self.freesteam == 0 and EOS == 0 and not coolprop_fluids) or \
-            mdl_joule != 'off' or mdl_comp != 'off':
+        self.scalar = ""
+        scalar_list = self.m_sca.getUserScalarNameList()
+        for s in self.m_sca.getScalarsVarianceList():
+            if s in scalar_list: scalar_list.remove(s)
+
+        if scalar_list != []:
+            self.scalar = scalar_list[0]
+            for scalar in scalar_list:
+                self.modelNameDiff.addItem(scalar)
+
+        # Validators
+        validatorRho    = DoubleValidator(self.lineEditRho,    min = 0.0)
+        validatorMu     = DoubleValidator(self.lineEditMu,     min = 0.0)
+        validatorCp     = DoubleValidator(self.lineEditCp,     min = 0.0)
+        validatorAl     = DoubleValidator(self.lineEditAl,     min = 0.0)
+        validatorDiff   = DoubleValidator(self.lineEditDiff,   min = 0.0)
+        validatorViscv0 = DoubleValidator(self.lineEditViscv0, min = 0.0)
+        validatorDiftl0 = DoubleValidator(self.lineEditDiftl0, min = 0.0)
+
+        validatorRho.setExclusiveMin(True)
+        validatorMu.setExclusiveMin(True)
+        validatorCp.setExclusiveMin(True)
+        validatorAl.setExclusiveMin(True)
+        validatorDiff.setExclusiveMin(True)
+        validatorDiftl0.setExclusiveMin(True)
+
+        self.lineEditRho.setValidator(validatorRho)
+        self.lineEditMu.setValidator(validatorMu)
+        self.lineEditCp.setValidator(validatorCp)
+        self.lineEditAl.setValidator(validatorAl)
+        self.lineEditDiff.setValidator(validatorDiff)
+        self.lineEditViscv0.setValidator(validatorViscv0)
+        self.lineEditDiftl0.setValidator(validatorDiftl0)
+
+        if (self.freesteam == 1 or EOS == 1 or coolprop_fluids):
+            self.tables = True
+        else:
+            self.tables = False
+
+        if self.tables == False or mdl_joule != 'off' or mdl_comp != 'off':
             self.groupBoxTableChoice.hide()
         else:
             self.groupBoxTableChoice.show()
             self.lineEditReference.setEnabled(False)
+
             # suppress perfect gas
             self.modelMaterial.addItem(self.tr('user material'), 'user_material')
             tmp = ["Argon", "Nitrogen", "Hydrogen", "Oxygen", "Helium", "Air"]
@@ -387,18 +426,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.modelMaterial.setItem(str_model=material)
             self.updateMethod()
 
-        self.scalar = ""
-        scalar_list = self.m_sca.getUserScalarNameList()
-        for s in self.m_sca.getScalarsVarianceList():
-            if s in scalar_list: scalar_list.remove(s)
-
-        if scalar_list != []:
-            self.scalar = scalar_list[0]
-            for scalar in scalar_list:
-                self.modelNameDiff.addItem(scalar)
-
         # Connections
-
         self.connect(self.comboBoxRho,      SIGNAL("activated(const QString&)"), self.slotStateRho)
         self.connect(self.comboBoxMu,       SIGNAL("activated(const QString&)"), self.slotStateMu)
         self.connect(self.comboBoxCp,       SIGNAL("activated(const QString&)"), self.slotStateCp)
@@ -423,32 +451,23 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.connect(self.pushButtonDiff,   SIGNAL("clicked()"), self.slotFormulaDiff)
         self.connect(self.pushButtonViscv0, SIGNAL("clicked()"), self.slotFormulaViscv0)
 
-        # Validators
+        self.initializeWidget()
 
-        validatorRho    = DoubleValidator(self.lineEditRho, min = 0.0)
-        validatorMu     = DoubleValidator(self.lineEditMu, min = 0.0)
-        validatorCp     = DoubleValidator(self.lineEditCp, min = 0.0)
-        validatorAl     = DoubleValidator(self.lineEditAl, min = 0.0)
-        validatorDiff   = DoubleValidator(self.lineEditDiff, min = 0.0)
-        validatorViscv0 = DoubleValidator(self.lineEditViscv0, min = 0.0)
-        validatorDiftl0 = DoubleValidator(self.lineEditDiftl0, min = 0.0)
+        self.case.undoStartGlobal()
 
-        validatorRho.setExclusiveMin(True)
-        validatorMu.setExclusiveMin(True)
-        validatorCp.setExclusiveMin(True)
-        validatorAl.setExclusiveMin(True)
-        validatorDiff.setExclusiveMin(True)
-        validatorDiftl0.setExclusiveMin(True)
 
-        self.lineEditRho.setValidator(validatorRho)
-        self.lineEditMu.setValidator(validatorMu)
-        self.lineEditCp.setValidator(validatorCp)
-        self.lineEditAl.setValidator(validatorAl)
-        self.lineEditDiff.setValidator(validatorDiff)
-        self.lineEditViscv0.setValidator(validatorViscv0)
-        self.lineEditDiftl0.setValidator(validatorDiftl0)
+    def initializeWidget(self):
+        """
+        """
+        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp = self.mdl.getThermoPhysicalModel()
 
-        if scalar_list == []:
+        #compressible
+        self.groupBoxViscv0.hide()
+
+        # combustion
+        self.groupBoxDiftl0.hide()
+
+        if self.scalar == "":
             self.groupBoxDiff.hide()
         else :
             self.groupBoxDiff.show()
@@ -464,14 +483,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 self.pushButtonDiff.setEnabled(True)
                 setGreenColor(self.pushButtonDiff, True)
 
-        #compressible
-        self.groupBoxViscv0.hide()
-
-        # combustion
-        self.groupBoxDiftl0.hide()
-
         # Standard Widget initialization
-
         for tag, symbol in self.lst:
             __model  = getattr(self, "model"      + symbol)
             __line   = getattr(self, "lineEdit"   + symbol)
@@ -593,12 +605,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 if tag == 'specific_heat':
                     self.groupBoxCp.setTitle('Specific heat')
 
-        self.case.undoStartGlobal()
 
-
-    def updateTypeChoice(self):
+    def updateTypeChoice(self, old_choice):
         """
-        add/suppress thermo tables for each proprties
+        add/suppress thermo tables for each properties
         """
         for tag, symbol in self.lst:
             __model  = getattr(self, "model" + symbol)
@@ -606,6 +616,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 __model.disableItem(str_model='thermal_law')
             else:
                 __model.enableItem(str_model='thermal_law')
+                if old_choice == "user_material":
+                    self.mdl.setPropertyMode(tag, 'thermal_law')
             c = self.mdl.getPropertyMode(tag)
             __model.setItem(str_model=c)
 
@@ -659,9 +671,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         Method to call 'setMaterial'
         """
         choice = self.modelMaterial.dicoV2M[str(text)]
+        old_choice = self.mdl.getMaterials()
         self.mdl.setMaterials(choice)
         self.updateMethod()
-        self.updateTypeChoice()
+        self.updateTypeChoice(old_choice)
 
 
     @pyqtSignature("const QString &")

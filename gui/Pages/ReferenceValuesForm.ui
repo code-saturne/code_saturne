@@ -339,7 +339,7 @@
         <item>
          <widget class="QLabel" name="labelInfoT0">
           <property name="text">
-           <string>(used for initialization of enthalpy and density)</string>
+           <string>(used for properties initialization)</string>
           </property>
          </widget>
         </item>
