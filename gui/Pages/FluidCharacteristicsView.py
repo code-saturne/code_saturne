@@ -318,7 +318,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         self.modelRho.addItem(self.tr('constant'), 'constant')
         self.modelRho.addItem(self.tr('variable'), 'variable')
-        self.modelRho.addItem(self.tr('thermal law'), 'thermal_law')
+        self.modelRho.addItem(self.tr('material law'), 'thermal_law')
         if mdl_atmo != 'off':
             self.modelRho.addItem(self.tr('defined in atphyv'), 'variable')
         elif mdl_joule == 'arc':
@@ -326,19 +326,19 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         self.modelMu.addItem(self.tr('constant'), 'constant')
         self.modelMu.addItem(self.tr('variable'), 'variable')
-        self.modelMu.addItem(self.tr('thermal law'), 'thermal_law')
+        self.modelMu.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelMu.addItem(self.tr('defined in elphyv'), 'variable')
 
         self.modelCp.addItem(self.tr('constant'), 'constant')
         self.modelCp.addItem(self.tr('variable'), 'variable')
-        self.modelCp.addItem(self.tr('thermal law'), 'thermal_law')
+        self.modelCp.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelCp.addItem(self.tr('defined in elphyv'), 'variable')
 
         self.modelAl.addItem(self.tr('constant'), 'constant')
         self.modelAl.addItem(self.tr('variable'), 'variable')
-        self.modelAl.addItem(self.tr('thermal law'), 'thermal_law')
+        self.modelAl.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelAl.addItem(self.tr('defined in elphyv'), 'variable')
 
@@ -347,11 +347,11 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         self.modelViscv0.addItem(self.tr('constant'), 'constant')
         self.modelViscv0.addItem(self.tr('variable'), 'variable')
-        self.modelViscv0.addItem(self.tr('thermal law'), 'thermal_law')
+        self.modelViscv0.addItem(self.tr('material law'), 'thermal_law')
 
         self.modelDiftl0.addItem(self.tr('constant'), 'constant')
         self.modelDiftl0.addItem(self.tr('variable'), 'variable')
-        self.modelDiftl0.addItem(self.tr('thermal law'), 'thermal_law')
+        self.modelDiftl0.addItem(self.tr('material law'), 'thermal_law')
 
         self.modelPhas.addItem(self.tr('liquid'), 'liquid')
         self.modelPhas.addItem(self.tr('gas'), 'gas')
