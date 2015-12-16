@@ -79,9 +79,6 @@ implicit none
 
 character        name*300, chaine*80
 logical          interleaved
-integer          iok20 , iok21 , iok30 , iok31 , iok50 , iok51 , iok60
-integer          iok32
-integer          iok70
 integer          iokss , iokcaz
 integer          ii    , iiesca, iest
 integer          ipp   , iwar  , kval
@@ -525,74 +522,38 @@ endif
 
 write(nfecra,2530)xkappa,cstlog,apow,bpow
 
-iok20 = 0
-iok21 = 0
-iok30 = 0
-iok31 = 0
-iok32 = 0
-iok50 = 0
-iok51 = 0
-iok60 = 0
-iok70 = 0
-if(iturb.eq.20) then
-  iok20 = 20
-endif
-if(iturb.eq.21) then
-  iok21 = 21
-endif
-if(iturb.eq.30) then
-  iok30 = 30
-endif
-if(iturb.eq.31) then
-  iok31 = 31
-endif
-if(iturb.eq.32) then
-  iok32 = 32
-endif
-if(iturb.eq.50) then
-  iok50 = 50
-endif
-if(iturb.eq.51) then
-  iok51 = 51
-endif
-if(iturb.eq.60) then
-  iok60 = 60
-endif
-if(iturb.eq.70) then
-  iok70 = 70
-endif
-if(iok20.gt.0) then
+if (iturb.eq.20) then
   write(nfecra,2531)ce1,ce2,sigmak,sigmae,cmu
 endif
-if (iok21.gt.0) then
+if (iturb.eq.21) then
   write(nfecra,2532)ce1,ce2,sigmak,sigmae,cmu
 endif
-if (iok30.gt.0) then
+if (iturb.eq.30) then
   write(nfecra,2533)ce1,ce2,crij1,crij2,crij3,sigmae,csrij,       &
                     crijp1,crijp2,cmu
 endif
-if (iok31.gt.0) then
+if (iturb.eq.31) then
   write(nfecra,2534)cssgs1,cssgs2,cssgr1,cssgr2,cssgr3,cssgr4,    &
        cssgr5,csrij,crij3,ce1,cssge2,sigmae,cmu
 endif
-if (iok32.gt.0) then
+if (iturb.eq.32) then
   write(nfecra,2539)cebms1,cebmr1,cebmr2,cebmr3,cebmr4,cebmr5,    &
                     csrij,cebmr6,cebme2,ce1,sigmae,xa1,sigmak,    &
                     xceta,xct
 endif
-if (iok50.gt.0) then
+if (iturb.eq.50) then
   write(nfecra,2535) cv2fa1,cv2fe2,sigmak,sigmae,cv2fmu,cv2fct,   &
        cv2fcl,cv2fet,cv2fc1,cv2fc2
 endif
-if(iok51.gt.0) then
+if (iturb.eq.51) then
   write(nfecra,2538) cpale1,cpale2,cpale3,cpale4,sigmak,cpalse,cpalmu,cpalct, &
        cpalcl,cpalet,cpalc1,cpalc2
 endif
-if (iok60.gt.0) then
+if (iturb.eq.60) then
   write(nfecra,2536) ckwsk1,ckwsk2,ckwsw1,ckwsw2,ckwbt1,ckwbt2,   &
        ckwgm1,ckwgm2,ckwa1,ckwc1,cmu
 endif
-if(iok70.gt.0) then
+if (iturb.eq.70) then
   write(nfecra,2537) csab1,csab2,csasig,csav1,csaw1,csaw2,csaw3
 endif
 
