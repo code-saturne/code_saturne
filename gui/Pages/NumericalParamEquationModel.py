@@ -112,8 +112,8 @@ class NumericalParamEquatModel(Model):
 
         self.default['solver_choice_pressure'] = 'multigrid'
         self.default['solver_choice'] = 'automatic'
-        self.default['preconditioning_choice_pressure'] = 'none'
-        self.default['preconditioning_choice'] = 'none'
+        self.default['preconditioning_choice_pressure'] = 'automatic'
+        self.default['preconditioning_choice'] = 'automatic'
 
         if name not in self.var:
             self.default['order_scheme'] = 'upwind'
@@ -593,7 +593,7 @@ class NumericalParamEquatModel(Model):
     def setPreconditioningChoice(self, name, value):
         """ Put choice of preconditioning for variable labelled name """
         self.isInList(value, ('multigrid', 'none', 'jacobi',
-                              'polynomial'))
+                              'polynomial', 'automatic'))
         node = self._getSolverNameNode(name)
 
         if self._isPressure(node):

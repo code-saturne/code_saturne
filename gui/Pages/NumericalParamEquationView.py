@@ -169,6 +169,7 @@ class PreconditioningChoiceDelegate(QItemDelegate):
         editor.addItem("Multigrid")
         editor.addItem("Jacobi")
         editor.addItem("Polynomial")
+        editor.addItem("Automatic")
 
         solver = index.model().dataSolver[index.row()]['iresol']
         if solver == 'multigrid':
