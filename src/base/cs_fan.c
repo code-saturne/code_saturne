@@ -783,9 +783,9 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
 
     const cs_fan_t  *fan = _cs_glob_fans[fan_id];
 
-    const cs_real_t  hub_radius  = fan->hub_radius;
-    const cs_real_t  blades_radius  = fan->blades_radius;
-    const cs_real_t  fan_radius = fan->fan_radius;
+    const cs_real_t  r_hub  = fan->hub_radius;
+    const cs_real_t  r_blades  = fan->blades_radius;
+    const cs_real_t  r_fan = fan->fan_radius;
 
     const cs_real_t  mean_flow = 0.5 * (  fan->out_flow
                                         - fan->in_flow);
@@ -805,13 +805,13 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
       f_theta = 0.0;
       f_rot[0] = 0.0, f_rot[1] = 0.0, f_rot[2] = 0.0;
 
-      if (blades_radius < 1.0e-12 && hub_radius < 1.0e-12) {
+      if (r_blades < 1.0e-12 && r_hub < 1.0e-12) {
 
         f_z = delta_p / fan->thickness;
         f_theta = 0.0;
 
       }
-      else if (hub_radius < blades_radius) {
+      else if (r_hub < r_blades) {
 
         cs_real_t  r_1, r_2, aux, aux_1, aux_2, coo_axis, d_axis, d_cel_axis[3];
 
@@ -819,25 +819,29 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
         r_2 = 0.85 * fan->blades_radius;
 
         if (fan->dim == 2) {
-          aux_1 =   (delta_p * 2.0 * fan_radius)
-                  / (fan->thickness * (1.15*blades_radius - hub_radius));
+          aux_1 =   (delta_p * 2.0 * r_fan)
+                  / (fan->thickness * (1.15*r_blades - r_hub));
           aux_2 = 0.0;
         }
         else {
-          cs_real_t f_base;
-          const cs_real_t hub_radius3
-            = hub_radius * hub_radius * hub_radius;
-          const cs_real_t blades_radius3
-            = blades_radius * blades_radius * blades_radius;
-          const cs_real_t blades_radius2 = blades_radius * blades_radius;
-          const cs_real_t fan_radius2 = fan_radius * fan_radius;
-          f_base =   (0.7*blades_radius - hub_radius)
-                   / (  1.0470*fan->thickness
-                      * (  hub_radius3
-                         + 1.4560*blades_radius3
-                         - 2.570*blades_radius2*hub_radius));
-          aux_1 = f_base * delta_p * pi * fan_radius2;
-          aux_2 = f_base * fan->axial_torque;
+          const cs_real_t r_hub4 = r_hub * r_hub * r_hub * r_hub;
+          const cs_real_t r_hub3 = r_hub * r_hub * r_hub;
+          const cs_real_t r_blades4 = r_blades * r_blades * r_blades * r_blades;
+          const cs_real_t r_blades3 = r_blades * r_blades * r_blades;
+          const cs_real_t r_blades2 = r_blades * r_blades;
+          const cs_real_t r_fan2 = r_fan * r_fan;
+          cs_real_t f_base =   (0.7*r_blades - r_hub)
+                             / (  1.0470*fan->thickness
+                                * (  r_hub3
+                                   + 1.4560*r_blades3
+                                   - 2.570*r_blades2*r_hub));
+          cs_real_t f_orth =   (0.7*r_blades - r_hub)
+                             / (  fan->thickness
+                                * (  1.042*r_blades4
+                                   + 0.523*r_hub4
+                                   - 1.667*r_blades3*r_hub));
+          aux_1 = f_base * delta_p * pi * r_fan2;
+          aux_2 = f_orth * fan->axial_torque;
         }
 
         /* Vector from the outlet face axis point to the cell center */
@@ -867,21 +871,21 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
         for (int coo_id = 0; coo_id < 3; coo_id++)
           f_rot[coo_id] /= aux;
 
-        if (d_axis < hub_radius) {
+        if (d_axis < r_hub) {
           f_z     = 0.0;
           f_theta = 0.0;
         }
         else if (d_axis < r_1) {
-          f_z     = aux_1 * (d_axis - hub_radius) / (r_1 - hub_radius);
-          f_theta = aux_2 * (d_axis - hub_radius) / (r_1 - hub_radius);
+          f_z     = aux_1 * (d_axis - r_hub) / (r_1 - r_hub);
+          f_theta = aux_2 * (d_axis - r_hub) / (r_1 - r_hub);
         }
         else if (d_axis < r_2) {
           f_z     = aux_1;
           f_theta = aux_2;
         }
-        else if (d_axis < blades_radius) {
-          f_z     = aux_1 * (blades_radius - d_axis) / (blades_radius - r_2);
-          f_theta = aux_2 * (blades_radius - d_axis) / (blades_radius - r_2);
+        else if (d_axis < r_blades) {
+          f_z     = aux_1 * (r_blades - d_axis) / (r_blades - r_2);
+          f_theta = aux_2 * (r_blades - d_axis) / (r_blades - r_2);
         }
         else {
           f_z     = 0.0;
