@@ -302,10 +302,12 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
                 self.modelDirection.setItem(str_model=str(n))
 
                 if str(n) == "6":
-                    self.lineEditNdirec.setEnabled(True)
+                    self.label_2.show()
+                    self.lineEditNdirec.show()
                     self.lineEditNdirec.setText(str(self.mdl.getNbDir()))
                 else:
-                    self.lineEditNdirec.setEnabled(False)
+                    self.label_2.hide()
+                    self.lineEditNdirec.hide()
 
         self.browser.configureTree(self.case)
 
@@ -328,10 +330,12 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.mdl.setQuadrature(n)
 
         if n == 6:
-            self.lineEditNdirec.setEnabled(True)
+            self.label_2.show()
+            self.lineEditNdirec.show()
             self.lineEditNdirec.setText(str(self.mdl.getNbDir()))
         else:
-            self.lineEditNdirec.setEnabled(False)
+            self.label_2.hide()
+            self.lineEditNdirec.hide()
 
 
     @pyqtSignature("const QString &")
