@@ -102,14 +102,10 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
            default['model'] == 'Rij-EBRSM':
             self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 1, 1)
             self.wallFunctions.addItem(self.tr("No wall function"), '0')
-            self.checkBoxGravity.setChecked(False)
-            self.checkBoxGravity.setEnabled(False)
             self.comboBoxWallFunctions.setEnabled(False)
         elif default['model'] == 'Spalart-Allmaras':
             self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 1, 1)
             self.wallFunctions.addItem(self.tr("One scale model (log law)"), '2')
-            self.checkBoxGravity.setChecked(False)
-            self.checkBoxGravity.setEnabled(False)
             self.comboBoxWallFunctions.setEnabled(False)
         else:
             # Combo - power law (iwallf=1) unavailable through the GUI
@@ -119,12 +115,14 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
             self.wallFunctions.addItem(self.tr("2 scales model (log law)"), '3')
             self.wallFunctions.addItem(self.tr("Scalable 2 scales model (log law)"), '4')
 
-            # Initialization
+            # Initialization of wall function model
             self.wallFunctions.setItem(str_model=str(self.result['wall_function']))
-            if self.result['gravity_terms'] == 'on':
-                self.checkBoxGravity.setChecked(True)
-            else:
-                self.checkBoxGravity.setChecked(False)
+
+        # Initialization gravity terms
+        if self.result['gravity_terms'] == 'on':
+            self.checkBoxGravity.setChecked(True)
+        else:
+            self.checkBoxGravity.setChecked(False)
 
         self.case.undoStartGlobal()
 
