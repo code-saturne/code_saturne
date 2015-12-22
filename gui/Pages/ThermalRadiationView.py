@@ -206,6 +206,8 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.modelDirection.addItem("120 directions (LC11)", "7")
         self.modelDirection.addItem("48 directions (DCT020-2468)", "8")
 
+        self.modelDirection.disableItem(str_model="6")
+
         # Connections
 
         self.connect(self.comboBoxRadModel,
@@ -302,10 +304,12 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
                 self.modelDirection.setItem(str_model=str(n))
 
                 if str(n) == "6":
-                    self.lineEditNdirec.setEnabled(True)
+                    self.label_2.show()
+                    self.lineEditNdirec.show()
                     self.lineEditNdirec.setText(str(self.mdl.getNbDir()))
                 else:
-                    self.lineEditNdirec.setEnabled(False)
+                    self.label_2.hide()
+                    self.lineEditNdirec.hide()
 
         self.browser.configureTree(self.case)
 
@@ -328,10 +332,12 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.mdl.setQuadrature(n)
 
         if n == 6:
-            self.lineEditNdirec.setEnabled(True)
+            self.label_2.show()
+            self.lineEditNdirec.show()
             self.lineEditNdirec.setText(str(self.mdl.getNbDir()))
         else:
-            self.lineEditNdirec.setEnabled(False)
+            self.label_2.hide()
+            self.lineEditNdirec.hide()
 
 
     @pyqtSignature("const QString &")
