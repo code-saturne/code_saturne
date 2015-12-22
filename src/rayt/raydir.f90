@@ -49,7 +49,7 @@ implicit none
 
 double precision  vec(10), poids(5), vect(3)
 integer           ii, jj
-integer           nquad, nbpoint, niv, ntri, int1, tri
+integer           nquad, nbpoint, lev, ntri, int1, tri
 
 double precision, dimension(:,:), allocatable :: x3d, y3d, z3d
 double precision, dimension(:,:), allocatable :: posnod
@@ -310,13 +310,24 @@ elseif (i_quadrature.eq.5) then   ! Quadrature T4 : 128 directions
   angsol(15) = poids(3)
   angsol(16) = poids(1)
 
-elseif (i_quadrature.eq.6) then   ! Quadrature Tn : 8 n^2 directions
+else if (i_quadrature.eq.6) then   ! Quadrature Tn: 8*n^2 directions
 
-  nquad = ndirs
+  nquad = ndirec
 
-  ! calcul de la position x et la position z du centre de tous les sous triangles sur le grand triangle 2D
+  ! Compute X position and Z position of the center of all the sub triangles of the main 2D triangle
 
-  nbpoint = 2 * nquad - 1   ! nombre de point max dans un niveau
+  ! Here for T2:      z
+  !                  /\
+  !                 /  \
+  !                /  1 \         ! level 1 (1 triangle)
+  !               /______\
+  !              /\      /\
+  !             /  \ 2  /  \      ! level 2 (3 triangles)
+  !            /  1 \  /  3 \
+  !           /______\/______\
+  !         x                 y
+
+  nbpoint = 2 * nquad - 1   ! Max number of points of a level
 
   allocate(x3d(nquad, nbpoint))
   allocate(y3d(nquad, nbpoint))
@@ -326,28 +337,29 @@ elseif (i_quadrature.eq.6) then   ! Quadrature Tn : 8 n^2 directions
   y3d = 0.d0
   x3d = 0.d0
 
-  ! position z
+  ! z position
 
   do ii = 0, nquad - 1
-    niv = nquad - ii
-    do jj = 1, 2 * niv - 1, 2
-      z3d(niv, jj) = (1.d0 + 3.d0 * DBLE(ii)) / (3.d0 * DBLE(nquad))
+    lev = nquad - ii
+    do jj = 1, 2 * lev - 1, 2
+      z3d(lev, jj) = (1.d0 + 3.d0 * dble(ii)) / (3.d0 * dble(nquad))
     enddo
-    do jj = 2, 2 * niv - 1, 2
-      z3d(niv, jj) = (2.d0 + 3.d0 * DBLE(ii)) / (3.d0 * DBLE(nquad))
+    do jj = 2, 2 * lev - 1, 2
+      z3d(lev, jj) = (2.d0 + 3.d0 * dble(ii)) / (3.d0 * dble(nquad))
     enddo
   enddo
 
- ! position y
+  ! y position
 
- ! la position y pour chaque point d'un niveau augmente de 1/(3*(nbpoint+1)/2) dans une meme colonne de triangle.
- ! on remplit donc les points en y par colonne (diagonale allant du haut vers bas gauche)
+  ! y position y for each point of a given level increases of 1/(3*(nbpoint+1)/2) in the same column of a triangle.
+  ! So we fill y3d by column (diagonal going from the top to the bottom
+  ! left)
 
   jj = 0
   int1 = 0
   do tri = 1, nbpoint
-    do niv = 1 + jj, nquad
-      y3d(niv, tri) = DBLE(tri + jj) / (3.d0 * (DBLE(nbpoint) + 1.d0) / 2.d0)
+    do lev = 1 + jj, nquad
+      y3d(lev, tri) = dble(tri + jj) / (3.d0 * (dble(nbpoint) + 1.d0) / 2.d0)
     enddo
     int1 = int1 + 1
     if (int1.eq.2) then
@@ -356,24 +368,24 @@ elseif (i_quadrature.eq.6) then   ! Quadrature Tn : 8 n^2 directions
     endif
   enddo
 
-  ! position x
+  ! x position
 
   x3d = 1.0d0 - z3d - y3d
 
-  ! reecriture dans sx,sy,sz
+  ! write x3d, y3d, z3d in sx, sy, sz
 
   jj = 0
-  do niv=1,nquad
-    nbpoint = 2 * niv - 1
+  do lev = 1, nquad
+    nbpoint = 2 * lev - 1
     do ii = 1, nbpoint
       jj = jj+1
-      sx(jj) = x3d(niv, ii)
-      sy(jj) = y3d(niv, ii)
-      sz(jj) = z3d(niv, ii)
+      sx(jj) = x3d(lev, ii)
+      sy(jj) = y3d(lev, ii)
+      sz(jj) = z3d(lev, ii)
     enddo
   enddo
 
-  ! normalisation des vecteurs
+  ! Vectors normalisation
 
   do ii = 1, ndirs
     vect(1) = sx(ii)
@@ -389,113 +401,110 @@ elseif (i_quadrature.eq.6) then   ! Quadrature Tn : 8 n^2 directions
   deallocate(y3d)
   deallocate(z3d)
 
- ! on connait maintenant toutes les directions, on va maintenant calculer les poids de chacune des directions.
+  ! All the directions are now known, weights will be computed
 
- ! calcul de la position des sous noeuds
+  ! Compute nodes positions (the number at node are the number of the node of a
+  ! giver level)
 
- !                 1           ! niv 1
- !                 /\
- !                /  \
- !              1/____\2       ! niv 2
- !              /\    /\
- !             /  \  /  \
- !           1/____\/____\3    ! niv 3
- !                 2
+  !                 z
+  !                 1           ! level 1 (1 point)
+  !                 /\
+  !                /  \
+  !              1/____\2       ! level 2 (2 points)
+  !              /\    /\
+  !             /  \  /  \
+  !           1/____\/____\3    ! level 3 (3 points)
+  !          x      2       y
 
-      nbpoint = nquad + 1   ! nombre de point max dans un niveau
+  nbpoint = nquad + 1   ! Max number of points for a level
 
-      allocate(x3d(nquad+1, nbpoint))
-      allocate(y3d(nquad+1, nbpoint))
-      allocate(z3d(nquad+1, nbpoint))
+  allocate(x3d(nquad+1, nbpoint))
+  allocate(y3d(nquad+1, nbpoint))
+  allocate(z3d(nquad+1, nbpoint))
 
-  ! position z
-  niv = 1
-  z3d(niv, 1) = 1.d0
+  ! z position
+  lev = 1
+  z3d(lev, 1) = 1.d0
 
   do ii = 2, nquad + 1
-    niv = niv + 1
-    do jj = 1, niv   ! il y a niv points dans le niveau niv
-      z3d(niv, jj) = z3d(niv - 1, 1) - 1.d0 / DBLE(nquad)
+    lev = lev + 1
+    do jj = 1, lev   ! There are "lev" points at level "lev"
+      z3d(lev, jj) = z3d(lev - 1, 1) - 1.d0 / dble(nquad)
     enddo
   enddo
 
-  ! position y
-  ! on remplit donc les points en y par colonne (diagonale allant du haut vers bas gauche)
+  ! y position
+  ! We fill points in y by column (diagonal going from the top to the bottom
+  ! left)
 
-  niv = 1
-  y3d(niv, 1) = 0.d0
+  lev = 1
+  y3d(lev, 1) = 0.d0
 
-  do ii = 2,nquad+1
-    niv = niv + 1
-    do jj = 1, niv  ! Il y a niv points dans le niveau niv
-      y3d(niv, jj) = DBLE(jj - 1) * (1.d0 - z3d(niv, 1)) / DBLE(niv - 1)
+  do ii = 2, nquad+1
+    lev = lev + 1
+    do jj = 1, lev  ! There are "lev" points at level "lev"
+      y3d(lev, jj) = dble(jj - 1) * (1.d0 - z3d(lev, 1)) / dble(lev - 1)
     enddo
   enddo
 
-  ! position x
+  ! x position (all points lives on the plane x+y+z=1)
 
   x3d = 1.d0 - z3d - y3d
 
-  ! calcul de l'aire et du poids de chaque triangle
+  ! Compute the surface and the weight of each triangle
 
   ntri = 0
 
-  do niv = 1, nquad  ! nombre de niveau de triangle
+  allocate(posnod(3, 3))
 
-    ! triangle n°1 du niveau
-    allocate(posnod(3, 3))
+  do lev = 1, nquad  ! Number of triangle levels
 
-    posnod(1, 1) = x3d(niv, 1)
-    posnod(2, 1) = y3d(niv, 1)
-    posnod(3, 1) = z3d(niv, 1)
-    posnod(1, 2) = x3d(niv + 1, 1)
-    posnod(2, 2) = y3d(niv + 1, 1)
-    posnod(3, 2) = z3d(niv + 1, 1)
-    posnod(1, 3) = x3d(niv + 1, 2)
-    posnod(2, 3) = y3d(niv + 1, 2)
-    posnod(3, 3) = z3d(niv + 1, 2)
+    ! First triangle of the level
+
+    posnod(1, 1) = x3d(lev, 1)
+    posnod(2, 1) = y3d(lev, 1)
+    posnod(3, 1) = z3d(lev, 1)
+    posnod(1, 2) = x3d(lev + 1, 1)
+    posnod(2, 2) = y3d(lev + 1, 1)
+    posnod(3, 2) = z3d(lev + 1, 1)
+    posnod(1, 3) = x3d(lev + 1, 2)
+    posnod(2, 3) = y3d(lev + 1, 2)
+    posnod(3, 3) = z3d(lev + 1, 2)
     ntri = ntri + 1
     call lhuilier(posnod, angsol(ntri))
 
-    deallocate(posnod)
+    do ii = 1, lev - 1   ! Number of double triangle for this level
 
-    do ii = 1, niv - 1   ! nombre de double triangle dans le niveau
-
-      allocate(posnod(3,3))
-
-      posnod(1, 1) = x3d(niv, 1 + (ii - 1))
-      posnod(2, 1) = y3d(niv, 1 + (ii - 1))
-      posnod(3, 1) = z3d(niv, 1 + (ii - 1))
-      posnod(1, 2) = x3d(niv, 2 + (ii - 1))
-      posnod(2, 2) = y3d(niv, 2 + (ii - 1))
-      posnod(3, 2) = z3d(niv, 2 + (ii - 1))
-      posnod(1, 3) = x3d(niv + 1, 2 + (ii - 1))
-      posnod(2, 3) = y3d(niv + 1, 2 + (ii - 1))
-      posnod(3, 3) = z3d(niv + 1, 2 + (ii - 1))
+      posnod(1, 1) = x3d(lev, 1 + (ii - 1))
+      posnod(2, 1) = y3d(lev, 1 + (ii - 1))
+      posnod(3, 1) = z3d(lev, 1 + (ii - 1))
+      posnod(1, 2) = x3d(lev, 2 + (ii - 1))
+      posnod(2, 2) = y3d(lev, 2 + (ii - 1))
+      posnod(3, 2) = z3d(lev, 2 + (ii - 1))
+      posnod(1, 3) = x3d(lev + 1, 2 + (ii - 1))
+      posnod(2, 3) = y3d(lev + 1, 2 + (ii - 1))
+      posnod(3, 3) = z3d(lev + 1, 2 + (ii - 1))
       ntri = ntri + 1
       call lhuilier(posnod, angsol(ntri))
 
-      deallocate(posnod)
-
-      allocate(posnod(3,3))
-      posnod(1,1) = x3d(niv, 2 + (ii - 1))
-      posnod(2,1) = y3d(niv, 2 + (ii - 1))
-      posnod(3,1) = z3d(niv, 2 + (ii - 1))
-      posnod(1,2) = x3d(niv + 1, 2 + (ii - 1))
-      posnod(2,2) = y3d(niv + 1, 2 + (ii - 1))
-      posnod(3,2) = z3d(niv + 1, 2 + (ii - 1))
-      posnod(1,3) = x3d(niv + 1, 3 + (ii - 1))
-      posnod(2,3) = y3d(niv + 1, 3 + (ii - 1))
-      posnod(3,3) = z3d(niv + 1, 3 + (ii - 1))
+      posnod(1, 1) = x3d(lev, 2 + (ii - 1))
+      posnod(2, 1) = y3d(lev, 2 + (ii - 1))
+      posnod(3, 1) = z3d(lev, 2 + (ii - 1))
+      posnod(1, 2) = x3d(lev + 1, 2 + (ii - 1))
+      posnod(2, 2) = y3d(lev + 1, 2 + (ii - 1))
+      posnod(3, 2) = z3d(lev + 1, 2 + (ii - 1))
+      posnod(1, 3) = x3d(lev + 1, 3 + (ii - 1))
+      posnod(2, 3) = y3d(lev + 1, 3 + (ii - 1))
+      posnod(3, 3) = z3d(lev + 1, 3 + (ii - 1))
       ntri = ntri + 1
 
       call lhuilier(posnod, angsol(ntri))
-
-      deallocate(posnod)
 
     enddo
 
   enddo
+
+  deallocate(posnod)
 
   deallocate(x3d)
   deallocate(y3d)
@@ -615,10 +624,10 @@ end subroutine
 
 !===============================================================================
 
-subroutine lhuilier (posnod, angleS)
+subroutine lhuilier (posnod, sol_angle)
 
 !===============================================================================
-!  FONCTION  :
+!  Function  :
 !  ---------
 
 ! compute the solid angle associated to a given direction of the Tn quadrature
@@ -626,30 +635,30 @@ subroutine lhuilier (posnod, angleS)
 !-------------------------------------------------------------------------------
 ! Arguments
 
-double precision posnod(3,3)
-double precision angleS
+double precision posnod(3, 3)
+double precision sol_angle
 
 ! Local variable
-double precision a,b,c,p
+double precision a, b, c, p
 
 !-------------------------------------------------------------------------------
 
 
-! on renormalise pour les produits scalaire
+! Renormalisation for dot products
 
-call normve(posnod(:,1))
-call normve(posnod(:,2))
-call normve(posnod(:,3))
+call normve(posnod(:, 1))
+call normve(posnod(:, 2))
+call normve(posnod(:, 3))
 
-!longueur des segments du triangle curviligne (R=1)
+! segment lengths of the curvilinear triangle (R=1)
 
 a = dacos(dot_product(posnod(:, 1), posnod(:, 2)))
 b = dacos(dot_product(posnod(:, 2), posnod(:, 3)))
 c = dacos(dot_product(posnod(:, 3), posnod(:, 1)))
 
-p = 0.5d0 * (a + b + c) ! périmètre
+p = 0.5d0 * (a + b + c) ! perimeter
 
-angleS = 4 * datan(dsqrt(tan(p / 2) * tan((p - a) / 2) * tan((p - b) / 2)*tan((p - c) / 2)))
+sol_angle = 4.d0 * datan(dsqrt(tan(p / 2.d0) * tan((p - a) / 2.d0) * tan((p - b) / 2.d0)*tan((p - c) / 2.d0)))
 
 return
 

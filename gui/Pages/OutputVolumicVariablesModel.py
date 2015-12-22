@@ -641,7 +641,7 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
                     <property label="Flux_convectif" name="flux_convectif" support="boundary"/>
                     <property label="Coeff_ech_conv" name="coeff_ech_conv" support="boundary"/>
                     <restart status="off"/>
-                    <directions_number>32</directions_number>
+                    <directions_number>3</directions_number>
                     <absorption_coefficient type="constant">0</absorption_coefficient>
                  </radiative_transfer>'''
 

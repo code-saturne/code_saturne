@@ -240,7 +240,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         validatorCoeff = DoubleValidator(self.lineEditCoeff, min=0.0)
         self.lineEditCoeff.setValidator(validatorCoeff)
 
-        validatorNdir = IntValidator(self.lineEditNdirec, min=3)
+        validatorNdir = IntValidator(self.lineEditNdirec, min=2)
         self.lineEditNdirec.setValidator(validatorNdir)
 
         self.modelAbsorption.addItem('constant',                   'constant')
