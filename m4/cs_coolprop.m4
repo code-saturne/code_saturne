@@ -146,6 +146,9 @@ if test "x$with_coolprop" != "xno" ; then
   AC_LANG_POP
 
   if test "x$cs_have_coolprop" != "xyes"; then
+    if test "x$with_coolprop" != "xcheck"; then
+      AC_MSG_FAILURE([CoolProp support requested, but test for CoolProp failed])
+    fi
     COOLPROP_CPPFLAGS=""
     COOLPROP_LDFLAGS=""
     COOLPROP_LIBS=""

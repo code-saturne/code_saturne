@@ -102,14 +102,14 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
   std::vector<std::string> outputs;
 
   fluids.push_back(CoolPropMaterial);
-  char *variable1;
-  BFT_MALLOC(variable1, 2, char);
-  char variable2[] = "P";
+  std::string Name1 = "";
+  std::string Name2 = "P";
+  std::string Backend = "HEOS";
 
   if (thermo_plane == CS_PHYS_PROP_PLANE_PH)
-    strcpy(variable1, "H");
+    Name1 = "H";
   else if (thermo_plane == CS_PHYS_PROP_PLANE_PT)
-    strcpy(variable1, "T");
+    Name1 = "T";
 
   switch (property) {
     case CS_PHYS_PROP_PRESSURE:
@@ -172,26 +172,23 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
   val2.clear();
   fractions.clear();
 
-  for (int i = 0; i < n_vals; i++)
-  {
+  for (int i = 0; i < n_vals; i++) {
     val1.push_back(var2[i]);
     val2.push_back(var1[i]);
   }
   fractions.push_back(1.0);
 
   std::vector<std::vector<double> > out = CoolProp::PropsSImulti(outputs,
-                                                                 variable1,
+                                                                 Name1,
                                                                  val1,
-                                                                 variable2,
+                                                                 Name2,
                                                                  val2,
-                                                                 "HEOS",
+                                                                 Backend,
                                                                  fluids,
                                                                  fractions);
 
   for (int i = 0; i < n_vals; i++)
     val[i] = out[i][0];
-
-  BFT_FREE(variable1);
 }
 
 /*----------------------------------------------------------------------------*/
