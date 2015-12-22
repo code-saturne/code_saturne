@@ -3705,6 +3705,8 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
     /* Compute Vx <- Vx - (A-diag).Rk and residue: backward step */
 
+    res2 = 0.0;
+
     if (diag_block_size == 1) {
 
 #     pragma omp parallel for private(r) reduction(+:res2)      \
