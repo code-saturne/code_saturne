@@ -123,7 +123,7 @@
         <item>
          <widget class="QLineEdit" name="lineEditV0">
           <property name="toolTip">
-           <string>Code_Saturne key word: V0</string>
+           <string>Code_Saturne key word: uref</string>
           </property>
          </widget>
         </item>
