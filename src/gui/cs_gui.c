@@ -2825,35 +2825,33 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
   if (cs_gui_strcmp(vars->model, "compressible_model"))
     cs_gui_reference_initialization("mass_molar", &(phys_pp->xmasmr));
 
-  if (cs_gui_strcmp(vars->model, "thermal_scalar")) {
-    material = _thermal_table_choice("material");
-    if (material != NULL) {
-      if (!(cs_gui_strcmp(material, "user_material"))) {
-        phas = _thermal_table_choice("phas");
+  material = _thermal_table_choice("material");
+  if (material != NULL) {
+    if (!(cs_gui_strcmp(material, "user_material"))) {
+      phas = _thermal_table_choice("phas");
 
-        if (!phas) {
-          BFT_MALLOC(phas, 6, char);
-          strcpy(phas, "undef");
-        }
-
-        cs_phys_prop_thermo_plane_type_t thermal_plane = CS_PHYS_PROP_PLANE_PH;
-        if (itherm == 1)
-          thermal_plane = CS_PHYS_PROP_PLANE_PT;
-        //else if (itherm == 3)
-        //  // TODO compressible
-        //  thermal_plane = CS_PHYS_PROP_PLANE_PS;
-
-        const int itpscl = cs_glob_thermal_model->itpscl;
-
-        cs_thermal_table_set(material,
-                             _thermal_table_choice("method"),
-                             phas,
-                             _thermal_table_choice("reference"),
-                             thermal_plane,
-                             itpscl);
+      if (!phas) {
+        BFT_MALLOC(phas, 6, char);
+        strcpy(phas, "undef");
       }
-      BFT_FREE(material);
+
+      cs_phys_prop_thermo_plane_type_t thermal_plane = CS_PHYS_PROP_PLANE_PH;
+      if (itherm == 1)
+        thermal_plane = CS_PHYS_PROP_PLANE_PT;
+      //else if (itherm == 3)
+      //  // TODO compressible
+      //  thermal_plane = CS_PHYS_PROP_PLANE_PS;
+
+      const int itpscl = cs_glob_thermal_model->itpscl;
+
+      cs_thermal_table_set(material,
+                           _thermal_table_choice("method"),
+                           phas,
+                           _thermal_table_choice("reference"),
+                           thermal_plane,
+                           itpscl);
     }
+    BFT_FREE(material);
   }
 
   /* ro0, viscl0, cp0, isls0[iscalt-1] si tables */
@@ -5544,7 +5542,6 @@ cs_gui_linear_solvers(void)
   cs_sles_it_type_t sles_it_type = CS_SLES_N_IT_TYPES;
 
   double tmp;
-  int n_max_iter;
   char* algo_choice = NULL;
   char* precond_choice = NULL;
 
@@ -5556,7 +5553,7 @@ cs_gui_linear_solvers(void)
 
   tmp = (double) n_max_iter_default;
   _variable_value(c_pres->name, "max_iter_number", &tmp);
-  n_max_iter = (int) tmp;
+  int n_max_iter = (int)tmp;
 
   algo_choice = _variable_choice(c_pres->name, "solver_choice");
   precond_choice = _variable_choice(c_pres->name, "preconditioning_choice");
@@ -5582,35 +5579,37 @@ cs_gui_linear_solvers(void)
   else if (! cs_gui_strcmp(algo_choice, "automatic"))
     multigrid = true;
 
-  if (cs_gui_strcmp(precond_choice, "multigrid")) {
-    cs_sles_it_t *c = cs_sles_it_define(c_pres->id,
-                                        NULL,
-                                        sles_it_type,
-                                        -1,
-                                        10000);
-    cs_sles_pc_t *pc = cs_multigrid_pc_create();
-    cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
-    cs_sles_it_transfer_pc(c, &pc);
-
-    cs_multigrid_set_solver_options(mg,
-                                    CS_SLES_PCG, CS_SLES_PCG, CS_SLES_PCG,
-                                    1, /* n max cycles */
-                                    1,   /* n max iter for descent (default 2) */
-                                    1,  /* n max iter for ascent (default 10) */
-                                    n_max_iter,
-                                    0, 0, 0,  /* precond degree */
-                                    -1, -1, 1); /* precision multiplier */
-  }
-  else if (sles_it_type < CS_SLES_N_IT_TYPES) {
+  if (sles_it_type < CS_SLES_N_IT_TYPES) {
     int poly_degree = -1;
     if (cs_gui_strcmp(precond_choice, "jacobi"))
       poly_degree = 0;
     else if (cs_gui_strcmp(precond_choice, "polynomial"))
       poly_degree = 1;
 
-    cs_sles_it_define(c_pres->id, NULL, sles_it_type,
-                      poly_degree, n_max_iter);
+    cs_sles_it_t *c = cs_sles_it_define(c_pres->id,
+                                        NULL,
+                                        sles_it_type,
+                                        poly_degree,
+                                        n_max_iter);
+
+    if (cs_gui_strcmp(precond_choice, "multigrid")) {
+      cs_sles_pc_t *pc = cs_multigrid_pc_create();
+      cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
+      cs_sles_it_transfer_pc(c, &pc);
+      cs_multigrid_set_solver_options(mg,
+                                      CS_SLES_P_GAUSS_SEIDEL,
+                                      CS_SLES_P_GAUSS_SEIDEL,
+                                      CS_SLES_P_GAUSS_SEIDEL,
+                                      1, /* n max cycles */
+                                      1, /* n max iter for descent */
+                                      1, /* n max iter for ascent */
+                                      1, /* n max iter for coarse solve */
+                                      0, 0, 0,  /* precond degree */
+                                      -1, -1, 1); /* precision multiplier */
+    }
+
   }
+
   else if (multigrid == true) {
     cs_multigrid_t *mg = cs_multigrid_define(c_pres->id, NULL);
     cs_multigrid_set_solver_options(mg,
@@ -5663,33 +5662,33 @@ cs_gui_linear_solvers(void)
       /* If choice is "automatic" or unspecified, delay
          choice to cs_sles_default, so do nothing here */
 
-      if (cs_gui_strcmp(precond_choice, "multigrid")) {
-        cs_sles_it_t *c = cs_sles_it_define(f->id,
-                                            NULL,
-                                            sles_it_type,
-                                            -1,
-                                            10000);
-        cs_sles_pc_t *pc = cs_multigrid_pc_create();
-        cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
-        cs_sles_it_transfer_pc(c, &pc);
+      if (sles_it_type < CS_SLES_N_IT_TYPES) {
 
-        cs_multigrid_set_solver_options(mg,
-                                        CS_SLES_PCG, CS_SLES_PCG, CS_SLES_PCG,
-                                        1, /* n max cycles */
-                                        1,   /* n max iter for descent (default 2) */
-                                        1,  /* n max iter for ascent (default 10) */
-                                        n_max_iter,
-                                        0, 0, 0,  /* precond degree */
-                                        -1, -1, 1); /* precision multiplier */
-      }
-      else if (sles_it_type < CS_SLES_N_IT_TYPES) {
         int poly_degree = -1;
         if (cs_gui_strcmp(precond_choice, "jacobi"))
           poly_degree = 0;
         else if (cs_gui_strcmp(precond_choice, "polynomial"))
           poly_degree = 1;
-        cs_sles_it_define(f->id, NULL, sles_it_type,
-                          poly_degree, n_max_iter);
+
+        cs_sles_it_t *c = cs_sles_it_define(f->id, NULL, sles_it_type,
+                                            poly_degree, n_max_iter);
+
+        if (cs_gui_strcmp(precond_choice, "multigrid")) {
+          cs_sles_pc_t *pc = cs_multigrid_pc_create();
+          cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
+          cs_sles_it_transfer_pc(c, &pc);
+          cs_multigrid_set_solver_options(mg,
+                                          CS_SLES_P_GAUSS_SEIDEL,
+                                          CS_SLES_P_GAUSS_SEIDEL,
+                                          CS_SLES_P_GAUSS_SEIDEL,
+                                          1, /* n max cycles */
+                                          1, /* n max iter for descent */
+                                          1, /* n max iter for ascent */
+                                          1, /* n max iter for coarse solve */
+                                          0, 0, 0,  /* precond degree */
+                                          -1, -1, 1); /* precision multiplier */
+        }
+
       }
     }
   }

@@ -618,6 +618,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 __model.enableItem(str_model='thermal_law')
                 if old_choice == "user_material":
                     self.mdl.setPropertyMode(tag, 'thermal_law')
+                self.__changeChoice(str("material law"), symbol, tag)
             c = self.mdl.getPropertyMode(tag)
             __model.setItem(str_model=c)
 
