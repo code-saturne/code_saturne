@@ -5,6 +5,8 @@ Version 4.1.2 (unreleased)
 Bug fixes:
 ----------
 
+- GUI: fix handling of turbulent flux model (previously ignored).
+
 - Disable Tn radiative model in GUI as that model has an unresolved bug.
 
 - Fix some message formats.

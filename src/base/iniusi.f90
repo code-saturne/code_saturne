@@ -319,7 +319,8 @@ if (iihmpr.eq.1) then
               xmasmr, itempk)
 
 !     Scamin, scamax, turbulent flux model
-  call cssca2(itytur, iturt)
+  call cssca2(iturb, iturt)
+  !==========
 
   ! Diffusivites
   call cssca3(visls0, t0, p0, cp0)
