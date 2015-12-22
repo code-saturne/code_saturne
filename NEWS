@@ -5,6 +5,12 @@ Version 4.1.2 (unreleased)
 Bug fixes:
 ----------
 
+- Major Fix for Low Reynolds number turbulence model wall boundary conditions.
+  This error vanishes as the mesh is refined (therefore not previously
+  detected by the validation process, where meshes are fine enough).
+  The value of "u_star" and "u_k" now give a correct value for these
+  models when imposing a pressure gradient.
+
 - GUI: fix handling of turbulent flux model (previously ignored).
 
 - Disable Tn radiative model in GUI as that model has an unresolved bug.
