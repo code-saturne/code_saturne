@@ -39,7 +39,7 @@ Bug fixes:
 Architectural changes
 ---------------------
 
-- Fix for detection of Catalyst with recent ParaView versions (4.4+)
+- Fix for detection of Catalyst with recent ParaView versions (4.4+).
 
 - Improve flushing of error* files in case of error to avoid empty error
   files on some systems.
