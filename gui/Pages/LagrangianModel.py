@@ -159,7 +159,7 @@ class LagrangianModel(Model):
         if status != 'off':
             OutputControlModel(self.case).addDefaultLagrangianWriter()
             OutputControlModel(self.case).addDefaultLagrangianMesh()
-            self.node_out_lag = node_lagr.xmlInitChildNode('output')
+            self.node_out_lag = self.node_lagr.xmlInitChildNode('output')
         elif old_status and old_status != 'off':
             OutputControlModel(self.case).deleteMesh(['-3'])
             OutputControlModel(self.case).deleteWriter(['-3', '-4'])
