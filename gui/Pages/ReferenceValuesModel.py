@@ -84,7 +84,7 @@ class ReferenceValuesModel(Model):
         default['reference_velocity']    = 1.0
         default['length_choice']         = 'automatic'
         default['reference_length']      = 1.0
-        default['reference_temperature'] = 1273.15
+        default['reference_temperature'] = 293.15
         default['fuel_temperature']      = 436.
         default['oxydant_temperature']   = 353.
         if (self.getParticularPhysical() == "atmo" or
