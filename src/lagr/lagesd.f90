@@ -565,14 +565,15 @@ if (ireent.eq.1) then
          nbpres = nbpres + 1
          dnbres = dnbres + pepa( jrpoi,ip)
 
-         parbor(ipepa(jdfac,ip),ires) = parbor(ipepa(jdfac,ip),ires) + pepa(jrpoi,ip)
+         if (iflmbd .eq. 1) then
+            parbor(ipepa(jdfac,ip),ires) = parbor(ipepa(jdfac,ip),ires) + pepa(jrpoi,ip)
 
-         parbor(ipepa(jdfac,ip),iflres) = parbor(ipepa(jdfac,ip),iflres) + pepa(jrpoi,ip)  &
-                       + ( pepa(jrpoi,ip) * eptp(jmp,ip) / surfbn(ipepa(jdfac,ip)))
+            parbor(ipepa(jdfac,ip),iflres) = parbor(ipepa(jdfac,ip),iflres) + pepa(jrpoi,ip)  &
+                 + (pepa(jrpoi,ip) * eptp(jmp,ip) / surfbn(ipepa(jdfac,ip)))
 
-         parbor(ipepa(jdfac,ip),iflm) = parbor(ipepa(jdfac,ip),iflm)                       &
-                       - ( pepa(jrpoi,ip) * eptp(jmp,ip) / surfbn(ipepa(jdfac,ip)))
-
+            parbor(ipepa(jdfac,ip),iflm) = parbor(ipepa(jdfac,ip),iflm)                       &
+                 - (pepa(jrpoi,ip) * eptp(jmp,ip) / surfbn(ipepa(jdfac,ip)))
+         endif
 
          else  ! No direct normal lift-off
 

@@ -251,7 +251,7 @@ do np = 1,2
    call vdwsp(distp, rpart, uvdwsp)
    call edlsp(distp, rpart, tempf, uedlsp)
 
-   udlvor(np) = (uvdwsp + uedlsp) * (1 - scovag - scovap)
+   udlvor(np) = uvdwsp + uedlsp * (1 - scovag - scovap)
 enddo
 
 fadhes = (udlvor(2) - udlvor(1)) / (2.d0 * step)

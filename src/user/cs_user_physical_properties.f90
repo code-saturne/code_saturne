@@ -687,15 +687,11 @@ endif ! --- Test on .false.
 if (.false.) then
   if (ipreci == 1) then
     do iel = 1, ncel
-      if (cvar_scalt(iel) .le. 250.d0) then
-        ! low pH (Morp:5,5 ppm + NH3: 0,2 ppm+ hydrazine: 7,5 ppb)
-        solub(iel) = -0.0088d0 *  cvar_scalt(iel) + 3.8839d0
-      else
-        solub(iel) = 0.0039d0 *  cvar_scalt(iel) + 0.7165d0
-      endif
-    enddo
+      solub(iel) = -0.0088d0 *  cvar_scalt(iel) + 3.8839d0 ! ppb (ug/L)
+      solub(iel) = solub(iel)*1.d-9 * cpro_rom(iel) ! kg/m3
+   enddo
   endif
-end if
+endif
 
 !--------
 ! Formats

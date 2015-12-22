@@ -190,14 +190,15 @@ do ip = 1, nbpart
                   nbpres = nbpres + 1
                   dnbres = dnbres + pepa( jrpoi,ip)
 
-                  parbor(ipepa(jdfac,ip),ires) = parbor(ipepa(jdfac,ip),ires) + pepa(jrpoi,ip)
+                  if (iflmbd .eq. 1) then
+                    parbor(ipepa(jdfac,ip),ires) = parbor(ipepa(jdfac,ip),ires) + pepa(jrpoi,ip)
 
-                  parbor(ipepa(jdfac,ip),iflres) = parbor(ipepa(jdfac,ip),iflres)                  &
-                              + ( pepa(jrpoi,ip) * eptp(jmp,ip) / norm_face)
+                    parbor(ipepa(jdfac,ip),iflres) =   parbor(ipepa(jdfac,ip),iflres)  &
+                                                     + (pepa(jrpoi,ip) * eptp(jmp,ip) / norm_face)
 
-                  parbor(ipepa(jdfac,ip),iflm) = parbor(ipepa(jdfac,ip),iflm)                   &
-                              - ( pepa(jrpoi,ip) * eptp(jmp,ip) / norm_face)
-
+                    parbor(ipepa(jdfac,ip),iflm) =   parbor(ipepa(jdfac,ip),iflm)  &
+                                                   - (pepa(jrpoi,ip) * eptp(jmp,ip) / norm_face)
+                  endif
 
                endif
 
@@ -287,13 +288,15 @@ do ip = 1, nbpart
                   nbpres = nbpres + 1
                   dnbres = dnbres + pepa( jrpoi,ip)
 
-                  parbor(ipepa(jdfac,ip),ires) = parbor(ipepa(jdfac,ip),ires) + pepa(jrpoi,ip)
+                  if (iflmbd .eq. 1) then
+                    parbor(ipepa(jdfac,ip),ires) = parbor(ipepa(jdfac,ip),ires) + pepa(jrpoi,ip)
 
-                  parbor(ipepa(jdfac,ip),iflres) = parbor(ipepa(jdfac,ip),iflres)                  &
-                                     + ( pepa(jrpoi,ip) * eptp(jmp,ip) / norm_face)
+                    parbor(ipepa(jdfac,ip),iflres) = parbor(ipepa(jdfac,ip),iflres)                  &
+                         + (pepa(jrpoi,ip) * eptp(jmp,ip) / norm_face)
 
-                  parbor(ipepa(jdfac,ip),iflm) = parbor(ipepa(jdfac,ip),iflm)                   &
-                                   - ( pepa(jrpoi,ip) * eptp(jmp,ip) / norm_face)
+                    parbor(ipepa(jdfac,ip),iflm) = parbor(ipepa(jdfac,ip),iflm)                   &
+                         - (pepa(jrpoi,ip) * eptp(jmp,ip) / norm_face)
+                 endif
                endif
 
                if (ipepa(jnbasg,ip).eq.0) then
