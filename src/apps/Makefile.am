@@ -25,7 +25,7 @@
 # PLE dependency
 
 if HAVE_INTERNAL_PLE
-  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
+  CPPFLAGS_PLE = -I"$(top_srcdir)/libple/src" -I"$(top_builddir)/libple"
   LIBPLE_LA = $(top_builddir)/libple/src/libple.la
 else
   CPPFLAGS_PLE = $(PLE_CPPFLAGS)
@@ -156,7 +156,7 @@ cs_solver$(EXEEXT): libsaturne.la
 # Code_Saturne IO utility (minimal dependencies)
 
 if HAVE_FRONTEND
-cs_io_dump_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" -I$(top_srcdir)/src/base
+cs_io_dump_CPPFLAGS = -DLOCALEDIR=\"'$(localedir)'\" -I$(top_srcdir)/src/base
 cs_io_dump_SOURCES = cs_io_dump.c
 cs_io_dump_LDADD = $(LTLIBINTL)
 endif
@@ -166,7 +166,7 @@ endif
 if HAVE_FRONTEND
 
 cs_check_syntax_CPPFLAGS = \
--DLOCALEDIR=\"$(localedir)\" \
+-DLOCALEDIR=\"'$(localedir)'\" \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/mei

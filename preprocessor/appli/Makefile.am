@@ -43,7 +43,7 @@ endif
 
 # Main part
 
-AM_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" \
+AM_CPPFLAGS = -DLOCALEDIR=\"'$(localedir)'\" \
 -I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/pre-post -I$(top_srcdir)/preprocessor/util
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
@@ -64,7 +64,7 @@ cs_preprocess_LINK = $(LINK)
 endif
 
 cs_preprocess_CPPFLAGS = \
--DLOCALEDIR=\"$(localedir)\" \
+-DLOCALEDIR=\"'$(localedir)'\" \
 $(AM_CPPFLAGS) \
 $(HDF5_CPPFLAGS) $(MED_CPPFLAGS) $(CGNS_CPPFLAGS)
 

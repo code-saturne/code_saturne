@@ -149,9 +149,9 @@ noinst_LTLIBRARIES = libcscorep.la libcscore.la \
 # it localedir and pkgdatadir info.
 
 libcscorep_la_CPPFLAGS = \
--DLOCALEDIR=\"$(localedir)\" \
--DPKGDATADIR=\"$(pkgdatadir)\" \
--DPKGLIBDIR=\"$(pkglibdir)\" \
+-DLOCALEDIR=\"'$(localedir)'\" \
+-DPKGDATADIR=\"'$(pkgdatadir)'\" \
+-DPKGLIBDIR=\"'$(pkglibdir)'\" \
 $(AM_CPPFLAGS)
 
 libcscorep_la_SOURCES = cs_base.c

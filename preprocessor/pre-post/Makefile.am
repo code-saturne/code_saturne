@@ -68,7 +68,7 @@ noinst_LTLIBRARIES = libprepostecs.la
 libprepostecs_la_LIBADD =
 
 libprepostecs_la_CPPFLAGS = \
--DPKGLIBDIR=\"$(pkglibdir)\" \
+-DPKGLIBDIR=\"'$(pkglibdir)'\" \
 $(AM_CPPFLAGS)
 
 libprepostecs_la_SOURCES = \
