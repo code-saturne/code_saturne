@@ -506,7 +506,7 @@ _sles_pc_poly_apply_poly(void                *context,
 
   const cs_lnum_t n_rows = c->n_rows;
   const cs_lnum_t n_aux = (x_in == NULL) ?
-    CS_SIMD_SIZE(c->n_cols) + c->n_rows : c->n_rows;
+    CS_SIMD_SIZE(c->n_cols) + c->n_cols : c->n_cols;
 
   if (c->n_aux < n_aux) {
     c->n_aux = n_aux;
