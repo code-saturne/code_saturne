@@ -11,6 +11,8 @@ Bug fixes:
   The value of "u_star" and "u_k" now give a correct value for these
   models when imposing a pressure gradient.
 
+- GUI: fix handling of turbulent flux model (previously ignored).
+
 - Disable Tn radiative model in GUI as that model has an unresolved bug.
 
 - Fix some message formats.
