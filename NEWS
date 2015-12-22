@@ -15,6 +15,8 @@ Bug fixes:
 
 - Fix some message formats.
 
+- GUI: fix handling of turbulence gravity terms.
+
 - Remove unneeded allocation leading to crash for some large meshes when
   reading MED files.
 

@@ -98,13 +98,14 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
         self.checkBoxGravity.setEnabled(True)
         self.comboBoxScales.setEnabled(True)
 
-        if default['model'] == 'Spalart-Allmaras' or \
-           default['model'] == 'v2f-BL-v2/k' or \
+        if default['model'] == 'v2f-BL-v2/k' or \
            default['model'] == 'Rij-EBRSM':
             self.modelScales = ComboModel(self.comboBoxScales, 1, 1)
             self.modelScales.addItem(self.tr("One scale model"), '0')
-            self.checkBoxGravity.setChecked(False)
-            self.checkBoxGravity.setEnabled(False)
+            self.comboBoxScales.setEnabled(False)
+        elif default['model'] == 'Spalart-Allmaras':
+            self.modelScales = ComboModel(self.comboBoxScales, 1, 1)
+            self.modelScales.addItem(self.tr("One scale model"), '0')
             self.comboBoxScales.setEnabled(False)
         else:
             # Combo
@@ -114,13 +115,14 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
             self.modelScales.addItem(self.tr("Two scale model"), '1')
             self.modelScales.addItem(self.tr("Scalable wall function"), '2')
 
-            # Initialization
-
+            # Initialization of wall function model
             self.modelScales.setItem(str_model=str(self.result['scale_model']))
-            if self.result['gravity_terms'] == 'on':
-                self.checkBoxGravity.setChecked(True)
-            else:
-                self.checkBoxGravity.setChecked(False)
+
+        # Initialization of gravity terms
+        if self.result['gravity_terms'] == 'on':
+            self.checkBoxGravity.setChecked(True)
+        else:
+            self.checkBoxGravity.setChecked(False)
 
         self.case.undoStartGlobal()
 
@@ -263,11 +265,11 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.frameLength.show()
             self.frameAdvanced.hide()
             self.model.getLengthScale()
-        elif model not in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
+        elif model not in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
             self.frameLength.hide()
             self.frameAdvanced.show()
 
-        if model in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
+        if model in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
             self.line.hide()
         else:
             self.line.show()
