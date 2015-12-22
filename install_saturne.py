@@ -628,8 +628,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.0.8",
-                    archive="med-3.0.8.tar.gz",
+                    version="3.1.0",
+                    archive="med-3.1.0.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
