@@ -614,7 +614,7 @@ by CoolProp:
 \sloppy
 
 To install CoolProp's Python bindings (used by the GUI when available),
-the straigthformward method is to go into the CoolProp source directory,
+the straigthforward method is to go into the CoolProp source directory,
 then run:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
@@ -1155,6 +1155,9 @@ With the IBM XL compilers, the same build works fine, as long as the
 \texttt{CXXFLAGS=-qlanglvl=redefmac}) option is passed. Adding
 the HDF5 tools path to the \texttt{\$PATH} environment variable for
 the  configuration stage may also be required.
+\item CoolProp: the GNU (not XL) C++ compiler must be used, and the additional
+\texttt{-DCMAKE\_CXX\_FLAGS=-U\_\_powerpc\_\_} option must be passed to
+the \texttt{cmake} command.
 \end{itemize}
 
 For an example, let us start with the front-end build:
@@ -1308,7 +1311,7 @@ and uncomment and define the applicable sections.
 If used, the name of the batch system should match one of the templates \\
 in \texttt{<install-prefix>/share/code\_saturne/batch},
 and those may also be edited if necessary to match the local
-batch configuration{\footnote Some batch systems allow a wide
+batch configuration\footnote{Some batch systems allow a wide
 range of alternate and sometimes incompatible options or keywords,
 and it is for all practical purposes impossible to determine
 which options are allowed for a given setup, so editing the
