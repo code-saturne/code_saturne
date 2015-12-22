@@ -21,6 +21,9 @@ Bug fixes:
 
 - GUI: fix handling of turbulence gravity terms.
 
+- GUI: pass reference values (uref, almax) for all turbulence models,
+  not just RANS (in case they might be useful).
+
 - Remove unneeded allocation leading to crash for some large meshes when
   reading MED files.
 

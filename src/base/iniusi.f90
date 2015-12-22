@@ -350,13 +350,9 @@ if (iihmpr.eq.1) then
   call cssca3(visls0, t0, p0, cp0)
   !==========
 
-!     Init turb (uref, almax) si necessaire (modele RANS)
-  if (itytur.eq.2 .or. itytur.eq.3 .or.             &
-      itytur.eq.5 .or. itytur.eq.6 .or.             &
-      itytur.eq.7) then
-    call cstini(uref, almax)
-    !==========
-  endif
+  ! Init of reference values (uref, almax)
+  call cstini(uref, almax)
+  !==========
 
   call uiipsu(iporos)
   !==========
