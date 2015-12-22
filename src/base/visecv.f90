@@ -85,7 +85,7 @@ integer          iel, ifac, ii, jj
 integer          ipcvst
 integer          ipcvsv
 
-double precision d2s3m
+double precision d2s3m, secvsi, secvsj, pnd
 
 double precision, allocatable, dimension(:) :: secvis
 double precision, dimension(:), pointer :: porosi
@@ -186,14 +186,31 @@ if (irangp.ge.0.or.iperio.eq.1) then
 endif
 
 ! --- Interior faces
-! TODO we should (re)test the weigthen walue and also add a consistent
-! geometrical weigthen if imvisf>0. (see viscfa.f90)
+! TODO we should (re)test the weigthen walue for imvisf=0
 
-do ifac = 1, nfac
-  ii = ifacel(1,ifac)
-  jj = ifacel(2,ifac)
-  secvif(ifac) = 0.5d0*(secvis(ii)+secvis(jj))
-enddo
+if (imvisf.eq.0) then
+  do ifac = 1, nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
+
+    secvsi = secvis(ii)
+    secvsj = secvis(jj)
+    pnd = pond(ifac)
+
+    secvif(ifac) = 0.5d0*(secvsi+secvsj)
+  enddo
+else
+  do ifac = 1, nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
+
+    secvsi = secvis(ii)
+    secvsj = secvis(jj)
+    pnd = pond(ifac)
+
+    secvif(ifac) = secvsi*secvsj/(pnd*secvsi+(1.d0-pnd)*secvsj)
+  enddo
+endif
 
 ! --- Boundary faces
 ! TODO shall we extrapolate this value?
