@@ -68,6 +68,7 @@ use lagdim, only: ntersl
 use numvar
 use entsor
 use cstphy
+use cstnum
 use optcal
 use lagran
 use pointe, only: rvoid1
@@ -109,13 +110,15 @@ integer          iitsla
 integer          iprev
 double precision epsrgp, climgp, extrap
 double precision rhothe
-double precision utaurf,ut2,ypa,ya,tke,xunorm, limiter
+double precision utaurf,ut2,ypa,ya,tke,xunorm, limiter, nu0,alpha
+double precision xnoral, xnal(3)
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: produc
 double precision, allocatable, dimension(:,:) :: gradro
+double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:) :: smbrts
 double precision, allocatable, dimension(:,:,:) ::rovsdtts
 
@@ -182,6 +185,157 @@ if(iwarni(iep).ge.1) then
     write(nfecra,1002)
   endif
 endif
+
+!===============================================================================
+! 1.1 Advanced init for EBRSM
+!===============================================================================
+! Automatic reinitialization at the end of the first iteration:
+! wall distance y^+ is computed with -C log(1-alpha), where C=CL*Ceta*L*kappa, then y
+! so we have an idea of the wall distance in complexe geometries.
+! Then U is initialized with a Reichard lay
+! Epsilon by 1/(kappa y), clipped next to the wall at its value for y^+=15
+! k is given by a blending between eps/(2 nu)*y^2 and utau/sqrt(Cmu)
+! The blending function is chosen so that the asymptotic behavior
+! and give the correct pic of k
+
+!TODO FIXME Are the BC uncompatible?
+if (ntcabs.eq.1.and.reinit_turb.eq.1) then
+
+  allocate(grad(3,ncelet))
+
+  ! Compute the gradient of Alpha
+  iprev  = 0
+  inc    = 1
+  iccocg = 1
+
+  call field_gradient_scalar(ivarfl(ial), iprev, imrgra, inc,     &
+                             iccocg,                              &
+                             grad)
+
+  if (irijco.eq.1) then
+    call field_get_val_v(ivarfl(irij), cvar_rij)
+    call field_get_val_prev_v(ivarfl(irij), cvara_rij)
+  else
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+    call field_get_val_s(ivarfl(ir12), cvar_r12)
+    call field_get_val_s(ivarfl(ir13), cvar_r13)
+    call field_get_val_s(ivarfl(ir23), cvar_r23)
+    call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+    call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+    call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+    call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
+    call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
+    call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
+  endif
+
+  utaurf=0.05d0*uref
+
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+  call field_get_val_s(ivarfl(ial), cvar_al)
+  call field_get_val_prev_v(ivarfl(iu), vel)
+
+
+  nu0 = viscl0/ro0
+
+  do iel = 1, ncel
+    ! Compute the velocity magnitude
+    xunorm = vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2
+    xunorm = sqrt(xunorm)
+
+    ! y+ is bounded by 400, because in the Reichard profile, it corresponds to saturation (u>uref)
+    cvar_al(iel) = max(min(cvar_al(iel),(1.d0-exp(-400.d0/50.d0))) &
+    ,0.d0)
+    ! Compute the magnitude of the Alpha gradient
+    xnoral = ( grad(1,iel)*grad(1,iel)          &
+           +   grad(2,iel)*grad(2,iel)          &
+           +   grad(3,iel)*grad(3,iel) )
+    xnoral = sqrt(xnoral)
+   ! Compute the unitary vector of Alpha !FIXME not homogeneous
+    if (xnoral.le.epzero/cell_f_vol(iel)**(1.d0/3.d0)) then
+      xnal(1) = 1.d0/sqrt(3.d0)
+      xnal(2) = 1.d0/sqrt(3.d0)
+      xnal(3) = 1.d0/sqrt(3.d0)
+    else
+      xnal(1) = grad(1,iel)/xnoral
+      xnal(2) = grad(2,iel)/xnoral
+      xnal(3) = grad(3,iel)/xnoral
+    endif
+
+    alpha = cvar_al(iel)
+
+
+    ! Compute YA, therefore alpha is given by 1-exp(-YA/(50 nu/utau))
+    ! NB: y^+ = 50 give the best compromise
+    ya = -dlog(1.d0-cvar_al(iel))*50.d0*nu0/utaurf
+    ypa = ya/(nu0/utaurf)
+    ! Velocity magnitude is imposed (limitted only), the direction is
+    ! conserved
+    if (xunorm.le.1.d-12*uref) then
+      limiter = 1.d0
+    else
+      limiter = min(utaurf/xunorm*(2.5d0*dlog(1.d0+0.4d0*ypa)            &
+      +7.8d0*(1.d0-dexp(-ypa/11.d0)          &
+      -(ypa/11.d0)*dexp(-0.33d0*ypa))),      &
+      1.d0)
+    endif
+
+    vel(1,iel) = limiter*vel(1,iel)
+    vel(2,iel) = limiter*vel(2,iel)
+    vel(3,iel) = limiter*vel(3,iel)
+
+    ut2 = 0.05d0*uref
+    cvar_ep(iel) = utaurf**3*min(1.d0/(xkappa*15.d0*nu0/utaurf), &
+    1.d0/(xkappa*ya))
+    tke = cvar_ep(iel)/2.d0/nu0*ya**2             &
+    * exp(-ypa/25.d0)**2                         &
+    + ut2**2/0.3d0*(1.d0-exp(-ypa/25.d0))**2
+
+    if (irijco.eq.0) then
+      cvar_r11(iel) = alpha**3       *2.d0/3.d0        *tke &
+                    + (1.d0-alpha**3)*(1.d0-xnal(1)**2)*tke
+      cvar_r22(iel) = alpha**3       *2.d0/3.d0        *tke &
+                    + (1.d0-alpha**3)*(1.d0-xnal(2)**2)*tke
+      cvar_r33(iel) = alpha**3       *2.d0/3.d0        *tke &
+                    + (1.d0-alpha**3)*(1.d0-xnal(3)**2)*tke
+      cvar_r12(iel) = -(1.d0-alpha**3)*(xnal(1)*xnal(2))*tke
+      cvar_r23(iel) = -(1.d0-alpha**3)*(xnal(2)*xnal(3))*tke
+      cvar_r13(iel) = -(1.d0-alpha**3)*(xnal(1)*xnal(3))*tke
+    else
+      cvar_rij(1,iel) = alpha**3       *2.d0/3.d0        *tke &
+                    + (1.d0-alpha**3)*(1.d0-xnal(1)**2)*tke
+      cvar_rij(2,iel) = alpha**3       *2.d0/3.d0        *tke &
+                    + (1.d0-alpha**3)*(1.d0-xnal(2)**2)*tke
+      cvar_rij(3,iel) = alpha**3       *2.d0/3.d0        *tke &
+                    + (1.d0-alpha**3)*(1.d0-xnal(3)**2)*tke
+      cvar_rij(4,iel) = -(1.d0-alpha**3)*(xnal(1)*xnal(2))*tke
+      cvar_rij(5,iel) = -(1.d0-alpha**3)*(xnal(2)*xnal(3))*tke
+      cvar_rij(6,iel) = -(1.d0-alpha**3)*(xnal(1)*xnal(3))*tke
+    end if
+  enddo
+
+  do iel = 1, ncel
+    if (irijco.eq.0) then
+      cvara_r11(iel) = cvar_r11(iel)
+      cvara_r22(iel) = cvar_r22(iel)
+      cvara_r33(iel) = cvar_r33(iel)
+      cvara_r12(iel) = cvar_r12(iel)
+      cvara_r23(iel) = cvar_r23(iel)
+      cvara_r13(iel) = cvar_r13(iel)
+    else
+      cvara_rij(1,iel) = cvar_rij(1,iel)
+      cvara_rij(2,iel) = cvar_rij(2,iel)
+      cvara_rij(3,iel) = cvar_rij(3,iel)
+      cvara_rij(4,iel) = cvar_rij(4,iel)
+      cvara_rij(5,iel) = cvar_rij(5,iel)
+      cvara_rij(6,iel) = cvar_rij(6,iel)
+    end if
+  enddo
+
+  deallocate(grad)
+end if
+
 
 !===============================================================================
 ! 2.1 Compute the velocity gradient
@@ -512,91 +666,6 @@ else
   call clprij(ncelet, ncel, iclip)
 endif
 
-!===============================================================================
-! 7. Advanced init for EBRSM
-!===============================================================================
-! Automatic reinitialization at the end of the first iteration:
-! wall distance y^+ is computed with -C log(1-alpha), where C=CL*Ceta*L*kappa, then y
-! so we have an idea of the wall distance in complexe geometries.
-! Then U is initialized with a Reichard lay
-! Epsilon by 1/(kappa y), clipped next to the wall at its value for y^+=15
-! k is given by a blending between eps/(2 nu)*y^2 and utau/sqrt(Cmu)
-! The blending function is chosen so that the asymptotic behavior
-! and give the correct pic of k
-
-!TODO FIXME: why not just before? Are the BC uncompatible?
-if (ntcabs.eq.1.and.reinit_turb.eq.1) then
-
-  if (irijco.eq.1) then
-    call field_get_val_prev_v(ivarfl(irij), cvar_rij)
-  else
-    call field_get_val_prev_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_prev_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_prev_s(ivarfl(ir33), cvar_r33)
-    call field_get_val_prev_s(ivarfl(ir12), cvar_r12)
-    call field_get_val_prev_s(ivarfl(ir13), cvar_r13)
-    call field_get_val_prev_s(ivarfl(ir23), cvar_r23)
-  endif
-
-  utaurf=0.05d0*uref
-
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-  call field_get_val_s(ivarfl(ial), cvar_al)
-  call field_get_val_prev_v(ivarfl(iu), vel)
-
-
-  do iel = 1, ncel
-    ! Compute the velocity magnitude
-    xunorm = vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2
-    xunorm = sqrt(xunorm)
-
-    ! y+ is bounded by 400, because in the Reichard profile, it corresponds to saturation (u>uref)
-    cvar_al(iel) = max(min(cvar_al(iel),(1.d0-exp(-400.d0/50.d0))) &
-    ,0.d0)
-
-    ! Compute YA, therefore alpha is given by 1-exp(-YA/(50 nu/utau))
-    ! NB: y^+ = 50 give the best compromise
-    ya = -dlog(1.d0-cvar_al(iel))*50.d0*viscl0/utaurf
-    ypa = ya/(viscl0/utaurf)
-    ! Velocity magnitude is imposed (limitted only), the direction is
-    ! conserved
-    if (xunorm.le.1.d-12*uref) then
-      limiter = 1.d0
-    else
-      limiter = min(utaurf/xunorm*(2.5d0*dlog(1.d0+0.4d0*ypa)            &
-      +7.8d0*(1.d0-dexp(-ypa/11.d0)          &
-      -(ypa/11.d0)*dexp(-0.33d0*ypa))),      &
-      1.d0)
-    endif
-
-    vel(1,iel) = limiter*vel(1,iel)
-    vel(2,iel) = limiter*vel(2,iel)
-    vel(3,iel) = limiter*vel(3,iel)
-
-    ut2 = 0.05d0*uref
-    cvar_ep(iel) = utaurf**3*min(1.d0/(0.41d0*15.d0*viscl0/utaurf), &
-    1.d0/(0.41d0*ya))
-    tke = cvar_ep(iel)/2.d0/viscl0*ya**2             &
-    * exp(-ypa/25.d0)**2                         &
-    + ut2**2/0.3d0*(1.d0-exp(-ypa/25.d0))**2
-    if (irijco.eq.0) then
-      cvar_r11(iel) = 2.d0/3.d0*tke
-      cvar_r22(iel) = 2.d0/3.d0*tke
-      cvar_r33(iel) = 2.d0/3.d0*tke
-      cvar_r23(iel) = 0.d0
-      cvar_r12(iel) = 0.d0
-      cvar_r13(iel) = 0.d0
-    else
-      cvar_rij(1,iel) = 2.d0/3.d0*tke
-      cvar_rij(2,iel) = 2.d0/3.d0*tke
-      cvar_rij(3,iel) = 2.d0/3.d0*tke
-      cvar_rij(4,iel) = 0.d0
-      cvar_rij(5,iel) = 0.d0
-      cvar_rij(6,iel) = 0.d0
-    end if
-  enddo
-
-end if
 
 ! Free memory
 deallocate(viscf, viscb)

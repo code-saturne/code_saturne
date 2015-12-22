@@ -1625,7 +1625,6 @@ if (iccvfg.eq.0) then
 
   ! Si on est en v2f (phi-fbar ou BL-v2/k), on reserve un tableau
   ! de taille NCELET pour eviter de recalculer la production dans RESV2F
-  ! (trois appels a gradient_s)
   if (itytur.eq.5) then
     allocate(prdv2f(ncelet))
   endif

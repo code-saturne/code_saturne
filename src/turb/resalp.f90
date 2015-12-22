@@ -200,7 +200,7 @@ do iel=1,ncel
   xlldrb = xcl*max(xllke,xllkmg)
 
   ! For automatic initialization, the length scale is fixed at L^+ =50
-  if (ntcabs.eq.1) xlldrb=50.d0*viscl0/(0.05d0*uref)
+  if (ntcabs.eq.1.and.reinit_turb.eq.1) xlldrb=50.d0*viscl0/ro0/(0.05d0*uref)
 
   l2 = xlldrb**2
 

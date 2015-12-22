@@ -825,7 +825,7 @@ call codits &
 ! 5. Clipping
 !===============================================================================
 
-   call clpv2f(ncel, iwarni(iphi))
+call clpv2f(ncel, iwarni(iphi))
 
 ! Free memory
 deallocate(viscf, viscb)

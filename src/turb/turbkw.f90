@@ -119,7 +119,7 @@ double precision thetp1, thetak, thetaw, thets, thetap, epsrsp
 double precision tuexpk, tuexpw
 double precision cdkw, xarg1, xxf1, xgamma, xbeta, sigma, produc
 double precision var, vrmin(2), vrmax(2)
-double precision utaurf,ut2,ypa,ya,xunorm, limiter
+double precision utaurf,ut2,ypa,ya,xunorm, limiter, nu0
 
 double precision rvoid(1)
 
@@ -1103,6 +1103,7 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1) then
   call field_get_val_prev_v(ivarfl(iu), vel)
 
   utaurf = 0.05d0*uref
+  nu0 = viscl0 / ro0
 
   do iel = 1, ncel
     ! Compute the velocity magnitude
@@ -1110,7 +1111,7 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1) then
     xunorm = sqrt(xunorm)
 
     ya = dispar(iel)
-    ypa = ya*utaurf/viscl0
+    ypa = ya*utaurf/nu0
     ! Velocity magnitude is imposed (limitted only), the direction is
     ! conserved
     if (xunorm.le.1.d-12*uref) then
@@ -1127,13 +1128,13 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1) then
     vel(3,iel) = limiter*vel(3,iel)
 
     ut2 = 0.05d0*uref
-    xeps = utaurf**3*min(1.d0/(0.41d0*15.d0*viscl0/utaurf), &
-    1.d0/(0.41d0*ya))
-    cvar_k(iel) = xeps/2.d0/viscl0*ya**2                    &
+    xeps = utaurf**3*min(1.d0/(xkappa*15.d0*nu0/utaurf), &
+    1.d0/(xkappa*ya))
+    cvar_k(iel) = xeps/2.d0/nu0*ya**2                    &
     * exp(-ypa/25.d0)**2                        &
-    + ut2**2/0.3d0*(1.d0-exp(-ypa/25.d0))**2
+    + ut2**2/sqrt(cmu)*(1.d0-exp(-ypa/25.d0))**2
 
-    cvar_omg(iel) = ut2**3/(0.41d0*15.d0*viscl0/ut2)/(ut2**2/0.3d0)/0.09d0
+    cvar_omg(iel) = ut2**3/(xkappa*15.d0*nu0/ut2)/(ut2**2/sqrt(cmu))/cmu
 
   enddo
 end if

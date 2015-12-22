@@ -996,7 +996,7 @@ endif
 
 ! --- Advanced re-initialization for EBRSM or k-omega models
 
-!     - 0: switch off (default
+!     - 0: switch off (default)
 !     - 1: switch on
 
 if (.false.) then
