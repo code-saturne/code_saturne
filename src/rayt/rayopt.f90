@@ -284,7 +284,7 @@ if (iirayo.gt.0) then
 ! --> NDIREC
 !     Parametre Quadrature Tn
   if (iirayo.eq.1 .and. i_quadrature.eq.6) then
-    if (ndirec.lt.3) then
+    if (ndirec.lt.2) then
       write(nfecra, 4020) ndirec
       iok = iok + 1
     endif

@@ -1171,8 +1171,13 @@ if (iirayo.gt.0) then
 
   write(nfecra,2640) iirayo
 
-  write(nfecra,2650) isuird, nfreqr, i_quadrature,ndirec,          &
-                     idiver, imodak, iimpar, iimlum
+  if (i_quadrature.eq.6) then
+    write(nfecra,2650) isuird, nfreqr, i_quadrature, ndirec,         &
+                       idiver, imodak, iimpar, iimlum
+  else
+    write(nfecra,2651) isuird, nfreqr, i_quadrature,                 &
+                       idiver, imodak, iimpar, iimlum, imoadf
+  endif
 
   write(nfecra,9900)
 
@@ -1203,6 +1208,22 @@ endif
 '       IMODAK = ',4x,i10,    ' (1: modak coef absor; 0 sinon)',/,&
 '       IIMPAR = ',4x,i10,    ' (0 1 ou 2: impr Tempera paroi)',/,&
 '       IIMLUM = ',4x,i10,    ' (0 1 ou 2: impr infos solveur)',/)
+ 2651 format(                                                     &
+' --- Options :',                                               /,&
+'       ISUIRD = ',4x,i10,    ' (0 : pas de suite ; 1 : suite)',/,&
+'       NFREQR = ',4x,i10,    ' (Frequence pass. rayonnement )',/,&
+'       i_quadrature = ',4x,i4,' (nbr de quadrature (si DOM)'  ,/,&
+'                      ',4x,4x,'   1: S4 (24 directions)'      ,/,&
+'                      ',4x,4x,'   2: S6 (48 directions)'      ,/,&
+'                      ',4x,4x,'   3: S8 (80 directions)'      ,/,&
+'                      ',4x,4x,'   4: T2 (32 directions)'      ,/,&
+'                      ',4x,4x,'   5: T4 (128 directions)'     ,/,&
+'                      ',4x,4x,'   6: Tn (8*ndirec^2 directions))',/,&
+'       IDIVER = ',4x,i10,    ' (0 1 ou 2: calcul TS radiatif)',/,&
+'       IMODAK = ',4x,i10,    ' (1: modak coef absor; 0 sinon)',/,&
+'       IIMPAR = ',4x,i10,    ' (0 1 ou 2: impr Tempera paroi)',/,&
+'       IIMLUM = ',4x,i10,    ' (0 1 ou 2: impr infos solveur)',/,&
+'       IMOADF = ',4x,i10,    ' (0 1 ou 2: non,ADF08,ADF50   )',/)
 
 #else
 
@@ -1224,11 +1245,27 @@ endif
 '                      ',4x,4x,'   4: T2 (32 directions)'      ,/,&
 '                      ',4x,4x,'   5: T4 (128 directions)'     ,/,&
 '                      ',4x,4x,'   6: Tn (8*ndirec^2 directions))',/,&
-'       NDIREC = ',4x,i10,    ' (if i_quadrature=6)'           ,/,&
+'       NDIREC = ',4x,i10,    ' (only if i_quadrature=6)'      ,/,&
 '       IDIVER = ',4x,i10,    ' (0 1 or 2: compute radiat. ST)',/,&
 '       IMODAK = ',4x,i10,    ' (1: modak absor coef; 0 else )',/,&
 '       IIMPAR = ',4x,i10,    ' (0 1 or 2: print wall temp.  )',/,&
 '       IIMLUM = ',4x,i10,    ' (0 1 or 2: print solver info )',/)
+ 2651 format(                                                     &
+' --- Options:',                                                /,&
+'       ISUIRD = ',4x,i10,    ' (0: no restart; 1: restart   )',/,&
+'       NFREQR = ',4x,i10,    ' (Radiation pass frequency    )',/,&
+'       i_quadrature = ',4x,i4,' (quadrature number (if DOM)'  ,/,&
+'                      ',4x,4x,'   1: S4 (24 directions)'      ,/,&
+'                      ',4x,4x,'   2: S6 (48 directions)'      ,/,&
+'                      ',4x,4x,'   3: S8 (80 directions)'      ,/,&
+'                      ',4x,4x,'   4: T2 (32 directions)'      ,/,&
+'                      ',4x,4x,'   5: T4 (128 directions)'     ,/,&
+'                      ',4x,4x,'   6: Tn (8*ndirec^2 directions))',/,&
+'       IDIVER = ',4x,i10,    ' (0 1 or 2: compute radiat. ST)',/,&
+'       IMODAK = ',4x,i10,    ' (1: modak absor coef; 0 else )',/,&
+'       IIMPAR = ',4x,i10,    ' (0 1 or 2: print wall temp.  )',/,&
+'       IIMLUM = ',4x,i10,    ' (0 1 or 2: print solver info )',/,&
+'       IMOADF = ',4x,i10,    ' (0 1 or 2: none,ADF08,ADF50  )',/)
 
 #endif
 

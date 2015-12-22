@@ -206,8 +206,6 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.modelDirection.addItem("120 directions (LC11)", "7")
         self.modelDirection.addItem("48 directions (DCT020-2468)", "8")
 
-        self.modelDirection.disableItem(str_model="6")
-
         # Connections
 
         self.connect(self.comboBoxRadModel,
@@ -240,7 +238,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         validatorCoeff = DoubleValidator(self.lineEditCoeff, min=0.0)
         self.lineEditCoeff.setValidator(validatorCoeff)
 
-        validatorNdir = IntValidator(self.lineEditNdirec, min=3)
+        validatorNdir = IntValidator(self.lineEditNdirec, min=2)
         self.lineEditNdirec.setValidator(validatorNdir)
 
         self.modelAbsorption.addItem('constant',                   'constant')
