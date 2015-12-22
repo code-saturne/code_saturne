@@ -313,7 +313,7 @@ elseif (i_quadrature.eq.5) then   ! Quadrature T4 : 128 directions
 
 elseif (i_quadrature.eq.6) then   ! Quadrature Tn : 8 n^2 directions
 
-  nquad = ndirs
+  nquad = ndirec
 
   ! calcul de la position x et la position z du centre de tous les sous triangles sur le grand triangle 2D
 
