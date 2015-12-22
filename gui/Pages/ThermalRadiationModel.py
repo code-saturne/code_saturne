@@ -138,8 +138,8 @@ class ThermalRadiationModel(Variables, Model):
                    'Emissivite', 'Flux_net',      'Flux_convectif',  'Coeff_ech_conv']
 
         raylabE = ['Srad',      'Qrad',      'Absorp',          'Emiss',    'CoefAb',
-                   'Wall_temp', 'Flux_incident', 'Th_conductivity', 'Thickness',
-                   'Emissivity','Flux_net',      'Flux_convectif',  'Coeff_ech_conv']
+                   'Wall_temp', 'Incident_flux', 'Th_conductivity', 'Thickness',
+                   'Emissivity','Net_flux',      'Convective_flux',  'Conv_exch_coeff']
 
         dico['name'] = rayName
         dico['labF'] = raylabF
