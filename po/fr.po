@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-12-05 18:35+0100\n"
+"POT-Creation-Date: 2015-12-22 10:26+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4684,6 +4684,18 @@ msgstr ""
 msgid "bad choice: speed of sound not available yet"
 msgstr ""
 
+#, c-format
+msgid ""
+"CoolProp was unable to compute some fluid properties with\n"
+"input variable names: \"%s\", \"%s\" and backend \"%s\".\n"
+"\n"
+"First of %d fluid(s) considered: \"%s\"."
+msgstr ""
+"CoolProp n'a pas pu calculer certaines propriétés fluides avec\n"
+"les variables d'entrées: \"%s\", \"%s\" et méthode \"%s\".\n"
+"\n"
+"Premier de %d fluid(s) considérés: \"%s\"."
+
 msgid "point-to-point or not synchronized"
 msgstr "point à point ou non synchronisé"
 
@@ -7873,6 +7885,19 @@ msgstr ""
 msgid "No aligned allocation function available on this system"
 msgstr ""
 
+msgid " Invalid type of definition for a material property."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key for setting the advection field %s.\n"
+" Please read listing for more details and modify your settings."
+msgstr ""
+
+#, c-format
+msgid " Key %s is not implemented yet."
+msgstr " La clé %s n'est pas encore gérée."
+
 msgid ""
 " Incompatible type of boundary condition by default.\n"
 " Please modify your settings.\n"
@@ -7953,6 +7978,11 @@ msgid ""
 " %d boundary faces have no boundary type."
 msgstr ""
 
+#, c-format
+msgid ""
+" Undefined type of equation to solve for eq. %s. Please check your settings."
+msgstr ""
+
 msgid ""
 " Invalid boundary by default.\n"
 " Please modify your settings."
@@ -7983,8 +8013,20 @@ msgstr ""
 msgid ""
 " Invalid key for setting the type of definition.\n"
 " Given key: %s\n"
-" Choice among value, field, evaluator, analytic, user, law or file\n"
+" Choice among value, analytic, user, law.\n"
 " Please modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" An existing property has already the name %s.\n"
+" Stop adding this property.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" An existing advection field has already the name %s.\n"
+" Stop adding this advection field.\n"
 msgstr ""
 
 #, c-format
@@ -8041,6 +8083,12 @@ msgstr ""
 msgid ""
 " Invalid key for setting equation %s.\n"
 " Please read listing for more details and modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" Equation %s is not modifiable anymore.\n"
+" Please check your settings."
 msgstr ""
 
 #, c-format
@@ -8121,28 +8169,19 @@ msgid ""
 " Choices are among implicit, explicit, crank_nicolson and theta_scheme"
 msgstr ""
 
-#, c-format
-msgid " Key %s is not implemented yet."
-msgstr " La clé %s n'est pas encore gérée."
-
-#, c-format
-msgid " cs_equation_t structure to set with property %s is NULL\n"
+msgid " Cannot link an empty cs_equation_t structure"
 msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key for setting a property.\n"
+" Invalid keyword for linking an equation.\n"
 " Current value: %s\n"
-" Possible choice: diffusion or time\n"
+" Possible choices: diffusion, time, advection\n"
 msgstr ""
 
 msgid ""
 " cs_equation_t structure is NULL\n"
 " Cannot set the initial condition"
-msgstr ""
-
-#, c-format
-msgid " Invalid type of equation for equation %s.\n"
 msgstr ""
 
 #, c-format
@@ -8157,6 +8196,14 @@ msgstr ""
 msgid ""
 " cs_equation_t structure is NULL\n"
 " Cannot add a boundary condition related to mesh location %s"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key for setting the type of definition.\n"
+" Given key: %s\n"
+" Choice among value, field, evaluator, analytic, user, law or file\n"
+" Please modify your settings."
 msgstr ""
 
 #, c-format
@@ -8253,13 +8300,9 @@ msgstr ""
 msgid " Invalid type of definition.\n"
 msgstr ""
 
-msgid " Invalid type of definition of a material property."
-msgstr ""
-
-msgid " Invalid type of material property."
-msgstr ""
-
-msgid " Invalid type of definition for an advection field."
+msgid ""
+" Invalid key for setting the groundwater module.\n"
+" Please read listing for more details and modify your settings."
 msgstr ""
 
 msgid " This type of discrete Hodge operator is not covered.\n"
@@ -8268,40 +8311,31 @@ msgstr ""
 msgid " Invalid type of Hodge operator.\n"
 msgstr ""
 
-msgid "by value"
+msgid "by analytic function"
+msgstr ""
+
+msgid "by array"
 msgstr ""
 
 msgid "by field"
 msgstr ""
 
-msgid "by evaluator"
+msgid "by law (one argument)"
 msgstr ""
 
-msgid "by analytic function"
+msgid "by time function"
 msgstr ""
 
 msgid "by user function"
 msgstr ""
 
-msgid "by law"
-msgstr ""
-
-msgid "by file"
+msgid "by value"
 msgstr ""
 
 msgid "vector"
 msgstr ""
 
 msgid "tensor"
-msgstr ""
-
-msgid "isotropic"
-msgstr ""
-
-msgid "orthotropic"
-msgstr ""
-
-msgid "anisotropic"
 msgstr ""
 
 msgid "Homogeneous Dirichlet"
@@ -8337,55 +8371,10 @@ msgstr ""
 msgid "head loss"
 msgstr ""
 
-#, c-format
-msgid ""
-" Invalid id (equal to %d and should be between 0 and %d).\n"
-" Cannot access to the definition of this material property.\n"
+msgid " Invalid BC type. Stop execution."
 msgstr ""
 
-#, c-format
-msgid ""
-" Invalid id (equal to %d and should be between 0 and %d).\n"
-" Cannot access to the definition of this advection field.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" An existing property already has the same name %s.\n"
-" Stop adding the material property.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid key %s for setting the type of property.\n"
-" Key is one of the following: isotropic, orthotropic or anisotropic.\n"
-" Please modify your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" Stop setting the material property %s.\n"
-" Do not find a similar name in the property database.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" The definition of the tensor related to the material property %s is not "
-"symmetric.\n"
-" This case is not handled. Please check your settings.\n"
-msgstr ""
-
-msgid " Invalid type of definition for a material property."
-msgstr ""
-
-#, c-format
-msgid ""
-" An existing advection field has already the same name %s.\n"
-" Stop adding this advection field.\n"
-msgstr ""
-
-#, c-format
-msgid " Type of property for %s is invalid with the creation of field.\n"
+msgid " Invalid type of enforcement. Stop execution."
 msgstr ""
 
 msgid " Invalid type of reaction term. Stop execution."
@@ -8397,10 +8386,29 @@ msgstr ""
 msgid " Invalid preconditioner. Stop execution."
 msgstr ""
 
-msgid " Invalid BC type. Stop execution."
+#, c-format
+msgid ""
+" Invalid key %s for setting the type of property.\n"
+" Key is one of the following: isotropic, orthotropic or anisotropic.\n"
+" Please modify your settings."
 msgstr ""
 
-msgid " Invalid type of enforcement. Stop execution."
+msgid " Invalid type of property."
+msgstr ""
+
+msgid " Invalid type of definition for a property."
+msgstr ""
+
+#, c-format
+msgid ""
+" The definition of the tensor related to the property %s is not symmetric.\n"
+" This case is not handled.Please check your settings.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key for setting the property %s.\n"
+" Please read listing for more details and modify your settings."
 msgstr ""
 
 msgid "barycentric"

@@ -48,6 +48,7 @@ $(FREESTEAM_CPPFLAGS) \
 $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_CXXFLAGS = $(CXXFLAGS_DBG) $(CXXFLAGS_OPT)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
@@ -341,6 +342,8 @@ verlon.f90 \
 vert1d.f90 \
 visecv.f90 \
 zufall.f90
+libcsbase_la_LDFLAGS = -no-undefined
+libcsbase_la_LIBADD =
 
 # Renumbering (may require extra headers)
 
@@ -380,16 +383,40 @@ cs_eos_la_LDFLAGS = -module -avoid-version
 endif
 
 if HAVE_COOLPROP
+
+if HAVE_PLUGINS
+
 cs_coolprop_la_CPPFLAGS = \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 $(COOLPROP_CPPFLAGS) $(MPI_CPPFLAGS)
+cs_coolprop_la_LIBADD = \
+$(COOLPROP_LDFLAGS) $(COOLPROP_LIBS) \
+$(COOLPROPRUNPATH)
 pkginclude_HEADERS += cs_coolprop.hxx
 pkglib_LTLIBRARIES += cs_coolprop.la
 cs_coolprop_la_SOURCES = cs_coolprop.cxx
 cs_coolprop_la_LDFLAGS = -module -avoid-version
+
+else
+
+libcs_coolprop_la_CPPFLAGS = \
+-I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/bft \
+$(COOLPROP_CPPFLAGS) $(MPI_CPPFLAGS)
+pkginclude_HEADERS += cs_coolprop.hxx
+libcs_coolprop_la_LIBADD = \
+$(COOLPROP_LDFLAGS) $(COOLPROP_LIBS) \
+$(COOLPROPRUNPATH)
+libcs_coolprop_la_SOURCES = cs_coolprop.cxx
+noinst_LTLIBRARIES += libcs_coolprop.la
+libcsbase_la_LIBADD += libcs_coolprop.la
+
+endif
 
 endif
 

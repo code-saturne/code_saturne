@@ -2780,7 +2780,6 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
   cs_var_t  *vars = cs_glob_var;
 
   const int itherm = cs_glob_thermal_model->itherm;
-  /* const int iscalt = cs_glob_thermal_model->iscalt; */
 
   cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
 
@@ -2836,7 +2835,7 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
       }
 
       cs_phys_prop_thermo_plane_type_t thermal_plane = CS_PHYS_PROP_PLANE_PH;
-      if (itherm == 1)
+      if (itherm <= 1)
         thermal_plane = CS_PHYS_PROP_PLANE_PT;
       //else if (itherm == 3)
       //  // TODO compressible

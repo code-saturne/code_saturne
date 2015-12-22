@@ -187,6 +187,14 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
                                                                  fluids,
                                                                  fractions);
 
+  if (out.size() != n_vals)
+    bft_error(__FILE__, __LINE__, 0,
+              _("CoolProp was unable to compute some fluid properties with\n"
+                "input variable names: \"%s\", \"%s\" and backend \"%s\".\n\n"
+                "First of %d fluid(s) considered: \"%s\"."),
+              Name1.c_str(), Name2.c_str(), Backend.c_str(),
+              (int)n_vals, fluids[0].c_str());
+
   for (int i = 0; i < n_vals; i++)
     val[i] = out[i][0];
 }

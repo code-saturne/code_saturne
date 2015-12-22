@@ -226,7 +226,7 @@ _get_eos_dl_function_pointer(const char  *name)
 
 #endif
 
-#if defined(HAVE_DLOPEN) && defined(HAVE_COOLPROP)
+#if defined(HAVE_PLUGINS) && defined(HAVE_COOLPROP)
 
 /*----------------------------------------------------------------------------
  * Get a shared library function pointer for a writer plugin
@@ -304,6 +304,7 @@ cs_thermal_table_set(const char *material,
     strcpy(cs_glob_thermal_table->reference, reference);
     cs_glob_thermal_table->type = 3;
 #if defined(HAVE_COOLPROP)
+#if defined(HAVE_PLUGINS)
     {
       char  *lib_path = NULL;
       const char *pkglibdir = cs_base_get_pkglibdir();
@@ -330,6 +331,10 @@ cs_thermal_table_set(const char *material,
       _cs_phys_prop_coolprop = (cs_phys_prop_coolprop_t *)  (intptr_t)
         _get_coolprop_dl_function_pointer("cs_phys_prop_coolprop");
     }
+#else
+    _cs_phys_prop_coolprop = (cs_phys_prop_coolprop_t *)  (intptr_t)
+      cs_phys_prop_coolprop;
+#endif
 #endif
   }
   else {
@@ -397,7 +402,7 @@ cs_thermal_table_finalize(void)
       _cs_phys_prop_eos = NULL;
     }
 #endif
-#if defined(HAVE_COOLPROP)
+#if defined(HAVE_COOLPROP) && defined(HAVE_PLUGINS)
     if (cs_glob_thermal_table->type == 3) {
       if (dlclose(_cs_coolprop_dl_lib) != 0)
         bft_error(__FILE__, __LINE__, 0,
