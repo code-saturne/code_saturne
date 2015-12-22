@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 #
 #-------------------------------------------------------------------------------
 #
@@ -149,7 +149,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
     """
     Open a dialog to start external programs and display its output.
     """
-    def __init__(self, parent, title, cmd_list, start_directory="", obj_salome=""):
+    def __init__(self, parent, title, cmd, start_directory="", obj_salome=""):
         """
         Constructor. Must be overriden.
         """
@@ -177,9 +177,6 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         self.connect(self.proc,
                      SIGNAL('readyReadStandardError()'),
                      self.slotReadFromStderr)
-        self.connect(self.proc,
-                     SIGNAL('stateChanged(QProcess::ProcessState)'),
-                     self.slotStateChanged)
         self.connect(self.pushButtonLines,
                      SIGNAL('clicked()'),
                      self.__slotLines)
@@ -189,35 +186,25 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         self.connect(self.pushButtonKill,
                      SIGNAL('clicked()'),
                      self.__slotKill)
+        self.connect(self.proc,
+                     SIGNAL('started()'),
+                     self.slotStarted)
+        self.connect(self.proc,
+                     SIGNAL('finished(int, QProcess::ExitStatus)'),
+                     self.slotFinished)
 
-        self.procErrorFlag = False
-
-        self.cmd_list = cmd_list
-        if self.cmd_list:
-            self.cmd = self.cmd_list.pop(0)
-        else:
-            self.cmd = None
+        self.cmd = cmd
 
         cursor = QCursor(Qt.BusyCursor)
         QApplication.setOverrideCursor(cursor)
 
 
     @pyqtSignature("int, QProcess::ExitStatus")
-    def slotProcess(self):
+    def slotStarted(self):
         """
-        Public slot. Run a list of commands.
+        Public slot. Process is started.
         """
-        if self.proc.exitStatus() == QProcess.NormalExit and not self.procErrorFlag:
-            self.proc.start(self.cmd)
-            if self.cmd_list:
-                self.cmd = self.cmd_list.pop(0)
-                self.connect(self.proc,
-                             SIGNAL('finished(int, QProcess::ExitStatus)'),
-                             self.slotProcess)
-            else:
-                self.connect(self.proc,
-                             SIGNAL('finished(int, QProcess::ExitStatus)'),
-                             self.slotFinished)
+        pass
 
 
     @pyqtSignature("int, QProcess::ExitStatus")
@@ -225,6 +212,20 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         """
         Public slot. Enable the close button of the dialog window.
         """
+
+        if exitStatus != QProcess.NormalExit:
+            error = self.proc.error()
+            if error == QProcess.FailedToStart:
+                print("failed to start")
+            elif error == QProcess.Timedout:
+                print("timed out")
+            elif error == QProcess.WriteError:
+                print("error trying to write to process")
+            elif error == QProcess.ReadError:
+                print("error trying to read from process")
+            else:
+                print("crashed or killed")
+
         # if the GUI is launched through SALOME, update the object browser
         # in order to display results
         if self.objBr:
@@ -298,44 +299,8 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         if len(killList) <= 0:
             return
 
-        cmd = "kill -9 %s" % string.join(list(map(str, killList)), ' ')
+        cmd = "kill -9 %s" % " ".join(list(map(str, killList)))
         subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-
-
-    #def killPGroup(self):
-        #"""
-        #Attempts to find all childred & grandchildren of the spawned subprocess
-        #"""
-        ## get the pid, pgid, ppid of our current processes:
-        #cmd = "ps eo pid,pgid --no-headers"
-        #psraw = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.readlines()
-        #psList = []
-        #killList = []
-        #for ps in psraw: # 1: gets rid of header
-            #psList.append(map(int, ps.split()))
-
-        #pgid = 0
-
-        ## find the pgid of the spawned subprocess:
-        #for ps in psList:
-            #if int(self.proc.pid()) in ps:
-                #pgid = ps[1]
-                #break
-
-        #if pgid == 0:
-            #return
-
-        ## get a list of all pids in the pgid except the group owner:
-        #for ps in psList:
-            #if pgid in ps and pgid != ps[0]:  # check [0] so we don't kill ourselves
-                #killList.append(ps[0])
-
-        ## don't do anything if we didn't find anything:
-        #if len(killList) <= 0:
-            #return
-
-        #cmd = "kill %s" % string.join(map(str, killList[1:-1]), ' ')
-        #subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 
 
     @pyqtSignature("")
@@ -397,15 +362,6 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
             if ba.isNull(): return
             s = (ba.data()).decode("utf-8")[:-1]
             self.logText.append('<font color="red">' + s + '</font>')
-            self.procErrorFlag = True
-
-
-    @pyqtSignature("QProcess::ProcessState")
-    def slotStateChanged(self, state):
-        """
-        Public slot. Handle the current status of the subprocess.
-        """
-        pass
 
 
     def closeEvent(self, event):

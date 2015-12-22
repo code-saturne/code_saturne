@@ -221,7 +221,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
 
 class BatchRunningStopByIterationDialogView(QDialog, Ui_BatchRunningStopByIterationDialogForm):
     """
-    Advanced dialog for stop the computation at a given iteration
+    Advanced dialog to stop the computation at a given iteration
     """
     def __init__(self, parent, default):
         """
@@ -253,7 +253,7 @@ class BatchRunningStopByIterationDialogView(QDialog, Ui_BatchRunningStopByIterat
     @pyqtSignature("const QString &")
     def __slotStopIter(self, text):
         """
-        Private slot to set a iteration number to stop the code.
+        Private slot to set an iteration number to stop the code.
         """
         if self.sender().validator().state == QValidator.Acceptable:
             iter = from_qvariant(text, int)
@@ -286,10 +286,10 @@ class BatchRunningStopByIterationDialogView(QDialog, Ui_BatchRunningStopByIterat
 #-------------------------------------------------------------------------------
 
 class ListingDialogView(CommandMgrDialogView):
-    def __init__(self, parent, case, title, cmd_list):
+    def __init__(self, parent, case, title, cmd):
         self.case = case
 
-        CommandMgrDialogView.__init__(self, parent, title, cmd_list, self.case['scripts_path'], self.case['salome'])
+        CommandMgrDialogView.__init__(self, parent, title, cmd, self.case['scripts_path'], self.case['salome'])
 
         self.connect(self.pushButtonStop,   SIGNAL('clicked()'), self.__slotStop)
         self.connect(self.pushButtonStopAt, SIGNAL('clicked()'), self.__slotStopAt)
@@ -300,7 +300,7 @@ class ListingDialogView(CommandMgrDialogView):
         self.listing  = "listing"
         self.n_lines = 0
 
-        self.slotProcess()
+        self.proc.start(self.cmd)
 
 
     def slotReadFromStdout(self):
@@ -317,18 +317,16 @@ class ListingDialogView(CommandMgrDialogView):
             s = (ba.data()).decode("utf-8")[:-1]
             self.logText.append(s)
             self.n_lines += 1
-            self.__execDir(s)
+
+            # Work and result directories printed in first lines of log.
+            if self.n_lines < 16:
+                self.__execDir(s)
 
 
     def __execDir(self, s):
         """
         Private method. Find the directory of the code execution.
         """
-        # Work and result directories printed in first lines of log.
-
-        if self.n_lines > 15:
-            return
-
         # Read directly the run directory from the sdtout of the code.
 
         if "Working directory" in s:
@@ -781,7 +779,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             pass
 
         if self.case['salome'] or key == 'localhost':
-            dlg = ListingDialogView(self.parent, self.case, run_title, [cmd])
+            dlg = ListingDialogView(self.parent, self.case, run_title, cmd)
             dlg.show()
         else:
             cs_exec_environment.run_command(cmd)
