@@ -413,6 +413,9 @@ Architectural changes
 Bug fixes
 ---------
 
+- Face mean secondary viscosity is now computed consistantly with face mean
+  viscosity (namely harmonic if imvisf equal to 1).
+
 - Fix bug introduced in rev. 4491 (before release of 3.0.0):
 
   - in rev 4491, the call to specific physics laws was moved from BEFORE
