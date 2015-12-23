@@ -55,6 +55,7 @@ else :
 import cs_config
 
 coolprop_fluids = []
+coolprop_warn = False
 
 if cs_config.config().libs['coolprop'].have != "no" and not coolprop_fluids:
 
@@ -68,16 +69,19 @@ if cs_config.config().libs['coolprop'].have != "no" and not coolprop_fluids:
          coolprop_fluids.append(f)
       coolprop_fluids.sort()
 
-   except Exception:  # CoolProp availble but not its Python bindings
+   except Exception:  # CoolProp might be available but not its Python bindings
 
-      import traceback
-      exc_info = sys.exc_info()
-      bt = traceback.format_exception(*exc_info)
-      for l in bt:
-         print(l)
-      del exc_info
-      print("Warning: CoolProp Python bindings not available or usable")
-      print("         list of fluids based on CoolProp 5.1.1")
+      if cs_config.config().libs['coolprop'].have != "gui_only":
+         import traceback
+         exc_info = sys.exc_info()
+         bt = traceback.format_exception(*exc_info)
+         for l in bt:
+            print(l)
+         del exc_info
+         print("Warning: CoolProp Python bindings not available or usable")
+         print("         list of fluids based on CoolProp 5.1.1")
+      else:
+         coolprop_warn = True
 
       coolprop_fluids = ['1-Butene', 'Acetone', 'Air', 'Ammonia', 'Argon',
                          'Benzene', 'CarbonDioxide', 'CarbonMonoxide',
@@ -415,12 +419,13 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 self.modelMaterial.addItem(self.tr('Water'), 'Water')
 
             if coolprop_fluids and EOS == 0:
+                have_coolprop = False
+                if cs_config.config().libs['coolprop'].have != "no":
+                    have_coolprop = True
                 for fli in coolprop_fluids:
-                    if self.freesteam == 1:
-                        if fli != 'Water':
-                            self.modelMaterial.addItem(self.tr(fli), fli)
-                    else:
-                        self.modelMaterial.addItem(self.tr(fli), fli)
+                    if self.freesteam == 1 and fli == 'Water':
+                        continue
+                    self.modelMaterial.addItem(self.tr(fli), fli, coolprop_warn)
 
             material = self.mdl.getMaterials()
             self.modelMaterial.setItem(str_model=material)

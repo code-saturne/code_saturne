@@ -336,7 +336,7 @@ class ComboModel:
         self.combo.setModel(self.model)
 
 
-    def addItem(self, str_view, str_model=""):
+    def addItem(self, str_view, str_model="", warn=False):
         """
         Insert an item in the model.
 
@@ -345,11 +345,18 @@ class ComboModel:
 
         str_model: correponding string used in the model.
         For example, 'lagrangian'
+
+        warn: If True, entry is marked with a color.
         """
         item  = QtGui.QStandardItem(str(str_view))
 
         index = self.last
         self.model.setItem(index, item)
+
+        if warn:
+            self.combo.setItemData(index,
+                                   QtGui.QColor(QtCore.Qt.red),
+                                   QtCore.Qt.TextColorRole)
 
         self.last = index + 1
 
