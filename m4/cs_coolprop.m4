@@ -87,6 +87,7 @@ AC_ARG_WITH(coolprop-lib,
             [if test "x$with_coolprop" != "xno" -a "x$with_coolprop" != "xyes" \
 	          -a "x$with_coolprop" != "xcheck"; then
                case `uname -m` in
+                  ppc64)      ref_name='libCoolProp' ;;
                   *64)        ref_name='64bit/libCoolProp' ;;
                   *32 | i*86) ref_name='32bit/libCoolProp' ;;
                   *)          ref_name='libCoolProp' ;;
