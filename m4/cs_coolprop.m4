@@ -27,8 +27,22 @@ dnl-----------------------------------------------------------------------------
 
 AC_DEFUN([CS_AC_TEST_COOLPROP], [
 
+cs_gui_coolprop=false
+
 cs_have_coolprop=no
 cs_have_coolprop_headers=no
+
+AC_ARG_ENABLE(gui-coolprop,
+  [AS_HELP_STRING([--enable-gui-coolprop], [Allow CoolProp fluids in GUI even when not available])],
+  [
+    case "${enableval}" in
+      yes) cs_gui_coolprop=true ;;
+      no)  cs_gui_coolprop=false ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-gui-coolprop]) ;;
+    esac
+  ],
+  [ cs_gui_coolprop=false ]
+)
 
 AC_ARG_WITH(coolprop,
             [AS_HELP_STRING([--with-coolprop=DIR],
@@ -154,6 +168,9 @@ if test "x$with_coolprop" != "xno" ; then
     COOLPROP_LIBS=""
     COOLPROPRUNPATH=""
     COOLPROPPYTHONPATH=""
+    if test "x$cs_gui_coolprop" != "xfalse"; then
+      cs_have_coolprop=gui_only
+    fi
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"
