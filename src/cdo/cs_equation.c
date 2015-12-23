@@ -2643,7 +2643,7 @@ cs_equation_add_source_term(cs_equation_t   *eq,
                 " Can not add a source term related to mesh location %s"),
               ml_name);
 
-  cs_param_source_term_type_t  st_type = CS_PARAM_N_SOURCE_TERM_TYPES;
+  cs_param_source_term_type_t  st_type = CS_PARAM_SOURCE_TERM_USER;
   cs_param_def_type_t  def_type = CS_PARAM_N_DEF_TYPES;
   cs_equation_param_t  *eqp = eq->param;
 

@@ -479,11 +479,11 @@ cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_reaction_add(cs_param_reaction_t          *rp,
-                      const char                   *r_name,
-                      cs_param_hodge_type_t         h_type,
-                      cs_param_hodge_algo_t         h_algo,
-                      cs_param_source_term_type_t   r_type)
+cs_param_reaction_add(cs_param_reaction_t       *rp,
+                      const char                *r_name,
+                      cs_param_hodge_type_t      h_type,
+                      cs_param_hodge_algo_t      h_algo,
+                      cs_param_reaction_type_t   r_type)
 {
   if (rp == NULL)
     return;

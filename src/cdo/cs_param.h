@@ -511,7 +511,7 @@ cs_param_reaction_add(cs_param_reaction_t          *rp,
                       const char                   *r_name,
                       cs_param_hodge_type_t         h_type,
                       cs_param_hodge_algo_t         h_algo,
-                      cs_param_source_term_type_t   r_type);
+                      cs_param_reaction_type_t      r_type);
 
 /*----------------------------------------------------------------------------*/
 /*!
