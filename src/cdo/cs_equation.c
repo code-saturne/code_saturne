@@ -1072,7 +1072,7 @@ _get_eqkey(const char *keyname)
     if (strcmp(keyname, "itsol") == 0)
       key = EQKEY_ITSOL;
     else if (strcmp(keyname, "itsol_eps") == 0)
-      key = EQKEY_ITSOL_MAX_ITER;
+      key = EQKEY_ITSOL_EPS;
     else if (strcmp(keyname, "itsol_max_iter") == 0)
       key = EQKEY_ITSOL_MAX_ITER;
     else if (strcmp(keyname, "itsol_resnorm") == 0)
