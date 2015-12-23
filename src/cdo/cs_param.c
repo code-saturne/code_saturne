@@ -78,8 +78,8 @@ static const char
 cs_param_def_type_name[CS_PARAM_N_DEF_TYPES][CS_CDO_LEN_NAME]=
   { N_("by analytic function"),
     N_("by array"),
-    N_("by field"),
     N_("by law (one argument)"),
+    N_("by subdomain"),
     N_("by time function"),
     N_("by user function"),
     N_("by value") };
@@ -258,6 +258,73 @@ cs_param_set_def(cs_param_def_type_t      def_type,
     break;
 
   } /* end of switch on def_type */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set a cs_get_t structure
+ *
+ * \param[in]      var_type   type of variables (scalar, vector, tensor...)
+ * \param[in]      val        value to set
+ * \param[in, out] get        pointer to cs_get_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_set_get(cs_param_var_type_t      var_type,
+                 const char              *val,
+                 cs_get_t                *get)
+{
+  assert(var_type != CS_PARAM_N_VAR_TYPES);
+
+  if (val == NULL) {
+
+    if (var_type == CS_PARAM_VAR_SCAL)
+      get->val = 0.0;
+    else if (var_type == CS_PARAM_VAR_VECT)
+      get->vect[0] = get->vect[1] = get->vect[2] = 0.0;
+    else if (var_type == CS_PARAM_VAR_TENS) {
+      for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+          get->tens[i][j] = 0.0;
+    }
+    else if (var_type == CS_PARAM_VAR_SYMTENS) {
+      for (int i = 0; i < 6; i++)
+        get->twovects[i] = 0.0;
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0, _(" Invalid type of variable."));
+
+  }
+  else { // val != NULL
+
+    if (var_type == CS_PARAM_VAR_SCAL)
+      get->val = atof(val);
+    else if (var_type == CS_PARAM_VAR_VECT) {
+      char s[3][32];
+      sscanf(val, "%s %s %s", s[0], s[1], s[2]);
+      for (int i = 0; i < 3; i++)
+        get->vect[i] = atof(s[i]);
+    }
+    else if (var_type == CS_PARAM_VAR_TENS) {
+      char s[9][32];
+      sscanf(val, "%s %s %s %s %s %s %s %s %s",
+             s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8]);
+      for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+          get->tens[i][j] = atof(s[3*i+j]);
+    }
+    else if (var_type == CS_PARAM_VAR_SYMTENS) {
+      char s[6][32];
+      sscanf(val, "%s %s %s %s %s %s", s[0], s[1], s[2], s[3], s[4], s[5]);
+      for (int i = 0; i < 6; i++)
+        get->twovects[i] = atof(s[i]);
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0, _(" Invalid type of variable."));
+
+  }
 
 }
 

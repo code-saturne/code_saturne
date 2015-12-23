@@ -50,6 +50,8 @@
 
 #include "cs_mesh_location.h"
 #include "cs_cdo_toolbox.h"
+#include "cs_property.h"
+#include "cs_advection_field.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -85,8 +87,8 @@ static const double  one6 = 1/6.;
 static const double  L = 200;
 
 /* Solution of the TRACY 1D verification testcase
-        F.T. Tracy, "1D, 2D, 3D analytical solutions of unsaturated flow in
-        groundwater", Journal of Hydrology, 170, pp. 199--214 (1995)
+   F.T. Tracy, "1D, 2D, 3D analytical solutions of unsaturated flow in
+   groundwater", Journal of Hydrology, 170, pp. 199--214 (1995)
 */
 static void
 get_sol(cs_real_t           time,
@@ -190,7 +192,7 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      =========================================
 
      Choose a boundary by default
-     boundary keyword is one of the following keyword
+     Boundary keyword is one of the following keyword
      >> wall or symmetry
   */
 
@@ -264,32 +266,86 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      =========================================
 
      For the groundwater module:
-       cs_domain_activate_groundwater(domain, "model_keyword");
+     >> cs_domain_activate_groundwater(domain,
+                                       permeability_type,
+                                       Richards_time);
 
-     where "model_keyword" is chosen among the following list:
-     >> "saturated", "tracy", "genutchen"
+     * permeability_type is one of the following keywords:
+     "isotopic", "orthotropic" or "anisotropic"
+     * Richards_time is one of the following keywords:
+     "steady" or "unsteady"
 
-     This call implies:
-     - add an equation named "Richards" along with an associated field named
+     * Consequences of the activation of the groundwater module are:
+     - add a new equation named "Richards" along with an associated field named
      "hydraulic_head". Default boundary condition is set to "zero_flux".
-     - definition of an advection field named "darcian_flux"
-     - definition of a property called "permeability".
-     - definition a property called "soil_capacity" used to take into account
-     the unsteady phenomena if the model is not "satured".
+     - define a new advection field named "darcian_flux"
+     - define a new property called "permeability".
+     - define a new property called "soil_capacity" if "unsteady" is chosen
+  */
+
+  cs_domain_activate_groundwater(domain,
+                                 "isotropic", // type of permeability
+                                 "unsteady"); // steady or unsteady
+
+  /* Retrieve the the groundwater module */
+  cs_groundwater_t  *gw = cs_domain_get_groundwater(domain);
+
+  /* Set additional parameters related to the groundwater module
+     >> cs_groundwater_set_param(gw,
+                                 keyword,
+                                 keyval);
+
+     * keyword is "post_freq"
+     Frequency used to postprocess specific quantities to the groundwater module
+     If keyval is "10" for instance, every 10 iterations postprocessing is done.
+     * keyword is "output_moisture"
+     If keyval is "true", a moisture field is postprocessed.
+
+   */
+
+  cs_groundwater_set_param(gw, "post_freq", "10");
+  cs_groundwater_set_param(gw, "output_moisture", "true");
+
+  /* Add a type of soil
+     >> cs_groundwater_add_soil_by_value(gw,
+                                         mesh_location_name,
+                                         model_keyword,
+                                         saturated_permeability);
+
+     * mesh_location_name is the name of the mesh location where this soil is
+     defined. The mesh location is related to cells. By default, "cells"
+     corresponds to all the cells of the mesh. Otherwise, one needs to define
+     new mesh locations.
+     * model_keyword is one of the following choices:
+     "saturated", "tracy" or "genutchen"
+     * saturated_permeability depends on the type of permeability chosen.
+     1 value if isotropic, 3 values if orthtropic or 9 values if anisotropic.
 
   */
 
-  cs_domain_activate_groundwater(domain, "tracy");
+  cs_groundwater_add_soil_by_value(gw,
+                                   "cells",       /* mesh location name */
+                                   "tracy",       /* soil model */
+                                   "1.15741e-4"); /* saturated permeability */
 
-  /* Set parameters associated to the groundwater module */
-  cs_groundwater_t  *gw = cs_domain_get_groundwater(domain);
+  /* Set additional parameters defining this soil
+     >> cs_groundwater_set_soil_param(gw,
+                                      mesh_location_name,
+                                      keyword,
+                                      keyval);
 
-  cs_groundwater_set_param(gw, "saturated_permeability", "1.15741e-4");
-  cs_groundwater_set_param(gw, "tracy_hr", "-100");
-  cs_groundwater_set_param(gw, "max_moisture", "0.45");
-  cs_groundwater_set_param(gw, "residual_moisture", "0.15");
-  cs_groundwater_set_param(gw, "post_freq", "10");
-  cs_groundwater_set_param(gw, "output_moisture", "true");
+     If mesh_location_name is set to NULL, all soils are set.
+
+     Available keywords are:
+     "saturated_moisture",
+     "residual_moisture",
+     "tracy_hr"  (only useful is Tracy model is used)
+
+  */
+
+  cs_groundwater_set_soil_param(gw, "cells", "tracy_hr", "-100");
+  cs_groundwater_set_soil_param(gw, NULL, "saturated_moisture", "0.45");
+  cs_groundwater_set_soil_param(gw, NULL, "residual_moisture", "0.15");
 
   /* Then add a tracer equation convected by the darcean velocity
      >> cs_groundwater_add_tracer_equation(domain,

@@ -52,15 +52,33 @@ BEGIN_C_DECLS
 /* Type of predefined modelling for the groundwater flows */
 typedef enum {
 
-  CS_GROUNDWATER_MODEL_SATURATED, /* media is satured */
+  CS_GROUNDWATER_MODEL_COMPOSITE, /* Mixed of predefined groundwater model */
   CS_GROUNDWATER_MODEL_GENUCHTEN, /* Van Genuchten-Mualem laws for dimensionless
                                      moisture content and hydraulic conductivity
                                   */
+  CS_GROUNDWATER_MODEL_SATURATED, /* media is satured */
   CS_GROUNDWATER_MODEL_TRACY,     /* Tracy model for unsaturated soils */
   CS_GROUNDWATER_MODEL_USER,      /* User-defined model */
   CS_GROUNDWATER_N_MODELS
 
 } cs_groundwater_model_t;
+
+/* Parameters defining the van Genuchten-Mualen law */
+typedef struct {
+
+  double  n;          // 1.25 < n < 6
+  double  m;          // m = 1 - 1/n
+  double  scale;      // scale parameter [m^-1]
+  double  tortuosity; // tortuosity param. for saturated hydraulic conductivity
+
+} cs_gw_genuchten_t;
+
+typedef struct {
+
+  double   h_r;
+  double   h_s;
+
+} cs_gw_tracy_t;
 
 typedef struct _groundwater_t  cs_groundwater_t;
 
@@ -72,12 +90,14 @@ typedef struct _groundwater_t  cs_groundwater_t;
 /*!
  * \brief  Create a structure dedicated to manage groundwater flows
  *
+ * \param[in]  n_cells    number of cells in the computational domain
+ *
  * \return a pointer to a new allocated cs_groundwater_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_groundwater_t *
-cs_groundwater_create(void);
+cs_groundwater_create(cs_lnum_t    n_cells);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -124,7 +144,6 @@ cs_groundwater_summary(const cs_groundwater_t   *gw);
  *
  * \param[in]      connect          pointer to a cs_cdo_connect_t structure
  * \param[in]      richards_eq_id   id related to the Richards equation
- * \param[in]      model            keyword related to the model used
  * \param[in, out] permeability     pointer to a property structure
  * \param[in, out] soil_capacity    pointer to a property structure
  * \param[in, out] adv_field        pointer to a cs_adv_field_t structure
@@ -135,13 +154,46 @@ cs_groundwater_summary(const cs_groundwater_t   *gw);
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_groundwater_init(const cs_cdo_connect_t  *connect,
-                    int                      richards_eq_id,
-                    const char              *model,
-                    cs_property_t           *permeability,
-                    cs_property_t           *soil_capacity,
-                    cs_adv_field_t          *adv_field,
-                    cs_groundwater_t        *gw);
+cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
+                          int                      richards_eq_id,
+                          cs_property_t           *permeability,
+                          cs_property_t           *soil_capacity,
+                          cs_adv_field_t          *adv_field,
+                          cs_groundwater_t        *gw);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new type of soil to consider in the groundwater module
+ *
+ * \param[in, out] gw         pointer to a cs_groundwater_t structure
+ * \param[in]      ml_name    name of the mesh location related to this soil
+ * \param[in]      model_kw   keyword related to the model used
+ * \param[in]      ks         value(s) of the saturated permeability
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_groundwater_add_soil_by_value(cs_groundwater_t   *gw,
+                                 const char         *ml_name,
+                                 const char         *model_kw,
+                                 const char         *pty_val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set parameters related to a cs_groundwater_t structure
+ *
+ * \param[in, out]  gw        pointer to a cs_groundwater_t structure
+ * \param[in]       ml_name   name of the mesh location associated to this soil
+ * \param[in]       keyname   name of key related to the member of adv to set
+ * \param[in]       keyval    accessor to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
+                              const char          *ml_name,
+                              const char          *keyname,
+                              const char          *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -156,7 +208,6 @@ cs_groundwater_init(const cs_cdo_connect_t  *connect,
  * \param[in]      eqname           name of the equation
  * \param[in]      varname          name of the related variable
  * \param[in]      diff_property    pointer to a cs_property_t struct.
- * \param[in]      dispersivity     dispersivity for each axis (x, y, z]
  * \param[in]      bulk_density     value of the bulk density
  * \param[in]      distrib_coef     value of the distribution coefficient
  * \param[in]      reaction_rate    value of the first order rate of reaction
@@ -171,7 +222,6 @@ cs_groundwater_add_tracer(cs_groundwater_t   *gv,
                           const char         *eq_name,
                           const char         *var_name,
                           cs_property_t      *diff_property,
-                          cs_real_3_t         dispersivity,
                           double              bulk_density,
                           double              distrib_coef,
                           double              reaction_rate);

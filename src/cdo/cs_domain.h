@@ -341,40 +341,16 @@ cs_domain_activate_wall_distance(cs_domain_t   *domain);
 /*!
  * \brief  Activate the computation of the Richards' equation
  *
- * \param[in, out]   domain         pointer to a cs_domain_t structure
- * \param[in]        model          keyword related to the model used
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in]       kw_type    "isotropic", "orthotropic or "anisotropic"
+ * \param[in]       kw_time    Richards equation is "steady" or "unsteady"
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_domain_activate_groundwater(cs_domain_t   *domain,
-                               const char    *model);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add a new equation related to the groundwater flow module
- *         This equation is a specific unsteady advection/diffusion/reaction eq.
- *         Tracer is advected thanks to the darcian velocity and
- *         diffusion/reaction parameters result from a physical modelling.
- *
- * \param[in, out]  domain         pointer to a cs_domain_t structure
- * \param[in]       eqname         name of the equation
- * \param[in]       varname        name of the related variable
- * \param[in]       dispersivity   dispersivity for each axis (x, y, z]
- * \param[in]       bulk_density   value of the bulk density
- * \param[in]       distrib_coef   value of the distribution coefficient
- * \param[in]       reaction_rate  value of the first order rate of reaction
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
-                                 const char    *eq_name,
-                                 const char    *var_name,
-                                 cs_real_3_t    dispersivity,
-                                 double         bulk_density,
-                                 double         distribution_coef,
-                                 double         reaction_rate);
+                               const char    *kw_type,
+                               const char    *kw_time);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -389,6 +365,30 @@ cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
 
 cs_groundwater_t *
 cs_domain_get_groundwater(const cs_domain_t    *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new equation related to the groundwater flow module
+ *         This equation is a specific unsteady advection/diffusion/reaction eq.
+ *         Tracer is advected thanks to the darcian velocity and
+ *         diffusion/reaction parameters result from a physical modelling.
+ *
+ * \param[in, out]  domain         pointer to a cs_domain_t structure
+ * \param[in]       eqname         name of the equation
+ * \param[in]       varname        name of the related variable
+ * \param[in]       bulk_density   value of the bulk density
+ * \param[in]       distrib_coef   value of the distribution coefficient
+ * \param[in]       reaction_rate  value of the first order rate of reaction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
+                                 const char    *eq_name,
+                                 const char    *var_name,
+                                 double         bulk_density,
+                                 double         distribution_coef,
+                                 double         reaction_rate);
 
 /*----------------------------------------------------------------------------*/
 /*!

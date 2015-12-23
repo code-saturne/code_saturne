@@ -1221,62 +1221,66 @@ cs_domain_activate_wall_distance(cs_domain_t   *domain)
 /*!
  * \brief  Activate the computation of the Richards' equation
  *
- * \param[in, out]   domain         pointer to a cs_domain_t structure
- * \param[in]        model          keyword related to the model used
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in]       kw_type    "isotropic", "orthotropic or "anisotropic"
+ * \param[in]       kw_time    Richards equation is "steady" or "unsteady"
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_domain_activate_groundwater(cs_domain_t   *domain,
-                               const char    *model)
+                               const char    *kw_type,
+                               const char    *kw_time)
 {
   if (domain == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" cs_domain_t structure is not allocated."));
 
-  cs_property_t  *permeability = NULL, *soil_capacity = NULL;
-  cs_adv_field_t  *adv_field = NULL;
   int  richards_eq_id = domain->n_equations;
 
   /* Allocate a new strcuture for managing groundwater module */
-  domain->gw = cs_groundwater_create();
+  domain->gw = cs_groundwater_create(domain->mesh->n_cells);
 
   /* Add a property related to the diffusion term of the Richards eq. */
-  cs_domain_add_property(domain, "permeability", "anisotropic");
+  cs_domain_add_property(domain, "permeability", kw_type);
+
+  cs_property_t  *permeability = cs_domain_get_property(domain,
+                                                        "permeability");
 
   /* Add a property related to the unsteady term of the Richards eq. */
-  if (strcmp(model, "saturated")) // not "saturated"
-    cs_domain_add_property(domain, "soil_capacity", "isotropic");
+  cs_property_t  *soil_capacity = NULL;
 
-  /* Add an advection field related to the darcian flux steming from the
+  if (strcmp(kw_time, "unsteady") == 0) {
+    cs_domain_add_property(domain, "soil_capacity", "isotropic");
+    soil_capacity = cs_domain_get_property(domain, "soil_capacity");
+  }
+
+  /* Add an advection field related to the darcian flux stemming from the
      Richards equation */
   cs_domain_add_advection_field(domain, "darcian_flux");
 
-  adv_field = cs_domain_get_advection_field(domain, "darcian_flux");
-  permeability = cs_domain_get_property(domain, "permeability");
-  soil_capacity = cs_domain_get_property(domain, "soil_capacity");
+  cs_adv_field_t  *adv_field = cs_domain_get_advection_field(domain,
+                                                             "darcian_flux");
 
   /* Create a new equation */
-  cs_equation_t  *richards_eq = cs_groundwater_init(domain->connect,
-                                                    richards_eq_id,
-                                                    model,
-                                                    permeability,
-                                                    soil_capacity,
-                                                    adv_field,
-                                                    domain->gw);
-
-  domain->richards_eq_id = richards_eq_id;
-  domain->n_predef_equations += 1;
-  domain->n_equations += 1;
-  BFT_REALLOC(domain->equations, domain->n_equations, cs_equation_t *);
-  domain->equations[richards_eq_id] = richards_eq;
+  cs_equation_t  *richards_eq = cs_groundwater_initialize(domain->connect,
+                                                          richards_eq_id,
+                                                          permeability,
+                                                          soil_capacity,
+                                                          adv_field,
+                                                          domain->gw);
 
   if (richards_eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " The module dedicated to groundwater flows is activated but"
               " the Richards' equation is not set.");
 
-
+  /* Update cs_domain_t structure */
+  domain->richards_eq_id = richards_eq_id;
+  domain->n_predef_equations += 1;
+  domain->n_equations += 1;
+  BFT_REALLOC(domain->equations, domain->n_equations, cs_equation_t *);
+  domain->equations[richards_eq_id] = richards_eq;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1310,7 +1314,6 @@ cs_domain_get_groundwater(const cs_domain_t    *domain)
  * \param[in, out]  domain         pointer to a cs_domain_t structure
  * \param[in]       eqname         name of the equation
  * \param[in]       varname        name of the related variable
- * \param[in]       dispersivity   dispersivity for each axis (x, y, z]
  * \param[in]       bulk_density   value of the bulk density
  * \param[in]       distrib_coef   value of the distribution coefficient
  * \param[in]       reaction_rate  value of the first order rate of reaction
@@ -1321,7 +1324,6 @@ void
 cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
                                  const char    *eq_name,
                                  const char    *var_name,
-                                 cs_real_3_t    dispersivity,
                                  double         bulk_density,
                                  double         distrib_coef,
                                  double         reaction_rate)
@@ -1353,7 +1355,6 @@ cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
                                                         eq_name,
                                                         var_name,
                                                         diff_pty,
-                                                        dispersivity,
                                                         bulk_density,
                                                         distrib_coef,
                                                         reaction_rate);

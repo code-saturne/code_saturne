@@ -2312,8 +2312,6 @@ cs_equation_add_bc(cs_equation_t    *eq,
   /* Get the type of definition */
   if (strcmp(def_key, "value") == 0)
     def_type = CS_PARAM_DEF_BY_VALUE;
-  else if (strcmp(def_key, "field") == 0)
-    def_type = CS_PARAM_DEF_BY_FIELD;
   else if (strcmp(def_key, "array") == 0)
     def_type = CS_PARAM_DEF_BY_ARRAY;
   else if (strcmp(def_key, "analytic") == 0)
@@ -2670,8 +2668,6 @@ cs_equation_add_source_term(cs_equation_t   *eq,
   /* Get the type of definition */
   if (strcmp(def_key, "value") == 0)
     def_type = CS_PARAM_DEF_BY_VALUE;
-  else if (strcmp(def_key, "field") == 0)
-    def_type = CS_PARAM_DEF_BY_FIELD;
   else if (strcmp(def_key, "array") == 0)
     def_type = CS_PARAM_DEF_BY_ARRAY;
   else if (strcmp(def_key, "analytic") == 0)

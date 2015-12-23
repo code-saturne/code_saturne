@@ -44,20 +44,21 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Tag to build parameter flag */
-#define CS_PARAM_FLAG_UNIFORM  (1 <<  0) //    1: uniform (in space)
-#define CS_PARAM_FLAG_CELLWISE (1 <<  1) //    2: cellwise uniform
-#define CS_PARAM_FLAG_UNSTEADY (1 <<  2) //    4: unsteady
-#define CS_PARAM_FLAG_VERTEX   (1 <<  3) //    8: on vertices
-#define CS_PARAM_FLAG_EDGE     (1 <<  4) //   16: on edges
-#define CS_PARAM_FLAG_FACE     (1 <<  5) //   32: on faces
-#define CS_PARAM_FLAG_CELL     (1 <<  6) //   64: on cells
-#define CS_PARAM_FLAG_PRIMAL   (1 <<  7) //  128: on primal mesh
-#define CS_PARAM_FLAG_DUAL     (1 <<  8) //  256: on dual mesh
-#define CS_PARAM_FLAG_BORDER   (1 <<  9) //  512: scalar-valued
-#define CS_PARAM_FLAG_SCAL     (1 << 10) // 1024: scalar-valued
-#define CS_PARAM_FLAG_VECT     (1 << 11) // 2048: vector-valued
-#define CS_PARAM_FLAG_TENS     (1 << 12) // 4096: tensor-valued
-#define CS_PARAM_FLAG_BY_CELL  (1 << 13) // 8192: by cell (c2e, c2f, c2v)
+#define CS_PARAM_FLAG_UNIFORM  (1 <<  0) //     1: uniform (in space)
+#define CS_PARAM_FLAG_CELLWISE (1 <<  1) //     2: cellwise uniform
+#define CS_PARAM_FLAG_UNSTEADY (1 <<  2) //     4: unsteady
+#define CS_PARAM_FLAG_VERTEX   (1 <<  3) //     8: on vertices
+#define CS_PARAM_FLAG_EDGE     (1 <<  4) //    16: on edges
+#define CS_PARAM_FLAG_FACE     (1 <<  5) //    32: on faces
+#define CS_PARAM_FLAG_CELL     (1 <<  6) //    64: on cells
+#define CS_PARAM_FLAG_PRIMAL   (1 <<  7) //   128: on primal mesh
+#define CS_PARAM_FLAG_DUAL     (1 <<  8) //   256: on dual mesh
+#define CS_PARAM_FLAG_BORDER   (1 <<  9) //   512: scalar-valued
+#define CS_PARAM_FLAG_SCAL     (1 << 10) //  1024: scalar-valued
+#define CS_PARAM_FLAG_VECT     (1 << 11) //  2048: vector-valued
+#define CS_PARAM_FLAG_TENS     (1 << 12) //  4096: tensor-valued
+#define CS_PARAM_FLAG_BY_CELL  (1 << 13) //  8192: by cell (c2e, c2f, c2v)
+#define CS_PARAM_FLAG_OWNER    (1 << 14) // 16384: owner
 
 /*============================================================================
  * Type definitions
@@ -72,11 +73,20 @@ typedef void (cs_user_func_t) (const void         *input1,
 
 typedef union {
 
-  cs_get_t               get;       // definition by value
-  cs_analytic_func_t    *analytic;  // definition by an analytic function
-  cs_timestep_func_t    *time_func; // definition of the time step by a function
-  cs_user_func_t        *user_func; // definition by an user-defined function
-  cs_onevar_law_func_t  *law1_func; // definition by law depending one variable
+  /* For a definition by value */
+  cs_get_t                         get;
+
+  /* For a definition by an analytic function */
+  cs_analytic_func_t              *analytic;
+
+  /* For a definition of the time step by a function */
+  cs_timestep_func_t              *time_func;
+
+  /* For a definition by an user-defined function */
+  cs_user_func_t                  *user_func;
+
+  /* For a definition by law depending on one variable */
+  cs_onevar_law_func_t            *law1_func;
 
 } cs_def_t;
 
@@ -84,8 +94,8 @@ typedef enum {
 
   CS_PARAM_DEF_BY_ANALYTIC_FUNCTION,
   CS_PARAM_DEF_BY_ARRAY,
-  CS_PARAM_DEF_BY_FIELD,
   CS_PARAM_DEF_BY_ONEVAR_LAW,
+  CS_PARAM_DEF_BY_SUBDOMAIN,
   CS_PARAM_DEF_BY_TIME_FUNCTION,
   CS_PARAM_DEF_BY_USER_FUNCTION,
   CS_PARAM_DEF_BY_VALUE,
@@ -390,6 +400,32 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Get the name related to a type of variable
+ *
+ * \param[in] type     cs_param_var_type_t
+ *
+ * \return the name associated to this type
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_var_type_name(const cs_param_var_type_t   type);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name related to a type of definition
+ *
+ * \param[in] type     cs_param_def_type_t
+ *
+ * \return the name associated to this type
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_def_type_name(const cs_param_def_type_t   type);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set a cs_def_t structure
  *
  * \param[in]      def_type   type of definition (by value, function...)
@@ -404,6 +440,21 @@ cs_param_set_def(cs_param_def_type_t      def_type,
                  cs_param_var_type_t      var_type,
                  const void              *val,
                  cs_def_t                *def);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set a cs_get_t structure
+ *
+ * \param[in]      var_type   type of variables (scalar, vector, tensor...)
+ * \param[in]      val        value to set
+ * \param[in, out] get        pointer to cs_get_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_set_get(cs_param_var_type_t      var_type,
+                 const char              *val,
+                 cs_get_t                *get);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -539,32 +590,6 @@ cs_param_source_term_get_name(const cs_param_source_term_t   st_info);
 
 const char *
 cs_param_source_term_get_type_name(const cs_param_source_term_t   st_info);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name related to a type of variable
- *
- * \param[in] type     cs_param_var_type_t
- *
- * \return the name associated to this type
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_get_var_type_name(const cs_param_var_type_t   type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name related to a type of definition
- *
- * \param[in] type     cs_param_def_type_t
- *
- * \return the name associated to this type
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_get_def_type_name(const cs_param_def_type_t   type);
 
 /*----------------------------------------------------------------------------*/
 /*!
