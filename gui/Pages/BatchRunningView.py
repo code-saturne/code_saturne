@@ -765,7 +765,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         if key == None:
             run_id, run_title = self.__suggest_run_id()
             self.__updateRuncase(run_id)
-            cmd = batch
+            cmd = cs_exec_environment.enquote_arg(batch)
             key = 'localhost'
         elif key[0:3] == 'CCC':
             cmd = 'msub ' + batch
