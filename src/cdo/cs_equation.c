@@ -257,6 +257,7 @@ typedef enum {
   EQKEY_SOLVER_FAMILY,
   EQKEY_SPACE_SCHEME,
   EQKEY_VERBOSITY,
+  EQKEY_SLES_VERBOSITY,
   EQKEY_BC_ENFORCEMENT,
   EQKEY_BC_QUADRATURE,
   EQKEY_OUTPUT_FREQ,
@@ -718,6 +719,24 @@ _sles_initialization(const cs_equation_t  *eq)
         break;
       } // end of switch
 
+      /* Define the level of verbosity for SLES structure */
+      int  sles_verbosity = eq->param->sles_verbosity;
+      if (sles_verbosity > 0) {
+
+        cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
+        cs_sles_it_t  *sles_it = (cs_sles_it_t *)cs_sles_get_context(sles);
+
+        /* Set verbosity */
+        cs_sles_set_verbosity(sles, sles_verbosity);
+
+        if (sles_verbosity > 1) /* Add plot */
+          cs_sles_it_set_plot_options(sles_it,
+                                      eq->name,
+                                      true);    /* use_iteration instead of
+                                                   wall clock time */
+
+      }
+
     } // Solver provided by Code_Saturne
     break;
 
@@ -957,6 +976,8 @@ _print_eqkey(eqkey_t  key)
     return "space_scheme";
   case EQKEY_VERBOSITY:
     return "verbosity";
+  case EQKEY_SLES_VERBOSITY:
+    return "itsol_verbosity";
   case EQKEY_BC_ENFORCEMENT:
     return "bc_enforcement";
   case EQKEY_BC_QUADRATURE:
@@ -1091,6 +1112,9 @@ _get_eqkey(const char *keyname)
   else if (strcmp(keyname, "verbosity") == 0)
     key = EQKEY_VERBOSITY;
 
+  else if (strcmp(keyname, "itsol_verbosity") == 0)
+    key = EQKEY_SLES_VERBOSITY;
+
   else if (strncmp(keyname, "bc", 2) == 0) { /* key begins with bc */
     if (strcmp(keyname, "bc_enforcement") == 0)
       key = EQKEY_BC_ENFORCEMENT;
@@ -1202,6 +1226,7 @@ _create_equation_param(cs_equation_type_t     type,
   eqp->type = type;
   eqp->var_type = var_type;
   eqp->verbosity =  0;
+  eqp->sles_verbosity =  0;
   eqp->output_freq = 1;
   eqp->post_freq = 10;
   eqp->post_flag =  0;
@@ -1986,6 +2011,10 @@ cs_equation_set_option(cs_equation_t       *eq,
 
   case EQKEY_VERBOSITY: // "verbosity"
     eqp->verbosity = atoi(val);
+    break;
+
+  case EQKEY_SLES_VERBOSITY: // "verbosity" for SLES structures
+    eqp->sles_verbosity = atoi(val);
     break;
 
   case EQKEY_BC_ENFORCEMENT:

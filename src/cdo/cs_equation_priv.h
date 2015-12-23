@@ -99,10 +99,11 @@ typedef struct {
    equation with term sources */
 typedef struct {
 
-  cs_equation_type_t     type;         /* predefined, user... */
-  cs_param_var_type_t    var_type;     /* scalar, vector, tensor... */
-  int                    verbosity;    /* Level of detail to output */
-  int                    output_freq;  /* Write log at this frequency */
+  cs_equation_type_t    type;           /* predefined, user... */
+  cs_param_var_type_t   var_type;       /* scalar, vector, tensor... */
+  int                   verbosity;      /* Level of detail to output */
+  int                   sles_verbosity; /* Level of detail to output for SLES */
+  int                   output_freq;    /* Write log at this frequency */
 
   /* Unsteady-Diffusion-Convection-Source term activated or not */
   int                    flag;

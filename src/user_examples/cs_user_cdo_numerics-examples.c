@@ -180,6 +180,9 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      KEY = "itsol_resnorm"
      >> val: "true" or "false"
 
+     KEY = "itsol_verbosity"
+     >> val: "0", "1", "2" or higher
+
      Set the type of enforcement of the boundary conditions
      KEY = "bc_enforcement"
         >> val: "strong", "penalization", "nitsche", "sym_nitsche"
@@ -237,11 +240,13 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
   cs_equation_set_option(eq, "verbosity", "2");
   cs_equation_set_option(eq, "hodge_diff_algo", "cost");
   cs_equation_set_option(eq, "hodge_diff_coef", "dga");
+
   cs_equation_set_option(eq, "solver_family", "petsc");
+
   cs_equation_set_option(eq, "itsol", "cg");
   cs_equation_set_option(eq, "precond", "amg");
   cs_equation_set_option(eq, "itsol_max_iter", "2500");
   cs_equation_set_option(eq, "itsol_eps", "1e-12");
   cs_equation_set_option(eq, "itsol_resnorm", "false");
-
+  cs_equation_set_option(eq, "itsol_verbosity", "1");
 }
