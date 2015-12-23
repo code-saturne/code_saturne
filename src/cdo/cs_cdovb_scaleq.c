@@ -931,7 +931,6 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);
   assert(eqp->var_type == CS_PARAM_VAR_SCAL);
 
-  const cs_lnum_t  n_cells = connect->c_info->n_ent;
   const cs_lnum_t  n_vertices = connect->v_info->n_ent;
   const cs_lnum_t  n_b_faces = connect->f_info->n_ent_bd;
 

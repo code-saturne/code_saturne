@@ -489,11 +489,11 @@ _pvp_by_analytic_func(const cs_cdo_quantities_t    *quant,
  * \brief  Compute the integral over a dual cell (or a portion) of a value
  *         defined on a selection of (primal) cells
  *
- * \param[in]     quant      additional mesh quantities struct.
- * \param[in]     connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]     const_val  constant value
- * \param[in]     ml_id      id related to a cs_mesh_location_t struct.
- * \param[in,out] values     pointer to the computed values
+ * \param[in]      quant      additional mesh quantities struct.
+ * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]      const_val  constant value
+ * \param[in]      ml_id      id related to a cs_mesh_location_t struct.
+ * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 

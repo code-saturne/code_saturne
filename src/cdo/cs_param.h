@@ -320,9 +320,9 @@ typedef struct {
 /* Types of source terms */
 typedef enum {
 
+  CS_PARAM_SOURCE_TERM_HEADLOSS, // specific treatment (not implemented)
+  CS_PARAM_SOURCE_TERM_MASS,     // specific treatment (not implemented)
   CS_PARAM_SOURCE_TERM_USER,     // user-defined
-  CS_PARAM_SOURCE_TERM_MASS,     // specific treatment
-  CS_PARAM_SOURCE_TERM_HEADLOSS, // specific treatment
   CS_PARAM_N_SOURCE_TERM_TYPES
 
 } cs_param_source_term_type_t;

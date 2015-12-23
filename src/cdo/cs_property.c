@@ -331,7 +331,7 @@ _get_tensor_by_value(const cs_property_t      *pty,
 
   } // Property type
 }
- 
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the value using a law with one argument
@@ -367,7 +367,7 @@ _get_result_by_onevar_law(cs_lnum_t                 c_id,
                               pty->connect->c2v,
                               pty->cdoq,
                               pty->array, &val_xc);
-    
+
     law(val_xc, struc, get);
 
   }

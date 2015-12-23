@@ -1325,7 +1325,7 @@ cs_groundwater_automatic_settings(cs_equation_t      **equations,
       flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL;
       cs_property_set_array(permeability, flag, hydraulic_head->val);
       cs_property_set_struct(permeability, (const void *)soil);
-      
+
       /* Soil capacity settings (related to unsteady term) */
       if (has_previous)
         bft_error(__FILE__, __LINE__, 0, "Not implemented. To do.");
