@@ -779,7 +779,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         if rm_type == None:
             run_id, run_title = self.__suggest_run_id()
             self.__updateRuncase(run_id)
-            cmd = batch
+            cmd = cs_exec_environment.enquote_arg(batch)
         else:
             run_title = self.case['package'].code_name + ' - Job Submission'
             cmd = cs_exec_environment.enquote_arg(sys.argv[0]) \
