@@ -163,10 +163,12 @@ static cs_phys_prop_eos_t       *_cs_phys_prop_eos = NULL;
 
 #endif
 
-#if defined(HAVE_DLOPEN) && defined(HAVE_COOLPROP)
+#if defined(HAVE_COOLPROP)
 
-static void                     *_cs_coolprop_dl_lib = NULL;
 static cs_phys_prop_coolprop_t  *_cs_phys_prop_coolprop = NULL;
+#if defined(HAVE_PLUGINS)
+static void                     *_cs_coolprop_dl_lib = NULL;
+#endif
 
 #endif
 
