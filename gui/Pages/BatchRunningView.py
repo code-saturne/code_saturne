@@ -758,7 +758,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         key = self.case['batch_type']
 
-        batch = self.case['runcase'].path
+        batch = cs_exec_environment.enquote_arg(self.case['runcase'].path)
 
         if key == None:
             run_id, run_title = self.__suggest_run_id()

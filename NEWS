@@ -1,4 +1,12 @@
 
+Release 4.0.5 (unreleased)
+==========================
+
+Bug fixes:
+----------
+
+- Fix hang in GUI when starting run where the case's path contains whitespace.
+
 Version 4.0.4 (23 Dec 2015)
 ===========================
 
