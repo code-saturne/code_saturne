@@ -186,7 +186,7 @@ integer          imucpp, idftnp, iswdyp
 integer          iescap, ircflp, ischcp, isstpp, ivar
 integer          nswrsp
 integer          imvisp
-integer          iflid, iflwgr, f_dim
+integer          iflid, iflwgr, f_dim, imasac
 
 integer          icvflb, f_id0
 integer          ivoid(1)
@@ -2105,6 +2105,7 @@ if (idilat.eq.5) then
 
   ivar   = ipr
   iconvp = 1
+  imasac = 1
   idiffp = 0
   nswrsp = 1
   imligp = imligr(ivar)
@@ -2129,7 +2130,7 @@ if (idilat.eq.5) then
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   iwarnp , imucpp , idftnp ,                                     &
+   iwarnp , imucpp , idftnp , imasac ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    cvar_pr  , cvar_pr       ,                                     &
    coefa_dp2       , coefb_p, coefaf_dp2      , coefbf_p,         &

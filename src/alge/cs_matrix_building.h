@@ -247,8 +247,6 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centred
@@ -270,7 +268,6 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
 void
 cs_sym_matrix_tensor(const cs_mesh_t          *m,
                      int                       idiffp,
-                     int                       ndircp,
                      double                    thetap,
                      const cs_real_66_t        cofbfts[],
                      const cs_real_66_t        fimp[],
@@ -296,8 +293,6 @@ cs_sym_matrix_tensor(const cs_mesh_t          *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centred
@@ -324,7 +319,6 @@ void
 cs_matrix_tensor(const cs_mesh_t          *m,
                  int                       iconvp,
                  int                       idiffp,
-                 int                       ndircp,
                  double                    thetap,
                  const cs_real_66_t        coefbts[],
                  const cs_real_66_t        cofbfts[],
@@ -605,8 +599,6 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centered
@@ -633,7 +625,6 @@ void
 cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
                                        int                       iconvp,
                                        int                       idiffp,
-                                       int                       ndircp,
                                        double                    thetap,
                                        const cs_real_66_t        coefbu[],
                                        const cs_real_66_t        cofbfu[],
@@ -701,8 +692,6 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centered
@@ -724,7 +713,6 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
 void
 cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t           *m,
                                            int                       idiffp,
-                                           int                       ndircp,
                                            double                    thetap,
                                            const cs_real_66_t        cofbfu[],
                                            const cs_real_66_t        fimp[],

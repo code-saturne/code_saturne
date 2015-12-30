@@ -111,7 +111,7 @@ integer          nswrgp, imligp, iwarnp, iconvp, idiffp
 integer          icvflb, f_id0
 integer          isou  , jsou
 integer          iflmb0, itypfl
-integer          itsqdm
+integer          itsqdm, imasac
 
 double precision epsrgp, climgp, extrap, thetap, blencp, relaxp
 double precision rom
@@ -340,11 +340,17 @@ if (itsqdm.ne.0) then
 
   icvflb = 0;
 
+  ! The added convective scalar mass flux is:
+  !      (thetap*Y_\face-imasac*Y_\celli)*mf.
+  ! When building the implicit part of the rhs, one
+  ! has to impose 1 on mass accumulation.
+  imasac = 1
+
   call bilscv &
   !==========
 ( idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
   ischcp , isstpp , inc    , imrgra , ivisse ,                   &
-  iwarnp , idftnp ,                                              &
+  iwarnp , idftnp , imasac ,                                     &
   blencp , epsrgp , climgp , relaxp , thetap ,                   &
   vela   , vela   ,                                              &
   coefau , coefbu , cofafu , cofbfu ,                            &

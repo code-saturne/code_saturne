@@ -85,7 +85,7 @@ integer          iccocg, inc
 integer          iconvp, idiffp, ircflp
 integer          ischcp, isstpp
 integer          ifcvsl, iflmas, iflmab
-integer          imucpp, idftnp
+integer          imucpp, idftnp, imasac
 double precision epsrgp, climgp, extrap
 double precision blencp, relaxp, thetex
 
@@ -151,6 +151,7 @@ do iscal = 1, nscal
 
   ivar0  = 0
   iconvp = 0
+  imasac = 0
   idiffp = 1
   nswrgp = nswrgr(ivar)
   imligp = imligr(ivar)
@@ -233,7 +234,7 @@ do iscal = 1, nscal
   !==========
   ( idtvar , ivar0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-    iwarnp , imucpp , idftnp ,                                     &
+    iwarnp , imucpp , idftnp , imasac ,                            &
     blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
     cvar_scal       , cvar_scal       ,                            &
     coefap , coefbp , cofafp , cofbfp ,                            &

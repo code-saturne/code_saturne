@@ -155,7 +155,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imucpp, idftnp, iswdyp
-integer          iflid , f_id, st_prv_id,  keydri, iscdri
+integer          iflid , f_id, st_prv_id, st_id,  keydri, iscdri
 integer          icvflb, f_dim, iflwgr
 integer          delay_id, icla
 
@@ -194,7 +194,8 @@ double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:,:), pointer :: cvara_rij
-double precision, dimension(:), pointer :: visct, cpro_cp, c_st_scal
+double precision, dimension(:), pointer :: visct, cpro_cp, cproa_scal_st
+double precision, dimension(:), pointer :: cpro_scal_st
 double precision, dimension(:), pointer :: cpro_viscls
 ! Darcy arrays
 double precision, allocatable, dimension(:) :: diverg
@@ -280,9 +281,9 @@ endif
 ! --- Numero du terme source dans PROPCE si extrapolation
 call field_get_key_int(iflid, kstprv, st_prv_id)
 if (st_prv_id .ge.0) then
-  call field_get_val_s(st_prv_id, c_st_scal)
+  call field_get_val_s(st_prv_id, cproa_scal_st)
 else
-  c_st_scal => null()
+  cproa_scal_st => null()
 endif
 
 ! S pour Source, V pour Variable
@@ -363,6 +364,21 @@ call ustssc &
   dt     ,                                                       &
   ckupdc , smacel , smbrs  , rovsdt )
 
+! Store the source terms for convective limiter
+call field_get_key_int(iflid, kst, st_id)
+if (st_id .ge.0) then
+  call field_get_val_s(st_id, cpro_scal_st)
+
+  do iel = 1, ncel
+    !Fill the scalar source term field
+    cpro_scal_st(iel) = smbrs(iel)
+  end do
+  ! Handle parallelism and periodicity
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(cpro_scal_st)
+  endif
+end if
+
 if (ibdtso(ivar).gt.ntinit.and.ntcabs.gt.1 &
     .and.(idtvar.eq.0.or.idtvar.eq.1)) then
   ! TODO: remove test on ntcabs and implemente a "proper" condition for
@@ -401,9 +417,9 @@ endif
 if (st_prv_id .ge. 0) then
   do iel = 1, ncel
     ! Stockage temporaire pour economiser un tableau
-    smbexp = c_st_scal(iel)
+    smbexp = cproa_scal_st(iel)
     ! Terme source utilisateur explicite
-    c_st_scal(iel) = smbrs(iel)
+    cproa_scal_st(iel) = smbrs(iel)
     ! Terme source du pas de temps precedent et
     ! On suppose -ROVSDT > 0 : on implicite
     !    le terme source utilisateur (le reste)
@@ -562,10 +578,10 @@ if (ncesmp.gt.0) then
 
   deallocate(srcmas)
 
-  ! Si on extrapole les TS on met Gamma Pinj dans c_st_scal
+  ! Si on extrapole les TS on met Gamma Pinj dans cproa_scal_st
   if (st_prv_id .ge. 0) then
     do iel = 1, ncel
-      c_st_scal(iel) = c_st_scal(iel) + w1(iel)
+      cproa_scal_st(iel) = cproa_scal_st(iel) + w1(iel)
     enddo
   ! Sinon on le met directement dans SMBRS
   else
@@ -724,7 +740,7 @@ if (itspdv.eq.1) then
         call field_get_val_v(f_id, xut)
 
         do iel = 1, ncel
-          c_st_scal(iel) = c_st_scal(iel) -2.d0*xcpp(iel)*cell_f_vol(iel) &
+          cproa_scal_st(iel) = cproa_scal_st(iel) -2.d0*xcpp(iel)*cell_f_vol(iel) &
                                           *(xut(1,iel)*grad(1,iel)    &
                                            +xut(2,iel)*grad(2,iel)    &
                                            +xut(3,iel)*grad(3,iel) )
@@ -732,7 +748,7 @@ if (itspdv.eq.1) then
       ! SGDH model
       else
         do iel = 1, ncel
-          c_st_scal(iel) = c_st_scal(iel)                                     &
+          cproa_scal_st(iel) = cproa_scal_st(iel)                                     &
                + 2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)                  &
                *cell_f_vol(iel)/sigmas(iscal)                                     &
                *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
@@ -843,7 +859,7 @@ endif
 if (st_prv_id .ge. 0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbrs(iel) = smbrs(iel) + thetp1 * c_st_scal(iel)
+    smbrs(iel) = smbrs(iel) + thetp1 * cproa_scal_st(iel)
   enddo
 endif
 

@@ -1571,7 +1571,10 @@ write(nfecra,9900)
 '       IDIFF  =  0 ou  1       (1 pour diff. tot branchee   )',/,&
 '       IDIFFT =  0 ou  1       (1 pour diff. turb. branchee )',/,&
 '       ISCHCV =  0 ou  1       (SOLU ou CD                  )',/,&
-'       ISSTPC =  0 ou  1       (1 : sans test de pente      )',/,&
+'       ISSTPC =  0,1,2,3       (0 : test de pente'            ,/,&
+'                                1 : sans test de pente'       ,/,&
+'                                2 : min/max limier'           ,/,&
+'                                3 : Roe Sweby limiter       )',/,&
 '       BLENCV =  [0.;1.]       (1-proportion d upwind       )',/,&
 '       THETAV =  [0.;1.]       (0.5 Crank-Nicolson/AB       )',/,&
 '                               (theta pour les termes de    )',/,&
@@ -1667,7 +1670,10 @@ write(nfecra,9900)
 '       IDIFF  =  0 ou  1       (1 for total diffusion active)',/,&
 '       IDIFFT =  0 ou  1       (1 for turbulent diff. active)',/,&
 '       ISCHCV =  0 ou  1       (SOLU or CD                  )',/,&
-'       ISSTPC =  0 ou  1       (1: no slope test            )',/,&
+'       ISSTPC =  0,1,2,3       (0: slope test'                ,/,&
+'                                1: no slope test'             ,/,&
+'                                2: min/max limiter'           ,/,&
+'                                3: Roe Sweby limiter        )',/,&
 '       BLENCV =  [0.;1.]       (1-upwind proportion         )',/,&
 '       THETAV =  [0.;1.]       (0.5 Crank-Nicolson/AB       )',/,&
 '                               (theta for convection-       )',/,&

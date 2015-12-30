@@ -511,6 +511,10 @@ if (nscal.ge.1) then
     if (isso2t(ii).gt.0) then
       call add_source_term_prev_field(ivarfl(isca(ii)))
     endif
+    ! Only usefull for Min/Max limiter
+    if (isstpc(isca(ii)).eq.2) then
+      call add_source_term_field(ivarfl(isca(ii)))
+    endif
     call field_get_key_int (ivarfl(isca(ii)), kivisl, ifcvsl)
     if (ifcvsl.ge.0.and.iscavr(ii).le.0) then
       if (ivsext(ii).gt.0) then
@@ -1112,3 +1116,67 @@ call field_set_key_int(f_id, kstprv, st_id)
 return
 
 end subroutine add_source_term_prev_field
+
+
+!===============================================================================
+
+!> \brief add field defining current source term values for a given field
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     f_id          base field id
+!_______________________________________________________________________________
+
+subroutine add_source_term_field &
+ ( f_id )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer, intent(in) :: f_id
+
+! Local variables
+
+character(len=64) :: f_name
+
+integer :: type_flag, location_id, st_id, f_dim
+logical :: has_previous, interleaved
+
+!===============================================================================
+
+type_flag = FIELD_EXTENSIVE + FIELD_PROPERTY
+location_id = 1 ! variables defined on cells
+has_previous = .false.
+interleaved = .true.
+
+! Define asscociated field
+
+call field_get_dim(f_id, f_dim, interleaved)
+call field_get_name (f_id, f_name)
+
+call field_create(trim(f_name)//'_st', type_flag,               &
+                  location_id, f_dim, interleaved, has_previous,     &
+                  st_id)
+
+call field_set_key_int(f_id, kst, st_id)
+
+return
+
+end subroutine add_source_term_field
+

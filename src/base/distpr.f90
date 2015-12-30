@@ -75,7 +75,7 @@ double precision distpa(ncelet)
 
 ! Local variables
 
-integer          ndircp, iconvp, idiffp, isym
+integer          ndircp, iconvp, idiffp, isym, imasac
 integer          ipp
 integer          niterf
 integer          iinvpe
@@ -194,6 +194,7 @@ call viscfa                                                       &
    viscf  , viscb  )
 
 iconvp = 0
+imasac = 0
 idiffp = 1
 isym   = 1
 thetap = 1.d0
@@ -283,7 +284,7 @@ do isweep = 0, nswrsl
     !==========
  ( idtva0 , ivar   , iconvp , idiffp , nswrgy , imligy , ircfly , &
    ischcy , isstpy , inc    , imrgra , iccocg ,                   &
-   iwarny , imucpp , idftnp ,                                     &
+   iwarny , imucpp , idftnp , imasac ,                            &
    blency , epsrgy , climgy , extray , relaxp , thetap ,          &
    dvarp  , dvarp  , coefad , coefbd , coefad , cofbfd ,          &
    viscf  , viscb  , viscf  , viscb  , rvoid  , rvoid  ,          &

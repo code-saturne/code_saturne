@@ -211,6 +211,9 @@ module numvar
   !> source terms at previous time step for 2nd order
   integer, save :: kstprv
 
+  !> source terms at the current time step (used for limiters)
+  integer, save :: kst
+
   !> convective mass flux of the variables at the previous time-step
   integer, save :: ifluaa(nvarmx)
 

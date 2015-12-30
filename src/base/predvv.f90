@@ -205,7 +205,7 @@ integer          iconvp, idiffp, ndircp, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
 integer          iflmb0, nswrp
 integer          idtva0, icvflb
-integer          jsou, ivisep
+integer          jsou  , ivisep, imasac
 integer          ivoid(1)
 
 double precision rnorm , vitnor
@@ -278,6 +278,7 @@ call field_get_val_s(icrom, crom)
 if (iroext.gt.0.or.idilat.gt.1) then
   call field_get_val_prev_s(icrom, croma)
 endif
+
 
 if (iappel.eq.2) then
   if (iforbr.ge.0 .and. iterns.eq.1 .or. icavit.ge.0) then
@@ -1782,11 +1783,12 @@ else if (iappel.eq.2) then
   inc = 1
   ! Pas de relaxation en stationnaire
   idtva0 = 0
+  imasac = 0
 
   call bilscv &
  ( idtva0 , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisse ,                   &
-   iwarnp , idftnp ,                                              &
+   iwarnp , idftnp , imasac ,                                     &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    vel    , vel    ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &

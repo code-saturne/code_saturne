@@ -237,6 +237,7 @@ _find_or_add_system(const char          *name,
   /* If found, return */
 
   if (cmp_ret == 0)
+
     return cs_glob_gradient_systems[mid_id];
 
   /* Reallocate global array if necessary */
@@ -246,6 +247,7 @@ _find_or_add_system(const char          *name,
     if (cs_glob_gradient_n_max_systems == 0)
       cs_glob_gradient_n_max_systems = 10;
     else
+
       cs_glob_gradient_n_max_systems *= 2;
     BFT_REALLOC(cs_glob_gradient_systems,
                 cs_glob_gradient_n_max_systems,

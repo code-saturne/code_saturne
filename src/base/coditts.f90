@@ -245,7 +245,7 @@ integer          iinvpe
 integer          idtva0
 integer          isou , jsou
 integer          ibsize, iesize
-integer          lvar
+integer          lvar, imasac
 
 double precision residu, rnorm, ressol, rnorm2
 double precision thetex
@@ -353,11 +353,16 @@ thetex = 1.d0 - thetap
 if (abs(thetex).gt.epzero) then
   inc    = 1
 
+  ! The added convective scalar mass flux is:
+  !      (thetex*Y_\face-imasac*Y_\celli)*mf.
+  ! When building the explicit part of the rhs, one
+  ! has to impose 0 on mass accumulation.
+  imasac = 0
   call bilscts &
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra ,                            &
-   iwarnp , idftnp ,                                              &
+   iwarnp , idftnp , imasac ,                                     &
    blencp , epsrgp , climgp , relaxp , thetex ,                   &
    pvara  , pvara  ,                                              &
    coefats , coefbts , cofafts , cofbfts ,                        &
@@ -385,7 +390,7 @@ do iel = 1, ncelet
   enddo
 enddo
 
-! In the following, bilscv is called with inc=1,
+! In the following, bilscts is called with inc=1,
 ! except for Weight Matrix (nswrsp=-1)
 inc = 1
 if (nswrsp.eq.-1) then
@@ -406,15 +411,21 @@ do iel = 1, ncel
   enddo
 enddo
 
+! The added convective scalar mass flux is:
+!      (thetap*Y_\face-imasac*Y_\celli)*mf.
+! When building the implicit part of the rhs, one
+! has to impose 1 on mass accumulation.
+imasac = 1
+
 call bilscts &
 !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra ,                            &
-   iwarnp , idftnp ,                                              &
+   iwarnp , idftnp , imasac ,                                     &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefats , coefbts , cofafts , cofbfts ,                        &
-   flumas , flumab , viscfs , viscbs ,  visccs ,                          &
+   flumas , flumab , viscfs , viscbs ,  visccs ,                  &
    weighf , weighb ,                                              &
    icvflb , icvfli ,                                              &
    smbrp  )
@@ -549,11 +560,11 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
     !==========
    ( idtvar , lvar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra ,                            &
-     iwarnp , idftnp ,                                              &
+     iwarnp , idftnp , imasac ,                                     &
      blencp , epsrgp , climgp , relaxp , thetap ,                   &
      dpvar  , dpvar  ,                                              &
      coefats , coefbts , cofafts , cofbfts ,                        &
-     flumas , flumab , viscfs , viscbs ,  visccs ,                          &
+     flumas , flumab , viscfs , viscbs ,  visccs ,                  &
      weighf , weighb ,                                              &
      icvflb , icvfli ,                                              &
      adxk   )
@@ -701,15 +712,21 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
     enddo
   endif
 
+  ! The added convective scalar mass flux is:
+  !      (thetex*Y_\face-imasac*Y_\celli)*mf.
+  ! When building the implicit part of the rhs, one
+  ! has to impose 1 on mass accumulation.
+  imasac = 1
+
   call bilscts &
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra ,                            &
-   iwarnp , idftnp ,                                              &
+   iwarnp , idftnp , imasac ,                                     &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefats , coefbts , cofafts , cofbfts ,                        &
-   flumas , flumab , viscfs , viscbs ,   visccs ,                         &
+   flumas , flumab , viscfs , viscbs ,   visccs ,                 &
    weighf , weighb ,                                              &
    icvflb , icvfli ,                                              &
    smbrp  )

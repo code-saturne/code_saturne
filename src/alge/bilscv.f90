@@ -101,6 +101,9 @@
 !> \param[in]     idftnp        indicator
 !>                               - 1 scalar diffusivity
 !>                               - 6 symmetric tensor diffusivity
+!> \param[in]     imasac        indicator
+!>                               - 1 take mass accumulation into account
+!>                               - 0 do not take mass accumulation
 !> \param[in]     blencp        fraction of upwinding
 !> \param[in]     epsrgp        relative precision for the gradient
 !>                               reconstruction
@@ -143,7 +146,7 @@
 subroutine bilscv &
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   iwarnp , idftnp ,                                              &
+   iwarnp , idftnp , imasac ,                                     &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -177,7 +180,7 @@ integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , ivisep
-integer          idftnp , icvflb
+integer          idftnp , icvflb , imasac
 integer          iwarnp
 integer          icvfli(nfabor)
 
@@ -240,7 +243,7 @@ if (idftnp.eq.1) then
   call bilsc4 &
   !==========
    ( idtvar , f_id   , vcopt  ,                                     &
-     icvflb , inc    , ifaccp , ivisep ,                            &
+     icvflb , inc    , ifaccp , ivisep , imasac ,                   &
      pvar   , pvara  ,                                              &
      itypfb , icvfli , coefav , coefbv , cofafv , cofbfv ,          &
      flumas , flumab , viscf  , viscb  , secvif ,                   &
@@ -258,7 +261,7 @@ elseif (idftnp.eq.6) then
     call bilsc4 &
     !==========
    ( idtvar , f_id   , vcopt  ,                                     &
-     icvflb , inc    , ifaccp , idiflc ,                            &
+     icvflb , inc    , ifaccp , idiflc , imasac ,                   &
      pvar   , pvara  ,                                              &
      itypfb , icvfli , coefav , coefbv , cofafv , cofbfv ,          &
      flumas , flumab , viscf  , viscb  , secvif ,                   &

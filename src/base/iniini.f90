@@ -121,6 +121,7 @@ call field_get_key_id("scalar_diffusivity_ref", kvisl0)
 call field_get_key_id("gradient_weighting_id", kwgrec)
 
 call field_get_key_id("source_term_prev_id", kstprv)
+call field_get_key_id("source_term_id", kst)
 
 icrom = -1
 ibrom = -1

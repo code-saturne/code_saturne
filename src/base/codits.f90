@@ -248,9 +248,11 @@ integer          itenso,iinvpe, iinvpp
 integer          idtva0
 integer          lvar
 integer          ibsize, iesize
+integer          kscmin, kscmax, imasac
 
 double precision residu, rnorm, ressol, rnorm2
 double precision thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
+double precision scalar_inf, scalar_sup
 
 type(solving_info) sinfo
 
@@ -264,6 +266,14 @@ double precision, allocatable, dimension(:) :: rhs0
 !===============================================================================
 ! 0.  Initialization
 !===============================================================================
+
+! Key id for clipping
+call field_get_key_id("min_scalar_clipping", kscmin)
+call field_get_key_id("max_scalar_clipping", kscmax)
+
+! Get the min and max clipping
+call field_get_key_double(ivarfl(ivar), kscmin, scalar_inf)
+call field_get_key_double(ivarfl(ivar), kscmax, scalar_sup)
 
 ! Allocate temporary arrays
 allocate(dam(ncelet))
@@ -357,16 +367,28 @@ endif
 ! On calcule le bilan explicite total
 thetex = 1.d0 - thetap
 
+! Compute the min/ max limiter
+inc = 1
+call max_limiter_building_wrapper(ivar,       &
+                                  inc,        &
+                                  rovsdt)
+
 ! Si THETEX=0, ce n'est pas la peine d'en rajouter
 if (abs(thetex).gt.epzero) then
   inc    = 1
   iccocg = 1
 
+
+  ! The added convective scalar mass flux is:
+  !      (thetex*Y_\face-imasac*Y_\celli)*mf.
+  ! When building the explicit part of the rhs, one
+  ! has to impose 0 on mass accumulation.
+  imasac = 0
   call bilsca &
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   iwarnp , imucpp , idftnp ,                                     &
+   iwarnp , imucpp , idftnp , imasac ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
    pvara  , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
@@ -410,11 +432,17 @@ enddo
 
 iccocg = 1
 
+! The added convective scalar mass flux is:
+!      (thetap*Y_\face-imasac*Y_\celli)*mf.
+! When building the implicit part of the rhs, one
+! has to impose 1 on mass accumulation.
+imasac = 1
+
 call bilsca &
 !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   iwarnp , imucpp , idftnp ,                                     &
+   iwarnp , imucpp , idftnp , imasac ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
@@ -529,7 +557,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
     !==========
    ( idtvar , lvar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-     iwarnp , imucpp , idftnp ,                                     &
+     iwarnp , imucpp , idftnp , imasac ,                            &
      blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
      dpvar  , dpvar  , coefap , coefbp , cofafp , cofbfp ,          &
      flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
@@ -649,11 +677,21 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
     enddo
   endif
 
+  ! Compute the min/ max limiter
+  call max_limiter_building_wrapper(ivar,       &
+                                    inc,        &
+                                    rovsdt)
+
+  ! The added convective scalar mass flux is:
+  !      (thetex*Y_\face-imasac*Y_\celli)*mf.
+  ! When building the implicit part of the rhs, one
+  ! has to impose 1 on mass accumulation.
+  imasac = 1
   call bilsca &
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   iwarnp , imucpp , idftnp ,                                     &
+   iwarnp , imucpp , idftnp , imasac ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
@@ -803,3 +841,71 @@ if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1,rhs0)
 !----
 
 end subroutine
+
+!===============================================================================
+! Function:
+! ---------
+
+!> \brief Wrapper to
+
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ivar          index of the current variable
+!>                               - 1 diffusion,
+!>                               - 0 otherwise
+!> \param[in]     inc            - 1 not an increment
+!>                               - 0 if an increment
+!> \param[in]     rovsdt        \f$ f_s^{imp} \f$
+!_______________________________________________________________________________
+
+
+subroutine max_limiter_building_wrapper(ivar,       &
+                                        inc,        &
+                                        rovsdt)
+!===============================================================================
+! Module files
+!===============================================================================
+use paramx
+use numvar
+use cstnum
+use entsor
+use parall
+use period
+use mesh
+use field
+use cs_f_interfaces
+use cs_c_bindings
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          inc    , ivar
+
+double precision rovsdt(ncelet)
+
+!Local variables
+
+integer f_id
+
+!==============================================================================
+
+!FIXME do it as in bilsca when f_id < 0
+if (ivar.ge.1) then
+  f_id = ivarfl(ivar)
+else
+  return
+endif
+
+call max_limiter_building(f_id,       &
+                          inc,        &
+                          rovsdt)
+
+end subroutine max_limiter_building_wrapper

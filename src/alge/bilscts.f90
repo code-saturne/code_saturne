@@ -91,6 +91,9 @@
 !> \param[in]     idftnp        indicator
 !>                               - 1 scalar diffusivity
 !>                               - 6 symmetric tensor diffusivity
+!> \param[in]     imasac        indicator
+!>                               - 1 take mass accumulation into account
+!>                               - 0 do not take mass accumulation
 !> \param[in]     blencp        fraction of upwinding
 !> \param[in]     epsrgp        relative precision for the gradient
 !>                               reconstruction
@@ -136,7 +139,7 @@
 subroutine bilscts &
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra ,                            &
-   iwarnp , idftnp ,                                              &
+   iwarnp , idftnp , imasac ,                                     &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefa  , coefb  , cofaf  , cofbf  ,                            &
@@ -171,7 +174,7 @@ integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra
-integer          idftnp , icvflb
+integer          idftnp , icvflb , imasac
 integer          iwarnp
 integer          icvfli(nfabor)
 
@@ -231,13 +234,13 @@ if (idftnp.eq.1) then
   call bilsc6 &
   !==========
    ( idtvar , f_id   , vcopt  ,                                     &
-     icvflb , inc    , ifaccp ,                                     &
+     icvflb , inc    , ifaccp , imasac ,                            &
      pvar   , pvara  ,                                              &
-     itypfb , icvfli , coefa , coefb , cofaf , cofbf ,      &
+     itypfb , coefa , coefb , cofaf , cofbf ,                       &
      flumas , flumab , viscf  , viscb  ,                            &
      smbr   )
 
-!! Symmetric tensor diffusivity TODO
+! Symmetric tensor diffusivity
 elseif (idftnp.eq.6) then
 
   ! Nor diffusive part neither secondary viscosity or transpose of gradient
@@ -248,12 +251,12 @@ elseif (idftnp.eq.6) then
 
     call bilsc6 &
     !==========
-     ( idtvar , f_id   , vcopt  ,                                     &
-       icvflb , inc    , ifaccp ,                                     &
-       pvar   , pvara  ,                                              &
-       itypfb , icvfli , coefa , coefb , cofaf , cofbf ,      &
-       flumas , flumab , viscf  , viscb  ,                            &
-       smbr   )
+   ( idtvar , f_id   , vcopt  ,                                     &
+     icvflb , inc    , ifaccp , imasac ,                            &
+     pvar   , pvara  ,                                              &
+     itypfb , coefa , coefb , cofaf , cofbf ,                       &
+     flumas , flumab , viscf  , viscb  ,                            &
+     smbr   )
   endif
 
 
@@ -265,7 +268,7 @@ elseif (idftnp.eq.6) then
    ( idtvar , f_id   , vcopt  ,                                     &
      inc    ,                                                       &
      pvar   , pvara  , itypfb ,                                     &
-     coefa , coefb , cofaf , cofbf ,                        &
+     coefa , coefb , cofaf , cofbf ,                                &
      viscf  , viscb  , viscce ,                                     &
      weighf , weighb ,                                              &
      smbr  )

@@ -325,27 +325,51 @@ cs_balance_by_zone(const int  bc_type[],
 
   int inc = 1;
 
-  /* Gradient for slope test */
-  cs_real_3_t *grdpa = NULL;
+  /* Compute the gradient for convective scheme (the slope test, limiter, SOLU, etc) */
+  cs_real_3_t *gradup = NULL;
+  cs_real_3_t *gradst = NULL;
   if (var_cal_opt.blencv > 0 && var_cal_opt.isstpc == 0) {
-    BFT_MALLOC(grdpa, n_cells_ext, cs_real_3_t);
-
+    BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-      grdpa[c_id][0] = 0.;
-      grdpa[c_id][1] = 0.;
-      grdpa[c_id][2] = 0.;
+      gradst[c_id][0] = 0.;
+      gradst[c_id][1] = 0.;
+      gradst[c_id][2] = 0.;
     }
-
+    /* Slope test gradient */
     if (var_cal_opt.iconv > 0)
       cs_slope_test_gradient(field_id,
                              inc,
                              halo_type,
                              grad,
-                             grdpa,
+                             gradst,
                              f->val,
                              a_F,
                              b_F,
                              i_mass_flux);
+
+  }
+  /* Pure SOLU scheme without using gradient_slope_test function
+     or Roe and Sweby limiters */
+  if (var_cal_opt.blencv > 0
+      && (var_cal_opt.ischcv==2 || var_cal_opt.isstpc==3)) {
+    BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+      gradup[c_id][0] = 0.;
+      gradup[c_id][1] = 0.;
+      gradup[c_id][2] = 0.;
+    }
+
+    if (var_cal_opt.iconv > 0)
+      cs_upwind_gradient(field_id,
+                         inc,
+                         halo_type,
+                         a_F,
+                         b_F,
+                         i_mass_flux,
+                         b_mass_flux,
+                         f->val,
+                         gradup);
+
   }
 
   /* Face viscosity */
@@ -404,10 +428,10 @@ cs_balance_by_zone(const int  bc_type[],
 
   /* Synchronization for parallelism */
   BFT_MALLOC(cells_tag_list, n_cells_ext, cs_lnum_t);
-  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++){
+  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
     cells_tag_list[c_id] = 0;
   }
-  for (cs_lnum_t c_id = 0; c_id < n_cells_sel; c_id++){
+  for (cs_lnum_t c_id = 0; c_id < n_cells_sel; c_id++) {
     cs_lnum_t c_id_sel = cells_sel_list[c_id];
     cells_tag_list[c_id_sel] = 1;
   }
@@ -569,9 +593,6 @@ cs_balance_by_zone(const int  bc_type[],
     We handle different types of boundary faces separately to better
     analyze the information, but this is not mandatory. */
 
-  cs_real_t pir, pip, pjp, pipr, pjpr;
-  cs_real_t pifri, pjfri, pifrj, pjfrj;
-
   if (icvflb == 0) {
     /* ====================
        ---> Upwind
@@ -586,6 +607,8 @@ cs_balance_by_zone(const int  bc_type[],
         /* Associated boundary cell */
         cs_lnum_t c_id = b_face_cells[f_id_sel];
 
+        cs_real_t pir, pipr;
+
         cs_b_cd_steady(ircflp,
                        relaxp,
                        diipb[f_id_sel],
@@ -597,19 +620,23 @@ cs_balance_by_zone(const int  bc_type[],
 
         cs_real_t term_balance = 0.;
 
-        cs_b_upwind_flux_cons(iconvp,
-                              inc,
-                              ifaccp,
-                              bc_type[f_id_sel],
-                              pir,
-                              pipr,
-                              a_F[f_id_sel],
-                              b_F[f_id_sel],
-                              b_mass_flux[f_id_sel],
-                              cpro_cp[c_id],
-                              &term_balance);
+        cs_b_upwind_flux(iconvp,
+                         1., /* thetap */
+                         0, /* Conservative formulation, no mass accumulation */
+                         inc,
+                         ifaccp,
+                         bc_type[f_id_sel],
+                         f->val[c_id],
+                         pir,
+                         pipr,
+                         a_F[f_id_sel],
+                         b_F[f_id_sel],
+                         b_mass_flux[f_id_sel],
+                         cpro_cp[c_id],
+                         &term_balance);
 
         cs_b_diff_flux(idiffp,
+                       1., /* thetap */
                        inc,
                        pipr,
                        af_F[f_id_sel],
@@ -646,6 +673,8 @@ cs_balance_by_zone(const int  bc_type[],
         /* Associated boundary cell */
         cs_lnum_t c_id = b_face_cells[f_id_sel];
 
+        cs_real_t pir, pipr;
+
         cs_b_cd_unsteady(ircflp,
                          diipb[f_id_sel],
                          grad[c_id],
@@ -655,19 +684,23 @@ cs_balance_by_zone(const int  bc_type[],
 
         cs_real_t term_balance = 0.;
 
-        cs_b_upwind_flux_cons(iconvp,
-                              inc,
-                              ifaccp,
-                              bc_type[f_id_sel],
-                              pir,
-                              pipr,
-                              a_F[f_id_sel],
-                              b_F[f_id_sel],
-                              b_mass_flux[f_id_sel],
-                              cpro_cp[c_id],
-                              &term_balance);
+        cs_b_upwind_flux(iconvp,
+                         1., /* thetap */
+                         0, /* Conservative formulation, no mass accumulation */
+                         inc,
+                         ifaccp,
+                         bc_type[f_id_sel],
+                         f->val[c_id],
+                         pir,
+                         pipr,
+                         a_F[f_id_sel],
+                         b_F[f_id_sel],
+                         b_mass_flux[f_id_sel],
+                         cpro_cp[c_id],
+                         &term_balance);
 
         cs_b_diff_flux(idiffp,
+                       1., /* thetap */
                        inc,
                        pipr,
                        af_F[f_id_sel],
@@ -716,6 +749,8 @@ cs_balance_by_zone(const int  bc_type[],
         /* Associated boundary cell */
         cs_lnum_t c_id = b_face_cells[f_id_sel];
 
+        cs_real_t pir, pipr;
+
         cs_b_cd_steady(ircflp,
                        relaxp,
                        diipb[f_id_sel],
@@ -727,22 +762,26 @@ cs_balance_by_zone(const int  bc_type[],
 
         cs_real_t term_balance = 0.;
 
-        cs_b_imposed_conv_flux_cons(iconvp,
-                                    inc,
-                                    ifaccp,
-                                    bc_type[f_id_sel],
-                                    icvfli[f_id_sel],
-                                    pir,
-                                    pipr,
-                                    a_F[f_id_sel],
-                                    b_F[f_id_sel],
-                                    ac_F[f_id_sel],
-                                    bc_F[f_id_sel],
-                                    b_mass_flux[f_id_sel],
-                                    cpro_cp[c_id],
-                                    &term_balance);
+        cs_b_imposed_conv_flux(iconvp,
+                               1.,
+                               0, /* Conservative formulation, no mass accumulation */
+                               inc,
+                               ifaccp,
+                               bc_type[f_id_sel],
+                               icvfli[f_id_sel],
+                               f->val[c_id],
+                               pir,
+                               pipr,
+                               a_F[f_id_sel],
+                               b_F[f_id_sel],
+                               ac_F[f_id_sel],
+                               bc_F[f_id_sel],
+                               b_mass_flux[f_id_sel],
+                               cpro_cp[c_id],
+                               &term_balance);
 
         cs_b_diff_flux(idiffp,
+                       1., /* thetap */
                        inc,
                        pipr,
                        af_F[f_id_sel],
@@ -779,6 +818,8 @@ cs_balance_by_zone(const int  bc_type[],
         /* Associated boundary cell */
         cs_lnum_t c_id = b_face_cells[f_id_sel];
 
+        cs_real_t pir, pipr;
+
         cs_b_cd_unsteady(ircflp,
                          diipb[f_id_sel],
                          grad[c_id],
@@ -788,22 +829,26 @@ cs_balance_by_zone(const int  bc_type[],
 
         cs_real_t term_balance = 0.;
 
-        cs_b_imposed_conv_flux_cons(iconvp,
-                                    inc,
-                                    ifaccp,
-                                    bc_type[f_id_sel],
-                                    icvfli[f_id_sel],
-                                    pir,
-                                    pipr,
-                                    a_F[f_id_sel],
-                                    b_F[f_id_sel],
-                                    ac_F[f_id_sel],
-                                    bc_F[f_id_sel],
-                                    b_mass_flux[f_id_sel],
-                                    cpro_cp[c_id],
-                                    &term_balance);
+        cs_b_imposed_conv_flux(iconvp,
+                               1.,
+                               0, /* Conservative formulation, no mass accumulation */
+                               inc,
+                               ifaccp,
+                               bc_type[f_id_sel],
+                               icvfli[f_id_sel],
+                               f->val[c_id],
+                               pir,
+                               pipr,
+                               a_F[f_id_sel],
+                               b_F[f_id_sel],
+                               ac_F[f_id_sel],
+                               bc_F[f_id_sel],
+                               b_mass_flux[f_id_sel],
+                               cpro_cp[c_id],
+                               &term_balance);
 
         cs_b_diff_flux(idiffp,
+                       1., /* thetap */
                        inc,
                        pipr,
                        af_F[f_id_sel],
@@ -865,6 +910,9 @@ cs_balance_by_zone(const int  bc_type[],
 
         cs_real_2_t bi_bterms = {0.,0.};
 
+        cs_real_t pip, pjp, pipr, pjpr;
+        cs_real_t pifri, pjfri, pifrj, pjfrj;
+
         cs_i_cd_steady_upwind(ircflp,
                               relaxp,
                               weight[f_id],
@@ -887,17 +935,22 @@ cs_balance_by_zone(const int  bc_type[],
                               &pipr,
                               &pjpr);
 
-        cs_i_conv_flux_cons(iconvp,
-                            pifri,
-                            pifrj,
-                            pjfri,
-                            pjfrj,
-                            i_mass_flux[f_id_sel],
-                            cpro_cp[c_id1],
-                            cpro_cp[c_id2],
-                            bi_bterms);
+        cs_i_conv_flux(iconvp,
+                       1.,
+                       0, /* Conservative formulation, no mass accumulation */
+                       f->val[c_id1],
+                       f->val[c_id2],
+                       pifri,
+                       pifrj,
+                       pjfri,
+                       pjfrj,
+                       i_mass_flux[f_id_sel],
+                       cpro_cp[c_id1],
+                       cpro_cp[c_id2],
+                       bi_bterms);
 
         cs_i_diff_flux(idiffp,
+                       1.,
                        pip,
                        pjp,
                        pipr,
@@ -938,6 +991,9 @@ cs_balance_by_zone(const int  bc_type[],
 
         cs_real_2_t bi_bterms = {0.,0.};
 
+        cs_real_t pip, pjp;
+        cs_real_t pif, pjf;
+
         cs_i_cd_unsteady_upwind(ircflp,
                                 weight[f_id],
                                 cell_cen[c_id1],
@@ -948,30 +1004,31 @@ cs_balance_by_zone(const int  bc_type[],
                                 grad[c_id2],
                                 f->val[c_id1],
                                 f->val[c_id2],
-                                &pifri,
-                                &pifrj,
-                                &pjfri,
-                                &pjfrj,
+                                &pif,
+                                &pjf,
                                 &pip,
-                                &pjp,
-                                &pipr,
-                                &pjpr);
+                                &pjp);
 
-        cs_i_conv_flux_cons(iconvp,
-                            pifri,
-                            pifrj,
-                            pjfri,
-                            pjfrj,
-                            i_mass_flux[f_id_sel],
-                            cpro_cp[c_id1],
-                            cpro_cp[c_id2],
-                            bi_bterms);
+        cs_i_conv_flux(iconvp,
+                       1.,
+                       0, /* Conservative formulation, no mass accumulation */
+                       f->val[c_id1],
+                       f->val[c_id2],
+                       pif,
+                       pif, /* no relaxation */
+                       pjf,
+                       pjf, /* no relaxation */
+                       i_mass_flux[f_id_sel],
+                       cpro_cp[c_id1],
+                       cpro_cp[c_id2],
+                       bi_bterms);
 
         cs_i_diff_flux(idiffp,
+                       1.,
                        pip,
                        pjp,
-                       pipr,
-                       pjpr,
+                       pip, /* no relaxation */
+                       pjp, /* no relaxation */
                        i_visc[f_id_sel],
                        bi_bterms);
 
@@ -997,10 +1054,9 @@ cs_balance_by_zone(const int  bc_type[],
         }
       }
     }
-  } else if (isstpp == 1) {
-    /* ====================
-       ---> No slope
-       ====================*/
+  /* --> Flux with no slope test or Min/Max Beta limiter
+    ====================================================*/
+  } else if (isstpp == 1 || isstpp == 2) {
 
     /* Steady */
     if (idtvar < 0) {
@@ -1014,6 +1070,9 @@ cs_balance_by_zone(const int  bc_type[],
 
         cs_real_2_t bi_bterms = {0.,0.};
 
+        cs_real_t pip, pjp, pipr, pjpr;
+        cs_real_t pifri, pjfri, pifrj, pjfrj;
+
         cs_i_cd_steady(ircflp,
                        ischcp,
                        relaxp,
@@ -1025,6 +1084,8 @@ cs_balance_by_zone(const int  bc_type[],
                        dijpf[f_id_sel],
                        grad[c_id1],
                        grad[c_id2],
+                       gradup[c_id1],
+                       gradup[c_id2],
                        f->val[c_id1],
                        f->val[c_id2],
                        f->val_pre[c_id1],
@@ -1038,17 +1099,22 @@ cs_balance_by_zone(const int  bc_type[],
                        &pipr,
                        &pjpr);
 
-        cs_i_conv_flux_cons(iconvp,
-                            pifri,
-                            pifrj,
-                            pjfri,
-                            pjfrj,
-                            i_mass_flux[f_id_sel],
-                            cpro_cp[c_id1],
-                            cpro_cp[c_id2],
-                            bi_bterms);
+        cs_i_conv_flux(iconvp,
+                       1.,
+                       0, /* Conservative formulation, no mass accumulation */
+                       f->val[c_id1],
+                       f->val[c_id2],
+                       pifri,
+                       pifrj,
+                       pjfri,
+                       pjfrj,
+                       i_mass_flux[f_id_sel],
+                       cpro_cp[c_id1],
+                       cpro_cp[c_id2],
+                       bi_bterms);
 
         cs_i_diff_flux(idiffp,
+                       1.,
                        pip,
                        pjp,
                        pipr,
@@ -1089,6 +1155,9 @@ cs_balance_by_zone(const int  bc_type[],
 
         cs_real_2_t bi_bterms = {0.,0.};
 
+        cs_real_t pip, pjp;
+        cs_real_t pif, pjf;
+
         cs_i_cd_unsteady(ircflp,
                          ischcp,
                          blencp,
@@ -1099,32 +1168,35 @@ cs_balance_by_zone(const int  bc_type[],
                          dijpf[f_id_sel],
                          grad[c_id1],
                          grad[c_id2],
+                         gradup[c_id1],
+                         gradup[c_id2],
                          f->val[c_id1],
                          f->val[c_id2],
-                         &pifri,
-                         &pifrj,
-                         &pjfri,
-                         &pjfrj,
+                         &pif,
+                         &pjf,
                          &pip,
-                         &pjp,
-                         &pipr,
-                         &pjpr);
+                         &pjp);
 
-        cs_i_conv_flux_cons(iconvp,
-                            pifri,
-                            pifrj,
-                            pjfri,
-                            pjfrj,
-                            i_mass_flux[f_id_sel],
-                            cpro_cp[c_id1],
-                            cpro_cp[c_id2],
-                            bi_bterms);
+        cs_i_conv_flux(iconvp,
+                       1.,
+                       0, /* Conservative formulation, no mass accumulation */
+                       f->val[c_id1],
+                       f->val[c_id2],
+                       pif,
+                       pif, /* no relaxation */
+                       pjf,
+                       pjf, /* no relaxation */
+                       i_mass_flux[f_id_sel],
+                       cpro_cp[c_id1],
+                       cpro_cp[c_id2],
+                       bi_bterms);
 
         cs_i_diff_flux(idiffp,
+                       1.,
                        pip,
                        pjp,
-                       pipr,
-                       pjpr,
+                       pip, /* no relaxation */
+                       pjp, /* no relaxation */
                        i_visc[f_id_sel],
                        bi_bterms);
 
@@ -1150,10 +1222,11 @@ cs_balance_by_zone(const int  bc_type[],
         }
       }
     }
+
+  /* --> Flux with slope test or Roe and Sweby limiter
+    ==================================================*/
+
   } else {
-    /* ====================
-       ---> Slope test
-       ====================*/
 
     /* Steady */
     if (idtvar < 0) {
@@ -1166,6 +1239,9 @@ cs_balance_by_zone(const int  bc_type[],
         cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
 
         cs_real_2_t bi_bterms = {0.,0.};
+
+        cs_real_t pip, pjp, pipr, pjpr;
+        cs_real_t pifri, pjfri, pifrj, pjfrj;
 
         cs_i_cd_steady_slope_test(&indic,
                                   ircflp,
@@ -1183,8 +1259,10 @@ cs_balance_by_zone(const int  bc_type[],
                                   i_mass_flux[f_id_sel],
                                   grad[c_id1],
                                   grad[c_id2],
-                                  grdpa[c_id1],
-                                  grdpa[c_id2],
+                                  gradup[c_id1],
+                                  gradup[c_id2],
+                                  gradst[c_id1],
+                                  gradst[c_id2],
                                   f->val[c_id1],
                                   f->val[c_id2],
                                   f->val_pre[c_id1],
@@ -1198,17 +1276,22 @@ cs_balance_by_zone(const int  bc_type[],
                                   &pipr,
                                   &pjpr);
 
-        cs_i_conv_flux_cons(iconvp,
-                            pifri,
-                            pifrj,
-                            pjfri,
-                            pjfrj,
-                            i_mass_flux[f_id_sel],
-                            cpro_cp[c_id1],
-                            cpro_cp[c_id2],
-                            bi_bterms);
+        cs_i_conv_flux(iconvp,
+                       1.,
+                       0, /* Conservative formulation, no mass accumulation */
+                       f->val[c_id1],
+                       f->val[c_id2],
+                       pifri,
+                       pifrj,
+                       pjfri,
+                       pjfrj,
+                       i_mass_flux[f_id_sel],
+                       cpro_cp[c_id1],
+                       cpro_cp[c_id2],
+                       bi_bterms);
 
         cs_i_diff_flux(idiffp,
+                       1.,
                        pip,
                        pjp,
                        pipr,
@@ -1249,6 +1332,9 @@ cs_balance_by_zone(const int  bc_type[],
 
         cs_real_2_t bi_bterms = {0.,0.};
 
+        cs_real_t pip, pjp;
+        cs_real_t pif, pjf;
+
         cs_i_cd_unsteady_slope_test(&indic,
                                     ircflp,
                                     ischcp,
@@ -1264,34 +1350,37 @@ cs_balance_by_zone(const int  bc_type[],
                                     i_mass_flux[f_id_sel],
                                     grad[c_id1],
                                     grad[c_id2],
-                                    grdpa[c_id1],
-                                    grdpa[c_id2],
+                                    gradup[c_id1],
+                                    gradup[c_id2],
+                                    gradst[c_id1],
+                                    gradst[c_id2],
                                     f->val[c_id1],
                                     f->val[c_id2],
-                                    &pifri,
-                                    &pifrj,
-                                    &pjfri,
-                                    &pjfrj,
+                                    &pif,
+                                    &pjf,
                                     &pip,
-                                    &pjp,
-                                    &pipr,
-                                    &pjpr);
+                                    &pjp);
 
-        cs_i_conv_flux_cons(iconvp,
-                            pifri,
-                            pifrj,
-                            pjfri,
-                            pjfrj,
-                            i_mass_flux[f_id_sel],
-                            cpro_cp[c_id1],
-                            cpro_cp[c_id2],
-                            bi_bterms);
+        cs_i_conv_flux(iconvp,
+                       1.,
+                       0, /* Conservative formulation, no mass accumulation */
+                       f->val[c_id1],
+                       f->val[c_id2],
+                       pif,
+                       pif, /* no relaxation */
+                       pjf,
+                       pjf, /* no relaxation */
+                       i_mass_flux[f_id_sel],
+                       cpro_cp[c_id1],
+                       cpro_cp[c_id2],
+                       bi_bterms);
 
         cs_i_diff_flux(idiffp,
+                       1.,
                        pip,
                        pjp,
-                       pipr,
-                       pjpr,
+                       pip, /* no relaxation */
+                       pjp, /* no relaxation */
                        i_visc[f_id_sel],
                        bi_bterms);
 
@@ -1322,8 +1411,10 @@ cs_balance_by_zone(const int  bc_type[],
   /* Free memory */
 
   BFT_FREE(grad);
-  if (grdpa != NULL)
-    BFT_FREE(grdpa);
+  if (gradup != NULL)
+    BFT_FREE(gradup);
+  if (gradst != NULL)
+    BFT_FREE(gradst);
   BFT_FREE(f_reconstructed);
 
   if (!itemperature || icp == -1)

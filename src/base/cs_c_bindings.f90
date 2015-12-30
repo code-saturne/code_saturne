@@ -114,6 +114,22 @@ module cs_c_bindings
 
   interface
 
+    subroutine max_limiter_building(                     &
+                                             f_id,       &
+                                             inc,        &
+                                             rovsdt    ) &
+    bind(C, name='cs_max_limiter_building')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int),value :: f_id
+      integer(c_int),value :: inc
+      real(c_double), dimension(*) , intent(in) :: rovsdt
+
+ end subroutine max_limiter_building
+
+
+
+
     !---------------------------------------------------------------------------
 
     !> \brief Set mapped boundary conditions for a given field and mapping
@@ -191,8 +207,8 @@ module cs_c_bindings
     end subroutine log_iteration
 
     !---------------------------------------------------------------------------
-
     !> \brief Compute filters for dynamic models.
+
 
     !> \param[in]   dim            stride of array to filter
     !> \param[in]   val            array of values to filter

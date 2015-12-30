@@ -239,11 +239,16 @@ module optcal
   !> type of convective scheme
   !>    - 1: centered
   !>    - 0: second order
+  !>    - 2: pure upwind gradient in SOLU
+  !>    - 3: Lax Wendroff scheme
   integer, save ::          ischcv(nvarmx)
 
-  !> switch off the slope test:
-  !>    - 1: swich off the slope test
+  !> Slope test, Min/MAx limiter or Roe and Sweby limiters
   !>    - 0: swich on the slope test
+  !>    - 1: swich off the slope test (default)
+  !>    - 2: continuous limiter ensuring positivness
+  !>    - 3: Roe-Sweby limiter
+  !>         (ensuring  Decreasing Total Variation)
   integer, save ::          isstpc(nvarmx)
 
   !> method to compute interior mass flux due to ALE mesh velocity

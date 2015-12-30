@@ -71,6 +71,7 @@ use ihmpre
 use cplsat
 use mesh
 use field
+use cs_f_interfaces
 use cs_c_bindings
 
 !===============================================================================
@@ -82,11 +83,13 @@ implicit none
 ! Local variables
 
 integer          ii
-integer          ifcvsl, kislts, ifctsl, kbfid
+integer          ifcvsl, kislts, kcvlim, ifctsl, kbfid
 integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
 logical          ilved, iprev, inoprv, is_set
 integer          f_id
+
+type(var_cal_opt) vcopt
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
 
@@ -189,6 +192,50 @@ if (iwallf.ge.5) then
                                          iflid)
 endif
 
+! Convection limiter
+
+call field_get_key_id("convection_limiter_id", kcvlim)
+
+itycat = FIELD_PROPERTY
+ilved = .true.
+
+do ii = 1, nvar
+  f_id = ivarfl(ii)
+
+  call field_get_key_struct_var_cal_opt(f_id, vcopt)
+
+  ! Beta limiter
+  write(nfecra,*) "vcopt", ii, f_id, vcopt%isstpc
+  if (vcopt%isstpc.eq.2) then
+    ! Now create matching field
+    ! Build name and label
+    call field_get_name(f_id, f_name)
+    name  = trim(f_name) // '_conv_lim'
+
+    ityloc = 1 ! cells
+
+    call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ifctsl)
+    call field_set_key_int(ifctsl, keyvis, 1)
+    call field_set_key_int(ifctsl, keylog, 1)
+
+    call field_set_key_int(f_id, kcvlim, ifctsl)
+  !Roe-Sweby limiter
+  else if (vcopt%isstpc.eq.3) then
+    ! Now create matching field
+    ! Build name and label
+    call field_get_name(f_id, f_name)
+    name  = trim(f_name) // '_conv_lim'
+
+    ityloc = 2 ! Interior faces
+
+    call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ifctsl)
+    call field_set_key_int(ifctsl, keyvis, 1)
+    call field_set_key_int(ifctsl, keylog, 1)
+
+    call field_set_key_int(f_id, kcvlim, ifctsl)
+  endif
+enddo
+
 !===============================================================================
 ! 3. Additional postprocessing fields
 !===============================================================================
@@ -245,8 +292,10 @@ do ii = 1, nvar
   f_id = ivarfl(ii)
   call field_get_key_int(f_id, kislts, ifctsl)
   if (ifctsl.eq.0) then
-    ! Now create matching field
-    if (iconv(ii).gt.0 .and. blencv(ii).gt.0 .and. isstpc(ii).eq.0) then
+   call field_get_key_struct_var_cal_opt(f_id, vcopt)
+
+   ! Now create matching field
+    if (vcopt%iconv.gt.0 .and. vcopt%blencv.gt.0 .and. vcopt%isstpc.eq.0) then
       ! Build name and label
       call field_get_name(f_id, f_name)
       name  = trim(f_name) // '_slope_upwind'

@@ -161,30 +161,30 @@ typedef struct {
 
 static cs_var_cal_opt_t _var_cal_opt =
 {
-  0,     /* iwarni */
-  1,     /* iconv  */
-  1,     /* istat  */
-  1,     /* idiff  */
-  1,     /* idifft */
-  1,     /* idften */
-  0,     /* iswdyn */
-  1,     /* ischcv */
-  1,     /* ibdtso */
-  1,     /* isstpc */
-  100,   /* nswrgr */
-  1,     /* nswrsm */
-  0,     /* imrgra */
-  -1,    /* imligr */
-  1,     /* ircflu */
-  0,     /* iwgrec */
-  1.,    /* thetav */
-  1.,    /* blencv */
-  1.e-8, /* epsilo */
-  1.e-7, /* epsrsm */
-  1.e-5, /* epsrgr */
-  1.5,   /* climgr */
-  0.,    /* extrag */
-  1.     /* relaxv */
+  .iwarni = 0,
+  .iconv  = 1,
+  .istat  = 1,
+  .idiff  = 1,
+  .idifft = 1,
+  .idften = 1,
+  .iswdyn = 0,
+  .ischcv = 1,
+  .ibdtso = 1,
+  .isstpc = 1,
+  .nswrgr = 100,
+  .nswrsm = 1,
+  .imrgra = 0,
+  .imligr = -1,
+  .ircflu = 1,
+  .iwgrec = 0,
+  .thetav = 1.,
+  .blencv = 1.,
+  .epsilo = 1.e-8,
+  .epsrsm = 1.e-7,
+  .epsrgr = 1.e-5,
+  .climgr = 1.5,
+  .extrag = 0.,
+  .relaxv = 1.
 };
 
 /* Space discretisation options structure and associated pointer */
@@ -415,13 +415,29 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("first_moment_id", -1, 0); /* iscavr(iscal) */
 
   cs_field_define_key_int("source_term_prev_id", -1, CS_FIELD_VARIABLE);
-
+  /* TODO merge with previous key word */
+  cs_field_define_key_int("source_term_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("slope_test_upwind_id", -1, CS_FIELD_VARIABLE);
 
   cs_field_define_key_int("boundary_value_id", -1, 0);
 
+  cs_field_define_key_int("convection_limiter_id", -1, 0);
+
   cs_field_define_key_double("min_scalar_clipping", -1.e12, 0);
   cs_field_define_key_double("max_scalar_clipping", 1.e12, 0);
+
+  /* Bounds of a given scalar which won't be used in clipping */
+
+  cs_field_define_key_double("max_scalar", 1., 0);
+  cs_field_define_key_double("min_scalar", 0., 0);
+
+ /* Integer corresponding to the type of Roe-Sweby Limiter:
+  * 1->minmod
+  * 2->van-leer
+  * 3->van-albada
+  * 4->superbee */
+
+  cs_field_define_key_int("limiter_choice", -1, CS_FIELD_VARIABLE); // MODIF
 
   /* Structure containing the calculation options of the field variables */
   cs_field_define_key_struct("var_cal_opt",

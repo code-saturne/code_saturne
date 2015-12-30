@@ -98,7 +98,7 @@ integer          keysca, iscal, keydri, iscdri, icvflb
 integer          keyccl
 integer          icla, jcla, jvar
 integer          ivoid(1)
-integer          ielup, id_x1, id_vdp_i
+integer          ielup, id_x1, id_vdp_i, imasac
 
 double precision epsrgp, climgp, extrap, blencp
 double precision thetap
@@ -473,11 +473,17 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     call field_get_coefaf_v(ivarfl(iu), cofafv)
     call field_get_coefbf_v(ivarfl(iu), cofbfv)
 
+    ! The added convective scalar mass flux is:
+    !      (thetap*Y_\face-imasac*Y_\celli)*mf.
+    ! When building the implicit part of the rhs, one
+    ! has to impose 1 on mass accumulation.
+    imasac = 1
+
     ! Warning: bilsc adds "-( grad(u) . rho u)"
     call bilscv &
    ( idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-     iwarnp , idftnp ,                                              &
+     iwarnp , idftnp , imasac ,                                     &
      blencp , epsrgp , climgp , relaxp , thetap ,                   &
      vel    , vel    ,                                              &
      coefav , coefbv , cofafv , cofbfv ,                            &

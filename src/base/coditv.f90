@@ -251,7 +251,7 @@ integer          iinvpe
 integer          idtva0
 integer          isou , jsou
 integer          ibsize, iesize
-integer          lvar
+integer          lvar, imasac
 
 double precision residu, rnorm, ressol, rnorm2
 double precision thetex
@@ -359,11 +359,16 @@ thetex = 1.d0 - thetap
 if (abs(thetex).gt.epzero) then
   inc    = 1
 
+  ! The added convective scalar mass flux is:
+  !      (thetex*Y_\face-imasac*Y_\celli)*mf.
+  ! When building the explicit part of the rhs, one
+  ! has to impose 0 on mass accumulation.
+  imasac = 0
   call bilscv &
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   iwarnp , idftnp ,                                              &
+   iwarnp , idftnp , imasac ,                                     &
    blencp , epsrgp , climgp , relaxp , thetex ,                   &
    pvara  , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -411,11 +416,17 @@ do iel = 1, ncel
   enddo
 enddo
 
+! The added convective scalar mass flux is:
+!      (thetap*Y_\face-imasac*Y_\celli)*mf.
+! When building the implicit part of the rhs, one
+! has to impose 1 on mass accumulation.
+imasac = 1
+
 call bilscv &
 !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   iwarnp , idftnp ,                                              &
+   iwarnp , idftnp , imasac ,                                     &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -547,7 +558,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
     !==========
    ( idtvar , lvar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-     iwarnp , idftnp ,                                              &
+     iwarnp , idftnp , imasac ,                                     &
      blencp , epsrgp , climgp , relaxp , thetap ,                   &
      dpvar  , dpvar  ,                                              &
      coefav , coefbv , cofafv , cofbfv ,                            &
@@ -689,11 +700,16 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
     enddo
   endif
 
+  ! The added convective scalar mass flux is:
+  !      (thetex*Y_\face-imasac*Y_\celli)*mf.
+  ! When building the implicit part of the rhs, one
+  ! has to impose 1 on mass accumulation.
+  imasac = 1
   call bilscv &
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   iwarnp , idftnp ,                                              &
+   iwarnp , idftnp , imasac ,                                     &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
@@ -768,7 +784,7 @@ if (iescap.gt.0) then
   !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-   iwarnp , idftnp ,                                              &
+   iwarnp , idftnp , imasac ,                                     &
    blencp , epsrgp , climgp , relaxp , thetap ,                   &
    pvar   , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &

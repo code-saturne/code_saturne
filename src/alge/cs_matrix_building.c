@@ -213,7 +213,9 @@ void CS_PROCF (matrxts, MATRXTS)
  cs_real_t                xa[]
 )
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells = m->n_cells;
 
   if (*isym != 1 && *isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
@@ -224,7 +226,6 @@ void CS_PROCF (matrxts, MATRXTS)
   if (*isym == 1) {
     cs_sym_matrix_tensor(m,
                          *idiffp,
-                         *ndircp,
                          *thetap,
                          cofbfts,
                          fimp,
@@ -238,7 +239,6 @@ void CS_PROCF (matrxts, MATRXTS)
     cs_matrix_tensor(m,
                      *iconvp,
                      *idiffp,
-                     *ndircp,
                      *thetap,
                      coefbts,
                      cofbfts,
@@ -250,6 +250,31 @@ void CS_PROCF (matrxts, MATRXTS)
                      da,
                      (cs_real_2_t*) xa);
   }
+
+  /* Penalization if non invertible matrix */
+
+  /* If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
+     least 1 in order not to shift the diagonal). */
+
+  if (*ndircp <= 0) {
+    const double epsi = 1.e-7;
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (int isou = 0; isou < 6; isou++) {
+        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
+      }
+    }
+  }
+
+  /* If a whole line of the matrix is 0, the diagonal is set to 1 */
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    cs_lnum_t corr_cell_id = CS_MIN(cs_glob_porous_model, 1)*cell_id;
+    for (int isou = 0; isou < 6; isou++) {
+      da[cell_id][isou][isou] += mq->c_solid_flag[corr_cell_id];
+    }
+  }
+
 }
 
 
@@ -479,7 +504,9 @@ void CS_PROCF (matrvts, MATRVTS)
  cs_real_662_t              xa[]
 )
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells = m->n_cells;
 
   if (*isym != 1 && *isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
@@ -490,7 +517,6 @@ void CS_PROCF (matrvts, MATRVTS)
   if (*isym == 1) {
     cs_sym_matrix_anisotropic_diffusion_tensor(m,
                                                *idiffp,
-                                               *ndircp,
                                                *thetap,
                                                cofbfts,
                                                fimp,
@@ -504,7 +530,6 @@ void CS_PROCF (matrvts, MATRVTS)
     cs_matrix_anisotropic_diffusion_tensor(m,
                                            *iconvp,
                                            *idiffp,
-                                           *ndircp,
                                            *thetap,
                                            coefbts,
                                            cofbfts,
@@ -515,6 +540,30 @@ void CS_PROCF (matrvts, MATRVTS)
                                            b_visc,
                                            da,
                                            (cs_real_662_t *) xa);
+  }
+
+  /* Penalization if non invertible matrix */
+
+  /* If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
+     least 1 in order not to shift the diagonal). */
+
+  if (*ndircp <= 0) {
+    const double epsi = 1.e-7;
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (int isou = 0; isou < 6; isou++) {
+        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
+      }
+    }
+  }
+
+  /* If a whole line of the matrix is 0, the diagonal is set to 1 */
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    cs_lnum_t corr_cell_id = CS_MIN(cs_glob_porous_model, 1)*cell_id;
+    for (int isou = 0; isou < 6; isou++) {
+      da[cell_id][isou][isou] += mq->c_solid_flag[corr_cell_id];
+    }
   }
 
 }
@@ -778,8 +827,13 @@ cs_matrix_scalar(const cs_mesh_t          *m,
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
 
-          da[ii] -= xa[face_id][0];
-          da[jj] -= xa[face_id][1];
+          /* D_ii =  theta (m_ij)^+ - m_ij
+           *      = -X_ij - (1-theta)*m_ij
+           * D_jj = -theta (m_ij)^- + m_ij
+           *      = -X_ji + (1-theta)*m_ij
+           */
+          da[ii] -= xa[face_id][0] + iconvp*(1. - thetap)*i_massflux[face_id];
+          da[jj] -= xa[face_id][1] - iconvp*(1. - thetap)*i_massflux[face_id];
 
         }
       }
@@ -799,9 +853,13 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 
           double flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
 
-          da[ii] += thetap*(  iconvp*flui*(coefbp[face_id]-1.)
-                            + idiffp*b_visc[face_id]*cofbfp[face_id]);
-
+          /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+           *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+           *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+           */
+          da[ii] += iconvp*(flui*thetap*(coefbp[face_id]-1.)
+                           -(1.-thetap)*b_massflux[face_id])
+                  + idiffp*thetap*b_visc[face_id]*cofbfp[face_id];
         }
       }
     }
@@ -817,9 +875,12 @@ cs_matrix_scalar(const cs_mesh_t          *m,
       double flui = 0.5*(i_massflux[face_id] -fabs(i_massflux[face_id]));
       double fluj =-0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
 
-      xa[face_id][0] = thetap*( iconvp*xcpp[i_face_cells[face_id][0]]*flui
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
+
+      xa[face_id][0] = thetap*( iconvp*xcpp[ii]*flui
                                -idiffp*i_visc[face_id]);
-      xa[face_id][1] = thetap*( iconvp*xcpp[i_face_cells[face_id][1]]*fluj
+      xa[face_id][1] = thetap*( iconvp*xcpp[jj]*fluj
                                -idiffp*i_visc[face_id]);
 
     }
@@ -836,8 +897,13 @@ cs_matrix_scalar(const cs_mesh_t          *m,
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
 
-          da[ii] -= xa[face_id][0];
-          da[jj] -= xa[face_id][1];
+          /* D_ii =  theta (m_ij)^+ - m_ij
+           *      = -X_ij - (1-theta)*m_ij
+           * D_jj = -theta (m_ij)^- + m_ij
+           *      = -X_ji + (1-theta)*m_ij
+           */
+          da[ii] -= xa[face_id][0] + iconvp*(1. - thetap)*xcpp[ii]*i_massflux[face_id];
+          da[jj] -= xa[face_id][1] - iconvp*(1. - thetap)*xcpp[jj]*i_massflux[face_id];
 
         }
       }
@@ -854,9 +920,16 @@ cs_matrix_scalar(const cs_mesh_t          *m,
              face_id++) {
 
           cs_lnum_t ii = b_face_cells[face_id];
+
           double flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
-          da[ii] += thetap*(  iconvp*flui*xcpp[ii]*(coefbp[face_id]-1.)
-                            + idiffp*b_visc[face_id]*cofbfp[face_id]);
+
+          /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+           *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+           *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+           */
+          da[ii] += iconvp*xcpp[ii]*(flui*thetap*(coefbp[face_id]-1.)
+                                    -(1.-thetap)*b_massflux[face_id])
+                  + idiffp*thetap*b_visc[face_id]*cofbfp[face_id];
         }
       }
     }
@@ -976,13 +1049,8 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
-        if(isou == jsou) {
-          da[ii][jsou][isou] += thetap*idiffp*b_visc[face_id]
-                                      *cofbfu[face_id][jsou][isou];
-        } else {
-          da[ii][jsou][isou] += thetap*idiffp*b_visc[face_id]
-                                      *cofbfu[face_id][jsou][isou];
-        }
+        da[ii][jsou][isou] += thetap*idiffp*b_visc[face_id]
+                                    *cofbfu[face_id][jsou][isou];
       }
     }
 
@@ -1004,8 +1072,6 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centred
@@ -1027,7 +1093,6 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
 void
 cs_sym_matrix_tensor(const cs_mesh_t          *m,
                      int                       idiffp,
-                     int                       ndircp,
                      double                    thetap,
                      const cs_real_66_t        cofbfts[],
                      const cs_real_66_t        fimp[],
@@ -1045,8 +1110,6 @@ cs_sym_matrix_tensor(const cs_mesh_t          *m,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  const double epsi = 1.e-7;
 
   /* 1. Initialization */
 
@@ -1106,32 +1169,13 @@ cs_sym_matrix_tensor(const cs_mesh_t          *m,
 
     for (int isou = 0; isou < 6; isou++) {
       for (int jsou = 0; jsou < 6; jsou++) {
-        if(isou == jsou) {
-          da[ii][jsou][isou] += thetap*idiffp*b_visc[face_id]
-                                      *cofbfts[face_id][jsou][isou];
-        } else {
-          da[ii][jsou][isou] += thetap*idiffp*b_visc[face_id]
-                                      *cofbfts[face_id][jsou][isou];
-        }
+        da[ii][jsou][isou] += thetap*idiffp*b_visc[face_id]
+                                    *cofbfts[face_id][jsou][isou];
       }
     }
 
   }
 
-
-  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
-     least 1 in order not to shift the diagonal). */
-
-  if (ndircp <= 0) {
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-
-      for (int isou = 0; isou < 6; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
-      }
-
-    }
-  }
 
 }
 
@@ -1248,9 +1292,16 @@ cs_matrix_vector(const cs_mesh_t          *m,
     cs_lnum_t ii = i_face_cells[face_id][0];
     cs_lnum_t jj = i_face_cells[face_id][1];
 
+    /* D_ii =  theta (m_ij)^+ - m_ij
+     *      = -X_ij - (1-theta)*m_ij
+     * D_jj = -theta (m_ij)^- + m_ij
+     *      = -X_ji + (1-theta)*m_ij
+     */
     for (int isou = 0; isou < 3; isou++) {
-      da[ii][isou][isou] -= xa[face_id][0];
-      da[jj][isou][isou] -= xa[face_id][1];
+      da[ii][isou][isou] -= xa[face_id][0]
+                          + iconvp*(1. - thetap)*i_massflux[face_id];
+      da[jj][isou][isou] -= xa[face_id][1]
+                          - iconvp*(1. - thetap)*i_massflux[face_id];
     }
 
   }
@@ -1264,11 +1315,16 @@ cs_matrix_vector(const cs_mesh_t          *m,
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
+        /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+         *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+         *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+         */
         if(isou == jsou) {
-          da[ii][jsou][isou] += thetap*( iconvp*flui
-                                         *(coefbu[face_id][jsou][isou]-1.)
-                                        +idiffp*b_visc[face_id]
-                                         *cofbfu[face_id][jsou][isou]);
+          da[ii][jsou][isou] += iconvp*( thetap*flui
+                                        *(coefbu[face_id][jsou][isou]-1.)
+                                       - (1. - thetap)*b_massflux[face_id])
+                              + idiffp*thetap*b_visc[face_id]
+                                      *cofbfu[face_id][jsou][isou];
         } else {
           da[ii][jsou][isou] += thetap*( iconvp*flui*coefbu[face_id][jsou][isou]
                                         +idiffp*b_visc[face_id]
@@ -1299,8 +1355,6 @@ cs_matrix_vector(const cs_mesh_t          *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centred
@@ -1327,7 +1381,6 @@ void
 cs_matrix_tensor(const cs_mesh_t          *m,
                  int                       iconvp,
                  int                       idiffp,
-                 int                       ndircp,
                  double                    thetap,
                  const cs_real_66_t        coefbts[],
                  const cs_real_66_t        cofbfts[],
@@ -1348,8 +1401,6 @@ cs_matrix_tensor(const cs_mesh_t          *m,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  const double epsi = 1.e-7;
 
   /* 1. Initialization */
 
@@ -1399,9 +1450,16 @@ cs_matrix_tensor(const cs_mesh_t          *m,
     cs_lnum_t ii = i_face_cells[face_id][0];
     cs_lnum_t jj = i_face_cells[face_id][1];
 
+    /* D_ii =  theta (m_ij)^+ - m_ij
+     *      = -X_ij - (1-theta)*m_ij
+     * D_jj = -theta (m_ij)^- + m_ij
+     *      = -X_ji + (1-theta)*m_ij
+     */
     for (int isou = 0; isou < 6; isou++) {
-      da[ii][isou][isou] -= xa[face_id][0];
-      da[jj][isou][isou] -= xa[face_id][1];
+      da[ii][isou][isou] -= xa[face_id][0]
+                          + iconvp*(1. - thetap)*i_massflux[face_id];
+      da[jj][isou][isou] -= xa[face_id][1]
+                          - iconvp*(1. - thetap)*i_massflux[face_id];
     }
 
   }
@@ -1415,11 +1473,16 @@ cs_matrix_tensor(const cs_mesh_t          *m,
 
     for (int isou = 0; isou < 6; isou++) {
       for (int jsou = 0; jsou < 6; jsou++) {
+        /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+         *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+         *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+         */
         if(isou == jsou) {
-          da[ii][jsou][isou] += thetap*( iconvp*flui
-                                         *(coefbts[face_id][jsou][isou]-1.)
-                                        +idiffp*b_visc[face_id]
-                                         *cofbfts[face_id][jsou][isou]);
+          da[ii][jsou][isou] += iconvp*( thetap*flui
+                                        *(coefbts[face_id][jsou][isou]-1.)
+                                       - (1. - thetap)*b_massflux[face_id])
+                              + idiffp*thetap*b_visc[face_id]
+                                      *cofbfts[face_id][jsou][isou];
         } else {
           da[ii][jsou][isou] += thetap*( iconvp*flui*coefbts[face_id][jsou][isou]
                                         +idiffp*b_visc[face_id]
@@ -1428,21 +1491,6 @@ cs_matrix_tensor(const cs_mesh_t          *m,
       }
     }
 
-  }
-
-
-  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
-     least 1 in order not to shift the diagonal). */
-
-  if (ndircp <= 0) {
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-
-      for (int isou = 0; isou < 6; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
-      }
-
-    }
   }
 
 }
@@ -1680,30 +1728,30 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
     }
   }
 
-  for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
-        xa[ifac][0][jsou][isou] = 0.;
-        xa[ifac][1][jsou][isou] = 0.;
+        xa[face_id][0][jsou][isou] = 0.;
+        xa[face_id][1][jsou][isou] = 0.;
       }
     }
   }
 
   /* 2. Computation of extradiagonal terms */
 
-  for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
-    double flui = 0.5*( i_massflux[ifac] -fabs(i_massflux[ifac]) );
-    double fluj =-0.5*( i_massflux[ifac] +fabs(i_massflux[ifac]) );
+    double flui = 0.5*( i_massflux[face_id] -fabs(i_massflux[face_id]) );
+    double fluj =-0.5*( i_massflux[face_id] +fabs(i_massflux[face_id]) );
 
     for (int isou = 0; isou < 3; isou++) {
-      xa[ifac][0][isou][isou] = iconvp*flui;
-      xa[ifac][1][isou][isou] = iconvp*fluj;
+      xa[face_id][0][isou][isou] = iconvp*flui;
+      xa[face_id][1][isou][isou] = iconvp*fluj;
       for (int jsou = 0; jsou < 3; jsou++) {
-        xa[ifac][0][jsou][isou] = thetap*( xa[ifac][0][jsou][isou]
-                                         - idiffp*i_visc[ifac][jsou][isou]);
-        xa[ifac][1][jsou][isou] = thetap*( xa[ifac][1][jsou][isou]
-                                         - idiffp*i_visc[ifac][jsou][isou]);
+        xa[face_id][0][jsou][isou] = thetap*( xa[face_id][0][jsou][isou]
+                                         - idiffp*i_visc[face_id][jsou][isou]);
+        xa[face_id][1][jsou][isou] = thetap*( xa[face_id][1][jsou][isou]
+                                         - idiffp*i_visc[face_id][jsou][isou]);
       }
     }
 
@@ -1711,37 +1759,49 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
 
   /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
-  for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
-    cs_lnum_t ii = i_face_cells[ifac][0];
-    cs_lnum_t jj = i_face_cells[ifac][1];
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
 
+    /* D_ii =  theta (m_ij)^+ - m_ij
+     *      = -X_ij - (1-theta)*m_ij
+     * D_jj = -theta (m_ij)^- + m_ij
+     *      = -X_ji + (1-theta)*m_ij
+     */
     for (int isou = 0; isou < 3; isou++) {
+      da[ii][isou][isou] -= iconvp*(1. - thetap)*i_massflux[face_id];
+      da[jj][isou][isou] += iconvp*(1. - thetap)*i_massflux[face_id];
       for (int jsou = 0; jsou < 3; jsou++) {
-        da[ii][jsou][isou] -= xa[ifac][0][jsou][isou];
-        da[jj][jsou][isou] -= xa[ifac][1][jsou][isou];
+        da[ii][jsou][isou] -= xa[face_id][0][jsou][isou];
+        da[jj][jsou][isou] -= xa[face_id][1][jsou][isou];
       }
     }
   }
 
   /* 4. Contribution of border faces to the diagonal */
 
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-    cs_lnum_t ii = b_face_cells[ifac];
-    double flui = 0.5*( b_massflux[ifac] -fabs(b_massflux[ifac]) );
+    cs_lnum_t ii = b_face_cells[face_id];
+    double flui = 0.5*( b_massflux[face_id] -fabs(b_massflux[face_id]) );
 
     for (int isou = 0; isou < 3; isou++) {
       for (int jsou = 0; jsou < 3; jsou++) {
+        /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+         *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+         *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+         */
         if(isou == jsou) {
-          da[ii][jsou][isou] += thetap*( iconvp*flui
-                                         *(coefbu[ifac][jsou][isou]-1.)
-                                        +idiffp*b_visc[ifac]
-                                         *cofbfu[ifac][jsou][isou] );
+          da[ii][jsou][isou] += iconvp*( thetap*flui
+                                        *(coefbu[face_id][jsou][isou]-1.)
+                                       - (1. - thetap)*b_massflux[face_id])
+                              + idiffp*thetap*b_visc[face_id]
+                                      *cofbfu[face_id][jsou][isou];
         } else {
-          da[ii][jsou][isou] += thetap*( iconvp*flui*coefbu[ifac][jsou][isou]
-                                        +idiffp*b_visc[ifac]
-                                         *cofbfu[ifac][jsou][isou] );
+          da[ii][jsou][isou] += thetap*( iconvp*flui*coefbu[face_id][jsou][isou]
+                                        +idiffp*b_visc[face_id]
+                                         *cofbfu[face_id][jsou][isou] );
         }
       }
     }
@@ -1767,8 +1827,6 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centered
@@ -1795,7 +1853,6 @@ void
 cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
                                        int                       iconvp,
                                        int                       idiffp,
-                                       int                       ndircp,
                                        double                    thetap,
                                        const cs_real_66_t        coefbu[],
                                        const cs_real_66_t        cofbfu[],
@@ -1817,8 +1874,6 @@ cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  const double epsi = 1.e-7;
-
   /* 1. Initialization */
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -1838,30 +1893,30 @@ cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
     }
   }
 
-  for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
     for (int isou = 0; isou < 6; isou++) {
       for (int jsou = 0; jsou < 6; jsou++) {
-        xa[ifac][0][jsou][isou] = 0.;
-        xa[ifac][1][jsou][isou] = 0.;
+        xa[face_id][0][jsou][isou] = 0.;
+        xa[face_id][1][jsou][isou] = 0.;
       }
     }
   }
 
   /* 2. Computation of extradiagonal terms */
 
-  for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
-    double flui = 0.5*( i_massflux[ifac] -fabs(i_massflux[ifac]) );
-    double fluj =-0.5*( i_massflux[ifac] +fabs(i_massflux[ifac]) );
+    double flui = 0.5*( i_massflux[face_id] -fabs(i_massflux[face_id]) );
+    double fluj =-0.5*( i_massflux[face_id] +fabs(i_massflux[face_id]) );
 
     for (int isou = 0; isou < 6; isou++) {
-      xa[ifac][0][isou][isou] = iconvp*flui;
-      xa[ifac][1][isou][isou] = iconvp*fluj;
+      xa[face_id][0][isou][isou] = iconvp*flui;
+      xa[face_id][1][isou][isou] = iconvp*fluj;
       for (int jsou = 0; jsou < 6; jsou++) {
-        xa[ifac][0][jsou][isou] = thetap*( xa[ifac][0][jsou][isou]
-                                         - idiffp*i_visc[ifac][jsou][isou]);
-        xa[ifac][1][jsou][isou] = thetap*( xa[ifac][1][jsou][isou]
-                                         - idiffp*i_visc[ifac][jsou][isou]);
+        xa[face_id][0][jsou][isou] = thetap*( xa[face_id][0][jsou][isou]
+                                         - idiffp*i_visc[face_id][jsou][isou]);
+        xa[face_id][1][jsou][isou] = thetap*( xa[face_id][1][jsou][isou]
+                                         - idiffp*i_visc[face_id][jsou][isou]);
       }
     }
 
@@ -1869,53 +1924,54 @@ cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
 
   /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
-  for (cs_lnum_t ifac = 0; ifac < n_i_faces; ifac++) {
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
-    cs_lnum_t ii = i_face_cells[ifac][0];
-    cs_lnum_t jj = i_face_cells[ifac][1];
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
 
+    /* D_ii =  theta (m_ij)^+ - m_ij
+     *      = -X_ij - (1-theta)*m_ij
+     * D_jj = -theta (m_ij)^- + m_ij
+     *      = -X_ji + (1-theta)*m_ij
+     */
     for (int isou = 0; isou < 6; isou++) {
+      da[ii][isou][isou] -= iconvp*(1. - thetap)*i_massflux[face_id];
+      da[jj][isou][isou] += iconvp*(1. - thetap)*i_massflux[face_id];
+
       for (int jsou = 0; jsou < 6; jsou++) {
-        da[ii][jsou][isou] -= xa[ifac][0][jsou][isou];
-        da[jj][jsou][isou] -= xa[ifac][1][jsou][isou];
+        da[ii][jsou][isou] -= xa[face_id][0][jsou][isou];
+        da[jj][jsou][isou] -= xa[face_id][1][jsou][isou];
       }
     }
   }
 
   /* 4. Contribution of border faces to the diagonal */
 
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-    cs_lnum_t ii = b_face_cells[ifac];
-    double flui = 0.5*( b_massflux[ifac] -fabs(b_massflux[ifac]) );
+    cs_lnum_t ii = b_face_cells[face_id];
+    double flui = 0.5*( b_massflux[face_id] -fabs(b_massflux[face_id]) );
 
     for (int isou = 0; isou < 6; isou++) {
       for (int jsou = 0; jsou < 6; jsou++) {
+        /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+         *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+         *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+         */
         if(isou == jsou) {
-          da[ii][jsou][isou] += thetap*( iconvp*flui
-                                         *(coefbu[ifac][jsou][isou]-1.)
-                                        +idiffp*b_visc[ifac]
-                                         *cofbfu[ifac][jsou][isou] );
+          da[ii][jsou][isou] += iconvp*( thetap*flui
+                                        *(coefbu[face_id][jsou][isou]-1.)
+                                       - (1. - thetap)*b_massflux[face_id])
+                              + idiffp*thetap*b_visc[face_id]
+                                      *cofbfu[face_id][jsou][isou];
         } else {
-          da[ii][jsou][isou] += thetap*( iconvp*flui*coefbu[ifac][jsou][isou]
-                                        +idiffp*b_visc[ifac]
-                                         *cofbfu[ifac][jsou][isou] );
+          da[ii][jsou][isou] += thetap*( iconvp*flui*coefbu[face_id][jsou][isou]
+                                        +idiffp*b_visc[face_id]
+                                         *cofbfu[face_id][jsou][isou] );
         }
       }
     }
 
-  }
-
-
-  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum. */
-
-  if ( ndircp <= 0 ) {
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      for (int isou = 0; isou < 6; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
-      }
-    }
   }
 
 }
@@ -2063,8 +2119,6 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centered
@@ -2086,7 +2140,6 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
 void
 cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t           *m,
                                            int                       idiffp,
-                                           int                       ndircp,
                                            double                    thetap,
                                            const cs_real_66_t        cofbfu[],
                                            const cs_real_66_t        fimp[],
@@ -2104,8 +2157,6 @@ cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t           *m,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  const double epsi = 1.e-7;
 
   /* 1. Initialization */
 
@@ -2169,28 +2220,11 @@ cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t           *m,
 
     for (int isou = 0; isou < 6; isou++) {
       for (int jsou = 0; jsou < 6; jsou++) {
-        if(isou == jsou) {
-          da[ii][jsou][isou] += thetap*idiffp*b_visc[ifac]
-                                      *cofbfu[ifac][jsou][isou];
-        } else {
-          da[ii][jsou][isou] += thetap*idiffp*b_visc[ifac]
-                                      *cofbfu[ifac][jsou][isou];
-        }
+        da[ii][jsou][isou] += thetap*idiffp*b_visc[ifac]
+                                    *cofbfu[ifac][jsou][isou];
       }
     }
 
-  }
-
-
-  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum. */
-
-  if ( ndircp <= 0 ) {
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      for (int isou = 0; isou < 6; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
-      }
-    }
   }
 
 }

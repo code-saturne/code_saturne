@@ -233,16 +233,16 @@ endif
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
-    if ((iconv (ii).ne.0.and.iconv (ii).ne.1).or.                 &
-        (istat (ii).ne.0.and.istat (ii).ne.1).or.                 &
-        (idiff (ii).ne.0.and.idiff (ii).ne.1).or.                 &
-        (idifft(ii).ne.0.and.idifft(ii).ne.1).or.                 &
-        (thetav(ii).gt.1.d0.or.thetav(ii).lt.0.d0).or.            &
-        (blencv(ii).gt.1.d0.or.blencv(ii).lt.0.d0).or.            &
-        (ischcv(ii).ne.0.and.ischcv(ii).ne.1).or.                 &
-        (isstpc(ii).ne.0.and.isstpc(ii).ne.1)   ) then
+    if ((iconv (ii).ne.0.and.iconv (ii).ne.1).or.                            &
+        (istat (ii).ne.0.and.istat (ii).ne.1).or.                            &
+        (idiff (ii).ne.0.and.idiff (ii).ne.1).or.                            &
+        (idifft(ii).ne.0.and.idifft(ii).ne.1).or.                            &
+        (thetav(ii).gt.1.d0.or.thetav(ii).lt.0.d0).or.                       &
+        (blencv(ii).gt.1.d0.or.blencv(ii).lt.0.d0).or.                       &
+        (ischcv(ii).lt.0.and.ischcv(ii).gt.3).or.                            &
+        (isstpc(ii).lt.0.and.isstpc(ii).gt.3)   ) then
       call field_get_label(f_id, chaine)
-      write(nfecra,2100) chaine(1:16),                             &
+      write(nfecra,2100) chaine(1:16),                            &
                          istat(ii),iconv(ii),                     &
                          idiff(ii),idifft(ii),                    &
                          thetav(ii),blencv(ii),ischcv(ii),        &
@@ -1914,8 +1914,8 @@ endif
 '@ Valeurs entrees ici',10X,     i10,      i10,                 /,&
 '@',                                                            /,&
 '@ Parametre               THETAV   BLENCV    ISCHCV    ISSTPC',/,&
-'@ Valeurs acceptees     [0.; 1.] [0.; 1.]   0 ou  1   0 ou  1',/,&
-'@ Valeurs entrees ici',      e14.5,     e14.5,i10,  i10,       /,&
+'@ Valeurs acceptees     [0.; 1.] [0.; 1.]   0,1,2,3   0,1,2,3',/,&
+'@ Valeurs entrees ici',      e9.2,     e9.2,i10,  i10,         /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
@@ -4497,8 +4497,8 @@ endif
 '@ Values entered here',10X,     i10,      i10,                 /,&
 '@',                                                            /,&
 '@ PARAMETER               THETAV   BLENCV    ISCHCV    ISSTPC',/,&
-'@ Values   accepted     [0.; 1.] [0.; 1.]   0 or  1   0 or  1',/,&
-'@ Values entered here',      e14.5,     e14.5,i10,  i10,       /,&
+'@ Values   accepted     [0.; 1.] [0.; 1.]   0,1,2,3   0,1,2,3',/,&
+'@ Values entered here',      e9.2,     e9.2,i10,  i10,         /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&

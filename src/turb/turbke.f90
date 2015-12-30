@@ -41,7 +41,8 @@
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     icepdc        index of the ncepdp cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
-!> \param[in]     itypsm        mass source type for the variables (cf. cs_user_mass_source_terms)
+!> \param[in]     itypsm        mass source type for the variables
+!>                              (cf. cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     tslagr        coupling term of the lagangian module
 !> \param[in]     ckupdc        work array for the head loss
@@ -108,7 +109,7 @@ integer          istprv
 integer          iphydp, iprev
 integer          imucpp, idftnp, iswdyp
 
-integer          icvflb
+integer          icvflb, imasac
 integer          ivoid(1)
 
 double precision rnorm , d2s3, d1s3, divp23
@@ -892,6 +893,7 @@ if (ikecou.eq.1) then
   iccocg = 1
   inc    = 1
   iconvp = iconv (ivar)
+  imasac = 1
   idiffp = idiff (ivar)
   nswrgp = nswrgr(ivar)
   imligp = imligr(ivar)
@@ -913,7 +915,7 @@ if (ikecou.eq.1) then
   call bilsca &
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   iwarnp , imucpp , idftnp ,                                     &
+   iwarnp , imucpp , idftnp , imasac ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    cvara_k         , cvara_k         ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
@@ -960,6 +962,7 @@ if (ikecou.eq.1) then
   iccocg = 1
   inc    = 1
   iconvp = iconv (ivar)
+  imasac = 1
   idiffp = idiff (ivar)
   nswrgp = nswrgr(ivar)
   imligp = imligr(ivar)
@@ -981,7 +984,7 @@ if (ikecou.eq.1) then
   call bilsca &
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   iwarnp , imucpp , idftnp ,                                     &
+   iwarnp , imucpp , idftnp , imasac ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    cvara_ep        , cvara_ep        ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &

@@ -99,6 +99,9 @@
 !> \param[in]     idftnp        indicator
 !>                               - 1 scalar diffusivity
 !>                               - 6 symmetric tensor diffusivity
+!> \param[in]     imasac        indicator
+!>                               - 1 take mass accumulation into account
+!>                               - 0 do not take mass accumulation
 !> \param[in]     blencp        fraction of upwinding
 !> \param[in]     epsrgp        relative precision for the gradient
 !>                               reconstruction
@@ -146,10 +149,10 @@
 subroutine bilsca &
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   iwarnp , imucpp , idftnp ,                                     &
+   iwarnp , imucpp , idftnp , imasac ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
-   flumas , flumab , viscf  , viscb  , viscce , xcpp   ,          &
+   flumas , flumab , viscf  , viscb  , viscce , xcpp,             &
    weighf , weighb ,                                              &
    icvflb , icvfli ,                                              &
    smbrp  )
@@ -181,7 +184,7 @@ integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , iccocg
-integer          iwarnp , imucpp, idftnp, icvflb
+integer          iwarnp , imucpp, idftnp, icvflb, imasac
 
 integer          icvfli(nfabor)
 
@@ -246,7 +249,7 @@ if (idftnp.eq.1) then
     !==========
    ( idtvar , f_id   , vcopt  ,                                     &
      icvflb , inc    , iccocg ,                                     &
-     ifaccp ,                                                       &
+     ifaccp , imasac ,                                              &
      pvar   , pvara  ,                                              &
      itypfb , icvfli , coefap , coefbp , cofafp , cofbfp ,          &
      flumas , flumab , viscf  , viscb  ,                            &
@@ -260,7 +263,7 @@ if (idftnp.eq.1) then
     !==========
    ( idtvar , f_id   , vcopt  ,                                     &
      inc    , iccocg ,                                              &
-     ifaccp ,                                                       &
+     ifaccp , imasac ,                                              &
      pvar   , pvara  , itypfb , coefap , coefbp , cofafp , cofbfp , &
      flumas , flumab , viscf  , viscb  , xcpp   ,                   &
      smbrp  )
@@ -279,7 +282,7 @@ elseif (idftnp.eq.6) then
     !==========
    ( idtvar , f_id   , vcopt  ,                                     &
      icvflb , inc    , iccocg ,                                     &
-     ifaccp ,                                                       &
+     ifaccp , imasac ,                                              &
      pvar   , pvara  ,                                              &
      itypfb , icvfli , coefap , coefbp , cofafp , cofbfp ,          &
      flumas , flumab , viscf  , viscb  ,                            &
@@ -293,7 +296,7 @@ elseif (idftnp.eq.6) then
     !==========
    ( idtvar , f_id   , vcopt  ,                                     &
      inc    , iccocg ,                                              &
-     ifaccp ,                                                       &
+     ifaccp , imasac ,                                              &
      pvar   , pvara  , itypfb , coefap , coefbp , cofafp , cofbfp , &
      flumas , flumab , viscf  , viscb  , xcpp   ,                   &
      smbrp  )

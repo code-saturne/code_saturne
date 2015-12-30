@@ -106,7 +106,7 @@ integer          iwarnp
 integer          istprv
 integer          imucpp, idftnp, iswdyp
 
-integer          icvflb
+integer          icvflb, imasac
 integer          ivoid(1)
 
 double precision rnorm , d2s3, divp23, epz2
@@ -711,6 +711,7 @@ if (ikecou.eq.1) then
   inc    = 1
   imucpp = 0
   idftnp = 1 ! no tensorial diffusivity
+  imasac = 1
   iconvp = iconv (ivar)
   idiffp = idiff (ivar)
   nswrgp = nswrgr(ivar)
@@ -731,7 +732,7 @@ if (ikecou.eq.1) then
   call bilsca &
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   iwarnp , imucpp , idftnp ,                                     &
+   iwarnp , imucpp , idftnp , imasac ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    cvara_k         , cvara_k         ,                            &
    coefa_k , coefb_k , coefaf_k , coefbf_k ,                      &
@@ -779,6 +780,7 @@ if (ikecou.eq.1) then
   imucpp = 0
   idftnp = 1 ! no tensorial diffusivity
   iconvp = iconv (ivar)
+  imasac = 1
   idiffp = idiff (ivar)
   nswrgp = nswrgr(ivar)
   imligp = imligr(ivar)
@@ -798,7 +800,7 @@ if (ikecou.eq.1) then
   call bilsca &
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   iwarnp , imucpp , idftnp ,                                     &
+   iwarnp , imucpp , idftnp , imasac ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    cvara_omg       , cvara_omg       ,                            &
    coefa_o , coefb_o , coefaf_o , coefbf_o ,                      &
