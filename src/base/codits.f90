@@ -766,7 +766,7 @@ if (iescap.gt.0) then
   !==========
  ( idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   iwarnp , imucpp , idftnp ,                                     &
+   iwarnp , imucpp , idftnp , imasac ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs , visccs , xcpp   ,          &
