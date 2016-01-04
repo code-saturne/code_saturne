@@ -6468,14 +6468,13 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
  *                               - 1 otherwise
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     bc_type       type of bcs
- * \param[in]     coefa        boundary condition array for the variable
+ * \param[in]     coefa         boundary condition array for the variable
  *                               (explicit part)
- * \param[in]     coefb        boundary condition array for the variable
+ * \param[in]     coefb         boundary condition array for the variable
  *                               (implicit part)
- * \param[in]     cofaf        boundary condition array for the diffusion
+ * \param[in]     cofaf         boundary condition array for the diffusion
  *                               of the variable (explicit part)
- * \param[in]     cofbf        boundary condition array for the diffusion
+ * \param[in]     cofbf         boundary condition array for the diffusion
  *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
@@ -6497,7 +6496,6 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
                                 int                         inc,
                                 cs_real_6_t       *restrict pvar,
                                 const cs_real_6_t *restrict pvara,
-                                const cs_int_t              bc_type[],
                                 const cs_real_6_t           coefa[],
                                 const cs_real_66_t          coefb[],
                                 const cs_real_6_t           cofaf[],

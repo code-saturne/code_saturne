@@ -998,7 +998,6 @@ void CS_PROCF (diftnts, DIFTNTS)
                                   *inc,
                                   pvar,
                                   pvara,
-                                  bc_type,
                                   coefa,
                                   coefb,
                                   cofaf,
@@ -6875,7 +6874,6 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
  *                               - 1 otherwise
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     bc_type       boundary condition type
  * \param[in]     coefa         boundary condition array for the variable
  *                               (explicit part)
  * \param[in]     coefb         boundary condition array for the variable
@@ -6904,7 +6902,6 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
                                 int                         inc,
                                 cs_real_6_t       *restrict pvar,
                                 const cs_real_6_t *restrict pvara,
-                                const cs_int_t              bc_type[],//FIXME rm
                                 const cs_real_6_t           coefa[],
                                 const cs_real_66_t          coefb[],
                                 const cs_real_6_t           cofaf[],
