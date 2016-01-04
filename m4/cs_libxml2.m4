@@ -103,14 +103,12 @@ if test "x$with_libxml2" != "xno" ; then
                  [ AC_DEFINE([HAVE_LIBXML2], 1, [LIBXML2 support])
                    cs_have_libxml2=yes
                  ],
-                 [if test "x$with_libxml2" != "xcheck" ; then
-                    AC_MSG_FAILURE([LIBXML2 support is requested, but test for LIBXML2 failed!])
-                  else
-                    AC_MSG_WARN([no LIBXML2 support])
-                  fi
+                 [AC_MSG_FAILURE([LIBXML2 support is requested, but test for LIBXML2 failed!])
                  ],
                 )
 
+  else
+    AC_MSG_FAILURE([LIBXML2 support is requested, but LIBXML2 headers not found; ])
   fi
 
   if test "x$cs_have_libxml2" != "xyes"; then
