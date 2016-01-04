@@ -1,4 +1,4 @@
-# Copyright (C) 1998-2015 EDF S.A.
+# Copyright (C) 1998-2016 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
