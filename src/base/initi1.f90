@@ -113,50 +113,6 @@ call ppini1
 ! Radiative model options
 call rayopt
 
-! Number of fields
-call field_get_n_fields(nfld)
-call field_get_key_id("variable_id", keyvar)
-
-! Copy field calculation options into the field structure
-do f_id = 0, nfld - 1
-
-  call field_get_type(f_id, f_type)
-
-  ! Is the field of type FIELD_VARIABLE?
-  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-
-    call field_get_key_int(f_id, keyvar, ivar)
-
-    vcopt%iwarni= iwarni(ivar)
-    vcopt%iconv = iconv (ivar)
-    vcopt%istat = istat (ivar)
-    vcopt%idiff = idiff (ivar)
-    vcopt%idifft= idifft(ivar)
-    vcopt%idften= idften(ivar)
-    vcopt%iswdyn= iswdyn(ivar)
-    vcopt%ischcv= ischcv(ivar)
-    vcopt%ibdtso= ibdtso(ivar)
-    vcopt%isstpc= isstpc(ivar)
-    vcopt%nswrgr= nswrgr(ivar)
-    vcopt%nswrsm= nswrsm(ivar)
-    vcopt%imrgra= imrgra
-    vcopt%imligr= imligr(ivar)
-    vcopt%ircflu= ircflu(ivar)
-    vcopt%iwgrec= iwgrec(ivar)
-    vcopt%thetav= thetav(ivar)
-    vcopt%blencv= blencv(ivar)
-    vcopt%epsilo= epsilo(ivar)
-    vcopt%epsrsm= epsrsm(ivar)
-    vcopt%epsrgr= epsrgr(ivar)
-    vcopt%climgr= climgr(ivar)
-    vcopt%extrag= extrag(ivar)
-    vcopt%relaxv= relaxv(ivar)
-
-    call field_set_key_struct_var_cal_opt(f_id, vcopt)
-  endif
-enddo
-
 ! Additional fields
 
 call addfld
@@ -228,6 +184,7 @@ call user_linear_solvers
 
 ! Number of fields
 call field_get_n_fields(nfld)
+call field_get_key_id("variable_id", keyvar)
 
 ! Copy field calculation options into the field structure
 do f_id = 0, nfld - 1
