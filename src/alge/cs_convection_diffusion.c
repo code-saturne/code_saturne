@@ -787,7 +787,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
   int g_id, t_id;
   int tr_dim = 0;
 
-  bool upwind_switch;
   bool recompute_cocg = (iccocg) ? true : false;
 
   cs_real_t pifri, pjfri, pifrj, pjfrj;
@@ -1244,6 +1243,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
             cs_real_2_t fluxij = {0.,0.};
 
+            bool upwind_switch;
+
             cs_i_cd_steady_slope_test(&upwind_switch,
                                       ircflp,
                                       ischcp,
@@ -1328,6 +1329,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
             jj = i_face_cells[face_id][1];
 
             cs_real_2_t fluxij = {0.,0.};
+
+            bool upwind_switch;
 
             cs_i_cd_unsteady_slope_test(&upwind_switch,
                                         ircflp,
@@ -4717,7 +4720,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     for (g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for private(face_id, ii, jj, visci, viscj, \
                                       pipp, pjpp, pippr, pjppr,      \
-                                      fluxi, fluxj, fikdvi,          \
+                                      diippf, djjppf, \
+                                      fluxi, fluxj, fikdvi, fjkdvi,  \
                                       pi, pj, pir, pjr, pia, pja)    \
                  reduction(+:n_upwind)
       for (t_id = 0; t_id < n_i_threads; t_id++) {
@@ -4907,8 +4911,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   if (idtvar < 0) {
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, visci, fikdvi,       \
-                                      pir, pippr, pfacd, flux, pi, pia) \
+#     pragma omp parallel for private(face_id, ii, visci, fikdvi, diippf,  \
+                                      pir, pippr, pfacd, flux, pi, pia)    \
                  if(m->n_b_faces > CS_THR_MIN)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -5513,7 +5517,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
 
           for (i = 0; i < 3; i++) {
 
-            flux = secvis*grdtrv*i_f_face_normal[ face_id][i];
+            flux = secvis*grdtrv*i_f_face_normal[face_id][i];
 
             /* We need to compute (K grad(u)^T) .IJ
                which is equal to IJ . (grad(u) . K^T)
