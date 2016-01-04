@@ -5,6 +5,8 @@ Release 4.2.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix some OpenMP bugs in convection-diffusion operators.
+
 - Fix hang in GUI when starting run where the case's path contains whitespace.
 
 Release 4.2.0 (Dec 23 2015)
