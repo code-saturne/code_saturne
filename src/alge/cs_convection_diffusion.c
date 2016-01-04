@@ -56,6 +56,7 @@
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
+#include "cs_field_operator.h"
 #include "cs_field_pointer.h"
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
@@ -232,7 +233,7 @@ _max_limiter_denom(const int              f_id,
 
   /* SOLU Scheme asked with standard gradient
    *  or CENTERED scheme */
-  if (ischcp==0 || ischcp==1) {
+  if (ischcp == 0 || ischcp == 1) {
 
     cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
         &gradient_type,
@@ -256,7 +257,7 @@ _max_limiter_denom(const int              f_id,
 
   }
   /* pure SOLU scheme without using gradient_slope_test function*/
-  else if (ischcp==2) {
+  else if (ischcp == 2) {
 
     cs_upwind_gradient(f_id,
                        inc,
@@ -291,7 +292,7 @@ _max_limiter_denom(const int              f_id,
   /* ---> Contribution from interior faces */
 
   for (cs_lnum_t g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for
+#   pragma omp parallel for
 
     for (cs_lnum_t t_id = 0; t_id < n_i_threads; t_id++) {
       for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -488,7 +489,7 @@ _max_limiter_num(const int           f_id,
   /* ---> Contribution from boundary faces */
 
   for (cs_lnum_t g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for
+#   pragma omp parallel for
     for (cs_lnum_t t_id = 0; t_id < n_b_threads; t_id++) {
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -618,19 +619,19 @@ cs_real_t cs_limiter_function(const int   limiter,
   cs_real_t phi;
 
   /* minmod limiter */
-  if (limiter==0) {
+  if (limiter == 0) {
     phi = cs_limiter_minmod(r);
   }
   /* Van-Leer limiter */
-  else if (limiter==1) {
+  else if (limiter == 1) {
     phi = cs_limiter_van_leer(r);
   }
   /* Van-Albada limiter */
-  else if (limiter==2) {
+  else if (limiter == 2) {
     phi = cs_limiter_van_albada(r);
   }
   /* Superbee limiter */
-  else if (limiter==3) {
+  else if (limiter == 3) {
     phi = cs_limiter_superbee(r);
   }
   /* Lax Wendroff */
@@ -1035,7 +1036,7 @@ void CS_PROCF (itrmas, ITRMAS)
  const cs_real_t          cofbfp[],
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
- const cs_real_t          viselx[],
+ cs_real_t                viselx[],
  const cs_real_t          visely[],
  const cs_real_t          viselz[],
  cs_real_t                i_massflux[],
@@ -1275,27 +1276,613 @@ void CS_PROCF (itrgrv, ITRGRV)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute a coefficient for blending that ensures the positivity
- *  of the scalar.
+ * \brief Compute the upwind gradient used in the slope tests.
  *
  * \param[in]     f_id         field index
  * \param[in]     inc          Not an increment flag
- * \param[in]     rovsdt
+ * \param[in]     halo_type    halo type
+ * \param[in]     grad         standard gradient
+ * \param[out]    grdpa        upwind gradient
+ * \param[in]     pvar         values
+ * \param[in]     coefap       boundary condition array for the variable
+ *                             (explicit part)
+ * \param[in]     coefbp       boundary condition array for the variable
+ *                             (implicit part)
+ * \param[in]     i_massflux   mass flux at interior faces
  */
 /*----------------------------------------------------------------------------*/
-void
-cs_max_limiter_building(
-   const int                 f_id,
-   const int                 inc,
-   const cs_real_t           rovsdt[])
-{
 
+void
+cs_slope_test_gradient(const int               f_id,
+                       const int               inc,
+                       const cs_halo_type_t    halo_type,
+                       cs_real_3_t            *grad,
+                       cs_real_3_t            *grdpa,
+                       cs_real_t              *pvar,
+                       const cs_real_t        *coefap,
+                       const cs_real_t        *coefbp,
+                       const cs_real_t        *i_massflux)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_halo_t  *halo = m->halo;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
+
+        cs_real_t difx = i_face_cog[face_id][0] - cell_cen[ii][0];
+        cs_real_t dify = i_face_cog[face_id][1] - cell_cen[ii][1];
+        cs_real_t difz = i_face_cog[face_id][2] - cell_cen[ii][2];
+        cs_real_t djfx = i_face_cog[face_id][0] - cell_cen[jj][0];
+        cs_real_t djfy = i_face_cog[face_id][1] - cell_cen[jj][1];
+        cs_real_t djfz = i_face_cog[face_id][2] - cell_cen[jj][2];
+
+        cs_real_t pif =   pvar[ii]
+                        + difx*grad[ii][0]+dify*grad[ii][1]+difz*grad[ii][2];
+        cs_real_t pjf =   pvar[jj]
+                        + djfx*grad[jj][0]+djfy*grad[jj][1]+djfz*grad[jj][2];
+
+        cs_real_t pfac = pjf;
+        if (i_massflux[face_id] > 0.) pfac = pif;
+
+        cs_real_t pfac1 = pfac*i_face_normal[face_id][0];
+        cs_real_t pfac2 = pfac*i_face_normal[face_id][1];
+        cs_real_t pfac3 = pfac*i_face_normal[face_id][2];
+
+        grdpa[ii][0] = grdpa[ii][0] + pfac1;
+        grdpa[ii][1] = grdpa[ii][1] + pfac2;
+        grdpa[ii][2] = grdpa[ii][2] + pfac3;
+
+        grdpa[jj][0] = grdpa[jj][0] - pfac1;
+        grdpa[jj][1] = grdpa[jj][1] - pfac2;
+        grdpa[jj][2] = grdpa[jj][2] - pfac3;
+
+      }
+    }
+  }
+
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+# pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cs_lnum_t ii = b_face_cells[face_id];
+
+        cs_real_t diipbx = diipb[face_id][0];
+        cs_real_t diipby = diipb[face_id][1];
+        cs_real_t diipbz = diipb[face_id][2];
+        cs_real_t pfac =   inc*coefap[face_id]
+                         + coefbp[face_id] * (pvar[ii] + diipbx*grad[ii][0]
+                                                       + diipby*grad[ii][1]
+                                                      + diipbz*grad[ii][2]);
+        grdpa[ii][0] = grdpa[ii][0] + pfac*b_face_normal[face_id][0];
+        grdpa[ii][1] = grdpa[ii][1] + pfac*b_face_normal[face_id][1];
+        grdpa[ii][2] = grdpa[ii][2] + pfac*b_face_normal[face_id][2];
+
+      }
+    }
+  }
+
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+    cs_real_t unsvol = 1./cell_vol[cell_id];
+
+    grdpa[cell_id][0] = grdpa[cell_id][0]*unsvol;
+    grdpa[cell_id][1] = grdpa[cell_id][1]*unsvol;
+    grdpa[cell_id][2] = grdpa[cell_id][2]*unsvol;
+
+  }
+
+  /* Synchronization for parallelism or periodicity */
+
+  if (halo != NULL) {
+    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa, 3);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)grdpa, 3);
+
+    /* Gradient periodicity of rotation for Reynolds stress components */
+    if (cs_glob_mesh->have_rotation_perio > 0 && f_id != -1)
+      cs_gradient_perio_process_rij(&f_id, grdpa);
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the upwind gradient in order to cope with SOLU schemes
+ *        observed in the litterature.
+ *
+ * \param[in]     f_id         field index
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     halo_type    halo type
+ * \param[out]    grdpa        upwind gradient
+ * \param[in]     pvar         values
+ * \param[in]     coefap       boundary condition array for the variable
+ *                             (explicit part)
+ * \param[in]     coefbp       boundary condition array for the variable
+ *                             (implicit part)
+ * \param[in]     i_massflux   mass flux at interior faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_upwind_gradient(const int                     f_id,
+                   const int                     inc,
+                   const cs_halo_type_t          halo_type,
+                   const cs_real_t               coefap[],
+                   const cs_real_t               coefbp[],
+                   const cs_real_t               i_massflux[],
+                   const cs_real_t               b_massflux[],
+                   const cs_real_t     *restrict pvar,
+                   cs_real_3_t         *restrict grdpa)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_halo_t  *halo = m->halo;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
+
+        cs_real_t pif = pvar[ii];
+        cs_real_t pjf = pvar[jj];
+
+        cs_real_t pfac = pjf;
+        if (i_massflux[face_id] > 0.) pfac = pif;
+
+        cs_real_t pfac1 = pfac*i_face_normal[face_id][0];
+        cs_real_t pfac2 = pfac*i_face_normal[face_id][1];
+        cs_real_t pfac3 = pfac*i_face_normal[face_id][2];
+
+        grdpa[ii][0] = grdpa[ii][0] + pfac1;
+        grdpa[ii][1] = grdpa[ii][1] + pfac2;
+        grdpa[ii][2] = grdpa[ii][2] + pfac3;
+
+        grdpa[jj][0] = grdpa[jj][0] - pfac1;
+        grdpa[jj][1] = grdpa[jj][1] - pfac2;
+        grdpa[jj][2] = grdpa[jj][2] - pfac3;
+
+      }
+    }
+  }
+
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cs_lnum_t ii = b_face_cells[face_id];
+
+        cs_lnum_t pfac = pvar[ii];
+
+        if (b_massflux[face_id] < 0)
+          pfac = inc*coefap[face_id] + coefbp[face_id] * pvar[ii];
+
+        grdpa[ii][0] = grdpa[ii][0] + pfac*b_face_normal[face_id][0];
+        grdpa[ii][1] = grdpa[ii][1] + pfac*b_face_normal[face_id][1];
+        grdpa[ii][2] = grdpa[ii][2] + pfac*b_face_normal[face_id][2];
+
+      }
+    }
+  }
+
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+    cs_real_t unsvol = 1./cell_vol[cell_id];
+
+    grdpa[cell_id][0] = grdpa[cell_id][0]*unsvol;
+    grdpa[cell_id][1] = grdpa[cell_id][1]*unsvol;
+    grdpa[cell_id][2] = grdpa[cell_id][2]*unsvol;
+
+  }
+
+  /* Synchronization for parallelism or periodicity */
+
+  if (halo != NULL) {
+    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa, 3);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)grdpa, 3);
+
+    /* Gradient periodicity of rotation for Reynolds stress components */
+    if (cs_glob_mesh->have_rotation_perio > 0 && f_id != -1)
+      cs_gradient_perio_process_rij(&f_id, grdpa);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the upwind gradient used in the slope tests.
+ *
+ * \param[in]     f_id         field index
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     halo_type    halo type
+ * \param[in]     grad         standard gradient
+ * \param[out]    grdpa        upwind gradient
+ * \param[in]     pvar         values
+ * \param[in]     coefa        boundary condition array for the variable
+                               (Explicit part)
+ * \param[in]     coefb        boundary condition array for the variable
+                              (Implicit part)
+ * \param[in]     i_massflux   mass flux at interior faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_slope_test_gradient_vector(const int              f_id,
+                              const int              inc,
+                              const cs_halo_type_t   halo_type,
+                              cs_real_33_t          *grad,
+                              cs_real_33_t          *grdpa,
+                              cs_real_3_t           *pvar,
+                              const cs_real_3_t     *coefa,
+                              const cs_real_33_t    *coefb,
+                              const cs_real_t       *i_massflux)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_halo_t  *halo = m->halo;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict i_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cs_real_t difv[3], djfv[3];
+
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
+
+        for (int jsou = 0; jsou < 3; jsou++) {
+          difv[jsou] = i_face_cog[face_id][jsou] - cell_cen[ii][jsou];
+          djfv[jsou] = i_face_cog[face_id][jsou] - cell_cen[jj][jsou];
+        }
+
+        /* x-y-z component, p = u, v, w */
+
+        for (int isou = 0; isou < 3; isou++) {
+          cs_real_t pif = pvar[ii][isou];
+          cs_real_t pjf = pvar[jj][isou];
+          for (int jsou = 0; jsou < 3; jsou++) {
+            pif = pif + grad[ii][isou][jsou]*difv[jsou];
+            pjf = pjf + grad[jj][isou][jsou]*djfv[jsou];
+          }
+
+          cs_real_t pfac = pjf;
+          if (i_massflux[face_id] > 0.) pfac = pif;
+
+          /* U gradient */
+
+          cs_real_t vfac[3];
+
+          for (int jsou = 0; jsou < 3; jsou++) {
+            vfac[jsou] = pfac*i_f_face_normal[face_id][jsou];
+
+            grdpa[ii][isou][jsou] = grdpa[ii][isou][jsou] + vfac[jsou];
+            grdpa[jj][isou][jsou] = grdpa[jj][isou][jsou] - vfac[jsou];
+          }
+        }
+
+      }
+    }
+  }
+
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+             face_id++) {
+
+          cs_real_t diipbv[3];
+          cs_lnum_t ii = b_face_cells[face_id];
+
+          for (int jsou = 0; jsou < 3; jsou++)
+            diipbv[jsou] = diipb[face_id][jsou];
+
+          /* x-y-z components, p = u, v, w */
+
+          for (int isou = 0; isou < 3; isou++) {
+            cs_real_t pfac = inc*coefa[face_id][isou];
+            /*coefu is a matrix */
+            for (int jsou =  0; jsou < 3; jsou++)
+              pfac += coefb[face_id][jsou][isou]*(  pvar[ii][jsou]
+                                                  + grad[ii][jsou][0]*diipbv[0]
+                                                  + grad[ii][jsou][1]*diipbv[1]
+                                                  + grad[ii][jsou][2]*diipbv[2]);
+
+            for (int jsou = 0; jsou < 3; jsou++)
+              grdpa[ii][isou][jsou] += pfac*b_f_face_normal[face_id][jsou];
+          }
+
+      }
+    }
+  }
+
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    cs_real_t unsvol = 1./cell_vol[cell_id];
+    for (int isou = 0; isou < 3; isou++) {
+      for (int jsou = 0; jsou < 3; jsou++)
+        grdpa[cell_id][isou][jsou] = grdpa[cell_id][isou][jsou]*unsvol;
+    }
+  }
+
+  /* Handle parallelism and periodicity */
+
+  if (halo != NULL) {
+    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa, 9);
+    if (m->n_init_perio > 0)
+      cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)grdpa);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the upwind gradient used in the slope tests.
+ *
+ * \param[in]     f_id         field index
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     halo_type    halo type
+ * \param[in]     grad         standard gradient
+ * \param[out]    grdpa        upwind gradient
+ * \param[in]     pvar         values
+ * \param[in]     coefa        boundary condition array for the variable
+                               (Explicit part)
+ * \param[in]     coefb        boundary condition array for the variable
+                              (Implicit part)
+ * \param[in]     i_massflux   mass flux at interior faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_slope_test_gradient_tensor(const int              f_id,
+                              const int              inc,
+                              const cs_halo_type_t   halo_type,
+                              cs_real_63_t          *grad,
+                              cs_real_63_t          *grdpa,
+                              cs_real_6_t           *pvar,
+                              const cs_real_6_t     *coefa,
+                              const cs_real_66_t    *coefb,
+                              const cs_real_t       *i_massflux)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_halo_t  *halo = m->halo;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict i_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cs_real_t difv[3], djfv[3];
+
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
+
+        for (int jsou = 0; jsou < 3; jsou++) {
+          difv[jsou] = i_face_cog[face_id][jsou] - cell_cen[ii][jsou];
+          djfv[jsou] = i_face_cog[face_id][jsou] - cell_cen[jj][jsou];
+        }
+
+        /* x-y-z component, p = u, v, w */
+
+        for (int isou = 0; isou < 6; isou++) {
+          cs_real_t pif = pvar[ii][isou];
+          cs_real_t pjf = pvar[jj][isou];
+          for (int jsou = 0; jsou < 3; jsou++) {
+            pif = pif + grad[ii][isou][jsou]*difv[jsou];
+            pjf = pjf + grad[jj][isou][jsou]*djfv[jsou];
+          }
+
+          cs_real_t pfac = pjf;
+          if (i_massflux[face_id] > 0.) pfac = pif;
+
+          /* U gradient */
+
+          cs_real_t vfac[3];
+
+          for (int jsou = 0; jsou < 3; jsou++) {
+            vfac[jsou] = pfac*i_f_face_normal[face_id][jsou];
+
+            grdpa[ii][isou][jsou] = grdpa[ii][isou][jsou] + vfac[jsou];
+            grdpa[jj][isou][jsou] = grdpa[jj][isou][jsou] - vfac[jsou];
+          }
+        }
+
+      }
+    }
+  }
+
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cs_real_t diipbv[3];
+        cs_lnum_t ii = b_face_cells[face_id];
+
+        for (int jsou = 0; jsou < 3; jsou++)
+          diipbv[jsou] = diipb[face_id][jsou];
+
+        /* x-y-z components, p = u, v, w */
+
+        for (int isou = 0; isou < 6; isou++) {
+          cs_real_t pfac = inc*coefa[face_id][isou];
+          /*coefu is a matrix */
+          for (int jsou =  0; jsou < 6; jsou++)
+            pfac += coefb[face_id][jsou][isou]*(  pvar[ii][jsou]
+                                                + grad[ii][jsou][0]*diipbv[0]
+                                                + grad[ii][jsou][1]*diipbv[1]
+                                                + grad[ii][jsou][2]*diipbv[2]);
+
+          for (int jsou = 0; jsou < 3; jsou++)
+            grdpa[ii][isou][jsou] += pfac*b_f_face_normal[face_id][jsou];
+        }
+
+      }
+    }
+  }
+
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    cs_real_t unsvol = 1./cell_vol[cell_id];
+    for (int isou = 0; isou < 6; isou++) {
+      for (int jsou = 0; jsou < 3; jsou++)
+        grdpa[cell_id][isou][jsou] = grdpa[cell_id][isou][jsou]*unsvol;
+    }
+  }
+
+  /* Handle parallelism and periodicity */
+
+  if (halo != NULL) {
+    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa, 18);
+    if (m->n_init_perio > 0)
+      cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)grdpa);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute a coefficient for blending that ensures the positivity
+ *  of the scalar.
+ *
+ * \param[in]     f_id         field id
+ * \param[in]     inc          "not an increment" flag
+ * \param[in]     rovsdt       rho * volume / dt
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_max_limiter_building(int              f_id,
+                        int              inc,
+                        const cs_real_t  rovsdt[])
+{
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_halo_t *halo = m->halo;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  /* Get option from the field */
+  /* Get options from the field */
+
   cs_field_t *f = cs_field_by_id(f_id);
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_var_cal_opt_t var_cal_opt;
@@ -1320,22 +1907,20 @@ cs_max_limiter_building(
 
   /* First Step: Treatment of the denominator for the inferior and superior bound */
 
-  _max_limiter_denom(
-     f_id,
-     inc,
-     denom_inf,
-     denom_sup);
+  _max_limiter_denom(f_id,
+                     inc,
+                     denom_inf,
+                     denom_sup);
 
   /* Second Step: Treatment of the numenator for the inferior and superior bound */
 
-  _max_limiter_num(
-     f_id,
-     inc,
-     rovsdt,
-     num_inf,
-     num_sup);
+  _max_limiter_num(f_id,
+                   inc,
+                   rovsdt,
+                   num_inf,
+                   num_sup);
 
-#   pragma omp parallel for
+# pragma omp parallel for
   for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
 
     /* Treatment of the inferior bound */
@@ -1347,7 +1932,7 @@ cs_max_limiter_building(
       beta_inf = -1.;
     }
     else {
-      beta_inf = num_inf[ii]/denom_inf[ii];//FIXME division by 0
+      beta_inf = num_inf[ii]/denom_inf[ii]; //FIXME division by 0
       beta_inf = CS_MIN(beta_inf, 1.);
     }
 
@@ -1360,24 +1945,21 @@ cs_max_limiter_building(
       beta_sup = -1.;
     }
     else {
-      beta_sup = num_sup[ii]/denom_sup[ii];//FIXME division by 0
+      beta_sup = num_sup[ii]/denom_sup[ii]; //FIXME division by 0
       beta_sup = CS_MIN(beta_sup, 1.);
     }
 
     cpro_beta[ii] = CS_MIN(beta_inf, beta_sup);
-
   }
 
   /* Synchronize variable */
-  if (halo != NULL) {
+  if (halo != NULL)
     cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_beta);
-  }
 
   BFT_FREE(denom_inf);
   BFT_FREE(num_inf);
   BFT_FREE(denom_sup);
   BFT_FREE(num_sup);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1513,14 +2095,10 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   char var_name[32];
 
-  cs_gnum_t n_upwind;
-  cs_lnum_t cell_id, face_id, ii, jj;
-  int iupwin;
-  int g_id, t_id;
+  int iupwin = 0;
   int tr_dim = 0;
   int w_stride = 1;
 
-  bool upwind_switch;
   bool recompute_cocg = (iccocg) ? true : false;
 
   cs_real_t *coface, *cofbce;
@@ -1599,9 +2177,9 @@ cs_convection_diffusion_scalar(int                       idtvar,
          - when we have convection, we are not in pure upwind
            and we have not shunted the slope test. */
 
-  if (  (idiffp!=0 && ircflp==1)
-     || (  iconvp!=0 && iupwin==0
-        && (ischcp==0 || ircflp==1 || isstpp==0))) {
+  if (  (idiffp != 0 && ircflp == 1)
+     || (  iconvp != 0 && iupwin == 0
+        && (ischcp == 0 || ircflp == 1 || isstpp == 0))) {
 
     if (f_id != -1) {
       /* Get the calculation option from the field */
@@ -1641,7 +2219,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   } else {
 #   pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       grad[cell_id][0] = 0.;
       grad[cell_id][1] = 0.;
       grad[cell_id][2] = 0.;
@@ -1651,12 +2229,12 @@ cs_convection_diffusion_scalar(int                       idtvar,
   /* 2.1 Compute the gradient for convective scheme (the slope test, limiter, SOLU, etc) */
 
   /* Slope test gradient */
-  if (iconvp>0 && iupwin==0 && isstpp==0) {
+  if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
 
     BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
 
 # pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       gradst[cell_id][0] = 0.;
       gradst[cell_id][1] = 0.;
       gradst[cell_id][2] = 0.;
@@ -1676,12 +2254,12 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   /* Pure SOLU scheme without using gradient_slope_test function
      or Roe and Sweby limiters */
-  if (iconvp>0 && iupwin==0 && (ischcp==2 || isstpp==3)) {
+  if (iconvp > 0 && iupwin == 0 && (ischcp == 2 || isstpp == 3)) {
 
     BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
 
 # pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       gradup[cell_id][0] = 0.;
       gradup[cell_id][1] = 0.;
       gradup[cell_id][2] = 0.;
@@ -1703,11 +2281,11 @@ cs_convection_diffusion_scalar(int                       idtvar,
     ---> Contribution from interior faces
     ======================================================================*/
 
-  n_upwind = 0;
+  cs_gnum_t n_upwind = 0;
 
   if (n_cells_ext>n_cells) {
 #   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
-    for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       rhs[cell_id] = 0.;
     }
   }
@@ -1715,21 +2293,21 @@ cs_convection_diffusion_scalar(int                       idtvar,
   /* --> Pure upwind flux
     =====================*/
 
-  if (iupwin==1) {
+  if (iupwin == 1) {
 
     /* Steady */
-    if (idtvar<0) {
+    if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)\
-                            reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
+
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
               n_upwind++;
@@ -1795,16 +2373,16 @@ cs_convection_diffusion_scalar(int                       idtvar,
     /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)\
-                            reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
+
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
               n_upwind++;
@@ -1865,25 +2443,25 @@ cs_convection_diffusion_scalar(int                       idtvar,
   /* --> Flux with no slope test or Min/Max Beta limiter
     ====================================================*/
 
-  } else if (isstpp==1 || isstpp==2) {
+  } else if (isstpp == 1 || isstpp == 2) {
 
-    if (ischcp<0 || ischcp>2) {
+    if (ischcp < 0 || ischcp > 2) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcv"));
     }
 
     /* Steady */
-    if (idtvar<0) {
+    if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             cs_real_2_t fluxij = {0.,0.};
 
@@ -1949,15 +2527,15 @@ cs_convection_diffusion_scalar(int                       idtvar,
     /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             cs_real_t beta = blencp;
 
@@ -2027,31 +2605,31 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   } else {
 
-    if (ischcp<0 || ischcp>2) {
+    if (ischcp < 0 || ischcp > 2) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcv"));
     }
-    if (isstpp!=0 && isstpp!=3) {
+    if (isstpp != 0 && isstpp != 3) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of isstpc"));
     }
 
     /* Steady */
-    if (idtvar<0) {
+    if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)\
-                            reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
-            cs_real_2_t fluxij = {0.,0.};
+            cs_real_2_t fluxij = {0., 0.};
 
+            bool upwind_switch;
             cs_real_t pifri, pjfri, pifrj, pjfrj;
             cs_real_t pip, pjp, pipr, pjpr;
 
@@ -2133,16 +2711,17 @@ cs_convection_diffusion_scalar(int                       idtvar,
     /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)\
-                            reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
+
+            bool upwind_switch = false;
 
             cs_real_2_t fluxij = {0.,0.};
 
@@ -2150,7 +2729,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_real_t pip, pjp;
 
             /* Original slope test */
-            if (isstpp==0) {
+            if (isstpp == 0) {
 
               cs_i_cd_unsteady_slope_test(&upwind_switch,
                                           ircflp,
@@ -2194,15 +2773,14 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
             }
             /* Roe- Sweby limiter */
-            else { /* if (isstpp==3) */
+            else { /* if (isstpp == 3) */
 
               cs_real_t rij;
 
-              int cur, dow;
+              int cur;
               cs_real_t p_u, p_c, p_d;
 
               cur = ii;
-              dow = jj;
               // Current    point value
               p_c = pvar[ii];
               // Downstream point value
@@ -2210,7 +2788,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
               if (i_massflux[face_id] < 0.) {
                 cur = jj;
-                dow = ii;
                 p_c = pvar[jj];
                 p_d = pvar[ii];
               }
@@ -2331,17 +2908,16 @@ cs_convection_diffusion_scalar(int                       idtvar,
   if (icvflb == 0) {
 
     /* Steady */
-    if (idtvar<0) {
+    if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii)\
-                            if(m->n_b_faces > CS_THR_MIN)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
-          for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id];
+            cs_lnum_t ii = b_face_cells[face_id];
 
             cs_real_t fluxi = 0.;
             cs_real_t pir, pipr;
@@ -2388,15 +2964,14 @@ cs_convection_diffusion_scalar(int                       idtvar,
     /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii)\
-                            if(m->n_b_faces > CS_THR_MIN)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
-          for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id];
+            cs_lnum_t ii = b_face_cells[face_id];
 
             cs_real_t fluxi = 0.;
             cs_real_t pir, pipr;
@@ -2442,7 +3017,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   /* Boundary convective flux is imposed at some faces
      (tagged in icvfli array) */
-  } else if (icvflb==1) {
+  } else if (icvflb == 1) {
 
     /* Retrieve the value of the convective flux to be imposed */
     if (f_id != -1) {
@@ -2454,17 +3029,16 @@ cs_convection_diffusion_scalar(int                       idtvar,
     }
 
     /* Steady */
-    if (idtvar<0) {
+    if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii)\
-                            if(m->n_b_faces > CS_THR_MIN)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
-          for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id];
+            cs_lnum_t ii = b_face_cells[face_id];
 
             cs_real_t fluxi = 0.;
             cs_real_t pir, pipr;
@@ -2514,15 +3088,14 @@ cs_convection_diffusion_scalar(int                       idtvar,
     /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii)\
-                            if(m->n_b_faces > CS_THR_MIN)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
-          for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id];
+            cs_lnum_t ii = b_face_cells[face_id];
 
             cs_real_t fluxi = 0.;
             cs_real_t pir, pipr;
@@ -2726,9 +3299,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   char var_name[32];
 
   cs_gnum_t n_upwind;
-  cs_lnum_t face_id, ii, jj, cell_id;
-  int iupwin, g_id, t_id;
-  int ityp;
+  int iupwin = 0;
 
   cs_real_33_t *grad, *grdpa;
   cs_real_t *bndcel;
@@ -2814,7 +3385,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   } else {
 #   pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
         for (int jsou = 0; jsou < 3; jsou++)
           grad[cell_id][isou][jsou] = 0.;
@@ -2827,7 +3398,7 @@ cs_convection_diffusion_vector(int                         idtvar,
      ======================================================================*/
 
 # pragma omp parallel for
-  for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     for (int jsou = 0; jsou < 3; jsou++) {
       for (int isou = 0; isou < 3; isou++)
         grdpa[cell_id][isou][jsou] = 0.;
@@ -2857,7 +3428,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   if (n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext -n_cells > CS_THR_MIN)
-    for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 3; isou++)
         rhs[cell_id][isou] = 0.;
     }
@@ -2871,27 +3442,27 @@ cs_convection_diffusion_vector(int                         idtvar,
     /* Steady */
     if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)\
-                   reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
               n_upwind++;
             }
 
-            double fluxi[3], fluxj[3] ;
+            cs_real_t fluxi[3], fluxj[3] ;
             for (int isou =  0; isou < 3; isou++) {
               fluxi[isou] = 0;
               fluxj[isou] = 0;
             }
+
             cs_real_3_t pip, pjp, pipr, pjpr;
             cs_real_3_t pifri, pifrj, pjfri, pjfrj;
 
@@ -2954,23 +3525,22 @@ cs_convection_diffusion_vector(int                         idtvar,
     /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)\
-                   reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
               n_upwind++;
             }
 
-            double fluxi[3], fluxj[3] ;
+            cs_real_t fluxi[3], fluxj[3] ;
             for (int isou =  0; isou < 3; isou++) {
               fluxi[isou] = 0;
               fluxj[isou] = 0;
@@ -3038,7 +3608,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   } else if (isstpp == 1) {
 
-    if (ischcp<0 || ischcp>1) {
+    if (ischcp < 0 || ischcp > 1) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcv"));
     }
@@ -3046,17 +3616,17 @@ cs_convection_diffusion_vector(int                         idtvar,
     /* Steady */
     if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
-            double fluxi[3], fluxj[3] ;
+            cs_real_t fluxi[3], fluxj[3] ;
             for (int isou =  0; isou < 3; isou++) {
               fluxi[isou] = 0;
               fluxj[isou] = 0;
@@ -3124,17 +3694,17 @@ cs_convection_diffusion_vector(int                         idtvar,
       /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
-            double fluxi[3], fluxj[3] ;
+            cs_real_t fluxi[3], fluxj[3] ;
             for (int isou =  0; isou < 3; isou++) {
               fluxi[isou] = 0;
               fluxj[isou] = 0;
@@ -3204,7 +3774,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   } else {
 
-    if (ischcp<0 || ischcp>1) {
+    if (ischcp < 0 || ischcp > 1) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcv"));
     }
@@ -3212,18 +3782,17 @@ cs_convection_diffusion_vector(int                         idtvar,
     /* Steady */
     if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)\
-                   reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
-            double fluxi[3], fluxj[3] ;
+            cs_real_t fluxi[3], fluxj[3] ;
             for (int isou =  0; isou < 3; isou++) {
               fluxi[isou] = 0;
               fluxj[isou] = 0;
@@ -3298,18 +3867,17 @@ cs_convection_diffusion_vector(int                         idtvar,
       /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)\
-                   reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
-            double fluxi[3], fluxj[3] ;
+            cs_real_t fluxi[3], fluxj[3] ;
             for (int isou =  0; isou < 3; isou++) {
               fluxi[isou] = 0;
               fluxj[isou] = 0;
@@ -3413,17 +3981,16 @@ cs_convection_diffusion_vector(int                         idtvar,
     /* Steady */
     if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii)\
-                   if(m->n_b_faces > CS_THR_MIN)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
-          for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id];
+            cs_lnum_t ii = b_face_cells[face_id];
 
-            double fluxi[3] ;
+            cs_real_t fluxi[3] ;
             for (int isou =  0; isou < 3; isou++) {
               fluxi[isou] = 0;
             }
@@ -3472,17 +4039,16 @@ cs_convection_diffusion_vector(int                         idtvar,
       /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii)\
-                   if(m->n_b_faces > CS_THR_MIN)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
-          for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id];
+            cs_lnum_t ii = b_face_cells[face_id];
 
-            double fluxi[3] ;
+            cs_real_t fluxi[3] ;
             for (int isou =  0; isou < 3; isou++) {
               fluxi[isou] = 0;
             }
@@ -3529,7 +4095,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     } /* idtvar */
 
     /* Boundary convective flux imposed at some faces (tags in icvfli array) */
-  } else if (icvflb==1) {
+  } else if (icvflb == 1) {
 
     /* Retrieve the value of the convective flux to be imposed */
     if (f_id != -1) {
@@ -3543,21 +4109,20 @@ cs_convection_diffusion_vector(int                         idtvar,
     /* Steady */
     if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii)\
-                   if(m->n_b_faces > CS_THR_MIN)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
-          for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id];
+            cs_lnum_t ii = b_face_cells[face_id];
 
-            double fluxi[3] ;
+            cs_real_t fluxi[3], pir[3], pipr[3];
+
             for (int isou =  0; isou < 3; isou++) {
               fluxi[isou] = 0;
             }
-            cs_real_3_t pir, pipr;
 
             cs_b_cd_steady_vector(ircflp,
                                   relaxp,
@@ -3570,7 +4135,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
             cs_b_imposed_conv_flux_vector(iconvp,
                                           1., /* thetap */
-                                          1, /* imasac */
+                                          1., /* imasac */
                                           inc,
                                           ifaccp,
                                           bc_type[face_id],
@@ -3605,17 +4170,16 @@ cs_convection_diffusion_vector(int                         idtvar,
       /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii)\
-                   if(m->n_b_faces > CS_THR_MIN)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
-          for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id];
+            cs_lnum_t ii = b_face_cells[face_id];
 
-            double fluxi[3] ;
+            cs_real_t fluxi[3] ;
             for (int isou =  0; isou < 3; isou++) {
               fluxi[isou] = 0;
             }
@@ -3678,12 +4242,12 @@ cs_convection_diffusion_vector(int                         idtvar,
     BFT_MALLOC(bndcel, n_cells_ext, cs_real_t);
 
 #   pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++)
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
       bndcel[cell_id] = 1.;
 
-#   pragma omp parallel for private(ityp) if(m->n_b_faces > CS_THR_MIN)
-    for (face_id = 0; face_id < m->n_b_faces; face_id++) {
-      ityp = bc_type[face_id];
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+      int ityp = bc_type[face_id];
       if (   ityp == CS_OUTLET
           || ityp == CS_INLET
           || ityp == CS_CONVECTIVE_INLET
@@ -3696,15 +4260,15 @@ cs_convection_diffusion_vector(int                         idtvar,
 
     /* ---> Interior faces */
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, jj)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0];
-          jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
           double pnd = weight[face_id];
           double secvis = secvif[face_id];
@@ -3751,7 +4315,6 @@ cs_convection_diffusion_vector(int                         idtvar,
   BFT_FREE(grdpa);
   BFT_FREE(grad);
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3878,14 +4441,13 @@ cs_convection_diffusion_tensor(int                         idtvar,
   int tr_dim = 0;
 
   cs_gnum_t n_upwind;
-  cs_lnum_t face_id, ii, jj, cell_id;
-  int iupwin, g_id, t_id;
+  int iupwin;
 
   cs_real_63_t *grad, *grdpa;
 
   cs_field_t *f;
 
-  cs_real_t  *v_slope_test = _get_v_slope_test(f_id,  var_cal_opt);
+  cs_real_t  *v_slope_test = _get_v_slope_test(f_id, var_cal_opt);
 
   /*==========================================================================*/
 
@@ -3962,7 +4524,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
   } else {
 #   pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
         for (int jsou = 0; jsou < 3; jsou++)
           grad[cell_id][isou][jsou] = 0.;
@@ -3975,7 +4537,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
      ======================================================================*/
 
 # pragma omp parallel for
-  for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     for (int jsou = 0; jsou < 3; jsou++) {
       for (int isou = 0; isou < 6; isou++)
         grdpa[cell_id][isou][jsou] = 0.;
@@ -4005,7 +4567,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
   if (n_cells_ext > n_cells) {
 #   pragma omp parallel for
-    for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 6; isou++)
         rhs[cell_id][isou] = 0.;
     }
@@ -4019,16 +4581,15 @@ cs_convection_diffusion_tensor(int                         idtvar,
     /* Steady */
     if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)  \
-                   reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
@@ -4100,16 +4661,15 @@ cs_convection_diffusion_tensor(int                         idtvar,
     /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)    \
-                   reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
@@ -4183,7 +4743,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
   } else if (isstpp == 1) {
 
-    if (ischcp<0 || ischcp>1) {
+    if (ischcp < 0 || ischcp > 1) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcp"));
     }
@@ -4191,16 +4751,16 @@ cs_convection_diffusion_tensor(int                         idtvar,
     /* Steady */
     if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for
 
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             double fluxi[6], fluxj[6] ;
             for (int isou =  0; isou < 6; isou++) {
@@ -4270,16 +4830,16 @@ cs_convection_diffusion_tensor(int                         idtvar,
       /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for
 
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             double fluxi[6], fluxj[6] ;
             for (int isou =  0; isou < 6; isou++) {
@@ -4288,7 +4848,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
             }
             cs_real_6_t pip, pjp, pipr, pjpr;
             cs_real_6_t pifri, pifrj, pjfri, pjfrj;
-
 
             cs_i_cd_unsteady_tensor(ircflp,
                                     ischcp,
@@ -4349,7 +4908,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
   } else {
 
-    if (ischcp<0 || ischcp>1) {
+    if (ischcp < 0 || ischcp > 1) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcp"));
     }
@@ -4357,16 +4916,15 @@ cs_convection_diffusion_tensor(int                         idtvar,
     /* Steady */
     if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)  \
-                   reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             double fluxi[6], fluxj[6] ;
             for (int isou =  0; isou < 6; isou++) {
@@ -4443,16 +5001,15 @@ cs_convection_diffusion_tensor(int                         idtvar,
       /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)     \
-                   reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             double fluxi[6], fluxj[6] ;
             for (int isou =  0; isou < 6; isou++) {
@@ -4554,15 +5111,14 @@ cs_convection_diffusion_tensor(int                         idtvar,
     /* Steady */
     if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii)            \
-                   if(m->n_b_faces > CS_THR_MIN)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
-          for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id];
+            cs_lnum_t ii = b_face_cells[face_id];
 
             double fluxi[6] ;
             for (int isou =  0; isou < 6; isou++) {
@@ -4612,15 +5168,14 @@ cs_convection_diffusion_tensor(int                         idtvar,
       /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_b_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii)  \
-                   if(m->n_b_faces > CS_THR_MIN)
-        for (t_id = 0; t_id < n_b_threads; t_id++) {
-          for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#       pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+        for (int t_id = 0; t_id < n_b_threads; t_id++) {
+          for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
                face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = b_face_cells[face_id];
+            cs_lnum_t ii = b_face_cells[face_id];
 
             double fluxi[6] ;
             for (int isou =  0; isou < 6; isou++) {
@@ -4766,7 +5321,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
   const double thetap = var_cal_opt.thetav;
 
   const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells = m->n_cells;
@@ -4802,12 +5356,10 @@ cs_convection_diffusion_thermal(int                       idtvar,
   char var_name[32];
 
   cs_gnum_t n_upwind;
-  cs_lnum_t face_id, ii, jj, cell_id;
-  int iupwin, g_id, t_id;
+  int iupwin;
   int tr_dim = 0;
   int w_stride = 1;
 
-  bool upwind_switch;
   bool recompute_cocg = (iccocg) ? true : false;
 
   cs_real_3_t *grad;
@@ -4886,9 +5438,9 @@ cs_convection_diffusion_thermal(int                       idtvar,
          - when we have convection, we are not in pure upwind
            and we have not shunted the slope test. */
 
-  if (  (idiffp!=0 && ircflp==1)
-        || (  iconvp!=0 && iupwin==0
-              && (ischcp==0 || ircflp==1 || isstpp==0))) {
+  if (   (idiffp != 0 && ircflp == 1)
+      || (   iconvp != 0 && iupwin == 0
+          && (ischcp == 0 || ircflp == 1 || isstpp == 0))) {
 
     if (f_id != -1) {
       /* Get the calculation option from the field */
@@ -4928,7 +5480,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   } else {
 #   pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       grad[cell_id][0] = 0.;
       grad[cell_id][1] = 0.;
       grad[cell_id][2] = 0.;
@@ -4942,12 +5494,12 @@ cs_convection_diffusion_thermal(int                       idtvar,
   /* 2.1 Compute the gradient for convective scheme (the slope test, limiter, SOLU, etc) */
 
   /* Slope test gradient */
-  if (iconvp>0 && iupwin==0 && isstpp==0) {
+  if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
 
     BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
 
 # pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       gradst[cell_id][0] = 0.;
       gradst[cell_id][1] = 0.;
       gradst[cell_id][2] = 0.;
@@ -4967,12 +5519,12 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   /* Pure SOLU scheme without using gradient_slope_test function
      or Roe and Sweby limiters */
-  if (iconvp>0 && iupwin==0 && (ischcp==2 || isstpp==3)) {
+  if (iconvp > 0 && iupwin == 0 && (ischcp == 2 || isstpp == 3)) {
 
     BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
 
 # pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       gradup[cell_id][0] = 0.;
       gradup[cell_id][1] = 0.;
       gradup[cell_id][2] = 0.;
@@ -4998,7 +5550,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   if (n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
-    for (cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++)
+    for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++)
       rhs[cell_id] = 0.;
   }
 
@@ -5010,16 +5562,15 @@ cs_convection_diffusion_thermal(int                       idtvar,
     /* Steady */
     if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)\
-                   reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
               n_upwind = n_upwind+1;
@@ -5085,16 +5636,15 @@ cs_convection_diffusion_thermal(int                       idtvar,
       /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)\
-                   reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells) {
               n_upwind = n_upwind+1;
@@ -5155,9 +5705,9 @@ cs_convection_diffusion_thermal(int                       idtvar,
   /* --> Flux with no slope test or Min/Max Beta limiter
     ====================================================*/
 
-  } else if (isstpp==1 || isstpp==2) {
+  } else if (isstpp == 1 || isstpp == 2) {
 
-    if (ischcp<0 || ischcp>2) {
+    if (ischcp < 0 || ischcp > 2) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcv"));
     }
@@ -5165,15 +5715,15 @@ cs_convection_diffusion_thermal(int                       idtvar,
     /* Steady */
     if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             cs_real_2_t fluxij = {0.,0.};
 
@@ -5239,15 +5789,15 @@ cs_convection_diffusion_thermal(int                       idtvar,
       /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             cs_real_t beta = blencp;
 
@@ -5317,11 +5867,11 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   } else {
 
-    if (ischcp<0 || ischcp>2) {
+    if (ischcp < 0 || ischcp > 2) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcv"));
     }
-    if (isstpp!=0 && isstpp!=3) {
+    if (isstpp != 0 && isstpp != 3) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of isstpc"));
     }
@@ -5329,21 +5879,22 @@ cs_convection_diffusion_thermal(int                       idtvar,
     /* Steady */
     if (idtvar < 0) {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)\
-                   reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             cs_real_2_t fluxij = {0.,0.};
 
             cs_real_t pifri, pjfri, pifrj, pjfrj;
             cs_real_t pip, pjp, pipr, pjpr;
+
+            bool upwind_switch;
 
             cs_i_cd_steady_slope_test(&upwind_switch,
                                       ircflp,
@@ -5423,24 +5974,25 @@ cs_convection_diffusion_thermal(int                       idtvar,
       /* Unsteady */
     } else {
 
-      for (g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for private(face_id, ii, jj)\
-                   reduction(+:n_upwind)
-        for (t_id = 0; t_id < n_i_threads; t_id++) {
-          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (cs_lnum_t g_id = 0; g_id < n_i_groups; g_id++) {
+#       pragma omp parallel for reduction(+:n_upwind)
+        for (cs_lnum_t t_id = 0; t_id < n_i_threads; t_id++) {
+          for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
 
-            ii = i_face_cells[face_id][0];
-            jj = i_face_cells[face_id][1];
+            cs_lnum_t ii = i_face_cells[face_id][0];
+            cs_lnum_t jj = i_face_cells[face_id][1];
 
             cs_real_2_t fluxij = {0.,0.};
+
+            bool upwind_switch = false;
 
             cs_real_t pif, pjf;
             cs_real_t pip, pjp;
 
             /* Original slope test */
-            if (isstpp==0) {
+            if (isstpp == 0) {
 
               cs_i_cd_unsteady_slope_test(&upwind_switch,
                                           ircflp,
@@ -5484,15 +6036,14 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
             }
             /* Roe- Sweby limier */
-            else { /* if (isstpp==3) */
+            else { /* if (isstpp == 3) */
 
               cs_real_t rij;
 
-              int cur, dow;
+              int cur;
               cs_real_t p_u, p_c, p_d;
 
               cur = ii;
-              dow = jj;
               // Current    point value
               p_c = pvar[ii];
               // Downstream point value
@@ -5500,7 +6051,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
               if (i_massflux[face_id] < 0.) {
                 cur = jj;
-                dow = ii;
                 p_c = pvar[jj];
                 p_d = pvar[ii];
               }
@@ -5620,15 +6170,14 @@ cs_convection_diffusion_thermal(int                       idtvar,
   /* Steady */
   if (idtvar < 0) {
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii)\
-                 if(m->n_b_faces > CS_THR_MIN)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id];
+          cs_lnum_t ii = b_face_cells[face_id];
 
           cs_real_t fluxi = 0.;
           cs_real_t pir, pipr;
@@ -5675,15 +6224,14 @@ cs_convection_diffusion_thermal(int                       idtvar,
     /* Unsteady */
   } else {
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii)\
-                 if(m->n_b_faces > CS_THR_MIN)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id];
+          cs_lnum_t ii = b_face_cells[face_id];
 
           cs_real_t fluxi = 0.;
           cs_real_t pir, pipr;
@@ -5852,14 +6400,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
   char var_name[32];
 
-  cs_lnum_t face_id, ii, jj, cell_id;
-  int isou, n_upwind, g_id, t_id;
-  double pfacd,flux,fluxi,fluxj;
-  double pi, pj, pia, pja;
-  double pir,pjr,pippr,pjppr;
-  double diippf[3], djjppf[3], pipp, pjpp;
-  double visci[3][3], viscj[3][3];
-  double fikdvi, fjkdvi;
+  int n_upwind;
   int tr_dim = 0;
   int w_stride = 1;
 
@@ -5917,8 +6458,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     /* With porosity */
   } else if (porosi != NULL && porosf == NULL) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
-    for (cell_id = 0; cell_id < n_cells; cell_id++) {
-      for (isou = 0; isou < 6; isou++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (int isou = 0; isou < 6; isou++) {
         w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
       }
     }
@@ -5927,7 +6468,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     /* With tensorial porosity */
   } else if (porosi != NULL && porosf != NULL) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
-    for (cell_id = 0; cell_id < n_cells; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       cs_math_sym_33_product(porosf[cell_id],
                              viscel[cell_id],
                              w2[cell_id]);
@@ -5988,7 +6529,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
   } else {
 #   pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       grad[cell_id][0] = 0.;
       grad[cell_id][1] = 0.;
       grad[cell_id][2] = 0.;
@@ -6003,7 +6544,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
   if (n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
-    for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       rhs[cell_id] = 0.;
     }
   }
@@ -6011,31 +6552,29 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   /* Steady */
   if (idtvar < 0) {
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, jj, visci, viscj, \
-                                      pipp, pjpp, pippr, pjppr,      \
-                                      fluxi, fluxj, fikdvi,          \
-                                      pi, pj, pir, pjr, pia, pja)    \
-                 reduction(+:n_upwind)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for reduction(+:n_upwind)
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0];
-          jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
           /* in parallel, face will be counted by one and only one rank */
           if (ii < n_cells) {
             n_upwind++;
           }
 
-          pi = pvar[ii];
-          pj = pvar[jj];
-          pia = pvara[ii];
-          pja = pvara[jj];
+          cs_real_t pi = pvar[ii];
+          cs_real_t pj = pvar[jj];
+          cs_real_t pia = pvara[ii];
+          cs_real_t pja = pvara[jj];
 
           /* Recompute II" and JJ"
              ----------------------*/
+
+          cs_real_t visci[3][3], viscj[3][3];
 
           visci[0][0] = viscce[ii][0];
           visci[1][1] = viscce[ii][1];
@@ -6048,7 +6587,9 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          fikdvi = weighf[face_id][0];
+          cs_real_t fikdvi = weighf[face_id][0];
+
+          cs_real_t diippf[3], djjppf[3];
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
@@ -6069,7 +6610,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           viscj[0][2] = viscce[jj][5];
 
           /* FJ.Kj.S / ||Kj.S||^2 */
-          fjkdvi = weighf[face_id][1];
+          cs_real_t fjkdvi = weighf[face_id][1];
 
           /* JJ" = JF + FJ" */
           for (int i = 0; i < 3; i++) {
@@ -6080,27 +6621,27 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           }
 
           /* p in I" and J" */
-          pipp = pi + ircflp*( grad[ii][0]*diippf[0]
-                             + grad[ii][1]*diippf[1]
-                             + grad[ii][2]*diippf[2]);
-          pjpp = pj + ircflp*( grad[jj][0]*djjppf[0]
-                             + grad[jj][1]*djjppf[1]
-                             + grad[jj][2]*djjppf[2]);
+          cs_real_t pipp = pi + ircflp*(  grad[ii][0]*diippf[0]
+                                        + grad[ii][1]*diippf[1]
+                                        + grad[ii][2]*diippf[2]);
+          cs_real_t pjpp = pj + ircflp*(  grad[jj][0]*djjppf[0]
+                                        + grad[jj][1]*djjppf[1]
+                                        + grad[jj][2]*djjppf[2]);
 
-          pir = pi/relaxp - (1.-relaxp)/relaxp * pia;
-          pjr = pj/relaxp - (1.-relaxp)/relaxp * pja;
+          cs_real_t pir = pi/relaxp - (1.-relaxp)/relaxp * pia;
+          cs_real_t pjr = pj/relaxp - (1.-relaxp)/relaxp * pja;
 
           /* pr in I" and J" */
-          pippr = pir + ircflp*( grad[ii][0]*diippf[0]
-                               + grad[ii][1]*diippf[1]
-                               + grad[ii][2]*diippf[2]);
-          pjppr = pjr + ircflp*( grad[jj][0]*djjppf[0]
-                               + grad[jj][1]*djjppf[1]
-                               + grad[jj][2]*djjppf[2]);
+          cs_real_t pippr = pir + ircflp*(  grad[ii][0]*diippf[0]
+                                          + grad[ii][1]*diippf[1]
+                                          + grad[ii][2]*diippf[2]);
+          cs_real_t pjppr = pjr + ircflp*(  grad[jj][0]*djjppf[0]
+                                          + grad[jj][1]*djjppf[1]
+                                          + grad[jj][2]*djjppf[2]);
 
 
-          fluxi = i_visc[face_id]*(pippr - pjpp);
-          fluxj = i_visc[face_id]*(pipp - pjppr);
+          cs_real_t fluxi = i_visc[face_id]*(pippr - pjpp);
+          cs_real_t fluxj = i_visc[face_id]*(pipp - pjppr);
 
           rhs[ii] -= fluxi;
           rhs[jj] += fluxj;
@@ -6112,29 +6653,27 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     /* Unsteady */
   } else {
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, jj,              \
-                                      visci, viscj, fikdvi, fjkdvi, \
-                                      pipp, pjpp, diippf, djjppf,   \
-                                      flux, pi, pj)                 \
-                 reduction(+:n_upwind)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for reduction(+:n_upwind)
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0];
-          jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
           /* in parallel, face will be counted by one and only one rank */
           if (ii < n_cells) {
             n_upwind++;
           }
 
-          pi = pvar[ii];
-          pj = pvar[jj];
+          cs_real_t pi = pvar[ii];
+          cs_real_t pj = pvar[jj];
 
           /* Recompute II" and JJ"
              ----------------------*/
+
+          cs_real_t visci[3][3], viscj[3][3];
 
           visci[0][0] = viscce[ii][0];
           visci[1][1] = viscce[ii][1];
@@ -6147,7 +6686,9 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          fikdvi = weighf[face_id][0];
+          cs_real_t fikdvi = weighf[face_id][0];
+
+          cs_real_t diippf[3], djjppf[3];
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
@@ -6168,7 +6709,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           viscj[0][2] = viscce[jj][5];
 
           /* FJ.Kj.S / ||Kj.S||^2 */
-          fjkdvi = weighf[face_id][1];
+          cs_real_t fjkdvi = weighf[face_id][1];
 
           /* JJ" = JF + FJ" */
           for (int i = 0; i < 3; i++) {
@@ -6179,14 +6720,14 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           }
 
           /* p in I" and J" */
-          pipp = pi + ircflp*( grad[ii][0]*diippf[0]
-                             + grad[ii][1]*diippf[1]
-                             + grad[ii][2]*diippf[2]);
-          pjpp = pj + ircflp*( grad[jj][0]*djjppf[0]
-                             + grad[jj][1]*djjppf[1]
-                             + grad[jj][2]*djjppf[2]);
+          cs_real_t pipp = pi + ircflp*(  grad[ii][0]*diippf[0]
+                                        + grad[ii][1]*diippf[1]
+                                        + grad[ii][2]*diippf[2]);
+          cs_real_t pjpp = pj + ircflp*(  grad[jj][0]*djjppf[0]
+                                        + grad[jj][1]*djjppf[1]
+                                        + grad[jj][2]*djjppf[2]);
 
-          flux = i_visc[face_id]*(pipp -pjpp);
+          cs_real_t flux = i_visc[face_id]*(pipp -pjpp);
 
           rhs[ii] -= thetap*flux;
           rhs[jj] += thetap*flux;
@@ -6203,24 +6744,24 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   /* Steady */
   if (idtvar < 0) {
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, visci, fikdvi,       \
-                                      pir, pippr, pfacd, flux, pi, pia) \
-                 if(m->n_b_faces > CS_THR_MIN)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id];
+          cs_lnum_t ii = b_face_cells[face_id];
 
-          pi = pvar[ii];
-          pia = pvara[ii];
+          cs_real_t pi = pvar[ii];
+          cs_real_t pia = pvara[ii];
 
-          pir = pi/relaxp - (1.-relaxp)/relaxp*pia;
+          cs_real_t pir = pi/relaxp - (1.-relaxp)/relaxp*pia;
 
           /* Recompute II"
              --------------*/
+
+          cs_real_t visci[3][3];
 
           visci[0][0] = viscce[ii][0];
           visci[1][1] = viscce[ii][1];
@@ -6233,7 +6774,9 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          fikdvi = weighb[face_id];
+          cs_real_t fikdvi = weighb[face_id];
+
+          cs_real_t diippf[3];
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
@@ -6243,13 +6786,13 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
                                + visci[2][i]*b_face_normal[face_id][2] );
           }
 
-          pippr = pir + ircflp*( grad[ii][0]*diippf[0]
-                               + grad[ii][1]*diippf[1]
-                               + grad[ii][2]*diippf[2]);
+          cs_real_t pippr = pir + ircflp*(  grad[ii][0]*diippf[0]
+                                          + grad[ii][1]*diippf[1]
+                                          + grad[ii][2]*diippf[2]);
 
-          pfacd = inc*cofafp[face_id] + cofbfp[face_id]*pippr;
+          cs_real_t pfacd = inc*cofafp[face_id] + cofbfp[face_id]*pippr;
 
-          flux = b_visc[face_id]*pfacd;
+          cs_real_t flux = b_visc[face_id]*pfacd;
           rhs[ii] -= flux;
 
         }
@@ -6259,21 +6802,21 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     /* Unsteady */
   } else {
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, visci, fikdvi, \
-                                      diippf, pipp, pfacd, flux, pi)      \
-                 if(m->n_b_faces > CS_THR_MIN)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id];
+          cs_lnum_t ii = b_face_cells[face_id];
 
-          pi = pvar[ii];
+          cs_real_t pi = pvar[ii];
 
           /* Recompute II"
              --------------*/
+
+          cs_real_t visci[3][3];
 
           visci[0][0] = viscce[ii][0];
           visci[1][1] = viscce[ii][1];
@@ -6286,7 +6829,9 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          fikdvi = weighb[face_id];
+          cs_real_t fikdvi = weighb[face_id];
+
+          cs_real_t diippf[3];
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
@@ -6296,13 +6841,13 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
                                + visci[2][i]*b_face_normal[face_id][2]);
           }
 
-          pipp = pi + ircflp*( grad[ii][0]*diippf[0]
-                             + grad[ii][1]*diippf[1]
-                             + grad[ii][2]*diippf[2]);
+          cs_real_t pipp = pi + ircflp*(  grad[ii][0]*diippf[0]
+                                        + grad[ii][1]*diippf[1]
+                                        + grad[ii][2]*diippf[2]);
 
-          pfacd = inc*cofafp[face_id] + cofbfp[face_id]*pipp;
+          cs_real_t pfacd = inc*cofafp[face_id] + cofbfp[face_id]*pipp;
 
-          flux = b_visc[face_id]*pfacd;
+          cs_real_t flux = b_visc[face_id]*pfacd;
           rhs[ii] -= thetap*flux;
 
         }
@@ -6428,18 +6973,6 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
   char var_name[32];
 
   cs_gnum_t n_upwind;
-  cs_lnum_t face_id, ii, jj, cell_id;
-  int g_id, t_id, isou, jsou;
-  int ityp;
-  int i, j, k;
-  double pfacd, flux, fluxi, fluxj, pnd;
-  double pi, pj, pia, pja;
-  double pir, pipr[3], pjpr[3];
-  double dpvf[3];
-  double dijpfv[3];
-  double diipfv[3], djjpfv[3], pip[3], pjp[3];
-  double diipbv[3];
-  double grdtrv, secvis;
 
   cs_real_33_t *gradv;
   cs_real_t *bndcel;
@@ -6488,10 +7021,10 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
                        gradv);
 
   } else {
-#   pragma omp parallel for private(isou, jsou)
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-      for (isou = 0; isou < 3 ; isou++) {
-        for (jsou = 0; jsou < 3; jsou++)
+#   pragma omp parallel for
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+      for (int isou = 0; isou < 3 ; isou++) {
+        for (int jsou = 0; jsou < 3; jsou++)
           gradv[cell_id][isou][jsou] = 0.;
       }
     }
@@ -6504,9 +7037,9 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
   n_upwind = 0;
 
   if (n_cells_ext > n_cells) {
-#   pragma omp parallel for private(isou) if(n_cells_ext -n_cells > CS_THR_MIN)
-    for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
-      for (isou = 0; isou < 3; isou++) {
+#   pragma omp parallel for if(n_cells_ext -n_cells > CS_THR_MIN)
+    for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
+      for (int isou = 0; isou < 3; isou++) {
         rhs[cell_id][isou] = 0.;
       }
     }
@@ -6515,52 +7048,54 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
   /* Steady */
   if (idtvar < 0) {
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, jj, isou, jsou, pnd,     \
-                                      dijpfv, diipfv, djjpfv, dpvf, pi, pj, \
-                                      pia, pja, pip, pjp, pipr, pjpr,       \
-                                      fluxi, fluxj)                         \
-                 reduction(+:n_upwind)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for reduction(+:n_upwind)
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0];
-          jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
           /* in parallel, face will be counted by one and only one rank */
           if (ii < n_cells) {
             n_upwind++;
           }
 
-          for (jsou = 0; jsou < 3; jsou++) {
+          cs_real_t dijpfv[3], diipfv[3], djjpfv[3];
+
+          for (int jsou = 0; jsou < 3; jsou++) {
             dijpfv[jsou] = dijpf[face_id][jsou];
           }
 
-          pnd = weight[face_id];
+          cs_real_t pnd = weight[face_id];
 
           /* Recompute II' and JJ' at this level */
-          for (jsou = 0; jsou < 3; jsou++) {
+          for (int jsou = 0; jsou < 3; jsou++) {
             diipfv[jsou] =   i_face_cog[face_id][jsou]
                            - (cell_cen[ii][jsou] + (1.-pnd) * dijpfv[jsou]);
             djjpfv[jsou] =   i_face_cog[face_id][jsou]
                            - cell_cen[jj][jsou]  + pnd  * dijpfv[jsou];
           }
 
+          cs_real_t pip[3], pjp[3], pipr[3], pjpr[3];
+
           /*-----------------
             X-Y-Z components, p = u, v, w */
-          for (isou = 0; isou < 3; isou++) {
+          for (int isou = 0; isou < 3; isou++) {
 
-            for (jsou = 0; jsou < 3; jsou++) {
+            cs_real_t dpvf[3];
+
+            for (int jsou = 0; jsou < 3; jsou++) {
               dpvf[jsou] = 0.5*(gradv[ii][isou][jsou] + gradv[jj][isou][jsou]);
             }
 
-            pi  = pvar [ii][isou];
-            pj  = pvar [jj][isou];
+            cs_real_t pi  = pvar [ii][isou];
+            cs_real_t pj  = pvar [jj][isou];
 
-            pia = pvara[ii][isou];
-            pja = pvara[jj][isou];
+            cs_real_t pia = pvara[ii][isou];
+            cs_real_t pja = pvara[jj][isou];
 
             /* reconstruction only if IRCFLP = 1 */
             pip[isou] = pi + ircflp*(  dpvf[0]*diipfv[0]
@@ -6581,14 +7116,14 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
 
           }
 
-          for (isou = 0; isou < 3; isou++) {
+          for (int isou = 0; isou < 3; isou++) {
 
-            fluxi = i_visc[face_id][0][isou]*(pipr[0] - pjp[0])
-                  + i_visc[face_id][1][isou]*(pipr[1] - pjp[1])
-                  + i_visc[face_id][2][isou]*(pipr[2] - pjp[2]);
-            fluxj = i_visc[face_id][0][isou]*(pip[0] - pjpr[0])
-                  + i_visc[face_id][1][isou]*(pip[1] - pjpr[1])
-                  + i_visc[face_id][2][isou]*(pip[2] - pjpr[2]);
+            cs_real_t fluxi =   i_visc[face_id][0][isou]*(pipr[0] - pjp[0])
+                              + i_visc[face_id][1][isou]*(pipr[1] - pjp[1])
+                              + i_visc[face_id][2][isou]*(pipr[2] - pjp[2]);
+            cs_real_t fluxj =   i_visc[face_id][0][isou]*(pip[0] - pjpr[0])
+                              + i_visc[face_id][1][isou]*(pip[1] - pjpr[1])
+                              + i_visc[face_id][2][isou]*(pip[2] - pjpr[2]);
 
             rhs[ii][isou] = rhs[ii][isou] - fluxi;
             rhs[jj][isou] = rhs[jj][isou] + fluxj;
@@ -6602,48 +7137,51 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
     /* Unsteady */
   } else {
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, jj, isou, jsou, pnd, dijpfv,\
-                                      diipfv, djjpfv, dpvf, pi, pj,            \
-                                      pip, pjp, flux)                          \
-                 reduction(+:n_upwind)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for reduction(+:n_upwind)
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0];
-          jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
           /* in parallel, face will be counted by one and only one rank */
           if (ii < n_cells) {
             n_upwind++;
           }
 
-          for (jsou = 0; jsou < 3; jsou++) {
+          cs_real_t dijpfv[3], diipfv[3], djjpfv[3];
+
+          for (int jsou = 0; jsou < 3; jsou++) {
             dijpfv[jsou] = dijpf[face_id][jsou];
           }
 
-          pnd = weight[face_id];
+          cs_real_t pnd = weight[face_id];
 
           /* Recompute II' and JJ' at this level */
-          for (jsou = 0; jsou < 3; jsou++) {
+          for (int jsou = 0; jsou < 3; jsou++) {
             diipfv[jsou] =   i_face_cog[face_id][jsou]
                            - (cell_cen[ii][jsou] + (1.-pnd) * dijpfv[jsou]);
             djjpfv[jsou] =   i_face_cog[face_id][jsou]
                            - cell_cen[jj][jsou]  +  pnd * dijpfv[jsou];
           }
 
+          cs_real_t pip[3], pjp[3];
+
           /*-----------------
             X-Y-Z components, p = u, v, w */
-          for (isou = 0; isou < 3; isou++) {
+          for (int isou = 0; isou < 3; isou++) {
 
-            for (jsou = 0; jsou < 3; jsou++) {
+            cs_real_t dpvf[3];
+
+            for (int jsou = 0; jsou < 3; jsou++) {
               dpvf[jsou] = 0.5*(gradv[ii][isou][jsou] + gradv[jj][isou][jsou]);
             }
 
-            pi = pvar[ii][isou];
-            pj = pvar[jj][isou];
+            cs_real_t pi = pvar[ii][isou];
+            cs_real_t pj = pvar[jj][isou];
 
             pip[isou] = pi + ircflp*(  dpvf[0]*diipfv[0]
                                      + dpvf[1]*diipfv[1]
@@ -6654,11 +7192,11 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
 
           }
 
-          for (isou = 0; isou < 3; isou++) {
+          for (int isou = 0; isou < 3; isou++) {
 
-            flux = i_visc[face_id][0][isou]*(pip[0] - pjp[0])
-                 + i_visc[face_id][1][isou]*(pip[1] - pjp[1])
-                 + i_visc[face_id][2][isou]*(pip[2] - pjp[2]);
+            cs_real_t flux =   i_visc[face_id][0][isou]*(pip[0] - pjp[0])
+                             + i_visc[face_id][1][isou]*(pip[1] - pjp[1])
+                             + i_visc[face_id][2][isou]*(pip[2] - pjp[2]);
 
             rhs[ii][isou] = rhs[ii][isou] - thetap*flux;
             rhs[jj][isou] = rhs[jj][isou] + thetap*flux;
@@ -6678,37 +7216,40 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
   /* Steady */
   if (idtvar < 0) {
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, isou, jsou, diipbv, \
-                                      pfacd, pir, pipr, flux)          \
-                 if(m->n_b_faces > CS_THR_MIN)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id];
+          cs_lnum_t ii = b_face_cells[face_id];
 
-          for (jsou = 0; jsou < 3; jsou++)
+          cs_real_t diipbv[3];
+
+          for (int jsou = 0; jsou < 3; jsou++)
             diipbv[jsou] = diipb[face_id][jsou];
 
           /*-----------------
             X-Y-Z components, p = u, v, w */
-          for (isou = 0; isou < 3; isou++) {
+          for (int isou = 0; isou < 3; isou++) {
 
-            pfacd = inc*cofafv[face_id][isou];
+            cs_real_t pfacd = inc*cofafv[face_id][isou];
+
+            cs_real_t pipr[3];
 
             /*coefu and cofuf are matrices */
-            for (jsou = 0; jsou < 3; jsou++) {
-              pir  = pvar[ii][jsou]/relaxp - (1.-relaxp)/relaxp*pvara[ii][jsou];
+            for (int jsou = 0; jsou < 3; jsou++) {
+              cs_real_t pir  =   pvar[ii][jsou]/relaxp
+                               - (1.-relaxp)/relaxp*pvara[ii][jsou];
 
               pipr[jsou] = pir +ircflp*(  gradv[ii][jsou][0]*diipbv[0]
                                         + gradv[ii][jsou][1]*diipbv[1]
                                         + gradv[ii][jsou][2]*diipbv[2]);
-              pfacd = pfacd + cofbfv[face_id][jsou][isou]*pipr[jsou];
+              pfacd += cofbfv[face_id][jsou][isou]*pipr[jsou];
             }
 
-            flux = b_visc[face_id]*pfacd;
+            cs_real_t flux = b_visc[face_id]*pfacd;
             rhs[ii][isou] = rhs[ii][isou] - flux;
 
           } /* isou */
@@ -6720,35 +7261,36 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
     /* Unsteady */
   } else {
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, isou, jsou, diipbv, \
-                                      pfacd, pir, flux, pi)            \
-                 if(m->n_b_faces > CS_THR_MIN)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id];
+          cs_lnum_t ii = b_face_cells[face_id];
 
-          for (jsou = 0; jsou < 3; jsou++)
+          cs_real_t diipbv[3];
+
+          for (int jsou = 0; jsou < 3; jsou++)
             diipbv[jsou] = diipb[face_id][jsou];
 
           /*-----------------
             X-Y-Z components, p = u, v, w */
-          for (isou = 0; isou < 3; isou++) {
+          for (int isou = 0; isou < 3; isou++) {
 
-            pfacd = inc*cofafv[face_id][isou];
+            cs_real_t pfacd = inc*cofafv[face_id][isou];
 
             /*coefu and cofuf are matrices */
-            for (jsou = 0; jsou < 3; jsou++) {
-              pir = pvar[ii][jsou] + ircflp*(  gradv[ii][jsou][0]*diipbv[0]
-                                             + gradv[ii][jsou][1]*diipbv[1]
-                                             + gradv[ii][jsou][2]*diipbv[2]);
-              pfacd = pfacd + cofbfv[face_id][jsou][isou]*pir;
+            for (int jsou = 0; jsou < 3; jsou++) {
+              cs_real_t pir =   pvar[ii][jsou]
+                              + ircflp*(  gradv[ii][jsou][0]*diipbv[0]
+                                        + gradv[ii][jsou][1]*diipbv[1]
+                                        + gradv[ii][jsou][2]*diipbv[2]);
+              pfacd += cofbfv[face_id][jsou][isou]*pir;
             }
 
-            flux = b_visc[face_id]*pfacd;
+            cs_real_t flux = b_visc[face_id]*pfacd;
             rhs[ii][isou] = rhs[ii][isou] - thetap * flux;
 
           } /* isou */
@@ -6771,13 +7313,13 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
     BFT_MALLOC(bndcel, n_cells_ext, cs_real_t);
 
 #   pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       bndcel[cell_id] = 1.;
     }
 
-#   pragma omp parallel for private(ityp) if(m->n_b_faces > CS_THR_MIN)
-    for (face_id = 0; face_id < m->n_b_faces; face_id++) {
-      ityp = bc_type[face_id];
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+      int ityp = bc_type[face_id];
       if (   ityp == CS_OUTLET
           || ityp == CS_INLET
           || ityp == CS_CONVECTIVE_INLET
@@ -6791,34 +7333,34 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
 
     /* ---> Interior faces */
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, jj, isou, jsou, pnd, secvis,\
-                                      grdtrv, flux, i, j, k)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0];
-          jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
-          pnd = weight[face_id];
-          secvis = secvif[face_id];
+          cs_real_t pnd = weight[face_id];
+          cs_real_t secvis = secvif[face_id];
 
-          grdtrv =      pnd*(gradv[ii][0][0]+gradv[ii][1][1]+gradv[ii][2][2])
-                 + (1.-pnd)*(gradv[jj][0][0]+gradv[jj][1][1]+gradv[jj][2][2]);
+          cs_real_t grdtrv
+            =        pnd*(gradv[ii][0][0]+gradv[ii][1][1]+gradv[ii][2][2])
+              + (1.-pnd)*(gradv[jj][0][0]+gradv[jj][1][1]+gradv[jj][2][2]);
 
-          for (i = 0; i < 3; i++) {
+          for (int i = 0; i < 3; i++) {
 
-            flux = secvis*grdtrv*i_f_face_normal[ face_id][i];
+            cs_real_t flux = secvis*grdtrv*i_f_face_normal[ face_id][i];
 
             /* We need to compute (K grad(u)^T) .IJ
                which is equal to IJ . (grad(u) . K^T)
                But: (IJ . (grad(u) . K^T))_i = IJ_k grad(u)_kj K_ij
                Warning, in FORTRAN K_ij = K(j, i) */
 
-            for (j = 0; j < 3; j++) {
-              for (k = 0; k < 3; k++) {
+            for (int j = 0; j < 3; j++) {
+              for (int k = 0; k < 3; k++) {
                 flux = flux + dijpf[face_id][k]
                             *(pnd*gradv[ii][k][j]+(1-pnd)*gradv[jj][k][j])
                             *i_visc[face_id][i][j];
@@ -6955,14 +7497,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 
   char var_name[32];
 
-  cs_lnum_t face_id, ii, jj, cell_id;
-  int  n_upwind, g_id, t_id;
-  double pfacd,flux,fluxi,fluxj;
-  double pi[6], pj[6], pia[6], pja[6];
-  double pir[6],pjr[6],pippr[6],pjppr[6];
-  double diippf[3], djjppf[3], pipp[6], pjpp[6];
-  double visci[3][3], viscj[3][3];
-  double fikdvi, fjkdvi;
+  int  n_upwind;
 
   cs_real_6_t *viscce;
   cs_real_6_t *w2;
@@ -7014,7 +7549,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
     /* With porosity */
   } else if (porosi != NULL && porosf == NULL) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
-    for (cell_id = 0; cell_id < n_cells; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
         w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
       }
@@ -7024,7 +7559,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
     /* With tensorial porosity */
   } else if (porosi != NULL && porosf != NULL) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
-    for (cell_id = 0; cell_id < n_cells; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       cs_math_sym_33_product(porosf[cell_id],
                              viscel[cell_id],
                              w2[cell_id]);
@@ -7063,15 +7598,13 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 
   } else {
 #   pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
         for (int jsou = 0; jsou < 3; jsou++)
           grad[cell_id][isou][jsou] = 0.;
       }
     }
   }
-
-
 
   /* ======================================================================
      ---> Contribution from interior faces
@@ -7080,8 +7613,8 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
   n_upwind = 0;
 
   if (n_cells_ext > n_cells) {
-#   pragma omp parallel  if(n_cells_ext -n_cells > CS_THR_MIN)
-    for (cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
+#   pragma omp parallel for if(n_cells_ext -n_cells > CS_THR_MIN)
+    for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
         rhs[cell_id][isou] = 0.;
       }
@@ -7091,23 +7624,25 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
   /* Steady */
   if (idtvar < 0) {
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, jj, visci, viscj, \
-                                      pipp, pjpp, pippr, pjppr,      \
-                                      fluxi, fluxj, fikdvi,          \
-                                      pi, pj, pir, pjr, pia, pja)    \
-                 reduction(+:n_upwind)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for reduction(+:n_upwind)
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0];
-          jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
+
           /* in parallel, face will be counted by one and only one rank */
           if (ii < n_cells) {
             n_upwind++;
           }
+
+          cs_real_t visci[3][3], viscj[3][3];
+          cs_real_t diippf[3], djjppf[3], pipp[6], pjpp[6];
+          cs_real_t  pir[6], pjr[6], pippr[6], pjppr[6];
+          cs_real_t  pi[6], pj[6], pia[6], pja[6];
 
           for (int isou = 0; isou < 6; isou++) {
             pi[isou] = pvar[ii][isou];
@@ -7130,7 +7665,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          fikdvi = weighf[face_id][0];
+          cs_real_t fikdvi = weighf[face_id][0];
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
@@ -7151,7 +7686,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
           viscj[0][2] = viscce[jj][5];
 
           /* FJ.Kj.S / ||Kj.S||^2 */
-          fjkdvi = weighf[face_id][1];
+          cs_real_t fjkdvi = weighf[face_id][1];
 
           /* JJ" = JF + FJ" */
           for (int i = 0; i < 3; i++) {
@@ -7183,8 +7718,8 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
                                              + grad[jj][isou][2]*djjppf[2]);
 
 
-            fluxi = i_visc[face_id]*(pippr[isou] - pjpp[isou]);
-            fluxj = i_visc[face_id]*(pipp[isou] - pjppr[isou]);
+            cs_real_t fluxi = i_visc[face_id]*(pippr[isou] - pjpp[isou]);
+            cs_real_t fluxj = i_visc[face_id]*(pipp[isou] - pjppr[isou]);
 
             rhs[ii][isou] -= fluxi;
             rhs[jj][isou] += fluxj;
@@ -7196,23 +7731,23 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
     /* Unsteady */
   } else {
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, jj,              \
-                                      visci, viscj, fikdvi, fjkdvi, \
-                                      pipp, pjpp, diippf, djjppf,   \
-                                      flux, pi, pj)                 \
-                 reduction(+:n_upwind)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for reduction(+:n_upwind)
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0];
-          jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
           /* in parallel, face will be counted by one and only one rank */
           if (ii < n_cells) {
             n_upwind++;
           }
+
+          cs_real_t visci[3][3], viscj[3][3];
+          cs_real_t diippf[3], djjppf[3], pipp[6], pjpp[6];
+          cs_real_t pi[6], pj[6];
 
           for (int isou = 0; isou < 6; isou++) {
             pi[isou] = pvar[ii][isou];
@@ -7233,7 +7768,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          fikdvi = weighf[face_id][0];
+          cs_real_t fikdvi = weighf[face_id][0];
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
@@ -7254,7 +7789,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
           viscj[0][2] = viscce[jj][5];
 
           /* FJ.Kj.S / ||Kj.S||^2 */
-          fjkdvi = weighf[face_id][1];
+          cs_real_t fjkdvi = weighf[face_id][1];
 
           /* JJ" = JF + FJ" */
           for (int i = 0; i < 3; i++) {
@@ -7273,7 +7808,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
                                            + grad[jj][isou][1]*djjppf[1]
                                            + grad[jj][isou][2]*djjppf[2]);
 
-            flux = i_visc[face_id]*(pipp[isou] -pjpp[isou]);
+            cs_real_t flux = i_visc[face_id]*(pipp[isou] -pjpp[isou]);
 
             rhs[ii][isou] -= thetap*flux;
             rhs[jj][isou] += thetap*flux;
@@ -7290,23 +7825,24 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
   /* Steady */
   if (idtvar < 0) {
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, visci, fikdvi,       \
-                                      pir, pippr, pfacd, flux, pi, pia) \
-                 if(m->n_b_faces > CS_THR_MIN)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id];
+          cs_lnum_t ii = b_face_cells[face_id];
+
+          cs_real_t pi[6], pia[6], pir[6], pippr[6];
+          cs_real_t visci[3][3];
+          cs_real_t diippf[3];
 
           for (int isou = 0; isou < 6; isou++) {
             pi[isou] = pvar[ii][isou];
             pia[isou] = pvara[ii][isou];
             pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp*pia[isou];
           }
-
 
           /* Recompute II"
              --------------*/
@@ -7322,7 +7858,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          fikdvi = weighb[face_id];
+          cs_real_t fikdvi = weighb[face_id];
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
@@ -7337,12 +7873,12 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
                                              + grad[ii][isou][2]*diippf[2]);
           }
           for (int isou = 0; isou < 6; isou++) {
-            pfacd = inc*cofaf[face_id][isou];
+            cs_real_t pfacd = inc*cofaf[face_id][isou];
             for (int jsou = 0; jsou < 6; jsou++) {
               pfacd += cofbf[face_id][isou][jsou]*pippr[jsou];
             }
 
-            flux = b_visc[face_id]*pfacd;
+            cs_real_t flux = b_visc[face_id]*pfacd;
             rhs[ii][isou] -= flux;
           }
         }
@@ -7352,16 +7888,17 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
     /* Unsteady */
   } else {
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for private(face_id, ii, visci, fikdvi, \
-                                      diippf, pipp, pfacd, flux, pi)      \
-                 if(m->n_b_faces > CS_THR_MIN)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = b_face_cells[face_id];
+          cs_lnum_t ii = b_face_cells[face_id];
+
+          cs_real_t visci[3][3];
+          cs_real_t diippf[3], pi[6], pipp[6];
 
           for (int isou = 0; isou < 6; isou++) {
             pi[isou] = pvar[ii][isou];
@@ -7381,7 +7918,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          fikdvi = weighb[face_id];
+          cs_real_t fikdvi = weighb[face_id];
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
@@ -7396,12 +7933,12 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
                                            + grad[ii][isou][2]*diippf[2]);
           }
           for (int isou = 0; isou < 6; isou++) {
-            pfacd = inc*cofaf[face_id][isou];
+            cs_real_t pfacd = inc*cofaf[face_id][isou];
             for (int jsou = 0; jsou < 6; jsou++) {
               pfacd += cofbf[face_id][isou][jsou]*pipp[jsou];
             }
 
-            flux = b_visc[face_id]*pfacd;
+            cs_real_t flux = b_visc[face_id]*pfacd;
             rhs[ii][isou] -= thetap*flux;
           }
 
@@ -7500,7 +8037,7 @@ cs_face_diffusion_potential(const int                 f_id,
                             const cs_real_t           cofbfp[],
                             const cs_real_t           i_visc[],
                             const cs_real_t           b_visc[],
-                            const cs_real_t           viselx[],
+                            cs_real_t       *restrict viselx,
                             const cs_real_t           visely[],
                             const cs_real_t           viselz[],
                             cs_real_t       *restrict i_massflux,
@@ -7875,6 +8412,13 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
@@ -7898,9 +8442,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
 
   bool recompute_cocg = (iccocg) ? true : false;
 
-  double diippf[3], djjppf[3];
-  double visci[3][3], viscj[3][3];
-
   cs_real_6_t *viscce;
   cs_real_6_t *w2;
   cs_real_3_t *grad;
@@ -7913,6 +8454,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
     ==========================================================================*/
 
   if (init >= 1) {
+    #pragma omp parallel for
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
       i_massflux[face_id] = 0.;
     }
@@ -7963,39 +8505,52 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
   if (halo != NULL)
     cs_halo_sync_var(halo, halo_type, pvar);
 
-
   /*==========================================================================
-    2. Update mass flux without reconstruction technics
+    2. Update mass flux without reconstruction technique
     ==========================================================================*/
 
   if (nswrgp <= 1) {
 
     /* ---> Contribution from interior faces */
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+    for (cs_lnum_t g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (cs_lnum_t t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             face_id++) {
 
-      cs_lnum_t ii = i_face_cells[face_id][0];
-      cs_lnum_t jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
-      i_massflux[face_id] += i_visc[face_id]*(pvar[ii] - pvar[jj]);
+          i_massflux[face_id] += i_visc[face_id]*(pvar[ii] - pvar[jj]);
 
+        }
+      }
     }
 
     /* ---> Contribution from boundary faces */
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+    for (cs_lnum_t g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for
+      for (cs_lnum_t t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+             face_id++) {
 
-      cs_lnum_t ii = b_face_cells[face_id];
-      double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
+          cs_lnum_t ii = b_face_cells[face_id];
+          double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pvar[ii];
 
-      b_massflux[face_id] += b_visc[face_id]*pfac;
+          b_massflux[face_id] += b_visc[face_id]*pfac;
 
+        }
+      }
     }
 
   }
 
   /*==========================================================================
-    3. Update mass flux with reconstruction technics
+    3. Update mass flux with reconstruction technique
     ==========================================================================*/
 
   if (nswrgp > 1) {
@@ -8061,7 +8616,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
       }
     }
     else if (f_id == -2) {
-      gweight = viscce;
+      gweight = (cs_real_t *)viscce;
     }
 
     /* Compute gradient */
@@ -8088,112 +8643,132 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
 
     /* Mass flow through interior faces */
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+    for (cs_lnum_t g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (cs_lnum_t t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             face_id++) {
 
-      cs_lnum_t ii = i_face_cells[face_id][0];
-      cs_lnum_t jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
-      double pi = pvar[ii];
-      double pj = pvar[jj];
+          double pi = pvar[ii];
+          double pj = pvar[jj];
 
-      /* Recompute II" and JJ"
-         ----------------------*/
+          /* Recompute II" and JJ"
+             ----------------------*/
 
-      visci[0][0] = viscce[ii][0];
-      visci[1][1] = viscce[ii][1];
-      visci[2][2] = viscce[ii][2];
-      visci[1][0] = viscce[ii][3];
-      visci[0][1] = viscce[ii][3];
-      visci[2][1] = viscce[ii][4];
-      visci[1][2] = viscce[ii][4];
-      visci[2][0] = viscce[ii][5];
-      visci[0][2] = viscce[ii][5];
+          cs_real_t visci[3][3], viscj[3][3];
+          cs_real_t diippf[3], djjppf[3];
 
-      /* IF.Ki.S / ||Ki.S||^2 */
-      double fikdvi = weighf[face_id][0];
+          visci[0][0] = viscce[ii][0];
+          visci[1][1] = viscce[ii][1];
+          visci[2][2] = viscce[ii][2];
+          visci[1][0] = viscce[ii][3];
+          visci[0][1] = viscce[ii][3];
+          visci[2][1] = viscce[ii][4];
+          visci[1][2] = viscce[ii][4];
+          visci[2][0] = viscce[ii][5];
+          visci[0][2] = viscce[ii][5];
 
-      /* II" = IF + FI" */
-      for (int i = 0; i < 3; i++) {
-        diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
-                  - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
-                           + visci[1][i]*i_face_normal[face_id][1]
-                           + visci[2][i]*i_face_normal[face_id][2] );
+          /* IF.Ki.S / ||Ki.S||^2 */
+          cs_real_t fikdvi = weighf[face_id][0];
+
+          /* II" = IF + FI" */
+          for (int i = 0; i < 3; i++) {
+            diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
+                      - fikdvi*(  visci[0][i]*i_face_normal[face_id][0]
+                                + visci[1][i]*i_face_normal[face_id][1]
+                                + visci[2][i]*i_face_normal[face_id][2] );
+          }
+
+          viscj[0][0] = viscce[jj][0];
+          viscj[1][1] = viscce[jj][1];
+          viscj[2][2] = viscce[jj][2];
+          viscj[1][0] = viscce[jj][3];
+          viscj[0][1] = viscce[jj][3];
+          viscj[2][1] = viscce[jj][4];
+          viscj[1][2] = viscce[jj][4];
+          viscj[2][0] = viscce[jj][5];
+          viscj[0][2] = viscce[jj][5];
+
+          /* FJ.Kj.S / ||Kj.S||^2 */
+          double fjkdvi = weighf[face_id][1];
+
+          /* JJ" = JF + FJ" */
+          for (int i = 0; i < 3; i++) {
+            djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
+                      + fjkdvi*(  viscj[0][i]*i_face_normal[face_id][0]
+                                + viscj[1][i]*i_face_normal[face_id][1]
+                                + viscj[2][i]*i_face_normal[face_id][2] );
+          }
+
+          /* p in I" and J" */
+          double pipp = pi + ircflp*(  grad[ii][0]*diippf[0]
+                                     + grad[ii][1]*diippf[1]
+                                     + grad[ii][2]*diippf[2]);
+          double pjpp = pj + ircflp*(  grad[jj][0]*djjppf[0]
+                                     + grad[jj][1]*djjppf[1]
+                                     + grad[jj][2]*djjppf[2]);
+
+          i_massflux[face_id] += i_visc[face_id]*(pipp - pjpp);
+
+        }
       }
-
-      viscj[0][0] = viscce[jj][0];
-      viscj[1][1] = viscce[jj][1];
-      viscj[2][2] = viscce[jj][2];
-      viscj[1][0] = viscce[jj][3];
-      viscj[0][1] = viscce[jj][3];
-      viscj[2][1] = viscce[jj][4];
-      viscj[1][2] = viscce[jj][4];
-      viscj[2][0] = viscce[jj][5];
-      viscj[0][2] = viscce[jj][5];
-
-      /* FJ.Kj.S / ||Kj.S||^2 */
-      double fjkdvi = weighf[face_id][1];
-
-      /* JJ" = JF + FJ" */
-      for (int i = 0; i < 3; i++) {
-        djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
-                  + fjkdvi*( viscj[0][i]*i_face_normal[face_id][0]
-                           + viscj[1][i]*i_face_normal[face_id][1]
-                           + viscj[2][i]*i_face_normal[face_id][2] );
-      }
-
-      /* p in I" and J" */
-      double pipp = pi + ircflp*( grad[ii][0]*diippf[0]
-                         + grad[ii][1]*diippf[1]
-                         + grad[ii][2]*diippf[2]);
-      double pjpp = pj + ircflp*( grad[jj][0]*djjppf[0]
-                         + grad[jj][1]*djjppf[1]
-                         + grad[jj][2]*djjppf[2]);
-
-      i_massflux[face_id] += i_visc[face_id]*(pipp - pjpp);
-
     }
 
     /* ---> Contribution from boundary faces */
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+    for (cs_lnum_t g_id = 0; g_id < n_b_groups; g_id++) {
+#     pragma omp parallel for
+      for (cs_lnum_t t_id = 0; t_id < n_b_threads; t_id++) {
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+             face_id++) {
 
-      cs_lnum_t ii = b_face_cells[face_id];
+          cs_lnum_t ii = b_face_cells[face_id];
 
-      double pi = pvar[ii];
+          double pi = pvar[ii];
 
-      /* Recompute II"
-         --------------*/
+          /* Recompute II"
+             --------------*/
 
-      visci[0][0] = viscce[ii][0];
-      visci[1][1] = viscce[ii][1];
-      visci[2][2] = viscce[ii][2];
-      visci[1][0] = viscce[ii][3];
-      visci[0][1] = viscce[ii][3];
-      visci[2][1] = viscce[ii][4];
-      visci[1][2] = viscce[ii][4];
-      visci[2][0] = viscce[ii][5];
-      visci[0][2] = viscce[ii][5];
+          cs_real_t visci[3][3];
+          cs_real_t diippf[3];
 
-      /* IF.Ki.S / ||Ki.S||^2 */
-      double fikdvi = weighb[face_id];
+          visci[0][0] = viscce[ii][0];
+          visci[1][1] = viscce[ii][1];
+          visci[2][2] = viscce[ii][2];
+          visci[1][0] = viscce[ii][3];
+          visci[0][1] = viscce[ii][3];
+          visci[2][1] = viscce[ii][4];
+          visci[1][2] = viscce[ii][4];
+          visci[2][0] = viscce[ii][5];
+          visci[0][2] = viscce[ii][5];
 
-      /* II" = IF + FI" */
-      for (int i = 0; i < 3; i++) {
-        diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
-                  - fikdvi*( visci[0][i]*b_face_normal[face_id][0]
-                           + visci[1][i]*b_face_normal[face_id][1]
-                           + visci[2][i]*b_face_normal[face_id][2] );
+          /* IF.Ki.S / ||Ki.S||^2 */
+          cs_real_t fikdvi = weighb[face_id];
+
+          /* II" = IF + FI" */
+          for (int i = 0; i < 3; i++) {
+            diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
+                      - fikdvi*(  visci[0][i]*b_face_normal[face_id][0]
+                                + visci[1][i]*b_face_normal[face_id][1]
+                                + visci[2][i]*b_face_normal[face_id][2] );
+          }
+
+          double pipp = pi + ircflp*( grad[ii][0]*diippf[0]
+                                     + grad[ii][1]*diippf[1]
+                                     + grad[ii][2]*diippf[2]);
+
+
+          double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pipp;
+
+          b_massflux[face_id] += b_visc[face_id]*pfac;
+
+        }
       }
-
-      double pipp = pi + ircflp*( grad[ii][0]*diippf[0]
-                         + grad[ii][1]*diippf[1]
-                         + grad[ii][2]*diippf[2]);
-
-
-      double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pipp;
-
-      b_massflux[face_id] += b_visc[face_id]*pfac;
-
     }
 
     /* Free memory */
@@ -8201,7 +8776,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
     BFT_FREE(w2);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -8332,7 +8906,7 @@ cs_diffusion_potential(const int                 f_id,
   cs_real_3_t *visel;
   cs_field_t *f;
 
-  const cs_real_t *gweight = NULL;
+  cs_real_t *gweight = NULL;
 
   /*==========================================================================*/
 
@@ -8341,6 +8915,8 @@ cs_diffusion_potential(const int                 f_id,
     ==========================================================================*/
 
   BFT_MALLOC(visel, n_cells_ext, cs_real_3_t);
+
+# pragma omp parallel for
   for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
     visel[ii][0] = viselx[ii];
     visel[ii][1] = visely[ii];
@@ -8730,14 +9306,13 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
   bool recompute_cocg = (iccocg) ? true : false;
 
   double diippf[3], djjppf[3];
-  double visci[3][3], viscj[3][3];
 
   cs_real_6_t *viscce;
   cs_real_6_t *w2;
   cs_real_3_t *grad;
   cs_field_t *f;
 
-  const cs_real_t *gweight = NULL;
+  cs_real_t *gweight = NULL;
 
   /*==========================================================================
     1. Initialization
@@ -8950,6 +9525,8 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
           /* Recompute II" and JJ"
              ----------------------*/
 
+          cs_real_t visci[3][3], viscj[3][3];
+
           visci[0][0] = viscce[ii][0];
           visci[1][1] = viscce[ii][1];
           visci[2][2] = viscce[ii][2];
@@ -8961,7 +9538,7 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
           visci[0][2] = viscce[ii][5];
 
           /* IF.Ki.S / ||Ki.S||^2 */
-          double fikdvi = weighf[face_id][0];
+          cs_real_t fikdvi = weighf[face_id][0];
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {
@@ -9025,6 +9602,8 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
           /* Recompute II"
              --------------*/
 
+          cs_real_t visci[3][3];
+
           visci[0][0] = viscce[ii][0];
           visci[1][1] = viscce[ii][1];
           visci[2][2] = viscce[ii][2];
@@ -9046,9 +9625,9 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
                                + visci[2][i]*b_face_normal[face_id][2] );
           }
 
-          double pipp = pi + ircflp*( grad[ii][0]*diippf[0]
-                             + grad[ii][1]*diippf[1]
-                             + grad[ii][2]*diippf[2]);
+          double pipp = pi + ircflp*(  grad[ii][0]*diippf[0]
+                                     + grad[ii][1]*diippf[1]
+                                     + grad[ii][2]*diippf[2]);
 
 
           double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pipp;

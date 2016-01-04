@@ -313,10 +313,6 @@ _l2_norm_3(cs_lnum_t              n_elts,
 {
   const cs_lnum_t block_size = 60;
 
-  cs_lnum_t sid, bid, ii;
-  cs_lnum_t start_id, end_id;
-  double sdot1, sdot2, sdot3, cdot1, cdot2, cdot3;
-
   cs_lnum_t n_blocks = n_elts / block_size;
   cs_lnum_t n_sblocks = sqrt(n_blocks);
   cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
@@ -324,22 +320,18 @@ _l2_norm_3(cs_lnum_t              n_elts,
   double s[3];
   double s1 = 0.0, s2 = 0.0, s3 = 0.0;
 
-# pragma omp parallel for reduction(+:s1, s2, s3) private(bid, start_id, end_id, ii, \
-                                                          cdot1, cdot2, cdot3, \
-                                                          sdot1, sdot2, sdot3)
-  for (sid = 0; sid < n_sblocks; sid++) {
+# pragma omp parallel for reduction(+:s1, s2, s3)
+  for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
 
-    sdot1 = 0.0;
-    sdot2 = 0.0;
-    sdot3 = 0.0;
+    double sdot1 = 0.0;
+    double sdot2 = 0.0;
+    double sdot3 = 0.0;
 
-    for (bid = 0; bid < blocks_in_sblocks; bid++) {
-      start_id = block_size * (blocks_in_sblocks*sid + bid);
-      end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-      cdot1 = 0.0;
-      cdot2 = 0.0;
-      cdot3 = 0.0;
-      for (ii = start_id; ii < end_id; ii++) {
+    for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+      cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+      cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+      double cdot1 = 0.0, cdot2 = 0.0, cdot3 = 0.0;
+      for (cs_lnum_t ii = start_id; ii < end_id; ii++) {
         cdot1 += x[ii][0] * x[ii][0];
         cdot2 += x[ii][1] * x[ii][1];
         cdot3 += x[ii][2] * x[ii][2];
@@ -355,12 +347,10 @@ _l2_norm_3(cs_lnum_t              n_elts,
 
   }
 
-  cdot1 = 0.0;
-  cdot2 = 0.0;
-  cdot3 = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n_elts;
-  for (ii = start_id; ii < end_id; ii++) {
+  cs_lnum_t start_id = block_size * n_sblocks*blocks_in_sblocks;
+  cs_lnum_t end_id = n_elts;
+  double cdot1 = 0.0, cdot2 = 0.0, cdot3 = 0.0;
+  for (cs_lnum_t ii = start_id; ii < end_id; ii++) {
     cdot1 += x[ii][0] * x[ii][0];
     cdot2 += x[ii][1] * x[ii][1];
     cdot3 += x[ii][2] * x[ii][2];
@@ -578,43 +568,38 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t        *m,
 
   const cs_real_t *restrict weight = fvq->weight;
 
-  cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
-  int        g_id, t_id;
-  cs_real_t  a11, a12, a13, a22, a23, a33;
-  cs_real_t  cocg11, cocg12, cocg13, cocg22, cocg23, cocg33;
-  cs_real_t  det_inv, uddij2, udbfs;
-  cs_real_3_t  dc, dddij;
-
   /* Initialization */
 
-# pragma omp parallel for private(ll, mm)
-  for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    for (ll = 0; ll < 3; ll++) {
-      for (mm = 0; mm < 3; mm++)
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t ll = 0; ll < 3; ll++) {
+      for (cs_lnum_t mm = 0; mm < 3; mm++)
         cocg[cell_id][ll][mm] = 0.0;
     }
   }
 
   /* Contribution from interior faces */
 
-  for (g_id = 0; g_id < n_i_groups; g_id++) {
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#   pragma omp parallel for private(face_id, ii, jj, ll, mm, uddij2, dc)
-    for (t_id = 0; t_id < n_i_threads; t_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-      for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            face_id++) {
 
-        ii = i_face_cells[face_id][0];
-        jj = i_face_cells[face_id][1];
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
 
         cs_real_t pond = weight[face_id];
 
-        cs_real_3_t dc_i = {0., 0., 0.};
-        cs_real_3_t dc_j = {0., 0., 0.};
-        cs_real_33_t inv_kf;
-        for (ll = 0; ll < 3; ll++)
+        cs_real_t dc_i[3] = {0., 0., 0.};
+        cs_real_t dc_j[3] = {0., 0., 0.};
+        cs_real_t dc[3];
+        cs_real_t inv_kf[3][3];
+
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
 
         _compute_ani_weighting_cocg(&c_weight[ii*6],
@@ -625,15 +610,15 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t        *m,
                                     dc_j,
                                     inv_kf);
 
-        uddij2 = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+        cs_real_t uddij2 = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-        for (ll = 0; ll < 3; ll++) {
-          for (mm = 0; mm < 3; mm++)
-              cocg[ii][ll][mm] += dc_i[mm] * dc_i[ll] * uddij2;
+        for (cs_lnum_t ll = 0; ll < 3; ll++) {
+          for (cs_lnum_t mm = 0; mm < 3; mm++)
+            cocg[ii][ll][mm] += dc_i[mm] * dc_i[ll] * uddij2;
         }
-        for (ll = 0; ll < 3; ll++) {
-          for (mm = 0; mm < 3; mm++)
-              cocg[jj][ll][mm] += dc_j[mm] * dc_j[ll] * uddij2;
+        for (cs_lnum_t ll = 0; ll < 3; ll++) {
+          for (cs_lnum_t mm = 0; mm < 3; mm++)
+            cocg[jj][ll][mm] += dc_j[mm] * dc_j[ll] * uddij2;
         }
 
       } /* loop on faces */
@@ -646,20 +631,22 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t        *m,
 
   if (m->halo_type == CS_HALO_EXTENDED) {
 
-#   pragma omp parallel for private(jj, ll, mm, uddij2, dc)
-    for (ii = 0; ii < n_cells; ii++) {
+#   pragma omp parallel for
+    for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
       for (cs_lnum_t cidx = cell_cells_idx[ii];
            cidx < cell_cells_idx[ii+1];
            cidx++) {
 
-        jj = cell_cells_lst[cidx];
+        cs_lnum_t jj = cell_cells_lst[cidx];
 
-        for (ll = 0; ll < 3; ll++)
+        cs_real_t dc[3];
+
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
-        uddij2 = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+        cs_real_t uddij2 = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-        for (ll = 0; ll < 3; ll++) {
-          for (mm = 0; mm < 3; mm++)
+        for (cs_lnum_t ll = 0; ll < 3; ll++) {
+          for (cs_lnum_t mm = 0; mm < 3; mm++)
             cocg[ii][ll][mm] += dc[ll] * dc[mm] * uddij2;
         }
 
@@ -670,11 +657,11 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t        *m,
 
   /* Save partial cocg at interior faces of boundary cells */
 
-# pragma omp parallel for private(cell_id, ll, mm)
-  for (ii = 0; ii < m->n_b_cells; ii++) {
-    cell_id = m->b_cells[ii];
-    for (ll = 0; ll < 3; ll++) {
-      for (mm = 0; mm < 3; mm++)
+# pragma omp parallel for
+  for (cs_lnum_t ii = 0; ii < m->n_b_cells; ii++) {
+    cs_lnum_t cell_id = m->b_cells[ii];
+    for (cs_lnum_t ll = 0; ll < 3; ll++) {
+      for (cs_lnum_t mm = 0; mm < 3; mm++)
         cocgb[ii][ll][mm] = cocg[cell_id][ll][mm];
     }
   }
@@ -682,24 +669,26 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t        *m,
   /* Contribution from boundary faces, assuming symmetry everywhere
      so as to avoid obtaining a non-invertible matrix in 2D cases. */
 
-  for (g_id = 0; g_id < n_b_groups; g_id++) {
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#   pragma omp parallel for private(face_id, ii, ll, mm, udbfs, dddij)
-    for (t_id = 0; t_id < n_b_threads; t_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
-      for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      cs_real_t  dddij[3];
+
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
 
-        ii = b_face_cells[face_id];
+        cs_lnum_t ii = b_face_cells[face_id];
 
-        udbfs = 1. / b_face_surf[face_id];
+        cs_real_t udbfs = 1. / b_face_surf[face_id];
 
-        for (ll = 0; ll < 3; ll++)
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
           dddij[ll] =   udbfs * b_face_normal[face_id][ll];
 
-        for (ll = 0; ll < 3; ll++) {
-          for (mm = 0; mm < 3; mm++)
+        for (cs_lnum_t ll = 0; ll < 3; ll++) {
+          for (cs_lnum_t mm = 0; mm < 3; mm++)
             cocg[ii][ll][mm] += dddij[ll]*dddij[mm];
         }
 
@@ -714,26 +703,24 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t        *m,
 
   /* The cocg term for interior cells only changes if the mesh does */
 
-# pragma omp parallel for private(cocg11, cocg12, cocg13, cocg22, \
-                                  cocg23, cocg33, a11, a12,       \
-                                  a13, a22, a23, a33, det_inv)
-  for (cell_id = 0; cell_id < n_cells; cell_id++) {
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
-    cocg11 = cocg[cell_id][0][0];
-    cocg12 = cocg[cell_id][0][1];
-    cocg13 = cocg[cell_id][0][2];
-    cocg22 = cocg[cell_id][1][1];
-    cocg23 = cocg[cell_id][1][2];
-    cocg33 = cocg[cell_id][2][2];
+    cs_real_t cocg11 = cocg[cell_id][0][0];
+    cs_real_t cocg12 = cocg[cell_id][0][1];
+    cs_real_t cocg13 = cocg[cell_id][0][2];
+    cs_real_t cocg22 = cocg[cell_id][1][1];
+    cs_real_t cocg23 = cocg[cell_id][1][2];
+    cs_real_t cocg33 = cocg[cell_id][2][2];
 
-    a11 = cocg22*cocg33 - cocg23*cocg23;
-    a12 = cocg23*cocg13 - cocg12*cocg33;
-    a13 = cocg12*cocg23 - cocg22*cocg13;
-    a22 = cocg11*cocg33 - cocg13*cocg13;
-    a23 = cocg12*cocg13 - cocg11*cocg23;
-    a33 = cocg11*cocg22 - cocg12*cocg12;
+    cs_real_t a11 = cocg22*cocg33 - cocg23*cocg23;
+    cs_real_t a12 = cocg23*cocg13 - cocg12*cocg33;
+    cs_real_t a13 = cocg12*cocg23 - cocg22*cocg13;
+    cs_real_t a22 = cocg11*cocg33 - cocg13*cocg13;
+    cs_real_t a23 = cocg12*cocg13 - cocg11*cocg23;
+    cs_real_t a33 = cocg11*cocg22 - cocg12*cocg12;
 
-    det_inv = 1. / (cocg11*a11 + cocg12*a12 + cocg13*a13);
+    cs_real_t det_inv = 1. / (cocg11*a11 + cocg12*a12 + cocg13*a13);
 
     cocg[cell_id][0][0] = a11 * det_inv;
     cocg[cell_id][0][1] = a12 * det_inv;

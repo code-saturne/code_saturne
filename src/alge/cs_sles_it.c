@@ -1906,8 +1906,6 @@ _jacobi(cs_sles_it_t              *c,
 
   while (cvg == CS_SLES_ITERATING) {
 
-    register double r;
-
     n_iter += 1;
 
 #if defined(HAVE_OPENMP)
@@ -1928,10 +1926,10 @@ _jacobi(cs_sles_it_t              *c,
 
     res2 = 0.0;
 
-#   pragma omp parallel for private(r) reduction(+:res2) if(n_rows > CS_THR_MIN)
+#   pragma omp parallel for reduction(+:res2) if(n_rows > CS_THR_MIN)
     for (ii = 0; ii < n_rows; ii++) {
       vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
-      r = ad[ii] * (vx[ii]-rk[ii]);
+      double r = ad[ii] * (vx[ii]-rk[ii]);
       res2 += (r*r);
     }
 

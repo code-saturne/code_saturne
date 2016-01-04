@@ -973,8 +973,6 @@ static void
 _coarsen(const cs_grid_t   *f,
          cs_grid_t         *c)
 {
-  cs_lnum_t  ii, jj, face_id;
-
   cs_lnum_t  c_n_cells = 0;
 
   const cs_lnum_t f_n_faces = f->n_faces;
@@ -982,10 +980,10 @@ _coarsen(const cs_grid_t   *f,
 
   /* Sanity check */
 
-# pragma omp parallel for private(ii, jj) if(f_n_faces > CS_THR_MIN)
-  for (face_id = 0; face_id < f_n_faces; face_id++) {
-    ii = f_face_cell[face_id][0];
-    jj = f_face_cell[face_id][1];
+# pragma omp parallel for if(f_n_faces > CS_THR_MIN)
+  for (cs_lnum_t face_id = 0; face_id < f_n_faces; face_id++) {
+    cs_lnum_t ii = f_face_cell[face_id][0];
+    cs_lnum_t jj = f_face_cell[face_id][1];
     if (ii == jj)
       bft_error(__FILE__, __LINE__, 0,
                 _("Connectivity error:\n"
@@ -995,7 +993,7 @@ _coarsen(const cs_grid_t   *f,
 
   /* Compute number of coarse cells */
 
-  for (ii = 0; ii < f->n_cells; ii++) {
+  for (cs_lnum_t ii = 0; ii < f->n_cells; ii++) {
     if (c->coarse_cell[ii] > c_n_cells)
       c_n_cells = c->coarse_cell[ii];
   }

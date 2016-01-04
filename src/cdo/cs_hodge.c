@@ -513,7 +513,7 @@ _compute_cost_quant(int                     n_loc_ent,
                     const cs_nvec3_t       *dq,
                     struct _cost_quant_t   *hq)
 {
-  int  i, j, ii, ij, ji, jj;
+  int  i, j, ii, ij, ji;
   double  dpq, tmp_val;
   cs_real_3_t  mdq_i;
 
@@ -532,7 +532,7 @@ _compute_cost_quant(int                     n_loc_ent,
 
     for (j = i+1; j < n_loc_ent; j++) {
 
-      ij = i*n_loc_ent+j, ji = j*n_loc_ent+i, jj = j*n_loc_ent+j;
+      ij = i*n_loc_ent+j, ji = j*n_loc_ent+i;
 
       /* Compute qmq (symmetric) */
       tmp_val = dq[j].meas * dq[i].meas * _dp3(dq[j].unitv, mdq_i);
