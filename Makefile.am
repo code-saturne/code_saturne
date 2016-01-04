@@ -386,7 +386,7 @@ install-doc:
 # Generate ChangeLog
 
 changelog:
-	start=2015-01-01; \
+	start=2016-01-01; \
 	if test -d ${top_srcdir}/.svn ; then \
 	  today=`date +%F`; \
 	  svn2cl --reparagraph --include-rev --include-actions \

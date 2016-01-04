@@ -1,3 +1,127 @@
+2015-12-07 12:24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8231] NEWS, preprocessor/pre-post/ecs_pre_med.c: Merge rev.
+	  8210 from trunk (do not allocate unneeded array when reading MED
+	  mesh).
+
+2015-12-07 09:45  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8224] NEWS, configure.ac, src/base/cs_base.c: Merge rev. 8202
+	  from trunk (improve flushing of error* files).
+
+2015-09-23 12:39  Jacques Fontaine <jacques-j.fontaine@edf.fr>
+
+	* [r8042] NEWS, src/rayt/raycli.f90: Merge rev. 8039 from trunk
+	  (fix bad argument in call of the user function for radiative
+	  bcs).
+
+2015-09-23 12:06  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8033] docs/theory/mesh_quality.tex,
+	  src/mesh/cs_mesh_bad_cells.c: Merge rev. 8031 from trunk.
+
+2015-09-22 07:54  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8029] NEWS, docs/theory/mesh_quality.tex,
+	  docs/user/saturne2.tex, src/base/impini.f90,
+	  src/mesh/cs_mesh_bad_cells.c, src/mesh/cs_mesh_quality.c: Merge
+	  rev. 8025 from trunk.
+
+2015-05-15 12:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7658] Makefile.am, build-aux[ADD],
+	  build-aux/cs_config_test.py[ADD], po/fr.po, sbin/bootstrap: Add
+	  Python configuration test file to complete rev. 7481 (tests for
+	  Salome build).
+
+2015-05-15 11:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7655] NEWS, configure.ac: Bump version to 3.0.7.
+
+2015-05-05 09:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7620] NEWS, src/base/lecamx.f90: Merge rev. 7618 from trunk
+	  (fix read error of hydrostatic pressure in restart files).
+
+2015-04-20 13:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7518] bin/cs_case_domain.py: Merge rev. 7516 from trunk (fix
+	  import of Syrthes script in some configurations).
+
+2015-04-14 08:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7488] Makefile.am: Fix for build without salome.
+
+2015-04-13 15:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7486] preprocessor/pre-post/ecs_table_post_cgns.c: Merge rev.
+	  7484 from trunk (fix compilation using CGNS versions < 3.2).
+
+2015-04-13 09:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7483] extras/installer/install_saturne.py.in,
+	  extras/installer/setup: Automatic installer updates.
+
+2015-04-13 09:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7482] NEWS, gui/Pages/LagrangianModel.py,
+	  gui/Pages/LagrangianView.py, src/gui/cs_gui_particles.c,
+	  src/lagr/lagopt.f90, src/user/uslag1.f90: Disable 2nd-order
+	  particle tracking scheme, broken in this version.
+
+2015-04-13 09:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7481] m4/cs_salome.m4, salome/Makefile.am,
+	  salome/cfd_study/doc/Makefile.am,
+	  salome/cfd_study/idl/Makefile.am,
+	  salome/cfd_study/src/CFDSTUDYGUI/Makefile.am,
+	  salome/fsi_coupling/idl/Makefile.am: Merge rev. 7280 from trunk
+	  (fixes for build with Salome when forcing PYTHON=python2 on
+	  Python3 systems). Portability improvements from older revs for
+	  m4/cs_salome.m4 are also included.
+
+2015-04-13 09:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7480] NEWS, po/fr.po, preprocessor/pre-post/ecs_pre_cgns.c,
+	  preprocessor/pre-post/ecs_table_post_cgns.c,
+	  src/fvm/fvm_to_cgns.c: Merge rev. 7476 from trunk (fixes for some
+	  element types with CGNS 3.2 and above).
+
+2015-03-03 12:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7380] NEWS, src/lagr/cs_lagr_tracking.c: Merge rev. 7377 from
+	  trunk (ensure particle displacement count not totally reset after
+	  move to neighbor domain).
+
+2015-02-26 08:38  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r7341] NEWS, src/base/resopv.f90: Merge rev 6815 from trunk (fix
+	  in idilat=2+iporos=1).
+
+2015-02-23 17:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7328] NEWS, src/base/cs_control.c: Merge rev. 7326 from trunk
+	  (fix possibly uninitialized optional values in control_file).
+
+2015-01-08 13:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7126] NEWS, src/base/dttvar.f90: Fix missing updates to CFL
+	  and/or Fourier numbers at some time steps.
+
+2015-01-07 09:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7114] NEWS, src/gui/cs_gui.c: Merge rev. 7077 from trunk (fix
+	  for handling of GUI-defined time moment restart options).
+
+2015-01-02 10:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r7033] ChangeLog.2007[DEL], ChangeLog.2008[DEL],
+	  ChangeLog.2009[DEL], ChangeLog.2010[DEL], ChangeLog.2011[DEL],
+	  ChangeLog.2012[DEL], ChangeLog.2013[DEL], ChangeLog.old[DEL],
+	  Makefile.am, extras/changelog/ChangeLog.base[CPY], po/fr.po:
+	  Merge revs. 6865 and 7027 from trunk (merge all ChangeLog files
+	  into one, update for 2015).
+
 2014-12-19 17:07  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
 
 	* [r7003] NEWS, src/ctwr/ctphyv.f90, src/gui/cs_gui.c,
