@@ -505,7 +505,7 @@ AC_SUBST(cs_have_openmp)
 # Now that compiler options are determined (relative notably to OpenMP),
 # update Fortran libraries necessary to link.
 
-if "x$cs_have_openmp_f" = "xyes" ; then
+if test "x$cs_have_openmp_f" = "xyes" ; then
   AC_FC_LIBRARY_LDFLAGS
 fi
 
