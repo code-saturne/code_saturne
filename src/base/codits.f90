@@ -248,11 +248,10 @@ integer          itenso,iinvpe, iinvpp
 integer          idtva0
 integer          lvar
 integer          ibsize, iesize
-integer          kscmin, kscmax, imasac
+integer          imasac
 
 double precision residu, rnorm, ressol, rnorm2
 double precision thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
-double precision scalar_inf, scalar_sup
 
 type(solving_info) sinfo
 
@@ -266,14 +265,6 @@ double precision, allocatable, dimension(:) :: rhs0
 !===============================================================================
 ! 0.  Initialization
 !===============================================================================
-
-! Key id for clipping
-call field_get_key_id("min_scalar_clipping", kscmin)
-call field_get_key_id("max_scalar_clipping", kscmax)
-
-! Get the min and max clipping
-call field_get_key_double(ivarfl(ivar), kscmin, scalar_inf)
-call field_get_key_double(ivarfl(ivar), kscmax, scalar_sup)
 
 ! Allocate temporary arrays
 allocate(dam(ncelet))
