@@ -96,16 +96,12 @@ double precision dt(ncelet)
 
 ! Local variables
 
-character(len=80) :: chaine
-integer           iel, igg, mode
-integer           iscal, ivar, ii
+integer          iel, igg, mode
 double precision coefg(ngazgm), hair, tinitk
-double precision valmax, valmin
 
 double precision, dimension(:), pointer :: cvar_scalt
 double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
 double precision, dimension(:), pointer :: cvar_npm, cvar_fsm
-double precision, dimension(:), pointer :: cvar_scal
 
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES

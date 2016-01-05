@@ -36,13 +36,11 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[out]    mbrom         indicator of boundary density array filling
-!> \param[in]     izfppp        boundary zone index for specific physic
 !> \param[in,out] propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine d3pphy &
- ( mbrom  , izfppp , propce )
+ ( propce )
 
 !===============================================================================
 
@@ -70,9 +68,6 @@ use field
 implicit none
 
 ! Arguments
-
-integer          mbrom
-integer          izfppp(nfabor)
 
 double precision propce(ncelet,*)
 

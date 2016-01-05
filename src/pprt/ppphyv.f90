@@ -122,7 +122,7 @@ endif
 ! ---> Flamme de diffusion chimie 3 points
 
 if (ippmod(icod3p).ge.0) then
-  call d3pphy(mbrom, izfppp, propce)
+  call d3pphy(propce)
 endif
 
 ! ---> Flamme de diffusion chimie equilibre
@@ -215,12 +215,9 @@ end subroutine cs_physical_properties1
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in,out] mbrom         indicator of prescribed density at the boundary
-!> \param[in,out] propce        physical properties at cell centers
 !_______________________________________________________________________________
 
-subroutine cs_physical_properties2 &
- ( mbrom, propce )
+subroutine cs_physical_properties2
 
 !===============================================================================
 ! Module files
@@ -244,9 +241,6 @@ use mesh
 implicit none
 
 ! Arguments
-integer          mbrom
-
-double precision propce(ncelet,*)
 
 ! Local variables
 

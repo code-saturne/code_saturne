@@ -53,8 +53,6 @@ integer          keyvar, ivar
 
 double precision ttsuit, wtsuit
 
-character(len=80) :: name, f_name
-
 type(var_cal_opt) vcopt
 
 !===============================================================================

@@ -80,8 +80,8 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
                       cs_phys_prop_thermo_plane_type_t   thermo_plane,
                       cs_phys_prop_type_t                property,
                       const cs_lnum_t                    n_vals,
-                      double                             var1[],
-                      double                             var2[],
+                      const cs_real_t                    var1[],
+                      const cs_real_t                    var2[],
                       cs_real_t                          val[]);
 
 #endif /* __CS_COOLPROP_HXX__ */

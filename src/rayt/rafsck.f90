@@ -94,7 +94,6 @@ integer, parameter :: maxit = 1000
 integer, parameter :: imlinear = 0, im3dspline = 7, im1dspline = 2
 integer, parameter :: im2dspline = 6
 
-double precision      wvnb, dwvnb
 double precision      x1, x2, xl, xm
 double precision      tref, pco2ref, ph2oref, sum1, sum2, kp, kp1, kp2, kpt4dv
 
@@ -600,7 +599,7 @@ integer               itx(4,4) !
 double precision      trad, t, xco2, xh2o
 
 ! Local variable
-integer               itrad(4), ita(4), ico2a(4), ih2oa(4), ip, it, ix, i, j
+integer               itrad(4), ita(4), ico2a(4), ih2oa(4), ip, i, j
 
 !===============================================================================
 
@@ -896,11 +895,12 @@ if (n .lt. 3) go to 100
 !
 ! Calculate the h(i) and delta(i)
 !
-do 10 i = 1, nm1
+do i = 1, nm1
   al(i) = 0.
   be(i) = 0.
   h(i) = x(i+1)-x(i)
-10 delta(i) = (y(i+1)-y(i))/h(i)
+  delta(i) = (y(i+1)-y(i))/h(i)
+enddo
 
 ! calculate first values for al and be by 3-point difference
 

@@ -267,7 +267,7 @@ elseif (idftnp.eq.6) then
     !==========
    ( idtvar , f_id   , vcopt  ,                                     &
      inc    ,                                                       &
-     pvar   , pvara  , itypfb ,                                     &
+     pvar   , pvara  ,                                              &
      coefa , coefb , cofaf , cofbf ,                                &
      viscf  , viscb  , viscce ,                                     &
      weighf , weighb ,                                              &

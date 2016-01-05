@@ -204,43 +204,6 @@ if (itytur.eq.3) irijnu = 1
 
 #else
 
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
-'@    =========                                               ',/,&
-'@                ATMOSPHERIC  MODULE                         ',/,&
-'@                                                            ',/,&
-'@  ISCALT IS SPECIFIED AUTOMATICALLY.                        ',/,&
-'@  iscalt should not be specified in usipsu, here:           ',/,&
-'@       ISCALT  = ', I10                                      ,/,&
-'@  Computation CAN NOT run.                                  ',/,&
-'@                                                            ',/,&
-'@  Check the input data given through the User Interface     ',/,&
-'@   or in cs_user_parameters.f90.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
-'@    =========                                               ',/,&
-'@                ATMOSPHERIC  MODULE                         ',/,&
-'@                                                            ',/,&
-'@  ISCACP IS SPECIFIED AUTOMATICALLY.                        ',/,&
-'@  For the scalar ', I10 ,' iscacp  should not be specified  ',/,&
-'@   in usipsu, here:                                         ',/,&
-'@          ISCACP(',I10   ,') = ',I10                         ,/,&
-'@  Computation CAN NOT run.                                  ',/,&
-'@                                                            ',/,&
-'@  Check the input data given through the User Interface     ',/,&
-'@   or in cs_user_parameters.f90.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  1002 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

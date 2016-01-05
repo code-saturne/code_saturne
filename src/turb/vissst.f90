@@ -79,7 +79,7 @@ implicit none
 ! Local variables
 
 integer          iel, inc
-integer          ifacpt, iprev
+integer          iprev
 
 double precision d1s3, d2s3
 double precision xk, xw, rom, xmu, xdist, xarg2, xf2

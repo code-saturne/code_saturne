@@ -95,8 +95,6 @@ double precision fadhes
 ! Variables for the adhesion moment
 double precision dismom, omsurf
 
-integer mode
-
 ! ==========================================================================
 ! 0.    initialization
 ! ==========================================================================

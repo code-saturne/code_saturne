@@ -968,6 +968,7 @@ void CS_PROCF (diftnv, DIFTNV)
                                   secvif,
                                   rhs);
 }
+
 /*----------------------------------------------------------------------------
  * Wrapper to cs_anisotropic_diffusion_tensor
  *----------------------------------------------------------------------------*/
@@ -980,7 +981,6 @@ void CS_PROCF (diftnts, DIFTNTS)
  const cs_int_t          *const   inc,
  cs_real_6_t                      pvar[],
  const cs_real_6_t                pvara[],
- const cs_int_t                   bc_type[],
  const cs_real_6_t                coefa[],
  const cs_real_66_t               coefb[],
  const cs_real_6_t                cofaf[],
@@ -1556,7 +1556,6 @@ cs_upwind_gradient(const int                     f_id,
 /*!
  * \brief Compute the upwind gradient used in the slope tests.
  *
- * \param[in]     f_id         field index
  * \param[in]     inc          Not an increment flag
  * \param[in]     halo_type    halo type
  * \param[in]     grad         standard gradient
@@ -1571,8 +1570,7 @@ cs_upwind_gradient(const int                     f_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_slope_test_gradient_vector(const int              f_id,
-                              const int              inc,
+cs_slope_test_gradient_vector(const int              inc,
                               const cs_halo_type_t   halo_type,
                               cs_real_33_t          *grad,
                               cs_real_33_t          *grdpa,
@@ -1710,7 +1708,6 @@ cs_slope_test_gradient_vector(const int              f_id,
 /*!
  * \brief Compute the upwind gradient used in the slope tests.
  *
- * \param[in]     f_id         field index
  * \param[in]     inc          Not an increment flag
  * \param[in]     halo_type    halo type
  * \param[in]     grad         standard gradient
@@ -1725,8 +1722,7 @@ cs_slope_test_gradient_vector(const int              f_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_slope_test_gradient_tensor(const int              f_id,
-                              const int              inc,
+cs_slope_test_gradient_tensor(const int              inc,
                               const cs_halo_type_t   halo_type,
                               cs_real_63_t          *grad,
                               cs_real_63_t          *grdpa,
@@ -3407,8 +3403,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
 
-    cs_slope_test_gradient_vector(f_id,
-                                  inc,
+    cs_slope_test_gradient_vector(inc,
                                   halo_type,
                                   grad,
                                   grdpa,
@@ -3418,7 +3413,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   i_massflux);
 
   }
-
 
   /* ======================================================================
      ---> Contribution from interior faces
@@ -4469,7 +4463,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-    cs_gradient_perio_init_rij_tensor(f, &tr_dim, grad);
+    cs_gradient_perio_init_rij_tensor(&tr_dim, grad);
     snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
   }
   else
@@ -4546,8 +4540,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
   if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
 
-    cs_slope_test_gradient_tensor(f_id,
-                                  inc,
+    cs_slope_test_gradient_tensor(inc,
                                   halo_type,
                                   grad,
                                   grdpa,
@@ -4555,7 +4548,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   coefa,
                                   coefb,
                                   i_massflux);
-
 
   }
 

@@ -567,7 +567,6 @@ type(gas_mix_species_prop)  spro
 
 ! Local variables
 
-integer          f_id
 double precision muref, lamref
 double precision trefmu, treflam, smu, slam
 

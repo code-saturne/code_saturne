@@ -94,8 +94,8 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
                       cs_phys_prop_thermo_plane_type_t   thermo_plane,
                       cs_phys_prop_type_t                property,
                       const cs_lnum_t                    n_vals,
-                      double                             var1[],
-                      double                             var2[],
+                      const cs_real_t                    var1[],
+                      const cs_real_t                    var2[],
                       cs_real_t                          val[])
 {
   std::vector<std::string> fluids;
@@ -172,7 +172,7 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
   val2.clear();
   fractions.clear();
 
-  for (int i = 0; i < n_vals; i++) {
+  for (cs_lnum_t i = 0; i < n_vals; i++) {
     val1.push_back(var2[i]);
     val2.push_back(var1[i]);
   }

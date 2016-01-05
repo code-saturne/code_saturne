@@ -72,7 +72,6 @@ subroutine cfxtcl &
 ! Module files
 !===============================================================================
 
-use dimens, only : nscal
 use paramx
 use numvar
 use optcal

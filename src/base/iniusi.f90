@@ -85,7 +85,7 @@ implicit none
 
 ! Local variables
 
-integer          nmodpp, ifcvsl
+integer          nmodpp
 integer          nscmax, nscusi
 integer          iihmpu, l_size
 double precision relaxp, extrap, l_cp(1), l_xmasm(1), l_cv(1)

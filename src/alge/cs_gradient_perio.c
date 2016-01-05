@@ -580,16 +580,14 @@ cs_gradient_perio_init_rij(const cs_field_t  *f,
  * We assume that is correct to treat periodicities implicitly for the other
  * variables when reconstructing gradients.
  *
- * \param[in]       f        pointer to field
  * \param[out]      tr_dim   2 for tensor (Rij) in case of rotation, 0 otherwise
  * \param[in, out]  grad     gradient of field
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_perio_init_rij_tensor(const cs_field_t  *f,
-                                  int               *tr_dim,
-                                  cs_real_63_t        grad[])
+cs_gradient_perio_init_rij_tensor(int           *tr_dim,
+                                  cs_real_63_t   grad[])
 {
   cs_mesh_t  *mesh = cs_glob_mesh;
   int isou;

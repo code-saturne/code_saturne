@@ -242,7 +242,6 @@ character(len=16) :: cnom
 integer          f_id,isym
 integer          inc,isweep,niterf,iel,nswmod
 integer          iinvpe
-integer          idtva0
 integer          isou , jsou
 integer          ibsize, iesize
 integer          lvar, imasac

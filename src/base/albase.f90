@@ -75,7 +75,6 @@ contains
 
     integer, intent(in) :: nfabor, nnod
 
-    integer inod
     if (iale.eq.1.or.imobil.eq.1) then
       allocate(xyzno0(3,nnod))
     endif

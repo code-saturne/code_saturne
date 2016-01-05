@@ -106,13 +106,10 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
-character(len=80) :: name
-
 integer          ii, ifac, izone, mode, iel, ige, iok
 integer          icla , ioxy
 integer          icke
 integer          nbrval
-integer          f_id
 
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision xkent, xeent, t1, t2, ustar2

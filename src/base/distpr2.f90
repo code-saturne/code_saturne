@@ -74,8 +74,6 @@ integer          ifac  , iel
 
 double precision xdis, dismax, dismin
 
-character(len=80) :: fname
-
 !===============================================================================
 
 ! normalement, on ne passe pas en parallele ici,  mais au cas ou ...

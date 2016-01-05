@@ -54,7 +54,7 @@ subroutine porcel &
   use lagran
   use lagdim
   use lagpar
-  use pointe, only: uetbor, parbor, itypfb
+  use pointe, only: parbor, itypfb
   use ppppar
   use coincl
   use parall

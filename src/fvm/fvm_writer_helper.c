@@ -305,36 +305,6 @@ _extra_vertex_get_gnum(const fvm_nodal_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * If necessary, reduce a local end index to adjust it to a given global
- * past the end global number.
- *
- * parameters:
- *   this_section          <-- fvm_nodal section structure
- *   end_id                <-> end_id that may require reduction
- *   global_num_end        <-- past the end (maximum + 1) parent element
- *                             global number
- *----------------------------------------------------------------------------*/
-
-static inline void
-_limit_end_id_g(const fvm_nodal_section_t  *this_section,
-                cs_lnum_t                  *end_id,
-                cs_gnum_t                   global_num_end)
-{
-  int last_id;
-
-  const cs_gnum_t *global_element_num
-    = fvm_io_num_get_global_num(this_section->global_element_num);
-
-  for (last_id = *end_id - 1;
-       (   last_id > 0
-        && global_element_num[last_id] >= global_num_end);
-       last_id --);
-
-  if (last_id > -1)
-    *end_id = last_id + 1;
-}
-
-/*----------------------------------------------------------------------------
  * Output per-element field values in parallel mode.
  *
  * Note that if the output data is not interleaved, for multidimensional data,

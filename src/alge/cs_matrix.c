@@ -144,9 +144,13 @@ const char  *cs_matrix_fill_type_name[] = {"CS_MATRIX_SCALAR",
                                            "CS_MATRIX_BLOCK_D_SYM",
                                            "CS_MATRIX_BLOCK"};
 
+#if defined (HAVE_MKL)
+
 static char _no_exclude_diag_error_str[]
   = N_("Matrix product variant using function %s\n"
        "does not handle case with excluded diagonal.");
+
+#endif
 
 static const char *_matrix_operation_name[CS_MATRIX_N_FILL_TYPES][2]
   = {{N_("y <- A.x"),

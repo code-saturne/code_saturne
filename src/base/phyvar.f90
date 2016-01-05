@@ -106,7 +106,7 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: sval
-double precision, dimension(:,:), pointer :: visten, vistes
+double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: viscl, visct, cpro_vis
 double precision, dimension(:), pointer :: cvar_voidf
 
@@ -182,9 +182,7 @@ call usphyv &
 ! Finalization of physical properties for specific physics
 ! AFTER the user
 if (ippmod(iphpar).ge.1) then
-  call cs_physical_properties2 &
- ( mbrom  , propce )
-
+  call cs_physical_properties2
 endif
 
 !  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)

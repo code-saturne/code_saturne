@@ -665,25 +665,6 @@ _get_tracking_info(const cs_lagr_particle_set_t  *particle_set,
 }
 
 /*----------------------------------------------------------------------------
- * Compute norm squared of 3D vector difference
- *
- * parameters:
- *   v1 <-- first vector
- *   v2 <-- second vector
- *
- * return:
- *   (v1-v2).(v1-v2)
- *----------------------------------------------------------------------------*/
-
-inline static cs_real_t
-_delta_norm_2_3d(const cs_real_t  v1[],
-                 const cs_real_t  v2[])
-{
-  cs_real_t d[3] = {v1[0]-v2[0], v1[1]-v2[1], v1[2]-v2[2]};
-  return (d[0]*d[0] + d[1]*d[1] + d[2]*d[2]);
-}
-
-/*----------------------------------------------------------------------------
  * Compute the norm of a 3D vector of double (cs_real_t)
  *
  * parameters:

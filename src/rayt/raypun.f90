@@ -135,7 +135,7 @@ integer          inc, iccocg
 integer          imucpp, idftnp, iswdyp, icvflb
 integer          ivoid(1)
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
-double precision aa, aaa, aaaa, relaxp, thetap
+double precision aa, aaa, relaxp, thetap
 
 double precision rvoid(1)
 

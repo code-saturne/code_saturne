@@ -76,7 +76,7 @@ integer          nfbpcd, ifbpcd(nfbpcd), izzftcd(nfbpcd)
 
 ! Local variables
 
-integer          ii, kk, iz, ifac
+integer          ii, kk, iz
 integer          iter
 
 double precision epsi,delta,r0,r1,epai1
