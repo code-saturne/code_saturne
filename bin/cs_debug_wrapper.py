@@ -671,17 +671,14 @@ def run_debug(cmds):
     # Tests for Valgrind
 
     valgrind = None
-    valgrind_opts = None
 
     if 'valgrind' in cmds.keys():
 
         valgrind = cmds['valgrind'][0]
-        valgrind_opts = []
         for cmd in cmds['valgrind'][1:]:
             if cmd[0:6] == '--vgdb':
                 vgdb = True
             else:
-                valgrind_opts += cmd
                 if cmd.find("--db-attach") > -1:
                     need_terminal = True
         for cmd in cmds['valgrind'][1:]:
