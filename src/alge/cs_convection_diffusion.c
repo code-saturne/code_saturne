@@ -216,7 +216,7 @@ _max_limiter_denom(const int              f_id,
   BFT_MALLOC(grdpa, n_cells_ext, cs_real_3_t);
   BFT_MALLOC(grdpaa, n_cells_ext, cs_real_3_t);
 
-#   pragma omp parallel for
+# pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     grdpa[cell_id][0] = 0.;
     grdpa[cell_id][1] = 0.;
@@ -283,7 +283,7 @@ _max_limiter_denom(const int              f_id,
 
   /* Step 2: Building of denominator */
 
-#   pragma omp parallel for
+# pragma omp parallel for
   for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
     denom_inf[ii] = 0.;
     denom_sup[ii] = 0.;
@@ -291,10 +291,9 @@ _max_limiter_denom(const int              f_id,
 
   /* ---> Contribution from interior faces */
 
-  for (cs_lnum_t g_id = 0; g_id < n_i_groups; g_id++) {
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #   pragma omp parallel for
-
-    for (cs_lnum_t t_id = 0; t_id < n_i_threads; t_id++) {
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
       for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
           face_id++) {
@@ -450,7 +449,7 @@ _max_limiter_num(const int           f_id,
     num_sup[ii] = 0.;
   }
 
-#   pragma omp parallel for
+# pragma omp parallel for
   for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
     num_inf[ii] = rovsdt[ii] * (pvara[ii] -scalar_min);
     num_sup[ii] = rovsdt[ii] * (scalar_max-pvara[ii]);
@@ -458,9 +457,9 @@ _max_limiter_num(const int           f_id,
 
   /* ---> Contribution from interior faces */
 
-  for (cs_lnum_t g_id = 0; g_id < n_i_groups; g_id++) {
-#       pragma omp parallel for
-    for (cs_lnum_t t_id = 0; t_id < n_i_threads; t_id++) {
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
       for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
           face_id++) {
@@ -488,9 +487,9 @@ _max_limiter_num(const int           f_id,
 
   /* ---> Contribution from boundary faces */
 
-  for (cs_lnum_t g_id = 0; g_id < n_b_groups; g_id++) {
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
 #   pragma omp parallel for
-    for (cs_lnum_t t_id = 0; t_id < n_b_threads; t_id++) {
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
           face_id++) {
@@ -1374,7 +1373,7 @@ cs_slope_test_gradient(const int               f_id,
   }
 
   for (int g_id = 0; g_id < n_b_groups; g_id++) {
-# pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -1656,31 +1655,31 @@ cs_slope_test_gradient_vector(const int              inc,
 
   for (int g_id = 0; g_id < n_b_groups; g_id++) {
 #   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
-        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-             face_id++) {
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+           face_id++) {
 
-          cs_real_t diipbv[3];
-          cs_lnum_t ii = b_face_cells[face_id];
+        cs_real_t diipbv[3];
+        cs_lnum_t ii = b_face_cells[face_id];
+
+        for (int jsou = 0; jsou < 3; jsou++)
+          diipbv[jsou] = diipb[face_id][jsou];
+
+        /* x-y-z components, p = u, v, w */
+
+        for (int isou = 0; isou < 3; isou++) {
+          cs_real_t pfac = inc*coefa[face_id][isou];
+          /*coefu is a matrix */
+          for (int jsou =  0; jsou < 3; jsou++)
+            pfac += coefb[face_id][jsou][isou]*(  pvar[ii][jsou]
+                                                + grad[ii][jsou][0]*diipbv[0]
+                                                + grad[ii][jsou][1]*diipbv[1]
+                                                + grad[ii][jsou][2]*diipbv[2]);
 
           for (int jsou = 0; jsou < 3; jsou++)
-            diipbv[jsou] = diipb[face_id][jsou];
-
-          /* x-y-z components, p = u, v, w */
-
-          for (int isou = 0; isou < 3; isou++) {
-            cs_real_t pfac = inc*coefa[face_id][isou];
-            /*coefu is a matrix */
-            for (int jsou =  0; jsou < 3; jsou++)
-              pfac += coefb[face_id][jsou][isou]*(  pvar[ii][jsou]
-                                                  + grad[ii][jsou][0]*diipbv[0]
-                                                  + grad[ii][jsou][1]*diipbv[1]
-                                                  + grad[ii][jsou][2]*diipbv[2]);
-
-            for (int jsou = 0; jsou < 3; jsou++)
-              grdpa[ii][isou][jsou] += pfac*b_f_face_normal[face_id][jsou];
-          }
+            grdpa[ii][isou][jsou] += pfac*b_f_face_normal[face_id][jsou];
+        }
 
       }
     }
@@ -2229,7 +2228,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
     BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
 
-# pragma omp parallel for
+#   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       gradst[cell_id][0] = 0.;
       gradst[cell_id][1] = 0.;
@@ -2254,7 +2253,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
     BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
 
-# pragma omp parallel for
+#   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       gradup[cell_id][0] = 0.;
       gradup[cell_id][1] = 0.;
@@ -4828,7 +4827,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
       for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for
-
         for (int t_id = 0; t_id < n_i_threads; t_id++) {
           for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -5973,9 +5971,9 @@ cs_convection_diffusion_thermal(int                       idtvar,
       /* Unsteady */
     } else {
 
-      for (cs_lnum_t g_id = 0; g_id < n_i_groups; g_id++) {
+      for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #       pragma omp parallel for reduction(+:n_upwind)
-        for (cs_lnum_t t_id = 0; t_id < n_i_threads; t_id++) {
+        for (int t_id = 0; t_id < n_i_threads; t_id++) {
           for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
                face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
                face_id++) {
@@ -8513,9 +8511,9 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
 
     /* ---> Contribution from interior faces */
 
-    for (cs_lnum_t g_id = 0; g_id < n_i_groups; g_id++) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
-      for (cs_lnum_t t_id = 0; t_id < n_i_threads; t_id++) {
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
         for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
@@ -8531,9 +8529,9 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
 
     /* ---> Contribution from boundary faces */
 
-    for (cs_lnum_t g_id = 0; g_id < n_b_groups; g_id++) {
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for
-      for (cs_lnum_t t_id = 0; t_id < n_b_threads; t_id++) {
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
@@ -8643,9 +8641,9 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
 
     /* Mass flow through interior faces */
 
-    for (cs_lnum_t g_id = 0; g_id < n_i_groups; g_id++) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
-      for (cs_lnum_t t_id = 0; t_id < n_i_threads; t_id++) {
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
         for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
@@ -8720,9 +8718,9 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
 
     /* ---> Contribution from boundary faces */
 
-    for (cs_lnum_t g_id = 0; g_id < n_b_groups; g_id++) {
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
 #     pragma omp parallel for
-      for (cs_lnum_t t_id = 0; t_id < n_b_threads; t_id++) {
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
         for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
              face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              face_id++) {
