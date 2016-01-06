@@ -5,6 +5,8 @@ Release 4.0.5 (unreleased)
 Bug fixes:
 ----------
 
+- Fix in fire algorithm (idilat=5, was not tested in the V&V process)
+
 - Fix some OpenMP bugs in convection-diffusion operators.
 
 - Fix hang in GUI when starting run where the case's path contains whitespace.
