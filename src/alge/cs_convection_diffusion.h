@@ -694,7 +694,7 @@ cs_i_no_relax_c_val_vector(const cs_real_3_t   pi,
                            cs_real_t           pipr[3],
                            cs_real_t           pjpr[3])
 {
-  for (int isou = 0 ; isou < 3 ; isou++) {
+  for (int isou = 0; isou < 3; isou++) {
     pir[isou] = pi[isou];
     pjr[isou] = pj[isou];
 
@@ -729,7 +729,7 @@ cs_i_no_relax_c_val_tensor(const cs_real_6_t   pi,
                            cs_real_t           pipr[6],
                            cs_real_t           pjpr[6])
 {
-  for (int isou = 0 ; isou < 6 ; isou++) {
+  for (int isou = 0; isou < 6; isou++) {
     pir[isou] = pi[isou];
     pjr[isou] = pj[isou];
 
@@ -899,7 +899,7 @@ cs_centered_f_val_vector(const double       pnd,
                          cs_real_t       pjfri[3],
                          cs_real_t       pjfrj[3])
 {
-  for (int isou = 0 ; isou < 3 ; isou++) {
+  for (int isou = 0; isou < 3; isou++) {
     pifri[isou] = pnd*pipr[isou] + (1.-pnd)*pjp[isou];
     pjfri[isou] = pifri[isou];
     pifrj[isou] = pnd*pip[isou]  + (1.-pnd)*pjpr[isou];
@@ -929,12 +929,12 @@ cs_centered_f_val_tensor(const double       pnd,
                          const cs_real_6_t  pjp,
                          const cs_real_6_t  pipr,
                          const cs_real_6_t  pjpr,
-                         cs_real_t       pifri[6],
-                         cs_real_t       pifrj[6],
-                         cs_real_t       pjfri[6],
-                         cs_real_t       pjfrj[6])
+                         cs_real_t          pifri[6],
+                         cs_real_t          pifrj[6],
+                         cs_real_t          pjfri[6],
+                         cs_real_t          pjfrj[6])
 {
-  for (int isou = 0 ; isou < 6 ; isou++) {
+  for (int isou = 0; isou < 6 ; isou++) {
     pifri[isou] = pnd*pipr[isou] + (1.-pnd)*pjp[isou];
     pjfri[isou] = pifri[isou];
     pifrj[isou] = pnd*pip[isou]  + (1.-pnd)*pjpr[isou];
@@ -2926,6 +2926,7 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
  * in case of a steady algorithm and using slope tests.
  *
  * \param[out]    upwind_switch   slope test result
+ * \param[in]     iconvp          convection flag
  * \param[in]     ircflp          recontruction flag
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     relaxp          relaxation coefficient
@@ -2963,6 +2964,7 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
 
 inline static void
 cs_i_cd_steady_slope_test(bool              *upwind_switch,
+                          const int          iconvp,
                           const int          ircflp,
                           const int          ischcp,
                           const double       relaxp,
@@ -3031,24 +3033,133 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
                    pipr,
                    pjpr);
 
-  cs_slope_test(pi,
-                pj,
-                distf,
-                srfan,
-                i_face_normal,
-                gradi,
-                gradj,
-                gradsti,
-                gradstj,
-                i_massflux,
-                &testij,
-                &tesqck);
+  /* Convection slope test is needed only when iconv >0 */
+  if (iconvp > 0) {
+    cs_slope_test(pi,
+                  pj,
+                  distf,
+                  srfan,
+                  i_face_normal,
+                  gradi,
+                  gradj,
+                  gradsti,
+                  gradstj,
+                  i_massflux,
+                  &testij,
+                  &tesqck);
 
-  if (tesqck<=0. || testij<=0.) {
+    if (tesqck<=0. || testij<=0.) {
 
-    /* Upwind
-       --------*/
+      /* Upwind
+         --------*/
 
+      cs_upwind_f_val(pi,
+                      pifrj);
+      cs_upwind_f_val(pir,
+                      pifri);
+      cs_upwind_f_val(pj,
+                      pjfri);
+      cs_upwind_f_val(pjr,
+                      pjfrj);
+
+      *upwind_switch = true;
+
+    } else {
+
+      if (ischcp==1) {
+
+        /* Centered
+           --------*/
+
+        cs_centered_f_val(weight,
+                          *pip,
+                          *pjpr,
+                          pifrj);
+        cs_centered_f_val(weight,
+                          *pipr,
+                          *pjp,
+                          pifri);
+        cs_centered_f_val(weight,
+                          *pipr,
+                          *pjp,
+                          pjfri);
+        cs_centered_f_val(weight,
+                          *pip,
+                          *pjpr,
+                          pjfrj);
+
+      } else if (ischcp == 0) {
+
+        /* Second order
+           ------------*/
+
+        cs_solu_f_val(cell_ceni,
+                      i_face_cog,
+                      gradi,
+                      pi,
+                      pifrj);
+        cs_solu_f_val(cell_ceni,
+                      i_face_cog,
+                      gradi,
+                      pir,
+                      pifri);
+        cs_solu_f_val(cell_cenj,
+                      i_face_cog,
+                      gradj,
+                      pj,
+                      pjfri);
+        cs_solu_f_val(cell_cenj,
+                      i_face_cog,
+                      gradj,
+                      pjr,
+                      pjfrj);
+
+      } else {
+
+        /* SOLU
+           -----*/
+
+        cs_solu_f_val(cell_ceni,
+                      i_face_cog,
+                      gradupi,
+                      pi,
+                      pifrj);
+        cs_solu_f_val(cell_ceni,
+                      i_face_cog,
+                      gradupi,
+                      pir,
+                      pifri);
+        cs_solu_f_val(cell_cenj,
+                      i_face_cog,
+                      gradupj,
+                      pj,
+                      pjfri);
+        cs_solu_f_val(cell_cenj,
+                      i_face_cog,
+                      gradupj,
+                      pjr,
+                      pjfrj);
+      }
+    }
+
+    /* Blending
+     --------*/
+
+    cs_blend_f_val(blencp,
+                   pi,
+                   pifrj);
+    cs_blend_f_val(blencp,
+                   pir,
+                   pifri);
+    cs_blend_f_val(blencp,
+                   pj,
+                   pjfri);
+    cs_blend_f_val(blencp,
+                   pjr,
+                   pjfrj);
+
+  /* If iconv=0 p*fr* are useless */
+  } else {
     cs_upwind_f_val(pi,
                     pifrj);
     cs_upwind_f_val(pir,
@@ -3057,103 +3168,7 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
                     pjfri);
     cs_upwind_f_val(pjr,
                     pjfrj);
-
-    *upwind_switch = true;
-
-  } else {
-
-    if (ischcp==1) {
-
-      /* Centered
-         --------*/
-
-      cs_centered_f_val(weight,
-                        *pip,
-                        *pjpr,
-                        pifrj);
-      cs_centered_f_val(weight,
-                        *pipr,
-                        *pjp,
-                        pifri);
-      cs_centered_f_val(weight,
-                        *pipr,
-                        *pjp,
-                        pjfri);
-      cs_centered_f_val(weight,
-                        *pip,
-                        *pjpr,
-                        pjfrj);
-
-    } else if (ischcp == 0) {
-
-      /* Second order
-         ------------*/
-
-      cs_solu_f_val(cell_ceni,
-                    i_face_cog,
-                    gradi,
-                    pi,
-                    pifrj);
-      cs_solu_f_val(cell_ceni,
-                    i_face_cog,
-                    gradi,
-                    pir,
-                    pifri);
-      cs_solu_f_val(cell_cenj,
-                    i_face_cog,
-                    gradj,
-                    pj,
-                    pjfri);
-      cs_solu_f_val(cell_cenj,
-                    i_face_cog,
-                    gradj,
-                    pjr,
-                    pjfrj);
-
-    } else {
-
-      /* SOLU
-         -----*/
-
-      cs_solu_f_val(cell_ceni,
-                    i_face_cog,
-                    gradupi,
-                    pi,
-                    pifrj);
-      cs_solu_f_val(cell_ceni,
-                    i_face_cog,
-                    gradupi,
-                    pir,
-                    pifri);
-      cs_solu_f_val(cell_cenj,
-                    i_face_cog,
-                    gradupj,
-                    pj,
-                    pjfri);
-      cs_solu_f_val(cell_cenj,
-                    i_face_cog,
-                    gradupj,
-                    pjr,
-                    pjfrj);
-
-    }
   }
-
-  /* Blending
-     --------*/
-
-  cs_blend_f_val(blencp,
-                 pi,
-                 pifrj);
-  cs_blend_f_val(blencp,
-                 pir,
-                 pifri);
-  cs_blend_f_val(blencp,
-                 pj,
-                 pjfri);
-  cs_blend_f_val(blencp,
-                 pjr,
-                 pjfrj);
 
 }
 
@@ -3163,6 +3178,7 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
  * in case of a steady algorithm and using slope tests.
  *
  * \param[out]    upwind_switch   slope test result
+ * \param[in]     iconvp          convection flag
  * \param[in]     ircflp          recontruction flag
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     relaxp          relaxation coefficient
@@ -3198,6 +3214,7 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
 
 inline static void
 cs_i_cd_steady_slope_test_vector(bool                upwind_switch[3],
+                                 const int           iconvp,
                                  const int           ircflp,
                                  const int           ischcp,
                                  const double        relaxp,
@@ -3268,102 +3285,119 @@ cs_i_cd_steady_slope_test_vector(bool                upwind_switch[3],
                           pipr,
                           pjpr);
 
-  cs_slope_test_vector(pi,
-                       pj,
-                       distf,
-                       srfan,
-                       i_face_normal,
-                       gradi,
-                       gradj,
-                       grdpai,
-                       grdpaj,
-                       i_massflux,
-                       testij,
-                       tesqck);
+  /* Convection slope test is needed only when iconv >0 */
+  if (iconvp > 0) {
+    cs_slope_test_vector(pi,
+                         pj,
+                         distf,
+                         srfan,
+                         i_face_normal,
+                         gradi,
+                         gradj,
+                         grdpai,
+                         grdpaj,
+                         i_massflux,
+                         testij,
+                         tesqck);
 
-  for (isou = 0 ; isou < 3; isou++) {
-    if (tesqck[isou]<=0. || testij[isou]<=0.) {
+    for (isou = 0; isou < 3; isou++) {
+      if (tesqck[isou]<=0. || testij[isou]<=0.) {
 
-      /* Upwind
-         --------*/
-
-      cs_upwind_f_val(pi[isou],
-                      &pifrj[isou]);
-      cs_upwind_f_val(pir[isou],
-                      &pifri[isou]);
-      cs_upwind_f_val(pj[isou],
-                      &pjfri[isou]);
-      cs_upwind_f_val(pjr[isou],
-                      &pjfrj[isou]);
-
-      upwind_switch[isou] = true;
-
-    } else {
-
-      if (ischcp==1) {
-
-        /* Centered
+        /* Upwind
            --------*/
 
-        cs_centered_f_val(weight,
-                          pip[isou],
-                          pjpr[isou],
-                          &pifrj[isou]);
-        cs_centered_f_val(weight,
-                          pipr[isou],
-                          pjp[isou],
-                          &pifri[isou]);
-        cs_centered_f_val(weight,
-                          pipr[isou],
-                          pjp[isou],
-                          &pjfri[isou]);
-        cs_centered_f_val(weight,
-                          pip[isou],
-                          pjpr[isou],
-                          &pjfrj[isou]);
+        cs_upwind_f_val(pi[isou],
+                        &pifrj[isou]);
+        cs_upwind_f_val(pir[isou],
+                        &pifri[isou]);
+        cs_upwind_f_val(pj[isou],
+                        &pjfri[isou]);
+        cs_upwind_f_val(pjr[isou],
+                        &pjfrj[isou]);
+
+        upwind_switch[isou] = true;
 
       } else {
 
-        /* Second order
-           ------------*/
+        if (ischcp==1) {
 
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradi[isou],
-                      pi[isou],
-                      &pifrj[isou]);
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradi[isou],
-                      pir[isou],
-                      &pifri[isou]);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradj[isou],
-                      pj[isou],
-                      &pjfri[isou]);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradj[isou],
-                      pjr[isou],
-                      &pjfrj[isou]);
+          /* Centered
+             --------*/
 
+          cs_centered_f_val(weight,
+                            pip[isou],
+                            pjpr[isou],
+                            &pifrj[isou]);
+          cs_centered_f_val(weight,
+                            pipr[isou],
+                            pjp[isou],
+                            &pifri[isou]);
+          cs_centered_f_val(weight,
+                            pipr[isou],
+                            pjp[isou],
+                            &pjfri[isou]);
+          cs_centered_f_val(weight,
+                            pip[isou],
+                            pjpr[isou],
+                            &pjfrj[isou]);
+
+        } else {
+
+          /* Second order
+             ------------*/
+
+          cs_solu_f_val(cell_ceni,
+                        i_face_cog,
+                        gradi[isou],
+                        pi[isou],
+                        &pifrj[isou]);
+          cs_solu_f_val(cell_ceni,
+                        i_face_cog,
+                        gradi[isou],
+                        pir[isou],
+                        &pifri[isou]);
+          cs_solu_f_val(cell_cenj,
+                        i_face_cog,
+                        gradj[isou],
+                        pj[isou],
+                        &pjfri[isou]);
+          cs_solu_f_val(cell_cenj,
+                        i_face_cog,
+                        gradj[isou],
+                        pjr[isou],
+                        &pjfrj[isou]);
+
+        }
       }
+    }
+
+    /* Blending
+       --------*/
+
+    cs_blend_f_val_vector(blencp,
+                          pi,
+                          pj,
+                          pir,
+                          pjr,
+                          pifri,
+                          pifrj,
+                          pjfri,
+                          pjfrj);
+
+  /* If iconv=0 p*fr* are useless */
+  } else {
+    for (isou = 0; isou < 3; isou++) {
+        cs_upwind_f_val(pi[isou],
+                        &pifrj[isou]);
+        cs_upwind_f_val(pir[isou],
+                        &pifri[isou]);
+        cs_upwind_f_val(pj[isou],
+                        &pjfri[isou]);
+        cs_upwind_f_val(pjr[isou],
+                        &pjfrj[isou]);
     }
   }
 
-  /* Blending
-     --------*/
-
-  cs_blend_f_val_vector(blencp,
-                        pi,
-                        pj,
-                        pir,
-                        pjr,
-                        pifri,
-                        pifrj,
-                        pjfri,
-                        pjfrj);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3372,6 +3406,7 @@ cs_i_cd_steady_slope_test_vector(bool                upwind_switch[3],
  * in case of a steady algorithm and using slope tests.
  *
  * \param[out]    upwind_switch   slope test result
+ * \param[in]     iconvp          convection flag
  * \param[in]     ircflp          recontruction flag
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     relaxp          relaxation coefficient
@@ -3407,6 +3442,7 @@ cs_i_cd_steady_slope_test_vector(bool                upwind_switch[3],
 
 inline static void
 cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
+                                 const int           iconvp,
                                  const int           ircflp,
                                  const int           ischcp,
                                  const double        relaxp,
@@ -3477,102 +3513,119 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
                           pipr,
                           pjpr);
 
-  cs_slope_test_tensor(pi,
-                       pj,
-                       distf,
-                       srfan,
-                       i_face_normal,
-                       gradi,
-                       gradj,
-                       grdpai,
-                       grdpaj,
-                       i_massflux,
-                       testij,
-                       tesqck);
+  /* Convection slope test is needed only when iconv >0 */
+  if (iconvp > 0) {
+    cs_slope_test_tensor(pi,
+                         pj,
+                         distf,
+                         srfan,
+                         i_face_normal,
+                         gradi,
+                         gradj,
+                         grdpai,
+                         grdpaj,
+                         i_massflux,
+                         testij,
+                         tesqck);
 
-  for (isou = 0 ; isou < 6; isou++) {
-    if (tesqck[isou]<=0. || testij[isou]<=0.) {
+    for (isou = 0; isou < 6; isou++) {
+      if (tesqck[isou]<=0. || testij[isou]<=0.) {
 
-      /* Upwind
-         --------*/
-
-      cs_upwind_f_val(pi[isou],
-                      &pifrj[isou]);
-      cs_upwind_f_val(pir[isou],
-                      &pifri[isou]);
-      cs_upwind_f_val(pj[isou],
-                      &pjfri[isou]);
-      cs_upwind_f_val(pjr[isou],
-                      &pjfrj[isou]);
-
-      upwind_switch[isou] = true;
-
-    } else {
-
-      if (ischcp==1) {
-
-        /* Centered
+        /* Upwind
            --------*/
 
-        cs_centered_f_val(weight,
-                          pip[isou],
-                          pjpr[isou],
-                          &pifrj[isou]);
-        cs_centered_f_val(weight,
-                          pipr[isou],
-                          pjp[isou],
-                          &pifri[isou]);
-        cs_centered_f_val(weight,
-                          pipr[isou],
-                          pjp[isou],
-                          &pjfri[isou]);
-        cs_centered_f_val(weight,
-                          pip[isou],
-                          pjpr[isou],
-                          &pjfrj[isou]);
+        cs_upwind_f_val(pi[isou],
+                        &pifrj[isou]);
+        cs_upwind_f_val(pir[isou],
+                        &pifri[isou]);
+        cs_upwind_f_val(pj[isou],
+                        &pjfri[isou]);
+        cs_upwind_f_val(pjr[isou],
+                        &pjfrj[isou]);
+
+        upwind_switch[isou] = true;
 
       } else {
 
-        /* Second order
-           ------------*/
+        if (ischcp==1) {
 
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradi[isou],
-                      pi[isou],
-                      &pifrj[isou]);
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradi[isou],
-                      pir[isou],
-                      &pifri[isou]);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradj[isou],
-                      pj[isou],
-                      &pjfri[isou]);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradj[isou],
-                      pjr[isou],
-                      &pjfrj[isou]);
+          /* Centered
+             --------*/
 
+          cs_centered_f_val(weight,
+                            pip[isou],
+                            pjpr[isou],
+                            &pifrj[isou]);
+          cs_centered_f_val(weight,
+                            pipr[isou],
+                            pjp[isou],
+                            &pifri[isou]);
+          cs_centered_f_val(weight,
+                            pipr[isou],
+                            pjp[isou],
+                            &pjfri[isou]);
+          cs_centered_f_val(weight,
+                            pip[isou],
+                            pjpr[isou],
+                            &pjfrj[isou]);
+
+        } else {
+
+          /* Second order
+             ------------*/
+
+          cs_solu_f_val(cell_ceni,
+                        i_face_cog,
+                        gradi[isou],
+                        pi[isou],
+                        &pifrj[isou]);
+          cs_solu_f_val(cell_ceni,
+                        i_face_cog,
+                        gradi[isou],
+                        pir[isou],
+                        &pifri[isou]);
+          cs_solu_f_val(cell_cenj,
+                        i_face_cog,
+                        gradj[isou],
+                        pj[isou],
+                        &pjfri[isou]);
+          cs_solu_f_val(cell_cenj,
+                        i_face_cog,
+                        gradj[isou],
+                        pjr[isou],
+                        &pjfrj[isou]);
+
+        }
       }
+    }
+
+    /* Blending
+       --------*/
+
+    cs_blend_f_val_tensor(blencp,
+                          pi,
+                          pj,
+                          pir,
+                          pjr,
+                          pifri,
+                          pifrj,
+                          pjfri,
+                          pjfrj);
+
+   /* If iconv=0 p*fr* are useless */
+  } else {
+    for (isou = 0; isou < 6; isou++) {
+        cs_upwind_f_val(pi[isou],
+                        &pifrj[isou]);
+        cs_upwind_f_val(pir[isou],
+                        &pifri[isou]);
+        cs_upwind_f_val(pj[isou],
+                        &pjfri[isou]);
+        cs_upwind_f_val(pjr[isou],
+                        &pjfrj[isou]);
     }
   }
 
-  /* Blending
-     --------*/
-
-  cs_blend_f_val_tensor(blencp,
-                        pi,
-                        pj,
-                        pir,
-                        pjr,
-                        pifri,
-                        pifrj,
-                        pjfri,
-                        pjfrj);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3581,6 +3634,7 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
  * in case of a steady algorithm and using slope tests.
  *
  * \param[out]    upwind_switch   slope test result
+ * \param[in]     iconvp          convection flag
  * \param[in]     ircflp          recontruction flag
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     relaxp          relaxation coefficient
@@ -3612,6 +3666,7 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
 
 inline static void
 cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
+                            const int          iconvp,
                             const int          ircflp,
                             const int          ischcp,
                             const double       blencp,
@@ -3660,91 +3715,102 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
                           pip,
                           pjp);
 
-  cs_slope_test(pi,
-                pj,
-                distf,
-                srfan,
-                i_face_normal,
-                gradi,
-                gradj,
-                gradsti,
-                gradstj,
-                i_massflux,
-                &testij,
-                &tesqck);
+  /* Convection slope test is needed only when iconv >0 */
+  if (iconvp > 0) {
+    cs_slope_test(pi,
+                  pj,
+                  distf,
+                  srfan,
+                  i_face_normal,
+                  gradi,
+                  gradj,
+                  gradsti,
+                  gradstj,
+                  i_massflux,
+                  &testij,
+                  &tesqck);
 
-  if (tesqck<=0. || testij<=0.) {
+    if (tesqck<=0. || testij<=0.) {
 
-    /* Upwind
+      /* Upwind
+         --------*/
+
+      cs_upwind_f_val(pi,
+                      pif);
+      cs_upwind_f_val(pj,
+                      pjf);
+
+      *upwind_switch = true;
+
+    } else {
+
+      if (ischcp==1) {
+
+        /* Centered
+           --------*/
+
+        cs_centered_f_val(weight,
+                          *pip,
+                          *pjp,
+                          pif);
+        cs_centered_f_val(weight,
+                          *pip,
+                          *pjp,
+                          pjf);
+
+      } else if (ischcp == 0) {
+
+        /* Original SOLU
+           --------------*/
+
+        cs_solu_f_val(cell_ceni,
+                      i_face_cog,
+                      gradi,
+                      pi,
+                      pif);
+        cs_solu_f_val(cell_cenj,
+                      i_face_cog,
+                      gradj,
+                      pj,
+                      pjf);
+
+      } else {
+
+        /* SOLU
+           -----*/
+
+        cs_solu_f_val(cell_ceni,
+                      i_face_cog,
+                      gradupi,
+                      pi,
+                      pif);
+        cs_solu_f_val(cell_cenj,
+                      i_face_cog,
+                      gradupj,
+                      pj,
+                      pjf);
+
+      }
+    }
+
+    /* Blending
        --------*/
 
+    cs_blend_f_val(blencp,
+                   pi,
+                   pif);
+    cs_blend_f_val(blencp,
+                   pj,
+                   pjf);
+
+  /* If iconv=0 p*f are useless */
+  } else {
     cs_upwind_f_val(pi,
                     pif);
     cs_upwind_f_val(pj,
                     pjf);
-
-    *upwind_switch = true;
-
-  } else {
-
-    if (ischcp==1) {
-
-      /* Centered
-         --------*/
-
-      cs_centered_f_val(weight,
-                        *pip,
-                        *pjp,
-                        pif);
-      cs_centered_f_val(weight,
-                        *pip,
-                        *pjp,
-                        pjf);
-
-    } else if (ischcp == 0) {
-
-      /* Original SOLU
-         --------------*/
-
-      cs_solu_f_val(cell_ceni,
-                    i_face_cog,
-                    gradi,
-                    pi,
-                    pif);
-      cs_solu_f_val(cell_cenj,
-                    i_face_cog,
-                    gradj,
-                    pj,
-                    pjf);
-
-    } else {
-
-      /* SOLU
-         -----*/
-
-      cs_solu_f_val(cell_ceni,
-                    i_face_cog,
-                    gradupi,
-                    pi,
-                    pif);
-      cs_solu_f_val(cell_cenj,
-                    i_face_cog,
-                    gradupj,
-                    pj,
-                    pjf);
-
-    }
   }
 
-  /* Blending
-     --------*/
-
-  cs_blend_f_val(blencp,
-                 pi,
-                 pif);
-  cs_blend_f_val(blencp,
-                 pj,
-                 pjf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3753,6 +3819,7 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
  * in case of a unsteady algorithm and using slope tests.
  *
  * \param[out]    upwind_switch   slope test result
+ * \param[in]     iconvp          convection flag
  * \param[in]     ircflp          recontruction flag
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     blencp          proportion of centered or SOLU scheme,
@@ -3785,6 +3852,7 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
 
 inline static void
 cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
+                                   const int           iconvp,
                                    const int           ircflp,
                                    const int           ischcp,
                                    const double        blencp,
@@ -3849,24 +3917,107 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
                              pipr,
                              pjpr);
 
-  cs_slope_test_vector(pi,
-                       pj,
-                       distf,
-                       srfan,
-                       i_face_normal,
-                       gradi,
-                       gradj,
-                       grdpai,
-                       grdpaj,
-                       i_massflux,
-                       testij,
-                       tesqck);
-  for (isou = 0 ; isou < 3; isou++) {
-    if (tesqck[isou]<=0. || testij[isou]<=0.) {
+  /* Convection slope test is needed only when iconv >0 */
+  if (iconvp > 0) {
+    cs_slope_test_vector(pi,
+                         pj,
+                         distf,
+                         srfan,
+                         i_face_normal,
+                         gradi,
+                         gradj,
+                         grdpai,
+                         grdpaj,
+                         i_massflux,
+                         testij,
+                         tesqck);
+    for (isou = 0; isou < 3; isou++) {
+      if (tesqck[isou]<=0. || testij[isou]<=0.) {
 
-      /* Upwind
-         --------*/
+        /* Upwind
+           --------*/
 
+        cs_upwind_f_val(pi[isou],
+                        &pifrj[isou]);
+        cs_upwind_f_val(pir[isou],
+                        &pifri[isou]);
+        cs_upwind_f_val(pj[isou],
+                        &pjfri[isou]);
+        cs_upwind_f_val(pjr[isou],
+                        &pjfrj[isou]);
+
+        upwind_switch[isou] = true;
+
+      } else {
+
+        if (ischcp==1) {
+
+          /* Centered
+             --------*/
+
+          cs_centered_f_val(weight,
+                            pip[isou],
+                            pjpr[isou],
+                            &pifrj[isou]);
+          cs_centered_f_val(weight,
+                            pipr[isou],
+                            pjp[isou],
+                            &pifri[isou]);
+          cs_centered_f_val(weight,
+                            pipr[isou],
+                            pjp[isou],
+                            &pjfri[isou]);
+          cs_centered_f_val(weight,
+                            pip[isou],
+                            pjpr[isou],
+                            &pjfrj[isou]);
+
+        } else {
+
+          /* Second order
+             ------------*/
+
+          cs_solu_f_val(cell_ceni,
+                        i_face_cog,
+                        gradi[isou],
+                        pi[isou],
+                        &pifrj[isou]);
+          cs_solu_f_val(cell_ceni,
+                        i_face_cog,
+                        gradi[isou],
+                        pir[isou],
+                        &pifri[isou]);
+          cs_solu_f_val(cell_cenj,
+                        i_face_cog,
+                        gradj[isou],
+                        pj[isou],
+                        &pjfri[isou]);
+          cs_solu_f_val(cell_cenj,
+                        i_face_cog,
+                        gradj[isou],
+                        pjr[isou],
+                        &pjfrj[isou]);
+
+        }
+      }
+    }
+
+    /* Blending
+       --------*/
+
+    cs_blend_f_val_vector(blencp,
+                          pi,
+                          pj,
+                          pir,
+                          pjr,
+                          pifri,
+                          pifrj,
+                          pjfri,
+                          pjfrj);
+  /* If iconv=0 p*fr* are useless */
+  } else {
+
+    for (isou = 0; isou < 3; isou++) {
       cs_upwind_f_val(pi[isou],
                       &pifrj[isou]);
       cs_upwind_f_val(pir[isou],
@@ -3876,74 +4027,8 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
       cs_upwind_f_val(pjr[isou],
                       &pjfrj[isou]);
 
-      upwind_switch[isou] = true;
-
-    } else {
-
-      if (ischcp==1) {
-
-        /* Centered
-           --------*/
-
-        cs_centered_f_val(weight,
-                          pip[isou],
-                          pjpr[isou],
-                          &pifrj[isou]);
-        cs_centered_f_val(weight,
-                          pipr[isou],
-                          pjp[isou],
-                          &pifri[isou]);
-        cs_centered_f_val(weight,
-                          pipr[isou],
-                          pjp[isou],
-                          &pjfri[isou]);
-        cs_centered_f_val(weight,
-                          pip[isou],
-                          pjpr[isou],
-                          &pjfrj[isou]);
-
-      } else {
-
-        /* Second order
-           ------------*/
-
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradi[isou],
-                      pi[isou],
-                      &pifrj[isou]);
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradi[isou],
-                      pir[isou],
-                      &pifri[isou]);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradj[isou],
-                      pj[isou],
-                      &pjfri[isou]);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradj[isou],
-                      pjr[isou],
-                      &pjfrj[isou]);
-
-      }
     }
   }
-
-  /* Blending
-     --------*/
-
-  cs_blend_f_val_vector(blencp,
-                        pi,
-                        pj,
-                        pir,
-                        pjr,
-                        pifri,
-                        pifrj,
-                        pjfri,
-                        pjfrj);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3952,6 +4037,7 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
  * in case of a unsteady algorithm and using slope tests.
  *
  * \param[out]    upwind_switch   slope test result
+ * \param[in]     iconvp          convection flag
  * \param[in]     ircflp          recontruction flag
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     blencp          proportion of centered or SOLU scheme,
@@ -3984,6 +4070,7 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
 
 inline static void
 cs_i_cd_unsteady_slope_test_tensor(bool                upwind_switch[6],
+                                   const int           iconvp,
                                    const int           ircflp,
                                    const int           ischcp,
                                    const double        blencp,
@@ -4048,24 +4135,109 @@ cs_i_cd_unsteady_slope_test_tensor(bool                upwind_switch[6],
                              pipr,
                              pjpr);
 
-  cs_slope_test_tensor(pi,
-                       pj,
-                       distf,
-                       srfan,
-                       i_face_normal,
-                       gradi,
-                       gradj,
-                       grdpai,
-                       grdpaj,
-                       i_massflux,
-                       testij,
-                       tesqck);
-  for (isou = 0 ; isou < 6; isou++) {
-    if (tesqck[isou]<=0. || testij[isou]<=0.) {
 
-      /* Upwind
-         --------*/
+  /* Convection slope test is needed only when iconv >0 */
+  if (iconvp > 0) {
+    cs_slope_test_tensor(pi,
+                         pj,
+                         distf,
+                         srfan,
+                         i_face_normal,
+                         gradi,
+                         gradj,
+                         grdpai,
+                         grdpaj,
+                         i_massflux,
+                         testij,
+                         tesqck);
+    for (isou = 0; isou < 6; isou++) {
+      if (tesqck[isou]<=0. || testij[isou]<=0.) {
 
+        /* Upwind
+           --------*/
+
+        cs_upwind_f_val(pi[isou],
+                        &pifrj[isou]);
+        cs_upwind_f_val(pir[isou],
+                        &pifri[isou]);
+        cs_upwind_f_val(pj[isou],
+                        &pjfri[isou]);
+        cs_upwind_f_val(pjr[isou],
+                        &pjfrj[isou]);
+
+        upwind_switch[isou] = true;
+
+      } else {
+
+        if (ischcp==1) {
+
+          /* Centered
+             --------*/
+
+          cs_centered_f_val(weight,
+                            pip[isou],
+                            pjpr[isou],
+                            &pifrj[isou]);
+          cs_centered_f_val(weight,
+                            pipr[isou],
+                            pjp[isou],
+                            &pifri[isou]);
+          cs_centered_f_val(weight,
+                            pipr[isou],
+                            pjp[isou],
+                            &pjfri[isou]);
+          cs_centered_f_val(weight,
+                            pip[isou],
+                            pjpr[isou],
+                            &pjfrj[isou]);
+
+        } else {
+
+          /* Second order
+             ------------*/
+
+          cs_solu_f_val(cell_ceni,
+                        i_face_cog,
+                        gradi[isou],
+                        pi[isou],
+                        &pifrj[isou]);
+          cs_solu_f_val(cell_ceni,
+                        i_face_cog,
+                        gradi[isou],
+                        pir[isou],
+                        &pifri[isou]);
+          cs_solu_f_val(cell_cenj,
+                        i_face_cog,
+                        gradj[isou],
+                        pj[isou],
+                        &pjfri[isou]);
+          cs_solu_f_val(cell_cenj,
+                        i_face_cog,
+                        gradj[isou],
+                        pjr[isou],
+                        &pjfrj[isou]);
+
+        }
+      }
+    }
+
+    /* Blending
+       --------*/
+
+    cs_blend_f_val_tensor(blencp,
+                          pi,
+                          pj,
+                          pir,
+                          pjr,
+                          pifri,
+                          pifrj,
+                          pjfri,
+                          pjfrj);
+
+  /* If iconv=0 p*fr* are useless */
+  } else {
+
+    for (isou = 0; isou < 6; isou++) {
       cs_upwind_f_val(pi[isou],
                       &pifrj[isou]);
       cs_upwind_f_val(pir[isou],
@@ -4075,74 +4247,8 @@ cs_i_cd_unsteady_slope_test_tensor(bool                upwind_switch[6],
       cs_upwind_f_val(pjr[isou],
                       &pjfrj[isou]);
 
-      upwind_switch[isou] = true;
-
-    } else {
-
-      if (ischcp==1) {
-
-        /* Centered
-           --------*/
-
-        cs_centered_f_val(weight,
-                          pip[isou],
-                          pjpr[isou],
-                          &pifrj[isou]);
-        cs_centered_f_val(weight,
-                          pipr[isou],
-                          pjp[isou],
-                          &pifri[isou]);
-        cs_centered_f_val(weight,
-                          pipr[isou],
-                          pjp[isou],
-                          &pjfri[isou]);
-        cs_centered_f_val(weight,
-                          pip[isou],
-                          pjpr[isou],
-                          &pjfrj[isou]);
-
-      } else {
-
-        /* Second order
-           ------------*/
-
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradi[isou],
-                      pi[isou],
-                      &pifrj[isou]);
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradi[isou],
-                      pir[isou],
-                      &pifri[isou]);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradj[isou],
-                      pj[isou],
-                      &pjfri[isou]);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradj[isou],
-                      pjr[isou],
-                      &pjfrj[isou]);
-
-      }
     }
   }
-
-  /* Blending
-     --------*/
-
-  cs_blend_f_val_tensor(blencp,
-                        pi,
-                        pj,
-                        pir,
-                        pjr,
-                        pifri,
-                        pifrj,
-                        pjfri,
-                        pjfrj);
 }
 
 /*----------------------------------------------------------------------------*/

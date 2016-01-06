@@ -2630,6 +2630,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_real_t pip, pjp, pipr, pjpr;
 
             cs_i_cd_steady_slope_test(&upwind_switch,
+                                      iconvp,
                                       ircflp,
                                       ischcp,
                                       relaxp,
@@ -2728,6 +2729,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
             if (isstpp == 0) {
 
               cs_i_cd_unsteady_slope_test(&upwind_switch,
+                                          iconvp,
                                           ircflp,
                                           ischcp,
                                           blencp,
@@ -3795,6 +3797,7 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_real_3_t pifri, pifrj, pjfri, pjfrj;
             bool upwind_switch[3];
             cs_i_cd_steady_slope_test_vector(upwind_switch,
+                                             iconvp,
                                              ircflp,
                                              ischcp,
                                              relaxp,
@@ -3880,6 +3883,7 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_real_3_t pifri, pifrj, pjfri, pjfrj;
             bool upwind_switch[3];
             cs_i_cd_unsteady_slope_test_vector(upwind_switch,
+                                               iconvp,
                                                ircflp,
                                                ischcp,
                                                blencp,
@@ -4927,6 +4931,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_real_6_t pifri, pifrj, pjfri, pjfrj;
             bool upwind_switch[6];
             cs_i_cd_steady_slope_test_tensor(upwind_switch,
+                                             iconvp,
                                              ircflp,
                                              ischcp,
                                              relaxp,
@@ -5012,6 +5017,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_real_6_t pifri, pifrj, pjfri, pjfrj;
             bool upwind_switch[6];
             cs_i_cd_unsteady_slope_test_tensor(upwind_switch,
+                                               iconvp,
                                                ircflp,
                                                ischcp,
                                                blencp,
@@ -5889,6 +5895,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
             bool upwind_switch;
 
             cs_i_cd_steady_slope_test(&upwind_switch,
+                                      iconvp,
                                       ircflp,
                                       ischcp,
                                       relaxp,
@@ -5987,6 +5994,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
             if (isstpp == 0) {
 
               cs_i_cd_unsteady_slope_test(&upwind_switch,
+                                          iconvp,
                                           ircflp,
                                           ischcp,
                                           blencp,

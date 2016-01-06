@@ -1244,6 +1244,7 @@ cs_balance_by_zone(const int  bc_type[],
         cs_real_t pifri, pjfri, pifrj, pjfrj;
 
         cs_i_cd_steady_slope_test(&indic,
+                                  iconvp,
                                   ircflp,
                                   ischcp,
                                   relaxp,
@@ -1336,6 +1337,7 @@ cs_balance_by_zone(const int  bc_type[],
         cs_real_t pif, pjf;
 
         cs_i_cd_unsteady_slope_test(&indic,
+                                    iconvp,
                                     ircflp,
                                     ischcp,
                                     blencp,
