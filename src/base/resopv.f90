@@ -183,7 +183,7 @@ integer          iinvpe, indhyd
 integer          itypfl
 integer          isou  , ibsize, iesize
 integer          imucpp, idftnp, iswdyp
-integer          iescap, ircflp, ischcp, isstpp, ivar
+integer          iescap, ircflp, ischcp, isstpp, ivar, ivar0
 integer          nswrsp
 integer          imvisp
 integer          iflid, iflwgr, f_dim
@@ -2104,6 +2104,7 @@ if (idilat.eq.5) then
   enddo
 
   ivar   = ipr
+  ivar0  = 0
   iconvp = 1
   idiffp = 0
   nswrsp = 1
@@ -2127,7 +2128,7 @@ if (idilat.eq.5) then
 
   call bilsca &
   !==========
- ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtvar , ivar0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
