@@ -372,7 +372,7 @@ cs_i_compute_quantities(const int          ircflp,
                         cs_real_t         *pjp)
 {
   cs_real_t diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz;
-  cs_real_t dpxf, dpyf, dpzf;
+  cs_real_t dpxf, dpyf, dpzf;//FIXME
 
   /* Recompute II' and JJ' at this level */
 
@@ -654,10 +654,10 @@ cs_i_relax_c_val_tensor(const double       relaxp,
                         const cs_real_6_t  recoj,
                         const cs_real_6_t  pi,
                         const cs_real_6_t  pj,
-                        cs_real_t       pir[6],
-                        cs_real_t       pjr[6],
-                        cs_real_t       pipr[6],
-                        cs_real_t       pjpr[6])
+                        cs_real_t          pir[6],
+                        cs_real_t          pjr[6],
+                        cs_real_t          pipr[6],
+                        cs_real_t          pjpr[6])
 {
   for (int isou = 0; isou < 6; isou++) {
     pir[isou] = pi[isou] /relaxp - (1.-relaxp)/relaxp * pia[isou];
@@ -665,76 +665,6 @@ cs_i_relax_c_val_tensor(const double       relaxp,
 
     pipr[isou] = pir[isou] + recoi[isou];
     pjpr[isou] = pjr[isou] + recoj[isou];
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy reconstructed or not cell values for consistency with relaxation
- * case.
- *
- * \param[in]     pi     value at cell i
- * \param[in]     pj     value at cell j
- * \param[in]     pip    reconstructed value at cell i
- * \param[in]     pjp    reconstructed value at cell j
- * \param[out]    pir    value at cell i
- * \param[out]    pjr    value at cell j
- * \param[out]    pipr   reconstructed value at cell i
- * \param[out]    pjpr   reconstructed value at cell j
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_i_no_relax_c_val_vector(const cs_real_3_t   pi,
-                           const cs_real_3_t   pj,
-                           const cs_real_3_t   pip,
-                           const cs_real_3_t   pjp,
-                           cs_real_t           pir[3],
-                           cs_real_t           pjr[3],
-                           cs_real_t           pipr[3],
-                           cs_real_t           pjpr[3])
-{
-  for (int isou = 0; isou < 3; isou++) {
-    pir[isou] = pi[isou];
-    pjr[isou] = pj[isou];
-
-    pipr[isou] = pip[isou];
-    pjpr[isou] = pjp[isou];
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy reconstructed or not cell values for consistency with relaxation
- * case.
- *
- * \param[in]     pi     value at cell i
- * \param[in]     pj     value at cell j
- * \param[in]     pip    reconstructed value at cell i
- * \param[in]     pjp    reconstructed value at cell j
- * \param[out]    pir    value at cell i
- * \param[out]    pjr    value at cell j
- * \param[out]    pipr   reconstructed value at cell i
- * \param[out]    pjpr   reconstructed value at cell j
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_i_no_relax_c_val_tensor(const cs_real_6_t   pi,
-                           const cs_real_6_t   pj,
-                           const cs_real_6_t   pip,
-                           const cs_real_6_t   pjp,
-                           cs_real_t           pir[6],
-                           cs_real_t           pjr[6],
-                           cs_real_t           pipr[6],
-                           cs_real_t           pjpr[6])
-{
-  for (int isou = 0; isou < 6; isou++) {
-    pir[isou] = pi[isou];
-    pjr[isou] = pj[isou];
-
-    pipr[isou] = pip[isou];
-    pjpr[isou] = pjp[isou];
   }
 }
 
@@ -758,70 +688,34 @@ cs_upwind_f_val(const cs_real_t  p,
 /*!
  * \brief Prepare value at face ij by using an upwind scheme.
  *
- * \param[in]     pi      value at cell i
- * \param[in]     pj      value at cell j
- * \param[in]     pir     relaxed value at cell i
- * \param[in]     pjr     relaxed value at cell j
- * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pifrj        contribution of i to flux from j to i
- * \param[out]    pjfri        contribution of j to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[in]     p       value at cell
+ * \param[out]    pf      value at face
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_upwind_f_val_vector(const cs_real_3_t  pi,
-                       const cs_real_3_t  pj,
-                       const cs_real_3_t  pir,
-                       const cs_real_3_t  pjr,
-                       cs_real_t          pifri[3],
-                       cs_real_t          pifrj[3],
-                       cs_real_t          pjfri[3],
-                       cs_real_t          pjfrj[3])
+cs_upwind_f_val_vector(const cs_real_3_t  p,
+                       cs_real_t          pf[3])
 {
-  int isou;
-
-  for (isou = 0; isou < 3; isou++) {
-    pifri[isou] = pir[isou];
-    pifrj[isou] = pi[isou];
-    pjfri[isou] = pj[isou];
-    pjfrj[isou] = pjr[isou];
-  }
+  for (int isou = 0; isou < 3; isou++)
+    pf[isou] = p[isou];
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Prepare value at face ij by using an upwind scheme.
  *
- * \param[in]     pi      value at cell i
- * \param[in]     pj      value at cell j
- * \param[in]     pir     relaxed value at cell i
- * \param[in]     pjr     relaxed value at cell j
- * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pifrj        contribution of i to flux from j to i
- * \param[out]    pjfri        contribution of j to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[in]     p       value at cell
+ * \param[out]    pf      value at face
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_upwind_f_val_tensor(const cs_real_6_t  pi,
-                       const cs_real_6_t  pj,
-                       const cs_real_6_t  pir,
-                       const cs_real_6_t  pjr,
-                       cs_real_t          pifri[6],
-                       cs_real_t          pifrj[6],
-                       cs_real_t          pjfri[6],
-                       cs_real_t          pjfrj[6])
+cs_upwind_f_val_tensor(const cs_real_6_t  p,
+                       cs_real_t          pf[6])
 {
-  int isou;
-
-  for (isou = 0; isou < 6; isou++) {
-    pifri[isou] = pir[isou];
-    pifrj[isou] = pi[isou];
-    pjfri[isou] = pj[isou];
-    pjfrj[isou] = pjr[isou];
-  }
+  for (int isou = 0; isou < 6; isou++)
+    pf[isou] = p[isou];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -876,15 +770,10 @@ cs_centered_f_val_limiter(const double     pnd,
 /*!
  * \brief Prepare value at face ij by using a centered scheme.
  *
- * \param[in]     pnd      geometrical weight
- * \param[in]     pip      reconstructed value at cell i
- * \param[in]     pjp      reconstructed value at cell j
- * \param[in]     pipr     relaxed reconstructed value at cell i
- * \param[in]     pjpr     relaxed reconstructed value at cell j
- * \param[out]    pifri    contribution of i to flux from i to j
- * \param[out]    pifrj    contribution of i to flux from j to i
- * \param[out]    pjfri    contribution of j to flux from i to j
- * \param[out]    pjfrj    contribution of j to flux from j to i
+ * \param[in]     pnd      weight
+ * \param[in]     pip      (relaxed) reconstructed value at cell i
+ * \param[in]     pjp      (relaxed) reconstructed value at cell j
+ * \param[out]    pf       face value
  */
 /*----------------------------------------------------------------------------*/
 
@@ -892,34 +781,20 @@ inline static void
 cs_centered_f_val_vector(const double       pnd,
                          const cs_real_3_t  pip,
                          const cs_real_3_t  pjp,
-                         const cs_real_3_t  pipr,
-                         const cs_real_3_t  pjpr,
-                         cs_real_t       pifri[3],
-                         cs_real_t       pifrj[3],
-                         cs_real_t       pjfri[3],
-                         cs_real_t       pjfrj[3])
+                         cs_real_t          pf[3])
 {
-  for (int isou = 0; isou < 3; isou++) {
-    pifri[isou] = pnd*pipr[isou] + (1.-pnd)*pjp[isou];
-    pjfri[isou] = pifri[isou];
-    pifrj[isou] = pnd*pip[isou]  + (1.-pnd)*pjpr[isou];
-    pjfrj[isou] = pifrj[isou];
-  }
+  for (int isou = 0; isou < 3; isou++)
+    pf[isou] = pnd*pip[isou] + (1.-pnd)*pjp[isou];
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Prepare value at face ij by using a centered scheme.
  *
- * \param[in]     pnd      geometrical weight
- * \param[in]     pip      reconstructed value at cell i
- * \param[in]     pjp      reconstructed value at cell j
- * \param[in]     pipr     relaxed reconstructed value at cell i
- * \param[in]     pjpr     relaxed reconstructed value at cell j
- * \param[out]    pifri    contribution of i to flux from i to j
- * \param[out]    pifrj    contribution of i to flux from j to i
- * \param[out]    pjfri    contribution of j to flux from i to j
- * \param[out]    pjfrj    contribution of j to flux from j to i
+ * \param[in]     pnd      weight
+ * \param[in]     pip      (relaxed) reconstructed value at cell i
+ * \param[in]     pjp      (relaxed) reconstructed value at cell j
+ * \param[out]    pf       face value
  */
 /*----------------------------------------------------------------------------*/
 
@@ -927,19 +802,10 @@ inline static void
 cs_centered_f_val_tensor(const double       pnd,
                          const cs_real_6_t  pip,
                          const cs_real_6_t  pjp,
-                         const cs_real_6_t  pipr,
-                         const cs_real_6_t  pjpr,
-                         cs_real_t          pifri[6],
-                         cs_real_t          pifrj[6],
-                         cs_real_t          pjfri[6],
-                         cs_real_t          pjfrj[6])
+                         cs_real_t          pf[6])
 {
-  for (int isou = 0; isou < 6 ; isou++) {
-    pifri[isou] = pnd*pipr[isou] + (1.-pnd)*pjp[isou];
-    pjfri[isou] = pifri[isou];
-    pifrj[isou] = pnd*pip[isou]  + (1.-pnd)*pjpr[isou];
-    pjfrj[isou] = pifrj[isou];
-  }
+  for (int isou = 0; isou < 6; isou++)
+    pf[isou] = pnd*pip[isou] + (1.-pnd)*pjp[isou];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1010,61 +876,31 @@ cs_solu_f_val_limiter(const cs_real_3_t  cell_cen,
 /*!
  * \brief Prepare value at face ij by using a Second Order Linear Upwind scheme.
  *
- * \param[in]     cell_ceni    center of gravity coordinates of cell i
- * \param[in]     cell_cenj    center of gravity coordinates of cell i
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     gradi      gradient at cell i
- * \param[in]     gradj      gradient at cell j
- * \param[in]     pi           value at cell i
- * \param[in]     pj           value at cell j
- * \param[in]     pir          relaxed value at cell i
- * \param[in]     pjr          relaxed value at cell j
- * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pifrj        contribution of i to flux from j to i
- * \param[out]    pjfri        contribution of j to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[in]     cell_cen     center of gravity coordinates of cell
+ * \param[in]     i_face_cog   center of gravity coordinates of face
+ * \param[in]     grad         gradient at cell
+ * \param[in]     p            (relaced) value at cell
+ * \param[out]    pf           face value
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_solu_f_val_vector(const cs_real_3_t   cell_ceni,
-                     const cs_real_3_t   cell_cenj,
+cs_solu_f_val_vector(const cs_real_3_t   cell_cen,
                      const cs_real_3_t   i_face_cog,
-                     const cs_real_33_t  gradi,
-                     const cs_real_33_t  gradj,
-                     const cs_real_3_t   pi,
-                     const cs_real_3_t   pj,
-                     const cs_real_3_t   pir,
-                     const cs_real_3_t   pjr,
-                     cs_real_t         pifri[3],
-                     cs_real_t         pifrj[3],
-                     cs_real_t         pjfri[3],
-                     cs_real_t         pjfrj[3])
+                     const cs_real_33_t  grad,
+                     const cs_real_3_t   p,
+                     cs_real_t           pf[3])
 {
-  cs_real_3_t difv, djfv;
+  cs_real_3_t df;
 
-  for (int jsou = 0; jsou < 3; jsou++) {
-    difv[jsou] = i_face_cog[jsou] - cell_ceni[jsou];
-    djfv[jsou] = i_face_cog[jsou] - cell_cenj[jsou];
-  }
-
-  /* leave reconstruction of PIF and PJF even if IRCFLP=0
-     otherwise, it is the same as using upwind */
+  for (int jsou = 0; jsou < 3; jsou++)
+    df[jsou] = i_face_cog[jsou] - cell_cen[jsou];
 
   for (int isou = 0; isou < 3; isou++) {
-     pifri[isou] = pir[isou]+ difv[0]*gradi[isou][0]
-                 + difv[1]*gradi[isou][1]
-                 + difv[2]*gradi[isou][2];
-     pifrj[isou] = pi[isou] + difv[0]*gradi[isou][0]
-                 + difv[1]*gradi[isou][1]
-                 + difv[2]*gradi[isou][2];
+     pf[isou] = p[isou] + df[0]*grad[isou][0]
+                        + df[1]*grad[isou][1]
+                        + df[2]*grad[isou][2];
 
-     pjfrj[isou] = pjr[isou]+ djfv[0]*gradj[isou][0]
-                 + djfv[1]*gradj[isou][1]
-                 + djfv[2]*gradj[isou][2];
-     pjfri[isou] = pj[isou] + djfv[0]*gradj[isou][0]
-                 + djfv[1]*gradj[isou][1]
-                 + djfv[2]*gradj[isou][2];
   }
 }
 
@@ -1072,61 +908,30 @@ cs_solu_f_val_vector(const cs_real_3_t   cell_ceni,
 /*!
  * \brief Prepare value at face ij by using a Second Order Linear Upwind scheme.
  *
- * \param[in]     cell_ceni    center of gravity coordinates of cell i
- * \param[in]     cell_cenj    center of gravity coordinates of cell i
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     gradi      gradient at cell i
- * \param[in]     gradj      gradient at cell j
- * \param[in]     pi           value at cell i
- * \param[in]     pj           value at cell j
- * \param[in]     pir          relaxed value at cell i
- * \param[in]     pjr          relaxed value at cell j
- * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pifrj        contribution of i to flux from j to i
- * \param[out]    pjfri        contribution of j to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[in]     cell_cen     center of gravity coordinates of cell
+ * \param[in]     i_face_cog   center of gravity coordinates of face
+ * \param[in]     grad         gradient at cell
+ * \param[in]     p            (relaced) value at cell
+ * \param[out]    pf           face value
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_solu_f_val_tensor(const cs_real_3_t   cell_ceni,
-                     const cs_real_3_t   cell_cenj,
+cs_solu_f_val_tensor(const cs_real_3_t   cell_cen,
                      const cs_real_3_t   i_face_cog,
-                     const cs_real_63_t  gradi,
-                     const cs_real_63_t  gradj,
-                     const cs_real_6_t   pi,
-                     const cs_real_6_t   pj,
-                     const cs_real_6_t   pir,
-                     const cs_real_6_t   pjr,
-                     cs_real_t         pifri[6],
-                     cs_real_t         pifrj[6],
-                     cs_real_t         pjfri[6],
-                     cs_real_t         pjfrj[6])
+                     const cs_real_63_t  grad,
+                     const cs_real_6_t   p,
+                     cs_real_t           pf[6])
 {
-  cs_real_3_t difv, djfv;
+  cs_real_3_t df;
 
-  for (int jsou = 0; jsou < 3; jsou++) {
-    difv[jsou] = i_face_cog[jsou] - cell_ceni[jsou];
-    djfv[jsou] = i_face_cog[jsou] - cell_cenj[jsou];
-  }
-
-  /* leave reconstruction of PIF and PJF even if IRCFLP=0
-     otherwise, it is the same as using upwind */
+  for (int jsou = 0; jsou < 3; jsou++)
+    df[jsou] = i_face_cog[jsou] - cell_cen[jsou];
 
   for (int isou = 0; isou < 6; isou++) {
-     pifri[isou] = pir[isou]+ difv[0]*gradi[isou][0]
-                 + difv[1]*gradi[isou][1]
-                 + difv[2]*gradi[isou][2];
-     pifrj[isou] = pi[isou] + difv[0]*gradi[isou][0]
-                 + difv[1]*gradi[isou][1]
-                 + difv[2]*gradi[isou][2];
-
-     pjfrj[isou] = pjr[isou]+ djfv[0]*gradj[isou][0]
-                 + djfv[1]*gradj[isou][1]
-                 + djfv[2]*gradj[isou][2];
-     pjfri[isou] = pj[isou] + djfv[0]*gradj[isou][0]
-                 + djfv[1]*gradj[isou][1]
-                 + djfv[2]*gradj[isou][2];
+     pf[isou] = p[isou] + df[0]*grad[isou][0]
+                        + df[1]*grad[isou][1]
+                        + df[2]*grad[isou][2];
   }
 }
 
@@ -1157,34 +962,18 @@ cs_blend_f_val(const double     blencp,
  *
  * \param[in]     blencp   proportion of centered or SOLU scheme,
  *                         (1-blencp) is the proportion of upwind.
- * \param[in]     pi       value at cell i
- * \param[in]     pj       value at cell j
- * \param[in]     pir      relaxed value at cell i
- * \param[in]     pjr      relaxed value at cell j
- * \param[out]    pifri    contribution of i to flux from i to j
- * \param[out]    pifrj    contribution of i to flux from j to i
- * \param[out]    pjfri    contribution of j to flux from i to j
- * \param[out]    pjfrj    contribution of j to flux from j to i
+ * \param[in]     p        (relaxed) value at cell
+ * \param[out]    pf       face value
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
 cs_blend_f_val_vector(const double       blencp,
-                      const cs_real_3_t  pi,
-                      const cs_real_3_t  pj,
-                      const cs_real_3_t  pir,
-                      const cs_real_3_t  pjr,
-                      cs_real_t       pifri[3],
-                      cs_real_t       pifrj[3],
-                      cs_real_t       pjfri[3],
-                      cs_real_t       pjfrj[3])
+                      const cs_real_3_t  p,
+                      cs_real_t          pf[3])
 {
-  for (int isou = 0; isou < 3; isou++) {
-    pifri[isou] = blencp*(pifri[isou])+(1.-blencp)*pir[isou];
-    pifrj[isou] = blencp*(pifrj[isou])+(1.-blencp)*pi[isou];
-    pjfri[isou] = blencp*(pjfri[isou])+(1.-blencp)*pj[isou];
-    pjfrj[isou] = blencp*(pjfrj[isou])+(1.-blencp)*pjr[isou];
-  }
+  for (int isou = 0; isou < 3; isou++)
+    pf[isou] = blencp*(pf[isou])+(1.-blencp)*p[isou];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1194,34 +983,18 @@ cs_blend_f_val_vector(const double       blencp,
  *
  * \param[in]     blencp   proportion of centered or SOLU scheme,
  *                         (1-blencp) is the proportion of upwind.
- * \param[in]     pi       value at cell i
- * \param[in]     pj       value at cell j
- * \param[in]     pir      relaxed value at cell i
- * \param[in]     pjr      relaxed value at cell j
- * \param[out]    pifri    contribution of i to flux from i to j
- * \param[out]    pifrj    contribution of i to flux from j to i
- * \param[out]    pjfri    contribution of j to flux from i to j
- * \param[out]    pjfrj    contribution of j to flux from j to i
+ * \param[in]     p        (relaxed) value at cell
+ * \param[out]    pf       face value
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
 cs_blend_f_val_tensor(const double       blencp,
-                      const cs_real_6_t  pi,
-                      const cs_real_6_t  pj,
-                      const cs_real_6_t  pir,
-                      const cs_real_6_t  pjr,
-                      cs_real_t       pifri[6],
-                      cs_real_t       pifrj[6],
-                      cs_real_t       pjfri[6],
-                      cs_real_t       pjfrj[6])
+                      const cs_real_6_t  p,
+                      cs_real_t          pf[6])
 {
-  for (int isou = 0; isou < 6; isou++) {
-    pifri[isou] = blencp*(pifri[isou])+(1.-blencp)*pir[isou];
-    pifrj[isou] = blencp*(pifrj[isou])+(1.-blencp)*pi[isou];
-    pjfri[isou] = blencp*(pjfri[isou])+(1.-blencp)*pj[isou];
-    pjfrj[isou] = blencp*(pjfrj[isou])+(1.-blencp)*pjr[isou];
-  }
+  for (int isou = 0; isou < 6; isou++)
+    pf[isou] = blencp*(pf[isou])+(1.-blencp)*p[isou];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1636,13 +1409,14 @@ cs_i_cd_steady_upwind_vector(const int          ircflp,
                           pjpr);
 
   cs_upwind_f_val_vector(pi,
-                         pj,
-                         pir,
-                         pjr,
-                         pifri,
-                         pifrj,
-                         pjfri,
+                         pifrj);
+  cs_upwind_f_val_vector(pir,
+                         pifri);
+  cs_upwind_f_val_vector(pj,
+                         pjfri);
+  cs_upwind_f_val_vector(pjr,
                          pjfrj);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1728,12 +1502,12 @@ cs_i_cd_steady_upwind_tensor(const int          ircflp,
                           pjpr);
 
   cs_upwind_f_val_tensor(pi,
-                         pj,
-                         pir,
-                         pjr,
-                         pifri,
-                         pifrj,
-                         pjfri,
+                         pifrj);
+  cs_upwind_f_val_tensor(pir,
+                         pifri);
+  cs_upwind_f_val_tensor(pj,
+                         pjfri);
+  cs_upwind_f_val_tensor(pjr,
                          pjfrj);
 }
 
@@ -1811,14 +1585,10 @@ cs_i_cd_unsteady_upwind(const int          ircflp,
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
  * \param[in]     pj           value at cell j
- * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pifrj        contribution of i to flux from j to i
- * \param[out]    pjfri        contribution of j to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[out]    pif          contribution of i to flux from i to j
+ * \param[out]    pjf          contribution of j to flux from i to j
  * \param[out]    pip          reconstructed value at cell i
  * \param[out]    pjp          reconstructed value at cell j
- * \param[out]    pipr         relaxed reconstructed value at cell i
- * \param[out]    pjpr         relaxed reconstructed value at cell j
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1833,16 +1603,11 @@ cs_i_cd_unsteady_upwind_vector(const int           ircflp,
                                const cs_real_33_t  gradj,
                                const cs_real_3_t   pi,
                                const cs_real_3_t   pj,
-                               cs_real_t           pifri[3],
-                               cs_real_t           pifrj[3],
-                               cs_real_t           pjfri[3],
-                               cs_real_t           pjfrj[3],
+                               cs_real_t           pif[3],
+                               cs_real_t           pjf[3],
                                cs_real_t           pip[3],
-                               cs_real_t           pjp[3],
-                               cs_real_t           pipr[3],
-                               cs_real_t           pjpr[3])
+                               cs_real_t           pjp[3])
 {
-  cs_real_3_t pir, pjr;
   cs_real_3_t recoi, recoj;
 
   cs_i_compute_quantities_vector(ircflp,
@@ -1860,23 +1625,9 @@ cs_i_cd_unsteady_upwind_vector(const int           ircflp,
                                  pip,
                                  pjp);
 
-  cs_i_no_relax_c_val_vector(pi,
-                             pj,
-                             pip,
-                             pjp,
-                             pir,
-                             pjr,
-                             pipr,
-                             pjpr);
+  cs_upwind_f_val_vector(pi, pif);
+  cs_upwind_f_val_vector(pj, pjf);
 
-  cs_upwind_f_val_vector(pi,
-                         pj,
-                         pir,
-                         pjr,
-                         pifri,
-                         pifrj,
-                         pjfri,
-                         pjfrj);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1894,14 +1645,10 @@ cs_i_cd_unsteady_upwind_vector(const int           ircflp,
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
  * \param[in]     pj           value at cell j
- * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pifrj        contribution of i to flux from j to i
- * \param[out]    pjfri        contribution of j to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[out]    pif          contribution of i to flux from i to j
+ * \param[out]    pjf          contribution of j to flux from i to j
  * \param[out]    pip          reconstructed value at cell i
  * \param[out]    pjp          reconstructed value at cell j
- * \param[out]    pipr         relaxed reconstructed value at cell i
- * \param[out]    pjpr         relaxed reconstructed value at cell j
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1916,16 +1663,11 @@ cs_i_cd_unsteady_upwind_tensor(const int           ircflp,
                                const cs_real_63_t  gradj,
                                const cs_real_6_t   pi,
                                const cs_real_6_t   pj,
-                               cs_real_t           pifri[6],
-                               cs_real_t           pifrj[6],
-                               cs_real_t           pjfri[6],
-                               cs_real_t           pjfrj[6],
+                               cs_real_t           pif[6],
+                               cs_real_t           pjf[6],
                                cs_real_t           pip[6],
-                               cs_real_t           pjp[6],
-                               cs_real_t           pipr[6],
-                               cs_real_t           pjpr[6])
+                               cs_real_t           pjp[6])
 {
-  cs_real_6_t pir, pjr;
   cs_real_6_t recoi, recoj;
 
   cs_i_compute_quantities_tensor(ircflp,
@@ -1943,23 +1685,9 @@ cs_i_cd_unsteady_upwind_tensor(const int           ircflp,
                                  pip,
                                  pjp);
 
-  cs_i_no_relax_c_val_tensor(pi,
-                             pj,
-                             pip,
-                             pjp,
-                             pir,
-                             pjr,
-                             pipr,
-                             pjpr);
+  cs_upwind_f_val_tensor(pi, pif);
+  cs_upwind_f_val_tensor(pj, pjf);
 
-  cs_upwind_f_val_tensor(pi,
-                         pj,
-                         pir,
-                         pjr,
-                         pifri,
-                         pifrj,
-                         pjfri,
-                         pjfrj);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2240,12 +1968,19 @@ cs_i_cd_steady_vector(const int           ircflp,
 
     cs_centered_f_val_vector(weight,
                              pip,
-                             pjp,
-                             pipr,
                              pjpr,
-                             pifri,
-                             pifrj,
-                             pjfri,
+                             pifrj);
+    cs_centered_f_val_vector(weight,
+                             pipr,
+                             pjp,
+                             pifri);
+    cs_centered_f_val_vector(weight,
+                             pipr,
+                             pjp,
+                             pjfri);
+    cs_centered_f_val_vector(weight,
+                             pip,
+                             pjpr,
                              pjfrj);
 
   } else {
@@ -2254,33 +1989,43 @@ cs_i_cd_steady_vector(const int           ircflp,
        ------------*/
 
     cs_solu_f_val_vector(cell_ceni,
-                         cell_cenj,
                          i_face_cog,
                          gradi,
-                         gradj,
                          pi,
-                         pj,
+                         pifrj);
+    cs_solu_f_val_vector(cell_ceni,
+                         i_face_cog,
+                         gradi,
                          pir,
+                         pifri);
+    cs_solu_f_val_vector(cell_cenj,
+                         i_face_cog,
+                         gradj,
+                         pj,
+                         pjfri);
+    cs_solu_f_val_vector(cell_cenj,
+                         i_face_cog,
+                         gradj,
                          pjr,
-                         pifri,
-                         pifrj,
-                         pjfri,
                          pjfrj);
 
   }
 
   /* Blending
      --------*/
-
   cs_blend_f_val_vector(blencp,
                         pi,
-                        pj,
+                        pifrj);
+  cs_blend_f_val_vector(blencp,
                         pir,
+                        pifri);
+  cs_blend_f_val_vector(blencp,
+                        pj,
+                        pjfri);
+  cs_blend_f_val_vector(blencp,
                         pjr,
-                        pifri,
-                        pifrj,
-                        pjfri,
                         pjfrj);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2378,12 +2123,19 @@ cs_i_cd_steady_tensor(const int           ircflp,
 
     cs_centered_f_val_tensor(weight,
                              pip,
-                             pjp,
-                             pipr,
                              pjpr,
-                             pifri,
-                             pifrj,
-                             pjfri,
+                             pifrj);
+    cs_centered_f_val_tensor(weight,
+                             pipr,
+                             pjp,
+                             pifri);
+    cs_centered_f_val_tensor(weight,
+                             pipr,
+                             pjp,
+                             pjfri);
+    cs_centered_f_val_tensor(weight,
+                             pip,
+                             pjpr,
                              pjfrj);
 
   } else {
@@ -2392,17 +2144,24 @@ cs_i_cd_steady_tensor(const int           ircflp,
        ------------*/
 
     cs_solu_f_val_tensor(cell_ceni,
-                         cell_cenj,
                          i_face_cog,
                          gradi,
-                         gradj,
                          pi,
-                         pj,
+                         pifrj);
+    cs_solu_f_val_tensor(cell_ceni,
+                         i_face_cog,
+                         gradi,
                          pir,
+                         pifri);
+    cs_solu_f_val_tensor(cell_cenj,
+                         i_face_cog,
+                         gradj,
+                         pj,
+                         pjfri);
+    cs_solu_f_val_tensor(cell_cenj,
+                         i_face_cog,
+                         gradj,
                          pjr,
-                         pifri,
-                         pifrj,
-                         pjfri,
                          pjfrj);
 
   }
@@ -2412,13 +2171,17 @@ cs_i_cd_steady_tensor(const int           ircflp,
 
   cs_blend_f_val_tensor(blencp,
                         pi,
-                        pj,
+                        pifrj);
+  cs_blend_f_val_tensor(blencp,
                         pir,
+                        pifri);
+  cs_blend_f_val_tensor(blencp,
+                        pj,
+                        pjfri);
+  cs_blend_f_val_tensor(blencp,
                         pjr,
-                        pifri,
-                        pifrj,
-                        pjfri,
                         pjfrj);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2680,14 +2443,10 @@ cs_i_cd_unsteady_limiter(const int          ircflp,
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
  * \param[in]     pj           value at cell j
- * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pifrj        contribution of i to flux from j to i
- * \param[out]    pjfri        contribution of j to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[out]    pif          contribution of i to flux from i to j
+ * \param[out]    pjf          contribution of j to flux from j to i
  * \param[out]    pip          reconstructed value at cell i
  * \param[out]    pjp          reconstructed value at cell j
- * \param[out]    pipr         relaxed reconstructed value at cell i
- * \param[out]    pjpr         relaxed reconstructed value at cell j
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2704,17 +2463,12 @@ cs_i_cd_unsteady_vector(const int           ircflp,
                         const cs_real_33_t  gradj,
                         const cs_real_3_t   pi,
                         const cs_real_3_t   pj,
-                        cs_real_t           pifri[3],
-                        cs_real_t           pifrj[3],
-                        cs_real_t           pjfri[3],
-                        cs_real_t           pjfrj[3],
+                        cs_real_t           pif[3],
+                        cs_real_t           pjf[3],
                         cs_real_t           pip[3],
-                        cs_real_t           pjp[3],
-                        cs_real_t           pipr[3],
-                        cs_real_t           pjpr[3])
+                        cs_real_t           pjp[3])
 
 {
-  cs_real_3_t pir, pjr;
   cs_real_3_t recoi, recoj;
 
   cs_i_compute_quantities_vector(ircflp,
@@ -2732,15 +2486,6 @@ cs_i_cd_unsteady_vector(const int           ircflp,
                                  pip,
                                  pjp);
 
-  cs_i_no_relax_c_val_vector(pi,
-                             pj,
-                             pip,
-                             pjp,
-                             pir,
-                             pjr,
-                             pipr,
-                             pjpr);
-
   if (ischcp == 1) {
 
     /* Centered
@@ -2749,12 +2494,11 @@ cs_i_cd_unsteady_vector(const int           ircflp,
     cs_centered_f_val_vector(weight,
                              pip,
                              pjp,
-                             pipr,
-                             pjpr,
-                             pifri,
-                             pifrj,
-                             pjfri,
-                             pjfrj);
+                             pif);
+    cs_centered_f_val_vector(weight,
+                             pip,
+                             pjp,
+                             pjf);
 
   } else {
 
@@ -2762,18 +2506,15 @@ cs_i_cd_unsteady_vector(const int           ircflp,
        ------------*/
 
     cs_solu_f_val_vector(cell_ceni,
-                         cell_cenj,
                          i_face_cog,
                          gradi,
-                         gradj,
                          pi,
+                         pif);
+    cs_solu_f_val_vector(cell_cenj,
+                         i_face_cog,
+                         gradj,
                          pj,
-                         pir,
-                         pjr,
-                         pifri,
-                         pifrj,
-                         pjfri,
-                         pjfrj);
+                         pjf);
 
   }
 
@@ -2782,13 +2523,10 @@ cs_i_cd_unsteady_vector(const int           ircflp,
 
   cs_blend_f_val_vector(blencp,
                         pi,
+                        pif);
+  cs_blend_f_val_vector(blencp,
                         pj,
-                        pir,
-                        pjr,
-                        pifri,
-                        pifrj,
-                        pjfri,
-                        pjfrj);
+                        pjf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2809,14 +2547,10 @@ cs_i_cd_unsteady_vector(const int           ircflp,
  * \param[in]     gradj        gradient at cell j
  * \param[in]     pi           value at cell i
  * \param[in]     pj           value at cell j
- * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pifrj        contribution of i to flux from j to i
- * \param[out]    pjfri        contribution of j to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[out]    pif          contribution of i to flux from i to j
+ * \param[out]    pjf          contribution of j to flux from i to j
  * \param[out]    pip          reconstructed value at cell i
  * \param[out]    pjp          reconstructed value at cell j
- * \param[out]    pipr         relaxed reconstructed value at cell i
- * \param[out]    pjpr         relaxed reconstructed value at cell j
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2833,17 +2567,12 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
                         const cs_real_63_t  gradj,
                         const cs_real_6_t   pi,
                         const cs_real_6_t   pj,
-                        cs_real_t           pifri[6],
-                        cs_real_t           pifrj[6],
-                        cs_real_t           pjfri[6],
-                        cs_real_t           pjfrj[6],
+                        cs_real_t           pif[6],
+                        cs_real_t           pjf[6],
                         cs_real_t           pip[6],
-                        cs_real_t           pjp[6],
-                        cs_real_t           pipr[6],
-                        cs_real_t           pjpr[6])
+                        cs_real_t           pjp[6])
 
 {
-  cs_real_6_t pir, pjr;
   cs_real_6_t recoi, recoj;
 
   cs_i_compute_quantities_tensor(ircflp,
@@ -2861,15 +2590,6 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
                                  pip,
                                  pjp);
 
-  cs_i_no_relax_c_val_tensor(pi,
-                             pj,
-                             pip,
-                             pjp,
-                             pir,
-                             pjr,
-                             pipr,
-                             pjpr);
-
   if (ischcp == 1) {
 
     /* Centered
@@ -2878,12 +2598,11 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
     cs_centered_f_val_tensor(weight,
                              pip,
                              pjp,
-                             pipr,
-                             pjpr,
-                             pifri,
-                             pifrj,
-                             pjfri,
-                             pjfrj);
+                             pif);
+    cs_centered_f_val_tensor(weight,
+                             pip,
+                             pjp,
+                             pjf);
 
   } else {
 
@@ -2891,18 +2610,15 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
        ------------*/
 
     cs_solu_f_val_tensor(cell_ceni,
-                         cell_cenj,
                          i_face_cog,
                          gradi,
-                         gradj,
                          pi,
+                         pif);
+    cs_solu_f_val_tensor(cell_cenj,
+                         i_face_cog,
+                         gradj,
                          pj,
-                         pir,
-                         pjr,
-                         pifri,
-                         pifrj,
-                         pjfri,
-                         pjfrj);
+                         pjf);
 
   }
 
@@ -2911,13 +2627,11 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
 
   cs_blend_f_val_tensor(blencp,
                         pi,
+                        pif);
+  cs_blend_f_val_tensor(blencp,
                         pj,
-                        pir,
-                        pjr,
-                        pifri,
-                        pifrj,
-                        pjfri,
-                        pjfrj);
+                        pjf);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3373,15 +3087,17 @@ cs_i_cd_steady_slope_test_vector(bool                upwind_switch[3],
 
     /* Blending
        --------*/
-
     cs_blend_f_val_vector(blencp,
                           pi,
-                          pj,
+                          pifrj);
+    cs_blend_f_val_vector(blencp,
                           pir,
+                          pifri);
+    cs_blend_f_val_vector(blencp,
+                          pj,
+                          pjfri);
+    cs_blend_f_val_vector(blencp,
                           pjr,
-                          pifri,
-                          pifrj,
-                          pjfri,
                           pjfrj);
 
   /* If iconv=0 p*fr* are useless */
@@ -3604,12 +3320,15 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
 
     cs_blend_f_val_tensor(blencp,
                           pi,
-                          pj,
+                          pifrj);
+    cs_blend_f_val_tensor(blencp,
                           pir,
+                          pifri);
+    cs_blend_f_val_tensor(blencp,
+                          pj,
+                          pjfri);
+    cs_blend_f_val_tensor(blencp,
                           pjr,
-                          pifri,
-                          pifrj,
-                          pjfri,
                           pjfrj);
 
    /* If iconv=0 p*fr* are useless */
@@ -3839,14 +3558,10 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
  * \param[in]     grdpaj          upwind gradient at cell j
  * \param[in]     pi              value at cell i
  * \param[in]     pj              value at cell j
- * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pifrj        contribution of i to flux from j to i
- * \param[out]    pjfri        contribution of j to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[out]    pif             contribution of i to flux from i to j
+ * \param[out]    pjf             contribution of j to flux from i to j
  * \param[out]    pip             reconstructed value at cell i
  * \param[out]    pjp             reconstructed value at cell j
- * \param[out]    pipr            relaxed reconstructed value at cell i
- * \param[out]    pjpr            relaxed reconstructed value at cell j
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3871,16 +3586,11 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
                                    const cs_real_33_t  grdpaj,
                                    const cs_real_3_t   pi,
                                    const cs_real_3_t   pj,
-                                   cs_real_t           pifri[3],
-                                   cs_real_t           pifrj[3],
-                                   cs_real_t           pjfri[3],
-                                   cs_real_t           pjfrj[3],
+                                   cs_real_t           pif[3],
+                                   cs_real_t           pjf[3],
                                    cs_real_t           pip[3],
-                                   cs_real_t           pjp[3],
-                                   cs_real_t           pipr[3],
-                                   cs_real_t           pjpr[3])
+                                   cs_real_t           pjp[3])
 {
-  cs_real_3_t pir, pjr;
   cs_real_3_t recoi, recoj;
   cs_real_t distf, srfan;
   cs_real_3_t testij, tesqck;
@@ -3908,15 +3618,6 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
                                  pip,
                                  pjp);
 
-  cs_i_no_relax_c_val_vector(pi,
-                             pj,
-                             pip,
-                             pjp,
-                             pir,
-                             pjr,
-                             pipr,
-                             pjpr);
-
   /* Convection slope test is needed only when iconv >0 */
   if (iconvp > 0) {
     cs_slope_test_vector(pi,
@@ -3931,6 +3632,9 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
                          i_massflux,
                          testij,
                          tesqck);
+
+    /* FIXME: slope test should be done for the vector and not component by
+     * component. This is concerved for compatibility only. */
     for (isou = 0; isou < 3; isou++) {
       if (tesqck[isou]<=0. || testij[isou]<=0.) {
 
@@ -3938,13 +3642,9 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
            --------*/
 
         cs_upwind_f_val(pi[isou],
-                        &pifrj[isou]);
-        cs_upwind_f_val(pir[isou],
-                        &pifri[isou]);
+                        &pif[isou]);
         cs_upwind_f_val(pj[isou],
-                        &pjfri[isou]);
-        cs_upwind_f_val(pjr[isou],
-                        &pjfrj[isou]);
+                        &pjf[isou]);
 
         upwind_switch[isou] = true;
 
@@ -3957,20 +3657,12 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
 
           cs_centered_f_val(weight,
                             pip[isou],
-                            pjpr[isou],
-                            &pifrj[isou]);
-          cs_centered_f_val(weight,
-                            pipr[isou],
                             pjp[isou],
-                            &pifri[isou]);
-          cs_centered_f_val(weight,
-                            pipr[isou],
-                            pjp[isou],
-                            &pjfri[isou]);
+                            &pif[isou]);
           cs_centered_f_val(weight,
                             pip[isou],
-                            pjpr[isou],
-                            &pjfrj[isou]);
+                            pjp[isou],
+                            &pjf[isou]);
 
         } else {
 
@@ -3981,22 +3673,12 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
                         i_face_cog,
                         gradi[isou],
                         pi[isou],
-                        &pifrj[isou]);
-          cs_solu_f_val(cell_ceni,
-                        i_face_cog,
-                        gradi[isou],
-                        pir[isou],
-                        &pifri[isou]);
+                        &pif[isou]);
           cs_solu_f_val(cell_cenj,
                         i_face_cog,
                         gradj[isou],
                         pj[isou],
-                        &pjfri[isou]);
-          cs_solu_f_val(cell_cenj,
-                        i_face_cog,
-                        gradj[isou],
-                        pjr[isou],
-                        &pjfrj[isou]);
+                        &pjf[isou]);
 
         }
       }
@@ -4004,28 +3686,21 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
 
     /* Blending
        --------*/
-
     cs_blend_f_val_vector(blencp,
                           pi,
+                          pif);
+    cs_blend_f_val_vector(blencp,
                           pj,
-                          pir,
-                          pjr,
-                          pifri,
-                          pifrj,
-                          pjfri,
-                          pjfrj);
-  /* If iconv=0 p*fr* are useless */
+                          pjf);
+
+  /* If iconv=0 p*f are useless */
   } else {
 
     for (isou = 0; isou < 3; isou++) {
       cs_upwind_f_val(pi[isou],
-                      &pifrj[isou]);
-      cs_upwind_f_val(pir[isou],
-                      &pifri[isou]);
+                      &pif[isou]);
       cs_upwind_f_val(pj[isou],
-                      &pjfri[isou]);
-      cs_upwind_f_val(pjr[isou],
-                      &pjfrj[isou]);
+                      &pjf[isou]);
 
     }
   }
@@ -4057,14 +3732,10 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
  * \param[in]     grdpaj          upwind gradient at cell j
  * \param[in]     pi              value at cell i
  * \param[in]     pj              value at cell j
- * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pifrj        contribution of i to flux from j to i
- * \param[out]    pjfri        contribution of j to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[out]    pif             contribution of i to flux from i to j
+ * \param[out]    pjf             contribution of j to flux from i to j
  * \param[out]    pip             reconstructed value at cell i
  * \param[out]    pjp             reconstructed value at cell j
- * \param[out]    pipr            relaxed reconstructed value at cell i
- * \param[out]    pjpr            relaxed reconstructed value at cell j
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4089,16 +3760,11 @@ cs_i_cd_unsteady_slope_test_tensor(bool                upwind_switch[6],
                                    const cs_real_63_t  grdpaj,
                                    const cs_real_6_t   pi,
                                    const cs_real_6_t   pj,
-                                   cs_real_t           pifri[6],
-                                   cs_real_t           pifrj[6],
-                                   cs_real_t           pjfri[6],
-                                   cs_real_t           pjfrj[6],
+                                   cs_real_t           pif[6],
+                                   cs_real_t           pjf[6],
                                    cs_real_t           pip[6],
-                                   cs_real_t           pjp[6],
-                                   cs_real_t           pipr[6],
-                                   cs_real_t           pjpr[6])
+                                   cs_real_t           pjp[6])
 {
-  cs_real_6_t pir, pjr;
   cs_real_6_t recoi, recoj;
   cs_real_t distf, srfan;
   cs_real_6_t testij, tesqck;
@@ -4126,16 +3792,6 @@ cs_i_cd_unsteady_slope_test_tensor(bool                upwind_switch[6],
                                  pip,
                                  pjp);
 
-  cs_i_no_relax_c_val_tensor(pi,
-                             pj,
-                             pip,
-                             pjp,
-                             pir,
-                             pjr,
-                             pipr,
-                             pjpr);
-
-
   /* Convection slope test is needed only when iconv >0 */
   if (iconvp > 0) {
     cs_slope_test_tensor(pi,
@@ -4157,13 +3813,9 @@ cs_i_cd_unsteady_slope_test_tensor(bool                upwind_switch[6],
            --------*/
 
         cs_upwind_f_val(pi[isou],
-                        &pifrj[isou]);
-        cs_upwind_f_val(pir[isou],
-                        &pifri[isou]);
+                        &pif[isou]);
         cs_upwind_f_val(pj[isou],
-                        &pjfri[isou]);
-        cs_upwind_f_val(pjr[isou],
-                        &pjfrj[isou]);
+                        &pjf[isou]);
 
         upwind_switch[isou] = true;
 
@@ -4176,20 +3828,12 @@ cs_i_cd_unsteady_slope_test_tensor(bool                upwind_switch[6],
 
           cs_centered_f_val(weight,
                             pip[isou],
-                            pjpr[isou],
-                            &pifrj[isou]);
-          cs_centered_f_val(weight,
-                            pipr[isou],
                             pjp[isou],
-                            &pifri[isou]);
-          cs_centered_f_val(weight,
-                            pipr[isou],
-                            pjp[isou],
-                            &pjfri[isou]);
+                            &pif[isou]);
           cs_centered_f_val(weight,
                             pip[isou],
-                            pjpr[isou],
-                            &pjfrj[isou]);
+                            pjp[isou],
+                            &pjf[isou]);
 
         } else {
 
@@ -4200,23 +3844,12 @@ cs_i_cd_unsteady_slope_test_tensor(bool                upwind_switch[6],
                         i_face_cog,
                         gradi[isou],
                         pi[isou],
-                        &pifrj[isou]);
-          cs_solu_f_val(cell_ceni,
-                        i_face_cog,
-                        gradi[isou],
-                        pir[isou],
-                        &pifri[isou]);
+                        &pif[isou]);
           cs_solu_f_val(cell_cenj,
                         i_face_cog,
                         gradj[isou],
                         pj[isou],
-                        &pjfri[isou]);
-          cs_solu_f_val(cell_cenj,
-                        i_face_cog,
-                        gradj[isou],
-                        pjr[isou],
-                        &pjfrj[isou]);
-
+                        &pjf[isou]);
         }
       }
     }
@@ -4226,27 +3859,19 @@ cs_i_cd_unsteady_slope_test_tensor(bool                upwind_switch[6],
 
     cs_blend_f_val_tensor(blencp,
                           pi,
+                          pif);
+    cs_blend_f_val_tensor(blencp,
                           pj,
-                          pir,
-                          pjr,
-                          pifri,
-                          pifrj,
-                          pjfri,
-                          pjfrj);
+                          pjf);
 
   /* If iconv=0 p*fr* are useless */
   } else {
 
     for (isou = 0; isou < 6; isou++) {
       cs_upwind_f_val(pi[isou],
-                      &pifrj[isou]);
-      cs_upwind_f_val(pir[isou],
-                      &pifri[isou]);
+                      &pif[isou]);
       cs_upwind_f_val(pj[isou],
-                      &pjfri[isou]);
-      cs_upwind_f_val(pjr[isou],
-                      &pjfrj[isou]);
-
+                      &pjf[isou]);
     }
   }
 }
@@ -4285,7 +3910,7 @@ cs_b_compute_quantities(const cs_real_3_t  diipb,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_b_compute_quantities_vector(const cs_real_3_t  diipb,
+cs_b_compute_quantities_vector(const cs_real_3_t   diipb,
                                const cs_real_33_t  gradi,
                                const int           ircflp,
                                cs_real_t           recoi[3])
@@ -4309,7 +3934,7 @@ cs_b_compute_quantities_vector(const cs_real_3_t  diipb,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_b_compute_quantities_tensor(const cs_real_3_t  diipb,
+cs_b_compute_quantities_tensor(const cs_real_3_t   diipb,
                                const cs_real_63_t  gradi,
                                const int           ircflp,
                                cs_real_t           recoi[6])
@@ -4397,73 +4022,6 @@ cs_b_relax_c_val_tensor(const double       relaxp,
   for (int isou = 0; isou < 6; isou++) {
     pir[isou]  = pi[isou]/relaxp - (1.-relaxp)/relaxp*pia[isou];
     pipr[isou] = pir[isou] + recoi[isou];
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy values at bounadry cell i for consistency with relaxation case.
- *
- * \param[in]     pi       value at cell i
- * \param[in]     recoi    reconstruction at cell i
- * \param[out]    pir      value at cell i
- * \param[out]    pipr     reconstructed value at cell i
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_b_no_relax_c_val(const cs_real_t  pi,
-                    const cs_real_t  recoi,
-                    cs_real_t        *pir,
-                    cs_real_t        *pipr)
-{
-  *pir  = pi;
-  *pipr = pi + recoi;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy values at bounadry cell i for consistency with relaxation case.
- *
- * \param[in]     pi       value at cell i
- * \param[in]     recoi    reconstruction at cell i
- * \param[out]    pir      value at cell i
- * \param[out]    pipr     reconstructed value at cell i
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_b_no_relax_c_val_vector(const cs_real_3_t  pi,
-                           const cs_real_3_t  recoi,
-                           cs_real_t       pir[3],
-                           cs_real_t       pipr[3])
-{
-  for(int isou = 0; isou< 3; isou++) {
-    pir[isou]  = pi[isou];
-    pipr[isou] = pi[isou] + recoi[isou];
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy values at bounadry cell i for consistency with relaxation case.
- *
- * \param[in]     pi       value at cell i
- * \param[in]     recoi    reconstruction at cell i
- * \param[out]    pir      value at cell i
- * \param[out]    pipr     reconstructed value at cell i
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_b_no_relax_c_val_tensor(const cs_real_6_t  pi,
-                           const cs_real_6_t  recoi,
-                           cs_real_t       pir[6],
-                           cs_real_t       pipr[6])
-{
-  for(int isou = 0; isou< 6; isou++) {
-    pir[isou]  = pi[isou];
-    pipr[isou] = pi[isou] + recoi[isou];
   }
 }
 
@@ -5030,8 +4588,7 @@ cs_b_cd_steady_tensor(const int          ircflp,
  * \param[in]     diipb    distance I'I'
  * \param[in]     gradi    gradient at cell i
  * \param[in]     pi       value at cell i
- * \param[in]     pir      value at cell i (for consistancy)
- * \param[out]    pipr     reconstructed value at cell i
+ * \param[out]    pip      reconstructed value at cell i
  */
 /*----------------------------------------------------------------------------*/
 
@@ -5040,8 +4597,7 @@ cs_b_cd_unsteady(const int          ircflp,
                  const cs_real_3_t  diipb,
                  const cs_real_3_t  gradi,
                  const cs_real_t    pi,
-                 cs_real_t         *pir,
-                 cs_real_t         *pipr)
+                 cs_real_t         *pip)
 {
   cs_real_t recoi;
 
@@ -5050,10 +4606,7 @@ cs_b_cd_unsteady(const int          ircflp,
                           ircflp,
                           &recoi);
 
-  cs_b_no_relax_c_val(pi,
-                      recoi,
-                      pir,
-                      pipr);
+  *pip = pi + recoi;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5065,8 +4618,7 @@ cs_b_cd_unsteady(const int          ircflp,
  * \param[in]     diipb    distance I'I'
  * \param[in]     gradi    gradient at cell i
  * \param[in]     pi       value at cell i
- * \param[out]    pir      relaxed value at cell i
- * \param[out]    pipr     relaxed reconstructed value at cell i
+ * \param[out]    pip      reconstructed value at cell i
  */
 /*----------------------------------------------------------------------------*/
 
@@ -5075,8 +4627,7 @@ cs_b_cd_unsteady_vector(const int          ircflp,
                         const cs_real_3_t  diipb,
                         const cs_real_33_t gradi,
                         const cs_real_3_t  pi,
-                        cs_real_t          pir[3],
-                        cs_real_t          pipr[3])
+                        cs_real_t          pip[3])
 {
   cs_real_3_t recoi;
 
@@ -5085,10 +4636,8 @@ cs_b_cd_unsteady_vector(const int          ircflp,
                                  ircflp,
                                  recoi);
 
-  cs_b_no_relax_c_val_vector(pi,
-                             recoi,
-                             pir,
-                             pipr);
+  for(int isou = 0; isou< 3; isou++)
+    pip[isou] = pi[isou] + recoi[isou];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5100,8 +4649,7 @@ cs_b_cd_unsteady_vector(const int          ircflp,
  * \param[in]     diipb    distance I'I'
  * \param[in]     gradi    gradient at cell i
  * \param[in]     pi       value at cell i
- * \param[out]    pir      relaxed value at cell i
- * \param[out]    pipr     relaxed reconstructed value at cell i
+ * \param[out]    pip      reconstructed value at cell i
  */
 /*----------------------------------------------------------------------------*/
 
@@ -5110,8 +4658,7 @@ cs_b_cd_unsteady_tensor(const int          ircflp,
                         const cs_real_3_t  diipb,
                         const cs_real_63_t gradi,
                         const cs_real_6_t  pi,
-                        cs_real_t          pir[6],
-                        cs_real_t          pipr[6])
+                        cs_real_t          pip[6])
 {
   cs_real_6_t recoi;
 
@@ -5120,10 +4667,8 @@ cs_b_cd_unsteady_tensor(const int          ircflp,
                                  ircflp,
                                  recoi);
 
-  cs_b_no_relax_c_val_tensor(pi,
-                             recoi,
-                             pir,
-                             pipr);
+  for(int isou = 0; isou< 6; isou++)
+    pip[isou] = pi[isou] + recoi[isou];
 }
 
 /*============================================================================

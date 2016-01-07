@@ -673,14 +673,13 @@ cs_balance_by_zone(const int  bc_type[],
         /* Associated boundary cell */
         cs_lnum_t c_id = b_face_cells[f_id_sel];
 
-        cs_real_t pir, pipr;
+        cs_real_t pip;
 
         cs_b_cd_unsteady(ircflp,
                          diipb[f_id_sel],
                          grad[c_id],
                          f->val[c_id],
-                         &pir,
-                         &pipr);
+                         &pip);
 
         cs_real_t term_balance = 0.;
 
@@ -691,8 +690,8 @@ cs_balance_by_zone(const int  bc_type[],
                          ifaccp,
                          bc_type[f_id_sel],
                          f->val[c_id],
-                         pir,
-                         pipr,
+                         f->val[c_id], /* no relaxation */
+                         pip,
                          a_F[f_id_sel],
                          b_F[f_id_sel],
                          b_mass_flux[f_id_sel],
@@ -702,7 +701,7 @@ cs_balance_by_zone(const int  bc_type[],
         cs_b_diff_flux(idiffp,
                        1., /* thetap */
                        inc,
-                       pipr,
+                       pip,
                        af_F[f_id_sel],
                        bf_F[f_id_sel],
                        b_visc[f_id_sel],
@@ -818,14 +817,13 @@ cs_balance_by_zone(const int  bc_type[],
         /* Associated boundary cell */
         cs_lnum_t c_id = b_face_cells[f_id_sel];
 
-        cs_real_t pir, pipr;
+        cs_real_t pip;
 
         cs_b_cd_unsteady(ircflp,
                          diipb[f_id_sel],
                          grad[c_id],
                          f->val[c_id],
-                         &pir,
-                         &pipr);
+                         &pip);
 
         cs_real_t term_balance = 0.;
 
@@ -837,8 +835,8 @@ cs_balance_by_zone(const int  bc_type[],
                                bc_type[f_id_sel],
                                icvfli[f_id_sel],
                                f->val[c_id],
-                               pir,
-                               pipr,
+                               f->val[c_id], /* no relaxation */
+                               pip,
                                a_F[f_id_sel],
                                b_F[f_id_sel],
                                ac_F[f_id_sel],
@@ -850,7 +848,7 @@ cs_balance_by_zone(const int  bc_type[],
         cs_b_diff_flux(idiffp,
                        1., /* thetap */
                        inc,
-                       pipr,
+                       pip,
                        af_F[f_id_sel],
                        bf_F[f_id_sel],
                        b_visc[f_id_sel],
