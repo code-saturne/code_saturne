@@ -25,43 +25,40 @@
 
 \vspace{1cm}
 %-------------------------------------------------------------------------------
-\section*{Fonction}
+\section*{Function}
 %-------------------------------------------------------------------------------
-Ce sous-programme, appel\'{e} entre autre par \fort{predvv}, \fort{turbke}, \fort{covofi},
-\fort{resrij}, \fort{reseps}, ..., r\'{e}sout les \'{e}quations de convection-diffusion
-d'un scalaire $a$ avec termes sources du type :
+This subroutine, called by \fort{predvv}, \fort{turbke}, \fort{covofi},
+\fort{resrij}, \fort{reseps}, amongst others, solves the convection-diffusion equations
+of a given scalar $a$ with source terms of the type:
 \begin{equation}\label{Base_Codits_eq_ref}
 \begin{array}{c}
 \displaystyle f_s^{\,imp} (a^{n+1} - a^{n}) +
-\theta \ \underbrace{\dive((\rho \underline{u})\,a^{n+1})}_{\text{convection implicite}}
--\theta \ \underbrace{\dive(\mu_{\,tot}\,\grad a^{n+1})}_{\text{diffusion implicite}}
+\theta \ \underbrace{\dive((\rho \underline{u})\,a^{n+1})}_{\text{implicit convection}}
+-\theta \ \underbrace{\dive(\mu_{\,tot}\,\grad a^{n+1})}_{\text{implicit diffusion}}
 \\\\
-= f_s^{\,exp}-(1-\theta) \ \underbrace{\dive((\rho \underline{u})\,a^{n})}_{\text{convection explicite}}
- + (1-\theta) \ \underbrace{\dive(\mu_{\,tot}\,\grad a^{n})}_{\text{diffusion explicite}}
+= f_s^{\,exp}-(1-\theta) \ \underbrace{\dive((\rho \underline{u})\,a^{n})}_{\text{explicit convection}}
+ + (1-\theta) \ \underbrace{\dive(\mu_{\,tot}\,\grad a^{n})}_{\text{explicit diffusion}}
 \end{array}
 \end{equation}
-o\`{u} $\rho \underline{u}$, $f_s^{exp}$ et $f_s^{imp}$ d\'{e}signent respectivement le flux de masse, les termes sources explicites et les termes lin\'{e}aris\'{e}s en $a^{n+1}$.
-$a$ est un scalaire d\'{e}fini sur toutes les cellules\footnote{$a$, sous forme discr\`ete en espace, correspond \`a un vecteur dimensionn\'e \`a \var{NCELET} de composante $a_I$, I d\'ecrivant l'ensemble des cellules.}.
-Par souci de clart\'{e} on suppose, en l'absence d'indication, les propri\'{e}tes
-physiques $\Phi$ (viscosit\'{e} totale $\mu_{tot}$,...) et le flux de masse $(\rho
-\underline{u})$ pris respectivement aux instants $n+\theta_\Phi$ et
-$n+\theta_F$, o\`{u} $\theta_\Phi$ et $\theta_F$ d\'{e}pendent des sch\'{e}mas en temps
-sp\'{e}cifiquement utilis\'{e}s pour ces grandeurs\footnote{cf. \fort{introd}}.
+where $\rho \underline{u}$, $f_s^{exp}$ and $f_s^{imp}$ denote respectively the mass flux, the explicit source terms and the terms linearized in $a^{n+1}$.
+$a$ is a scalar defined on all cells\footnote{$a$, in spatially discrete form, corresponds to a vector sized to \var{NCELET} of component $a_I$, I describing all of the cells.}.
+For clarification, unless stated otherwise it is assumed that the physical properties $\Phi$ (total
+viscosity $\mu_{tot}$,...) are evaluated at time $n+\theta_\Phi$ and the mass flux $(\rho\underline{u})$
+at time $n+\theta_F$, with $\theta_\Phi$ and $\theta_F$ dependent on the specific time-integration schemes
+selected for the respective quantities\footnote{cf. \fort{introd}}.
 \\
-L'\'{e}criture des termes de convection et diffusion en maillage non orthogonal
-engendre des difficult\'{e}s (termes de reconstruction et test de pente) qui sont
-contourn\'{e}es en utilisant une m\'ethode it\'erative dont la limite, si elle
-existe, est la solution de l'\'{e}quation pr\'{e}c\'{e}dente.
+The discretisation of the convection and diffusion terms in non-orthogonal grids creates numerical difficulties, notably with respect to the reconstruction terms and the slope test. These are circumvented by using an iterative process for which the limit, if there is one, is the solution of the previous equation.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation}
+\section*{Discretisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Afin d'expliquer la proc\'{e}dure utilis\'{e}e pour traiter les difficult\'{e}s dues aux
-termes de reconstruction et de test de pente dans les termes de
-convection-diffusion, on note, de fa\c con analogue \`a ce qui est d\'efini dans
-\fort{navstv} mais sans discr\'etisation spatiale associ\'ee, $\mathcal{E}_{n}$ l'op\'erateur :
+In order to explain the procedure employed to address the computational
+problems, owing to the use of reconstruction terms and the slope (or gradient)
+test, in treating the convection-diffusion terms, we denote by $\mathcal{E}_{n}$
+(similarly to the definition given in \fort{navstv} though without the associated spatial discretisation)
+the operator:
 \begin{equation}\label{Base_Codits_Eq_ref_small}
 \begin{array}{c}
 \mathcal{E}_{n}(a) = f_s^{\,imp}\,a + \theta\,\, \dive((\rho
@@ -70,200 +67,172 @@ convection-diffusion, on note, de fa\c con analogue \`a ce qui est d\'efini dans
 \underline{u})\, a^n) - (1-\theta)\,\, \dive(\mu_{\,tot}\,\grad a^n)
 \end{array}
 \end{equation}
-L'\'equation (\ref{Base_Codits_eq_ref}) s'\'ecrit donc :
+Hence, equation (\ref{Base_Codits_eq_ref}) is written:
 \begin{equation}
 \mathcal{E}_{n}(a^{n+1}) = 0
 \end{equation}
-La quantit\'e  $\mathcal{E}_{n}(a^{n+1})$ comprend donc :\\
-\hspace*{1.cm} $\rightsquigarrow$ $f_s^{\,imp}\,a^{n+1}$, contribution des
-termes diff\'erentiels d'ordre $0$ lin\'eaire en $a^{n+1}$,\\
+The quantity  $\mathcal{E}_{n}(a^{n+1})$ thus comprises:\\
+\hspace*{1.cm} $\rightsquigarrow$ $f_s^{\,imp}\,a^{n+1}$, contribution of the linear, zeroth-order
+differential terms in $a^{n+1}$,\\
 \hspace*{1.cm} $\rightsquigarrow$ $\theta\,\,
 \dive((\rho\underline{u})\,a^{n+1})
-- \theta\,\, \dive(\mu_{\,tot}\,\grad a^{n+1})$, termes de convection-diffusion
-implicites complets (termes non reconstruits + termes de reconstruction)
-lin\'eaires\footnote{Lors de la discr\'{e}tisation en espace, le caract\`{e}re lin\'{e}aire
-de ces termes pourra cependant être perdu, notamment \`{a} cause du test de pente.}
-en $a^{n+1}$,\\
+- \theta\,\, \dive(\mu_{\,tot}\,\grad a^{n+1})$, full implicit convection-diffusion terms
+(terms without flux reconstruction + reconstructed terms),
+linear\footnote{During the spatial discretisation, the linearity of these terms
+could however be lost, notably through the use of the slope test.}
+in $a^{n+1}$,\\
 \hspace*{1.cm} $\rightsquigarrow$ $f_s^{\,exp}- f_s^{\,imp}\,a^n$ et
 $(1-\theta)\,\,\dive((\rho
-\underline{u})\,a^n) - (1-\theta)\,\, \dive(\mu_{\,tot}\,\grad a^n)$ l'ensemble
-des termes explicites (y compris la partie explicite provenant du sch\'ema en
-temps appliqu\'e \`a la convection diffusion).\\\\
+\underline{u})\,a^n) - (1-\theta)\,\, \dive(\mu_{\,tot}\,\grad a^n)$ all of the
+explicit terms (including the explicit parts obtained from the time scheme
+applied to the convection diffusion equation).\\\\
 
-De m\^eme, on introduit un op\'erateur $\mathcal{EM}_{n}$ approch\'e de
-$\mathcal{E}_{n}$, lin\'eaire et simplement inversible, tel que son
-expression contient :\\
-\hspace*{1.cm}$\rightsquigarrow$ la prise en compte des termes lin\'eaires en $a$,\\
-\hspace*{1.cm}$\rightsquigarrow$ la convection int\'{e}gr\'{e}e par un sch\'{e}ma d\'{e}centr\'{e} amont
-(upwind) du premier ordre en espace,\\
-\hspace*{1.cm}$\rightsquigarrow$ les flux diffusifs non reconstruits.\\
+Likewise, we introduce an operator $\mathcal{EM}_{n}$ that is close to
+$\mathcal{E}_{n}$, linear and simple to invert, such that its
+expression contains:\\
+\hspace*{1.cm}$\rightsquigarrow$ the consideration of the linear terms in $a$,\\
+\hspace*{1.cm}$\rightsquigarrow$ the convection integrated with a first-order upwind scheme in space,\\
+\hspace*{1.cm}$\rightsquigarrow$ the diffusive flux without reconstruction.\\
 \begin{equation}
 \mathcal{EM}_{n}(a) = f_s^{\,imp}\,a + \theta\,\,[\dive((\rho
-\underline{u})\,a)]^{\textit{amont}} - \theta\,\, [\dive(\mu_{\,tot}\,\grad a)]^{\textit{N Rec}}
+\underline{u})\,a)]^{\textit{upwind}} - \theta\,\, [\dive(\mu_{\,tot}\,\grad a)]^{\textit{N Rec}}
 \end{equation}
-Cet op\'erateur permet donc de contourner la difficult\'e induite par la pr\'esence d'\'eventuelles non lin\'earit\'es introduites par l'activation du test de pente lors du sch\'ema convectif, et par le remplissage important de la structure de la matrice d\'ecoulant de la pr\'esence des gradients propres \`a la reconstruction.\\
-On a la relation\footnote{On pourra se reporter au sous-programme
-\fort{matrix} pour plus de d\'etails relativement \`a
-$\mathcal{EM_{\it{disc}}}$, op\'erateur discret agissant sur un scalaire $a$.}, pour toute cellule $\Omega_I$ de centre $I$  :
+This operator helps circumvent the difficulty caused by the presence of nonlinearities (which may be introduced if the slope test is activated in conjunction with the convection scheme) and the high fill-in that occurs in the matrix structure owing to the presence of reconstruction gradients.\\
+We have, for each cell $\Omega_I$ of centre $I$, the following relation\footnote{For further details regarding $\mathcal{EM_{\it{disc}}}$, the discrete operator acting on a scalar $a$, the reader can refer to the subroutine
+\fort{matrix}.}:
 \begin{equation}\notag
 \mathcal{EM_{\it{disc}}}(a,I) = \int_{\Omega_i}\mathcal{EM}_{n}(a)  \, d\Omega
 \end{equation}
-On cherche \`{a} r\'{e}soudre :
+and want to solve the following problem:
 \begin{equation}
 0 =\mathcal{E}_{n}(a^{n+1}) =  \mathcal{EM}_{n}(a^{n+1}) +  \mathcal{E}_{n}(a^{n+1}) - \mathcal{EM}_{n}(a^{n+1})
 \end{equation}
-Soit :
+Hence:
 \begin{equation}
 \mathcal{EM}_{n}(a^{n+1}) =  \mathcal{EM}_{n}(a^{n+1}) -  \mathcal{E}_{n}(a^{n+1})
 \end{equation}
-On va pour cela utiliser un algorithme de type point fixe en d\'{e}finissant la
-suite $(a^{n+1,\,k})_{k\in \mathbb{N}}$\footnote{Dans le cas ou le point fixe en
-vitesse-pression est utilis\'{e} (\var{NTERUP}$>$ 1) $a^{n+1,0}$ est initialis\'{e} par
-la derni\`{e}re valeur obtenue de $a^{n+1}$.}:
+In order to do so, we will use a fixed-point algorithm, defining the
+sequence $(a^{n+1,\,k})_{k\in \mathbb{N}}$\footnote{If the fixed-point iterative algorithm is used
+to solve the velocity-pressure system (\var{NTERUP}$>$ 1), $a^{n+1,0}$ is initialised by
+the last value that was obtained for $a^{n+1}$.}:
 \begin{equation}\notag
 \left\{\begin{array}{l}
 a^{n+1,\,0} = a^{n}\\
 a^{n+1,\,k+1} = a^{n+1,\,k} + \delta a^{n+1,\,k+1}
 \end{array}\right.
 \end{equation}
-o\`{u} $\delta a^{n+1,\,k+1}$ est solution de :
+where $\delta a^{n+1,\,k+1}$ is the solution of:
 \begin{equation}
 \mathcal{EM}_{n}(a^{n+1,\,k} + \delta a^{n+1,\,k+1}) = \mathcal{EM}_{n}(a^{n+1,\,k}) - \mathcal{E}_{n}(a^{n+1,\,k})
 \end{equation}
-Soit encore, par lin\'{e}arit\'{e} de $\mathcal{EM}_{n}$ :
+Which, by linearity of $\mathcal{EM}_{n}$, simplifies out to:
 \begin{equation}
 \mathcal{EM}_{n}(\delta a^{n+1,\,k+1}) = - \mathcal{E}_{n}(a^{n+1,\,k})
 \label{Base_Codits_Eq_Codits}
 \end{equation}
 
-Cette suite, coupl\'ee avec le choix de l'op\'erateur $\mathcal{E}_{n}$, permet donc de lever la difficult\'{e} induite par la
-pr\'esence de la convection (discr\'etis\'ee \`a l'aide de sch\'emas num\'eriques
-qui peuvent introduire des non lin\'earit\'es) et les termes de
-reconstruction. Le sch\'ema r\'eellement choisi par l'utilisateur pour la
-convection (donc \'eventuellement non lin\'eaire si le test de pente est activ\'e) ainsi que les termes de
-reconstruction vont \^etre pris \`a l'it\'{e}ration $k$ et trait\'es au second membre {\it via} le sous-programme \fort{bilsc2},  alors que les termes
-non reconstruits sont pris \`{a} l'it\'{e}ration $k+1$ et repr\'esentent donc les
-inconnues du syst\`eme lin\'eaire r\'esolu par \fort{codits}\footnote{cf. le sous-programme
+By applying this sequence with the selected operator $\mathcal{E}_{n}$, we
+are able to overcome the computational difficulty that arises when dealing
+with the convection (discretised using numerical schemes that can lead to the
+introduction of nonlinearities) and/or reconstruction terms. The user-specified scheme for the
+convection (which may be nonlinear should the slope test be activated) as
+well as the reconstruction terms will be evaluated at the iteration $k$ and treated on the right-hand side {\it via} the subroutine \fort{bilsc2}, while the non-reconstructed terms are taken at iteration $k+1$ and hence represent the unknowns
+of the linear system solved by \fort{codits}\footnote{cf. the subroutine
 \fort{navstv}.}.\\
 
-On suppose de plus que cette suite $(a^{n+1,\,k})_k$ converge vers la solution
-$a^{n+1}$ de l'\'equation (\ref{Base_Codits_Eq_ref_small}), {\it i.e.}
-$\lim\limits_{k\rightarrow\infty} \delta a^{n+1,\,k}\,=\,0$, ceci pour tout $n$ donn\'e.\\
-(\ref{Base_Codits_Eq_Codits}) correspond \`a l'\'equation r\'esolue par \fort{codits}. La
-matrice $\tens{EM}_{\,n}$, matrice associ\'ee \`a $\mathcal{EM}_{n}$  est
- \`a inverser, les termes non lin\'eaires sont mis au second membre mais sous forme
- explicite (indice $k$ de $a^{n+1,\,k}$) et ne posent donc plus de probl\`eme.
+We assume moreover that the sequence $(a^{n+1,\,k})_k$ converges to the solution
+$a^{n+1}$ of equation (\ref{Base_Codits_Eq_ref_small}), {\it i.e.}
+$\lim\limits_{k\rightarrow\infty} \delta a^{n+1,\,k}\,=\,0$, for any given value of $n$.\\
+The equation solved by \fort{codits} is the abovementioned (\ref{Base_Codits_Eq_Codits}). The
+matrix $\tens{EM}_{\,n}$, which is associated to the operator $\mathcal{EM}_{n}$, has to be
+inverted; the nonlinear terms are placed on the right-hand side, but in explicit form
+(index $k$ of $a^{n+1,\,k}$) and thus cease to pose a problem.
 
-\minititre{Remarque 1}
-La viscosit\'{e} $\mu_{\,tot}$ prise dans $\mathcal{EM}_{n}$ et dans
-$\mathcal{E}_{n}$  d\'{e}pend du mod\`{e}le de turbulence utilis\'{e}. Ainsi on a
- $\mu_{\,tot}=\mu_{\,laminaire} + \mu_{\,turbulent}$
-dans $\mathcal{EM}_{n}$ et dans $\mathcal{E}_{n}$ sauf lorsque l'on
-utilise un mod\`{e}le $R_{ij}-\varepsilon$, auquel cas on a
-$\mu_{\,tot}=\mu_{\,laminaire}$.\\
-Le choix de $\mathcal{EM}_{n}$ \'{e}tant  {\it a
-priori} arbitraire ($\mathcal{EM}_{n}$ doit \^etre lin\'eaire et la suite
- $(a^{n+1,\,k})_{k\in\mathbb{N}}$ doit converger pour tout $n$ donn\'e), une option des mod\`{e}les
-$R_{ij}-\varepsilon$ ($\var{IRIJNU}=1$) consiste \`a for\c cer  $\mu_{\,tot}^n$
-dans l'expression de $\mathcal{EM}_{n}$ \`a la
-valeur $\mu_{\,laminaire}^n + \mu_{\,turbulent}^n$ lors de l'appel \`a
-\fort{codits} dans le sous-programme \fort{navstv}, pour l'\'etape de
-pr\'ediction de la vitesse. Ceci n'a pas de sens
-physique (seul $\mu_{\,laminaire}^n$ \'{e}tant cens\'{e} intervenir), mais cela peut
-dans certains cas avoir un effet stabilisateur, sans que cela modifie pour
-autant les valeurs de la limite de la suite $(a^{n+1,\,k})_k$.\\
+\minititre{Remark 1}
+The total viscosity $\mu_{\,tot}$ considered in $\mathcal{EM}_{n}$ and in
+$\mathcal{E}_{n}$ is dependent on the turbulence model used. More specifically, the viscous
+term in $\mathcal{EM}_{n}$ and in $\mathcal{E}_{n}$ is, as a general rule, taken as being  $\mu_{\,tot}=\mu_{\,laminar} + \mu_{\,turbulent}$, the exception being when an $R_{ij}-\varepsilon$ model
+is used, in which case $\mu_{\,tot}=\mu_{\,laminar}$.\\
+The choice of $\mathcal{EM}_{n}$ being  {\it a
+priori} arbitrary, ($\mathcal{EM}_{n}$ has to be linear and the sequence
+ $(a^{n+1,\,k})_{k\in\mathbb{N}}$ must converge for any given $n$), one of the options in the
+$R_{ij}-\varepsilon$ models ($\var{IRIJNU}=1$) consists in forcing the viscosity $\mu_{\,tot}^n$,
+that appears in the expression of $\mathcal{EM}_{n}$ to take the value
+$\mu_{\,laminar}^n + \mu_{\,turbulent}^n$ when \fort{codits} is called by the subroutine \fort{navstv} for the velocity prediction step.  There is no physical reason for doing so (only the laminar viscosity $\mu_{\,laminar}^n$ is supposed to appear), however this can have a stabilising effect in certain cases without there being any concomitant effect on the limit-values of the sequence $(a^{n+1,\,k})_k$.\\
 
-\minititre{Remarque 2}
-Quand \fort{codits} est utilis\'e pour le couplage instationnaire renforc\'{e}
-vitesse-pression (\var{IPUCOU}=1), on fait une seule it\'{e}ration $k$ en initialisant la suite $(a^{n+1,\,k})_{k\in\mathbb{N}}$ \`{a} z\'{e}ro. Les conditions de type Dirichlet sont
-annul\'{e}es (on a $\var{INC}\,=\,0$) et le second membre est \'{e}gal \`{a} $\rho |\Omega_i|$.
-Ce qui permet d'obtenir une approximation de type diagonal de
-$\tens{EM}_{n}$
-n\'ecessaire lors de l'\'{e}tape de correction de la vitesse\footnote{cf. le sous-programme \fort{resopv}.}.
+\minititre{Remark 2}
+When \fort{codits} is used for strengthened transient velocity-pressure coupling
+(\var{IPUCOU}=1), a single iteration $k$ is made by initialising the sequence $(a^{n+1,\,k})_{k\in\mathbb{N}}$ to zero. The Dirichlet type boundary conditions are cancelled (we have $\var{INC}\,=\,0$) and the right-hand side is equal to $\rho |\Omega_i|$, which allows us to obtain a diagonal-type approximation of $\tens{EM}_{n}$, needed for the velocity correction step \footnote{cf. subroutine \fort{resopv}.}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Mise en \oe uvre}
+\section*{Implementation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-L'algorithme de ce sous-programme est le suivant :\\
-- d\'{e}termination des propri\'{e}t\'{e}s de la matrice $\tens{EM}_{n}$ (sym\'etrique
-si pas de convection, non sym\'etrique sinon)\\
-- choix automatique de la m\'{e}thode de r\'{e}solution pour l'inverser si l'utilisateur
-ne l'a pas sp\'ecifi\'e pour la variable trait\'ee. La m\'ethode de Jacobi est utilis\'ee par d\'efaut pour toute variable scalaire $a$ convect\'ee. Les m\'ethodes
-disponibles sont la m\'ethode du gradient conjugu\'e, celle de Jacobi, et le
-bi-gradient conjugu\'e stabilis\'e ($BICGStab$) pour les matrices non
-sym\'etriques. Un pr\'econditionnement diagonal est possible et utilis\'e par
-d\'efaut pour tous ces solveurs except\'{e} Jacobi.\\
-- prise en compte de la p\'eriodicit\'e (translation ou rotation d'un scalaire, vecteur ou tenseur),\\
-- construction de la matrice $\tens{EM}_{n}$ correspondant \`{a} l'op\'erateur
-lin\'eaire $\mathcal{EM}_{n}$ par appel au sous-programme
-\fort{matrix}\footnote{ On rappelle que dans \fort{matrix}, la convection  est
-trait\'{e}e, quelque soit le choix de l'utilisateur, avec un sch\'{e}ma d\'{e}centr\'{e} amont d'ordre 1 en espace et qu'il n'y a pas de reconstruction
-pour la diffusion. Le choix de l'utilisateur quant au
-sch\'{e}ma num\'{e}rique pour la convection intervient uniquement lors de l'int\'{e}gration
-des termes de convection de $\mathcal{E}_{n}$, au second membre de
-(\ref{Base_Codits_Eq_Codits}) dans le sous-programme \fort{bilsc2}.}. Les termes implicites correspondant \`{a}
-la partie diagonale de la matrice et donc aux contributions diff\'erentielles
-d'ordre $0$ lin\'eaires en $a^{n+1}$,({\it i.e} $f_s^{imp}$), sont stock\'{e}s dans le tableau \var{ROVSDT} (r\'ealis\'e en amont du sous-programme appelant \fort{codits}).\\
-- cr\'{e}ation de la hi\'{e}rarchie de maillage si on utilise le multigrille
+The algorithm for this subroutine is as follows:\\
+- determination of the properties of the $\tens{EM}_{n}$ matrix (symmetric
+if there is no convection, asymmetric otherwise)\\
+- automatic selection of the solution method for its inversion if the user has not already
+specified one for the variable being treated. The Jacobi method is used by default for every convected scalar variable $a$. The  methods available are the conjugate gradient method, Jacobi's and the
+bi-conjugate gradient stabilised method ($BICGStab$) for asymmetric matrices.  Diagonal pre-conditioning can be implemented and is used by default for all of these solvers except for Jacobi.\\
+- consideration of the periodicity (translation or rotation of a scalar, vector or tensor),\\
+- construction of the $\tens{EM}_{n}$ matrix corresponding to the linear operator $\mathcal{EM}_{n}$ through a call to the subroutine
+\fort{matrix}\footnote{ Remember that in \fort{matrix}, regardless of the user's choice, a first-order in space upwind scheme is always used to treat the convection and there is no reconstruction for
+the diffusive flux. The user's choice of numerical scheme for the convection is only applied for the integration
+of the convection terms of $\mathcal{E}_{n}$, on the right-hand side of
+(\ref{Base_Codits_Eq_Codits}), which computed in the subroutine \fort{bilsc2}.}. The implicit terms corresponding to the diagonal part of the matrix and hence to the zeroth-order linear differential contributions in $a^{n+1}$,({\it i.e.} $f_s^{imp}$), are stored in the array \var{ROVSDT} (realized before the subroutine calls \fort{codits}).\\
+- creation of the grid hierarchy if the multigrid algorithm is used
 ($ \var{IMGRP}\,>0 $).\\
-- appel \`{a} \fort{bilsc2} pour une \'{e}ventuelle prise en compte de la
-convection-diffusion explicite lorsque $\theta \ne 0$.\\
-- boucle sur le nombre d'it\'{e}rations de 1 \`a $\var{NSWRSM}$ (appel\'{e} $\var{NSWRSP}$ dans \fort{codits}).
- Les it\'{e}rations sont repr\'{e}sent\'{e}es par $k$ appel\'{e}
-\var{ISWEEP} dans le code et d\'efinissent les indices de la suite $(a^{n+1,\,k})_k$
-et de $(\delta a^{n+1,\,k})_k$.\\
-Le second membre est scind\'e en deux parties :\\
-\hspace*{1cm}{\tiny$\blacksquare$}\ un terme, affine
-en  $a^{n+1,\,k-1}$, facile \`a mettre \`a jour dans le cadre de la r\'esolution
-par incr\'ement, et qui s'\'ecrit :
+- call to \fort{bilsc2} to take the explicit convection-diffusion into account should
+ $\theta \ne 0$.\\
+- loop over the number of iterations from 1 to $\var{NSWRSM}$ (which is called $\var{NSWRSP}$ in \fort{codits}).
+The iterations are represented by $k$, which is designated \var{ISWEEP} in the code and defines the indices of the sequence $(a^{n+1,\,k})_k$ and of $(\delta a^{n+1,\,k})_k$.\\
+The right-hand side is split into two parts:\\
+\hspace*{1cm}{\tiny$\blacksquare$}\ a term that is affine in $a^{n+1,\,k-1}$, easily updated during the course of the incremental-iterative resolution procedure, which is written as:
 \begin{equation}\notag
  -f_s^{\,imp} \left(\,a^{n+1,\,k-1} - a^{n+1,0}\right) + f_s^{\,exp}- (1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^{n+1,0}) - \dive(\mu_{\,tot}\,\grad a^{n+1,0})\,\right]\\
 \end{equation}
 \\
-\hspace*{1cm}{\tiny$\blacksquare$}\ les termes issus de la
-convection/diffusion (avec reconstruction) calcul\'{e}e par \fort{bilsc2}.\\
+\hspace*{1cm}{\tiny$\blacksquare$}\ the terms arising from the
+convection/diffusion computation (with reconstruction) performed by \fort{bilsc2}.\\
 \begin{equation}\notag
 - \theta\,\left[\,\dive\left((\rho \underline{u})\,a^{n+1,\,k-1}\right)- \dive\left(\mu_{\,tot}\,\grad a^{n+1,\,k-1}\right)\right]
 \end{equation}
 
-La boucle en $k$ est alors la suivante :
+The loop in $k$ is then the following:
 \begin{itemize}
-\item Calcul du second membre, hors contribution des termes de
-convection-diffusion explicite $\var{SMBINI}$; le second membre complet correspondant
-\`a $\mathcal{E}_{n}(a^{n+1,\,k-1})$ est, quant \`a lui, stock\'e dans le
-tableau $\var{SMBRP}$, initialis\'e par $\var{SMBINI}$ et compl\'et\'e par les
-termes reconstruits de convection-diffusion par appel au sous-programme
-\fort{bilsc2}.\\
-\`A l'it\'eration $k$, $\var{SMBINI}$ not\'e  $\var{SMBINI}^{\,k}$ vaut :\\
+\item Computation of the right-hand side (second member) of the equation, without the contribution of
+the explicit convection-diffusion terms $\var{SMBINI}$; as for the whole right-hand side corresponding
+to $\mathcal{E}_{n}(a^{n+1,\,k-1})$, it is stored in the array $\var{SMBRP}$,
+initialised by $\var{SMBINI}$ and completed with the reconstructed
+convection-diffusion terms by a call to the subroutine \fort{bilsc2}.\\
+At iteration $k$, $\var{SMBINI}$ noted  $\var{SMBINI}^{\,k}$ is equal to:\\
 \begin{equation}\notag
 \var{SMBINI}^{\,k}\  = f_s^{\,exp}-(1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,\right]-\,f_s^{\,imp}(\,a^{n+1,\,k-1} - a^n\,) \\
 \end{equation}
 \\
-$\bullet$ Avant de boucler sur $k$, un premier appel au sous-programme \fort{bilsc2} avec $\var{THETAP}=1-\theta$ permet de prendre
-en compte la partie explicite des termes de convection-diffusion provenant du sch\'ema en temps.
+$\bullet$ Before starting the loop over $k$, a first call to the subroutine \fort{bilsc2} with $\var{THETAP}=1-\theta$ serves to take the explicit part (from the time advancement scheme) of the convection-diffusion terms into account.
 \begin{equation}\notag
 \displaystyle
 \var{SMBRP}^{\,0} = f_s^{\,exp} -(1-\theta)\,[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,]\\
 \end{equation}
-Avant de boucler sur $k$, le second membre $\var{SMBRP}^{\,0}$ est stock\'e dans le tableau $\var{SMBINI}^{\,0}$ et sert pour l'initialisation du reste du calcul.
+Similarly, before looping on $k$, the right-hand side $\var{SMBRP}^{\,0}$ is stored in the array $\var{SMBINI}^{\,0}$ and serves to initialize the computation.
 \begin{equation}\notag
 \var{SMBINI}^{\,0} =\var{SMBRP}^{\,0}
 \end{equation}
 \\
-$\bullet$ pour $k = 1$,
+$\bullet$ for $k = 1$,
 \begin{equation}\notag
 \begin{array}{ll}
 \var{SMBINI}^{\,1}\ &=f_s^{\,exp}-(1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,\right]-\,f_s^{\,imp}\,(\,a^{n+1,\,0} - a^n\,)\\
 &=f_s^{\,exp}- (1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^{n+1,\,0}) - \dive(\mu_{\,tot}\,\grad a^{n+1,\,0})\,\right]-f_s^{\,imp}\,\delta a^{n+1,\,0} \\
 \end{array}
 \end{equation}
-On a donc :
+This calculation is thus represented by a corresponding sequence of operations on the arrays:
 \begin{equation}\notag
 \var{SMBINI}^{\,1}\ =\ \var{SMBINI}^{\,0} - \var{ROVSDT}\,*(\,\var{PVAR}-\,\var{PVARA})
 \end{equation}
-et $\var{SMBRP}^{\,1}$ est compl\'et\'e par un second appel au sous-programme \fort{bilsc2} avec $\var{THETAP}=\theta$, de mani\`ere \`a ajouter dans le second membre la partie de la convection-diffusion implicite.
+and $\var{SMBRP}^{\,1}$ is completed by a second call to the subroutine \fort{bilsc2} with $\var{THETAP}=\theta$, so that the implicit part of the convection-diffusion computation is added to the right-hand side.
 \begin{equation}\notag
 \begin{array}{ll}
 \var{SMBRP}^{\,1} & = \var{SMBINI}^{\,1} -\theta\,\left[\,\dive((\rho \underline{u})\,a^{n+1,\,0}) - \dive(\mu_{\,tot}\,\grad a^{n+1,\,0})\,\right]\\
@@ -271,46 +240,45 @@ et $\var{SMBRP}^{\,1}$ est compl\'et\'e par un second appel au sous-programme \f
 & -\theta\,\left[\,\dive((\rho \underline{u})\,a^{n+1,\,0}) - \dive(\mu_{\,tot}\,\grad a^{n+1,\,0})\,\right]\\
 \end{array}
 \end{equation}
-$\bullet$ pour $k = 2$,\\
-de fa\c con analogue, on obtient :
+$\bullet$ for $k = 2$,\\
+In a similar fashion, we obtain:
 \begin{equation}\notag
 \begin{array}{ll}
 \var{SMBINI}^{\,2}\ &=f_s^{\,exp}-(1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,\right]-\,f_s^{\,imp}\,(\,a^{n+1,\,1} - a^n\,)\\
 \end{array}
 \end{equation}
-Soit :
+
+Hence, the equivalent array formula:
 \begin{equation}\notag
 \var{SMBINI}^{\,2}\ =\ \var{SMBINI}^{\,1} - \var{ROVSDT}\,*\,\var{DPVAR}^{\,1}
 \end{equation}
-l'appel au sous-programme \fort{bilsc2}, \'etant syst\'ematiquement fait par la suite avec $\var{THETAP}=\theta$, on obtient de m\^eme :
+the call to the subroutine \fort{bilsc2} being systematically made thereafter with $\var{THETAP}=\theta$, we likewise obtain:
 \begin{equation}\notag
 \begin{array}{ll}
 \var{SMBRP}^{\,2}\ &=\ \var{SMBINI}^{\,2}-\theta\left[\dive\left((\rho \underline{u})\,a^{n+1,\,1}\right)- \dive\left(\mu_{\,tot}\,\grad \,a^{n+1,\,1}\right)\right]\\
 \end{array}
 \end{equation}
-o\`u
+where
 \begin{equation}\notag
 a^{n+1,\,1}=\var{PVAR}^{\,1}=\var{PVAR}^{\,0}+\var{DPVAR}^{\,1}=a^{n+1,\,0}+\delta a^{n+1,\,1}
 \end{equation}
-$\bullet$ pour l'it\'eration $k+1$,\\
-Le tableau $\var{SMBINI}^{\,k+1}$ initialise le second membre complet
-$\var{SMBRP}^{\,k+1}$ auquel vont \^etre rajout\'ees les contributions
-convectives et diffusives {\it via} le sous-programme \fort{bilsc2}.\\
-on a la formule :
+$\bullet$ for iteration $k+1$,\\
+The array $\var{SMBINI}^{\,k+1}$ initialises the entire right side
+$\var{SMBRP}^{\,k+1}$ to which will be added the convective and diffusive contributions
+{\it via} the subroutine \fort{bilsc2}.\\
+The array formula is given by:
 \begin{equation}\notag
 \begin{array}{ll}
 \var{SMBINI}^{\,k+1}\ &= \var{SMBINI}^{\,k} - \var{ROVSDT}\,*\,\var{DPVAR}^{\,k}\\
 \end{array}
 \end{equation}
-Puis suit le calcul et l'ajout des termes de convection-diffusion reconstruits de $-\  \mathcal{E}_{n}(a^{n+1,\,k})$, par appel au sous-programme
-\fort{bilsc2}. On rappelle que la convection est prise en compte \`{a} cette \'{e}tape
-par le sch\'{e}ma num\'{e}rique choisi par l'utilisateur (sch\'{e}ma d\'{e}centr\'{e} amont du
-premier ordre en espace, sch\'{e}ma centr\'{e} du second ordre en espace, sch\'{e}ma
-d\'{e}centr\'{e} amont du second ordre S.O.L.U. ou une
-pond\'{e}ration (blending) des sch\'{e}mas dits du second ordre (centr\'{e}  ou S.O.L.U.) avec le sch\'{e}ma
-amont du premier ordre, utilisation \'eventuelle d'un test de pente).\\
-Cette contribution (convection-diffusion) est alors
-ajout\'{e}e dans le second membre  $\var{SMBRP}^{\,k+1}$ (initialis\'e par $\var{SMBINI}^{\,k+1}$).
+Then follows the computation and the addition of the reconstructed convection-diffusion terms of
+$-\  \mathcal{E}_{n}(a^{n+1,\,k})$, by a call to the \fort{bilsc2} subroutine. Remember
+that the convection is taken into account at this step by the user-specified numerical scheme
+(first-order accurate in space upwind scheme, centred scheme with second-order spatial discretisation, second-order
+linear upwind "SOLU" scheme or a weighted average (blending) of one of the second-order schemes (either centred or SOLU) and the first-order upwind scheme, with potential use of a slope test).\\
+This contribution (convection-diffusion) is then added in to the right side of the
+equation  $\var{SMBRP}^{\,k+1}$ (initialised by $\var{SMBINI}^{\,k+1}$).
 \begin{equation}\notag
 \begin{array}{ll}
 \var{SMBRP}^{\,k+1}\ &= \var{SMBINI}^{\,k+1} - \theta\,\left[\,\dive\left((\rho \underline{u})\,a^{n+1,\,k}\right)- \dive\left(\mu_{\,tot}\,\grad a^{n+1,\,k}\right)\right]\\
@@ -319,66 +287,65 @@ ajout\'{e}e dans le second membre  $\var{SMBRP}^{\,k+1}$ (initialis\'e par $\var
 \end{array}
 \end{equation}
 
-\item R\'esolution du syst\`{e}me lin\'{e}aire en $\delta a^{n+1,\,k+1}$ correspondant
-\`a l'\'equation (\ref{Base_Codits_Eq_Codits}) par inversion de la matrice
-$\tens{EM}_{n}$, en appelant le sous programme \fort{invers}.
-On calcule $a^{n+1,\,k+1}$ gr\^ace \`a la formule :
+\item Resolution of the linear system in $\delta a^{n+1,\,k+1}$ corresponding
+to equation (\ref{Base_Codits_Eq_Codits}) by inversion of the $\tens{EM}_{n}$ matrix, through a call to the subroutine \fort{invers}.
+We calculate $a^{n+1,\,k+1}$ based on the formula:
 \begin{equation}\notag
 a^{n+1,\,k+1} =  a^{n+1,\,k} + \delta a^{n+1,\,k+1}
 \end{equation}
-Soit :
+Represented in array form by:
 \begin{equation}\notag
 \var{PVAR}^{\,k+1} =  \var{PVAR}^{\,k} + \var{DPVAR}^{\,k+1}
 \end{equation}
 
-\item Traitement de la p\'eriodicit\'e et du parall\'{e}lisme.
-\item Test de convergence :\\
-Il porte sur la quantit\'e  $||\var{SMBRP}^{\,k+1}|| < \varepsilon
-||\tens{EM}_{n}(a^{n}) + \var{SMBRP}^{\,1}|| $, o\`u $||\,.\,||$ repr\'esente la
-norme euclidienne.
-Si le test est v\'erifi\'e, la convergence est atteinte et on sort de la
-boucle sur les it\'{e}rations. La solution recherch\'{e}e est  $a^{\,n+1} = a^{n+1,\,k+1}$.\\
-Sinon, on continue d'it\'erer dans la limite des it\'{e}rations impos\'{e}es par $\var{NSWRSM}$ dans \fort{usini1}.\\
-En ``continu'' ce test de convergence s'\'{e}crit aussi :
+\item Treatment of parallelism and of the periodicity.
+\item Test of convergence:\\
+The test involves the quantity  $||\var{SMBRP}^{\,k+1}|| < \varepsilon
+||\tens{EM}_{n}(a^{n}) + \var{SMBRP}^{\,1}|| $, where $||\,.\,||$ denotes the
+Euclidean norm. The solution sought is  $a^{\,n+1} = a^{n+1,\,k+1}$. If the test is satisfied, then convergence has been reached and we exit the iteration loop. \\
+If not, we continue to iterate until the upper limit of iterations imposed by $\var{NSWRSM}$ in \fort{usini1} is reached.\\
+The condition for convergence is also written, in continuous form, as:
 \begin{equation}\notag
 \begin{array}{ll}
 ||\var{SMBRP}^{\,k+1}||& < \varepsilon ||f_s^{\,exp}\ - \dive((\rho \underline{u})\,a^{n}) + \dive(\mu_{\,tot}\,\grad a^{n}) \\
 & +[\dive((\rho \underline{u})\,a^{n})]^{\textit{amont}} + [\dive(\mu_{\,tot}\,\grad a^{n})]^{\textit{N Rec}}||\\
 \end{array}
 \end{equation}
-Si bien que sur maillage orthogonal avec sch\'{e}ma de convection upwind et en l'absence de terme source, la suite converge en th\'{e}orie en une unique it\'{e}ration puisque par construction~:
+As a consequence, on orthogonal mesh with an upwind convection scheme and in the absence of source terms, the sequence converges in theory in a single iteration because, by construction:
 \begin{equation}\notag
 \begin{array}{ll}
 ||\var{SMBRP}^{\,2}||=\,0\,& < \varepsilon ||f_s^{\,exp}||
 \end{array}
 \end{equation}
 \end{itemize}
-Fin de la boucle.
+End of the loop.
 \\
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Points \`a traiter}\label{Base_Codits_section4}
+\section*{Points to treat}\label{Base_Codits_section4}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\etape{Approximation $\mathcal{EM}_{n}$ de l'op\'erateur
+\etape{Approximation $\mathcal{EM}_{n}$ of the operator
 $\mathcal{E}_{n}$}
-D'autres approches visant soit \`a modifier la d\'efinition de l'approxim\'ee, prise en compte du sch\'ema centr\'e sans reconstruction par exemple,
-soit \`a abandonner cette voie seraient \`a \'etudier.\\
+Alternative approaches should be investigated with the aim of either modifying the current definition
+of the approximate operator so that the centred scheme without reconstruction, for example, is
+taken into account, or abandoning it altogether.\\
 
-\etape{Test de convergence}
-La quantit\'e d\'efinissant le  test de convergence est \'{e}galement \`{a} revoir, \'{e}ventuellement \`{a} simplifier.
+\etape{Test of convergence}
+The quantity defined as criterion for the convergence test is also needs to be reviewed and potentially simplified.
 
-\etape{Prise en compte de $T_s^{imp}$}
-Lors de la r\'{e}solution de l'\'{e}quation par \fort{codits}, le tableau \var{ROVSDT} a
-deux fonctions : il sert \`{a} calculer la diagonale de la matrice (par appel de
-\fort{matrix}) et il sert \`{a} mettre \`{a} jour le second membre \`{a} chaque
-sous-it\'{e}ration de la r\'{e}solution en incr\'{e}ments. Or, dans le cas o\`{u} $T_s^{imp}$
-est positif, on ne l'int\`{e}gre pas dans \var{ROVSDT}, afin de ne pas affaiblir la
-diagonale de la matrice. De ce fait, on ne l'utilise pas pour mettre \`{a} jour le
-second membre, alors que ce serait tout \`{a} fait possible. Au final, on obtient
-donc un terme source trait\'{e} totalement en explicite ($T_s^{exp}+T_s^{imp}a^n$),
-alors que la r\'{e}solution en incr\'{e}ments nous permettrait justement de l'impliciter
-quasiment totalement ($T_s^{exp}+T_s^{imp}a^{n+1,k_{fin}-1}$, o\`{u} $k_{fin}$ est
-la derni\`{e}re sous-it\'{e}ration effectu\'{e}e).\\
-Pour ce faire, il faudrait d\'{e}finir deux tableaux \var{ROVSDT} dans \fort{codits}.
+\etape{Consideration of $T_s^{imp}$}
+During the resolution of the equation by \fort{codits}, the \var{ROVSDT} array has
+two functions: it serves to compute the diagonal elements of the matrix (by calling
+\fort{matrix}) and it serves to update the right-hand side at each
+sub-iteration of the incremental resolution. However, if $T_s^{imp}$ is positive,
+we don't include it in \var{ROVSDT} so as not to reduce the diagonal dominance
+of the matrix. In consequence, it is not used in the update of the right-hand side,
+although it would certainly be feasible to include positive values in the updates.
+The outcome of this is a source term that has been computed in a fully explicit
+manner ($T_s^{exp}+T_s^{imp}a^n$), whereas the advantage of the incremental
+approach is precisely that it allows for almost total implicitization of the solution
+($T_s^{exp}+T_s^{imp}a^{n+1,k_{fin}-1}$, where $k_{fin}$ is
+the final sub-iteration executed).\\
+To achieve this, would require defining two \var{ROVSDT} arrays in \fort{codits}.
