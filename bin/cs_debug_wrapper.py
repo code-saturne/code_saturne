@@ -217,10 +217,11 @@ def process_cmd_line(argv, pkg):
             if positions[k] > s_id:
                 s_id = positions[k]
         for f in files:
-            if f[1] > s_id:
+            if f[1] > s_id and positions['program'] == -1:
                 p = os.path.realpath(f[0])
-                if os.stat(p).st_mode & stat.S_IXUSR:
-                    positions['program'] = f[1]
+                if os.path.isfile(p) or os.path.islink(p):
+                    if os.stat(p).st_mode & stat.S_IXUSR:
+                        positions['program'] = f[1]
 
     # Second check if Valgrind is used, based on the fact that all
     # Valgrind options start with "-".
