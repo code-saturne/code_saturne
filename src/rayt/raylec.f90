@@ -140,7 +140,7 @@ if (isuird.eq.1) then
   ! Aux faces de bord
 
   call field_get_val_s(itempb, btemp_s)
-  rubriq = 'boundary_temperature'
+  rubriq = 'boundary_temperature::vals::0'
   old_name = 'wall_temperature'
   itysup = 3
   nbval = 1

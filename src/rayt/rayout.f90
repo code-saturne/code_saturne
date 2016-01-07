@@ -133,7 +133,7 @@ else
   do ifac = 1, nfabor
     tb_save(ifac) = btemp_s(ifac) + tkelvi
   enddo
-  rubriq = 'boundary_temperature'
+  rubriq = 'boundary_temperature::vals::0'
   itysup = 3
   nbval = 1
   call restart_write_section_real_t(rp,rubriq,itysup,nbval,tb_save)
