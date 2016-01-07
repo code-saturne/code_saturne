@@ -5,6 +5,8 @@ Release 4.2.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix postprocessing of unlocated Syrthes coupling face centers in 2D.
+
 - Fix broken restart for radiative transfers.
 
 - Fix in fire algorithm (idilat=5, was not tested in the V&V process)
