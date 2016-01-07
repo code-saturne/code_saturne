@@ -910,7 +910,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     cs_coord_t *el_list = NULL;
     fvm_io_num_t *vtx_io_num = NULL;
     fvm_nodal_t *ulck_points = fvm_nodal_create("unlocated elements (centers)",
-                                                syr_coupling->dim);
+                                                3);
+    n_exterior = ple_locator_get_n_exterior(coupling_ent->locator);
     const ple_lnum_t *exterior_list
       = ple_locator_get_exterior_list(coupling_ent->locator);
 
