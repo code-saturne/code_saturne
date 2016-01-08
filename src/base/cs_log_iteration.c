@@ -1205,12 +1205,14 @@ _log_clips(void)
 
     const char *name = NULL;
     int f_id = _clips[clip_id].f_id;
+    int f_dim = 0;
     if (f_id > 0) {
       const cs_field_t  *f = cs_field_by_id(f_id);
       name = cs_field_get_key_str(f, label_key_id);
       if (name == NULL)
         name = f->name;
       type_idx[1] = clip_id + 1;
+      f_dim = f->dim;
     }
     else {
       name = cs_map_name_to_id_reverse(_name_map, _clips[clip_id].name_id);
@@ -1220,6 +1222,10 @@ _log_clips(void)
     assert(name != NULL);
 
     size_t l_name_width = cs_log_strlen(name);
+    if (f_dim == 3)
+      l_name_width += 3;
+    else if (f_dim > 3)
+      l_name_width += 4;
     max_name_width = CS_MAX(max_name_width, l_name_width);
 
   }
