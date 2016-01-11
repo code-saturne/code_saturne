@@ -277,6 +277,22 @@ cs_lnum_t *
 cs_order_renumbering(const cs_lnum_t  order[],
                      size_t           nb_ent);
 
+/*----------------------------------------------------------------------------
+ * Reorder data based on ordering array.
+ *
+ * parameters:
+ *   n_elts   <-- number of elements
+ *   elt_size <-- element size
+ *   order    <-- reordering array
+ *   data     <-> data
+ *----------------------------------------------------------------------------*/
+
+void
+cs_order_reorder_data(cs_lnum_t         n_elts,
+                      size_t            elt_size,
+                      const cs_lnum_t   order[],
+                      void             *data);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

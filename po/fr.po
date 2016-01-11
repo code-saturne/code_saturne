@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-01-11 09:22+0100\n"
+"POT-Creation-Date: 2016-01-11 10:40+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6958,6 +6958,7 @@ msgstr ""
 "Au moins 1 couplage Code_Saturne a été défini pour lequel\n"
 "aucune communication avec une instance de Code_Saturne n'est possible."
 
+#, c-format
 msgid "%sd: %s is not defined at this stage."
 msgstr "%sd : %s n'est pas défini à cette étape."
 
@@ -11302,6 +11303,23 @@ msgstr ""
 "Le maillage principal ne contient pas de connectivité\n"
 "faces->sommets, indispensable à la reconstruction\n"
 "de la connectivité nodale (cs_mesh_connect_faces_to_nodal)."
+
+#, c-format
+msgid ""
+"Edge for extrusion joining vertices at coordinates\n"
+" [%12.3g, %12.3g, %12.3g] and\n"
+" [%12.3g, %12.3g, %12.3g] has %d adjacent faces."
+msgstr ""
+"l'arête pour l'extrusion joignant les sommets de coordonnées\n"
+" [%12.3g, %12.3g, %12.3g] et\n"
+" [%12.3g, %12.3g, %12.3g] a %d faces adjacentes."
+
+msgid ""
+"\n"
+"Extrusion: no faces selected, so nothing to do.\n"
+msgstr ""
+"\n"
+"Extrusion : aucune face sélectionnée, donc rien à effectuer.\n"
 
 #, c-format
 msgid ""

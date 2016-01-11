@@ -32,6 +32,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -1245,6 +1246,42 @@ cs_order_renumbering(const cs_lnum_t  order[],
 #endif
 
   return number;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reorder data based on ordering array.
+ *
+ * \param[in]      n_elts      number of elements
+ * \param[in]      elt_size    element size
+ * \param[in]      order       reordering array
+ * \param[in,out]  data        data
+ *
+ * \return  new size of data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_order_reorder_data(cs_lnum_t         n_elts,
+                      size_t            elt_size,
+                      const cs_lnum_t   order[],
+                      void             *data)
+{
+  unsigned char *tmp;
+  unsigned char *_data = data;
+
+  BFT_MALLOC(tmp, n_elts*elt_size, unsigned char);
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    cs_lnum_t j = order[i];
+    const unsigned char *src = _data + j*elt_size;
+    unsigned char *dest = tmp + i*elt_size;
+    for (size_t k = 0; k < elt_size; k++)
+      dest[k] = src[k];
+  }
+  memcpy(data, tmp, n_elts*elt_size);
+
+  BFT_FREE(tmp);
 }
 
 /*----------------------------------------------------------------------------*/

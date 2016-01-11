@@ -64,6 +64,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
+#include "cs_mesh_extrude.h"
 #include "cs_mesh_smoother.h"
 #include "cs_mesh_thinwall.h"
 #include "cs_mesh_warping.h"
@@ -528,35 +529,6 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
 void
 cs_user_mesh_modify(cs_mesh_t  *mesh)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
-  /* Example: modify vertex coordinates */
-  /*------------------------------------*/
-
-  /* Divide coordinates by 1000 (millimetres to metres).
-   *
-   * Warning:
-   *
-   *   This is incompatible with pre-processed periodicity,
-   *   as the periodicity transformation is not updated.
-   *
-   *   With periodicity, using a coordinate transformation matrix
-   *   in cs_user_mesh_input is preferred. */
-
-  if (false) {
-    cs_lnum_t  vtx_id;
-    const double  coo_mult = 1. / 1000.;
-
-    for (vtx_id = 0; vtx_id < mesh->n_vertices; vtx_id++) {
-      mesh->vtx_coord[vtx_id*3]     *= coo_mult;
-      mesh->vtx_coord[vtx_id*3 + 1] *= coo_mult;
-      mesh->vtx_coord[vtx_id*3 + 2] *= coo_mult;
-    }
-
-    /* Set mesh modification flag if it should be saved for future re-use. */
-
-    mesh->modified = 1;
-  }
 }
 
 /*----------------------------------------------------------------------------
