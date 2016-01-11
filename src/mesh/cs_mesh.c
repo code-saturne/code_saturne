@@ -3736,6 +3736,8 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
              "domain_num:        %d\n",
              mesh->dim, mesh->n_domains, mesh->domain_num);
 
+  bft_printf("\nNumber of families: %3d\n",mesh->n_families);
+
   bft_printf("\nLocal dimensions:\n"
              "n_cells:                  %d\n"
              "n_cells_with_ghosts:      %d\n"
@@ -3790,6 +3792,10 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
     bft_printf("\n");
   }
 
+  bft_printf("\nFamily of each internal face:\n");
+  for (i = 0; i < mesh->n_i_faces; i++)
+    bft_printf("   < %3d >  %5d\n", i, mesh->i_face_family[i]);
+
   if (mesh->global_i_face_num != NULL) {
 
     bft_printf("\nInternal faces global numbering:\n");
@@ -3816,6 +3822,20 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
     bft_printf("\n");
   }
 
+  bft_printf("\nFamily of each boundary face:\n");
+  for (i = 0; i < mesh->n_b_faces; i++)
+    bft_printf("   < %3d >  %5d\n", i, mesh->b_face_family[i]);
+
+  if (mesh->global_b_face_num != NULL) {
+
+    bft_printf("\nBoundary faces global numbering:\n");
+    for (i = 0; i < mesh->n_b_faces; i++)
+      bft_printf("   < %7d >  %12llu",
+                 i, (unsigned long long)(mesh->global_b_face_num[i]));
+    bft_printf("\n");
+
+  }
+
   bft_printf("\n\n        -------------------------"
              "        Cells"
              "        -------------------------\n\n");
@@ -3830,7 +3850,6 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
   }
 
-  bft_printf("\nNumber of families: %3d\n",mesh->n_families);
   bft_printf("Family of each cell:\n");
   for (i = 0; i < mesh->n_cells_with_ghosts; i++)
     bft_printf("   < %3d >  %5d\n", i, mesh->cell_family[i]);
