@@ -925,7 +925,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
                     void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t  ii;
+  cs_lnum_t  ii, jj;
   double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, beta, residue;
   cs_real_t  *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict gk;
@@ -1016,8 +1016,8 @@ _conjugate_gradient(cs_sles_it_t              *c,
         vx[ii] += (alpha * dk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
+      for (jj = 0; jj < n_rows; jj++)
+        rk[jj] += (alpha * zk[jj]);
     }
 
     /* Convergence test */
@@ -1078,8 +1078,8 @@ _conjugate_gradient(cs_sles_it_t              *c,
         vx[ii] += (alpha * dk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
+      for (jj = 0; jj < n_rows; jj++)
+        rk[jj] += (alpha * zk[jj]);
     }
 
   }
@@ -1126,7 +1126,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
                        void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t  ii;
+  cs_lnum_t  ii, jj;
   double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, gk_sk, beta, residue;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict gk, *restrict sk;
@@ -1219,8 +1219,8 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
         vx[ii] += (alpha * dk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
+      for (jj = 0; jj < n_rows; jj++)
+        rk[jj] += (alpha * zk[jj]);
     }
 
     /* Convergence test */
@@ -1279,9 +1279,9 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
         vx[ii] += alpha * dk[ii];
       }
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++) {
-        zk[ii] = sk[ii] + (beta * zk[ii]);
-        rk[ii] += alpha * zk[ii];
+      for (jj = 0; jj < n_rows; jj++) {
+        zk[jj] = sk[jj] + (beta * zk[jj]);
+        rk[jj] += alpha * zk[jj];
       }
     }
 
@@ -1325,7 +1325,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
                         void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t  ii;
+  cs_lnum_t  ii, jj;
   double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, beta, residue;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict zk;
@@ -1407,8 +1407,8 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
         vx[ii] += (alpha * dk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
+      for (jj = 0; jj < n_rows; jj++)
+        rk[jj] += (alpha * zk[jj]);
     }
 
     /* Convergence test */
@@ -1462,8 +1462,8 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
         vx[ii] += (alpha * dk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
+      for (jj = 0; jj < n_rows; jj++)
+        rk[jj] += (alpha * zk[jj]);
     }
 
   }
@@ -1510,7 +1510,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
                            void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t  ii;
+  cs_lnum_t  ii, jj;
   double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, rk_sk, beta, residue;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict sk;
@@ -1595,8 +1595,8 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
         vx[ii] += (alpha * dk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
+      for (jj = 0; jj < n_rows; jj++)
+        rk[jj] += (alpha * zk[jj]);
     }
 
     /* Convergence test */
@@ -1650,9 +1650,9 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
         vx[ii] += alpha * dk[ii];
       }
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++) {
-        zk[ii] = sk[ii] + (beta * zk[ii]);
-        rk[ii] += alpha * zk[ii];
+      for (jj = 0; jj < n_rows; jj++) {
+        zk[jj] = sk[jj] + (beta * zk[jj]);
+        rk[jj] += alpha * zk[jj];
       }
     }
 
@@ -1696,7 +1696,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
                       void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t  ii;
+  cs_lnum_t  ii, jj;
   double  residue;
   double  ak, bk, ck, dk, ek, denom, alpha, tau;
   cs_real_t *_aux_vectors;
@@ -1807,10 +1807,10 @@ _conjugate_residual_3(cs_sles_it_t              *c,
         rkm1[ii] = trk;
       }
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++) {
-        cs_real_t tvx = vx[ii];
-        vx[ii] = alpha*vx[ii] + c0*vxm1[ii] + c1*wk[ii];
-        vxm1[ii] = tvx;
+      for (jj = 0; jj < n_rows; jj++) {
+        cs_real_t tvx = vx[jj];
+        vx[jj] = alpha*vx[jj] + c0*vxm1[jj] + c1*wk[jj];
+        vxm1[jj] = tvx;
       }
     }
 
@@ -2365,7 +2365,7 @@ _bi_cgstab(cs_sles_it_t              *c,
            void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t  ii;
+  cs_lnum_t  ii, jj;
   double  _epzero = 1.e-30; /* smaller than epzero */
   double  ro_0, ro_1, alpha, beta, betam1, gamma, omega, ukres0;
   double  residue;
@@ -2492,8 +2492,8 @@ _bi_cgstab(cs_sles_it_t              *c,
         vx[ii] += (gamma * zk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        rk[ii] -= (gamma * uk[ii]);
+      for (jj = 0; jj < n_rows; jj++)
+        rk[jj] -= (gamma * uk[jj]);
     }
 
     /* Compute zk = C.rk (zk is overwritten, vk is a working array */
@@ -2524,8 +2524,8 @@ _bi_cgstab(cs_sles_it_t              *c,
         vx[ii] += (alpha * zk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        rk[ii] -= (alpha * vk[ii]);
+      for (jj = 0; jj < n_rows; jj++)
+        rk[jj] -= (alpha * vk[jj]);
     }
 
     /* Convergence test at beginning of next iteration so
@@ -2575,7 +2575,7 @@ _bicgstab2(cs_sles_it_t              *c,
            void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t ii;
+  cs_lnum_t ii, jj;
   double  _epzero = 1.e-30;/* smaller than epzero */
   double  ro_0, ro_1, alpha, beta, gamma;
   double  omega_1, omega_2, mu, nu, tau;
@@ -2731,8 +2731,8 @@ _bicgstab2(cs_sles_it_t              *c,
       for (ii = 0; ii < n_rows; ii++)
         vk[ii] = sk[ii] - beta*vk[ii];
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        uk[ii] = rk[ii] - beta*uk[ii];
+      for (jj = 0; jj < n_rows; jj++)
+        uk[jj] = rk[jj] - beta*uk[jj];
     }
 
     /* wk = A*vk */
@@ -2783,8 +2783,8 @@ _bicgstab2(cs_sles_it_t              *c,
         rk[ii] += - omega_1*sk[ii] - omega_2*tk[ii];
       /* u <- u - omega_1*v - omega_2*w */
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        uk[ii] += - omega_1*vk[ii] - omega_2*wk[ii];
+      for (jj = 0; jj < n_rows; jj++)
+        uk[jj] += - omega_1*vk[jj] - omega_2*wk[jj];
     }
 
   }
