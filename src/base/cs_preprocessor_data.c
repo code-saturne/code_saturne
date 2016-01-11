@@ -2203,12 +2203,12 @@ cs_preprocessor_check_perio(void)
 
   _n_max_mesh_files = 0;
 
-  mr = _cs_glob_mesh_reader;
-
   for (int i = 0; i < _n_mesh_files; i++) {
     retval = _read_perio_info((_mesh_file_info + i)->filename);
     perio_flag = CS_MAX(retval, perio_flag);
   }
+
+  _mesh_reader_destroy(&mr);
 
   /* Return values */
 
