@@ -925,7 +925,6 @@ _conjugate_gradient(cs_sles_it_t              *c,
                     void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t  ii;
   double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, beta, residue;
   cs_real_t  *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict gk;
@@ -964,7 +963,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     rk[ii] -= rhs[ii];
 
   /* Preconditioning */
@@ -980,7 +979,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
 #if defined(HAVE_OPENMP)
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     dk[ii] = gk[ii];
 
 #else
@@ -1012,11 +1011,11 @@ _conjugate_gradient(cs_sles_it_t              *c,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         vx[ii] += (alpha * dk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         rk[ii] += (alpha * zk[ii]);
     }
 
@@ -1062,7 +1061,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
     rk_gkm1 = rk_gk;
 
 #   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       dk[ii] = gk[ii] + (beta * dk[ii]);
 
     cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
@@ -1074,11 +1073,11 @@ _conjugate_gradient(cs_sles_it_t              *c,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         vx[ii] += (alpha * dk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         rk[ii] += (alpha * zk[ii]);
     }
 
@@ -1126,7 +1125,6 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
                        void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t  ii;
   double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, gk_sk, beta, residue;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict gk, *restrict sk;
@@ -1166,7 +1164,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     rk[ii] -= rhs[ii];
 
   /* Preconditionning */
@@ -1182,7 +1180,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 #if defined(HAVE_OPENMP)
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     dk[ii] = gk[ii];
 
 #else
@@ -1215,11 +1213,11 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         vx[ii] += (alpha * dk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         rk[ii] += (alpha * zk[ii]);
     }
 
@@ -1274,12 +1272,12 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++) {
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
         dk[ii] = gk[ii] + (beta * dk[ii]);
         vx[ii] += alpha * dk[ii];
       }
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++) {
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
         zk[ii] = sk[ii] + (beta * zk[ii]);
         rk[ii] += alpha * zk[ii];
       }
@@ -1325,7 +1323,6 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
                         void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t  ii;
   double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, beta, residue;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict zk;
@@ -1362,7 +1359,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     rk[ii] -= rhs[ii];
 
   /* Descent direction */
@@ -1371,7 +1368,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 #if defined(HAVE_OPENMP)
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     dk[ii] = rk[ii];
 
 #else
@@ -1403,11 +1400,11 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         vx[ii] += (alpha * dk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         rk[ii] += (alpha * zk[ii]);
     }
 
@@ -1446,7 +1443,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
     rk_rkm1 = rk_rk;
 
 #   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       dk[ii] = rk[ii] + (beta * dk[ii]);
 
     cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
@@ -1458,11 +1455,11 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         vx[ii] += (alpha * dk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         rk[ii] += (alpha * zk[ii]);
     }
 
@@ -1510,7 +1507,6 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
                            void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t  ii;
   double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, rk_sk, beta, residue;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict sk;
@@ -1549,7 +1545,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     rk[ii] = rk[ii] - rhs[ii];
 
   /* Descent direction */
@@ -1558,7 +1554,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 #if defined(HAVE_OPENMP)
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     dk[ii] = rk[ii];
 
 #else
@@ -1591,11 +1587,11 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         vx[ii] += (alpha * dk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         rk[ii] += (alpha * zk[ii]);
     }
 
@@ -1645,12 +1641,12 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++) {
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
         dk[ii] = rk[ii] + (beta * dk[ii]);
         vx[ii] += alpha * dk[ii];
       }
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++) {
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
         zk[ii] = sk[ii] + (beta * zk[ii]);
         rk[ii] += alpha * zk[ii];
       }
@@ -2363,7 +2359,6 @@ _bi_cgstab(cs_sles_it_t              *c,
            void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t  ii;
   double  _epzero = 1.e-30; /* smaller than epzero */
   double  ro_0, ro_1, alpha, beta, betam1, gamma, omega, ukres0;
   double  residue;
@@ -2399,7 +2394,7 @@ _bi_cgstab(cs_sles_it_t              *c,
   }
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
     pk[ii] = 0.0;
     uk[ii] = 0.0;
   }
@@ -2410,7 +2405,7 @@ _bi_cgstab(cs_sles_it_t              *c,
   cs_matrix_vector_multiply(rotation_mode, a, vx, res0);
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
     res0[ii] = -res0[ii] + rhs[ii];
     rk[ii] = res0[ii];
   }
@@ -2461,7 +2456,7 @@ _bi_cgstab(cs_sles_it_t              *c,
     /* Compute pk */
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       pk[ii] = rk[ii] + omega*(pk[ii] - alpha*uk[ii]);
 
     /* Compute zk = c.pk */
@@ -2486,11 +2481,11 @@ _bi_cgstab(cs_sles_it_t              *c,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         vx[ii] += (gamma * zk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         rk[ii] -= (gamma * uk[ii]);
     }
 
@@ -2518,11 +2513,11 @@ _bi_cgstab(cs_sles_it_t              *c,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         vx[ii] += (alpha * zk[ii]);
 
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         rk[ii] -= (alpha * vk[ii]);
     }
 
@@ -2573,7 +2568,6 @@ _bicgstab2(cs_sles_it_t              *c,
            void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  cs_lnum_t ii;
   double  _epzero = 1.e-30;/* smaller than epzero */
   double  ro_0, ro_1, alpha, beta, gamma;
   double  omega_1, omega_2, mu, nu, tau;
@@ -2616,7 +2610,7 @@ _bicgstab2(cs_sles_it_t              *c,
   /* Initialize work arrays */
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
     uk[ii] = 0.0;
   }
 
@@ -2626,7 +2620,7 @@ _bicgstab2(cs_sles_it_t              *c,
   cs_matrix_vector_multiply(rotation_mode, a, vx, res0);
 
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
     res0[ii] = -res0[ii] + rhs[ii];
     rk[ii] = res0[ii];
     qk[ii] = rk[ii];
@@ -2678,7 +2672,7 @@ _bicgstab2(cs_sles_it_t              *c,
     ro_0 = ro_1;
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       uk[ii] = rk[ii] - beta* uk[ii];
 
     /* Compute vk =  A*uk */
@@ -2705,7 +2699,7 @@ _bicgstab2(cs_sles_it_t              *c,
     /* Update rk */
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++) {
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
       rk[ii] -= alpha*vk[ii];
       vx[ii] += alpha*uk[ii];
     }
@@ -2726,10 +2720,10 @@ _bicgstab2(cs_sles_it_t              *c,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         vk[ii] = sk[ii] - beta*vk[ii];
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         uk[ii] = rk[ii] - beta*uk[ii];
     }
 
@@ -2746,7 +2740,7 @@ _bicgstab2(cs_sles_it_t              *c,
     alpha = (ro_0+mprec)/(gamma+mprec);
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++) {
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
       rk[ii] -= alpha*vk[ii];
       sk[ii] -= alpha*wk[ii];
     }
@@ -2770,18 +2764,18 @@ _bicgstab2(cs_sles_it_t              *c,
 
     /* sol <- sol + omega_1*r + omega_2*s + alpha*u */
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       vx[ii] += omega_1*rk[ii] + omega_2*sk[ii] + alpha*uk[ii];
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
       /* r <- r - omega_1*s - omega_2*t */
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         rk[ii] += - omega_1*sk[ii] - omega_2*tk[ii];
       /* u <- u - omega_1*v - omega_2*w */
 #     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         uk[ii] += - omega_1*vk[ii] - omega_2*wk[ii];
     }
 
