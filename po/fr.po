@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-12-22 10:26+0100\n"
+"POT-Creation-Date: 2016-01-11 09:22+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -2982,8 +2982,11 @@ msgstr " %s : Convection en blending centré avec %f pourcent d'upwind\n"
 msgid " %s: Convection in 2nd order blending with %f percent of upwind\n"
 msgstr " %s : Convection en blending d'ordre 2 avec %f pourcent d'upwind\n"
 
-msgid "invalid value of ischcp"
-msgstr "valeur invalide pour ischcp"
+msgid "invalid value of ischcv"
+msgstr "valeur invalide pour ischcv"
+
+msgid "invalid value of isstpc"
+msgstr "valeur invalide pour isstpc"
 
 #, c-format
 msgid " %s: %llu Faces with upwind on %llu interior faces \n"
@@ -2991,6 +2994,9 @@ msgstr " %s : %llu Faces avec upwind sur %llu faces intérieures\n"
 
 msgid "invalid value of icvflb and f_id"
 msgstr "valeur invalide pour icvflb et f_id"
+
+msgid "invalid value of ischcp"
+msgstr "valeur invalide pour ischcp"
 
 msgid "invalid value of init"
 msgstr "valeur invalide pour init"
@@ -6952,6 +6958,9 @@ msgstr ""
 "Au moins 1 couplage Code_Saturne a été défini pour lequel\n"
 "aucune communication avec une instance de Code_Saturne n'est possible."
 
+msgid "%sd: %s is not defined at this stage."
+msgstr "%sd : %s n'est pas défini à cette étape."
+
 #, c-format
 msgid ""
 "The group \"%s\" in the selection criteria:\n"
@@ -8300,9 +8309,49 @@ msgstr ""
 msgid " Invalid type of definition.\n"
 msgstr ""
 
+#, c-format
+msgid ""
+" Invalid type of mesh location for mesh location  %s.\n"
+" The expected type is CS_MESH_LOCATION_CELLS.\n"
+msgstr ""
+
+msgid " Invalid type of model for computing the moisture content."
+msgstr ""
+
 msgid ""
 " Invalid key for setting the groundwater module.\n"
 " Please read listing for more details and modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid choice of gravitation axis: %s.\n"
+" Available choices are 'x', 'y' and 'z'\n"
+" Please check your settings."
+msgstr ""
+
+#, c-format
+msgid " Invalid type of property for %s."
+msgstr ""
+
+msgid ""
+" Invalid key for setting the soil parameters in groundwater module.\n"
+" Please read the listing for more details and modify your settings."
+msgstr ""
+
+msgid " Groundwater module is activated but no soil is defined."
+msgstr ""
+
+msgid " Invalid type of property."
+msgstr ""
+
+msgid " Invalid type of model for groundwater module.."
+msgstr ""
+
+#, c-format
+msgid ""
+" %d cells have no related soil.\n"
+" Please check your settings."
 msgstr ""
 
 msgid " This type of discrete Hodge operator is not covered.\n"
@@ -8317,10 +8366,10 @@ msgstr ""
 msgid "by array"
 msgstr ""
 
-msgid "by field"
+msgid "by law (one argument)"
 msgstr ""
 
-msgid "by law (one argument)"
+msgid "by subdomain"
 msgstr ""
 
 msgid "by time function"
@@ -8371,6 +8420,9 @@ msgstr ""
 msgid "head loss"
 msgstr ""
 
+msgid " Invalid type of variable."
+msgstr ""
+
 msgid " Invalid BC type. Stop execution."
 msgstr ""
 
@@ -8388,21 +8440,24 @@ msgstr ""
 
 #, c-format
 msgid ""
+" The definition of the tensor related to the property %s is not symmetric.\n"
+" This case is not handled. Please check your settings.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" mesh location %s has not been found.\n"
+" Please check your settings."
+msgstr ""
+
+#, c-format
+msgid ""
 " Invalid key %s for setting the type of property.\n"
 " Key is one of the following: isotropic, orthotropic or anisotropic.\n"
 " Please modify your settings."
 msgstr ""
 
-msgid " Invalid type of property."
-msgstr ""
-
 msgid " Invalid type of definition for a property."
-msgstr ""
-
-#, c-format
-msgid ""
-" The definition of the tensor related to the property %s is not symmetric.\n"
-" This case is not handled.Please check your settings.\n"
 msgstr ""
 
 #, c-format

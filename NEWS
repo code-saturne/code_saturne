@@ -2,12 +2,15 @@
 Trunk (unreleased)
 ==================
 
+Changes
+-------
+
+ - when calling cs_selector_get_b_face_num_list or
+   cs_selector_get_i_face_num_list, it is no longer necessary to build
+   selection mechanisms during the optional mesh modification step.
 
 Release 4.2.0 (December 23 2015)
 ================================
-
-Changes
--------
 
 User changes
 ------------

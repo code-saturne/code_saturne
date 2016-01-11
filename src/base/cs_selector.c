@@ -43,6 +43,7 @@
 
 #include "cs_halo.h"
 #include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 
 #include "cs_selector.h"
 
@@ -93,6 +94,11 @@ cs_selector_get_b_face_num_list(const char  *criteria,
 
   *n_b_faces = 0;
 
+  if (cs_glob_mesh->select_b_faces == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%sd: %s is not defined at this stage."),
+                __func__, "cs_glob_mesh->select_b_faces");
+
   c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
                                criteria,
                                1,
@@ -128,6 +134,11 @@ cs_selector_get_i_face_num_list(const char  *criteria,
   int c_id;
 
   *n_i_faces = 0;
+
+  if (cs_glob_mesh->select_i_faces == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%sd: %s is not defined at this stage."),
+                __func__, "cs_glob_mesh->select_i_faces");
 
   c_id = fvm_selector_get_list(cs_glob_mesh->select_i_faces,
                                criteria,
@@ -165,6 +176,11 @@ cs_selector_get_cell_num_list(const char  *criteria,
 
   *n_cells = 0;
 
+  if (cs_glob_mesh->select_b_faces == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%sd: %s is not defined at this stage."),
+                __func__, "cs_glob_mesh->select_b_faces");
+
   c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
                                criteria,
                                1,
@@ -201,20 +217,61 @@ cs_selector_get_b_face_list(const char  *criteria,
 
   *n_b_faces = 0;
 
-  c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                               criteria,
-                               0,
-                               n_b_faces,
-                               b_face_list);
+  if (cs_glob_mesh->select_b_faces != NULL) {
 
-  if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
-    const char *missing
-      = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The group \"%s\" in the selection criteria:\n"
-                 "\"%s\"\n"
-                 " does not correspond to any boundary face.\n"),
-               missing, criteria);
+    c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                                 criteria,
+                                 0,
+                                 n_b_faces,
+                                 b_face_list);
+
+    if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
+      const char *missing
+        = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("The group \"%s\" in the selection criteria:\n"
+                   "\"%s\"\n"
+                   " does not correspond to any boundary face.\n"),
+                 missing, criteria);
+
+    }
+
+  }
+
+  else {
+
+    cs_mesh_t *mesh = cs_glob_mesh;
+
+    bool del_class_defs = (mesh->class_defs != NULL) ? true : false;
+
+    cs_mesh_init_group_classes(mesh);
+
+    cs_real_t  *b_face_cog = NULL, *b_face_normal = NULL;
+
+    cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
+
+    fvm_selector_t *sel_b_faces = fvm_selector_create(mesh->dim,
+                                                      mesh->n_b_faces,
+                                                      mesh->class_defs,
+                                                      mesh->b_face_family,
+                                                      1,
+                                                      b_face_cog,
+                                                      b_face_normal);
+
+    c_id = fvm_selector_get_list(sel_b_faces,
+                                 criteria,
+                                 0,
+                                 n_b_faces,
+                                 b_face_list);
+
+    BFT_FREE(b_face_cog);
+    BFT_FREE(b_face_normal);
+
+    if (del_class_defs)
+      mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
+
+    sel_b_faces = fvm_selector_destroy(sel_b_faces);
+
   }
 }
 
@@ -237,21 +294,62 @@ cs_selector_get_i_face_list(const char  *criteria,
 
   *n_i_faces = 0;
 
-  c_id = fvm_selector_get_list(cs_glob_mesh->select_i_faces,
-                               criteria,
-                               0,
-                               n_i_faces,
-                               i_face_list);
+  if (cs_glob_mesh->select_b_faces != NULL) {
 
-  if (fvm_selector_n_missing(cs_glob_mesh->select_i_faces, c_id) > 0) {
-    const char *missing
-      = fvm_selector_get_missing(cs_glob_mesh->select_i_faces, c_id, 0);
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The group \"%s\" in the selection criteria:\n"
-                 "\"%s\"\n"
-                 " does not correspond to any interior face.\n"),
-               missing, criteria);
+    c_id = fvm_selector_get_list(cs_glob_mesh->select_i_faces,
+                                 criteria,
+                                 0,
+                                 n_i_faces,
+                                 i_face_list);
+
+    if (fvm_selector_n_missing(cs_glob_mesh->select_i_faces, c_id) > 0) {
+      const char *missing
+        = fvm_selector_get_missing(cs_glob_mesh->select_i_faces, c_id, 0);
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("The group \"%s\" in the selection criteria:\n"
+                   "\"%s\"\n"
+                   " does not correspond to any interior face.\n"),
+                 missing, criteria);
+    }
+
   }
+
+  else {
+
+    cs_mesh_t *mesh = cs_glob_mesh;
+
+    bool del_class_defs = (mesh->class_defs != NULL) ? true : false;
+
+    cs_mesh_init_group_classes(mesh);
+
+    cs_real_t  *i_face_cog = NULL, *i_face_normal = NULL;
+
+    cs_mesh_quantities_i_faces(mesh, &i_face_cog, &i_face_normal);
+
+    fvm_selector_t *sel_i_faces = fvm_selector_create(mesh->dim,
+                                                      mesh->n_i_faces,
+                                                      mesh->class_defs,
+                                                      mesh->i_face_family,
+                                                      1,
+                                                      i_face_cog,
+                                                      i_face_normal);
+
+    c_id = fvm_selector_get_list(sel_i_faces,
+                                 criteria,
+                                 0,
+                                 n_i_faces,
+                                 i_face_list);
+
+    BFT_FREE(i_face_cog);
+    BFT_FREE(i_face_normal);
+
+    if (del_class_defs)
+      mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
+
+    sel_i_faces = fvm_selector_destroy(sel_i_faces);
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -272,6 +370,11 @@ cs_selector_get_cell_list(const char  *criteria,
   int c_id;
 
   *n_cells = 0;
+
+  if (cs_glob_mesh->select_cells == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%sd: %s is not defined at this stage."),
+                __func__, "cs_glob_mesh->select_cells");
 
   c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
                                criteria,
@@ -410,7 +513,7 @@ cs_selector_get_family_list(const char  *criteria,
 
   *n_families = 0;
 
-  /* As all selectors were build with the same group class definitions,
+  /* As all selectors were built with the same group class definitions,
      any selector may be used here. */
   c_id = fvm_selector_get_gc_list(cs_glob_mesh->select_cells,
                                   criteria,

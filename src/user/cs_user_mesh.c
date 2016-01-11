@@ -500,36 +500,16 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
     cs_lnum_t   n_selected_faces = 0;
     cs_lnum_t  *selected_faces = NULL;
 
-    cs_real_t  *i_face_cog = NULL, *i_face_normal = NULL;
-
     /* example of multi-line character string */
 
     const char criteria[] = "plane[0, -1, 0, 0.5, epsilon = 0.0001]"
                             " or plane[-1, 0, 0, 0.5, epsilon = 0.0001]";
-
-    cs_mesh_init_group_classes(mesh);
-
-    cs_mesh_quantities_i_faces(mesh, &i_face_cog, &i_face_normal);
-
-    cs_glob_mesh->select_i_faces = fvm_selector_create(mesh->dim,
-                                                       mesh->n_i_faces,
-                                                       mesh->class_defs,
-                                                       mesh->i_face_family,
-                                                       1,
-                                                       i_face_cog,
-                                                       i_face_normal);
 
     BFT_MALLOC(selected_faces, mesh->n_i_faces, cs_lnum_t);
 
     cs_selector_get_i_face_list(criteria,
                                 &n_selected_faces,
                                 selected_faces);
-
-    BFT_FREE(i_face_cog);
-    BFT_FREE(i_face_normal);
-
-    mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
-    mesh->select_i_faces = fvm_selector_destroy(mesh->select_i_faces);
 
     cs_create_thinwall(mesh,
                        selected_faces,
