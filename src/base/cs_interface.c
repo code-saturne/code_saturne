@@ -905,7 +905,7 @@ _interfaces_from_flat_equiv(cs_interface_set_t  *ifs,
 }
 
 /*----------------------------------------------------------------------------
- * Global ordering associated with an I/O numbering structure.
+ * Creation of a list of interfaces between elements of a same type.
  *
  * The global_num values need not be ordered or contiguous.
  *
