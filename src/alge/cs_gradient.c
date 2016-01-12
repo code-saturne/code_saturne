@@ -796,12 +796,8 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
                           cs_real_t              var[],
                           cs_real_3_t  *restrict grad)
 {
-  int        g_id, t_id;
   cs_gnum_t  t_n_clip;
-  cs_lnum_t  face_id, ii, jj, ll;
-  cs_real_t  dist[3];
-  cs_real_t  dvar, dist1, dist2, dpdxf, dpdyf, dpdzf;
-  cs_real_t  global_min_factor, global_max_factor, factor1, factor2;
+  cs_real_t  global_min_factor, global_max_factor;
   cs_real_t  t_min_factor, t_max_factor;
 
   cs_gnum_t  n_clip = 0, n_g_clip = 0;
@@ -872,7 +868,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
     clip_factor = buf + 2*n_cells_ext;
 
 # pragma omp parallel for
-  for (ii = 0; ii < n_cells_ext; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
     denum[ii] = 0;
     denom[ii] = 0;
   }
@@ -883,30 +879,28 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
   if (clip_mode == 0) {
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-
-#     pragma omp parallel for private(face_id, ii, jj, ll, \
-                                      dist, dist1, dist2, dvar)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0];
-          jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
-          for (ll = 0; ll < 3; ll++)
+          cs_real_t dist[3];
+          for (int ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
 
-          dist1 = CS_ABS(  dist[0]*grad[ii][0]
-                         + dist[1]*grad[ii][1]
-                         + dist[2]*grad[ii][2]);
-          dist2 = CS_ABS(  dist[0]*grad[jj][0]
-                         + dist[1]*grad[jj][1]
-                         + dist[2]*grad[jj][2]);
+          cs_real_t dist1 = CS_ABS(  dist[0]*grad[ii][0]
+                                   + dist[1]*grad[ii][1]
+                                   + dist[2]*grad[ii][2]);
+          cs_real_t dist2 = CS_ABS(  dist[0]*grad[jj][0]
+                                   + dist[1]*grad[jj][1]
+                                   + dist[2]*grad[jj][2]);
 
-          dvar = CS_ABS(var[ii] - var[jj]);
+          cs_real_t dvar = CS_ABS(var[ii] - var[jj]);
 
           denum[ii] = CS_MAX(denum[ii], dist1);
           denum[jj] = CS_MAX(denum[jj], dist2);
@@ -923,21 +917,22 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(jj, ll, dist, dist1, dvar)
-      for (ii = 0; ii < n_cells; ii++) {
+#     pragma omp parallel for
+      for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
         for (cs_lnum_t cidx = cell_cells_idx[ii];
              cidx < cell_cells_idx[ii+1];
              cidx++) {
 
-          jj = cell_cells_lst[cidx];
+          cs_lnum_t jj = cell_cells_lst[cidx];
 
-          for (ll = 0; ll < 3; ll++)
+          cs_real_t dist[3];
+          for (int ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
 
-          dist1 = CS_ABS(  dist[0]*grad[ii][0]
-                         + dist[1]*grad[ii][1]
-                         + dist[2]*grad[ii][2]);
-          dvar = CS_ABS(var[ii] - var[jj]);
+          cs_real_t dist1 = CS_ABS(  dist[0]*grad[ii][0]
+                                   + dist[1]*grad[ii][1]
+                                   + dist[2]*grad[ii][2]);
+          cs_real_t dvar = CS_ABS(var[ii] - var[jj]);
 
           denum[ii] = CS_MAX(denum[ii], dist1);
           denom[ii] = CS_MAX(denom[ii], dvar);
@@ -950,28 +945,28 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
   }
   else if (clip_mode == 1) {
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-
-#     pragma omp parallel for private(face_id, ii, jj, ll, \
-                                      dpdxf, dpdyf, dpdzf, dist, dist1, dvar)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0];
-          jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
-          for (ll = 0; ll < 3; ll++)
+          cs_real_t dist[3];
+          for (int ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
 
-          dpdxf = 0.5 * (grad[ii][0] + grad[jj][0]);
-          dpdyf = 0.5 * (grad[ii][1] + grad[jj][1]);
-          dpdzf = 0.5 * (grad[ii][2] + grad[jj][2]);
+          cs_real_t dpdxf = 0.5 * (grad[ii][0] + grad[jj][0]);
+          cs_real_t dpdyf = 0.5 * (grad[ii][1] + grad[jj][1]);
+          cs_real_t dpdzf = 0.5 * (grad[ii][2] + grad[jj][2]);
 
-          dist1 = CS_ABS(dist[0]*dpdxf + dist[1]*dpdyf + dist[2]*dpdzf);
-          dvar = CS_ABS(var[ii] - var[jj]);
+          cs_real_t dist1 = CS_ABS(  dist[0]*dpdxf
+                                   + dist[1]*dpdyf
+                                   + dist[2]*dpdzf);
+          cs_real_t dvar = CS_ABS(var[ii] - var[jj]);
 
           denum[ii] = CS_MAX(denum[ii], dist1);
           denum[jj] = CS_MAX(denum[jj], dist1);
@@ -988,24 +983,26 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(jj, ll, dist, \
-                                      dpdxf, dpdyf, dpdzf, dist1, dvar)
-      for (ii = 0; ii < n_cells; ii++) {
+#     pragma omp parallel for
+      for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
         for (cs_lnum_t cidx = cell_cells_idx[ii];
              cidx < cell_cells_idx[ii+1];
              cidx++) {
 
-          jj = cell_cells_lst[cidx];
+          cs_lnum_t jj = cell_cells_lst[cidx];
 
-          for (ll = 0; ll < 3; ll++)
+          cs_real_t dist[3];
+          for (int ll = 0; ll < 3; ll++)
             dist[ll] = cell_cen[ii][ll] - cell_cen[jj][ll];
 
-          dpdxf = 0.5 * (grad[ii][0] + grad[jj][0]);
-          dpdyf = 0.5 * (grad[ii][1] + grad[jj][1]);
-          dpdzf = 0.5 * (grad[ii][2] + grad[jj][2]);
+          cs_real_t dpdxf = 0.5 * (grad[ii][0] + grad[jj][0]);
+          cs_real_t dpdyf = 0.5 * (grad[ii][1] + grad[jj][1]);
+          cs_real_t dpdzf = 0.5 * (grad[ii][2] + grad[jj][2]);
 
-          dist1 = CS_ABS(dist[0]*dpdxf + dist[1]*dpdyf + dist[2]*dpdzf);
-          dvar = CS_ABS(var[ii] - var[jj]);
+          cs_real_t dist1 = CS_ABS(  dist[0]*dpdxf
+                                   + dist[1]*dpdyf
+                                   + dist[2]*dpdzf);
+          cs_real_t dvar = CS_ABS(var[ii] - var[jj]);
 
           denum[ii] = CS_MAX(denum[ii], dist1);
           denom[ii] = CS_MAX(denom[ii], dvar);
@@ -1024,17 +1021,17 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
     t_min_factor = min_factor;
     t_max_factor = max_factor;
 
-#   pragma omp parallel private(t_min_factor, t_max_factor, factor1, t_n_clip)
+#   pragma omp parallel private(t_min_factor, t_max_factor, t_n_clip)
     {
       t_n_clip = 0;
       t_min_factor = min_factor; t_max_factor = max_factor;
 
 #     pragma omp for
-      for (ii = 0; ii < n_cells; ii++) {
+      for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
 
         if (denum[ii] > climgp * denom[ii]) {
 
-          factor1 = climgp * denom[ii]/denum[ii];
+          cs_real_t factor1 = climgp * denom[ii]/denum[ii];
           grad[ii][0] *= factor1;
           grad[ii][1] *= factor1;
           grad[ii][2] *= factor1;
@@ -1059,7 +1056,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
   else if (clip_mode == 1) {
 
 #   pragma omp parallel for
-    for (ii = 0; ii < n_cells_ext; ii++)
+    for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++)
       clip_factor[ii] = (cs_real_t)DBL_MAX;
 
     /* Synchronize variable */
@@ -1075,24 +1072,23 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
       }
     }
 
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#     pragma omp parallel for private(face_id, ii, jj, factor1, factor2, \
-                                      min_factor)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
+#     pragma omp parallel for private(min_factor)
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          ii = i_face_cells[face_id][0];
-          jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
-          factor1 = 1.0;
+          cs_real_t factor1 = 1.0;
           if (denum[ii] > climgp * denom[ii])
             factor1 = climgp * denom[ii]/denum[ii];
 
-          factor2 = 1.0;
+          cs_real_t factor2 = 1.0;
           if (denum[jj] > climgp * denom[jj])
             factor2 = climgp * denom[jj]/denum[jj];
 
@@ -1111,18 +1107,18 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
     if (cell_cells_idx != NULL && halo_type == CS_HALO_EXTENDED) {
 
-#     pragma omp parallel for private(jj, factor1, factor2)
-      for (ii = 0; ii < n_cells; ii++) {
+#     pragma omp parallel for
+      for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
 
-        factor1 = 1.0;
+        cs_real_t factor1 = 1.0;
 
         for (cs_lnum_t cidx = cell_cells_idx[ii];
              cidx < cell_cells_idx[ii+1];
              cidx++) {
 
-          jj = cell_cells_lst[cidx];
+          cs_lnum_t jj = cell_cells_lst[cidx];
 
-          factor2 = 1.0;
+          cs_real_t factor2 = 1.0;
 
           if (denum[jj] > climgp * denom[jj])
             factor2 = climgp * denom[jj]/denum[jj];
@@ -1137,15 +1133,15 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
 
     } /* End for extended neighborhood */
 
-#   pragma omp parallel private(t_min_factor, t_max_factor, t_n_clip, ll)
+#   pragma omp parallel private(t_min_factor, t_max_factor, t_n_clip)
     {
       t_n_clip = 0;
       t_min_factor = min_factor; t_max_factor = max_factor;
 
 #     pragma omp for
-      for (ii = 0; ii < n_cells; ii++) {
+      for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
 
-        for (ll = 0; ll < 3; ll++)
+        for (int ll = 0; ll < 3; ll++)
           grad[ii][ll] *= clip_factor[ii];
 
         if (clip_factor[ii] < 0.99) {
