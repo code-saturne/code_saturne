@@ -308,6 +308,11 @@ typedef cs_real_t  cs_real_3_t[3];      /* Vector of 3 real values */
 typedef cs_real_t  cs_real_4_t[4];      /* Vector of 4 real values */
 typedef cs_real_t  cs_real_6_t[6];      /* Vector of 6 real values
                                            (for symmetric tensor) */
+typedef cs_real_t  cs_real_9_t[9];      /* Vector of 9 real values */
+
+typedef cs_real_t  cs_real_45_t[45];    /* Vector of 45 real values
+                                           (for symmetric 9x9 matrices) */
+
 typedef cs_real_t  cs_real_33_t[3][3];  /* Matrix of 3x3 real values */
 typedef cs_real_t  cs_real_66_t[6][6];  /* Matrix of 6x6 real values */
 

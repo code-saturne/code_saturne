@@ -2143,6 +2143,7 @@ cs_mesh_create(void)
   mesh->vtx_coord = NULL;
   mesh->i_face_cells = NULL;
   mesh->b_face_cells = NULL;
+  mesh->b_face_b_cells = NULL;
   mesh->i_face_vtx_idx = NULL;
   mesh->b_face_vtx_idx = NULL;
   mesh->i_face_vtx_lst = NULL;
@@ -2232,6 +2233,7 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
   BFT_FREE(mesh->vtx_coord);
   BFT_FREE(mesh->i_face_cells);
   BFT_FREE(mesh->b_face_cells);
+  BFT_FREE(mesh->b_face_b_cells);
   BFT_FREE(mesh->i_face_vtx_idx);
   BFT_FREE(mesh->b_face_vtx_idx);
   BFT_FREE(mesh->i_face_vtx_lst);
@@ -2595,6 +2597,7 @@ cs_mesh_update_auxiliary(cs_mesh_t  *mesh)
     _Bool *flag = NULL;
 
     BFT_MALLOC(flag, mesh->n_cells, _Bool);
+    BFT_MALLOC(mesh->b_face_b_cells, mesh->n_b_faces, cs_lnum_t);
 
     for (i = 0; i < mesh->n_cells; i++)
       flag[i] = false;
@@ -2613,8 +2616,12 @@ cs_mesh_update_auxiliary(cs_mesh_t  *mesh)
     BFT_REALLOC(mesh->b_cells, mesh->n_b_cells, cs_lnum_t);
 
     for (i = 0, n_b_cells = 0; i < mesh->n_cells; i++) {
-      if (flag[i] == true)
+      if (flag[i] == true) {
         mesh->b_cells[n_b_cells++] = i;
+        for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++)
+          if (mesh->b_face_cells[face_id] == i)
+            mesh->b_face_b_cells[face_id] = n_b_cells-1;
+      }
     }
 
     BFT_FREE(flag);

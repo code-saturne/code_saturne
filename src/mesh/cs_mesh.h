@@ -85,6 +85,7 @@ typedef struct {
 
   cs_lnum_2_t  *i_face_cells;      /* Interior faces -> cells connectivity */
   cs_lnum_t    *b_face_cells;      /* Boundary faces -> cells connectivity */
+  cs_lnum_t    *b_face_b_cells;    /* Boundary faces -> cells connectivity */
 
   cs_lnum_t    *i_face_vtx_idx;    /* Interior faces -> vertices index */
   cs_lnum_t    *i_face_vtx_lst;    /* Interior faces -> vertices connectivity */

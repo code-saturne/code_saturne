@@ -131,6 +131,80 @@ static int _gradient_stat_id = -1;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Factorize dense p*p symmetric matrices.
+ * Only the lower triangular part is stored and the factorization is performed
+ * in place (original coefficients are replaced).
+ * Crout Factorization is performed (A = L D t(L)).
+ *
+ * parameters:
+ *   d_size   <--  matrix size (p)
+ *   ad       <--> symmetric matrix to be factorized
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_fact_crout_pp(const int   d_size,
+               cs_real_t  *ad)
+{
+  cs_real_t aux[d_size];
+  for (int kk = 0; kk < d_size - 1; kk++) {
+    int kk_d_size = kk*(kk + 1)/2;
+    for (int ii = kk + 1; ii < d_size; ii++) {
+      int ii_d_size = ii*(ii + 1)/2;
+      aux[ii] = ad[ii_d_size + kk];
+      ad[ii_d_size + kk] =   ad[ii_d_size + kk]
+                           / ad[kk_d_size + kk];
+      for (int jj = kk + 1; jj < ii + 1; jj++) {
+        ad[ii_d_size + jj] = ad[ii_d_size + jj] - ad[ii_d_size + kk]*aux[jj];
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Solve forward and backward linear systems of the form L D t(L) x = b.
+ * Matrix L D t(L) should be given by a Crout factorization.
+ *
+ * parameters:
+ *   mat      <--  symmetric factorized (Crout) matrix
+ *   d_size   <--  matrix size (p)
+ *   x         --> linear system vector solution
+ *   b        <--  linear system vector right hand side
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_fw_and_bw_ldtl_pp(const cs_real_t mat[],
+                   const int       d_size,
+                         cs_real_t x[],
+                   const cs_real_t b[])
+{
+  cs_real_t  aux[d_size];
+
+  /* forward (stricly lower + identity) */
+  for (int ii = 0; ii < d_size; ii++) {
+    int ii_d_size = ii*(ii + 1)/2;
+    aux[ii] = b[ii];
+    for (int jj = 0; jj < ii; jj++) {
+      aux[ii] -= aux[jj]*mat[ii_d_size + jj];
+    }
+  }
+
+  /* diagonal */
+  for (int ii = 0; ii < d_size; ii++) {
+    int ii_d_size = ii*(ii + 1)/2;
+    aux[ii] /= mat[ii_d_size + ii];
+  }
+
+  /* backward (transposed of strictly lower + identity) */
+  for (int ii = d_size - 1; ii >= 0; ii--) {
+    x[ii] = aux[ii];
+    for (int jj = d_size - 1; jj > ii; jj--) {
+      int jj_d_size = jj*(jj + 1)/2;
+      x[ii] -= x[jj]*mat[jj_d_size + ii];
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Return pointer to new gradient computation info structure.
  *
  * parameters:
@@ -3487,6 +3561,246 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute cocg at boundaries for lsq vector gradient.
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   coefbv         <-- B.C. coefficients for boundary face normals
+ *----------------------------------------------------------------------------*/
+
+static cs_real_45_t *
+_compute_cocgb_lsq_v(const cs_mesh_t              *m,
+                  const cs_mesh_quantities_t   *fvq,
+                  const cs_real_33_t  *restrict coefbv)
+{
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_lnum_t *restrict b_face_b_cells
+    = (const cs_lnum_t *restrict)m->b_face_b_cells;
+
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+  cs_real_45_t *restrict cocgb_lsq = fvq->cocgb_lsq;
+
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_t *restrict b_face_surf
+    = (const cs_real_t *restrict)fvq->b_face_surf;
+  const cs_real_t *restrict b_dist
+    = (const cs_real_t *restrict)fvq->b_dist;
+
+  /* build indices bijection */
+  cs_lnum_2_t *_33_9_idx;
+  BFT_MALLOC(_33_9_idx, 9, cs_lnum_2_t);
+
+  int nn = 0;
+  for (int ii = 0; ii < 3; ii++)
+    for (int jj = 0; jj < 3; jj++) {
+      _33_9_idx[nn][0] = ii;
+      _33_9_idx[nn][1] = jj;
+      nn++;
+    }
+
+  /* initialize cocg for lsq vector gradient */
+  cs_real_45_t *_cocgb_v;
+  BFT_MALLOC(_cocgb_v, m->n_b_cells, cs_real_45_t);
+
+# pragma omp parallel for
+  for (cs_lnum_t b_cell_id = 0; b_cell_id < m->n_b_cells; b_cell_id++)
+    for (int ll = 0; ll < 45; ll++)
+      _cocgb_v[b_cell_id][ll] = cocgb_lsq[b_cell_id][ll];
+
+  /* build cocgb_v matrix */
+
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cs_real_t udbfs = 1. / b_face_surf[face_id];
+        const cs_real_t *iipbf = &diipb[face_id][0];
+
+        cs_lnum_t b_cell_id = b_face_b_cells[face_id];
+
+        /* db = I'F / ||I'F|| */
+        cs_real_3_t  nb;
+        for (int ii = 0; ii < 3; ii++)
+          nb[ii] = udbfs * b_face_normal[face_id][ii];
+
+        cs_real_t db = 1./b_dist[face_id];
+        cs_real_t db2 = db*db;
+
+        /* B - 1 */
+        cs_real_33_t bt;
+        for (int ll = 0; ll < 3; ll++)
+          for (int pp = 0; pp < 3; pp++)
+            if (ll == pp)
+              bt[ll][pp] = coefbv[face_id][ll][pp] - 1;
+            else
+              bt[ll][pp] = coefbv[face_id][ll][pp];
+
+        for (int ll = 0; ll < 9; ll++) {
+          int ll_9 = ll*(ll+1)/2;
+          for (int pp = 0; pp <= ll; pp++) {
+            /* contribution of t[kk][qq] */
+            int kk = _33_9_idx[ll][0];
+            int qq = _33_9_idx[ll][1];
+
+            /* derivative with respect to t[rr][ss] */
+            int rr = _33_9_idx[pp][0];
+            int ss = _33_9_idx[pp][1];
+
+            /* part from derivative of 1/2*|| B*t*IIp/db ||^2 */
+            cs_real_t cocgv = 0.;
+            for (int mm = 0; mm < 3; mm++)
+              cocgv += bt[mm][kk]*bt[mm][rr];
+            _cocgb_v[b_cell_id][ll_9+pp] += cocgv
+                                            *(iipbf[qq]*iipbf[ss])*db2;
+
+            /* part from derivative of -< t*nb , B*t*IIp/db > */
+            _cocgb_v[b_cell_id][ll_9+pp] -= (  nb[ss]*bt[rr][kk]*iipbf[qq]
+                                              + nb[qq]*bt[kk][rr]*iipbf[ss])
+                                             *db;
+          }
+        }
+      }
+    }
+  }
+
+  BFT_FREE(_33_9_idx);
+
+  /* Crout factorization of 9x9 symmetric cocg at boundaries */
+  const int d_size = 9;
+# pragma omp parallel
+  for (cs_lnum_t b_cell_id = 0; b_cell_id < m->n_b_cells; b_cell_id++)
+    _fact_crout_pp(d_size,
+                   (cs_real_t *)&_cocgb_v[b_cell_id][0]);
+
+  return _cocgb_v;
+}
+
+/*----------------------------------------------------------------------------
+ * Build rhs for lsq vector gradient at boundary cells.
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   rhs            <-- right hand side
+ *   pvar           <-- variable
+ *   coefav         <-- B.C. coefficients for boundary face normals
+ *   coefbv         <-- B.C. coefficients for boundary face normals
+ *----------------------------------------------------------------------------*/
+
+static cs_real_9_t *
+_compute_rhsb_lsq_v(const cs_mesh_t              *m,
+                    const cs_mesh_quantities_t   *fvq,
+                    const int                     inc,
+                          cs_real_33_t           *rhs,
+                    const cs_real_3_t   *restrict pvar,
+                    const cs_real_3_t   *restrict coefav,
+                    const cs_real_33_t  *restrict coefbv)
+{
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_lnum_t *restrict b_face_b_cells
+    = (const cs_lnum_t *restrict)m->b_face_b_cells;
+
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+  const cs_real_t *restrict b_dist
+    = (const cs_real_t *restrict)fvq->b_dist;
+
+  /* build indices bijection */
+  cs_lnum_2_t *_33_9_idx;
+  BFT_MALLOC(_33_9_idx, 9, cs_lnum_2_t);
+
+  int nn = 0;
+  for (int pp = 0; pp < 3; pp++)
+    for (int qq = 0; qq < 3; qq++) {
+      _33_9_idx[nn][0] = pp;
+      _33_9_idx[nn][1] = qq;
+      nn++;
+    }
+
+  /* initialize cocg for lsq vector gradient */
+  cs_real_9_t *_rhsb_v;
+  BFT_MALLOC(_rhsb_v, m->n_b_cells, cs_real_9_t);
+
+# pragma omp parallel for
+  for (cs_lnum_t b_cell_id = 0; b_cell_id < m->n_b_cells; b_cell_id++) {
+    cs_lnum_t cell_id = m->b_cells[b_cell_id];
+
+    for (int ll = 0; ll < 9; ll++) {
+      /* initialize */
+      int pp = _33_9_idx[ll][0];
+      int qq = _33_9_idx[ll][1];
+
+      /* part already computed from rhs */
+      _rhsb_v[b_cell_id][ll] = rhs[cell_id][pp][qq];
+    }
+  }
+
+  /* build rhsb_v */
+
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cs_lnum_t cell_id = b_face_cells[face_id];
+        cs_lnum_t b_cell_id = b_face_b_cells[face_id];
+
+        cs_real_t db = 1./b_dist[face_id];
+        cs_real_t db2 = db*db;
+
+        cs_real_33_t bt;
+        cs_real_3_t a;
+        for (int ll = 0; ll < 3; ll++) {
+          a[ll] = inc*coefav[face_id][ll];
+          for (int pp = 0; pp < 3; pp++) {
+            bt[ll][pp] = coefbv[face_id][ll][pp];
+            if (ll == pp)
+              bt[ll][pp] = bt[ll][pp] - 1;
+          }
+        }
+
+        for (int ll = 0; ll < 9; ll++) {
+          int pp = _33_9_idx[ll][0];
+          int qq = _33_9_idx[ll][1];
+
+          /* part from derivative of < (B-1)*t*IIp/db , (A+(B-1)*v)/db > */
+          cs_real_t rhsv = 0.;
+          for (int rr = 0; rr < 3; rr++) {
+            rhsv += bt[rr][pp]*diipb[face_id][qq]
+                   *(a[rr]+bt[rr][0]*pvar[cell_id][0]
+                          +bt[rr][1]*pvar[cell_id][1]
+                     +bt[rr][2]*pvar[cell_id][2]);
+          }
+
+          _rhsb_v[b_cell_id][ll] -= rhsv*db2;
+        }
+      }
+    }
+  }
+
+  BFT_FREE(_33_9_idx);
+
+  return _rhsb_v;
+}
+
+/*----------------------------------------------------------------------------
  * Compute cell gradient of a vector using least-squares reconstruction for
  * non-orthogonal meshes (n_r_sweeps > 1).
  *
@@ -3529,14 +3843,15 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict cell_cells_lst
     = (const cs_lnum_t *restrict)m->cell_cells_lst;
 
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
   cs_real_33_t *restrict cocg = fvq->cocg_lsq;
 
-  cs_lnum_t  cell_id, face_id, cell_id1, cell_id2, i, j, k;
-  int        g_id, t_id;
+  cs_lnum_t  cell_id1, cell_id2, i, j, k;
   cs_real_t  pfac, ddc;
   cs_real_3_t  dc;
   cs_real_3_t  fctb;
@@ -3558,7 +3873,7 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
   /*-------------------------*/
 
 # pragma omp parallel for private(i, j)
-  for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     for (i = 0; i < 3; i++)
       for (j = 0; j < 3; j++)
         rhs[cell_id][i][j] = 0.0;
@@ -3566,13 +3881,13 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
 
   /* Contribution from interior faces */
 
-  for (g_id = 0; g_id < n_i_groups; g_id++) {
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#   pragma omp parallel for private(face_id, cell_id1, cell_id2,\
+#   pragma omp parallel for private(cell_id1, cell_id2,\
                                     i, j, pfac, dc, fctb, ddc)
-    for (t_id = 0; t_id < n_i_threads; t_id++) {
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-      for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            face_id++) {
 
@@ -3632,19 +3947,23 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
 
   /* Contribution from boundary faces */
 
-  for (g_id = 0; g_id < n_b_groups; g_id++) {
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#   pragma omp parallel for private(face_id, cell_id1, i, j, pfac, dc, ddc)
-    for (t_id = 0; t_id < n_b_threads; t_id++) {
+#   pragma omp parallel for private(cell_id1, i, j, pfac, dc, ddc)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
-      for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
 
         cell_id1 = b_face_cells[face_id];
 
+        const cs_real_t *iipbf = &diipb[face_id][0];
+
+        /* db = I'F */
         for (i = 0; i < 3; i++)
-          dc[i] = b_face_cog[face_id][i] - cell_cen[cell_id1][i];
+          dc[i] = b_face_cog[face_id][i] - cell_cen[cell_id1][i]
+                 -iipbf[i];
 
         ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
@@ -3668,7 +3987,7 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
   /* Compute gradient */
   /*------------------*/
 
-  for (cell_id = 0; cell_id < n_cells; cell_id++)
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
     for (j = 0; j < 3; j++)
       for (i = 0; i < 3; i++) {
 
@@ -3678,6 +3997,54 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
           gradv[cell_id][i][j] += rhs[cell_id][i][k] * cocg[cell_id][k][j];
 
       }
+
+  /* Compute gradient on boundary cells */
+  /*------------------------------------*/
+
+  cs_real_45_t *cocgb_v = _compute_cocgb_lsq_v(m,
+                                               fvq,
+                                               coefbv);
+
+  cs_real_9_t *rhsb_v = _compute_rhsb_lsq_v(m,
+                                            fvq,
+                                            inc,
+                                            rhs,
+                                            pvar,
+                                            coefav,
+                                            coefbv);
+
+  /* build indices bijection */
+  cs_lnum_2_t *_33_9_idx;
+  BFT_MALLOC(_33_9_idx, 9, cs_lnum_2_t);
+
+  int nn = 0;
+  for (int ii = 0; ii < 3; ii++)
+    for (int jj = 0; jj < 3; jj++) {
+      _33_9_idx[nn][0] = ii;
+      _33_9_idx[nn][1] = jj;
+      nn++;
+    }
+
+  const int d_size = 9;
+  cs_real_9_t x;
+  for (cs_lnum_t b_cell_id = 0; b_cell_id < m->n_b_cells; b_cell_id++) {
+    cs_lnum_t cell_id = m->b_cells[b_cell_id];
+
+    _fw_and_bw_ldtl_pp((cs_real_t *)&cocgb_v[b_cell_id][0],
+                       d_size,
+                       (cs_real_t *)&x[0],
+                       (cs_real_t *)&rhsb_v[b_cell_id][0]);
+
+    for (int kk = 0; kk < 9; kk++) {
+      int ii = _33_9_idx[kk][0];
+      int jj = _33_9_idx[kk][1];
+      gradv[cell_id][ii][jj] = x[kk];
+    }
+  }
+
+  BFT_FREE(_33_9_idx);
+  BFT_FREE(cocgb_v);
+  BFT_FREE(rhsb_v);
 
   /* Periodicity and parallelism treatment */
 
@@ -5602,4 +5969,3 @@ cs_gradient_type_by_imrgra(int                  imrgra,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-

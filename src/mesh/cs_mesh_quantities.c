@@ -615,13 +615,16 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
   const cs_lnum_t *restrict cell_cells_lst
     = (const cs_lnum_t *restrict)m->cell_cells_lst;
 
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_t *restrict b_face_surf
+    = (const cs_real_t *restrict)fvq->b_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
   cs_real_33_t *restrict cocg = fvq->cocg_lsq;
+  cs_real_45_t *restrict cocgb_lsq = fvq->cocgb_lsq;
 
-  cs_lnum_t  cell_id, face_id, cell_id1, cell_id2, i, j;
+  cs_lnum_t  face_id, cell_id1, cell_id2, i, j;
   int        g_id, t_id;
   cs_real_t  a11, a12, a13, a22, a23, a33;
   cs_real_t  cocg11, cocg12, cocg13, cocg22, cocg23, cocg33;
@@ -631,10 +634,15 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
 
   /* Compute cocg */
 
+  if (cocgb_lsq == NULL) {
+    BFT_MALLOC(cocgb_lsq, m->n_b_cells, cs_real_45_t);
+    fvq->cocgb_lsq = cocgb_lsq;
+  }
+
   /* Initialization */
 
 # pragma omp parallel for private(i, j)
-  for (cell_id = 0; cell_id < n_cells_ext; cell_id++)
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
     for (i = 0; i < 3; i++)
       for (j = 0; j < 3; j++)
         cocg[cell_id][i][j] = 0.0;
@@ -706,7 +714,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
 
   for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-#   pragma omp parallel for private(face_id, cell_id1, i, j, ddc, dc)
+#   pragma omp parallel for private(face_id, cell_id1, i, j, dc)
     for (t_id = 0; t_id < n_b_threads; t_id++) {
 
       for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -715,20 +723,63 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
 
         cell_id1 = b_face_cells[face_id];
 
-        for (i = 0; i < 3; i++)
-          dc[i] = b_face_cog[face_id][i] - cell_cen[cell_id1][i];
+        cs_real_t udbfs = 1. / b_face_surf[face_id];
 
-        ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+        for (i = 0; i < 3; i++)
+          dc[i] = udbfs * b_face_normal[face_id][i];
 
         for (i = 0; i < 3; i++)
           for (j = 0; j < 3; j++)
-            cocg[cell_id1][i][j] += dc[i]*dc[j]*ddc;
+            cocg[cell_id1][i][j] += dc[i]*dc[j];
 
       } /* loop on faces */
 
     } /* loop on threads */
 
   } /* loop on thread groups */
+
+  /* Build indices bijection between [1-9] and [1-3]*[1-3] */
+
+  cs_lnum_2_t *_33_9_idx;
+  BFT_MALLOC(_33_9_idx, 9, cs_lnum_2_t);
+  int nn = 0;
+  for (int ll = 0; ll < 3; ll++) {
+    for (int mm = 0; mm < 3; mm++) {
+      _33_9_idx[nn][0] = ll;
+      _33_9_idx[nn][1] = mm;
+      nn++;
+    }
+  }
+
+  /* Save partial cocg at interior faces of boundary cells */
+
+# pragma omp parallel for
+  for (cs_lnum_t b_cell_id = 0; b_cell_id < m->n_b_cells; b_cell_id++) {
+    cs_lnum_t cell_id = m->b_cells[b_cell_id];
+    for (int ll = 0; ll < 9; ll++) {
+      /* index of row first coefficient */
+      int ll_9 = ll*(ll+1)/2;
+
+      for (int mm = 0; mm <= ll; mm++) {
+        /* initialize */
+        cocgb_lsq[b_cell_id][ll_9+mm] = 0.;
+
+        /* contribution of t[kk][qq] */
+        int pp = _33_9_idx[ll][0];
+        int qq = _33_9_idx[ll][1];
+
+        /* derivative with respect to t[rr][ss] */
+        int rr = _33_9_idx[mm][0];
+        int ss = _33_9_idx[mm][1];
+
+        /* part from cocg_s (BCs independant) */
+        if (pp == rr)
+          cocgb_lsq[b_cell_id][ll_9+mm] += cocg[cell_id][qq][ss];
+      }
+    }
+  }  /* loop on boundary cells */
+
+  BFT_FREE(_33_9_idx);
 
   /* Invert for all cells. */
   /*-----------------------*/
@@ -738,7 +789,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
 # pragma omp parallel for private(cocg11, cocg12, cocg13, cocg22, \
                                   cocg23, cocg33, a11, a12, \
                                   a13, a22, a23, a33, det_inv)
-  for (cell_id = 0; cell_id < n_cells; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
     cocg11 = cocg[cell_id][0][0];
     cocg12 = cocg[cell_id][0][1];
@@ -2121,6 +2172,7 @@ cs_mesh_quantities_create(void)
   mesh_quantities->cocg_s_lsq = NULL;
   mesh_quantities->cocg_it = NULL;
   mesh_quantities->cocg_lsq = NULL;
+  mesh_quantities->cocgb_lsq = NULL;
   mesh_quantities->b_sym_flag = NULL;
   mesh_quantities->c_solid_flag = NULL;
   mesh_quantities->bad_cell_flag = NULL;
@@ -2173,6 +2225,7 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
   BFT_FREE(mesh_quantities->cocg_s_lsq);
   BFT_FREE(mesh_quantities->cocg_it);
   BFT_FREE(mesh_quantities->cocg_lsq);
+  BFT_FREE(mesh_quantities->cocgb_lsq);
   BFT_FREE(mesh_quantities->b_sym_flag);
   BFT_FREE(mesh_quantities->c_solid_flag);
   BFT_FREE(mesh_quantities->bad_cell_flag);
@@ -2305,8 +2358,9 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   }
 
   if (_compute_cocg_lsq == 1) {
-    if (mesh_quantities->cocg_lsq == NULL)
+    if (mesh_quantities->cocg_lsq == NULL) {
       BFT_MALLOC(mesh_quantities->cocg_lsq, n_cells_with_ghosts, cs_real_33_t);
+    }
   }
 
   if (mesh_quantities->b_sym_flag == NULL)
