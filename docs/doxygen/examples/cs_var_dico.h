@@ -208,7 +208,7 @@
   propce(iel,icp)          | call field_get_val_s(iprpfl(\ref cstphy::icp "icp"), cpro_cp)             |CS_F_(cp)->val[cell_id]            | Specific heat
   propce(iel,icpa)         | call field_get_val_s(iprpfl(\ref numvar::icpa "icpa"), cpro_cpa)          |CS_F_(cp)->val_pre[cell_id]        | specific heat at the previous time-step
   propce(iel,icrom)        | call field_get_val_s(iprpfl(\ref numvar::icrom "icrom"), cpro_crom)       |CS_F_(rho)->val[cell_id]           | Density (at cells)
-  propce(iel,ibrom)        | call field_get_val_s(iprpfl(\ref numvar::ibrom "ibrom"), bpro_rho)        |CS_F_(rho_b)->val[cell_id]         | Density (at boundary faces)
+  propfb(ifac,ibrom)       | call field_get_val_s(iprpfl(\ref numvar::ibrom "ibrom"), bpro_rho)        |CS_F_(rho_b)->val[face_id]         | Density (at boundary faces)
   propce(iel,ismago)       | call field_get_val_s(iprpfl(\ref numvar::ismago "ismago"), cpro_smago)    |cs_field_by_name("smagorinsky_constant^2")| Field id of the anisotropic turbulent viscosity
   propce(iel,icour)        | call field_get_val_s(iprpfl(\ref numvar::icour "icour"), cpro_cour)       |cs_field_by_name("courant_number") | Courant number
   propce(iel,ifour)        | call field_get_val_s(iprpfl(\ref numvar::ifour "ifour"), cpro_four)       |cs_field_by_name("fourier_number") | Fourier number
