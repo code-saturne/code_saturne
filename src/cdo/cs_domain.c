@@ -56,6 +56,7 @@
 #include "cs_walldistance.h"
 #include "cs_groundwater.h"
 #include "cs_prototypes.h"
+#include "cs_evaluate.h"
 #include "cs_source_term.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
@@ -134,7 +135,7 @@ _domain_boundary_ml_name[CS_PARAM_N_BOUNDARY_TYPES][CS_CDO_LEN_NAME] =
 static void
 _domain_post(const cs_domain_t    *domain)
 {
-  bft_printf("\n Post-processing if needed");
+  bft_printf("\n Post-processing if needed\n");
 
   /* Post-processing of the advection field(s) */
   for (int id = 0; id < domain->n_adv_fields; id++)
@@ -1325,6 +1326,9 @@ cs_domain_get_groundwater(const cs_domain_t    *domain)
  * \param[in, out]  domain         pointer to a cs_domain_t structure
  * \param[in]       eqname         name of the equation
  * \param[in]       varname        name of the related variable
+ * \param[in]       wmd            value of the water molecular diffusivity
+ * \param[in]       alpha_l        value of the longitudinal dispersivity
+ * \param[in]       alpha_t        value of the transversal dispersivity
  * \param[in]       bulk_density   value of the bulk density
  * \param[in]       distrib_coef   value of the distribution coefficient
  * \param[in]       reaction_rate  value of the first order rate of reaction
@@ -1335,28 +1339,62 @@ void
 cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
                                  const char    *eq_name,
                                  const char    *var_name,
+                                 double         wmd,
+                                 double         alpha_l,
+                                 double         alpha_t,
                                  double         bulk_density,
                                  double         distrib_coef,
                                  double         reaction_rate)
 {
+  int  len = 0;
+  char  *pty_name = NULL;
+  bool  alphat_gt_0 = (alpha_t > cs_get_zero_threshold()) ? true : false;
+  bool  alphal_gt_0 = (alpha_l > cs_get_zero_threshold()) ? true : false;
+  bool  wmd_gt_0 = (wmd > cs_get_zero_threshold()) ? true : false;
+
   /* Sanity checks */
   if (domain->gw == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " Groundwater module is requested but is not activated.\n"
               " Please first activate this module.");
 
-  /* Add a new property related to the diffusion property */
-  int  len = strlen(eq_name) + strlen("_diffusivity") + 1;
-  char  *pty_name = NULL;
-
+  /* Add a new property related to the time-depedent term */
+  len = strlen(eq_name) + strlen("_time") + 1;
   BFT_MALLOC(pty_name, len, char);
-  sprintf(pty_name, "%s_diffusivity", eq_name);
+  sprintf(pty_name, "%s_time", eq_name);
 
-  cs_domain_add_property(domain, pty_name, "anisotropic");
+  cs_domain_add_property(domain, pty_name, "isotropic");
 
-  cs_property_t *diff_pty = cs_domain_get_property(domain, pty_name);
+  cs_property_t *time_pty = cs_domain_get_property(domain, pty_name);
 
-  BFT_FREE(pty_name);
+  /* Add a new property related to the diffusion property */
+  cs_property_t *diff_pty = NULL;
+
+  if (alphat_gt_0 || alphal_gt_0 || wmd_gt_0) {
+
+    len = strlen(eq_name) + strlen("_diffusivity") + 1;
+    BFT_MALLOC(pty_name, len, char);
+    sprintf(pty_name, "%s_diffusivity", eq_name);
+
+    cs_domain_add_property(domain, pty_name, "anisotropic");
+
+    diff_pty = cs_domain_get_property(domain, pty_name);
+
+  }
+
+  /* If needed add a new property related to the reaction term */
+  cs_property_t *reac_pty = NULL;
+  if (reaction_rate > cs_get_zero_threshold()) {
+
+    len = strlen(eq_name) + strlen("_reaction") + 1;
+    BFT_REALLOC(pty_name, len, char);
+    sprintf(pty_name, "%s_reaction", eq_name);
+
+    cs_domain_add_property(domain, pty_name, "isotropic");
+
+    reac_pty = cs_domain_get_property(domain, pty_name);
+
+  }
 
   /* Add a new equation */
   BFT_REALLOC(domain->equations, domain->n_equations + 1, cs_equation_t *);
@@ -1366,18 +1404,25 @@ cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
                                                         eq_name,
                                                         var_name,
                                                         diff_pty,
+                                                        time_pty,
+                                                        reac_pty,
+                                                        wmd,
+                                                        alpha_l,
+                                                        alpha_t,
                                                         bulk_density,
                                                         distrib_coef,
                                                         reaction_rate);
+
+  if (tracer_eq == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " Problem during the definition of the tracer equation %s for"
+              " the groundwater module.", eq_name);
 
   domain->equations[domain->n_equations] = tracer_eq;
   domain->n_predef_equations += 1;
   domain->n_equations += 1;
 
-  if (tracer_eq == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              " Problem during the definition of a new tracer equation for"
-              " the groundwater module.");
+  BFT_FREE(pty_name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1477,7 +1522,7 @@ cs_domain_add_user_equation(cs_domain_t         *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create cs_field_t structures attached to equation unknowns and 
+ * \brief  Create cs_field_t structures attached to equation unknowns and
  *         advection fields
  *
  * \param[in, out]  domain    pointer to a cs_domain_t structure

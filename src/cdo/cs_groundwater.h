@@ -203,28 +203,38 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
  *         by the resolution of the Richards equation.
  *         Diffusion/reaction parameters result from a physical modelling.
  *
- * \param[in, out] gw               pointer to a cs_groundwater_t structure
- * \param[in]      tracer_eq_id     id related to the tracer equation
- * \param[in]      eqname           name of the equation
- * \param[in]      varname          name of the related variable
- * \param[in]      diff_property    pointer to a cs_property_t struct.
- * \param[in]      bulk_density     value of the bulk density
- * \param[in]      distrib_coef     value of the distribution coefficient
- * \param[in]      reaction_rate    value of the first order rate of reaction
+ * \param[in, out] gw              pointer to a cs_groundwater_t structure
+ * \param[in]      tracer_eq_id    id related to the tracer equation
+ * \param[in]      eqname          name of the equation
+ * \param[in]      varname         name of the related variable
+ * \param[in]      diff_pty        related property for the diffusion term
+ * \param[in]      time_pty        related property for the time-dependent term
+ * \param[in]      reac_pty        related property for the reaction term
+ * \param[in]      wmd             value of the water molecular diffusivity
+ * \param[in]      alpha_l         value of the longitudinal dispersivity
+ * \param[in]      alpha_t         value of the transversal dispersivity
+ * \param[in]      bulk_density    value of the bulk density
+ * \param[in]      distrib_coef    value of the distribution coefficient
+ * \param[in]      reaction_rate   value of the first order rate of reaction
  *
  * \return a pointer to a new allocated equation structure (Tracer eq.)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_groundwater_add_tracer(cs_groundwater_t   *gv,
-                          int                 tracer_eq_id,
-                          const char         *eq_name,
-                          const char         *var_name,
-                          cs_property_t      *diff_property,
-                          double              bulk_density,
-                          double              distrib_coef,
-                          double              reaction_rate);
+cs_groundwater_add_tracer(cs_groundwater_t    *gw,
+                          int                  tracer_eq_id,
+                          const char          *eqname,
+                          const char          *varname,
+                          cs_property_t       *diff_pty,
+                          cs_property_t       *time_pty,
+                          cs_property_t       *reac_pty,
+                          double               wmd,
+                          double               alpha_l,
+                          double               alpha_t,
+                          double               bulk_density,
+                          double               distrib_coef,
+                          double               reaction_rate);
 
 /*----------------------------------------------------------------------------*/
 /*!

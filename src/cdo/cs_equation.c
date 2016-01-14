@@ -2414,7 +2414,7 @@ cs_equation_set_reaction_option(cs_equation_t    *eq,
 
   cs_equation_param_t  *eqp = eq->param;
 
-  /* Look for the requested source term */
+  /* Look for the requested reaction term */
   int  r_id = -1;
   if (r_name != NULL) { // Look for the related source term structure
 
@@ -3309,6 +3309,29 @@ cs_equation_get_field(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return the flag associated to an equation
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a flag (cs_flag_t type)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t
+cs_equation_get_flag(const cs_equation_t    *eq)
+{
+  cs_flag_t  ret_flag = 0;
+
+  if (eq == NULL)
+    return ret_flag;
+
+  ret_flag = eq->param->flag;
+
+  return ret_flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the cs_equation_param_t structure associated to a
  *         cs_equation_t structure
  *
@@ -3365,6 +3388,47 @@ cs_equation_get_time_property(const cs_equation_t    *eq)
     return NULL;
   else
     return eq->param->time_property;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a pointer to the cs_property_t structure associated to the
+ *         reaction term called r_name and related to this equation
+ *
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a pointer to a cs_property_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_equation_get_reaction_property(const cs_equation_t    *eq,
+                                  const char             *r_name)
+{
+  if (eq == NULL)
+    return NULL;
+
+  if (r_name == NULL)
+    return NULL;
+
+  const cs_equation_param_t  *eqp = eq->param;
+
+  /* Look for the requested reaction term */
+  int  r_id = -1;
+  for (int i = 0; i < eqp->n_reaction_terms; i++) {
+    if (strcmp(eqp->reaction_terms[i].name, r_name) == 0) {
+      r_id = i;
+      break;
+    }
+  }
+
+  if (r_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Cannot find the reaction term %s in equation %s.\n"
+                " Please check your settings.\n"), r_name, eq->name);
+
+  return eqp->reaction_properties[r_id];
 }
 
 /*----------------------------------------------------------------------------*/

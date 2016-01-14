@@ -439,6 +439,19 @@ cs_equation_get_field(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return the flag associated to an equation
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a flag (cs_flag_t type)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t
+cs_equation_get_flag(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the cs_equation_param_t structure associated to a
  *         cs_equation_t structure
  *
@@ -478,6 +491,22 @@ cs_equation_get_diffusion_property(const cs_equation_t    *eq);
 
 cs_property_t *
 cs_equation_get_time_property(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return a pointer to the cs_property_t structure associated to the
+ *         reaction term called r_name and related to this equation
+ *
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return a pointer to a cs_property_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_equation_get_reaction_property(const cs_equation_t    *eq,
+                                  const char             *r_name);
 
 /*----------------------------------------------------------------------------*/
 /*!

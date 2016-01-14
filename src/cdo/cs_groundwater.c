@@ -73,9 +73,19 @@ typedef struct {
 
   int              eq_id;
 
-  double           bulk_density;
-  double           distrib_coef;
+  /* Product of the bulk density by the distribution coefficient */
+  double           rho_kd;
+
+  /* Longitudinal and transversal dispersivity */
+  double           alpha_l;
+  double           alpha_t;
+
+  /* Water molecular diffusivity */
+  double           wmd;
+
+  /* First order decay coefficient (related to the reaction term) */
   double           reaction_rate;
+
 
 } cs_gw_tracer_t;
 
@@ -96,9 +106,6 @@ typedef struct {
   double                  residual_moisture;       /* theta_r */
   double                  saturated_moisture;      /* theta_s */
   cs_get_t                saturated_permeability;  /* k_s [m.s^-1] */
-
-  /* Soil properties related to transport equation */
-  cs_real_3_t             dispersivity;
 
 } cs_gw_soil_t;
 
@@ -325,7 +332,6 @@ _init_soil(const char     *ml_name,
                 " The expected type is CS_MESH_LOCATION_CELLS.\n"), ml_name);
 
   soil->ml_id = ml_id;
-  soil->dispersivity[0] = soil->dispersivity[1] = soil->dispersivity[2] = 0;
 
   /* Set the model associated to this soil */
   if (strcmp(model_kw, "saturated") == 0) {
@@ -374,6 +380,9 @@ _init_soil(const char     *ml_name,
  * \brief  Set a cs_gw_tracer_t structure
  *
  * \param[in]      tracer_eq_id    id related to the tracer equation
+ * \param[in]      wmd             value of the water molecular diffusivity
+ * \param[in]      alpha_l         value of the longitudinal dispersivity
+ * \param[in]      alpha_t         value of the transversal dispersivity
  * \param[in]      bulk_density    value of the bulk density
  * \param[in]      distrib_coef    value of the distribution coefficient
  * \param[in]      reaction_rate   value of the first order rate of reaction
@@ -383,6 +392,9 @@ _init_soil(const char     *ml_name,
 
 static void
 _set_tracer_param(int                 tracer_eq_id,
+                  double              wmd,
+                  double              alpha_l,
+                  double              alpha_t,
                   double              bulk_density,
                   double              distrib_coef,
                   double              reaction_rate,
@@ -392,9 +404,100 @@ _set_tracer_param(int                 tracer_eq_id,
 
   tp->eq_id = tracer_eq_id;
 
-  tp->bulk_density = bulk_density;
-  tp->distrib_coef = distrib_coef;
+  tp->wmd = wmd;
+  tp->rho_kd = bulk_density * distrib_coef;
   tp->reaction_rate = reaction_rate;
+  tp->alpha_l = alpha_l;
+  tp->alpha_t = alpha_t;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the coefficient appearing in the diffusion term of the
+ *         tracer equation
+ *
+ * \param[in]      theta          value of the moisture content
+ * \param[in]      v              value of the local velocity
+ * \param[in]      tracer_struc   pointer to a soil structure
+ * \param[in, out] result         pointer to a cs_get_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_get_tracer_diffusion_tensor(double          theta,
+                             const double    v[],
+                             const void     *tracer_struc,
+                             cs_get_t       *result)
+{
+  const cs_gw_tracer_t  *tp = (const cs_gw_tracer_t  *)tracer_struc;
+
+  const double  vxx = v[0]*v[0], vyy = v[1]*v[1], vzz = v[2]*v[2];
+  const double  vxy = v[0]*v[1], vxz = v[0]*v[1], vyz = v[1]*v[2];
+  const double  vnorm = sqrt(vxx + vyy + vzz);
+
+  assert(vnorm > cs_get_zero_threshold());
+  const double  onv = 1/vnorm;
+  const double  delta_coef = (tp->alpha_l - tp->alpha_t)*onv;
+
+  /* Extra diagonal terms */
+  result->tens[0][1] = result->tens[1][0] = delta_coef * vxy;
+  result->tens[0][2] = result->tens[2][0] = delta_coef * vxz;
+  result->tens[1][2] = result->tens[2][1] = delta_coef * vyz;
+
+  /* Diagonal terms */
+  const double  diag_coef = tp->wmd * theta;
+
+  result->tens[0][0] = tp->alpha_l*vxx + tp->alpha_t*vyy + tp->alpha_t*vzz;
+  result->tens[1][1] = tp->alpha_t*vxx + tp->alpha_l*vyy + tp->alpha_t*vzz;
+  result->tens[2][2] = tp->alpha_t*vxx + tp->alpha_t*vyy + tp->alpha_l*vzz;
+
+  for (int k = 0; k < 3; k++) {
+    result->tens[k][k] *= onv;
+    result->tens[k][k] += diag_coef;
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the coefficient appearing in time-dependent term of the
+ *         simulation of tracer equations
+ *
+ * \param[in]      theta          value of the moisture content
+ * \param[in]      tracer_struc   pointer to a soil structure
+ * \param[in, out] result         pointer to a cs_get_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_get_tracer_time_coeff(double        theta,
+                       const void   *tracer_struc,
+                       cs_get_t     *result)
+{
+  const cs_gw_tracer_t  *tracer = (const cs_gw_tracer_t  *)tracer_struc;
+
+  result->val = theta + tracer->rho_kd;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the coefficient appearing in reaction term for the simulation
+ *         of tracer equations
+ *
+ * \param[in]      theta          value of the moisture content
+ * \param[in]      tracer_struc   pointer to a soil structure
+ * \param[in, out] result         pointer to a cs_get_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_get_tracer_reaction_coeff(double        theta,
+                           const void   *tracer_struc,
+                           cs_get_t     *result)
+{
+  const cs_gw_tracer_t  *tracer = (const cs_gw_tracer_t  *)tracer_struc;
+
+  result->val = tracer->reaction_rate * (theta + tracer->rho_kd);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1225,7 +1328,12 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
  * \param[in]      tracer_eq_id    id related to the tracer equation
  * \param[in]      eqname          name of the equation
  * \param[in]      varname         name of the related variable
- * \param[in]      diff_property   pointer to a cs_property_t struct.
+ * \param[in]      diff_pty        related property for the diffusion term
+ * \param[in]      time_pty        related property for the time-dependent term
+ * \param[in]      reac_pty        related property for the reaction term
+ * \param[in]      wmd             value of the water molecular diffusivity
+ * \param[in]      alpha_l         value of the longitudinal dispersivity
+ * \param[in]      alpha_t         value of the transversal dispersivity
  * \param[in]      bulk_density    value of the bulk density
  * \param[in]      distrib_coef    value of the distribution coefficient
  * \param[in]      reaction_rate   value of the first order rate of reaction
@@ -1239,7 +1347,12 @@ cs_groundwater_add_tracer(cs_groundwater_t    *gw,
                           int                  tracer_eq_id,
                           const char          *eqname,
                           const char          *varname,
-                          cs_property_t       *diff_property,
+                          cs_property_t       *diff_pty,
+                          cs_property_t       *time_pty,
+                          cs_property_t       *reac_pty,
+                          double               wmd,
+                          double               alpha_l,
+                          double               alpha_t,
                           double               bulk_density,
                           double               distrib_coef,
                           double               reaction_rate)
@@ -1251,11 +1364,16 @@ cs_groundwater_add_tracer(cs_groundwater_t    *gw,
 
   BFT_REALLOC(gw->tracer_param, gw->n_tracers + 1, cs_gw_tracer_t);
 
+  cs_gw_tracer_t  *tp = gw->tracer_param + gw->n_tracers;
+
   _set_tracer_param(tracer_eq_id,
+                    wmd,
+                    alpha_l,
+                    alpha_t,
                     bulk_density,
                     distrib_coef,
                     reaction_rate,
-                    gw->tracer_param + gw->n_tracers);
+                    tp);
 
   gw->n_tracers += 1;
 
@@ -1265,8 +1383,32 @@ cs_groundwater_add_tracer(cs_groundwater_t    *gw,
                           CS_PARAM_VAR_SCAL,            // type of variable
                           CS_PARAM_BC_HMG_NEUMANN);     // default BC
 
-  /* Associate permeability to the diffusion property of the Richards eq. */
-  cs_equation_link(eq, "diffusion", diff_property);
+  /* Associate the property for the unsteady term */
+  cs_equation_link(eq, "time", time_pty);
+  cs_property_def_by_law(time_pty, _get_tracer_time_coeff);
+  cs_property_set_struct(time_pty, (const void *)tp);
+
+  /* Associate the advection field for the advection term */
+  assert(gw->adv_field != NULL); /* Sanity check */
+  cs_equation_link(eq, "advection", gw->adv_field);
+
+  /* Associate the property for the diffusion term */
+  if (diff_pty != NULL) {
+
+    cs_equation_link(eq, "diffusion", diff_pty);
+    cs_property_def_by_scavec_law(diff_pty, _get_tracer_diffusion_tensor);
+    cs_property_set_struct(diff_pty, (const void *)tp);
+
+  }
+
+  /* Associate the property for the reaction term */
+  if (reac_pty != NULL) {
+
+    cs_equation_add_reaction(eq, "decay", "linear", reac_pty);
+    cs_property_def_by_law(reac_pty, _get_tracer_reaction_coeff);
+    cs_property_set_struct(reac_pty, (const void *)tp);
+
+  }
 
   return eq;
 }
@@ -1555,10 +1697,44 @@ cs_groundwater_automatic_settings(cs_equation_t      **equations,
 
     cs_gw_tracer_t  tp = gw->tracer_param[i];
     cs_equation_t  *eq = equations[tp.eq_id];
+    cs_flag_t  eq_flag = cs_equation_get_flag(eq);
 
-    cs_equation_link(eq, "advection", gw->adv_field);
+    const char  *eqname = cs_equation_get_name(eq);
 
-  }
+    /* Set time property */
+    cs_property_t  *time_pty = cs_equation_get_time_property(eq);
+
+    flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL;
+    cs_property_set_array(time_pty, flag, gw->moisture_content->val);
+
+    /* Set diffusion property */
+    if (eq_flag & CS_EQUATION_DIFFUSION) {
+
+      cs_property_t  *diff_pty = cs_equation_get_diffusion_property(eq);
+
+      flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL;
+      cs_property_set_array(diff_pty, flag, gw->moisture_content->val);
+
+      flag = CS_PARAM_FLAG_FACE | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_BY_CELL;
+      flag |= CS_PARAM_FLAG_SCAL;
+      cs_property_set_second_array(diff_pty, flag, gw->darcian_flux);
+
+    }
+
+    /* Add reaction term if needed */
+    if (eq_flag & CS_EQUATION_REACTION) {
+
+      cs_property_t  *reac_pty = cs_equation_get_reaction_property(eq,
+                                                                   "decay");
+
+      flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL;
+      cs_property_set_array(reac_pty, flag, gw->moisture_content->val);
+
+    }
+
+    /* TODO: add predefined source term */
+
+  } // Loop on tracer equations
 
 }
 
