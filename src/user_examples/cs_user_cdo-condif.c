@@ -466,20 +466,33 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
 
   /* Add a source term:
 
-     Label of the source term is optional (i.e. NULL is possible)
+     cs_equation_add_source_term_by_val(eq,
+                                        label,
+                                        ml_name,
+                                        val);
+     or
+
+     cs_equation_add_source_term_by_analytic(eq,
+                                             label,
+                                             ml_name,
+                                             analytic_func);
+
+     where label of the source term is optional (i.e. NULL is possible)
      This label is mandatory if additional settings are requested only for
      this specific source term.
 
-     Type of definition is among the following choices:
-     >> "value", "analytic", "user"
+     where ml_name is the name of the mesh location where this source term is
+     defined (a selection of cells)
+
+     where val is the value of the source term by m^3
+     or where analytic_func is the name of the analytical function
 
    */
 
-  cs_equation_add_source_term(eq,
-                              "SourceTerm",     // label of the source term
-                              "cells",          // name of the mesh location
-                              "analytic",       // type of definition
-                              _define_source);  // analytic function
+  cs_equation_add_source_term_by_analytic(eq,
+                                          "SourceTerm",    // label
+                                          "cells",         // ml_name
+                                          _define_source); // analytic function
 
   /* Optional: specify additional settings for a source term
 
@@ -491,23 +504,19 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
      If st_label is set to NULL, all source terms of the equation are set
      to the given parameters.
 
-     KEY = "post" Set the behaviour related to post-processing
+     KEY = "post_freq" Set the behaviour related to post-processing
      >> VAL = "-1" no post-processing,
             = "0"  at the beginning of the computation,
             = "n"  at each n iterations
 
      KEY = "quadrature" Set the algortihm used for quadrature
-     >> VAL = "subdiv"  used a subdivision into tetrahedra
-            = "bary"    used the barycenter approximation
+     >> VAL = "bary"    used the barycenter approximation
             = "higher"  used 4 Gauss points for approximating the integral
             = "highest" used 5 Gauss points for approximating the integral
 
-     Remark: "higher" and "highest" implies automatically a subdivision
-             into tetrahedra
   */
 
   cs_equation_set_source_term_option(eq, "SourceTerm", "quadrature", "bary");
-  cs_equation_set_source_term_option(eq, "SourceTerm", "quadrature", "subdiv");
 
   /* Optional: specify additional settings for a reaction term
 

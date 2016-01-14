@@ -49,7 +49,7 @@
 #include "cs_search.h"
 #include "cs_post.h"
 #include "cs_quadrature.h"
-#include "cs_evaluate.h"
+#include "cs_source_term.h"
 #include "cs_cdo_bc.h"
 #include "cs_hodge.h"
 #include "cs_cdovb_advection.h"
@@ -1116,21 +1116,23 @@ cs_cdovb_scaleq_free(void   *builder)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_compute_source(void    *builder)
+cs_cdovb_scaleq_compute_source(void            *builder)
 {
   cs_lnum_t  i;
-  cs_flag_t  tag;
+
   cs_cdovb_scaleq_t  *bld = (cs_cdovb_scaleq_t *)builder;
-
-  const cs_equation_param_t  *eqp = bld->eqp;
-  const cs_time_step_t  *time_step = bld->time_step;
-  const cs_cdo_connect_t  *connect = bld->connect;
-  const cs_cdo_quantities_t  *quant = bld->quant;
-
-  double  *st_eval = _vbscal_work;
 
   for (i = 0; i < bld->n_vertices; i++)
     bld->source_terms[i] = 0;
+
+  const cs_equation_param_t  *eqp = bld->eqp;
+
+  if (eqp->n_source_terms == 0)
+    return;
+
+  cs_flag_t  tag;
+
+  double  *st_eval = _vbscal_work;
 
   if (eqp->flag & CS_EQUATION_HCONF_ST) {
     tag = CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
@@ -1142,43 +1144,30 @@ cs_cdovb_scaleq_compute_source(void    *builder)
   else
     tag = CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_SCAL;
 
-  if (eqp->n_source_terms > 0) { /* Add contribution from source terms */
+  for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
 
-    for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
+    const cs_source_term_t  *st = eqp->source_terms[st_id];
 
-      const cs_param_source_term_t  st = eqp->source_terms[st_id];
+    cs_source_term_compute(tag,
+                           st,
+                           &st_eval);  // updated inside this function
 
-      /* Sanity check */
-      assert(st.var_type == CS_PARAM_VAR_SCAL);
+    /* Update source term array */
+    if (eqp->flag & CS_EQUATION_HCONF_ST) {
 
-      cs_evaluate(quant, connect,  // geometrical and topological info.
-                  time_step,
-                  tag,
-                  st.ml_id,
-                  st.def_type,
-                  st.quad_type,
-                  st.use_subdiv,
-                  st.def,             // definition of the explicit part
-                  &st_eval);          // updated inside this function
+      double  *mv = _vbscal_work + bld->n_vertices;
 
-      /* Update source term array */
-      if (eqp->flag & CS_EQUATION_HCONF_ST) {
+      cs_sla_matvec(bld->hvpcd_conf, st_eval, &mv, true);
+      for (i = 0; i < bld->n_vertices; i++)
+        bld->source_terms[i] += mv[i];
 
-        double  *mv = _vbscal_work + bld->n_vertices;
+    }
+    else {
+      for (i = 0; i < bld->n_vertices; i++)
+        bld->source_terms[i] += st_eval[i];
+    }
 
-        cs_sla_matvec(bld->hvpcd_conf, st_eval, &mv, true);
-        for (i = 0; i < bld->n_vertices; i++)
-          bld->source_terms[i] += mv[i];
-
-      }
-      else {
-        for (i = 0; i < bld->n_vertices; i++)
-          bld->source_terms[i] += st_eval[i];
-      }
-
-    } // Loop on source terms
-
-  } /* There is at least one source term which is defined */
+  } // Loop on source terms
 
 }
 

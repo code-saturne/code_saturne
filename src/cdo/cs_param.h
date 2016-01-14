@@ -88,6 +88,12 @@ typedef union {
   /* For a definition by law depending on one variable */
   cs_onevar_law_func_t            *law1_func;
 
+  /* For a definition by law depending on two variables */
+  cs_twovar_law_func_t            *law2_func;
+
+  /* For a definition by law depending on two variables */
+  cs_scavec_law_func_t            *law_scavec_func;
+
 } cs_def_t;
 
 typedef enum {
@@ -95,6 +101,8 @@ typedef enum {
   CS_PARAM_DEF_BY_ANALYTIC_FUNCTION,
   CS_PARAM_DEF_BY_ARRAY,
   CS_PARAM_DEF_BY_ONEVAR_LAW,
+  CS_PARAM_DEF_BY_TWOVAR_LAW,
+  CS_PARAM_DEF_BY_SCAVEC_LAW,
   CS_PARAM_DEF_BY_SUBDOMAIN,
   CS_PARAM_DEF_BY_TIME_FUNCTION,
   CS_PARAM_DEF_BY_USER_FUNCTION,
@@ -314,40 +322,6 @@ typedef struct {
 
 } cs_param_bc_t;
 
-/* SOURCE TERMS */
-/* ============ */
-
-/* Types of source terms */
-typedef enum {
-
-  CS_PARAM_SOURCE_TERM_HEADLOSS, // specific treatment (not implemented)
-  CS_PARAM_SOURCE_TERM_MASS,     // specific treatment (not implemented)
-  CS_PARAM_SOURCE_TERM_USER,     // user-defined
-  CS_PARAM_N_SOURCE_TERM_TYPES
-
-} cs_param_source_term_type_t;
-
-typedef struct {
-
-  char  *restrict name;   /* short description of the source term */
-
-  int             ml_id;  /* id of the related mesh location structure */
-  int             post;   /* -1: no post, 0: at the beginning,
-                              n: at each 'n' iterations */
-
-  /* Specification related to the way of computing the source term */
-  cs_param_source_term_type_t  type;       // mass, head loss...
-  cs_param_var_type_t          var_type;   // scalar, vector...
-  cs_param_def_type_t          def_type;   // by value, by function...
-  cs_quadra_type_t             quad_type;  // barycentric, higher, highest
-  bool                         use_subdiv; // use a subdivision into tetrahedra
-
-  /* Values if one needs an implicit and explicit part
-     implicit part comes first */
-  cs_def_t                     def;
-
-} cs_param_source_term_t;
-
 /* ITERATIVE SOLVERS */
 /* ================= */
 
@@ -515,32 +489,6 @@ cs_param_reaction_add(cs_param_reaction_t          *rp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a source term. This source term is added to the list of
- *         source terms associated to an equation
- *
- * \param[in, out] stp        pointer to cs_param_source_term_t structure
- * \param[in]      st_name    name of the source term
- * \param[in]      ml_id      id of the related to a cs_mesh_location_t struct.
- * \param[in]      type       type of source term
- * \param[in]      var_type   type of variables (scalar, vector, tensor...)
- * \param[in]      quad_type  type of quadrature rule to use
- * \param[in]      def_type   type of definition (by value, function...)
- * \param[in]      val        access to the definition of the source term
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_source_term_add(cs_param_source_term_t       *stp,
-                         const char                   *st_name,
-                         int                           ml_id,
-                         cs_param_source_term_type_t   type,
-                         cs_param_var_type_t           var_type,
-                         cs_quadra_type_t              quad_type,
-                         cs_param_def_type_t           def_type,
-                         const void                   *val);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Get the name related to a reaction term
  *
  * \param[in] r_info     cs_param_reaction_t structure
@@ -564,32 +512,6 @@ cs_param_reaction_get_name(const cs_param_reaction_t   r_info);
 
 const char *
 cs_param_reaction_get_type_name(cs_param_reaction_t  r_info);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name related to a source term
- *
- * \param[in] st_info     cs_param_source_term_t structure
- *
- * \return the name of the source term
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_source_term_get_name(const cs_param_source_term_t   st_info);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of type of a given source term structure
- *
- * \param[in] st_info     cs_param_source_term_t structure
- *
- * \return  the name of the type
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_source_term_get_type_name(const cs_param_source_term_t   st_info);
 
 /*----------------------------------------------------------------------------*/
 /*!

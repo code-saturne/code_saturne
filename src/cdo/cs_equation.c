@@ -115,7 +115,7 @@ typedef void *
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_compute_source_t)(void    *builder);
+(cs_equation_compute_source_t)(void          *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -284,15 +284,6 @@ typedef enum {
 
 } reakey_t;
 
-/* List of keys for setting a source term */
-typedef enum {
-
-  STKEY_POST,
-  STKEY_QUADRATURE,
-  STKEY_ERROR
-
-} stkey_t;
-
 /*=============================================================================
  * Local Macro definitions and structure definitions
  *============================================================================*/
@@ -342,6 +333,14 @@ struct _cs_equation_t {
   cs_equation_get_tmpbuf_t      *get_tmpbuf;
 
 };
+
+/*============================================================================
+ * Private variables
+ *============================================================================*/
+
+static const char _err_empty_eq[] =
+  N_(" Stop setting an empty cs_equation_t structure.\n"
+     " Please check your settings.\n");
 
 /*============================================================================
  * Private function prototypes
@@ -1039,31 +1038,6 @@ _print_reakey(reakey_t  key)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Print the name of the corresponding source term key
- *
- * \param[in] key        name of the key
- *
- * \return a string
- */
-/*----------------------------------------------------------------------------*/
-
-static const char *
-_print_stkey(stkey_t  key)
-{
-  switch (key) {
-  case STKEY_POST:
-    return "post";
-  case STKEY_QUADRATURE:
-    return "quadrature";
-  default:
-    assert(0);
-  }
-
-  return NULL; // avoid a warning
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Get the corresponding enum from the name of an equation key.
  *         If not found, print an error message
  *
@@ -1180,30 +1154,6 @@ _get_reakey(const char *keyname)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the corresponding enum from the name of a source term key.
- *         If not found, print an error message
- *
- * \param[in] keyname    name of the key
- *
- * \return a stkey_t
- */
-/*----------------------------------------------------------------------------*/
-
-static stkey_t
-_get_stkey(const char *keyname)
-{
-  stkey_t  key = STKEY_ERROR;
-
-  if (strcmp(keyname, "post") == 0)
-    key = STKEY_POST;
-  else if (strcmp(keyname, "quadrature") == 0)
-    key = STKEY_QUADRATURE;
-
-  return key;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Create a cs_equation_param_t
  *
  * \param[in] type             type of equation
@@ -1269,20 +1219,21 @@ _create_equation_param(cs_equation_type_t     type,
   eqp->reaction_terms = NULL;
   eqp->reaction_properties = NULL;
 
+  /* No source term by default (always in the right-hand side) */
+  eqp->n_source_terms = 0;
+  eqp->source_terms = NULL;
+
   /* Boundary conditions structure.
      One assigns a boundary condition by default */
   eqp->bc = cs_param_bc_create(default_bc);
 
+  /* Initial condition */
   cs_param_set_def(eqp->time_info.ic_def_type, var_type, NULL,
                    &(eqp->time_info.ic_def));
 
   /* Settings for driving the linear algebra */
   eqp->algo_info = _algo_info_by_default;
   eqp->itsol_info = _itsol_info_by_default;
-
-  /* Source terms */
-  eqp->n_source_terms = 0;
-  eqp->source_terms = NULL;
 
   return eqp;
 }
@@ -1352,6 +1303,9 @@ cs_equation_create(const char            *eqname,
   eq->matrix = NULL;
   eq->rhs = NULL;
 
+  /* Builder structure for this equation */
+  eq->builder = NULL;
+
   /* Pointer of function */
   eq->init_builder = NULL;
   eq->compute_source = NULL;
@@ -1361,8 +1315,6 @@ cs_equation_create(const char            *eqname,
   eq->get_f_values = NULL;
   eq->get_tmpbuf = NULL;
   eq->free_builder = NULL;
-
-  eq->builder = NULL;
 
   return  eq;
 }
@@ -1399,18 +1351,23 @@ cs_equation_free(cs_equation_t  *eq)
   }
 
   if (eqp->n_reaction_terms > 0) { // reaction terms
+
     for (int i = 0; i< eqp->n_reaction_terms; i++)
       BFT_FREE(eqp->reaction_terms[i].name);
     BFT_FREE(eqp->reaction_terms);
-    /* Free only the array of pointers and tnot the pointers themselves
+
+    /* Free only the array of pointers and not the pointers themselves
        since they are stored in a cs_domain_t structure */
     BFT_FREE(eqp->reaction_properties);
+
   }
 
   if (eqp->n_source_terms > 0) { // Source terms
+
     for (int i = 0; i< eqp->n_source_terms; i++)
-      BFT_FREE(eqp->source_terms[i].name);
+      eqp->source_terms[i] = cs_source_term_free(eqp->source_terms[i]);
     BFT_FREE(eqp->source_terms);
+
   }
 
   BFT_FREE(eq->param);
@@ -1668,23 +1625,8 @@ cs_equation_summary(const cs_equation_t  *eq)
   if (source_term) {
 
     bft_printf("\n  <%s/Source terms>\n", eq->name);
-    for (int s_id = 0; s_id < eqp->n_source_terms; s_id++) {
-
-      cs_param_source_term_t  st_info = eqp->source_terms[s_id];
-
-      bft_printf("    <st> name: %s\n", cs_param_source_term_get_name(st_info));
-      bft_printf("    <st> mesh location: %s\n",
-                 cs_mesh_location_get_name(st_info.ml_id));
-      bft_printf("    <st> Type: %s; Variable type: %s; Definition type: %s\n",
-                 cs_param_source_term_get_type_name(st_info),
-                 cs_param_get_var_type_name(st_info.var_type),
-                 cs_param_get_def_type_name(st_info.def_type));
-      if (eqp->verbosity > 0)
-        bft_printf("    <st> Quadrature type: %s; Use subdivision: %s\n",
-                   cs_quadrature_get_type_name(st_info.quad_type),
-                   cs_base_strtf(st_info.use_subdiv));
-
-    } // Loop on source terms
+    for (int s_id = 0; s_id < eqp->n_source_terms; s_id++)
+      cs_source_term_summary(eq->name, eqp->source_terms[s_id]);
 
   } // Source terms
 
@@ -1837,9 +1779,7 @@ cs_equation_set_option(cs_equation_t       *eq,
                        const void          *val)
 {
   if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Stop setting an empty cs_equation_t structure.\n"
-                " Please check your settings.\n"));
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
@@ -2190,8 +2130,7 @@ cs_equation_link(cs_equation_t       *eq,
                  void                *pointer)
 {
   if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Cannot link an empty cs_equation_t structure"));
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
   cs_equation_param_t  *eqp = eq->param;
 
@@ -2239,9 +2178,7 @@ cs_equation_set_ic(cs_equation_t    *eq,
                    void             *val)
 {
   if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" cs_equation_t structure is NULL\n"
-                " Cannot set the initial condition"));
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
   cs_equation_param_t  *eqp = eq->param;
 
@@ -2288,10 +2225,7 @@ cs_equation_add_bc(cs_equation_t    *eq,
   int  ml_id;
 
   if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" cs_equation_t structure is NULL\n"
-                " Cannot add a boundary condition related to mesh location %s"),
-              ml_name);
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
   cs_equation_param_t  *eqp = eq->param;
   cs_param_bc_t  *bc = eqp->bc;
@@ -2365,7 +2299,7 @@ cs_equation_add_bc(cs_equation_t    *eq,
  *         to a reaction term
  *
  * \param[in, out] eq         pointer to a cs_equation_t structure
- * \param[in]      r_name     name of the source term or NULL
+ * \param[in]      r_name     name of the reaction term or NULL
  * \param[in]      type_name  type of reaction term to add
  * \param[in]      property   pointer to a cs_property_t struct.
  */
@@ -2378,9 +2312,7 @@ cs_equation_add_reaction(cs_equation_t   *eq,
                          cs_property_t   *property)
 {
   if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" cs_equation_t structure is NULL\n"
-                " Can not add a reaction term."));
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
   /* Only this kind of reaction term is available up to now */
   cs_param_reaction_type_t  r_type = CS_PARAM_N_REACTION_TYPES;
@@ -2475,9 +2407,7 @@ cs_equation_set_reaction_option(cs_equation_t    *eq,
   int  i;
 
   if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Stop setting an empty cs_equation_t structure.\n"
-                " Please check your settings.\n"));
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
@@ -2507,7 +2437,7 @@ cs_equation_set_reaction_option(cs_equation_t    *eq,
   if (key == REAKEY_ERROR) {
     bft_printf("\n\n Current key: %s\n", keyname);
     bft_printf(" Possible keys: ");
-    for (i = 0; i < STKEY_ERROR; i++) {
+    for (i = 0; i < REAKEY_ERROR; i++) {
       bft_printf("%s ", _print_reakey(i));
       if (i > 0 && i % 3 == 0)
         bft_printf("\n\t");
@@ -2617,40 +2547,76 @@ cs_equation_set_reaction_option(cs_equation_t    *eq,
  *         to a source term
  *         def_key among "value", "analytic", "user"...
  *
+ * \param[in, out]  eq             pointer to a cs_equation_t structure
+ * \param[in]       ml_id          id related to a mesh location
+ * \param[in]       array_support  indicate where the values are defined
+ * \param[in]       array_values   pointer to the array values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_gravity_source_term(cs_equation_t   *eq,
+                                    int              ml_id,
+                                    cs_flag_t        array_support,
+                                    cs_real_t       *array_values)
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+
+  cs_source_term_type_t  st_type = CS_SOURCE_TERM_GRAVITY;
+  cs_equation_param_t  *eqp = eq->param;
+
+  /* Add a new source term */
+  int  st_id = eqp->n_source_terms;
+
+  eqp->n_source_terms += 1;
+  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_source_term_t *);
+
+  /* Create and set new source term structure */
+  eqp->source_terms[st_id] = cs_source_term_create("gravity_source",
+                                                   ml_id,
+                                                   st_type,
+                                                   eqp->var_type);
+
+  cs_source_term_def_by_array(eqp->source_terms[st_id],
+                              array_support,
+                              array_values);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize by value a new structure to store parameters
+ *         related to a source term defined by a user
+ *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
  * \param[in]       st_name   name of the source term or NULL
  * \param[in]       ml_name   name of the related mesh location
- * \param[in]       def_key   way of defining the value of the source term
  * \param[in]       val       pointer to the value
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_source_term(cs_equation_t   *eq,
-                            const char      *st_name,
-                            const char      *ml_name,
-                            const char      *def_key,
-                            const void      *val)
+cs_equation_add_source_term_by_val(cs_equation_t   *eq,
+                                   const char      *st_name,
+                                   const char      *ml_name,
+                                   const void      *val)
 {
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+
   int  ml_id;
   char *_st_name = NULL;
+  cs_source_term_type_t  st_type = CS_SOURCE_TERM_USER;
+  cs_equation_param_t  *eqp = eq->param;
 
   const char  *name;
 
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" cs_equation_t structure is NULL\n"
-                " Can not add a source term related to mesh location %s"),
-              ml_name);
-
-  cs_param_source_term_type_t  st_type = CS_PARAM_SOURCE_TERM_USER;
-  cs_param_def_type_t  def_type = CS_PARAM_N_DEF_TYPES;
-  cs_equation_param_t  *eqp = eq->param;
-
   /* Add a new source term */
   int  st_id = eqp->n_source_terms;
+
   eqp->n_source_terms += 1;
-  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_param_source_term_t);
+  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_source_term_t *);
 
   if (st_name == NULL) { /* Define a name by default */
     assert(st_id < 100);
@@ -2665,35 +2631,72 @@ cs_equation_add_source_term(cs_equation_t   *eq,
   /* Get the mesh location id from its name */
   _check_ml_name(ml_name, &ml_id);
 
-  /* Get the type of definition */
-  if (strcmp(def_key, "value") == 0)
-    def_type = CS_PARAM_DEF_BY_VALUE;
-  else if (strcmp(def_key, "array") == 0)
-    def_type = CS_PARAM_DEF_BY_ARRAY;
-  else if (strcmp(def_key, "analytic") == 0)
-    def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
-  else if (strcmp(def_key, "user") == 0)
-    def_type = CS_PARAM_DEF_BY_USER_FUNCTION;
+  /* Create and set new source term structure */
+  eqp->source_terms[st_id] = cs_source_term_create(name,
+                                                   ml_id,
+                                                   st_type,
+                                                   eqp->var_type);
+
+  cs_source_term_def_by_value(eqp->source_terms[st_id], val);
+
+  if (st_name == NULL)
+    BFT_FREE(_st_name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize by an analytical function a new structure
+ *         related to a source term defined by a user
+ *
+ * \param[in, out]  eq        pointer to a cs_equation_t structure
+ * \param[in]       st_name   name of the source term or NULL
+ * \param[in]       ml_name   name of the related mesh location
+ * \param[in]       ana       pointer to an analytical function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
+                                        const char           *st_name,
+                                        const char           *ml_name,
+                                        cs_analytic_func_t   *ana)
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+
+  int  ml_id;
+  char *_st_name = NULL;
+  cs_source_term_type_t  st_type = CS_SOURCE_TERM_USER;
+  cs_equation_param_t  *eqp = eq->param;
+
+  const char  *name;
+
+  /* Add a new source term */
+  int  st_id = eqp->n_source_terms;
+
+  eqp->n_source_terms += 1;
+  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_source_term_t *);
+
+  if (st_name == NULL) { /* Define a name by default */
+    assert(st_id < 100);
+    int len = strlen("sourceterm_00") + 1;
+    BFT_MALLOC(_st_name, len, char);
+    sprintf(_st_name, "sourceterm_%2d", st_id);
+    name = _st_name;
+  }
   else
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting the type of definition.\n"
-                " Given key: %s\n"
-                " Choice among value, field, evaluator, analytic, user, law"
-                " or file\n"
-                " Please modify your settings."), def_key);
+    name = st_name;
 
-  /* Get the type of source term */
-  st_type = CS_PARAM_SOURCE_TERM_USER; /* only this kind of source term up to
-                                          now */
+  /* Get the mesh location id from its name */
+  _check_ml_name(ml_name, &ml_id);
 
-  cs_param_source_term_add(eqp->source_terms + st_id,
-                           name,
-                           ml_id,
-                           st_type,
-                           eqp->var_type,
-                           CS_QUADRATURE_BARY,    // default value
-                           def_type,
-                           val);
+  /* Create and set new source term structure */
+  eqp->source_terms[st_id] = cs_source_term_create(name,
+                                                  ml_id,
+                                                  st_type,
+                                                  eqp->var_type);
+
+  cs_source_term_def_by_analytic(eqp->source_terms[st_id], ana);
 
   if (st_name == NULL)
     BFT_FREE(_st_name);
@@ -2723,9 +2726,7 @@ cs_equation_set_source_term_option(cs_equation_t    *eq,
   int  i;
 
   if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Stop setting an empty cs_equation_t structure.\n"
-                " Please check your settings.\n"));
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
@@ -2737,89 +2738,25 @@ cs_equation_set_source_term_option(cs_equation_t    *eq,
   if (st_name != NULL) { // Look for the related source term structure
 
     for (i = 0; i < eqp->n_source_terms; i++) {
-      if (strcmp(eqp->source_terms[i].name, st_name) == 0) {
+      if (strcmp(cs_source_term_get_name(eqp->source_terms[i]), st_name) == 0) {
         st_id = i;
         break;
       }
     }
 
-    if (st_id == -1) // Error
+    if (st_id == -1)
       bft_error(__FILE__, __LINE__, 0,
-                _(" Cannot find source term %s.\n"
-                  " Please check your settings.\n"), st_name);
+                _(" Cannot find source term %s among defined source terms.\n"
+                  " Please check your settings for equation %s.\n"),
+                st_name, eq->name);
 
   } // st_name != NULL
 
-  stkey_t  key = _get_stkey(keyname);
-
-  if (key == STKEY_ERROR) {
-    bft_printf("\n\n Current key: %s\n", keyname);
-    bft_printf(" Possible keys: ");
-    for (i = 0; i < STKEY_ERROR; i++) {
-      bft_printf("%s ", _print_stkey(i));
-      if (i > 0 && i % 3 == 0)
-        bft_printf("\n\t");
-    }
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting source term %s.\n"
-                " Please read listing for more details and"
-                " modify your settings."), st_name);
-
-  } /* Error message */
-
-  switch(key) {
-
-  case STKEY_POST:
-    {
-      int  post_freq = atoi(keyval);
-
-      if (st_id != -1)
-        eqp->source_terms[st_id].post = post_freq;
-      else
-        for (i = 0; i < eqp->n_source_terms; i++)
-          eqp->source_terms[i].post = post_freq;
-
-    }
-    break;
-
-  case STKEY_QUADRATURE:
-    if (strcmp(keyval, "subdiv") == 0) {
-      if (st_id != -1)
-        eqp->source_terms[st_id].use_subdiv = true;
-      else
-        for (i = 0; i < eqp->n_source_terms; i++)
-          eqp->source_terms[i].use_subdiv = true;
-    }
-    else {
-
-      cs_quadra_type_t  qtype = CS_QUADRATURE_NONE;
-
-      if (strcmp(keyval, "bary") == 0)
-        qtype = CS_QUADRATURE_BARY;
-      else if (strcmp(keyval, "higher") == 0)
-        qtype = CS_QUADRATURE_HIGHER;
-      else if (strcmp(keyval, "highest") == 0)
-        qtype = CS_QUADRATURE_HIGHEST;
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" Invalid key value for setting the quadrature behaviour"
-                    " of a source term.\n"
-                    " Choices are among subdiv, bary, higher, highest."));
-
-      if (st_id != -1)
-        eqp->source_terms[st_id].quad_type = qtype;
-      else
-        for (i = 0; i < eqp->n_source_terms; i++)
-          eqp->source_terms[i].quad_type = qtype;
-
-    }
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Key %s is not implemented yet."), keyname);
-
-  } /* Switch on keys */
+  if (st_id != -1)
+    cs_source_term_set_option(eqp->source_terms[st_id], keyname, keyval);
+  else
+    for (i = 0; i < eqp->n_source_terms; i++)
+      cs_source_term_set_option(eqp->source_terms[i], keyname, keyval);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);

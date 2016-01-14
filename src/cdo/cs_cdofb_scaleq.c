@@ -49,7 +49,7 @@
 #include "cs_search.h"
 #include "cs_post.h"
 #include "cs_quadrature.h"
-#include "cs_evaluate.h"
+#include "cs_source_term.h"
 #include "cs_cdo_bc.h"
 #include "cs_hodge.h"
 
@@ -640,47 +640,38 @@ cs_cdofb_scaleq_free(void   *builder)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_compute_source(void    *builder)
+cs_cdofb_scaleq_compute_source(void            *builder)
 {
   cs_lnum_t  i;
 
   cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t *)builder;
 
+  for (i = 0; i < b->n_cells; i++)
+    b->source_terms[i] = 0;
+
   const cs_equation_param_t  *eqp = b->eqp;
+
+  if (eqp->n_source_terms == 0)
+    return;
 
   double  *contrib = _fbscal_work;
 
-  if (eqp->n_source_terms > 0) { /* Add contribution from source terms */
+  for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
 
+    const cs_source_term_t  *st = eqp->source_terms[st_id];
+
+    cs_flag_t  dof_flag =
+      CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
+
+    cs_source_term_compute(dof_flag,
+                           st,
+                           &contrib);  // updated inside this function
+
+    /* Update source term array */
     for (i = 0; i < b->n_cells; i++)
-      b->source_terms[i] = 0;
+      b->source_terms[i] += contrib[i];
 
-    for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
-
-      const cs_param_source_term_t  st = eqp->source_terms[st_id];
-
-      cs_flag_t  dof_flag =
-        CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
-
-      /* Sanity check */
-      assert(st.var_type == CS_PARAM_VAR_SCAL);
-
-      cs_evaluate(b->quant, b->connect, b->time_step,
-                  dof_flag,
-                  st.ml_id,
-                  st.def_type,
-                  st.quad_type,
-                  st.use_subdiv,
-                  st.def,             // definition of the explicit part
-                  &contrib);          // updated inside this function
-
-      /* Update source term array */
-      for (i = 0; i < b->n_cells; i++)
-        b->source_terms[i] += contrib[i];
-
-    } // Loop on source terms
-
-  } /* There is at least one source term which is defined */
+  } // Loop on source terms
 
 }
 

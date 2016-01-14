@@ -99,8 +99,10 @@ struct _cs_property_t {
   cs_def_t             def;      // accessor to the definition
 
   /* Useful buffers to deal with more complex definitions */
-  cs_flag_t    array_flag;  // short description of the related array
-  cs_real_t   *array;       // if the property hinges on an array
+  cs_real_t   *array1;      // if the property hinges on an array
+  cs_flag_t    array1_flag; // short description of the related array
+  cs_real_t   *array2;      // if the property hinges on a second array
+  cs_flag_t    array2_flag; // short description of the related array
 
   const void  *struc;       // if one needs a structure. Only shared
 
@@ -132,6 +134,13 @@ static const cs_flag_t  cs_var_support_pc =
   CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_CELL;
 static const cs_flag_t  cs_var_support_pv =
   CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_VERTEX;
+static const cs_flag_t  cs_var_support_dfbyc =
+  CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_FACE | CS_PARAM_FLAG_BY_CELL;
+
+/* Pointer to shared structures (owned by a cs_domain_t structure) */
+static const cs_cdo_quantities_t  *cs_cdo_quant;
+static const cs_cdo_connect_t  *cs_cdo_connect;
+static const cs_time_step_t  *cs_time_step;
 
 /*============================================================================
  * Private function prototypes
@@ -351,14 +360,14 @@ _get_result_by_onevar_law(cs_lnum_t                 c_id,
                           const void               *struc,
                           cs_get_t                 *get)
 {
-  assert(pty->array != NULL); /* Sanity check */
+  assert(pty->array1 != NULL); /* Sanity check */
 
   /* Test if flag has at least the pattern of the reference support */
-  if ((pty->array_flag & cs_var_support_pc) == cs_var_support_pc)
-    law(pty->array[c_id], struc, get);
+  if ((pty->array1_flag & cs_var_support_pc) == cs_var_support_pc)
+    law(pty->array1[c_id], struc, get);
 
   /* Test if flag has at least the pattern of the reference support */
-  else if ((pty->array_flag & cs_var_support_pv) == cs_var_support_pv) {
+  else if ((pty->array1_flag & cs_var_support_pv) == cs_var_support_pv) {
 
     cs_real_t  val_xc;
 
@@ -366,7 +375,7 @@ _get_result_by_onevar_law(cs_lnum_t                 c_id,
     cs_reco_pv_at_cell_center(c_id,
                               pty->connect->c2v,
                               pty->cdoq,
-                              pty->array, &val_xc);
+                              pty->array1, &val_xc);
 
     law(val_xc, struc, get);
 
@@ -375,6 +384,78 @@ _get_result_by_onevar_law(cs_lnum_t                 c_id,
     bft_error(__FILE__, __LINE__, 0,
               " Invalid support for evaluating the property %s"
               " by law with one argument.", pty->name);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value using a law with two arguments: one scalar and
+ *         one vector-valued
+ *
+ * \param[in]       c_id    cell id
+ * \param[in]       pty     pointer to a cs_property_t structure
+ * \param[in]       law     function pointer to the law
+ * \param[in]       struc   pointer to a structure
+ * \param[in, out]  get     pointer to a union used to retrieve the result
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_get_result_by_scavec_law(cs_lnum_t                 c_id,
+                          const cs_property_t      *pty,
+                          cs_scavec_law_func_t     *law,
+                          const void               *struc,
+                          cs_get_t                 *get)
+{
+  double  scal_val = 0;
+  double  vect_val[3] = {0, 0, 0};
+
+  /* Sanity checks */
+  assert(pty->array1 != NULL);
+  assert(pty->array2 != NULL);
+
+  /* Test which is the pattern of the first array and recover the scalar
+     value */
+  if ((pty->array1_flag & cs_var_support_pc) == cs_var_support_pc)
+    scal_val = pty->array1[c_id];
+
+  else if ((pty->array1_flag & cs_var_support_pv) == cs_var_support_pv) {
+
+    /* Reconstruct (or interpolate) value at the current cell center */
+    cs_reco_pv_at_cell_center(c_id,
+                              pty->connect->c2v, pty->cdoq, pty->array1,
+                              &scal_val);
+
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid support for the first array when evaluating the"
+              " property %s by a law with two arguments.", pty->name);
+
+
+  /* Test which is the pattern of the second array and recover the vector
+     value */
+  if ((pty->array2_flag & cs_var_support_pc) == cs_var_support_pc) {
+
+    for (int k = 0; k < 3; k++)
+      vect_val[k] = pty->array2[3*c_id+k];
+
+  }
+  else if ((pty->array2_flag & cs_var_support_dfbyc) == cs_var_support_dfbyc) {
+
+    /* Reconstruct (or interpolate) value at the current cell center */
+    cs_reco_dfbyc_at_cell_center(c_id,
+                                 pty->connect->c2e, pty->cdoq, pty->array2,
+                                 vect_val);
+
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid support for the second array when evaluating the"
+              " property %s by a law with two arguments.", pty->name);
+
+  /* Retrieve the result of the law function */
+  law(scal_val, vect_val, struc, get);
 
 }
 
@@ -438,8 +519,10 @@ cs_property_create(const char                  *name,
   pty->def.get.val = 0;
 
   /* Specific members for more complex definition */
-  pty->array_flag = 0;
-  pty->array = NULL;
+  pty->array1_flag = 0;
+  pty->array1 = NULL;
+  pty->array2_flag = 0;
+  pty->array2 = NULL;
 
   /* Specific members for a definition by subdomain */
   pty->n_subdomains = 0;
@@ -474,9 +557,14 @@ cs_property_free(cs_property_t   *pty)
     BFT_FREE(pty->def_ids);
   }
 
-  if (pty->array_flag & CS_PARAM_FLAG_OWNER) {
-    if (pty->array != NULL)
-      BFT_FREE(pty->array);
+  if (pty->array1_flag & CS_PARAM_FLAG_OWNER) {
+    if (pty->array1 != NULL)
+      BFT_FREE(pty->array1);
+  }
+
+  if (pty->array2_flag & CS_PARAM_FLAG_OWNER) {
+    if (pty->array2 != NULL)
+      BFT_FREE(pty->array2);
   }
 
   /* All other pointers are shared */
@@ -842,6 +930,48 @@ cs_property_def_by_law(cs_property_t          *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a cs_property_t structure thanks to a law function with
+ *         two scalars arguments
+ *
+ * \param[in, out]  pty     pointer to a cs_property_t structure
+ * \param[in]       func    pointer to a function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_def_by_twovar_law(cs_property_t          *pty,
+                              cs_twovar_law_func_t   *func)
+{
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+  pty->def_type = CS_PARAM_DEF_BY_TWOVAR_LAW;
+  pty->def.law2_func = func;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_property_t structure thanks to a law function with
+ *         two arguments: one scalar and one vector-valued
+ *
+ * \param[in, out]  pty     pointer to a cs_property_t structure
+ * \param[in]       func    pointer to a function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_def_by_scavec_law(cs_property_t          *pty,
+                              cs_scavec_law_func_t   *func)
+{
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+  pty->def_type = CS_PARAM_DEF_BY_SCAVEC_LAW;
+  pty->def.law_scavec_func = func;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define a cs_property_t structure thanks to an array of values
  *
  * \param[in, out]  pty       pointer to a cs_property_t structure
@@ -859,8 +989,8 @@ cs_property_def_by_array(cs_property_t    *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   pty->def_type = CS_PARAM_DEF_BY_ARRAY;
-  pty->array_flag = support;
-  pty->array = array;
+  pty->array1_flag = support;
+  pty->array1 = array;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1067,7 +1197,7 @@ cs_property_def_subdomain_by_law(cs_property_t             *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set "array" members of a cs_property_t structure
+ * \brief  Set "array" member of a cs_property_t structure
  *
  * \param[in, out]  pty          pointer to a cs_property_t structure
  * \param[in]       array_flag   information on the support of the array
@@ -1083,13 +1213,35 @@ cs_property_set_array(cs_property_t    *pty,
   if (pty == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  pty->array_flag = array_flag;
-  pty->array = array;
+  pty->array1_flag = array_flag;
+  pty->array1 = array;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set "array" members of a cs_property_t structure
+ * \brief  Set a second "array" member of a cs_property_t structure
+ *
+ * \param[in, out]  pty          pointer to a cs_property_t structure
+ * \param[in]       array_flag   information on the support of the array
+ * \param[in]       array        pointer to an array of values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_second_array(cs_property_t    *pty,
+                             cs_flag_t         array_flag,
+                             cs_real_t        *array)
+{
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+  pty->array2_flag = array_flag;
+  pty->array2 = array;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set "struc" member of a cs_property_t structure
  *
  * \param[in, out]  pty          pointer to a cs_property_t structure
  * \param[in]       structure    structure to associate to this property
@@ -1206,6 +1358,13 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
 
   case CS_PARAM_DEF_BY_ONEVAR_LAW:
     _get_result_by_onevar_law(c_id, pty, pty->def.law1_func, pty->struc, &get);
+    _get_tensor_by_value(pty, get, tensor);
+    break;
+
+  case CS_PARAM_DEF_BY_SCAVEC_LAW:
+    _get_result_by_scavec_law(c_id,
+                              pty, pty->def.law_scavec_func, pty->struc,
+                              &get);
     _get_tensor_by_value(pty, get, tensor);
     break;
 
@@ -1334,6 +1493,13 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
    _get_result_by_onevar_law(c_id, pty, pty->def.law1_func, pty->struc, &get);
    result = get.val;
    break;
+
+  case CS_PARAM_DEF_BY_SCAVEC_LAW:
+    _get_result_by_scavec_law(c_id,
+                              pty, pty->def.law_scavec_func, pty->struc,
+                              &get);
+    result = get.val;
+    break;
 
  case CS_PARAM_DEF_BY_SUBDOMAIN:
    {

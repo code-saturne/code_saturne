@@ -36,6 +36,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_equation_priv.h"
+#include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -131,7 +132,7 @@ cs_cdovb_scaleq_free(void   *builder);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_compute_source(void    *builder);
+cs_cdovb_scaleq_compute_source(void            *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!

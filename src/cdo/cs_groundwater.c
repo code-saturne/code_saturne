@@ -116,6 +116,7 @@ struct _groundwater_t {
   /* Gravity effect */
   bool                     with_gravitation;
   cs_real_3_t              gravity;
+  cs_real_t               *gravity_source_term;
 
   /* Set of equations associated to this module */
   int                      richards_eq_id;
@@ -444,7 +445,7 @@ _permeability_by_genuchten_law(double        h,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the permeability (or hydraulic conductivity) using the
- *         van Tracy law
+ *         Tracy law
  *
  * \param[in]      h             value of the hydralic head
  * \param[in]      soil_struc    pointer to a soil structure
@@ -718,6 +719,7 @@ cs_groundwater_create(cs_lnum_t    n_cells)
 
   gw->with_gravitation = false;
   gw->gravity[0] = 0, gw->gravity[1] = 0, gw->gravity[2] = 0;
+  gw->gravity_source_term = NULL;
 
   gw->richards_eq_id = -1;
   gw->n_tracers = 0;
@@ -750,6 +752,9 @@ cs_groundwater_finalize(cs_groundwater_t   *gw)
   BFT_FREE(gw->tracer_param);
   BFT_FREE(gw->darcian_flux);
   BFT_FREE(gw->work);
+
+  if (gw->with_gravitation)
+    BFT_FREE(gw->gravity_source_term);
 
   if (gw->n_soils > 1)
     BFT_FREE(gw->soil_id);
@@ -1309,6 +1314,24 @@ cs_groundwater_automatic_settings(cs_equation_t      **equations,
                                          true,     // interleave
                                          has_previous);
   cs_field_allocate_values(gw->moisture_content);
+
+  if (gw->with_gravitation) { /* Gravitation effect */
+
+    int  ml_id = hydraulic_head->location_id;
+    const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
+    const cs_lnum_t  n_vertices = n_elts[0];
+
+    BFT_MALLOC(gw->gravity_source_term, n_vertices, cs_real_t);
+    for (i = 0; i < n_vertices; i++)
+      gw->gravity_source_term[i] = 0;
+
+    flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL;
+    cs_equation_add_gravity_source_term(richards,
+                                        ml_id,
+                                        flag,
+                                        gw->gravity_source_term);
+
+  }
 
   /* Set the values for the permeability and the moisture content
      and if needed set also the value of the soil capacity */

@@ -129,6 +129,47 @@ typedef void
                         const void    *law_param,
                         cs_get_t      *retval);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of a quantity according to a law depending only
+ *         on two variables.
+ *         This law is described by a set of parameters stored in a structure.
+ *         result = law(var1_value, var2_value)
+ *
+ * \param[in]      var1_value  value of the first variable attached to this law
+ * \param[in]      var2_value  value of the second variable attached to this law
+ * \param[in]      law_param   set of paramters related to the current law
+ * \param[in, out] retval      result of the function
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_twovar_law_func_t) (double         var1_value,
+                        double         var2_value,
+                        const void    *law_param,
+                        cs_get_t      *retval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of a quantity according to a law depending only
+ *         on two variables (the first one is a scalar and the second one a
+ *         vector)
+ *         This law is described by a set of parameters stored in a structure.
+ *         result = law(var1_value, var2_value)
+ *
+ * \param[in]      var1_value  value of the first variable attached to this law
+ * \param[in]      var2_value  value of the second variable attached to this law
+ * \param[in]      law_param   set of paramters related to the current law
+ * \param[in, out] retval      result of the function
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_scavec_law_func_t) (double          var1_value,
+                        const double    var2_vect[],
+                        const void     *law_param,
+                        cs_get_t       *retval);
+
 /*============================================================================
  * Global variables
  *============================================================================*/

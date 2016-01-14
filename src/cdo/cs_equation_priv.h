@@ -32,6 +32,7 @@
 #include "cs_param.h"
 #include "cs_property.h"
 #include "cs_advection_field.h"
+#include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -106,7 +107,7 @@ typedef struct {
   int                   output_freq;    /* Write log at this frequency */
 
   /* Unsteady-Diffusion-Convection-Source term activated or not */
-  int                    flag;
+  cs_flag_t              flag;
 
   /* Post-treatment */
   int                    post_freq;   /* Move this option to cs_field_t ? */
@@ -140,9 +141,9 @@ typedef struct {
   cs_param_reaction_t   *reaction_terms;
   cs_property_t        **reaction_properties;
 
-  /* Source term(s) (always in the right-hand side) */
-  int                      n_source_terms;
-  cs_param_source_term_t  *source_terms;
+  /* Source terms */
+  int                    n_source_terms;
+  cs_source_term_t     **source_terms;
 
 } cs_equation_param_t;
 

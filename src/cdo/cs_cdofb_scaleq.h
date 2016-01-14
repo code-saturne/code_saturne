@@ -44,6 +44,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_equation_priv.h"
+#include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -128,7 +129,7 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_scaleq_free(void   *builder);
+cs_cdofb_scaleq_free(void       *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -139,7 +140,7 @@ cs_cdofb_scaleq_free(void   *builder);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_compute_source(void    *builder);
+cs_cdofb_scaleq_compute_source(void     *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!

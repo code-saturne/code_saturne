@@ -327,11 +327,10 @@ cs_walldistance_setup(cs_equation_t   *eq,
                      "0.0");       // value to set
 
   /* Add source term */
-  cs_equation_add_source_term(eq,
-                              "WallDist.st",   // label
-                              "cells",         // mesh location name
-                              "value",         // type of definition
-                              "1.0");          // value to set
+  cs_equation_add_source_term_by_val(eq,
+                                     "WallDist.st",   // label
+                                     "cells",         // mesh location name
+                                     "1.0");          // value to set
 
   /* Post-processing of the computed unknown only at the beginning */
   cs_equation_set_option(eq, "post_freq", "0");

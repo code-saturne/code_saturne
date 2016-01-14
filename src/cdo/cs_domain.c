@@ -53,10 +53,10 @@
 
 #include "cs_mesh_location.h"
 #include "cs_post.h"
-#include "cs_evaluate.h"
 #include "cs_walldistance.h"
 #include "cs_groundwater.h"
 #include "cs_prototypes.h"
+#include "cs_source_term.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
 
@@ -134,6 +134,8 @@ _domain_boundary_ml_name[CS_PARAM_N_BOUNDARY_TYPES][CS_CDO_LEN_NAME] =
 static void
 _domain_post(const cs_domain_t    *domain)
 {
+  bft_printf("\n Post-processing if needed");
+
   /* Post-processing of the advection field(s) */
   for (int id = 0; id < domain->n_adv_fields; id++)
     cs_advection_field_post(domain->adv_fields[id]);
@@ -524,6 +526,15 @@ cs_domain_init(const cs_mesh_t             *mesh,
   domain->time_options.dtmin = default_time_step;
   domain->time_options.dtmax = default_time_step;
   domain->time_options.relxst = 0.7; // Not useful in CDO schemes
+
+  /* Shared main general structure with source term */
+  cs_source_term_set_shared_pointers(domain->cdo_quantities,
+                                     domain->connect,
+                                     domain->time_step);
+
+  cs_evaluate_set_shared_pointers(domain->cdo_quantities,
+                                  domain->connect,
+                                  domain->time_step);
 
   /* Equations */
   domain->n_equations = 0;
@@ -1466,8 +1477,8 @@ cs_domain_add_user_equation(cs_domain_t         *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Find the cs_equation_t structure whith name eqname
- *         Return NULL if not find
+ * \brief  Create cs_field_t structures attached to equation unknowns and 
+ *         advection fields
  *
  * \param[in, out]  domain    pointer to a cs_domain_t structure
  */

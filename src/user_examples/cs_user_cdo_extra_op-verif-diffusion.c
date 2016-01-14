@@ -50,16 +50,17 @@
 #include "cs_mesh_location.h"
 #include "cs_post.h"
 #include "cs_field.h"
+
 #include "cs_cdo.h"
-#include "cs_reco.h"
-#include "cs_quadrature.h"
 #include "cs_cdo_toolbox.h"
-#include "cs_param.h"
+#include "cs_cdofb_scaleq.h"
 #include "cs_equation_priv.h"
 #include "cs_equation.h"
 #include "cs_evaluate.h"
 #include "cs_hodge.h"
-#include "cs_cdofb_scaleq.h"
+#include "cs_param.h"
+#include "cs_quadrature.h"
+#include "cs_reco.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -78,7 +79,7 @@ BEGIN_C_DECLS
 /*!
   \file cs_user_cdo_extra_op.c
 
-  \brief Additional user-defined post-processing and analysis functions
+  \brief User-defined extra operations for post-processing and analysis
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -105,12 +106,10 @@ _get_sol(cs_real_t          time,
          const cs_real_3_t  xyz,
          cs_get_t          *retval)
 {
-  double  solution;
-
   const double  x = xyz[0], y = xyz[1], z = xyz[2];
   const double  pi = 4.0*atan(1.0);
 
-  solution = 1+sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+one_third));
+  double  solution = 1+sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+one_third));
 
   (*retval).val = solution;
 }
@@ -942,20 +941,16 @@ _cdofb_post(const cs_mesh_t            *m,
        -> Compute the L^2 norm of dpdi
     */
 
-    cs_def_t  def;
-    def.analytic = get_sol;
+    /* Type of degrees of freedom to consider */
+    cs_flag_t  flag =
+      CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
 
-    cs_flag_t  flag = CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL
-      | CS_PARAM_FLAG_SCAL;
-
-    cs_evaluate(cdoq, connect, time_step,
-                flag,  // DoF flag (where to compute the evaluation)
-                cs_mesh_location_get_id_by_name("cells"),
-                CS_PARAM_DEF_BY_ANALYTIC_FUNCTION,
-                CS_QUADRATURE_BARY,
-                true,   // use of subdivision into tetrahedra
-                def,
-                &work); // work --> int_cell solu(x,y,z)
+    /* Compute the integral of the solution over each primal cell */
+    cs_evaluate_from_analytic(flag,
+                              cs_mesh_location_get_id_by_name("cells"),
+                              get_sol,
+                              CS_QUADRATURE_BARY,
+                              work); // work --> int_cell solu(x,y,z)
 
     for (i = 0; i < n_cells; i++) {
       work[i] /= cdoq->cell_vol[i];

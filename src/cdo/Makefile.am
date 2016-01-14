@@ -61,6 +61,7 @@ cs_property.h \
 cs_quadrature.h \
 cs_reco.h \
 cs_sla.h \
+cs_source_term.h \
 cs_walldistance.h
 
 # Library source files
@@ -88,6 +89,7 @@ cs_property.c \
 cs_quadrature.c \
 cs_reco.c \
 cs_sla_matrix.c \
+cs_source_term.c \
 cs_walldistance.c
 
 libcscdo_la_LDFLAGS = -no-undefined

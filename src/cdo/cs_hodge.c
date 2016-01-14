@@ -45,7 +45,6 @@
 #include <bft_printf.h>
 
 #include "cs_sort.h"
-#include "cs_evaluate.h"
 #include "cs_cdo_toolbox.h"
 
 /*----------------------------------------------------------------------------

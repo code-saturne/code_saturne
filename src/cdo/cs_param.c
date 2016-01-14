@@ -79,6 +79,8 @@ cs_param_def_type_name[CS_PARAM_N_DEF_TYPES][CS_CDO_LEN_NAME]=
   { N_("by analytic function"),
     N_("by array"),
     N_("by law (one argument)"),
+    N_("by law (two arguments)"),
+    N_("by law (two arguments: scalar+vector)"),
     N_("by subdomain"),
     N_("by time function"),
     N_("by user function"),
@@ -118,12 +120,6 @@ cs_param_hodge_algo_desc[CS_PARAM_N_HODGE_ALGOS][CS_CDO_LEN_NAME] =
   { "Voronoi",
     "Whitney on the Barycentric Subdivision (WBS)",
     "COnsistency-STabilization splitting (COST)" };
-
-static const char
-cs_param_source_term_type_name[CS_PARAM_N_SOURCE_TERM_TYPES][CS_CDO_LEN_NAME] =
-  { N_("user"),
-    N_("mass"),
-    N_("head loss") };
 
 /*============================================================================
  * Private function prototypes
@@ -545,81 +541,6 @@ cs_param_reaction_get_type_name(cs_param_reaction_t  r_info)
   }
 
   return "NULL";
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a source term. This source term is added to the list of
- *         source terms associated to an equation
- *
- * \param[in, out] stp        pointer to cs_param_source_term_t structure
- * \param[in]      st_name    name of the source term
- * \param[in]      ml_id      id of the related to a cs_mesh_location_t struct.
- * \param[in]      type       type of source term
- * \param[in]      var_type   type of variables (scalar, vector, tensor...)
- * \param[in]      quad_type  type of quadrature rule to use
- * \param[in]      def_type   type of definition (by value, function...)
- * \param[in]      val        access to the definition of the source term
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_source_term_add(cs_param_source_term_t       *stp,
-                         const char                   *st_name,
-                         int                           ml_id,
-                         cs_param_source_term_type_t   type,
-                         cs_param_var_type_t           var_type,
-                         cs_quadra_type_t              quad_type,
-                         cs_param_def_type_t           def_type,
-                         const void                   *val)
-{
-  if (stp == NULL)
-    return;
-
-  int len = strlen(st_name)+1;
-  BFT_MALLOC(stp->name, len, char);
-  strncpy(stp->name, st_name, len);
-
-  stp->ml_id = ml_id;
-  stp->type = type;
-  stp->var_type = var_type;
-  stp->quad_type = quad_type;
-  stp->def_type = def_type;
-  stp->use_subdiv = false; // default behaviour
-
-  cs_param_set_def(def_type, var_type, val, &(stp->def));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name related to a source term
- *
- * \param[in] st_info     cs_param_source_term_t structure
- *
- * \return the name of the source term
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_source_term_get_name(const cs_param_source_term_t   st_info)
-{
-  return st_info.name;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of type of a given source term structure
- *
- * \param[in] st_info     cs_param_source_term_t structure
- *
- * \return  the name of the type
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_source_term_get_type_name(const cs_param_source_term_t   st_info)
-{
-  return cs_param_source_term_type_name[st_info.type];
 }
 
 /*----------------------------------------------------------------------------*/

@@ -2,7 +2,7 @@
 #define __CS_EVALUATE_H__
 
 /*============================================================================
- * Functions and structures to deal with source term computation
+ * Functions and structures to deal with evaluation of quantities
  *============================================================================*/
 
 /*
@@ -57,33 +57,56 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the contribution related to a source term or a
- *         boundary condition for instance
+ * \brief  Set shared pointers to main domain members
  *
- * \param[in]      quant      additional mesh quantities struct.
- * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]      time_step  pointer to a time step structure
- * \param[in]      dof_flag   indicate where the evaluation has to be done
- * \param[in]      loc_id     id related to a cs_mesh_location_t struct.
- * \param[in]      def_type   type of definition
- * \param[in]      quad_type  type of quadrature (not always used)
- * \param[in]      use_subdiv consider or not the subdivision into tetrahedra
- * \param[in]      def        access to the definition of the values
- * \param[in, out] p_values   pointer to the computed values (allocated if NULL)
+ * \param[in]  quant       additional mesh quantities struct.
+ * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in]  time_step   pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate(const cs_cdo_quantities_t    *quant,
-            const cs_cdo_connect_t       *connect,
-            const cs_time_step_t         *time_step,
-            cs_flag_t                     dof_flag,
-            int                           loc_id,
-            cs_param_def_type_t           def_type,
-            cs_quadra_type_t              quad_type,
-            bool                          use_subdiv,
-            cs_def_t                      def,
-            double                       *p_values[]);
+cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
+                                const cs_cdo_connect_t       *connect,
+                                const cs_time_step_t         *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution related to a quantity defined by analytic
+ *         function for all the degrees of freedom
+ *
+ * \param[in]      dof_flag    indicate where the evaluation has to be done
+ * \param[in]      ml_id       id related to a cs_mesh_location_t structure
+ * \param[in]      ana         accessor to values thanks to a function pointer
+ * \param[in]      quad_type   type of quadrature (not always used)
+ * \param[in, out] retval      pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_from_analytic(cs_flag_t              dof_flag,
+                          int                    ml_id,
+                          cs_analytic_func_t    *ana,
+                          cs_quadra_type_t       quad_type,
+                          double                 retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution related to a quantity defined by analytic
+ *         function for all the degrees of freedom
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      ml_id     id related to a cs_mesh_location_t structure
+ * \param[in]      value     constant value used for computing the contribution
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_from_value(cs_flag_t       dof_flag,
+                       int             ml_id,
+                       double          value,
+                       double          retval[]);
 
 /*----------------------------------------------------------------------------*/
 

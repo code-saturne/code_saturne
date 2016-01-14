@@ -188,7 +188,7 @@ cs_equation_add_bc(cs_equation_t    *eq,
  *         to a reaction term
  *
  * \param[in, out] eq         pointer to a cs_equation_t structure
- * \param[in]      r_name     name of the source term or NULL
+ * \param[in]      r_name     name of the reaction term or NULL
  * \param[in]      type_name  type of reaction term to add
  * \param[in]      property   pointer to a cs_property_t struct.
  */
@@ -226,20 +226,55 @@ cs_equation_set_reaction_option(cs_equation_t    *eq,
  *         to a source term
  *         def_key among "value", "analytic", "user"...
  *
+ * \param[in, out]  eq             pointer to a cs_equation_t structure
+ * \param[in]       ml_id          id related to a mesh location
+ * \param[in]       array_support  indicate where the values are defined
+ * \param[in]       array_values   pointer to the array values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_gravity_source_term(cs_equation_t   *eq,
+                                    int              ml_id,
+                                    cs_flag_t        array_support,
+                                    cs_real_t       *array_values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize by value a new structure to store parameters
+ *         related to a source term defined by a user
+ *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
  * \param[in]       st_name   name of the source term or NULL
  * \param[in]       ml_name   name of the related mesh location
- * \param[in]       def_key   way of defining the value of the source term
  * \param[in]       val       pointer to the value
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_source_term(cs_equation_t   *eq,
-                            const char      *st_name,
-                            const char      *ml_name,
-                            const char      *def_key,
-                            const void      *val);
+cs_equation_add_source_term_by_val(cs_equation_t   *eq,
+                                   const char      *st_name,
+                                   const char      *ml_name,
+                                   const void      *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize by an analytical function a new structure
+ *         related to a source term defined by a user
+ *
+ * \param[in, out]  eq        pointer to a cs_equation_t structure
+ * \param[in]       st_name   name of the source term or NULL
+ * \param[in]       ml_name   name of the related mesh location
+ * \param[in]       ana       pointer to an analytical function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
+                                        const char           *st_name,
+                                        const char           *ml_name,
+                                        cs_analytic_func_t   *ana);
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -419,11 +454,11 @@ cs_equation_get_param(const cs_equation_t    *eq);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Return a pointer to the cs_property_t structure associated to the
- *         diffusion term for this equation (NULL if not activated).
+ *         diffusion term for this equation.
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  *
- * \return a pointer to a cs_property_t structure
+ * \return a pointer to a cs_property_t structure or NULL if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -433,11 +468,11 @@ cs_equation_get_diffusion_property(const cs_equation_t    *eq);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Return a pointer to the cs_property_t structure associated to the
- *         unsteady term for this equation (NULL if not activated).
+ *         unsteady term for this equation.
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  *
- * \return a pointer to a cs_property_t structure
+ * \return a pointer to a cs_property_t structure or NULL if not found
  */
 /*----------------------------------------------------------------------------*/
 

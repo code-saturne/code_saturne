@@ -357,10 +357,6 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
                                            first order rate reaction);
    */
 
-
-
-
-
 }
 
 /*----------------------------------------------------------------------------*/
