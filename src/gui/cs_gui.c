@@ -5579,9 +5579,11 @@ cs_gui_linear_solvers(void)
     multigrid = true;
 
   if (sles_it_type < CS_SLES_N_IT_TYPES) {
-    int poly_degree = -1;
+    int poly_degree = 0;
     if (cs_gui_strcmp(precond_choice, "jacobi"))
       poly_degree = 0;
+    else if (cs_gui_strcmp(precond_choice, "none"))
+      poly_degree = -1;
     else if (cs_gui_strcmp(precond_choice, "polynomial"))
       poly_degree = 1;
 
@@ -5655,17 +5657,16 @@ cs_gui_linear_solvers(void)
       else if (cs_gui_strcmp(algo_choice, "PCR3"))
         sles_it_type = CS_SLES_PCR3;
 
-      BFT_FREE(algo_choice);
-      BFT_FREE(precond_choice);
-
       /* If choice is "automatic" or unspecified, delay
          choice to cs_sles_default, so do nothing here */
 
       if (sles_it_type < CS_SLES_N_IT_TYPES) {
 
-        int poly_degree = -1;
+        int poly_degree = 0;
         if (cs_gui_strcmp(precond_choice, "jacobi"))
           poly_degree = 0;
+        else if (cs_gui_strcmp(precond_choice, "none"))
+          poly_degree = -1;
         else if (cs_gui_strcmp(precond_choice, "polynomial"))
           poly_degree = 1;
 
@@ -5689,6 +5690,10 @@ cs_gui_linear_solvers(void)
         }
 
       }
+
+      BFT_FREE(algo_choice);
+      BFT_FREE(precond_choice);
+
     }
   }
 }

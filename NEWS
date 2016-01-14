@@ -5,6 +5,8 @@ Release 4.2.1 (unreleased)
 Bug fixes:
 ----------
 
+- GUI: fix handling of linear solver preconditionning options.
+
 - Fix weighted array stats for multi-dimensional data (n = 2 or > 3)
   on mesh subset.
 
