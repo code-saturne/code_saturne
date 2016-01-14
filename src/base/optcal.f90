@@ -237,10 +237,9 @@ module optcal
   double precision, save :: blencv(nvarmx)
 
   !> type of convective scheme
+  !>    - 0: second order linear upwind
   !>    - 1: centered
-  !>    - 0: second order
   !>    - 2: pure upwind gradient in SOLU
-  !>    - 3: Lax Wendroff scheme
   integer, save ::          ischcv(nvarmx)
 
   !> Slope test, Min/MAx limiter or Roe and Sweby limiters

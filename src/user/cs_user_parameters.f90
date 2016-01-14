@@ -727,7 +727,7 @@ integer nmodpp
 ! Local variables
 
 logical       ilved, inoprv
-integer       ii, jj, kscmin, kscmax, keydri, kbfid
+integer       ii, jj, ivar, kscmin, kscmax, keydri, kbfid, kccmin, kccmax
 integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ifcvsl, b_f_id
 
 !===============================================================================
@@ -1244,45 +1244,49 @@ if (.false.) then
 
 endif
 
-! --- Reference diffusivity visls0 in kg/(m s) for each
-!        USER scalar except those which represent the variance of another.
+! --- Convective scheme for user (and non-user) scalars
 
-!     For non-user scalars relative to specific physics (coal, combustion,
-!       electric arcs: see usppmo) implicitly defined in the model,
-!       the information is given automatically elsewhere:
-!       we do not modify visls0 here.
+! ischcv(ivar) is the type of convective scheme:
+!   - 0: second order linear upwind
+!   - 1: centered
+!   - 2: pure upwind gradient in SOLU
 
-!     For user scalars JJ which represent the variance of another user
-!       scalar, we do not define visls0(jj) here.
-!       This is the purpose of the test on iscavr(jj) in the example below.
-!       Indeed the diffusivity of the variance of a scalar is assumed
-!       identical to that scalar's diffusivity.
-
-!     For user scalars jj behaving as a temperature (iscacp(jj) = 1),
-!       Cp is outside of the diffusion term in the temperature equation, so:
-!       visls0(jj) = Lambda
-
-!     For user scalars jj NOT behaving as a temperature (iscacp(jj) = 0),
-!       visls0(jj) = Lambda/Cp
-
-!     Here, as an example, we assign to viscl0 the viscosity of the fluid
-!       phase, which is fitting for passive tracers which follow the fluid
-!       (this is also the default used if not modified here or using the GUI).
+! isstpc(ivar) is the slope test, Min/MAx limiter or Roe and Sweby limiters
+!   - 0: swich on the slope test
+!   - 1: swich off the slope test (default)
+!   - 2: continuous limiter ensuring positivness
+!   - 3: Roe-Sweby limiter
+!        (ensuring  Decreasing Total Variation)
 
 if (.false.) then
 
+  ! Get the Key for the Sup and Inf for the convective scheme
+  call field_get_key_id("min_scalar", kccmin)
+  call field_get_key_id("max_scalar", kccmax)
+
   ! Thermal model:
-  ! In case of specific physic, this value could be automatically set and should
-  ! not be modified.
-  if (iscalt.gt.0)  visls0(iscalt) = viscl0
+  if (iscalt.gt.0) then
+
+    ivar = isca(iscalt)
+    ischcv(ivar) = 0
+    isstpc(ivar) = 2
+
+    ! Set the Value for the Sup and Inf of the studied scalar
+    call field_set_key_double(ivarfl(ivar), kccmin, 0.d0)
+    call field_set_key_double(ivarfl(ivar), kccmax, 1.d0)
+
+  endif
 
   ! We loop on user scalars:
   do jj = 1, nscaus
-    ! For scalars which are not variances
-    if (iscavr(jj).le.0) then
-      ! We define the scalar diffusivity
-      visls0(jj) = viscl0
-    endif
+
+    ivar = isca(jj)
+    ischcv(ivar) = 0
+    isstpc(ivar) = 2
+
+    ! Set the Value for the Sup and Inf of the studied scalar
+    call field_set_key_double(ivarfl(ivar), kccmin, 0.d0)
+    call field_set_key_double(ivarfl(ivar), kccmax, 1.d0)
   enddo
 
 endif
