@@ -59,23 +59,25 @@ typedef struct _cs_cdovb_scaleq_t cs_cdovb_scaleq_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate work buffer related to cdo vertex-based schemes
+ * \brief  Allocate work buffer and general structures related to CDO
+ *         vertex-based schemes
  *
  * \param[in] connect   pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_init_buffer(const cs_cdo_connect_t      *connect);
+cs_cdovb_scaleq_initialize(const cs_cdo_connect_t      *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free work buffer related to cdo vertex-based schemes
+ * \brief  Free work buffer and general structure related to CDO vertex-based
+ *         schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_free_buffer(void);
+cs_cdovb_scaleq_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

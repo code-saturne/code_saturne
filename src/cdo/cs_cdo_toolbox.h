@@ -47,18 +47,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef enum {
-
-  CS_TOOLBOX_SUM,        /* Sum of values*/
-  CS_TOOLBOX_WSUM,       /* Weighted sum of values */
-  CS_TOOLBOX_SUMABS,     /* Sum of absolute values */
-  CS_TOOLBOX_WSUMABS,    /* Weighted sum of absolute values */
-  CS_TOOLBOX_SUM2,       /* Sum of squared values */
-  CS_TOOLBOX_WSUM2,      /* Weighted sum of squared values */
-  CS_TOOLBOX_N_SUM_TYPES
-
-} cs_toolbox_type_sum_t;
-
 /* Structure for managing temporary buffers */
 typedef struct {
 
@@ -237,28 +225,6 @@ _invmat33(const cs_real_t   in[3][3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize a private structure for this file used for
- *         reducing round-off errors during summation
- *
- *  \param[in] ref_size    reference array dimension
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_init(cs_lnum_t      ref_size);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a private structure for this file used for reducing round-off
- *         errors during summation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_finalize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the eigenvalues of a 3x3 matrix which is symmetric and real
  *         -> Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
  *         Communication of the ACM (April 1961)
@@ -315,48 +281,6 @@ cs_voltet(const cs_real_3_t   xv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute alpha*x + beta*y = p_z
- *
- * \param[in]     size    vector dimension
- * \param[in]     alpha   coefficient for x vector
- * \param[in]     x       first vector
- * \param[in]     beta    coefficient for y vector
- * \param[in]     y       second vector
- * \param[in,out] p_z     resulting vector (allocated if NULL)
- * \param[in]     reset   reset z vector before computation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_daxpy(int                size,
-         double             alpha,
-         const cs_real_t    x[],
-         cs_real_t          beta,
-         const cs_real_t    y[],
-         cs_real_t         *p_z[],
-         bool               reset);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the dot product of two vectors of dimension "size"
- *         This algorithm tries to reduce round-off error thanks to
- *          intermediate sums.
- *
- *  \param[in] size    vector dimension
- *  \param[in] v       first vector
- *  \param[in] w       second vector
- *
- * \return  the dot product of two vectors
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_dp(int            size,
-      const double   v[],
-      const double   w[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the euclidean norm 2 of a vector of size len
  *         This algorithm tries to reduce round-off error thanks to
  *          intermediate sums.
@@ -374,25 +298,20 @@ cs_euclidean_norm(int            len,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute by default the sum of the elements of an array of double
- *         Additional operation are also possible: square, abs
- *         This algorithm tries to reduce round-off errors thanks to
- *         intermediate sums.
+ * \brief  Compute the weighted sum of square values of an array
  *
- *  \param[in] size    array dimension
- *  \param[in] v       values
- *  \param[in] w       weights (possibly NULL)
- *  \param[in] op      operation to do when doing the sum
+ *  \param[in] n      size of arrays v and w
+ *  \param[in] x      array of floating-point values
+ *  \param[in] w      floating-point values of weights
  *
- * \return the sum (with possibly additional op) of a vector
+ * \return the result of this operation
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_sum(cs_lnum_t              size,
-       const double           v[],
-       const double           w[],
-       cs_toolbox_type_sum_t  op);
+cs_weighted_sum_square(cs_lnum_t                n,
+                       const double *restrict   x,
+                       const double *restrict   weight);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -99,10 +99,6 @@ struct _cs_cdovb_scaleq_t {
   cs_lnum_t          *v_z2i_ids;  // Mapping n_dof_vertices -> n_vertices
   cs_lnum_t          *v_i2z_ids;  // Mapping n_vertices     -> n_dof_vertices
 
-  /* Index of the system matrix (avoid to build it at each iteration)
-     v2v connectivity through cell neighboorhood */
-  cs_connect_index_t  *v2v;
-
   /* Boundary conditions:
 
      face_bc should not change during the simulation.
@@ -151,6 +147,11 @@ static const cs_real_t  cs_weak_penalization_weight = 0.01;
 
 static size_t  _vbscal_work_size = 0;
 static cs_real_t  *_vbscal_work = NULL;
+
+/* Index of a CDO vertex-based matrix (avoid to build it at each iteration and
+   for each equation).
+   v2v connectivity through cell neighboorhood */
+static cs_connect_index_t  *cs_cdovb_v2v = NULL;
 
 /*============================================================================
  * Private function prototypes
@@ -244,8 +245,7 @@ _build_hvpcd_conf(cs_cdovb_scaleq_t    *builder)
 
   /* Initialize matrix structure */
   builder->hvpcd_conf =
-    cs_sla_matrix_create_msr_from_index(builder->v2v,
-                                        true, true, 1); // sym, sorted, stride
+    cs_sla_matrix_create_msr_from_index(cs_cdovb_v2v, true, true, 1);
 
   for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
 
@@ -299,9 +299,7 @@ _init_time_matrix(cs_cdovb_scaleq_t          *builder)
   }
   else
     time_mat =
-      cs_sla_matrix_create_msr_from_index(builder->v2v,
-                                          true, true, 1); // sym, sorted, stride
-
+      cs_sla_matrix_create_msr_from_index(cs_cdovb_v2v, true, true, 1);
 
   return time_mat;
 }
@@ -849,14 +847,15 @@ _enforce_bc(cs_cdovb_scaleq_t          *builder,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate work buffer related to cdo vertex-based schemes
+ * \brief  Allocate work buffer and general structures related to CDO
+ *         vertex-based schemes
  *
  * \param[in] connect   pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_init_buffer(const cs_cdo_connect_t      *connect)
+cs_cdovb_scaleq_initialize(const cs_cdo_connect_t      *connect)
 {
   /* Sanity check */
   assert(_vbscal_work == NULL && _vbscal_work_size == 0);
@@ -867,22 +866,57 @@ cs_cdovb_scaleq_init_buffer(const cs_cdo_connect_t      *connect)
   /* Work buffers */
   _vbscal_work_size = CS_MAX(3*n_vertices, n_cells);
   BFT_MALLOC(_vbscal_work, _vbscal_work_size, cs_real_t);
+
+  /* Build a (sorted) v2v connectivity index */
+  const cs_connect_index_t  *c2v = connect->c2v;
+  cs_connect_index_t  *v2c = cs_index_transpose(n_vertices, c2v);
+
+  cs_cdovb_v2v = cs_index_compose(n_vertices, v2c, c2v);
+  cs_index_sort(cs_cdovb_v2v);
+
+  /* Update index (v2v has a diagonal entry. We remove it since we consider a
+     matrix stored using the MSR format */
+  cs_lnum_t  shift = 0;
+  cs_lnum_t  *tmp_idx = NULL;
+
+  BFT_MALLOC(tmp_idx, n_vertices + 1, cs_lnum_t);
+  memcpy(tmp_idx, cs_cdovb_v2v->idx, sizeof(cs_lnum_t)*(n_vertices+1));
+
+  for (cs_lnum_t  i = 0; i < n_vertices; i++) {
+
+    cs_lnum_t  start = tmp_idx[i], end = tmp_idx[i+1];
+
+    for (cs_lnum_t  j = start; j < end; j++)
+      if (cs_cdovb_v2v->ids[j] != i)
+        cs_cdovb_v2v->ids[shift++] = cs_cdovb_v2v->ids[j];
+
+    cs_cdovb_v2v->idx[i+1] = cs_cdovb_v2v->idx[i] + end-start-1;
+
+  } // Loop on vertices
+
+  assert(shift == cs_cdovb_v2v->idx[n_vertices]); // Sanity check
+
+  /* Free temporary buffers */
+  cs_index_free(&v2c);
+  BFT_FREE(tmp_idx);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free work buffer related to cdo vertex-based schemes
+ * \brief  Free work buffer and general structure related to CDO vertex-based
+ *         schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_free_buffer(void)
+cs_cdovb_scaleq_finalize(void)
 {
-  if (_vbscal_work == NULL)
-    return;
+  if (_vbscal_work != NULL) {
+    _vbscal_work_size = 0;
+    BFT_FREE(_vbscal_work );
+  }
 
-  _vbscal_work_size = 0;
-  BFT_FREE(_vbscal_work );
+  cs_index_free(&(cs_cdovb_v2v));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -949,37 +983,6 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
      the boundary conditions */
   builder->n_vertices = n_vertices;
   builder->n_dof_vertices = n_vertices;
-
-  /* Build a (sorted) v2v connectivity index */
-  const cs_connect_index_t  *c2v = connect->c2v;
-  cs_connect_index_t  *v2c = cs_index_transpose(n_vertices, c2v);
-
-  builder->v2v = cs_index_compose(n_vertices, v2c, c2v);
-  cs_index_sort(builder->v2v);
-  cs_index_free(&v2c);
-
-  /* Update index (v2v has a diagonal entry. We remove it since we consider a
-     matrix stored using the MSR format */
-  cs_lnum_t  shift = 0;
-  cs_lnum_t  *tmp_idx = NULL;
-
-  BFT_MALLOC(tmp_idx, n_vertices + 1, cs_lnum_t);
-  memcpy(tmp_idx, builder->v2v->idx, sizeof(cs_lnum_t)*(n_vertices+1));
-
-  for (i = 0; i < n_vertices; i++) {
-
-    cs_lnum_t  start = tmp_idx[i], end = tmp_idx[i+1];
-
-    for (cs_lnum_t  j = start; j < end; j++)
-      if (builder->v2v->ids[j] != i)
-        builder->v2v->ids[shift++] = builder->v2v->ids[j];
-
-    builder->v2v->idx[i+1] = builder->v2v->idx[i] + end-start-1;
-
-  } // Loop on vertices
-
-  assert(shift == builder->v2v->idx[n_vertices]); // Sanity check
-  BFT_FREE(tmp_idx);
 
   /* Set members and structures related to the management of the BCs */
 
@@ -1087,9 +1090,6 @@ cs_cdovb_scaleq_free(void   *builder)
 
   _builder->face_bc = cs_cdo_bc_free(_builder->face_bc);
   _builder->vtx_dir = cs_cdo_bc_list_free(_builder->vtx_dir);
-
-  /* Free connectivity index */
-  cs_index_free(&(_builder->v2v));
 
   /* Free Hodge operator defined from conforming reconstruction op. */
   _builder->hvpcd_conf = cs_sla_matrix_free(_builder->hvpcd_conf);
@@ -1223,7 +1223,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
      adr = advection/diffusion/reaction
   */
   cs_sla_matrix_t  *sys_mat =
-    cs_sla_matrix_create_msr_from_index(sys_builder->v2v,
+    cs_sla_matrix_create_msr_from_index(cs_cdovb_v2v,
                                         false,  // symmetric
                                         true,   // sorted
                                         1);     // stride

@@ -45,6 +45,7 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_blas.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_location.h"
@@ -545,8 +546,8 @@ _cdovb_post(const cs_mesh_t            *m,
     cs_compute_pvol_vtx(connect, cdoq, &pvol);
 
     /* Compute discrete L2 error norm on the potential */
-    num = cs_sum(n_vertices, ddip, pvol, CS_TOOLBOX_WSUM2);
-    denum = cs_sum(n_vertices, rpex, pvol, CS_TOOLBOX_WSUM2);
+    num = cs_weighted_sum_square(n_vertices, ddip, pvol);
+    denum = cs_weighted_sum_square(n_vertices, rpex, pvol);
     if (fabs(denum) > zthreshold)
       l2dpot = sqrt(num/denum);
     else
@@ -600,10 +601,10 @@ _cdovb_post(const cs_mesh_t            *m,
     cs_compute_pvol_edge(connect, cdoq, &pvol);
     for (i = 0; i < n_edges; i++)
       work[i] = ddig[i]/cdoq->edge[i].meas;
-    num = cs_sum(n_edges, work, pvol, CS_TOOLBOX_WSUM2);
+    num = cs_weighted_sum_square(n_edges, work, pvol);
     for (i = 0; i < n_edges; i++)
       work[i] = rgex[i]/cdoq->edge[i].meas;
-    denum = cs_sum(cdoq->n_edges, work, pvol, CS_TOOLBOX_WSUM2);
+    denum = cs_weighted_sum_square(n_edges, work, pvol);
     if (fabs(denum) > zthreshold)
       l2dgrd = sqrt(num/denum);
     else
@@ -622,9 +623,9 @@ _cdovb_post(const cs_mesh_t            *m,
                                              h_info);
 
       cs_sla_matvec(H, ddig, &work, true);
-      num = cs_dp(n_edges, ddig, work);
+      num = cs_dot(n_edges, ddig, work);
       cs_sla_matvec(H, rgex, &work, true);
-      denum = cs_dp(n_edges, rgex, work);
+      denum = cs_dot(n_edges, rgex, work);
 
       H = cs_sla_matrix_free(H);
     }
@@ -853,8 +854,8 @@ _cdofb_post(const cs_mesh_t            *m,
 
     /* Compute an approximation of int_Omega (delta_p)^2 / int_Omega pex^2
        which approximates the normalized L2 norm */
-    num = cs_sum(n_cells, cell_dpdi, cdoq->cell_vol, CS_TOOLBOX_WSUM2);
-    denum = cs_sum(n_cells, cell_rpex, cdoq->cell_vol, CS_TOOLBOX_WSUM2);
+    num = cs_weighted_sum_square(n_cells, cell_dpdi, cdoq->cell_vol);
+    denum = cs_weighted_sum_square(n_cells, cell_rpex, cdoq->cell_vol);
     if (fabs(denum) > zthreshold)
       l2dpotc = sqrt(num/denum);
     else
@@ -903,8 +904,8 @@ _cdofb_post(const cs_mesh_t            *m,
     cs_compute_pvol_face(connect, cdoq, &pvol);
 
     /* Compute discrete L2 error norm on the potential */
-    num = cs_sum(n_faces, face_dpdi, pvol, CS_TOOLBOX_WSUM2);
-    denum = cs_sum(n_faces, face_rpex, pvol, CS_TOOLBOX_WSUM2);
+    num = cs_weighted_sum_square(n_faces, face_dpdi, pvol);
+    denum = cs_weighted_sum_square(n_faces, face_rpex, pvol);
     if (fabs(denum) > zthreshold)
       l2dpotf = sqrt(num/denum);
     else
@@ -957,8 +958,8 @@ _cdofb_post(const cs_mesh_t            *m,
       cell_dpdi[i] = work[i] - cell_pdi[i];
     }
 
-    num = cs_sum(n_cells, cell_dpdi, cdoq->cell_vol, CS_TOOLBOX_WSUM2);
-    denum = cs_sum(n_cells, work, cdoq->cell_vol, CS_TOOLBOX_WSUM2);
+    num = cs_weighted_sum_square(n_cells, cell_dpdi, cdoq->cell_vol);
+    denum = cs_weighted_sum_square(n_cells, work, cdoq->cell_vol);
     if (fabs(denum) > zthreshold)
       l2r0potc = sqrt(num/denum);
     else

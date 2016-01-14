@@ -148,17 +148,6 @@ cs_domain_init(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Proceed to the last settings of a cs_domain_t structure
- *
- * \param[in, out]  domain    pointer to the cs_domain_t structure to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_last_setup(cs_domain_t    *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Free a cs_domain_t structure
  *
  * \param[in, out]   domain    pointer to the cs_domain_t structure to free
@@ -180,6 +169,17 @@ cs_domain_free(cs_domain_t   *domain);
 
 void
 cs_domain_summary(const cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Proceed to the last settings of a cs_domain_t structure
+ *
+ * \param[in, out]  domain    pointer to the cs_domain_t structure to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_last_setup(cs_domain_t    *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

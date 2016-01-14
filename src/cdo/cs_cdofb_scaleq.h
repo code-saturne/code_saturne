@@ -67,23 +67,25 @@ typedef struct _cs_cdofb_scaleq_t cs_cdofb_scaleq_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate work buffer related to cdo face-based schemes
+ * \brief  Allocate work buffer and general structures related to CDO
+ *         face-based schemes
  *
  * \param[in] connect   pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_init_buffer(const cs_cdo_connect_t      *connect);
+cs_cdofb_scaleq_initialize(const cs_cdo_connect_t      *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free work buffer related to cdo face-based schemes
+ * \brief  Free work buffer and general structure related to CDO face-based
+ *         schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_free_buffer(void);
+cs_cdofb_scaleq_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

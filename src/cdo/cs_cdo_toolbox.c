@@ -45,6 +45,7 @@
 #include <bft_printf.h>
 
 #include "cs_cdo.h"
+#include "cs_blas.h"
 #include "cs_sort.h"
 
 /*----------------------------------------------------------------------------
@@ -134,15 +135,13 @@ _compute_info_double(cs_lnum_t         n_elts,
                      const cs_real_t   data[],
                      cs_data_info_t   *info)
 {
-  int  i;
-
   if (n_elts == 0)
     return;
 
   /* Compute statistics */
-  for (i = 0; i < n_elts; i++) {
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
 
-    cs_real_t  val = data[i];
+    const cs_real_t  val = data[i];
     cs_real_t  delta = val - info->mean;
     cs_real_t  chi = delta/(i+1);
 
@@ -153,8 +152,8 @@ _compute_info_double(cs_lnum_t         n_elts,
     info->mean += chi;
 
   }
-  info->sigma = sqrt(fabs(info->sigma)/n_elts);
 
+  info->sigma = sqrt(fabs(info->sigma)/n_elts);
   info->euclidean_norm = cs_euclidean_norm(n_elts, data);
 }
 
@@ -174,16 +173,13 @@ _compute_info_int32(cs_lnum_t         n_elts,
                     const cs_lnum_t   data[],
                     cs_data_info_t   *info)
 {
-  int  i;
-
   if (n_elts == 0)
     return;
 
   /* Compute statistics */
-  for (i = 0; i < n_elts; i++) {
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
 
-    cs_lnum_t  val = data[i];
-    size_t  val2 = val*val;
+    const cs_lnum_t  val = data[i];
     double  delta = val - info->mean;
     double  chi = delta/(i+1);
 
@@ -192,12 +188,12 @@ _compute_info_int32(cs_lnum_t         n_elts,
 
     info->sigma += i*chi*delta;
     info->mean += chi;
-    info->euclidean_norm += val2;
+    info->euclidean_norm += val*val;
 
   }
 
   info->sigma = sqrt(fabs(info->sigma)/n_elts);
-  info->euclidean_norm = sqrt(fabs(info->euclidean_norm));
+  info->euclidean_norm = sqrt(info->euclidean_norm);
 }
 
 /*============================================================================
@@ -396,49 +392,6 @@ _invmat33(const cs_real_t   in[3][3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize a private structure for this file used for
- *         reducing round-off errors during summation
- *
- *  \param[in] ref_size    reference array dimension
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_init(cs_lnum_t      ref_size)
-{
-  double  invln2 = 1/log(2);
-  double  estimate = log(ref_size)*invln2;
-  int  power = floor(log(estimate)*invln2);
-  int  size = (1 << power);
-
-  /* Compute a number of sub sums according to a reference size */
-  _op_subsum.size = CS_MAX(2, size);
-
-  BFT_MALLOC(_op_subsum.idx, _op_subsum.size + 1, int);
-  BFT_MALLOC(_op_subsum.sums, _op_subsum.size, double);
-
-  printf("# N_SUB_SUMS      %d\n", _op_subsum.size);
-  bft_printf(" -sla- n_subsums      %d\n", _op_subsum.size);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a private structure for this file used for reducing round-off
- *         errors during summation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_finalize(void)
-{
-  assert(_op_subsum.size > 0);
-
-  BFT_FREE(_op_subsum.idx);
-  BFT_FREE(_op_subsum.sums);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the eigenvalues of a 3x3 matrix which is symmetric and real
  *         -> Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
  *         Communication of the ACM (April 1961)
@@ -591,133 +544,6 @@ cs_voltet(const cs_real_3_t   xv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute alpha*x + beta*y = p_z
- *
- * \param[in]     size    vector dimension
- * \param[in]     alpha   coefficient for x vector
- * \param[in]     x       first vector
- * \param[in]     beta    coefficient for y vector
- * \param[in]     y       second vector
- * \param[in,out] p_z     resulting vector (allocated if NULL)
- * \param[in]     reset   reset z vector before computation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_daxpy(int                size,
-         double             alpha,
-         const cs_real_t    x[],
-         cs_real_t          beta,
-         const cs_real_t    y[],
-         cs_real_t         *p_z[],
-         _Bool              reset)
-{
-  int  i;
-
-  cs_real_t  *z = *p_z;
-
-  if (size < 1)
-    return;
-
-  /* Sanity check */
-  assert(x != NULL && y != NULL);
-
-  if (z == NULL)
-    reset = true, BFT_MALLOC(z, size, cs_real_t);
-
-  if (reset)
-    for (i = 0; i < size; i++) z[i] = 0;
-
-  if (fabs(alpha) < DBL_MIN && fabs(beta) < DBL_MIN)
-    return;
-
-  if (fabs(alpha) > DBL_MIN && fabs(beta) > DBL_MIN) {
-    for (i = 0; i < size; i++)
-      z[i] += alpha*x[i] + beta*y[i];
-  }
-  else {
-    if (fabs(beta) > DBL_MIN)
-      for (i = 0; i < size; i++) z[i] += beta*y[i];
-    else
-      for (i = 0; i < size; i++) z[i] += alpha*y[i];
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the dot product of two vectors of dimension "size"
- *         This algorithm tries to reduce round-off error thanks to
- *          intermediate sums.
- *
- *  \param[in] size    vector dimension
- *  \param[in] v       first vector
- *  \param[in] w       second vector
- *
- * \return  the dot product of two vectors
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_dp(int           size,
-      const double  v[],
-      const double  w[])
-{
-  int  i, k, sl, test_size, new_size;
-
-  if (size < 1)
-    return 0.0;
-
-  if (v == NULL || w == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Array not allocated. Stop dot product computation.\n"));
-
-  /* Initialize sum and index */
-  _op_subsum.idx[0] = 0;
-  for (i = 0; i < _op_subsum.size; i++) {
-    _op_subsum.idx[i+1] = 0;
-    _op_subsum.sums[i] = 0.0;
-  }
-
-  /* Compute slice size */
-  sl = size/_op_subsum.size;
-  if (sl % _op_subsum.size != 0)
-    sl += 1;
-  if (sl == 0)
-    sl = 1;
-
-  /* Build index */
-  for (i = 0; i < _op_subsum.size; i++) {
-    if (_op_subsum.idx[i] < size) {
-      _op_subsum.idx[i+1] = _op_subsum.idx[i] + sl;
-      if (_op_subsum.idx[i+1] > size) _op_subsum.idx[i+1] = size;
-    }
-    else
-      _op_subsum.idx[i+1] = size;
-  }
-  _op_subsum.idx[_op_subsum.size] = size;
-
-  /* Compute sums by slice */
-  for (k = 0; k < _op_subsum.size; k++)
-    for (i = _op_subsum.idx[k]; i < _op_subsum.idx[k+1]; i++)
-      _op_subsum.sums[k] += v[i]*w[i];
-
-  /* Aggregate sub-sums */
-  test_size = _op_subsum.size;
-  while (test_size > 1) {
-    new_size = test_size / 2;
-    for (k = 0; k < new_size; k++)
-      _op_subsum.sums[k] = _op_subsum.sums[2*k] + _op_subsum.sums[2*k+1];
-    if (test_size % 2 != 0)
-      _op_subsum.sums[new_size] = _op_subsum.sums[test_size];
-    test_size = new_size;
-  }
-
-  return _op_subsum.sums[0];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the euclidean norm 2 of a vector of size len
  *         This algorithm tries to reduce round-off error thanks to
  *          intermediate sums.
@@ -738,7 +564,7 @@ cs_euclidean_norm(int            len,
   if (len < 1 || v == NULL)
     return 0.0;
 
-  n2 = cs_dp(len, v, v);
+  n2 = cs_dot(len, v, v);
   if (n2 > -DBL_MIN)
     n2 = sqrt(n2);
   else
@@ -750,117 +576,73 @@ cs_euclidean_norm(int            len,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute by default the sum of the elements of an array of double
- *         Additional operation are also possible: square, abs
- *         This algorithm tries to reduce round-off errors thanks to
- *         intermediate sums.
+ * \brief  Compute the weighted sum of square values of an array
  *
- *  \param[in] size    array dimension
- *  \param[in] v       values
- *  \param[in] w       weights (possibly NULL)
- *  \param[in] op      operation to do when doing the sum
+ *  \param[in] n       size of arrays x and weight
+ *  \param[in] x       array of floating-point values
+ *  \param[in] weight  floating-point values of weights
  *
- * \return the sum (with possibly additional op) of a vector
+ * \return the result of this operation
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_sum(cs_lnum_t              size,
-       const double           v[],
-       const double           w[],
-       cs_toolbox_type_sum_t  op)
+cs_weighted_sum_square(cs_lnum_t                n,
+                       const double *restrict   x,
+                       const double *restrict   weight)
 {
-  int  i, k, sl, test_size, new_size;
-
-  if (size == 0)
+  if (n == 0)
     return 0.0;
 
-  /* Initialize sum and index */
-  _op_subsum.idx[0] = 0;
-  for (i = 0; i < _op_subsum.size; i++)
-    _op_subsum.idx[i+1] = 0, _op_subsum.sums[i] = 0.0;
-
-  /* Compute slice size */
-  sl = size/_op_subsum.size;
-  if (sl % _op_subsum.size != 0) sl += 1;
-  if (sl == 0) sl = 1;
-
-  /* Build index */
-  for (i = 0; i < _op_subsum.size; i++) {
-    if (_op_subsum.idx[i] < size) {
-      _op_subsum.idx[i+1] = _op_subsum.idx[i] + sl;
-      if (_op_subsum.idx[i+1] > size)
-        _op_subsum.idx[i+1] = size;
-    }
-    else
-      _op_subsum.idx[i+1] = size;
-  }
-  _op_subsum.idx[_op_subsum.size] = size;
-
-  if (op == CS_TOOLBOX_WSUM    ||
-      op == CS_TOOLBOX_WSUMABS ||
-      op == CS_TOOLBOX_WSUM2)
-    if (w == NULL)
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Weighted operation requested but weigths not allocated.\n"
-                  " Stop execution.\n"));
-
-  /* Compute sums by slice */
-  switch(op) {
-
-  case CS_TOOLBOX_SUM:
-    for (k = 0; k < _op_subsum.size; k++)
-      for (i = _op_subsum.idx[k]; i < _op_subsum.idx[k+1]; i++)
-        _op_subsum.sums[k] += v[i];
-    break;
-
-  case CS_TOOLBOX_WSUM:
-    for (k = 0; k < _op_subsum.size; k++)
-      for (i = _op_subsum.idx[k]; i < _op_subsum.idx[k+1]; i++)
-        _op_subsum.sums[k] += w[i]*v[i];
-    break;
-
-  case CS_TOOLBOX_SUMABS:
-    for (k = 0; k < _op_subsum.size; k++)
-      for (i = _op_subsum.idx[k]; i < _op_subsum.idx[k+1]; i++)
-        _op_subsum.sums[k] += fabs(v[i]);
-    break;
-
-  case CS_TOOLBOX_WSUMABS:
-    for (k = 0; k < _op_subsum.size; k++)
-      for (i = _op_subsum.idx[k]; i < _op_subsum.idx[k+1]; i++)
-        _op_subsum.sums[k] += w[i]*fabs(v[i]);
-    break;
-
-  case CS_TOOLBOX_SUM2:
-    for (k = 0; k < _op_subsum.size; k++)
-      for (i = _op_subsum.idx[k]; i < _op_subsum.idx[k+1]; i++)
-        _op_subsum.sums[k] += v[i]*v[i];
-    break;
-
-  case CS_TOOLBOX_WSUM2:
-    for (k = 0; k < _op_subsum.size; k++)
-      for (i = _op_subsum.idx[k]; i < _op_subsum.idx[k+1]; i++)
-        _op_subsum.sums[k] += w[i]*v[i]*v[i];
-    break;
-  default:
+  /* Sanity check */
+  if (weight == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _("  Undefined operation. Stop sum computation.\n"));
+              _(" Weighted operation needs weigth array to be allocated.\n"
+                " Stop execution.\n"));
+
+  const cs_lnum_t  block_size = 60;
+
+  const cs_lnum_t  n_blocks = n / block_size;
+  const cs_lnum_t  n_sblocks = sqrt(n_blocks);
+  const cs_lnum_t  blocks_in_sblocks = (n_sblocks > 0) ? n_blocks/n_sblocks : 0;
+
+  double result = 0.0;
+
+ /*
+  * The algorithm used is l3superblock60, based on the article:
+  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+  * 2008 Society for Industrial and Applied Mathematics
+  */
+
+# pragma omp parallel for reduction(+:result) if (n > CS_THR_MIN)
+  for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+    double sresult = 0.0;
+
+    for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+      cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+      cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+      double _result = 0.0;
+      for (cs_lnum_t i = start_id; i < end_id; i++)
+        _result += weight[i]*x[i]*x[i];
+      sresult += _result;
+    }
+
+    result += sresult;
 
   }
 
-  /* Aggregate sub-sums */
-  test_size = _op_subsum.size;
-  while (test_size > 1) {
-    new_size = test_size / 2;
-    for (k = 0; k < new_size; k++)
-      _op_subsum.sums[k] = _op_subsum.sums[2*k] + _op_subsum.sums[2*k+1];
-    if (test_size % 2 != 0)
-      _op_subsum.sums[new_size] = _op_subsum.sums[test_size];
-    test_size = new_size;
-  }
+  /* Remainder */
+  double _result = 0.0;
+  cs_lnum_t start_id = block_size * n_sblocks*blocks_in_sblocks;
+  cs_lnum_t end_id = n;
+  for (cs_lnum_t i = start_id; i < end_id; i++)
+    _result += weight[i]*x[i]*x[i];
+  result += _result;
 
-  return _op_subsum.sums[0];
+  return result;
 }
 
 /*----------------------------------------------------------------------------*/

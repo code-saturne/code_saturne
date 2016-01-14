@@ -111,7 +111,6 @@ _setup(cs_mesh_t             *m,
   /* Initialization of several modules */
   cs_set_eps_machine();      /* Compute and set epsilon machine */
   cs_quadrature_setup();     /* Compute constant used in quadrature rules */
-  cs_toolbox_init(4*m->n_cells);
 
   /* User-defined settings and default initializations
      WARNING: Change the order of call to the following routines with care
@@ -185,11 +184,9 @@ _setup(cs_mesh_t             *m,
 static void
 _finalize(cs_domain_t  **domain)
 {
-  cs_toolbox_finalize();
-
   /* Free temporary buffers allocated for each kind of numerical used */
-  cs_cdovb_scaleq_free_buffer();
-  cs_cdofb_scaleq_free_buffer();
+  cs_cdovb_scaleq_finalize();
+  cs_cdofb_scaleq_finalize();
 
   *domain = cs_domain_free(*domain);
 }

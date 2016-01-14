@@ -227,7 +227,7 @@ _print_gwkey(gwkey_t  key)
  */
 /*----------------------------------------------------------------------------*/
 
-static gwkey_t
+static inline gwkey_t
 _get_gwkey(const char  *keyname)
 {
   gwkey_t  key = GWKEY_ERROR;
@@ -284,7 +284,7 @@ _print_soilkey(soilkey_t  key)
  */
 /*----------------------------------------------------------------------------*/
 
-static soilkey_t
+static inline soilkey_t
 _get_soilkey(const char  *keyname)
 {
   soilkey_t  key = SOILKEY_ERROR;
@@ -423,7 +423,7 @@ _set_tracer_param(int                 tracer_eq_id,
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static inline void
 _get_tracer_diffusion_tensor(double          theta,
                              const double    v[],
                              const void     *tracer_struc,
@@ -469,7 +469,7 @@ _get_tracer_diffusion_tensor(double          theta,
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static inline void
 _get_tracer_time_coeff(double        theta,
                        const void   *tracer_struc,
                        cs_get_t     *result)
@@ -490,7 +490,7 @@ _get_tracer_time_coeff(double        theta,
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static inline void
 _get_tracer_reaction_coeff(double        theta,
                            const void   *tracer_struc,
                            cs_get_t     *result)
@@ -511,7 +511,7 @@ _get_tracer_reaction_coeff(double        theta,
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static inline void
 _permeability_by_genuchten_law(double        h,
                                const void   *soil_struc,
                                cs_get_t     *result)
@@ -556,7 +556,7 @@ _permeability_by_genuchten_law(double        h,
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static inline void
 _permeability_by_tracy_law(double        h,
                            const void   *soil_struc,
                            cs_get_t     *result)
@@ -589,7 +589,7 @@ _permeability_by_tracy_law(double        h,
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static inline void
 _moisture_by_tracy_law(double        h,
                        const void   *soil_struc,
                        cs_get_t     *result)
@@ -1841,8 +1841,6 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
     for (i = 0; i < gw->n_tracers; i++) {
 
       cs_equation_t  *eq = eqs[gw->tracer_param[i].eq_id];
-
-      cs_equation_init_system(mesh, connect, cdoq, time_step, eq);
 
       if (!cs_equation_is_steady(eq)) { // unsteady ?
 
