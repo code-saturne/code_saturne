@@ -2143,7 +2143,6 @@ cs_mesh_create(void)
   mesh->vtx_coord = NULL;
   mesh->i_face_cells = NULL;
   mesh->b_face_cells = NULL;
-  mesh->b_face_b_cells = NULL;
   mesh->i_face_vtx_idx = NULL;
   mesh->b_face_vtx_idx = NULL;
   mesh->i_face_vtx_lst = NULL;
@@ -2175,6 +2174,7 @@ cs_mesh_create(void)
 
   mesh->n_b_cells = 0;
   mesh->b_cells = NULL;
+  mesh->b_face_b_cells = NULL;
 
   mesh->cell_cells_idx = NULL;
   mesh->cell_cells_lst = NULL;
@@ -2233,7 +2233,6 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
   BFT_FREE(mesh->vtx_coord);
   BFT_FREE(mesh->i_face_cells);
   BFT_FREE(mesh->b_face_cells);
-  BFT_FREE(mesh->b_face_b_cells);
   BFT_FREE(mesh->i_face_vtx_idx);
   BFT_FREE(mesh->b_face_vtx_idx);
   BFT_FREE(mesh->i_face_vtx_lst);
@@ -2278,8 +2277,8 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
 {
   /* Free structures that may be rebuilt */
 
-  if (mesh->b_cells != NULL)
-    BFT_FREE(mesh->b_cells);
+  BFT_FREE(mesh->b_cells);
+  BFT_FREE(mesh->b_face_b_cells);
 
   if (mesh->cell_cells_idx != NULL) {
     BFT_FREE(mesh->cell_cells_idx);
