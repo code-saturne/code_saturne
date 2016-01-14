@@ -114,21 +114,14 @@ module cs_c_bindings
 
   interface
 
-    subroutine max_limiter_building(                     &
-                                             f_id,       &
-                                             inc,        &
-                                             rovsdt    ) &
+    subroutine max_limiter_building(f_id, inc, rovsdt) &
     bind(C, name='cs_max_limiter_building')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int),value :: f_id
       integer(c_int),value :: inc
       real(c_double), dimension(*) , intent(in) :: rovsdt
-
- end subroutine max_limiter_building
-
-
-
+    end subroutine max_limiter_building
 
     !---------------------------------------------------------------------------
 
@@ -867,7 +860,9 @@ module cs_c_bindings
     ! to logging of fields
 
     subroutine cs_log_iteration_clipping_field(f_id, n_clip_min, n_clip_max,  &
-                                               min_pre_clip, max_pre_clip,n_clip_min_comp, n_clip_max_comp)    &
+                                               min_pre_clip, max_pre_clip,    &
+                                               n_clip_min_comp,               &
+                                               n_clip_max_comp)               &
       bind(C, name='cs_log_iteration_clipping_field')
       use, intrinsic :: iso_c_binding
       implicit none
