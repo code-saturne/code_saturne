@@ -1556,7 +1556,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
           for (j = 0; j < dim2; j++)
             c[j] = 0.0;
           for (i = start_id; i < end_id; i++) {
-            wi = wl[i];
+            wi = w[wl[i]];
             for (j = 0; j < dim; j++) {
               c[j]     += v[i*dim + j];
               c[j+dim] += v[i*dim + j]*wi;
@@ -1626,7 +1626,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
   }
   else if (vl == NULL) {
     for (i = start_id; i < end_id; i++) {
-      wi = wl[i];
+      wi = w[wl[i]];
       for (j = 0; j < dim; j++) {
         c[j]     += v[i*dim + j];
         c[j+dim] += v[i*dim + j]*wi;

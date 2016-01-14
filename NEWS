@@ -5,6 +5,9 @@ Release 4.2.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix weighted array stats for multi-dimensional data (n = 2 or > 3)
+  on mesh subset.
+
 - Fix postprocessing of unlocated Syrthes coupling face centers in 2D.
 
 - Fix broken restart for radiative transfers.
