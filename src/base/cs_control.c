@@ -328,7 +328,7 @@ _control_postprocess(const cs_time_step_t   *ts,
 
 static void
 _parse_control_file(char  *buffer,
-                    long  f_size)
+                    long   f_size)
 {
   int nt_max;
 

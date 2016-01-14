@@ -1299,7 +1299,7 @@ cs_dot_xx_xy(cs_lnum_t                    n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return 2 dot products of 3 vectors: x.x, and y.z
+ * \brief Return 2 dot products of 3 vectors: x.y, and y.z
  *
  * The products could be computed separately, but computing them
  * simultaneously adds more optimization opportunities and possibly better

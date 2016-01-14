@@ -173,7 +173,7 @@ cs_dot_xy_yz(cs_lnum_t                    n,
              double                      *xy);
 
 /*----------------------------------------------------------------------------
- * Return 3 dot products of 3 vectors: x.y, x.y, and y.z
+ * Return 3 dot products of 3 vectors: x.x, x.y, and y.z
  *
  * The products could be computed separately, but computing them
  * simultaneously adds more optimization opportunities and possibly better

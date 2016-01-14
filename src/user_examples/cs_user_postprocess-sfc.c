@@ -1,5 +1,5 @@
 /*============================================================================
- * Define (conforming or non-conforming) mesh joinings.
+ *  Define postprocessing output.
  *============================================================================*/
 
 /* VERS */
@@ -346,7 +346,7 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
 void
 cs_user_postprocess_writers(void)
 {
-  /* Every writer has a a strictly positive or negative id. Negative ids
+  /* Every writer has a strictly positive or negative id. Negative ids
    * are for predefined writers, positive ids for user writers.
    * All predefined writers use the settings from writer -1, and
    * redefining that writer here allows changing from the default or GUI
