@@ -105,9 +105,7 @@ BEGIN_C_DECLS
 
 /* Cache line multiple, in cs_real_t units */
 
-#define CS_CL  CS_CL_SIZE/8
-
-#define CS_THREAD_ALIGN(s)  (((s-1)/CS_CL+1)*CS_CL)
+#define CS_CL  (CS_CL_SIZE/8)
 
 /*=============================================================================
  * Local Type Definitions
@@ -3945,7 +3943,7 @@ _mat_vec_p_l_msr_omp_sched(bool                exclude_diag,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 
-      cs_lnum_t n_s_rows = CS_THREAD_ALIGN(n_rows * 0.9);
+      cs_lnum_t n_s_rows = cs_align(n_rows * 0.9, CS_CL);
 
 #     pragma omp for nowait
       for (cs_lnum_t ii = 0; ii < n_s_rows; ii++) {
@@ -3988,7 +3986,7 @@ _mat_vec_p_l_msr_omp_sched(bool                exclude_diag,
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 
-      cs_lnum_t n_s_rows = CS_THREAD_ALIGN(n_rows * 0.9);
+      cs_lnum_t n_s_rows = cs_align(n_rows * 0.9, CS_CL);
 
 #     pragma omp for
       for (cs_lnum_t ii = 0; ii < n_s_rows; ii++) {

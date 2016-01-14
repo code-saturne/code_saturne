@@ -57,8 +57,16 @@ BEGIN_C_DECLS
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
- * Macro definitions
+ * Local macro definitions
  *============================================================================*/
+
+/* Block size for superblock algorithm */
+
+#define CS_SBLOCK_BLOCK_SIZE 60
+
+/* Cache line multiple, in cs_real_t units */
+
+#define CS_CL  (CS_CL_SIZE/8)
 
 /*============================================================================
  * Type definitions
@@ -71,6 +79,62 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Compute array index bounds for a local thread.
+ *
+ * When called inside an OpenMP parallel section, this will return the
+ * start an past-the-end indexes for the array range assigned to that thread.
+ * In other cases, the start index is 1, and the past-the-end index is n;
+ *
+ * parameters:
+ *   n    <-- size of array
+ *   s_id --> start index for the current thread
+ *   e_id --> past-the-end index for the current thread
+ *----------------------------------------------------------------------------*/
+
+static void
+_thread_range(cs_lnum_t   n,
+              cs_lnum_t  *s_id,
+              cs_lnum_t  *e_id)
+{
+#if defined(HAVE_OPENMP)
+  int t_id = omp_get_thread_num();
+  int n_t = omp_get_num_threads();
+  cs_lnum_t t_n = (n + n_t - 1) / n_t;
+  *s_id =  t_id    * t_n;
+  *e_id = (t_id+1) * t_n;
+  *s_id = cs_align(*s_id, CS_CL);
+  *e_id = cs_align(*e_id, CS_CL);
+  if (*e_id > n) *e_id = n;
+#else
+  *s_id = 0;
+  *e_id = n;
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Compute blocks sizes for superblock algorithm.
+ *
+ * parameters:
+ *   n                 <-- size of array
+ *   block_size        <-- block size
+ *   n_sblocks         --> number of superblocks
+ *   blocks_in_sblocks --> number of blocks per superblock
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_sbloc_sizes(cs_lnum_t   n,
+             cs_lnum_t   block_size,
+             cs_lnum_t  *n_sblocks,
+             cs_lnum_t  *blocks_in_sblocks)
+{
+  cs_lnum_t n_blocks = (n + block_size - 1) / block_size;
+  *n_sblocks = (n_blocks > 1) ? sqrt(n_blocks) : 1;
+
+  cs_lnum_t n_b = block_size * *n_sblocks;
+  *blocks_in_sblocks = (n + n_b - 1) / n_b;
+}
 
 /*----------------------------------------------------------------------------
  * Compute sum of a 1-dimensional array.
@@ -89,33 +153,33 @@ static double
 _cs_real_sum_1d(cs_lnum_t        n,
                 const cs_real_t  v[])
 {
-  const cs_lnum_t block_size = 60;
-
-  cs_lnum_t i;
-  cs_lnum_t sid, bid;
-  cs_lnum_t start_id, end_id;
-  double c, s;
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
   double v_sum = 0.;
 
-# pragma omp parallel private(bid, start_id, end_id, i, c, s)    \
-                              reduction(+:v_sum) if (n > CS_THR_MIN)
+# pragma omp parallel reduction(+:v_sum) if (n > CS_THR_MIN)
   {
-    # pragma omp for
-    for (sid = 0; sid < n_sblocks; sid++) {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
 
-      s = 0.0;
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_real_t *_v = v + s_id;
 
-      for (bid = 0; bid < blocks_in_sblocks; bid++) {
-        start_id = block_size * (blocks_in_sblocks*sid + bid);
-        end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        c = 0.0;
-        for (i = start_id; i < end_id; i++)
-          c += v[i];
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s = 0.;
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double c = 0.;
+        for (cs_lnum_t i = start_id; i < end_id; i++)
+          c += _v[i];
         s += c;
       }
 
@@ -123,15 +187,7 @@ _cs_real_sum_1d(cs_lnum_t        n,
 
     }
 
-  } /* End of OpenMP-threaded section */
-
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  c = 0.0;
-  for (i = start_id; i < end_id; i++)
-    c += v[i];
-
-  v_sum += c;
+  }
 
   return v_sum;
 }
@@ -157,73 +213,62 @@ _cs_real_sstats_1d(cs_lnum_t         n,
                    double           *vmax,
                    double           *vsum)
 {
-  const cs_lnum_t block_size = 60;
-
-  cs_lnum_t i;
-  cs_lnum_t sid, bid;
-  cs_lnum_t start_id, end_id;
-  double c, s, lmin, lmax;
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
-#if defined(__xlc__)
-#pragma disjoint(*v, *vmin, *vmax, *vsum)
-#endif
-
   *vmin = HUGE_VAL;
   *vmax = -HUGE_VAL;
   *vsum = 0.;
 
-# pragma omp parallel private(bid, start_id, end_id, i, \
-                              c, s, lmin, lmax) if (n > CS_THR_MIN)
+# pragma omp parallel if (n > CS_THR_MIN)
   {
-    # pragma omp for
-    for (sid = 0; sid < n_sblocks; sid++) {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
 
-      lmin = HUGE_VAL;
-      lmax = -HUGE_VAL;
-      s = 0.0;
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_real_t *_v = v + s_id;
 
-      for (bid = 0; bid < blocks_in_sblocks; bid++) {
-        start_id = block_size * (blocks_in_sblocks*sid + bid);
-        end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        c = 0.0;
-        for (i = start_id; i < end_id; i++) {
-          c += v[i];
-          if (v[i] < lmin)
-            lmin = v[i];
-          if (v[i] > lmax)
-            lmax = v[i];
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_real_t lmin = HUGE_VAL;
+    cs_real_t lmax = -HUGE_VAL;
+
+    double lsum = 0.;
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s = 0.;
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double c = 0.;
+        for (cs_lnum_t i = start_id; i < end_id; i++) {
+          c += _v[i];
+          if (_v[i] < lmin)
+            lmin = _v[i];
+          if (_v[i] > lmax)
+            lmax = _v[i];
         }
         s += c;
       }
 
-#     pragma omp critical
-      {
-        if (lmin < *vmin)
-          *vmin = lmin;
-        if (lmax > *vmax)
-          *vmax = lmax;
-        *vsum += s;
-      }
+      lsum += s;
 
     }
-  } /* End of OpenMP-threaded section */
 
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  c = 0.0;
-  for (i = start_id; i < end_id; i++) {
-    c += v[i];
-    if (v[i] < *vmin)
-      *vmin = v[i];
-    if (v[i] > *vmax)
-      *vmax = v[i];
+#   pragma omp critical
+    {
+      if (lmin < *vmin)
+        *vmin = lmin;
+      if (lmax > *vmax)
+        *vmax = lmax;
+      *vsum += lsum;
+    }
+
   }
-
-  *vsum += c;
 }
 
 /*----------------------------------------------------------------------------
@@ -250,41 +295,40 @@ _cs_real_sstats_1d_l(cs_lnum_t         n,
                      double           *vmax,
                      double           *vsum)
 {
-  const cs_lnum_t block_size = 60;
-
-  cs_lnum_t i, li;
-  cs_lnum_t sid, bid;
-  cs_lnum_t start_id, end_id;
-  double c, s, lmin, lmax;
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
-#if defined(__xlc__)
-#pragma disjoint(*vl, *v, *vmin, *vmax, *vsum)
-#endif
-
   *vmin = HUGE_VAL;
   *vmax = -HUGE_VAL;
   *vsum = 0.;
 
-# pragma omp parallel private(bid, start_id, end_id, li, i, \
-                              c, s, lmin, lmax) if (n > CS_THR_MIN)
+# pragma omp parallel if (n > CS_THR_MIN)
   {
-    # pragma omp for
-    for (sid = 0; sid < n_sblocks; sid++) {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
 
-      lmin = HUGE_VAL;
-      lmax = -HUGE_VAL;
-      s = 0.0;
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_lnum_t *_vl = vl + s_id;
 
-      for (bid = 0; bid < blocks_in_sblocks; bid++) {
-        start_id = block_size * (blocks_in_sblocks*sid + bid);
-        end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        c = 0.0;
-        for (li = start_id; li < end_id; li++) {
-          i = vl[li];
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_real_t lmin = HUGE_VAL;
+    cs_real_t lmax = -HUGE_VAL;
+
+    double lsum = 0.;
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s = 0.;
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double c = 0.;
+        for (cs_lnum_t li = start_id; li < end_id; li++) {
+          cs_lnum_t i = _vl[li];
           c += v[i];
           if (v[i] < lmin)
             lmin = v[i];
@@ -294,31 +338,20 @@ _cs_real_sstats_1d_l(cs_lnum_t         n,
         s += c;
       }
 
-#     pragma omp critical
-      {
-        if (lmin < *vmin)
-          *vmin = lmin;
-        if (lmax > *vmax)
-          *vmax = lmax;
-        *vsum += s;
-      }
+      lsum += s;
 
     }
-  } /* End of OpenMP-threaded section */
 
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  c = 0.0;
-  for (li = start_id; li < end_id; li++) {
-    i = vl[li];
-    c += v[i];
-    if (v[i] < *vmin)
-      *vmin = v[i];
-    if (v[i] > *vmax)
-      *vmax = v[i];
+#   pragma omp critical
+    {
+      if (lmin < *vmin)
+        *vmin = lmin;
+      if (lmax > *vmax)
+        *vmax = lmax;
+      *vsum += lsum;
+    }
+
   }
-
-  *vsum += c;
 }
 
 /*----------------------------------------------------------------------------
@@ -347,82 +380,68 @@ _cs_real_sstats_1d_w(cs_lnum_t         n,
                      double           *vsum,
                      double           *wsum)
 {
-  const cs_lnum_t block_size = 60;
-
-  cs_lnum_t i;
-  cs_lnum_t sid, bid;
-  cs_lnum_t start_id, end_id;
-  double c[2], s[2], lmin, lmax;
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
-#if defined(__xlc__)
-#pragma disjoint(*v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
-
   *vmin = HUGE_VAL;
   *vmax = -HUGE_VAL;
   *vsum = 0.;
   *wsum = 0.;
 
-# pragma omp parallel private(bid, start_id, end_id, i, \
-                              c, s, lmin, lmax) if (n > CS_THR_MIN)
+# pragma omp parallel if (n > CS_THR_MIN)
   {
-    # pragma omp for
-    for (sid = 0; sid < n_sblocks; sid++) {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
 
-      lmin = HUGE_VAL;
-      lmax = -HUGE_VAL;
-      s[0] = 0.0;
-      s[1] = 0.0;
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_real_t *_v = v + s_id;
+    const cs_real_t *_w = w + s_id;
 
-      for (bid = 0; bid < blocks_in_sblocks; bid++) {
-        start_id = block_size * (blocks_in_sblocks*sid + bid);
-        end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        c[0] = 0.0;
-        c[1] = 0.0;
-        for (i = start_id; i < end_id; i++) {
-          c[0] += v[i];
-          c[1] += v[i]*w[i];
-          if (v[i] < lmin)
-            lmin = v[i];
-          if (v[i] > lmax)
-            lmax = v[i];
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_real_t lmin = HUGE_VAL;
+    cs_real_t lmax = -HUGE_VAL;
+
+    double lsum[2] = {0., 0.};
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s[2] = {0., 0.};
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double c[2] = {0., 0.};
+        for (cs_lnum_t i = start_id; i < end_id; i++) {
+          c[0] += _v[i];
+          c[1] += _v[i]*_w[i];
+          if (_v[i] < lmin)
+            lmin = _v[i];
+          if (_v[i] > lmax)
+            lmax = _v[i];
         }
         s[0] += c[0];
         s[1] += c[1];
       }
 
-#     pragma omp critical
-      {
-        if (lmin < *vmin)
-          *vmin = lmin;
-        if (lmax > *vmax)
-          *vmax = lmax;
-        *vsum += s[0];
-        *wsum += s[1];
-      }
+      lsum[0] += s[0];
+      lsum[1] += s[1];
 
     }
-  } /* End of OpenMP-threaded section */
 
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  c[0] = 0.0;
-  c[1] = 0.0;
-  for (i = start_id; i < end_id; i++) {
-    c[0] += v[i];
-    c[1] += v[i]*w[i];
-    if (v[i] < *vmin)
-      *vmin = v[i];
-    if (v[i] > *vmax)
-      *vmax = v[i];
+#   pragma omp critical
+    {
+      if (lmin < *vmin)
+        *vmin = lmin;
+      if (lmax > *vmax)
+        *vmax = lmax;
+      *vsum += lsum[0];
+      *wsum += lsum[1];
+    }
+
   }
-
-  *vsum += c[0];
-  *wsum += c[1];
 }
 
 /*----------------------------------------------------------------------------
@@ -453,82 +472,68 @@ _cs_real_sstats_1d_w_l(cs_lnum_t         n,
                        double           *vsum,
                        double           *wsum)
 {
-  const cs_lnum_t block_size = 60;
-
-  cs_lnum_t i;
-  cs_lnum_t sid, bid;
-  cs_lnum_t start_id, end_id;
-  double c[2], s[2], lmin, lmax;
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
-#if defined(__xlc__)
-#pragma disjoint(*wl, *v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
-
   *vmin = HUGE_VAL;
   *vmax = -HUGE_VAL;
   *vsum = 0.;
   *wsum = 0.;
 
-# pragma omp parallel private(bid, start_id, end_id, i, \
-                              c, s, lmin, lmax) if (n > CS_THR_MIN)
+# pragma omp parallel if (n > CS_THR_MIN)
   {
-    # pragma omp for
-    for (sid = 0; sid < n_sblocks; sid++) {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
 
-      lmin = HUGE_VAL;
-      lmax = -HUGE_VAL;
-      s[0] = 0.0;
-      s[1] = 0.0;
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_lnum_t *_wl = wl + s_id;
+    const cs_real_t *_v = v + s_id;
 
-      for (bid = 0; bid < blocks_in_sblocks; bid++) {
-        start_id = block_size * (blocks_in_sblocks*sid + bid);
-        end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        c[0] = 0.0;
-        c[1] = 0.0;
-        for (i = start_id; i < end_id; i++) {
-          c[0] += v[i];
-          c[1] += v[i]*w[wl[i]];
-          if (v[i] < lmin)
-            lmin = v[i];
-          if (v[i] > lmax)
-            lmax = v[i];
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_real_t lmin = HUGE_VAL;
+    cs_real_t lmax = -HUGE_VAL;
+
+    double lsum[2] = {0., 0.};
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s[2] = {0., 0.};
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double c[2] = {0., 0.};
+        for (cs_lnum_t i = start_id; i < end_id; i++) {
+          c[0] += _v[i];
+          c[1] += _v[i]*w[_wl[i]];
+          if (_v[i] < lmin)
+            lmin = _v[i];
+          if (_v[i] > lmax)
+            lmax = _v[i];
         }
         s[0] += c[0];
         s[1] += c[1];
       }
 
-#     pragma omp critical
-      {
-        if (lmin < *vmin)
-          *vmin = lmin;
-        if (lmax > *vmax)
-          *vmax = lmax;
-        *vsum += s[0];
-        *wsum += s[1];
-      }
+      lsum[0] += s[0];
+      lsum[1] += s[1];
 
     }
-  } /* End of OpenMP-threaded section */
 
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  c[0] = 0.0;
-  c[1] = 0.0;
-  for (i = start_id; i < end_id; i++) {
-    c[0] += v[i];
-    c[1] += v[i]*w[wl[i]];
-    if (v[i] < *vmin)
-      *vmin = v[i];
-    if (v[i] > *vmax)
-      *vmax = v[i];
+#   pragma omp critical
+    {
+      if (lmin < *vmin)
+        *vmin = lmin;
+      if (lmax > *vmax)
+        *vmax = lmax;
+      *vsum += lsum[0];
+      *wsum += lsum[1];
+    }
+
   }
-
-  *vsum += c[0];
-  *wsum += c[1];
 }
 
 /*----------------------------------------------------------------------------
@@ -559,44 +564,41 @@ _cs_real_sstats_1d_l_w(cs_lnum_t         n,
                        double           *vsum,
                        double           *wsum)
 {
-  const cs_lnum_t block_size = 60;
-
-  cs_lnum_t i, li;
-  cs_lnum_t sid, bid;
-  cs_lnum_t start_id, end_id;
-  double c[2], s[2], lmin, lmax;
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
-#if defined(__xlc__)
-#pragma disjoint(*vl, *v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
-
   *vmin = HUGE_VAL;
   *vmax = -HUGE_VAL;
   *vsum = 0.;
   *wsum = 0.;
 
-# pragma omp parallel private(bid, start_id, end_id, li, i, \
-                              c, s, lmin, lmax) if (n > CS_THR_MIN)
+# pragma omp parallel if (n > CS_THR_MIN)
   {
-    # pragma omp for
-    for (sid = 0; sid < n_sblocks; sid++) {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
 
-      lmin = HUGE_VAL;
-      lmax = -HUGE_VAL;
-      s[0] = 0.0;
-      s[1] = 0.0;
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_lnum_t *_vl = vl + s_id;
 
-      for (bid = 0; bid < blocks_in_sblocks; bid++) {
-        start_id = block_size * (blocks_in_sblocks*sid + bid);
-        end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        c[0] = 0.0;
-        c[1] = 0.0;
-        for (li = start_id; li < end_id; li++) {
-          i = vl[li];
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_real_t lmin = HUGE_VAL;
+    cs_real_t lmax = -HUGE_VAL;
+
+    double lsum[2] = {0., 0.};
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s[2] = {0., 0.};
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double c[2] = {0., 0.};
+        for (cs_lnum_t li = start_id; li < end_id; li++) {
+          cs_lnum_t i = _vl[li];
           c[0] += v[i];
           c[1] += v[i]*w[i];
           if (v[i] < lmin)
@@ -608,35 +610,22 @@ _cs_real_sstats_1d_l_w(cs_lnum_t         n,
         s[1] += c[1];
       }
 
-#     pragma omp critical
-      {
-        if (lmin < *vmin)
-          *vmin = lmin;
-        if (lmax > *vmax)
-          *vmax = lmax;
-        *vsum += s[0];
-        *wsum += s[1];
-      }
+      lsum[0] += s[0];
+      lsum[1] += s[1];
 
     }
-  } /* End of OpenMP-threaded section */
 
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  c[0] = 0.0;
-  c[1] = 0.0;
-  for (li = start_id; li < end_id; li++) {
-    i = vl[li];
-    c[0] += v[i];
-    c[1] += v[i]*w[i];
-    if (v[i] < *vmin)
-      *vmin = v[i];
-    if (v[i] > *vmax)
-      *vmax = v[i];
+#   pragma omp critical
+    {
+      if (lmin < *vmin)
+        *vmin = lmin;
+      if (lmax > *vmax)
+        *vmax = lmax;
+      *vsum += lsum[0];
+      *wsum += lsum[1];
+    }
+
   }
-
-  *vsum += c[0];
-  *wsum += c[1];
 }
 
 /*----------------------------------------------------------------------------
@@ -663,55 +652,54 @@ _cs_real_sstats_3d(cs_lnum_t          n,
                    double             vmax[4],
                    double             vsum[4])
 {
-  const cs_lnum_t block_size = 60;
-
-  int j;
-  cs_lnum_t i, sid, bid;
-  cs_lnum_t start_id, end_id;
-  double v_norm;
-  double c[4], s[4], lmin[4], lmax[4];
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
-#if defined(__xlc__)
-#pragma disjoint(*v, *vmin, *vmax, *vsum)
-#endif
-
-  for (j = 0; j < 4; j++) {
+  for (cs_lnum_t j = 0; j < 4; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
   }
 
-# pragma omp parallel private(bid, start_id, end_id, i, j, \
-                              c, s, v_norm, lmin, lmax) if (n > CS_THR_MIN)
+# pragma omp parallel if (n > CS_THR_MIN)
   {
-    # pragma omp for
-    for (sid = 0; sid < n_sblocks; sid++) {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
 
-      for (j = 0; j < 4; j++) {
-        lmin[j] = HUGE_VAL;
-        lmax[j] = -HUGE_VAL;
-      }
-      for (j = 0; j < 4; j++)
-        s[j] = 0.0;
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_real_3_t *_v = v + s_id;
 
-      for (bid = 0; bid < blocks_in_sblocks; bid++) {
-        start_id = block_size * (blocks_in_sblocks*sid + bid);
-        end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        for (j = 0; j < 4; j++)
-          c[j] = 0.0;
-        for (i = start_id; i < end_id; i++) {
-          for (j = 0; j < 3; j++) {
-            c[j]   += v[i][j];
-            if (v[i][j] < lmin[j])
-              lmin[j] = v[i][j];
-            if (v[i][j] > lmax[j])
-              lmax[j] = v[i][j];
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_real_t lmin[4], lmax[4];
+    for (cs_lnum_t j = 0; j < 4; j++) {
+      lmin[j] = HUGE_VAL;
+      lmax[j] = -HUGE_VAL;
+    }
+
+    double lsum[4] = {0., 0., 0., 0.};
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s[4] = {0., 0., 0., 0.};
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double c[4] = {0., 0., 0., 0.};
+        for (cs_lnum_t i = start_id; i < end_id; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            c[j]   += _v[i][j];
+            if (_v[i][j] < lmin[j])
+              lmin[j] = _v[i][j];
+            if (_v[i][j] > lmax[j])
+              lmax[j] = _v[i][j];
           }
-          v_norm = sqrt(v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2]);
+          double v_norm = sqrt(  _v[i][0]*_v[i][0]
+                               + _v[i][1]*_v[i][1]
+                               + _v[i][2]*_v[i][2]);
           c[3] += v_norm;
           if (v_norm < lmin[3])
             lmin[3] = v_norm;
@@ -719,45 +707,27 @@ _cs_real_sstats_3d(cs_lnum_t          n,
             lmax[3] = v_norm;
         }
 
-        for (j = 0; j < 4; j++)
+        for (cs_lnum_t j = 0; j < 4; j++)
           s[j] += c[j];
       }
 
-#     pragma omp critical
-      {
-        for (j = 0; j < 4; j++) {
-          if (lmin[j] < vmin[j])
-            vmin[j] = lmin[j];
-          if (lmax[j] > vmax[j])
-            vmax[j] = lmax[j];
-          vsum[j] += s[j];
-        }
+      for (cs_lnum_t j = 0; j < 4; j++)
+        lsum[j] += s[j];
+
+    }
+
+#   pragma omp critical
+    {
+      for (cs_lnum_t j = 0; j < 4; j++) {
+        if (lmin[j] < vmin[j])
+          vmin[j] = lmin[j];
+        if (lmax[j] > vmax[j])
+          vmax[j] = lmax[j];
+        vsum[j] += lsum[j];
       }
     }
-  } /* End of OpenMP-threaded section */
 
-  for (j = 0; j < 4; j++)
-    c[j] = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  for (i = start_id; i < end_id; i++) {
-    for (j = 0; j < 3; j++) {
-      c[j]   += v[i][j];
-      if (v[i][j] < vmin[j])
-        vmin[j] = v[i][j];
-      if (v[i][j] > vmax[j])
-        vmax[j] = v[i][j];
-    }
-    v_norm = sqrt(v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2]);
-    c[3] += v_norm;
-    if (v_norm < vmin[3])
-      vmin[3] = v_norm;
-    if (v_norm > vmax[3])
-      vmax[3] = v_norm;
   }
-
-  for (j = 0; j < 4; j++)
-    vsum[j] += c[j];
 }
 
 /*----------------------------------------------------------------------------
@@ -786,56 +756,55 @@ _cs_real_sstats_3d_l(cs_lnum_t          n,
                      double             vmax[4],
                      double             vsum[4])
 {
-  const cs_lnum_t block_size = 60;
-
-  int j;
-  cs_lnum_t i, li, sid, bid;
-  cs_lnum_t start_id, end_id;
-  double v_norm;
-  double c[4], s[4], lmin[4], lmax[4];
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
-#if defined(__xlc__)
-#pragma disjoint(*v, *vmin, *vmax, *vsum)
-#endif
-
-  for (j = 0; j < 4; j++) {
+  for (cs_lnum_t j = 0; j < 4; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
   }
 
-# pragma omp parallel private(bid, start_id, end_id, li, i, j, \
-                              c, s, v_norm, lmin, lmax) if (n > CS_THR_MIN)
+# pragma omp parallel if (n > CS_THR_MIN)
   {
-    # pragma omp for
-    for (sid = 0; sid < n_sblocks; sid++) {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
 
-      for (j = 0; j < 4; j++) {
-        lmin[j] = HUGE_VAL;
-        lmax[j] = -HUGE_VAL;
-      }
-      for (j = 0; j < 4; j++)
-        s[j] = 0.0;
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_lnum_t *_vl = vl + s_id;
 
-      for (bid = 0; bid < blocks_in_sblocks; bid++) {
-        start_id = block_size * (blocks_in_sblocks*sid + bid);
-        end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        for (j = 0; j < 4; j++)
-          c[j] = 0.0;
-        for (li = start_id; li < end_id; li++) {
-          i = vl[li];
-          for (j = 0; j < 3; j++) {
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_real_t lmin[4], lmax[4];
+    for (cs_lnum_t j = 0; j < 4; j++) {
+      lmin[j] = HUGE_VAL;
+      lmax[j] = -HUGE_VAL;
+    }
+
+    double lsum[4] = {0., 0., 0., 0.};
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s[4] = {0., 0., 0., 0.};
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double c[4] = {0., 0., 0., 0.};
+        for (cs_lnum_t li = start_id; li < end_id; li++) {
+          cs_lnum_t i = _vl[li];
+          for (cs_lnum_t j = 0; j < 3; j++) {
             c[j]   += v[i][j];
             if (v[i][j] < lmin[j])
               lmin[j] = v[i][j];
             if (v[i][j] > lmax[j])
               lmax[j] = v[i][j];
           }
-          v_norm = sqrt(v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2]);
+          double v_norm = sqrt(  v[i][0]*v[i][0]
+                               + v[i][1]*v[i][1]
+                               + v[i][2]*v[i][2]);
           c[3] += v_norm;
           if (v_norm < lmin[3])
             lmin[3] = v_norm;
@@ -843,46 +812,27 @@ _cs_real_sstats_3d_l(cs_lnum_t          n,
             lmax[3] = v_norm;
         }
 
-        for (j = 0; j < 4; j++)
+        for (cs_lnum_t j = 0; j < 4; j++)
           s[j] += c[j];
       }
 
-#     pragma omp critical
-      {
-        for (j = 0; j < 4; j++) {
-          if (lmin[j] < vmin[j])
-            vmin[j] = lmin[j];
-          if (lmax[j] > vmax[j])
-            vmax[j] = lmax[j];
-          vsum[j] += s[j];
-        }
+      for (cs_lnum_t j = 0; j < 4; j++)
+        lsum[j] += s[j];
+
+    }
+
+#   pragma omp critical
+    {
+      for (cs_lnum_t j = 0; j < 4; j++) {
+        if (lmin[j] < vmin[j])
+          vmin[j] = lmin[j];
+        if (lmax[j] > vmax[j])
+          vmax[j] = lmax[j];
+        vsum[j] += lsum[j];
       }
     }
-  } /* End of OpenMP-threaded section */
 
-  for (j = 0; j < 4; j++)
-    c[j] = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  for (li = start_id; li < end_id; li++) {
-    i = vl[li];
-    for (j = 0; j < 3; j++) {
-      c[j]   += v[i][j];
-      if (v[i][j] < vmin[j])
-        vmin[j] = v[i][j];
-      if (v[i][j] > vmax[j])
-        vmax[j] = v[i][j];
-    }
-    v_norm = sqrt(v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2]);
-    c[3] += v_norm;
-    if (v_norm < vmin[3])
-      vmin[3] = v_norm;
-    if (v_norm > vmax[3])
-      vmax[3] = v_norm;
   }
-
-  for (j = 0; j < 4; j++)
-    vsum[j] += c[j];
 }
 
 /*----------------------------------------------------------------------------
@@ -913,109 +863,86 @@ _cs_real_sstats_3d_w(cs_lnum_t          n,
                      double             vsum[4],
                      double             wsum[4])
 {
-  const cs_lnum_t block_size = 60;
-
-  int j;
-  cs_lnum_t i, sid, bid;
-  cs_lnum_t start_id, end_id;
-  double v_norm;
-  double c[8], s[8], lmin[4], lmax[4];
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
-#if defined(__xlc__)
-#pragma disjoint(*v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
-
-  for (j = 0; j < 4; j++) {
+  for (cs_lnum_t j = 0; j < 4; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
     wsum[j] = 0.;
   }
 
-# pragma omp parallel private(bid, start_id, end_id, i, j, \
-                              c, s, v_norm, lmin, lmax) if (n > CS_THR_MIN)
+# pragma omp parallel if (n > CS_THR_MIN)
   {
-    # pragma omp for
-    for (sid = 0; sid < n_sblocks; sid++) {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
 
-      for (j = 0; j < 4; j++) {
-        lmin[j] = HUGE_VAL;
-        lmax[j] = -HUGE_VAL;
-      }
-      for (j = 0; j < 8; j++)
-        s[j] = 0.0;
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_real_3_t *_v = v + s_id;
+    const cs_real_t *_w = w + s_id;
 
-      for (bid = 0; bid < blocks_in_sblocks; bid++) {
-        start_id = block_size * (blocks_in_sblocks*sid + bid);
-        end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        for (j = 0; j < 8; j++)
-          c[j] = 0.0;
-        for (i = start_id; i < end_id; i++) {
-          for (j = 0; j < 3; j++) {
-            c[j]   += v[i][j];
-            c[j+4] += v[i][j]*w[i];
-            if (v[i][j] < lmin[j])
-              lmin[j] = v[i][j];
-            if (v[i][j] > lmax[j])
-              lmax[j] = v[i][j];
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_real_t lmin[4], lmax[4]         ;
+    for (cs_lnum_t j = 0; j < 4; j++) {
+      lmin[j] = HUGE_VAL;
+      lmax[j] = -HUGE_VAL;
+    }
+
+    double lsum[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double c[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
+        for (cs_lnum_t i = start_id; i < end_id; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            c[j]   += _v[i][j];
+            c[j+4] += _v[i][j]*_w[i];
+            if (_v[i][j] < lmin[j])
+              lmin[j] = _v[i][j];
+            if (_v[i][j] > lmax[j])
+              lmax[j] = _v[i][j];
           }
-          v_norm = sqrt(v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2]);
+          double v_norm = sqrt(  _v[i][0]*_v[i][0]
+                               + _v[i][1]*_v[i][1]
+                               + _v[i][2]*_v[i][2]);
           c[3] += v_norm;
-          c[7] += v_norm*w[i];
+          c[7] += v_norm*_w[i];
           if (v_norm < lmin[3])
             lmin[3] = v_norm;
           if (v_norm > lmax[3])
             lmax[3] = v_norm;
         }
 
-        for (j = 0; j < 8; j++)
+        for (cs_lnum_t j = 0; j < 8; j++)
           s[j] += c[j];
       }
 
-#     pragma omp critical
-      {
-        for (j = 0; j < 4; j++) {
-          if (lmin[j] < vmin[j])
-            vmin[j] = lmin[j];
-          if (lmax[j] > vmax[j])
-            vmax[j] = lmax[j];
-          vsum[j] += s[j];
-          wsum[j] += s[4+j];
-        }
+      for (cs_lnum_t j = 0; j < 8; j++)
+        lsum[j] += s[j];
+
+    }
+
+#   pragma omp critical
+    {
+      for (cs_lnum_t j = 0; j < 4; j++) {
+        if (lmin[j] < vmin[j])
+          vmin[j] = lmin[j];
+        if (lmax[j] > vmax[j])
+          vmax[j] = lmax[j];
+        vsum[j] += lsum[j];
+        wsum[j] += lsum[4+j];
       }
-
     }
-  } /* End of OpenMP-threaded section */
 
-  for (j = 0; j < 8; j++)
-    c[j] = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  for (i = start_id; i < end_id; i++) {
-    for (j = 0; j < 3; j++) {
-      c[j]   += v[i][j];
-      c[j+4] += v[i][j]*w[i];
-      if (v[i][j] < vmin[j])
-        vmin[j] = v[i][j];
-      if (v[i][j] > vmax[j])
-        vmax[j] = v[i][j];
-    }
-    v_norm = sqrt(v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2]);
-    c[3] += v_norm;
-    c[7] += v_norm*w[i];
-    if (v_norm < vmin[3])
-      vmin[3] = v_norm;
-    if (v_norm > vmax[3])
-      vmax[3] = v_norm;
-  }
-
-  for (j = 0; j < 4; j++) {
-    vsum[j] += c[j];
-    wsum[j] += c[4+j];
   }
 }
 
@@ -1050,58 +977,58 @@ _cs_real_sstats_3d_w_l(cs_lnum_t          n,
                        double             vsum[4],
                        double             wsum[4])
 {
-  const cs_lnum_t block_size = 60;
-
-  int j;
-  cs_lnum_t i, sid, bid;
-  cs_lnum_t start_id, end_id;
-  double v_norm, wi;
-  double c[8], s[8], lmin[4], lmax[4];
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
-#if defined(__xlc__)
-#pragma disjoint(*wl, *v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
-
-  for (j = 0; j < 4; j++) {
+  for (cs_lnum_t j = 0; j < 4; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
     wsum[j] = 0.;
   }
 
-# pragma omp parallel private(bid, start_id, end_id, i, j, \
-                              wi, c, s, v_norm, lmin, lmax) if (n > CS_THR_MIN)
+# pragma omp parallel if (n > CS_THR_MIN)
   {
-    # pragma omp for
-    for (sid = 0; sid < n_sblocks; sid++) {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
 
-      for (j = 0; j < 4; j++) {
-        lmin[j] = HUGE_VAL;
-        lmax[j] = -HUGE_VAL;
-      }
-      for (j = 0; j < 8; j++)
-        s[j] = 0.0;
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_lnum_t *_wl = wl + s_id;
+    const cs_real_3_t *_v = v + s_id;
 
-      for (bid = 0; bid < blocks_in_sblocks; bid++) {
-        start_id = block_size * (blocks_in_sblocks*sid + bid);
-        end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        for (j = 0; j < 8; j++)
-          c[j] = 0.0;
-        for (i = start_id; i < end_id; i++) {
-          wi = w[wl[i]];
-          for (j = 0; j < 3; j++) {
-            c[j]   += v[i][j];
-            c[j+4] += v[i][j]*wi;
-            if (v[i][j] < lmin[j])
-              lmin[j] = v[i][j];
-            if (v[i][j] > lmax[j])
-              lmax[j] = v[i][j];
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_real_t lmin[4], lmax[4]         ;
+    for (cs_lnum_t j = 0; j < 4; j++) {
+      lmin[j] = HUGE_VAL;
+      lmax[j] = -HUGE_VAL;
+    }
+
+    double lsum[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double c[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
+        for (cs_lnum_t i = start_id; i < end_id; i++) {
+          cs_real_t wi = w[_wl[i]];
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            c[j]   += _v[i][j];
+            c[j+4] += _v[i][j]*wi;
+            if (_v[i][j] < lmin[j])
+              lmin[j] = _v[i][j];
+            if (_v[i][j] > lmax[j])
+              lmax[j] = _v[i][j];
           }
-          v_norm = sqrt(v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2]);
+          double v_norm = sqrt(  _v[i][0]*_v[i][0]
+                               + _v[i][1]*_v[i][1]
+                               + _v[i][2]*_v[i][2]);
           c[3] += v_norm;
           c[7] += v_norm*wi;
           if (v_norm < lmin[3])
@@ -1110,50 +1037,27 @@ _cs_real_sstats_3d_w_l(cs_lnum_t          n,
             lmax[3] = v_norm;
         }
 
-        for (j = 0; j < 8; j++)
+        for (cs_lnum_t j = 0; j < 8; j++)
           s[j] += c[j];
       }
 
-#     pragma omp critical
-      {
-        for (j = 0; j < 4; j++) {
-          if (lmin[j] < vmin[j])
-            vmin[j] = lmin[j];
-          if (lmax[j] > vmax[j])
-            vmax[j] = lmax[j];
-          vsum[j] += s[j];
-          wsum[j] += s[4+j];
-        }
+      for (cs_lnum_t j = 0; j < 8; j++)
+        lsum[j] += s[j];
+
+    }
+
+#   pragma omp critical
+    {
+      for (cs_lnum_t j = 0; j < 4; j++) {
+        if (lmin[j] < vmin[j])
+          vmin[j] = lmin[j];
+        if (lmax[j] > vmax[j])
+          vmax[j] = lmax[j];
+        vsum[j] += lsum[j];
+        wsum[j] += lsum[4+j];
       }
     }
-  } /* End of OpenMP-threaded section */
 
-  for (j = 0; j < 8; j++)
-    c[j] = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  for (i = start_id; i < end_id; i++) {
-    wi = w[wl[i]];
-    for (j = 0; j < 3; j++) {
-      c[j]   += v[i][j];
-      c[j+4] += v[i][j]*wi;
-      if (v[i][j] < vmin[j])
-        vmin[j] = v[i][j];
-      if (v[i][j] > vmax[j])
-        vmax[j] = v[i][j];
-    }
-    v_norm = sqrt(v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2]);
-    c[3] += v_norm;
-    c[7] += v_norm*wi;
-    if (v_norm < vmin[3])
-      vmin[3] = v_norm;
-    if (v_norm > vmax[3])
-      vmax[3] = v_norm;
-  }
-
-  for (j = 0; j < 4; j++) {
-    vsum[j] += c[j];
-    wsum[j] += c[4+j];
   }
 }
 
@@ -1187,50 +1091,47 @@ _cs_real_sstats_3d_l_w(cs_lnum_t          n,
                        double             vsum[4],
                        double             wsum[4])
 {
-  const cs_lnum_t block_size = 60;
-
-  int j;
-  cs_lnum_t li, i, sid, bid;
-  cs_lnum_t start_id, end_id;
-  double v_norm;
-  double c[8], s[8], lmin[4], lmax[4];
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
-#if defined(__xlc__)
-#pragma disjoint(*vl, *v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
-
-  for (j = 0; j < 4; j++) {
+  for (cs_lnum_t j = 0; j < 4; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
     wsum[j] = 0.;
   }
 
-# pragma omp parallel private(bid, start_id, end_id, li, i, j, \
-                              c, s, v_norm, lmin, lmax) if (n > CS_THR_MIN)
+# pragma omp parallel if (n > CS_THR_MIN)
   {
-    # pragma omp for
-    for (sid = 0; sid < n_sblocks; sid++) {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
 
-      for (j = 0; j < 4; j++) {
-        lmin[j] = HUGE_VAL;
-        lmax[j] = -HUGE_VAL;
-      }
-      for (j = 0; j < 8; j++)
-        s[j] = 0.0;
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_lnum_t *_vl = vl + s_id;
 
-      for (bid = 0; bid < blocks_in_sblocks; bid++) {
-        start_id = block_size * (blocks_in_sblocks*sid + bid);
-        end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-        for (j = 0; j < 8; j++)
-          c[j] = 0.0;
-        for (li = start_id; li < end_id; li++) {
-          i = vl[li];
-          for (j = 0; j < 3; j++) {
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_real_t lmin[4], lmax[4]         ;
+    for (cs_lnum_t j = 0; j < 4; j++) {
+      lmin[j] = HUGE_VAL;
+      lmax[j] = -HUGE_VAL;
+    }
+
+    double lsum[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double s[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double c[8] = {0., 0., 0., 0., 0., 0., 0., 0.};
+        for (cs_lnum_t l_id = start_id; l_id < end_id; l_id++) {
+          cs_lnum_t i = _vl[l_id];
+          for (cs_lnum_t j = 0; j < 3; j++) {
             c[j]   += v[i][j];
             c[j+4] += v[i][j]*w[i];
             if (v[i][j] < lmin[j])
@@ -1238,7 +1139,9 @@ _cs_real_sstats_3d_l_w(cs_lnum_t          n,
             if (v[i][j] > lmax[j])
               lmax[j] = v[i][j];
           }
-          v_norm = sqrt(v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2]);
+          double v_norm = sqrt(  v[i][0]*v[i][0]
+                               + v[i][1]*v[i][1]
+                               + v[i][2]*v[i][2]);
           c[3] += v_norm;
           c[7] += v_norm*w[i];
           if (v_norm < lmin[3])
@@ -1247,50 +1150,27 @@ _cs_real_sstats_3d_l_w(cs_lnum_t          n,
             lmax[3] = v_norm;
         }
 
-        for (j = 0; j < 8; j++)
+        for (cs_lnum_t j = 0; j < 8; j++)
           s[j] += c[j];
       }
 
-#     pragma omp critical
-      {
-        for (j = 0; j < 4; j++) {
-          if (lmin[j] < vmin[j])
-            vmin[j] = lmin[j];
-          if (lmax[j] > vmax[j])
-            vmax[j] = lmax[j];
-          vsum[j] += s[j];
-          wsum[j] += s[4+j];
-        }
+      for (cs_lnum_t j = 0; j < 8; j++)
+        lsum[j] += s[j];
+
+    }
+
+#   pragma omp critical
+    {
+      for (cs_lnum_t j = 0; j < 4; j++) {
+        if (lmin[j] < vmin[j])
+          vmin[j] = lmin[j];
+        if (lmax[j] > vmax[j])
+          vmax[j] = lmax[j];
+        vsum[j] += lsum[j];
+        wsum[j] += lsum[4+j];
       }
     }
-  } /* End of OpenMP-threaded section */
 
-  for (j = 0; j < 8; j++)
-    c[j] = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-  for (li = start_id; li < end_id; li++) {
-    i = vl[li];
-    for (j = 0; j < 3; j++) {
-      c[j]   += v[i][j];
-      c[j+4] += v[i][j]*w[i];
-      if (v[i][j] < vmin[j])
-        vmin[j] = v[i][j];
-      if (v[i][j] > vmax[j])
-        vmax[j] = v[i][j];
-    }
-    v_norm = sqrt(v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2]);
-    c[3] += v_norm;
-    c[7] += v_norm*w[i];
-    if (v_norm < vmin[3])
-      vmin[3] = v_norm;
-    if (v_norm > vmax[3])
-      vmax[3] = v_norm;
-  }
-
-  for (j = 0; j < 4; j++) {
-    vsum[j] += c[j];
-    wsum[j] += c[4+j];
   }
 }
 
@@ -1323,73 +1203,87 @@ _cs_real_sstats_nd(cs_lnum_t         n,
                    double            vmax[],
                    double            vsum[])
 {
-  const cs_lnum_t block_size = 60;
-
-  int j;
-  cs_lnum_t li, i, sid, bid;
-  cs_lnum_t start_id, end_id;
-  double c[9], s[9], lmin[9], lmax[9];
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
   assert(dim <= 9);
 
-#if defined(__xlc__)
-#pragma disjoint(*vl, *v, *vmin, *vmax, *vsum)
-#endif
-
-  for (j = 0; j < dim; j++) {
+  for (cs_lnum_t j = 0; j < dim; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
   }
 
-# pragma omp parallel private(bid, start_id, end_id, li, i, j, \
-                              c, s, lmin, lmax) if (n > CS_THR_MIN)
+# pragma omp parallel if (n > CS_THR_MIN)
   {
-    # pragma omp for
-    for (sid = 0; sid < n_sblocks; sid++) {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
 
-      for (j = 0; j < dim; j++) {
+    const cs_lnum_t _n = e_id - s_id;
+
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_real_t lmin[9], lmax[9];
+    double lsum[9];
+
+    for (cs_lnum_t j = 0; j < dim; j++) {
+      lmin[j] = HUGE_VAL;
+      lmax[j] = -HUGE_VAL;
+      lsum[j] = 0;
+    }
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      for (cs_lnum_t j = 0; j < dim; j++) {
         lmin[j] = HUGE_VAL;
         lmax[j] = -HUGE_VAL;
       }
-      for (j = 0; j < dim; j++)
-        s[j] = 0.0;
+
+      double s[9];
+      for (cs_lnum_t j = 0; j < dim; j++)
+        s[j] = 0.;
 
       if (vl == NULL) {
 
-        for (bid = 0; bid < blocks_in_sblocks; bid++) {
-          start_id = block_size * (blocks_in_sblocks*sid + bid);
-          end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-          for (j = 0; j < dim; j++)
-            c[j] = 0.0;
-          for (i = start_id; i < end_id; i++) {
-            for (j = 0; j < dim; j++) {
-              c[j] += v[i*dim + j];
-              if (v[i*dim + j] < lmin[j])
-                lmin[j] = v[i*dim + j];
-              if (v[i*dim+j] > lmax[j])
-                lmax[j] = v[i*dim+j];
+        const cs_real_t *_v = v + s_id;
+
+        for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+          cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+          cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+          if (end_id > _n)
+            end_id = _n;
+          double c[9];
+          for (cs_lnum_t j = 0; j < dim; j++)
+            c[j] = 0.;
+          for (cs_lnum_t i = start_id; i < end_id; i++) {
+            for (cs_lnum_t j = 0; j < dim; j++) {
+              c[j] += _v[i*dim + j];
+              if (_v[i*dim + j] < lmin[j])
+                lmin[j] = _v[i*dim + j];
+              if (_v[i*dim+j] > lmax[j])
+                lmax[j] = _v[i*dim+j];
             }
           }
-          for (j = 0; j < dim; j++)
+          for (cs_lnum_t j = 0; j < dim; j++)
             s[j] += c[j];
         }
 
       }
       else {
 
-        for (bid = 0; bid < blocks_in_sblocks; bid++) {
-          start_id = block_size * (blocks_in_sblocks*sid + bid);
-          end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-          for (j = 0; j < dim; j++)
-            c[j] = 0.0;
-          for (li = start_id; li < end_id; li++) {
-            i = vl[li];
-            for (j = 0; j < dim; j++) {
+        const cs_lnum_t *_vl = vl + s_id;
+
+        for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+          cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+          cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+          if (end_id > _n)
+            end_id = _n;
+          double c[9];
+          for (cs_lnum_t j = 0; j < dim; j++)
+            c[j] = 0.;
+          for (cs_lnum_t li = start_id; li < end_id; li++) {
+            cs_lnum_t i = _vl[li];
+            for (cs_lnum_t j = 0; j < dim; j++) {
               c[j] += v[i*dim + j];
               if (v[i*dim + j] < lmin[j])
                 lmin[j] = v[i*dim + j];
@@ -1397,61 +1291,29 @@ _cs_real_sstats_nd(cs_lnum_t         n,
                 lmax[j] = v[i*dim+j];
             }
           }
-          for (j = 0; j < dim; j++)
+          for (cs_lnum_t j = 0; j < dim; j++)
             s[j] += c[j];
         }
 
       }
 
-#     pragma omp critical
-      {
-        for (j = 0; j < dim; j++) {
-          if (lmin[j] < vmin[j])
-            vmin[j] = lmin[j];
-          if (lmax[j] > vmax[j])
-            vmax[j] = lmax[j];
-          vsum[j] += s[j];
-        }
-      }
+      for (cs_lnum_t j = 0; j < dim; j++)
+        lsum[j] += s[j];
 
     }
-  } /* End of OpenMP-threaded section */
 
-  for (j = 0; j < dim; j++)
-    c[j] = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-
-  if (vl == NULL) {
-
-    for (i = start_id; i < end_id; i++) {
-      for (j = 0; j < dim; j++) {
-        c[j] += v[i*dim + j];
-        if (v[i*dim + j] < vmin[j])
-          vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > vmax[j])
-          vmax[j] = v[i*dim+j];
+#   pragma omp critical
+    {
+      for (cs_lnum_t j = 0; j < dim; j++) {
+        if (lmin[j] < vmin[j])
+          vmin[j] = lmin[j];
+        if (lmax[j] > vmax[j])
+          vmax[j] = lmax[j];
+        vsum[j] += lsum[j];
       }
     }
 
   }
-  else {
-
-    for (li = start_id; li < end_id; li++) {
-      i = vl[li];
-      for (j = 0; j < dim; j++) {
-        c[j] += v[i*dim + j];
-        if (v[i*dim + j] < vmin[j])
-          vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > vmax[j])
-          vmax[j] = v[i*dim+j];
-      }
-    }
-
-  }
-
-  for (j = 0; j < dim; j++)
-    vsum[j] += c[j];
 }
 
 /*----------------------------------------------------------------------------
@@ -1490,95 +1352,122 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
                      double            vsum[],
                      double            wsum[])
 {
-  const cs_lnum_t block_size = 60;
-
-  int j;
-  cs_lnum_t li, i, sid, bid;
-  cs_lnum_t start_id, end_id;
-  double wi, c[18], s[18], lmin[9], lmax[9];
-
-  cs_lnum_t n_blocks = n / block_size;
-  cs_lnum_t n_sblocks = sqrt(n_blocks);
-  cs_lnum_t blocks_in_sblocks = (n_sblocks > 0) ? n_blocks / n_sblocks : 0;
-
-  const int dim2 = dim*2;
-
   assert(dim <= 9);
 
-#if defined(__xlc__)
-#pragma disjoint(*vl, *wl, *v, *w, *vmin, *vmax, *vsum, *wsum)
-#endif
-
-  for (j = 0; j < dim; j++) {
+  for (cs_lnum_t j = 0; j < dim; j++) {
     vmin[j] = HUGE_VAL;
     vmax[j] = -HUGE_VAL;
     vsum[j] = 0.;
     wsum[j] = 0.;
   }
 
-# pragma omp parallel private(bid, start_id, end_id, li, i, j, \
-                              wi, c, s, lmin, lmax) if (n > CS_THR_MIN)
+# pragma omp parallel if (n > CS_THR_MIN)
   {
-    # pragma omp for
-    for (sid = 0; sid < n_sblocks; sid++) {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
 
-      for (j = 0; j < dim; j++) {
+    const cs_lnum_t _n = e_id - s_id;
+
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    const int dim2 = dim*2;
+
+    cs_real_t lmin[9], lmax[9];
+    double lsum[18];
+
+    for (cs_lnum_t j = 0; j < dim; j++) {
+      lmin[j] = HUGE_VAL;
+      lmax[j] = -HUGE_VAL;
+      lsum[j] = 0;
+      lsum[j+dim] = 0;
+    }
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      for (cs_lnum_t j = 0; j < dim; j++) {
         lmin[j] = HUGE_VAL;
         lmax[j] = -HUGE_VAL;
       }
-      for (j = 0; j < dim2; j++)
-        s[j] = 0.0;
+
+      double s[18];
+      for (cs_lnum_t j = 0; j < dim2; j++)
+        s[j] = 0.;
 
       if (vl == NULL && wl == NULL) {
-        for (bid = 0; bid < blocks_in_sblocks; bid++) {
-          start_id = block_size * (blocks_in_sblocks*sid + bid);
-          end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-          for (j = 0; j < dim2; j++)
-            c[j] = 0.0;
-          for (i = start_id; i < end_id; i++) {
-            for (j = 0; j < dim; j++) {
-              c[j]     += v[i*dim + j];
-              c[j+dim] += v[i*dim + j]*w[i];
-              if (v[i*dim + j] < lmin[j])
-                lmin[j] = v[i*dim + j];
-              if (v[i*dim+j] > lmax[j])
-                lmax[j] = v[i*dim+j];
+
+        const cs_real_t *_v = v + s_id;
+        const cs_real_t *_w = w + s_id;
+
+        for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+          cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+          cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+          if (end_id > _n)
+            end_id = _n;
+          double c[18];
+          for (cs_lnum_t j = 0; j < dim2; j++)
+            c[j] = 0.;
+          for (cs_lnum_t i = start_id; i < end_id; i++) {
+            for (cs_lnum_t j = 0; j < dim; j++) {
+              c[j]     += _v[i*dim + j];
+              c[j+dim] += _v[i*dim + j]*_w[i];
+              if (_v[i*dim + j] < lmin[j])
+                lmin[j] = _v[i*dim + j];
+              if (_v[i*dim+j] > lmax[j])
+                lmax[j] = _v[i*dim+j];
             }
           }
-          for (j = 0; j < dim2; j++)
+          for (cs_lnum_t j = 0; j < dim2; j++)
             s[j] += c[j];
         }
       }
+
       else if (vl == NULL) {
-        for (bid = 0; bid < blocks_in_sblocks; bid++) {
-          start_id = block_size * (blocks_in_sblocks*sid + bid);
-          end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-          for (j = 0; j < dim2; j++)
-            c[j] = 0.0;
-          for (i = start_id; i < end_id; i++) {
-            wi = wl[i];
-            for (j = 0; j < dim; j++) {
-              c[j]     += v[i*dim + j];
-              c[j+dim] += v[i*dim + j]*wi;
-              if (v[i*dim + j] < lmin[j])
-                lmin[j] = v[i*dim + j];
-              if (v[i*dim+j] > lmax[j])
-                lmax[j] = v[i*dim+j];
+
+        const cs_lnum_t *_wl = wl + s_id;
+        const cs_real_t *_v = v + s_id;
+
+        for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+          cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+          cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+          if (end_id > _n)
+            end_id = _n;
+          double c[18];
+          for (cs_lnum_t j = 0; j < dim2; j++)
+            c[j] = 0.;
+          for (cs_lnum_t i = start_id; i < end_id; i++) {
+            cs_lnum_t wi = w[_wl[i]];
+            for (cs_lnum_t j = 0; j < dim; j++) {
+              c[j]     += _v[i*dim + j];
+              c[j+dim] += _v[i*dim + j]*wi;
+              if (_v[i*dim + j] < lmin[j])
+                lmin[j] = _v[i*dim + j];
+              if (_v[i*dim+j] > lmax[j])
+                lmax[j] = _v[i*dim+j];
             }
           }
-          for (j = 0; j < dim2; j++)
+          for (cs_lnum_t j = 0; j < dim2; j++)
             s[j] += c[j];
         }
+
       }
       else { /* vl != NULL */
-        for (bid = 0; bid < blocks_in_sblocks; bid++) {
-          start_id = block_size * (blocks_in_sblocks*sid + bid);
-          end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-          for (j = 0; j < dim2; j++)
-            c[j] = 0.0;
-          for (li = start_id; li < end_id; li++) {
-            i = vl[li];
-            for (j = 0; j < dim; j++) {
+
+        const cs_lnum_t *_vl = vl + s_id;
+
+        for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+          cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+          cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+          if (end_id > _n)
+            end_id = _n;
+          double c[18];
+          for (cs_lnum_t j = 0; j < dim2; j++)
+            c[j] = 0.;
+          for (cs_lnum_t li = start_id; li < end_id; li++) {
+            cs_lnum_t i = _vl[li];
+            for (cs_lnum_t j = 0; j < dim; j++) {
               c[j]     += v[i*dim + j];
               c[j+dim] += v[i*dim + j]*w[i];
               if (v[i*dim + j] < lmin[j])
@@ -1587,73 +1476,29 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
                 lmax[j] = v[i*dim+j];
             }
           }
-          for (j = 0; j < dim2; j++)
+          for (cs_lnum_t j = 0; j < dim2; j++)
             s[j] += c[j];
         }
+
       }
 
-#     pragma omp critical
-      {
-        for (j = 0; j < dim; j++) {
-          if (lmin[j] < vmin[j])
-            vmin[j] = lmin[j];
-          if (lmax[j] > vmax[j])
-            vmax[j] = lmax[j];
-          vsum[j] += s[j];
-          wsum[j] += s[dim+j];
-        }
-      }
+      for (cs_lnum_t j = 0; j < dim2; j++)
+        lsum[j] += s[j];
 
     }
-  } /* End of OpenMP-threaded section */
 
-  for (j = 0; j < dim2; j++)
-    c[j] = 0.0;
-  start_id = block_size * n_sblocks*blocks_in_sblocks;
-  end_id = n;
-
-  if (vl == NULL && wl == NULL) {
-    for (i = start_id; i < end_id; i++) {
-      for (j = 0; j < dim; j++) {
-        c[j]     += v[i*dim + j];
-        c[j+dim] += v[i*dim + j]*w[i];
-        if (v[i*dim + j] < vmin[j])
-          vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > vmax[j])
-          vmax[j] = v[i*dim+j];
+#   pragma omp critical
+    {
+      for (cs_lnum_t j = 0; j < dim; j++) {
+        if (lmin[j] < vmin[j])
+          vmin[j] = lmin[j];
+        if (lmax[j] > vmax[j])
+          vmax[j] = lmax[j];
+        vsum[j] += lsum[j];
+        wsum[j] += lsum[dim+j];
       }
     }
-  }
-  else if (vl == NULL) {
-    for (i = start_id; i < end_id; i++) {
-      wi = wl[i];
-      for (j = 0; j < dim; j++) {
-        c[j]     += v[i*dim + j];
-        c[j+dim] += v[i*dim + j]*wi;
-        if (v[i*dim + j] < vmin[j])
-          vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > vmax[j])
-          vmax[j] = v[i*dim+j];
-      }
-    }
-  }
-  else { /* vl != NULL */
-    for (li = start_id; li < end_id; li++) {
-      i = vl[li];
-      for (j = 0; j < dim; j++) {
-        c[j]     += v[i*dim + j];
-        c[j+dim] += v[i*dim + j]*w[i];
-        if (v[i*dim + j] < vmin[j])
-          vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > vmax[j])
-          vmax[j] = v[i*dim+j];
-      }
-    }
-  }
 
-  for (j = 0; j < dim; j++) {
-    vsum[j] += c[j];
-    wsum[j] += c[dim+j];
   }
 }
 

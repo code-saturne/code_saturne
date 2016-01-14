@@ -103,6 +103,23 @@ BEGIN_C_DECLS
 
 */
 
+/*! \fn inline static cs_lnum_t cs_align(cs_lnum_t i, cs_lnum_t j)
+ *
+ * \brief Given a base index i, return the next index aligned with a size m.
+ *
+ * This index is computed as follows:
+ *
+ * if i > 0:
+ *   ((i - 1) / m + 1) * m
+ * if i = 0:
+ *   0
+ *
+ * \param[in]  i  base index
+ * \param[in]  m  block size to align with
+ *
+ * \return  aligned index
+ */
+
 /*============================================================================
  * Global variables
  *============================================================================*/

@@ -510,6 +510,28 @@ extern MPI_Comm       cs_glob_mpi_comm;      /* Main MPI intra-communicator */
 
 #endif
 
+/*=============================================================================
+ * Public functions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Given a base index i, return the next index aligned with a size m.
+ *
+ * parameters:
+ *   i <-- base index
+ *   m <-- block size to align with
+ *
+ * returns:
+ *   aligned index
+ *----------------------------------------------------------------------------*/
+
+inline static cs_lnum_t
+cs_align(cs_lnum_t  i,
+         cs_lnum_t  m)
+{
+  return ((i > 0) ? ((i-1)/m+1)*m : 0);
+}
+
 /*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus

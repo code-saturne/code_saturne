@@ -2,7 +2,7 @@
 #define __CS_BLAS_H__
 
 /*============================================================================
- * Portability and fallback layer for BLAS functions
+ * BLAS (Basic Linear Algebra Subroutine) functions
  *============================================================================*/
 
 /*
@@ -48,8 +48,35 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- *  Public function prototypes or wrapper macros
+ * Type definitions
  *============================================================================*/
+
+/* BLAS reduction algorithm families */
+
+typedef enum {
+
+  CS_BLAS_REDUCE_SUPERBLOCK,
+  CS_BLAS_REDUCE_KAHAN
+
+} cs_blas_reduce_t;
+
+/*============================================================================
+ *  Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the preferred BLAS reduction algorithm family.
+ *
+ * This may not be enforced for all algorithms, though it should at least
+ * be enforced for the most general functions such as \ref cs_dot.
+ *
+ * \param[in]  mode   BLAS mode to use
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_blas_set_reduce_algorithm(cs_blas_reduce_t  mode);
 
 /*----------------------------------------------------------------------------
  * Constant times a vector plus a vector: y <-- ax + y
@@ -70,8 +97,6 @@ cs_axpy(cs_lnum_t         n,
 /*----------------------------------------------------------------------------
  * Return the dot product of 2 vectors: x.y
  *
- * For better precision, a superblock algorithm is used.
- *
  * parameters:
  *   n <-- size of arrays x and y
  *   x <-- array of floating-point values
@@ -87,31 +112,7 @@ cs_dot(cs_lnum_t         n,
        const cs_real_t  *y);
 
 /*----------------------------------------------------------------------------
- * Return the global residual of 2 extensive vectors:
- *  1/sum(vol) . sum(X.Y/vol)
- *
- * For better precision, a superblock algorithm is used.
- *
- * parameters:
- *   n   <-- size of arrays x and y
- *   vol <-- array of floating-point values
- *   x   <-- array of floating-point values
- *   y   <-- array of floating-point values
- *
- * returns:
- *   global residual
- *----------------------------------------------------------------------------*/
-
-double
-cs_gres(cs_lnum_t         n,
-        const cs_real_t  *vol,
-        const cs_real_t  *x,
-        const cs_real_t  *y);
-
-/*----------------------------------------------------------------------------
  * Return dot products of a vector with itself: x.x
- *
- * For better precision, a superblock algorithm is used.
  *
  * parameters:
  *   n  <-- size of arrays x and y
@@ -131,8 +132,6 @@ cs_dot_xx(cs_lnum_t         n,
  * The products could be computed separately, but computing them
  * simultaneously adds more optimization opportunities and possibly better
  * cache behavior.
- *
- * For better precision, a superblock algorithm is used.
  *
  * parameters:
  *   n  <-- size of arrays x and y
@@ -155,8 +154,6 @@ cs_dot_xx_xy(cs_lnum_t                    n,
  * The products could be computed separately, but computing them
  * simultaneously adds more optimization opportunities and possibly better
  * cache behavior.
- *
- * For better precision, a superblock algorithm is used.
  *
  * parameters:
  *   n  <-- size of arrays x and y
@@ -181,8 +178,6 @@ cs_dot_xy_yz(cs_lnum_t                    n,
  * The products could be computed separately, but computing them
  * simultaneously adds more optimization opportunities and possibly better
  * cache behavior.
- *
- * For better precision, a superblock algorithm is used.
  *
  * parameters:
  *   n  <-- size of arrays x and y
@@ -209,8 +204,6 @@ cs_dot_xx_xy_yz(cs_lnum_t                    n,
  * The products could be computed separately, but computing them
  * simultaneously adds more optimization opportunities and possibly better
  * cache behavior.
- *
- * For better precision, a superblock algorithm is used.
  *
  * parameters:
  *   n  <-- size of arrays x and y
@@ -241,8 +234,6 @@ cs_dot_xx_yy_xy_xz_yz(cs_lnum_t                    n,
  * In parallel mode, the local results are summed on the default
  * global communicator.
  *
- * For better precision, a superblock algorithm is used.
- *
  * parameters:
  *   n <-- size of arrays x and y
  *   x <-- array of floating-point values
@@ -254,6 +245,26 @@ cs_dot_xx_yy_xy_xz_yz(cs_lnum_t                    n,
 
 double
 cs_gdot(cs_lnum_t         n,
+        const cs_real_t  *x,
+        const cs_real_t  *y);
+
+/*----------------------------------------------------------------------------
+ * Return the global residual of 2 extensive vectors:
+ *  1/sum(vol) . sum(X.Y/vol)
+ *
+ * parameters:
+ *   n   <-- size of arrays x and y
+ *   vol <-- array of floating-point values
+ *   x   <-- array of floating-point values
+ *   y   <-- array of floating-point values
+ *
+ * returns:
+ *   global residual
+ *----------------------------------------------------------------------------*/
+
+double
+cs_gres(cs_lnum_t         n,
+        const cs_real_t  *vol,
         const cs_real_t  *x,
         const cs_real_t  *y);
 

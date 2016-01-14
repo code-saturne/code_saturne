@@ -83,8 +83,10 @@ const char ext_blas_type[] = "external";
 const char ext_blas_type[] = "";
 #endif
 
-/* Size of arrays for tests */
+/* Reduction algorithm name */
+const char *reduce_name[] = {"superblock", "Kahan compensated sum"};
 
+/* Size of arrays for tests */
 static const int _n_sizes = 9;
 static const cs_lnum_t _n_elts[]
   = {1000000, 200000, 50000, 20000, 10000, 3000, 1000, 500, 100};
@@ -184,31 +186,6 @@ _ddot_canonical(cs_lnum_t      n,
 # pragma omp parallel for reduction(+: s)
   for (i = 0; i < n; i++)
     s += (x[i] * y[i]);
-
-  return s;
-}
-
-/*----------------------------------------------------------------------------*/
-/* Return the dot product of 2 vectors using Kahan's sum: x.y                 */
-/*----------------------------------------------------------------------------*/
-
-static double
-_ddot_kahan(cs_lnum_t      n,
-            const double  *x,
-            const double  *y)
-{
-  cs_lnum_t  i;
-  double     s = 0, c = 0;
-
-  if (n < 1)
-    return s;
-
-  for (i = 0; i < n; i++) {
-    double z = (x[i] * y[i]) - c;
-    double t = s + z;
-    c = (t - s) - z;
-    s = t;
-  }
 
   return s;
 }
@@ -504,47 +481,52 @@ _dot_product_1(double   t_measure,
 
       test_sum = test_sum - floor(test_sum);
 
-      wt0 = cs_timer_wtime(), wt1 = wt0;
+      for (cs_blas_reduce_t j = 0; j < 2; j++) {
 
-      if (t_measure > 0)
-        n_runs = 8;
-      else
-        n_runs = 1;
-      run_id = 0;
-      while (run_id < n_runs) {
-        double test_sum_mult = 1.0/n_runs;
+        cs_blas_set_reduce_algorithm(j);
+
+        wt0 = cs_timer_wtime(), wt1 = wt0;
+        if (t_measure > 0)
+          n_runs = 8;
+        else
+          n_runs = 1;
+        run_id = 0;
         while (run_id < n_runs) {
-          double s1 = cs_dot(n, x, y);
+          double test_sum_mult = 1.0/n_runs;
+          while (run_id < n_runs) {
+            double s1 = cs_dot(n, x, y);
 #if defined(HAVE_MPI)
-          if (_global) {
-            double s1_glob = 0.0;
-            MPI_Allreduce(&s1, &s1_glob, 1, MPI_DOUBLE, MPI_SUM,
-                          cs_glob_mpi_comm);
-            s1 = s1_glob;
-          }
+            if (_global) {
+              double s1_glob = 0.0;
+              MPI_Allreduce(&s1, &s1_glob, 1, MPI_DOUBLE, MPI_SUM,
+                            cs_glob_mpi_comm);
+              s1 = s1_glob;
+            }
 #endif
-          test_sum += test_sum_mult*s1;
-          run_id++;
+            test_sum += test_sum_mult*s1;
+            run_id++;
+          }
+          wt1 = cs_timer_wtime();
+          if (wt1 - wt0 < t_measure)
+            n_runs *= 2;
         }
-        wt1 = cs_timer_wtime();
-        if (wt1 - wt0 < t_measure)
-          n_runs *= 2;
+
+        if (_global == 0)
+          bft_printf("\n"
+                     "Local dot product %s with %s (%d elts.)\n"
+                     "-----------------\n",
+                     type_name[type_id], reduce_name[j], (int)n);
+        else
+          bft_printf("\n"
+                     "Global dot product %s with %s (%d elts/rank)\n"
+                     "------------------\n",
+                     type_name[type_id], reduce_name[j], (int)n);
+
+        bft_printf("  (calls: %d)\n", n_runs);
+
+        _print_stats(n_runs, n_ops, 0, wt1 - wt0);
+
       }
-
-      if (_global == 0)
-        bft_printf("\n"
-                   "Local dot product %s (%d elts.)\n"
-                   "-----------------\n",
-                   type_name[type_id], (int)n);
-      else
-        bft_printf("\n"
-                   "Global dot product %s (%d elts/rank)\n"
-                   "------------------\n",
-                   type_name[type_id], (int)n);
-
-      bft_printf("  (calls: %d)\n", n_runs);
-
-      _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
       if (type_id == 0)
         BFT_FREE(y);
@@ -668,33 +650,39 @@ _dot_product_2(double  t_measure)
 
     test_sum = test_sum - floor(test_sum);
 
-    wt0 = cs_timer_wtime(), wt1 = wt0;
+    for (cs_blas_reduce_t j = 0; j < 2; j++) {
 
-    if (t_measure > 0)
-      n_runs = 8;
-    else
-      n_runs = 1;
-    run_id = 0;
-    while (run_id < n_runs) {
-      double s1, s2;
-      double test_sum_mult = 1.0/n_runs;
+      cs_blas_set_reduce_algorithm(j);
+
+      wt0 = cs_timer_wtime(), wt1 = wt0;
+
+      if (t_measure > 0)
+        n_runs = 8;
+      else
+        n_runs = 1;
+      run_id = 0;
       while (run_id < n_runs) {
-        cs_dot_xx_xy(n, x, y, &s1, &s2);
-        test_sum += test_sum_mult*s1;
-        run_id++;
+        double s1, s2;
+        double test_sum_mult = 1.0/n_runs;
+        while (run_id < n_runs) {
+          cs_dot_xx_xy(n, x, y, &s1, &s2);
+          test_sum += test_sum_mult*s1;
+          run_id++;
+        }
+        wt1 = cs_timer_wtime();
+        if (wt1 - wt0 < t_measure)
+          n_runs *= 2;
       }
-      wt1 = cs_timer_wtime();
-      if (wt1 - wt0 < t_measure)
-        n_runs *= 2;
+
+      bft_printf("\n"
+                 "Double local dot product X.X, X.Y with %s (%d elts.)\n"
+                 "---------------------------------\n", reduce_name[j], (int)n);
+
+      bft_printf("  (calls: %d)\n", n_runs);
+
+      _print_stats(n_runs, n_ops, 0, wt1 - wt0);
+
     }
-
-    bft_printf("\n"
-               "Double local dot product X.X, X.Y (%d elts.)\n"
-               "---------------------------------\n", (int)n);
-
-    bft_printf("  (calls: %d)\n", n_runs);
-
-    _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
     BFT_FREE(x);
     BFT_FREE(y);
@@ -2026,37 +2014,36 @@ main (int argc, char *argv[])
     }
 
     s = _ddot_canonical(n, x, y);
-    bft_printf("  Canonical  dot product error for n = %7d: %12.5e\n",
-               (int)n, ref_s - s);
+    bft_printf("  %-22s dot product error for n = %7d: %12.5e\n",
+               "canonical", (int)n, ref_s - s);
 
-    s = _ddot_kahan(n, x, y);
-    bft_printf("  Kahan sum  dot product error for n = %7d: %12.5e\n",
-               (int)n, ref_s - s);
-
-    s = cs_dot(n, x, y);
-    bft_printf("  Superblock dot product error for n = %7d: %12.5e\n",
-               (int)n, ref_s - s);
+    for (cs_blas_reduce_t j = 0; j < 2; j++) {
+      cs_blas_set_reduce_algorithm(j);
+      s = cs_dot(n, x, y);
+      bft_printf("  %-22s dot product error for n = %7d: %12.5e\n",
+                 reduce_name[j], (int)n, ref_s - s);
+    }
 
 #if defined(HAVE_ESSL)
     s = ddot(n, (double *)x, 1, (double *)y, 1);
-    bft_printf("  ESSL       dot product error for n = %7d: %12.5e\n",
-               (int)n, ref_s - s);
+    bft_printf("  %-22s dot product error for n = %7d: %12.5e\n",
+               "ESSL", (int)n, ref_s - s);
 #elif defined(HAVE_ACML)
     s = ddot(n, (double *)x, 1, (double *)y, 1);
-    bft_printf("  ACML       dot product error for n = %7d: %12.5e\n",
-               (int)n, ref_s - s);
+    bft_printf("  %-22s dot product error for n = %7d: %12.5e\n",
+               "ACML", (int)n, ref_s - s);
 #elif defined(HAVE_MKL)
     s = cblas_ddot(n, x, 1, y, 1);
-    bft_printf("  MKL        dot product error for n = %7d: %12.5e\n",
-               (int)n, ref_s - s);
+    bft_printf("  %-22s dot product error for n = %7d: %12.5e\n",
+               "MKL", (int)n, ref_s - s);
 #elif defined(HAVE_ATLAS)
     s = cblas_ddot(n, x, 1, y, 1);
-    bft_printf("  ATLAS      dot product error for n = %7d: %12.5e\n",
-               (int)n, ref_s - s);
+    bft_printf("  %-22s dot product error for n = %7d: %12.5e\n",
+               "ATLAS", (int)n, ref_s - s);
 #elif defined(HAVE_CBLAS)
     s = cblas_ddot(n, x, 1, y, 1);
-    bft_printf("  BLAS       dot product error for n = %7d: %12.5e\n",
-               (int)n, ref_s - s);
+    bft_printf("  %-22s dot product error for n = %7d: %12.5e\n",
+               "C BLAS", (int)n, ref_s - s);
 #endif
 
     bft_printf("\n");
