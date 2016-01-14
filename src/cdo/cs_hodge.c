@@ -1316,7 +1316,7 @@ cs_hodge_build_local(int                         c_id,
                      const cs_cdo_quantities_t  *quant,
                      cs_hodge_builder_t         *hb)
 {
-  int n_ent;
+  int  n_ent = 0;
 
   /* Sanity check */
   assert(hb != NULL);

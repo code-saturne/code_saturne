@@ -570,7 +570,7 @@ cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
   /* Loop on border faces.
      Add diagonal term for vertices attached to a boundary face where
      the advection field points inward */
-  if (cs_advection_field_is_cellwise(builder->adv)) {
+  if (cs_advection_field_is_cellwise(adv)) {
 
     for (f_id = quant->n_i_faces; f_id < quant->n_faces; f_id++) {
 
@@ -582,7 +582,7 @@ cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
       const cs_lnum_t  c_id = connect->f2c->col_id[connect->f2c->idx[f_id]];
 
       /* Retrieve the value of the advection field in the current cell */
-      cs_advection_field_get_cell_vector(c_id, builder->adv, &advf);
+      cs_advection_field_get_cell_vector(c_id, adv, &advf);
 
       const double  dp = _dp3(advf.unitv, qf.unitv);
       if (fabs(dp) > cs_get_zero_threshold()) {

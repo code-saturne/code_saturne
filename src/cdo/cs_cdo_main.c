@@ -184,6 +184,9 @@ _setup(cs_mesh_t             *m,
 static void
 _finalize(cs_domain_t  **domain)
 {
+  /* Write a restart file */
+  cs_domain_write_restart(*domain);
+
   /* Free temporary buffers allocated for each kind of numerical used */
   cs_cdovb_scaleq_finalize();
   cs_cdofb_scaleq_finalize();

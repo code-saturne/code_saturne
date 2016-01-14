@@ -161,6 +161,21 @@ cs_domain_free(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set auxiliary parameters related to a cs_domain_t structure
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in]       keyname   name of key related to the parameter to set
+ * \param[in]       keyval    value related to the parameter to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_param(cs_domain_t    *domain,
+                    const char     *keyname,
+                    const char     *keyval);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Summary of a cs_domain_t structure
  *
  * \param[in]   domain    pointer to the cs_domain_t structure to summarize
@@ -183,19 +198,6 @@ cs_domain_last_setup(cs_domain_t    *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the boundary type by default
- *
- * \param[in, out]   domain        pointer to a cs_domain_t structure
- * \param[in]        bdy_name      key name of the default boundary
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_set_default_boundary(cs_domain_t       *domain,
-                               const char        *bdy_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Add a boundary type defined on a mesh location
  *
  * \param[in, out]   domain       pointer to a cs_domain_t structure
@@ -211,35 +213,42 @@ cs_domain_add_boundary(cs_domain_t               *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the frequency at which output is done in listing
+ * \brief  Define the value of the time step thanks to a predefined function
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
- * \param[in]        freq     each freq iterations
+ * \param[in]        func      pointer to a cs_timestep_func_t function
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_output_freq(cs_domain_t   *domain,
-                          int            freq);
+cs_domain_def_time_step_by_function(cs_domain_t          *domain,
+                                    cs_timestep_func_t   *func);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup the time step structure related to a domain
+ * \brief  Define the value of the time step.
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
- * \param[in]        t_end     final physical time
- * \param[in]        nt_max    max. number of temporal iterations
- * \param[in]        defkey    way of defining the time step
- * \param[in]        defval    definition of the time step
+ * \param[in]        dt        value of the constant time step
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_time_step(cs_domain_t   *domain,
-                        double         t_end,
-                        int            nt_max,
-                        const char    *defkey,
-                        void          *defval);
+cs_domain_def_time_step_by_value(cs_domain_t   *domain,
+                                 double         dt);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if one needs to continue iterations in time
+ *
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_domain_needs_iterate(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -251,6 +260,17 @@ cs_domain_set_time_step(cs_domain_t   *domain,
 
 void
 cs_domain_define_current_time_step(cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update time step after one temporal iteration
+ *
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_increment_time(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -442,30 +462,6 @@ cs_domain_create_fields(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if one needs to continue iterations in time
- *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_domain_needs_iterate(cs_domain_t  *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update time step after one temporal iteration
- *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_increment_time(cs_domain_t  *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Solve all the equations of a computational domain for one time step
  *
  * \param[in, out]  domain     pointer to a cs_domain_t structure
@@ -474,6 +470,17 @@ cs_domain_increment_time(cs_domain_t  *domain);
 
 void
 cs_domain_solve(cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write a restart file for the CDO module
+ *
+ * \param[in]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_write_restart(const cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 

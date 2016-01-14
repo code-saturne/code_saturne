@@ -147,6 +147,8 @@ cs_user_cdo_activated(void)
 void
 cs_user_cdo_add_mesh_locations(void)
 {
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+
   /* ===========================
      Define mesh locations
      ===========================
@@ -186,22 +188,24 @@ cs_user_cdo_add_mesh_locations(void)
 void
 cs_user_cdo_init_domain(cs_domain_t   *domain)
 {
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
-  /* =========================================
-     Define boundary of the domain
-     =========================================
+  /* ======================
+     Boundary of the domain
+     ====================== */
 
-     Choose a boundary by default
-     Boundary keyword is one of the following keyword
-     >> wall or symmetry
+  /* Choose a boundary by default.
+     >> cs_domain_set_param(domain, "default_boundary", keyval);
+
+     keyval is one of the following keyword: wall or symmetry
   */
 
-  cs_domain_set_default_boundary(domain, "wall");
+  cs_domain_set_param(domain, "default_boundary", "symmetry");
 
   /* Add a boundary
-     >>   cs_domain_add_boundary(domain,
-                                 mesh location name,
-                                 boundary keyword)
+     >> cs_domain_add_boundary(domain,
+                               mesh location name,
+                               boundary keyword)
 
      mesh location name is either a predefined mesh location or one defined
      by user
@@ -213,69 +217,58 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
   cs_domain_add_boundary(domain, "left", "inlet");
   cs_domain_add_boundary(domain, "right", "outlet");
 
-  /* =========================================
+  /* ====================
      Time step management
-     =========================================
+     ==================== */
+
+  /* Set the final time
+     >> cs_domain_set_param(domain, "time_max", keyval);
+
+     keyval is for instance "10."
+
+     Set the max. number of time steps
+     >> cs_domain_set_param(domain, "nt_max", keyval);
+
+     keyval is for instance "100"
 
      If there is an inconsistency between the max. number of iteration in
      time and the final physical time, the first condition encountered stops
      the calculation.
-
-     Type of definition is among the following choices:
-     >> "value", "time_func", "user"
-     By value, the time step is constant
-
   */
 
-  cs_domain_set_time_step(domain,
-                          864000.,  /* Final time of the simulation */
-                          200,      /* Max. number of time iteration */
-                          "value",  /* How time step is define */
-                          "4320");  /* Value of the time step (2160) */
+  cs_domain_set_param(domain, "time_max", "864000.");
+  cs_domain_set_param(domain, "nt_max", "200");
+
+  /* Define the value of the time step
+     >> cs_domain_def_time_step_by_value(domain, dt_val);
+     >> cs_domain_def_time_step_by_func(domain, dt_func);
+
+     The second way to define the time step enable complex definitions.
+     dt_func must have the following prototype:
+
+     double dt_func(int  nt_cur, double  time_cur)
+  */
+
+  cs_domain_def_time_step_by_value(domain, 4320);
 
   /* Rk: Final time is 10 days = 864000 and dt = 0.05 day i.e 20 iters
      for one day */
 
   /* ================================
-     User-defined material properties
+     Activate groundwater flow module
      ================================
 
-     By default, one material property is defined:
-     >> "unity" (isotropic and value equal 1.0)
-
-     Users can also define additional material properties
-     cs_domain_add_property(domain,
-                            "name_of_property",
-                            "type_keyword");
-
-      type_keyword has predefined values among:
-        >> "isotropic", "orthotropic" or "anisotropic"
-  */
-
-  /* =========================================
-     Activate predefined equations
-     =========================================
-
-     For the wall distance:
-       cs_domain_activate_wall_distance(domain);
-
-  */
-
-  /* =========================================
-     Activate groundwater module
-     =========================================
-
-     For the groundwater module:
+     For the groundwater flow module:
      >> cs_domain_activate_groundwater(domain,
                                        permeability_type,
                                        Richards_time);
 
      * permeability_type is one of the following keywords:
-     "isotopic", "orthotropic" or "anisotropic"
+     "isotropic", "orthotropic" or "anisotropic"
      * Richards_time is one of the following keywords:
      "steady" or "unsteady"
 
-     * Consequences of the activation of the groundwater module are:
+     * Consequences of the activation of the groundwater flow module are:
      - add a new equation named "Richards" along with an associated field named
      "hydraulic_head". Default boundary condition is set to "zero_flux".
      - define a new advection field named "darcian_flux"
@@ -287,19 +280,18 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
                                  "isotropic", // type of permeability
                                  "unsteady"); // steady or unsteady
 
-  /* Retrieve the the groundwater module */
+  /* Retrieve the groundwater flow module */
   cs_groundwater_t  *gw = cs_domain_get_groundwater(domain);
 
-  /* Set additional parameters related to the groundwater module
-     >> cs_groundwater_set_param(gw,
-                                 keyword,
-                                 keyval);
+  /* Set additional parameters related to the groundwater flow module
+     >> cs_groundwater_set_param(gw, keyword, keyval);
 
-     * keyword is "post_freq"
-     Frequency used to postprocess specific quantities to the groundwater module
-     If keyval is "10" for instance, every 10 iterations postprocessing is done.
-     * keyword is "output_moisture"
-     If keyval is "true", a moisture field is postprocessed.
+     If keyword = "post_freq"
+     - Frequency used to postprocess specific quantities related to the
+       groundwater flow module
+       Ex: keyval = "10" means every 10 iterations postprocessing is done.
+     If keyword = "output_moisture"
+       Ex: keyval = "true" means that the moisture field is postprocessed.
 
    */
 
@@ -312,13 +304,13 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
                                          model_keyword,
                                          saturated_permeability);
 
-     * mesh_location_name is the name of the mesh location where this soil is
+     - mesh_location_name is the name of the mesh location where this soil is
      defined. The mesh location is related to cells. By default, "cells"
      corresponds to all the cells of the mesh. Otherwise, one needs to define
      new mesh locations.
-     * model_keyword is one of the following choices:
+     - model_keyword is one of the following choices:
      "saturated", "tracy" or "genutchen"
-     * saturated_permeability depends on the type of permeability chosen.
+     - saturated_permeability depends on the type of permeability chosen.
      1 value if isotropic, 3 values if orthtropic or 9 values if anisotropic.
 
   */
@@ -337,9 +329,9 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      If mesh_location_name is set to NULL, all soils are set.
 
      Available keywords are:
-     "saturated_moisture",
-     "residual_moisture",
-     "tracy_hr"  (only useful is Tracy model is used)
+     - "saturated_moisture",
+     - "residual_moisture",
+     - "tracy_hr"  (only useful is Tracy model is used)
 
   */
 
@@ -347,15 +339,47 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
   cs_groundwater_set_soil_param(gw, NULL, "saturated_moisture", "0.45");
   cs_groundwater_set_soil_param(gw, NULL, "residual_moisture", "0.15");
 
-  /* Then add a tracer equation convected by the darcean velocity
-     >> cs_groundwater_add_tracer_equation(domain,
-                                           "eq_name",
-                                           "variable_name",
-                                           dispersivity vector,
-                                           bulk density,
-                                           distribution coefficient,
-                                           first order rate reaction);
+  /* Add a tracer equation convected by the darcean velocity
+    >> cs_domain_add_groundwater_tracer(domain,
+                                         eqname,
+                                         varname,
+                                         water_diff,
+                                         alpha_l,
+                                         alpha_t,
+                                         rho,
+                                         kd,
+                                         lambda);
+
+     This implies the creation of a new equation called eqname and a new
+     field called varname.
+     According to the setting, additional properties can be created.
    */
+
+  /* =======================
+     Advection field options
+     =======================
+
+     Retrieve the advection field to set
+     cs_adv_field_t  *adv = cs_domain_get_advection_field(domain, "adv_name");
+
+     Set optional parameters for this advection field
+
+     cs_advection_field_set_option(adv,
+                                   keyword,
+                                   keyval);
+
+     * keyword is "post_freq"
+     Frequency used to postprocess specific quantities to the groundwater module
+     If keyval is "10" for instance, every 10 iterations postprocessing is done.
+     * keyword is "output_moisture"
+     If keyval is "true", a moisture field is postprocessed.
+
+  */
+
+  cs_adv_field_t  *adv = cs_domain_get_advection_field(domain, "darcian_flux");
+
+  cs_advection_field_set_option(adv, "post_freq", "0");
+  cs_advection_field_set_option(adv, "cell_field", "true");
 
 }
 
@@ -372,66 +396,17 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
 void
 cs_user_cdo_set_domain(cs_domain_t   *domain)
 {
-  /* ==========
-     Properties
-     ==========
-
-     Retrieve the property to set
-     cs_property_t  *pty = cs_domain_get_property(domain, "pty_name");
-
-     Several ways exist to define a property
-      >> cs_property_def_by_value(pty, value);
-         -- pty is the structure related to the property to set
-         -- value is "1.0" for instance for an isotropic property
-            or "0.5 0.1 1." for instance for an orthotropic property
-
-      >> cs_property_def_by_analytic(pty, func);
-         -- pty is the structure related to the property to set
-         -- func is a function with a predefined prototype
-
-      >> cs_property_def_by_law(pty, func);
-         -- pty is the structure related to the property to set
-         -- func is a function with a predefined prototype
-
-  */
-
-  /* ===============
-     Advection field
-     ===============
-
-     Retrieve the advection field to set
-     cs_adv_field_t  *adv = cs_domain_get_advection_field(domain, "adv_name");
-
-  */
-
-  cs_adv_field_t  *adv = cs_domain_get_advection_field(domain, "darcian_flux");
-
-  cs_advection_field_set_option(adv, "post_freq", "0");
-  cs_advection_field_set_option(adv, "cell_field", "true");
-
-  /* =========
-     Equations
-     =========
-
-     Retrieve the equation to set
+  /* Retrieve the equation to set
      cs_equation_t  *eq = cs_domain_get_equation(domain, "eq_name");
-
-     Define the boundary conditions
-     >> cs_equation_add_bc(eq,
-                           "mesh_location_name",
-                           "bc_type_keyword",
-                           "definition_type_keyword",
-                           pointer to the definition);
-
-     -- eq is the structure related to the equation to set
-     -- Keyword related to the boundary condition type is a choice among:
-        >> "dirichlet", "neumann" or "robin"
-     -- Keyword related to the type of definition is a choice among:
-        >> "value", "analytic"
-
   */
 
-  cs_equation_t  *eq = cs_domain_get_equation(domain, "Richards");
+  cs_equation_t  *eq = NULL;
+
+  /* =================
+     Richards equation
+     ================= */
+
+  eq = cs_domain_get_equation(domain, "Richards");
 
   /* Define the boundary conditions
      >> cs_equation_add_bc(eq,

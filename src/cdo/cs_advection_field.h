@@ -61,22 +61,31 @@ typedef struct _cs_adv_field_t cs_adv_field_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set shared pointers to main domain members
+ *
+ * \param[in]  quant       additional mesh quantities struct.
+ * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in]  time_step   pointer to a time step structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_set_shared_pointers(const cs_cdo_quantities_t    *quant,
+                                       const cs_cdo_connect_t       *connect,
+                                       const cs_time_step_t         *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create and initialize a new advection field structure
  *
  * \param[in]  name        name of the advection field
- * \param[in]  cdoq        pointer to a cs_cdo_quantities_t struct.
- * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a cs_time_step_t struct.
  *
  * \return a pointer to a new allocated cs_adv_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_adv_field_t *
-cs_advection_field_create(const char                  *name,
-                          const cs_cdo_quantities_t   *cdoq,
-                          const cs_cdo_connect_t      *connect,
-                          const cs_time_step_t        *time_step);
+cs_advection_field_create(const char   *name);
 
 /*----------------------------------------------------------------------------*/
 /*!

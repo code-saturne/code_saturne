@@ -1032,34 +1032,34 @@ cs_groundwater_summary(const cs_groundwater_t   *gw)
                 " Please check your settings.");
     } // Switch model
 
-    if (gw->n_soils > 1) {
+  } // Loop on soils
 
-      switch (gw->global_model) {
-      case CS_GROUNDWATER_MODEL_COMPOSITE:
-        bft_printf("  <GW/Global model> composite model\n");
-        break;
-      case CS_GROUNDWATER_MODEL_GENUCHTEN:
-        bft_printf("  <GW/Global model> model VanGenuchten-Mualen\n");
-        break;
-      case CS_GROUNDWATER_MODEL_SATURATED:
-        bft_printf("  <GW/Global model> model saturated\n");
-        break;
-      case CS_GROUNDWATER_MODEL_TRACY:
-        bft_printf("  <GW/Global model> model Tracy\n");
-        break;
-      case CS_GROUNDWATER_MODEL_USER:
-        bft_printf("  <GW/Global model> model User-defined\n");
-        break;
+  if (gw->n_soils > 1) {
 
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " Invalid model for groundwater module.\n"
-                  " Please check your settings.");
+    switch (gw->global_model) {
+    case CS_GROUNDWATER_MODEL_COMPOSITE:
+      bft_printf("  <GW/Global model> composite model\n");
+      break;
+    case CS_GROUNDWATER_MODEL_GENUCHTEN:
+      bft_printf("  <GW/Global model> model VanGenuchten-Mualen\n");
+      break;
+    case CS_GROUNDWATER_MODEL_SATURATED:
+      bft_printf("  <GW/Global model> model saturated\n");
+      break;
+    case CS_GROUNDWATER_MODEL_TRACY:
+      bft_printf("  <GW/Global model> model Tracy\n");
+      break;
+    case CS_GROUNDWATER_MODEL_USER:
+      bft_printf("  <GW/Global model> model User-defined\n");
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " Invalid model for groundwater module.\n"
+                " Please check your settings.");
     } // Switch model
 
-    }
-
-  } // Loop on soils
+  }
 
 }
 

@@ -77,11 +77,6 @@ struct _cs_adv_field_t {
   cs_param_def_type_t    def_type;
   cs_def_t               def;
 
-  /* Pointer to the main structures (not owned, only shared) */
-  const cs_cdo_quantities_t   *cdoq;
-  const cs_cdo_connect_t      *connect;
-  const cs_time_step_t        *time_step;
-
   /* Useful buffers to deal with more complex definitions
      var and struc are not owned by this structure.  */
   cs_flag_t    array_flag;  // short description of the related array
@@ -113,6 +108,11 @@ static const char _err_empty_adv[] =
 /* Array support is on dual faces and scan thanks to the c2e connectivity */
 static const cs_flag_t  cs_var_support_dfbyc =
   CS_PARAM_FLAG_FACE | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_BY_CELL;
+
+/* Pointer to shared structures (owned by a cs_domain_t structure) */
+static const cs_cdo_quantities_t  *cs_cdo_quant;
+static const cs_cdo_connect_t  *cs_cdo_connect;
+static const cs_time_step_t  *cs_time_step;
 
 /*============================================================================
  * Private function prototypes
@@ -183,22 +183,37 @@ _get_advkey(const char  *keyname)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set shared pointers to main domain members
+ *
+ * \param[in]  quant       additional mesh quantities struct.
+ * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in]  time_step   pointer to a time step structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_set_shared_pointers(const cs_cdo_quantities_t    *quant,
+                                       const cs_cdo_connect_t       *connect,
+                                       const cs_time_step_t         *time_step)
+{
+  /* Assign static const pointers */
+  cs_cdo_quant = quant;
+  cs_cdo_connect = connect;
+  cs_time_step = time_step;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create and initialize a new advection field structure
  *
  * \param[in]  name        name of the advection field
- * \param[in]  cdoq        pointer to a cs_cdo_quantities_t struct.
- * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a cs_time_step_t struct.
  *
  * \return a pointer to a new allocated cs_adv_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_adv_field_t *
-cs_advection_field_create(const char                  *name,
-                          const cs_cdo_quantities_t   *cdoq,
-                          const cs_cdo_connect_t      *connect,
-                          const cs_time_step_t        *time_step)
+cs_advection_field_create(const char   *name)
 {
   cs_adv_field_t  *adv = NULL;
 
@@ -208,11 +223,6 @@ cs_advection_field_create(const char                  *name,
   int  len = strlen(name) + 1;
   BFT_MALLOC(adv->name, len, char);
   strncpy(adv->name, name, len);
-
-  /* Shared pointers for defining the adv_field */
-  adv->cdoq = cdoq;
-  adv->connect = connect;
-  adv->time_step = time_step;
 
   /* Default initialization */
   adv->post_unitv = false;
@@ -526,6 +536,9 @@ cs_advection_field_def_by_array(cs_adv_field_t     *adv,
   adv->def_type = CS_PARAM_DEF_BY_ARRAY;
   adv->array_flag = support;
   adv->array = array;
+
+  if ((support & cs_var_support_dfbyc) == cs_var_support_dfbyc)
+    adv->flag |= CS_PARAM_FLAG_CELLWISE;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -629,8 +642,8 @@ cs_advection_field_get_cell_vector(cs_lnum_t              c_id,
     {
       cs_get_t  get;
 
-      const cs_real_t  *xc = adv->cdoq->cell_centers + 3*c_id;
-      const double  t_cur = adv->time_step->t_cur;
+      const cs_real_t  *xc = cs_cdo_quant->cell_centers + 3*c_id;
+      const double  t_cur = cs_time_step->t_cur;
 
       /* Call the analytic function. result is stored in get */
       adv->def.analytic(t_cur, xc, &get);
@@ -646,7 +659,9 @@ cs_advection_field_get_cell_vector(cs_lnum_t              c_id,
 
       /* Test if flag has at least the pattern of the reference support */
       if ((adv->array_flag & cs_var_support_dfbyc) == cs_var_support_dfbyc)
-        cs_reco_dfbyc_at_cell_center(c_id, adv->connect->c2e, adv->cdoq,
+        cs_reco_dfbyc_at_cell_center(c_id,
+                                     cs_cdo_connect->c2e,
+                                     cs_cdo_quant,
                                      adv->array, recoval);
       else
         bft_error(__FILE__, __LINE__, 0,
@@ -687,7 +702,7 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
 
   cs_lnum_t  c_id;
 
-  const cs_cdo_quantities_t  *quant = adv->cdoq;
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
 
   switch (adv->def_type) {
 
@@ -712,7 +727,7 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
     {
       cs_get_t  get;
 
-      const double  t_cur = adv->time_step->t_cur;
+      const double  t_cur = cs_time_step->t_cur;
 
       for (c_id = 0; c_id < quant->n_cells; c_id++) {
 
@@ -742,7 +757,9 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
 
           const cs_lnum_t  shift_c = 3*c_id;
 
-          cs_reco_dfbyc_at_cell_center(c_id, adv->connect->c2e, quant,
+          cs_reco_dfbyc_at_cell_center(c_id,
+                                       cs_cdo_connect->c2e,
+                                       quant,
                                        adv->array, recoval);
 
           cell_values[shift_c]    = recoval[0];
@@ -787,7 +804,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
   if (adv == NULL)
     return;
 
-  const cs_cdo_quantities_t  *quant = adv->cdoq;
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
 
   switch (adv->def_type) {
 
@@ -812,12 +829,12 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
     {
       cs_get_t  get;
 
-      const double  t_cur = adv->time_step->t_cur;
+      const double  t_cur = cs_time_step->t_cur;
 
       for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
 
         const cs_lnum_t  shift = 3*v_id;
-        const cs_real_t  *xv = adv->cdoq->vtx_coord + shift;
+        const cs_real_t  *xv = quant->vtx_coord + shift;
 
         /* Call the analytic function. result is stored in get */
         adv->def.analytic(t_cur, xv, &get);
@@ -836,7 +853,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
       cs_lnum_t  j, c_id;
       cs_real_3_t  recoval;
 
-      const cs_cdo_connect_t  *topo = adv->connect;
+      const cs_cdo_connect_t  *topo = cs_cdo_connect;
 
       /* Test if flag has at least the pattern of the reference support */
       if ((adv->array_flag & cs_var_support_dfbyc) == cs_var_support_dfbyc) {
@@ -851,7 +868,9 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
 
         for (c_id = 0; c_id < quant->n_cells; c_id++) {
 
-          cs_reco_dfbyc_at_cell_center(c_id, topo->c2e, quant,
+          cs_reco_dfbyc_at_cell_center(c_id,
+                                       topo->c2e,
+                                       quant,
                                        adv->array, recoval);
 
           for (j = topo->c2v->idx[c_id]; j < topo->c2v->idx[c_id+1]; j++) {
@@ -930,8 +949,8 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
   cs_lnum_t  _i, jf, je, k;
   cs_nvec3_t  adv_vect;
 
-  const cs_cdo_quantities_t  *cdoq = adv->cdoq;
-  const cs_cdo_connect_t  *connect = adv->connect;
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
+  const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const cs_connect_index_t  *c2e = connect->c2e;
 
   if (adv->flag & CS_PARAM_FLAG_UNIFORM ||
@@ -959,7 +978,7 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
         cs_real_3_t  gpts[3], xg;
         cs_get_t  get;
 
-        const double  t_cur = adv->time_step->t_cur;
+        const double  t_cur = cs_time_step->t_cur;
         const cs_real_t  *xc = cdoq->cell_centers + 3*c_id;
 
         /* Loop on cell edges */
@@ -1070,7 +1089,7 @@ cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
   if (adv == NULL)
     return adv_flx;
 
-  const cs_cdo_quantities_t  *cdoq = adv->cdoq;
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
   const cs_quant_t  pfq = cdoq->face[f_id];
   const cs_quant_t  peq = cdoq->edge[e_id];
   const cs_real_t  *xv = cdoq->vtx_coord + 3*v_id;
@@ -1090,7 +1109,7 @@ cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
       cs_real_3_t  gpts[3], xg;
       cs_get_t  get;
 
-      const double  t_cur = adv->time_step->t_cur;
+      const double  t_cur = cs_time_step->t_cur;
 
       switch (a_info.quad_type) {
 
@@ -1135,8 +1154,8 @@ cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
         /* Test if flag has at least the pattern of the reference support */
         if ((adv->array_flag & cs_var_support_dfbyc) == cs_var_support_dfbyc) {
 
-          const cs_connect_index_t  *c2e = adv->connect->c2e;
-          const cs_sla_matrix_t  *f2c = adv->connect->f2c;
+          const cs_connect_index_t  *c2e = cs_cdo_connect->c2e;
+          const cs_sla_matrix_t  *f2c = cs_cdo_connect->f2c;
 
           cs_lnum_t  c_id = f2c->col_id[f2c->idx[f_id]];
           assert(f2c->idx[f_id+1] - f2c->idx[f_id] == 1);
@@ -1226,8 +1245,8 @@ cs_advection_field_post(const cs_adv_field_t  *adv)
   cs_lnum_t  unitv_size = 0;
   cs_real_t  *unitv = NULL;
 
-  const cs_cdo_quantities_t  *cdoq = adv->cdoq;
-  const cs_time_step_t  *time_step = adv->time_step;
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
+  const cs_time_step_t  *time_step = cs_time_step;
   const int  nt_cur = time_step->nt_cur;
 
   if (adv->post_freq < 0)

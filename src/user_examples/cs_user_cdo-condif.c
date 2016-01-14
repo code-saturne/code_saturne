@@ -222,21 +222,22 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
-  /* =========================================
-     Define boundary of the domain
-     =========================================
+  /* ======================
+     Boundary of the domain
+     ====================== */
 
-     Choose a boundary by default.
-     Boundary keyword is one of the following keyword
-     >> wall or symmetry
+  /* Choose a boundary by default.
+     >> cs_domain_set_param(domain, "default_boundary", keyval);
+
+     keyval is one of the following keyword: wall or symmetry
   */
 
-  cs_domain_set_default_boundary(domain, "wall");
+  cs_domain_set_param(domain, "default_boundary", "wall");
 
   /* Add a boundary
-     >>   cs_domain_add_boundary(domain,
-                                 mesh location name,
-                                 boundary keyword)
+     >> cs_domain_add_boundary(domain,
+                               mesh location name,
+                               boundary keyword)
 
      mesh location name is either a predefined mesh location or one defined
      by user
@@ -248,29 +249,42 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
   cs_domain_add_boundary(domain, "in", "inlet");
   cs_domain_add_boundary(domain, "out", "outlet");
 
-  /* =========================================
+  /* ====================
      Time step management
-     =========================================
+     ==================== */
+
+  /* Set the final time
+     >> cs_domain_set_param(domain, "time_max", keyval);
+
+     keyval is for instance "10."
+
+     Set the max. number of time steps
+     >> cs_domain_set_param(domain, "nt_max", keyval);
+
+     keyval is for instance "100"
 
      If there is an inconsistency between the max. number of iteration in
      time and the final physical time, the first condition encountered stops
      the calculation.
-
-     Type of definition is among the following choices:
-     >> "value", "time_func", "user"
-     By value, the time step is constant
-
   */
 
-  cs_domain_set_time_step(domain,
-                          100,     /* Max. number of time iteration */
-                          10.,     /* Final time of the simulation */
-                          "value", /* How time step is define */
-                          "1");    /* Value of the time step */
+  cs_domain_set_param(domain, "nt_max", "100");
 
-  /* =========================================
+  /* Define the value of the time step
+     >> cs_domain_def_time_step_by_value(domain, dt_val);
+     >> cs_domain_def_time_step_by_func(domain, dt_func);
+
+     The second way to define the time step enable complex definitions.
+     dt_func must have the following prototype:
+
+     double dt_func(int  nt_cur, double  time_cur)
+  */
+
+  cs_domain_def_time_step_by_value(domain, 1.0);
+
+  /* =============================
      Activate predefined equations
-     =========================================
+     =============================
 
      For the wall distance:
        cs_domain_activate_wall_distance(domain);
@@ -414,28 +428,28 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
 
   /* ======================
      User-defined equations
-     ======================
+     ====================== */
 
-     Retrieve the equation to set
-     cs_equation_t  *eq = cs_domain_get_equation(domain, "eq_name");
+  /* Retrieve the equation to set
+     >> cs_equation_t  *eq = cs_domain_get_equation(domain, "eq_name");
+  */
 
-     Define the boundary conditions
+  cs_equation_t  *eq = cs_domain_get_equation(domain, "AdvDiff");
+
+  /* Define the boundary conditions
      >> cs_equation_add_bc(eq,
                            "mesh_location_name",
                            "bc_type_keyword",
                            "definition_type_keyword",
                            pointer to the definition);
 
-     -- eq is the structure related to the equation to set
-     -- Keyword related to the boundary condition type is a choice among:
-        >> "dirichlet", "neumann" or "robin"
-     -- Keyword related to the type of definition is a choice among:
-        >> "value", "analytic"
+     - eq is the structure related to the equation to set
+     - Keyword related to the boundary condition type is a choice among:
+       >> "dirichlet", "neumann" or "robin"
+     - Keyword related to the type of definition is a choice among:
+       >> "value", "analytic"
 
   */
-
-  /* Retrieve an equation to set */
-  cs_equation_t  *eq = cs_domain_get_equation(domain, "AdvDiff");
 
   cs_equation_add_bc(eq,                // equation
                      "boundary_faces",  // name of the mesh location
@@ -448,13 +462,12 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
                          "term_keyword",
                          structure_to_link);
 
-     -- eq is the structure related to the equation to set
-     -- Keyword related to the term to set is a choice among:
-        >> "diffusion", "time" or "advection"
-     -- If keyword is "time" or "diffusion", the structure to link is a
-        property.
-        If keyword is "advection", the structure to link is an advection field
-
+     - eq is the structure related to the equation to set
+     - Keyword related to the term to set is a choice among:
+       >> "diffusion", "time" or "advection"
+     - If keyword is "time" or "diffusion", the structure to link is a
+       property.
+       If keyword is "advection", the structure to link is an advection field
   */
 
   /* Activate unsteady effect */
@@ -465,17 +478,15 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
   cs_equation_link(eq, "advection", adv);
 
   /* Add a source term:
-
-     cs_equation_add_source_term_by_val(eq,
-                                        label,
-                                        ml_name,
-                                        val);
+     >> cs_equation_add_source_term_by_val(eq,
+                                           label,
+                                           ml_name,
+                                           val);
      or
-
-     cs_equation_add_source_term_by_analytic(eq,
-                                             label,
-                                             ml_name,
-                                             analytic_func);
+     >> cs_equation_add_source_term_by_analytic(eq,
+                                                label,
+                                                ml_name,
+                                                analytic_func);
 
      where label of the source term is optional (i.e. NULL is possible)
      This label is mandatory if additional settings are requested only for
@@ -486,7 +497,6 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
 
      where val is the value of the source term by m^3
      or where analytic_func is the name of the analytical function
-
    */
 
   cs_equation_add_source_term_by_analytic(eq,
@@ -495,40 +505,38 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
                                           _define_source); // analytic function
 
   /* Optional: specify additional settings for a source term
-
-     cs_equation_set_source_term_option(eq,      // equation
-                                        stlabel, // label of the source term
-                                        key,     // name of the key
-                                        val)     // value of the key to set
+     >> cs_equation_set_source_term_option(eq,      // equation
+                                           stlabel, // label of the source term
+                                           key,     // name of the key
+                                           val)     // value of the key to set
 
      If st_label is set to NULL, all source terms of the equation are set
      to the given parameters.
 
-     KEY = "post_freq" Set the behaviour related to post-processing
-     >> VAL = "-1" no post-processing,
-            = "0"  at the beginning of the computation,
-            = "n"  at each n iterations
+     key = "post_freq" Set the behaviour related to post-processing
+     >> val = "-1" no post-processing,
+        val = "0"  at the beginning of the computation,
+        val = "n"  at each n iterations
 
-     KEY = "quadrature" Set the algortihm used for quadrature
-     >> VAL = "bary"    used the barycenter approximation
-            = "higher"  used 4 Gauss points for approximating the integral
-            = "highest" used 5 Gauss points for approximating the integral
+     key = "quadrature" Set the algortihm used for quadrature
+     >> val = "bary"    used the barycenter approximation
+        val = "higher"  used 4 Gauss points for approximating the integral
+        val = "highest" used 5 Gauss points for approximating the integral
 
   */
 
   cs_equation_set_source_term_option(eq, "SourceTerm", "quadrature", "bary");
 
   /* Optional: specify additional settings for a reaction term
-
-     cs_equation_reaction_term_set(eq,       // equation
-                                   r_name,   // label of the reaction term
-                                   key,      // name of the key
-                                   val)      // value of the key to set
+     >> cs_equation_reaction_term_set(eq,       // equation
+                                      r_name,   // label of the reaction term
+                                      key,      // name of the key
+                                      val)      // value of the key to set
 
      If r_name is set to NULL, all reaction terms of the equation are set
      to the given parameters.
 
-     KEY = "hodge_algo"
+     key = "hodge_algo"
      >> val: "voronoi", "cost" or "whitney_bary"
      - "voronoi" leads to diagonal discrete Hodge operator but is not
      consistent for all meshes
@@ -537,13 +545,13 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
      - "wbs" is robust and accurate but is limited to the reconstruction of
      potential-like degrees of freedom
 
-     KEY = "hodge_coef" (only useful if "hodge_algo" is set to "cost")
+     key = "hodge_coef" (only useful if "hodge_algo" is set to "cost")
      >> val: "dga", "sushi", "gcr" or any strictly positive value
 
-     KEY = "lumping"
+     key = "lumping"
      >> val: "true" or "false"
 
-     KEY = "inv_pty" (inverse the value of the related property ?)
+     key = "inv_pty" (inverse the value of the related property ?)
      >> val: "true" or "false"
   */
 

@@ -677,7 +677,7 @@ _sles_initialization(const cs_equation_t  *eq)
       case CS_PARAM_ITSOL_BICG:
         cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
                           NULL,
-                          CS_SLES_BICGSTAB2,
+                          CS_SLES_BICGSTAB,
                           poly_degree,
                           itsol.n_max_iter);
         break;

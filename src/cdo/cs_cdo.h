@@ -102,14 +102,16 @@ typedef void
  * \brief  Simple function to define the time step according to the number of
  *         iteration already done
  *
- * \param[in]      time_iter  current number of iterations
+ * \param[in]   time_iter   current number of iterations
+ * \param[in]   time        value of the time at the end of the last iteration
  *
  * \return the value of the time step
  */
 /*----------------------------------------------------------------------------*/
 
 typedef cs_real_t
-(cs_timestep_func_t) (int    time_iter);
+(cs_timestep_func_t) (int      time_iter,
+                      double   time);
 
 /*----------------------------------------------------------------------------*/
 /*!

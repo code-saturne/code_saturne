@@ -62,16 +62,6 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-struct _subsum_t {
-
-  int      size;
-  int     *idx;
-  double  *sums;
-
-};
-
-static struct _subsum_t  _op_subsum;
-
 static const double  _oversix = 1/6.0;
 static const double  _overdim = 1/3.0;
 

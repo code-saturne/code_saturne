@@ -82,11 +82,6 @@ struct _cs_property_t {
                              If post_freq > -1, a related cs_field_t structure
                              is created. */
 
-  /* Pointer to the main structures (not owned, only shared) */
-  const cs_cdo_quantities_t   *cdoq;
-  const cs_cdo_connect_t      *connect;
-  const cs_time_step_t        *time_step;
-
   /* The number of values to set depends on the type of property
        - isotropic   = 1 => CS_PARAM_VAR_SCAL
        - orthotropic = 3 => CS_PARAM_VAR_VECT
@@ -271,7 +266,7 @@ _add_def_by_subdomain(cs_property_t    *pty,
 {
   cs_lnum_t  i;
 
-  const cs_lnum_t  n_cells = pty->cdoq->n_cells;
+  const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
 
   pty->def_type = CS_PARAM_DEF_BY_SUBDOMAIN;
 
@@ -373,8 +368,8 @@ _get_result_by_onevar_law(cs_lnum_t                 c_id,
 
     /* Reconstruct (or interpolate) value at the current cell center */
     cs_reco_pv_at_cell_center(c_id,
-                              pty->connect->c2v,
-                              pty->cdoq,
+                              cs_cdo_connect->c2v,
+                              cs_cdo_quant,
                               pty->array1, &val_xc);
 
     law(val_xc, struc, get);
@@ -423,7 +418,7 @@ _get_result_by_scavec_law(cs_lnum_t                 c_id,
 
     /* Reconstruct (or interpolate) value at the current cell center */
     cs_reco_pv_at_cell_center(c_id,
-                              pty->connect->c2v, pty->cdoq, pty->array1,
+                              cs_cdo_connect->c2v, cs_cdo_quant, pty->array1,
                               &scal_val);
 
   }
@@ -445,7 +440,7 @@ _get_result_by_scavec_law(cs_lnum_t                 c_id,
 
     /* Reconstruct (or interpolate) value at the current cell center */
     cs_reco_dfbyc_at_cell_center(c_id,
-                                 pty->connect->c2e, pty->cdoq, pty->array2,
+                                 cs_cdo_connect->c2e, cs_cdo_quant, pty->array2,
                                  vect_val);
 
   }
@@ -465,13 +460,31 @@ _get_result_by_scavec_law(cs_lnum_t                 c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set shared pointers to main domain members
+ *
+ * \param[in]  quant       additional mesh quantities struct.
+ * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in]  time_step   pointer to a time step structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
+                                const cs_cdo_connect_t       *connect,
+                                const cs_time_step_t         *time_step)
+{
+  /* Assign static const pointers */
+  cs_cdo_quant = quant;
+  cs_cdo_connect = connect;
+  cs_time_step = time_step;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create and initialize a new property structure
  *
  * \param[in]  name        name of the property
  * \param[in]  key_type    keyname of the type of property
- * \param[in]  cdoq        pointer to a cs_cdo_quantities_t struct.
- * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a cs_time_step_t struct.
  *
  * \return a pointer to a new allocated cs_property_t structure
  */
@@ -479,10 +492,7 @@ _get_result_by_scavec_law(cs_lnum_t                 c_id,
 
 cs_property_t *
 cs_property_create(const char                  *name,
-                   const char                  *key_type,
-                   const cs_cdo_quantities_t   *cdoq,
-                   const cs_cdo_connect_t      *connect,
-                   const cs_time_step_t        *time_step)
+                   const char                  *key_type)
 {
   cs_property_t  *pty = NULL;
 
@@ -492,11 +502,6 @@ cs_property_create(const char                  *name,
   int  len = strlen(name) + 1;
   BFT_MALLOC(pty->name, len, char);
   strncpy(pty->name, name, len);
-
-  /* Shared pointers for defining the property */
-  pty->cdoq = cdoq;
-  pty->connect = connect;
-  pty->time_step = time_step;
 
   /* Assign a type */
   if (strcmp(key_type, "isotropic") == 0)
@@ -1345,8 +1350,8 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
 
   case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
     {
-      const cs_real_t  *xc = pty->cdoq->cell_centers + 3*c_id;
-      const double  t_cur = pty->time_step->t_cur;
+      const cs_real_t  *xc = cs_cdo_quant->cell_centers + 3*c_id;
+      const double  t_cur = cs_time_step->t_cur;
 
       /* Call the analytic function. result is stored in get and then converted
          into a 3x3 tensor */
@@ -1480,8 +1485,8 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
 
  case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
    {
-     const cs_real_t  *xc = pty->cdoq->cell_centers + 3*c_id;
-     const double  t_cur = pty->time_step->t_cur;
+     const cs_real_t  *xc = cs_cdo_quant->cell_centers + 3*c_id;
+     const double  t_cur = cs_time_step->t_cur;
 
      /* Call the analytic function. result is stored in get */
      pty->def.analytic(t_cur, xc, &get);
