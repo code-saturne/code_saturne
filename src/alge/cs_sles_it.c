@@ -3788,8 +3788,10 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
       cvg = _convergence_test(c, n_iter, residue, convergence);
 
     }
-    else if (n_iter >= convergence->n_iterations_max)
+    else if (n_iter >= convergence->n_iterations_max) {
+      convergence->n_iterations = n_iter;
       cvg = CS_SLES_MAX_ITERATION;
+    }
 
   }
 
