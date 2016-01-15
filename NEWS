@@ -5,6 +5,8 @@ Release 4.2.1 (unreleased)
 Bug fixes:
 ----------
 
+- GUI: performance tuning should be available also in preprocessor mode.
+
 - GUI: fix handling of linear solver preconditionning options.
 
 - Fix weighted array stats for multi-dimensional data (n = 2 or > 3)
