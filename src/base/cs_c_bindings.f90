@@ -2794,7 +2794,8 @@ contains
 
     ! Local variables
 
-    character(len=len_trim(name)+1, kind=c_char) :: c_name, c_label
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    character(len=len_trim(label)+1, kind=c_char) :: c_label
     integer(c_int) :: c_location_id, c_dim, c_id
 
     c_name = trim(name)//c_null_char
