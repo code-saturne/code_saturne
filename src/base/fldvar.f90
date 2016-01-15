@@ -641,6 +641,7 @@ use dimens
 use entsor
 use numvar
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -655,39 +656,18 @@ integer, intent(out)         :: ivar
 ! Local variables
 
 integer  id, ii, ipp
-integer  type_flag, location_id
-logical  interleaved, has_previous
+integer  location_id
 
-integer, save :: keycpl = -1
 integer, save :: keyvar = -1
 
-type_flag = FIELD_INTENSIVE + FIELD_VARIABLE
 location_id = 1         ! variables defined on cells
-interleaved = .true.
-has_previous = .true.
-
-! Test if the field has already been defined
-call field_get_id_try(trim(name), id)
-if (id .ge. 0) then
-  write(nfecra,1000) trim(name)
-  call csexit (1)
-endif
 
 ! Create field
 
+call variable_field_create(name, label, location_id, dim, id)
+
 if (keyvar.lt.0) then
-  call field_get_key_id('coupled', keycpl)
   call field_get_key_id("variable_id", keyvar)
-endif
-
-call field_create(name, type_flag, location_id, dim, interleaved, has_previous, &
-                  id)
-
-call field_set_key_int(id, keyvis, 1)
-call field_set_key_int(id, keylog, 1)
-
-if (len(trim(label)).gt.0) then
-  call field_set_key_str(id, keylbl, trim(label))
 endif
 
 ivar = nvar + 1
@@ -702,41 +682,12 @@ ipp = field_post_id(id)
 call field_set_key_int(id, keyvar, ivar)
 
 if (dim .gt. 1) then
-  call field_set_key_int(id, keycpl, 1)
   do ii = 2, dim
     ivarfl(ivar + ii - 1) = id
   enddo
 endif
 
 return
-
-!---
-! Formats
-!---
-
-#if defined(_CS_LANG_FR)
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERREUR :    ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    ========                                                ',/,&
-'@     LE CHAMP : ', a, 'EST DEJA DEFINI.                     ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-#else
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP              ',/,&
-'@    ======                                                  ',/,&
-'@     FIELD: ', a, 'HAS ALREADY BEEN DEFINED.                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-#endif
 
 end subroutine add_variable_field
 
@@ -858,7 +809,7 @@ end subroutine add_user_scalar_fields
 !______________________________________________________________________________!
 !> \param[in]  name           field name
 !> \param[in]  label          field default label, or empty
-!> \param[out] iscal          variable number for defined field
+!> \param[out] iscal          scalar number for defined field
 !_______________________________________________________________________________
 
 subroutine add_model_scalar_field &
@@ -885,95 +836,19 @@ integer, intent(out)         :: iscal
 
 ! Local variables
 
-integer  dim, id, ipp
-integer  type_flag, location_id
-logical  interleaved, has_previous
+integer  dim
 
-integer, save :: keyvar = -1
-integer, save :: keysca = -1
-
-type_flag = FIELD_INTENSIVE + FIELD_VARIABLE
 dim = 1
-location_id = 1 ! variables defined on cells
-interleaved = .true.
-has_previous = .true.
 
-! Test if the field has already been defined
-call field_get_id_try(trim(name), id)
-if (id .ge. 0) then
-  write(nfecra,1000) trim(name)
-  call csexit (1)
-endif
-
-! Create field
-
-if (keysca.lt.0) then
-  call field_get_key_id("scalar_id", keysca)
-  call field_get_key_id("variable_id", keyvar)
-endif
-
-call field_create(name, type_flag, location_id, dim, interleaved, has_previous, &
-                  id)
-
-call field_set_key_int(id, keyvis, 1)
-call field_set_key_int(id, keylog, 1)
-
-if (len(trim(label)).gt.0) then
-  call field_set_key_str(id, keylbl, trim(label))
-endif
-
-nvar = nvar + 1
-nscal = nscal + 1
-nscapp = nscapp + 1
-iscal = nscaus + nscapp
-
-! Check we have enough slots
-call fldvar_check_nvar
-call fldvar_check_nscapp
-
-isca(iscal) = nvar
-iscapp(nscapp) = iscal
-ivarfl(isca(iscal)) = id
-ipp = field_post_id(id)
-
-call field_set_key_int(id, keyvar, nvar)
-call field_set_key_int(id, keysca, iscal)
+call add_model_field(name, label, dim, iscal)
 
 return
-
-!---
-! Formats
-!---
-
-#if defined(_CS_LANG_FR)
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERREUR :    ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    ========                                                ',/,&
-'@     LE CHAMP : ', a, 'EST DEJA DEFINI.                     ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-#else
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP              ',/,&
-'@    ======                                                  ',/,&
-'@     FIELD: ', a, 'HAS ALREADY BEEN DEFINED.                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-#endif
 
 end subroutine add_model_scalar_field
 
 !===============================================================================
 !
-!> \brief add field defining a non-user solved scalar variable,
+!> \brief add field defining a non-user solved variable,
 !>        with default options
 !
 !> It is recommended not to define variable names of more than 16
@@ -1003,6 +878,7 @@ use dimens
 use entsor
 use numvar
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -1016,41 +892,72 @@ integer, intent(out)         :: iscal
 
 ! Local variables
 
-integer  ivar, id, ii, ipp
-integer  type_flag, location_id,  keycpl
-logical  interleaved, has_previous
+integer  id
+integer  location_id
+
+location_id = 1 ! variables defined on cells
+
+! Create field
+
+call variable_field_create(name, label, location_id, dim, id)
+
+call add_model_field_indexes(id, iscal)
+
+return
+
+end subroutine add_model_field
+
+!===============================================================================
+!
+!> \brief add field indexes associated with a new non-user solved
+!>        scalar variable, with default options
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]  f_id           field id
+!> \param[out] iscal          variable number for defined field
+!_______________________________________________________________________________
+
+subroutine add_model_field_indexes &
+ ( f_id, iscal )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer, intent(in)  :: f_id
+integer, intent(out) :: iscal
+
+! Local variables
+
+integer  dim, ivar, ii, ipp
+logical  interleaved
 
 integer, save :: keyvar = -1
 integer, save :: keysca = -1
 
-type_flag = FIELD_INTENSIVE + FIELD_VARIABLE
-location_id = 1 ! variables defined on cells
-interleaved = .true.
-has_previous = .true.
+! Get field dimension
 
-! Test if the field has already been defined
-call field_get_id_try(trim(name), id)
-if (id .ge. 0) then
-  write(nfecra,1000) trim(name)
-  call csexit (1)
-endif
-
-! Create field
+call field_get_dim(f_id, dim, interleaved)
 
 if (keysca.lt.0) then
-  call field_get_key_id('coupled', keycpl)
   call field_get_key_id("scalar_id", keysca)
   call field_get_key_id("variable_id", keyvar)
-endif
-
-call field_create(name, type_flag, location_id, dim, interleaved, has_previous, &
-                  id)
-
-call field_set_key_int(id, keyvis, 1)
-call field_set_key_int(id, keylog, 1)
-
-if (len(trim(label)).gt.0) then
-  call field_set_key_str(id, keylbl, trim(label))
 endif
 
 ivar = nvar + 1
@@ -1065,50 +972,18 @@ call fldvar_check_nscapp
 
 do ii = 1, dim
   isca(iscal + ii - 1) =  nvar - dim + ii
-  ivarfl(isca(iscal + ii - 1)) = id
+  ivarfl(isca(iscal + ii - 1)) = f_id
   iscapp(nscapp - dim + ii) = iscal + ii - 1
 enddo
 
-ipp = field_post_id(id)
+ipp = field_post_id(f_id)
 
-call field_set_key_int(id, keyvar, nvar)
-call field_set_key_int(id, keysca, iscal)
-
-if (dim .gt. 1) then
-  call field_set_key_int(id, keycpl, 1)
-endif
+call field_set_key_int(f_id, keyvar, nvar)
+call field_set_key_int(f_id, keysca, iscal)
 
 return
 
-!---
-! Formats
-!---
-
-#if defined(_CS_LANG_FR)
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERREUR :    ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    ========                                                ',/,&
-'@     LE CHAMP : ', a, 'EST DEJA DEFINI.                     ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-#else
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP              ',/,&
-'@    ======                                                  ',/,&
-'@     FIELD: ', a, 'HAS ALREADY BEEN DEFINED.                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-#endif
-
-end subroutine add_model_field
+end subroutine add_model_field_indexes
 
 !===============================================================================
 
@@ -1300,3 +1175,42 @@ return
 end subroutine fldvar_check_nscapp
 
 !===============================================================================
+! C bindings (reverse)
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+!> \brief add field indexes associated with a new non-user solved
+!>        variable, with default options
+!
+!> \param[in]  f_id    field id
+
+!> \result             scalar number for defined field
+!-------------------------------------------------------------------------------
+
+function cs_add_model_field_indexes(f_id) result(iscal) &
+  bind(C, name='cs_add_model_field_indexes')
+
+  use, intrinsic :: iso_c_binding
+  use cs_c_bindings
+
+  implicit none
+
+  ! Arguments
+
+  integer(c_int), value :: f_id
+  integer(c_int) :: iscal
+
+  ! Local variables
+
+  integer f_id0, iscal0
+
+  f_id0 = f_id
+
+  call add_model_field_indexes(f_id0, iscal0)
+
+  iscal = iscal0
+
+end function cs_add_model_field_indexes
+
+!---------------------------------------------------------------------------
+

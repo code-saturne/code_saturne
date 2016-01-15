@@ -91,6 +91,7 @@ cs_ext_neighborhood.h \
 cs_fan.h \
 cs_file.h \
 cs_field.h \
+cs_field_default.h \
 cs_field_pointer.h \
 cs_field_operator.h \
 cs_fp_exception.h \
@@ -232,6 +233,7 @@ cs_coupling.c \
 cs_ext_neighborhood.c \
 cs_fan.c \
 cs_field.c \
+cs_field_default.c \
 cs_field_pointer.c \
 cs_field_operator.c \
 cs_halo.c \

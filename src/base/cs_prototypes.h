@@ -197,6 +197,20 @@ void CS_PROCF (normalen, normalen)
 );
 
 /*----------------------------------------------------------------------------
+ * Add field indexes associated with a new non-user solved variable,
+ * with default options
+ *
+ * parameters:
+ *   f_id <--   field id
+ *
+ * returns:
+ *   scalar number for defined field
+ *----------------------------------------------------------------------------*/
+
+int
+cs_add_model_field_indexes(int f_id);
+
+/*----------------------------------------------------------------------------
  * Initialize Lagrangian module parameters for a given zone and class
  *
  * parameters:

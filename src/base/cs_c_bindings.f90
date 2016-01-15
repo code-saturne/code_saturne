@@ -1164,6 +1164,21 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function creating a variable field
+
+    function cs_variable_field_create(name, label,                   &
+                                      location_id, dim) result(id)   &
+      bind(C, name='cs_variable_field_create')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in)  :: name, label
+      integer(c_int), value                                    :: location_id
+      integer(c_int), value                                    :: dim
+      integer(c_int)                                           :: id
+    end function cs_variable_field_create
+
+    !---------------------------------------------------------------------------
+
     ! Add terms from backward differentiation in time.
 
     subroutine cs_backward_differentiation_in_time(field_id,                  &
@@ -2749,6 +2764,51 @@ contains
     id = c_id
 
   end function timer_stats_id_by_name
+
+  !=============================================================================
+
+
+  !> \brief  Add field defining a general solved variable, with default options.
+
+  !> \param[in]  name           field name
+  !> \param[in]  label          field default label, or empty
+  !> \param[in]  location_id    field location type:
+  !>                              0: none
+  !>                              1: cells
+  !>                              2: interior faces
+  !>                              3: interior faces
+  !>                              4: vertices
+  !> \param[in]  dim            field dimension
+  !> \param[out] id             id of defined field
+
+  subroutine variable_field_create(name, label, location_id, dim, id)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in) :: name, label
+    integer, intent(in)          :: location_id, dim
+    integer, intent(out)         :: id
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name, c_label
+    integer(c_int) :: c_location_id, c_dim, c_id
+
+    c_name = trim(name)//c_null_char
+    c_label = trim(label)//c_null_char
+    c_location_id = location_id
+    c_dim = dim
+
+    c_id = cs_variable_field_create(c_name, c_label, c_location_id, c_dim)
+
+    id = c_id
+
+    return
+
+  end subroutine variable_field_create
 
   !=============================================================================
 
