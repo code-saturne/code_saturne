@@ -16,6 +16,9 @@ Changes
 Numerics
 --------
 
+ - Default to multigrid-preconditionned conjugate gradient for
+   most symetric linear systems.
+
  - Improve performance and possible precision of reduction operations.
     * improve OpenMP load balancing of SuperBlock reductions
     * add optional Kahan compensated sum-based BLAS operations;

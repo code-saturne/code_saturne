@@ -110,9 +110,7 @@ class NumericalParamEquatModel(Model):
         self.default['slope_test'] = 'on'
         self.default['flux_reconstruction'] = 'on'
 
-        self.default['solver_choice_pressure'] = 'multigrid'
         self.default['solver_choice'] = 'automatic'
-        self.default['preconditioning_choice_pressure'] = 'automatic'
         self.default['preconditioning_choice'] = 'automatic'
 
         if name not in self.var:
@@ -578,10 +576,7 @@ class NumericalParamEquatModel(Model):
                               'gauss_seidel', 'PCR3'))
         node = self._getSolverNameNode(name)
 
-        if self._isPressure(node):
-            default = self._defaultValues()['solver_choice_pressure']
-        else:
-            default = self._defaultValues()['solver_choice']
+        default = self._defaultValues()['solver_choice']
 
         if value != default:
             n = node.xmlInitNode('solver_choice')
@@ -596,10 +591,7 @@ class NumericalParamEquatModel(Model):
                               'polynomial', 'automatic'))
         node = self._getSolverNameNode(name)
 
-        if self._isPressure(node):
-            default = self._defaultValues()['preconditioning_choice_pressure']
-        else:
-            default = self._defaultValues()['preconditioning_choice']
+        default = self._defaultValues()['preconditioning_choice']
 
         if value != default:
             n = node.xmlInitNode('preconditioning_choice')
@@ -633,11 +625,7 @@ class NumericalParamEquatModel(Model):
         if n:
             value = n['choice']
         else:
-            if self._isPressure(node):
-                default = self._defaultValues()['solver_choice_pressure']
-            else:
-                default = self._defaultValues()['solver_choice']
-            value = default
+            value = self._defaultValues()['solver_choice']
         return value
 
 
@@ -650,11 +638,7 @@ class NumericalParamEquatModel(Model):
         if n:
             value = n['choice']
         else:
-            if self._isPressure(node):
-                default = self._defaultValues()['preconditioning_choice_pressure']
-            else:
-                default = self._defaultValues()['preconditioning_choice']
-            value = default
+            value = self._defaultValues()['preconditioning_choice']
         return value
 
 

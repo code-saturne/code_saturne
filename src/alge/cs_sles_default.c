@@ -131,6 +131,7 @@ cs_sles_default(int                 f_id,
 
     if (!strcmp(name, "wall_distance")) { /* distpr.f90 */
       sles_it_type = CS_SLES_PCG;
+      multigrid = true;
     }
     if (!strcmp(name, "yplus_wall")) { /* distyp.f90 */
       sles_it_type = CS_SLES_JACOBI;
@@ -150,6 +151,7 @@ cs_sles_default(int                 f_id,
           return;
       }
       /* If copying from pressure failed, default to multigrid */
+      sles_it_type = CS_SLES_PCG;
       multigrid = true;
     }
     else if (!strcmp(name, "Prhydro")) { /* prehyd.f90 */
@@ -164,28 +166,45 @@ cs_sles_default(int                 f_id,
     }
     else if (!strcmp(name, "radiation_P1")) { /* raypun.f90 */
       sles_it_type = CS_SLES_PCG;
-      n_max_iter = 1000;
+      multigrid = true;
     }
 
   }
 
   /* Final default */
 
-  if (multigrid == false) {
-    if (sles_it_type == CS_SLES_N_IT_TYPES) {
-      if (cs_matrix_is_symmetric(a))
-        sles_it_type = CS_SLES_PCG;
-      else
-        sles_it_type = CS_SLES_JACOBI;
-    }
-    (void)cs_sles_it_define(f_id,
-                            name,
-                            sles_it_type,
-                            _poly_degree_default,
-                            n_max_iter);
+  if (sles_it_type == CS_SLES_N_IT_TYPES) {
+    if (cs_matrix_is_symmetric(a))
+      sles_it_type = CS_SLES_PCG;
+    else
+      sles_it_type = CS_SLES_JACOBI;
   }
-  else
-    cs_multigrid_define(-1, name);
+
+  int poly_degree = (multigrid) ? _poly_degree_default : -1;
+
+  cs_sles_it_t *c = cs_sles_it_define(f_id,
+                                      name,
+                                      sles_it_type,
+                                      poly_degree,
+                                      n_max_iter);
+
+  /* Multigrid used as preconditionner */
+
+  if (multigrid) {
+    cs_sles_pc_t *pc = cs_multigrid_pc_create();
+    cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
+    cs_sles_it_transfer_pc(c, &pc);
+    cs_multigrid_set_solver_options(mg,
+                                    CS_SLES_P_GAUSS_SEIDEL,
+                                    CS_SLES_P_GAUSS_SEIDEL,
+                                    CS_SLES_PCG,
+                                    1,    /* n max cycles */
+                                    1,    /* n max iter for descent */
+                                    1,    /* n max iter for ascent */
+                                    500,  /* n max iter for coarse solve */
+                                    0, 0, 0,  /* precond degree */
+                                    -1, -1, 1); /* precision multiplier */
+  }
 }
 
 /*----------------------------------------------------------------------------*/
