@@ -171,8 +171,11 @@ _sles_default_native(int                f_id,
   /* Final default */
 
   if (sles_it_type == CS_SLES_N_IT_TYPES) {
-    if (symmetric)
+    if (symmetric) {
       sles_it_type = CS_SLES_PCG;
+      if (f_id > -1)
+        multigrid = true;
+    }
     else
       sles_it_type = CS_SLES_JACOBI;
   }
@@ -263,23 +266,8 @@ cs_sles_default_setup(void)
 
   const int n_fields = cs_field_n_fields();
 
-  /* Define solver for all variable fields if not already done */
-
-  /* Multigrid by default for pressure */
-
-  const cs_field_t *cvar_p = (cs_field_by_name_try("pressure"));
-  if (cvar_p != NULL) {
-    if (cvar_p->type & CS_FIELD_VARIABLE) {
-      void *context = NULL;
-      cs_sles_t *sc = cs_sles_find(cvar_p->id, NULL);
-      if (sc != NULL)
-        context = cs_sles_get_context(sc);
-      if (context == NULL)
-        cs_multigrid_define(cvar_p->id, NULL);
-    }
-  }
-
-  /* Default for other fields based on convection/diffusion */
+  /* Define solver for all variable fields if not already done,
+     based on convection/diffusion */
 
   if (key_cal_opt_id > -1) {
 
@@ -293,16 +281,11 @@ cs_sles_default_setup(void)
           context = cs_sles_get_context(sc);
 
         if (context == NULL) {
-
           /* Get the calculation option from the field */
           cs_var_cal_opt_t var_cal_opt;
           cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-          if (var_cal_opt.iconv > 0)
-            cs_sles_it_define(f_id, NULL, CS_SLES_JACOBI,
-                              _poly_degree_default, _n_max_iter_default);
-          else if (var_cal_opt.idiff > 0)
-            cs_multigrid_define(f_id, NULL);
-
+          bool symmetric = (var_cal_opt.iconv > 0) ? false : true;
+          _sles_default_native(f_id, NULL, CS_MATRIX_N_TYPES, symmetric);
         }
 
       }
