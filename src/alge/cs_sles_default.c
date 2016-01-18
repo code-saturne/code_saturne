@@ -102,26 +102,23 @@ static const int _n_max_iter_default = 10000;
  * Private function definitions
  *============================================================================*/
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Default definition of a sparse linear equation solver
 
-  \param[in]  f_id  associated field id, or < 0
-  \param[in]  name  associated name if f_id < 0, or NULL
-  \param[in]  a     matrix
+  \param[in]  f_id         associated field id, or < 0
+  \param[in]  name         associated name if f_id < 0, or NULL
+  \param[in]  matrix_type  matrix type, if available, or CS_MATRIX_N_TYPES
+                           if not determined at calling site
+  \param[in]  symmetric    indicate if matrix is symmetric
 */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_sles_default(int                 f_id,
-                const char         *name,
-                const cs_matrix_t  *a)
+static void
+_sles_default_native(int                f_id,
+                     const char        *name,
+                     cs_matrix_type_t   matrix_type,
+                     bool               symmetric)
 {
   bool multigrid = false;
   cs_sles_it_type_t sles_it_type = CS_SLES_N_IT_TYPES;
@@ -164,7 +161,7 @@ cs_sles_default(int                 f_id,
       sles_it_type = CS_SLES_PCG;
       n_max_iter = 1000;
     }
-    else if (!strcmp(name, "radiation_P1")) { /* raypun.f90 */
+    else if (!strcmp(name, "radiation_p1")) { /* raypun.f90 */
       sles_it_type = CS_SLES_PCG;
       multigrid = true;
     }
@@ -174,37 +171,74 @@ cs_sles_default(int                 f_id,
   /* Final default */
 
   if (sles_it_type == CS_SLES_N_IT_TYPES) {
-    if (cs_matrix_is_symmetric(a))
+    if (symmetric)
       sles_it_type = CS_SLES_PCG;
     else
       sles_it_type = CS_SLES_JACOBI;
   }
 
-  int poly_degree = (multigrid) ? _poly_degree_default : -1;
-
-  cs_sles_it_t *c = cs_sles_it_define(f_id,
-                                      name,
-                                      sles_it_type,
-                                      poly_degree,
-                                      n_max_iter);
-
-  /* Multigrid used as preconditionner */
-
   if (multigrid) {
-    cs_sles_pc_t *pc = cs_multigrid_pc_create();
-    cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
-    cs_sles_it_transfer_pc(c, &pc);
-    cs_multigrid_set_solver_options(mg,
-                                    CS_SLES_P_GAUSS_SEIDEL,
-                                    CS_SLES_P_GAUSS_SEIDEL,
-                                    CS_SLES_PCG,
-                                    1,    /* n max cycles */
-                                    1,    /* n max iter for descent */
-                                    1,    /* n max iter for ascent */
-                                    500,  /* n max iter for coarse solve */
-                                    0, 0, 0,  /* precond degree */
-                                    -1, -1, 1); /* precision multiplier */
+
+    /* Multigrid used as preconditionner if possible, as solver otherwise */
+
+    if ((matrix_type == CS_MATRIX_MSR) || (matrix_type == CS_MATRIX_N_TYPES)) {
+      cs_sles_it_t *c = cs_sles_it_define(f_id,
+                                          name,
+                                          sles_it_type,
+                                          -1, /* poly_degree */
+                                          n_max_iter);
+      cs_sles_pc_t *pc = cs_multigrid_pc_create();
+      cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
+      cs_sles_it_transfer_pc(c, &pc);
+      cs_multigrid_set_solver_options(mg,
+                                      CS_SLES_P_GAUSS_SEIDEL,
+                                      CS_SLES_P_GAUSS_SEIDEL,
+                                      CS_SLES_PCG,
+                                      1,    /* n max cycles */
+                                      1,    /* n max iter for descent */
+                                      1,    /* n max iter for ascent */
+                                      500,  /* n max iter for coarse solve */
+                                      0, 0, 0,  /* precond degree */
+                                      -1, -1, 1); /* precision multiplier */
+    }
+    else
+      cs_multigrid_define(f_id, name);
+
   }
+  else
+    (void)cs_sles_it_define(f_id,
+                            name,
+                            sles_it_type,
+                            _poly_degree_default,
+                            n_max_iter);
+
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Default definition of a sparse linear equation solver
+
+  \param[in]  f_id  associated field id, or < 0
+  \param[in]  name  associated name if f_id < 0, or NULL
+  \param[in]  a     matrix
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_default(int                 f_id,
+                const char         *name,
+                const cs_matrix_t  *a)
+{
+  cs_matrix_type_t type = cs_matrix_get_type(a);
+  bool symmetric = cs_matrix_is_symmetric(a);
+
+  _sles_default_native(f_id, name, type, symmetric);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -417,6 +451,11 @@ cs_sles_solve_native(int                  f_id,
          "  maximum number of systems: %d\n"
          "If this is not an error, increase CS_SLES_DEFAULT_N_SETUPS\n"
          "  in file %s.", CS_SLES_DEFAULT_N_SETUPS, __FILE__);
+
+    if (cs_sles_get_context(sc) == NULL)
+      _sles_default_native(f_id, name, CS_MATRIX_N_TYPES, symmetric);
+
+    assert(cs_sles_get_context(sc) != NULL);
 
     cs_sles_pc_t  *pc = NULL;
     cs_multigrid_t *mg = NULL;
