@@ -2010,7 +2010,7 @@ _create_struct_csr(bool                have_diag,
     assert(ms->_row_index[ms->n_rows] < tmp_row_index[ms->n_rows]);
 
     BFT_FREE(tmp_row_index);
-    BFT_REALLOC(ms->_col_id, (ms->row_index[ms->n_rows]), cs_lnum_t);
+    BFT_REALLOC(ms->_col_id, (ms->_row_index[ms->n_rows]), cs_lnum_t);
 
   }
 
