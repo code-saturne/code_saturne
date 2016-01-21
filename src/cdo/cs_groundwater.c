@@ -71,12 +71,10 @@ BEGIN_C_DECLS
 /* Set of parameters related to a tracer equation */
 typedef struct {
 
-  int              eq_id;
-
-  /* Product of the bulk density by the distribution coefficient */
+  /* Bulk density times the distribution coefficient for each soil */
   double           rho_kd;
 
-  /* Longitudinal and transversal dispersivity */
+  /* Longitudinal and transversal dispersivity for each soil */
   double           alpha_l;
   double           alpha_t;
 
@@ -86,7 +84,6 @@ typedef struct {
   /* First order decay coefficient (related to the reaction term) */
   double           reaction_rate;
 
-
 } cs_gw_tracer_t;
 
 /* Set of parameters describing a type of soil */
@@ -94,6 +91,9 @@ typedef struct {
 
   int          ml_id;    /* id associated to a mesh location structure
                             The support entities are cells */
+
+  /* Set of parameters for each tracer equation */
+  cs_gw_tracer_t         *tracer_param;
 
   /* Physical modelling adopted for this soil */
   cs_groundwater_model_t  model;
@@ -115,39 +115,40 @@ struct _groundwater_t {
   cs_flag_t                flag;       /* Compact information */
   int                      post_freq;  /* Frequency for post-processing */
 
-  cs_lnum_t                n_cells;    /* number of cells (useful for accessing
-                                          soil_id) */
-
   cs_groundwater_model_t   global_model;
-
-  /* Gravity effect */
-  bool                     with_gravitation;
-  cs_real_3_t              gravity;
-  cs_real_t               *gravity_source_term;
-
-  /* Set of equations associated to this module */
-  int                      richards_eq_id;
-  int                      n_tracers;
-  cs_gw_tracer_t          *tracer_param;
-
-  /* Moisture content variable and attached quantities */
-  cs_field_t              *moisture_content;
 
   /* Physical parameters related to each kind of soil considered.
      If n_soils > 1, soil_id array stores the id giving access to the soil
      parameters related to each cell of the mesh */
-  int                      n_soils;
-  cs_gw_soil_t            *soil_param;
-  short int               *soil_id;        /* NULL or allocated to n_cells */
+  int            n_soils;
+  int            n_max_soils;
+  cs_gw_soil_t  *soil_param;
+  cs_lnum_t      n_cells;     /* Number of cells (useful to get soil_id) */
+  short int     *soil_id;     /* NULL or allocated to n_cells */
+
+  /* Gravity effect */
+  bool           with_gravitation;
+  cs_real_3_t    gravity;
+  cs_real_t     *gravity_source_term;
+
+  /* Set of equations associated to this module */
+  int            richards_eq_id;
+
+  int            n_tracers;
+  int            n_max_tracers;
+  int           *tracer_eq_ids;
+
+  /* Moisture content variable and attached quantities */
+  cs_field_t          *moisture_content;
 
   /* Permeability is the diffusion property related to Richards equation but
      this property plays also a role in the diffusion of tracer equations */
-  cs_property_t           *permeability;  /* shared with domain */
+  cs_property_t       *permeability;  /* shared with a cs_domain_t structure */
 
   /* Scan the c2e connectivity index to get the darcian flux related to
      each dual face when CDO vertex-based scheme is activated */
-  cs_real_t               *darcian_flux;
-  cs_adv_field_t          *adv_field;    /* shared with domain */
+  cs_real_t           *darcian_flux;
+  cs_adv_field_t      *adv_field;    /* shared with a cs_domain_t structure */
 
   /* Work buffer */
   cs_real_t  *work;
@@ -303,10 +304,43 @@ _get_soilkey(const char  *keyname)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set a cs_gw_tracer_t structure
+ *
+ * \param[in, out] tp              pointer to a cs_gw_tracer_t structure
+ * \param[in]      wmd             value of the water molecular diffusivity
+ * \param[in]      alpha_l         value of the longitudinal dispersivity
+ * \param[in]      alpha_t         value of the transversal dispersivity
+ * \param[in]      bulk_density    value of the bulk density
+ * \param[in]      distrib_coef    value of the distribution coefficient
+ * \param[in]      reaction_rate   value of the first order rate of reaction
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_tracer_param(cs_gw_tracer_t     *tp,
+                  double              wmd,
+                  double              alpha_l,
+                  double              alpha_t,
+                  double              bulk_density,
+                  double              distrib_coef,
+                  double              reaction_rate)
+{
+  assert(tp != NULL); /* Sanity check */
+
+  tp->wmd = wmd;
+  tp->rho_kd = bulk_density * distrib_coef;
+  tp->reaction_rate = reaction_rate;
+  tp->alpha_l = alpha_l;
+  tp->alpha_t = alpha_t;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize a cs_gw_soil_t structure (already allocated)
  *
  * \param[in]      ml_name         name of the mesh location
  * \param[in]      model_kw        keyword related to the modelling
+ * \param[in]      n_tracers       number of related tracer eqs
  * \param[in, out] soil            pointer to a cs_gw_soil_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -314,6 +348,7 @@ _get_soilkey(const char  *keyname)
 static void
 _init_soil(const char     *ml_name,
            const char     *model_kw,
+           int             n_tracers,
            cs_gw_soil_t   *soil)
 {
   if (soil == NULL)
@@ -373,42 +408,51 @@ _init_soil(const char     *ml_name,
               " Value given: %s\n"
               " Availaible models: saturated, genutchen, tracy", model_kw);
 
+  /* Set of parameters for each tracer which are related to this soil */
+  BFT_MALLOC(soil->tracer_param, n_tracers, cs_gw_tracer_t);
+  for (int i = 0; i < n_tracers; i++) /* default initialization */
+    _set_tracer_param(soil->tracer_param + i,
+                      0.0,  /* water molecular diffusivity */
+                      0.0,  /* alpha_l */
+                      0.0,  /* alpha_t */
+                      1.0,  /* bulk density */
+                      0.0,  /* Kd (distribution coef.) */
+                      0.0); /* reaction rate */
+
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a cs_gw_tracer_t structure
+ * \brief  Get the id in a cs_groundwater_t structure from the tracer
+ *         equation id
  *
- * \param[in]      tracer_eq_id    id related to the tracer equation
- * \param[in]      wmd             value of the water molecular diffusivity
- * \param[in]      alpha_l         value of the longitudinal dispersivity
- * \param[in]      alpha_t         value of the transversal dispersivity
- * \param[in]      bulk_density    value of the bulk density
- * \param[in]      distrib_coef    value of the distribution coefficient
- * \param[in]      reaction_rate   value of the first order rate of reaction
- * \param[in, out] tp              pointer to a cs_gw_tracer_t structure
+ * \param[in]   gw             pointer to a cs_groundwater_t structure
+ * \param[in]   tracer_eq_id   tracer equation id
+ *
+ * \returns an id related to this tracer equation id
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_set_tracer_param(int                 tracer_eq_id,
-                  double              wmd,
-                  double              alpha_l,
-                  double              alpha_t,
-                  double              bulk_density,
-                  double              distrib_coef,
-                  double              reaction_rate,
-                  cs_gw_tracer_t     *tp)
+static inline int
+_get_tracer_id(const cs_groundwater_t   *gw,
+               int                       tracer_eq_id)
 {
-  assert(tp != NULL); /* Sanity check */
+  int  tracer_id = -1;
 
-  tp->eq_id = tracer_eq_id;
+  for (int id = 0; id < gw->n_tracers; id++) {
+    if (gw->tracer_eq_ids[id] == tracer_eq_id) {
+      tracer_id = id;
+      break;
+    }
+  }
 
-  tp->wmd = wmd;
-  tp->rho_kd = bulk_density * distrib_coef;
-  tp->reaction_rate = reaction_rate;
-  tp->alpha_l = alpha_l;
-  tp->alpha_t = alpha_t;
+  if (tracer_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              " Stop setting a tracer equation. Its identification number has"
+              " not been found in the groundwater flow module.\n"
+              " Please check your settings.");
+
+  return tracer_id;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -789,6 +833,48 @@ _update_moisture_content(const cs_cdo_connect_t      *connect,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if the setting is correct
+ *
+ * \param[in]  gw     pointer to a cs_groundwater_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_settings(const cs_groundwater_t  *gw)
+{
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+
+  for (int i = 0; i < gw->n_max_tracers; i++)
+    if (gw->tracer_eq_ids[i] == -1)
+      bft_error(__FILE__, __LINE__, 0,
+                " At least one tracer equation has not been set.\n"
+                " %d tracer equations have heen initialy requested.\n"
+                " Please check your settings.", gw->n_max_tracers);
+
+
+  if (gw->n_soils < gw->n_max_soils)
+    bft_error(__FILE__, __LINE__, 0,
+              " %d soils are defined but %d have been initially requested."
+              " Please check your settings.", gw->n_soils, gw->n_max_soils);
+
+  if (gw->n_soils > 1) {
+
+    cs_lnum_t  n_unset_cells = 0;
+
+    for (cs_lnum_t i = 0; i < gw->n_cells; i++)
+      if (gw->soil_id[i] == gw->n_max_soils) n_unset_cells++;
+
+    if (n_unset_cells > 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %d cells are not associated to any soil.\n"
+                " Please check your settings.", n_unset_cells);
+
+  } // n_soils > 1
+
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -797,14 +883,12 @@ _update_moisture_content(const cs_cdo_connect_t      *connect,
 /*!
  * \brief  Create a structure dedicated to manage groundwater flows
  *
- * \param[in]  n_cells    number of cells in the computational domain
- *
  * \return a pointer to a new allocated cs_groundwater_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_groundwater_t *
-cs_groundwater_create(cs_lnum_t    n_cells)
+cs_groundwater_create(void)
 {
   cs_groundwater_t  *gw = NULL;
 
@@ -815,9 +899,11 @@ cs_groundwater_create(cs_lnum_t    n_cells)
   gw->post_freq = -1;
 
   gw->n_soils = 0;
+  gw->n_max_soils = 0;
   gw->soil_param = NULL;
-  gw->n_cells = n_cells;
+  gw->n_cells = 0;
   gw->soil_id = NULL;
+
   gw->global_model = CS_GROUNDWATER_N_MODELS;
 
   gw->with_gravitation = false;
@@ -826,7 +912,8 @@ cs_groundwater_create(cs_lnum_t    n_cells)
 
   gw->richards_eq_id = -1;
   gw->n_tracers = 0;
-  gw->tracer_param = NULL;
+  gw->n_max_tracers = 0;
+  gw->tracer_eq_ids = NULL;
 
   gw->darcian_flux = NULL;
   gw->adv_field = NULL;
@@ -852,7 +939,6 @@ cs_groundwater_finalize(cs_groundwater_t   *gw)
     return NULL;
 
   BFT_FREE(gw->soil_param);
-  BFT_FREE(gw->tracer_param);
   BFT_FREE(gw->darcian_flux);
   BFT_FREE(gw->work);
 
@@ -862,7 +948,10 @@ cs_groundwater_finalize(cs_groundwater_t   *gw)
   if (gw->n_soils > 1)
     BFT_FREE(gw->soil_id);
 
+  BFT_FREE(gw->tracer_eq_ids);
   BFT_FREE(gw);
+
+  /* Fields, advection fields and properties are freed elsewhere */
 
   return NULL;
 }
@@ -955,6 +1044,9 @@ cs_groundwater_summary(const cs_groundwater_t   *gw)
 {
   if (gw == NULL)
     return;
+
+  /* Sanity checks */
+  _check_settings(gw);
 
   bft_printf("\n");
   bft_printf("%s", lsepline);
@@ -1069,6 +1161,8 @@ cs_groundwater_summary(const cs_groundwater_t   *gw)
  *
  * \param[in]      connect          pointer to a cs_cdo_connect_t structure
  * \param[in]      richards_eq_id   id related to the Richards equation
+ * \param[in]      n_soils          number of soils to consider
+ * \param[in]      n_tracers        number of tracers to consider
  * \param[in, out] permeability     pointer to a property structure
  * \param[in, out] soil_capacity    pointer to a property structure
  * \param[in, out] adv_field        pointer to a cs_adv_field_t structure
@@ -1081,6 +1175,8 @@ cs_groundwater_summary(const cs_groundwater_t   *gw)
 cs_equation_t *
 cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
                           int                      richards_eq_id,
+                          int                      n_soils,
+                          int                      n_tracer_eqs,
                           cs_property_t           *permeability,
                           cs_property_t           *soil_capacity,
                           cs_adv_field_t          *adv_field,
@@ -1089,6 +1185,7 @@ cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
   cs_equation_t  *eq = NULL;
 
   const cs_connect_index_t  *c2e = connect->c2e;
+  const cs_lnum_t  n_cells = connect->c_info->n_ent;
 
   /* Sanity check */
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
@@ -1114,12 +1211,32 @@ cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
   gw->adv_field = adv_field;
 
   /* Up to now Richards equation is only set with CS_SPACE_SCHEME_CDOVB */
-  BFT_MALLOC(gw->darcian_flux, c2e->idx[connect->c_info->n_ent], cs_real_t);
-  for (cs_lnum_t i = 0; i < c2e->idx[connect->c_info->n_ent]; i++)
+  BFT_MALLOC(gw->darcian_flux, c2e->idx[n_cells], cs_real_t);
+  for (cs_lnum_t i = 0; i < c2e->idx[n_cells]; i++)
     gw->darcian_flux[i] = 0;
 
   /* Work (temporary) buffer */
   BFT_MALLOC(gw->work, connect->n_max_ebyc, cs_real_t);
+
+  /* Quantities related to soils */
+  assert(n_soils > 0);
+  gw->n_soils = 0; /* No soil is set at the beginning */
+  gw->n_max_soils = n_soils; /* Max. number of soils allocated */
+  BFT_MALLOC(gw->soil_param, n_soils, cs_gw_soil_t);
+
+  gw->n_cells = n_cells;
+  if (n_soils > 1) {
+    BFT_MALLOC(gw->soil_id, n_cells, short int);
+
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      gw->soil_id[i] = n_soils; /* Default value => not set */
+  }
+
+  gw->n_tracers = 0;
+  gw->n_max_tracers = n_tracer_eqs;
+  BFT_MALLOC(gw->tracer_eq_ids, n_tracer_eqs, int);
+  for (int i = 0; i < n_tracer_eqs; i++)
+    gw->tracer_eq_ids[i] = -1; /* Default initialization = not set */
 
   return eq;
 }
@@ -1141,17 +1258,20 @@ cs_groundwater_add_soil_by_value(cs_groundwater_t   *gw,
                                  const char         *model_kw,
                                  const char         *pty_val)
 {
-  if (gw == NULL)
-    return;
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
   int  soil_id = gw->n_soils;
 
   gw->n_soils += 1;
-  BFT_REALLOC(gw->soil_param, gw->n_soils, cs_gw_soil_t);
+  if (gw->n_soils > gw->n_max_soils)
+    bft_error(__FILE__, __LINE__, 0,
+              " Maximum number of soils is reached.\n"
+              " Stop adding a new soil by value (mesh location: %s).\n"
+              " Please modify your settings.", ml_name);
 
   cs_gw_soil_t  *soil = gw->soil_param + soil_id;
 
-  _init_soil(ml_name, model_kw, soil);
+  _init_soil(ml_name, model_kw, gw->n_max_tracers, soil);
 
   /* Set the saturated permeability */
   switch (cs_property_get_type(gw->permeability)) {
@@ -1202,7 +1322,7 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
 
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
-  int ml_id = -1;
+  int  ml_id = -1;
 
   if (ml_name != NULL) {
 
@@ -1322,21 +1442,12 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
  *         This equation is a specific unsteady advection/diffusion/reaction eq.
  *         Tracer is advected thanks to the darcian velocity which is given
  *         by the resolution of the Richards equation.
- *         Diffusion/reaction parameters result from a physical modelling.
+ *         Diffusion and reaction parameters result from a physical modelling.
  *
  * \param[in, out] gw              pointer to a cs_groundwater_t structure
  * \param[in]      tracer_eq_id    id related to the tracer equation
  * \param[in]      eqname          name of the equation
  * \param[in]      varname         name of the related variable
- * \param[in]      diff_pty        related property for the diffusion term
- * \param[in]      time_pty        related property for the time-dependent term
- * \param[in]      reac_pty        related property for the reaction term
- * \param[in]      wmd             value of the water molecular diffusivity
- * \param[in]      alpha_l         value of the longitudinal dispersivity
- * \param[in]      alpha_t         value of the transversal dispersivity
- * \param[in]      bulk_density    value of the bulk density
- * \param[in]      distrib_coef    value of the distribution coefficient
- * \param[in]      reaction_rate   value of the first order rate of reaction
  *
  * \return a pointer to a new allocated equation structure (Tracer eq.)
  */
@@ -1346,36 +1457,20 @@ cs_equation_t *
 cs_groundwater_add_tracer(cs_groundwater_t    *gw,
                           int                  tracer_eq_id,
                           const char          *eqname,
-                          const char          *varname,
-                          cs_property_t       *diff_pty,
-                          cs_property_t       *time_pty,
-                          cs_property_t       *reac_pty,
-                          double               wmd,
-                          double               alpha_l,
-                          double               alpha_t,
-                          double               bulk_density,
-                          double               distrib_coef,
-                          double               reaction_rate)
+                          const char          *varname)
 {
   /* Sanity check */
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
+  if (gw->n_soils != gw->n_max_soils)
+    bft_error(__FILE__, __LINE__, 0,
+              " Add a tracer but not all soils are defined (%d/%d).\n"
+              " Stop adding a new tracer equation (%s).\n"
+              " Please check your settings.",
+              gw->n_soils, gw->n_max_soils, eqname);
+
+  int  tracer_id = gw->n_tracers;
   cs_equation_t  *eq = NULL;
-
-  BFT_REALLOC(gw->tracer_param, gw->n_tracers + 1, cs_gw_tracer_t);
-
-  cs_gw_tracer_t  *tp = gw->tracer_param + gw->n_tracers;
-
-  _set_tracer_param(tracer_eq_id,
-                    wmd,
-                    alpha_l,
-                    alpha_t,
-                    bulk_density,
-                    distrib_coef,
-                    reaction_rate,
-                    tp);
-
-  gw->n_tracers += 1;
 
   eq = cs_equation_create(eqname,                       // equation name
                           varname,                      // variable name
@@ -1383,68 +1478,128 @@ cs_groundwater_add_tracer(cs_groundwater_t    *gw,
                           CS_PARAM_VAR_SCAL,            // type of variable
                           CS_PARAM_BC_HMG_NEUMANN);     // default BC
 
-  /* Associate the property for the unsteady term */
-  cs_equation_link(eq, "time", time_pty);
-  cs_property_def_by_law(time_pty, _get_tracer_time_coeff);
-  cs_property_set_struct(time_pty, (const void *)tp);
+  gw->n_tracers += 1;
+  if (gw->n_tracers > gw->n_max_tracers)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Maximum number of tracers is reached.\n"
+                " Stop adding the tracer equation %s.\n"
+                " Please modify your settings."), eqname);
+
+  BFT_REALLOC(gw->tracer_eq_ids, gw->n_tracers, int);
+  gw->tracer_eq_ids[tracer_id] = tracer_eq_id;
 
   /* Associate the advection field for the advection term */
   assert(gw->adv_field != NULL); /* Sanity check */
   cs_equation_link(eq, "advection", gw->adv_field);
 
-  /* Associate the property for the diffusion term */
-  if (diff_pty != NULL) {
-
-    cs_equation_link(eq, "diffusion", diff_pty);
-    cs_property_def_by_scavec_law(diff_pty, _get_tracer_diffusion_tensor);
-    cs_property_set_struct(diff_pty, (const void *)tp);
-
-  }
-
-  /* Associate the property for the reaction term */
-  if (reac_pty != NULL) {
-
-    cs_equation_add_reaction(eq, "decay", "linear", reac_pty);
-    cs_property_def_by_law(reac_pty, _get_tracer_reaction_coeff);
-    cs_property_set_struct(reac_pty, (const void *)tp);
-
-  }
+  /* Set default option */
+  cs_equation_set_option(eq, "space_scheme", "cdo_vb");
+  cs_equation_set_option(eq, "itsol", "bicg");
+  cs_equation_set_option(eq, "bc_enforcement", "weak");
+  cs_equation_set_option(eq, "time_scheme", "crank_nicolson");
 
   return eq;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined settings for the module dedicated to groundwater flows
+ * \brief  Add a new equation related to the groundwater flow module
+ *         This equation is a specific unsteady advection/diffusion/reaction eq.
+ *         Tracer is advected thanks to the darcian velocity which is given
+ *         by the resolution of the Richards equation.
+ *         Diffusion/reaction parameters result from a physical modelling.
  *
- * \param[in, out] equations    pointer to the array of cs_equation_t struct.
- * \param[in, out] gw           pointer to a cs_groundwater_t structure
+ * \param[in, out] gw              pointer to a cs_groundwater_t structure
+ * \param[in]      tracer_eq_id    id related to the tracer equation
+ * \param[in]      ml_name         name of the related mesh location
+ * \param[in]      wmd             value of the water molecular diffusivity
+ * \param[in]      alpha_l         value of the longitudinal dispersivity
+ * \param[in]      alpha_t         value of the transversal dispersivity
+ * \param[in]      bulk_density    value of the bulk density
+ * \param[in]      distrib_coef    value of the distribution coefficient
+ * \param[in]      reaction_rate   value of the first order rate of reaction
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_automatic_settings(cs_equation_t      **equations,
-                                  cs_groundwater_t    *gw)
+cs_groundwater_set_tracer_param(cs_groundwater_t    *gw,
+                                int                  tracer_eq_id,
+                                const char          *ml_name,
+                                double               wmd,
+                                double               alpha_l,
+                                double               alpha_t,
+                                double               bulk_density,
+                                double               distrib_coef,
+                                double               reaction_rate)
 {
-  cs_lnum_t  i, j, c_id;
+  /* Sanity check */
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+
+  int  tracer_id = _get_tracer_id(gw, tracer_eq_id);
+
+  /* Look for the related soil */
+  int  ml_id = cs_mesh_location_get_id_by_name(ml_name);
+  if (ml_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _( " Stop setting a tracer equation."
+                 " Invalid mesh location name %s.\n"
+                 " This mesh location is not already defined.\n"), ml_name);
+
+  int  soil_id = -1;
+  for (int id = 0; id < gw->n_soils; id++) {
+    if (gw->soil_param[id].ml_id == ml_id) {
+      soil_id = id;
+      break;
+    }
+  }
+
+  if (soil_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Stop setting a tracer equation."
+                " No soil related to mesh location %s has been found.\n"
+                " Please check your settings."), ml_name);
+
+
+  cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+  cs_gw_tracer_t  *tp = soil->tracer_param + tracer_id;
+
+  /* Set tracer parameters */
+  _set_tracer_param(tp,
+                    wmd,
+                    alpha_l, alpha_t,
+                    bulk_density, distrib_coef,
+                    reaction_rate);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined settings for the Richards equation
+ *
+ * \param[in, out] gw        pointer to a cs_groundwater_t structure
+ * \param[in, out] richards  pointer to the related cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_groundwater_richards_setup(cs_groundwater_t    *gw,
+                              cs_equation_t       *richards)
+{
+  cs_lnum_t  i, c_id;
   cs_flag_t  flag;
 
-  /* Sanity check */
+  /* Sanity checks */
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
   if (gw->n_soils == 0)
     bft_error(__FILE__, __LINE__, 0,
               _(" Groundwater module is activated but no soil is defined."));
 
-  cs_property_t  *permeability = gw->permeability;
-  cs_equation_t  *richards = equations[gw->richards_eq_id];
-  cs_field_t  *hydraulic_head = cs_equation_get_field(richards);
-
-  /* Sanity check */
   assert(richards != NULL);
   assert(cs_equation_get_space_scheme(richards) == CS_SPACE_SCHEME_CDOVB);
 
-  /* Moisture content (defined in each cell) */
+  cs_property_t  *permeability = gw->permeability;
+  cs_field_t  *hydraulic_head = cs_equation_get_field(richards);
   bool has_previous = cs_equation_is_steady(richards) ? false:true;
   int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
   int  location_id = cs_mesh_location_get_id_by_name(N_("cells"));
@@ -1575,16 +1730,12 @@ cs_groundwater_automatic_settings(cs_equation_t      **equations,
 
     cs_groundwater_model_t  model = gw->soil_param[0].model;
 
-    BFT_MALLOC(gw->soil_id, gw->n_cells, short int);
-    for (i = 0; i < gw->n_cells; i++)
-      gw->soil_id[i] = -1; // default initialization (not set)
-
     gw->global_model = model;
 
     /* Is there a unique model ? */
-    for (i = 0; i < gw->n_soils; i++) {
+    for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
 
-      const cs_gw_soil_t  *soil = gw->soil_param + i;
+      const cs_gw_soil_t  *soil = gw->soil_param + soil_id;
       const double  theta_s = soil->saturated_moisture;
 
       if (soil->model != model)
@@ -1598,10 +1749,10 @@ cs_groundwater_automatic_settings(cs_equation_t      **equations,
       assert(elt_ids != NULL);
 
       /* Initialization of soil_id and moisture content */
-      for (j = 0; j < n_elts[0]; j++) {
+      for (i = 0; i < n_elts[0]; i++) {
 
-        c_id = elt_ids[j];
-        gw->soil_id[c_id] = i;
+        c_id = elt_ids[i];
+        gw->soil_id[c_id] = soil_id;
         gw->moisture_content->val[c_id] = theta_s;
 
       } // Loop on selected cells
@@ -1675,16 +1826,6 @@ cs_groundwater_automatic_settings(cs_equation_t      **equations,
 
     } // Loop on the different type of soils
 
-#if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
-    cs_lnum_t  n_unset_cells = 0;
-    for (i = 0; i < gw->n_cells; i++)
-      if (gw->soil_id[i] == -1) n_unset_cells++;
-
-    if (n_unset_cells > 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _(" %d cells have no related soil.\n"
-                  " Please check your settings."), n_unset_cells);
-#endif
   } /* n_soils > 1 */
 
   /* Define and then link the advection field to each tracer equations */
@@ -1692,49 +1833,189 @@ cs_groundwater_automatic_settings(cs_equation_t      **equations,
   flag |= CS_PARAM_FLAG_SCAL;
 
   cs_advection_field_def_by_array(gw->adv_field, flag, gw->darcian_flux);
+}
 
-  for (i = 0; i < gw->n_tracers; i++) {
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if one needs to add a reaction term for a given tracer
+ *
+ * \param[in] gw         pointer to a cs_groundwater_t structure
+ * \param[in] eq_id      id of the equation related to this tracer
+ *
+ * \returns true or false
+ */
+/*----------------------------------------------------------------------------*/
 
-    cs_gw_tracer_t  tp = gw->tracer_param[i];
-    cs_equation_t  *eq = equations[tp.eq_id];
-    cs_flag_t  eq_flag = cs_equation_get_flag(eq);
+bool
+cs_groundwater_tracer_needs_reaction(const cs_groundwater_t    *gw,
+                                     int                        eq_id)
+{
+  int  tracer_id = _get_tracer_id(gw, eq_id);
+  bool  is_needed = false;
 
-    const char  *eqname = cs_equation_get_name(eq);
+  /* Loop on soils to check in a reaction term is needed */
+  for (int soil_id = 0; soil_id < gw->n_soils && is_needed == false; soil_id++)
+    {
+      cs_gw_soil_t  *soil = gw->soil_param + soil_id;
 
-    /* Set time property */
-    cs_property_t  *time_pty = cs_equation_get_time_property(eq);
+      if (soil->tracer_param[tracer_id].reaction_rate > 0) is_needed = true;
+    }
+
+  return is_needed;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if one needs to add a diffusion term for a given tracer
+ *
+ * \param[in] gw         pointer to a cs_groundwater_t structure
+ * \param[in] eq_id      id of the equation related to this tracer
+ *
+ * \returns true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_groundwater_tracer_needs_diffusion(const cs_groundwater_t    *gw,
+                                      int                        eq_id)
+{
+  int  tracer_id = _get_tracer_id(gw, eq_id);
+  bool  is_needed = false;
+
+  /* Loop on soils to check in a reaction term is needed */
+  for (int soil_id = 0; soil_id < gw->n_soils && is_needed == false; soil_id++)
+    {
+      cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+
+      if (soil->tracer_param[tracer_id].alpha_t > 0) is_needed = true;
+      if (soil->tracer_param[tracer_id].alpha_l > 0) is_needed = true;
+      if (soil->tracer_param[tracer_id].wmd > 0) is_needed = true;
+    }
+
+  return is_needed;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined settings for a tracer equation
+ *
+ * \param[in]      tracer_eq_id  id of the equation related to this tracer
+ * \param[in, out] eq            pointer to the related cs_equation_t structure
+ * \param[in, out] gw            pointer to a cs_groundwater_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_groundwater_tracer_setup(int                  tracer_eq_id,
+                            cs_equation_t       *eq,
+                            cs_groundwater_t    *gw)
+{
+  cs_flag_t  flag;
+  cs_gw_soil_t  *soil = NULL;
+  cs_gw_tracer_t  *tp = NULL;
+
+  /* Sanity check */
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+
+  int  tracer_id = _get_tracer_id(gw, tracer_eq_id);
+  cs_flag_t  eq_flag = cs_equation_get_flag(eq);
+
+  if (gw->n_soils == 1) {
+    soil = gw->soil_param;
+    tp = soil->tracer_param + tracer_id;
+  }
+
+  /* Set time property */
+  cs_property_t  *time_pty = cs_equation_get_time_property(eq);
+
+  if (gw->n_soils == 1) {
+    cs_property_def_by_law(time_pty, _get_tracer_time_coeff);
+    cs_property_set_struct(time_pty, (const void *)tp);
+  }
+  else {
+
+    for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
+
+      soil = gw->soil_param + soil_id;
+      tp = soil->tracer_param + tracer_id;
+      cs_property_def_subdomain_by_law(time_pty,
+                                       cs_mesh_location_get_name(soil->ml_id),
+                                       (const void *)tp,
+                                       _get_tracer_time_coeff);
+
+    } // Loop on soils
+
+  } // n_soils > 1
+
+  flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL;
+  cs_property_set_array(time_pty, flag, gw->moisture_content->val);
+
+  /* Add a diffusion property */
+  if (eq_flag & CS_EQUATION_DIFFUSION) {
+
+    cs_property_t  *diff_pty = cs_equation_get_diffusion_property(eq);
+
+    if (gw->n_soils == 1) {
+      cs_property_def_by_scavec_law(diff_pty, _get_tracer_diffusion_tensor);
+      cs_property_set_struct(diff_pty, (const void *)tp);
+    }
+    else {
+
+      for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
+
+        soil = gw->soil_param + soil_id;
+        tp = soil->tracer_param + tracer_id;
+        cs_property_def_subdomain_by_scavec_law(diff_pty,
+                                         cs_mesh_location_get_name(soil->ml_id),
+                                         (const void *)tp,
+                                         _get_tracer_diffusion_tensor);
+
+      } // Loop on soils
+
+    } // n_soils > 1
 
     flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL;
-    cs_property_set_array(time_pty, flag, gw->moisture_content->val);
+    cs_property_set_array(diff_pty, flag, gw->moisture_content->val);
 
-    /* Set diffusion property */
-    if (eq_flag & CS_EQUATION_DIFFUSION) {
+    flag = CS_PARAM_FLAG_FACE | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_BY_CELL;
+    flag |= CS_PARAM_FLAG_SCAL;
+    cs_property_set_second_array(diff_pty, flag, gw->darcian_flux);
 
-      cs_property_t  *diff_pty = cs_equation_get_diffusion_property(eq);
+  } /* Diffusion term has to be set */
 
-      flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL;
-      cs_property_set_array(diff_pty, flag, gw->moisture_content->val);
+  /* Add a reaction property */
+  if (eq_flag & CS_EQUATION_REACTION) {
 
-      flag = CS_PARAM_FLAG_FACE | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_BY_CELL;
-      flag |= CS_PARAM_FLAG_SCAL;
-      cs_property_set_second_array(diff_pty, flag, gw->darcian_flux);
+    cs_property_t  *reac_pty = cs_equation_get_reaction_property(eq, "decay");
 
+    if (gw->n_soils == 1) {
+      cs_property_def_by_law(reac_pty, _get_tracer_reaction_coeff);
+      cs_property_set_struct(reac_pty, (const void *)tp);
     }
+    else {
 
-    /* Add reaction term if needed */
-    if (eq_flag & CS_EQUATION_REACTION) {
+      for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
 
-      cs_property_t  *reac_pty = cs_equation_get_reaction_property(eq,
-                                                                   "decay");
+        soil = gw->soil_param + soil_id;
+        tp = soil->tracer_param + tracer_id;
+        cs_property_def_subdomain_by_law(reac_pty,
+                                         cs_mesh_location_get_name(soil->ml_id),
+                                         (const void *)tp,
+                                         _get_tracer_reaction_coeff);
 
-      flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL;
-      cs_property_set_array(reac_pty, flag, gw->moisture_content->val);
+      } // Loop on soils
 
-    }
+    } // n_soils > 1
 
-    /* TODO: add predefined source term */
+    flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL;
+    cs_property_set_array(reac_pty, flag, gw->moisture_content->val);
 
-  } // Loop on tracer equations
+  } /* Reaction term has to be set */
+
+  if (eq_flag & CS_EQUATION_DIFFUSION)
+    cs_equation_set_option(eq, "adv_weight", "sg");
+
+  /* TODO: add predefined source term */
 
 }
 
@@ -1801,7 +2082,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
 
     for (i = 0; i < gw->n_tracers; i++) {
 
-      cs_equation_t  *eq = eqs[gw->tracer_param[i].eq_id];
+      cs_equation_t  *eq = eqs[gw->tracer_eq_ids[i]];
 
       cs_equation_init_system(mesh, connect, cdoq, time_step, eq);
 
@@ -1840,7 +2121,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
 
     for (i = 0; i < gw->n_tracers; i++) {
 
-      cs_equation_t  *eq = eqs[gw->tracer_param[i].eq_id];
+      cs_equation_t  *eq = eqs[gw->tracer_eq_ids[i]];
 
       if (!cs_equation_is_steady(eq)) { // unsteady ?
 

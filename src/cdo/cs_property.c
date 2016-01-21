@@ -1205,6 +1205,39 @@ cs_property_def_subdomain_by_law(cs_property_t             *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a cs_property_t structure in a subdomain by a law using as
+ *         arguments a scalar and a vector
+ *
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       ml_name   name of the related mesh location
+ * \param[in]       struc     pointer to a structure (may be NULL)
+ * \param[in]       func      pointer to a law function defined by subdomain
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_def_subdomain_by_scavec_law(cs_property_t             *pty,
+                                        const char                *ml_name,
+                                        const void                *struc,
+                                        cs_scavec_law_func_t      *func)
+{
+  int  ml_id = cs_mesh_location_get_id_by_name(ml_name);
+
+  _check_def_by_subdomain(pty, ml_name, ml_id);
+
+  int  new_id = pty->n_subdomains;
+
+  _add_def_by_subdomain(pty, new_id, ml_id);
+
+  cs_property_subdef_t  *new_sub = pty->sub_defs + new_id;
+
+  new_sub->def_type = CS_PARAM_DEF_BY_SCAVEC_LAW;
+  new_sub->def.law_scavec_func = func;
+  new_sub->struc = struc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set "array" member of a cs_property_t structure
  *
  * \param[in, out]  pty          pointer to a cs_property_t structure
@@ -1392,6 +1425,13 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
                                  &get);
        _get_tensor_by_value(pty, get, tensor);
        break;
+
+     case CS_PARAM_DEF_BY_SCAVEC_LAW:
+       _get_result_by_scavec_law(c_id,
+                                 pty, sub->def.law_scavec_func, sub->struc,
+                                 &get);
+       _get_tensor_by_value(pty, get, tensor);
+    break;
 
      default:
        bft_error(__FILE__, __LINE__, 0,

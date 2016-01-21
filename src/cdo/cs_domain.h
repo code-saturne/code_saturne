@@ -364,13 +364,17 @@ cs_domain_activate_wall_distance(cs_domain_t   *domain);
  * \param[in, out]  domain     pointer to a cs_domain_t structure
  * \param[in]       kw_type    "isotropic", "orthotropic or "anisotropic"
  * \param[in]       kw_time    Richards equation is "steady" or "unsteady"
+ * \param[in]       n_soils    number of soils to consider
+ * \param[in]       n_tracers  number of tracer equations
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_domain_activate_groundwater(cs_domain_t   *domain,
                                const char    *kw_type,
-                               const char    *kw_time);
+                               const char    *kw_time,
+                               int            n_soils,
+                               int            n_tracers);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -397,6 +401,22 @@ cs_domain_get_groundwater(const cs_domain_t    *domain);
  * \param[in, out]  domain         pointer to a cs_domain_t structure
  * \param[in]       eqname         name of the equation
  * \param[in]       varname        name of the related variable
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
+                                 const char    *eq_name,
+                                 const char    *var_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the parameters related to a tracer equation used in the
+ *         groundwater flow module
+ *
+ * \param[in, out]  domain         pointer to a cs_domain_t structure
+ * \param[in]       eqname         name of the equation
+ * \param[in]       ml_name        name of the related mesh location
  * \param[in]       wmd            value of the water molecular diffusivity
  * \param[in]       alpha_l        value of the longitudinal dispersivity
  * \param[in]       alpha_t        value of the transversal dispersivity
@@ -407,9 +427,9 @@ cs_domain_get_groundwater(const cs_domain_t    *domain);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
+cs_domain_set_groundwater_tracer(cs_domain_t   *domain,
                                  const char    *eq_name,
-                                 const char    *var_name,
+                                 const char    *ml_name,
                                  double         wmd,
                                  double         alpha_l,
                                  double         alpha_t,

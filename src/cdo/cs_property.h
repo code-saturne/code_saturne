@@ -376,6 +376,24 @@ cs_property_def_subdomain_by_law(cs_property_t             *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a cs_property_t structure in a subdomain by a law using as
+ *         arguments a scalar and a vector
+ *
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       ml_name   name of the related mesh location
+ * \param[in]       struc     pointer to a structure (may be NULL)
+ * \param[in]       func      pointer to a law function defined by subdomain
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_def_subdomain_by_scavec_law(cs_property_t             *pty,
+                                        const char                *ml_name,
+                                        const void                *struc,
+                                        cs_scavec_law_func_t      *func);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set "array" member of a cs_property_t structure
  *
  * \param[in, out]  pty          pointer to a cs_property_t structure

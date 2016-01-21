@@ -1430,13 +1430,17 @@ cs_domain_activate_wall_distance(cs_domain_t   *domain)
  * \param[in, out]  domain     pointer to a cs_domain_t structure
  * \param[in]       kw_type    "isotropic", "orthotropic or "anisotropic"
  * \param[in]       kw_time    Richards equation is "steady" or "unsteady"
+ * \param[in]       n_soils    number of soils to consider
+ * \param[in]       n_tracers  number of tracer equations
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_domain_activate_groundwater(cs_domain_t   *domain,
                                const char    *kw_type,
-                               const char    *kw_time)
+                               const char    *kw_time,
+                               int            n_soils,
+                               int            n_tracers)
 {
   if (domain == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -1445,7 +1449,7 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
   int  richards_eq_id = domain->n_equations;
 
   /* Allocate a new strcuture for managing groundwater module */
-  domain->gw = cs_groundwater_create(domain->mesh->n_cells);
+  domain->gw = cs_groundwater_create();
 
   /* Add a property related to the diffusion term of the Richards eq. */
   cs_domain_add_property(domain, "permeability", kw_type);
@@ -1471,6 +1475,8 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
   /* Create a new equation */
   cs_equation_t  *richards_eq = cs_groundwater_initialize(domain->connect,
                                                           richards_eq_id,
+                                                          n_soils,
+                                                          n_tracers,
                                                           permeability,
                                                           soil_capacity,
                                                           adv_field,
@@ -1520,6 +1526,65 @@ cs_domain_get_groundwater(const cs_domain_t    *domain)
  * \param[in, out]  domain         pointer to a cs_domain_t structure
  * \param[in]       eqname         name of the equation
  * \param[in]       varname        name of the related variable
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
+                                 const char    *eq_name,
+                                 const char    *var_name)
+{
+  int  len = 0;
+  char  *pty_name = NULL;
+
+  /* Sanity checks */
+  if (domain == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" cs_domain_t structure is not allocated."));
+
+  if (domain->gw == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Groundwater module is requested but is not activated.\n"
+                " Please first activate this module."));
+
+  /* Add a new equation */
+  BFT_REALLOC(domain->equations, domain->n_equations + 1, cs_equation_t *);
+
+  cs_equation_t  *tracer_eq = cs_groundwater_add_tracer(domain->gw,
+                                                        domain->n_equations,
+                                                        eq_name,
+                                                        var_name);
+
+  if (tracer_eq == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " Problem during the definition of the tracer equation %s for"
+              " the groundwater module.", eq_name);
+
+  /* Add a new property related to the time-depedent term */
+  len = strlen(eq_name) + strlen("_time") + 1;
+  BFT_MALLOC(pty_name, len, char);
+  sprintf(pty_name, "%s_time", eq_name);
+  cs_domain_add_property(domain, pty_name, "isotropic");
+
+  cs_property_t *time_pty = cs_domain_get_property(domain, pty_name);
+
+  cs_equation_link(tracer_eq, "time", time_pty);
+
+  domain->equations[domain->n_equations] = tracer_eq;
+  domain->n_predef_equations += 1;
+  domain->n_equations += 1;
+
+  BFT_FREE(pty_name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the parameters related to a tracer equation used in the
+ *         groundwater flow module
+ *
+ * \param[in, out]  domain         pointer to a cs_domain_t structure
+ * \param[in]       eqname         name of the equation
+ * \param[in]       ml_name        name of the related mesh location
  * \param[in]       wmd            value of the water molecular diffusivity
  * \param[in]       alpha_l        value of the longitudinal dispersivity
  * \param[in]       alpha_t        value of the transversal dispersivity
@@ -1530,9 +1595,9 @@ cs_domain_get_groundwater(const cs_domain_t    *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
+cs_domain_set_groundwater_tracer(cs_domain_t   *domain,
                                  const char    *eq_name,
-                                 const char    *var_name,
+                                 const char    *ml_name,
                                  double         wmd,
                                  double         alpha_l,
                                  double         alpha_t,
@@ -1540,83 +1605,36 @@ cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
                                  double         distrib_coef,
                                  double         reaction_rate)
 {
-  int  len = 0;
-  char  *pty_name = NULL;
-  bool  alphat_gt_0 = (alpha_t > cs_get_zero_threshold()) ? true : false;
-  bool  alphal_gt_0 = (alpha_l > cs_get_zero_threshold()) ? true : false;
-  bool  wmd_gt_0 = (wmd > cs_get_zero_threshold()) ? true : false;
-
   /* Sanity checks */
+  if (domain == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" cs_domain_t structure is not allocated."));
+
   if (domain->gw == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              " Groundwater module is requested but is not activated.\n"
-              " Please first activate this module.");
+              _(" Groundwater module is requested but is not activated.\n"
+                " Please first activate this module."));
 
-  /* Add a new property related to the time-depedent term */
-  len = strlen(eq_name) + strlen("_time") + 1;
-  BFT_MALLOC(pty_name, len, char);
-  sprintf(pty_name, "%s_time", eq_name);
-
-  cs_domain_add_property(domain, pty_name, "isotropic");
-
-  cs_property_t *time_pty = cs_domain_get_property(domain, pty_name);
-
-  /* Add a new property related to the diffusion property */
-  cs_property_t *diff_pty = NULL;
-
-  if (alphat_gt_0 || alphal_gt_0 || wmd_gt_0) {
-
-    len = strlen(eq_name) + strlen("_diffusivity") + 1;
-    BFT_MALLOC(pty_name, len, char);
-    sprintf(pty_name, "%s_diffusivity", eq_name);
-
-    cs_domain_add_property(domain, pty_name, "anisotropic");
-
-    diff_pty = cs_domain_get_property(domain, pty_name);
-
+  int  eq_id = -1;
+  bool found = false;
+  for (int i = 0; i < domain->n_equations && found == false; i++) {
+    cs_equation_t  *_eq = domain->equations[i];
+    if (strcmp(eq_name, cs_equation_get_name(_eq)) == 0)
+      eq_id = i, found = true;
   }
 
-  /* If needed add a new property related to the reaction term */
-  cs_property_t *reac_pty = NULL;
-  if (reaction_rate > cs_get_zero_threshold()) {
-
-    len = strlen(eq_name) + strlen("_reaction") + 1;
-    BFT_REALLOC(pty_name, len, char);
-    sprintf(pty_name, "%s_reaction", eq_name);
-
-    cs_domain_add_property(domain, pty_name, "isotropic");
-
-    reac_pty = cs_domain_get_property(domain, pty_name);
-
-  }
-
-  /* Add a new equation */
-  BFT_REALLOC(domain->equations, domain->n_equations + 1, cs_equation_t *);
-
-  cs_equation_t  *tracer_eq = cs_groundwater_add_tracer(domain->gw,
-                                                        domain->n_equations,
-                                                        eq_name,
-                                                        var_name,
-                                                        diff_pty,
-                                                        time_pty,
-                                                        reac_pty,
-                                                        wmd,
-                                                        alpha_l,
-                                                        alpha_t,
-                                                        bulk_density,
-                                                        distrib_coef,
-                                                        reaction_rate);
-
-  if (tracer_eq == NULL)
+  if (found == false)
     bft_error(__FILE__, __LINE__, 0,
-              " Problem during the definition of the tracer equation %s for"
-              " the groundwater module.", eq_name);
+              _(" Stop setting a tracer equation %s.\n"
+                " No equation with this name has been found.\n"
+                " Please check your settings."), eq_name);
 
-  domain->equations[domain->n_equations] = tracer_eq;
-  domain->n_predef_equations += 1;
-  domain->n_equations += 1;
-
-  BFT_FREE(pty_name);
+  cs_groundwater_set_tracer_param(domain->gw, eq_id, ml_name,
+                                  wmd,
+                                  alpha_l, alpha_t,
+                                  bulk_density,
+                                  distrib_coef,
+                                  reaction_rate);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1647,8 +1665,72 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
 
   } // Wall distance is activated
 
-  if (domain->richards_eq_id > -1)
-    cs_groundwater_automatic_settings(domain->equations, domain->gw);
+  if (domain->richards_eq_id > -1) { /* Groundwater flow module */
+
+    int  len = 0, max_len = 0;
+    char  *pty_name = NULL;
+
+    /* Automatic settings for the Richards equation */
+    eq = domain->equations[domain->richards_eq_id];
+    cs_groundwater_richards_setup(domain->gw, eq);
+
+    /* Automatic settings for the tracer equations */
+    for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
+
+      if (eq_id != domain->richards_eq_id) {
+
+        eq = domain->equations[eq_id];
+
+        if (cs_equation_get_type(eq) == CS_EQUATION_TYPE_GROUNDWATER) {
+
+          if (cs_groundwater_tracer_needs_diffusion(domain->gw, eq_id)) {
+
+            /* Add a new property related to the diffusion property */
+            const char *eq_name = cs_equation_get_name(eq);
+
+            len = strlen(eq_name) + strlen("_diffusivity") + 1;
+            if (len > max_len)
+              max_len = len, BFT_REALLOC(pty_name, len, char);
+            sprintf(pty_name, "%s_diffusivity", eq_name);
+
+            cs_domain_add_property(domain, pty_name, "anisotropic");
+
+            cs_property_t *diff_pty = cs_domain_get_property(domain, pty_name);
+
+            cs_equation_link(eq, "diffusion", diff_pty);
+
+          } /* Add a diffusion property for this equation ? */
+
+          if (cs_groundwater_tracer_needs_reaction(domain->gw, eq_id)) {
+
+            /* Add a new property related to the reaction property */
+            const char *eq_name = cs_equation_get_name(eq);
+
+            len = strlen(eq_name) + strlen("_reaction") + 1;
+            if (len > max_len)
+              max_len = len, BFT_REALLOC(pty_name, len, char);
+            sprintf(pty_name, "%s_reaction", eq_name);
+
+            cs_domain_add_property(domain, pty_name, "isotropic");
+
+            cs_property_t *reac_pty = cs_domain_get_property(domain, pty_name);
+
+            cs_equation_add_reaction(eq, "decay", "linear", reac_pty);
+
+          } /* Add a reaction property for this equation ? */
+
+          /* Automatic settings for this tracer equation */
+          cs_groundwater_tracer_setup(eq_id, eq, domain->gw);
+
+        } /* Tracer equation related to the groundwater flow module */
+
+      } /* Not the Richards equation */
+
+    } /* Loop on equations */
+
+    BFT_FREE(pty_name);
+
+  } /* Groundwater flow module is activated */
 
 }
 

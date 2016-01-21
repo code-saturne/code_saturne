@@ -261,16 +261,19 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      For the groundwater flow module:
      >> cs_domain_activate_groundwater(domain,
                                        permeability_type,
-                                       Richards_time);
+                                       Richards_time,
+                                       n_soils,
+                                       n_tracers);
 
      * permeability_type is one of the following keywords:
-     "isotropic", "orthotropic" or "anisotropic"
+       "isotropic", "orthotropic" or "anisotropic"
      * Richards_time is one of the following keywords:
-     "steady" or "unsteady"
+       "steady" or "unsteady"
+     * n_soils should be at least equal to 1.
 
      * Consequences of the activation of the groundwater flow module are:
      - add a new equation named "Richards" along with an associated field named
-     "hydraulic_head". Default boundary condition is set to "zero_flux".
+       "hydraulic_head". Default boundary condition is set to "zero_flux".
      - define a new advection field named "darcian_flux"
      - define a new property called "permeability".
      - define a new property called "soil_capacity" if "unsteady" is chosen
@@ -278,7 +281,9 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
 
   cs_domain_activate_groundwater(domain,
                                  "isotropic", // type of permeability
-                                 "unsteady"); // steady or unsteady
+                                 "unsteady",  // steady or unsteady
+                                 1,           // number of soils
+                                 0);          // number of tracers
 
   /* Retrieve the groundwater flow module */
   cs_groundwater_t  *gw = cs_domain_get_groundwater(domain);
@@ -298,7 +303,10 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
   cs_groundwater_set_param(gw, "post_freq", "10");
   cs_groundwater_set_param(gw, "output_moisture", "true");
 
-  /* Add a type of soil
+  /* =========
+     Add soils
+     =========
+
      >> cs_groundwater_add_soil_by_value(gw,
                                          mesh_location_name,
                                          model_keyword,
@@ -309,9 +317,9 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      corresponds to all the cells of the mesh. Otherwise, one needs to define
      new mesh locations.
      - model_keyword is one of the following choices:
-     "saturated", "tracy" or "genutchen"
+       "saturated", "tracy" or "genutchen"
      - saturated_permeability depends on the type of permeability chosen.
-     1 value if isotropic, 3 values if orthtropic or 9 values if anisotropic.
+       1 value if isotropic, 3 values if orthtropic or 9 values if anisotropic.
 
   */
 
@@ -339,10 +347,23 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
   cs_groundwater_set_soil_param(gw, NULL, "saturated_moisture", "0.45");
   cs_groundwater_set_soil_param(gw, NULL, "residual_moisture", "0.15");
 
-  /* Add a tracer equation convected by the darcean velocity
-    >> cs_domain_add_groundwater_tracer(domain,
+  /* ====================
+     Add tracer equations
+     ====================
+
+     Add a tracer equation which is unsteady and convected by the darcean flux
+     >> cs_domain_add_groundwater_tracer(domain,
                                          eqname,
-                                         varname,
+                                         varname);
+
+     This implies the creation of a new equation called eqname and a new
+     field called varname.
+  */
+
+  /* Set parameters related to each tracer equation in each soil
+     >> cs_domain_set_groundwater_tracer(domain,
+                                         eqname,
+                                         mesh_location_name,
                                          water_diff,
                                          alpha_l,
                                          alpha_t,
@@ -350,36 +371,11 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
                                          kd,
                                          lambda);
 
-     This implies the creation of a new equation called eqname and a new
-     field called varname.
-     According to the setting, additional properties can be created.
+     According to the setting, additional properties can be created which are
+     associated to the diffusion and/or reaction terms.
+
+     If mesh_location_name is set to NULL, all soils are set.
    */
-
-  /* =======================
-     Advection field options
-     =======================
-
-     Retrieve the advection field to set
-     cs_adv_field_t  *adv = cs_domain_get_advection_field(domain, "adv_name");
-
-     Set optional parameters for this advection field
-
-     cs_advection_field_set_option(adv,
-                                   keyword,
-                                   keyval);
-
-     * keyword is "post_freq"
-     Frequency used to postprocess specific quantities to the groundwater module
-     If keyval is "10" for instance, every 10 iterations postprocessing is done.
-     * keyword is "output_moisture"
-     If keyval is "true", a moisture field is postprocessed.
-
-  */
-
-  cs_adv_field_t  *adv = cs_domain_get_advection_field(domain, "darcian_flux");
-
-  cs_advection_field_set_option(adv, "post_freq", "0");
-  cs_advection_field_set_option(adv, "cell_field", "true");
 
 }
 
@@ -433,7 +429,7 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
                      "right",      // name of the mesh location
                      "dirichlet",  // BC type
                      "value",      // type of definition
-                     "-100");      // pointer to the analytic function
+                     "-100");      // value to set
 
   /* Define the initial condition (By default: zero is set) */
   cs_equation_set_ic(eq,         // equation

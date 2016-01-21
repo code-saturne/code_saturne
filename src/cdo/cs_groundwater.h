@@ -90,14 +90,12 @@ typedef struct _groundwater_t  cs_groundwater_t;
 /*!
  * \brief  Create a structure dedicated to manage groundwater flows
  *
- * \param[in]  n_cells    number of cells in the computational domain
- *
  * \return a pointer to a new allocated cs_groundwater_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_groundwater_t *
-cs_groundwater_create(cs_lnum_t    n_cells);
+cs_groundwater_create(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -144,6 +142,8 @@ cs_groundwater_summary(const cs_groundwater_t   *gw);
  *
  * \param[in]      connect          pointer to a cs_cdo_connect_t structure
  * \param[in]      richards_eq_id   id related to the Richards equation
+ * \param[in]      n_soils          number of soils to consider
+ * \param[in]      n_tracers        number of tracers to consider
  * \param[in, out] permeability     pointer to a property structure
  * \param[in, out] soil_capacity    pointer to a property structure
  * \param[in, out] adv_field        pointer to a cs_adv_field_t structure
@@ -156,6 +156,8 @@ cs_groundwater_summary(const cs_groundwater_t   *gw);
 cs_equation_t *
 cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
                           int                      richards_eq_id,
+                          int                      n_soils,
+                          int                      n_tracer_eqs,
                           cs_property_t           *permeability,
                           cs_property_t           *soil_capacity,
                           cs_adv_field_t          *adv_field,
@@ -201,21 +203,12 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
  *         This equation is a specific unsteady advection/diffusion/reaction eq.
  *         Tracer is advected thanks to the darcian velocity which is given
  *         by the resolution of the Richards equation.
- *         Diffusion/reaction parameters result from a physical modelling.
+ *         Diffusion and reaction parameters result from a physical modelling.
  *
  * \param[in, out] gw              pointer to a cs_groundwater_t structure
  * \param[in]      tracer_eq_id    id related to the tracer equation
  * \param[in]      eqname          name of the equation
  * \param[in]      varname         name of the related variable
- * \param[in]      diff_pty        related property for the diffusion term
- * \param[in]      time_pty        related property for the time-dependent term
- * \param[in]      reac_pty        related property for the reaction term
- * \param[in]      wmd             value of the water molecular diffusivity
- * \param[in]      alpha_l         value of the longitudinal dispersivity
- * \param[in]      alpha_t         value of the transversal dispersivity
- * \param[in]      bulk_density    value of the bulk density
- * \param[in]      distrib_coef    value of the distribution coefficient
- * \param[in]      reaction_rate   value of the first order rate of reaction
  *
  * \return a pointer to a new allocated equation structure (Tracer eq.)
  */
@@ -225,29 +218,96 @@ cs_equation_t *
 cs_groundwater_add_tracer(cs_groundwater_t    *gw,
                           int                  tracer_eq_id,
                           const char          *eqname,
-                          const char          *varname,
-                          cs_property_t       *diff_pty,
-                          cs_property_t       *time_pty,
-                          cs_property_t       *reac_pty,
-                          double               wmd,
-                          double               alpha_l,
-                          double               alpha_t,
-                          double               bulk_density,
-                          double               distrib_coef,
-                          double               reaction_rate);
+                          const char          *varname);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined settings for the module dedicated to groundwater flows
+ * \brief  Add a new equation related to the groundwater flow module
+ *         This equation is a specific unsteady advection/diffusion/reaction eq.
+ *         Tracer is advected thanks to the darcian velocity which is given
+ *         by the resolution of the Richards equation.
+ *         Diffusion/reaction parameters result from a physical modelling.
  *
- * \param[in, out] equations    pointer to the array of cs_equation_t struct.
- * \param[in, out] gw           pointer to a cs_groundwater_t structure
+ * \param[in, out] gw              pointer to a cs_groundwater_t structure
+ * \param[in]      tracer_eq_id    id related to the tracer equation
+ * \param[in]      ml_name         name of the related mesh location
+ * \param[in]      wmd             value of the water molecular diffusivity
+ * \param[in]      alpha_l         value of the longitudinal dispersivity
+ * \param[in]      alpha_t         value of the transversal dispersivity
+ * \param[in]      bulk_density    value of the bulk density
+ * \param[in]      distrib_coef    value of the distribution coefficient
+ * \param[in]      reaction_rate   value of the first order rate of reaction
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_automatic_settings(cs_equation_t      **equations,
-                                  cs_groundwater_t    *gw);
+cs_groundwater_set_tracer_param(cs_groundwater_t    *gw,
+                                int                  tracer_eq_id,
+                                const char          *ml_name,
+                                double               wmd,
+                                double               alpha_l,
+                                double               alpha_t,
+                                double               bulk_density,
+                                double               distrib_coef,
+                                double               reaction_rate);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined settings for the Richards equation
+ *
+ * \param[in, out] gw        pointer to a cs_groundwater_t structure
+ * \param[in, out] richards  pointer to the related cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_groundwater_richards_setup(cs_groundwater_t    *gw,
+                              cs_equation_t       *richards);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if one needs to add a reaction term for a given tracer
+ *
+ * \param[in] gw         pointer to a cs_groundwater_t structure
+ * \param[in] eq_id      id of the equation related to this tracer
+ *
+ * \returns true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_groundwater_tracer_needs_reaction(const cs_groundwater_t    *gw,
+                                     int                        eq_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if one needs to add a diffusion term for a given tracer
+ *
+ * \param[in] gw         pointer to a cs_groundwater_t structure
+ * \param[in] eq_id      id of the equation related to this tracer
+ *
+ * \returns true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_groundwater_tracer_needs_diffusion(const cs_groundwater_t    *gw,
+                                      int                        eq_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined settings for a tracer equation
+ *
+ * \param[in]      tracer_eq_id  id of the equation related to this tracer
+ * \param[in, out] eq            pointer to the related cs_equation_t structure
+ * \param[in, out] gw            pointer to a cs_groundwater_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_groundwater_tracer_setup(int                  tracer_eq_id,
+                            cs_equation_t       *eq,
+                            cs_groundwater_t    *gw);
 
 /*----------------------------------------------------------------------------*/
 /*!
