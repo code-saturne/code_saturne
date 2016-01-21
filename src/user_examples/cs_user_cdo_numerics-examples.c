@@ -158,7 +158,7 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      KEY = "itsol"
      >> val: "cg" (default), "bicg", "gmres", "amg"
      - "cg" is the standard conjuguate gradient algorithm
-     - "bicg" is BiCG-Stab2 algorithm (for non-symmetric linear systems)
+     - "bicg" is BiCGstab algorithm (for non-symmetric linear systems)
      - "gmres" is a robust iterative solver but not as efficient
      - "amg" is an algebraic multigrid iterative solver
 

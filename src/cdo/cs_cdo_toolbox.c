@@ -456,9 +456,6 @@ cs_eigen_mat33(const cs_real_t     m[3][3],
     e2 = 3*tr - e1 -e3; // since tr(m) = e1 + e2 + e3
   }
 
-  /* Debug */
-  printf(" --msg-- Computed eigenvalues %5.3e < %5.3e < %5.3e\n", e1, e2, e3);
-
   /* Return values */
   assert(fabs(e1) > 0);
   *eig_ratio = e3/e1;

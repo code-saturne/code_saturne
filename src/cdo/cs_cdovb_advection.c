@@ -360,33 +360,35 @@ _build_local_vpfd(cs_lnum_t                   c_id,
 
     cs_real_t  beta_flx = builder->fluxes[id];
 
-    if (fabs(beta_flx) > 0) {
+    if (fabs(beta_flx) > 0) { /* Flux induced by the advection field > 0 */
 
-      cs_lnum_t  e_id = c2e->ids[i];
-      cs_lnum_t  e_shft = e2v->idx[e_id];
-      cs_lnum_t  v1_id = e2v->col_id[e_shft];
-      short int  sgn_v1 = e2v->sgn[e_shft];
-      cs_lnum_t  v2_id = e2v->col_id[e_shft+1];
-      short int  sgn_v2 = e2v->sgn[e_shft+1];  // fd(e),cd(v) = -v,e
+      const cs_lnum_t  e_id = c2e->ids[i];
+      const cs_lnum_t  e_shft = e2v->idx[e_id];
+      const cs_lnum_t  v1_id = e2v->col_id[e_shft];
+      const cs_lnum_t  v2_id = e2v->col_id[e_shft+1];
+      const short int  sgn_v1 = e2v->sgn[e_shft]; // fd(e),cd(v) = -v,e
+      const short int  sgn_v2 = -sgn_v1;
 
-      cs_real_t  criter = builder->criter[id];
+      const cs_real_t  criter = builder->criter[id];
 
-      // Compute the updwind coefficient knowing that fd(e),cd(v) = -v,e
-      cs_real_t  weight_v1 = _upwind_weight(-sgn_v1 * criter, a_info);
-      cs_real_t  weight_v2 = 1 - weight_v1;
+      /* Compute the updwind coefficient knowing that fd(e),cd(v) = -v,e */
+      const cs_real_t  weight_v1 = _upwind_weight(-sgn_v1 * criter, a_info);
+      const cs_real_t  weight_v2 = 1 - weight_v1;
+      const cs_real_t  cw1 = beta_flx * weight_v1, cw2 = beta_flx * weight_v2;
 
       /* Update local convection matrix */
-      short int  _v1 = loc_ids[v1_id];
-      short int  _v2 = loc_ids[v2_id];
-      int  shft_v1 = _v1*loc->n_ent, shft_v2 = _v2*loc->n_ent;
-      cs_real_t  cw1 = beta_flx * weight_v1, cw2 = beta_flx * weight_v2;
+      const short int  _v1 = loc_ids[v1_id];
+      const short int  _v2 = loc_ids[v2_id];
+      const int  shft_v1 = _v1*loc->n_ent, shft_v2 = _v2*loc->n_ent;
 
       /* Sanity check */
       assert(_v1 != -1 && _v2 != -1);
 
+      /* Vertex _v1 */
       loc->mat[shft_v1 + _v1] += -sgn_v1 * cw1;
-      loc->mat[shft_v2 + _v2] += -sgn_v2 * cw2;
       loc->mat[shft_v1 + _v2] =  -sgn_v1 * cw2;
+      /* Vertex _v2 */
+      loc->mat[shft_v2 + _v2] += -sgn_v2 * cw2;
       loc->mat[shft_v2 + _v1] =  -sgn_v2 * cw1;
 
     } // convective flux is greater than zero
