@@ -747,7 +747,10 @@ cs_property_summary(const cs_property_t   *pty)
 
   case CS_PARAM_DEF_BY_SUBDOMAIN:
     bft_printf("       definition by %d subdomains\n", pty->n_subdomains);
+    break;
 
+  case CS_PARAM_DEF_BY_SCAVEC_LAW:
+    bft_printf("       definition by law depending on one scalar+one vector\n");
     break;
 
   default:
