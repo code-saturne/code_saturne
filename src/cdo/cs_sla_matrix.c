@@ -3428,15 +3428,25 @@ cs_sla_matrix_summary(const char        *name,
       fprintf(_f, " -sla-  sym           False\n");
 
     if (m->type == CS_SLA_MAT_MSR ) {
+
       dinfo = cs_analysis_data(m->n_rows,    // n_elts
                                1,            // stride
                                CS_DOUBLE,    // datatype
                                m->diag,      // data
                                false);       // work also with abs ?
       cs_data_info_dump("mat->diag", _f, m->n_rows, CS_DOUBLE, dinfo);
+
+      const cs_lnum_t  n_msr_vals = m->info.nnz - m->n_rows;
+
+      dinfo = cs_analysis_data(n_msr_vals,   // n_elts
+                               1,            // stride
+                               CS_DOUBLE,    // datatype
+                               m->val,       // data
+                               false);       // work also with abs ?
+      cs_data_info_dump("mat->val", _f, n_msr_vals, CS_DOUBLE, dinfo);
     }
 
-    if (m->type == CS_SLA_MAT_CSR || m->type == CS_SLA_MAT_MSR) {
+    if (m->type == CS_SLA_MAT_CSR) {
       dinfo = cs_analysis_data(m->info.nnz,  // n_elts
                                1,            // stride
                                CS_DOUBLE,    // datatype
@@ -3518,13 +3528,10 @@ cs_sla_matrix_dump(const char             *name,
       fprintf(_f, "%5d >", i+1);
 
       if (diag != NULL) { /* Dump diagonal */
-        fprintf(_f, "  Diagonal entries:\n");
-        for (i = 0; i < m->n_rows; i++) {
-          fprintf(_f, " %5d >", i+1);
-          for (k = 0; k < m->stride; k++)
-            fprintf(_f, " % -8.4e", diag[i*m->stride+k]);
-          fprintf(_f, "\n");
-        }
+        fprintf(_f, " %5d >>", i);
+        for (k = 0; k < m->stride; k++)
+          fprintf(_f, " % -8.4e", diag[i*m->stride+k]);
+        fprintf(_f, " >> Extra:");
       } /* diag != NULL */
 
       if (m->type == CS_SLA_MAT_DEC) { // DEC matrix
@@ -3537,11 +3544,14 @@ cs_sla_matrix_dump(const char             *name,
       else if (m->type == CS_SLA_MAT_CSR || m->type == CS_SLA_MAT_MSR) {
 
         for (j = s; j < e; j++) {
-          for (k = 0; k < m->stride; k++)
-            fprintf(_f, " % -8.4e", val[j*m->stride+k]);
-          fprintf(_f, " (%5d)", col_id[j]);
-        }
-      }
+          for (k = 0; k < m->stride; k++) {
+            const double  v_ij = val[j*m->stride+k];
+            if (fabs(v_ij) > 0)
+              fprintf(_f, " % -8.4e (%5d)", v_ij, col_id[j]);
+          }
+        } // Loop on row entries
+
+      } // MSR or CSR
       fprintf(_f, "\n");
 
     }
@@ -3623,7 +3633,7 @@ cs_sla_system_dump(const char              *name,
 
         assert(m->diag == NULL);
         for (j = s; j < e; j++) {
-          fprintf(_f, " <col: %3d;", col_id[j]);
+          fprintf(_f, " <col: %4d;", col_id[j]);
           for (k = 0; k < m->stride; k++)
             fprintf(_f, " %2d", sgn[j*m->stride+k]);
           fprintf(_f,">");
@@ -3638,19 +3648,21 @@ cs_sla_system_dump(const char              *name,
         if (diag != NULL) {
           fprintf(_f, " diag:");
           for (k = 0; k < m->stride; k++)
-            fprintf(_f, " % -8.4e", diag[i*m->stride+k]);
+            fprintf(_f, " % -6.3e", diag[i*m->stride+k]);
           fprintf(_f, "\t");
         }
 
         for (j = s; j < e; j++) {
-          fprintf(_f, " (%4d,", col_id[j]);
-          for (k = 0; k < m->stride; k++)
-            fprintf(_f, " % -8.4e", val[j*m->stride+k]);
-          fprintf(_f, ")");
+          for (k = 0; k < m->stride; k++) {
+            const double  v_ij = val[j*m->stride+k];
+            if (fabs(v_ij) > 0)
+              fprintf(_f, " (% -6.3e, %4d)", v_ij, col_id[j]);
+          }
         }
-      }
 
-    }
+      } // MSR or CSR
+
+    } // Loop on rows
 
   } /* m neither NULL nor CS_SLA_MAT_NONE */
 
