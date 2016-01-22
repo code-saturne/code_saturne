@@ -482,6 +482,77 @@ end subroutine add_property_field_nd
 
 !===============================================================================
 
+!> \brief complete property field for post.
+!
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     f_id          field id
+!> \param[in]     dim           field dimension
+!_______________________________________________________________________________
+
+subroutine add_property_field_post &
+ ( f_id, dim )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer, intent(in)          :: f_id, dim
+
+! Local variables
+
+integer  iprop, ii, keyprp
+
+!===============================================================================
+
+call field_get_key_id("property_id", keyprp)
+! Property number and mapping to field
+
+iprop = nproce + 1
+nproce = nproce + dim
+
+call fldprp_check_nproce
+
+do ii = 1, dim
+  iprpfl(iprop + ii -1) = f_id
+  ipproc(iprop + ii - 1) = iprop + ii - 1
+enddo
+
+! Postprocessing slots
+
+ipppro(iprop) = field_post_id(f_id)
+do ii = 2, dim
+  ipppro(iprop+ii-1) = ipppro(iprop) -1 + ii
+enddo
+
+call field_set_key_int(f_id, keyipp, ipppro(iprop))
+
+! Mapping
+
+call field_set_key_int(f_id, keyprp, iprop)
+
+return
+
+end subroutine add_property_field_post
+
+!===============================================================================
+
 !> \brief add field defining a hidden property field defined on cells
 !
 !-------------------------------------------------------------------------------

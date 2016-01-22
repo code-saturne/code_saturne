@@ -711,7 +711,6 @@ use ppthch
 use ppincl
 use coincl
 use cpincl
-use elincl
 use field
 use cavitation
 use rotation
@@ -1100,7 +1099,8 @@ endif
 !             are useful but simply represent mean initial values;
 !             the density, molecular dynamic viscosity, and specific
 !             heat are necessarily given in propce (whether they are
-!             physically variable or not): see uselph for the Joule effect
+!             physically variable or not): see cs_user_physical_properties
+!             for the Joule effect
 !             module and the electric arcs dp_ELE data file.
 !         t0  is useful an must be in Kelvin (> 0) but represents a simple
 !             initialization value.
@@ -2383,159 +2383,6 @@ endif
 
 return
 end subroutine uscfx2
-
-
-!===============================================================================
-
-
-subroutine useli1 &
-!================
-
- ( iihmpu )
-
-
-!===============================================================================
-!  Purpose  :
-!  -------
-!          User subroutines for input of calculation parameters,
-!       and to initialize variables used for specific electric models,
-!
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! iihmpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
-!                  !    !     ! used (1: yes, 0: no)                           !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-!
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use cstnum
-use ppppar
-use ppthch
-use ppincl
-use elincl
-use mesh
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer iihmpu
-
-! Local variables
-
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-! 0. This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     If a file from the GUI is used, this subroutine may not be mandatory,
-!       thus the default (library reference) version returns immediately.
-!===============================================================================
-
-
-if (iihmpu.eq.1) then
-  return
-else
-  write(nfecra,9000)
-  call csexit (1)
-endif
-
- 9000 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in data input',/,                          &
-'@    =======',/,                                                 &
-'@     The user subroutine ''useli1'' must be completed',/,       &
-'@     for electric module',/,                                    &
-'@',/,                                                            &
-'@  The calculation will not be run.',/,                          &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-
-!===============================================================================
-! 1. Calculation options
-!===============================================================================
-
-! --> Relaxation coefficient for mass density
-!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
-if (.false.) then
-  srrom = 0.d0
-endif
-
-! --> "Electric variables" scaling (Joule effect or electric arc version)
-!      IELCOR = 0 : NO Correction
-!      IELCOR = 1 : CORRECTION
-if (.false.) then
-  ielcor = 0
-endif
-
-!     Imposed current intensity (electric arc) in Amp
-!        and Imposed Power (Joule effect for glass melting applications) in Watt
-!       These values have to be positive
-!
-if (.false.) then
-  couimp = 0.d0
-  puisim = 0.d0
-endif
-
-!     Initial Potential Difference (positive value)
-if (.false.) then
-  dpot = 0.d0
-endif
-
-! ---> Model for scaling intensity (electric arcs)
-!       MODREC = 0 : user defined
-!       MODREC = 1 : standard model
-!       MODREC = 2 : resetting plane model for electromagnetic quantities
-if (.false.) then
-  modrec = 1
-endif
-
-! ---> Define current density component used to calculate current when MODREC = 2
-!       IDRECA (1, 2 or 3) for component (x, y or z)
-if (.false.) then
-  idreca = 3
-
-  ! Example : plane z = 3 with epsilon 0.0002
-
-  crit_reca(1) = 0.
-  crit_reca(2) = 0.
-  crit_reca(3) = 1.
-  crit_reca(4) = -3.
-  crit_reca(5) = 0.0002
-endif
-
-!----
-! End
-!----
-
-return
-end subroutine useli1
 
 
 !===============================================================================

@@ -59,7 +59,6 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
-use elincl
 use mesh
 use atchem
 use siream
@@ -80,12 +79,13 @@ double precision propce(ncelet,*)
 
 integer          iscal, ivar, iel
 integer          ii, iisc, itspdv, icalc, iappel
-integer          ispecf
+integer          ispecf, scal_id, f_id
 
 double precision, allocatable, dimension(:) :: dtr
 double precision, allocatable, dimension(:) :: viscf, viscb
 
 double precision, dimension(:), pointer :: cvar_var, cvara_var
+integer :: keyvar
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -98,6 +98,8 @@ save             ipass
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+call field_get_key_id("scalar_id", keyvar)
 
 ! Allocate temporary arrays for the species resolution
 allocate(dtr(ncelet))
@@ -315,13 +317,17 @@ if (nscapp.gt.0) then
 
         if (ippmod(ielarc).ge.1.or.ippmod(ieljou).eq.1             &
              .or.ippmod(ieljou).eq.3) then
-          if (iscal.eq.ipotr) then
+          call field_get_id('elec_pot_r', f_id)
+          call field_get_key_int(f_id, keyvar, scal_id)
+          if (iscal.eq.scal_id) then
             icalc = 1
           endif
         endif
 !     On y va apres PotI si on est en Joule avec PotI
         if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
-          if (iscal.eq.ipoti) then
+          call field_get_id('elec_pot_i', f_id)
+          call field_get_key_int(f_id, keyvar, scal_id)
+          if (iscal.eq.scal_id) then
             icalc = 1
           endif
         endif
@@ -331,7 +337,7 @@ if (nscapp.gt.0) then
 !     Calcul de j, E et j.E
           iappel = 1
 
-          call elflux(iappel, propce)
+          call elflux(iappel)
           !==========
 
 
@@ -339,10 +345,7 @@ if (nscapp.gt.0) then
 
           if ( ielcor .eq.1  .and. ntcabs .gt. 1 ) then
 
-            call elreca(dt, propce)
-            !==========
-
-            call uselrc(nvar, nscal, dt)
+            call elreca(dt)
             !==========
 
           endif
@@ -368,7 +371,7 @@ if (ippmod(ielarc).ge.1) then
 !       apres la determination et le recalage de j
   iappel = 2
 
-  call elflux(iappel, propce)
+  call elflux(iappel)
   !==========
 
 endif

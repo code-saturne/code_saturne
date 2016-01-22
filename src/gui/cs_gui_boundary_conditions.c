@@ -61,6 +61,7 @@
 #include "cs_prototypes.h"
 #include "cs_thermal_model.h"
 #include "cs_timer.h"
+#include "cs_elec_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1563,8 +1564,6 @@ _init_boundaries(const cs_lnum_t  *nfabor,
  * integer          ientgb           <-- 1 for burned gas inlet (gas combustion)
  * integer          ientgf           <-- 1 for unburned gas inlet (gas combustion)
  * integer          iprofm           <-- atmospheric flows: on/off for profile from data
- * double precision coejou           <-- electric arcs
- * double precision dpot             <-- electric arcs : potential difference
  * integer          itypfb           <-- type of boundary for each face
  * integer          izfppp           <-- zone number for each boundary face
  * integer          icodcl           <-- boundary conditions array type
@@ -1619,10 +1618,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                int        *ientgf,
                                int        *ientgb,
                                int        *iprofm,
-                               double     *coejou,
-                               double     *dpot,
-                               int        *ielcor,
-                               int        *ipoti,
                                int        *itypfb,
                                int        *izfppp,
                                int        *icodcl,
@@ -1815,44 +1810,47 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
     }
 
     if (cs_gui_strcmp(vars->model_value, "joule")) {
-      if (*ielcor == 1) {
-        const cs_field_t  *f = cs_field_by_name_try("elec_pot_r");
+      if (cs_glob_elec_option->ielcor == 1) {
+        const cs_field_t  *f = CS_F_(potr);
         const int var_key_id = cs_field_key_id("variable_id");
         ivar = cs_field_get_key_int(f, var_key_id) -1;
 
         for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac];
-          rcodcl[ivar * (*nfabor) + ifbr] *= (*coejou);
+          rcodcl[ivar * (*nfabor) + ifbr] *= cs_glob_elec_option->coejou;
         }
 
-        if (*ipoti > 0) {
-          const cs_field_t  *fi = cs_field_by_name_try("elec_pot_i");
+        if (cs_glob_elec_option->ieljou == 2 || cs_glob_elec_option->ieljou == 4) {
+          const cs_field_t  *fi = CS_F_(poti);
           ivar = cs_field_get_key_int(fi, var_key_id) -1;
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac];
-            rcodcl[ivar * (*nfabor) + ifbr] *= (*coejou);
+            rcodcl[ivar * (*nfabor) + ifbr] *= cs_glob_elec_option->coejou;
           }
         }
       }
     }
 
     if (cs_gui_strcmp(vars->model_value, "arc")) {
-      const cs_field_t  *f = cs_field_by_name_try("elec_pot_r");
+      const cs_field_t  *f = CS_F_(potr);
       const int var_key_id = cs_field_key_id("variable_id");
       ivar = cs_field_get_key_int(f, var_key_id) -1;
 
-      if (boundaries->type_code[f->id][izone] == DIRICHLET_IMPLICIT && *ielcor == 1)
+      if (boundaries->type_code[f->id][izone] == DIRICHLET_IMPLICIT && cs_glob_elec_option->ielcor == 1)
         for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac];
           icodcl[ivar * (*nfabor) + ifbr] = 5;
-          rcodcl[ivar * (*nfabor) + ifbr] = *dpot;
+          rcodcl[ivar * (*nfabor) + ifbr] = cs_glob_elec_option->pot_diff;
         }
 
       /* TODO modify when vec_potential in vector field */
+      //const cs_field_t  *fp1 = CS_FI_(potva, 0);
       const cs_field_t  *fp1 = cs_field_by_name_try("vec_potential_01");
       int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
+      //const cs_field_t  *fp2 = CS_FI_(potva, 1);
       const cs_field_t  *fp2 = cs_field_by_name_try("vec_potential_02");
       int ivar2 = cs_field_get_key_int(fp2, var_key_id) -1;
+      //const cs_field_t  *fp3 = CS_FI_(potva, 2);
       const cs_field_t  *fp3 = cs_field_by_name_try("vec_potential_03");
       int ivar3 = cs_field_get_key_int(fp3, var_key_id) -1;
 

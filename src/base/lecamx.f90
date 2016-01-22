@@ -79,7 +79,6 @@ use ppincl
 use coincl
 use cpincl
 use cs_fuel_incl
-use elincl
 use ppcpfu
 use mesh
 use field
@@ -1449,9 +1448,9 @@ if ( ippmod(ielarc).ge.1  .or. ippmod(ieljou).ge.1 ) then
     rubriq = 'ddpot_recalage_arc_elec'
     itysup = 0
     nbval  = 1
-    rval(1) = dpot
+    rval(1) = pot_diff
     call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
-    dpot = rval(1)
+    pot_diff = rval(1)
     nberro=nberro+ierror
 
     rubriq = 'elcou_recalage_arc_elec'
@@ -1468,7 +1467,8 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
      ippmod(ielarc).ge.1 .or.                                     &
      ippmod(ielion).ge.1       ) then
 
-  call restart_read_field_vals(rp, iprpfl(iefjou), 0, ierror)
+  call field_get_id('joule_power', f_id)
+  call restart_read_field_vals(rp, f_id, 0, ierror)
   nberro=nberro+ierror
   ilu = ilu + 1
 
@@ -1478,15 +1478,18 @@ if ( ippmod(ielarc).ge.1 ) then
 
   nbval  = 1
 
-  call restart_read_field_vals(rp, iprpfl(ilapla(1)), 0, ierror)
+  call field_get_id('laplace_force_1', f_id)
+  call restart_read_field_vals(rp, f_id, 0, ierror)
   nberro=nberro+ierror
   ilu = ilu + 1
 
-  call restart_read_field_vals(rp, iprpfl(ilapla(2)), 0, ierror)
+  call field_get_id('laplace_force_2', f_id)
+  call restart_read_field_vals(rp, f_id, 0, ierror)
   nberro=nberro+ierror
   ilu = ilu + 1
 
-  call restart_read_field_vals(rp, iprpfl(ilapla(3)), 0, ierror)
+  call field_get_id('laplace_force_3', f_id)
+  call restart_read_field_vals(rp, f_id, 0, ierror)
   nberro=nberro+ierror
   ilu = ilu + 1
 

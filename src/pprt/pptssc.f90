@@ -191,7 +191,6 @@ if (ippmod(ieljou).ge.1 .or.                                      &
    call eltssc                                                    &
    !==========
  ( iscal  ,                                                       &
-   propce ,                                                       &
    smbrs  )
 endif
 

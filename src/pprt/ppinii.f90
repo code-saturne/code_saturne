@@ -57,7 +57,6 @@ use cpincl
 use cs_coal_incl
 use cs_fuel_incl
 use ppincl
-use elincl
 use ppcpfu
 use atincl
 use atchem
@@ -237,17 +236,6 @@ igrb   = 0
 ieqnox = 1
 imdnox = 0
 irb = 0
-
-! ---> Initialisation pour l'effet Joule , Arc electrique et conduction ionique
-
-ipotr     = 0
-ipoti     = 0
-ipotva(1) = 0
-ipotva(2) = 0
-ipotva(3) = 0
-do iesp=1,ngazgm
-  iycoel(iesp) = 0
-enddo
 
 ! ---> Coefficient de relation de la masse volumique
 !      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
@@ -651,37 +639,7 @@ do izone = 1, nozppm
 enddo
 
 !===============================================================================
-! 6. REMPLISSAGE INCLUDE elincl.h
-!                INCLUDE POUR LA PHYSIQUE PARTICULIERE RELATIF A
-!                EFFET JOULE, ARC ELECTRIQUE, CONDUCTION IONIQUE
-!===============================================================================
-
-do iii=1,ntypmx
-  ientm1(iii)=0
-  ielph1(iii)=0
-  ielph2(iii)=0
-  ielph3(iii)=0
-  ielneu(iii)=0
-enddo
-
-do it=1,npot
-  do iesp=1,ngazgm
-    rhoel (iesp,it) = 0.d0
-    cpel  (iesp,it) = 0.d0
-    sigel (iesp,it) = 0.d0
-    xlabel(iesp,it) = 0.d0
-    visel (iesp,it) = 0.d0
-    xkabel(iesp,it) = 0.d0
-  enddo
-enddo
-
-do iesp=1,ngazgm
-  qespel(iesp) = 0.d0
-  suscep(iesp) = 0.d0
-enddo
-
-!===============================================================================
-! 7. REMPLISSAGE INCLUDE atincl.h
+! 6. REMPLISSAGE INCLUDE atincl.h
 !                INCLUDE POUR LA VERSION ATMOSPHERIQUE
 !===============================================================================
 

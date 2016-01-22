@@ -178,14 +178,12 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
 
 !     En Joule, on impose a l'utilisateur de programmer ses lois
 !        sur les proprietes (masse volumique , ...)
-!        Des exemples physiques sont fournis dans uselph.
+!        Des exemples physiques sont fournis dans cs_user_physical_properties.
 !     En arc electrique, on lit un fichier de donnees et on interpole.
 
   call elphyv &
   !==========
- ( nvar   , nscal  ,                                              &
-   mbrom  , izfppp ,                                              &
-   dt     )
+ (srrom)
 
 endif
 

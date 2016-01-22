@@ -60,6 +60,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use ihmpre
 
 !===============================================================================
 
@@ -137,7 +138,9 @@ endif
 if ( ippmod(ieljou).ge.1 .or.                                     &
      ippmod(ielarc).ge.1 .or.                                     &
      ippmod(ielion).ge.1       ) then
-  call elini1
+  call elini1 (srrom, visls0, diftl0, iconv, istat,               &
+               idiff, idifft, idircl, isca, blencv,               &
+               sigmas, iwarni, iihmpr)
   !==========
 endif
 

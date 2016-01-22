@@ -124,47 +124,6 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
                                 double *const tfuel);
 
 /*----------------------------------------------------------------------------
- * Electrical model : read parameters
- *
- * Fortran Interface:
- *
- * subroutine uieli1
- * *****************
- * integer         ieljou    -->   joule model
- * integer         ielarc    -->   arc model
- * integer         ielcor    <--   scaling electrical variables
- * double          couimp    <--   imposed current intensity
- * double          puisim    <--   imposed power
- * integer         modrec    <--   scaling type for electric arc
- * integer         idrecal   <--   current density component used to scaling
- *                                 (modrec ==2)
- * char            crit_reca <--   define criteria for plane used to scaling (modrec ==2)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uieli1, UIELI1) (const int    *const ieljou,
-                                const int    *const ielarc,
-                                      int    *const ielcor,
-                                      double *const couimp,
-                                      double *const puisim,
-                                      int    *const modrec,
-                                      int    *const idreca,
-                                      double *const crit_reca);
-
-/*----------------------------------------------------------------------------
- * Electrical model : define plane for elreca
- *
- * Fortran Interface:
- *
- * subroutine uielrc
- * *****************
- * integer         izreca    <--   define plane used to scaling (modrec ==2)
- * char            crit_reca <--   define criteria for plane used to scaling (modrec ==2)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uielrc, UIELRC) (int    *const izreca,
-                                double *const crit_reca);
-
-/*----------------------------------------------------------------------------
  * Atmospheric flows: read of meteorological file of data
  *
  * Fortran Interface:
@@ -296,6 +255,26 @@ void CS_PROCF (uidai1, UIDAI1) (const int    *const idarcy,
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Electrical model : read parameters
+ *
+ * subroutine uieli1
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void
+uieli1(void);
+
+/*----------------------------------------------------------------------------
+ * Electrical model : define plane for elreca
+ *
+ * subroutine uielrc
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void
+uielrc(void);
 
 /*-----------------------------------------------------------------------------
  * Return the name of a thermophysical model.

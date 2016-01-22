@@ -24,6 +24,19 @@
 
 # Main part
 
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/gui \
+-I$(top_srcdir)/src/mei \
+-I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/turb \
+$(MPI_CPPFLAGS) $(LIBXML2_CPPFLAGS)
+
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCMODINCLUDE)$(top_builddir)/src/alge \
@@ -45,24 +58,14 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS =
+pkginclude_HEADERS = \
+cs_elec_model.h
 
 # Library source files
 
 noinst_LTLIBRARIES = libcselec.la
 libcselec_la_SOURCES = \
-cs_elec_bcond.f90 \
-elflux.f90 \
-elini1.f90 \
-eliniv.f90 \
-ellecd.f90 \
-elphyv.f90 \
-elprop.f90 \
-elreca.f90 \
-elthht.f90 \
-eltssc.f90 \
-elvarp.f90 \
-elveri.f90
+cs_elec_model.c
 libcselec_la_LDFLAGS = -no-undefined
 
 clean-local:

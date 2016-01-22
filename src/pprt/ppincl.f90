@@ -565,85 +565,6 @@ module ppincl
 
   !> \}
 
-  !--> POINTEURS VARIABLES VERSION ELECTRIQUES
-
-  !> \defgroup electrical Electrical version variables
-
-  !> \addtogroup electrical
-  !> \{
-
-  !> dsize of "electrical" vectors
-  integer    ndimve
-  parameter (ndimve = 3)
-
-  !> \defgroup elec_transported Transported variables
-
-  !> \addtogroup elec_transported
-  !> \{
-
-  !> real potential
-  integer, save :: ipotr
-
-  !> imaginary potential
-  integer, save :: ipoti
-
-  !> components of magnetic vector potential
-  integer, save :: ipotva(ndimve)
-
-  !> constituent massic fraction
-  integer, save :: iycoel(ngazgm)
-
-  !> \}
-
-  !> \defgroup elec_properties Physical properties
-
-  !> \addtogroup elec_properties
-  !> \{
-
-  !> volumetric power dissipated by Joule effect (\f$ W/m^3 \f$)
-  integer, save :: iefjou
-
-  !> volumetric electrical charge (\f$ C/m^3 \f$)
-  ! TODO  Charge electrique volumique C/m3                  = IQELEC
-  integer, save :: iqelec
-  !> electromagetic Laplace force (\f$ N/m^2 \f$)
-  ! TODO  Forces electromagnetiques de Laplace en N/m3      = ILAPLA()
-  integer, save :: ilapla(ndimve)
-
-  !> real intensity density (\f$ A/m^2 \f$)
-  ! TODO  Densite de courant electrique reelle A/m2         = IDJR()
-  integer, save :: idjr(ndimve)
-
-  !> imaginary intensity density (\f$ A/m^2 \f$)
-  ! TODO  Densite de courant electrique imaginaire en A/m2  = IDJI()
-  integer, save :: idji(ndimve)
-
-  !> absorption coefficient  (\f$ m^{-1} \f$)
-  ! TODO   ou coeff d'absorption en m-1                     = IDRAD
-  integer, save :: idrad
-
-  !> \}
-
-  !> \}
-
-
-  !> \defgroup ionic_conduction Ionic conduction variables
-
-  !> \addtogroup ionic_conduction
-  !> \{
-
-  ! TODO absent de la doc utilisateur
-  integer   nesiom
-  parameter (nesiom = 10)
-
-  ! TODO absent de la doc utilisateur
-  integer   nespio
-
-  !> transporded variable per species
-  integer, save :: iymion(nesiom)
-
-  !> \}
-
 
   !> \defgroup compressible Compressible module
 
@@ -781,7 +702,7 @@ module ppincl
   !> and may be modified by the user in \ref useli1.
   !> With gas combustion, pulverised coal or electric arcs, \ref srrom is
   !> automatically used after the second time-step. With Joule effect,
-  !> the user decides whether or not it will be used in \ref uselph
+  !> the user decides whether or not it will be used in \ref cs_user_physical_properties
   !> from the coding law giving the density.
   !>
   !> Always useful with gas combustion, pulverized coal or the electric module.

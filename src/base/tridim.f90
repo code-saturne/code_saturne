@@ -80,7 +80,6 @@ use ihmpre
 use radiat
 use cplsat
 use ppcpfu
-use elincl
 use mesh
 use field
 use rotation
@@ -952,7 +951,6 @@ do while (iterns.le.nterup)
     isopcf, iparoi, iparug, isymet, isolib, ifrent, ifresf,        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
-    coejou, dpot,   ielcor, ipoti,                                 &
     itypfb, izfppp, icodcl,                                        &
     dtref,  ttcabs, surfbo, cdgfbo,                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
@@ -1516,7 +1514,6 @@ if (ippmod(idarcy).eq.1) then
     isopcf, iparoi, iparug, isymet, isolib, ifrent, ifresf,        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
-    coejou, dpot,   ielcor, ipoti,                                 &
     itypfb, izfppp, icodcl,                                        &
     dtref,  ttcabs, surfbo, cdgfbo,                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &

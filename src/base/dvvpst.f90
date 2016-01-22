@@ -109,7 +109,7 @@ integer          ipp   , idimt , kk   , ll, iel
 integer          ivarl
 integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          fldid, fldprv, keycpl, iflcpl
-integer          ifcsii, iflpst, itplus, iprev
+integer          ifcsii, iflpst, itplus, iprev, f_id
 
 double precision rbid(1)
 double precision vr(3)
@@ -754,13 +754,13 @@ if (numtyp.eq.-1) then
 
       ! Gradient of the real potential
 
-      ivar = isca(ipotr)
+      call field_get_id('elec_pot_r', f_id)
 
       inc = 1
       iprev = 0
       iccocg = 1
 
-      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,           &
+      call field_gradient_scalar(f_id, iprev, imrgra, inc,                   &
                                  iccocg,                                     &
                                  grad)
       idimt  = 3
@@ -778,13 +778,13 @@ if (numtyp.eq.-1) then
     if (.true.                                                               &
         .and. (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4)) then
 
-      ivar = isca(ipoti)
+      call field_get_id('elec_pot_i', f_id)
 
       inc = 1
       iprev = 0
       iccocg = 1
 
-      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,           &
+      call field_gradient_scalar(f_id, iprev, imrgra, inc,                   &
                                  iccocg,                                     &
                                  grad)
 
@@ -803,11 +803,11 @@ if (numtyp.eq.-1) then
     if (.true.                                                               &
         .and. (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4)) then
 
-      ivar = isca(ipoti)
+      call field_get_id('elec_pot_i', f_id)
 
       ! As in elflux
 
-      call field_get_key_int (ivarfl(ivar), kivisl, ifcsii)
+      call field_get_key_int (f_id, kivisl, ifcsii)
       if (ifcsii .ge. 0) then
         call field_get_val_s(ifcsii, cvisii)
       endif
@@ -816,7 +816,7 @@ if (numtyp.eq.-1) then
       iprev = 0
       iccocg = 1
 
-      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,           &
+      call field_gradient_scalar(f_id, iprev, imrgra, inc,                   &
                                  iccocg,                                     &
                                  grad)
 
@@ -831,7 +831,7 @@ if (numtyp.eq.-1) then
       ientla = .true.
       ivarpr = .false.
 
-      call post_write_var(nummai, 'Current_Im', idimt, ientla, ivarpr,  &
+      call post_write_var(nummai, 'Current_Im', idimt, ientla, ivarpr,       &
                           ntcabs, ttcabs, grad, rbid, rbid)
 
     endif
@@ -842,13 +842,13 @@ if (numtyp.eq.-1) then
 
       ! Ax Component
 
-      ivar = isca(ipotva(1))
+      call field_get_id('vec_potential_01', f_id)
 
       inc = 1
       iprev = 0
       iccocg = 1
 
-      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,           &
+      call field_gradient_scalar(f_id, iprev, imrgra, inc,                   &
                                  iccocg,                                     &
                                  grad)
 
@@ -863,13 +863,13 @@ if (numtyp.eq.-1) then
 
       ! Ay component
 
-      ivar = isca(ipotva(2))
+      call field_get_id('vec_potential_02', f_id)
 
       inc = 1
       iprev = 0
       iccocg = 1
 
-      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,           &
+      call field_gradient_scalar(f_id, iprev, imrgra, inc,                   &
                                  iccocg,                                     &
                                  grad)
 
@@ -883,13 +883,13 @@ if (numtyp.eq.-1) then
 
       ! Az component
 
-      ivar = isca(ipotva(3))
+      call field_get_id('vec_potential_03', f_id)
 
       inc = 1
       iprev = 0
       iccocg = 1
 
-      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,           &
+      call field_gradient_scalar(f_id, iprev, imrgra, inc,                   &
                                  iccocg,                                     &
                                  grad)
 
@@ -916,8 +916,8 @@ if (numtyp.eq.-1) then
 
       ivar = 0
 
-      call field_get_val_s(ivarfl(isca(ipotr)), cpotr)
-      call field_get_val_s(ivarfl(isca(ipoti)), cpoti)
+      call field_get_val_s_by_name('elec_pot_r', cpotr)
+      call field_get_val_s_by_name('elec_pot_i', cpoti)
 
       do iloc = 1, ncelps
         iel = lstcel(iloc)

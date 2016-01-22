@@ -300,11 +300,7 @@ elseif (ippmod(iatmos).ge.0) then
   !==========
 
 ! ---> Ecoulements electrique
-
-elseif (ippmod(ielarc).ge.1 .or. ippmod(ieljou).ge.1) then
-
-  call cs_elec_bcond(itypfb, izfppp, rcodcl)
-  !=================
+! nothing
 
 endif
 !----

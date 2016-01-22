@@ -37,6 +37,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/ctwr \
+-I$(top_srcdir)/src/elec \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
@@ -66,7 +67,8 @@ AM_LDFLAGS =
 # Add cs_user_modules file to distribution as it is not automatically accounted
 # for by automake
 
-EXTRA_DIST = cs_user_modules.f90 cs_user_parameters.f90 cs_user_extra_operations.f90
+EXTRA_DIST = cs_user_modules.f90 cs_user_parameters.f90 \
+cs_user_extra_operations.f90 cs_user_physical_properties.f90
 
 # Library source files
 
@@ -78,6 +80,7 @@ cs_user_cdo.c \
 cs_user_cdo_numerics.c \
 cs_user_cdo_extra_op.c \
 cs_user_coupling.c \
+cs_user_electric_scaling.c \
 cs_user_extra_operations.c \
 cs_user_fluid_structure_interaction.f90 \
 cs_user_head_losses.f90 \
@@ -89,7 +92,7 @@ cs_user_metal_structures_source_terms.f90 \
 cs_user_parameters.c \
 cs_user_particle_tracking.f90 \
 cs_user_performance_tuning.c \
-cs_user_physical_properties.f90 \
+cs_user_physical_properties.c \
 cs_user_postprocess.c \
 cs_user_postprocess_var.f90 \
 cs_user_porosity.f90 \
@@ -101,7 +104,6 @@ cs_user_turbomachinery.c \
 cs_user_boundary_conditions_ale.f90 \
 usatch.f90 \
 usctdz.f90 \
-uselrc.f90 \
 ushist.f90 \
 uslaen.f90 \
 uslag1.f90 \
@@ -134,13 +136,25 @@ cs_f_user_extra_operations.obj: $(cs_user_f_extra_operations)
 cs_f_user_extra_operations.lo: $(cs_user_f_extra_operations)
 	$(LTFCCOMPILE) -c -o cs_f_user_extra_operations.o $(cs_user_f_extra_operations)
 
+cs_user_f_physical_properties = $(top_srcdir)/src/user/cs_user_physical_properties.f90
+
+cs_f_user_physical_properties.o: $(cs_user_f_physical_properties)
+	$(FCCOMPILE) -c -o cs_f_user_physical_properties.o  $(cs_user_f_physical_properties)
+
+cs_f_user_physical_properties.obj: $(cs_user_f_physical_properties)
+	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_physical_properties)`
+
+cs_f_user_physical_properties.lo: $(cs_user_f_physical_properties)
+	$(LTFCCOMPILE) -c -o cs_f_user_physical_properties.o $(cs_user_f_physical_properties)
+
 noinst_LTLIBRARIES = libcsuser.la
 libcsuser_la_SOURCES = $(userfiles)
-libcsuser_la_LIBADD = cs_f_user_parameters.lo cs_f_user_extra_operations.lo
+libcsuser_la_LIBADD = cs_f_user_parameters.lo cs_f_user_extra_operations.lo cs_f_user_physical_properties.lo
 libcsuser_la_LDFLAGS = -no-undefined
 
 userdir = $(pkgdatadir)/user
-user_DATA = $(userfiles) cs_user_modules.f90 cs_user_parameters.f90 cs_user_extra_operations.f90
+user_DATA = $(userfiles) cs_user_modules.f90 cs_user_parameters.f90 \
+cs_user_extra_operations.f90 cs_user_physical_properties.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

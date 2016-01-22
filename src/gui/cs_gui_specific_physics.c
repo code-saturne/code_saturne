@@ -60,6 +60,7 @@
 #include "cs_field_pointer.h"
 #include "cs_prototypes.h"
 #include "cs_selector.h"
+#include "cs_elec_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -76,6 +77,7 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
+#define LG_MAX 1000
 
 /* debugging switch */
 #define _XML_DEBUG_ 0
@@ -1809,238 +1811,6 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
 
 
 /*----------------------------------------------------------------------------
- * Electrical model : read parameters
- *
- * Fortran Interface:
- *
- * subroutine uieli1
- * *****************
- * integer         ieljou    -->   joule model
- * integer         ielarc    -->   arc model
- * integer         ielcor    <--   scaling electrical variables
- * double          couimp    <--   imposed current intensity
- * double          puisim    <--   imposed power
- * integer         modrec    <--   scaling type for electric arc
- * integer         idreca    <--   current density component used to scaling
- *                                 (modrec ==2)
- * char            crit_reca <--   define criteria for plane used to scaling (modrec ==2)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uieli1, UIELI1) (const int    *const ieljou,
-                                const int    *const ielarc,
-                                      int    *const ielcor,
-                                      double *const couimp,
-                                      double *const puisim,
-                                      int    *const modrec,
-                                      int    *const idreca,
-                                      double *const crit_reca)
-{
-  char *path   = NULL;
-  int   status = 0;
-  double   result;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "thermophysical_models",
-                                  "joule_effect",
-                                  "variable_scaling");
-
-  cs_xpath_add_attribute(&path, "status");
-  if (cs_gui_get_status(path, &status))
-    *ielcor = status;
-  BFT_FREE(path);
-
-  if (*ieljou > 0) {
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 3, "thermophysical_models",
-                                    "joule_effect",
-                                    "imposed_power");
-
-    cs_xpath_add_function_text(&path);
-    if (!cs_gui_get_double(path, &result))
-      bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-    *puisim = result;
-    BFT_FREE(path);
-  }
-
-  if (*ielarc > 0) {
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 3, "thermophysical_models",
-                                    "joule_effect",
-                                    "imposed_current");
-    cs_xpath_add_function_text(&path);
-    if (!cs_gui_get_double(path, &result))
-      bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-    *couimp = result;
-    BFT_FREE(path);
-
-    if (*ielcor > 0) {
-      path = cs_xpath_init_path();
-      char *choice;
-
-      cs_xpath_add_elements(&path, 3, "thermophysical_models",
-                                      "joule_effect",
-                                      "recal_model");
-      cs_xpath_add_attribute(&path, "model");
-      choice = cs_gui_get_attribute_value(path);
-      if (cs_gui_strcmp(choice, "general_case"))
-        *modrec = 1;
-      else if (cs_gui_strcmp(choice, "plane_define"))
-        *modrec = 2;
-      else if (cs_gui_strcmp(choice, "user"))
-        *modrec = 3;
-      else
-        bft_error(__FILE__, __LINE__, 0, _("Invalid model : %s\n"), choice);
-
-      BFT_FREE(choice);
-
-      if (*modrec == 2) {
-        path = cs_xpath_init_path();
-        cs_xpath_add_elements(&path, 4, "thermophysical_models",
-                                        "joule_effect",
-                                        "recal_model",
-                                        "direction");
-        cs_xpath_add_function_text(&path);
-        choice = cs_gui_get_text_value(path);
-        if (cs_gui_strcmp(choice, "X"))
-          *idreca = 1;
-        else if (cs_gui_strcmp(choice, "Y"))
-          *idreca = 2;
-        else
-          *idreca = 3;
-        BFT_FREE(path);
-        BFT_FREE(choice);
-
-        double val;
-        path = cs_xpath_init_path();
-        cs_xpath_add_elements(&path, 5, "thermophysical_models",
-                                        "joule_effect",
-                                        "recal_model",
-                                        "plane_definition",
-                                        "A");
-        cs_xpath_add_function_text(&path);
-        if (!cs_gui_get_double(path, &val))
-          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-        BFT_FREE(path);
-        crit_reca[0] = val;
-
-        path = cs_xpath_init_path();
-        cs_xpath_add_elements(&path, 5, "thermophysical_models",
-                                        "joule_effect",
-                                        "recal_model",
-                                        "plane_definition",
-                                        "B");
-        cs_xpath_add_function_text(&path);
-        if (!cs_gui_get_double(path, &val))
-          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-        BFT_FREE(path);
-        crit_reca[1] = val;
-
-        path = cs_xpath_init_path();
-        cs_xpath_add_elements(&path, 5, "thermophysical_models",
-                                        "joule_effect",
-                                        "recal_model",
-                                        "plane_definition",
-                                        "C");
-        cs_xpath_add_function_text(&path);
-        if (!cs_gui_get_double(path, &val))
-          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-        BFT_FREE(path);
-        crit_reca[2] = val;
-
-        path = cs_xpath_init_path();
-        cs_xpath_add_elements(&path, 5, "thermophysical_models",
-                                        "joule_effect",
-                                        "recal_model",
-                                        "plane_definition",
-                                        "D");
-        cs_xpath_add_function_text(&path);
-        if (!cs_gui_get_double(path, &val))
-          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-        BFT_FREE(path);
-        crit_reca[3] = val;
-
-        path = cs_xpath_init_path();
-        cs_xpath_add_elements(&path, 5, "thermophysical_models",
-                                        "joule_effect",
-                                        "recal_model",
-                                        "plane_definition",
-                                        "epsilon");
-        cs_xpath_add_function_text(&path);
-        if (!cs_gui_get_double(path, &val))
-          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-        BFT_FREE(path);
-        crit_reca[4] = val;
-      }
-    }
-    BFT_FREE(path);
-  }
-
-#if _XML_DEBUG_
-  bft_printf("==>UIELI1\n");
-  bft_printf("--ielcor  = %i\n", *ielcor);
-  bft_printf("--puisim  = %f\n", *puisim);
-  bft_printf("--couimp  = %f\n", *couimp);
-  bft_printf("--modrec  = %f\n", *modrec);
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Electrical model : define plane for elreca
- *
- * Fortran Interface:
- *
- * subroutine uielrc
- * *****************
- * integer         izreca    <--   define plane used to scaling (modrec ==2)
- * char            crit_reca <--   define criteria for plane used to scaling (modrec ==2)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uielrc, UIELRC) (int    *const izreca,
-                                double *const crit_reca)
-{
-  /* build list of cells */
-  char *crit = NULL;
-
-  cs_lnum_t   n_selected_faces = 0;
-  cs_lnum_t  *selected_faces = NULL;
-
-  BFT_MALLOC(crit, 66, char);
-
-  char cVal[10];
-
-  strcpy(crit, "plane[");
-  sprintf(cVal, "%f", crit_reca[0]);
-  strcat(crit, cVal);
-  strcat(crit, ",");
-  sprintf(cVal, "%f", crit_reca[1]);
-  strcat(crit, cVal);
-  strcat(crit, ",");
-  sprintf(cVal, "%f", crit_reca[2]);
-  strcat(crit, cVal);
-  strcat(crit, ",");
-  sprintf(cVal, "%f", crit_reca[3]);
-  strcat(crit, cVal);
-  strcat(crit, ",epsilon=");
-  sprintf(cVal, "%6f", crit_reca[4]);
-  strcat(crit, cVal);
-  strcat(crit, "]");
-
-  BFT_MALLOC(selected_faces, cs_glob_mesh->n_i_faces, cs_lnum_t);
-
-  cs_selector_get_i_face_list(crit,
-                              &n_selected_faces,
-                              selected_faces);
-
-  for (int j=0; j < n_selected_faces; j++)
-    izreca[selected_faces[j]] = 1;
-
-  BFT_FREE(selected_faces);
-  BFT_FREE(crit);
-
-}
-
-
-/*----------------------------------------------------------------------------
  * Atmospheric flows: read of meteorological file of data
  *
  * Fortran Interface:
@@ -2682,6 +2452,219 @@ void CS_PROCF (uidai1, UIDAI1) (const int    *const idarcy,
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Electrical model : read parameters
+ *----------------------------------------------------------------------------*/
+
+void
+uieli1(void)
+{
+  char *path   = NULL;
+  int   status = 0;
+  double   result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                  "joule_effect",
+                                  "variable_scaling");
+
+  cs_elec_option_t *elec_opt = cs_get_glob_elec_option();
+
+  cs_xpath_add_attribute(&path, "status");
+  if (cs_gui_get_status(path, &status))
+    elec_opt->ielcor = status;
+  BFT_FREE(path);
+
+  if (cs_glob_elec_option->ieljou > 0) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                    "joule_effect",
+                                    "imposed_power");
+
+    cs_xpath_add_function_text(&path);
+    if (!cs_gui_get_double(path, &result))
+      bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+    elec_opt->puisim = result;
+    BFT_FREE(path);
+  }
+
+  if (cs_glob_elec_option->ielarc > 0) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                    "joule_effect",
+                                    "imposed_current");
+    cs_xpath_add_function_text(&path);
+    if (!cs_gui_get_double(path, &result))
+      bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+    elec_opt->couimp = result;
+    BFT_FREE(path);
+
+    if (cs_glob_elec_option->ielcor > 0) {
+      path = cs_xpath_init_path();
+      char *choice;
+
+      cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                      "joule_effect",
+                                      "recal_model");
+      cs_xpath_add_attribute(&path, "model");
+      choice = cs_gui_get_attribute_value(path);
+      if (cs_gui_strcmp(choice, "general_case"))
+        elec_opt->modrec = 1;
+      else if (cs_gui_strcmp(choice, "plane_define"))
+        elec_opt->modrec = 2;
+      else if (cs_gui_strcmp(choice, "user"))
+        elec_opt->modrec = 3;
+      else
+        bft_error(__FILE__, __LINE__, 0, _("Invalid model : %s\n"), choice);
+
+      BFT_FREE(choice);
+
+      if (cs_glob_elec_option->modrec == 2) {
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 4, "thermophysical_models",
+                                        "joule_effect",
+                                        "recal_model",
+                                        "direction");
+        cs_xpath_add_function_text(&path);
+        choice = cs_gui_get_text_value(path);
+        if (cs_gui_strcmp(choice, "X"))
+          elec_opt->idreca = 1;
+        else if (cs_gui_strcmp(choice, "Y"))
+          elec_opt->idreca = 2;
+        else
+          elec_opt->idreca = 3;
+        BFT_FREE(path);
+        BFT_FREE(choice);
+
+        double val;
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 5, "thermophysical_models",
+                                        "joule_effect",
+                                        "recal_model",
+                                        "plane_definition",
+                                        "A");
+        cs_xpath_add_function_text(&path);
+        if (!cs_gui_get_double(path, &val))
+          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+        BFT_FREE(path);
+        elec_opt->crit_reca[0] = val;
+
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 5, "thermophysical_models",
+                                        "joule_effect",
+                                        "recal_model",
+                                        "plane_definition",
+                                        "B");
+        cs_xpath_add_function_text(&path);
+        if (!cs_gui_get_double(path, &val))
+          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+        BFT_FREE(path);
+        elec_opt->crit_reca[1] = val;
+
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 5, "thermophysical_models",
+                                        "joule_effect",
+                                        "recal_model",
+                                        "plane_definition",
+                                        "C");
+        cs_xpath_add_function_text(&path);
+        if (!cs_gui_get_double(path, &val))
+          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+        BFT_FREE(path);
+        elec_opt->crit_reca[2] = val;
+
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 5, "thermophysical_models",
+                                        "joule_effect",
+                                        "recal_model",
+                                        "plane_definition",
+                                        "D");
+        cs_xpath_add_function_text(&path);
+        if (!cs_gui_get_double(path, &val))
+          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+        BFT_FREE(path);
+        elec_opt->crit_reca[3] = val;
+
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 5, "thermophysical_models",
+                                        "joule_effect",
+                                        "recal_model",
+                                        "plane_definition",
+                                        "epsilon");
+        cs_xpath_add_function_text(&path);
+        if (!cs_gui_get_double(path, &val))
+          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+        BFT_FREE(path);
+        elec_opt->crit_reca[4] = val;
+      }
+    }
+    BFT_FREE(path);
+  }
+
+#if _XML_DEBUG_
+  bft_printf("==>UIELI1\n");
+  bft_printf("--ielcor  = %i\n", cs_glob_elec_option->ielcor);
+  bft_printf("--puisim  = %f\n", cs_glob_elec_option->puisim);
+  bft_printf("--couimp  = %f\n", cs_glob_elec_option->couimp);
+  bft_printf("--modrec  = %f\n", cs_glob_elec_option->modrec);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Electrical model : define plane for elreca
+ *
+ * Fortran Interface:
+ *
+ * subroutine uielrc
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void
+uielrc(void)
+{
+  /* build list of cells */
+  char *crit = NULL;
+
+  cs_lnum_t   n_selected_faces = 0;
+  cs_lnum_t  *selected_faces = NULL;
+
+  BFT_MALLOC(crit, 66, char);
+
+  char cVal[10];
+
+  cs_elec_option_t *elec_opt = cs_get_glob_elec_option();
+
+  strcpy(crit, "plane[");
+  sprintf(cVal, "%f", elec_opt->crit_reca[0]);
+  strcat(crit, cVal);
+  strcat(crit, ",");
+  sprintf(cVal, "%f", elec_opt->crit_reca[1]);
+  strcat(crit, cVal);
+  strcat(crit, ",");
+  sprintf(cVal, "%f", elec_opt->crit_reca[2]);
+  strcat(crit, cVal);
+  strcat(crit, ",");
+  sprintf(cVal, "%f", elec_opt->crit_reca[3]);
+  strcat(crit, cVal);
+  strcat(crit, ",epsilon=");
+  sprintf(cVal, "%6f", elec_opt->crit_reca[4]);
+  strcat(crit, cVal);
+  strcat(crit, "]");
+
+  BFT_MALLOC(selected_faces, cs_glob_mesh->n_i_faces, cs_lnum_t);
+
+  cs_selector_get_i_face_list(crit,
+                              &n_selected_faces,
+                              selected_faces);
+
+  for (int j=0; j < n_selected_faces; j++)
+    elec_opt->izreca[selected_faces[j]] = 1;
+
+  BFT_FREE(selected_faces);
+  BFT_FREE(crit);
+
+}
 
 /*-----------------------------------------------------------------------------
  * Return the name of a thermophysical model.

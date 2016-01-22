@@ -108,6 +108,11 @@ call iniusi
 
 call ppini1
 
+!===============================================================================
+! Map Fortran pointers to C global data
+!===============================================================================
+call elec_option_init
+
 ! Radiative model options
 call rayopt
 

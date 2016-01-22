@@ -111,7 +111,7 @@ module cstphy
   !> it is therefore better to specify its value.
   !>
   !> Always useful otherwise, even if a law defining the density is given by
-  !> the user subroutines \ref usphyv or \ref uselph.
+  !> the user subroutines \ref usphyv or \ref cs_user_physical_properties.
   !> indeed, except with the
   !> compressible module, CS  does not use
   !> the total pressure \f$P\f$ when solving the Navier-Stokes equation, but a

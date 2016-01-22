@@ -68,7 +68,6 @@ use cpincl
 use ppincl
 use atincl
 use ctincl
-use elincl
 use ppcpfu
 use cs_coal_incl
 use cs_fuel_incl
@@ -90,6 +89,7 @@ integer          iel, mode
 integer          iesp , idimve
 
 double precision tinit, hinit, coefe(ngazem)
+character(len=80) :: f_name
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: cvar_scalt, cvar_ycoel
@@ -137,7 +137,8 @@ endif
 '@    =========                                               ',/,&
 '@                      for Electric module                   ',/,&
 '@                                                            ',/,&
-'@     The user routine uselph has to be completed            ',/,&
+'@     The user routine cs_user_physical_properties           ',/,&
+'@     has to be completed                                    ',/,&
 '@                                                            ',/,&
 '@     This user routine is used to define thermal properties ',/,&
 '@     It is unavoidable.                                     ',/,&
@@ -185,12 +186,12 @@ if ( isuite.eq.0 ) then
     mode = -1
     tinit = t0
     coefe(1) = 1.d0
-    if ( ngazg .gt. 1 ) then
-      do iesp = 2, ngazg
+    if ( ngazge .gt. 1 ) then
+      do iesp = 2, ngazge
         coefe(iesp) = 0.d0
       enddo
     endif
-    call elthht(mode,ngazg,coefe,hinit,tinit)
+    call elthht(mode,coefe,hinit,tinit)
   else
     mode = -1
     tinit = t0
@@ -207,13 +208,15 @@ if ( isuite.eq.0 ) then
 
 ! --> Mass fraction  = 1 ou 0
 
-  if ( ngazg .gt. 1 ) then
-    call field_get_val_s(ivarfl(isca(iycoel(1))), cvar_ycoel)
+  if ( ngazge .gt. 1 ) then
+    write(f_name,'(a13,i2.2)') 'esl_fraction_', 1
+    call field_get_val_s_by_name(trim(f_name), cvar_ycoel)
     do iel = 1, ncel
       cvar_ycoel(iel) = 1.d0
     enddo
-    do iesp = 2, ngazg-1
-      call field_get_val_s(ivarfl(isca(iycoel(iesp))), cvar_ycoel)
+    do iesp = 2, ngazge-1
+      write(f_name,'(a13,i2.2)') 'esl_fraction_',iesp
+      call field_get_val_s_by_name(trim(f_name), cvar_ycoel)
       do iel = 1, ncel
         cvar_ycoel(iel) = 0.d0
       enddo
@@ -224,14 +227,14 @@ if ( isuite.eq.0 ) then
 ! --> Electric potentials = 0
 
 !     -- Real Component
-  call field_get_val_s(ivarfl(isca(ipotr)), cvar_potr)
+  call field_get_val_s_by_name('elec_pot_r', cvar_potr)
   do iel = 1, ncel
     cvar_potr(iel) = 0.d0
   enddo
 
 !     -- Imaginary (for Joule heating by direct conduction)
   if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
-    call field_get_val_s(ivarfl(isca(ipoti)), cvar_poti)
+    call field_get_val_s_by_name('elec_pot_r', cvar_poti)
     do iel = 1, ncel
       cvar_poti(iel) = 0.d0
     enddo
@@ -239,11 +242,17 @@ if ( isuite.eq.0 ) then
 
 !     -- Vector potential (3D electric arc 3D)
   if ( ippmod(ielarc).ge.2 ) then
-    do idimve = 1, ndimve
-      call field_get_val_s(ivarfl(isca(ipotva(idimve))), cvar_potva)
-      do iel = 1, ncel
-        cvar_potva(iel) = 0.d0
-      enddo
+    call field_get_val_s_by_name('vec_potential_01', cvar_potva)
+    do iel = 1, ncel
+      cvar_potva(iel) = 0.d0
+    enddo
+    call field_get_val_s_by_name('vec_potential_02', cvar_potva)
+    do iel = 1, ncel
+      cvar_potva(iel) = 0.d0
+    enddo
+    call field_get_val_s_by_name('vec_potential_03', cvar_potva)
+    do iel = 1, ncel
+      cvar_potva(iel) = 0.d0
     enddo
   endif
 

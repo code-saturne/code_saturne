@@ -68,7 +68,6 @@ use ppincl
 use coincl
 use cpincl
 use cs_fuel_incl
-use elincl
 use ppcpfu
 use cplsat
 use field
@@ -1043,7 +1042,7 @@ if (iecaux.eq.1) then
       rubriq = 'ddpot_recalage_arc_elec'
       itysup = 0
       nbval  = 1
-      rval(1) = dpot
+      rval(1) = pot_diff
 
       call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
@@ -1059,23 +1058,23 @@ if (iecaux.eq.1) then
        ippmod(ielarc).ge.1 .or.                                   &
        ippmod(ielion).ge.1       ) then
 
+    call field_get_id('joule_power', ipcefj)
     iecr   = 1
-    ipcefj = ipproc(iefjou)
 
-    call restart_write_field_vals(rp, iprpfl(ipcefj), 0)
+    call restart_write_field_vals(rp, ipcefj, 0)
 
   endif
 
   if (ippmod(ielarc).ge.1) then
 
     iecr   = 1
-    ipcla1 = ipproc(ilapla(1))
-    ipcla2 = ipproc(ilapla(2))
-    ipcla3 = ipproc(ilapla(3))
+    call field_get_id('laplace_force_1', ipcla1)
+    call field_get_id('laplace_force_2', ipcla2)
+    call field_get_id('laplace_force_3', ipcla3)
 
-    call restart_write_field_vals(rp, iprpfl(ipcla1), 0)
-    call restart_write_field_vals(rp, iprpfl(ipcla2), 0)
-    call restart_write_field_vals(rp, iprpfl(ipcla3), 0)
+    call restart_write_field_vals(rp, ipcla1, 0)
+    call restart_write_field_vals(rp, ipcla2, 0)
+    call restart_write_field_vals(rp, ipcla3, 0)
 
   endif
 

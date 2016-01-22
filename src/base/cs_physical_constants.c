@@ -138,7 +138,7 @@ BEGIN_C_DECLS
         therefore better to specify its value.
 
         Always useful otherwise, even if a law defining the density is given by
-        the user subroutines \ref usphyv or \ref uselph.
+        the user subroutines \ref usphyv or \ref cs_user_physical_properties.
         Indeed, except with the compressible module, CS  does not use the total
         pressure \f$P\f$ when solving the Navier-Stokes equation, but a reduced
         pressure \f$ P^*=P-\rho_0\vect{g}.(\vect{x}-\vect{x}_0)+ P^*_0-P_0 \f$,

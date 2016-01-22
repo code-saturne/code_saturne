@@ -86,6 +86,7 @@ integer          iesp, mode
 double precision coefg(ngazgm)
 double precision hbl
 double precision ym(ngazgm)
+character(len=80) :: f_name
 
 double precision, dimension(:), pointer :: bym1, bym2, bym3
 
@@ -147,28 +148,33 @@ else if (ippmod(ieljou).ge.1) then
 
 else if (ippmod(ielarc).ge.1) then
 
-  allocate(cvar_ycoel(ngazg-1))
-  do iesp = 1, ngazg-1
-    call field_get_val_s(ivarfl(isca(iycoel(iesp))), cvar_ycoel(iesp)%p)
-  enddo
+  if (ngazge .gt. 1) then
+    allocate(cvar_ycoel(ngazge-1))
+    do iesp = 1, ngazge-1
+      write(f_name,'(a13,i2.2)') 'esl_fraction_',iesp
+      call field_get_val_prev_s_by_name(trim(f_name), cvar_ycoel(iesp)%p)
+    enddo
+  endif
 
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     hbl = h_b(ifac)
-    if (ngazg .eq. 1) then
+    if (ngazge .eq. 1) then
       ym(1) = 1.d0
-      call elthht(mode, ngazg, ym, hbl, t_b(ifac))
+      call elthht(mode, ym, hbl, t_b(ifac))
     else
-      ym(ngazg) = 1.d0
-      do iesp = 1, ngazg-1
+      ym(ngazge) = 1.d0
+      do iesp = 1, ngazge-1
         ym(iesp) = cvar_ycoel(iesp)%p(iel)
-        ym(ngazg) = ym(ngazg) - ym(iesp)
+        ym(ngazge) = ym(ngazge) - ym(iesp)
       enddo
-      call elthht(mode, ngazg, ym, hbl, t_b(ifac))
+      call elthht(mode, ym, hbl, t_b(ifac))
     endif
   enddo
 
-  deallocate(cvar_ycoel)
+  if (ngazge .gt. 1) then
+    deallocate(cvar_ycoel)
+  endif
 
 !   else if (ippmod(ielion).ge.1) then
 !   ... to be implemented ...

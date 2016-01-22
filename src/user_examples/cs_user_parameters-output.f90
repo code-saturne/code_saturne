@@ -98,7 +98,6 @@ use ppthch
 use ppincl
 use coincl
 use cpincl
-use elincl
 use field
 use cavitation
 
@@ -223,7 +222,6 @@ use coincl
 use cs_coal_incl
 use cs_fuel_incl
 use cpincl
-use elincl
 use ppcpfu
 use radiat
 

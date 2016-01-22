@@ -56,7 +56,6 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
-use elincl
 use cs_coal_incl
 use cs_fuel_incl
 use ppcpfu
@@ -153,7 +152,7 @@ endif
 if ( ippmod(ieljou).ge.1 .or.                                     &
      ippmod(ielarc).ge.1 .or.                                     &
      ippmod(ielion).ge.1       ) then
-  call elvarp
+  call elvarp(ippmod(ieljou), ippmod(ielarc), ippmod(ielion), iihmpr)
   !==========
 endif
 

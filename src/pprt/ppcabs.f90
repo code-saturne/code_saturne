@@ -94,12 +94,13 @@ double precision kgas(ncelet,nwsgg), agas(ncelet,nwsgg), agasbo(nfabor,nwsgg)
 
 ! Local variables
 
-integer          iel, ifac, icla, ipck, icha, iok
+integer          iel, ifac, icla, ipck, icha, iok, f_id
 double precision xm, dd2, vv, sf, xlc, xkmin, pp
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_fsm
+double precision, dimension(:), pointer :: cvar_rad
 
 !===============================================================================
 ! 0 - Initialization
@@ -335,13 +336,20 @@ endif
 
 
 if ( ippmod(ielarc).ge.1 ) then
+  call field_get_id_try('absorption_coeff', f_id)
+  if (f_id > 0) then
+    call field_get_val_prev_s_by_name('absorption_coeff', cvar_rad)
+  else
+    call field_get_id_try('radiation_source', f_id)
+    if (f_id > 0) then
+      call field_get_val_prev_s_by_name('absorption_coeff', cvar_rad)
+    endif
+  endif
 
   do iel = 1, ncel
 
 ! ---> Directement donne par le fichier dp_elec
-
-      propce(iel,ipproc(icak(1))) = propce(iel,ipproc(idrad))
-
+    propce(iel,ipproc(icak(1))) = cvar_rad(iel)
   enddo
 
 endif

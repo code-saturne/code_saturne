@@ -98,7 +98,6 @@ use ppincl
 use ppcpfu
 use atincl
 use ctincl
-use elincl
 use cs_fuel_incl
 use mesh
 use field
@@ -130,10 +129,13 @@ double precision uref2, d2s3
 double precision rhomoy, dhy, ustar2
 double precision xkent, xeent
 double precision z1   , z2
+integer          ipotr, ipoti, f_id, ipotva1, ipotva2, ipotva3
+character(len=80) :: f_name
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: bfpro_rom
 double precision, dimension(:), pointer :: cvara_potva
+integer :: keyvar
 !< [loc_var_dec]
 
 !===============================================================================
@@ -144,7 +146,24 @@ double precision, dimension(:), pointer :: cvara_potva
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
+call field_get_key_id("variable_id", keyvar)
+
 d2s3 = 2.d0/3.d0
+
+call field_get_id('elec_pot_r', f_id)
+call field_get_key_int(f_id, keyvar, ipotr)
+if (ippmod(ieljou).ge. 2) then
+  call field_get_id('elec_pot_i', f_id)
+  call field_get_key_int(f_id, keyvar, ipoti)
+endif
+if (ippmod(ielarc).ge.2) then
+  call field_get_id('vec_potential_01', f_id)
+  call field_get_key_int(f_id, keyvar, ipotva1)
+  call field_get_id('vec_potential_02', f_id)
+  call field_get_key_int(f_id, keyvar, ipotva2)
+  call field_get_id('vec_potential_03', f_id)
+  call field_get_key_int(f_id, keyvar, ipotva3)
+endif
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
@@ -284,17 +303,18 @@ do ilelt = 1, nlelt
   ! (What is important for electric arc is the difference between anode and
   ! cathode potentials)
 
-  ii = ipotr
-  icodcl(ifac,isca(ii))   = 1
-  rcodcl(ifac,isca(ii),1) = 0.d0
+  icodcl(ifac,ipotr)   = 1
+  rcodcl(ifac,ipotr,1) = 0.d0
 
   ! Mass fraction of the (n-1) gas mixture components
 
-  if (ngazg .gt. 1) then
-    do iesp=1,ngazg-1
-      ii = iycoel(iesp)
-      icodcl(ifac,isca(ii))   = 1
-      rcodcl(ifac,isca(ii),1) = 0.d0
+  if (ngazge .gt. 1) then
+    do iesp=1,ngazge-1
+      write(f_name,'(a13,i2.2)') 'esl_fraction_',iesp
+      call field_get_id(trim(f_name), f_id)
+      call field_get_key_int(f_id, keyvar, ii)
+      icodcl(ifac,ii)   = 1
+      rcodcl(ifac,ii,1) = 0.d0
     enddo
   endif
 
@@ -302,9 +322,8 @@ do ilelt = 1, nlelt
   ! Imaginary part of the potentiel (ipoti) is imposed to zero
 
   if (ippmod(ieljou).ge. 2) then
-    ii = ipoti
-    icodcl(ifac,isca(ii))   = 1
-    rcodcl(ifac,isca(ii),1) = 0.d0
+    icodcl(ifac,ipoti)   = 1
+    rcodcl(ifac,ipoti,1) = 0.d0
   endif
 
   ! Specific model for Electric arc:
@@ -319,11 +338,12 @@ do ilelt = 1, nlelt
   ! the electrodes (see above)
 
   if (ippmod(ielarc).ge.2) then
-    do idim= 1,ndimve
-      ii = ipotva(idim)
-      icodcl(ifac,isca(ii))   = 3
-      rcodcl(ifac,isca(ii),3) = 0.d0
-    enddo
+      icodcl(ifac,ipotva1)   = 3
+      rcodcl(ifac,ipotva1,3) = 0.d0
+      icodcl(ifac,ipotva2)   = 3
+      rcodcl(ifac,ipotva2,3) = 0.d0
+      icodcl(ifac,ipotva3)   = 3
+      rcodcl(ifac,ipotva3,3) = 0.d0
   endif
 
 enddo
@@ -379,22 +399,20 @@ do ilelt = 1, nlelt
   ! you can impose directly the value.
 
   if (ippmod(ieljou).ge. 1) then
-    ii = ipotr
-    icodcl(ifac,isca(ii))   = 1
+    icodcl(ifac,ipotr)   = 1
     if (ielcor.eq.1) then
-      rcodcl(ifac,isca(ii),1) = 500.d0*coejou
+      rcodcl(ifac,ipotr,1) = 500.d0*coejou
     else
-      rcodcl(ifac,isca(ii),1) = 500.d0
+      rcodcl(ifac,ipotr,1) = 500.d0
     endif
   endif
 
   if (ippmod(ieljou).ge. 2) then
-    ii = ipoti
-    icodcl(ifac,isca(ii))   = 1
+    icodcl(ifac,ipoti)   = 1
     if (ielcor.eq.1) then
-      rcodcl(ifac,isca(ii),1) = sqrt(3.d0)*500.d0*coejou
+      rcodcl(ifac,ipoti,1) = sqrt(3.d0)*500.d0*coejou
     else
-      rcodcl(ifac,isca(ii),1) = sqrt(3.d0)*500.d0
+      rcodcl(ifac,ipoti,1) = sqrt(3.d0)*500.d0
     endif
   endif
 
@@ -455,13 +473,12 @@ do ilelt = 1, nlelt
   ! *  It is also possible to fix the value of the potential on the anode.
   !    (for example, 1000 Volts).
 
-  ii = ipotr
-  icodcl(ifac,isca(ii))   = 1
+  icodcl(ifac,ipotr)   = 1
 
   if (ippmod(ielarc).ge.1 .and. ielcor .eq.1) then
-    rcodcl(ifac,isca(ii),1) = dpot
+    rcodcl(ifac,ipotr,1) = pot_diff
   else
-    rcodcl(ifac,isca(ii),1) = 1000.d0
+    rcodcl(ifac,ipotr,1) = 1000.d0
   endif
 
   ! Mass fraction of the (n-1) gas mixture components
@@ -541,12 +558,17 @@ do ilelt = 1, nlelt
         cdgfbo(3,ifac) .le. -2.249d-2  .or.                      &
         cdgfbo(3,ifac) .ge.  2.249d-2      ) then
       iel = ifabor(ifac)
-      do idim = 1, ndimve
-        ii = ipotva(idim)
-        call field_get_val_prev_s(ivarfl(isca(ii)), cvara_potva)
-        icodcl(ifac,isca(ii))   = 1
-        rcodcl(ifac,isca(ii),1) = cvara_potva(iel)
-      enddo
+      icodcl(ifac,ipotva1)   = 1
+      call field_get_val_prev_s_by_name('vec_potential_01', cvara_potva)
+      rcodcl(ifac,ipotva1,1) = cvara_potva(iel)
+
+      icodcl(ifac,ipotva2)   = 1
+      call field_get_val_prev_s_by_name('vec_potential_02', cvara_potva)
+      rcodcl(ifac,ipotva2,1) = cvara_potva(iel)
+
+      icodcl(ifac,ipotva3)   = 1
+      call field_get_val_prev_s_by_name('vec_potential_0', cvara_potva)
+      rcodcl(ifac,ipotva3,1) = cvara_potva(iel)
     endif
   endif
 
@@ -583,15 +605,14 @@ do ilelt = 1, nlelt
   rcodcl(ifac,isca(ii),2) = 1.d5
 
   ! Real electrical potential: anode boundary condition;
-  ! dpot calculated in uselrc.f
+  ! pot_diff calculated in uselrc.f
 
-  ii = ipotr
-  icodcl(ifac,isca(ii))   = 1
+  icodcl(ifac,ipotr)   = 1
 
   if (ippmod(ielarc).ge.1 .and. ielcor .eq.1) then
-    rcodcl(ifac,isca(ii),1) = dpot
+    rcodcl(ifac,ipotr,1) = pot_diff
   else
-    rcodcl(ifac,isca(ii),1) = 100.d0
+    rcodcl(ifac,ipotr,1) = 100.d0
   endif
 
   ! Restriking modeling:
@@ -600,16 +621,15 @@ do ilelt = 1, nlelt
   !     and also in agreement with uselrc.fr
 
   if (ippmod(ielarc).ge.1 .and. ielcor .eq.1) then
-    if (iclaq.eq.1 .and. ntcabs.le.ntdcla+30) then
-
-      z1 = zclaq - 2.d-4
+    if (irestrike.eq.1 .and. ntcabs.le.ntdcla+30) then
+      z1 = restrike_pointZ - 2.d-4
       if (z1.le.0.d0) z1 = 0.d0
-      z2 = zclaq + 2.d-4
+      z2 = restrike_pointZ + 2.d-4
       if (z2.ge.2.d-2) z2 = 2.d-2
 
       if (cdgfbo(3,ifac).ge.z1 .and. cdgfbo(3,ifac).le.z2) then
         icodcl(ifac,isca(ii))   = 1
-        rcodcl(ifac,isca(ii),1) = dpot
+        rcodcl(ifac,isca(ii),1) = pot_diff
       else
         icodcl(ifac,isca(ii))   = 3
         rcodcl(ifac,isca(ii),3) = 0.d0
@@ -620,11 +640,12 @@ do ilelt = 1, nlelt
   ! Vector potential : Zero flux
 
   if (ippmod(ielarc).ge.2) then
-    do idim= 1,ndimve
-      ii = ipotva(idim)
-      icodcl(ifac,isca(ii))   = 3
-      rcodcl(ifac,isca(ii),3) = 0.d0
-    enddo
+      icodcl(ifac,ipotva1)   = 3
+      rcodcl(ifac,ipotva1,3) = 0.d0
+      icodcl(ifac,ipotva2)   = 3
+      rcodcl(ifac,ipotva2,3) = 0.d0
+      icodcl(ifac,ipotva3)   = 3
+      rcodcl(ifac,ipotva3,3) = 0.d0
   endif
 
 enddo
@@ -659,9 +680,8 @@ do ilelt = 1, nlelt
   ! electrical potential depending on the electrode configuration:
 
   if (ippmod(ieljou).ge. 2) then
-    ii = ipoti
-    icodcl(ifac,isca(ii))   = 1
-    rcodcl(ifac,isca(ii),1) = 0.d0
+    icodcl(ifac,ipoti)   = 1
+    rcodcl(ifac,ipoti,1) = 0.d0
   endif
 
 enddo

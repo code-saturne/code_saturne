@@ -93,6 +93,7 @@ double precision f1mc(ncharm), f2mc(ncharm)
 double precision x2t, h2, x2h2, hf, xsolid(nsolim), t1, tbl
 double precision ym(ngazgm)
 double precision diamgt,masgut,mkgout,mfgout,mkfini,rhofol
+character(len=80) :: f_name
 
 double precision, dimension(:), pointer :: bym1, bym2, bym3
 
@@ -184,7 +185,8 @@ else if (ippmod(ielarc).ge.1) then
   allocate(cvar_ycoel(ngazg-1))
 
   do iesp = 1, ngazg-1
-    call field_get_val_s(ivarfl(isca(iycoel(iesp))), cvar_ycoel(iesp)%p)
+    write(f_name,'(a13,i2.2)') 'esl_fraction_',iesp
+    call field_get_val_prev_s_by_name(trim(f_name), cvar_ycoel(iesp)%p)
   enddo
 
 endif
@@ -313,14 +315,14 @@ do ilst = 1, nlst
 
     if (ngazg .eq. 1) then
       ym(1) = 1.d0
-      call elthht(mode, ngazg, ym, h_b(ifac), tbl)
+      call elthht(mode, ym, h_b(ifac), tbl)
     else
       ym(ngazg) = 1.d0
       do iesp = 1, ngazg-1
         ym(iesp) = cvar_ycoel(iesp)%p(iel)
         ym(ngazg) = ym(ngazg) - ym(iesp)
       enddo
-      call elthht(mode, ngazg, ym, h_b(ifac), tbl)
+      call elthht(mode, ym, h_b(ifac), tbl)
     endif
 
   !   else if (ippmod(ielion).ge.1) then

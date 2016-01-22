@@ -251,6 +251,7 @@ double precision, dimension(:), pointer :: cvara_r12, cvara_r23, cvara_r13
 double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: viscl, visct, c_estim
 double precision, allocatable, dimension(:) :: surfbm
+double precision, dimension(:), pointer :: lapla1, lapla2, lapla3
 
 !===============================================================================
 
@@ -1623,11 +1624,13 @@ endif
 ! ---> Electric Arc (Laplace Force)
 !      (No 2nd order in time yet)
 if (ippmod(ielarc).ge.1) then
+  call field_get_val_s_by_name('laplace_force_1', lapla1)
+  call field_get_val_s_by_name('laplace_force_2', lapla2)
+  call field_get_val_s_by_name('laplace_force_3', lapla3)
   do iel = 1, ncel
-    do isou = 1, 3
-      smbr(isou,iel) = smbr(isou,iel)                               &
-                     + cell_f_vol(iel)*propce(iel,ipproc(ilapla(isou)))
-    enddo
+      smbr(1,iel) = smbr(1,iel) + cell_f_vol(iel) * lapla1(iel)
+      smbr(2,iel) = smbr(2,iel) + cell_f_vol(iel) * lapla2(iel)
+      smbr(3,iel) = smbr(3,iel) + cell_f_vol(iel) * lapla3(iel)
   enddo
 endif
 

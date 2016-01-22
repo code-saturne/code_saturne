@@ -87,7 +87,7 @@ integer          ifcvsl, kbfid
 integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
 logical          ilved, iprev, inoprv, is_set
-integer          f_id
+integer          f_id, potr, poti
 
 character(len=80) :: f_name, f_label, s_label, s_name
 
@@ -153,12 +153,14 @@ do ii = 1, nscal
     ! Special case for electric arcs: real and imaginary electric
     ! conductivity is the same (and ipotr < ipoti)
     if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
-      if (ii.eq.ipotr) then
+      call field_get_id('elec_pot_r', potr)
+      call field_get_id('elec_pot_i', poti)
+      if (f_id.eq.potr) then
         f_name = 'elec_sigma'
         f_label = 'Sigma'
-      else if (ii.eq.ipoti) then
-        call field_get_key_int(ivarfl(isca(ipotr)), kivisl, ifcvsl)
-        call field_set_key_int(ivarfl(isca(ipoti)), kivisl, ifcvsl)
+      else if (f_id.eq.poti) then
+        call field_get_key_int(potr, kivisl, ifcvsl)
+        call field_set_key_int(poti, kivisl, ifcvsl)
         cycle ! go to next scalar in loop, avoid creating property
       endif
     endif

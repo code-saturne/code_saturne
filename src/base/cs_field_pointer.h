@@ -150,6 +150,13 @@ typedef enum {
   CS_ENUMF_(poti),         /*!< Electric potential, imaginary part */
   CS_ENUMF_(potva),        /*!< Vector potential */
   CS_ENUMF_(ycoel),        /*!< Constituent mass fraction */
+  CS_ENUMF_(joulp),        /*!< Joule power */
+  CS_ENUMF_(absco),        /*!< absorption coefficient */
+  CS_ENUMF_(radsc),        /*!< radiation source */
+  CS_ENUMF_(elech),        /*!< electric charge */
+  CS_ENUMF_(curre),        /*!< current real */
+  CS_ENUMF_(curim),        /*!< current imaginary */
+  CS_ENUMF_(laplf),        /*!< laplace forces */
 
   CS_ENUMF_(rad_lumin),    /*!< Radiative luminance */
   CS_ENUMF_(rad_q),        /*!< Radiative flux */
@@ -303,6 +310,13 @@ cs_field_pointer_map_gas_mix(void);
 
 void
 cs_field_pointer_map_electric_arcs(int  n_gasses);
+
+/*----------------------------------------------------------------------------
+ * Map base fields to enumerated pointers properties for electric arcs
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_properties_map_electric_arcs(void);
 
 /*----------------------------------------------------------------------------
  * Map base fields to enumerated pointers for gas combustion.

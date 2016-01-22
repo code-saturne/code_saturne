@@ -52,7 +52,6 @@ use pointe
 use ppppar
 use ppthch
 use ppincl
-use elincl
 use mesh
 use field
 use dimens

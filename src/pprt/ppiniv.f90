@@ -163,7 +163,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
      ippmod(ielarc).ge.1 .or.                                     &
      ippmod(ielion).ge.1       ) then
 
-  call eliniv(nvar, nscal, dt, propce)
+  call eliniv(isuite, nvar, nscal, dt)
   !==========
 
 endif

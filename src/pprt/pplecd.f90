@@ -122,7 +122,7 @@ endif
 if ( ippmod(ieljou).ge.1 .or.                                     &
      ippmod(ielarc).ge.1 .or.                                     &
      ippmod(ielion).ge.1      ) then
-  call ellecd
+  call ellecd (ippmod(ieljou), ippmod(ielarc), ippmod(ielion))
   !==========
 endif
 
