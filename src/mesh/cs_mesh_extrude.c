@@ -72,7 +72,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file mesh_extrude.c
+  \file cs_mesh_extrude.c
         Mesh extrusion.
 */
 

@@ -103,7 +103,7 @@ BEGIN_C_DECLS
 
 */
 
-/*! \fn inline static cs_lnum_t cs_align(cs_lnum_t i, cs_lnum_t j)
+/*! \fn inline static cs_lnum_t cs_align(cs_lnum_t i, cs_lnum_t m)
  *
  * \brief Given a base index i, return the next index aligned with a size m.
  *

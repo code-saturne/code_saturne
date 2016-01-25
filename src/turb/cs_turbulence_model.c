@@ -186,7 +186,7 @@ BEGIN_C_DECLS
           the domain volume).
 
         Useful mainly for RANS models.
-  \var  cs_turb_ref_values_t:uref
+  \var  cs_turb_ref_values_t::uref
         characteristic flow velocity, used for the initialization of the
         turbulence
         - Negative value: not initialized.

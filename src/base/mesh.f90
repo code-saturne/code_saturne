@@ -352,9 +352,10 @@ contains
   end function nodfbr
 
   !=============================================================================
+
   !> \anchor isolid
   !> integer to mark out the "solid" cells (where the fluid volume is 0).
-  !> Only available when \ref iporos > 0.
+  !> Only available when \ref optcal::iporos "iposros" > 0.
   !> When \ref iporos = 0, this array has a unique value (isolid_0(1:1)=0).
 
   elemental pure function isolid(iporos, iel) result(isol)

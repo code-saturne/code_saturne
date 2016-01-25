@@ -104,7 +104,7 @@ module cs_nz_condensation
   !> Constant value of the wall temperature given by the user when
   !> the thermal 1D model is not activated for the condensation model with
   !> different zones specified in the user subroutine
-  !> \ref cs_user_nzones_boundary_mass_source_terms.
+  !> \ref cs_user_boundary_mass_source_terms.
   double precision, allocatable, dimension(:) :: ztpar
 
   !> \}

@@ -65,9 +65,6 @@ enum {X, Y, Z};
  * \brief Compute different types of "limiter function" according to the method
     proposed by Roe-Sweby (Second Order Upwind TVD schemes)
  *
- * \param[out]    phi          phi(r) limiter function whose role is to compare
-                               and bound slope (gradient) on a given face by
-                               comparing it with an downstream slope
  * \param[in]     limiter      choice of the limiter function
  * \param[in]     r            r = downstream_slope/face_slope
                                in a structured 1D mesh, for face "i+1/2" and

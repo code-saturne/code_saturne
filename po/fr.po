@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-01-11 10:40+0100\n"
+"POT-Creation-Date: 2016-01-25 17:46+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4874,11 +4874,11 @@ msgid ""
 msgstr ""
 
 msgid ""
-"    id      surface       volume         flow\n"
-"  ----  -----------  -----------  -----------\n"
+"    id      surface       volume         flow       deltaP\n"
+"  ----  -----------  -----------  -----------  -----------\n"
 msgstr ""
-"    id      surface       volume         flux\n"
-"  ----  -----------  -----------  -----------\n"
+"    id      surface       volume         flux       deltaP\n"
+"  ----  -----------  -----------  -----------  -----------\n"
 
 msgid "intensive"
 msgstr "intensif"
@@ -5267,6 +5267,12 @@ msgstr ""
 "Valeurs de clés définies par champ :\n"
 "------------------------------------\n"
 "\n"
+
+#, c-format
+msgid ""
+"Error defining variable \"%s\";\n"
+"this name is already reserved for field with id %d."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -7953,18 +7959,12 @@ msgstr ""
 msgid "Invalid datatype for analysing data.\n"
 msgstr ""
 
-msgid " Array not allocated. Stop dot product computation.\n"
-msgstr ""
-
 msgid " Stop norm computation. Norm value is < 0 !\n"
 msgstr ""
 
 msgid ""
-" Weighted operation requested but weigths not allocated.\n"
+" Weighted operation needs weigth array to be allocated.\n"
 " Stop execution.\n"
-msgstr ""
-
-msgid "  Undefined operation. Stop sum computation.\n"
 msgstr ""
 
 msgid "domain_walls"
@@ -7979,7 +7979,10 @@ msgstr ""
 msgid "domain_symmetries"
 msgstr ""
 
-msgid " cs_domain_t structure is not allocated."
+#, c-format
+msgid ""
+" Invalid key name %s for setting a boundary by default.\n"
+" Available choices are: wall or symmetry."
 msgstr ""
 
 #, c-format
@@ -7988,9 +7991,9 @@ msgid ""
 " %d boundary faces have no boundary type."
 msgstr ""
 
-#, c-format
 msgid ""
-" Undefined type of equation to solve for eq. %s. Please check your settings."
+" Invalid key for setting a parameter for this domain.\n"
+" Please read listing for more details and modify your settings."
 msgstr ""
 
 msgid ""
@@ -8003,8 +8006,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key name %s for setting a boundary by default.\n"
-" Available choices are: wall or symmetry."
+" Undefined type of equation to solve for eq. %s. Please check your settings."
 msgstr ""
 
 #, c-format
@@ -8019,12 +8021,9 @@ msgid ""
 " Available choices are: wall, inlet, outlet or symmetry."
 msgstr ""
 
-#, c-format
 msgid ""
-" Invalid key for setting the type of definition.\n"
-" Given key: %s\n"
-" Choice among value, analytic, user, law.\n"
-" Please modify your settings."
+" Unsteady computation without stopping criterion on the max number of "
+"iteration or a maximal time."
 msgstr ""
 
 #, c-format
@@ -8039,6 +8038,21 @@ msgid ""
 " Stop adding this advection field.\n"
 msgstr ""
 
+msgid " cs_domain_t structure is not allocated."
+msgstr ""
+
+msgid ""
+" Groundwater module is requested but is not activated.\n"
+" Please first activate this module."
+msgstr ""
+
+#, c-format
+msgid ""
+" Stop setting a tracer equation %s.\n"
+" No equation with this name has been found.\n"
+" Please check your settings."
+msgstr ""
+
 #, c-format
 msgid ""
 " Invalid type of equation: %s\n"
@@ -8049,6 +8063,11 @@ msgstr ""
 msgid ""
 " Invalid type of boundary condition by default: %s\n"
 " Choices are zero_value or zero_flux."
+msgstr ""
+
+msgid ""
+" Stop setting an empty cs_equation_t structure.\n"
+" Please check your settings.\n"
 msgstr ""
 
 #, c-format
@@ -8082,11 +8101,6 @@ msgstr ""
 msgid ""
 " Invalid scheme for the space discretization.\n"
 " Please check your settings."
-msgstr ""
-
-msgid ""
-" Stop setting an empty cs_equation_t structure.\n"
-" Please check your settings.\n"
 msgstr ""
 
 #, c-format
@@ -8179,19 +8193,11 @@ msgid ""
 " Choices are among implicit, explicit, crank_nicolson and theta_scheme"
 msgstr ""
 
-msgid " Cannot link an empty cs_equation_t structure"
-msgstr ""
-
 #, c-format
 msgid ""
 " Invalid keyword for linking an equation.\n"
 " Current value: %s\n"
 " Possible choices: diffusion, time, advection\n"
-msgstr ""
-
-msgid ""
-" cs_equation_t structure is NULL\n"
-" Cannot set the initial condition"
 msgstr ""
 
 #, c-format
@@ -8200,12 +8206,6 @@ msgid ""
 " Given key: %s\n"
 " Choice among value and analytic.\n"
 " Please modify your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" cs_equation_t structure is NULL\n"
-" Cannot add a boundary condition related to mesh location %s"
 msgstr ""
 
 #, c-format
@@ -8222,11 +8222,6 @@ msgid ""
 " Given key: %s\n"
 " Choice among dirichlet, neumann or robin.\n"
 " Please modify your settings."
-msgstr ""
-
-msgid ""
-" cs_equation_t structure is NULL\n"
-" Can not add a reaction term."
 msgstr ""
 
 #, c-format
@@ -8254,25 +8249,8 @@ msgstr ""
 
 #, c-format
 msgid ""
-" cs_equation_t structure is NULL\n"
-" Can not add a source term related to mesh location %s"
-msgstr ""
-
-#, c-format
-msgid ""
-" Cannot find source term %s.\n"
-" Please check your settings.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid key for setting source term %s.\n"
-" Please read listing for more details and modify your settings."
-msgstr ""
-
-msgid ""
-" Invalid key value for setting the quadrature behaviour of a source term.\n"
-" Choices are among subdiv, bary, higher, highest."
+" Cannot find source term %s among defined source terms.\n"
+" Please check your settings for equation %s.\n"
 msgstr ""
 
 #, c-format
@@ -8296,18 +8274,23 @@ msgstr ""
 msgid " Invalid mesh location id (= -1) for the current field\n"
 msgstr ""
 
+#, c-format
+msgid ""
+" Cannot find the reaction term %s in equation %s.\n"
+" Please check your settings.\n"
+msgstr ""
+
 msgid "Invalid quadrature type.\n"
 msgstr ""
 
-msgid " Invalid case. Not able to compute an evaluation.\n"
+msgid ""
+" Invalid type of degrees of freedom.\n"
+" This case is not handled yet."
 msgstr ""
 
 msgid ""
-" Invalid type of definition. Stop evaluation.\n"
-" This case is not handled yet.\n"
-msgstr ""
-
-msgid " Invalid type of definition.\n"
+" Invalid type of degree of freedom.\n"
+" This case is not handled yet."
 msgstr ""
 
 #, c-format
@@ -8340,6 +8323,26 @@ msgid ""
 " Please read the listing for more details and modify your settings."
 msgstr ""
 
+#, c-format
+msgid ""
+" Maximum number of tracers is reached.\n"
+" Stop adding the tracer equation %s.\n"
+" Please modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" Stop setting a tracer equation. Invalid mesh location name %s.\n"
+" This mesh location is not already defined.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Stop setting a tracer equation. No soil related to mesh location %s has "
+"been found.\n"
+" Please check your settings."
+msgstr ""
+
 msgid " Groundwater module is activated but no soil is defined."
 msgstr ""
 
@@ -8347,12 +8350,6 @@ msgid " Invalid type of property."
 msgstr ""
 
 msgid " Invalid type of model for groundwater module.."
-msgstr ""
-
-#, c-format
-msgid ""
-" %d cells have no related soil.\n"
-" Please check your settings."
 msgstr ""
 
 msgid " This type of discrete Hodge operator is not covered.\n"
@@ -8368,6 +8365,12 @@ msgid "by array"
 msgstr ""
 
 msgid "by law (one argument)"
+msgstr ""
+
+msgid "by law (two arguments)"
+msgstr ""
+
+msgid "by law (two arguments: scalar+vector)"
 msgstr ""
 
 msgid "by subdomain"
@@ -8413,12 +8416,6 @@ msgid "Outlet"
 msgstr ""
 
 msgid "Symmetry"
-msgstr ""
-
-msgid "mass"
-msgstr ""
-
-msgid "head loss"
 msgstr ""
 
 msgid " Invalid type of variable."
@@ -8479,6 +8476,26 @@ msgstr ""
 msgid ""
 " Cannot build diagonal index. Pattern is shared.\n"
 " Stop execution.\n"
+msgstr ""
+
+msgid " Invalid type of source term."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key for setting source term %s.\n"
+" Please read listing for more details and modify your settings."
+msgstr ""
+
+msgid ""
+" Invalid key value for setting the quadrature behaviour of a source term.\n"
+" Choices are among subdiv, bary, higher, highest."
+msgstr ""
+
+msgid " Invalid case. Not able to compute an evaluation.\n"
+msgstr ""
+
+msgid " Invalid type of definition.\n"
 msgstr ""
 
 #, c-format
@@ -8656,6 +8673,67 @@ msgstr " Création des halos\n"
 
 msgid " Defining halos\n"
 msgstr " Définition des halos\n"
+
+#, c-format
+msgid ""
+"Error for electric arc model\n"
+"only choice -1 or 2 are permitted yet\n"
+"model selected : \"%i\";\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error for joule model\n"
+"only choice -1, 1, 2, 3 or 4 are permitted yet\n"
+"model selected : \"%i\";\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error for ionic conduction model\n"
+"only choice -1 is permitted yet\n"
+"model selected : \"%i\";\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error for scaling model\n"
+"only choice -1 or 2 are permitted yet\n"
+"model selected : \"%i\";\n"
+msgstr ""
+
+msgid ""
+"Invalid or incomplete calculation parameter\n"
+"Verify parameters\n"
+msgstr ""
+
+#, c-format
+msgid "Error opening file \"%s\""
+msgstr "Erreur à l'ouverture du fichier \"%s\""
+
+#, c-format
+msgid "incorrect number of species \"%i\";\n"
+msgstr ""
+
+#, c-format
+msgid "incorrect choice for radiative model \"%i\";\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"electric module : \n"
+"bad value for mode (integer equal to -1 or 1 : %i here.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"electric module : properties read on file\n"
+"Warning : error in cs_elec_physical_properties\n"
+"Invalid reading with temperature : %f.\n"
+msgstr ""
+
+msgid "Error electric arc with ampere theorem not available\n"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -9915,10 +9993,6 @@ msgid "Invalid compressible model: %s.\n"
 msgstr ""
 
 #, c-format
-msgid "Invalid model : %s\n"
-msgstr ""
-
-#, c-format
 msgid ""
 "Coal number is limited to %i\n"
 "In the parametric file it is %i.\n"
@@ -9942,6 +10016,10 @@ msgid ""
 "Oxidant number must be between 1 and 3.\n"
 "It is  %i in the parametric file \n"
 "Calculation is interupted \n"
+msgstr ""
+
+#, c-format
+msgid "Invalid model : %s\n"
 msgstr ""
 
 #, c-format
@@ -12095,15 +12173,3 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
-
-#~ msgid "Construction/destruction:"
-#~ msgstr "Construction/destruction :"
-
-#~ msgid "Swap source and destination:"
-#~ msgstr "Inversion source et destination :"
-
-#~ msgid "Sort by source rank:"
-#~ msgstr "Tri par rang source :"
-
-#~ msgid "Copy exchanged data:"
-#~ msgstr "Copie de données échangées :"

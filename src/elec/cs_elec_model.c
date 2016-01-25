@@ -631,7 +631,7 @@ cs_electrical_properties_read(cs_int_t ielarc,
 
   if (!file)
     bft_error(__FILE__, __LINE__, 0,
-              _("Error can not open file \"%s\";\n"),
+              _("Error opening file \"%s\""),
               cs_glob_elec_option->ficfpp);
 
   /* Position at the beginning of the file */

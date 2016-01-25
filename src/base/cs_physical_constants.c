@@ -240,7 +240,7 @@ BEGIN_C_DECLS
 
         Always useful.
   \var  cs_fluid_properties_t::psginf
-        stiffened gas (\ref ppincl::ieos "ieos"=2) limit pressure
+        stiffened gas (\ref cs_fluid_properties_t::ieos "ieos"=2) limit pressure
         (zero in perfect gas)
   \var  cs_fluid_properties_t::gammasg
         stiffened gas (\ref ppincl::ieos "ieos"=2) polytropic coefficient

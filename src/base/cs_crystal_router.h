@@ -175,7 +175,7 @@ cs_crystal_router_n_elts(const cs_crystal_router_t  *cr);
  * Note also that if the destination id is provided in the Crystal Router,
  * it will be applied automatically to all extracted arrays, except the
  * dest_id array itself, which is always in receive order. If the Crystal
- * Router does not contain destination id info but the \ref dest_id
+ * Router does not contain destination id info but the \c dest_id
  * argument points to a non-NULL value, the provided id will be used to
  * order extracted data. This allows saving the destination id on the receive
  * side, and not re-sending it (saving bandwidth) for subsequent calls

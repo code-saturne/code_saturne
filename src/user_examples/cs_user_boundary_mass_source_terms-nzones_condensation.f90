@@ -26,7 +26,7 @@
 ! Function:
 ! ---------
 
-!> \file cs_user_nzones_boundary_mass_source_terms.f90
+!> \file cs_user_boundary_mass_source_terms-nzones_condensation.f90
 !>
 !> \brief Source terms for each zone associated at the boundary faces and the
 !> neighboring cells with surface condensation.

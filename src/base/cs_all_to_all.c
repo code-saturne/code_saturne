@@ -1294,7 +1294,7 @@ cs_all_to_all_copy_index(cs_all_to_all_t  *d,
  *
  * If a destination buffer is provided, it should be of sufficient size for
  * the number of elements indicated by
- * dest_index[\ref cs_all_to_all_n_elts_dest(d)];
+ * dest_index[\ref cs_all_to_all_n_elts_dest "cs_all_to_all_n_elts_dest(d)"];
  *
  * If no buffer is provided, one is allocated automatically, and transferred
  * to the caller (who is responsible for freeing it when no longer needed).

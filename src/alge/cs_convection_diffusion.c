@@ -516,9 +516,6 @@ _max_limiter_num(const int           f_id,
 /*!
  * \brief Compute the minmod limiter function
  *
- * \param[out]    phi          phi(r) limiter function whose role is to compare
-                               and bound slope (gradient) on a given face by
-                               comparing it with an downstream slope
  * \param[in]     r            r=downstream_slope/face_slope
                                in a structured 1D mesh, for face "i+1/2" and
                                for positive mass flux, it could represent:
@@ -536,15 +533,13 @@ static cs_real_t cs_limiter_minmod(cs_real_t r)
 /*!
  * \brief Compute the Van-Leer limiter function
  *
- * \param[out]    phi          phi(r) limiter function whose role is to compare
-                               and bound slope (gradient) on a given face by
-                               comparing it with an downstream slope
  * \param[in]     r             = downstream_slope/face_slope
                                in a structured 1D mesh, for face "i+1/2" and
                                for positive mass flux, it could represent:
                                (Y_{i+2}-Y_{i+1})/(Y_{i+1}-Y_{i})
  */
 /*----------------------------------------------------------------------------*/
+
 static
 cs_real_t cs_limiter_van_leer(cs_real_t  r)
 {
@@ -557,15 +552,13 @@ cs_real_t cs_limiter_van_leer(cs_real_t  r)
 /*!
  * \brief Compute the Van-Albada limiter function
  *
- * \param[out]    phi          phi(r) limiter function whose role is to compare
-                               and bound slope (gradient) on a given face by
-                               comparing it with an downstream slope
  * \param[in]     r            r = downstream_slope/face_slope
                                in a structured 1D mesh, for face "i+1/2" and
                                for positive mass flux, it could represent:
                                (Y_{i+2}-Y_{i+1})/(Y_{i+1}-Y_{i})
  */
 /*----------------------------------------------------------------------------*/
+
 static
 cs_real_t cs_limiter_van_albada(cs_real_t  r)
 {
@@ -578,15 +571,13 @@ cs_real_t cs_limiter_van_albada(cs_real_t  r)
 /*!
  * \brief Compute the Van-Leer limiter function
  *
- * \param[out]    phi          phi(r) limiter function whose role is to compare
-                               and bound slope (gradient) on a given face by
-                               comparing it with an downstream slope
  * \param[in]     r            r = downstream_slope/face_slope
                                in a structured 1D mesh, for face "i+1/2" and
                                for positive mass flux, it could represent:
                                (Y_{i+2}-Y_{i+1})/(Y_{i+1}-Y_{i})
  */
 /*----------------------------------------------------------------------------*/
+
 static
 cs_real_t cs_limiter_superbee(cs_real_t  r)
 {
@@ -600,9 +591,6 @@ cs_real_t cs_limiter_superbee(cs_real_t  r)
  * \brief Compute different types of "limiter function" according to the method
     proposed by Roe-Sweby (Second Order Upwind TVD schemes)
  *
- * \param[out]    phi          phi(r) limiter function whose role is to compare
-                               and bound slope (gradient) on a given face by
-                               comparing it with an downstream slope
  * \param[in]     limiter      choice of the limiter function
  * \param[in]     r            r = downstream_slope/face_slope
                                in a structured 1D mesh, for face "i+1/2" and
@@ -663,10 +651,9 @@ cs_upstream_val(const cs_real_t                     p_c,
                 const cs_real_3_t                   gradup)
 {
   cs_real_t p_u;
-  p_u = p_c - c_vol/pow(surf, 2)*(
-                                   normal[0]*gradup[0]
-                                 + normal[1]*gradup[1]
-                                 + normal[2]*gradup[2]);
+  p_u = p_c - c_vol/pow(surf, 2)*(  normal[0]*gradup[0]
+                                  + normal[1]*gradup[1]
+                                  + normal[2]*gradup[2]);
   return p_u;
 }
 
