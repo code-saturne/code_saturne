@@ -90,7 +90,7 @@ secondary viscosity}}\ \ - \dive{(\rho \tens{R})}
 &\displaystyle +\underbrace {\Gamma
 (\vect{u}_{\,i}-\vect{u})}_{\text{mass source term}}-
 \underbrace {\rho\
-\tens{K}_{\,pdc} \vect {u}}_{\text{head loss}} +
+\tens{K} \vect {u}}_{\text{head loss}} +
 \underbrace { \vect{T}_{\,s}^{\,exp}+
 T_{s}^{\,imp}\ \vect{u}}_{\text{other source terms}}
 \label{Base_Predvv_eqqdm}
@@ -104,7 +104,7 @@ $\rho$ and not with $\rho_{\,0}$):
 p=p^*-\rho_{\,0}\ \vect{g}\cdot\vect{X}
 \end{equation}
 (\vect{X} being the vector of components $x$, $y$ and $z$).\\
-$\mu_t$, $\tens{K}_{\,pdc}$, $\vect{u}_{\,i}$ represent respectively
+$\mu_t$, $\tens{K}$, $\vect{u}_{\,i}$ represent respectively
 the turbulent dynamic viscosity, the tensor related to head losses and the value of the
 variable associated with the mass source.\\
 The divergence of the Reynolds stress tensor is expressed by:
@@ -167,7 +167,7 @@ the nonlinear term) implemented by specifying  $\var{NTERUP}>1$.
 The equation (\ref{Base_Predvv_eqqdm}) is discretized at the time level
 $n+\theta$ using a $\theta$-scheme and the tensor of velocity head losses
 decomposed into the sum of its diagonal $\tens{K}_{d}$ and extra diagonal $\tens{K}_{e}$ terms (such that
- $\tens{K}_{pdc}=\tens{K}_{d}+\tens{K}_{e}$).\\
+ $\tens{K}=\tens{K}_{d}+\tens{K}_{e}$).\\
 $\bullet$ The pressure is assumed to be known at the point in time $n-1+\theta$
 (pressure/velocity time lag) and the gradient evidently calculated at this instant.\\
 $\bullet$ The secondary viscosity and the gradient transpose source terms,
@@ -404,7 +404,7 @@ Computation of the term $-\dive(\rho \tens{R})$ is implemented in two steps. A c
 \linebreak
 \item The secondary viscosity $- \displaystyle \frac {2} {3}\grad (\mu_{\,tot} \dive \vect\,{u})$ and transposed gradient $ \dive (\mu_{\,tot} \,^t\ggrad \vect {u})$ terms, when these taken into account (\emph{i.e.} \var{IVISSE}\,(\var{IPHAS})\ = 1, where \var{IPHAS} is the number of the phase treated) are computed by the subroutine \fort{visecv}. They are only calculated at the first iteration over \fort{navstv}. During this step, the array \var{TRAV} serves as a working array when the subroutine  \fort{visecv} is being called. It reverts to its normal value at the end of the call during which its contents are stored temporarily in the vectors \var{W7} to \var{W9}.
 \\
-\item The terms corresponding to the velocity head losses ($\rho \tens{K}_{\,pdc}
+\item The terms corresponding to the velocity head losses ($\rho \tens{K}
 {u}$), if there are any (\ $\var{NCEPDP}> 0$\ ), are calculated by the subroutine \fort{tspdcv} at the first iteration over \fort{navstv}. They are decomposed into two parts:\\
 {\tiny$\blacksquare$} The first part, corresponding to the contribution of the diagonal terms ($-\rho\,\tens{K}_{\,d}\vect{u}$), is not extrapolated.\\
 {\tiny$\blacksquare$} The second, which corresponds to the extra diagonal terms
@@ -634,15 +634,6 @@ $\bullet$ \var{NTERUP} $>$ 1 (sub-iteration $k$) : $\var{SMBR}^n=\var{TRAVA}^n+\
 \etape{Evaluation of the term $\grad(\rho k)$ for turbulent viscosity models}
 When modelling turbulent viscosity, we compute $\rho\ \grad k$ instead of $\grad(\rho k)$. This
 approximation was implemented from the outset because the $\rho k$ boundary conditions are not directly accessible, in contrast to those of $k$.\\
-
-\etape{Account taken of the diagonal of $\tens{K}_{\,pdc}$}
-The user subroutine \fort{uskpdc}, currently contains an explicit warning regarding this issue, however it is written in as a comment.
-% \footnote{Which reads: Always ensure
-%\that the diagonal coefficients (of the head loss tensor considered) are positive. If this is not the case,
-%you run the risk of CRASHING. No subsequent check is performed.}.
-If the user doesn't take sufficient care, the diagonal part $\tens{K}_{\,d}$ of the velocity head loss tensor
-$\tens{K}_{\,pdc}$ can be systematically taken into account in the computation of the coefficient
-coefficient $f_s^{\,imp}$, whether its contribution $K_{\,d}$ is positive or not. A positivity test to check the positive definiteness of the elements of $\tens{K}_{\,d}$ should be implemented to ensure these are correctly taken into account (contribution genuinely increasing the diagonal dominance of the global matrix).
 
 \etape{Expression of $\tens{EM}$}
 With incremental solving, it is not absolutely necessary for convergence that the value of the viscosity appearing in the expression of the operator $\mathcal{E}$ be the same as that taken into account in the incremental system matrix, $\tens{EM}$. In $R_{ij}-\varepsilon$, for example, the total viscosity used in $\tens{EM}$ contains the molecular viscosity but can also contain the turbulent viscosity if the option \var{IRIJNU = 1 } is selected, whereas only the former is included in the operator $\mathcal{E}$. This addition of the turbulent viscosity, which is not at all relevant to the $R_{ij}-\varepsilon$ model, has been inherited from practices implemented in

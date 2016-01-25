@@ -62,7 +62,7 @@ The continuous equations are thus:
 %
 with $\rho$ the density field, $\vect{u}$ the velocity field,
 $[\,\vect{TS}-\tens{K}\,\vect{u}\,]$ the other source terms ($\tens{K}$ is a
-positive diagonal tensor by definition), $\tens{\sigma}$ the stress tensor,
+symmetric positive definite tensor by definition), $\tens{\sigma}$ the stress tensor,
 $\tens{\tau}$ the tensor of viscous stresses,
 $\mu$ the dynamic viscosity (molecular and possibly turbulent),
 $\kappa$ the volume viscosity (usually null and therefore neglected in
@@ -181,15 +181,13 @@ decoupling of the velocity components.
 \item Explicitation or extrapolation of the physical quantities (\emph{i.e}
 $\rho,\,\mu,\,Cp\,...$) and the mass flux.
 \item Explicitation or extrapolation of the explicit source terms
-(for example, the contributions of the transpose gradient, secondary viscosity,
-extra diagonal elements of the head losses, injected mass $\Gamma\,\vect{u}^{in}$, ...)
+(for example
+injected mass $\Gamma\,\vect{u}^{in}$, ...)
 at time $n+\theta_{S}$.
 \item The implicit source terms that are linear with respect to the velocity
-(implicit user-specified source terms, diagonal of the head losses
-$\tens{K_d}\,\underline{u}$, sources of mass $\Gamma\,\vect{u}$, etc...)
-are assumed to be evaluated at time $n+\theta$ and are tied to the tensor
-$\tens{K}$\footnote{As the velocity components are decoupled, in practice only
-the linear terms relative to the resolved component are factorised; the other terms are treated as explicit terms. A more detailed explanation can be found in \fort{predvv}.}.
+(implicit user-specified source terms, the head losses
+$\tens{K}\,\underline{u}$, sources of mass $\Gamma\,\vect{u}$, etc...)
+are assumed to be evaluated at time $n+\theta$.
 \end{itemize}
 
 For clarification, unless otherwise specified, the physical properties
