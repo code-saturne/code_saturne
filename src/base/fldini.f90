@@ -92,7 +92,7 @@ integer          iopchr
 integer          iscdri, icla, iclap
 integer          keyccl, keydri
 integer          idfm, iggafm, nfld
-integer          iflidp, idimf
+integer          iflidp, idimf, n_fans
 
 character(len=80) :: name, f_name
 
@@ -450,6 +450,21 @@ do ii = 1, nvar
   endif
 enddo
 
+! Fans output
+itycat = FIELD_PROPERTY
+ilved = .true.
+
+n_fans = cs_fan_n_fans()
+if (n_fans .gt. 0) then
+  name = 'fans_ids'
+
+  ityloc = 1 ! cells
+
+  call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ifctsl)
+  call field_set_key_int(ifctsl, keyvis, 1)
+  call field_set_key_int(ifctsl, keylog, 1)
+
+endif
 
 ! Convection limiter
 

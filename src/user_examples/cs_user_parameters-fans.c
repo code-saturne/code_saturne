@@ -122,7 +122,7 @@ cs_user_parameters(void)
     const cs_real_t  pressure_curve_coeffs[3] = {0.6, -0.1, -0.05};
     const cs_real_t  axial_torque = 0.01;
 
-    cs_fan_define(3, /* fan (mesh) dimension */
+    cs_fan_define(3, /* fan (mesh) dimension (2D or 3D) */
                   inlet_axis_coords,
                   outlet_axis_coords,
                   fan_radius,
