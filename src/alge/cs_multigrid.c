@@ -1928,7 +1928,7 @@ _multigrid_pc_get_type(const void  *context,
   }
   else {
     static const char t[] = N_("Multigrid");
-    return t;
+    return _(t);
   }
 }
 
@@ -2985,30 +2985,32 @@ cs_multigrid_pc_create(void)
  * postprocessing data to assist debugging, then aborts the run.
  * It does nothing in case the maximum iteration count is reached.
 
- * \param[in, out]  context        pointer to multigrid solver info and context
- *                                 (actual type: cs_multigrid_t  *)
+ * \param[in, out]  sles           pointer to solver object
  * \param[in]       state          convergence state
  * \param[in]       name           pointer to name of linear system
  * \param[in]       a              matrix
  * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
+ *
+ * \return  false (do not attempt new solve)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_multigrid_error_post_and_abort(void                         *context,
+bool
+cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
                                   cs_sles_convergence_state_t   state,
-                                  const char                   *name,
                                   const cs_matrix_t            *a,
                                   cs_halo_rotation_t            rotation_mode,
                                   const cs_real_t               rhs[],
                                   cs_real_t                     vx[])
 {
   if (state >= CS_SLES_MAX_ITERATION)
-    return;
+    return false;
 
-  const cs_multigrid_t  *mg = context;
+  const cs_multigrid_t  *mg = cs_sles_get_context(sles);
+  const char *name = cs_sles_get_name(sles);
+
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
 
   int level = mgd->exit_level;
@@ -3154,6 +3156,8 @@ cs_multigrid_error_post_and_abort(void                         *context,
               name, _(error_type[err_id]),
               mgd->exit_cycle_id, level,
               mgd->exit_initial_residue, mgd->exit_residue);
+
+  return false;
 }
 
 /*----------------------------------------------------------------------------*/

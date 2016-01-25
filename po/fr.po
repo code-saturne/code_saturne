@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-01-25 17:46+0100\n"
+"POT-Creation-Date: 2016-01-25 19:33+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3704,7 +3704,7 @@ msgid "Linear solver options for other systems"
 msgstr "Options de solveurs linéaires pour les autres systèmes"
 
 msgid "Linear solver performance with previous options"
-msgstr "Performance des solveurs linéaires avec options précédetes"
+msgstr "Performance des solveurs linéaires avec options précédentes"
 
 msgid "Linear solver performance for fields"
 msgstr "Performance des solveurs linéaires pour les champs"
@@ -3762,6 +3762,20 @@ msgid ""
 "  it  may not be called multiple times for a given field (id %d)\n"
 "  without calling cs_sles_pop between those calls."
 msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"\n"
+"%s [%s]: divergence\n"
+"  fallback from %s to Jacobi (diagonal) preconditioning\n"
+"  for re-try and subsequent solves.\n"
+msgstr ""
+"\n"
+"\n"
+"%s [%s]: divergence\n"
+"  secours: basculement du préconditionnement %s à Jacobi (diagonal)\n"
+"  pour nouvelle tentative et résolutions ultérieures.\n"
 
 msgid "Conjugate gradient"
 msgstr "Gradient conjugué"
@@ -7526,7 +7540,7 @@ msgstr "support"
 
 #, c-format
 msgid "Error opening file: \"%s\""
-msgstr "Erreur à l'ouverture du fichier \"%s\"."
+msgstr "Erreur à l'ouverture du fichier : \"%s\""
 
 #, c-format
 msgid ""

@@ -4629,6 +4629,42 @@ cs_sles_it_transfer_pc(cs_sles_it_t     *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Copy options from one iterative sparse linear system solver info
+ *        and context to another.
+ *
+ * Optional plotting contexts are shared between the source and destination
+ * contexts.
+ *
+ * Preconditioner settings are to be handled separately.
+ *
+ * \param[in]       src   pointer to source info and context
+ * \param[in, out]  dest  pointer to destination info and context
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_transfer_parameters(const cs_sles_it_t  *src,
+                               cs_sles_it_t        *dest)
+{
+  if (dest != NULL && src != NULL) {
+
+    dest->update_stats = src->update_stats;
+    dest->n_max_iter = src->n_max_iter;
+
+    dest->plot_time_stamp = src->plot_time_stamp;
+    dest->plot = src->plot;
+    if (dest->_plot != NULL)
+      cs_time_plot_finalize(&(dest->_plot));
+
+#if defined(HAVE_MPI)
+    dest->comm = src->comm;
+#endif
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Associate a similar info and context object with which some setup
  *        data may be shared.
  *
@@ -4837,30 +4873,30 @@ cs_sles_it_log_parallel_options(void)
  * postprocessing data to assist debugging, then aborts the run.
  * It does nothing in case the maximum iteration count is reached.
 
- * \param[in, out]  context        pointer to iterative solver info and context
- *                                 (actual type: cs_sles_it_t  *)
+ * \param[in, out]  sles           pointer to solver object
  * \param[in]       state          convergence state
- * \param[in]       name           pointer to name of linear system
  * \param[in]       a              matrix
  * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
+ *
+ * \return  false (do not attempt new solve)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_sles_it_error_post_and_abort(void                         *context,
+bool
+cs_sles_it_error_post_and_abort(cs_sles_t                    *sles,
                                 cs_sles_convergence_state_t   state,
-                                const char                   *name,
                                 const cs_matrix_t            *a,
                                 cs_halo_rotation_t            rotation_mode,
                                 const cs_real_t              *rhs,
                                 cs_real_t                    *vx)
 {
   if (state >= CS_SLES_BREAKDOWN)
-    return;
+    return false;
 
-  cs_sles_it_t  *c = context;
+  const cs_sles_it_t  *c = cs_sles_get_context(sles);
+  const char *name = cs_sles_get_name(sles);
 
   int mesh_id = cs_post_init_error_writer_cells();
 
@@ -4881,6 +4917,8 @@ cs_sles_it_error_post_and_abort(void                         *context,
             _(cs_sles_it_type_name[c->type]),
             _(error_type[err_id]),
             name);
+
+  return false;
 }
 
 /*----------------------------------------------------------------------------*/

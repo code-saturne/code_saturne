@@ -161,6 +161,40 @@ void
 cs_sles_free_native(int          f_id,
                     const char  *name);
 
+/*----------------------------------------------------------------------------
+ * Error handler attempting fallback to alternative solution procedure for
+ * sparse linear equation solver.
+ *
+ * In case of divergence with an iterative solver, this error handler
+ * switches to a default preconditionner, then resets the solution vector.
+ *
+ * The default error for the solver type handler is then  set, in case
+ * the solution fails again.
+ *
+ * Note that this error handler may rebuild solver contexts, so should not
+ * be used in conjunction with shared contexts (such as multigrid
+ * ascent/descent contexts), but only for "outer" solvers.
+ *
+ * parameters:
+ *   sles          <-> pointer to solver object
+ *   state         <-- convergence status
+ *   a             <-- matrix
+ *   rotation_mode <-- halo update option for rotational periodicity
+ *   rhs           <-- right hand side
+ *   vx            <-> system solution
+ *
+ * returns:
+ *   true if fallback solution is possible, false otherwise
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_sles_default_error(cs_sles_t                    *sles,
+                      cs_sles_convergence_state_t   state,
+                      const cs_matrix_t            *a,
+                      cs_halo_rotation_t            rotation_mode,
+                      const cs_real_t               rhs[],
+                      cs_real_t                     vx[]);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

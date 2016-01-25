@@ -335,20 +335,20 @@ cs_multigrid_pc_create(void);
  * It does nothing in case the maximum iteration count is reached.
  *
  * parameters:
- *   context       <-> pointer to multigrid sparse linear system solver info
- *                     (actual type: cs_multigrid_t  *)
- *   name          <-- pointer to name of linear system
+ *   sles          <-> pointer to solver object
  *   state         <-- convergence status
  *   a             <-- matrix
  *   rotation_mode <-- halo update option for rotational periodicity
  *   rhs           <-- right hand side
  *   vx            <-> system solution
+ *
+ * returns:
+ *   false (do not attempt new solve)
  *----------------------------------------------------------------------------*/
 
-void
-cs_multigrid_error_post_and_abort(void                         *context,
+bool
+cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
                                   cs_sles_convergence_state_t   state,
-                                  const char                   *name,
                                   const cs_matrix_t            *a,
                                   cs_halo_rotation_t            rotation_mode,
                                   const cs_real_t              *rhs,

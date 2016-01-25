@@ -318,6 +318,24 @@ cs_sles_it_transfer_pc(cs_sles_it_t     *context,
                        cs_sles_pc_t    **pc);
 
 /*----------------------------------------------------------------------------
+ * Copy options from one iterative sparse linear system solver info
+ * and context to another.
+ *
+ * Optional plotting contexts are shared between the source and destination
+ * contexts.
+ *
+ * Preconditioner settings are to be handled separately.
+ *
+ * parameters:
+ *   src  <-- pointer to source info and context
+ *   dest <-> pointer to destination info and context
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_transfer_parameters(const cs_sles_it_t  *src,
+                               cs_sles_it_t        *dest);
+
+/*----------------------------------------------------------------------------
  * Associate a similar info and context object with which some setup
  * data may be shared.
  *
@@ -446,21 +464,20 @@ cs_sles_it_log_parallel_options(void);
  * It does nothing in case the maximum iteration count is reached.
  *
  * parameters:
- *   context       <-> pointer to iterative sparse linear system solver info
- *                     (actual type: cs_sles_it_t  *)
+ *   sles          <-> pointer to solver object
  *   state         <-- convergence state
- *   name          <-- pointer to name of linear system
  *   a             <-- matrix
  *   rotation_mode <-- halo update option for rotational periodicity
  *   rhs           <-- right hand side
  *   vx            <-> system solution
- */
-/*----------------------------------------------------------------------------*/
+ *
+ * returns:
+ *   false (do not attempt new solve)
+ *----------------------------------------------------------------------------*/
 
-void
-cs_sles_it_error_post_and_abort(void                         *context,
+bool
+cs_sles_it_error_post_and_abort(cs_sles_t                    *sles,
                                 cs_sles_convergence_state_t   state,
-                                const char                   *name,
                                 const cs_matrix_t            *a,
                                 cs_halo_rotation_t            rotation_mode,
                                 const cs_real_t              *rhs,

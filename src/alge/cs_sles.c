@@ -222,27 +222,20 @@ BEGIN_C_DECLS
 
   Such a function is optional, and may be used for a variety of purposes,
   such as logging, postprocessing, re-trying with different parameters,
-  or aborting the run.
+  aborting the run, or any combination thereof.
 
-  n error handler may be  associated with a given solver context using
+  An error handler may be  associated with a given solver context using
   \ref cs_sles_set_error_handler, in which case it will be called whenever
   convergence fails.
 
-  \remark In the advent of re-trying with different parameters,
-  it is recommended that either the parameters be sufficiently similar that
-  performance logging will not be affected, so the info reported to
-  the user is not biased. Complex strategies involving different
-  solver types should not be based on the use of an error handler, but
-  built-into the solver function, with appropriate performance logging
-  (though they may use an error handler in case of final failure).
-
-  \param[in, out]  context        pointer to solver context
+  \param[in, out]  sles           pointer to solver object
   \param[in]       status         convergence status
-  \param[in]       name           name of linear system
   \param[in]       a              matrix
   \param[in]       rotation_mode  Halo update option for rotational periodicity
   \param[in]       rhs            Right hand side
   \param[out]      vx             System solution
+
+  \return  true if solve should be re-executed, false otherwise
 
   \typedef  cs_sles_define_t
 
@@ -1269,6 +1262,41 @@ cs_sles_get_context(cs_sles_t  *sles)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return field id associated with a given sparse linear equation solver.
+ *
+ * \param[in]  sles  pointer to solver object
+ *
+ * \return  associated field id (or -1 if defined by name)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_sles_get_f_id(const cs_sles_t  *sles)
+{
+  return sles->f_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return name associated with a given sparse linear equation solver.
+ *
+ * This is simply a utility function which will return its name argument
+ * if f_id < 0, and the associated field's name or label otherwise.
+ *
+ * \param[in]  sles  pointer to solver object
+ *
+ * \return  pointer to associated linear system object name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_sles_get_name(const cs_sles_t  *sles)
+{
+  return cs_sles_base_name(sles->f_id, sles->name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Setup sparse linear equation solver.
  *
  * Use of this function is optional: if a \ref cs_sles_solve is called
@@ -1366,20 +1394,23 @@ cs_sles_solve(cs_sles_t           *sles,
 
   cs_sles_convergence_state_t state;
 
-  if (! _needs_solving(sles_name,
-                       a,
-                       sles->verbosity,
-                       precision,
-                       r_norm,
-                       residue,
-                       vx,
-                       rhs)) {
+  bool do_solve = _needs_solving(sles_name,
+                                 a,
+                                 sles->verbosity,
+                                 precision,
+                                 r_norm,
+                                 residue,
+                                 vx,
+                                 rhs);
+
+  if (! do_solve) {
     sles->n_no_op += 1;
     *n_iter = 0;
     state = CS_SLES_CONVERGED;
   }
 
-  else
+  while (do_solve) {
+
     state = sles->solve_func(sles->context,
                              sles_name,
                              a,
@@ -1394,14 +1425,17 @@ cs_sles_solve(cs_sles_t           *sles,
                              aux_size,
                              aux_vectors);
 
-  if (state < CS_SLES_ITERATING && sles->error_func != NULL)
-    sles->error_func(sles->context,
-                     state,
-                     sles_name,
-                     a,
-                     rotation_mode,
-                     rhs,
-                     vx);
+    if (state < CS_SLES_ITERATING && sles->error_func != NULL)
+      do_solve = sles->error_func(sles,
+                                  state,
+                                  a,
+                                  rotation_mode,
+                                  rhs,
+                                  vx);
+    else
+      do_solve = false;
+
+  }
 
   cs_timer_stats_switch(t_top_id);
 
@@ -1515,6 +1549,24 @@ cs_sles_set_error_handler(cs_sles_t                *sles,
 {
   if (sles != NULL)
     sles->error_func = error_handler_func;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to default sparse linear solver definition function.
+ *
+ * The associated function will be used to provide a definition when
+ * \ref cs_sles_setup or \ref cs_sles_solve is used for a system for which no
+ * matching call to \ref cs_sles_define has been done.
+ *
+ * \return  define_func pointer to default definition function
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_define_t  *
+cs_sles_get_default_define(void)
+{
+  return _cs_sles_define_default;
 }
 
 /*----------------------------------------------------------------------------*/

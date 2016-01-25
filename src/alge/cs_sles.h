@@ -215,32 +215,25 @@ typedef void
  * such as logging, postprocessing, re-trying with different parameters,
  * aborting the run, or any combination thereof.
  *
- * An error handler may be associated with a given solver context using
+ * An error handler may be associated with a given solver using
  * cs_sles_set_error_handler(), in which case it will be called whenever
  * convergence fails.
  *
- * Remark: in the advent of re-trying with different parameters,
- * it is recommended that either the parameters be sufficiently similar that
- * performance logging will not be affected, so the info reported to
- * the user is not biased. Complex strategies involving different
- * solver types should not be based on the use of an error handler, but
- * built-into the solver function, with appropriate performance logging
- * (though they may use an error handler in case of final failure).
- *
  * parameters:
- *   context       <-> pointer to solver context
- *   state         <-- convergence state
- *   name          <-- name of linear system
+ *   sles          <-> pointer to solver object
+ *   state         <-- convergence status
  *   a             <-- matrix
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   rhs           <-- Right hand side
  *   vx            <-- System solution
+ *
+ * returns:
+ *   true if solve should be re-executed, false otherwise
  *----------------------------------------------------------------------------*/
 
-typedef void
-(cs_sles_error_handler_t) (void                         *context,
+typedef bool
+(cs_sles_error_handler_t) (cs_sles_t                    *sles,
                            cs_sles_convergence_state_t   state,
-                           const char                   *name,
                            const cs_matrix_t            *a,
                            cs_halo_rotation_t            rotation_mode,
                            const cs_real_t              *rhs,
@@ -516,6 +509,35 @@ cs_sles_get_context(cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return field id associated with a given sparse linear equation solver.
+ *
+ * \param[in]  sles  pointer to solver object
+ *
+ * \return  associated field id (or -1 if defined by name)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_sles_get_f_id(const cs_sles_t  *sles);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return name associated with a given sparse linear equation solver.
+ *
+ * This is simply a utility function which will return its name argument
+ * if f_id < 0, and the associated field's name or label otherwise.
+ *
+ * \param[in]  sles  pointer to solver object
+ *
+ * \return  pointer to associated linear system object name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_sles_get_name(const cs_sles_t  *sles);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Setup sparse linear equation solver.
  *
  * Use of this function is optional: if a \ref cs_sles_solve is called
@@ -642,6 +664,21 @@ cs_sles_copy(cs_sles_t        *dest,
 void
 cs_sles_set_error_handler(cs_sles_t                *sles,
                           cs_sles_error_handler_t  *error_handler_func);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to default sparse linear solver definition function.
+ *
+ * The associated function will be used to provide a definition when
+ * \ref cs_sles_setup or \ref cs_sles_solve is used for a system for which no
+ * matching call to \ref cs_sles_define has been done.
+ *
+ * \return  define_func pointer to default definition function
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_define_t  *
+cs_sles_get_default_define(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

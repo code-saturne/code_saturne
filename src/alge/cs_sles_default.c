@@ -203,6 +203,8 @@ _sles_default_native(int                f_id,
                                       500,  /* n max iter for coarse solve */
                                       0, 0, 0,  /* precond degree */
                                       -1, -1, 1); /* precision multiplier */
+      cs_sles_t *sc = cs_sles_find(f_id, name);
+      cs_sles_set_error_handler(sc, cs_sles_default_error);
     }
     else
       cs_multigrid_define(f_id, name);
@@ -435,8 +437,30 @@ cs_sles_solve_native(int                  f_id,
          "If this is not an error, increase CS_SLES_DEFAULT_N_SETUPS\n"
          "  in file %s.", CS_SLES_DEFAULT_N_SETUPS, __FILE__);
 
-    if (cs_sles_get_context(sc) == NULL)
-      _sles_default_native(f_id, name, CS_MATRIX_N_TYPES, symmetric);
+    /* If context has not been defined yet, temporarily set
+       matrix coefficients (using native matrix, which has lowest
+       overhead as coefficients ae provided in that form)
+       to define the required context.
+
+       The matrix type might be modifie later based on solver
+       constraints. */
+
+    if (cs_sles_get_context(sc) == NULL) {
+      a = cs_matrix_native(symmetric,
+                           diag_block_size,
+                           extra_diag_block_size);
+      cs_matrix_set_coefficients(a,
+                                 symmetric,
+                                 diag_block_size,
+                                 extra_diag_block_size,
+                                 m->n_i_faces,
+                                 (const cs_lnum_2_t *)(m->i_face_cells),
+                                 da,
+                                 xa);
+      cs_sles_define_t  *sles_default_func = cs_sles_get_default_define();
+      sles_default_func(f_id, name, a);
+      cs_matrix_release_coefficients(a);
+    }
 
     assert(cs_sles_get_context(sc) != NULL);
 
@@ -541,6 +565,103 @@ cs_sles_free_native(int          f_id,
     }
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Error handler attempting fallback to alternative solution procedure
+ *        for sparse linear equation solver.
+ *
+ * In case of divergence with an iterative solver, this error handler
+ * switches to a default preconditionner, then resets the solution vector.
+ *
+ * The default error for the solver type handler is then  set, in case
+ * the solution fails again.
+ *
+ * Note that this error handler may rebuild solver contexts, so should not
+ * be used in conjunction with shared contexts (such as multigrid
+ * ascent/descent contexts), but only for "outer" solvers.
+ *
+ * \param[in, out]  sles           pointer to solver object
+ * \param[in]       state          convergence status
+ * \param[in]       a              matrix
+ * \param[in]       rotation_mode  halo update option for rotational periodicity
+ * \param[in]       rhs            right hand side
+ * \param[in, out]  vx             system solution
+ *
+ * \return  true if fallback solution is possible, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_sles_default_error(cs_sles_t                    *sles,
+                      cs_sles_convergence_state_t   state,
+                      const cs_matrix_t            *a,
+                      cs_halo_rotation_t            rotation_mode,
+                      const cs_real_t               rhs[],
+                      cs_real_t                     vx[])
+{
+  bool alternative = false;
+
+  if (state >= CS_SLES_BREAKDOWN)
+    return alternative;
+
+  /* Case for iterative solver:
+     if multigrid is not adapted to the current
+     system, revert to Jacobi preconditioner */
+
+  if (strcmp(cs_sles_get_type(sles), "cs_sles_it_t") == 0) {
+
+    cs_sles_it_t  *c_old = cs_sles_get_context(sles);
+
+    cs_sles_pc_t  *pc = cs_sles_it_get_pc(c_old);
+
+    if (pc != NULL) {
+      const char *pc_type = cs_sles_pc_get_type(pc);
+      if (strcmp(pc_type, "multigrid") == 0)
+        alternative = true;
+    }
+
+    if (alternative) {
+
+      const cs_sles_it_type_t sles_it_type = cs_sles_it_get_type(c_old);
+
+      const int f_id = cs_sles_get_f_id(sles);
+      const char *name = cs_sles_get_name(sles);
+
+      /* Switch to alternative solver if possible */
+
+      bft_printf(_("\n\n"
+                   "%s [%s]: divergence\n"
+                   "  fallback from %s to Jacobi (diagonal) preconditioning\n"
+                   "  for re-try and subsequent solves.\n"),
+                 _(cs_sles_it_type_name[sles_it_type]), name,
+                 cs_sles_pc_get_type_name(pc));
+
+      cs_sles_free(sles);
+
+      cs_sles_it_t  *c_new = cs_sles_it_define(f_id,
+                                               name,
+                                               sles_it_type,
+                                               0, /* poly_degree */
+                                               0);
+
+      cs_sles_it_transfer_parameters(c_old, c_new);
+
+    }
+
+  } /* End of "cs_sles_it_t" case */
+
+  /* Reset solution if new solve is expected */
+
+  if (alternative) {
+    const int *db_size = cs_matrix_get_diag_block_size(a);
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * db_size[1];
+    for (cs_lnum_t i = 0; i < n_cols; i++)
+      vx[i] = 0;
+  }
+
+  return alternative;
 }
 
 /*----------------------------------------------------------------------------*/
