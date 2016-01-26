@@ -451,13 +451,14 @@ do ii = 1, nvar
 enddo
 
 ! Fans output
+
 itycat = FIELD_PROPERTY
 ilved = .true.
 
 n_fans = cs_fan_n_fans()
 if (n_fans .gt. 0) then
-  name = 'fans_ids'
 
+  name = 'fan_id'
   ityloc = 1 ! cells
 
   call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ifctsl)
