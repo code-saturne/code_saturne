@@ -72,7 +72,16 @@ if test "x$with_eos" != "xno" ; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  EOS_LIBS="-lCCLanguageAPI -lCCEOSAPI"
+  # Now check library
+
+  EOS_LIBS="-lshared_eos"
+
+  eosversion=`${with_eos}/bin/eos --version`
+
+  if test "$eosversion" = "1.3.0"; then
+    EOS_LIBS="-lCCLanguageAPI -lCCEOSAPI"
+  fi
+
   CPPFLAGS="${CPPFLAGS} ${EOS_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${EOS_LDFLAGS}"
   LIBS="${EOS_LIBS} ${LIBS}"
