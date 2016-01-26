@@ -58,6 +58,7 @@
 #include "cs_log.h"
 #include "cs_numbering.h"
 #include "cs_order.h"
+#include "cs_parall.h"
 #include "cs_part_to_block.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
@@ -1700,6 +1701,127 @@ _write_vector_l(cs_lnum_t         n_elts,
     cs_file_write_global(f, vals, sizeof(double), n_elts);
 }
 
+/*----------------------------------------------------------------------------
+ * Compute the Frobenius norm of a matrix.
+ *
+ * parameters:
+ *   m <-- pointer to matrix structure
+ *
+ * returns:
+ *    matrix Frobenius norm (or -1 if not computable)
+ *----------------------------------------------------------------------------*/
+
+static double
+_frobenius_norm(const cs_matrix_t  *m)
+{
+  double retval = -1.;
+
+  if (m == NULL)
+    return retval;
+
+  cs_matrix_fill_type_t ft = m->fill_type;
+
+  switch(m->type) {
+
+  case CS_MATRIX_NATIVE:
+    {
+      if (   (m->eb_size[0]*m->eb_size[0] == m->eb_size[3])
+          && (m->db_size[0]*m->db_size[0] == m->db_size[3])) {
+
+        cs_lnum_t  d_stride = m->db_size[3];
+        cs_lnum_t  e_stride = m->eb_size[3];
+        const cs_matrix_struct_native_t  *ms = m->structure;
+        const cs_matrix_coeff_native_t  *mc = m->coeffs;
+        double e_mult = (m->eb_size[3] == 1) ? m->db_size[0] : 1;
+        if (mc->symmetric)
+          e_mult *= 2;
+
+        retval = cs_dot_xx(d_stride*m->n_rows, mc->da);
+
+        double ed_contrib = 0.;
+        const cs_real_t  *restrict xa = mc->xa;
+#       pragma omp parallel reduction(+:ed_contrib) if (ms->n_edges > CS_THR_MIN)
+        {
+          double c = 0; /* Use Kahan compensated summation for
+                           sum of block contributions (but not for local
+                           block sums, for simplicity and performance) */
+#         pragma omp for
+          for (cs_lnum_t face_id = 0; face_id < ms->n_edges; face_id++) {
+            cs_lnum_t ii = ms->edges[face_id][0];
+            if (ii < ms->n_rows) {
+              double bsum = 0;
+              for (cs_lnum_t kk = 0; kk < e_stride; kk++) {
+                bsum  += (  xa[face_id*e_stride + kk]
+                          * xa[face_id*e_stride + kk]);
+              }
+              double z = bsum - c;
+              double t = ed_contrib + z;
+              c = (t - ed_contrib) - z;
+              ed_contrib = t;
+            }
+          }
+        }
+        retval += ed_contrib*e_mult;
+
+        cs_parall_sum(1, CS_DOUBLE, &retval);
+      }
+    }
+    break;
+
+  case CS_MATRIX_CSR:
+    assert(   ft == CS_MATRIX_SCALAR
+           || ft == CS_MATRIX_SCALAR_SYM
+           || ft == CS_MATRIX_BLOCK);
+    if (m->eb_size[0]*m->eb_size[0] == m->eb_size[3]) {
+      cs_lnum_t  stride = m->eb_size[3];
+      const cs_matrix_struct_csr_t  *ms = m->structure;
+      const cs_matrix_coeff_csr_t  *mc = m->coeffs;
+      cs_lnum_t n_vals = ms->row_index[m->n_rows];
+      retval = cs_dot_xx(stride*n_vals, mc->val);
+      cs_parall_sum(1, CS_DOUBLE, &retval);
+    }
+    break;
+
+  case CS_MATRIX_CSR_SYM:
+    assert(ft == CS_MATRIX_SCALAR_SYM);
+    {
+      const cs_matrix_struct_csr_sym_t  *ms = m->structure;
+      const cs_matrix_coeff_csr_sym_t  *mc = m->coeffs;
+      cs_lnum_t n_vals = ms->row_index[ms->n_rows];
+      retval = cs_dot_xx(n_vals, mc->val);
+      if (ft == CS_MATRIX_SCALAR_SYM) {
+        const cs_real_t *d = cs_matrix_get_diagonal(m);
+        retval -= cs_dot_xx(m->n_rows, d);
+      }
+      cs_parall_sum(1, CS_DOUBLE, &retval);
+    }
+    break;
+
+  case CS_MATRIX_MSR:
+    if (   (m->eb_size[0]*m->eb_size[0] == m->eb_size[3])
+        && (m->db_size[0]*m->db_size[0] == m->db_size[3])) {
+      cs_lnum_t  d_stride = m->db_size[3];
+      cs_lnum_t  e_stride = m->eb_size[3];
+      const cs_matrix_struct_csr_t  *ms = m->structure;
+      const cs_matrix_coeff_msr_t  *mc = m->coeffs;
+      cs_lnum_t n_vals = ms->row_index[m->n_rows];
+      double d_mult = (m->eb_size[3] == 1) ? m->db_size[0] : 1;
+      retval = cs_dot_xx(d_stride*m->n_rows, mc->d_val);
+      retval += d_mult * cs_dot_xx(e_stride*n_vals, mc->x_val);
+      cs_parall_sum(1, CS_DOUBLE, &retval);
+    }
+    break;
+
+    default:
+      retval = -1;
+  }
+
+  if (retval > 0)
+    retval = sqrt(retval);
+
+  return retval;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1814,6 +1936,48 @@ cs_matrix_dump_linear_system(const cs_matrix_t  *matrix,
   f = cs_file_free(f);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log general info relative to matrix.
+ *
+ * \param[in]  matrix     pointer to matrix structure
+ * \param[in]  verbosity  verbosity level
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_log_info(const cs_matrix_t  *matrix,
+                   int                 verbosity)
+{
+  cs_log_t log = CS_LOG_DEFAULT;
+
+  if (matrix == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("The matrix is not defined."));
+
+  cs_log_printf(log,
+                _("\n"
+                  " Matrix info:\n"
+                  "   type: %s\n"),
+                cs_matrix_type_fullname[matrix->type]);
+
+  if (matrix->fill_type == CS_MATRIX_N_FILL_TYPES)
+    return;
+
+  cs_log_printf(log,
+                _("   fill type: %s\n"),
+                cs_matrix_fill_type_name[matrix->fill_type]);
+
+  if (verbosity > 1) {
+    double fnorm = _frobenius_norm(matrix);
+    if (fnorm > -1)
+      cs_log_printf(log,
+                    _("   Frobenius norm: %11.4e\n"), fnorm);
+  }
+
+  cs_log_printf(log, "\n");
+}
+
 /*----------------------------------------------------------------------------
  * Test matrix dump operations.
  *
@@ -1888,7 +2052,8 @@ cs_matrix_dump_test(cs_lnum_t              n_cells,
   for (test_id = 0; test_id < n_tests; test_id++) {
 
     int *_diag_block_size = (block_flag[test_id]) ? diag_block_size : NULL;
-    int *_extra_diag_block_size = (block_flag[test_id]-1) ? extra_diag_block_size : NULL;
+    int *_extra_diag_block_size = (block_flag[test_id]-1) ?
+      extra_diag_block_size : NULL;
 
     cs_matrix_structure_t
       *ms = cs_matrix_structure_create(type[test_id],

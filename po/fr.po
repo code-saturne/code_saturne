@@ -3413,6 +3413,24 @@ msgstr ""
 "L'extraction de la diagonale dominance de matrices au format %s \n"
 "n'est pas encore opérationnelle."
 
+#, c-format
+msgid ""
+"\n"
+" Matrix info:\n"
+"   type: %s\n"
+msgstr ""
+"\n"
+" Information sur la matrice :\n"
+"   type: %s\n"
+
+#, c-format
+msgid "   fill type: %s\n"
+msgstr "   type de remplissage : %s\n"
+
+#, c-format
+msgid "   Frobenius norm: %11.4e\n"
+msgstr "   norme de Frobenius : %11.4e\n"
+
 msgid "  Solver type:                       multigrid\n"
 msgstr "  Type de solveur :                  multigrille\n"
 
@@ -3892,6 +3910,14 @@ msgstr ""
 "  Nombre d'itérations moyen :    %12d\n"
 "  Temps total de préparation :   %12.3f\n"
 "  Temps total de résolution :    %12.3f\n"
+
+#, c-format
+msgid ""
+"\n"
+" Setup of solver for linear system \"%s\"\n"
+msgstr ""
+"\n"
+" Préparation du solveur pour le système linéaire \"%s\"\n"
 
 msgid "GMRES not supported with block_size > 1 (velocity coupling)."
 msgstr ""

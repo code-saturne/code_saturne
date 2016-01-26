@@ -4186,6 +4186,12 @@ cs_sles_it_setup(void               *context,
 
   const int diag_block_size = (cs_matrix_get_diag_block_size(a))[0];
 
+  if (verbosity > 1) {
+    bft_printf(_("\n Setup of solver for linear system \"%s\"\n"),
+               name);
+    cs_matrix_log_info(a, verbosity);
+  }
+
   if (c->type == CS_SLES_JACOBI)
     _setup_sles_it(c, name, a, verbosity, diag_block_size, true);
 

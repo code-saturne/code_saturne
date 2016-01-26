@@ -63,6 +63,18 @@ cs_matrix_dump_linear_system(const cs_matrix_t  *matrix,
                              const char         *name);
 
 /*----------------------------------------------------------------------------
+ * Log general info relative to matrix.
+ *
+ * parameters:
+ *   matrix    <-- pointer to matrix structure
+ *   verbosity <-- verbosity level
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_log_info(const cs_matrix_t  *matrix,
+                   int                 verbosity);
+
+/*----------------------------------------------------------------------------
  * Test matrix dump operations.
  *
  * parameters:
