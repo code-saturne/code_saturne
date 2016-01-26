@@ -1999,7 +1999,7 @@ main (int argc, char *argv[])
     double s;
 
     cs_lnum_t n = _n_elts[sub_id];
-    double ref_s = 385 * (n/10) * _pi;
+    double ref_s = 165 * (n/10) * _pi;
     double *x = NULL, *y = NULL;
 
     /* Initialize arrays */
@@ -2009,7 +2009,7 @@ main (int argc, char *argv[])
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
-      x[ii] = (ii%10 + 1)*_pi;
+      x[ii] = (ii%10 - 3)*_pi;
       y[ii] = (ii%10 + 1);
     }
 
