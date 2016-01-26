@@ -752,9 +752,9 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
     ! With porosity
     if (iporos.eq.1) then
       do iel = 1, ncel
-        trav(iel,1) = trav(iel,1)*porosi(iel)
-        trav(iel,2) = trav(iel,2)*porosi(iel)
-        trav(iel,3) = trav(iel,3)*porosi(iel)
+        trav(1,iel) = trav(1,iel)*porosi(iel)
+        trav(2,iel) = trav(2,iel)*porosi(iel)
+        trav(3,iel) = trav(3,iel)*porosi(iel)
       enddo
     endif
     ! Si on itere sur navsto, on utilise TRAVA ; sinon TRAV

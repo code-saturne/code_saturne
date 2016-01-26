@@ -4,6 +4,8 @@ Version 3.0.8 (unreleased)
 Bug fixes:
 ----------
 
+- Fix incorrect memory access in velocity prediction with porosity.
+
 - Remove unneeded allocation leading to crash for some large meshes when
   reading MED files.
 
