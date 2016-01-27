@@ -5,6 +5,8 @@ Trunk (unreleased)
 Changes
 -------
 
+ - Allow coupling of radiative transfer with 1d wall thermal module.
+
  - Extend automatic postprocessing output to fields defined at vertices.
 
  - Add boundary mesh extrusion function callable from user subroutines.

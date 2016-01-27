@@ -227,6 +227,7 @@ tmax = grand + tkelvi
 !                  = iprefl -> Reflecting wall with fixed outside temperature
 !                  = ifgrno -> Gray wall with fixed conduction flux
 !                  = ifrefl -> Reflecting wall with fixed conduction flux
+!                  = itpt1d -> Gray wall with solved inside temperature
 
 !      tintp(ifac) inside wall temperature (Kelvin)
 !                  initialize thwall at the first time step.

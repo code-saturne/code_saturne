@@ -80,6 +80,8 @@ use cstnum
 use cstphy
 use entsor
 use pointe
+use field
+use radiat
 
 !===============================================================================
 
@@ -98,6 +100,7 @@ integer          ii , ivar
 integer          ifac
 integer          icldef
 double precision, dimension(:), allocatable :: h_b
+double precision, dimension(:), pointer :: b_temp
 
 !===============================================================================
 
@@ -119,7 +122,29 @@ interface
 
 !===============================================================================
 
-! Sans specification, une face couplee est une face de type paroi
+! Update boundary temperature field for radiative transfer
+
+if (iirayo.ge.1.and.nfpt1d.gt.0) then
+
+  call field_get_val_s(itempb, b_temp)
+
+  do ii = 1, nfpt1d
+    ifac = ifpt1d(ii)
+    if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
+      if (itpscl.eq.2) then
+        b_temp(ifac) = tppt1d(ii) - tkelvi
+      else
+        b_temp(ifac) = tppt1d(ii)
+      endif
+    endif
+  enddo
+
+endif
+
+! Sans specification, une face couplee est une face de type paroi FIXME, ca pose
+! probleme si on a une couleur pour plusieurs types de face, paroi + autre
+! Ces conditions peuvent etre ecrasees sur la face est couplee au flux radiatif dans
+! cs_user_radiative_transfer_bcs.f90
 
 icldef = 5
 
@@ -129,9 +154,10 @@ do ii = 1, nfpt1d
 
    ifac = ifpt1d(ii)
 
-   if ((icodcl(ifac,ivar) .ne. 1) .and.                           &
-       (icodcl(ifac,ivar) .ne. 5) .and.                           &
-       (icodcl(ifac,ivar) .ne. 6)) icodcl(ifac,ivar) = icldef
+   if ((icodcl(ifac,ivar).ne.1 .and.                           &
+        icodcl(ifac,ivar).ne.5 .and.                           &
+        icodcl(ifac,ivar).ne.6).and.                           &
+       itypfb(ifac).eq.iparoi      ) icodcl(ifac,ivar) = icldef
 
    rcodcl(ifac,ivar,1) = tppt1d(ii)
    rcodcl(ifac,ivar,2) = rinfin

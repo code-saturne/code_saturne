@@ -81,7 +81,9 @@ void CS_PROCF (mait1d,MAIT1D)
  * INTEGER          ICLT1D : <-  : type of exterior boundary condition
  * DOUBLE PRECISION TBORD  : <-  : fluid temperature at the boundary
  * DOUBLE PRECISION HBORD  : <-  : exchange coefficient for the fluid
+ * DOUBLE PRECISION QINC   : <-  : incident radiative flux at the boundary
  *                         :     : at the boundary
+ * DOUBLE PRECISION EPS    : <-  : emissivity (epsilon)
  * DOUBLE PRECISION TET1D  : <-  : temperature on the exterior boundary
  *                         :     : (Dirichlet boundary condition)
  * DOUBLE PRECISION HET1D  : <-  : exchange coefficient on the exterior wall
@@ -100,6 +102,8 @@ void CS_PROCF (tpar1d,TPAR1D)
  cs_int_t *icdcle,
  cs_real_t *tf,
  cs_real_t *hf,
+ cs_real_t *qinc,
+ cs_real_t *eps,
  cs_real_t *te,
  cs_real_t *he,
  cs_real_t *fe,

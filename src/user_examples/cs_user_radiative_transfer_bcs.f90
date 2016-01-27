@@ -94,6 +94,7 @@ use entsor
 use optcal
 use cstphy
 use cstnum
+use pointe, only: ifpt1d, nfpt1d
 use parall
 use period
 use ppppar
@@ -128,7 +129,7 @@ double precision textp(nfabor), tintp(nfabor)
 ! Local variables
 
 integer          ifac , ivar, iok
-integer          ilelt, nlelt
+integer          ilelt, nlelt, ii
 
 integer, allocatable, dimension(:) :: lstelt
 !< [loc_var]
@@ -200,6 +201,7 @@ tmax = grand + tkelvi
 !                  = iprefl -> Reflecting wall with fixed outside temperature
 !                  = ifgrno -> Gray wall with fixed conduction flux
 !                  = ifrefl -> Reflecting wall with fixed conduction flux
+!                  = itpt1d -> Gray wall with solved inside temperature
 
 !      tintp(ifac) inside wall temperature (Kelvin)
 !                  initialize thwall at the first time step.
@@ -430,6 +432,37 @@ do ilelt = 1, nlelt
 
 enddo
 !< [example_5]
+
+!   -------------------------------------------------------------------
+!-->  Example 6 :
+!      For wall boundary faces which marked with uspt1d:
+!           heat transfer solved in a gray wall exposed to
+!           an radiative and convective flux
+!           with tp1d module (ustp1d)
+!       ------------------------------------
+
+!< [example_6]
+if (nfpt1d.gt.0) then
+
+  do ii = 1, nfpt1d
+
+    ifac = ifpt1d(ii)
+
+    ! zone number
+    izfrdp(ifac) = 56
+
+    ! Type of condition: heat transfer equation solved
+    isothp(ifac) = itpt1d
+
+    ! Emissivity
+    epsp  (ifac) = 0.9d0
+    ! Initial temperature
+    tintp (ifac) = t0
+
+  enddo
+
+endif
+!< [example_6]
 
 !                           WARNING
 

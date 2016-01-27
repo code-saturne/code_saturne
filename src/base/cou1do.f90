@@ -25,9 +25,8 @@ subroutine cou1do &
 
  ( nvar   , nscal  , nfpt1d ,                                     &
    ifpt1d , iclt1d ,                                              &
-   tppt1d , tept1d , hept1d , fept1d ,                            &
-   xlmbt1 , rcpt1d , dtpt1d , dt     ,                            &
-   cvcst  ,                                                       &
+   tppt1d , tept1d , hept1d , fept1d , eppt1d ,                   &
+   xlmbt1 , rcpt1d , dtpt1d , dt     , cvcst  ,                   &
    hbord  , tbord  )
 
 !===============================================================================
@@ -51,6 +50,7 @@ subroutine cou1do &
 ! tept1d           ! tr ! <-- ! temperature exterieure                         !
 ! hept1d           ! tr ! <-- ! coefficient d'echange exterieur                !
 ! fept1d           ! tr ! <-- ! flux exterieur                                 !
+! eppt1d           ! tr ! <-- ! epaisseur de paroi                             !
 ! xlmbt1           ! tr ! <-- ! diffusivite thermique                          !
 ! rcpt1d           ! tr ! <-- ! rocp                                           !
 ! dtpt1d           ! tr ! <-- ! pas de temps                                   !
@@ -77,9 +77,10 @@ use cstnum
 use field
 use parall
 use period
-use pointe, only: izft1d
+use pointe, only: izft1d, itypfb
 use mesh
 use cs_cf_bindings
+use radiat
 
 !===============================================================================
 
@@ -94,7 +95,7 @@ integer          ifpt1d(nfpt1d), iclt1d(nfpt1d)
 double precision dt(ncelet)
 double precision hbord(nfabor),tbord(nfabor)
 double precision tppt1d(nfpt1d)
-double precision tept1d(nfpt1d), hept1d(nfpt1d), fept1d(nfpt1d)
+double precision tept1d(nfpt1d), hept1d(nfpt1d), fept1d(nfpt1d), eppt1d(nfpt1d)
 double precision xlmbt1(nfpt1d), rcpt1d(nfpt1d), dtpt1d(nfpt1d)
 double precision cvcst
 
@@ -104,13 +105,14 @@ integer          iappel
 integer          ifac, iel , ii
 
 integer          ivoid(1)
+double precision rvoid(1)
 
 double precision energ, cvt
 
-double precision rvoid(1)
 double precision, dimension(:), allocatable :: wa
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cpro_cp, cpro_cv, cpro_rho
+double precision, dimension(:), pointer :: bqinci, beps
 
 !===============================================================================
 ! Interfaces
@@ -218,16 +220,47 @@ call vert1d &
   rvoid  , rvoid  ,                                               &
   xlmbt1 , rcpt1d , dtpt1d )
 
-do ii = 1, nfpt1d
+! coupling with radiative module
+if (iirayo.ge.1) then
 
-   ifac = ifpt1d(ii)
+  call field_get_val_s(iqinci, bqinci)
+  call field_get_val_s(ieps, beps)
 
-   call tpar1d                                                    &
- ( ii-1      , iclt1d(ii), tbord(ifac), hbord(ifac),              &
-   tept1d(ii), hept1d(ii), fept1d(ii) , xlmbt1(ii) ,              &
-   rcpt1d(ii), dtpt1d(ii), tppt1d(ii) )
+  do ii = 1, nfpt1d
 
-enddo
+    ifac = ifpt1d(ii)
+
+    ! FIXME pour gerer les faces qui ne sont pas des parois ou beps n'est pas
+    ! renseigne, par exemple si une meme couleur est utilisee pour designer
+    ! plusieurs faces, paroi + autre
+    if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
+
+      call tpar1d                                                   &
+      ( ii-1      , iclt1d(ii), tbord(ifac), hbord(ifac),           &
+      bqinci(ifac), beps(ifac),                                     &
+      tept1d(ii), hept1d(ii), fept1d(ii) ,                          &
+      xlmbt1(ii), rcpt1d(ii), dtpt1d(ii) , tppt1d(ii) )
+
+    endif
+
+  enddo
+
+! without coupling with radiative module
+else
+
+  do ii = 1, nfpt1d
+
+    ifac = ifpt1d(ii)
+
+    call tpar1d                                                 &
+    ( ii-1    , iclt1d(ii), tbord(ifac), hbord(ifac),           &
+    zero      , zero      ,                                     &
+    tept1d(ii), hept1d(ii), fept1d(ii) ,                        &
+    xlmbt1(ii), rcpt1d(ii), dtpt1d(ii) , tppt1d(ii) )
+
+  enddo
+
+endif
 
 if (itherm .gt. 1) deallocate(wa)
 

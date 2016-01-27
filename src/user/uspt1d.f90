@@ -246,7 +246,7 @@ if (iappel.eq.2) then
     nppt1d(ii) = 8
     eppt1d(ii) = 0.01144d0
     rgpt1d(ii) = 1.d0
-    tppt1d(ii) = 25.d0
+    tppt1d(ii) = 25.d0 + tkelvi ! FIXME gerer les K et °C
   enddo
 endif
 !===============================================================================

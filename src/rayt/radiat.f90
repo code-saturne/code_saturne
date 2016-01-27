@@ -213,9 +213,10 @@ module radiat
   !                   ET paroi non reflechissante (EPS non nul)
   !       IFREFL Flux de conduction impose dans la paroi
   !                   ET paroi reflechissante     (EPS = 0)
+  !       ITPT1D Resolution de l'equation de la chaleur (module tp1d)
 
-  integer   itpimp   , ipgrno   , iprefl   , ifgrno   , ifrefl
-  parameter(itpimp=1 , ipgrno=21, iprefl=22, ifgrno=31, ifrefl=32)
+  integer   itpimp   , ipgrno   , iprefl   , ifgrno   , ifrefl   , itpt1d
+  parameter(itpimp=1 , ipgrno=21, iprefl=22, ifgrno=31, ifrefl=32, itpt1d=4)
 
   !> \}
 

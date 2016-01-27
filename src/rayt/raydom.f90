@@ -610,7 +610,7 @@ do ngg = 1, nwsgg
       endif
     enddo
 
-    ! Update Boundary condiction coefficients
+    ! Update Boundary condition coefficients
 
     call raycll &
     ( itypfb ,                                                       &

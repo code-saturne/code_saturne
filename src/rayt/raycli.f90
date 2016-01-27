@@ -125,12 +125,12 @@ double precision rcodcl(ndimfb,nvarcl,3)
 
 integer          iok, ifac, iel, ideb, ivart
 integer          mode, ifvu, ii, izonem, izone
-integer          nrferr(14), icoerr(15)
+integer          nrferr(15), icoerr(16)
 integer          ivahg, nlst, icodw
 
 double precision tmin , tmax   , tx
 double precision xmtk
-double precision rvferr(25)
+double precision rvferr(27)
 
 integer, allocatable, dimension(:) :: isothm, lstfac
 
@@ -246,7 +246,7 @@ if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
 
 ! Error checking
 
-do ii = 1, 14
+do ii = 1, 15
   nrferr(ii) = 0
 enddo
 
@@ -433,7 +433,7 @@ if (1.eq.1) then
   do ifac = 1, nfabor
     if (itypfb(ifac).ne.iparoi .and.                             &
         itypfb(ifac).ne.iparug .and.                             &
-        isothm(ifac)  .ne.-1         ) then
+        isothm(ifac).ne.-1         ) then
       nrferr(4) = nrferr(4) + 1
       icoerr(4) = izfrad(ifac)
       itypfb(ifac) = - iabs(itypfb(ifac))
@@ -496,6 +496,16 @@ if (1.eq.1) then
         nrferr(9) = nrferr(9) + 1
         icoerr(9) = izfrad(ifac)
         rvferr(14) = tint(ifac)
+        itypfb(ifac) = - iabs(itypfb(ifac))
+      endif
+    elseif (isothm(ifac).eq.itpt1d) then
+      if (beps(ifac).lt.0.d0.or.                                 &
+          beps(ifac).gt.1.d0.or.                                 &
+          tint(ifac).le.0.d0) then
+        nrferr(15) = nrferr(15) + 1
+        icoerr(16) = izfrad(ifac)
+        rvferr(26) = beps(ifac)
+        rvferr(27) = tint(ifac)
         itypfb(ifac) = - iabs(itypfb(ifac))
       endif
     elseif (isothm(ifac).ne.-1) then
@@ -561,7 +571,7 @@ endif
 
 iok = 0
 
-do ii = 1, 14
+do ii = 1, 15
   if (nrferr(ii).gt.0) iok = 1
 enddo
 
@@ -618,9 +628,14 @@ if (iok.ne.0) then
     write(nfecra,2160) nrferr(9), icoerr(9), rvferr(14)
   endif
 
+  call sync_rad_bc_err(nrferr(15), 2, icoerr(15), rvferr(26:27))
+  if (nrferr(15).gt.0) then
+    write(nfecra,2170) nrferr(15), icoerr(16), rvferr(26), rvferr(27)
+  endif
+
   call sync_bc_err(nrferr(10), 2, icoerr(10:11))
   if (nrferr(10).gt.0) then
-    write(nfecra,2170) nrferr(10), icoerr(10), icoerr(11)
+    write(nfecra,2180) nrferr(10), icoerr(10), icoerr(11)
   endif
 
   call sync_rad_bc_err(nrferr(11), 3, icoerr(12), rvferr(15:17))
@@ -679,6 +694,9 @@ do ifac = 1, nfabor
     icodcl(ifac,ivart) = 3
     if (ihgas.ge.0) icodcl(ifac,ivahg) = 3
     beps(ifac) = 0.d0
+  elseif (isothm(ifac).eq.itpt1d) then
+    icodcl(ifac,ivart) = icodw
+    if (ihgas.ge.0) icodcl(ifac,ivahg) = icodw
   endif
 enddo
 
@@ -739,7 +757,8 @@ if (ideb.eq.1) then
   do ifac = 1,nfabor
     if (isothm(ifac).eq.ipgrno .or.                             &
         isothm(ifac).eq.iprefl .or.                             &
-        isothm(ifac).eq.ifgrno    ) then
+        isothm(ifac).eq.ifgrno .or.                             &
+        isothm(ifac).eq.itpt1d) then
       isothm(ifac) = itpimp
     endif
   enddo
@@ -1114,6 +1133,27 @@ deallocate(tparo)
 '@'                                                            ,/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT'   ,/,&
 '@    ========='                                               ,/,&
+'@    Avec ISOTHP = ITPT1D,'                                   ,/,&
+'@      EPSP  doit etre un reel inclus dans [0.; 1.]'          ,/,&
+'@      TINTP doit etre un reel strictement positif'           ,/,&
+'@'                                                            ,/,&
+'@  Ceci n''est pas le cas pour ', i10, ' faces'               ,/,&
+'@    derniere face avec erreur (zone = :',i10,')'             ,/,&
+'@      EPSP  =      ', e12.4                                  ,/,&
+'@      TINTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
+'@                                                            ',/,&
+'@  Verifier les conditions aux limites de rayonnement.'       ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2180 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES RAYONNEMENT'   ,/,&
+'@    ========='                                               ,/,&
 '@  Valeur interdite de ISOTHM pour ', i10, ' faces'           ,/,&
 '@    derniere face avec erreur (zone = :',i10,')'             ,/,&
 '@      ISOTHM =     ', i10                                    ,/,&
@@ -1388,6 +1428,27 @@ deallocate(tparo)
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/)
  2170 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN RADIATIVE BOUNDARY CONDITIONS CHECK'   ,/,&
+'@    ======='                                                 ,/,&
+'@    With ISOTHP = ITPT1D,'                                   ,/,&
+'@      EPSP  must be a real in the range [0.; 1.]'            ,/,&
+'@      TINTP must be a strictly positive real'                ,/,&
+'@'                                                            ,/,&
+'@  This is not the case for ', i10, ' faces'                  ,/,&
+'@    last face with error (zone = :',i10,')'                  ,/,&
+'@      EPSP  =      ', e12.4                                  ,/,&
+'@      TINTP =      ', e12.4                                  ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be run'                             ,/,&
+'@'                                                            ,/,&
+'@  Check radiative boundary conditions.'                      ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
+ 2180 format(                                                     &
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/,&

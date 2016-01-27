@@ -1204,9 +1204,12 @@ do while (iterns.le.nterup)
       call cou1do &
     ( nvar   , nscal  , nfpt1d ,                                   &
       ifpt1d , iclt1d ,                                            &
-      tppt1d , tept1d , hept1d , fept1d ,                          &
+      tppt1d , tept1d , hept1d , fept1d , eppt1d ,                 &
       xlmbt1 , rcpt1d , dtpt1d , dt     , cvcst  ,                 &
       hbord  , theipb )
+
+      if (iirayo.ge.1) call cou1di(nfabor, iscalt, icodcl, rcodcl)
+
     endif
 
     ! 1-D thermal model coupling with condensation

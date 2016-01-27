@@ -240,7 +240,9 @@ void CS_PROCF (mait1d,MAIT1D)
  * INTEGER          ICLT1D : <-  : type of exterior boundary condition
  * DOUBLE PRECISION TBORD  : <-  : fluid temperature at the boundary
  * DOUBLE PRECISION HBORD  : <-  : exchange coefficient for the fluid
+ * DOUBLE PRECISION QINC   : <-  : incident radiative flux at the boundary
  *                         :     : at the boundary
+ * DOUBLE PRECISION EPS    : <-  : emissivity (epsilon)
  * DOUBLE PRECISION TET1D  : <-  : temperature on the exterior boundary
  *                         :     : (Dirichlet boundary condition)
  * DOUBLE PRECISION HET1D  : <-  : exchange coefficient on the exterior wall
@@ -259,6 +261,8 @@ void CS_PROCF (tpar1d, TPAR1D)
  cs_lnum_t*icdcle,
  cs_real_t *tf,
  cs_real_t *hf,
+ cs_real_t *qinc,
+ cs_real_t *eps,
  cs_real_t *te,
  cs_real_t *he,
  cs_real_t *fe,
@@ -284,6 +288,8 @@ void CS_PROCF (tpar1d, TPAR1D)
   cs_real_t *zz;
   cs_lnum_t n;
 
+  cs_real_t stephn = 5.6703e-8; // FIXME call stephn from module cstphy
+
   n = cs_glob_par1d[*ii].n;
 
   BFT_MALLOC(al, 4*n, cs_real_t);
@@ -298,8 +304,8 @@ void CS_PROCF (tpar1d, TPAR1D)
   /* Boundary conditions on the fluid side: flux conservation */
   /*   flux in the fluid = flux in the solid = f3 + h2*T1 */
   a1 = 1./(*hf)+zz[0]/(*lb);
-  h2 = -1./a1;
-  f3 = -h2*(*tf);
+  h2 = -1./a1; // TAKE CARE TO THE MINUS !
+  f3 = -h2*(*tf)+(*qinc);
 
   /* Boundary conditions on the exterior */
   /*   flux in the fluid = flux in the solid = f6 + h5*T(n-1) */
@@ -345,7 +351,8 @@ void CS_PROCF (tpar1d, TPAR1D)
   bl[0] = 0.;
   bl[n-1] = 0.;
   al[0] = 0.;
-  bl[0] = bl[0] + (*rocp)/(*dtf)*2*zz[0] + (*lb)/(zz[1]-zz[0]) - h2;
+  bl[0] = bl[0] + (*rocp)/(*dtf)*2*zz[0] + (*lb)/(zz[1]-zz[0]) - h2
+                + (*eps)*stephn*pow(cs_glob_par1d[*ii].t[0],3.);
   dl[0] = dl[0] +f3;
   bl[n-1] =   bl[n-1] + (*rocp)/(*dtf)*2*(cs_glob_par1d[*ii].e-zz[n-1])
             + (*lb)/(zz[n-1]-zz[n-2]) -h5;
