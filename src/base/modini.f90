@@ -1120,7 +1120,7 @@ if (ippmod(idarcy).eq.1) then
     idften(ipr) = 6
   endif
 
-  if (darcy_anisotropic_diffusion.eq.1) then
+  if (darcy_anisotropic_dispersion.eq.1) then
     do iscal = 1, nscal
       idften(isca(iscal)) = 6
     enddo

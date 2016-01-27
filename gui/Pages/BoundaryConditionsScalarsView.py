@@ -166,6 +166,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.modelTypeThermal.addItem(self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
             self.modelTypeSpecies.addItem(self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
             self.modelTypeMeteo.addItem(  self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
+        elif self.nature == 'groundwater':
+            self.modelTypeSpecies.addItem(self.tr("Prescribed flux"), 'neumann')
+            self.modelTypeSpecies.addItem(self.tr("Exchange coefficient"), 'exchange_coefficient')
 
         self.species = ""
         self.species_list = self.sca_mo.getUserScalarNameList()
@@ -294,6 +297,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                     self.labelExSpecies.show()
                     v = self.__boundary.getScalarValue(self.species, 'dirichlet')
                     w = self.__boundary.getScalarValue(self.species, 'exchange_coefficient')
+                    if self.nature == 'groundwater':
+                        self.labelValueSpecies.setText('Velocity')
+                        self.labelExSpecies.setText('Concentration')
                     self.lineEditValueSpecies.setText(str(v))
                     self.lineEditExSpecies.setText(str(w))
                 else:
@@ -308,6 +314,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             elif self.species_type in ('exchange_coefficient_formula', 'dirichlet_formula', 'neumann_formula'):
                 self.pushButtonSpecies.setEnabled(True)
                 setGreenColor(self.pushButtonSpecies, True)
+
+            if self.nature == 'groundwater':
+                self.groupBoxSpecies.setTitle('Transport equation')
 
         # Initalize meteo
         self.labelValueMeteo.hide()

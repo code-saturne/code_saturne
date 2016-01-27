@@ -424,6 +424,39 @@ omega = k^0.5/almax;"""
 
 
     @Variables.undoLocal
+    def setHydraulicHeadFormula(self, zone, formula):
+        """
+        Public method.
+        Set the formula for hydraulic head.
+        """
+        self.__verifyZone(zone)
+        node = self.node_veloce.xmlGetNode('variable', name = 'pressure')
+
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        n = node.xmlInitChildNode('formula', zone_id = zone)
+        n.xmlSetTextNode(formula)
+
+
+    @Variables.noUndo
+    def getHydraulicHeadFormula(self, zone):
+        """
+        Public method.
+        Return the formula for hydraulic head.
+        """
+        self.__verifyZone(zone)
+        node = self.node_veloce.xmlGetNode('variable', name = 'pressure')
+
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+
+        formula = node.xmlGetString('formula', zone_id=zone)
+        return formula
+
+
+    @Variables.undoLocal
     def setDensityFormula(self, zone, formula):
         """
         Public method.

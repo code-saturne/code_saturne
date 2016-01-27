@@ -145,8 +145,18 @@ class TimeStepModel(Model):
         self.isIntInList(val, [0, 1, 2])
         self.node_time.xmlSetData('time_passing', val)
 
-        Variables(self.case).setNewProperty(self.node_time, 'courant_number')
-        Variables(self.case).setNewProperty(self.node_time, 'fourier_number')
+        from code_saturne.Pages.GroundwaterModel import GroundwaterModel
+        if GroundwaterModel(self.case).getGroundwaterModel() == 'off':
+            Variables(self.case).setNewProperty(self.node_time, 'courant_number')
+            Variables(self.case).setNewProperty(self.node_time, 'fourier_number')
+        else:
+            nn = self.node_time.xmlGetNode('property', name='courant_number')
+            if nn:
+                nn.xmlRemoveNode()
+            nn = self.node_time.xmlGetNode('property', name='fourier_number')
+            if nn:
+                nn.xmlRemoveNode()
+        del GroundwaterModel
 
         if val in (1, 2):
             Variables(self.case).setNewProperty(self.node_time, 'local_time_step')

@@ -149,7 +149,7 @@ epsilo(ipr) = 1.d-13
 !---------------
 
 !< [richards_num_trpt]
-if (darcy_anisotropic_diffusion.eq.0) then
+if (darcy_anisotropic_dispersion.eq.0) then
   do ii = 1, nscal
     ! Set gradient computation to weighted (1) for high permeability ratio in tetrahedral meshes.
     ! Only works with isotropic diffusion.
@@ -206,9 +206,6 @@ darcy_anisotropic_permeability = 0
 !< [richards_grav]
 ! Set gravity to pass from H to h. Example for H = h + z:
 darcy_gravity = 1
-darcy_gravity_x = 0.d0
-darcy_gravity_y = 0.d0
-darcy_gravity_z = 1.d0
 !< [richards_grav]
 
 !< [richards_conv]
@@ -223,7 +220,7 @@ darcy_convergence_criterion = 0
 
 !< [richards_disp]
 ! Set dispersion to isotropic (0) or anisotropic (1) for all solutes
-darcy_anisotropic_diffusion = 0
+darcy_anisotropic_dispersion = 0
 !< [richards_disp]
 
 !< [richards_steady]

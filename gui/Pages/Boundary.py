@@ -90,6 +90,8 @@ class Boundary(object) :
             return InletOutletBoundary.__new__(InletOutletBoundary, label, case)
         elif nature == 'free_surface':
             return FreeSurfaceBoundary.__new__(FreeSurfaceBoundary, label, case)
+        elif nature == 'groundwater':
+            return GroundwaterBoundary.__new__(GroundwaterBoundary, label, case)
         else :
             raise ValueError("Unknown boundary nature: " + nature)
 
@@ -295,6 +297,8 @@ class InletBoundary(Boundary):
         dico['compressible_type']   = 'imposed_inlet'
         dico['fraction']            = 0.0
         dico['pressure']            = 0.0
+        dico['pressure_flux']       = 0.0
+        dico['hydraulicHeadChoice'] = 'dirichlet'
 
         from code_saturne.Pages.GasCombustionModel import GasCombustionModel
         model = GasCombustionModel(self.case).getGasCombustionModel()
@@ -1009,26 +1013,109 @@ omega = 0.;"""
 
 
     @Variables.noUndo
-    def getPressureValue(self):
+    def getHydraulicHeadValue(self):
         """
         Return value of the pressure
         """
         pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
         if pressure == None:
             pressure = self.__defaultValues()['pressure']
-            self.setPressureValue(pressure)
+            self.setHydraulicHeadValue(pressure)
 
         return pressure
 
 
     @Variables.undoLocal
-    def setPressureValue(self, value):
+    def setHydraulicHeadValue(self, value):
         """
         Set value of the pressure
         """
         Model().isFloat(value)
         node = self.boundNode.xmlInitNode('dirichlet', name='pressure')
         self.boundNode.xmlSetData('dirichlet', value, name='pressure')
+
+
+    @Variables.noUndo
+    def getHydraulicHeadFlux(self):
+        """
+        Return value of the pressure
+        """
+        pressure = self.boundNode.xmlGetDouble('neumann', name='pressure')
+        if pressure == None:
+            pressure = self.__defaultValues()['pressure_flux']
+            self.setHydraulicHeadFlux(pressure)
+
+        return pressure
+
+
+    @Variables.undoLocal
+    def setHydraulicHeadFlux(self, value):
+        """
+        Set value of the pressure
+        """
+        Model().isFloat(value)
+        node = self.boundNode.xmlInitNode('neumann', name='pressure')
+        self.boundNode.xmlSetData('neumann', value, name='pressure')
+
+
+    @Variables.noUndo
+    def getHydraulicHeadChoice(self):
+        """
+        Get hydraulic head choice
+        """
+        scalarNode = self.boundNode.xmlInitNode('hydraulicHead')
+
+        choice = scalarNode['choice']
+        if not choice:
+            choice = self.__defaultValues()['hydraulicHeadChoice']
+            self.setHydraulicHeadChoice(choice)
+        return choice
+
+
+    @Variables.undoGlobal
+    def setHydraulicHeadChoice(self, choice) :
+        """
+        Set hydraulic head choice
+        """
+        Model().isInList(choice, ['dirichlet', 'neumann', 'dirichlet_formula'])
+
+        scalarNode = self.boundNode.xmlInitNode('hydraulicHead')
+
+        if scalarNode['choice'] == choice:
+            return
+
+        old_choice = scalarNode['choice']
+        scalarNode['choice'] = choice
+        # delete nodes
+        if old_choice == 'dirichlet':
+            self.boundNode.xmlRemoveChild(old_choice)
+
+
+    @Variables.noUndo
+    def getHydraulicHeadFormula(self):
+        """
+        Public method.
+        Return the formula for hydraulic head variable.
+        """
+        scalarNode = self.boundNode.xmlInitNode('dirichlet_formula', name='hydraulicHead')
+        formula = scalarNode.xmlGetChildString('formula')
+
+        if not formula:
+            formula = 'H = 0.'
+
+        return formula
+
+
+    @Variables.undoLocal
+    def setHydraulicHeadFormula(self, formula):
+        """
+        Public method.
+        Set the formula for hydraulic head variable.
+        """
+        scalarNode = self.boundNode.xmlInitNode('dirichlet_formula', name='hydraulicHead')
+
+        n = scalarNode.xmlSetData('formula', formula)
+
 
 #-------------------------------------------------------------------------------
 # Atmospheric flow inlet/outlet boundary.
@@ -1787,6 +1874,7 @@ class CompressibleOutletBoundary(Boundary) :
         n.xmlRemoveChild('compressible_type')
         n.xmlRemoveChild('pressure')
 
+
 #-------------------------------------------------------------------------------
 # Outlet boundary
 #-------------------------------------------------------------------------------
@@ -1850,9 +1938,11 @@ class OutletBoundary(Boundary) :
         dico = {}
         from code_saturne.Pages.ReferenceValuesModel import ReferenceValuesModel
         dico['reference_pressure'] = ReferenceValuesModel(self.case).getPressure()
-        dico['scalarChoice'] = 'neumann'
-        dico['scalar'] = 0.
-        dico['pressure'] = 0.
+        dico['scalarChoice']  = 'neumann'
+        dico['scalar']        = 0.
+        dico['pressure']      = 0.
+        dico['pressure_flux'] = 0.
+        dico['hydraulicHeadChoice'] = 'dirichlet'
 
         return dico
 
@@ -2038,26 +2128,108 @@ class OutletBoundary(Boundary) :
 
 
     @Variables.noUndo
-    def getPressureValue(self):
+    def getHydraulicHeadValue(self):
         """
         Return value of the pressure
         """
         pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
         if pressure == None:
             pressure = self.__defaultValues()['pressure']
-            self.setPressureValue(pressure)
+            self.setHydraulicHeadValue(pressure)
 
         return pressure
 
 
     @Variables.undoLocal
-    def setPressureValue(self, value):
+    def setHydraulicHeadValue(self, value):
         """
         Set value of the pressure
         """
         Model().isFloat(value)
         node = self.boundNode.xmlInitNode('dirichlet', name='pressure')
         self.boundNode.xmlSetData('dirichlet', value, name='pressure')
+
+
+    @Variables.noUndo
+    def getHydraulicHeadFlux(self):
+        """
+        Return value of the pressure
+        """
+        pressure = self.boundNode.xmlGetDouble('neumann', name='pressure')
+        if pressure == None:
+            pressure = self.__defaultValues()['pressure_flux']
+            self.setHydraulicHeadFlux(pressure)
+
+        return pressure
+
+
+    @Variables.undoLocal
+    def setHydraulicHeadFlux(self, value):
+        """
+        Set value of the pressure
+        """
+        Model().isFloat(value)
+        node = self.boundNode.xmlInitNode('neumann', name='pressure')
+        self.boundNode.xmlSetData('neumann', value, name='pressure')
+
+
+    @Variables.noUndo
+    def getHydraulicHeadChoice(self):
+        """
+        Get hydraulic head choice
+        """
+        scalarNode = self.boundNode.xmlInitNode('hydraulicHead')
+
+        choice = scalarNode['choice']
+        if not choice:
+            choice = self.__defaultValues()['hydraulicHeadChoice']
+            self.setHydraulicHeadChoice(choice)
+        return choice
+
+
+    @Variables.undoGlobal
+    def setHydraulicHeadChoice(self, choice) :
+        """
+        Set hydraulic head choice
+        """
+        Model().isInList(choice, ['dirichlet', 'neumann', 'dirichlet_formula'])
+
+        scalarNode = self.boundNode.xmlInitNode('hydraulicHead')
+
+        if scalarNode['choice'] == choice:
+            return
+
+        old_choice = scalarNode['choice']
+        scalarNode['choice'] = choice
+        # delete nodes
+        if old_choice == 'dirichlet':
+            self.boundNode.xmlRemoveChild(old_choice)
+
+
+    @Variables.noUndo
+    def getHydraulicHeadFormula(self):
+        """
+        Public method.
+        Return the formula for hydraulic head variable.
+        """
+        scalarNode = self.boundNode.xmlInitNode('dirichlet_formula', name='hydraulicHead')
+        formula = scalarNode.xmlGetChildString('formula')
+
+        if not formula:
+            formula = 'H = 0.'
+
+        return formula
+
+
+    @Variables.undoLocal
+    def setHydraulicHeadFormula(self, formula):
+        """
+        Public method.
+        Set the formula for hydraulic head variable.
+        """
+        scalarNode = self.boundNode.xmlInitNode('dirichlet_formula', name='hydraulicHead')
+
+        n = scalarNode.xmlSetData('formula', formula)
 
 
 #-------------------------------------------------------------------------------
@@ -2107,6 +2279,301 @@ class FreeSurfaceBoundary(Boundary) :
         Delete all information of free surface in boundary conditions.
         """
         self.boundNode.xmlRemoveNode()
+
+
+#-------------------------------------------------------------------------------
+# GroundwaterBoundary boundary
+#-------------------------------------------------------------------------------
+
+class GroundwaterBoundary(Boundary) :
+    """
+    """
+    def __new__(cls, label, case) :
+        """
+        Constructor
+        """
+        return object.__new__(cls)
+
+
+    def _initBoundary(self):
+        """
+        Initialize the boundary, add nodes in the boundary node
+        """
+        self._scalarChoicesList  = ['dirichlet',
+                                    'neumann',
+                                    'exchange_coefficient',
+                                    'dirichlet_formula',
+                                    'neumann_formula',
+                                    'exchange_coefficient_formula']
+        pass
+
+
+    def __defaultValues(self):
+        """
+        Default values
+        """
+        dico = {}
+        dico['pressure'] = 0.
+        dico['pressure_flux'] = 0.
+        dico['hydraulicHeadChoice'] = 'dirichlet'
+        dico['scalar']              = 0.0
+        dico['scalarChoice']        = 'dirichlet'
+
+        return dico
+
+
+    @Variables.noUndo
+    def getHydraulicHeadValue(self):
+        """
+        Return value of the pressure
+        """
+        pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
+        if pressure == None:
+            pressure = self.__defaultValues()['pressure']
+            self.setHydraulicHeadValue(pressure)
+
+        return pressure
+
+
+    @Variables.undoLocal
+    def setHydraulicHeadValue(self, value):
+        """
+        Set value of the pressure
+        """
+        Model().isFloat(value)
+        node = self.boundNode.xmlInitNode('dirichlet', name='pressure')
+        self.boundNode.xmlSetData('dirichlet', value, name='pressure')
+
+
+    @Variables.noUndo
+    def getHydraulicHeadFlux(self):
+        """
+        Return value of the pressure
+        """
+        pressure = self.boundNode.xmlGetDouble('neumann', name='pressure')
+        if pressure == None:
+            pressure = self.__defaultValues()['pressure_flux']
+            self.setHydraulicHeadFlux(pressure)
+
+        return pressure
+
+
+    @Variables.undoLocal
+    def setHydraulicHeadFlux(self, value):
+        """
+        Set value of the pressure
+        """
+        Model().isFloat(value)
+        node = self.boundNode.xmlInitNode('neumann', name='pressure')
+        self.boundNode.xmlSetData('neumann', value, name='pressure')
+
+
+    @Variables.noUndo
+    def getHydraulicHeadChoice(self):
+        """
+        Get hydraulic head choice
+        """
+        scalarNode = self.boundNode.xmlInitNode('hydraulicHead')
+
+        choice = scalarNode['choice']
+        if not choice:
+            choice = self.__defaultValues()['hydraulicHeadChoice']
+            self.setHydraulicHeadChoice(choice)
+        return choice
+
+
+    @Variables.undoGlobal
+    def setHydraulicHeadChoice(self, choice) :
+        """
+        Set hydraulic head choice
+        """
+        Model().isInList(choice, ['dirichlet', 'neumann', 'dirichlet_formula'])
+
+        scalarNode = self.boundNode.xmlInitNode('hydraulicHead')
+
+        if scalarNode['choice'] == choice:
+            return
+
+        old_choice = scalarNode['choice']
+        scalarNode['choice'] = choice
+        # delete nodes
+        if old_choice == 'dirichlet':
+            self.boundNode.xmlRemoveChild(old_choice)
+
+
+    @Variables.noUndo
+    def getHydraulicHeadFormula(self):
+        """
+        Public method.
+        Return the formula for hydraulic head variable.
+        """
+        scalarNode = self.boundNode.xmlInitNode('dirichlet_formula', name='hydraulicHead')
+        formula = scalarNode.xmlGetChildString('formula')
+
+        if not formula:
+            formula = 'H = 0.'
+
+        return formula
+
+
+    @Variables.undoLocal
+    def setHydraulicHeadFormula(self, formula):
+        """
+        Public method.
+        Set the formula for hydraulic head variable.
+        """
+        scalarNode = self.boundNode.xmlInitNode('dirichlet_formula', name='hydraulicHead')
+
+        n = scalarNode.xmlSetData('formula', formula)
+
+
+    def __getscalarList(self):
+        """
+        return list of scalars name
+        """
+        scalar_list =  self.sca_model.getScalarNameList()
+        if self.sca_model.getMeteoScalarsNameList() != None:
+            for sca in self.sca_model.getMeteoScalarsNameList():
+                scalar_list.append(sca)
+        if len(self.sca_model.getThermalScalarName()) > 0:
+            scalar_list.append(self.sca_model.getThermalScalarName()[0])
+
+        return scalar_list
+
+
+    def __deleteScalarNodes(self, name, tag):
+        """
+        Delete nodes of scalars
+        """
+        Model().isInList(name, self.__getscalarList())
+        Model().isInList(tag, self._scalarChoicesList)
+
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
+        for tt in self._scalarChoicesList:
+            if tt != tag:
+                scalarNode.xmlRemoveChild(tt)
+
+
+    @Variables.noUndo
+    def getScalarChoice(self, scalarName):
+        """
+        Get scalar choice
+        """
+        Model().isInList(scalarName, self.__getscalarList())
+
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
+
+        #update type of scalar
+        self.updateScalarTypeAndName(scalarNode, scalarName)
+
+        choice = scalarNode['choice']
+        if not choice:
+            choice = self.__defaultValues()['scalarChoice']
+            self.setScalarChoice(scalarName, choice)
+
+        return choice
+
+
+    @Variables.undoGlobal
+    def setScalarChoice(self, scalarName, choice) :
+        """
+        Set scalar choice
+        """
+        Model().isInList(scalarName, self.__getscalarList())
+        Model().isInList(choice, self._scalarChoicesList)
+
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
+
+        #update name and type of scalar
+        self.updateScalarTypeAndName(scalarNode, scalarName)
+
+        if scalarNode['choice'] == choice:
+            return
+
+        scalarNode['choice'] = choice
+        self.__deleteScalarNodes(scalarName, choice)
+
+
+    @Variables.noUndo
+    def getScalarValue(self, scalarName, choice) :
+        """
+        Get scalar value
+        """
+        Model().isInList(scalarName, self.__getscalarList())
+        Model().isInList(choice, self._scalarChoicesList)
+
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
+
+        #update name and type of scalar
+        self.updateScalarTypeAndName(scalarNode, scalarName)
+
+        value = scalarNode.xmlGetChildDouble(choice)
+        if value == None :
+            value = self.__defaultValues()['scalar']
+            self.setScalarValue(scalarName, choice, value)
+        return value
+
+
+    @Variables.undoGlobal
+    def setScalarValue(self, scalarName, choice, value):
+        """
+        Set scalar value
+        """
+        Model().isInList(scalarName, self.__getscalarList())
+        Model().isFloat(value)
+        Model().isInList(choice, self._scalarChoicesList)
+
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
+
+        #update name and type of scalar
+        self.updateScalarTypeAndName(scalarNode, scalarName)
+
+        scalarNode.xmlSetData(choice, value)
+
+
+    @Variables.noUndo
+    def getDefaultScalarFormula(self, scalarName, scalar_model):
+        """
+        Get defaut scalar formula
+        """
+        if scalar_model == 'dirichlet_formula':
+            formula = scalarName+""" = 0;\n"""
+        elif scalar_model == 'neumann_formula':
+            formula = """flux = 0;\n"""
+        elif scalar_model == 'exchange_coefficient_formula':
+            formula = scalarName+""" = 0;\nhc = 0;\n"""
+
+        return formula
+
+
+    @Variables.noUndo
+    def getScalarFormula(self, scalarName, choice):
+        """
+        Public method.
+        Return the formula for a turbulent variable.
+        """
+        Model().isInList(scalarName, self.__getscalarList())
+        Model().isInList(choice, self._scalarChoicesList)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
+        formula = scalarNode.xmlGetChildString(choice)
+
+        if not formula:
+            formula = self.getDefaultScalarFormula(scalarName, choice)
+
+        return formula
+
+
+    @Variables.undoLocal
+    def setScalarFormula(self, scalarName, choice, formula):
+        """
+        Public method.
+        Set the formula for a turbulent variable.
+        """
+        Model().isInList(scalarName, self.__getscalarList())
+        Model().isInList(choice, self._scalarChoicesList)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
+
+        n = scalarNode.xmlSetData(choice, formula)
 
 
 #-------------------------------------------------------------------------------

@@ -419,7 +419,7 @@ Thermophysical models
     Atmospheric flows
     Species transport
     Turbomachinery
-    Darcy
+    Groundwater flows
 Physical properties
     Reference values
     Fluid properties
@@ -431,7 +431,7 @@ Volume conditions
     Porosity
     Source terms
     Coriolis Source Terms
-    Darcy laws
+    Groundwater laws
 Particles and droplets tracking
     Global settings
     Statistics
@@ -670,8 +670,8 @@ Calculation management
         self.setRowClose(self.tr('Head losses'))
         self.setRowClose(self.tr('Porosity'))
         self.setRowClose(self.tr('Lagrangian solution control'))
-        self.setRowClose(self.tr('Darcy'))
-        self.setRowClose(self.tr('Darcy laws'))
+        self.setRowClose(self.tr('Groundwater flows'))
+        self.setRowClose(self.tr('Groundwater laws'))
 
         if case['prepro'] == True:
             self.setRowClose(self.tr('Thermophysical models'))
@@ -764,7 +764,7 @@ Calculation management
         node5 = node0.xmlGetNode('radiative_transfer', 'model')
         node6 = node0.xmlGetNode('atmospheric_flows',  'model')
         node7 = node0.xmlGetNode('compressible_model', 'model')
-        node8 = node0.xmlGetNode('darcy_model',        'model')
+        node8 = node0.xmlGetNode('groundwater_model',  'model')
 
         if node1['model'] in ('ebu', 'd3p', 'lwp'):
             self.setRowOpen(self.tr('Thermal model'))
@@ -819,16 +819,24 @@ Calculation management
             self.setRowOpen(self.tr('Fluid structure interaction'))
 
         if node8 and node8['model'] != 'off':
-            self.setRowOpen(self.tr('Darcy'))
+            self.setRowOpen(self.tr('Groundwater flows'))
             self.setRowClose(self.tr('Turbulence models'))
             self.setRowClose(self.tr('Turbomachinery'))
+            self.setRowClose(self.tr('Reference values'))
             self.setRowClose(self.tr('Gravity'))
             self.setRowClose(self.tr('Fluid properties'))
+            self.setRowClose(self.tr('Deformable mesh'))
+            self.setRowClose(self.tr('Thermal model'))
+            self.setRowClose(self.tr('Coriolis Source Terms'))
         else:
             self.setRowOpen(self.tr('Turbulence models'))
             self.setRowOpen(self.tr('Turbomachinery'))
+            self.setRowOpen(self.tr('Reference values'))
             self.setRowOpen(self.tr('Gravity'))
             self.setRowOpen(self.tr('Fluid properties'))
+            self.setRowOpen(self.tr('Deformable mesh'))
+            self.setRowOpen(self.tr('Thermal model'))
+            self.setRowOpen(self.tr('Coriolis Source Terms'))
 
         # Source terms view
         node_domain = case.xmlGetNode('solution_domain')
@@ -836,7 +844,7 @@ Calculation management
         nb_zone = 0
         nb_zone_losses = 0
         nb_zone_porosity = 0
-        nb_zone_darcy = 0
+        nb_zone_groundwater = 0
 
         for node in node_vol.xmlGetChildNodeList('zone'):
             if node['momentum_source_term'] == 'on':
@@ -851,8 +859,8 @@ Calculation management
                 nb_zone_losses = nb_zone_losses + 1
             if node['porosity'] == 'on':
                 nb_zone_porosity = nb_zone_porosity + 1
-            if node['darcy_law'] == 'on':
-                nb_zone_darcy = nb_zone_darcy + 1
+            if node['groundwater_law'] == 'on':
+                nb_zone_groundwater = nb_zone_groundwater + 1
 
         if nb_zone > 0:
             self.setRowOpen(self.tr('Source terms'))
@@ -860,8 +868,8 @@ Calculation management
             self.setRowOpen(self.tr('Head losses'))
         if nb_zone_porosity > 0:
             self.setRowOpen(self.tr('Porosity'))
-        if nb_zone_darcy > 0:
-            self.setRowOpen(self.tr('Darcy laws'))
+        if nb_zone_groundwater > 0 and node8 and node8['model'] != 'off':
+            self.setRowOpen(self.tr('Groundwater laws'))
 
         self.__hideRow()
 

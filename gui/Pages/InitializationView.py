@@ -55,7 +55,7 @@ from code_saturne.Pages.LocalizationModel import VolumicLocalizationModel, Local
 from code_saturne.Pages.InitializationModel import InitializationModel
 from code_saturne.Pages.CompressibleModel import CompressibleModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.DarcyModel import DarcyModel
+from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -96,6 +96,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.turb_group = [self.labelTurbulence, self.pushButtonTurbulence,
                            self.comboBoxTurbulence]
         self.thermal_group = [self.labelThermal, self.pushButtonThermal]
+        self.velocity_group = [self.labelVelocity, self.pushButtonVelocity]
         self.species_group = [self.labelSpecies, self.comboBoxSpecies, self.pushButtonSpecies]
         self.meteo_group =   [self.labelMeteo, self.comboBoxMeteo, self.pushButtonMeteo]
         self.thermodynamic_list = ['Pressure', 'Density', 'Temperature', 'Energy']
@@ -128,24 +129,24 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         # 2/ Connections
 
-        self.connect(self.comboBoxZone,         SIGNAL("activated(const QString&)"),   self.slotZone)
-        self.connect(self.comboBoxTurbulence,   SIGNAL("activated(const QString&)"),   self.slotChoice)
-        self.connect(self.comboBoxSpecies,      SIGNAL("activated(const QString&)"),   self.slotSpeciesChoice)
-        self.connect(self.comboBoxMeteo,        SIGNAL("activated(const QString&)"),   self.slotMeteoChoice)
-        self.connect(self.checkBoxPressure,     SIGNAL("clicked()"),                   self.slotPressure)
-        self.connect(self.checkBoxDensity,      SIGNAL("clicked()"),                   self.slotDensity)
-        self.connect(self.checkBoxTemperature,  SIGNAL("clicked()"),                   self.slotTemperature)
-        self.connect(self.checkBoxEnergy,       SIGNAL("clicked()"),                   self.slotEnergy)
-        self.connect(self.pushButtonVelocity,   SIGNAL("clicked()"),                   self.slotVelocityFormula)
-        self.connect(self.pushButtonThermal,    SIGNAL("clicked()"),                   self.slotThermalFormula)
-        self.connect(self.pushButtonTurbulence, SIGNAL("clicked()"),                   self.slotTurbulenceFormula)
-        self.connect(self.pushButtonSpecies,    SIGNAL("clicked()"),                   self.slotSpeciesFormula)
-        self.connect(self.pushButtonMeteo,      SIGNAL("clicked()"),                   self.slotMeteoFormula)
-        self.connect(self.pushButtonPressure,   SIGNAL("clicked()"),                   self.slotPressureFormula)
-        self.connect(self.pushButtonDensity,    SIGNAL("clicked()"),                   self.slotDensityFormula)
-        self.connect(self.pushButtonTemperature,SIGNAL("clicked()"),                   self.slotTemperatureFormula)
-        self.connect(self.pushButtonEnergy,     SIGNAL("clicked()"),                   self.slotEnergyFormula)
-        self.connect(self.pushButtonPressure_2, SIGNAL("clicked()"),                   self.slotPressureFormula)
+        self.connect(self.comboBoxZone,            SIGNAL("activated(const QString&)"),   self.slotZone)
+        self.connect(self.comboBoxTurbulence,      SIGNAL("activated(const QString&)"),   self.slotChoice)
+        self.connect(self.comboBoxSpecies,         SIGNAL("activated(const QString&)"),   self.slotSpeciesChoice)
+        self.connect(self.comboBoxMeteo,           SIGNAL("activated(const QString&)"),   self.slotMeteoChoice)
+        self.connect(self.checkBoxPressure,        SIGNAL("clicked()"),                   self.slotPressure)
+        self.connect(self.checkBoxDensity,         SIGNAL("clicked()"),                   self.slotDensity)
+        self.connect(self.checkBoxTemperature,     SIGNAL("clicked()"),                   self.slotTemperature)
+        self.connect(self.checkBoxEnergy,          SIGNAL("clicked()"),                   self.slotEnergy)
+        self.connect(self.pushButtonVelocity,      SIGNAL("clicked()"),                   self.slotVelocityFormula)
+        self.connect(self.pushButtonThermal,       SIGNAL("clicked()"),                   self.slotThermalFormula)
+        self.connect(self.pushButtonTurbulence,    SIGNAL("clicked()"),                   self.slotTurbulenceFormula)
+        self.connect(self.pushButtonSpecies,       SIGNAL("clicked()"),                   self.slotSpeciesFormula)
+        self.connect(self.pushButtonMeteo,         SIGNAL("clicked()"),                   self.slotMeteoFormula)
+        self.connect(self.pushButtonPressure,      SIGNAL("clicked()"),                   self.slotPressureFormula)
+        self.connect(self.pushButtonDensity,       SIGNAL("clicked()"),                   self.slotDensityFormula)
+        self.connect(self.pushButtonTemperature,   SIGNAL("clicked()"),                   self.slotTemperatureFormula)
+        self.connect(self.pushButtonEnergy,        SIGNAL("clicked()"),                   self.slotEnergyFormula)
+        self.connect(self.pushButtonHydraulicHead, SIGNAL("clicked()"),                   self.slotHydraulicHeadFormula)
 
         choice = self.init.getInitialTurbulenceChoice(self.zone)
         self.modelTurbulence.setItem(str_model = choice)
@@ -185,11 +186,11 @@ class InitializationView(QWidget, Ui_InitializationForm):
             for item in self.meteo_group:
                 item.hide()
 
-        if DarcyModel(self.case).getDarcyModel() == "off":
-            self.labelpressure.hide()
-            self.pushButtonPressure_2.hide()
+        if GroundwaterModel(self.case).getGroundwaterModel() == "off":
+            self.labelHydraulicHead.hide()
+            self.pushButtonHydraulicHead.hide()
         else:
-            setGreenColor(self.pushButtonPressure_2, True)
+            setGreenColor(self.pushButtonHydraulicHead, True)
 
         # Initialize widget
         self.initializeVariables(self.zone)
@@ -565,7 +566,34 @@ pressure = p0 + g * ro * z;\n"""
             result = dialog.get_result()
             log.debug("slotPressureFormula -> %s" % str(result))
             self.init.setPressureFormula(self.zone, result)
-            setGreenColor(self.pushButtonPressure_2, False)
+            setGreenColor(self.pushButtonPressure, False)
+
+
+
+    @pyqtSignature("const QString&")
+    def slotHydraulicHeadFormula(self):
+        """
+        Input the initial Hydraulic Head formula
+        """
+        exp = self.init.getHydraulicHeadFormula(self.zone)
+        if not exp:
+            exp = """H = z;\n"""
+        exa = """#example: """
+        req = [('H', 'hydraulic head')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotHydraulicHeadFormula -> %s" % str(result))
+            self.init.setHydraulicHeadFormula(self.zone, result)
+            setGreenColor(self.pushButtonHydraulicHead, False)
 
 
 
@@ -686,11 +714,15 @@ pressure = p0 + g * ro * z;\n"""
                 setGreenColor(self.pushButtonTurbulence, False)
 
         #velocity
-        velocity_formula = self.init.getVelocityFormula(zone)
-        if not velocity_formula:
-            velocity_formula = self.init.getDefaultVelocityFormula()
-        self.init.setVelocityFormula(zone, velocity_formula)
-        setGreenColor(self.pushButtonVelocity, True)
+        if GroundwaterModel(self.case).getGroundwaterModel() == "groundwater":
+            for item in self.velocity_group:
+                item.hide()
+        else:
+            velocity_formula = self.init.getVelocityFormula(zone)
+            if not velocity_formula:
+                velocity_formula = self.init.getDefaultVelocityFormula()
+            self.init.setVelocityFormula(zone, velocity_formula)
+            setGreenColor(self.pushButtonVelocity, True)
 
         # Initialisation of Model Variables if thermal model is selectionned
         for item in self.thermal_group:

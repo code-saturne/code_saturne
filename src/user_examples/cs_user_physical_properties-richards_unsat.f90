@@ -147,8 +147,7 @@ do iel = 1, ncel
   ! Switch from hydraulic head (H=h+z) to pressure head (h)
   darcy_h = cvar_pr(iel)
   if (darcy_gravity.eq.1) then
-    darcy_h = cvar_pr(iel) - xyzcen(1,iel)*darcy_gravity_x - &
-         xyzcen(2,iel)*darcy_gravity_y - xyzcen(3,iel)*darcy_gravity_z
+    darcy_h = cvar_pr(iel) - xyzcen(3,iel)
   endif
   !< [richards_set_press]
 

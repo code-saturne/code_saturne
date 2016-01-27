@@ -72,7 +72,7 @@ BEGIN_C_DECLS
  *                              tabulation is used. INDJON=1: users tabulation
  * INTEGER          IEOS    --> compressible
  * INTEGER          IEQCO2  --> CO2 massic fraction transport
- * INTEGER          IDARCY  --> darcy model
+ * INTEGER          IDARCY  --> groundwater model
  *
  *----------------------------------------------------------------------------*/
 
@@ -224,7 +224,7 @@ void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
 
 
 /*----------------------------------------------------------------------------
- * darcy model : read parameters
+ * groundwater model : read parameters
  *
  * Fortran Interface:
  *
@@ -232,24 +232,16 @@ void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
  * *****************
  * integer         iricha          -->   richards model
  * integer         permeability    <--   permeability type
- * integer         diffusion       <--   diffusion type
+ * integer         dispersion      <--   dispersion type
  * integer         unsteady        <--   steady flow
- * integer         convergence     <--   convergence criterion of Newton scheme
  * integer         gravity         <--   check if gravity is taken into account
- * double          gravity_x       <--   x component for gravity vector
- * double          gravity_y       <--   y component for gravity vector
- * double          gravity_z       <--   z component for gravity vector
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uidai1, UIDAI1) (const int    *const idarcy,
                                       int    *const permeability,
-                                      int    *const diffusion,
+                                      int    *const dispersion,
                                       int    *const unsteady,
-                                      int    *const convergence,
-                                      int    *const gravity,
-                                      double *gravity_x,
-                                      double *gravity_y,
-                                      double *gravity_z);
+                                      int    *const gravity);
 
 
 /*=============================================================================

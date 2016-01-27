@@ -52,7 +52,7 @@ from code_saturne.Base.QtPage import DoubleValidator, ComboModel, to_qvariant
 from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.Boundary import Boundary
 from code_saturne.Pages.MobileMeshModel import MobileMeshModel
-from code_saturne.Pages.DarcyModel import DarcyModel
+from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -142,7 +142,10 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         # Fill the model with the boundary zone
 
         if MobileMeshModel(self.__case).getMethod() == "off":
-            lst = ('wall', 'inlet', 'outlet', 'free_inlet_outlet')
+            if GroundwaterModel(self.__case).getGroundwaterModel() == "off":
+                lst = ('wall', 'inlet', 'outlet', 'free_inlet_outlet')
+            else:
+                lst = ('wall', 'inlet', 'outlet', 'free_inlet_outlet', 'groundwater')
         else:
             lst = ('wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet')
 
@@ -171,7 +174,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.mobileMeshWidget.setup(self.__case)
         self.radiativeWidget.setup(self.__case)
         self.electricalWidget.setup(self.__case)
-        self.pressureWidget.setup(self.__case)
+        self.hydraulicheadWidget.setup(self.__case)
         self.externalHeadLossesWidget.setup(self.__case)
 
         self.__hideAllWidgets()
@@ -200,19 +203,21 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
             self.__selectSymmetryBoundary(boundary)
         elif nature == 'free_inlet_outlet':
             self.__selectInletOutletBoundary(boundary)
+        elif nature == 'groundwater':
+            self.__selectGroundwaterBoundary(boundary)
 
 
     def __selectInletBoundary(self, boundary):
         """
         Shows widgets for inlet.
         """
-        self.pressureWidget.hideWidget()
+        self.hydraulicheadWidget.hideWidget()
         if self.coalWidget.getCoalNumber() == 0:
-            if DarcyModel(self.__case).getDarcyModel() == "off":
+            if GroundwaterModel(self.__case).getGroundwaterModel() == "off":
                 self.velocityWidget.showWidget(boundary)
             else:
                 self.velocityWidget.hideWidget()
-                self.pressureWidget.showWidget(boundary)
+                self.hydraulicheadWidget.showWidget(boundary)
             self.coalWidget.hideWidget()
         else:
             self.velocityWidget.hideWidget()
@@ -237,7 +242,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.radiativeWidget.showWidget(boundary)
         self.electricalWidget.showWidget(boundary)
         self.externalHeadLossesWidget.hideWidget()
-        self.pressureWidget.hideWidget()
+        self.hydraulicheadWidget.hideWidget()
 
 
     def __selectOutletBoundary(self, boundary):
@@ -253,10 +258,10 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
             self.compressibleOutletWidget.hideWidget()
         self.electricalWidget.showWidget(boundary)
         self.externalHeadLossesWidget.hideWidget()
-        if DarcyModel(self.__case).getDarcyModel() == "off":
-            self.pressureWidget.hideWidget()
+        if GroundwaterModel(self.__case).getGroundwaterModel() == "off":
+            self.hydraulicheadWidget.hideWidget()
         else:
-            self.pressureWidget.showWidget(boundary)
+            self.hydraulicheadWidget.showWidget(boundary)
 
 
     def __selectInletOutletBoundary(self, boundary):
@@ -271,7 +276,22 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.mobileMeshWidget.hideWidget()
         self.electricalWidget.hideWidget()
         self.externalHeadLossesWidget.showWidget(boundary)
-        self.pressureWidget.hideWidget()
+        self.hydraulicheadWidget.hideWidget()
+
+
+    def __selectGroundwaterBoundary(self, boundary):
+        """
+        Shows widgets for groundwater flow.
+        """
+        self.coalWidget.hideWidget()
+        self.velocityWidget.hideWidget()
+        self.turbulenceWidget.hideWidget()
+        self.meteoWidget.hideWidget()
+        self.scalarsWidget.showWidget(boundary)
+        self.mobileMeshWidget.hideWidget()
+        self.electricalWidget.hideWidget()
+        self.externalHeadLossesWidget.hideWidget()
+        self.hydraulicheadWidget.showWidget(boundary)
 
 
     def __selectSymmetryBoundary(self, boundary):
@@ -297,7 +317,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.radiativeWidget.hideWidget()
         self.electricalWidget.hideWidget()
         self.externalHeadLossesWidget.hideWidget()
-        self.pressureWidget.hideWidget()
+        self.hydraulicheadWidget.hideWidget()
 
 
     def tr(self, text):

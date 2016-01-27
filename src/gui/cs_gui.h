@@ -302,13 +302,15 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
  * subroutine uitssc (f_id, pvar, tsexp, tsimp)
  * *****************
  *
+ * integer          idarcy   <--  groundwater module activation
  * integer          f_id     <--  field id
  * double precision pvar     <--  scalar
  * double precision tsexp    -->  explicit source terms
  * double precision tsimp    -->  implicit source terms
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uitssc, UITSSC)(const int                  *f_id,
+void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
+                              const int                  *f_id,
                               const cs_real_t   *restrict pvar,
                               cs_real_t         *restrict tsexp,
                               cs_real_t         *restrict tsimp);
@@ -341,7 +343,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
  * *****************
  *
  * integer          isuite   <--  restart indicator
- * integer          idarcy   <--  darcy module activation
+ * integer          idarcy   <--  groundwater module activation
  * integer          iccfth   <--  type of initialization (compressible model)
  *----------------------------------------------------------------------------*/
 
@@ -400,7 +402,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
 void CS_PROCF (uiprof, UIPROF)(void);
 
 /*----------------------------------------------------------------------------
- * darcy model : read laws for capacity, saturation and permeability
+ * groundwater model : read laws for capacity, saturation and permeability
  *
  * Fortran Interface:
  *
@@ -409,17 +411,11 @@ void CS_PROCF (uiprof, UIPROF)(void);
  * integer         permeability    <--  permeability type
  * integer         diffusion       <--  diffusion type
  * integer         gravity         <--  check if gravity is taken into account
- * double          gravity_x       <--   x component for gravity vector
- * double          gravity_y       <--   y component for gravity vector
- * double          gravity_z       <--   z component for gravity vector
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
                                 const cs_int_t  *diffusion,
-                                const cs_int_t  *gravity,
-                                const double    *gravity_x,
-                                const double    *gravity_y,
-                                const double    *gravity_z);
+                                const cs_int_t  *gravity);
 
 /*----------------------------------------------------------------------------
  * Free memory: clean global private variables and libxml2 variables.

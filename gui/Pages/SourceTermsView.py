@@ -54,6 +54,7 @@ from code_saturne.Pages.LocalizationModel import VolumicLocalizationModel, Local
 from code_saturne.Pages.SourceTermsModel import SourceTermsModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
+from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -100,8 +101,9 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
 
         # 1/ Combo box models
 
-        self.modelSpecies = ComboModel(self.comboBoxSpecies, 1, 1)
-        self.modelZone = ComboModel(self.comboBoxZone, 1, 1)
+        self.modelSpecies  = ComboModel(self.comboBoxSpecies, 1, 1)
+        self.modelSpecies2 = ComboModel(self.comboBoxSpecies2, 1, 1)
+        self.modelZone     = ComboModel(self.comboBoxZone, 1, 1)
 
         self.zone = ""
         zones = self.volzone.getZones()
@@ -113,9 +115,22 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
             if ('thermal_source_term' in zone.getNature().keys()):
                 if (zone.getNature()['thermal_source_term']  == "on"):
                     active = 1
+
             if ('scalar_source_term' in zone.getNature().keys()):
                 if (zone.getNature()['scalar_source_term']  == "on"):
                     active = 1
+
+            if GroundwaterModel(self.case).getGroundwaterModel() != "off":
+                self.groupBoxStandard.hide()
+                self.groupBoxRichards.show()
+                self.groupBoxTransport.show()
+                if (zone.getNature()['groundwater_law'] == "on"):
+                    active = 1
+            else:
+                self.groupBoxStandard.show()
+                self.groupBoxRichards.hide()
+                self.groupBoxTransport.hide()
+
             if (active):
                 label = zone.getLabel()
                 name = str(zone.getCodeNumber())
@@ -133,6 +148,9 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         self.connect(self.pushButtonMomentum,   SIGNAL("clicked()"),                   self.slotMomentumFormula)
         self.connect(self.pushButtonThermal,    SIGNAL("clicked()"),                   self.slotThermalFormula)
         self.connect(self.pushButtonSpecies,    SIGNAL("clicked()"),                   self.slotSpeciesFormula)
+        self.connect(self.comboBoxSpecies2,     SIGNAL("activated(const QString&)"),   self.slotSpeciesChoice)
+        self.connect(self.pushButtonSpecies2,   SIGNAL("clicked()"),                   self.slotSpeciesGroundWaterFormula)
+        self.connect(self.pushButtonRichards,   SIGNAL("clicked()"),                   self.slotRichardsFormula)
 
         # 3/ Initialize widget
 
@@ -178,10 +196,22 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
                     self.modelSpecies.addItem(self.tr(scalar),self.scalar)
                 self.modelSpecies.setItem(str_model = self.scalar)
 
+            self.groupBoxTransport.show()
+            setGreenColor(self.pushButtonSpecies2, True)
+            self.scalar = ""
+            scalar_list = self.th_sca.getUserScalarNameList()
+            for s in self.th_sca.getScalarsVarianceList():
+                if s in scalar_list: scalar_list.remove(s)
+            if scalar_list != []:
+                for scalar in scalar_list:
+                    self.scalar = scalar
+                    self.modelSpecies2.addItem(self.tr(scalar),self.scalar)
+                self.modelSpecies2.setItem(str_model = self.scalar)
         else:
             self.comboBoxSpecies.hide()
             self.pushButtonSpecies.hide()
             self.labelSpecies.hide()
+            self.groupBoxTransport.hide()
 
 
     @pyqtSignature("const QString&")
@@ -274,6 +304,64 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
             self.mdl.setSpeciesFormula(self.zone, self.scalar, result)
+            setGreenColor(self.sender(), False)
+
+
+    @pyqtSignature("const QString&")
+    def slotSpeciesGroundWaterFormula(self):
+        """
+        """
+        exp = self.mdl.getGroundWaterSpeciesFormula(self.zone, self.scalar)
+        if not exp:
+            exp = """Q = 0;\nlambda = 0;\n"""
+        exa = """#example: """
+        req = [('Q', 'species source term'),
+               ('lambda', 'radioactive decay')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate'),
+               ('t', 'current time')]
+
+        name = self.th_sca.getScalarName(self.scalar)
+        sym.append((name, 'current species'))
+
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotSpeciesGroundWaterFormula -> %s" % str(result))
+            self.mdl.setGroundWaterSpeciesFormula(self.zone, self.scalar, result)
+            setGreenColor(self.sender(), False)
+
+
+    @pyqtSignature("const QString&")
+    def slotRichardsFormula(self):
+        """
+        """
+        exp = self.mdl.getRichardsFormula(self.zone)
+        if not exp:
+            exp = """Qs = 0;\n"""
+        exa = """#example: """
+        req = [('Qs', 'volumetric source term')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate'),
+               ('t', 'current time')]
+
+        dialog = QMeiEditorView(self,
+                                check_syntax = self.case['package'].get_check_syntax(),
+                                expression = exp,
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotRichardsFormula -> %s" % str(result))
+            self.mdl.setRichardsFormula(self.zone, result)
             setGreenColor(self.sender(), False)
 
 

@@ -143,6 +143,72 @@ class SourceTermsModel(Model):
 
 
     @Variables.undoGlobal
+    def setGroundWaterSpeciesFormula(self, zone, species, formula):
+        """
+        Public method.
+        Set the formula for a turbulent variable.
+        """
+        self.__verifyZone(zone)
+        self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarNameList())
+        node = self.node_sterm
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        name_species = DefineUserScalarsModel(self.case).getScalarName(species)
+        n = node.xmlInitChildNode('scalar_formula', name = name_species, label = species, zone_id=zone)
+        n.xmlSetTextNode(formula)
+
+
+    @Variables.noUndo
+    def getGroundWaterSpeciesFormula(self, zone, species):
+        """
+        Public method.
+        Return the formula for a turbulent variable.
+        """
+        self.__verifyZone(zone)
+        self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarNameList())
+        node = self.node_sterm
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        name_species = DefineUserScalarsModel(self.case).getScalarName(species)
+        formula = node.xmlGetString('scalar_formula', name = name_species, label = species, zone_id=zone)
+
+        return formula
+
+
+    @Variables.undoGlobal
+    def setRichardsFormula(self, zone, formula):
+        """
+        Public method.
+        Set the formula for a turbulent variable.
+        """
+        self.__verifyZone(zone)
+        node = self.node_sterm
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        n = node.xmlInitChildNode('volumetric_source_term', zone_id=zone)
+        n.xmlSetTextNode(formula)
+
+
+    @Variables.noUndo
+    def getRichardsFormula(self, zone):
+        """
+        Public method.
+        Return the formula for a turbulent variable.
+        """
+        self.__verifyZone(zone)
+        node = self.node_sterm
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be existed"
+            raise ValueError(msg)
+        formula = node.xmlGetString('volumetric_source_term', zone_id=zone)
+
+        return formula
+
+
+    @Variables.undoGlobal
     def setThermalFormula(self, zone, scalar, formula):
         """
         Public method.

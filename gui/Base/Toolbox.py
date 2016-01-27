@@ -145,9 +145,9 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import code_saturne.Pages.CoriolisSourceTermsView as Page
         thisPage = Page.CoriolisSourceTermsView(root, case)
 
-    elif page_name == tr("Darcy laws"):
-        import code_saturne.Pages.DarcyLawView as Page
-        thisPage = Page.DarcyLawView(root, case)
+    elif page_name == tr("Groundwater laws"):
+        import code_saturne.Pages.GroundwaterLawView as Page
+        thisPage = Page.GroundwaterLawView(root, case)
 
     elif page_name == tr("Reference values"):
         import code_saturne.Pages.ReferenceValuesView as Page
@@ -169,9 +169,9 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import code_saturne.Pages.TurboMachineryView as Page
         thisPage = Page.TurboMachineryView(root, case)
 
-    elif page_name == tr("Darcy"):
-        import code_saturne.Pages.DarcyView as Page
-        thisPage = Page.DarcyView(root, case)
+    elif page_name == tr("Groundwater flows"):
+        import code_saturne.Pages.GroundwaterView as Page
+        thisPage = Page.GroundwaterView(root, case)
 
     elif page_name == tr("Global settings"):
         import code_saturne.Pages.LagrangianView as Page

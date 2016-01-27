@@ -348,7 +348,7 @@ if (iihmpr.eq.1) then
 
   if (iscal.ne.iscalt) then
     call uitssc &
-    ( iflid  , cvar_var , smbrs  , rovsdt )
+    ( ippmod(idarcy), iflid  , cvar_var , smbrs  , rovsdt )
   else
     call uitsth &
     ( iflid  , cvar_var , smbrs  , rovsdt )

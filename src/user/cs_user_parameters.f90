@@ -2600,7 +2600,7 @@ if (.false.) then
 endif
 
 if (.false.) then
-  darcy_anisotropic_diffusion = 0 ! diffusion : 0 isotrop, 1 anisotrop
+  darcy_anisotropic_dispersion = 0 ! dispersion : 0 isotrop, 1 anisotrop
 endif
 
 if (.false.) then
@@ -2613,13 +2613,6 @@ endif
 
 if (.false.) then
   darcy_gravity = 0 ! gravity is taken into account : 0 no, 1 yes
-endif
-
-! if gravity is taken into account define gravity vector
-if (.false.) then
-  darcy_gravity_x = 0.
-  darcy_gravity_y = 0.
-  darcy_gravity_z = 1.
 endif
 
 !----

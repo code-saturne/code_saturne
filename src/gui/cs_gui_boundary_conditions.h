@@ -102,6 +102,7 @@ typedef struct {
   mei_tree_t ***scalar;    /* formula for scalar (neumann, dirichlet or
                               exchange coefficient)*/
   mei_tree_t **headLoss;   /* formula for head loss (free inlet/outlet)       */
+  mei_tree_t **groundwat;  /* formula for hydraulic head (groundwater)        */
 } cs_boundary_t;
 
 /*============================================================================
@@ -130,9 +131,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *nfabor,
                                const int  *idarcy,
                                const int  *darcy_gravity,
-                               double     *darcy_gravity_x,
-                               double     *darcy_gravity_y,
-                               double     *darcy_gravity_z,
                                const int  *nozppm,
                                const int  *ncharm,
                                const int  *ncharb,

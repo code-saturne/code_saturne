@@ -171,7 +171,7 @@ do ii = 1, nscal
   ! Index field for delay
   call field_get_val_s(delay_id(ii), delay)
 
-  ! Index field for diffusion (dipersion and molecular diffusion) for the transport part
+  ! Index field for diffusion (dispersion and molecular diffusion) for the transport part
   call field_get_key_int(ivarfl(isca(ii)), kivisl, ifcvsl)
   if (ifcvsl.ge.0) then
     call field_get_val_s(ifcvsl, cpro_vscalt)
@@ -180,7 +180,7 @@ do ii = 1, nscal
   endif
 
   !< [richards_flow_solut]
-  ! Definition of the isotropic diffusion (dipersion and moleculer diffusion)
+  ! Definition of the isotropic diffusion (dispersion and moleculer diffusion)
   call getcel ('SOIL1', ncelt, lstcel)
   darcy_isotropic_dispersion = 1.d0
   molecular_diffusion = 1.d-6
@@ -193,7 +193,7 @@ do ii = 1, nscal
     endif
   enddo
 
-  ! Definition of the isotropic diffusion (dipersion and moleculer diffusion)
+  ! Definition of the isotropic diffusion (dispersion and moleculer diffusion)
   call getcel ('SOIL2', ncelt, lstcel)
   darcy_isotropic_dispersion = 0.2d0
   molecular_diffusion = 1.d-8

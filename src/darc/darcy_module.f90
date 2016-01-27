@@ -48,9 +48,9 @@ module darcy_module
   !> Set permeability to isotropic (0) or anisotropic (1) for all soils
   integer :: darcy_anisotropic_permeability
 
-  !> \anchor darcy_anisotropic_diffusion
+  !> \anchor darcy_anisotropic_dispersion
   !> Set dispersion to isotropic (0) or anisotropic (1) for all solutes
-  integer :: darcy_anisotropic_diffusion
+  integer :: darcy_anisotropic_dispersion
 
   !> \anchor darcy_unsteady
   !> Set if the transport part is based on a steady (0) or unsteady (1)
@@ -67,24 +67,6 @@ module darcy_module
   !> Set gravity to pass from pressure head \f$ h \f$ to hydraulic
   !> head \f$ H \f$
   integer :: darcy_gravity
-
-  !> \anchor darcy_gravity_x
-  !> Set direction \f$ x \f$ to pass from pressure head \f$ h \f$ to hydraulic
-  !> head
-  !> then \f$ H = h + x \f$
-  double precision :: darcy_gravity_x
-
-  !> \anchor darcy_gravity_y
-  !> Set direction \f$ y \f$ to pass from pressure head \f$ h \f$ to hydraulic
-  !> head
-  !> then \f$ H = h + y \f$
-  double precision :: darcy_gravity_y
-
-  !> \anchor darcy_gravity_z
-  !> Set direction \f$ z \f$ to pass from pressure head \f$ h \f$ to hydraulic
-  !> head
-  !> then \f$ H = h + z \f$
-  double precision :: darcy_gravity_z
 
   !> \}
 

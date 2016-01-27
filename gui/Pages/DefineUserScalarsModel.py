@@ -77,7 +77,12 @@ class DefineUserScalarsModel(Variables, Model):
         default['diffusion_coefficient'] = 1.83e-05
         default['diffusion_choice']      = 'constant'
         default['zone_id']               = 1
-        default['GGDH']                  = "SGDH"
+        from code_saturne.Pages.GroundwaterModel import GroundwaterModel
+        if GroundwaterModel(self.case).getGroundwaterModel() == "groundwater":
+            default['GGDH']                  = "OFF"
+        else:
+            default['GGDH']                  = "SGDH"
+        del GroundwaterModel
         if self.getScalarNameList():
             default['variance']          = self.getScalarNameList()[0]
         else:

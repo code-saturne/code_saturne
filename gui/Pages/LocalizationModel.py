@@ -186,6 +186,11 @@ class BoundaryZone(Zone):
                     self._natureDict['free_surface'] = self.tr("Free surface")
                     self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', 'free_surface']
                 del MobileMeshModel
+                from code_saturne.Pages.GroundwaterModel import GroundwaterModel
+                if GroundwaterModel(self.case).getGroundwaterModel() != "off":
+                    self._natureDict['groundwater'] = self.tr("Groundwater flow")
+                    self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', 'groundwater']
+                del GroundwaterModel
             else:
                 self._natureList = ['wall', 'inlet', 'outlet', 'symmetry']
         else:
@@ -223,17 +228,23 @@ class VolumicZone(Zone):
         self._natureList = ['initialization']
         self.case = case
 
-        if self.case['package'].name == 'code_saturne':
-            self._natureList.append('head_losses')
-            self._natureList.append('porosity')
-            self._natureList.append('momentum_source_term')
-
         self._natureDict = {}
         self._natureDict['initialization']       = self.tr("Initialization")
+
         if self.case['package'].name == 'code_saturne':
-            self._natureDict['head_losses']          = self.tr("Head losses")
-            self._natureDict['porosity']             = self.tr("Porosity")
-            self._natureDict['momentum_source_term'] = self.tr("Momentum source\n term")
+            from code_saturne.Pages.GroundwaterModel import GroundwaterModel
+            if GroundwaterModel(self.case).getGroundwaterModel() != "groundwater":
+                self._natureList.append('head_losses')
+                self._natureList.append('porosity')
+                self._natureList.append('momentum_source_term')
+
+                self._natureDict['head_losses']          = self.tr("Head losses")
+                self._natureDict['porosity']             = self.tr("Porosity")
+                self._natureDict['momentum_source_term'] = self.tr("Momentum source\n term")
+            else:
+                self._natureList.append('momentum_source_term')
+                self._natureDict['momentum_source_term'] = self.tr("Volumetric source\n term")
+            del GroundwaterModel
 
         from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
         if ThermalScalarModel(self.case).getThermalScalarModel() != 'off':
@@ -242,11 +253,11 @@ class VolumicZone(Zone):
         del ThermalScalarModel
 
         self.node_models = self.case.xmlGetNode('thermophysical_models')
-        node_darcy = self.node_models.xmlGetNode('darcy_model')
+        node_darcy = self.node_models.xmlGetNode('groundwater_model')
         if node_darcy:
             if node_darcy['model'] != 'off':
-                self._natureList.append('darcy_law')
-                self._natureDict['darcy_law']  = self.tr("Darcy volumic law")
+                self._natureList.append('groundwater_law')
+                self._natureDict['groundwater_law']  = self.tr("Groundwater\n volumic law")
 
         node = self.case.xmlGetNode('additional_scalars')
         number = len(node.xmlGetNodeList('variable', type='user'))
@@ -266,7 +277,7 @@ class VolumicZone(Zone):
         dico['nature']['mass_source_term']     = "off"
         dico['nature']['thermal_source_term']  = "off"
         dico['nature']['scalar_source_term']   = "off"
-        dico['nature']['darcy_law']            = "off"
+        dico['nature']['groundwater_law']      = "off"
         return dico
 
 

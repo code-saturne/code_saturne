@@ -905,32 +905,6 @@ _outlet_compressible(int         izone,
 }
 
 /*-----------------------------------------------------------------------------
- * Get pressure value for darcy (inlet / outlet).
- *
- * parameters:
- *   izone       -->  number of the current zone
- *----------------------------------------------------------------------------*/
-
-static void
-_boundary_darcy(int izone)
-{
-  double value;
-  char  *path = NULL;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "boundary_conditions", "outlet");
-  cs_xpath_add_test_attribute(&path, "label", boundaries->label[izone]);
-
-  cs_xpath_add_element(&path, "dirichlet");
-  cs_xpath_add_test_attribute(&path, "name", "pressure");
-  cs_xpath_add_function_text(&path);
-  if (cs_gui_get_double(path, &value))
-    boundaries->preout[izone] = value;
-
-  BFT_FREE(path);
-}
-
-/*-----------------------------------------------------------------------------
  * Initialize mei tree and check for symbols existence
  *
  * parameters:
@@ -969,6 +943,78 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
           symbols[i]);
 
   return tree;
+}
+
+/*-----------------------------------------------------------------------------
+ * Formula for hydraulic head.
+ *
+ * parameters:
+ *   label       <--  label of the inlet
+ *----------------------------------------------------------------------------*/
+
+static char*
+_hydraulic_head_formula(const char *nature,
+                        const char *label)
+{
+  char *path = NULL;
+  char *form = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
+  cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_elements(&path, 2, "hydraulicHead", "formula");
+  cs_xpath_add_function_text(&path);
+
+  form = cs_gui_get_text_value(path);
+  BFT_FREE(path);
+  return form;
+}
+
+/*-----------------------------------------------------------------------------
+ * Get pressure value for darcy (inlet/outlet/groundwater).
+ *
+ * parameters:
+ *   izone       -->  number of the current zone
+ *----------------------------------------------------------------------------*/
+
+static void
+_boundary_darcy(const char *nature,
+                const char *label,
+                      int   izone)
+{
+  double value;
+  char  *path = NULL;
+  char *choice = NULL;
+
+  choice = _boundary_choice(nature, label, "hydraulicHead", "choice");
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
+  cs_xpath_add_test_attribute(&path, "label", boundaries->label[izone]);
+
+  if (cs_gui_strcmp(choice, "dirichlet") || cs_gui_strcmp(choice, "neumann"))
+  {
+    cs_xpath_add_element(&path, choice);
+    cs_xpath_add_test_attribute(&path, "name", "pressure");
+    cs_xpath_add_function_text(&path);
+    if (cs_gui_get_double(path, &value))
+      boundaries->preout[izone] = value;
+  }
+  else if (cs_gui_strcmp(choice, "dirichlet_formula"))
+  {
+    const char *sym[] = {"H"};
+    if (_hydraulic_head_formula(nature, label) != NULL)
+      boundaries->groundwat[izone] =
+          _boundary_init_mei_tree(_hydraulic_head_formula(nature, label), sym, 1);
+    else
+    {
+      bft_printf("Warning : groundwater flow boundary conditions\n");
+      bft_printf("          without formula for hydraulic head\n");
+    }
+  }
+
+  BFT_FREE(path);
+  BFT_FREE(choice);
 }
 
 /*----------------------------------------------------------------------------
@@ -1080,8 +1126,9 @@ _init_boundaries(const cs_lnum_t  *nfabor,
     BFT_MALLOC(boundaries->entin,   zones, double);
     BFT_MALLOC(boundaries->preout,  zones, double);
   }
-  else if (cs_gui_strcmp(vars->model, "darcy_model")) {
+  else if (cs_gui_strcmp(vars->model, "groundwater_model")) {
     BFT_MALLOC(boundaries->preout,  zones, double);
+    BFT_MALLOC(boundaries->groundwat, zones,      mei_tree_t*  );
   }
   else {
     boundaries->ientat = NULL;
@@ -1162,8 +1209,9 @@ _init_boundaries(const cs_lnum_t  *nfabor,
       boundaries->preout[izone]    = 0;
       boundaries->entin[izone]     = 0;
     }
-   if (cs_gui_strcmp(vars->model, "darcy_model")) {
+   if (cs_gui_strcmp(vars->model, "groundwater_model")) {
       boundaries->preout[izone]    = 0;
+      boundaries->groundwat[izone] = NULL;
     }
 
     if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
@@ -1289,8 +1337,8 @@ _init_boundaries(const cs_lnum_t  *nfabor,
       }
 
       /* Inlet: data for darcy */
-      if (cs_gui_strcmp(vars->model, "darcy_model"))
-        _boundary_darcy(izone);
+      if (cs_gui_strcmp(vars->model, "groundwater_model"))
+        _boundary_darcy(nature, label, izone);
 
       /* Inlet: TURBULENCE */
       choice = _boundary_choice("inlet", label, "turbulence", "choice");
@@ -1323,8 +1371,8 @@ _init_boundaries(const cs_lnum_t  *nfabor,
         _outlet_compressible(izone, isspcf, isopcf);
 
       /* Inlet: data for darcy */
-      if (cs_gui_strcmp(vars->model, "darcy_model"))
-        _boundary_darcy(izone);
+      if (cs_gui_strcmp(vars->model, "groundwater_model"))
+        _boundary_darcy(nature, label, izone);
     }
     else if (cs_gui_strcmp(nature, "free_inlet_outlet")) {
       const char *sym[] = {"K"};
@@ -1336,6 +1384,10 @@ _init_boundaries(const cs_lnum_t  *nfabor,
         bft_printf("Warning : free inlet outlet boundary conditions\n");
         bft_printf("          without external head loss definition\n");
       }
+    }
+    else if (cs_gui_strcmp(nature, "groundwater")) {
+      _boundary_darcy(nature, label, izone);
+      //TODO species
     }
 
     /* for each zone */
@@ -1533,9 +1585,6 @@ _init_boundaries(const cs_lnum_t  *nfabor,
  * integer          nfabor           <-- number of boundary faces
  * integer          idarcy           <-- darcy module activate or not
  * integer          darcy_gravity    <-- is gravity taken into account
- * double precision darcy_gravity_x  <-- X component for gravity vector
- * double precision darcy_gravity_y  <-- Y component for gravity vector
- * double precision darcy_gravity_z  <-- Z component for gravity vector
  * integer          nozppm           <-- max number of boundary conditions zone
  * integer          ncharm           <-- maximal number of coals
  * integer          ncharb           <-- number of simulated coals
@@ -1589,9 +1638,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *nfabor,
                                const int  *idarcy,
                                const int  *darcy_gravity,
-                               double     *darcy_gravity_x,
-                               double     *darcy_gravity_y,
-                               double     *darcy_gravity_z,
                                const int  *nozppm,
                                const int  *ncharm,
                                const int  *ncharb,
@@ -2246,7 +2292,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
 
       }
 
-      if (cs_gui_strcmp(vars->model, "darcy_model")) {
+      if (cs_gui_strcmp(vars->model, "groundwater_model")) {
         for (int ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac] -1;
           for (i = 0; i < 3; i++)
@@ -2259,20 +2305,49 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       BFT_FREE(choice_v);
       BFT_FREE(choice_d);
 
-      if (cs_gui_strcmp(vars->model, "darcy_model")) {
+      if (cs_gui_strcmp(vars->model, "groundwater_model")) {
         const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
         int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
-        for (int ifac = 0; ifac < faces; ifac++) {
-          ifbr = faces_list[ifac] -1;
-          icodcl[ivar1 * (*nfabor) + ifbr] = 1;
-          rcodcl[ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
-          if (*darcy_gravity == 1) {
-            rcodcl[ivar1 * (*nfabor) + ifbr] += cdgfbo[3 * ifbr    ] * *darcy_gravity_x +
-                                                cdgfbo[3 * ifbr + 1] * *darcy_gravity_y +
-                                                cdgfbo[3 * ifbr + 2] * *darcy_gravity_z;
+        char *choice_d = _boundary_choice(boundaries->nature[izone], boundaries->label[izone], "hydraulicHead", "choice");
+
+        if (cs_gui_strcmp(choice_d, "dirichlet"))
+        {
+          for (int ifac = 0; ifac < faces; ifac++) {
+            ifbr = faces_list[ifac] -1;
+            icodcl[ivar1 * (*nfabor) + ifbr] = 1;
+            rcodcl[ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
           }
         }
+        else if (cs_gui_strcmp(choice_d, "neumann"))
+        {
+          for (int ifac = 0; ifac < faces; ifac++) {
+            ifbr = faces_list[ifac] -1;
+            icodcl[ivar1 * (*nfabor) + ifbr] = 3;
+            rcodcl[2 * (*nfabor) * (*nvarcl) + ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
+          }
+        }
+        else if (cs_gui_strcmp(choice_d, "dirichlet_formula"))
+        {
+          for (int ifac = 0; ifac < faces; ifac++) {
+            ifbr = faces_list[ifac] -1;
+            icodcl[ivar1 * (*nfabor) + ifbr] = 1;
+
+            mei_tree_t *ev_formula = boundaries->groundwat[izone];
+            mei_tree_insert(ev_formula, "t", *ttcabs);
+            mei_tree_insert(ev_formula, "dt", *dtref);
+            mei_tree_insert(ev_formula, "iter", *ntcabs);
+            mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
+            mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
+            mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
+            mei_evaluate(ev_formula);
+            rcodcl[ivar1 * (*nfabor) + ifbr]
+                = mei_tree_lookup(ev_formula, 'H');
+
+          }
+        }
+        BFT_FREE(choice_d);
       }
+
       /* turbulent inlet, with formula */
       if (icalke[zone_nbr-1] == 0) {
         t0 = cs_timer_wtime();
@@ -2547,20 +2622,48 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           }
         }
       }
-      else if (cs_gui_strcmp(vars->model, "darcy_model")) {
+      else if (cs_gui_strcmp(vars->model, "groundwater_model")) {
         const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
         const int var_key_id = cs_field_key_id("variable_id");
         int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
-        for (int ifac = 0; ifac < faces; ifac++) {
-          ifbr = faces_list[ifac] -1;
-          icodcl[ivar1 * (*nfabor) + ifbr] = 1;
-          rcodcl[ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
-          if (*darcy_gravity == 1) {
-            rcodcl[ivar1 * (*nfabor) + ifbr] += cdgfbo[3 * ifbr    ] * *darcy_gravity_x +
-                                                cdgfbo[3 * ifbr + 1] * *darcy_gravity_y +
-                                                cdgfbo[3 * ifbr + 2] * *darcy_gravity_z;
+        char *choice_d = _boundary_choice(boundaries->nature[izone], boundaries->label[izone], "hydraulicHead", "choice");
+
+        if (cs_gui_strcmp(choice_d, "dirichlet"))
+        {
+          for (int ifac = 0; ifac < faces; ifac++) {
+            ifbr = faces_list[ifac] -1;
+            icodcl[ivar1 * (*nfabor) + ifbr] = 1;
+            rcodcl[ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
           }
         }
+        else if (cs_gui_strcmp(choice_d, "neumann"))
+        {
+          for (int ifac = 0; ifac < faces; ifac++) {
+            ifbr = faces_list[ifac] -1;
+            icodcl[ivar1 * (*nfabor) + ifbr] = 3;
+            rcodcl[2 * (*nfabor) * (*nvarcl) + ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
+          }
+        }
+        else if (cs_gui_strcmp(choice_d, "dirichlet_formula"))
+        {
+          for (int ifac = 0; ifac < faces; ifac++) {
+            ifbr = faces_list[ifac] -1;
+            icodcl[ivar1 * (*nfabor) + ifbr] = 1;
+
+            mei_tree_t *ev_formula = boundaries->groundwat[izone];
+            mei_tree_insert(ev_formula, "t", *ttcabs);
+            mei_tree_insert(ev_formula, "dt", *dtref);
+            mei_tree_insert(ev_formula, "iter", *ntcabs);
+            mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
+            mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
+            mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
+            mei_evaluate(ev_formula);
+            rcodcl[ivar1 * (*nfabor) + ifbr]
+                = mei_tree_lookup(ev_formula, 'H');
+
+          }
+        }
+        BFT_FREE(choice_d);
       }
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
@@ -2608,6 +2711,67 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
         izfppp[ifbr] = zone_nbr;
         itypfb[ifbr] = *ifresf;
       }
+    }
+    else if (cs_gui_strcmp(boundaries->nature[izone], "groundwater")) {
+      const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
+      const int var_key_id = cs_field_key_id("variable_id");
+      int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
+      char *choice_d = _boundary_choice(boundaries->nature[izone], boundaries->label[izone], "hydraulicHead", "choice");
+
+      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac];
+        izfppp[ifbr] = zone_nbr;
+        itypfb[ifbr] = *iindef;
+      }
+
+      // TODO set velocity to 0
+      const cs_field_t  *fp2 = cs_field_by_name_try("velocity");
+      int ivar2 = cs_field_get_key_int(fp2, var_key_id) -1;
+
+      for (int ifac = 0; ifac < faces; ifac++) {
+        ifbr = faces_list[ifac];
+        for (i = 0; i < 3; i++) {
+          icodcl[(ivar2 + i) * (*nfabor) + ifbr] = 3;
+          rcodcl[(ivar2 + i) * (*nfabor) + ifbr] = 0.;
+        }
+      }
+
+      if (cs_gui_strcmp(choice_d, "dirichlet"))
+      {
+        for (int ifac = 0; ifac < faces; ifac++) {
+          ifbr = faces_list[ifac];
+          icodcl[ivar1 * (*nfabor) + ifbr] = 1;
+          rcodcl[ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
+        }
+      }
+      else if (cs_gui_strcmp(choice_d, "neumann"))
+      {
+        for (int ifac = 0; ifac < faces; ifac++) {
+          ifbr = faces_list[ifac];
+          icodcl[ivar1 * (*nfabor) + ifbr] = 3;
+          rcodcl[2 * (*nfabor) * (*nvarcl) + ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
+        }
+      }
+      else if (cs_gui_strcmp(choice_d, "dirichlet_formula"))
+      {
+        for (int ifac = 0; ifac < faces; ifac++) {
+          ifbr = faces_list[ifac];
+          icodcl[ivar1 * (*nfabor) + ifbr] = 1;
+
+          mei_tree_t *ev_formula = boundaries->groundwat[izone];
+          mei_tree_insert(ev_formula, "t", *ttcabs);
+          mei_tree_insert(ev_formula, "dt", *dtref);
+          mei_tree_insert(ev_formula, "iter", *ntcabs);
+          mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
+          mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
+          mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
+          mei_evaluate(ev_formula);
+          rcodcl[ivar1 * (*nfabor) + ifbr]
+              = mei_tree_lookup(ev_formula, 'H');
+
+        }
+      }
+      BFT_FREE(choice_d);
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
       for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
@@ -2821,6 +2985,9 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
       inature = *ifresf;
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
+      inature = *iindef;
+    }
+    else if (cs_gui_strcmp(boundaries->nature[izone], "groundwater")) {
       inature = *iindef;
     }
     else
@@ -3160,8 +3327,12 @@ cs_gui_boundary_conditions_free_memory(const int  *ncharb)
       BFT_FREE(boundaries->entin);
       BFT_FREE(boundaries->preout);
     }
-    if (cs_gui_strcmp(vars->model, "darcy_model")) {
+    if (cs_gui_strcmp(vars->model, "groundwater_model")) {
       BFT_FREE(boundaries->preout);
+      for (izone=0 ; izone < zones ; izone++)
+        if (boundaries->groundwat[izone] != NULL)
+          mei_tree_destroy(boundaries->groundwat[izone]);
+      BFT_FREE(boundaries->groundwat);
     }
     if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
       BFT_FREE(boundaries->meteo);

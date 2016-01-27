@@ -84,12 +84,12 @@ class NumericalParamGlobalModel(Model):
         else:
             self.default['piso_sweep_number'] = 2
         del CompressibleModel
-        from code_saturne.Pages.DarcyModel import DarcyModel
-        if DarcyModel(self.case).getDarcyModel() != 'off':
+        from code_saturne.Pages.GroundwaterModel import GroundwaterModel
+        if GroundwaterModel(self.case).getGroundwaterModel() != 'off':
             self.default['gradient_reconstruction'] = 1
         else:
             self.default['gradient_reconstruction'] = 0
-        del DarcyModel
+        del GroundwaterModel
         return self.default
 
 

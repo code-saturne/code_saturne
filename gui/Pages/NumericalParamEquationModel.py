@@ -50,7 +50,7 @@ from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
 from code_saturne.Pages.TurbulenceModel import TurbulenceModel
 from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
-from code_saturne.Pages.DarcyModel import DarcyModel
+from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 
 #-------------------------------------------------------------------------------
 # NumericalParamEquat model class
@@ -69,8 +69,8 @@ class NumericalParamEquatModel(Model):
         self.node_varVP   = self.node_vitpre.xmlGetNodeList('variable')
         self.node_np      = self.case.xmlInitNode('numerical_parameters')
         self.node_anal    = self.case.xmlGetNode('analysis_control')
-        self.model = XMLmodel(self.case)
-        self.darcy = DarcyModel(self.case).getDarcyModel()
+        self.model        = XMLmodel(self.case)
+        self.darcy        = GroundwaterModel(self.case).getGroundwaterModel()
 
        #variables list
         self.var = []

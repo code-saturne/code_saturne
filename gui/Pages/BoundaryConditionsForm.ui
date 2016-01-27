@@ -129,7 +129,7 @@
        </widget>
       </item>
       <item row="13" column="0">
-       <widget class="BoundaryConditionsPressureView" name="pressureWidget" native="true"/>
+       <widget class="BoundaryConditionsHydraulicHeadView" name="hydraulicheadWidget" native="true"/>
       </item>
      </layout>
     </widget>
@@ -223,9 +223,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>BoundaryConditionsPressureView</class>
+   <class>BoundaryConditionsHydraulicHeadView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsPressureView.h</header>
+   <header location="global">BoundaryConditionsHydraulicHeadView.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

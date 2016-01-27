@@ -1553,8 +1553,8 @@ _van_genuchten_parameter_value(const char  *zone_id,
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3,
                         "thermophysical_models",
-                        "darcy",
-                        "darcy_law");
+                        "groundwater",
+                        "groundwater_law");
   cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
   cs_xpath_add_element(&path, "VanGenuchten_parameters");
   cs_xpath_add_element(&path, parameter);
@@ -2417,8 +2417,8 @@ void CS_PROCF (csivis, CSIVIS) (void)
           if (_scalar_properties_choice(i+1, &choice1))
             if (iscalt != i+1)
               cs_field_set_key_int(f, kivisl, choice1 - 1);
-          // for Darcy we impose variable property
-          if (cs_gui_strcmp(vars->model, "darcy_model"))
+          // for groundwater we impose variable property
+          if (cs_gui_strcmp(vars->model, "groundwater_model"))
             if (iscalt != i+1)
               cs_field_set_key_int(f, kivisl, 0);
         }
@@ -3031,7 +3031,7 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
      the solver, one sets the diffusivity, thus one need to multiply
      this coefficient by the density to remain coherent */
 
-  if (!cs_gui_strcmp(vars->model, "darcy_model")) {
+  if (!cs_gui_strcmp(vars->model, "groundwater_model")) {
     int n_fields = cs_field_n_fields();
     for (int f_id = 0; f_id < n_fields; f_id++) {
       const cs_field_t  *f = cs_field_by_id(f_id);
@@ -3463,13 +3463,15 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
  * subroutine uitssc (f_id, pvar, tsexp, tsimp)
  * *****************
  *
+ * integer          idarcy   <--  groundwater module activation
  * integer          f_id     <--  field id
  * double precision pvar     <--  scalar
  * double precision tsexp    -->  explicit source terms
  * double precision tsimp    -->  implicit source terms
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uitssc, UITSSC)(const int                  *f_id,
+void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
+                              const int                  *f_id,
                               const cs_real_t   *restrict pvar,
                               cs_real_t         *restrict tsexp,
                               cs_real_t         *restrict tsimp)
@@ -3527,33 +3529,65 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *f_id,
       BFT_FREE(path);
 
       if (formula != NULL) {
-        ev_formula = mei_tree_new(formula);
-        mei_tree_insert(ev_formula,"x",0.);
-        mei_tree_insert(ev_formula,"y",0.);
-        mei_tree_insert(ev_formula,"z",0.);
-        mei_tree_insert(ev_formula, f->name, 0.0);
-        /* try to build the interpreter */
-        if (mei_tree_builder(ev_formula))
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Error: can not interpret expression: %s\n %i"),
-                    ev_formula->string, mei_tree_builder(ev_formula));
+        if (*idarcy == 0) {
+          ev_formula = mei_tree_new(formula);
+          mei_tree_insert(ev_formula,"x",0.);
+          mei_tree_insert(ev_formula,"y",0.);
+          mei_tree_insert(ev_formula,"z",0.);
+          mei_tree_insert(ev_formula, f->name, 0.0);
+          /* try to build the interpreter */
+          if (mei_tree_builder(ev_formula))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not interpret expression: %s\n %i"),
+                      ev_formula->string, mei_tree_builder(ev_formula));
 
-        const char *symbols[] = {"S","dS"};
-        if (mei_tree_find_symbols(ev_formula, 2, symbols))
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Error: can not find the required symbol: %s\n"), "S or dS");
+          const char *symbols[] = {"S","dS"};
+          if (mei_tree_find_symbols(ev_formula, 2, symbols))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not find the required symbol: %s\n"), "S or dS");
 
-        for (icel = 0; icel < cells; icel++) {
-          iel = cells_list[icel];
-          mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
-          mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
-          mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-          mei_tree_insert(ev_formula, f->name, pvar[iel]);
-          mei_evaluate(ev_formula);
-          dS = mei_tree_lookup(ev_formula,"dS");
-          tsimp[iel] = cell_f_vol[iel]*dS;
-          tsexp[iel] = mei_tree_lookup(ev_formula,"S") - dS*pvar[iel];
-          tsexp[iel] *= cell_f_vol[iel];
+          for (icel = 0; icel < cells; icel++) {
+            iel = cells_list[icel];
+            mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
+            mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
+            mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
+            mei_tree_insert(ev_formula, f->name, pvar[iel]);
+            mei_evaluate(ev_formula);
+            dS = mei_tree_lookup(ev_formula,"dS");
+            tsimp[iel] = cell_f_vol[iel]*dS;
+            tsexp[iel] = mei_tree_lookup(ev_formula,"S") - dS*pvar[iel];
+            tsexp[iel] *= cell_f_vol[iel];
+          }
+        }
+        else {  // groundwater flow
+          ev_formula = mei_tree_new(formula);
+          mei_tree_insert(ev_formula,"x",0.);
+          mei_tree_insert(ev_formula,"y",0.);
+          mei_tree_insert(ev_formula,"z",0.);
+          mei_tree_insert(ev_formula,"t",0.);
+          /* try to build the interpreter */
+          if (mei_tree_builder(ev_formula))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not interpret expression: %s\n %i"),
+                      ev_formula->string, mei_tree_builder(ev_formula));
+
+          const char *symbols[] = {"Q","lambda"};
+          if (mei_tree_find_symbols(ev_formula, 2, symbols))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not find the required symbol: %s\n"), "Q or lambda");
+
+          for (icel = 0; icel < cells; icel++) {
+            iel = cells_list[icel];
+            mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
+            mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
+            mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
+            mei_tree_insert(ev_formula, "t", cs_glob_time_step->t_cur);
+            mei_evaluate(ev_formula);
+            dS = mei_tree_lookup(ev_formula,"lambda");
+            tsimp[iel] = cell_f_vol[iel]*dS;
+            tsexp[iel] = mei_tree_lookup(ev_formula,"Q");
+            tsexp[iel] *= cell_f_vol[iel];
+          }
         }
         mei_tree_destroy(ev_formula);
       }
@@ -3682,7 +3716,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
  * *****************
  *
  * integer          isuite   <--  restart indicator
- * integer          idarcy   <--  darcy module activation
+ * integer          idarcy   <--  groundwater module activation
  * integer          iccfth   -->  type of initialization (compressible model)
  *----------------------------------------------------------------------------*/
 
@@ -3793,7 +3827,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
         BFT_FREE(formula_uvw);
         BFT_FREE(path_velocity);
 
-        /* pressure initialization for darcy model */
+        /* pressure initialization for groundwater model */
         if (*idarcy > 0) {
           char *formula        = NULL;
           mei_tree_t *ev_formula       = NULL;
@@ -3809,14 +3843,14 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           cs_xpath_add_function_text(&path);
           formula = cs_gui_get_text_value(path);
           if (formula != NULL) {
-            ev_formula = _init_mei_tree(formula, "pressure");
+            ev_formula = _init_mei_tree(formula, "H");
             for (icel = 0; icel < cells; icel++) {
               iel = cells_list[icel];
               mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
               mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
               mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
               mei_evaluate(ev_formula);
-              c->val[iel] = mei_tree_lookup(ev_formula, "pressure");
+              c->val[iel] = mei_tree_lookup(ev_formula, "H");
             }
             mei_tree_destroy(ev_formula);
           }
@@ -5038,7 +5072,7 @@ void CS_PROCF (uiprof, UIPROF) (void)
 
 
 /*----------------------------------------------------------------------------
- * darcy model : read laws for capacity, saturation and permeability
+ * groundwater model : read laws for capacity, saturation and permeability
  *
  * Fortran Interface:
  *
@@ -5047,17 +5081,11 @@ void CS_PROCF (uiprof, UIPROF) (void)
  * integer         permeability    <--  permeability type
  * integer         diffusion       <--  diffusion type
  * integer         gravity         <--  check if gravity is taken into account
- * double          gravity_x       <--   x component for gravity vector
- * double          gravity_y       <--   y component for gravity vector
- * double          gravity_z       <--   z component for gravity vector
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
                                 const cs_int_t  *diffusion,
-                                const cs_int_t  *gravity,
-                                const double    *gravity_x,
-                                const double    *gravity_y,
-                                const double    *gravity_z)
+                                const cs_int_t  *gravity)
 {
   char *path = NULL;
   char *status = NULL;
@@ -5098,7 +5126,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
     path = cs_xpath_init_path();
     cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
     cs_xpath_add_element_num(&path, "zone", i);
-    cs_xpath_add_attribute(&path, "darcy_law");
+    cs_xpath_add_attribute(&path, "groundwater_law");
     status = cs_gui_get_attribute_value(path);
     BFT_FREE(path);
 
@@ -5110,8 +5138,8 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
                             "thermophysical_models",
-                            "darcy",
-                            "darcy_law");
+                            "groundwater",
+                            "groundwater_law");
       cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
       cs_xpath_add_attribute(&path, "model");
       char *mdl = cs_gui_get_attribute_value(path);
@@ -5119,9 +5147,9 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
 
       if (cs_gui_strcmp(mdl, "VanGenuchten")) {
         double alpha_param, ks_param, l_param, n_param, thetas_param, thetar_param;
+        double ks_xx, ks_yy, ks_zz, ks_xy, ks_xz, ks_yz;
         double molecular_diffusion;
         _van_genuchten_parameter_value(zone_id, "alpha",  &alpha_param);
-        _van_genuchten_parameter_value(zone_id, "ks",     &ks_param);
         _van_genuchten_parameter_value(zone_id, "l",      &l_param);
         _van_genuchten_parameter_value(zone_id, "n",      &n_param);
         _van_genuchten_parameter_value(zone_id, "thetar", &thetar_param);
@@ -5130,15 +5158,23 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
                                        &molecular_diffusion);
 
         double m_param = 1 - 1 / n_param;
+        if (*permeability == 0)
+          _van_genuchten_parameter_value(zone_id, "ks",     &ks_param);
+        else {
+          _van_genuchten_parameter_value(zone_id, "ks_xx",     &ks_xx);
+          _van_genuchten_parameter_value(zone_id, "ks_yy",     &ks_yy);
+          _van_genuchten_parameter_value(zone_id, "ks_zz",     &ks_zz);
+          _van_genuchten_parameter_value(zone_id, "ks_xy",     &ks_xy);
+          _van_genuchten_parameter_value(zone_id, "ks_xz",     &ks_xz);
+          _van_genuchten_parameter_value(zone_id, "ks_yz",     &ks_yz);
+        }
 
         for (cs_lnum_t icel = 0; icel < cells; icel++) {
           cs_lnum_t iel = cells_list[icel];
           double pres = pressure_field[iel];
 
           if (*gravity == 1)
-            pres -= (cell_cen[iel][0] * *gravity_x +
-                     cell_cen[iel][1] * *gravity_y +
-                     cell_cen[iel][2] * *gravity_z );
+            pres -= (cell_cen[iel][2]);
 
           if (pres >= 0) {
             capacity_field[iel] = 0.;
@@ -5147,20 +5183,20 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
             if (*permeability == 0)
               permeability_field[iel] = ks_param;
             else {
-              permeability_field_v[iel][0] = ks_param;
-              permeability_field_v[iel][1] = ks_param;
-              permeability_field_v[iel][2] = ks_param;
-              permeability_field_v[iel][3] = 0.;
-              permeability_field_v[iel][4] = 0.;
-              permeability_field_v[iel][5] = 0.;
+              permeability_field_v[iel][0] = ks_xx;
+              permeability_field_v[iel][1] = ks_yy;
+              permeability_field_v[iel][2] = ks_zz;
+              permeability_field_v[iel][3] = ks_xy;
+              permeability_field_v[iel][4] = ks_xz;
+              permeability_field_v[iel][5] = ks_yz;
             }
           }
           else {
 
             double tmp1 = pow(fabs(alpha_param * pres), n_param);
-            double tmp2 = 1 / (1 + tmp1);
+            double tmp2 = 1. / (1. + tmp1);
             double se_param = pow(tmp2, m_param);
-            double perm = ks_param * pow(se_param, l_param) *
+            double perm = pow(se_param, l_param) *
                           pow((1. - pow((1. - tmp2), m_param)), 2);
 
             capacity_field[iel] = -m_param * n_param * tmp1 *
@@ -5171,14 +5207,14 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
 
 
             if (*permeability == 0)
-              permeability_field[iel] = perm;
+              permeability_field[iel] = perm * ks_param;
             else {
-              permeability_field_v[iel][0] = perm;
-              permeability_field_v[iel][1] = perm;
-              permeability_field_v[iel][2] = perm;
-              permeability_field_v[iel][3] = 0.;
-              permeability_field_v[iel][4] = 0.;
-              permeability_field_v[iel][5] = 0.;
+              permeability_field_v[iel][0] = perm * ks_xx;
+              permeability_field_v[iel][1] = perm * ks_yy;
+              permeability_field_v[iel][2] = perm * ks_zz;
+              permeability_field_v[iel][3] = perm * ks_xy;
+              permeability_field_v[iel][4] = perm * ks_xz;
+              permeability_field_v[iel][5] = perm * ks_yz;
             }
           }
         }
@@ -5187,8 +5223,8 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
         path = cs_xpath_init_path();
         cs_xpath_add_elements(&path, 3,
                               "thermophysical_models",
-                              "darcy",
-                              "darcy_law");
+                              "groundwater",
+                              "groundwater_law");
         cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
         cs_xpath_add_element(&path, "formula");
         cs_xpath_add_function_text(&path);
@@ -5270,8 +5306,8 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
         path = cs_xpath_init_path();
         cs_xpath_add_elements(&path, 3,
                               "thermophysical_models",
-                              "darcy",
-                              "darcy_law");
+                              "groundwater",
+                              "groundwater_law");
         cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
         cs_xpath_add_element(&path, "diffusion_coefficient");
         cs_xpath_add_element(&path, "longitudinal");
@@ -5282,8 +5318,8 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
         path = cs_xpath_init_path();
         cs_xpath_add_elements(&path, 3,
                               "thermophysical_models",
-                              "darcy",
-                              "darcy_law");
+                              "groundwater",
+                              "groundwater_law");
         cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
         cs_xpath_add_element(&path, "diffusion_coefficient");
         cs_xpath_add_element(&path, "transverse");
@@ -5305,6 +5341,34 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
           visten_v[iel][3] =       diff * vel[iel][1] * vel[iel][0] / denom;
           visten_v[iel][4] =       diff * vel[iel][1] * vel[iel][2] / denom;
           visten_v[iel][5] =       diff * vel[iel][2] * vel[iel][0] / denom;
+        }
+      }
+      else {
+        /* TODO to control */
+        cs_field_t *fturbvisco
+          = cs_field_by_name_try("turbulent_viscosity");
+        double  *visten = fturbvisco->val;
+        const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(u)->val);
+
+        double diffus;
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 3,
+                              "thermophysical_models",
+                              "groundwater",
+                              "groundwater_law");
+        cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+        cs_xpath_add_element(&path, "diffusion_coefficient");
+        cs_xpath_add_element(&path, "isotropic");
+        cs_xpath_add_function_text(&path);
+        cs_gui_get_double(path, &diffus);
+        BFT_FREE(path);
+
+        for (cs_lnum_t icel = 0; icel < cells; icel++) {
+          cs_lnum_t iel = cells_list[icel];
+          double norm = sqrt(vel[iel][0] * vel[iel][0] +
+                             vel[iel][1] * vel[iel][1] +
+                             vel[iel][2] * vel[iel][2]);
+          visten[iel] = diffus * norm;
         }
       }
 
@@ -5338,8 +5402,8 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
           path = cs_xpath_init_path();
           cs_xpath_add_elements(&path, 3,
                                 "thermophysical_models",
-                                "darcy",
-                                "darcy_law");
+                                "groundwater",
+                                "groundwater_law");
           cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
           cs_xpath_add_element_num(&path, "variable", user_id +1);
           cs_xpath_add_element(&path, "property");

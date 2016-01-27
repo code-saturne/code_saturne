@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>432</width>
-    <height>528</height>
+    <width>436</width>
+    <height>568</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -400,9 +400,9 @@
     </widget>
    </item>
    <item row="7" column="0">
-    <widget class="QGroupBox" name="groupBoxDarcy">
+    <widget class="QGroupBox" name="groupBoxGroundwater">
      <property name="title">
-      <string>Darcy model</string>
+      <string>groundwater flows</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="0">
@@ -421,7 +421,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QComboBox" name="comboBoxDarcy">
+         <widget class="QComboBox" name="comboBoxGroundwater">
           <property name="minimumSize">
            <size>
             <width>400</width>

@@ -87,7 +87,7 @@ p0 = 0.d0
 
 ! Set permeability and dispersion to isotropic
 darcy_anisotropic_permeability = 0
-darcy_anisotropic_diffusion = 0
+darcy_anisotropic_dispersion = 0
 
 ! Steady flow
 darcy_unsteady = 0
@@ -97,20 +97,13 @@ darcy_convergence_criterion = 0
 
 ! No gravitational effects
 darcy_gravity = 0
-darcy_gravity_x = 0.d0
-darcy_gravity_y = 0.d0
-darcy_gravity_z = 0.d0
 
 if (iihmpr.eq.1) then
   call uidai1(ippmod(idarcy),                     &
               darcy_anisotropic_permeability,     &
-              darcy_anisotropic_diffusion,        &
+              darcy_anisotropic_dispersion,       &
               darcy_unsteady,                     &
-              darcy_convergence_criterion,        &
-              darcy_gravity,                      &
-              darcy_gravity_x,                    &
-              darcy_gravity_y,                    &
-              darcy_gravity_z)
+              darcy_gravity)
 endif
 !===============================================================================
 ! 2. Define user settings

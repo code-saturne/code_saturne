@@ -56,7 +56,7 @@ from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
 from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
 from code_saturne.Pages.ElectricalModel import ElectricalModel
 from code_saturne.Pages.GasCombustionModel import GasCombustionModel
-from code_saturne.Pages.DarcyModel import DarcyModel
+from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 from code_saturne.Pages.LagrangianModel import LagrangianModel
 from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
@@ -153,7 +153,7 @@ class XMLinit(Variables):
             GasCombustionModel(self.case).getGasCombustionModel()
             ElectricalModel(self.case).getElectricalModel()
             ThermalRadiationModel(self.case).getRadiativeModel()
-            DarcyModel(self.case).getDarcyModel()
+            grdflow = GroundwaterModel(self.case).getGroundwaterModel()
             AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel()
             LagrangianModel(self.case).getLagrangianStatus()
 
@@ -1086,7 +1086,6 @@ class XMLinit(Variables):
                         nn.xmlInitNode('postprocessing_recording')['status']= s
 
         # renames
-
         node = self.case.xmlGetNode('calculation_management')
         if node:
             cmd = node.xmlGetString('valgrind')
@@ -1095,6 +1094,52 @@ class XMLinit(Variables):
                 nn = node.xmlGetChildNode('valgrind')
                 if nn:
                     nn.xmlRemoveNode()
+
+        # darcy_model -> groundwater
+        oldnode = XMLThermoPhysicalModelNode.xmlGetNode('darcy_model')
+        if oldnode:
+            mdl = oldnode['model']
+            newnode = XMLThermoPhysicalModelNode.xmlInitNode('groundwater_model', 'model')
+            newnode['model'] = mdl
+            newnode.xmlChildsCopy(oldnode)
+            oldnode.xmlRemoveNode()
+
+        node = XMLThermoPhysicalModelNode.xmlGetNode('groundwater_model')
+        if node:
+            n = node.xmlGetNode('diffusion')
+            if n:
+                mdl = n['model']
+                node.xmlInitNode('dispersion')['model']= mdl
+                n.xmlRemoveNode()
+            n = node.xmlGetNode('criterion')
+            if n:
+                n.xmlRemoveNode()
+            n = node.xmlGetNode('gravity')
+            if n:
+                n.xmlRemoveNode()
+
+        XMLDarcy = XMLThermoPhysicalModelNode.xmlGetNode('darcy')
+        if XMLDarcy:
+            XMLGround = XMLThermoPhysicalModelNode.xmlInitNode('groundwater')
+            XMLGround.xmlChildsCopy(XMLDarcy)
+            XMLDarcy.xmlRemoveNode()
+
+            nodelist = XMLGround.xmlGetNodeList('darcy_law')
+            for oldnode in nodelist:
+                mdl = oldnode['model']
+                zid = oldnode['zone_id']
+                newnode = XMLGround.xmlInitNode('groundwater_law', 'model')
+                newnode['model'] = mdl
+                newnode['zone_id'] = zid
+                newnode.xmlChildsCopy(oldnode)
+                oldnode.xmlRemoveNode()
+
+        XMLSolutionDomainNode = self.case.xmlInitNode('solution_domain')
+        self.__XMLVolumicConditionsNode = XMLSolutionDomainNode.xmlInitNode('volumic_conditions')
+        for node in self.__XMLVolumicConditionsNode.xmlGetNodeList('zone'):
+            law = node['darcy_law']
+            if law:
+                node['groundwater_law'] = law
 
 
 #-------------------------------------------------------------------------------

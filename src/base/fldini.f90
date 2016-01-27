@@ -568,7 +568,7 @@ ityloc = 1 ! cells
 ilved = .true.
 
 if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1 &
-    .or.darcy_anisotropic_diffusion.eq.1) then
+    .or.darcy_anisotropic_dispersion.eq.1) then
   call field_create('anisotropic_turbulent_viscosity', itycat, ityloc, idim6, &
                     ilved, inoprv, ivsten)
   if (iturb.eq.32.and.iggafm.eq.1) then

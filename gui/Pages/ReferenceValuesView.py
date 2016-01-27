@@ -54,7 +54,7 @@ from code_saturne.Pages.GasCombustionModel import GasCombustionModel
 from code_saturne.Pages.CompressibleModel import CompressibleModel
 from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
-from code_saturne.Pages.DarcyModel import DarcyModel
+from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -164,7 +164,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
 
         # Initialization
 
-        darc = DarcyModel(self.case).getDarcyModel()
+        darc = GroundwaterModel(self.case).getGroundwaterModel()
         if darc != 'off':
             self.groupBoxPressure.hide()
         else:

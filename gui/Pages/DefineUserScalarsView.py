@@ -60,6 +60,7 @@ from code_saturne.Pages.DefineUserScalarsForm import Ui_DefineUserScalarsForm
 from code_saturne.Pages.LocalizationModel import LocalizationModel
 from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -149,13 +150,16 @@ class GGDHDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
 
-        self.modelCombo.addItem(self.tr("SGDH"), "SGDH")
-        if TurbulenceModel(self.case).getTurbulenceModel() == "Rij-epsilon" or \
-           TurbulenceModel(self.case).getTurbulenceModel() == "Rij-SSG" or \
-           TurbulenceModel(self.case).getTurbulenceModel() == "Rij-EBRSM":
-            self.modelCombo.addItem(self.tr("GGDH"), "GGDH")
-            self.modelCombo.addItem(self.tr("AFM"), "AFM")
-            self.modelCombo.addItem(self.tr("DFM"), "DFM")
+        if GroundwaterModel(self.case).getGroundwaterModel() == "groundwater":
+            self.modelCombo.addItem(self.tr("OFF"), "OFF")
+        else:
+            self.modelCombo.addItem(self.tr("SGDH"), "SGDH")
+            if TurbulenceModel(self.case).getTurbulenceModel() == "Rij-epsilon" or \
+               TurbulenceModel(self.case).getTurbulenceModel() == "Rij-SSG" or \
+               TurbulenceModel(self.case).getTurbulenceModel() == "Rij-EBRSM":
+                self.modelCombo.addItem(self.tr("GGDH"), "GGDH")
+                self.modelCombo.addItem(self.tr("AFM"), "AFM")
+                self.modelCombo.addItem(self.tr("DFM"), "DFM")
 
 
     def setModelData(self, comboBox, model, index):
@@ -581,6 +585,8 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         for name in self.mdl.getScalarsVarianceList():
             self.modelVariance.newItem(name)
 
+        if GroundwaterModel(self.case).getGroundwaterModel() != "off":
+            self.groupBox_3.hide()
         self.case.undoStartGlobal()
 
 

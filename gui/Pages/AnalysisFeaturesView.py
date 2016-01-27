@@ -62,7 +62,7 @@ from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
 from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
 from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
-from code_saturne.Pages.DarcyModel import DarcyModel
+from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -103,7 +103,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.std   = SteadyManagementModel(self.case)
         self.atmo  = AtmosphericFlowsModel(self.case)
         self.comp  = CompressibleModel(self.case)
-        self.darc  = DarcyModel(self.case)
+        self.darc  = GroundwaterModel(self.case)
 
         # Set models and number of elements for combo boxes
 
@@ -114,7 +114,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelPulverizedCoal     = QtPage.ComboModel(self.comboBoxPulverizedCoal,3,1)
         self.modelJouleEffect        = QtPage.ComboModel(self.comboBoxJouleEffect,3,1)
         self.modelCompressible       = QtPage.ComboModel(self.comboBoxCompressible,3,1)
-        self.modelDarcy              = QtPage.ComboModel(self.comboBoxDarcy,2,1)
+        self.modelGroundwater        = QtPage.ComboModel(self.comboBoxGroundwater,2,1)
 
         self.modelSteadyFlow.addItem(self.tr("steady flow"), "on")
         self.modelSteadyFlow.addItem(self.tr("unsteady flow"), "off")
@@ -146,8 +146,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelCompressible.addItem(self.tr("Perfect gas with variable gamma"), 'variable_gamma')
         #self.modelCompressible.addItem(self.tr("Van Der Waals"), 'van_der_waals')
 
-        self.modelDarcy.addItem(self.tr("off"), 'off')
-        self.modelDarcy.addItem(self.tr("Darcy model"), 'darcy')
+        self.modelGroundwater.addItem(self.tr("off"), 'off')
+        self.modelGroundwater.addItem(self.tr("Groundwater flows"), 'groundwater')
 
         # Connect signals to slots
 
@@ -158,7 +158,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.connect(self.comboBoxPulverizedCoal,     SIGNAL("activated(const QString&)"), self.slotPulverizedCoal)
         self.connect(self.comboBoxJouleEffect,        SIGNAL("activated(const QString&)"), self.slotJouleEffect)
         self.connect(self.comboBoxCompressible,       SIGNAL("activated(const QString&)"), self.slotCompressibleModel)
-        self.connect(self.comboBoxDarcy,              SIGNAL("activated(const QString&)"), self.slotDarcyModel)
+        self.connect(self.comboBoxGroundwater,        SIGNAL("activated(const QString&)"), self.slotGroundwaterModel)
 
         # Initialize Widgets
 
@@ -262,14 +262,14 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         joule = self.elect.getElectricalModel()
         atmospheric = self.atmo.getAtmosphericFlowsModel()
         compressible = self.comp.getCompressibleModel()
-        darcy = self.darc.getDarcyModel()
+        darcy = self.darc.getGroundwaterModel()
 
         self.modelGasCombustionModel.setItem(str_model=flame)
         self.modelPulverizedCoal.setItem(str_model=coal)
         self.modelJouleEffect.setItem(str_model=joule)
         self.modelAtmospheric.setItem(str_model=atmospheric)
         self.modelCompressible.setItem(str_model=compressible)
-        self.modelDarcy.setItem(str_model=darcy)
+        self.modelGroundwater.setItem(str_model=darcy)
 
         # If one model is turned on, the others are turned off
 
@@ -291,7 +291,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                 self.comboBoxCompressible.setEnabled(False)
 
             if darcy == 'off':
-                self.comboBoxDarcy.setEnabled(False)
+                self.comboBoxGroundwater.setEnabled(False)
 
         if darcy != 'off':
             self.comboBoxSteadyFlow.setEnabled(False)
@@ -316,7 +316,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxJouleEffect.setEnabled(True)
         self.comboBoxAtmospheric.setEnabled(True)
         self.comboBoxCompressible.setEnabled(True)
-        self.comboBoxDarcy.setEnabled(True)
+        self.comboBoxGroundwater.setEnabled(True)
 
         if self.turb.getTurbulenceModel() not in ('k-epsilon',
                                                   'k-epsilon-PL',
@@ -344,7 +344,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxJouleEffect.setEnabled(False)
         self.comboBoxAtmospheric.setEnabled(False)
         self.comboBoxCompressible.setEnabled(False)
-        self.comboBoxDarcy.setEnabled(False)
+        self.comboBoxGroundwater.setEnabled(False)
         # Update the Tree files and folders
 
         self.browser.configureTree(self.case)
@@ -363,7 +363,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                         'PulverizedCoal',
                         'JouleEffect',
                         'Compressible',
-                        'Darcy']:
+                        'Groundwater']:
             log.debug("__stringModelFromCombo() Incorrect name for QComboBox name")
             string = ""
         else:
@@ -532,23 +532,20 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
 
     @pyqtSignature("const QString&")
-    def slotDarcyModel(self, text):
+    def slotGroundwaterModel(self, text):
         """
-        Called when the comboBoxDarcy changed
+        Called when the comboBoxGroundwater changed
         """
         self.__activateComboBox()
 
-        model = self.__stringModelFromCombo('Darcy')
-        self.darc.setDarcyModel(model)
+        model = self.__stringModelFromCombo('Groundwater')
+        self.darc.setGroundwaterModel(model)
 
         if model != 'off':
             self.__disableComboBox()
-            self.comboBoxDarcy.setEnabled(True)
+            self.comboBoxGroundwater.setEnabled(True)
             self.comboBoxSteadyFlow.setEnabled(False)
             self.comboBoxLagrangian.setEnabled(False)
-            title = self.tr("Warning")
-            msg   = self.tr("Darcy module is under development")
-            QMessageBox.information(self, title, msg)
         else:
             self.comboBoxCompressible.setEnabled(True)
             self.comboBoxGasCombustionModel.setEnabled(True)

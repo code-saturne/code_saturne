@@ -944,9 +944,7 @@ do while (iterns.le.nterup)
 
     call uiclim &
   ( ntcabs, nfabor, ippmod(idarcy),                                &
-    darcy_gravity, darcy_gravity_x, darcy_gravity_y,               &
-    darcy_gravity_z,                                               &
-    nozppm, ncharm, ncharb, nclpch,                                &
+    darcy_gravity, nozppm, ncharm, ncharb, nclpch,                 &
     iindef, ientre, iesicf, isspcf, iephcf,                        &
     isopcf, iparoi, iparug, isymet, isolib, ifrent, ifresf,        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
@@ -1413,9 +1411,8 @@ do while (iterns.le.nterup)
       if (iihmpr.eq.1) then
         call uidapp                                                    &
          ( darcy_anisotropic_permeability,                             &
-           darcy_anisotropic_diffusion,                                &
-           darcy_gravity,                                              &
-           darcy_gravity_x, darcy_gravity_y, darcy_gravity_z)
+           darcy_anisotropic_dispersion,                               &
+           darcy_gravity)
       endif
 
       ! Darcy : update data specific to underground flow
@@ -1507,9 +1504,7 @@ if (ippmod(idarcy).eq.1) then
 
     call uiclim &
   ( ntcabs, nfabor, ippmod(idarcy),                                &
-    darcy_gravity, darcy_gravity_x, darcy_gravity_y,               &
-    darcy_gravity_z,                                               &
-    nozppm, ncharm, ncharb, nclpch,                                &
+    darcy_gravity, nozppm, ncharm, ncharb, nclpch,                 &
     iindef, ientre, iesicf, isspcf, iephcf,                        &
     isopcf, iparoi, iparug, isymet, isolib, ifrent, ifresf,        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
