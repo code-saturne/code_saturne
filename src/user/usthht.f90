@@ -73,9 +73,9 @@ double precision enthal, temper
 
 integer         it
 
-!     Pour le second exemple ci-dessous,
-!        donnee de NTAB > 1 valeurs (fictives) de H (=HT) tabulees
-!        en fonction de NTAB valeurs de T (=TH) (attention a l'unite K ou C)
+! For the second example below,
+!   input of ntab > 1 (fictitious) tabulated values of H (=HT)
+!   as a function of NTAB values of T (=TH) (be careful with unit K or C)
 
 integer          ntab
 parameter       (ntab=5)
@@ -88,14 +88,11 @@ data             th /   100.d0,   200.d0,   300.d0,               &
 !===============================================================================
 
 
-!     ATTENTION, CE SOUS-PROGRAMME EST APPELE DANS DES BOUCLES :
-!     =========                               ================
+!     WARNING, the subroutine is called in loops:
+!     =======                    ===============
 
-!       EVITER LES IMPRESSIONS
-!       ======
-
-!       EVITER LES OPERATIONS FAISANT APPEL AU PARALLELISME
-!       ======
+!       Avoid parallel (collective) operations
+!       =====
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 
@@ -104,40 +101,31 @@ call csexit (1)
 !==========
 
 !----
-! FORMATS
+! Formats
 !----
 
  9000 format(                                                           &
-'@                                                            ',/,&
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DU CALCUL DE LA TEMPERATURE      ',/,&
-'@    =========                                               ',/,&
-'@    LES TABLES ENTHALPIE TEMPERATURE NE SONT PAS DISPONIBLES',/,&
-'@                                                            ',/,&
-'@  Le sous-programme utilisateur usthht doit etre complete.  ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Le couplage avec SYRTHES necessite la donne d''une        ',/,&
-'@    temperature de paroi.                                   ',/,&
-'@  Le scalaire choisi pour le couplage SYRTHES est ici une   ',/,&
-'@    enthalpie.                                              ',/,&
-'@  La loi donnant la temperature en fonction de l''enthalpie ',/,&
-'@    doit etre fournie par l''utilisateur dans le            ',/,&
-'@    sous-programme usthht.                                  ',/ &
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in enthalpy-temperature conversion',/,     &
+'@    =======',/,                                                 &
+'@',/,                                                            &
+'@     The user subroutine ''usthht'' must be completed.',/,      &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! EXEMPLES
+! Examples
 !===============================================================================
 
-! Premier exemple, correspondant a H=CpT avec Cp = 4000
-! =====================================================
+! First example, corresponding to H = CpT with Cp = 4000
+! ======================================================
 
 ! --- Mode H -> T
 if (mode .eq.  1) then
@@ -152,37 +140,27 @@ endif
 return
 
 
-
-
-
-
-
-
-
-
-
-
-! Second exemple, correspondant a une interpolation simple
-! === a partir d'une tabulation H=f(T) entree en DATA ====
+! Second example, corresponding to a simple interpolatio
+! === based on a tabulation H = f(T) entered as DATA ====
 !     ================================================
 
 ! --- Mode H -> T
 if (mode .eq.  1) then
 
-!       Initialisation par defaut
+  ! Default initialization
   temper = 0.d0
 
-!       Si H plus petit que la plus petite enthalpie tabulee
-!         on limite arbitrairement T a la plus petite temperature
-  if(enthal.le.ht(1)) then
+  ! If H is smaller than the smallest tabulated value,
+  ! set T to smallest temperature.
+  if (enthal.le.ht(1)) then
     temper = th(1)
 
-!       Si H plus grand que la plus grande enthalpie tabulee
-!         on limite arbitrairement T a la plus grande temperature
-  elseif(enthal.ge.ht(ntab)) then
+  ! If H is larger than the largest tabulated value,
+  ! set T to largest temperature.
+  else if (enthal.ge.ht(ntab)) then
     temper = th(ntab)
 
-!       Sinon, on interpole lineairement
+  ! Otherwise, use piecewise linear interpolation
   else
     do it = 2, ntab
       if(enthal.le.ht(it)) then
@@ -195,20 +173,20 @@ if (mode .eq.  1) then
 ! --- Mode T -> H
 else
 
-!       Initialisation par defaut
+  ! Default initialization
   enthal = 0.d0
 
-!       Si T plus petit que la plus petite temperature tabulee
-!         on limite arbitrairement H a la plus petite enthalpie
-  if(temper.le.th(1)) then
+  ! If T is smaller than the smallest tabulated value,
+  ! set H to smallest enthalpy.
+  if (temper.le.th(1)) then
     enthal = ht(1)
 
-!       Si T plus grand que la plus grande temperature tabulee
-!         on limite arbitrairement H a la plus grande enthalpie
-  elseif(temper.ge.th(ntab)) then
+  ! If T is larger than the largest tabulated value,
+  ! set H to largest enthalpy.
+  else if (temper.ge.th(ntab)) then
     enthal = ht(ntab)
 
-!       Sinon, on interpole lineairement
+  ! Otherwise, use piecewise linear interpolation
   else
     do it = 2, ntab
       if(temper.le.th(it)) then
@@ -222,7 +200,7 @@ endif
 return
 
 !----
-! FIN
+! End
 !----
 
 end subroutine usthht
