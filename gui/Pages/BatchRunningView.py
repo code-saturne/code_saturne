@@ -322,6 +322,7 @@ class ListingDialogView(CommandMgrDialogView):
         self.n_lines = 0
 
         self.proc.start(self.cmd)
+        self.proc.waitForFinished(100)
 
 
     def slotReadFromStdout(self):
