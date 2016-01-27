@@ -392,16 +392,14 @@ endif
 ! --> Fractions massiques des especes globales au bord
 !     Uniquement si transport de H
 
-if ( iirayo.gt.0 ) then
-  do igg = 1, ngazg
-    call field_get_val_s(ibym(1), bsval)
-    ipcycg = ipproc(iym(igg))
-    do ifac = 1, nfabor
-      iel = ifabor(ifac)
-      bsval(ifac) = propce(iel,ipcycg)
-    enddo
+do igg = 1, ngazg
+  call field_get_val_s(ibym(1), bsval)
+  ipcycg = ipproc(iym(igg))
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    bsval(ifac) = propce(iel,ipcycg)
   enddo
-endif
+enddo
 
 ! Free memory
 deallocate(yfuegf, yoxygf, yprogf)

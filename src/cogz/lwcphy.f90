@@ -83,10 +83,12 @@ double precision propce(ncelet,*)
 
 integer          igg, iel
 integer          izone , ifac
+integer          ipcycg
 double precision coefg(ngazgm)
 double precision nbmol , temsmm
 double precision masmg
 double precision, dimension(:), pointer :: brom,  crom
+double precision, dimension(:), pointer :: bsval
 double precision, dimension(:), pointer :: cvar_yfm, cvar_yfp2m
 double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
 double precision, dimension(:), pointer :: cvar_coyfp
@@ -211,6 +213,16 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
     endif
   enddo
 endif
+
+! --> Fractions massiques des especes globales au bord
+do igg = 1, ngazg
+  call field_get_val_s(ibym(igg), bsval)
+  ipcycg = ipproc(iym(igg))
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    bsval(ifac) = propce(iel,ipcycg)
+  enddo
+enddo
 
 !----
 ! FIN

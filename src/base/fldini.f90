@@ -536,25 +536,20 @@ endif
 ! Combustion
 !-----------
 
-if (iirayo .gt. 0) then
+if (     ippmod(icod3p).ne.-1         &
+    .or. ippmod(iccoal).ne.-1         &
+    .or. ippmod(icoebu).ne.-1         &
+    .or. ippmod(icolwc).ne.-1 ) then
 
-  if (     ippmod(icod3p).eq.1                                    &
-      .or. ippmod(iccoal).ge.0                                    &
-      .or. (ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3)         &
-      .or. (     ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3     &
-            .or. ippmod(icolwc).eq.5)) then
+  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+  ityloc = 3 ! boundary faces
 
-    itycat = FIELD_INTENSIVE + FIELD_PROPERTY
-    ityloc = 3 ! boundary faces
-
-    call field_create('boundary_ym_fuel',  &
-                      itycat, ityloc, idim1, ilved, inoprv, ibym(1))
-    call field_create('boundary_ym_oxydizer',  &
-                      itycat, ityloc, idim1, ilved, inoprv, ibym(2))
-    call field_create('boundary_ym_product',  &
-                      itycat, ityloc, idim1, ilved, inoprv, ibym(3))
-  endif
-
+  call field_create('boundary_ym_fuel',  &
+                    itycat, ityloc, idim1, ilved, inoprv, ibym(1))
+  call field_create('boundary_ym_oxydizer',  &
+                    itycat, ityloc, idim1, ilved, inoprv, ibym(2))
+  call field_create('boundary_ym_product',  &
+                    itycat, ityloc, idim1, ilved, inoprv, ibym(3))
 endif
 
 !===============================================================================

@@ -73,7 +73,7 @@ double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          if, ih, iel, icg
+integer          if, ih, iel, igg
 integer          ifac, mode
 integer          ipcycg
 
@@ -133,8 +133,8 @@ if ( ipass.le.2 ) then
 ! ---> Calcul de TSTOEA
 
 ! ---- Initialisation
-  do icg = 1, ngazgm
-    coefg(icg) = zero
+  do igg = 1, ngazgm
+    coefg(igg) = zero
   enddo
 
   hstoea = fs(1)*hinfue + (1.d0-fs(1))*hinoxy
@@ -264,25 +264,18 @@ call d3pint &
 deallocate(indpdf)
 
 !===============================================================================
-! 4. CALCUL DE RHO ET DES FRACTIONS MASSIQUES DES ESPECES GLOBALES
-!    SUR LES BORDS
+! 4. CALCUL DE DES FRACTIONS MASSIQUES DES ESPECES GLOBALES SUR LES BORDS
 !===============================================================================
 
-! --> Masse volumique au bord
-
 ! --> Fractions massiques des especes globales au bord
-!     Uniquement si rayonnement
-
-if (iirayo.gt.0) then
-  do icg = 1, ngazg
-    call field_get_val_s(ibym(icg), bsval)
-    ipcycg = ipproc(iym(icg))
-    do ifac = 1, nfabor
-      iel = ifabor(ifac)
-      bsval(ifac) = propce(iel,ipcycg)
-    enddo
+do igg = 1, ngazg
+  call field_get_val_s(ibym(igg), bsval)
+  ipcycg = ipproc(iym(igg))
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    bsval(ifac) = propce(iel,ipcycg)
   enddo
-endif
+enddo
 
 
 ! Free memory
