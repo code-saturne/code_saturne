@@ -5,6 +5,8 @@ Trunk (unreleased)
 Changes
 -------
 
+ - Extend automatic postprocessing output to fields defined at vertices.
+
  - Add boundary mesh extrusion function callable from user subroutines.
    (in case of periodicity, rebuilding the periodicity in a later
    preprocessing stage may be necessary).

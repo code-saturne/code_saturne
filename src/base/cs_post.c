@@ -2654,19 +2654,11 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
  *
  * parameters:
  *   post_mesh   <-- pointer to post-processing mesh structure
- *   n_cells     <-- local number of cells of post_mesh
- *   n_b_faces   <-- local number of boundary faces of post_mesh
- *   cell_list   <-- list of cells (1 to n) of post-processing mesh
- *   b_face_list <-- list of boundary faces (1 to n) of post-processing mesh
  *   ts          <-- time step status structure, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
 _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
-                       cs_lnum_t              n_cells,
-                       cs_lnum_t              n_b_faces,
-                       const cs_lnum_t        cell_list[],
-                       const cs_lnum_t        b_face_list[],
                        const cs_time_step_t  *ts)
 {
   /* Output for cell and boundary meshes */
@@ -2674,53 +2666,86 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
 
   if (post_mesh->cat_id == -1 || post_mesh->cat_id == -2) {
 
-    int f_id;
     const char *name;
 
-    const int location_id = (post_mesh->cat_id == -1) ?
-      CS_MESH_LOCATION_CELLS : CS_MESH_LOCATION_BOUNDARY_FACES;
+    cs_mesh_location_type_t  mesh_cat_type = CS_MESH_LOCATION_NONE;
+
+    if (post_mesh->cat_id == -1)
+      mesh_cat_type = CS_MESH_LOCATION_CELLS;
+    else if (post_mesh->cat_id == -2)
+      mesh_cat_type = CS_MESH_LOCATION_BOUNDARY_FACES;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid type of mesh for the generic postprocessing of"
+                  " fields.\n"
+                  " Requested mesh is neither volumic nor surfacic."));
 
     const int n_fields = cs_field_n_fields();
     const int vis_key_id = cs_field_key_id("post_vis");
     const int label_key_id = cs_field_key_id("label");
-    const cs_real_t *cell_val = NULL, *b_face_val = NULL;
 
     /* Loop on fields */
 
-    for (f_id = 0; f_id < n_fields; f_id++) {
+    for (int f_id = 0; f_id < n_fields; f_id++) {
 
-      bool interleaved, use_parent;
+      bool  use_parent = true;
 
       const cs_field_t  *f = cs_field_by_id(f_id);
 
-      if (f->location_id != location_id)
-        continue;
+      const cs_mesh_location_type_t field_loc_type
+         = cs_mesh_location_get_type(f->location_id);
+
+      if (mesh_cat_type == CS_MESH_LOCATION_CELLS) {
+        if (field_loc_type != CS_MESH_LOCATION_CELLS &&
+            field_loc_type != CS_MESH_LOCATION_VERTICES)
+          continue;
+      }
+
+      else if (mesh_cat_type == CS_MESH_LOCATION_BOUNDARY_FACES) {
+        if (field_loc_type != CS_MESH_LOCATION_BOUNDARY_FACES &&
+            field_loc_type != CS_MESH_LOCATION_VERTICES)
+          continue;
+      }
 
       if (! (cs_field_get_key_int(f, vis_key_id) & CS_POST_ON_LOCATION))
         continue;
-
-      interleaved = f->interleaved;
-      use_parent = true;
-
-      if (location_id == CS_MESH_LOCATION_CELLS)
-        cell_val = f->val;
-      else /* if (location_id == CS_MESH_LOCATION_BOUNDARY_FACES) */
-        b_face_val = f->val;
 
       name = cs_field_get_key_str(f, label_key_id);
       if (name == NULL)
         name = f->name;
 
-      cs_post_write_var(post_mesh->id,
-                        name,
-                        f->dim,
-                        interleaved,
-                        use_parent,
-                        CS_POST_TYPE_cs_real_t,
-                        cell_val,
-                        NULL,
-                        b_face_val,
-                        ts);
+      if (   field_loc_type == CS_MESH_LOCATION_CELLS
+          || field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES) {
+
+        const cs_real_t *cell_val = NULL, *b_face_val = NULL;
+
+        if (field_loc_type == CS_MESH_LOCATION_CELLS)
+          cell_val = f->val;
+        else /* if (field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES) */
+          b_face_val = f->val;
+
+        cs_post_write_var(post_mesh->id,
+                          name,
+                          f->dim,
+                          f->interleaved,
+                          use_parent,
+                          CS_POST_TYPE_cs_real_t,
+                          cell_val,
+                          NULL,
+                          b_face_val,
+                          ts);
+
+      }
+
+      else if (field_loc_type == CS_MESH_LOCATION_VERTICES)
+        cs_post_write_vertex_var(post_mesh->id,
+                                 name,
+                                 f->dim,
+                                 f->interleaved,
+                                 use_parent,
+                                 CS_POST_TYPE_cs_real_t,
+                                 f->val,
+                                 ts);
 
     } /* End of loop on fields */
 
@@ -5355,10 +5380,7 @@ cs_post_write_vars(const cs_time_step_t  *ts)
       /* Standard post-processing */
 
       if (post_mesh->cat_id < 0)
-        _cs_post_output_fields(post_mesh,
-                               n_cells, n_b_faces,
-                               cell_list, b_face_list,
-                               ts);
+        _cs_post_output_fields(post_mesh, ts);
 
       /* Output of variables by registered function instances */
       /*------------------------------------------------------*/
