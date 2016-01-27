@@ -225,6 +225,7 @@ cs_f_elec_model_get_pointers(int     **ngazge,
                              double  **pot_diff,
                              double  **coejou,
                              double  **elcou,
+                             double  **couimp,
                              int     **irestrike,
                              int     **ntdcla,
                              double  **restrike_pointX,
@@ -2509,6 +2510,7 @@ cs_f_elec_model_get_pointers(int     **ngazge,
                              double  **pot_diff,
                              double  **coejou,
                              double  **elcou,
+                             double  **couimp,
                              int     **irestrike,
                              int     **ntdcla,
                              double  **restrike_pointX,
@@ -2520,6 +2522,7 @@ cs_f_elec_model_get_pointers(int     **ngazge,
   *pot_diff        = &(_elec_option->pot_diff);
   *coejou          = &(_elec_option->coejou);
   *elcou           = &(_elec_option->elcou);
+  *couimp          = &(_elec_option->couimp);
   *irestrike       = &(_elec_option->irestrike);
   *ntdcla          = &(_elec_option->ntdcla);
   *restrike_pointX = &(_elec_option->restrike_point[0]);

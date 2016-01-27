@@ -1034,6 +1034,9 @@ module optcal
   !> elcou : current
   real(c_double), pointer, save :: elcou
 
+  !> pot_diff : imposed value for current
+  real(c_double), pointer, save :: couimp
+
   !> irestrike : 0 : restrike mode off
   !>             1 : restrike mode on
   integer(c_int), pointer, save :: irestrike
@@ -1201,14 +1204,14 @@ module optcal
     ! global electric model structure
 
     subroutine cs_f_elec_model_get_pointers(ngazge, ielcor, pot_diff, coejou,  &
-                                            elcou, irestrike, ntdcla,          &
+                                            elcou, couimp, irestrike, ntdcla,  &
                                             restrike_pointX, restrike_pointY,  &
                                             restrike_pointZ) &
       bind(C, name='cs_f_elec_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: ngazge, ielcor, pot_diff, coejou, elcou
-      type(c_ptr), intent(out) :: irestrike, ntdcla, restrike_pointX
+      type(c_ptr), intent(out) :: couimp, irestrike, ntdcla, restrike_pointX
       type(c_ptr), intent(out) :: restrike_pointY, restrike_pointZ
     end subroutine cs_f_elec_model_get_pointers
 
@@ -1538,12 +1541,12 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ngazge, c_ielcor, c_pot_diff, c_coejou
+    type(c_ptr) :: c_ngazge, c_ielcor, c_pot_diff, c_coejou, c_couimp
     type(c_ptr) :: c_elcou, c_irestrike, c_ntdcla, c_restrike_pointX
     type(c_ptr) :: c_restrike_pointY, c_restrike_pointZ
 
     call cs_f_elec_model_get_pointers(c_ngazge, c_ielcor, c_pot_diff, c_coejou,  &
-                                      c_elcou, c_irestrike, c_ntdcla,            &
+                                      c_elcou, c_couimp, c_irestrike, c_ntdcla,  &
                                       c_restrike_pointX, c_restrike_pointY,      &
                                       c_restrike_pointZ)
 
@@ -1552,6 +1555,7 @@ contains
     call c_f_pointer(c_pot_diff,        pot_diff)
     call c_f_pointer(c_coejou,          coejou)
     call c_f_pointer(c_elcou,           elcou)
+    call c_f_pointer(c_couimp,          couimp)
     call c_f_pointer(c_irestrike,       irestrike)
     call c_f_pointer(c_ntdcla,          ntdcla)
     call c_f_pointer(c_restrike_pointX, restrike_pointX)
