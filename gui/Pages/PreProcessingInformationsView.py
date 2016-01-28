@@ -116,7 +116,7 @@ class Informations:
         if not lines:
             raise ValueError("Code_Saturne Preprocessor log language unknown.")
 
-        refList, groupList = self.getListes(lines)
+        refList, groupList = self.getLists(lines)
 
         self.refList = refList
         self.groupList = groupList
@@ -161,9 +161,10 @@ class Informations:
             return lines
 
 
-    def getListes(self, lines):
+    def getLists(self, lines):
         refList = []
         groupList = []
+        j = len(lines)
         for i in range(len(lines)):
             index = re.search(self.str1, lines[i])
             if index != None:
