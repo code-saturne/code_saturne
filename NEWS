@@ -5,6 +5,8 @@ Release 4.2.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix crash in some parallel CGNS output cases (bug #165).
+
 - GUI: fix error extracting group names from preprocessing log in some cases.
 
 - GUI: performance tuning should be available also in preprocessor mode.
