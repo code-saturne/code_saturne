@@ -603,12 +603,13 @@ cs_sles_default_error(cs_sles_t                    *sles,
 {
   bool alternative = false;
 
-  if (state >= CS_SLES_BREAKDOWN)
+  if (state == CS_SLES_BREAKDOWN)
     return alternative;
 
   /* Case for iterative solver:
-     if multigrid is not adapted to the current
-     system, revert to Jacobi preconditioner */
+     if multigrid is not adapted to the current system,
+     revert to Jacobi preconditioner
+     (tested for if CS_SLES_DIVERGED or CS_SLES_MAX_ITERATION) */
 
   if (strcmp(cs_sles_get_type(sles), "cs_sles_it_t") == 0) {
 
