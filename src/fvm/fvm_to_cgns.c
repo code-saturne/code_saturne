@@ -955,7 +955,7 @@ _field_output(void           *context,
 
         int retval = CG_OK;
         cgsize_t partial_write_idx_end
-          = partial_write_idx_start + block_end - block_start - 1;
+          = partial_write_idx_start + range[1] - range[0] - 1;
 
         assert(block_end > block_start);
 
