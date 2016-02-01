@@ -1114,7 +1114,7 @@ if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
 
   if (iturbo.eq.1.or.iturbo.eq.2) call dmtmps(t3)
 
-  !$omp parallel do private(iel1, iel2, dtfac, rhofac)
+  !$omp parallel do private(iel1, iel2, rhofac)
   do ifac = 1, nfac
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
@@ -1130,7 +1130,7 @@ if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
                         + surfac(3,ifac)*(vr1(3) + vr2(3)) )
     endif
   enddo
-  !$omp parallel do private(iel, dtfac, rhofac) if(nfabor > thr_n_min)
+  !$omp parallel do private(iel, rhofac) if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     if (irotce(iel).ne.0) then
@@ -1190,7 +1190,7 @@ if (icavit.ge.0) then
     call field_get_val_prev_s(icrom, croma)
 
     call cavitation_print_mass_budget &
-   ( crom, croma, dt, imasfl, bmasfl )
+   ( crom, croma, brom, dt, imasfl, bmasfl )
 
   endif
 
