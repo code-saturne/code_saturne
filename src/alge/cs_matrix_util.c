@@ -364,6 +364,73 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
+ * Measure Diagonal dominance of native block matrix.
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *   dd     --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_bb_diag_dom_native(const cs_matrix_t  *matrix,
+                    cs_real_t          *restrict dd)
+{
+  cs_lnum_t  ii, jj, kk, ll, face_id;
+
+  const cs_matrix_struct_native_t  *ms = matrix->structure;
+  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+
+  const cs_real_t  *restrict xa = mc->xa;
+  const int *db_size = matrix->db_size;
+  const int *eb_size = matrix->eb_size;
+
+  /* block diagonal contribution */
+
+  _b_diag_dom_diag_contrib(mc->da, dd, ms->n_rows, ms->n_cols_ext, db_size);
+
+  /* non-diagonal terms */
+
+  if (mc->xa != NULL) {
+
+    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
+
+    if (mc->symmetric) {
+
+      for (face_id = 0; face_id < ms->n_edges; face_id++) {
+        ii = face_cel_p[face_id][0];
+        jj = face_cel_p[face_id][1];
+        for (kk = 0; kk < eb_size[0]; kk++) {
+          for (ll = 0; ll < eb_size[0]; ll++) {
+            cs_lnum_t si = face_id*eb_size[3] + kk*eb_size[2] + ll;
+            dd[ii*db_size[1] + kk] -= fabs(xa[si]);
+            dd[jj*db_size[1] + kk] -= fabs(xa[si]);
+          }
+        }
+      }
+    }
+    else {
+
+      for (face_id = 0; face_id < ms->n_edges; face_id++) {
+        ii = face_cel_p[face_id][0];
+        jj = face_cel_p[face_id][1];
+        for (kk = 0; kk < db_size[0]; kk++) {
+          for (ll = 0; ll < eb_size[0]; ll++) {
+            cs_lnum_t si0 = 2*face_id*eb_size[3] + kk*eb_size[2] + ll;
+            cs_lnum_t si1 = (2*face_id+1)*eb_size[3] + kk*eb_size[2] + ll;
+            dd[ii*db_size[1] + kk] -= fabs(xa[si0]);
+            dd[jj*db_size[1] + kk] -= fabs(xa[si1]);
+          }
+        }
+      }
+
+    }
+
+  }
+
+  _b_diag_dom_diag_normalize(mc->da, dd, ms->n_rows, db_size);
+}
+
+/*----------------------------------------------------------------------------
  * Measure Diagonal dominance of CSR matrix.
  *
  * parameters:
@@ -1846,8 +1913,10 @@ cs_matrix_diag_dominance(const cs_matrix_t  *matrix,
   case CS_MATRIX_NATIVE:
     if (matrix->db_size[3] == 1)
       _diag_dom_native(matrix, dd);
-    else
+    else if (matrix->eb_size[3] == 1)
       _b_diag_dom_native(matrix, dd);
+    else
+      _bb_diag_dom_native(matrix, dd);
     break;
   case CS_MATRIX_CSR:
     assert(matrix->db_size[3] == 1);
