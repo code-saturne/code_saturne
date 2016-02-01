@@ -144,6 +144,26 @@ cs_math_3_dot_product(const cs_real_t u[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the cross product of two vectors of 3 real values.
+ *
+ * \param[in]     u             vector of 3 real values
+ * \param[in]     v             vector of 3 real values
+ * \param[out]    uv            vector of 3 real values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_3_cross_product(const cs_real_t u[3],
+                        const cs_real_t v[3],
+                        cs_real_t       uv[restrict 3])
+{
+  uv[0] = u[1]*v[2] - u[2]*v[1];
+  uv[1] = u[2]*v[0] - u[0]*v[2];
+  uv[2] = u[0]*v[1] - u[1]*v[0];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the square norm of a vector of 3 real values.
  *
  * \param[in]     v             vector of 3 real values

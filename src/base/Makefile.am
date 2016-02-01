@@ -115,6 +115,7 @@ cs_physical_constants.h \
 cs_physical_properties.h \
 cs_post.h \
 cs_post_default.h \
+cs_post_util.h \
 cs_preprocess.h \
 cs_preprocessor_data.h \
 cs_prototypes.h \

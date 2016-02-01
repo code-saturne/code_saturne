@@ -5,6 +5,8 @@ Trunk (unreleased)
 Changes
 -------
 
+ - Added some turbomachinery post-processing utility functions.
+
  - Allow coupling of radiative transfer with 1d wall thermal module.
 
  - Extend automatic postprocessing output to fields defined at vertices.
