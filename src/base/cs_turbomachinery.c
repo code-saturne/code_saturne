@@ -605,7 +605,6 @@ _check_geometry(cs_mesh_t  *mesh)
          "rotor/stator sections.\n"
          "These sections must be initially disjoint to rotate freely."),
        __func__);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -636,6 +635,16 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
     cs_selector_get_cell_list(tbm->rotor_cells_c[r_id],
                               &_n_cells,
                               _cell_list);
+    cs_gnum_t _n_g_cells = _n_cells;
+    cs_parall_counter(&_n_g_cells, 1);
+    if (_n_g_cells == 0)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("%sd: The rotor %d with cell selection criteria\n"
+           "  \"%s\"\n"
+           "does not contain any cell.\n"
+           "This rotor should be removed or its selection criteria modified."),
+         __func__, r_id + 1, tbm->rotor_cells_c[r_id]);
     for (cs_lnum_t i = 0; i < _n_cells; i++)
       tbm->cell_rotor_num[_cell_list[i]] = r_id + 1;
   }
