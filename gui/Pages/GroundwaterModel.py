@@ -62,6 +62,7 @@ class GroundwaterModel(Variables, Model):
 
         self.node_models  = self.case.xmlGetNode('thermophysical_models')
         self.node_darcy = self.node_models.xmlInitChildNode('groundwater_model', 'model')
+        print self.node_darcy
 
 
     def __defaultValues(self):
@@ -267,7 +268,7 @@ class GroundwaterModel(Variables, Model):
         """
         Return if gravity is taken into account
         """
-        node = self.node_darcy.xmlInitNode('gravity', 'status')
+        node = self.node_darcy.xmlInitChildNode('gravity', 'status')
         status = node['status']
         if not status:
             v = self.__defaultValues()['gravity']
@@ -281,6 +282,6 @@ class GroundwaterModel(Variables, Model):
         Put if gravity is taken into account
         """
         self.isOnOff(v)
-        node = self.node_darcy.xmlInitNode('gravity', 'status')
+        node = self.node_darcy.xmlInitChildNode('gravity', 'status')
         node['status'] = v
 

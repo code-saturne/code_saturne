@@ -1114,9 +1114,6 @@ class XMLinit(Variables):
             n = node.xmlGetNode('criterion')
             if n:
                 n.xmlRemoveNode()
-            n = node.xmlGetNode('gravity')
-            if n:
-                n.xmlRemoveNode()
 
         XMLDarcy = XMLThermoPhysicalModelNode.xmlGetNode('darcy')
         if XMLDarcy:
