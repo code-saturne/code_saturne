@@ -20,18 +20,23 @@
 
 !-------------------------------------------------------------------------------
 
-! Module for turbomachinery capabilities
+!> \file turbomachinery.f90
+!> \brief Module for turbomachinery computations
 
 module turbomachinery
 
   !=============================================================================
+  !> \defgroup at_turbomachinery Module for turbomachinery computations
 
-  ! Type of turbomachinery computation :
-  !   none (0), frozen rotor (1), transient (2)
+  !> \addtogroup at_turbomachinery
+  !> \{
+
+  !> Type of turbomachinery computation :
+  !>   none (0), frozen rotor (1), transient (2)
 
   integer, save :: iturbo
 
-  ! Rotor number of the cells
+  !> Rotor identifier list (1:ncel)
 
   integer, dimension(:), pointer :: irotce
 
@@ -42,6 +47,8 @@ module turbomachinery
   ! Arrays associated to wall BC update
 
   double precision, dimension(:), allocatable :: coftur, hfltur
+
+  !> \}
 
   !=============================================================================
 

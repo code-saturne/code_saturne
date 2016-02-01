@@ -103,6 +103,7 @@ cs_user_extra_operations-parallel_operations.f90 \
 cs_user_extra_operations-richards_flux.f90 \
 cs_user_extra_operations-scalar_balance_by_zone.f90 \
 cs_user_extra_operations-scalar_balance.c \
+cs_user_extra_operations-turbomachinery.c \
 cs_user_head_losses.f90 \
 cs_user_initialization-atmospheric.f90 \
 cs_user_initialization-base.f90 \
@@ -129,6 +130,7 @@ cs_user_parameters-fans.c \
 cs_user_parameters-linear_solvers.c \
 cs_user_parameters-output.f90 \
 cs_user_parameters-richards.f90 \
+cs_user_parameters-rotation.f90 \
 cs_user_parameters-time_moments.c \
 cs_user_physical_properties-coal_drift.f90 \
 cs_user_physical_properties-compressible_flow.f90 \
@@ -141,6 +143,7 @@ cs_user_radiative_transfer_bcs.f90 \
 cs_user_source_terms.f90 \
 cs_user_source_terms-richards_decay.f90 \
 cs_user_source_terms-scalar_in_a_channel.f90 \
+cs_user_turbomachinery.c \
 usatch_4spe5reac.f90
 
 noinst_LTLIBRARIES = libcsexample.la

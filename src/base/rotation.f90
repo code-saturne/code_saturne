@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file rotation.f90
-!> \brief Module for physical constants
+!> \brief Module for rotating zones (rotors)
 
 module rotation
 
@@ -34,24 +34,33 @@ module rotation
   implicit none
 
   !=============================================================================
+  !> \defgroup at_rotation Module for rotation zones (rotors)
 
-  ! Maximum number of rotors
+  !> \addtogroup at_rotation
+  !> \{
+
+  !> Maximum number of rotors
 
   integer :: nrotmx
 
   parameter(nrotmx=20)
 
-  ! Rotation axis
+  !> Rotation axis
 
   double precision, save :: rotax(3, nrotmx)
 
-  ! Rotation origin coordinates
+  !> Rotation origin coordinates
 
   double precision, save :: rotcen(3, nrotmx)
+
+  !> \}
 
   !=============================================================================
 
   interface
+
+    !> \addtogroup at_rotation
+    !> \{
 
     !---------------------------------------------------------------------------
 
@@ -107,12 +116,16 @@ module rotation
 
     !---------------------------------------------------------------------------
 
-    !> \brief Compute rotation velocity relative to fixed coordinates
-    !>        at a given point.
+    !> \brief Compute rotation velocity at given point coordinates
+    !> \f[
+    !> \vect{v}=\vect{\Omega}\wedge\vect{x},\quad
+    !> \text{with }\vect{\Omega}\textnormal{ the rotation vector and }
+    !> \vect{x}\text{ the point location.}
+    !> \f]
 
     !> \param[in]    r_num   rotation number (0 for none, > 0 otherwise)
     !> \param[in]    coords  coordinates at point
-    !> \param[out]   vr      relative velocity
+    !> \param[out]   vr      rotation velocity
 
     subroutine rotation_velocity(r_num, coords, vr)  &
       bind(C, name='cs_f_rotation_velocity')
@@ -125,7 +138,13 @@ module rotation
 
     !---------------------------------------------------------------------------
 
-    !> \brief Add a Coriolis term to a vector
+    !> \brief Add a Coriolis term to a local vector
+    !> \f[
+    !> \vect{w}=\vect{w}+C\vect{\Omega}\wedge\vect{u},\quad
+    !> \text{with }C\text{ a multiplicative coefficient, }
+    !> \vect{\Omega}\text{ the rotation vector and }
+    !> \vect{u}\text{ the velocity.}
+    !> \f]
 
     !> \param[in]       r_num  rotation number (0 for none, > 0 otherwise)
     !> \param[in]       c      multiplicative coefficient
@@ -145,6 +164,12 @@ module rotation
     !---------------------------------------------------------------------------
 
     !> \brief Compute a Coriolis term for a vector
+    !> \f[
+    !> \vect{w}=C\vect{\Omega}\wedge\vect{u},\quad
+    !> \text{with }C\text{ a multiplicative coefficient, }
+    !> \vect{\Omega}\text{ the rotation vector and }
+    !> \vect{u}\text{ the velocity.}
+    !> \f]
 
     !> \param[in]   r_num  rotation number (0 for none, > 0 otherwise)
     !> \param[in]   c      multiplicative coefficient
@@ -164,6 +189,11 @@ module rotation
     !---------------------------------------------------------------------------
 
     !> \brief Add the dual tensor of a rotation vector to a tensor
+    !> \f[
+    !> T_{ij}=T_{ij}+\epsilon_{imj}\Omega_m,\quad
+    !> \text{for }\Omega_m\text{ the rotation vector components and }
+    !> \epsilon_{imj}\text{ the permutation tensor components.}
+    !> \f]
 
     !> \param[in]      r_num  rotation number (0 for none, > 0 otherwise)
     !> \param[in]      c      multiplicative coefficient
@@ -181,10 +211,15 @@ module rotation
     !---------------------------------------------------------------------------
 
     !> \brief Compute the dual tensor of a rotation vector
+    !> \f[
+    !> T_{ij}=\epsilon_{imj}\Omega_m,\quad
+    !> \text{for }\Omega_m\text{ the rotation vector components and }
+    !> \epsilon_{imj}\text{ the permutation tensor components.}
+    !> \f]
 
     !> \param[in]   r_num  rotation number (0 for none, > 0 otherwise)
-    !> \param[in]   c       multiplicative coefficient
-    !> \param[out]  tr      dual tensor of rotation
+    !> \param[in]   c      multiplicative coefficient
+    !> \param[out]  tr     dual tensor of rotation
 
     subroutine coriolis_t(r_num, c, tr) &
       bind(C, name='cs_f_rotation_coriolis_t')
@@ -194,6 +229,8 @@ module rotation
       real(c_double), value :: c
       real(c_double), dimension(3,3), intent(inout) :: tr
     end subroutine coriolis_t
+
+    !> \}
 
     !---------------------------------------------------------------------------
 

@@ -35,6 +35,7 @@ Here is a list of user examples. Thorougly documented snippets are provided.
    - \subpage les_inflow "Inflow Boundary conditions for LES"
    - \subpage f_parameters
    - \subpage parameters
+   - \subpage turbomachinery
    - \subpage cavit
    - \subpage physical_properties
    - \subpage drift_coal_scalars

@@ -1038,7 +1038,7 @@ if (.false.) then
 
 endif
 
-! --- rotation of the reference frame (omega in s-1)
+! --- rotation of the reference frame (omega in rad/s)
 
 !       If the rotation is not nul, then
 !          icorio = 0: rotation is taken into account by rotating the mesh
