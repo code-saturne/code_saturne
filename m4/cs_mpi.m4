@@ -32,6 +32,9 @@ cs_have_mpi=no
 cs_have_mpi_header=no
 cs_have_mpi_io=no
 cs_have_mpi_one_sided=no
+cs_have_mpi_neighbor_coll=no
+cs_have_mpi_ibarrier=no
+
 mpi_prefix=""
 
 AC_ARG_ENABLE(mpi-io,
@@ -428,6 +431,15 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                     cs_have_mpi_neighbor_coll=yes],
                    [cs_have_mpi_neighbor_coll=no])
       AC_MSG_RESULT($cs_have_mpi_neighbor_coll)
+    AC_MSG_CHECKING([for MPI nonblocking barrier])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                   [[ MPI_Request r;
+                      MPI_Comm comm;
+                      MPI_Ibarrier(comm, &r); ]])],
+                   [AC_DEFINE([HAVE_MPI_IBARRIER], 1, [MPI nonblocking barrier])
+                    cs_have_mpi_ibarrier=yes],
+                   [cs_have_mpi_ibarrier=no])
+      AC_MSG_RESULT($cs_have_mpi_ibarrier)
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"

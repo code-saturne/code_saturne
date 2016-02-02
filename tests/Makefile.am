@@ -113,6 +113,7 @@ cs_file_test \
 cs_interface_test \
 cs_map_test \
 cs_moment_test \
+cs_rank_neighbors_test \
 fvm_selector_test \
 fvm_selector_postfix_test \
 cs_sizes_test
@@ -158,6 +159,10 @@ cs_map_test_LDADD    = $(LDADD_CS_TESTS)
 cs_moment_test_SOURCES  = cs_moment_test.c
 cs_moment_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_moment_test_LDADD    = $(LDADD_CS_TESTS)
+
+cs_rank_neighbors_test_SOURCES  = cs_rank_neighbors_test.c
+cs_rank_neighbors_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+cs_rank_neighbors_test_LDADD    = $(LDADD_CS_TESTS)
 
 fvm_selector_test_SOURCES  = fvm_selector_test.c
 fvm_selector_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)

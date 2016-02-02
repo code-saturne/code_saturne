@@ -105,6 +105,7 @@ cs_log_setup.h \
 cs_map.h \
 cs_math.h \
 cs_measures_util.h \
+cs_rank_neighbors.h \
 cs_numbering.h \
 cs_opts.h \
 cs_order.h \
@@ -172,6 +173,7 @@ cs_interface.c \
 cs_io.c \
 cs_log.c \
 cs_math.c \
+cs_rank_neighbors.c \
 cs_map.c \
 cs_order.c \
 cs_part_to_block.c \

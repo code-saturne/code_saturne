@@ -6298,6 +6298,12 @@ msgstr ""
 "Section de type <%s> sur <%s>\n"
 "inattendue."
 
+#, c-format
+msgid ""
+"Warning: The %s (%s)\n"
+"         exchange type is not available with the current MPI libary.\n"
+msgstr ""
+
 msgid "sub-partitioning with LibScotch"
 msgstr "sous-partitionnement avec LibScotch"
 
