@@ -62,7 +62,6 @@ class GroundwaterModel(Variables, Model):
 
         self.node_models  = self.case.xmlGetNode('thermophysical_models')
         self.node_darcy = self.node_models.xmlInitChildNode('groundwater_model', 'model')
-        print self.node_darcy
 
 
     def __defaultValues(self):
