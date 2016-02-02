@@ -219,9 +219,12 @@ ilved = .true.
 ! In case of ALE or boundary efforts postprocessing, create appropriate field
 
 if (iale.eq.1 .or. ipstdv(ipstfo).ne.0) then
+  itycat = FIELD_EXTENSIVE + FIELD_POSTPROCESS
   call field_create('boundary_forces', itycat, ityloc, idim3, ilved, inoprv, &
                     iforbr)
 endif
+
+itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 
 ! In case of condensation or y+ postprocessing, create appropriate field
 
