@@ -62,6 +62,21 @@ cs_balance_by_zone(const int  bc_type[],
                    const char *scalar_name);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Computes one term of the head loss balance (pressure drop) on a
+ * volumic zone defined by the criterium also given as argument.
+ * The different contributions are printed in the listing.
+ *
+ * \param[in]     bc_type             boundary condition type
+ * \param[in]     selection_crit      zone selection criterium
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_drop_by_zone(const int  bc_type[],
+                         const char *selection_crit);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

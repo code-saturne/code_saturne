@@ -1203,6 +1203,18 @@ module cs_c_bindings
     end subroutine cs_balance_by_zone
 
     !---------------------------------------------------------------------------
+    ! Interface to C function for balance computation
+
+    subroutine cs_pressure_drop_by_zone(itypfb, selection_crit)  &
+      bind(C, name='cs_pressure_drop_by_zone')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int), dimension(*), intent(in) :: itypfb
+      character(kind=c_char, len=1), dimension(*), intent(in) :: selection_crit
+    end subroutine cs_pressure_drop_by_zone
+
+
+    !---------------------------------------------------------------------------
 
     ! Interface to C user function for extra operations
 
@@ -1288,6 +1300,34 @@ contains
     return
 
   end subroutine balance_by_zone
+
+  !=============================================================================
+
+  !> \brief Compute pressure drop for a given zone
+
+  !> param[in]       itypfb     array of boundary faces type
+  !> param[in]       sel_crit   selection criterium of a volumic zone
+
+  subroutine pressure_drop_by_zone(itypfb, sel_crit)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer(kind=c_int), dimension(*), intent(in) :: itypfb
+    character(len=*), intent(in)             :: sel_crit
+
+    ! Local variables
+
+    character(len=len_trim(sel_crit)+1, kind=c_char) :: c_sel_crit
+
+    c_sel_crit = trim(sel_crit)//c_null_char
+
+    call cs_pressure_drop_by_zone(itypfb, c_sel_crit)
+
+    return
+
+  end subroutine pressure_drop_by_zone
 
   !=============================================================================
 
