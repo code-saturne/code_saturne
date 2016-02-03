@@ -462,11 +462,17 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         """
         """
         exp = self.mdl.getFormula(self.label_select)
-        exa = """#example: a line segment
+        exa = """#example: a line segment between (x0, y0, z0) and (x1, y1, z1)
 #(s, the parameter is always between 0 and 1)
-x = 2*s + 3.2;
-y = 2;
-z = -0.5*s+5;"""
+x0 = 3.2;
+x1 = 2;
+y0 = 2;
+y1 = 2;
+z0 = 5;
+z1 = -0.5;
+x = x1*s + x0*(1.-s);
+y = y1*s + y0*(1.-s);
+z = z1*s + z0*(1.-s);"""
         req = [('x', "x formula"),
                ('y', "y formula"),
                ('z', "z formula")]
