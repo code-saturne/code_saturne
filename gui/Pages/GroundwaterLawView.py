@@ -192,7 +192,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
                 self.modelNameDiff.addItem(scalar)
 
         # Connections
-        self.connect(self.treeView,                SIGNAL("clicked(const QModelIndex &)"), self.slotSelectGroundwaterLawZones)
+        self.connect(self.treeView,                SIGNAL("pressed(const QModelIndex &)"), self.slotSelectGroundwaterLawZones)
         self.connect(self.comboBoxType,            SIGNAL("activated(const QString&)"),    self.slotGroundwaterLaw)
         self.connect(self.lineEditKs,              SIGNAL("textChanged(const QString &)"), self.slotKs)
         self.connect(self.lineEditKsXX,            SIGNAL("textChanged(const QString &)"), self.slotKsXX)
@@ -231,7 +231,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         t=[]
         for t in liste :
             NamLoc=t[1]
-            Lab=t[0 ]
+            Lab=t[0]
             self.modelGroundwaterLaw.insertItem(Lab, NamLoc[0],NamLoc[1])
 
         self.forgetStandardWindows()
@@ -242,6 +242,8 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
     @pyqtSignature("const QModelIndex&")
     def slotSelectGroundwaterLawZones(self, index):
         label, name, local = self.modelGroundwaterLaw.getItem(index.row())
+
+        self.entriesNumber = index.row()
 
         if hasattr(self, "modelScalars"): del self.modelScalars
         log.debug("slotSelectGroundwaterLawZones label %s " % label )
@@ -329,8 +331,6 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
 
         # force to variable property
         self.comboBoxDiff.setEnabled(False)
-
-        self.entriesNumber = index.row()
 
 
     def initializeVanGenuchten(self, name):
