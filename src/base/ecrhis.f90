@@ -102,7 +102,6 @@ if ((ipass.eq.1 .and. modhis.eq.2) .or. ncapt.eq.0) return
 
 if (ipass.eq.1) then
   call tplnbr(nptpl)
-  !==========
 endif
 
 if (keypp.lt.0) then
@@ -116,7 +115,6 @@ endif
 if (ipass.eq.1) then
   do ii = 1, ncapt
     call findpt                                                        &
-    !==========
     (ncelet, ncel, xyzcen,                                             &
      xyzcap(1,ii), xyzcap(2,ii), xyzcap(3,ii), nodcap(ii), ndrcap(ii))
   enddo
@@ -129,7 +127,6 @@ endif
 ! Create directory if required
 if (ipass.eq.1 .and. irangp.le.0) then
   call csmkdr(emphis, len(emphis))
-  !==========
 endif
 
 if (ipass.eq.1) then
@@ -168,7 +165,6 @@ if (ipass.eq.1) then
           if (irangp.ge.0) then
             lng = 3
             call parbcr(ndrcap(ihisvr(ipp,ii+1)), lng , xyztmp(1, ii))
-            !==========
           endif
         enddo
       else if (ihisvr(ipp,1) .lt. 0) then
@@ -183,7 +179,6 @@ if (ipass.eq.1) then
           if (irangp.ge.0) then
             lng = 3
             call parbcr(ndrcap(ii), lng , xyztmp(1, ii))
-            !==========
           endif
         enddo
       else
@@ -206,8 +201,7 @@ if (ipass.eq.1) then
           lnom = len_trim(nomhis)
 
           tplnum = nptpl + ipp
-          call tppini(tplnum, nomhis, nompre, tplfmt, idtvar, nthsav, tplflw, &
-          !==========
+          call tppini(tplnum, nomhis, nompre, tplfmt, idtvar, &
                       ncap, lsttmp(1), xyzcap(1,1), lnom, lpre)
 
         endif ! (irangp.le.0)
@@ -259,7 +253,6 @@ if (modhis.eq.0 .or. modhis.eq.1) then
                 varcap(icap) = val_s(nodcap(icap))
               else
                 call parhis(nodcap(icap), ndrcap(icap), val_s, varcap(icap))
-                !==========
               endif
             enddo
             ncap = ncapt
@@ -269,7 +262,6 @@ if (modhis.eq.0 .or. modhis.eq.1) then
                 varcap(icap) = val_s(nodcap(ihisvr(ipp,icap+1)))
               else
                 call parhis(nodcap(ihisvr(ipp,icap+1)), &
-                !==========
                            ndrcap(ihisvr(ipp,icap+1)), &
                            val_s, varcap(icap))
               endif
@@ -280,7 +272,6 @@ if (modhis.eq.0 .or. modhis.eq.1) then
           if (irangp.le.0 .and. ncap.gt.0) then
             tplnum = nptpl + ipp
             call tplwri(tplnum, tplfmt, ncap, ntcabs, ttcabs, varcap)
-            !==========
           endif
 
         else ! For vector field
@@ -299,7 +290,6 @@ if (modhis.eq.0 .or. modhis.eq.1) then
               if (irangp.ge.0) then
                 lng = 1
                 call parbcr(ndrcap(icap), lng, varcap(icap))
-                !==========
               endif
             enddo
             ncap = ncapt
@@ -315,7 +305,6 @@ if (modhis.eq.0 .or. modhis.eq.1) then
               if (irangp.ge.0) then
                 lng = 1
                 call parbcr(ndrcap(icap), lng, varcap(icap))
-                !==========
               endif
             enddo
             ncap = ihisvr(ipp,1)
@@ -326,7 +315,6 @@ if (modhis.eq.0 .or. modhis.eq.1) then
           if (irangp.le.0 .and. ncap.gt.0) then
             tplnum = nptpl + ipp
             call tplwri(tplnum, tplfmt, ncap, ntcabs, ttcabs, varcap)
-            !==========
           endif
 
         endif ! Scalar or  vector field
@@ -364,7 +352,6 @@ if (modhis.eq.2) then
       if (ncap.gt.0 .and. irangp.le.0) then
         tplnum = nptpl + ipp
         call tplend(tplnum, tplfmt)
-        !==========
       endif
 
     enddo

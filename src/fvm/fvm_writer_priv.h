@@ -51,10 +51,12 @@ BEGIN_C_DECLS
  * Writer format implementation and functionality info
  */
 
-#define FVM_WRITER_FORMAT_USE_EXTERNAL    (1 << 0)
+#define FVM_WRITER_FORMAT_USE_EXTERNAL     (1 << 0)
 
-#define FVM_WRITER_FORMAT_HAS_POLYGON     (1 << 1)
-#define FVM_WRITER_FORMAT_HAS_POLYHEDRON  (1 << 2)
+#define FVM_WRITER_FORMAT_HAS_POLYGON      (1 << 1)
+#define FVM_WRITER_FORMAT_HAS_POLYHEDRON   (1 << 2)
+
+#define FVM_WRITER_FORMAT_SEPARATE_MESHES  (1 << 3)
 
 /*============================================================================
  * Type definitions
@@ -99,7 +101,7 @@ typedef void
                               double   time_value);
 
 typedef int
-(fvm_writer_needs_tesselation_t) (fvm_writer_t       *this_writer,
+(fvm_writer_needs_tesselation_t) (void               *this_writer,
                                   const fvm_nodal_t  *mesh,
                                   fvm_element_t       element_type);
 
@@ -122,7 +124,7 @@ typedef void
                              const void       *const field_values[]);
 
 typedef void
-(fvm_writer_flush_t) (fvm_writer_t  *this_writer);
+(fvm_writer_flush_t) (void  *this_writer);
 
 /*----------------------------------------------------------------------------
  * Format information structure
@@ -165,16 +167,19 @@ typedef struct {
 
 struct _fvm_writer_t {
 
-  char                   *name;           /* Writer name */
-  fvm_writer_format_t    *format;         /* Output format */
-  char                   *options;        /* Output options */
-  char                   *path;           /* Output path */
-  fvm_writer_time_dep_t   time_dep;       /* Geometry time dependency */
-  void                   *format_writer;  /* Format-specific writer */
+  char                   *name;              /* Writer name */
+  fvm_writer_format_t    *format;            /* Output format */
+  char                   *options;           /* Output options */
+  char                   *path;              /* Output path */
+  fvm_writer_time_dep_t   time_dep;          /* Geometry time dependency */
+  int                     n_format_writers;  /* number of actual writers */
+  void                  **format_writer;     /* Format-specific writers */
+  char                  **mesh_names;        /* List of mesh names if one
+                                                writer per mesh is required */
 
-  cs_timer_counter_t      mesh_time;      /* Meshes output timer */
-  cs_timer_counter_t      field_time;     /* Fields output timer */
-  cs_timer_counter_t      flush_time;     /* output "completion" timer */
+  cs_timer_counter_t      mesh_time;         /* Meshes output timer */
+  cs_timer_counter_t      field_time;        /* Fields output timer */
+  cs_timer_counter_t      flush_time;        /* output "completion" timer */
 
 };
 

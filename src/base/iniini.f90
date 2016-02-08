@@ -233,7 +233,6 @@ enddo
 ! ncapt  : nombre de sondes total (limite a ncaptm)
 ! nthist : periode de sortie (> 0 ou -1 (jamais))
 ! frhist : frequence de sortie, en secondes (prioritaire sur nthist si > 0)
-! nthsav : periode de sauvegarde (> 0 (fichiers ouverts et refermes) ou -1 )
 ! ihisvr : nb de sonde et numero par variable (-999 non initialise)
 ! ihistr : indicateur d'ecriture des historiques des structures
 !          mobiles internes (=0 ou 1)
@@ -241,14 +240,12 @@ enddo
 ! nodcap : element correspondant aux sondes
 ! ndrcap : rang du processus contenant nodcap (parallelisme)
 ! xyzcap : position demandee des sondes
-! tplflw : time plot flush wall-time interval (none if <= 0)
 
 tplfmt = 1
 ncapt = 0
 
 nthist = 1
 frhist = -1.d0
-nthsav = -1
 
 do ii = 1, nvppmx
   do jj = 1, ncaptm+1
@@ -268,8 +265,6 @@ do ii = 1, ncaptm
   xyzcap(2,ii) = 0.d0
   xyzcap(3,ii) = 0.d0
 enddo
-
-tplflw = -1.d0
 
 ! ---> Fichiers Lagrangiens
 

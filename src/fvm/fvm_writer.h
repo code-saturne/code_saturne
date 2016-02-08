@@ -203,7 +203,7 @@ fvm_writer_version_string(int format_index,
  *   divide_polygons     tesselate polygons with triangles
  *   divide_polyhedra    tesselate polyhedra with tetrahedra and pyramids
  *                       (adding a vertex near each polyhedron's center)
- *   split_tensors       write tensor values as separate scalars
+ *   separate_meshes     use a different writer for each mesh
  *
  * parameters:
  *   name            <-- base name of output

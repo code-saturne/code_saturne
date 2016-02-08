@@ -137,7 +137,7 @@ fvm_to_ensight_set_mesh_time(void          *this_writer_p,
  *----------------------------------------------------------------------------*/
 
 int
-fvm_to_ensight_needs_tesselation(fvm_writer_t       *this_writer_p,
+fvm_to_ensight_needs_tesselation(void               *this_writer_p,
                                  const fvm_nodal_t  *mesh,
                                  fvm_element_t       element_type);
 

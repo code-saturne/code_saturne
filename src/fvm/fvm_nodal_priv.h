@@ -205,9 +205,20 @@ struct _fvm_nodal_t {
 
   fvm_nodal_section_t  **sections;  /* Array of section descriptions */
 
+  /* Metadata */
+  /*----------*/
+
   /* Group class descriptions if present */
 
   fvm_group_class_set_t   *gc_set;  /* Pointer to group class set, or NULL */
+
+  /* Optional global vertex labels.
+     As these are expected to be used only for small sets (i.e. probes)
+     where the point set is built from a global definition and data movement
+     would adds complexity and overhead, the labels refer to a global view
+     on rank 0; for the same reason, only shared labels are needed */
+
+  const char   **global_vertex_labels;  /* Pointer to vertex labesl, or NULL */
 
 };
 

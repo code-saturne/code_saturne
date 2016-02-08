@@ -188,31 +188,6 @@ module entsor
   !> frhist : output frequency in seconds
   double precision, save :: frhist
 
-  !> saving period the chronological record files (they are first stored in a
-  !> temporary file and then saved every \ref nthsav time step):
-  !>    - 0: by default (4 times during a calculation)
-  !>    - -1: saving at the end of the calculation
-  !>    - >0: period (every \ref nthsav time step)
-  !>
-  !> During the calculation, the user can read the chronological record files
-  !> in the execution directory when they have been saved, i.e. at the first
-  !> time step, at the tenth time step and when the time step number is a multiple of
-  !> \ref nthsav (multiple of (\ref optcal::ntmabs "ntmabs"
-  !> - \ref optcal::ntpabs "ntpabs")/4 if \ref nthsav=0).
-  !> \note Using the \a control_file file allows to update the value of
-  !> \ref optcal::ntmabs "ntmabs". Hence, if the calculation is at the time step n,
-  !> the saving of the chronological record files can be forced by changing
-  !> \ref optcal::ntmabs "ntmabs" to
-  !> \ref optcal::ntpabs "ntpabs"+4(n+1)
-  !>
-  !> Using \a control_file; after the files have been saved,
-  !> \ref optcal::ntmabs "ntmabs" can be
-  !> reset to its original value, still using \a control_file.
-  !> Useful if and only if chronological record files are generated (\em
-  !> i.e. there are probes (\ref ncapt>0) there is n for which
-  !> \ref ihisvr "ihisvr"(n, 1) \f$\ne\f$ 0)
-  integer, save :: nthsav
-
   !> number \ref ihisvr "ihisvr(n, 1)" and index-numbers \ref ihisvr "ihisvr"(n, j>1)
   !> of the record probes to be used for each variable, em i.e. calculation variable
   !> or physical property defined at the cell centers.
@@ -257,9 +232,6 @@ module entsor
   !> and j <= \ref ncapt.
   !> Useful if and only if \ref ncapt > 0.
   double precision, save :: xyzcap(3,ncaptm)
-
-  !> tplflw : time plot flush wall-time interval (none if <= 0)
-  double precision, save :: tplflw
 
   !> \}
 

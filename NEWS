@@ -36,6 +36,17 @@ Numerics
     * add optional Kahan compensated sum-based BLAS operations;
     * add cs_blas_set_reduce_algorithm() function to choose algorithm
 
+Architectural changes
+---------------------
+
+ - Improvements to postprocessing writer handling.
+   * add 'plot' and 'time_plot' writer types;
+   * time plot flushing behavior is now determined by the
+     cs_time_plot_set_flush_default() function, replacing the
+     Fortran 'nthsav' and 'tplflw' values;
+   * writers can now use the 'separate_meshes' option to create a
+     separate format-specific writer per mesh.
+
 
 Release 4.2.0 (December 23 2015)
 ================================

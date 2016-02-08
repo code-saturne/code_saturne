@@ -212,7 +212,7 @@ if (ipass.eq.1) then
 
           tplnum = nptpl +(ipas-1)*2*nvlsta + ipp + 1
 
-          call tppini(tplnum, nomhis, nompre, tplfmt, idtvar, nthsav, tplflw, &
+          call tppini(tplnum, nomhis, nompre, tplfmt, idtvar, &
           !==========
                       ncapt, lsttmp(1), xyzcap(1,1), lnom, lpre)
 

@@ -151,7 +151,7 @@ if (ipass.eq.1 .and. irangp.le.0) then
 
     tplnum = nptpl + ii
 
-    call tpsini(tplnum, nenvar, nompre, tplfmt, idtvar, nthsav, tplflw, &
+    call tpsini(tplnum, nenvar, nompre, tplfmt, idtvar, &
     !==========
                 nbstru, xmstru, xcstru, xkstru, lnam, lpre)
 

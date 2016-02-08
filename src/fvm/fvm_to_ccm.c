@@ -3816,27 +3816,6 @@ fvm_to_ccm_set_mesh_time(void     *this_writer_p,
 }
 
 /*----------------------------------------------------------------------------
- * Indicate if elements of a given type in a mesh associated with a given
- * CCMIO file writer need to be tesselated.
- *
- * parameters:
- *   this_writer_p <-- pointer to associated writer
- *   mesh          <-- pointer to nodal mesh structure that should be written
- *   element_type  <-- element type we are interested in
- *
- * returns:
- *   always 0 for this format.
- *----------------------------------------------------------------------------*/
-
-int
-fvm_to_ccm_needs_tesselation(fvm_writer_t       *this_writer_p,
-                             const fvm_nodal_t  *mesh,
-                             fvm_element_t       element_type)
-{
-  return 0;
-}
-
-/*----------------------------------------------------------------------------
  * Write nodal mesh to a CCMIO file
  *
  * parameters:

@@ -2417,7 +2417,7 @@ enddo
 write(nfecra,7522)
 
 !   - Fichiers historiques
-write(nfecra,7530) nthist,frhist,ncapt,nthsav
+write(nfecra,7530) nthist,frhist,ncapt
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keypp, ipp)
   if (ipp.le.1) cycle
@@ -2486,7 +2486,6 @@ write(nfecra,9900)
 '       NTHIST = ',4x,i10,    ' (Periode de sortie    )',       /,&
 '       FRHIST = ',4x,e11.5,  ' (Periode de sortie (s))',       /,&
 '       NCAPT  = ',4x,i10,    ' (Nombre de capteurs   )',       /,&
-'       NTHSAV = ',4x,i10,    ' (Periode de sauvegarde)',       /,&
                                                                 /,&
 '       Numero Nom                   Nb. sondes (-1 : toutes)'   )
  7531 format(i10,1X,          A16,6X,         i10                )
@@ -2526,7 +2525,6 @@ write(nfecra,9900)
 '       NTHIST = ',4x,i10,    ' (Output frequency     )',       /,&
 '       FRHIST = ',4x,e11.5,  ' (Output frequency (s) )',       /,&
 '       NCAPT  = ',4x,i10,    ' (Number of probes     )',       /,&
-'       NTHSAV = ',4x,i10,    ' (Checkpoint frequency )',       /,&
                                                                 /,&
 '       Number Name                  Nb. probes (-1: all)'       )
  7531 format(i10,1X,          A16,6X,         i10                )

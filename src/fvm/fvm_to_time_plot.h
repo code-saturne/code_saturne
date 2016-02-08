@@ -1,11 +1,9 @@
-#ifndef __FVM_TO_CCM_H__
-#define __FVM_TO_CCM_H__
-
-#if defined(HAVE_CCM)
+#ifndef __FVM_TO_TIME_PLOT_H__
+#define __FVM_TO_TIME_PLOT_H__
 
 /*============================================================================
  * Write a nodal representation associated with a mesh and associated
- * variables to CCM-IO files
+ * variables to time plot (whitepace-separated or csv) files
  *============================================================================*/
 
 /*
@@ -57,43 +55,15 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Returns number of library version strings associated with the CCM-IO format.
+ * Initialize FVM to time plot file writer.
  *
- * returns:
- *   number of library version strings associated with the CCM-IO format.
- *----------------------------------------------------------------------------*/
-
-int
-fvm_to_ccm_n_version_strings(void);
-
-/*----------------------------------------------------------------------------
- * Returns a library version string associated with the CCM-IO format.
- *
- * In certain cases, when using dynamic libraries, fvm may be compiled
- * with one library version, and linked with another. If both run-time
- * and compile-time version information is available, this function
- * will return the run-time version string by default.
- *
- * Setting the compile_time flag to 1, the compile-time version string
- * will be returned if this is different from the run-time version.
- * If the version is the same, or only one of the 2 version strings are
- * available, a NULL character string will be returned with this flag set.
- *
- * parameters:
- *   string_index <-- index in format's version string list (0 to n-1)
- *   compile_time <-- 0 by default, 1 if we want the compile-time version
- *                    string, if different from the run-time version.
- *
- * returns:
- *   pointer to constant string containing the library's version.
- *----------------------------------------------------------------------------*/
-
-const char *
-fvm_to_ccm_version_string(int string_index,
-                          int compile_time_version);
-
-/*----------------------------------------------------------------------------
- * Initialize FVM to CCM-IO file writer.
+ * Options are:
+ *   csv                 output CSV (comma-separated-values) files
+ *   dat                 output dat (space-separated) files
+ *   use_iteration       use time step id instead of time value for
+ *                       first column
+ *   flush_wtime=<wt>    flush output file every 'wt' seconds
+ *   n_buf_steps=<n>     write output to file every 'n' output steps
  *
  * parameters:
  *   name           <-- base output case name.
@@ -102,75 +72,75 @@ fvm_to_ccm_version_string(int string_index,
  *   comm           <-- associated MPI communicator.
  *
  * returns:
- *   pointer to opaque CCM-IO writer structure.
+ *   pointer to opaque time plot writer structure.
  *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI)
 
 void *
-fvm_to_ccm_init_writer(const char             *name,
-                       const char             *path,
-                       const char             *options,
-                       fvm_writer_time_dep_t   time_dependency,
-                       MPI_Comm                comm);
+fvm_to_time_plot_init_writer(const char             *name,
+                             const char             *path,
+                             const char             *options,
+                             fvm_writer_time_dep_t   time_dependency,
+                             MPI_Comm                comm);
 
 #else
 
 void *
-fvm_to_ccm_init_writer(const char             *name,
-                       const char             *path,
-                       const char             *options,
-                       fvm_writer_time_dep_t   time_dependency);
+fvm_to_time_plot_init_writer(const char             *name,
+                             const char             *path,
+                             const char             *options,
+                             fvm_writer_time_dep_t  time_dependency);
 
 #endif
 
 /*----------------------------------------------------------------------------
- * Finalize FVM to CCM-IO file writer.
+ * Finalize FVM to time plot file writer.
  *
  * parameters:
- *   this_writer_p <-- pointer to opaque CCM-IO writer structure.
+ *   writer <-- pointer to opaque time plot writer structure.
  *
  * returns:
  *   NULL pointer.
  *----------------------------------------------------------------------------*/
 
 void *
-fvm_to_ccm_finalize_writer(void  *this_writer_p);
+fvm_to_time_plot_finalize_writer(void  *writer);
 
 /*----------------------------------------------------------------------------
- * Associate new time step with a CCM-IO geometry.
+ * Associate new time step with a time plot geometry.
  *
  * parameters:
- *   this_writer_p <-- pointer to associated writer
- *   time_step     <-- time step number
- *   time_value    <-- time_value number
+ *   writer     <-- pointer to associated writer
+ *   time_step  <-- time step number
+ *   time_value <-- time_value number
  *----------------------------------------------------------------------------*/
 
 void
-fvm_to_ccm_set_mesh_time(void     *this_writer_p,
-                         int       time_step,
-                         double    time_value);
+fvm_to_time_plot_set_mesh_time(void          *writer,
+                               const int      time_step,
+                               const double   time_value);
 
 /*----------------------------------------------------------------------------
- * Write nodal mesh to a CCM-IO file
+ * Write nodal mesh to a time plot file
  *
  * parameters:
- *   this_writer_p <-- pointer to associated writer.
- *   mesh          <-- pointer to nodal mesh structure that should be written.
+ *   writer <-- pointer to associated writer.
+ *   mesh   <-- pointer to nodal mesh structure that should be written.
  *----------------------------------------------------------------------------*/
 
 void
-fvm_to_ccm_export_nodal(void               *this_writer_p,
-                        const fvm_nodal_t  *mesh);
+fvm_to_time_plot_export_nodal(void               *writer,
+                              const fvm_nodal_t  *mesh);
 
 /*----------------------------------------------------------------------------
- * Write field associated with a nodal mesh to a CCM-IO file.
+ * Write field associated with a nodal mesh to a time plot file.
  *
  * Assigning a negative value to the time step indicates a time-independent
  * field (in which case the time_value argument is unused).
  *
  * parameters:
- *   this_writer_p    <-- pointer to associated writer
+ *   writer           <-- pointer to associated writer
  *   mesh             <-- pointer to associated nodal mesh structure
  *   name             <-- variable name
  *   location         <-- variable definition location (nodes or elements)
@@ -189,23 +159,21 @@ fvm_to_ccm_export_nodal(void               *this_writer_p,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_to_ccm_export_field(void                   *this_writer_p,
-                        const fvm_nodal_t      *mesh,
-                        const char             *name,
-                        fvm_writer_var_loc_t    location,
-                        int                     dimension,
-                        cs_interlace_t          interlace,
-                        int                     n_parent_lists,
-                        const cs_lnum_t         parent_num_shift[],
-                        cs_datatype_t           datatype,
-                        int                     time_step,
-                        double                  time_value,
-                        const void       *const field_values[]);
+fvm_to_time_plot_export_field(void                  *writer,
+                              const fvm_nodal_t     *mesh,
+                              const char            *name,
+                              fvm_writer_var_loc_t   location,
+                              int                    dimension,
+                              cs_interlace_t         interlace,
+                              int                    n_parent_lists,
+                              const cs_lnum_t        parent_num_shift[],
+                              cs_datatype_t          datatype,
+                              int                    time_step,
+                              double                 time_value,
+                              const void      *const field_values[]);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* HAVE_CCM */
-
-#endif /* __FVM_TO_CCM_H__ */
+#endif /* __FVM_TO_TIME_PLOT_H__ */

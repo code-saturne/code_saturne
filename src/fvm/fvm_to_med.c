@@ -4063,7 +4063,7 @@ fvm_to_med_set_mesh_time(void          *this_writer,
  *----------------------------------------------------------------------------*/
 
 int
-fvm_to_med_needs_tesselation(fvm_writer_t       *this_writer,
+fvm_to_med_needs_tesselation(void               *this_writer,
                              const fvm_nodal_t  *mesh,
                              fvm_element_t       element_type)
 {

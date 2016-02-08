@@ -115,6 +115,9 @@ static size_t            _n_files[2] = {0, 0};
 static size_t            _n_files_max[2] = {0, 0};
 static cs_time_plot_t  **_plot_files[2] = {NULL, NULL};
 
+static float             _flush_wtime_default = -1;
+static int               _n_buffer_steps_default = -1;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -776,8 +779,7 @@ _fortran_time_plot_realloc(int                     plot_num,
  *
  * subroutine tppini (tplnum, tplnam, tplpre, tplfmt, idtvar,
  * *****************
- *                    ntflsh, wtflsh, nprb,   lstprb, xyzprb,
- *                    lnam,   lpre)
+ *                    nprb,   lstprb, xyzprb, lnam,   lpre)
  *
  * integer          tplnum      : <-- : number of plot to create (> 0)
  * character        tplnam      : <-- : name of associated plot
@@ -785,11 +787,6 @@ _fortran_time_plot_realloc(int                     plot_num,
  * integer          tplfmt      : <-- : associated format
  *                                      (1: dat, 2: csv, 3: both)
  * integer          idtvar      : <-- : calculation time dependency
- * integer          ntflsh      : <-- : file write every ntflsh output
- *                                      time steps if > 0 (file kept
- *                                      open otherwise)
- * integer          wtflsh      : <-- : file flush forced every wtflsh
- *                                      elapsed seconds if > 0
  * integer          nprb        : <-- : number of probes
  * integer          lstprb      : <-- : list of probes (1 to n)
  * double precision xyzprb      : <-- : probe coordinates
@@ -804,8 +801,6 @@ void CS_PROCF (tppini, TPPINI)
  const char      *tplpre,
  const cs_int_t  *tplfmt,
  const cs_int_t  *idtvar,
- const cs_int_t  *ntflsh,
- const cs_real_t *wtflsh,
  const cs_int_t  *nprb,
  const cs_int_t  *lstprb,
  const cs_real_t *xyzprb,
@@ -839,8 +834,8 @@ void CS_PROCF (tppini, TPPINI)
                                                               file_prefix,
                                                               fmt,
                                                               use_iteration,
-                                                              *wtflsh,
-                                                              *ntflsh,
+                                                              _flush_wtime_default,
+                                                              _n_buffer_steps_default,
                                                               *nprb,
                                                               lstprb,
                                                               xyzprb,
@@ -862,8 +857,7 @@ void CS_PROCF (tppini, TPPINI)
  *
  * subroutine tpsini (tplnum, tplnam, tplpre, tplfmt, idtvar,
  * *****************
- *                    ntflsh, wtflsh, nprb,   lstprb, xyzprb,
- *                    lnam,   lpre)
+ *                    nprb,   lstprb, xyzprb, lnam,   lpre)
  *
  * integer          tplnum      : <-- : number of plot to create (> 0)
  * character        tplnam      : <-- : name of associated plot
@@ -871,11 +865,6 @@ void CS_PROCF (tppini, TPPINI)
  * integer          tplfmt      : <-- : associated format
  *                                      (1: dat, 2: csv, 3: both)
  * integer          idtvar      : <-- : calculation time dependency
- * integer          ntflsh      : <-- : file write every ntflsh output
- *                                      time steps if > 0 (file kept
- *                                      open otherwise)
- * integer          wtflsh      : <-- : file flush forced every wtflsh
- *                                      elapsed seconds if > 0
  * integer          nstru       : <-- : number of structures
  * double precision xmstru      : <-- : mass matrixes
  * double precision xcstru      : <-- : damping matrixes
@@ -891,8 +880,6 @@ void CS_PROCF (tpsini, TPSINI)
  const char      *tplpre,
  const cs_int_t  *tplfmt,
  const cs_int_t  *idtvar,
- const cs_int_t  *ntflsh,
- const cs_real_t *wtflsh,
  const cs_int_t  *nstru,
  const cs_real_t *xmstru,
  const cs_real_t *xcstru,
@@ -927,8 +914,8 @@ void CS_PROCF (tpsini, TPSINI)
                                                                file_prefix,
                                                                fmt,
                                                                use_iteration,
-                                                               *wtflsh,
-                                                               *ntflsh,
+                                                              _flush_wtime_default,
+                                                              _n_buffer_steps_default,
                                                                *nstru,
                                                                xmstru,
                                                                xcstru,
@@ -1334,6 +1321,45 @@ cs_time_plot_flush_all(void)
 {
   for (cs_time_plot_t *p = _plots_head; p != NULL; p = p->next)
     cs_time_plot_flush(p);
+}
+
+/*----------------------------------------------------------------------------
+ * Set time plot file writer flush behavior defaults.
+ *
+ * parameters:
+ *   flush_wtime     <-- elapsed time interval between file flushes;
+ *                       if < 0, no forced flush
+ *   n_buffer_steps  <-- number of time steps in output buffer if
+ *                       file is not to be kept open
+ *----------------------------------------------------------------------------*/
+
+void
+cs_time_plot_set_flush_default(float  flush_wtime,
+                               int    n_buffer_steps)
+{
+  _flush_wtime_default    = flush_wtime;
+  _n_buffer_steps_default = n_buffer_steps;
+}
+
+/*----------------------------------------------------------------------------
+ * Return time plot file writer flush behavior defaults.
+ *
+ * parameters:
+ *   flush_wtime     --> elapsed time interval between file flushes;
+ *                       if < 0, no forced flush (NULL if not queried)
+ *   n_buffer_steps  <-- number of time steps in output buffer if
+ *                       file is not to be kept open (NULL if not queried)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_time_plot_get_flush_default(float  *flush_wtime,
+                               int    *n_buffer_steps)
+{
+  if (flush_wtime != NULL)
+    *flush_wtime = _flush_wtime_default;
+
+  if (n_buffer_steps != NULL)
+    *n_buffer_steps = _n_buffer_steps_default;
 }
 
 /*----------------------------------------------------------------------------*/

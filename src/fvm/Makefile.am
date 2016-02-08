@@ -83,6 +83,8 @@ fvm_to_catalyst.h \
 fvm_to_ensight.h \
 fvm_to_ensight_case.h \
 fvm_to_medcoupling.h \
+fvm_to_plot.h \
+fvm_to_time_plot.h \
 fvm_writer_helper.h \
 fvm_writer_priv.h
 
@@ -123,6 +125,8 @@ fvm_triangulate.c
 libfvm_filters_la_SOURCES = \
 fvm_to_ensight.c \
 fvm_to_ensight_case.c \
+fvm_to_plot.c \
+fvm_to_time_plot.c \
 fvm_writer.c \
 fvm_writer_helper.c
 

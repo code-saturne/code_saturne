@@ -125,11 +125,6 @@ if (nthist.le.0.and.nthist.ne.-1) then
   iok = iok + 1
 endif
 
-if (nthsav.lt.-1) then
-  write(nfecra,1200) 'NTHSAV (Periode   Save   Histo. )',nthsav
-  iok = iok + 1
-endif
-
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyipp, ippf)
   if (ippf.le.1) cycle
@@ -1717,23 +1712,6 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1200 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a33,                          ' DOIT ETRE UN ENTIER',   /,&
-'@    SUPERIEUR OU EGAL A -1',                                  /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  1210 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -4300,23 +4278,6 @@ endif
 
 #else
 
- 1200 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a33,                          ' MUST BE AN INTEGER',   /, &
-'@    GREATER THAN OR EQUAL TO -1',                             /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  1210 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

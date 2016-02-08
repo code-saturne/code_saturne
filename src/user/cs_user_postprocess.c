@@ -47,6 +47,7 @@
 #include "cs_selector.h"
 
 #include "cs_post.h"
+#include "cs_time_plot.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -288,12 +289,21 @@ cs_user_postprocess_writers(void)
    *   'text'              (text format, for EnSight)
    *   'big_endian'        (forces binary EnSight output to 'big-endian' mode)
    *   'adf'               (use ADF file type, for CGNS)
-   *   'hdf5'              (force HDF5 file type, usual the default for CGNS)
+   *   'hdf5'              (force HDF5 file type, usually the default for CGNS)
    *   'discard_polygons'  (ignore polygon-type faces)
    *   'discard_polyhedra' (ignore polyhedron-type cells)
    *   'divide_polygons'   (subdivides polygon-type faces)
-   *   'divide_polyhedra'  (subdivides polyhedron-type cells)
-   *   'split_tensors'     (writes tensors as separate scalars) */
+   *   'divide_polyhedra'  (subdivides polyhedron-type cells) */
+
+  /* Set time plot file writer flush behavior defaults.
+   *   flush_wtime     <-- elapsed time interval between file flushes;
+   *                       if < 0, no forced flush
+   *   n_buffer_steps  <-- number of time steps in output buffer if
+   *                       file is not to be kept open */
+
+  if (false)
+    cs_time_plot_set_flush_default(1800, /* flush_wtime */
+                                   -1);  /* n_buffer_steps */
 
   /* Default writer time dependency */
 

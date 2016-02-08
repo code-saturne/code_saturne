@@ -312,6 +312,30 @@ fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
                               const fvm_group_class_set_t  *gc_set);
 
 /*----------------------------------------------------------------------------
+ * Assign global vertex labels to a nodal mesh.
+ *
+ * As these are expected to be used only for small sets (i.e. probes)
+ * where the point set is built from a global definition and data movement
+ * would adds complexity and overhead, the labels refer to a global view
+ * on rank 0; for the same reason, only shared labels are needed.
+ *
+ * The size of the labels pointers array provided should be the same
+ * as that returned by fvm_nodal_n_g_vertices();
+ *
+ * This function should only be called once the nodal mesh representation
+ * has been completed, as most functions modifying its vertex definitions
+ * will remove these labels.
+ *
+ * parameters:
+ *   this_nodal <-> nodal mesh structure
+ *   g_labels   <-- global vertex labels, or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_nodal_set_global_vertex_labels(fvm_nodal_t  *this_nodal,
+                                   const char   *g_labels[]);
+
+/*----------------------------------------------------------------------------
  * Obtain the name of a nodal mesh.
  *
  * parameters:
@@ -427,6 +451,27 @@ void
 fvm_nodal_get_parent_num(const fvm_nodal_t  *this_nodal,
                          int                 entity_dim,
                          cs_lnum_t           parent_num[]);
+
+/*----------------------------------------------------------------------------
+ * Return pointer to global vertex labels of a nodal mesh.
+ *
+ * As these are expected to be used only for small sets (i.e. probes)
+ * where the point set is built from a global definition and data movement
+ * would adds complexity and overhead, the labels refer to a global view
+ * on rank 0; for the same reason, only shared labels are needed.
+ *
+ * The size of the labels pointers array returned should be the same
+ * as that returned by fvm_nodal_n_g_vertices();
+ *
+ * parameters:
+ *   this_nodal <-> nodal mesh structure
+ *
+ * returns:
+ *   pointer to global vertex labels, or NULL
+ *----------------------------------------------------------------------------*/
+
+const char **
+fvm_nodal_get_global_vertex_labels(const fvm_nodal_t  *this_nodal);
 
 /*----------------------------------------------------------------------------
  * Compute tesselation a a nodal mesh's sections of a given type, and add the

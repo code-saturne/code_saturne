@@ -2377,6 +2377,61 @@ fvm_writer_field_helper_output_n(fvm_writer_field_helper_t  *helper,
                             output_func);
 }
 
+/*----------------------------------------------------------------------------
+ * Set string representing a field component's name based on its id.
+ *
+ * parameters:
+ *   s                  --> destination string
+ *   s_size             <-- maximum string size
+ *   lowercase          <-- true if lowercase is required
+ *   dimension          <-- field dimension
+ *   component_id       <-- field component id
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_writer_field_component_name(char    *s,
+                                size_t   s_size,
+                                bool     lowercase,
+                                int      dimension,
+                                int      component_id)
+{
+  static const char *comp3[] = {"X", "Y", "Z"};
+  static const char *comp6[] = {"XX", "YY", "ZZ", "XY", "XZ", "YZ"};
+  static const char *comp9[] = {"XX", "XY", "XZ",
+                                "YX", "YY", "YZ",
+                                "ZX", "ZY", "ZZ"};
+
+  s[0] = '\0';
+
+  if (   dimension > 1 && s_size > 1
+      && component_id > -1
+      && component_id < dimension) {
+
+    if (dimension == 3)
+      strcpy(s, comp3[component_id]);
+
+    else if (s_size > 2) {
+      if (dimension == 6)
+        strcpy(s, comp6[component_id]);
+      else if (dimension == 9)
+        strcpy(s, comp9[component_id]);
+    }
+
+    /* Fallback */
+
+    if (s[0] == '\0') {
+      snprintf(s, s_size, "%d", component_id);
+      s[s_size -1] = '\0';
+    }
+
+    if (lowercase) {
+      size_t l = strlen(s);
+      for (size_t i = 0; i < l; i++)
+        s[i] = tolower(s[i]);
+    }
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/

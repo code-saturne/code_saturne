@@ -164,7 +164,7 @@ fvm_to_med_finalize_writer(void  *this_writer_p);
  *----------------------------------------------------------------------------*/
 
 int
-fvm_to_med_needs_tesselation(fvm_writer_t       *this_writer,
+fvm_to_med_needs_tesselation(void               *this_writer,
                              const fvm_nodal_t  *mesh,
                              fvm_element_t       element_type);
 

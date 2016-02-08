@@ -473,6 +473,24 @@ fvm_writer_field_helper_output_n(fvm_writer_field_helper_t  *helper,
                                  const void           *const field_values[],
                                  fvm_writer_field_output_t  *output_func);
 
+/*----------------------------------------------------------------------------
+ * Set string representing a field component's name based on its id.
+ *
+ * parameters:
+ *   s                  --> destination string
+ *   s_size             <-- maximum string size
+ *   lowercase          <-- true if lowercase is required
+ *   dimension          <-- field dimension
+ *   component_id       <-- field component id
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_writer_field_component_name(char    *s,
+                                size_t   s_size,
+                                bool     lowercase,
+                                int      dimension,
+                                int      component_id);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

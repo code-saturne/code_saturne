@@ -69,6 +69,8 @@
 #include "fvm_to_cgns.h"
 #include "fvm_to_med.h"
 #include "fvm_to_ensight.h"
+#include "fvm_to_plot.h"
+#include "fvm_to_time_plot.h"
 
 #if !defined(HAVE_PLUGINS)
 #if defined(HAVE_CATALYST)
@@ -102,9 +104,9 @@ BEGIN_C_DECLS
 
 /* Number and status of defined formats */
 
-static const int _fvm_writer_n_formats = 6;
+static const int _fvm_writer_n_formats = 8;
 
-static fvm_writer_format_t _fvm_writer_format_list[6] = {
+static fvm_writer_format_t _fvm_writer_format_list[8] = {
 
   /* Built-in EnSight Gold writer */
   {
@@ -128,7 +130,7 @@ static fvm_writer_format_t _fvm_writer_format_list[6] = {
     NULL                               /* flush_func */
   },
 
-  /* MED 3.0 writer */
+  /* MED writer */
   {
     "MED",
     "3.0 +",
@@ -258,6 +260,52 @@ static fvm_writer_format_t _fvm_writer_format_list[6] = {
     NULL
   },
 
+  /* Built-in plot writer */
+  {
+    "plot",
+    "",
+    (  FVM_WRITER_FORMAT_HAS_POLYGON
+     | FVM_WRITER_FORMAT_HAS_POLYHEDRON
+     | FVM_WRITER_FORMAT_SEPARATE_MESHES),
+    FVM_WRITER_TRANSIENT_CONNECT,
+    0,                                 /* dynamic library count */
+    NULL,                              /* dynamic library */
+    NULL,                              /* dynamic library name */
+    NULL,                              /* dynamic library prefix */
+    NULL,                              /* n_version_strings_func */
+    NULL,                              /* version_string_func */
+    fvm_to_plot_init_writer,           /* init_func */
+    fvm_to_plot_finalize_writer,       /* finalize_func */
+    fvm_to_plot_set_mesh_time,         /* set_mesh_time_func */
+    NULL,                              /* needs_tesselation_func */
+    fvm_to_plot_export_nodal,          /* export_nodal_func */
+    fvm_to_plot_export_field,          /* export_field_func */
+    fvm_to_plot_flush                  /* flush_func */
+  },
+
+  /* Built-in time plot writer */
+  {
+    "time_plot",
+    "",
+    (  FVM_WRITER_FORMAT_HAS_POLYGON
+     | FVM_WRITER_FORMAT_HAS_POLYHEDRON
+     | FVM_WRITER_FORMAT_SEPARATE_MESHES),
+    FVM_WRITER_FIXED_MESH,
+    0,                                 /* dynamic library count */
+    NULL,                              /* dynamic library */
+    NULL,                              /* dynamic library name */
+    NULL,                              /* dynamic library prefix */
+    NULL,                              /* n_version_strings_func */
+    NULL,                              /* version_string_func */
+    fvm_to_time_plot_init_writer,      /* init_func */
+    fvm_to_time_plot_finalize_writer,  /* finalize_func */
+    fvm_to_time_plot_set_mesh_time,    /* set_mesh_time_func */
+    NULL,                              /* needs_tesselation_func */
+    fvm_to_time_plot_export_nodal,     /* export_nodal_func */
+    fvm_to_time_plot_export_field,     /* export_field_func */
+    NULL                               /* flush_func */
+  },
+
   /* CCM-IO writer */
   {
     "CCM-IO",
@@ -276,7 +324,7 @@ static fvm_writer_format_t _fvm_writer_format_list[6] = {
     fvm_to_ccm_init_writer,           /* init_func */
     fvm_to_ccm_finalize_writer,       /* finalize_func */
     fvm_to_ccm_set_mesh_time,         /* set_mesh_time_func */
-    fvm_to_ccm_needs_tesselation,     /* needs_tesselation_func */
+    NULL,                             /* needs_tesselation_func */
     fvm_to_ccm_export_nodal,          /* export_nodal_func */
     fvm_to_ccm_export_field,          /* export_field_func */
     NULL                               /* flush_func */
@@ -513,6 +561,149 @@ _close_plugin(fvm_writer_format_t  *wf)
 
 #endif /* defined(HAVE_DLOPEN)*/
 
+/*----------------------------------------------------------------------------
+ * Initialize specific format writer based on writer and optional
+ * mesh name info.
+ *
+ * parameters:
+ *   this_writer     <-- pointer to mesh and field output writer
+ *   mesh_name       <-- optional mesh name, or NULL
+ *
+ * returns:
+ *   pointer to mesh and field output writer
+ *----------------------------------------------------------------------------*/
+
+static void *
+_format_writer_init(fvm_writer_t  *this_writer,
+                    const char    *mesh_name)
+{
+  char   local_dir[] = ".";
+  char  *tmp_path = NULL, *tmp_name = NULL;
+
+  void  *format_writer = NULL;
+
+  /* Determine path and create directory if needed */
+
+  const char *path = local_dir;
+
+  if (this_writer->path != NULL) {
+
+    int l = strlen(this_writer->path);
+
+    if (l > 0) {
+      BFT_MALLOC(tmp_path, l + 2, char);
+      strcpy(tmp_path, this_writer->path);
+      if (tmp_path[l - 1] == DIR_SEPARATOR)
+        tmp_path[l - 1] = '\0';
+      if (cs_file_mkdir_default(this_writer->path) == 1)
+        tmp_path[0] = '\0';
+      else {
+        l = strlen(tmp_path);
+        tmp_path[l]   = DIR_SEPARATOR;
+        tmp_path[l+1] = '\0';
+      }
+      path = tmp_path;
+    }
+
+  }
+
+  const char *name = this_writer->name;
+
+  if (mesh_name != NULL) {
+    if (strlen(mesh_name) > 0) {
+      size_t lw = strlen(this_writer->name);
+      size_t l = lw + 1 + strlen(mesh_name);
+      BFT_MALLOC(tmp_name, l + 1, char);
+      sprintf(tmp_name, "%s_%s", this_writer->name, mesh_name);
+      for (size_t i = lw + 1, j = 0; i < l; i++, j++) {
+        if (tmp_name[i] == ' ')
+          tmp_name[i] = '_';
+      }
+      name = tmp_name;
+    }
+  }
+
+  /* Initialize format-specific writer */
+
+  fvm_writer_init_t  *init_func = this_writer->format->init_func;
+
+  if (init_func != NULL) {
+
+    cs_fp_exception_disable_trap();
+
+#if defined(HAVE_MPI)
+    format_writer = init_func(name,
+                              path,
+                              this_writer->options,
+                              this_writer->time_dep,
+                              cs_glob_mpi_comm);
+#else
+    format_writer = init_func(name,
+                              path,
+                              this_writer->options,
+                              this_writer->time_dep);
+#endif
+
+    cs_fp_exception_restore_trap();
+
+  }
+
+  BFT_FREE(tmp_name);
+  BFT_FREE(tmp_path);
+
+  /* Return pointer to initialized writer */
+
+  return format_writer;
+}
+
+/*----------------------------------------------------------------------------
+ * Find or add a specific format writer based on writer and optional
+ * mesh name info.
+ *
+ * parameters:
+ *   this_writer     <-- pointer to mesh and field output writer
+ *   mesh_name       <-- optional mesh name, or NULL
+ *
+ * returns:
+ *   pointer to mesh and field output writer
+ *----------------------------------------------------------------------------*/
+
+static void*
+_find_or_add_format_writer(fvm_writer_t        *this_writer,
+                           const fvm_nodal_t   *mesh)
+{
+  void  *format_writer = NULL;
+
+  assert(this_writer != NULL);
+  assert(this_writer->format != NULL);
+
+  /* Find or add single-mesh writer if required */
+
+  if  (   this_writer->n_format_writers == 0
+       || this_writer->mesh_names != NULL) {
+    int i;
+    const char empty[] = "";
+    const char *name = (mesh->name != NULL) ? mesh->name : empty;
+    for (i = 0; i < this_writer->n_format_writers; i++) {
+      if (strcmp(this_writer->mesh_names[i], name) == 0)
+        break;
+    }
+    if (i >= this_writer->n_format_writers) {
+      BFT_REALLOC(this_writer->format_writer, i + 1, void *);
+      BFT_REALLOC(this_writer->mesh_names, i + 1, char *);
+      BFT_MALLOC(this_writer->mesh_names[i], strlen(name) + 1, char);
+      strcpy(this_writer->mesh_names[i], name);
+      this_writer->format_writer[i] = _format_writer_init(this_writer, name);
+      this_writer->n_format_writers += 1;
+    }
+    format_writer = this_writer->format_writer[i];
+  }
+  else
+    format_writer = this_writer->format_writer[0];
+
+  return format_writer;
+}
+
 /*============================================================================
  * Semi-private function definitions (prototypes in fvm_writer_priv.h)
  *============================================================================*/
@@ -568,6 +759,8 @@ fvm_writer_get_format_id(const char  *format_name)
     strcpy(closest_name, "Catalyst");
   else if (strncmp(tmp_name, "ccm", 3) == 0)
     strcpy(closest_name, "CCM-IO");
+  else
+    strcpy(closest_name, tmp_name);
 
   /* Find name in list */
 
@@ -725,7 +918,7 @@ fvm_writer_version_string(int format_index,
  *   divide_polygons     tesselate polygons with triangles
  *   divide_polyhedra    tesselate polyhedra with tetrahedra and pyramids
  *                       (adding a vertex near each polyhedron's center)
- *   split_tensors       write tensor values as separate scalars
+ *   separate_meshes     use a different writer for each mesh
  *
  * parameters:
  *   name            <-- base name of output
@@ -748,11 +941,9 @@ fvm_writer_init(const char             *name,
                 fvm_writer_time_dep_t   time_dependency)
 {
   int  i;
-  char   local_dir[] = ".";
-  char  *tmp_path = NULL;
   char  *tmp_options = NULL;
   fvm_writer_t  *this_writer = NULL;
-  fvm_writer_init_t  *init_func = NULL;
+  bool separate_meshes = false;
 
   /* Find corresponding format and check coherency */
 
@@ -773,31 +964,49 @@ fvm_writer_init(const char             *name,
               _("Format type \"%s\" required for case \"%s\" is not available"),
               format_name, name);
 
-  /* Create directory */
+  tmp_options = _fvm_writer_option_list(format_options);
 
-  if (path != NULL) {
+  /* Parse top-level options (consuming those handled here);
+     the options string now contains options separated by a single
+     whitespace. */
 
-    int l = strlen(path);
+  if (tmp_options != NULL) {
 
-    if (l > 0) {
-      BFT_MALLOC(tmp_path, l + 2, char);
-      strcpy(tmp_path, path);
-      if (tmp_path[l - 1] == DIR_SEPARATOR)
-        tmp_path[l - 1] = '\0';
-      if (cs_file_mkdir_default(path) == 1)
-        tmp_path[0] = '\0';
-      else {
-        l = strlen(tmp_path);
-        tmp_path[l]   = DIR_SEPARATOR;
-        tmp_path[l+1] = '\0';
+    int i0 = 0, i1;
+
+    while (tmp_options[i0] != '\0') {
+
+      for (i1 = i0; tmp_options[i1] != '\0' && tmp_options[i1] != ' '; i1++);
+      int l_opt = i1 - i0;
+
+      if (   (l_opt == 15)
+          && (strncmp(tmp_options + i0, "separate_meshes", l_opt) == 0)) {
+        separate_meshes = true;
+        if (tmp_options[i1] == ' ')
+          strcpy(tmp_options + i0, tmp_options + i1 + 1);
+        else {
+          if (i0 > 1) {
+            assert(tmp_options[i0-1] = ' ');
+            i0--;
+          }
+          tmp_options[i0] = '\0';
+        }
       }
+      else {
+        i0 = i1;
+        if (tmp_options[i0] == ' ')
+          i0++;
+      }
+
+      i1 = strlen(tmp_options);
+      if (i1 > 0)
+        BFT_REALLOC(tmp_options, i1+1, char);
+      else
+        BFT_FREE(tmp_options);
+
     }
 
   }
-  else
-    tmp_path = local_dir;
-
-  tmp_options = _fvm_writer_option_list(format_options);
 
   /* Initialize writer */
 
@@ -832,35 +1041,25 @@ fvm_writer_init(const char             *name,
   CS_TIMER_COUNTER_INIT(this_writer->field_time);
   CS_TIMER_COUNTER_INIT(this_writer->flush_time);
 
+  if (this_writer->format->info_mask & FVM_WRITER_FORMAT_SEPARATE_MESHES)
+    separate_meshes = true;
+
+  if (separate_meshes)
+    this_writer->n_format_writers = 0; /* Delay contruction */
+  else
+    this_writer->n_format_writers = 1;
+
+  this_writer->mesh_names = NULL;
+
   /* Initialize format-specific writer */
 
-  init_func = this_writer->format->init_func;
-
-  if (init_func != NULL) {
-
-    cs_fp_exception_disable_trap();
-
-#if defined(HAVE_MPI)
-    this_writer->format_writer = init_func(name,
-                                           tmp_path,
-                                           this_writer->options,
-                                           this_writer->time_dep,
-                                           cs_glob_mpi_comm);
-#else
-    this_writer->format_writer = init_func(name,
-                                           tmp_path,
-                                           this_writer->options,
-                                           this_writer->time_dep);
-#endif
-
-    cs_fp_exception_restore_trap();
-
+  if  (this_writer->n_format_writers > 0) {
+    BFT_MALLOC(this_writer->format_writer, 1, void *);
+    this_writer->format_writer[0] = _format_writer_init(this_writer,
+                                                        NULL);
   }
   else
     this_writer->format_writer = NULL;
-
-  if (tmp_path != local_dir)
-    BFT_FREE(tmp_path);
 
   /* Return pointer to initialized writer */
 
@@ -893,11 +1092,19 @@ fvm_writer_finalize(fvm_writer_t  *this_writer)
 
   if (finalize_func != NULL) {
     cs_fp_exception_disable_trap();
-    this_writer->format_writer = finalize_func(this_writer->format_writer);
+    for (int i = 0; i < this_writer->n_format_writers; i++)
+      finalize_func(this_writer->format_writer[i]);
     cs_fp_exception_restore_trap();
   }
   else
     this_writer->format_writer = NULL;
+  BFT_FREE(this_writer->format_writer);
+
+  if (this_writer->mesh_names != NULL) {
+    for (int i = 0; i < this_writer->n_format_writers; i++)
+      BFT_FREE(this_writer->mesh_names[i]);
+  }
+  BFT_FREE(this_writer->mesh_names);
 
   /* Unload plugin if required */
 
@@ -1020,9 +1227,10 @@ fvm_writer_set_mesh_time(fvm_writer_t  *this_writer,
 
   if (set_mesh_time_func != NULL) {
     cs_fp_exception_disable_trap();
-    set_mesh_time_func(this_writer->format_writer,
-                       time_step,
-                       time_value);
+    for (int i = 0; i < this_writer->n_format_writers; i++)
+      set_mesh_time_func(this_writer->format_writer[i],
+                         time_step,
+                         time_value);
     cs_fp_exception_restore_trap();
   }
 }
@@ -1050,9 +1258,11 @@ fvm_writer_needs_tesselation(fvm_writer_t       *this_writer,
   int retval = 0;
   fvm_writer_needs_tesselation_t  *needs_tesselation_func = NULL;
 
+  void  *format_writer = _find_or_add_format_writer(this_writer, mesh);
+
   needs_tesselation_func = this_writer->format->needs_tesselation_func;
   if (needs_tesselation_func != NULL)
-    retval = needs_tesselation_func(this_writer->format_writer,
+    retval = needs_tesselation_func(format_writer,
                                     mesh,
                                     element_type);
   return retval;
@@ -1077,13 +1287,15 @@ fvm_writer_export_nodal(fvm_writer_t        *this_writer,
   assert(this_writer != NULL);
   assert(this_writer->format != NULL);
 
+  void  *format_writer = _find_or_add_format_writer(this_writer, mesh);
+
   t0 = cs_timer_time();
 
   export_nodal_func = this_writer->format->export_nodal_func;
 
   if (export_nodal_func != NULL) {
     cs_fp_exception_disable_trap();
-    export_nodal_func(this_writer->format_writer, mesh);
+    export_nodal_func(format_writer, mesh);
     cs_fp_exception_restore_trap();
   }
 
@@ -1138,13 +1350,15 @@ fvm_writer_export_field(fvm_writer_t                 *this_writer,
   assert(this_writer != NULL);
   assert(this_writer->format != NULL);
 
+  void  *format_writer = _find_or_add_format_writer(this_writer, mesh);
+
   t0 = cs_timer_time();
 
   export_field_func = this_writer->format->export_field_func;
 
   if (export_field_func != NULL) {
     cs_fp_exception_disable_trap();
-    export_field_func(this_writer->format_writer,
+    export_field_func(format_writer,
                       mesh,
                       name,
                       location,
@@ -1190,7 +1404,8 @@ fvm_writer_flush(fvm_writer_t  *this_writer)
 
     cs_fp_exception_disable_trap();
 
-    flush_func(this_writer->format_writer);
+    for (int i = 0; i < this_writer->n_format_writers; i++)
+      flush_func(this_writer->format_writer[i]);
 
     cs_fp_exception_restore_trap();
 
