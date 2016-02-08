@@ -643,10 +643,12 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
 
     /* Create Crystal-router structure */
 
+    int flags = CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
+
     cs_crystal_router_t *cr = cs_crystal_router_create_s(n->size,
                                                          0,
                                                          CS_DATATYPE_NULL,
-                                                         0, /* flags */
+                                                         flags,
                                                          NULL,
                                                          NULL,
                                                          n->rank,
@@ -889,10 +891,12 @@ cs_rank_neighbors_sync_count(const cs_rank_neighbors_t   *n_send,
 
     /* Create Crystal-router structure */
 
+    int flags = CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
+
     cs_crystal_router_t *cr = cs_crystal_router_create_s(n_send->size,
                                                          1,
                                                          CS_LNUM_TYPE,
-                                                         0, /* flags */
+                                                         flags,
                                                          send_count,
                                                          NULL,
                                                          n_send->rank,
@@ -903,9 +907,8 @@ cs_rank_neighbors_sync_count(const cs_rank_neighbors_t   *n_send,
     _n_recv->size = cs_crystal_router_n_elts(cr);
 
     _n_recv->rank = NULL;
-    recv_count = NULL;
 
-    void *recv_count_p = recv_count;
+    void *recv_count_p = NULL;
 
     cs_crystal_router_get_data(cr,
                                &(_n_recv->rank),
@@ -914,7 +917,7 @@ cs_rank_neighbors_sync_count(const cs_rank_neighbors_t   *n_send,
                                NULL,
                                &recv_count_p);
 
-    recv_count = recv_count_p;
+    _recv_count = recv_count_p;
 
     cs_crystal_router_destroy(&cr);
 
