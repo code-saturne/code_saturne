@@ -78,7 +78,6 @@ class ProfilesModel(Model):
         value['nfreq']     = -1
         value['formula']   =  "x = 0;\ny = s;\nz = 0;\n"
         value['points']    =  200
-        value['title']     =  "profile"
         value['label']     =  "profile"
         value['choice']    =  "frequency"
         value['frequency'] =  1
@@ -240,16 +239,6 @@ class ProfilesModel(Model):
 
 
     @Variables.undoLocal
-    def setTitle(self, label, title):
-        """
-        Public method.
-        """
-        self.isInList(label, self.getProfilesLabelsList())
-        node = self.node_prof.xmlGetNode('profile', label = label)
-        node['title'] = title
-
-
-    @Variables.undoLocal
     def setLabel(self, old_label, label):
         """
         Public method.
@@ -336,11 +325,6 @@ class ProfilesModel(Model):
             freq = self.__defaultValues()['frequency']
             self.setOutputFrequency(label, freq)
 
-        title = node['title']
-        if not title:
-            title = self.__defaultValues()['title']
-            self.setTitle(label, title)
-
         f_node = node.xmlGetChildNode('format')
         if not f_node:
             fmt = self.__defaultValues()['format']
@@ -363,7 +347,7 @@ class ProfilesModel(Model):
                 if self.dicoLabel2Name[name] == (var['name'], var['component']) :
                     lst.append(name)
 
-        return label, title, fmt, lst, choice, freq, formula, NbPoint
+        return label, fmt, lst, choice, freq, formula, NbPoint
 
 
 #-------------------------------------------------------------------------------
@@ -385,9 +369,9 @@ class ProfilesTestCase(ModelTest):
     def checkSetProfile(self):
         """Check whether the ProfilesModel class could set one profile"""
         mdl = ProfilesModel(self.case)
-        mdl.setProfile('prof1.dat', 'title', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
+        mdl.setProfile('prof1.dat', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
         doc = '''<profiles>
-                    <profile label="prof1.dat" title="title">
+                    <profile label="prof1.dat">
                             <var_prop name="velocity" component="0"/>
                             <var_prop name="velocity" component="1"/>
                             <var_prop name="velocity" component="2"/>
@@ -408,10 +392,10 @@ class ProfilesTestCase(ModelTest):
     def checkReplaceProfile(self):
         """Check whether the ProfilesModel class could replace profiles"""
         mdl = ProfilesModel(self.case)
-        mdl.setProfile('prof1', 'title', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
-        mdl.replaceProfile('prof1', 'premier', 'title_bis', ['VelocitU'], 30, 0.1, 0.2, 0.3, 2.0, 2.0, 2.0)
+        mdl.setProfile('prof1', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
+        mdl.replaceProfile('prof1', 'premier', ['VelocitU'], 30, 0.1, 0.2, 0.3, 2.0, 2.0, 2.0)
         doc = '''<profiles>
-                    <profile label="premier" title="title_bis">
+                    <profile label="premier">
                             <var_prop name="velocity" component="0"/>
                             <output_frequency>30</output_frequency>
                             <x1>0.1</x1>
@@ -431,11 +415,11 @@ class ProfilesTestCase(ModelTest):
         """Check whether the ProfilesModel class could delete profiles"""
         mdl = ProfilesModel(self.case)
 
-        mdl.setProfile('prof1.dat', 'title1', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
-        mdl.setProfile('prof2.dat', 'title2', ['VelocitU'], 20, 0.9, 0.8, 0.7, 9.1, 9.2, 9.3)
+        mdl.setProfile('prof1.dat', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
+        mdl.setProfile('prof2.dat', ['VelocitU'], 20, 0.9, 0.8, 0.7, 9.1, 9.2, 9.3)
         mdl.deleteProfile('prof1')
         doc = '''<profiles>
-                    <profile label="prof2.dat" title="title2">
+                    <profile label="prof2.dat">
                             <var_prop name="velocity" component="0"/>
                             <output_frequency>20</output_frequency>
                             <x1>0.9</x1>
@@ -453,9 +437,9 @@ class ProfilesTestCase(ModelTest):
     def checkGetVarProfile(self):
         """Check whether the ProfilesModel class could get one profile"""
         mdl = ProfilesModel(self.case)
-        mdl.setProfile('prof1.dat', 'title1', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
-        mdl.setProfile('prof2.dat', 'title2', ['VelocitU'], 20, 0.9, 0.8, 0.7, 9.1, 9.2, 9.3)
-        prof = ('prof2.dat', 'title2', ['VelocitU'], 20, 0.9, 0.8, 0.7, 9.1, 9.2, 9.3)
+        mdl.setProfile('prof1.dat', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
+        mdl.setProfile('prof2.dat', ['VelocitU'], 20, 0.9, 0.8, 0.7, 9.1, 9.2, 9.3)
+        prof = ('prof2.dat', ['VelocitU'], 20, 0.9, 0.8, 0.7, 9.1, 9.2, 9.3)
 
         assert mdl.getProfileData('prof2') == prof,\
             'Could not get values for profile named label in ProfilesModel'

@@ -1138,6 +1138,10 @@ class XMLinit(Variables):
             if law:
                 node['groundwater_law'] = law
 
+        # Profile titles
+        for node in self.case.xmlGetNodeList('profile'):
+            node.xmlDelAttribute('title')
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

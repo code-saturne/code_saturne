@@ -217,7 +217,6 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.connect(self.comboBoxFormat,        SIGNAL("activated(const QString&)"), self.slotFormatType)
         self.connect(self.pushButtonFormula,     SIGNAL("clicked()"), self.slotFormula)
         self.connect(self.lineEditBaseName,      SIGNAL("textChanged(const QString &)"), self.slotBaseName)
-        self.connect(self.lineEditTitle,         SIGNAL("textChanged(const QString &)"), self.slotTitle)
         self.connect(self.lineEditFreq,          SIGNAL("textChanged(const QString &)"), self.slotFrequence)
         self.connect(self.lineEditFreqTime,      SIGNAL("textChanged(const QString &)"), self.slotFrequenceTime)
         self.connect(self.lineEditNbPoint,       SIGNAL("textChanged(const QString &)"), self.slotNbPoint)
@@ -234,10 +233,6 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         validatorNbPoint = IntValidator(self.lineEditNbPoint, min=0)
         self.lineEditNbPoint.setValidator(validatorNbPoint)
 
-        rx = "[\- _A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
-        validatorTitle =  RegExpValidator(self.lineEditTitle, QRegExp(rx))
-        self.lineEditTitle.setValidator(validatorTitle)
-
         rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
         validatorBaseName =  RegExpValidator(self.lineEditBaseName, QRegExp(rx))
         self.lineEditBaseName.setValidator(validatorBaseName)
@@ -251,7 +246,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         #update list of profiles for view from xml file
         for lab in self.mdl.getProfilesLabelsList():
             self.entriesNumber = self.entriesNumber + 1
-            label, title, fmt, lst, choice, freq, formula, nb_point = self.mdl.getProfileData(lab)
+            label, fmt, lst, choice, freq, formula, nb_point = self.mdl.getProfileData(lab)
             self.__insertProfile(label, lst)
 
         self.__eraseEntries()
@@ -329,8 +324,8 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         Return info from the argument entry.
         """
         label = self.modelProfile.getLabel(row)
-        lab, title, fmt, lst, choice, freq, formula, nb_point = self.mdl.getProfileData(label)
-        return label, title, fmt, lst, choice, freq, formula, nb_point
+        lab, fmt, lst, choice, freq, formula, nb_point = self.mdl.getProfileData(label)
+        return label, fmt, lst, choice, freq, formula, nb_point
 
 
     def __insertProfile(self, label, lst):
@@ -363,7 +358,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             msg   = self.tr("You must select an existing profile")
             QMessageBox.information(self, title, msg)
         else:
-            label, title, fmt, lst, choice, freq, formula, nb_point = self.__infoProfile(row)
+            label, fmt, lst, choice, freq, formula, nb_point = self.__infoProfile(row)
             self.modelProfile.deleteRow(row)
             self.mdl.deleteProfile(label)
             self.__eraseEntries()
@@ -379,10 +374,9 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         row = index.row()
         log.debug("slotSelectProfile -> %s" % (row,))
 
-        label, title, fmt, liste, choice, freq, formula, nb_point = self.__infoProfile(row)
+        label, fmt, liste, choice, freq, formula, nb_point = self.__infoProfile(row)
         self.label_select = label
 
-        self.lineEditTitle.setText(str(title))
         self.lineEditBaseName.setText(str(label))
         self.modelFormat.setItem(str_model=fmt)
 
@@ -504,14 +498,6 @@ z = z1*s + z0*(1.-s);"""
                 row = self.treeViewProfile.currentIndex().row()
                 liste = self.mdl.getVariable(self.label_select)
                 self.modelProfile.replaceItem(row, self.label_select, " ; ".join(liste))
-
-
-    @pyqtSignature("const QString&")
-    def slotTitle(self, text):
-        """
-        """
-        if self.sender().validator().state == QValidator.Acceptable:
-            self.mdl.setTitle(self.label_select, str(text))
 
 
     @pyqtSignature("const QString&")

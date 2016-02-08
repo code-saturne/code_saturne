@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes
 -------
 
+ - GUI: remove titles from profile definitions, as these were only handled
+   by the obsolete Salome VISU module.
+
  - Added some turbomachinery post-processing utility functions.
 
  - Allow coupling of radiative transfer with 1d wall thermal module.
@@ -15,7 +18,7 @@ Changes
    (in case of periodicity, rebuilding the periodicity in a later
    preprocessing stage may be necessary).
 
- - when calling cs_selector_get_b_face_num_list or
+ - When calling cs_selector_get_b_face_num_list or
    cs_selector_get_i_face_num_list, it is no longer necessary to build
    selection mechanisms during the optional mesh modification step.
 
@@ -32,6 +35,7 @@ Numerics
     * improve OpenMP load balancing of SuperBlock reductions
     * add optional Kahan compensated sum-based BLAS operations;
     * add cs_blas_set_reduce_algorithm() function to choose algorithm
+
 
 Release 4.2.0 (December 23 2015)
 ================================
