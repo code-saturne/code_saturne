@@ -45,7 +45,6 @@
 #include "bft_mem.h"
 
 #include "fvm_defs.h"
-#include "fvm_convert_array.h"
 #include "fvm_io_num.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
@@ -437,7 +436,7 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
   cs_part_to_block_t   *d = NULL;
   size_t                block_buf_size = 0;
 
-  const double      *vertex_coords = mesh->vertex_coords;
+  const cs_coord_t  *vertex_coords = mesh->vertex_coords;
   const cs_lnum_t   *parent_vertex_num = mesh->parent_vertex_num;
   const cs_lnum_t   n_vertices
       = fvm_io_num_get_local_count(mesh->global_vertex_num);
@@ -550,7 +549,7 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
   float        *coords_tmp = NULL;
 
   const cs_lnum_t    n_vertices = mesh->n_vertices;
-  const double      *vertex_coords = mesh->vertex_coords;
+  const cs_coord_t  *vertex_coords = mesh->vertex_coords;
   const cs_lnum_t   *parent_vertex_num = mesh->parent_vertex_num;
 
   const size_t  stride = (size_t)(mesh->dim);
