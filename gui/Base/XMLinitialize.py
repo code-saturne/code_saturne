@@ -194,8 +194,6 @@ class XMLinit(Variables):
         return msg
 
 
-
-
     def __backwardCompatibility(self):
         """
         Change XML in order to ensure backward compatibility.
@@ -219,7 +217,7 @@ class XMLinit(Variables):
             vers = self.case['package'].version
             self.case.root().xmlSetAttribute(solver_version = vers)
 
-            # apply all backwardCompatibility we don't know when it was create
+            # apply all backwardCompatibility we don't know when it was created
             self.__backwardCompatibilityOldVersion("-1")
             self.__backwardCompatibilityCurrentVersion()
 
@@ -230,31 +228,25 @@ class XMLinit(Variables):
         """
         if from_vers == "-1":
             self.__backwardCompatibilityBefore_3_0()
+
+        if from_vers <= "3.0":
             self.__backwardCompatibilityFrom_3_0()
-            self.__backwardCompatibilityFrom_3_1()
-            self.__backwardCompatibilityFrom_3_2()
-            self.__backwardCompatibilityFrom_3_3()
-            self.__backwardCompatibilityFrom_4_0()
-        elif from_vers == "3.0":
-            self.__backwardCompatibilityFrom_3_0()
-            self.__backwardCompatibilityFrom_3_1()
-            self.__backwardCompatibilityFrom_3_2()
-            self.__backwardCompatibilityFrom_3_3()
-            self.__backwardCompatibilityFrom_4_0()
-        elif from_vers == "3.1":
-            self.__backwardCompatibilityFrom_3_1()
-            self.__backwardCompatibilityFrom_3_2()
-            self.__backwardCompatibilityFrom_3_3()
-            self.__backwardCompatibilityFrom_4_0()
-        elif from_vers == "3.2":
-            self.__backwardCompatibilityFrom_3_2()
-            self.__backwardCompatibilityFrom_3_3()
-            self.__backwardCompatibilityFrom_4_0()
-        elif from_vers == "3.3":
-            self.__backwardCompatibilityFrom_3_3()
-            self.__backwardCompatibilityFrom_4_0()
-        elif from_vers == "4.0":
-            self.__backwardCompatibilityFrom_4_0()
+
+        if from_vers <= "4.0":
+            if from_vers <= "3.1":
+                self.__backwardCompatibilityFrom_3_1()
+            if from_vers <= "3.2":
+                self.__backwardCompatibilityFrom_3_2()
+            if from_vers <= "3.3":
+                self.__backwardCompatibilityFrom_3_3()
+            if from_vers <= "4.0":
+                self.__backwardCompatibilityFrom_4_0()
+
+        if from_vers <= "5.0":
+            if from_vers <= "4.1":
+                self.__backwardCompatibilityFrom_4_1()
+            if from_vers <= "4.2":
+                self.__backwardCompatibilityFrom_4_2()
 
 
     def __backwardCompatibilityBefore_3_0(self):
@@ -1034,8 +1026,7 @@ class XMLinit(Variables):
                 lst[i].xmlRemoveNode()
 
 
-
-    def __backwardCompatibilityCurrentVersion(self):
+    def __backwardCompatibilityFrom_4_1(self):
         """
         Change XML in order to ensure backward compatibility.
         """
@@ -1085,6 +1076,11 @@ class XMLinit(Variables):
                     if s:
                         nn.xmlInitNode('postprocessing_recording')['status']= s
 
+
+    def __backwardCompatibilityFrom_4_2(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
         # renames
         node = self.case.xmlGetNode('calculation_management')
         if node:
@@ -1094,6 +1090,12 @@ class XMLinit(Variables):
                 nn = node.xmlGetChildNode('valgrind')
                 if nn:
                     nn.xmlRemoveNode()
+
+
+    def __backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
 
         # darcy_model -> groundwater
         oldnode = XMLThermoPhysicalModelNode.xmlGetNode('darcy_model')
