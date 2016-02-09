@@ -42,6 +42,7 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_math.h"
 #include "cs_mesh_location.h"
 #include "cs_field.h"
 #include "cs_post.h"
@@ -60,6 +61,9 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Macro definitions and structure definitions
  *============================================================================*/
+
+/* Redefined names of function from cs_math to get shorter names */
+#define _dp3 cs_math_3_dot_product
 
 #define CS_ADVECTION_FIELD_DBG  1
 
@@ -1094,7 +1098,7 @@ cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
   const cs_quant_t  peq = cdoq->edge[e_id];
   const cs_real_t  *xv = cdoq->vtx_coord + 3*v_id;
 
-  cs_real_t  surf = cs_surftri(xv, peq.center, pfq.center);
+  cs_real_t  surf = cs_math_surftri(xv, peq.center, pfq.center);
 
   /* Compute the flux accros the portion of primal face */
   switch (adv->def_type) {
@@ -1389,5 +1393,7 @@ cs_advection_field_extra_op(const cs_adv_field_t  *adv)
 }
 
 /*----------------------------------------------------------------------------*/
+
+#undef _dp3
 
 END_C_DECLS

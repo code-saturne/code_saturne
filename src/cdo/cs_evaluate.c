@@ -41,6 +41,7 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_math.h"
 #include "cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
@@ -102,7 +103,7 @@ _analytic_quad_tet1(double                tcur,
   cs_real_3_t  xg;
   cs_get_t  evaluation;
 
-  double vol_tet = cs_voltet(xv, xe, xf, xc);
+  const double  vol_tet = cs_math_voltet(xv, xe, xf, xc);
 
   for (k = 0; k < 3; k++)
     xg[k] = 0.25*(xv[k] + xe[k] + xf[k] + xc[k]);
@@ -136,18 +137,17 @@ _analytic_quad_tet4(double               tcur,
                     cs_real_3_t          xc,
                     cs_analytic_func_t  *ana)
 {
-  int  p;
   double  weight;
   cs_real_3_t  gauss_pts[4];
   cs_get_t  evaluation;
 
-  double result = 0.0;
-  double vol_tet = cs_voltet(xv, xe, xf, xc);
+  double  result = 0.0;
+  const double  vol_tet = cs_math_voltet(xv, xe, xf, xc);
 
   /* Compute Gauss points and its unique weight */
   cs_quadrature_tet_4pts(xv, xe, xf, xc, vol_tet, gauss_pts, &weight);
 
-  for (p = 0; p < 4; p++) {
+  for (int p = 0; p < 4; p++) {
     ana(tcur, gauss_pts[p], &evaluation);
     result += evaluation.val;
   }
@@ -180,18 +180,17 @@ _analytic_quad_tet5(double              tcur,
                     cs_real_3_t         xc,
                     cs_analytic_func_t *ana)
 {
-  int  p;
   double  weights[5];
   cs_real_3_t  gauss_pts[5];
   cs_get_t  evaluation;
 
-  double result = 0.0;
-  double vol_tet = cs_voltet(xv, xe, xf, xc);
+  double  result = 0.0;
+  const double  vol_tet = cs_math_voltet(xv, xe, xf, xc);
 
   /* Compute Gauss points and its unique weight */
   cs_quadrature_tet_5pts(xv, xe, xf, xc, vol_tet, gauss_pts, weights);
 
-  for (p = 0; p < 5; p++) {
+  for (int p = 0; p < 5; p++) {
     ana(tcur, gauss_pts[p], &evaluation);
     result += evaluation.val*weights[p];
   }

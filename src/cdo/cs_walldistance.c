@@ -48,6 +48,7 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_post.h"
 #include "cs_mesh_location.h"
@@ -55,7 +56,6 @@
 #include "cs_cdo.h"
 #include "cs_param.h"
 #include "cs_reco.h"
-#include "cs_cdo_toolbox.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -66,6 +66,13 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*=============================================================================
+ * Local Macro definitions
+ *============================================================================*/
+
+/* Redefined the name of functions from cs_math to get shorter names */
+#define _dp3 cs_math_3_dot_product
 
 /*============================================================================
  * Private function prototypes
@@ -120,7 +127,7 @@ _compute_cdofb(const cs_cdo_connect_t     *connect,
     cs_real_t  tmp = _dp3(cell_gradient, cell_gradient) + 2*c_var[c_id];
     assert(tmp >= 0.); // Sanity check
 
-    dist[c_id] = sqrt(tmp) - _n3(cell_gradient);
+    dist[c_id] = sqrt(tmp) - cs_math_3_norm(cell_gradient);
 
   } // Loop on cells
 
@@ -210,7 +217,7 @@ _compute_cdovb(const cs_cdo_connect_t     *connect,
   for (i = 0; i < cdoq->n_vertices; i++) {
     cs_real_t  tmp = _dp3(vtx_gradient[i], vtx_gradient[i]) + 2*var[i];
     assert(tmp >= 0); // Sanity check
-    dist[i] = sqrt(tmp) - _n3(vtx_gradient[i]);
+    dist[i] = sqrt(tmp) - cs_math_3_norm(vtx_gradient[i]);
   }
 
   /* Post-processing */
@@ -378,5 +385,7 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
 }
 
 /*----------------------------------------------------------------------------*/
+
+#undef _dp3
 
 END_C_DECLS

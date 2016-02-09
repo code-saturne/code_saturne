@@ -43,6 +43,7 @@
 
 #include "bft_error.h"
 #include "bft_printf.h"
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -69,9 +70,6 @@ const char ssepline[] =
 /*=============================================================================
  * Local static variables
  *============================================================================*/
-
-static double  cs_base_eps_machine;
-static double  cs_base_zthreshold = FLT_MIN;
 
 /*============================================================================
  * Private function prototypes
@@ -102,55 +100,6 @@ cs_base_strtf(bool  boolean)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute epsilon which is the machine precision
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_set_eps_machine(void)
-{
-  double  y;
-
-  double  eps = 5e-16;
-
-  y = 1.0 + eps;
-
-  while (y > 1.0) {
-    eps /= 2.0;
-    y = 1.0 + eps;
-  }
-  eps *= 2.0;
-  printf("# Machine precision: %12.8e\n", eps);
-
-  cs_base_eps_machine = eps;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the machine precision
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_get_eps_machine(void)
-{
-  return cs_base_eps_machine;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the threshold under which one considers it's zero
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_get_zero_threshold(void)
-{
-  return cs_base_zthreshold;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Define a cs_nvec3_t structure from a cs_real_3_t
  *
  * \param[in]  v     vector of size 3
@@ -165,7 +114,7 @@ cs_nvec3(const cs_real_3_t    v,
   cs_real_t  magnitude = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
 
   qv->meas = magnitude;
-  if (fabs(magnitude) > cs_base_zthreshold) {
+  if (fabs(magnitude) > cs_defs_zero_threshold) {
 
     cs_real_t  inv = 1/magnitude;
     for (int k = 0; k < 3; k++)

@@ -34,7 +34,6 @@
 #include "cs_time_step.h"
 #include "cs_cdo.h"
 #include "cs_param.h"
-#include "cs_cdo_toolbox.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_property.h"

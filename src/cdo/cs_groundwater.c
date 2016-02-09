@@ -50,7 +50,6 @@
 #include "cs_field.h"
 #include "cs_cdo.h"
 #include "cs_param.h"
-#include "cs_cdo_toolbox.h"
 #include "cs_reco.h"
 #include "cs_hodge.h"
 
@@ -473,7 +472,7 @@ _get_tracer_diffusion_tensor(double          theta,
   const double  vxy = v[0]*v[1], vxz = v[0]*v[1], vyz = v[1]*v[2];
   const double  vnorm = sqrt(vxx + vyy + vzz);
 
-  assert(vnorm > cs_get_zero_threshold());
+  assert(vnorm > cs_defs_zero_threshold);
   const double  onv = 1/vnorm;
   const double  delta_coef = (tp->alpha_l - tp->alpha_t)*onv;
 

@@ -46,6 +46,7 @@
 #include <bft_printf.h>
 
 #include "cs_log.h"
+#include "cs_math.h"
 #include "cs_search.h"
 #include "cs_post.h"
 #include "cs_quadrature.h"
@@ -617,7 +618,7 @@ _weak_bc_enforcement(cs_cdovb_scaleq_t     *builder,
   /* Get the anisotropic ratio and the max. eigenvalue (if uniform) */
   if (is_uniform) {
     cs_property_get_cell_tensor(0, pty, h_info.inv_pty, matpty);
-    cs_eigen_mat33((const cs_real_t (*)[3])matpty, &eig_ratio, &eig_max);
+    cs_math_33_eigen((const cs_real_t (*)[3])matpty, &eig_ratio, &eig_max);
   }
 
   const cs_cdo_bc_list_t  *face_dir = builder->face_bc->dir;
@@ -633,7 +634,7 @@ _weak_bc_enforcement(cs_cdovb_scaleq_t     *builder,
 
     if (!is_uniform) {
       cs_property_get_cell_tensor(c_id, pty, h_info.inv_pty, matpty);
-      cs_eigen_mat33((const cs_real_t (*)[3])matpty, &eig_ratio, &eig_max);
+      cs_math_33_eigen((const cs_real_t (*)[3])matpty, &eig_ratio, &eig_max);
     }
 
     ntrgrd = cs_cdovb_diffusion_ntrgrd_build(c_id, f_id,
@@ -805,7 +806,8 @@ _enforce_bc(cs_cdovb_scaleq_t          *builder,
 
   case CS_PARAM_BC_ENFORCE_WEAK_PENA:
     {
-      cs_real_t  pena_coef = cs_weak_penalization_weight/cs_get_eps_machine();
+      cs_real_t  pena_coef =
+        cs_weak_penalization_weight / cs_defs_get_eps_machine();
 
       for (i = 0; i < builder->vtx_dir->n_elts; i++)
         full_matrix->diag[builder->vtx_dir->elt_ids[i]] += pena_coef;
@@ -1442,7 +1444,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
 
   bool do_cleaning = false; // Advanced option
   if (do_cleaning)
-    cs_sla_matrix_clean(sys_mat, cs_get_eps_machine());
+    cs_sla_matrix_clean(sys_mat, cs_defs_get_eps_machine());
   else
     cs_sla_matrix_rmzeros(sys_mat);
 

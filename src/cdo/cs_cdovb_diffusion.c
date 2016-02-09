@@ -44,12 +44,13 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_math.h"
+#include "cs_hodge.h"
+#include "cs_property.h"
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
-
-#include "cs_hodge.h"
-#include "cs_property.h"
 
 #include "cs_cdovb_diffusion.h"
 
@@ -72,10 +73,17 @@ BEGIN_C_DECLS
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
- * Local Macro definitions and structure definitions
+ * Local Macro definitions
  *============================================================================*/
 
 #define CS_CDOVB_DIFFUSION_DBG 0
+
+/* Redefined the name of functions from cs_math to get shorter names */
+#define _dp3  cs_math_3_dot_product
+
+/*=============================================================================
+ * Local structure definitions
+ *============================================================================*/
 
 /* Stiffness matrix builder */
 struct _cs_cdovb_diff_t {
@@ -205,7 +213,7 @@ _define_wbs_builder(cs_lnum_t                    c_id,
     wvc[_i] = over_cell_vol * quant->dcell_vol[i];
 
     /* Define the segment x_c --> x_v */
-    _lenunit3(xc, xv, len_vc + _i, unit_vc + _i);
+    cs_math_3_length_unitv(xc, xv, len_vc + _i, unit_vc[_i]);
 
   } // Loop on cell vertices
 
@@ -256,21 +264,19 @@ _grad_lagrange_vtx_pefc(const cs_real_3_t     ubase,
                         const cs_nvec3_t      deq,
                         cs_real_3_t           grd_func)
 {
-  int  k;
   cs_real_3_t  unormal;
 
   /* Normal direction to the plane in opposition to xv */
-  _cp3(ubase, deq.unitv, &unormal);
+  cs_math_3_cross_product(ubase, deq.unitv, unormal);
 
   /* Height from this plane to the vertex */
   double  sgn = _dp3(udir, unormal);
   double  height = len_vc * sgn;
-  assert(fabs(height) > cs_get_eps_machine()); /* Sanity check */
+  assert(fabs(height) > cs_defs_get_eps_machine()); /* Sanity check */
   double  over_height = 1/height;
 
-  for (k = 0; k < 3; k++)
+  for (int k = 0; k < 3; k++)
     grd_func[k] = unormal[k]*over_height;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -325,10 +331,10 @@ _compute_wvf_pefcvol(cs_lnum_t                   f_id,
     const short int  _v1 = loc_ids[v1_id];
     const short int  _v2 = loc_ids[v2_id];
 
-    _lenunit3(eq.center, pfq.center, &len, &un);
-    _cp3(un, eq.unitv, &cp);
+    cs_math_3_length_unitv(eq.center, pfq.center, &len, un);
+    cs_math_3_cross_product(un, eq.unitv, cp);
 
-    double  area = len * eq.meas * _n3(cp); // two times the area
+    double  area = len * eq.meas * cs_math_3_norm(cp); // two times the area
     double  contrib = area * f_coef;
 
     pefc_vol[j] = area * h_coef;
@@ -446,7 +452,7 @@ _compute_wbs_stiffness(cs_lnum_t                    c_id,
       for (ii = 0; ii < sloc->n_ent; ii++) {
 
         ishft = ii*sloc->n_ent;
-        _mv3(tensor, glv[ii], matg);
+        cs_math_33_3_product(tensor, glv[ii], matg);
 
         /* Diagonal contribution */
         sloc->mat[ishft+ii] += subvol * _dp3(matg, glv[ii]);
@@ -801,7 +807,7 @@ cs_cdovb_diffusion_ntrgrd_build(cs_lnum_t                    c_id,
     ntrgrd->mat[i] = 0;
 
   /* Compute the product: matpty*face unit normal */
-  _mv3((const cs_real_t (*)[3])matpty, pfq.unitv, mn);
+  cs_math_33_3_product((const cs_real_t (*)[3])matpty, pfq.unitv, mn);
 
   /* Build the local "normal trace gradient" according to the choice of
      algorithm use to build the discrete Hodge operator */
@@ -850,9 +856,9 @@ cs_cdovb_diffusion_ntrgrd_build(cs_lnum_t                    c_id,
         const double  tmp_val = peq.meas*dp;
         const double  beta_pec_vol = 3.*beta/tmp_val;
         const double  ecoef =  3*beta/dp;
-        const double  surf = cs_surftri(quant->vtx_coord + 3*v1_id,
-                                        peq.center,
-                                        pfq.center);
+        const double  surf = cs_math_surftri(quant->vtx_coord + 3*v1_id,
+                                             peq.center,
+                                             pfq.center);
 
         /* Penalization term */
         v_coef[v1_id] += surf*f_coef;
@@ -924,5 +930,7 @@ cs_cdovb_diffusion_ntrgrd_build(cs_lnum_t                    c_id,
 }
 
 /*----------------------------------------------------------------------------*/
+
+#undef _dp3
 
 END_C_DECLS

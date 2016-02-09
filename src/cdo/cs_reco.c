@@ -39,7 +39,7 @@
 
 #include <bft_mem.h>
 
-#include "cs_cdo_toolbox.h"
+#include "cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -55,14 +55,8 @@ BEGIN_C_DECLS
  * Local macro and structure definitions
  *============================================================================*/
 
-/*============================================================================
- * Static global variables
- *============================================================================*/
-
-/*============================================================================
- * Private function prototypes
- *============================================================================*/
-
+/* Redefined the name of functions from cs_math to get shorter names */
+#define _dp3  cs_math_3_dot_product
 
 /*============================================================================
  * Public function prototypes
@@ -131,14 +125,14 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
 
       eid = f2e->col_id[j];
       eq = quant->edge[eid];
-      _lenunit3(eq.center, fq.center, &lef, &uef);
+      cs_math_3_length_unitv(eq.center, fq.center, &lef, uef);
 
       for (l = e2v->idx[eid]; l < e2v->idx[eid+1]; l++) {
 
         vid = e2v->col_id[l];
-        _lenunit3(&(m->vtx_coord[3*vid]), eq.center, &lve, &uve);
-        _cp3(uve, uef, &cp);
-        frec[i] += 0.5*lve*lef*_n3(cp) * dof[vid];
+        cs_math_3_length_unitv(&(m->vtx_coord[3*vid]), eq.center, &lve, uve);
+        cs_math_3_cross_product(uve, uef, cp);
+        frec[i] += 0.5 * lve * lef * cs_math_3_norm(cp) * dof[vid];
 
       }
 
@@ -179,6 +173,7 @@ cs_reco_conf_grdc(const cs_cdo_connect_t     *connect,
               " Buffer must be pre-allocated.");
 
   const cs_sla_matrix_t  *c2f = connect->c2f;
+  const cs_real_t  *cell_centers = quant->cell_centers;
 
   for (j = c2f->idx[c_id], l = 0; j < c2f->idx[c_id+1]; j++, l++) {
 
@@ -186,7 +181,7 @@ cs_reco_conf_grdc(const cs_cdo_connect_t     *connect,
     short int  sgn = c2f->sgn[j];
     cs_quant_t  fq = quant->face[f_id];
 
-    _lenunit3(fq.center, &(quant->cell_centers[3*c_id]), &len, &unitv);
+    cs_math_3_length_unitv(fq.center, cell_centers + 3*c_id, &len, unitv);
 
     cs_real_t  ohf = -sgn/(len * fabs(_dp3(fq.unitv, unitv)));
 
@@ -513,5 +508,7 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
 }
 
 /*----------------------------------------------------------------------------*/
+
+#undef _dp3
 
 END_C_DECLS

@@ -46,12 +46,12 @@
 #include <bft_printf.h>
 
 #include "cs_blas.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_location.h"
 #include "cs_post.h"
 #include "cs_field.h"
-
 #include "cs_cdo.h"
 #include "cs_cdo_toolbox.h"
 #include "cs_cdofb_scaleq.h"
@@ -92,7 +92,6 @@ BEGIN_C_DECLS
 /*! \endcond (end ignore by Doxygen) */
 
 static FILE  *resume = NULL;
-static cs_real_t  one_third = 1./3;
 
 /*============================================================================
  * Private function prototypes
@@ -110,7 +109,7 @@ _get_sol(cs_real_t          time,
   const double  x = xyz[0], y = xyz[1], z = xyz[2];
   const double  pi = 4.0*atan(1.0);
 
-  double  solution = 1+sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+one_third));
+  double  solution = 1+sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_defs_onethird));
 
   (*retval).val = solution;
 }
@@ -211,19 +210,13 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
                    const double                 cell_pdi[],
                    const double                 face_pdi[])
 {
-  short int sgn;
-  int  i, j, k, ij, c_id, f_id;
-  double  gcontrib, pvol, l2dgrd, enerd, gdic;
+  int  i, j, k;
+  double  l2dgrd, enerd, gdic;
   cs_real_3_t  xc;
-  cs_quant_t  fq;
 
   double  num_l2d = 0, denum_l2d = 0, num_end = 0, denum_end = 0;
   double  *gexc = NULL, *dgc = NULL;
-  cs_locmat_t  *_h = NULL;
   cs_hodge_builder_t  *hb = cs_hodge_builder_init(topo, h_info);
-
-  const double  zthreshold = cs_get_zero_threshold();
-  const double  _over3 = 1./3.;
 
   /* Initialize local buffers */
   BFT_MALLOC(gexc, 2*topo->n_max_fbyc, double);
@@ -231,12 +224,12 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
   for (i = 0; i < 2*topo->n_max_fbyc; i++) gexc[i] = 0;
 
   /* Loop on cells */
-  for (c_id = 0; c_id < cdoq->n_cells; c_id++) {
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
     double  _nl2c = 0, _dl2c = 0, _denc = 0, _nenc = 0;
 
     /* Build a local discrete Hodge operator */
-    _h = cs_hodge_build_local(c_id, topo, cdoq, hb);
+    cs_locmat_t  *_h = cs_hodge_build_local(c_id, topo, cdoq, hb);
 
     for (k = 0; k < 3; k++)
       xc[k] = cdoq->cell_centers[3*c_id+k];
@@ -245,20 +238,19 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
 
       cs_lnum_t  shift = topo->c2f->idx[c_id] + i;
       const cs_nvec3_t  deq = cdoq->dedge[shift]; /* Dual edge quantities */
+      const cs_lnum_t f_id = _h->ids[i];
+      const cs_quant_t  fq = cdoq->face[f_id];
+      const short int sgn = topo->c2f->sgn[shift];
 
-      f_id = _h->ids[i];
-      assert(f_id == topo->c2f->col_id[shift]);
-
-      fq = cdoq->face[f_id];
-      sgn = topo->c2f->sgn[shift];
+      assert(f_id == topo->c2f->col_id[shift]); /* Sanity check */
 
       /* Compute pvol_{f,c} */
-      pvol = _over3 * deq.meas * fq.meas * _dp3(deq.unitv, fq.unitv);
-      gcontrib = pvol/(deq.meas*deq.meas);
+      const double  dp = cs_math_3_dot_product(deq.unitv, fq.unitv);
+      const double  pvol = cs_defs_onethird * deq.meas * fq.meas * dp;
+      const double  gcontrib = pvol/(deq.meas*deq.meas);
 
       gexc[i] = sgn*(face_rpex[f_id] - cell_rpex[c_id]);
-      gdic = sgn*(face_pdi[f_id] - cell_pdi[c_id]);
-      dgc[i] = gexc[i] - gdic;
+      dgc[i] = gexc[i] - sgn*(face_pdi[f_id] - cell_pdi[c_id]);
 
       _nl2c += gcontrib * dgc[i]*dgc[i];
       _dl2c += gcontrib * gexc[i]*gexc[i];
@@ -267,9 +259,9 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
 
     for (i = 0; i < _h->n_ent; i++) {
       for (j = 0; j < _h->n_ent; j++) {
-        ij = i*_h->n_ent+j;
-        _nenc += dgc[i]*_h->mat[ij]*dgc[j];
-        _denc += gexc[i]*_h->mat[ij]*gexc[j];
+        const int  ij = i*_h->n_ent+j;
+        _nenc += dgc[i] * _h->mat[ij]*dgc[j];
+        _denc += gexc[i] * _h->mat[ij]*gexc[j];
       }
     }
 
@@ -281,14 +273,14 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
   } /* Loop on cells */
 
   /* Compute the L2 discrete norm on gradient */
-  if (fabs(denum_l2d) > zthreshold)
+  if (fabs(denum_l2d) > cs_defs_zero_threshold)
     l2dgrd = sqrt(num_l2d/denum_l2d);
   else
     l2dgrd = sqrt(num_l2d);
   printf(" >> l2dgrd       % 10.6e\n", l2dgrd);
 
   /* Compute the discrete energy norm */
-  if (fabs(denum_end) > zthreshold)
+  if (fabs(denum_end) > cs_defs_zero_threshold)
     enerd = sqrt(num_end/denum_end);
   else
     enerd = sqrt(num_end);
@@ -335,7 +327,6 @@ _compute_vb_l2pot(const cs_mesh_t             *m,
   double  *pdi_recc = NULL, *pdi_recf = NULL;
 
   const double  tcur = time_step->t_cur;
-  const double  _over_six = 1./6.;
   const double  *xyz = m->vtx_coord;
 
   /* Reconstruct potentials at face centers and cell centers */
@@ -366,7 +357,10 @@ _compute_vb_l2pot(const cs_mesh_t             *m,
         const cs_lnum_t  v_id2 = topo->e2v->col_id[topo->e2v->idx[e_id]+1];
         const double  pv1 = pdi[v_id1], pv2 = pdi[v_id2];
 
-        voltet = cs_voltet(&(xyz[3*v_id1]), &(xyz[3*v_id2]), fq.center, xc);
+        const double  voltet = cs_math_voltet(&(xyz[3*v_id1]),
+                                              &(xyz[3*v_id2]),
+                                              fq.center,
+                                              xc);
 
         /* Analytical function and integration with the highest
            available quadrature */
@@ -379,10 +373,10 @@ _compute_vb_l2pot(const cs_mesh_t             *m,
         }
 
         /* Should keep the same order */
-        pdi_gpts[0] = _over_six *(pv1 + pv2 + pf) + 0.5*pc;
-        pdi_gpts[1] = _over_six *(pv2 + pf + pc)  + 0.5*pv1;
-        pdi_gpts[2] = _over_six *(pf + pc + pv1)  + 0.5*pv2;
-        pdi_gpts[3] = _over_six *(pc + pv1 + pv2) + 0.5*pf;
+        pdi_gpts[0] = cs_defs_onesix *(pv1 + pv2 + pf) + 0.5*pc;
+        pdi_gpts[1] = cs_defs_onesix *(pv2 + pf + pc)  + 0.5*pv1;
+        pdi_gpts[2] = cs_defs_onesix *(pf + pc + pv1)  + 0.5*pv2;
+        pdi_gpts[3] = cs_defs_onesix *(pc + pv1 + pv2) + 0.5*pf;
         pdi_gpts[4] = 0.25*(pv1 + pv2 + pf + pc);
 
         n_add = 0, d_add = 0;
@@ -441,7 +435,6 @@ _cdovb_post(const cs_mesh_t            *m,
   double  *ddip = NULL, *ddig = NULL, *rpex = NULL, *gdi = NULL, *rgex = NULL;
   double  *pvol = NULL, *work = NULL;
 
-  const double  zthreshold = cs_get_zero_threshold();
   const double  tcur = time_step->t_cur;
   const cs_lnum_t  n_vertices = cdoq->n_vertices, n_edges = cdoq->n_edges;
   const cs_equation_param_t  *eqp = cs_equation_get_param(eq);
@@ -548,7 +541,7 @@ _cdovb_post(const cs_mesh_t            *m,
     /* Compute discrete L2 error norm on the potential */
     num = cs_weighted_sum_square(n_vertices, ddip, pvol);
     denum = cs_weighted_sum_square(n_vertices, rpex, pvol);
-    if (fabs(denum) > zthreshold)
+    if (fabs(denum) > cs_defs_zero_threshold)
       l2dpot = sqrt(num/denum);
     else
       l2dpot = sqrt(num);
@@ -561,7 +554,7 @@ _cdovb_post(const cs_mesh_t            *m,
     */
 
     _compute_vb_l2pot(m, connect, cdoq, time_step, pdi, &num, &denum);
-    if (fabs(denum) > zthreshold)
+    if (fabs(denum) > cs_defs_zero_threshold)
       l2pot = sqrt(num/denum);
     else
       l2pot = sqrt(num);
@@ -605,7 +598,7 @@ _cdovb_post(const cs_mesh_t            *m,
     for (i = 0; i < n_edges; i++)
       work[i] = rgex[i]/cdoq->edge[i].meas;
     denum = cs_weighted_sum_square(n_edges, work, pvol);
-    if (fabs(denum) > zthreshold)
+    if (fabs(denum) > cs_defs_zero_threshold)
       l2dgrd = sqrt(num/denum);
     else
       l2dgrd = sqrt(num);
@@ -630,7 +623,7 @@ _cdovb_post(const cs_mesh_t            *m,
       H = cs_sla_matrix_free(H);
     }
 
-    if (fabs(denum) > zthreshold)
+    if (fabs(denum) > cs_defs_zero_threshold)
       enerd = sqrt(num/denum);
     else
       enerd = sqrt(num);
@@ -728,7 +721,6 @@ _cdofb_post(const cs_mesh_t            *m,
   double  *cell_rpex = NULL, *face_rpex = NULL;
   double  *pvol = NULL, *work = NULL;
 
-  const double  zthreshold = cs_get_zero_threshold();
   const double  tcur = time_step->t_cur;
   const cs_lnum_t  n_cells = cdoq->n_cells;
   const cs_lnum_t  n_faces = cdoq->n_faces;
@@ -856,7 +848,7 @@ _cdofb_post(const cs_mesh_t            *m,
        which approximates the normalized L2 norm */
     num = cs_weighted_sum_square(n_cells, cell_dpdi, cdoq->cell_vol);
     denum = cs_weighted_sum_square(n_cells, cell_rpex, cdoq->cell_vol);
-    if (fabs(denum) > zthreshold)
+    if (fabs(denum) > cs_defs_zero_threshold)
       l2dpotc = sqrt(num/denum);
     else
       l2dpotc = sqrt(num);
@@ -906,7 +898,7 @@ _cdofb_post(const cs_mesh_t            *m,
     /* Compute discrete L2 error norm on the potential */
     num = cs_weighted_sum_square(n_faces, face_dpdi, pvol);
     denum = cs_weighted_sum_square(n_faces, face_rpex, pvol);
-    if (fabs(denum) > zthreshold)
+    if (fabs(denum) > cs_defs_zero_threshold)
       l2dpotf = sqrt(num/denum);
     else
       l2dpotf = sqrt(num);
@@ -960,7 +952,7 @@ _cdofb_post(const cs_mesh_t            *m,
 
     num = cs_weighted_sum_square(n_cells, cell_dpdi, cdoq->cell_vol);
     denum = cs_weighted_sum_square(n_cells, work, cdoq->cell_vol);
-    if (fabs(denum) > zthreshold)
+    if (fabs(denum) > cs_defs_zero_threshold)
       l2r0potc = sqrt(num/denum);
     else
       l2r0potc = sqrt(num);

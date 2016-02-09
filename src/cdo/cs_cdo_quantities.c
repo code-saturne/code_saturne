@@ -41,7 +41,7 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
-#include "cs_cdo_toolbox.h"
+#include "cs_math.h"
 #include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
@@ -55,10 +55,18 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Local macro and structure definitions
+ * Local Macro definitions
  *============================================================================*/
 
 #define  CDO_QUANTITIES_DBG 0  /* Switch off/on debug information */
+
+/* Redefined names of function from cs_math to get shorter names */
+#define _n3  cs_math_3_norm
+#define _dp3  cs_math_3_dot_product
+
+/*=============================================================================
+ * Local structure definitions
+ *============================================================================*/
 
 /* Temporary structures to build mesh quantities */
 
@@ -100,8 +108,6 @@ typedef struct { /* These quantities are the integral of q on the plane
  * Static global variables
  *============================================================================*/
 
-static const double one_3 = 1/3.;
-static const double one_6 = 1/6.;
 static const double one_12 = 1/12.;
 static const double one_24 = 1/24.;
 
@@ -274,8 +280,8 @@ _get_proj_quantities(cs_lnum_t                f_id,
   } /* Loop on face edges */
 
   projq.p1  *=  0.5;
-  projq.pa  *=  one_6;
-  projq.pb  *= -one_6;
+  projq.pa  *=  cs_defs_onesix;
+  projq.pb  *= -cs_defs_onesix;
   projq.pab *=  one_24;
   projq.pa2 *=  one_12;
   projq.pb2 *= -one_12;
@@ -431,7 +437,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
           for (k = 0; k < 3; k++)
             xc[k] = iq->cell_centers[3*c_id+k];
 
-          vol = cs_voltet(xv, eq.center, fq.center, xc);
+          vol = cs_math_voltet(xv, eq.center, fq.center, xc);
 
           shift = cell_shift[c_id];
           if (topo->c2v->ids[shift] != v_id)
@@ -508,7 +514,7 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
           xexf[k] = f_q.center[k] - e_q.center[k];
           xexc[k] = xc[k] - e_q.center[k];
         }
-        _cp3(xexf, xexc, &trinorm);
+        cs_math_3_cross_product(xexf, xexc, trinorm);
         cs_nvec3(trinorm, &nvec);
 
         /* One should have (trinorm, te) > 0 */
@@ -1141,7 +1147,7 @@ cs_compute_pvol_edge(const cs_cdo_connect_t      *connect,
 
       dvol  = df0q.meas * _dp3(peq.unitv, df0q.unitv);
       dvol += df1q.meas * _dp3(peq.unitv, df1q.unitv);
-      pvol[e_id] += dvol * one_3 * peq.meas;
+      pvol[e_id] += dvol * cs_defs_onethird * peq.meas;
 
     }
   }
@@ -1166,28 +1172,27 @@ cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
                      const cs_cdo_quantities_t  *quant,
                      double                     *p_pvol[])
 {
-  cs_lnum_t  i, j, c_id;
-
   double  *pvol = *p_pvol;
 
   const cs_sla_matrix_t  *c2f = connect->c2f;
 
-  /* Allocate if needed and initialize */
+  /* Allocate if needed */
   if (pvol == NULL)
     BFT_MALLOC(pvol, quant->n_faces, double);
-  for (i = 0; i < quant->n_faces; i++)
+  /* Initialize */
+  for (cs_lnum_t i = 0; i < quant->n_faces; i++)
     pvol[i] = 0;
 
-  for (c_id = 0; c_id < quant->n_cells; c_id++) {
-
-    for (j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
 
       const cs_lnum_t  f_id = c2f->col_id[j];
       const cs_quant_t  pfq = quant->face[f_id];
       const cs_nvec3_t  deq = quant->dedge[j];
 
       /* Compute volume of the pyramid p_fc */
-      pvol[f_id] += one_3 * pfq.meas * deq.meas * _dp3(pfq.unitv, deq.unitv);
+      pvol[f_id] +=
+        cs_defs_onethird * pfq.meas * deq.meas * _dp3(pfq.unitv, deq.unitv);
 
     }
   }
@@ -1235,8 +1240,8 @@ cs_compute_face_weights(cs_lnum_t                   f_id,
     cs_lnum_t  v1_id = connect->e2v->col_id[2*e_id];
     cs_lnum_t  v2_id = connect->e2v->col_id[2*e_id+1];
 
-    _lenunit3(peq.center, pfq.center, &len, &un);
-    _cp3(un, peq.unitv, &cp);
+    cs_math_3_length_unitv(peq.center, pfq.center, &len, un);
+    cs_math_3_cross_product(un, peq.unitv, cp);
 
     contrib = 0.25 * peq.meas * len * _n3(cp) * invsurf;
 
@@ -1248,5 +1253,8 @@ cs_compute_face_weights(cs_lnum_t                   f_id,
 }
 
 /*----------------------------------------------------------------------------*/
+
+#undef _dp3
+#undef _n3
 
 END_C_DECLS

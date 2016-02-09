@@ -31,6 +31,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
@@ -44,7 +45,6 @@
 #include "cs_mesh_location.h"
 #include "cs_field.h"
 #include "cs_cdo.h"
-#include "cs_cdo_toolbox.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -44,8 +44,8 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_math.h"
 #include "cs_sort.h"
-#include "cs_cdo_toolbox.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -71,10 +71,17 @@ BEGIN_C_DECLS
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
- * Local Macro definitions and structure definitions
+ * Local Macro definitions
  *============================================================================*/
 
 #define CS_HODGE_DBG 0
+
+/* Redefined the name of functions from cs_math to get shorter names */
+#define _dp3  cs_math_3_dot_product
+
+/*=============================================================================
+ * Local structure definitions
+ *============================================================================*/
 
 /* Main structure used to define a discrete Hodge operator */
 struct _hodge_builder_t {
@@ -524,7 +531,7 @@ _compute_cost_quant(int                     n_loc_ent,
     hq->invsvol[i] = 3./dpq; /* 1/subvol where subvol = 1/d * dpq */
 
     /* Compute diagonal entries */
-    _mv3(ptymat, dq[i].unitv, mdq_i);
+    cs_math_33_3_product(ptymat, dq[i].unitv, mdq_i);
     ii = i*n_loc_ent+i;
     hq->qmq[ii] = dq[i].meas * dq[i].meas * _dp3(dq[i].unitv, mdq_i);
     hq->T[ii] = dpq;
@@ -864,9 +871,9 @@ _compute_wbs_face_quant(cs_lnum_t                   f_id,
     const short int  _v1 = loc_ids[v1_id];
     const short int  _v2 = loc_ids[v2_id];
 
-    _lenunit3(eq.center, fq.center, &len, &un);
-    _cp3(un, eq.unitv, &cp);
-    contrib = eq.meas * len * _n3(cp) * f_coef;
+    cs_math_3_length_unitv(eq.center, fq.center, &len, un);
+    cs_math_3_cross_product(un, eq.unitv, cp);
+    contrib = eq.meas * len * cs_math_3_norm(cp) * f_coef;
 
     hq->wf[_v1] += contrib;
     hq->wf[_v2] += contrib;
@@ -976,10 +983,10 @@ _build_using_wbs(int                         cid,
       /* Sanity check */
       assert(_v1 > -1 && _v2 > -1);
 
-      const cs_real_t  pef_vol = cs_voltet(&(xyz[3*v1_id]),
-                                     &(xyz[3*v2_id]),
-                                     pfq.center,
-                                     xc);
+      const cs_real_t  pef_vol = cs_math_voltet(&(xyz[3*v1_id]),
+                                                &(xyz[3*v2_id]),
+                                                pfq.center,
+                                                xc);
       const cs_real_t  w_vol = 0.05*pef_vol;
 
       /* Add local contribution */
@@ -1025,7 +1032,7 @@ _build_using_wbs(int                         cid,
   } // Loop on cell faces
 
   /* Take into account the value of the associated property */
-  if (fabs(hb->ptyval - 1.0) > cs_get_eps_machine()) {
+  if (fabs(hb->ptyval - 1.0) > cs_defs_get_eps_machine()) {
     for (i = 0; i < n_ent; i++) {
       int  shift_i = i*n_ent;
       for (j = i; j < n_ent; j++)
@@ -1085,10 +1092,10 @@ _build_using_voronoi(cs_lnum_t                    c_id,
         hl->ids[ii] = e_id;
 
         /* First sub-triangle contribution */
-        _mv3((const cs_real_3_t *)hb->ptymat, df0q.unitv, mv);
+        cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, df0q.unitv, mv);
         contrib = df0q.meas * _dp3(mv, df0q.unitv);
         /* Second sub-triangle contribution */
-        _mv3((const cs_real_3_t *)hb->ptymat, df1q.unitv, mv);
+        cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, df1q.unitv, mv);
         contrib += df1q.meas * _dp3(mv, df1q.unitv);
 
         /* Only a diagonal term */
@@ -1109,7 +1116,7 @@ _build_using_voronoi(cs_lnum_t                    c_id,
 
         hl->ids[ii] = f_id;
         /* Only a diagonal term */
-        _mv3((const cs_real_3_t *)hb->ptymat, deq.unitv, mv);
+        cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, deq.unitv, mv);
         hl->mat[ii*hl->n_ent+ii] = deq.meas * _dp3(mv, deq.unitv) / surf;
 
       } /* End of loop on cell faces */
@@ -1475,5 +1482,7 @@ cs_hodge_compute(const cs_cdo_connect_t      *connect,
 }
 
 /*----------------------------------------------------------------------------*/
+
+#undef _dp3
 
 END_C_DECLS

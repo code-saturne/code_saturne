@@ -479,6 +479,9 @@ typedef enum {
 
 /* Numerical constants */
 
+extern const cs_real_t cs_defs_zero_threshold;
+extern const cs_real_t cs_defs_onethird;
+extern const cs_real_t cs_defs_onesix;
 extern const cs_real_t cs_defs_epzero;
 extern const cs_real_t cs_defs_infinite_r;
 extern const cs_real_t cs_defs_big_r;
@@ -514,16 +517,16 @@ extern MPI_Comm       cs_glob_mpi_comm;      /* Main MPI intra-communicator */
  * Public functions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Given a base index i, return the next index aligned with a size m.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Given a base index i, return the next index aligned with a size m.
  *
- * parameters:
- *   i <-- base index
- *   m <-- block size to align with
+ * \param[in]  i   base index
+ * \param[in]  m   block size to align with
  *
- * returns:
- *   aligned index
- *----------------------------------------------------------------------------*/
+ * \return aligned index
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static cs_lnum_t
 cs_align(cs_lnum_t  i,
@@ -531,6 +534,24 @@ cs_align(cs_lnum_t  i,
 {
   return ((i > 0) ? ((i-1)/m+1)*m : 0);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value related to the machine precision
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_defs_set_eps_machine(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the value related to the machine precision
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_defs_get_eps_machine(void);
 
 /*----------------------------------------------------------------------------*/
 

@@ -318,7 +318,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
   } /* End of loop on cells */
 
   /* Clean entries of the operators */
-  // cs_sla_matrix_clean(full_matrix, cs_get_eps_machine());
+  // cs_sla_matrix_clean(full_matrix, cs_defs_get_eps_machine());
 
   /* Free memory */
   BFT_FREE(BHCtc);
@@ -384,7 +384,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
     {
       assert(builder->n_faces == builder->n_dof_faces); /* Sanity check */
 
-      cs_real_t  pena_coef = 0.01/cs_get_eps_machine();
+      cs_real_t  pena_coef = 0.01/cs_defs_get_eps_machine();
 
       for (i = 0; i < dir_faces->n_nhmg_elts; i++)
         face_rhs[dir_faces->elt_ids[i]] += pena_coef * builder->dir_val[i];

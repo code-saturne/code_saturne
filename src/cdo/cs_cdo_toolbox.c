@@ -31,7 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <stdlib.h>
-#include <math.h>
 #include <assert.h>
 #include <float.h>
 #include <limits.h>
@@ -46,6 +45,7 @@
 
 #include "cs_cdo.h"
 #include "cs_blas.h"
+#include "cs_math.h"
 #include "cs_sort.h"
 
 /*----------------------------------------------------------------------------
@@ -57,13 +57,6 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
-
-/*=============================================================================
- * Local Macro definitions
- *============================================================================*/
-
-static const double  _oversix = 1/6.0;
-static const double  _overdim = 1/3.0;
 
 /*============================================================================
  * Private function prototypes
@@ -187,347 +180,8 @@ _compute_info_int32(cs_lnum_t         n_elts,
 }
 
 /*============================================================================
- * Inline public function prototypes for frequent usage
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute a dot product for vector of dimension 3
- *
- * \param[in]  u     first vector
- * \param[in]  v     second vector
- *
- * \return the value of the dot product
- */
-/*----------------------------------------------------------------------------*/
-
-inline double
-_dp3(const cs_real_3_t  u,
-     const cs_real_3_t  v)
-{
-  return u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the euclidean norm of a vector of dimension 3
- *
- * \param[in]  v
- *
- * \return the norm value
- */
-/*----------------------------------------------------------------------------*/
-
-inline double
-_n3(const cs_real_3_t  v)
-{
-  return sqrt(_dp3(v, v));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the length (euclidien norm) between two points xa and xb in
- *         a cartesian coordinate system of dimension 3
- *
- * \param[in]  xa   first coordinate
- * \param[in]  xb   second coordinate
- *
- * \return the length (in euclidean norm) between two points xa and xb
- */
-/*----------------------------------------------------------------------------*/
-
-inline double
-_length3(const cs_real_3_t  xa,
-         const cs_real_3_t  xb)
-{
-  cs_real_3_t  diff;
-
-  diff[0] = xb[0] - xa[0];
-  diff[1] = xb[1] - xa[1];
-  diff[2] = xb[2] - xa[2];
-
-  return _n3(diff);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the length (euclidien norm) between two points xa and xb in
- *         a cartesian coordinate system of dimension 3
- *
- * \param[in]   xa       coordinate of the first extremity
- * \param[in]   xb       coordinate of the second extremity
- * \param[out]  len      pointer to the length of the vector va -> vb
- * \param[out]  unit     unitary vector anlong va -> vb
- */
-/*----------------------------------------------------------------------------*/
-
-inline void
-_lenunit3(const cs_real_3_t   xa,
-          const cs_real_3_t   xb,
-          cs_real_t          *len,
-          cs_real_3_t        *unit)
-{
-  cs_real_t  invl;
-  cs_real_3_t  diff;
-
-  diff[0] = xb[0] - xa[0];
-  diff[1] = xb[1] - xa[1];
-  diff[2] = xb[2] - xa[2];
-  *len = _n3(diff), invl = 1/(*len);
-  unit[0][0] = invl*diff[0];
-  unit[0][1] = invl*diff[1];
-  unit[0][2] = invl*diff[2];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the cross product of a vector of dimension 3
- *
- * \param[in]   u   first vector
- * \param[in]   v   second vector
- * \param[out]  w   result of u x v
- */
-/*----------------------------------------------------------------------------*/
-
-inline void
-_cp3(const cs_real_3_t   u,
-     const cs_real_3_t   v,
-     cs_real_3_t        *w)
-{
-  w[0][0] = u[1]*v[2] - u[2]*v[1];
-  w[0][1] = u[2]*v[0] - u[0]*v[2];
-  w[0][2] = u[0]*v[1] - u[1]*v[0];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the 3x3 matrice by vector product
- *
- * \param[in]      m    a 3x3 matrix
- * \param[in]      v    a vector
- * \param[in, out] mv   pointer to the vector resulting of the matrix-vector op.
- */
-/*----------------------------------------------------------------------------*/
-
-inline void
-_mv3(const cs_real_t     m[3][3],
-     const cs_real_t     v[3],
-     cs_real_t           mv[3])
-{
-  mv[0] = m[0][0]*v[0] + m[0][1]*v[1] + m[0][2]*v[2];
-  mv[1] = m[1][0]*v[0] + m[1][1]*v[1] + m[1][2]*v[2];
-  mv[2] = m[2][0]*v[0] + m[2][1]*v[1] + m[2][2]*v[2];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the determinant of a 3x3 matrix
- *
- * \param[in]  m    matrix
- *
- * \return the determinant
- */
-/*----------------------------------------------------------------------------*/
-
-inline cs_real_t
-_detmat33(const cs_real_t   m[3][3])
-{
-  cs_real_t  com0 = m[1][1]*m[2][2] - m[2][1]*m[1][2];
-  cs_real_t  com1 = m[2][1]*m[0][2] - m[0][1]*m[2][2];
-  cs_real_t  com2 = m[0][1]*m[1][2] - m[1][1]*m[0][2];
-
-  return m[0][0]*com0 + m[1][0]*com1 + m[2][0]*com2;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Inverse a 3x3 matrix
- *
- * \param[in]  in    matrix to inverse
- * \param[out] inv   inversed matrix
- */
-/*----------------------------------------------------------------------------*/
-
-inline void
-_invmat33(const cs_real_t   in[3][3],
-          cs_real_t         inv[3][3])
-{
-  int  k, l;
-  double  det, invdet;
-
-  inv[0][0] = in[1][1]*in[2][2] - in[2][1]*in[1][2];
-  inv[0][1] = in[2][1]*in[0][2] - in[0][1]*in[2][2];
-  inv[0][2] = in[0][1]*in[1][2] - in[1][1]*in[0][2];
-
-  inv[1][0] = in[2][0]*in[1][2] - in[1][0]*in[2][2];
-  inv[1][1] = in[0][0]*in[2][2] - in[2][0]*in[0][2];
-  inv[1][2] = in[1][0]*in[0][2] - in[0][0]*in[1][2];
-
-  inv[2][0] = in[1][0]*in[2][1] - in[2][0]*in[1][1];
-  inv[2][1] = in[2][0]*in[0][1] - in[0][0]*in[2][1];
-  inv[2][2] = in[0][0]*in[1][1] - in[1][0]*in[0][1];
-
-  det = in[0][0]*inv[0][0] + in[1][0]*inv[0][1] + in[2][0]*inv[0][2];
-  assert(fabs(det) > DBL_MIN*1e3);  /* inversibility ? */
-  invdet = 1 / det;
-
-  for (k = 0; k < 3; k++)
-    for (l = 0; l < 3; l++)
-      inv[k][l] *= invdet;
-}
-
-/*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the eigenvalues of a 3x3 matrix which is symmetric and real
- *         -> Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
- *         Communication of the ACM (April 1961)
- *         -> Wikipedia article entitled "Eigenvalue algorithm"
- *
- * \param[in]  m          3x3 matrix
- * \param[out] eig_ratio  max/min
- * \param[out] eig_max    max. eigenvalue
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_eigen_mat33(const cs_real_t     m[3][3],
-               cs_real_t          *eig_ratio,
-               cs_real_t          *eig_max)
-{
-  cs_real_t  e, e1, e2, e3;
-
-  /* Sanity check */
-  e1 = m[0][1]-m[1][0], e2 = m[0][2]-m[2][0], e3 = m[1][2]-m[2][1];
-  assert(e1*e1 + e2*e2 + e3*e3 <= 0.0);
-
-  cs_real_t  p1 = m[0][1]*m[0][1] + m[0][2]*m[0][2] + m[1][2]*m[1][2];
-
-  if (p1 <= 0.0) { // m is diagonal
-
-    e1 = m[0][0], e2 = m[1][1], e3 = m[2][2];
-    if (e3 < e2) e = e3, e3 = e2, e2 = e;
-    if (e3 < e1) e = e3, e3 = e1, e1 = e2, e2 = e;
-    else {
-      if (e2 < e1) e = e2, e2 = e1, e1 = e;
-    }
-
-  }
-  else { // m is not diagonal
-
-    cs_real_t  theta;
-    cs_real_t  n[3][3];
-
-    cs_real_t  tr = _overdim*(m[0][0] + m[1][1] + m[2][2]);
-
-    e1 = m[0][0] - tr, e2 = m[1][1] - tr, e3 = m[2][2] - tr;
-    cs_real_t  p2 = e1*e1 + e2*e2 + e3*e3 + 2*p1;
-
-    assert(p2 > 0);
-    cs_real_t  p = sqrt(p2*_oversix);
-    cs_real_t  ovp = 1./p;
-
-    for (int  i = 0; i < 3; i++) {
-      n[i][i] = ovp * (m[i][i] - tr);
-      for (int j = i + 1; j < 3; j++) {
-        n[i][j] = ovp*m[i][j];
-        n[j][i] = n[i][j];
-      }
-    }
-
-    /* r should be between -1 and 1 but truncation error and bad conditionning
-       can lead to slighty under/over-shoot */
-    cs_real_t  r = 0.5 * _detmat33((const cs_real_t (*)[3])n);
-    cs_real_t  pi = 4*atan(1.0);
-
-    if (r <= -1)
-      theta = _overdim*pi;
-    else if (r >= 1)
-      theta = 0.;
-    else
-      theta = _overdim*acos(r);
-
-    // eigenvalues computed should satisfy e1 < e2 < e3
-    e3 = tr + 2*p*cos(theta);
-    e1 = tr + 2*p*cos(theta + 2*pi*_overdim);
-    e2 = 3*tr - e1 -e3; // since tr(m) = e1 + e2 + e3
-  }
-
-  /* Return values */
-  assert(fabs(e1) > 0);
-  *eig_ratio = e3/e1;
-  *eig_max = e3;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the area of the convex_hull generated by 3 points.
- *         This corresponds to the computation of the surface of a triangle
- *
- * \param[in]  xv
- * \param[in]  xe
- * \param[in]  xf
- *
- * \return the surface of a triangle
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_surftri(const cs_real_3_t  xv,
-           const cs_real_3_t  xe,
-           const cs_real_3_t  xf)
-{
-  int  k;
-  cs_real_3_t  u, v, cp;
-
-  double  area = 0.0;
-
-  for (k = 0; k < 3; k++) {
-    u[k] = xe[k] - xv[k];
-    v[k] = xf[k] - xv[k];
-  }
-  _cp3(u, v, &cp);
-  area = 0.5*_n3(cp);
-
-  return  area;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the volume of the convex_hull generated by 4 points.
- *         This is equivalent to the computation of the volume of a tetrahedron
- *
- * \param[in]  xv
- * \param[in]  xe
- * \param[in]  xf
- * \param[in]  xc
- *
- * \return the volume of the tetrahedron.
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_voltet(const cs_real_3_t   xv,
-          const cs_real_3_t   xe,
-          const cs_real_3_t   xf,
-          const cs_real_3_t   xc)
-{
-  double  lev, lef, lec;
-  cs_real_3_t  uev, uef, uec, ucp;
-
-  double  vol = 0.0;
-
-  _lenunit3(xe, xv, &lev, &uev);
-  _lenunit3(xe, xf, &lef, &uef);
-  _lenunit3(xe, xc, &lec, &uec);
-  _cp3(uev, uef, &ucp);
-  vol = _oversix * lev * lef * lec * fabs(_dp3(ucp, uec));
-
-  return  vol;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -732,7 +386,7 @@ cs_analysis_data(cs_lnum_t       n_elts,
         for (i = 0; i < n_elts; i++) {
           for (j = 0; j < 3; j++)
             v[j] = data[stride*i+j];
-          values[i] = _n3(v);
+          values[i] = cs_math_3_norm(v);
         }
         _compute_info_double(n_elts, values, &info);
 

@@ -44,6 +44,8 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_math.h"
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -68,10 +70,17 @@ BEGIN_C_DECLS
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
- * Local Macro definitions and structure definitions
+ * Local Macro definitions
  *============================================================================*/
 
 #define CS_CDOVB_ADVECTION_DBG 0
+
+/* Redefined the name of functions from cs_math to get shorter names */
+#define _dp3 cs_math_3_dot_product
+
+/*=============================================================================
+ * Local structure definitions
+ *============================================================================*/
 
 struct _cs_cdovb_adv_t {
 
@@ -218,9 +227,9 @@ _init_with_diffusion(cs_lnum_t                    c_id,
     for (k = 0; k < 3; k++)
       dface.unitv[k] = inv_dfmeas*qdf.vect[k];
 
-    _mv3((const cs_real_t (*)[3])matpty, dface.unitv, matnu);
+    cs_math_33_3_product((const cs_real_t (*)[3])matpty, dface.unitv, matnu);
 
-    b->criter[id] = quant->edge[e_id].meas * mean_flux /_dp3(dface.unitv, matnu);
+    b->criter[id] = quant->edge[e_id].meas*mean_flux /_dp3(dface.unitv, matnu);
 
   } // Loop on cell edges
 
@@ -587,7 +596,7 @@ cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
       cs_advection_field_get_cell_vector(c_id, adv, &advf);
 
       const double  dp = _dp3(advf.unitv, qf.unitv);
-      if (fabs(dp) > cs_get_zero_threshold()) {
+      if (fabs(dp) > cs_defs_zero_threshold) {
 
         /* Loop on border face edges */
         for (i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
@@ -598,7 +607,7 @@ cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
           const cs_lnum_t  v2_id = e2v->col_id[e_shft+1];
           const cs_real_t  *xv1 = xyz + 3*v1_id;
           const cs_real_t  *xv2 = xyz + 3*v2_id;
-          const double  surf = 0.5*cs_surftri(xv1, xv2, qf.center);
+          const double  surf = 0.5 * cs_math_surftri(xv1, xv2, qf.center);
           const double  _flx = dp * advf.meas * surf;
 
           if (dp < 0) { // advection field is inward w.r.t. the face normal
@@ -718,7 +727,7 @@ cs_cdovb_advection_get_peclet_cell(const cs_cdo_quantities_t   *cdoq,
     cs_real_t  hc = pow(cdoq->cell_vol[c_id], one_third);
     cs_real_t  dp = adv_field.meas * _dp3(adv_field.unitv, dir_vect);
 
-    _mv3((const cs_real_t (*)[3])ptymat, dir_vect, ptydir);
+    cs_math_33_3_product((const cs_real_t (*)[3])ptymat, dir_vect, ptydir);
 
     cs_real_t  inv_denum = 1/(_dp3(dir_vect, ptydir));
 
@@ -762,5 +771,7 @@ cs_cdovb_advection_get_upwind_coef_cell(const cs_cdo_quantities_t   *cdoq,
 }
 
 /*----------------------------------------------------------------------------*/
+
+#undef _dp3
 
 END_C_DECLS
