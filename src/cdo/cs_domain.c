@@ -79,30 +79,34 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  int     id;          // mesh location id (-1 if not used)
-  int     n_sub_ids;   // number of related (sub) mesh location attached
-  int    *sub_ids;     // list of mesh location ids
+  int     n_ids;   // number of related (sub) mesh location attached
+  int    *ids;     // list of mesh location ids
 
-} cs_domain_bdy_ml_t;
+} _ml_list_t;
 
 struct _cs_domain_boundary_t {
 
   cs_param_boundary_type_t    default_boundary; // boundary set by default
 
   cs_lnum_t                   n_b_faces;        // number of boundary faces
-  cs_param_boundary_type_t   *types;            // type of each boundary face
+  cs_param_boundary_type_t   *b_face_types;     // type of each boundary face
 
   /* Number of border faces related to each type of boundary */
-  cs_lnum_t                   n_elts[CS_PARAM_N_BOUNDARY_TYPES];
+  cs_lnum_t                   n_type_elts[CS_PARAM_N_BOUNDARY_TYPES];
 
-  /* Id related to specific mesh location structures corresponding to
-     different types of boundaries
+  /* 
+     A mesh location attached to a domain boundary can be compound of several
+     existing mesh locations, hereafter called sub mesh locations
+  */
+
+  /* Mesh location id related to a domain boundary (-1 if not used)
+     Reserved names are the followings:
      >> "domain_walls"
      >> "domain_inlets"
      >> "domain_outlets"
-     >> "domain_symmetries"
-  */
-  cs_domain_bdy_ml_t           bdy_ml[CS_PARAM_N_BOUNDARY_TYPES];
+     >> "domain_symmetries"   */
+  int          ml_ids[CS_PARAM_N_BOUNDARY_TYPES];
+  _ml_list_t   sub_ml[CS_PARAM_N_BOUNDARY_TYPES];
 
 };
 
@@ -223,49 +227,49 @@ _get_domkey(const char  *keyname)
 static cs_domain_boundary_t *
 _init_domain_boundaries(cs_lnum_t     n_b_faces)
 {
-  cs_domain_boundary_t  *bcs = NULL;
+  cs_domain_boundary_t  *dby = NULL;
 
-  BFT_MALLOC(bcs, 1, cs_domain_boundary_t);
+  BFT_MALLOC(dby, 1, cs_domain_boundary_t);
 
-  bcs->n_b_faces = n_b_faces;
-  bcs->default_boundary = CS_PARAM_N_BOUNDARY_TYPES;
+  dby->n_b_faces = n_b_faces;
+  dby->default_boundary = CS_PARAM_N_BOUNDARY_TYPES;
 
-  BFT_MALLOC(bcs->types, n_b_faces, cs_param_boundary_type_t);
+  BFT_MALLOC(dby->b_face_types, n_b_faces, cs_param_boundary_type_t);
   for (int i = 0; i < n_b_faces; i++)
-    bcs->types[i] = CS_PARAM_N_BOUNDARY_TYPES;
+    dby->b_face_types[i] = CS_PARAM_N_BOUNDARY_TYPES;
 
   for (int i = 0; i < CS_PARAM_N_BOUNDARY_TYPES; i++) {
-    bcs->bdy_ml[i].id = -1;
-    bcs->bdy_ml[i].n_sub_ids = 0;
-    bcs->bdy_ml[i].sub_ids = NULL;
-    bcs->n_elts[i] = 0;
+    dby->ml_ids[i] = -1;
+    dby->sub_ml[i].n_ids = 0;
+    dby->sub_ml[i].ids = NULL;
+    dby->n_type_elts[i] = 0;
   }
 
-  return bcs;
+  return dby;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Destroy a cs_domain_boundary_t structure
  *
- * \param[in,out]  bcs       pointer to the cs_domain_t structure to free
+ * \param[in,out]  dby       pointer to the cs_domain_t structure to free
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_domain_boundary_t *
-_free_domain_boundaries(cs_domain_boundary_t   *bcs)
+_free_domain_boundaries(cs_domain_boundary_t   *dby)
 {
-  if (bcs == NULL)
-    return bcs;
+  if (dby == NULL)
+    return dby;
 
-  BFT_FREE(bcs->types);
+  BFT_FREE(dby->b_face_types);
 
   for (int type = 0; type < CS_PARAM_N_BOUNDARY_TYPES; type++)
-    BFT_FREE(bcs->bdy_ml[type].sub_ids);
+    BFT_FREE(dby->sub_ml[type].ids);
 
-  BFT_FREE(bcs);
+  BFT_FREE(dby);
 
   return NULL;
 }
@@ -283,26 +287,81 @@ static void
 _set_default_boundary(cs_domain_t     *domain,
                       const char      *bdy_name)
 {
-  cs_domain_boundary_t  *bcs = domain->boundaries;
-  cs_param_boundary_type_t  type = CS_PARAM_N_BOUNDARY_TYPES;
+  cs_domain_boundary_t  *dby = domain->boundaries;
+  cs_param_boundary_type_t  default_type = CS_PARAM_N_BOUNDARY_TYPES;
 
   /* Sanity check */
-  assert(bcs != NULL);
+  assert(dby != NULL);
 
   /* Find boundary type associated to bdy_name */
   if (strcmp(bdy_name, "wall") == 0)
-    type = CS_PARAM_BOUNDARY_WALL;
+    default_type = CS_PARAM_BOUNDARY_WALL;
   else if (strcmp(bdy_name, "symmetry") == 0)
-    type = CS_PARAM_BOUNDARY_SYMMETRY;
+    default_type = CS_PARAM_BOUNDARY_SYMMETRY;
   else
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid key name %s for setting a boundary by default.\n"
                 " Available choices are: wall or symmetry."),
               bdy_name);
 
-  bcs->default_boundary = type;
-  for (int i = 0; i < bcs->n_b_faces; i++)
-    bcs->types[i] = type;
+  dby->default_boundary = default_type;
+  for (int i = 0; i < dby->n_b_faces; i++)
+    dby->b_face_types[i] = default_type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add new mesh locations related to domain boundaries from existing
+ *         mesh locations
+ *
+ * \param[in]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_mesh_locations(cs_domain_t   *domain)
+{
+  cs_domain_boundary_t  *dby = domain->boundaries;
+  cs_param_boundary_type_t  default_type = dby->default_boundary;
+
+  /* Store all mesh locations not associated to the default type */
+  int  n_sub_ids = 0;
+  int  *sub_ids = NULL;
+
+  for (unsigned int type = 0; type < CS_PARAM_N_BOUNDARY_TYPES; type++) {
+
+    int _n_sub_ids = dby->sub_ml[type].n_ids;
+    int  *_sub_ids = dby->sub_ml[type].ids;
+
+    if (_n_sub_ids > 0 && type != default_type) {
+      // There is at least one mesh location
+
+      dby->ml_ids[type] =
+        cs_mesh_location_add_by_union(_domain_boundary_ml_name[type],
+                                      CS_MESH_LOCATION_BOUNDARY_FACES,
+                                      _n_sub_ids,
+                                      _sub_ids,
+                                      false);  // complement ?
+
+      /* Increment the list of mesh locations */
+      BFT_REALLOC(sub_ids, n_sub_ids + _n_sub_ids, int);
+      for (int i = 0; i < _n_sub_ids; i++)
+        sub_ids[n_sub_ids + i] = _sub_ids[i];
+      n_sub_ids += _n_sub_ids;
+
+    }
+
+  } /* Loop on boundary types */
+
+  /* Treatment of the default boundary type */
+  dby->ml_ids[default_type] =
+    cs_mesh_location_add_by_union(_domain_boundary_ml_name[default_type],
+                                  CS_MESH_LOCATION_BOUNDARY_FACES,
+                                  n_sub_ids,
+                                  sub_ids,
+                                  true);
+
+  BFT_FREE(sub_ids);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -321,79 +380,25 @@ _check_boundary_setup(cs_domain_t   *domain)
   if (domain == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
-  cs_domain_boundary_t  *bcs = domain->boundaries;
+  cs_domain_boundary_t  *dby = domain->boundaries;
 
   for (unsigned int k = 0; k < CS_PARAM_N_BOUNDARY_TYPES; k++)
-    bcs->n_elts[k] = 0;
+    dby->n_type_elts[k] = 0;
 
   /* Sanity check */
-  assert(bcs !=NULL);
+  assert(dby !=NULL);
 
-  for (int i = 0; i < bcs->n_b_faces; i++) {
-    if (bcs->types[i] == CS_PARAM_N_BOUNDARY_TYPES)
+  for (int i = 0; i < dby->n_b_faces; i++) {
+    if (dby->b_face_types[i] == CS_PARAM_N_BOUNDARY_TYPES)
       error_count++;
     else
-      bcs->n_elts[bcs->types[i]] += 1;
+      dby->n_type_elts[dby->b_face_types[i]] += 1;
   }
 
   if (error_count > 0)
     bft_error(__FILE__, __LINE__, 0,
               _(" Problem detected during the setup.\n"
                 " %d boundary faces have no boundary type."), error_count);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Check if the setup is reliable
- *
- * \param[in]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_add_mesh_locations(cs_domain_t   *domain)
-{
-  cs_domain_boundary_t  *bcs = domain->boundaries;
-  cs_param_boundary_type_t  default_type = bcs->default_boundary;
-
-  /* Store all mesh locations not associated to the default type */
-  int  n_sub_ids = 0;
-  int  *sub_ids = NULL;
-
-  for (unsigned int type = 0; type < CS_PARAM_N_BOUNDARY_TYPES; type++) {
-
-    int _n_sub_ids = bcs->bdy_ml[type].n_sub_ids;
-    int  *_sub_ids = bcs->bdy_ml[type].sub_ids;
-
-    if (_n_sub_ids > 0 && type != default_type) {
-      // There is at least one mesh location
-
-      bcs->bdy_ml[type].id  =
-        cs_mesh_location_add_by_union(_domain_boundary_ml_name[type],
-                                      CS_MESH_LOCATION_BOUNDARY_FACES,
-                                      _n_sub_ids,
-                                      _sub_ids,
-                                      false);  // complement ?
-
-      /* Increment the list of mesh locations */
-      BFT_REALLOC(sub_ids, n_sub_ids + _n_sub_ids, int);
-      for (int i = 0; i < _n_sub_ids; i++)
-        sub_ids[n_sub_ids + i] = _sub_ids[i];
-      n_sub_ids += _n_sub_ids;
-
-    }
-
-  } /* Loop on boundary types */
-
-  /* Treatment of the default boundary type */
-  bcs->bdy_ml[default_type].id  =
-    cs_mesh_location_add_by_union(_domain_boundary_ml_name[default_type],
-                                  CS_MESH_LOCATION_BOUNDARY_FACES,
-                                  n_sub_ids,
-                                  sub_ids,
-                                  true);
-
-  BFT_FREE(sub_ids);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -861,13 +866,13 @@ cs_domain_summary(const cs_domain_t   *domain)
 
     /* Number of border faces for each type of boundary */
     bft_printf("  >> Number of faces with a wall boundary:      %d\n",
-               bdy->n_elts[CS_PARAM_BOUNDARY_WALL]);
+               bdy->n_type_elts[CS_PARAM_BOUNDARY_WALL]);
     bft_printf("  >> Number of faces with an inlet boundary:    %d\n",
-               bdy->n_elts[CS_PARAM_BOUNDARY_INLET]);
+               bdy->n_type_elts[CS_PARAM_BOUNDARY_INLET]);
     bft_printf("  >> Number of faces with an outlet boundary:   %d\n",
-               bdy->n_elts[CS_PARAM_BOUNDARY_OUTLET]);
+               bdy->n_type_elts[CS_PARAM_BOUNDARY_OUTLET]);
     bft_printf("  >> Number of faces with a symmetry boundary:  %d\n",
-               bdy->n_elts[CS_PARAM_BOUNDARY_SYMMETRY]);
+               bdy->n_type_elts[CS_PARAM_BOUNDARY_SYMMETRY]);
 
     /* Time step summary */
     bft_printf("\n  Time step information\n");
@@ -991,7 +996,7 @@ cs_domain_add_boundary(cs_domain_t               *domain,
   /* Add this mesh location id to a list of mesh location ids of
      the same type */
   cs_param_boundary_type_t  type = CS_PARAM_N_BOUNDARY_TYPES;
-  cs_domain_boundary_t  *bcs = domain->boundaries;
+  cs_domain_boundary_t  *dby = domain->boundaries;
 
   /* Find boundary type associated to bdy_name */
   if (strcmp(bdy_name, "wall") == 0)
@@ -1009,22 +1014,22 @@ cs_domain_add_boundary(cs_domain_t               *domain,
               bdy_name);
 
   /* Number of mesh locations already defined for this type of boundary */
-  int  n_ml_ids = bcs->bdy_ml[type].n_sub_ids;
+  int  n_ml_ids = dby->sub_ml[type].n_ids;
 
   /* Add a new mesh location for this type of boundary */
-  BFT_REALLOC(bcs->bdy_ml[type].sub_ids, n_ml_ids + 1, int);
-  bcs->bdy_ml[type].sub_ids[n_ml_ids] = ml_id;
-  bcs->bdy_ml[type].n_sub_ids += 1;
+  BFT_REALLOC(dby->sub_ml[type].ids, n_ml_ids + 1, int);
+  dby->sub_ml[type].ids[n_ml_ids] = ml_id;
+  dby->sub_ml[type].n_ids += 1;
 
   const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
   const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
 
   if (elt_ids == NULL)
     for (int i = 0; i < n_elts[0]; i++)
-      bcs->types[i] = type;
+      dby->b_face_types[i] = type;
   else
     for (int i = 0; i < n_elts[0]; i++)
-      bcs->types[elt_ids[i]] = type;
+      dby->b_face_types[elt_ids[i]] = type;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1620,11 +1625,11 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
 
     eq = domain->equations[domain->wall_distance_eq_id];
 
-    cs_domain_bdy_ml_t  wall_bdy_ml = bdy->bdy_ml[CS_PARAM_BOUNDARY_WALL];
+    int  wall_ml_id = bdy->ml_ids[CS_PARAM_BOUNDARY_WALL];
 
     cs_walldistance_setup(eq,
                           cs_domain_get_property(domain, "unity"),
-                          wall_bdy_ml.id);
+                          wall_ml_id);
 
   } // Wall distance is activated
 
