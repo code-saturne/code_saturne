@@ -930,17 +930,22 @@ cs_groundwater_finalize(cs_groundwater_t   *gw)
   if (gw == NULL)
     return NULL;
 
-  BFT_FREE(gw->soil_param);
+  BFT_FREE(gw->tracer_eq_ids);
   BFT_FREE(gw->darcian_flux);
   BFT_FREE(gw->work);
 
   if (gw->with_gravitation)
     BFT_FREE(gw->gravity_source_term);
 
-  if (gw->n_soils > 1)
+  if (gw->n_soils > 1) {
+    for (int i = 0; i < gw->n_soils; i++) {
+      cs_gw_soil_t *soil = gw->soil_param + i;
+      BFT_FREE(soil->tracer_param);
+    }
     BFT_FREE(gw->soil_id);
+  }
+  BFT_FREE(gw->soil_param);
 
-  BFT_FREE(gw->tracer_eq_ids);
   BFT_FREE(gw);
 
   /* Fields, advection fields and properties are freed elsewhere */
@@ -1526,37 +1531,55 @@ cs_groundwater_set_tracer_param(cs_groundwater_t    *gw,
   int  tracer_id = _get_tracer_id(gw, tracer_eq_id);
 
   /* Look for the related soil */
-  int  ml_id = cs_mesh_location_get_id_by_name(ml_name);
-  if (ml_id == -1)
-    bft_error(__FILE__, __LINE__, 0,
-              _( " Stop setting a tracer equation."
-                 " Invalid mesh location name %s.\n"
-                 " This mesh location is not already defined.\n"), ml_name);
+  if (ml_name == NULL) { /* All soils have to be set for this tracer */
 
-  int  soil_id = -1;
-  for (int id = 0; id < gw->n_soils; id++) {
-    if (gw->soil_param[id].ml_id == ml_id) {
-      soil_id = id;
-      break;
-    }
+    for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
+
+      cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+
+      /* Set tracer parameters */
+      _set_tracer_param(soil->tracer_param + tracer_id,
+                        wmd,
+                        alpha_l, alpha_t,
+                        bulk_density, distrib_coef,
+                        reaction_rate);
+
+    } // Loop on soils
+
   }
+  else { /* Set this tracer equation for a specific soil */
 
-  if (soil_id == -1)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Stop setting a tracer equation."
-                " No soil related to mesh location %s has been found.\n"
-                " Please check your settings."), ml_name);
+    int ml_id = cs_mesh_location_get_id_by_name(ml_name);
+    if (ml_id == -1)
+      bft_error(__FILE__, __LINE__, 0,
+                _( " Stop setting a tracer equation."
+                   " Invalid mesh location name %s.\n"
+                   " This mesh location is not already defined.\n"), ml_name);
 
+    int  soil_id = -1;
+    for (int id = 0; id < gw->n_soils; id++) {
+      if (gw->soil_param[id].ml_id == ml_id) {
+        soil_id = id;
+        break;
+      }
+    }
 
-  cs_gw_soil_t  *soil = gw->soil_param + soil_id;
-  cs_gw_tracer_t  *tp = soil->tracer_param + tracer_id;
+    if (soil_id == -1)
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Stop setting a tracer equation."
+                  " No soil related to mesh location %s has been found.\n"
+                  " Please check your settings."), ml_name);
 
-  /* Set tracer parameters */
-  _set_tracer_param(tp,
-                    wmd,
-                    alpha_l, alpha_t,
-                    bulk_density, distrib_coef,
-                    reaction_rate);
+    cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+
+    /* Set tracer parameters */
+    _set_tracer_param(soil->tracer_param + tracer_id,
+                      wmd,
+                      alpha_l, alpha_t,
+                      bulk_density, distrib_coef,
+                      reaction_rate);
+
+  } /* Set a specific couple (tracer,soil) */
 
 }
 
