@@ -289,12 +289,13 @@ typedef enum {
 
 /* Other types */
 
-typedef int      cs_lnum_t;     /* Local integer index or number */
-typedef double   cs_coord_t;    /* Real number (coordinate value) */
+typedef int                 cs_lnum_t;    /* Local integer index or number */
+typedef double              cs_coord_t;   /* Real number (coordinate value) */
 
-typedef int      cs_int_t;      /* Fortran integer */
-typedef double   cs_real_t;     /* Fortran double precision */
-typedef char     cs_byte_t;     /* Byte (untyped memory unit) */
+typedef int                 cs_int_t;    /* Fortran integer */
+typedef double              cs_real_t;   /* Fortran double precision */
+typedef char                cs_byte_t;   /* Byte (untyped memory unit) */
+typedef unsigned short int  cs_flag_t;   /* Flag for storing metadata */
 
 /* Vector or array block types */
 
@@ -324,6 +325,13 @@ typedef cs_real_33_t  cs_real_332_t[2];  /* vector of 2 3x3 matrices
                                             of real values */
 typedef cs_real_66_t  cs_real_662_t[2];  /* vector of 2 6x6 matrices
                                             of real values */
+
+typedef struct {
+
+  double   val;  /* Value */
+  int      id;   /* Id related to value */
+
+} cs_double_int_t;
 
 
 /* Mappings to MPI datatypes */

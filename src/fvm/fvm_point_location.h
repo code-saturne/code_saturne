@@ -93,6 +93,39 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
                          cs_lnum_t           location[],
                          float               distance[]);
 
+/*----------------------------------------------------------------------------
+ * For each point previously located in a element, find among vertices of this
+ * element the closest vertex to this point.
+ * Update located_ent_num and distance.
+ * As input, located_ent_num is an array with a numbering not using a parent
+ * numbering. As output, located_ent_num may use a parent vertex numbering
+ * according to the value of locate_on_parents
+ *
+ * parameters:
+ *   this_nodal           <-- pointer to nodal mesh representation structure
+ *   locate_on_parents    <-- location relative to parent element numbers if 1,
+ *                            id of element + 1 in concatenated sections of
+ *                            same element dimension if 0
+ *   n_points             <-- number of points to locate
+ *   point_coords         <-- point coordinates
+ *   located_ent_num      <-> input: list of elements (cells or faces according
+ *                            to max entity dim) where points have been
+ *                            initially located or not (size: n_points)
+ *                            output: list of vertices closest to each point
+ *   distance             <-> distance from point to vertex indicated by
+ *                            location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                            and > 1 if outside a volume element, or absolute
+ *                            distance to a surface element (size: n_points)
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
+                                  int                 locate_on_parents,
+                                  cs_lnum_t           n_points,
+                                  const cs_coord_t    point_coords[],
+                                  cs_lnum_t           located_ent_num[],
+                                  float               distance[]);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

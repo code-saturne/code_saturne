@@ -429,6 +429,13 @@ cs_user_periodicity(void);
 void
 cs_user_postprocess_writers(void);
 
+/*-----------------------------------------------------------------------------
+ * Define monitoring probes and profiles. A profile is seen as a set of probes.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_postprocess_probes(void);
+
 /*----------------------------------------------------------------------------
  * Define post-processing meshes.
  *

@@ -119,6 +119,7 @@ cs_post_default.h \
 cs_post_util.h \
 cs_preprocess.h \
 cs_preprocessor_data.h \
+cs_probe.h \
 cs_prototypes.h \
 cs_renumber.h \
 cs_resource.h \
@@ -260,6 +261,7 @@ cs_post.c \
 cs_post_default.c \
 cs_preprocess.c \
 cs_preprocessor_data.c \
+cs_probe.c \
 cs_resource.c \
 cs_restart.c \
 cs_restart_default.c \

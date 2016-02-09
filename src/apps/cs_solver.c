@@ -83,6 +83,7 @@
 #include "cs_post.h"
 #include "cs_preprocess.h"
 #include "cs_preprocessor_data.h"
+#include "cs_probe.h"
 #include "cs_prototypes.h"
 #include "cs_restart.h"
 #include "cs_sles.h"
@@ -254,6 +255,7 @@ cs_run(void)
 
   cs_gui_postprocess_writers();
   cs_user_postprocess_writers();
+  cs_user_postprocess_probes();
   cs_post_init_writers();
 
   /* Print info on fields and associated keys and other setup options */
@@ -415,6 +417,7 @@ cs_run(void)
 
   /* Free post processing or logging related structures */
 
+  cs_probe_finalize();
   cs_post_finalize();
   cs_log_iteration_destroy_all();
 

@@ -39,6 +39,7 @@
 #include "fvm_writer.h"
 
 #include "cs_base.h"
+#include "cs_probe.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
@@ -143,7 +144,7 @@ typedef void
  *   cat_id      <-- category id of the output mesh for the current call
  *   ent_flag    <-- indicate global presence of cells (ent_flag[0]), interior
  *                   faces (ent_flag[1]), boundary faces (ent_flag[2]),
- *                   or particles (ent_flag[3])
+ *                   particles (ent_flag[3]) or probes (ent_flag[4])
  *   n_cells     <-- local number of cells of post_mesh
  *   n_i_faces   <-- local number of interior faces of post_mesh
  *   n_b_faces   <-- local number of boundary faces of post_mesh
@@ -157,7 +158,7 @@ typedef void
 (cs_post_time_mesh_dep_output_t) (void                  *input,
                                   int                    mesh_id,
                                   int                    cat_id,
-                                  int                    ent_flag[4],
+                                  int                    ent_flag[5],
                                   cs_lnum_t              n_cells,
                                   cs_lnum_t              n_i_faces,
                                   cs_lnum_t              n_b_faces,
@@ -433,6 +434,32 @@ cs_post_define_particles_mesh_by_func(int                    mesh_id,
                                       bool                   auto_variables,
                                       int                    n_writers,
                                       const int              writer_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a post-processing mesh for probes (set of probes should have
+ *        been already defined)
+ *
+ * \param[in] mesh_id        id of mesh to define (<0 reserved, >0 for user)
+ * \param[in] pset           pointer to a cs_probe_set_t structure
+ * \param[in] time_varying   true if probe coords may change during computation
+ * \param[in] is_profile     true if probe set is related to a profile
+ * \param[in] on_boundary    true if probes are located on boundary
+ * \param[in] auto_variable  true if the set of variables to post is predefined
+ * \param[in] n_writers      number of associated writers
+ * \param[in] writer_ids     ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_define_probe_mesh(int                    mesh_id,
+                          cs_probe_set_t        *pset,
+                          bool                   time_varying,
+                          bool                   is_profile,
+                          bool                   on_boundary,
+                          bool                   auto_variable,
+                          int                    n_writers,
+                          const int              writer_ids[]);
 
 /*----------------------------------------------------------------------------
  * Create an alias to a post-processing mesh.

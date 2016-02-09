@@ -45,7 +45,7 @@
 #include "cs_field.h"
 #include "cs_mesh.h"
 #include "cs_selector.h"
-
+#include "cs_probe.h"
 #include "cs_post.h"
 #include "cs_time_plot.h"
 
@@ -293,7 +293,9 @@ cs_user_postprocess_writers(void)
    *   'discard_polygons'  (ignore polygon-type faces)
    *   'discard_polyhedra' (ignore polyhedron-type cells)
    *   'divide_polygons'   (subdivides polygon-type faces)
-   *   'divide_polyhedra'  (subdivides polyhedron-type cells) */
+   *   'divide_polyhedra'  (subdivides polyhedron-type cells)
+   *   'split_tensors'     (writes tensors as separate scalars)
+   *   'separate_meshes' */
 
   /* Set time plot file writer flush behavior defaults.
    *   flush_wtime     <-- elapsed time interval between file flushes;
@@ -381,6 +383,149 @@ cs_user_postprocess_writers(void)
                           false,
                           frequency_n,
                           frequency_t);
+
+  if (false)
+          cs_post_define_writer(5,               /* writer_id */
+                             "profile",        /* writer name */
+                         "postprocessing", /* directory name */
+                         "plot",           /* format name */
+                         "",               /* format options */
+                         FVM_WRITER_FIXED_MESH,
+                         false,            // output_at_end
+                         100,              // nt_freq
+                         -1.0);            // dt_freq
+
+}
+
+/*-----------------------------------------------------------------------------
+ * Define monitoring probes and profiles. A profile is seen as a set of probes.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_postprocess_probes(void)
+{
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+
+  /* Post-processing for probes and profiles relies on the following functions
+   * whose prototypes are defined in cs_probe.h
+   *
+   * cs_probe_set_t structure handles the management of probes for monitoring
+   * or profile.
+   *
+   * Call cs_probe_set_create_from_array() for defining a list of probes whose
+   * parameters are:
+   * name      <--  name of the set of probes
+   * n_probes  <--  number of probes in coords and labels
+   * coords    <--  list of coordinates related to each probe
+   * labels    <--  list of label related to each probe (optional)
+   *
+   * Call cs_probe_set_create_from_segment() for defining a profile
+   * name         <--  name of the set of probes
+   * n_probes     <--  number of probes defining the profile
+   * start_coord  <--  coordinate of the starting point
+   * start_label  <--  NULL or label of the starting point (optional)
+   * end_coord    <--  coordinate of the ending point
+   * end_label    <--  NULL or label of the ending point (optional)
+   *
+   * For a more advanced usage, the functions cs_probe_set_create() and
+   * cs_probe_set_add_probe() can be called
+
+   * parameters for cs_probe_set_create():
+   * name    <--  name of the set of probes
+   *
+   * parameters for cs_probe_set_add_probe():
+   * pset    <->  set of probes (pointer to a cs_probe_set_t structure)
+   * xyz     <--  coordinates of the point to add
+   * label   <--  NULL or the name of the point (optional)
+   *
+   * All cs_probe_set_create_* functions return a pointer to a cs_probe_set_t
+   * structure which can be used to specify additional options thanks to
+   * cs_probe_set_option() with parameters:
+   * pset     <->  set of probes (pointer to a cs_probe_set_t structure)
+   * keyname  <--  name of the keyword related to the parameter to set
+   * keyval   <--  value of the keyword to set
+   *
+   * Available keynames are the following:
+   *
+   * "activated" where keyval is either "true" or "false" (default)
+   * "boundary"           where keyval is either "true" or "false" (default)
+   * "mode"               where keyval is "exact", "nearest_vertex" or
+   *                      "nearest_cell_center (default)
+   * "profile"            where keyval is either "true" or "false"
+   * "selection_criteria" where keyval is a string like "x > 0.5"
+   * "tolerance"          where keyval is for instance "0.05" (default "0.10")
+   * "moving_probes"      where keyval is either "true" or "false"
+   *
+   * More advanced functions are described along with examples below. */
+
+  if (false) { /* Define monitoring probes */
+
+    cs_real_3_t  m1 = {0.25, 0.025, 0.025};
+    cs_real_3_t  m2 = {0.50, 0.025, 0.025};
+    cs_real_3_t  m3 = {0.75, 0.025, 0.025};
+    cs_probe_set_t  *pset = cs_probe_set_create("Monitoring");
+
+    cs_probe_set_add_probe(pset, m1, "M1");
+    cs_probe_set_add_probe(pset, m2, "M2");
+    cs_probe_set_add_probe(pset, m3, "M3");
+
+    /* A writer (id = -3) using the format "time_plot" is associated by default
+       to a set of monitoring probes. This is not the case for a profile. */
+
+  }
+
+  if (true) { /* Add a first profile */
+
+    cs_coord_3_t  start = {0., 0.025, 0.025};
+    cs_coord_3_t  end = {1., 0.025, 0.025};
+    int  writer_ids[] = {2};
+
+    cs_probe_set_t  *pset =
+      cs_probe_set_create_from_segment("Prof1", // name
+                                       11,      // n_probes
+                                       start,   // start coordinate
+                                       NULL,    // start label
+                                       end,     // end coordinate
+                                       NULL);   // end label
+
+    //    cs_probe_set_associate_writers(pset, 1, writer_ids);
+  }
+
+  if (true)  {  /* Add a second profile attached to border vertices */
+
+    cs_coord_3_t  start = {0., 0., 0.};
+    cs_coord_3_t  end = {1., 0., 0.};
+
+    cs_probe_set_create_from_segment("P1",    // name
+                                     11,      // n_probes
+                                     start,   // start coordinate
+                                     NULL,    // start label
+                                     end,     // end coordinate
+                                     NULL);   // end label
+
+  }
+
+  if (false)  {  /* Add a second profile attached to border vertices */
+
+    cs_coord_3_t  start = {0., 0., 0.};
+    cs_coord_3_t  end = {1., 0., 0.};
+    int  writer_ids[] = {5};
+
+    cs_probe_set_t *pset =
+      cs_probe_set_create_from_segment("P2",     // name
+                                       21,       // n_probes
+                                       start,    // start coordinate
+                                       NULL,     // start label
+                                       end,      // end coordinate
+                                       NULL);    // end label
+
+    cs_probe_set_associate_writers(pset, 1, writer_ids);
+
+    cs_probe_set_option(pset, "boundary", "true");
+    cs_probe_set_option(pset, "mode", "nearest_vertex");
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -395,6 +540,7 @@ void
 cs_user_postprocess_meshes(void)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+
   /* Post-processing meshes may be defined using one of several functions,
    * whose protypes are defined in cs_post.h; these functions are:
    *

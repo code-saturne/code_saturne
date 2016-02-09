@@ -48,7 +48,6 @@
 #include "cs_timer.h"
 #include "cs_log.h"
 #include "cs_post.h"
-#include "cs_probe.h"
 #include "cs_prototypes.h"
 #include "cs_mesh_location.h"
 
@@ -172,9 +171,6 @@ _setup(cs_mesh_t             *m,
 
   /* Initialization for user-defined extra operations */
   cs_user_cdo_start_extra_op(domain);
-
-  /* Build probe sets (should be done after cs_user_start_extra_op) */
-  cs_probe_build();
 
   /* Sumary of the settings */
   cs_cdo_connect_summary(domain->connect);

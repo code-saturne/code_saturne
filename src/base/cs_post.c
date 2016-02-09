@@ -43,9 +43,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "fvm_nodal.h"
 #include "fvm_nodal_append.h"
-#include "fvm_writer.h"
 
 #include "cs_base.h"
 #include "cs_field.h"
@@ -60,7 +58,6 @@
 #include "cs_selector.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
-#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -223,7 +220,7 @@ typedef enum {
   CS_POST_LOCATION_I_FACE,       /* Values located at interior faces */
   CS_POST_LOCATION_B_FACE,       /* Values located at boundary faces */
   CS_POST_LOCATION_VERTEX,       /* Values located at vertices */
-  CS_POST_LOCATION_PARTICLE      /* Values located at particles */
+  CS_POST_LOCATION_PARTICLE,     /* Values located at particles */
 
 } cs_post_location_t;
 
@@ -269,27 +266,29 @@ typedef struct {
                                             mesh, > 0 for user mesh */
 
   char                   *name;          /* Mesh name */
-  char                   *criteria[4];   /* Base selection criteria for
+  char                   *criteria[5];   /* Base selection criteria for
                                             cells, interior faces,
                                             boundary faces, and particles
                                             respectively */
-  cs_post_elt_select_t   *sel_func[4];   /* Advanced selection functions for
+  cs_post_elt_select_t   *sel_func[5];   /* Advanced selection functions for
                                             cells, interior faces,
-                                            boundary faces, and particles
-                                            respectively */
-  void                   *sel_input[4];  /* Advanced selection input for
+                                            boundary faces, particles and
+                                            probes respectively */
+  void                   *sel_input[5];  /* Advanced selection input for
                                             matching selection functions */
-  int                     ent_flag[4];   /* Presence of cells (ent_flag[0],
+  int                     ent_flag[5];   /* Presence of cells (ent_flag[0],
                                             interior faces (ent_flag[1]),
                                             boundary faces (ent_flag[2]),
                                             or particles (ent_flag[3] = 1
-                                            for particles, 2 for trajectories)
+                                            for particles, 2 for trajectories),
+                                            probes (ent_flag[4] = 1 for
+                                            monitoring probes, 2 for profile)
                                             on one processor at least */
 
   int                     cat_id;        /* Optional category id as regards
                                             variables output (-1 as base
                                             volume mesh, -2 as base boundary
-                                            mesh, -4 as particles mesh,
+                                            mesh, -3 as particles mesh,
                                             0 by default) */
 
   int                     alias;         /* If > -1, index in array of
@@ -357,10 +356,10 @@ static int              _cs_post_n_meshes_max = 0;
 static cs_post_mesh_t  *_cs_post_meshes = NULL;
 
 /* Array of writers for post-processing; */
-/* writers -1 (default), -2 (show errors), -3 (particles default),
-   and -4 (trajectories default) are reserved */
+/* writers -1 (default), -2 (show errors), -3 (probe monitoring),
+   -4 (particles default)  and -5 (trajectories default) are reserved */
 
-static int                _cs_post_min_writer_id = -4;
+static int                _cs_post_min_writer_id = -5;
 static int                _cs_post_n_writers = 0;
 static int                _cs_post_n_writers_max = 0;
 static cs_post_writer_t  *_cs_post_writers = NULL;
@@ -534,15 +533,25 @@ _init_writer(cs_post_writer_t  *writer)
   assert(writer != NULL);
 
   if (writer->writer == NULL) {
+
     cs_post_writer_def_t  *wd = writer->wd;
+
+    /* Sanity checks */
     assert(writer->wd != NULL);
+    if (wd->fmt_id >= fvm_writer_n_formats())
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid format name for writer (case: %s, dirname: %s)."),
+                wd->case_name, wd->dir_name);
+
     writer->writer = fvm_writer_init(wd->case_name,
                                      wd->dir_name,
                                      fvm_writer_format_name(wd->fmt_id),
                                      wd->fmt_opts,
                                      wd->time_dep);
     _destroy_writer_def(writer);
+
   }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -965,7 +974,8 @@ _lagragian_needed(const cs_time_step_t  *ts)
  *   mesh_id      <-- requested mesh id
  *   time_varying <-- if true, mesh may be redefined over time if associated
  *                    writers allow it
- *   particles    <-- 0 for standard mesh, 1 for particles, 2 for trajectories
+ *   mode         <-- 0 for standard mesh, 1 for particles, 2 for trajectories,
+ *                    3 for probes
  *   n_writers    <-- number of associated writers
  *   writer_ids   <-- ids of associated writers
  *
@@ -976,7 +986,7 @@ _lagragian_needed(const cs_time_step_t  *ts)
 static cs_post_mesh_t *
 _predefine_mesh(int        mesh_id,
                 bool       time_varying,
-                int        particles,
+                int        mode,
                 int        n_writers,
                 const int  writer_ids[])
 {
@@ -999,7 +1009,7 @@ _predefine_mesh(int        mesh_id,
       post_mesh = _cs_post_meshes + i;
 
       BFT_FREE(post_mesh->name);
-      for (j = 0; j < 4; j++)
+      for (j = 0; j < 5; j++)
         BFT_FREE(post_mesh->criteria[j]);
       BFT_FREE(post_mesh->writer_id);
 
@@ -1049,7 +1059,7 @@ _predefine_mesh(int        mesh_id,
 
   post_mesh->add_groups = false;
 
-  for (j = 0; j < 4; j++) {
+  for (j = 0; j < 5; j++) {
     post_mesh->criteria[j] = NULL;
     post_mesh->sel_func[j] = NULL;
     post_mesh->sel_input[j] = NULL;
@@ -1078,9 +1088,7 @@ _predefine_mesh(int        mesh_id,
   post_mesh->n_writers = n_writers;
   BFT_MALLOC(post_mesh->writer_id, n_writers, int);
 
-  /* Non-Lagrangian mesh */
-
-  if (particles == 0) {
+  if (mode == 0) { /* Non-Lagrangian mesh */
 
     for (i = 0; i < n_writers; i++) {
 
@@ -1103,16 +1111,12 @@ _predefine_mesh(int        mesh_id,
     }
 
   }
+  else if (mode == 1 || mode == 2) { /* Lagrangian mesh */
 
-  /* Lagrangian mesh */
-
-  else {
-
-    fvm_writer_time_dep_t mod_type = (particles == 2) ?
+    fvm_writer_time_dep_t mod_type = (mode == 2) ?
       FVM_WRITER_FIXED_MESH : FVM_WRITER_TRANSIENT_CONNECT;
 
-    post_mesh->ent_flag[3] = particles;
-
+    post_mesh->ent_flag[3] = mode;
     post_mesh->mod_flag_min = FVM_WRITER_TRANSIENT_CONNECT;
     post_mesh->mod_flag_max = FVM_WRITER_TRANSIENT_CONNECT;
 
@@ -1135,6 +1139,33 @@ _predefine_mesh(int        mesh_id,
     if (j < n_writers) {
       post_mesh->n_writers = j;
       BFT_REALLOC(post_mesh->writer_id, j, int);
+    }
+
+  }
+  else  { /* Probe mesh */
+
+    assert(mode == 3 || mode == 4); /* Sanity check */
+    post_mesh->ent_flag[4] = mode - 2; /* 1 = probe monitoring,
+                                          2 = profile */
+
+    for (i = 0; i < n_writers; i++) {
+
+      fvm_writer_time_dep_t mod_flag;
+      int _writer_id = _cs_post_writer_id(writer_ids[i]);
+      cs_post_writer_t  *writer = _cs_post_writers + _writer_id;
+
+      post_mesh->writer_id[i] = _writer_id;
+
+      if (writer->wd != NULL)
+        mod_flag = writer->wd->time_dep;
+      else
+        mod_flag = fvm_writer_get_time_dep(writer->writer);
+
+      if (mod_flag < post_mesh->mod_flag_min)
+        post_mesh->mod_flag_min = mod_flag;
+      if (mod_flag > post_mesh->mod_flag_max)
+        post_mesh->mod_flag_max = mod_flag;
+
     }
 
   }
@@ -1521,6 +1552,36 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Create a post-processing mesh for probes
+ *
+ * parameters:
+ *   post_mesh     <-> pointer to partially initialized post-processing mesh
+ *----------------------------------------------------------------------------*/
+
+static void
+_define_probe_export_mesh(cs_post_mesh_t         *post_mesh)
+{
+  /* Sanity checks */
+  assert(post_mesh != NULL);
+
+  fvm_nodal_t  *exp_mesh = NULL;
+  cs_probe_set_t  *pset = (cs_probe_set_t *)post_mesh->sel_input[4];
+
+  /* First step: locate probes and update their coordinates */
+
+  cs_probe_set_locate(pset);
+
+  /* Create associated structure */
+
+  exp_mesh = cs_probe_set_export_mesh(pset, cs_probe_set_get_name(pset));
+
+  /* Link to newly created mesh */
+
+  post_mesh->exp_mesh = exp_mesh;
+  post_mesh->_exp_mesh = exp_mesh;
+}
+
+/*----------------------------------------------------------------------------
  * Initialize a post-processing mesh based on its selection criteria
  * or selection functions.
  *
@@ -1563,9 +1624,63 @@ _define_mesh(cs_post_mesh_t        *post_mesh,
     post_mesh->_exp_mesh = exp_edges;
   }
 
+  /* Particle (Lagrangian) mesh */
+
+  else if (post_mesh->ent_flag[3] != 0 && ts != NULL) {
+
+    cs_lnum_t n_post_particles = 0, n_particles = cs_lagr_get_n_particles();
+    cs_lnum_t *particle_list = NULL;
+
+    if (post_mesh->criteria[3] != NULL) {
+
+      cs_lnum_t n_cells = 0;
+      cs_lnum_t *cell_list = NULL;
+      const char *criteria = post_mesh->criteria[3];
+
+      if (!strcmp(criteria, "all[]"))
+        n_cells = mesh->n_cells;
+      else {
+        BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
+        cs_selector_get_cell_num_list(criteria, &n_cells, cell_list);
+      }
+      if (n_cells < mesh->n_cells || post_mesh->density < 1.) {
+        BFT_MALLOC(particle_list, n_particles, cs_lnum_t);
+        cs_lagr_get_particle_list(n_cells,
+                                  cell_list,
+                                  post_mesh->density,
+                                  &n_post_particles,
+                                  particle_list);
+        BFT_REALLOC(particle_list, n_post_particles, cs_lnum_t);
+      }
+      else
+        n_post_particles = n_particles;
+      BFT_FREE(cell_list);
+    }
+
+    else if (post_mesh->sel_func[3] != NULL) {
+      cs_post_elt_select_t *sel_func = post_mesh->sel_func[3];
+      sel_func(post_mesh->sel_input[0], &n_post_particles, &particle_list);
+    }
+
+    _define_particle_export_mesh(post_mesh,
+                                 n_post_particles,
+                                 particle_list,
+                                 ts);
+
+    BFT_FREE(particle_list);
+  }
+
+  /* Probe mesh */
+
+  else if (post_mesh->ent_flag[4] != 0) {
+
+    _define_probe_export_mesh(post_mesh);
+
+  }
+
   /* Standard (non-particle) meshes */
 
-  else if (post_mesh->ent_flag[3] == 0) {
+  else {
 
     cs_lnum_t i;
     cs_lnum_t n_cells = 0, n_i_faces = 0, n_b_faces = 0;
@@ -1635,52 +1750,6 @@ _define_mesh(cs_post_mesh_t        *post_mesh,
     BFT_FREE(i_face_list);
     BFT_FREE(b_face_list);
 
-  }
-
-  /* Particle (Lagrangian) mesh */
-
-  else if (post_mesh->ent_flag[3] != 0 && ts != NULL) {
-
-    cs_lnum_t n_post_particles = 0, n_particles = cs_lagr_get_n_particles();
-    cs_lnum_t *particle_list = NULL;
-
-    if (post_mesh->criteria[3] != NULL) {
-
-      cs_lnum_t n_cells = 0;
-      cs_lnum_t *cell_list = NULL;
-      const char *criteria = post_mesh->criteria[3];
-
-      if (!strcmp(criteria, "all[]"))
-        n_cells = mesh->n_cells;
-      else {
-        BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
-        cs_selector_get_cell_num_list(criteria, &n_cells, cell_list);
-      }
-      if (n_cells < mesh->n_cells || post_mesh->density < 1.) {
-        BFT_MALLOC(particle_list, n_particles, cs_lnum_t);
-        cs_lagr_get_particle_list(n_cells,
-                                  cell_list,
-                                  post_mesh->density,
-                                  &n_post_particles,
-                                  particle_list);
-        BFT_REALLOC(particle_list, n_post_particles, cs_lnum_t);
-      }
-      else
-        n_post_particles = n_particles;
-      BFT_FREE(cell_list);
-    }
-
-    else if (post_mesh->sel_func[3] != NULL) {
-      cs_post_elt_select_t *sel_func = post_mesh->sel_func[3];
-      sel_func(post_mesh->sel_input[0], &n_post_particles, &particle_list);
-    }
-
-    _define_particle_export_mesh(post_mesh,
-                                 n_post_particles,
-                                 particle_list,
-                                 ts);
-
-    BFT_FREE(particle_list);
   }
 
 }
@@ -3321,6 +3390,60 @@ cs_post_define_particles_mesh_by_func(int                    mesh_id,
 
   if (auto_variables)
     post_mesh->cat_id = -3;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a post-processing mesh for probes (set of probes should have
+ *        been already defined)
+ *
+ * \param[in] mesh_id        id of mesh to define (<0 reserved, >0 for user)
+ * \param[in] pset           pointer to a cs_probe_set_t structure
+ * \param[in] time_varying   true if probe coords may change during computation
+ * \param[in] is_profile     true if probe set is related to a profile
+ * \param[in] on_boundary    true if probes are located on boundary
+ * \param[in] auto_variable  true if the set of variables to post is predefined
+ * \param[in] n_writers      number of associated writers
+ * \param[in] writer_ids     ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_define_probe_mesh(int                    mesh_id,
+                          cs_probe_set_t        *pset,
+                          bool                   time_varying,
+                          bool                   is_profile,
+                          bool                   on_boundary,
+                          bool                   auto_variable,
+                          int                    n_writers,
+                          const int              writer_ids[])
+{
+  assert(pset != NULL); /* Sanity check */
+
+  /* Common initializations */
+
+  int  mode = (is_profile == true) ? 4 : 3;
+  cs_post_mesh_t *post_mesh = _predefine_mesh(mesh_id, time_varying, mode,
+                                              n_writers, writer_ids);
+
+  /* Define mesh based on current arguments */
+
+  const char  *mesh_name = cs_probe_set_get_name(pset);
+  BFT_MALLOC(post_mesh->name, strlen(mesh_name) + 1, char);
+  strcpy(post_mesh->name, mesh_name);
+
+  post_mesh->sel_func[4] = NULL;
+  post_mesh->sel_input[4] = pset;
+
+  post_mesh->add_groups = false;
+
+  if (auto_variable) {
+    if (on_boundary)
+      post_mesh->cat_id = -2;
+    else
+      post_mesh->cat_id = -1;
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4982,14 +5105,28 @@ cs_post_init_writers(void)
                           -1,               /* time step output frequency */
                           -1.0);            /* time value output frequency */
 
+  /* Additional writer for probe monitoring */
+
+  if (cs_probe_set_have_monitoring())
+    if (!cs_post_writer_exists(-3))
+      cs_post_define_writer(-3,             /* writer_id */
+                            "",             /* writer name */
+                            "monitoring",
+                            "time_plot",    /* format name */
+                            "",             /* format options */
+                            FVM_WRITER_FIXED_MESH,
+                            true,             /* output at end */
+                            5,                /* time step output frequency */
+                            -1.0);            /* time value output frequency */
+
   /* Additional writers for Lagrangian output */
 
   if (_lagragian_needed(NULL)) {
 
     /* Particles */
 
-    if (!cs_post_writer_exists(-3))
-      cs_post_define_writer(-3,                   /* writer_id */
+    if (!cs_post_writer_exists(-4))
+      cs_post_define_writer(-4,                   /* writer_id */
                             "particles",          /* writer name */
                             _cs_post_dirname,
                             "EnSight Gold",       /* format name */
@@ -4999,8 +5136,8 @@ cs_post_init_writers(void)
                             -1,                   /* time step frequency */
                             -1.0);                /* time value frequency */
 
-    if (!cs_post_writer_exists(-4))
-      cs_post_define_writer(-4,                    /* writer_id */
+    if (!cs_post_writer_exists(-5))
+      cs_post_define_writer(-5,                    /* writer_id */
                             "trajectories",        /* writer name */
                             _cs_post_dirname,
                             "EnSight Gold",        /* format name */
@@ -5044,35 +5181,38 @@ void
 cs_post_init_meshes(int check_mask)
 {
   int i;
-  const int writer_ids[] = {-1}; /* Default (main) writer id */
 
-  /* Definition of default post-processing meshes if this has not been
-     done yet */
+  { /* Definition of default post-processing meshes if this has not been
+       done yet */
 
-  if (!cs_post_mesh_exists(-1))
-    cs_post_define_volume_mesh(-1,
-                               _("Fluid domain"),
-                               "all[]",
-                               true,
-                               true,
-                               1,
-                               writer_ids);
+    const int  writer_ids[] = {-1}; /* Default (main) writer id */
 
-  if (!cs_post_mesh_exists(-2))
-    cs_post_define_surface_mesh(-2,
-                                _("Boundary"),
-                                NULL,
-                                "all[]",
-                                true,
-                                true,
-                                1,
-                                writer_ids);
+    if (!cs_post_mesh_exists(-1))
+      cs_post_define_volume_mesh(-1,
+                                 _("Fluid domain"),
+                                 "all[]",
+                                 true,
+                                 true,
+                                 1,
+                                 writer_ids);
+
+    if (!cs_post_mesh_exists(-2))
+      cs_post_define_surface_mesh(-2,
+                                  _("Boundary"),
+                                  NULL,
+                                  "all[]",
+                                  true,
+                                  true,
+                                  1,
+                                  writer_ids);
+
+  }
 
   /* Additional writers for Lagrangian output */
 
   if (_lagragian_needed(NULL)) {
     if (!cs_post_mesh_exists(-3)) {
-      const int _writer_ids[] = {-3};
+      const int writer_ids[] = {-3};
       cs_post_define_particles_mesh(-3,
                                     _("Particles"),
                                     "all[]",
@@ -5080,9 +5220,67 @@ cs_post_init_meshes(int check_mask)
                                     false,  /* trajectory */
                                     true,   /* auto_variables */
                                     1,
-                                    _writer_ids);
+                                    writer_ids);
     }
   }
+
+  /* Define probe meshes if needed */
+
+  for (int pset_id = 0; pset_id < cs_probe_get_n_sets(); pset_id++) {
+
+    bool  time_varying, is_profile, on_boundary, auto_variables;
+
+    int  n_writers = 0;
+    int  *writer_ids = NULL;
+    cs_probe_set_t  *pset = cs_probe_set_get_by_id(pset_id);
+    int  post_mesh_id = cs_post_get_free_mesh_id();
+
+    cs_probe_set_get_post_info(pset,
+                               &time_varying,
+                               &is_profile,
+                               &on_boundary,
+                               &auto_variables,
+                               &n_writers,
+                               &writer_ids);
+
+    if (is_profile) { /* User has to define an associated writer */
+
+      cs_post_define_probe_mesh(post_mesh_id,
+                                pset,
+                                time_varying,
+                                is_profile,
+                                on_boundary,
+                                auto_variables,
+                                n_writers,
+                                writer_ids);
+
+    }
+    else { /* Monitoring points */
+
+      const int  default_writer_ids[] = {-3};
+
+      if (n_writers == 0)
+        cs_post_define_probe_mesh(post_mesh_id,
+                                  pset,
+                                  time_varying,
+                                  is_profile,
+                                  on_boundary,
+                                  auto_variables,
+                                  1,
+                                  default_writer_ids);
+      else
+        cs_post_define_probe_mesh(post_mesh_id,
+                                  pset,
+                                  time_varying,
+                                  is_profile,
+                                  on_boundary,
+                                  auto_variables,
+                                  n_writers,
+                                  writer_ids);
+
+    }
+
+  } // Loop on sets of probes
 
   /* Remove meshes which are associated with no writer and not aliased */
 
@@ -5290,7 +5488,7 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
     if (active == true) {
 
-      const fvm_nodal_t * exp_mesh = post_mesh->exp_mesh;
+      const fvm_nodal_t  *exp_mesh = post_mesh->exp_mesh;
 
       if (exp_mesh == NULL)
         continue;

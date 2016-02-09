@@ -197,7 +197,7 @@ _write_particle_vars(cs_post_default_input_t  *input,
  *   cat_id      <-- category id of the output mesh for the current call
  *   ent_flag    <-- indicate global presence of cells (ent_flag[0]), interior
  *                   faces (ent_flag[1]), boundary faces (ent_flag[2]),
- *                   or particles (ent_flag[3])
+ *                   particles (ent_flag[3]) or probes (ent_flag[4])
  *   n_cells     <-- local number of cells of post_mesh
  *   n_i_faces   <-- local number of interior faces of post_mesh
  *   n_b_faces   <-- local number of boundary faces of post_mesh
@@ -211,7 +211,7 @@ static void
 _write_additional_vars(void                  *input,
                        int                    mesh_id,
                        int                    cat_id,
-                       int                    ent_flag[4],
+                       int                    ent_flag[5],
                        cs_lnum_t              n_cells,
                        cs_lnum_t              n_i_faces,
                        cs_lnum_t              n_b_faces,

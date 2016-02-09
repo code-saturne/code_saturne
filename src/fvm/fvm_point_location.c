@@ -49,6 +49,8 @@
 #include "fvm_nodal_priv.h"
 #include "fvm_triangulate.h"
 
+#include "cs_math.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -3385,6 +3387,203 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
 
   BFT_FREE(points_in_extents);
 
+}
+
+/*----------------------------------------------------------------------------
+ * For each point previously located in a element, find among vertices of this
+ * element the closest vertex to this point.
+ * Update located_ent_num and distance.
+ * As input, located_ent_num is an array with a numbering not using a parent
+ * numbering. As output, located_ent_num may use a parent vertex numbering
+ * according to the value of locate_on_parents
+ *
+ * parameters:
+ *   this_nodal           <-- pointer to nodal mesh representation structure
+ *   locate_on_parents    <-- location relative to parent element numbers if 1,
+ *                            id of element + 1 in concatenated sections of
+ *                            same element dimension if 0
+ *   n_points             <-- number of points to locate
+ *   point_coords         <-- point coordinates
+ *   located_ent_num      <-> input: list of elements (cells or faces according
+ *                            to max entity dim) where points have been
+ *                            initially located or not (size: n_points)
+ *                            output: list of vertices closest to each point
+ *   distance             <-> distance from point to vertex indicated by
+ *                            location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                            and > 1 if outside a volume element, or absolute
+ *                            distance to a surface element (size: n_points)
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
+                                  int                 locate_on_parents,
+                                  cs_lnum_t           n_points,
+                                  const cs_coord_t    point_coords[],
+                                  cs_lnum_t           located_ent_num[],
+                                  float               distance[])
+{
+  cs_lnum_t  elt_num;
+
+  if (this_nodal == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(point_coords != NULL && located_ent_num != NULL && distance != NULL);
+  assert(this_nodal->dim == 3);
+
+  if (this_nodal->dim != 3)
+    return;
+
+  const int  max_entity_dim = fvm_nodal_get_max_entity_dim(this_nodal);
+  const cs_coord_t  *vtx_coords = this_nodal->vertex_coords;
+
+  /* Build an index on sections of highest dimension to find the association
+     between point and section */
+  int  n_max_dim_sections = 0;
+
+  for (int i = 0; i < this_nodal->n_sections; i++)
+    if (this_nodal->sections[i]->entity_dim == max_entity_dim)
+      n_max_dim_sections++;
+
+  size_t  *section_index = NULL;
+  int  *section_list = NULL;
+
+  BFT_MALLOC(section_index, n_max_dim_sections + 1, size_t);
+  BFT_MALLOC(section_list, n_max_dim_sections, int);
+
+  section_index[0] = 0;
+  int shift = 0;
+  for (int i = 0; i < this_nodal->n_sections; i++) {
+
+    const fvm_nodal_section_t  *section = this_nodal->sections[i];
+
+    if (section->entity_dim == max_entity_dim) {
+      section_list[shift] = i;
+      section_index[shift+1] = section_index[shift] + section->n_elements;
+      shift++;
+    }
+
+  }
+  assert(shift == n_max_dim_sections); // Sanity check
+
+  /* Find the closest vertex */
+  for (int p_id = 0; p_id < n_points; p_id++) {
+
+    /* Find the related section */
+    const cs_lnum_t  num = located_ent_num[p_id];
+    const cs_coord_t  *p_coord = point_coords + 3*p_id;
+
+    if (num > -1) { /* This point has been previously located on this rank */
+
+      int  max_dim_s_id;
+      for (max_dim_s_id = 0; max_dim_s_id < n_max_dim_sections; max_dim_s_id++)
+        if ((size_t)num <= section_index[max_dim_s_id+1])
+          break;
+      if (max_dim_s_id == n_max_dim_sections)
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Located element can not be found among the sections of"
+                    " highest dimension.\n"
+                    " Element num: %d\n Nodal mesh name: %s\n"),
+                  num, this_nodal->name);
+
+      const cs_lnum_t  elt_id = num - section_index[max_dim_s_id] - 1;
+      const int  s_id = section_list[max_dim_s_id];
+      const fvm_nodal_section_t  *section = this_nodal->sections[s_id];
+
+      assert(elt_id > -1); /* Sanity check */
+
+      double  min_length = cs_defs_infinite_r;
+      cs_lnum_t  chosen_id = -1;
+
+      if (section->type == FVM_CELL_POLY) { // There are polyhedra
+
+        for (cs_lnum_t j = section->face_index[elt_id];
+             j < section->face_index[elt_id + 1]; j++) {
+
+          cs_lnum_t  f_id = CS_ABS(section->face_num[j]) - 1;
+          for (cs_lnum_t k = section->vertex_index[f_id];
+               k < section->vertex_index[f_id + 1]; k++) {
+
+            const cs_lnum_t  v_id = section->vertex_num[k] - 1;
+            const cs_coord_t  *v_coord = vtx_coords + 3*v_id;
+            double  length = cs_math_3_length(p_coord, v_coord);
+
+            if (length < min_length) {
+              min_length = length;
+              chosen_id = v_id;
+            }
+
+          }
+        }
+
+      } /* Polyhedra */
+
+      else if (section->type == FVM_FACE_POLY) { // There are polygons
+
+        for (cs_lnum_t j = section->vertex_index[elt_id];
+             j < section->vertex_index[elt_id+1]; j++) {
+
+          const cs_lnum_t  v_id = section->vertex_num[j] - 1;
+          const cs_coord_t  *v_coord = vtx_coords + 3*v_id;
+          double  length = cs_math_3_length(p_coord, v_coord);
+
+          if (length < min_length) {
+            min_length = length;
+            chosen_id = v_id;
+          }
+
+        }
+
+      } /* Polygon */
+
+      /* If section contains regular elements */
+
+      else {
+
+        const int  stride = section->stride;
+
+        for (int j = 0; j < stride; j++) {
+
+          const cs_lnum_t  v_id = section->vertex_num[elt_id*stride + j] - 1;
+          const cs_coord_t  *v_coord = vtx_coords + 3*v_id;
+          double  length = cs_math_3_length(p_coord, v_coord);
+
+          if (length < min_length) {
+            min_length = length;
+            chosen_id = v_id;
+          }
+
+        } /* Loop on element vertices */
+
+      } /* Regular element */
+
+      if (chosen_id == -1)
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Closest vertex has not been found for point %d in"
+                    " mesh %s\n"), num, this_nodal->name);
+
+      /* Update arrays to return */
+      distance[p_id] = (float)min_length;
+      located_ent_num[p_id] = chosen_id + 1;
+
+    } /* num > -1 */
+
+  } // Loop on points
+
+  /* Apply parent_vertex_num if needed */
+  if (locate_on_parents == 1) {
+    if (this_nodal->parent_vertex_num != NULL) {
+      for (int p_id = 0; p_id < n_points; p_id++) {
+        const cs_lnum_t  prev_id = located_ent_num[p_id] - 1;
+        if (prev_id > -1)
+          located_ent_num[p_id] = this_nodal->parent_vertex_num[prev_id];
+      }
+    }
+  }
+
+  /* Free memory */
+  BFT_FREE(section_index);
+  BFT_FREE(section_list);
 }
 
 /*----------------------------------------------------------------------------*/
