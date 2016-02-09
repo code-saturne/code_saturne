@@ -750,9 +750,9 @@ cs_domain_set_param(cs_domain_t    *domain,
         bft_printf("\n\t");
     }
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting a parameter for this domain.\n"
+              _(" Invalid key %s setting a parameter for this domain.\n"
                 " Please read listing for more details and"
-                " modify your settings."));
+                " modify your settings."), keyname);
 
   } /* Error message */
 

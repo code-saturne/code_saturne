@@ -978,9 +978,9 @@ cs_groundwater_set_param(cs_groundwater_t    *gw,
         bft_printf("\n\t");
     }
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting the groundwater module.\n"
+              _(" Invalid key %s for setting the groundwater module.\n"
                 " Please read listing for more details and modify your"
-                " settings."));
+                " settings."), keyname);
 
   } /* Error message */
 
@@ -1335,10 +1335,10 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
         bft_printf("\n\t");
     }
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting the soil parameters in groundwater"
-                " module.\n"
+              _(" Invalid key %s for setting the soil parameters associated to"
+                " location %s in the groundwater flow module.\n"
                 " Please read the listing for more details and modify your"
-                " settings."));
+                " settings."), keyname, ml_name);
 
   } /* Error message */
 
@@ -1802,7 +1802,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 
         if (has_previous)
           bft_error(__FILE__, __LINE__, 0,
-                    " Saturated model should lead to steady Richards equation.");
+                    " Saturated model must yield a steady Richards equation.");
 
         break; // Saturated model
 

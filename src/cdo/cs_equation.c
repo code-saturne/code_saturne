@@ -1782,9 +1782,9 @@ cs_equation_set_option(cs_equation_t       *eq,
         bft_printf("\n\t");
     }
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting equation %s.\n"
+              _(" Invalid key %s for setting equation %s.\n"
                 " Please read listing for more details and"
-                " modify your settings."), eq->name);
+                " modify your settings."), keyname, eq->name);
 
   } /* Error message */
 
