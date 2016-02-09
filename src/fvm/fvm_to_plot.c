@@ -233,7 +233,7 @@ _field_output(void           *context,
     char name_buf[64];
 
     if (w->name != NULL)
-      strncpy(name_buf, c->name, 63);
+      strncpy(name_buf, w->name, 63);
     else
       name_buf[0] = '\0';
     name_buf[63] = '\0';
