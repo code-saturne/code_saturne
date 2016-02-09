@@ -95,7 +95,7 @@ typedef struct { /* for DEC matrix operations */
 static const char  _sla_err_stride[] =
   "  Incompatible stride value (>1).\n   Stop matrix computation.\n";
 
-static const char _sla_matrix_type[CS_SLA_MAT_N_TYPES][CS_CDO_LEN_NAME] = {
+static const char _sla_matrix_type[CS_SLA_MAT_N_TYPES][CS_BASE_STRING_LEN] = {
   "None",
   "DEC",
   "CSR",

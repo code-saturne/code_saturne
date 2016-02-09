@@ -67,7 +67,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 static const char
-cs_param_def_type_name[CS_PARAM_N_DEF_TYPES][CS_CDO_LEN_NAME]=
+cs_param_def_type_name[CS_PARAM_N_DEF_TYPES][CS_BASE_STRING_LEN]=
   { N_("by analytic function"),
     N_("by array"),
     N_("by law (one argument)"),
@@ -79,13 +79,13 @@ cs_param_def_type_name[CS_PARAM_N_DEF_TYPES][CS_CDO_LEN_NAME]=
     N_("by value") };
 
 static const char
-cs_param_var_type_name[CS_PARAM_N_VAR_TYPES][CS_CDO_LEN_NAME]=
+cs_param_var_type_name[CS_PARAM_N_VAR_TYPES][CS_BASE_STRING_LEN]=
   { N_("scalar"),
     N_("vector"),
     N_("tensor") };
 
 static const char
-cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_CDO_LEN_NAME] =
+cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_BASE_STRING_LEN] =
   { N_("Homogeneous Dirichlet"),
     N_("Dirichlet"),
     N_("Homogeneous Neumann"),
@@ -93,14 +93,14 @@ cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_CDO_LEN_NAME] =
     N_("Robin") };
 
 static const char
-cs_param_boundary_type_name[CS_PARAM_N_BOUNDARY_TYPES][CS_CDO_LEN_NAME] =
+cs_param_boundary_type_name[CS_PARAM_N_BOUNDARY_TYPES][CS_BASE_STRING_LEN] =
   { N_("Wall"),
     N_("Inlet"),
     N_("Outlet"),
     N_("Symmetry") };
 
 static const char
-cs_param_hodge_type_desc[CS_PARAM_N_HODGE_TYPES][CS_CDO_LEN_NAME] =
+cs_param_hodge_type_desc[CS_PARAM_N_HODGE_TYPES][CS_BASE_STRING_LEN] =
   { "VpCd",
     "EpFd",
     "FpEd",
@@ -108,7 +108,7 @@ cs_param_hodge_type_desc[CS_PARAM_N_HODGE_TYPES][CS_CDO_LEN_NAME] =
     "CpVd"  };
 
 static const char
-cs_param_hodge_algo_desc[CS_PARAM_N_HODGE_ALGOS][CS_CDO_LEN_NAME] =
+cs_param_hodge_algo_desc[CS_PARAM_N_HODGE_ALGOS][CS_BASE_STRING_LEN] =
   { "Voronoi",
     "Whitney on the Barycentric Subdivision (WBS)",
     "COnsistency-STabilization splitting (COST)" };

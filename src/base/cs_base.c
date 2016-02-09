@@ -89,7 +89,6 @@ BEGIN_C_DECLS
  */
 
 #define CS_BASE_N_STRINGS                               5
-#define CS_BASE_STRING_LEN                             64
 
 /*============================================================================
  * Local Type Definitions

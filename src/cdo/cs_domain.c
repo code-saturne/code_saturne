@@ -137,7 +137,7 @@ static const char _err_empty_domain[] =
   " Please check your settings.\n";
 
 static const char
-_domain_boundary_ml_name[CS_PARAM_N_BOUNDARY_TYPES][CS_CDO_LEN_NAME] =
+_domain_boundary_ml_name[CS_PARAM_N_BOUNDARY_TYPES][CS_BASE_STRING_LEN] =
   { N_("domain_walls"),
     N_("domain_inlets"),
     N_("domain_outlets"),

@@ -74,7 +74,7 @@ static double  _tetr_quad4c1;
 static double  _tetr_quad4c2;
 
 static const char
-cs_quadrature_type_name[CS_QUADRATURE_N_TYPES][CS_CDO_LEN_NAME] =
+cs_quadrature_type_name[CS_QUADRATURE_N_TYPES][CS_BASE_STRING_LEN] =
   { N_("none"),
     N_("barycentric"),
     N_("higher (single weight)"),

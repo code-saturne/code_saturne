@@ -155,7 +155,7 @@ static const char _err_truefalse_key[] =
      " Please modify your setting.\n");
 
 static const char
-cs_probe_mode_name[CS_PROBE_N_MODES][64]=
+cs_probe_mode_name[CS_PROBE_N_MODES][CS_BASE_STRING_LEN]=
   { N_("exact"),
     N_("nearest cell center"),
     N_("nearest vertex") };
