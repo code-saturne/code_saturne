@@ -801,7 +801,7 @@ cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Post-processing related to this equation
+ * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation
  * \param[in]       field      pointer to a field strufcture
@@ -810,9 +810,9 @@ cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_post(const char                 *eqname,
-                     const cs_field_t           *field,
-                     void                       *builder)
+cs_cdofb_scaleq_extra_op(const char            *eqname,
+                         const cs_field_t      *field,
+                         void                  *builder)
 {
   int  len;
 
@@ -823,19 +823,7 @@ cs_cdofb_scaleq_post(const char                 *eqname,
   const cs_lnum_t  n_i_faces = connect->f_info->n_ent_in;
   const cs_real_t  *face_pdi = cs_cdofb_scaleq_get_face_values(b, field);
 
-  /* field post-processing */
-  cs_post_write_var(-1,              // id du maillage de post
-                    field->name,
-                    field->dim,
-                    field->interleaved, // interlace
-                    true,               // true = original mesh
-                    CS_POST_TYPE_cs_real_t,
-                    field->val,         // values on cells
-                    NULL,               // values at internal faces
-                    NULL,               // values at border faces
-                    b->time_step);      // time step management structure
-
-
+  /* Field post-processing */
   len = strlen(field->name) + 8 + 1;
   BFT_MALLOC(postlabel, len, char);
   sprintf(postlabel, "%s.Border", field->name);

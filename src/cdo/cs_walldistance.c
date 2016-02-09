@@ -143,7 +143,7 @@ _compute_cdofb(const cs_cdo_connect_t     *connect,
 
   bft_printf("\n -bnd- WallDistance.Max   % 10.6e\n", dinfo.max.value);
   bft_printf(" -bnd- WallDistance.Mean  % 10.6e\n", dinfo.mean);
-  bft_printf(" -bnd- WallDistance.Sigma % 10.6e\n", dinfo.sigma);
+  bft_printf(" -bnd- WallDistance.Sigma % 10.6e\n\n", dinfo.sigma);
   bft_printf("%s", msepline);
 }
 
@@ -246,60 +246,6 @@ _compute_cdovb(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the wall distance
- *
- * \param[in]   connect   pointer to a cs_cdo_connect_t structure
- * \param[in]   cdoq      pointer to a cs_cdo_quantities_t structure
- * \param[in]   eq        pointer to the associated cs_equation_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_walldistance_compute(const cs_cdo_connect_t      *connect,
-                        const cs_cdo_quantities_t   *cdoq,
-                        const cs_equation_t         *eq)
-{
-  cs_space_scheme_t  space_scheme = cs_equation_get_space_scheme(eq);
-  cs_field_t  *field = cs_equation_get_field(eq);
-  cs_real_t  *dist = NULL;
-  const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(field->location_id);
-
-  /* Sanity checks */
-  assert(field->is_owner);
-  assert(field->dim == 1);
-
-  /* Initialize dist array */
-  BFT_MALLOC(dist, n_elts[0], cs_real_t);
-  for (int i = 0; i < n_elts[0]; i++)
-    dist[i] = 0;
-
-  switch (space_scheme) {
-
-  case CS_SPACE_SCHEME_CDOVB:
-    assert(n_elts[0] == cdoq->n_vertices);
-    _compute_cdovb(connect, cdoq, field, dist);
-    break;
-
-  case CS_SPACE_SCHEME_CDOFB:
-    assert(n_elts[0] == cdoq->n_cells);
-    _compute_cdofb(connect, cdoq, eq, field, dist);
-    break;
-
-  default:
-    assert(0);
-    break;
-  }
-
-  /* Replace field values by dist */
-  for (int i = 0; i < n_elts[0]; i++)
-    field->val[i] = dist[i];
-
-  /* Free memory */
-  BFT_FREE(dist);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Setup an new equation related to the wall distance
  *
  * \param[in]  eq          pointer to the associated cs_equation_t structure
@@ -332,9 +278,6 @@ cs_walldistance_setup(cs_equation_t   *eq,
                                      "cells",         // mesh location name
                                      "1.0");          // value to set
 
-  /* Post-processing of the computed unknown only at the beginning */
-  cs_equation_set_option(eq, "post_freq", "0");
-
   /* Enforcement of the Dirichlet boundary conditions */
   cs_equation_set_option(eq, "bc_enforcement", "penalization");
 
@@ -348,6 +291,90 @@ cs_walldistance_setup(cs_equation_t   *eq,
   cs_equation_set_option(eq, "precond", "jacobi");
 #endif
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the wall distance
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      do_logcvg  output information on convergence or not
+ * \param[in, out] eq         pointer to the related cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_walldistance_compute(const cs_mesh_t              *mesh,
+                        const cs_time_step_t         *time_step,
+                        double                        dt_cur,
+                        const cs_cdo_connect_t       *connect,
+                        const cs_cdo_quantities_t    *cdoq,
+                        bool                          do_logcvg,
+                        cs_equation_t                *eq)
+{
+  /* First step:
+     Solve the equation related to the definition of the wall distance. */
+
+  /* Sanity check */
+  assert(cs_equation_is_steady(eq));
+
+  /* Initialize system before resolution for all equations
+     - create system builder
+     - initialize field according to initial conditions
+     - initialize source term */
+  cs_equation_init_system(mesh, connect, cdoq, time_step, eq);
+
+  /* Define the algebraic system */
+  cs_equation_build_system(mesh, time_step, dt_cur, eq);
+
+  /* Solve the algebraic system */
+  cs_equation_solve(eq, do_logcvg);
+
+  /* Second step:
+     Compute the wall distance. */
+
+  cs_field_t  *field = cs_equation_get_field(eq);
+
+  const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(field->location_id);
+
+  /* Sanity checks */
+  assert(field->is_owner);
+  assert(field->dim == 1);
+
+  /* Initialize dist array */
+  cs_real_t  *dist = NULL;
+  BFT_MALLOC(dist, n_elts[0], cs_real_t);
+  for (int i = 0; i < n_elts[0]; i++)
+    dist[i] = 0;
+
+  cs_space_scheme_t  space_scheme = cs_equation_get_space_scheme(eq);
+  switch (space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    assert(n_elts[0] == cdoq->n_vertices);
+    _compute_cdovb(connect, cdoq, field, dist);
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+    assert(n_elts[0] == cdoq->n_cells);
+    _compute_cdofb(connect, cdoq, eq, field, dist);
+    break;
+
+  default:
+    assert(0);
+    break;
+  }
+
+  /* Replace field values by dist */
+  for (int i = 0; i < n_elts[0]; i++)
+    field->val[i] = dist[i];
+
+  /* Free memory */
+  BFT_FREE(dist);
 }
 
 /*----------------------------------------------------------------------------*/

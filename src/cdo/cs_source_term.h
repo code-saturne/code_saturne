@@ -85,7 +85,7 @@ cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summarize the content of a cs_source_term_t structure
+ * \brief  Create and initialize a cs_source_term_t structure
  *
  * \param[in] st_name     name of the related source term
  * \param[in] ml_id       id of the related mesh location

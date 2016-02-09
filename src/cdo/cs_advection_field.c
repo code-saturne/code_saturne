@@ -1230,14 +1230,14 @@ cs_advection_field_update(cs_adv_field_t   *adv)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Perform the postprocessing if needed
+ * \brief  Perform the extra-operation if needed
  *
  * \param[in]      adv     pointer to a cs_adv_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_post(const cs_adv_field_t  *adv)
+cs_advection_field_extra_op(const cs_adv_field_t  *adv)
 {
   cs_lnum_t  v_id, c_id;
   cs_nvec3_t  advect;

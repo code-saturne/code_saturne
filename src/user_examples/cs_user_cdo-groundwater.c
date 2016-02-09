@@ -217,6 +217,29 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
   cs_domain_add_boundary(domain, "left", "inlet");
   cs_domain_add_boundary(domain, "right", "outlet");
 
+  /* =========================
+     Generic output management
+     ========================= */
+
+  /* Set the output frequency for log
+     >> cs_domain_set_param(domain, "output_freq", keyval);
+
+     keyval is for instance "10"
+
+     Set the level of verbosity (a fine-grained setting is also available if
+     one uses the function cs_user_cdo_numerics_settings()
+     >> cs_domain_set_param(domain, "verbosity", keyval);
+
+     keyval is for instance "-1" --> the lowest-level of information
+                             "0" --> reduced level of information
+                             "1" --> standard level of information
+                             "2" --> higher level of information
+
+  */
+
+  cs_domain_set_param(domain, "output_freq", "10");
+  cs_domain_set_param(domain, "verbosity", "2");
+
   /* ====================
      Time step management
      ==================== */
@@ -291,16 +314,11 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
   /* Set additional parameters related to the groundwater flow module
      >> cs_groundwater_set_param(gw, keyword, keyval);
 
-     If keyword = "post_freq"
-     - Frequency used to postprocess specific quantities related to the
-       groundwater flow module
-       Ex: keyval = "10" means every 10 iterations postprocessing is done.
      If keyword = "output_moisture"
        Ex: keyval = "true" means that the moisture field is postprocessed.
 
    */
 
-  cs_groundwater_set_param(gw, "post_freq", "10");
   cs_groundwater_set_param(gw, "output_moisture", "true");
 
   /* =========

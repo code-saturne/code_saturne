@@ -217,9 +217,6 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      >> val: "0.75" for instance (must be between 0 <=val<= 1)
 
      Post-processing options:
-     KEY = "post_freq"
-     >> val: "10" for instance  ("0" for only the initial state)
-
      KEY = "post"
      >> val: "peclet", "upwind_coef"
      "peclet" to post-process an estimation of the Peclet number in each cell

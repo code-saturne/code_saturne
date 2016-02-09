@@ -190,7 +190,7 @@ cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summarize the content of a cs_source_term_t structure
+ * \brief  Create and initialize a cs_source_term_t structure
  *
  * \param[in] st_name     name of the related source term
  * \param[in] ml_id       id of the related mesh location
@@ -301,11 +301,11 @@ cs_source_term_summary(const char               *eqname,
     eqn = eqname;
 
   if (st == NULL) {
-    bft_printf(" <%s/NULL>\n", eqn);
+    bft_printf("  <%s/NULL>\n", eqn);
     return;
   }
 
-  bft_printf(" <%s/%s> type: ", eqn, st->name);
+  bft_printf("  <%s/%s> type: ", eqn, st->name);
   switch (st->type) {
 
   case CS_SOURCE_TERM_GRAVITY:
@@ -323,10 +323,10 @@ cs_source_term_summary(const char               *eqname,
   }
   bft_printf(" mesh_location: %s\n", cs_mesh_location_get_name(st->ml_id));
 
-  bft_printf(" <%s/%s> Definition: %s\n",
+  bft_printf("  <%s/%s> Definition: %s\n",
              eqn, st->name, cs_param_get_def_type_name(st->def_type));
   if (st->def_type == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION)
-    bft_printf(" <%s/%s> Quadrature: %s\n",
+    bft_printf("  <%s/%s> Quadrature: %s\n",
                eqn, st->name, cs_quadrature_get_type_name(st->quad_type));
 
 }

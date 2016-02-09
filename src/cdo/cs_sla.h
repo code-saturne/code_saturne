@@ -57,7 +57,7 @@ BEGIN_C_DECLS
 #define  CS_SLA_MATRIX_INFO       (1 <<  3)  /* 8: info struct. is set */
 
 /*============================================================================
- * Type definitions for matrices
+ * Type definitions
  *============================================================================*/
 
 typedef enum {
@@ -105,18 +105,6 @@ typedef struct {
                          given preconditioning technique */
 
 } cs_sla_matrix_t;
-
-/*============================================================================
- * Type definitions for iterative solvers
- *============================================================================*/
-
-typedef struct {
-
-  int              code;       // Convergence code
-  int              iter;       // Current iteration
-  double           residual;   // Current residual norm computed
-
-} cs_sla_sumup_t;
 
 /*============================================================================
  * Public function prototypes for SLA matrices

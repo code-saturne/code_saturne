@@ -1034,7 +1034,7 @@ cs_user_cdo_extra_op(const cs_domain_t          *domain)
   if (eqp->flag & CS_EQUATION_UNSTEADY) {
     if (time_step->nt_cur == 0)
       return;
-    if (time_step->nt_cur % eqp->post_freq > 0)
+    if (time_step->nt_cur % domain->post_freq > 0)
       return;
 
     len += 9;
@@ -1043,7 +1043,7 @@ cs_user_cdo_extra_op(const cs_domain_t          *domain)
   }
   else {
     if (time_step->nt_cur > 0)
-        return;
+      return;
 
     BFT_MALLOC(filename, len, char);
     sprintf(filename, "Resume-%s.log", eqname);

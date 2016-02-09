@@ -111,8 +111,10 @@ typedef enum {
 
   DOMKEY_DEFAULT_BOUNDARY,
   DOMKEY_OUTPUT_FREQ,
+  DOMKEY_POST_FREQ,
   DOMKEY_NTMAX,
   DOMKEY_TMAX,
+  DOMKEY_VERBOSITY,
   DOMKEY_ERROR
 
 } domkey_t;
@@ -162,8 +164,12 @@ _print_domkey(domkey_t  key)
     return "output_freq";
   case DOMKEY_NTMAX:
     return "nt_max";
+  case DOMKEY_POST_FREQ:
+    return "post_freq";
   case DOMKEY_TMAX:
     return "time_max";
+  case DOMKEY_VERBOSITY:
+    return "verbosity";
 
   default:
     assert(0);
@@ -194,36 +200,14 @@ _get_domkey(const char  *keyname)
     key = DOMKEY_OUTPUT_FREQ;
   else if (strcmp(keyname, "nt_max") == 0)
     key = DOMKEY_NTMAX;
+  else if (strcmp(keyname, "post_freq") == 0)
+    key = DOMKEY_POST_FREQ;
   else if (strcmp(keyname, "time_max") == 0)
     key = DOMKEY_TMAX;
+  else if (strcmp(keyname, "verbosity") == 0)
+    key = DOMKEY_VERBOSITY;
 
   return key;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Postprocessing of quantities attached to the current domain s.t.
- *         advection fields
- *
- * \param[in]  domain  pointer to a cs_domain_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_domain_post(const cs_domain_t    *domain)
-{
-  /* Post-processing of the advection field(s) */
-  for (int id = 0; id < domain->n_adv_fields; id++)
-    cs_advection_field_post(domain->adv_fields[id]);
-
-  /* Predefined post-processing for the groundwater module */
-  if (domain->gw != NULL)
-    cs_groundwater_post(domain->time_step, domain->gw);
-
-  /* Generic post-processing related to the equation structure */
-  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++)
-    cs_equation_post(domain->time_step, domain->equations[eq_id]);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -414,59 +398,16 @@ _add_mesh_locations(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the wall distance
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_compute_wall_distance(cs_domain_t   *domain)
-{
-  if (domain->wall_distance_eq_id == -1)
-    return;
-
-  cs_equation_t  *wd_eq = domain->equations[domain->wall_distance_eq_id];
-
-  /* Sanity check */
-  assert(cs_equation_is_steady(wd_eq));
-
-  /* Initialize system before resolution for all equations
-     - create system builder
-     - initialize field according to initial conditions
-     - initialize source term */
-  cs_equation_init_system(domain->mesh,
-                          domain->connect,
-                          domain->cdo_quantities,
-                          domain->time_step,
-                          wd_eq);
-
-  /* Define the algebraic system */
-  cs_equation_build_system(domain->mesh,
-                           domain->time_step,
-                           domain->dt_cur,
-                           wd_eq);
-
-  /* Solve the algebraic system */
-  cs_equation_solve(domain->time_step, wd_eq);
-
-  /* Compute the wall distance */
-  cs_walldistance_compute(domain->connect,
-                          domain->cdo_quantities,
-                          wd_eq);
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute equations which user-defined and steady-state
  *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in]       do_logcvg  output information on convergence or not
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_steady_user_equations(cs_domain_t   *domain)
+_compute_steady_user_equations(cs_domain_t   *domain,
+                               bool           do_logcvg)
 {
   for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
 
@@ -495,7 +436,7 @@ _compute_steady_user_equations(cs_domain_t   *domain)
                                  eq);
 
         /* Solve the algebraic system */
-        cs_equation_solve(domain->time_step, eq);
+        cs_equation_solve(eq, do_logcvg);
 
       } /* User-defined equation */
 
@@ -509,14 +450,16 @@ _compute_steady_user_equations(cs_domain_t   *domain)
 /*!
  * \brief  Compute user-defined equation which are time-dependent
  *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
- * \param[in]       nt_cur    current number of iteration done
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ * \param[in]       nt_cur     current number of iteration done
+ * \param[in]       do_logcvg  output information on convergence or not
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _compute_unsteady_user_equations(cs_domain_t   *domain,
-                                 int            nt_cur)
+                                 int            nt_cur,
+                                 bool           do_logcvg)
 {
   if (nt_cur == 0) { /* Initialization */
 
@@ -567,7 +510,7 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
                                      eq);
 
           /* Solve domain */
-          cs_equation_solve(domain->time_step, eq);
+          cs_equation_solve(eq, do_logcvg);
 
         } /* User-defined equation */
 
@@ -681,6 +624,8 @@ cs_domain_init(const cs_mesh_t             *mesh,
 
   /* Other options */
   domain->output_freq = 10;
+  domain->post_freq = 10;
+  domain->verbosity = 1;
 
   /* Predefined equations or modules */
   domain->richards_eq_id = -1;
@@ -813,7 +758,7 @@ cs_domain_set_param(cs_domain_t    *domain,
     break;
 
   case DOMKEY_OUTPUT_FREQ:
-    {
+    { 
       int  freq = atoi(keyval);
 
       if (freq == 0) freq = -1;
@@ -825,8 +770,21 @@ cs_domain_set_param(cs_domain_t    *domain,
     domain->time_step->nt_max = atoi(keyval);
     break;
 
+  case DOMKEY_POST_FREQ:
+    {
+      int  freq = atoi(keyval);
+
+      if (freq == 0) freq = -1;
+      domain->post_freq = freq;
+    }
+    break;
+
   case DOMKEY_TMAX:
     domain->time_step->t_max = atof(keyval);
+    break;
+
+  case DOMKEY_VERBOSITY:
+    domain->verbosity = atoi(keyval);
     break;
 
   default:
@@ -862,83 +820,87 @@ cs_domain_summary(const cs_domain_t   *domain)
   bft_printf(" -msg- n_user_equations         %d\n", domain->n_user_equations);
   bft_printf(" -msg- n_properties             %d\n", domain->n_properties);
 
-  /* Properties */
-  bft_printf("\n%s", lsepline);
-  bft_printf("\tSummary of the definition of properties\n");
-  bft_printf("%s", lsepline);
+  if (domain->verbosity > 0) {
 
-  for (int i = 0; i < domain->n_properties; i++)
-    cs_property_summary(domain->properties[i]);
-
-  /* Advection fields */
-  if (domain->n_adv_fields > 0) {
-
+    /* Properties */
     bft_printf("\n%s", lsepline);
-    bft_printf("\tSummary of the advection field\n");
+    bft_printf("\tSummary of the definition of properties\n");
     bft_printf("%s", lsepline);
 
-    for (int i = 0; i < domain->n_adv_fields; i++)
-      cs_advection_field_summary(domain->adv_fields[i]);
+    for (int i = 0; i < domain->n_properties; i++)
+      cs_property_summary(domain->properties[i]);
 
-  }
+    /* Advection fields */
+    if (domain->n_adv_fields > 0) {
 
-  /* Boundary */
-  cs_domain_boundary_t  *bdy = domain->boundaries;
+      bft_printf("\n%s", lsepline);
+      bft_printf("\tSummary of the advection field\n");
+      bft_printf("%s", lsepline);
 
-  bft_printf("\n  Domain boundary by default: ");
-  switch (bdy->default_boundary) {
-  case CS_PARAM_BOUNDARY_WALL:
-    bft_printf(" wall\n");
-    break;
-  case CS_PARAM_BOUNDARY_SYMMETRY:
-    bft_printf(" symmetry\n");
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid boundary by default.\n"
-                " Please modify your settings."));
-  }
+      for (int i = 0; i < domain->n_adv_fields; i++)
+        cs_advection_field_summary(domain->adv_fields[i]);
 
-  /* Number of border faces for each type of boundary */
-  bft_printf("  >> Number of faces with a wall boundary:      %d\n",
-             bdy->n_elts[CS_PARAM_BOUNDARY_WALL]);
-  bft_printf("  >> Number of faces with a inlet boundary:     %d\n",
-             bdy->n_elts[CS_PARAM_BOUNDARY_INLET]);
-  bft_printf("  >> Number of faces with a outlet boundary:    %d\n",
-             bdy->n_elts[CS_PARAM_BOUNDARY_OUTLET]);
-  bft_printf("  >> Number of faces with a symmetry boundary:  %d\n",
-             bdy->n_elts[CS_PARAM_BOUNDARY_SYMMETRY]);
+    }
 
-  /* Time step summary */
-  bft_printf("\n  Time step information\n");
-  if (domain->only_steady)
-    bft_printf("  >> Steady-state computation");
+    /* Boundary */
+    cs_domain_boundary_t  *bdy = domain->boundaries;
 
-  else { /* Time information */
-
-    bft_printf("  >> Time step status:");
-    if (domain->time_options.idtvar == 0)
-      bft_printf("  constant\n");
-    else if (domain->time_options.idtvar == 1)
-      bft_printf("  variable in time\n");
-    else
+    bft_printf("\n  Domain boundary by default: ");
+    switch (bdy->default_boundary) {
+    case CS_PARAM_BOUNDARY_WALL:
+      bft_printf(" wall\n");
+      break;
+    case CS_PARAM_BOUNDARY_SYMMETRY:
+      bft_printf(" symmetry\n");
+      break;
+    default:
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid idtvar value for the CDO module.\n"));
-    bft_printf("  >> Type of definition: %s",
-               cs_param_get_def_type_name(domain->time_step_def_type));
-    if (domain->time_step_def_type == CS_PARAM_DEF_BY_VALUE)
-      bft_printf(" => %5.3e\n", domain->dt_cur);
-    else
-      bft_printf("\n");
-  }
-  bft_printf("\n");
+                _(" Invalid boundary by default.\n"
+                  " Please modify your settings."));
+    }
 
-  /* Summary of the groundwater module */
-  cs_groundwater_summary(domain->gw);
+    /* Number of border faces for each type of boundary */
+    bft_printf("  >> Number of faces with a wall boundary:      %d\n",
+               bdy->n_elts[CS_PARAM_BOUNDARY_WALL]);
+    bft_printf("  >> Number of faces with an inlet boundary:    %d\n",
+               bdy->n_elts[CS_PARAM_BOUNDARY_INLET]);
+    bft_printf("  >> Number of faces with an outlet boundary:   %d\n",
+               bdy->n_elts[CS_PARAM_BOUNDARY_OUTLET]);
+    bft_printf("  >> Number of faces with a symmetry boundary:  %d\n",
+               bdy->n_elts[CS_PARAM_BOUNDARY_SYMMETRY]);
 
-  /* Summary for each equation */
-  for (int  eq_id = 0; eq_id < domain->n_equations; eq_id++)
-    cs_equation_summary(domain->equations[eq_id]);
+    /* Time step summary */
+    bft_printf("\n  Time step information\n");
+    if (domain->only_steady)
+      bft_printf("  >> Steady-state computation");
+
+    else { /* Time information */
+
+      bft_printf("  >> Time step status:");
+      if (domain->time_options.idtvar == 0)
+        bft_printf("  constant\n");
+      else if (domain->time_options.idtvar == 1)
+        bft_printf("  variable in time\n");
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Invalid idtvar value for the CDO module.\n"));
+      bft_printf("  >> Type of definition: %s",
+                 cs_param_get_def_type_name(domain->time_step_def_type));
+      if (domain->time_step_def_type == CS_PARAM_DEF_BY_VALUE)
+        bft_printf(" => %5.3e\n", domain->dt_cur);
+      else
+        bft_printf("\n");
+    }
+    bft_printf("\n");
+
+    /* Summary of the groundwater module */
+    cs_groundwater_summary(domain->gw);
+
+    /* Summary for each equation */
+    for (int  eq_id = 0; eq_id < domain->n_equations; eq_id++)
+      cs_equation_summary(domain->equations[eq_id]);
+
+  } /* Domain->verbosity > 0 */
 
 }
 
@@ -1095,7 +1057,6 @@ cs_domain_def_time_step_by_function(cs_domain_t          *domain,
   domain->time_options.dtref =  domain->time_step->t_max;
   domain->time_options.dtmin =  domain->time_step->t_max;
   domain->time_options.dtmax = 0.;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1123,7 +1084,6 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
   domain->time_options.dtref = domain->dt_cur;
   domain->time_options.dtmin = domain->dt_cur;
   domain->time_options.dtmax = domain->dt_cur;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1653,6 +1613,9 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
   cs_domain_boundary_t  *bdy = domain->boundaries;
   cs_equation_t  *eq = NULL;
 
+  /* Wall distance */
+  /* ------------- */
+
   if (domain->wall_distance_eq_id > -1) {
 
     eq = domain->equations[domain->wall_distance_eq_id];
@@ -1665,7 +1628,10 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
 
   } // Wall distance is activated
 
-  if (domain->richards_eq_id > -1) { /* Groundwater flow module */
+  /* Groundwater flow module */
+  /* ----------------------- */
+
+  if (domain->richards_eq_id > -1) {
 
     int  len = 0, max_len = 0;
     char  *pty_name = NULL;
@@ -1829,6 +1795,10 @@ void
 cs_domain_solve(cs_domain_t  *domain)
 {
   int  nt_cur = domain->time_step->nt_cur;
+  bool  do_logcvg = false;
+
+  if (domain->verbosity > 1 && (nt_cur % domain->output_freq == 0))
+    do_logcvg = true;
 
   /* Setup step for all equations */
   if (nt_cur == 0) {
@@ -1839,9 +1809,22 @@ cs_domain_solve(cs_domain_t  *domain)
     bft_printf("%s", lsepline);
 
     /* Predefined equation for the computation of the wall distance */
-    _compute_wall_distance(domain);
+    if (domain->wall_distance_eq_id > -1) {
 
-    /* Only initialization is done if unsteady, otherwise make the whole
+      cs_equation_t  *walld_eq = domain->equations[domain->wall_distance_eq_id];
+
+      /* Compute the wall distance */
+      cs_walldistance_compute(domain->mesh,
+                              domain->time_step,
+                              domain->dt_cur,
+                              domain->connect,
+                              domain->cdo_quantities,
+                              do_logcvg,
+                              walld_eq);
+
+    } // wall distance
+
+    /* If unsteady, only initialization is done, otherwise one makes the whole
        computation */
     if (domain->richards_eq_id > -1)
       cs_groundwater_compute(domain->mesh,
@@ -1849,20 +1832,21 @@ cs_domain_solve(cs_domain_t  *domain)
                              domain->dt_cur,
                              domain->connect,
                              domain->cdo_quantities,
+                             do_logcvg,
                              domain->equations,
                              domain->gw);
 
     /* User-defined equations */
-    _compute_steady_user_equations(domain);
+    _compute_steady_user_equations(domain, do_logcvg);
 
     /* Only initialization is done */
-    _compute_unsteady_user_equations(domain, nt_cur);
+    _compute_unsteady_user_equations(domain, nt_cur, do_logcvg);
 
   }
   else { /* nt_cur > 0: solve unsteady problems */
 
     /* Output information */
-    if (nt_cur % domain->output_freq == 0) {
+    if (nt_cur % domain->output_freq == 0 && domain->verbosity > -1) {
       bft_printf("\n%s", lsepline);
       bft_printf("-ite- Solve domain for iteration %5d (time = %5.3e s)\n",
                  nt_cur, domain->time_step->t_cur);
@@ -1875,22 +1859,64 @@ cs_domain_solve(cs_domain_t  *domain)
                              domain->dt_cur,
                              domain->connect,
                              domain->cdo_quantities,
+                             do_logcvg,
                              domain->equations,
                              domain->gw);
 
     /* User-defined equations */
-    _compute_unsteady_user_equations(domain, nt_cur);
+    _compute_unsteady_user_equations(domain, nt_cur, do_logcvg);
 
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Process the computed solution
+ *
+ * \param[in]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_postprocess(cs_domain_t  *domain)
+{
+  /* Extra-operations */
+  /* ================ */
+
+  /* Predefined extra-operations related to advection fields */
   for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
     cs_advection_field_update(domain->adv_fields[adv_id]);
 
-  /* Generic post-processing */
-  _domain_post(domain);
+  for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
+    cs_advection_field_extra_op(domain->adv_fields[adv_id]);
+
+  /* Predefined extra-operations related to equations */
+  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++)
+    cs_equation_extra_op(domain->time_step, domain->equations[eq_id]);
+
+  /* Predefined extra-operations for the groundwater module */
+  if (domain->gw != NULL)
+    cs_groundwater_extra_op(domain->time_step, domain->gw);
 
   /* User-defined extra operations */
   cs_user_cdo_extra_op(domain);
+
+  /* Post-processing */
+  /* =============== */
+
+  /* Activation or not of each writer according to the time step */
+  cs_post_activate_by_time_step(domain->time_step);
+
+  /* User-defined activation of writers for a fine-grained control */
+  cs_user_postprocess_activate(domain->time_step->nt_max,
+                               domain->time_step->nt_cur,
+                               domain->time_step->t_cur);
+
+  cs_post_write_vars(domain->time_step);
+
+  /* Monitoring */
+  /* ========== */
 
 }
 

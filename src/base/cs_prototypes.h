@@ -581,8 +581,20 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Additional operations on results provided by CDO schemes.
- *         Define advanced post-processing and/or analysis for instance.
+ * \brief  Initial step for user-defined operations on results provided by the
+ *         CDO kernel.
+ *
+ * \param[in]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_start_extra_op(const cs_domain_t     *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Additional user-defined operations on results provided by the CDO
+ *         kernel. Define advanced post-processing and analysis for example.
  *
  * \param[in]  domain   pointer to a cs_domain_t structure
  */
@@ -590,6 +602,18 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain);
 
 void
 cs_user_cdo_extra_op(const cs_domain_t     *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Final step for user-defined operations on results provided by the
+ *         CDO kernel.
+ *
+ * \param[in]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_end_extra_op(const cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 

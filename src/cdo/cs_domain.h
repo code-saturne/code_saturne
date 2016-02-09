@@ -104,22 +104,23 @@ typedef struct {
 
   bool             only_steady;
 
-  /* Overview of pre-defined equations to solve
-      - Navier-Stokes equations (named NavierStokes)
-      - Groundwater module (named Richards)
-      - Wall distance (named WallDistance)
-
-     Predefined equations
+  /* Pre-defined equations to solve
      If xxxxx_eq_id = -1, then this equation is not activated */
 
-  int   richards_eq_id;       // Main equation of the groundwater module
+  /* GROUNDWATER FLOW MODULE */
+
+  int   richards_eq_id;   // Main equation of the groundwater module
+  cs_groundwater_t  *gw;  // NULL is not activated
+
+  /* WALL DISTANCE */
   int   wall_distance_eq_id;  // Wall distance computation
 
-  /* Groundwater flow module (NULL if not used) */
-  cs_groundwater_t  *gw;
+  /* TODO: NAVIER-STOKES */
 
   /* Output options */
-  int              output_freq;
+  int   output_freq;
+  int   post_freq;  
+  int   verbosity;
 
 } cs_domain_t;
 
@@ -490,6 +491,17 @@ cs_domain_create_fields(cs_domain_t  *domain);
 
 void
 cs_domain_solve(cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Process the computed solution
+ *
+ * \param[in]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_postprocess(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

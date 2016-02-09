@@ -80,7 +80,7 @@ BEGIN_C_DECLS
  * Local constant and enum definitions
  *============================================================================*/
 
-static const char cs_cdoversion[] = "0.4";
+static const char cs_cdoversion[] = "0.5";
 
 /*============================================================================
  * Private function prototypes
@@ -161,10 +161,13 @@ _setup(cs_mesh_t             *m,
   cs_post_activate_writer(-1,     /* default writer (volume mesh)*/
                           true);  /* activate if 1 */
   cs_post_write_meshes(NULL);     /* time step management structure set to NULL
-                                     => Time-idenpendent output is considered */
+                                     => Time-independent output is considered */
 
   /* Last setup stage */
   cs_domain_last_setup(domain);
+
+  /* Initialization for user-defined extra operations */
+  cs_user_cdo_start_extra_op(domain);
 
   /* Sumary of the settings */
   cs_cdo_connect_summary(domain->connect);
@@ -182,16 +185,21 @@ _setup(cs_mesh_t             *m,
 /*----------------------------------------------------------------------------*/
 
 static void
-_finalize(cs_domain_t  **domain)
+_finalize(cs_domain_t  *domain)
 {
+  /* Finalize user-defined extra operations */
+  cs_user_cdo_end_extra_op(domain);
+
   /* Write a restart file */
-  cs_domain_write_restart(*domain);
+  cs_domain_write_restart(domain);
 
   /* Free temporary buffers allocated for each kind of numerical used */
   cs_cdovb_scaleq_finalize();
   cs_cdofb_scaleq_finalize();
 
-  *domain = cs_domain_free(*domain);
+  /* Free cs_domain_structure (imply severals operation to free memory) */
+  domain = cs_domain_free(domain);
+  assert(domain == NULL);
 }
 
 /*============================================================================
@@ -223,7 +231,7 @@ cs_cdo_main(cs_mesh_t             *m,
   t1 = cs_timer_time();
   time_count = cs_timer_diff(&t0, &t1);
   cs_log_printf(CS_LOG_PERFORMANCE,
-                "  -t-    CDO setup runtime                    %12.3f s\n",
+                "  -t-    CDO setup runtime                 %12.3f s\n",
                 time_count.wall_nsec*1e-9);
 
   while (cs_domain_needs_iterate(domain)) {
@@ -239,10 +247,24 @@ cs_cdo_main(cs_mesh_t             *m,
     t1 = cs_timer_time();
     time_count = cs_timer_diff(&t0, &t1);
 
-    /* Output */
+    /* Perfomance statistics */
     if (domain->time_step->nt_cur % domain->output_freq == 0)
       cs_log_printf(CS_LOG_PERFORMANCE,
-                    "  -t-    CDO solver runtime (iter: %d)        %12.3f s\n",
+                    "  -t-    CDO solver runtime    (iter: %d)   %12.3f s\n",
+                    domain->time_step->nt_cur, time_count.wall_nsec*1e-9);
+
+    t0 = cs_timer_time();
+
+    /* Extra operations and post-processing of the computino solutions */
+    cs_domain_postprocess(domain);
+
+    t1 = cs_timer_time();
+    time_count = cs_timer_diff(&t0, &t1);
+
+    /* Perfomance statistics */
+    if (domain->time_step->nt_cur % domain->output_freq == 0)
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    "  -t-    CDO extra operations  (iter: %d)   %12.3f s\n",
                     domain->time_step->nt_cur, time_count.wall_nsec*1e-9);
 
     /* Increment time */
@@ -253,13 +275,12 @@ cs_cdo_main(cs_mesh_t             *m,
   /* Free main CDO structures */
   t0 = cs_timer_time();
 
-  _finalize(&domain);
-  assert(domain == NULL);
+  _finalize(domain);
 
   t1 = cs_timer_time();
   time_count = cs_timer_diff(&t0, &t1);
   cs_log_printf(CS_LOG_PERFORMANCE,
-                _("  -t-    Free CDO structures                  %12.3f s\n"),
+                _("  -t-    Free CDO structures               %12.3f s\n"),
                 time_count.wall_nsec*1e-9);
 
   bft_printf("\n%s", lsepline);

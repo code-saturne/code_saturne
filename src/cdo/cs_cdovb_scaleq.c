@@ -1499,7 +1499,7 @@ cs_cdovb_scaleq_update_field(const cs_real_t     *solu,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Post-processing related to this equation
+ * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation
  * \param[in]       field      pointer to a field strufcture
@@ -1508,9 +1508,9 @@ cs_cdovb_scaleq_update_field(const cs_real_t     *solu,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_post(const char                 *eqname,
-                     const cs_field_t           *field,
-                     void                       *builder)
+cs_cdovb_scaleq_extra_op(const char            *eqname,
+                         const cs_field_t      *field,
+                         void                  *builder)
 {
   int  len;
 
@@ -1521,19 +1521,8 @@ cs_cdovb_scaleq_post(const char                 *eqname,
 
   bool  do_adv = eqp->flag & CS_EQUATION_CONVECTION;
   bool  do_diff = eqp->flag & CS_EQUATION_DIFFUSION;
-  bool  do_peclet_post = (eqp->post_flag & CS_EQUATION_POST_PECLET ||
-                          eqp->post_flag & CS_EQUATION_POST_UPWIND_COEF);
-
-  /* Field post-processing */
-  cs_post_write_vertex_var(-1,              // id du maillage de post
-                           field->name,
-                           field->dim,
-                           true,            // interlace
-                           true,            // true = original mesh
-                           CS_POST_TYPE_cs_real_t,
-                           field->val,      // values on vertices
-                           b->time_step);   // time step management structure
-
+  bool  do_peclet_post = (eqp->process_flag & CS_EQUATION_POST_PECLET ||
+                          eqp->process_flag & CS_EQUATION_POST_UPWIND_COEF);
 
   if (do_adv && do_diff && do_peclet_post) {
 
@@ -1564,7 +1553,7 @@ cs_cdovb_scaleq_post(const char                 *eqname,
                                          base_vect,
                                          &work_c);
 
-      if (eqp->post_flag & CS_EQUATION_POST_PECLET)
+      if (eqp->process_flag & CS_EQUATION_POST_PECLET)
         cs_post_write_var(-1,             // id du maillage de post
                           postlabel,
                           1,
@@ -1576,7 +1565,7 @@ cs_cdovb_scaleq_post(const char                 *eqname,
                           NULL,           // values at border faces
                           b->time_step);  // time step management structure
 
-      if (eqp->post_flag & CS_EQUATION_POST_UPWIND_COEF) {
+      if (eqp->process_flag & CS_EQUATION_POST_UPWIND_COEF) {
 
         if (k == 0)
           sprintf(postlabel, "%s.UpwCoefX", eqname);

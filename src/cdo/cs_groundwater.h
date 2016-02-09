@@ -311,13 +311,14 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the system related to groundwater flows
+ * \brief  Compute the system related to groundwater flows module
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      time_step  pointer to a cs_time_step_t structure
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      do_logcvg  output information on convergence or not
  * \param[in, out] eqs        array of pointers to cs_equation_t structures
  * \param[in, out] gw         pointer to a cs_groundwater_t structure
  */
@@ -329,12 +330,13 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
                        double                        dt_cur,
                        const cs_cdo_connect_t       *connect,
                        const cs_cdo_quantities_t    *cdoq,
+                       bool                          do_logcvg,
                        cs_equation_t                *eqs[],
                        cs_groundwater_t             *gw);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined postprocessing for the groundwater module
+ * \brief  Predefined extra-operations for the groundwater module
  *
  * \param[in]  time_step   pointer to a cs_time_step_t struct.
  * \param[in]  gw          pointer to a cs_groundwater_t structure
@@ -342,8 +344,8 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_post(const cs_time_step_t      *time_step,
-                    const cs_groundwater_t    *gw);
+cs_groundwater_extra_op(const cs_time_step_t      *time_step,
+                        const cs_groundwater_t    *gw);
 
 /*----------------------------------------------------------------------------*/
 

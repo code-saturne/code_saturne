@@ -184,7 +184,7 @@ cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Post-processing related to this equation
+ * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation
  * \param[in]       field      pointer to a field strufcture
@@ -193,9 +193,9 @@ cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_post(const char                 *eqname,
-                     const cs_field_t           *field,
-                     void                       *builder);
+cs_cdofb_scaleq_extra_op(const char            *eqname,
+                         const cs_field_t      *field,
+                         void                  *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!

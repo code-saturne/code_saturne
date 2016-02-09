@@ -52,21 +52,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the wall distance
- *
- * \param[in]   connect   pointer to a cs_cdo_connect_t structure
- * \param[in]   cdoq      pointer to a cs_cdo_quantities_t structure
- * \param[in]   eq        pointer to the associated cs_equation_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_walldistance_compute(const cs_cdo_connect_t      *connect,
-                        const cs_cdo_quantities_t   *cdoq,
-                        const cs_equation_t         *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Setup an new equation related to the wall distance
  *
  * \param[in]  eq          pointer to the associated cs_equation_t structure
@@ -79,6 +64,29 @@ void
 cs_walldistance_setup(cs_equation_t   *eq,
                       cs_property_t   *diff_pty,
                       int              wall_ml_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the wall distance
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
+ * \param[in]      dt_cur     current value of the time step
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      do_logcvg  output information on convergence or not
+ * \param[in, out] eq         pointer to the related cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_walldistance_compute(const cs_mesh_t              *mesh,
+                        const cs_time_step_t         *time_step,
+                        double                        dt_cur,
+                        const cs_cdo_connect_t       *connect,
+                        const cs_cdo_quantities_t    *cdoq,
+                        bool                          do_logcvg,
+                        cs_equation_t                *eq);
 
 /*----------------------------------------------------------------------------*/
 

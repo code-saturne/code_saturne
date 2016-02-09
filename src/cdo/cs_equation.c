@@ -56,10 +56,8 @@
 #include "cs_base.h"
 #include "cs_cdo.h"
 #include "cs_mesh_location.h"
-#include "cs_field.h"
 #include "cs_multigrid.h"
 #include "cs_timer_stats.h"
-#include "cs_param.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
 
@@ -156,7 +154,7 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Post-processing related to this equation
+ * \brief  Extra-operation related to this equation
  *
  * \param[in]       eqname     name of the equation
  * \param[in]       field      pointer to a field strufcture
@@ -165,9 +163,9 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_post_t)(const char                 *eqname,
-                     const cs_field_t           *field,
-                     void                       *builder);
+(cs_equation_extra_op_t)(const char                 *eqname,
+                         const cs_field_t           *field,
+                         void                       *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -260,9 +258,7 @@ typedef enum {
   EQKEY_SLES_VERBOSITY,
   EQKEY_BC_ENFORCEMENT,
   EQKEY_BC_QUADRATURE,
-  EQKEY_OUTPUT_FREQ,
-  EQKEY_POST_FREQ,
-  EQKEY_POST,
+  EQKEY_EXTRA_OP,
   EQKEY_ADV_OP_TYPE,
   EQKEY_ADV_WEIGHT_ALGO,
   EQKEY_ADV_WEIGHT_CRIT,
@@ -307,7 +303,7 @@ struct _cs_equation_t {
                              systems */
   int     solve_ts_id;    /* Id of the timer stats structure related
                              to the inversion of the linear system */
-  int     post_ts_id;     /* Id of the timer stats structure gathering all
+  int     extra_op_ts_id; /* Id of the timer stats structure gathering all
                              steps afterthe resolution of the linear systems
                              (post, balance...) */
 
@@ -328,7 +324,7 @@ struct _cs_equation_t {
   cs_equation_build_system_t    *build_system;
   cs_equation_compute_source_t  *compute_source;
   cs_equation_update_field_t    *update_field;
-  cs_equation_post_t            *postprocess;
+  cs_equation_extra_op_t        *postprocess;
   cs_equation_get_f_values_t    *get_f_values;
   cs_equation_get_tmpbuf_t      *get_tmpbuf;
 
@@ -720,7 +716,7 @@ _sles_initialization(const cs_equation_t  *eq)
 
       /* Define the level of verbosity for SLES structure */
       int  sles_verbosity = eq->param->sles_verbosity;
-      if (sles_verbosity > 0) {
+      if (sles_verbosity > 1) {
 
         cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
         cs_sles_it_t  *sles_it = (cs_sles_it_t *)cs_sles_get_context(sles);
@@ -728,7 +724,7 @@ _sles_initialization(const cs_equation_t  *eq)
         /* Set verbosity */
         cs_sles_set_verbosity(sles, sles_verbosity);
 
-        if (sles_verbosity > 1) /* Add plot */
+        if (sles_verbosity > 2) /* Add plot */
           cs_sles_it_set_plot_options(sles_it,
                                       eq->name,
                                       true);    /* use_iteration instead of
@@ -981,12 +977,8 @@ _print_eqkey(eqkey_t  key)
     return "bc_enforcement";
   case EQKEY_BC_QUADRATURE:
     return "bc_quadrature";
-  case EQKEY_OUTPUT_FREQ:
-    return "output_freq";
-  case EQKEY_POST_FREQ:
-    return "post_freq";
-  case EQKEY_POST:
-    return "post";
+  case EQKEY_EXTRA_OP:
+    return "extra_op";
   case EQKEY_ADV_OP_TYPE:
     return "adv_formulation";
   case EQKEY_ADV_WEIGHT_ALGO:
@@ -1096,12 +1088,8 @@ _get_eqkey(const char *keyname)
       key = EQKEY_BC_QUADRATURE;
   }
 
-  else if (strcmp(keyname, "post") == 0)
-    key = EQKEY_POST;
-  else if (strcmp(keyname, "post_freq") == 0)
-    key = EQKEY_POST_FREQ;
-  else if (strcmp(keyname, "output_freq") == 0)
-    key = EQKEY_OUTPUT_FREQ;
+  else if (strcmp(keyname, "extra_op") == 0)
+    key = EQKEY_EXTRA_OP;
 
   else if (strncmp(keyname, "adv_", 4) == 0) {
     if (strcmp(keyname, "adv_formulation") == 0)
@@ -1177,9 +1165,7 @@ _create_equation_param(cs_equation_type_t     type,
   eqp->var_type = var_type;
   eqp->verbosity =  0;
   eqp->sles_verbosity =  0;
-  eqp->output_freq = 1;
-  eqp->post_freq = 10;
-  eqp->post_flag =  0;
+  eqp->process_flag =  0;
 
   /* Build the equation flag */
   eqp->flag = 0;
@@ -1296,7 +1282,7 @@ cs_equation_create(const char            *eqname,
   eq->do_build = true;  // Force the construction of the algebraic system
 
   /* Set timer statistic structure to a default value */
-  eq->main_ts_id = eq->pre_ts_id = eq->solve_ts_id = eq->post_ts_id = -1;
+  eq->main_ts_id = eq->pre_ts_id = eq->solve_ts_id = eq->extra_op_ts_id = -1;
 
   /* Algebraic system: allocated later */
   eq->ms = NULL;
@@ -1680,7 +1666,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
 
       char *label = NULL;
 
-      int len = strlen("_solve") + strlen(eq->name) + 1;
+      int len = strlen("_extra_op") + strlen(eq->name) + 1;
       BFT_MALLOC(label, len, char);
       sprintf(label, "%s_pre", eq->name);
       eq->pre_ts_id = cs_timer_stats_create(eq->name, label, label);
@@ -1690,9 +1676,9 @@ cs_equation_last_setup(cs_equation_t  *eq)
       eq->solve_ts_id = cs_timer_stats_create(eq->name, label, label);
       cs_timer_stats_set_plot(eq->solve_ts_id, 1);
 
-      sprintf(label, "%s_post", eq->name);
-      eq->post_ts_id = cs_timer_stats_create(eq->name, label, label);
-      cs_timer_stats_set_plot(eq->post_ts_id, 1);
+      sprintf(label, "%s_extra_op", eq->name);
+      eq->extra_op_ts_id = cs_timer_stats_create(eq->name, label, label);
+      cs_timer_stats_set_plot(eq->extra_op_ts_id, 1);
 
       BFT_FREE(label);
 
@@ -1709,7 +1695,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
     eq->build_system = cs_cdovb_scaleq_build_system;
     eq->compute_source = cs_cdovb_scaleq_compute_source;
     eq->update_field = cs_cdovb_scaleq_update_field;
-    eq->postprocess = cs_cdovb_scaleq_post;
+    eq->postprocess = cs_cdovb_scaleq_extra_op;
     eq->get_tmpbuf = cs_cdovb_scaleq_get_tmpbuf;
     eq->get_f_values = NULL;
     break;
@@ -1720,7 +1706,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
     eq->build_system = cs_cdofb_scaleq_build_system;
     eq->compute_source = cs_cdofb_scaleq_compute_source;
     eq->update_field = cs_cdofb_scaleq_update_field;
-    eq->postprocess = cs_cdofb_scaleq_post;
+    eq->postprocess = cs_cdofb_scaleq_extra_op;
     eq->get_tmpbuf = cs_cdofb_scaleq_get_tmpbuf;
     eq->get_f_values = cs_cdofb_scaleq_get_face_values;
     break;
@@ -1993,19 +1979,13 @@ cs_equation_set_option(cs_equation_t       *eq,
     }
     break;
 
-  case EQKEY_OUTPUT_FREQ:
-    eqp->output_freq = atoi(val);
-    break;
-
-  case EQKEY_POST_FREQ:
-    eqp->post_freq = atoi(val);
-    break;
-
-  case EQKEY_POST:
+  case EQKEY_EXTRA_OP:
     if (strcmp(val, "peclet") == 0)
-      eqp->post_flag |= CS_EQUATION_POST_PECLET;
+      eqp->process_flag |= CS_EQUATION_POST_PECLET;
+    else if (strcmp(val, "none") == 0)
+      eqp->process_flag |= CS_EQUATION_POST_NONE;
     else if (strcmp(val, "upwind_coef") == 0)
-      eqp->post_flag |= CS_EQUATION_POST_UPWIND_COEF;
+      eqp->process_flag |= CS_EQUATION_POST_UPWIND_COEF;
     break;
 
   case EQKEY_ADV_OP_TYPE:
@@ -2832,6 +2812,10 @@ cs_equation_create_field(cs_equation_t     *eq)
                                      true,          // interleave
                                      has_previous);
 
+  /* Set default value for default keys */
+  cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
+
   /* Store the related field id */
   eq->field_id = cs_field_id_by_name(eq->varname);
 
@@ -3093,23 +3077,20 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
 /*!
  * \brief  Solve the linear system for this equation
  *
- * \param[in]       time_step  pointer to a time step structure
- * \param[in, out]  eq         pointer to a cs_equation_t structure
+ * \param[in, out]  eq          pointer to a cs_equation_t structure
+ * \param[in]       do_logcvg   output information on convergence or not
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(const cs_time_step_t    *time_step,
-                  cs_equation_t           *eq)
+cs_equation_solve(cs_equation_t   *eq,
+                  bool             do_logcvg)
 {
-  double  r_norm;
-  cs_sles_convergence_state_t  cvg;
-  cs_sla_sumup_t  ret;
+  int  n_iters = 0;
+  double  r_norm = DBL_MAX, residual = DBL_MAX;
 
   if (eq->solve_ts_id > -1)
     cs_timer_stats_start(eq->solve_ts_id);
-
-  cs_halo_rotation_t  halo_rota = CS_HALO_ROTATION_IGNORE;
 
   cs_real_t  *x = eq->get_tmpbuf();
   cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
@@ -3118,10 +3099,12 @@ cs_equation_solve(const cs_time_step_t    *time_step,
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(eq->matrix);
   const cs_param_itsol_t  itsol_info = eq->param->itsol_info;
 
-  printf("\n# <<ITER %d>> Solve Ax = b for %s with %s\n"
-         "# System size: %8d ; eps: % -8.5e ;\n",
-         time_step->nt_cur, eq->name,
-         cs_param_get_solver_name(itsol_info.solver), n_rows, itsol_info.eps);
+  if (eq->param->sles_verbosity > 0)
+    printf("\n# %s >> Solve Ax = b with %s as solver and %s as precond.\n"
+           "# System size: %8d ; eps: % -8.5e ;\n",
+           eq->name, cs_param_get_solver_name(itsol_info.solver),
+           cs_param_get_precond_name(itsol_info.precond),
+           n_rows, itsol_info.eps);
 
   if (itsol_info.resid_normalized)
     r_norm = cs_euclidean_norm(n_rows, eq->rhs) / n_rows;
@@ -3133,35 +3116,32 @@ cs_equation_solve(const cs_time_step_t    *time_step,
   for (cs_lnum_t  i = 0; i < n_rows; i++)
     x[i] = fld->val[i];
 
-  cvg = cs_sles_solve(sles,
-                      eq->matrix,
-                      halo_rota,
-                      itsol_info.eps,
-                      r_norm,
-                      &(ret.iter),
-                      &(ret.residual),
-                      eq->rhs,
-                      x,
-                      0,      // aux. size
-                      NULL);  // aux. buffers
+  cs_sles_convergence_state_t code = cs_sles_solve(sles,
+                                                   eq->matrix,
+                                                   CS_HALO_ROTATION_IGNORE,
+                                                   itsol_info.eps,
+                                                   r_norm,
+                                                   &n_iters,
+                                                   &residual,
+                                                   eq->rhs,
+                                                   x,
+                                                   0,      // aux. size
+                                                   NULL);  // aux. buffers
 
-  if (eq->param->verbosity > 1) {
-    if (time_step->nt_cur % eq->param->output_freq == 0) {
-      bft_printf("  <%s/sla> code           %d\n", eq->name, cvg);
-      bft_printf("  <%s/sla> n_iters        %d\n", eq->name, ret.iter);
-      bft_printf("  <%s/sla> residual      % -8.4e\n", eq->name, ret.residual);
-    }
-  }
+  if (do_logcvg)
+    bft_printf("  <%s/sles_cvg> code  %d n_iters  %d residual  % -8.4e\n",
+               eq->name, code, n_iters, residual);
 
-  printf("# n_iters = %d with a residual norm = %8.5e for %s\n",
-         ret.iter, ret.residual, eq->name);
+  if (eq->param->sles_verbosity > 0)
+    printf("# %s >> n_iters = %d with a residual norm = %8.5e\n",
+           eq->name, n_iters, residual);
 
   if (eq->solve_ts_id > -1)
     cs_timer_stats_stop(eq->solve_ts_id);
 
   /* Store the solution in the related field structure */
-  if (eq->post_ts_id > -1)
-    cs_timer_stats_start(eq->post_ts_id);
+  if (eq->extra_op_ts_id > -1)
+    cs_timer_stats_start(eq->extra_op_ts_id);
 
   /* Copy current field values to previous values */
   cs_field_current_to_previous(fld);
@@ -3169,8 +3149,8 @@ cs_equation_solve(const cs_time_step_t    *time_step,
   /* Define the new field value for the current time */
   eq->update_field(x, eq->builder, fld->val);
 
-  if (eq->post_ts_id > -1)
-    cs_timer_stats_stop(eq->post_ts_id);
+  if (eq->extra_op_ts_id > -1)
+    cs_timer_stats_stop(eq->extra_op_ts_id);
 
   if (eq->param->flag & CS_EQUATION_UNSTEADY)
     eq->do_build = true; /* Improvement: exhibit cases where a new build
@@ -3181,7 +3161,7 @@ cs_equation_solve(const cs_time_step_t    *time_step,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Post-processing related to this equation
+ * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]  time_step  pointer to a time step structure
  * \param[in]  eq         pointer to a cs_equation_t structure
@@ -3189,41 +3169,27 @@ cs_equation_solve(const cs_time_step_t    *time_step,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_post(const cs_time_step_t       *time_step,
-                 const cs_equation_t        *eq)
+cs_equation_extra_op(const cs_time_step_t       *time_step,
+                     const cs_equation_t        *eq)
 {
   if (eq == NULL)
     return;
 
-  const int  nt_cur = time_step->nt_cur;
   const cs_field_t  *field = cs_field_by_id(eq->field_id);
   const cs_equation_param_t  *eqp = eq->param;
 
   /* Cases where a post-processing is not required */
-  if (eqp->post_freq == -1)
+  if (eqp->process_flag & CS_EQUATION_POST_NONE)
     return;
-  if (nt_cur == 0) {
-    if (eqp->flag & CS_EQUATION_UNSTEADY)
-      return;
-  }
-  else { /* nt_cur > 0 */
-    if (!(eqp->flag & CS_EQUATION_UNSTEADY))
-      return;
-    if (eqp->post_freq == 0)
-      return;
-    if (nt_cur % eqp->post_freq > 0)
-      return;
-  }
-  bft_printf(" <post/var> %s\n", field->name);
 
   /* Perform the post-processing */
-  if (eq->post_ts_id > -1)
-    cs_timer_stats_start(eq->post_ts_id);
+  if (eq->extra_op_ts_id > -1)
+    cs_timer_stats_start(eq->extra_op_ts_id);
 
   eq->postprocess(eq->name, field, eq->builder);
 
-  if (eq->post_ts_id > -1)
-    cs_timer_stats_stop(eq->post_ts_id);
+  if (eq->extra_op_ts_id > -1)
+    cs_timer_stats_stop(eq->extra_op_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/

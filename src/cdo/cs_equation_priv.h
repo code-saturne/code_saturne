@@ -50,9 +50,10 @@ BEGIN_C_DECLS
 #define  CS_EQUATION_REACTION   (1 <<  4)  /* 16: reaction term */
 #define  CS_EQUATION_HCONF_ST   (1 <<  5)  /* 32: treatment of the source */
 
-/* Post flag */
-#define  CS_EQUATION_POST_PECLET      (1 << 0)
-#define  CS_EQUATION_POST_UPWIND_COEF (2 << 0)
+/* Extra operations flag */
+#define  CS_EQUATION_POST_NONE        (1 << 0)
+#define  CS_EQUATION_POST_PECLET      (2 << 0)
+#define  CS_EQUATION_POST_UPWIND_COEF (3 << 0)
 
 /*============================================================================
  * Type definitions
@@ -104,14 +105,12 @@ typedef struct {
   cs_param_var_type_t   var_type;       /* scalar, vector, tensor... */
   int                   verbosity;      /* Level of detail to output */
   int                   sles_verbosity; /* Level of detail to output for SLES */
-  int                   output_freq;    /* Write log at this frequency */
 
   /* Unsteady-Diffusion-Convection-Source term activated or not */
   cs_flag_t              flag;
 
   /* Post-treatment */
-  int                    post_freq;   /* Move this option to cs_field_t ? */
-  cs_flag_t              post_flag;   /* Type of post-treatment to do */
+  cs_flag_t              process_flag;  /* Type of post-treatment to do */
 
   /* Numerical settings */
   cs_space_scheme_t      space_scheme;

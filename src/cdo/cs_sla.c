@@ -1,6 +1,7 @@
 /*============================================================================
  * Sparse linear algebra related to CDO techniques
  * Matrix operations (matvec, matmat, and other manipulations)
+ * Generic functions related to the linear systems to solve
  *============================================================================*/
 
 /*

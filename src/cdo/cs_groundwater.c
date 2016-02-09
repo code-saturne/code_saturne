@@ -113,7 +113,6 @@ typedef struct {
 struct _groundwater_t {
 
   cs_flag_t                flag;       /* Compact information */
-  int                      post_freq;  /* Frequency for post-processing */
 
   cs_groundwater_model_t   global_model;
 
@@ -160,7 +159,6 @@ typedef enum {
 
   GWKEY_GRAVITATION,
   GWKEY_OUTPUT_MOISTURE,
-  GWKEY_POST_FREQ,
   GWKEY_ERROR
 
 } gwkey_t;
@@ -207,8 +205,6 @@ _print_gwkey(gwkey_t  key)
     return "gravity";
   case GWKEY_OUTPUT_MOISTURE:
     return "output_moisture";
-  case GWKEY_POST_FREQ:
-    return "post_freq";
 
   default:
     assert(0);
@@ -237,8 +233,6 @@ _get_gwkey(const char  *keyname)
     key = GWKEY_GRAVITATION;
   else if (strcmp(keyname, "output_moisture") == 0)
     key = GWKEY_OUTPUT_MOISTURE;
-  else if (strcmp(keyname, "post_freq") == 0)
-    key = GWKEY_POST_FREQ;
 
   return key;
 }
@@ -896,7 +890,6 @@ cs_groundwater_create(void)
 
   /* Default initialization */
   gw->flag = 0;
-  gw->post_freq = -1;
 
   gw->n_soils = 0;
   gw->n_max_soils = 0;
@@ -1017,10 +1010,6 @@ cs_groundwater_set_param(cs_groundwater_t    *gw,
   case GWKEY_OUTPUT_MOISTURE:
     if (strcmp(keyval, "false")) // not "false"
       gw->flag |= CS_GROUNDWATER_POST_MOISTURE;
-    break;
-
-  case GWKEY_POST_FREQ:
-    gw->post_freq = atoi(keyval);
     break;
 
   default:
@@ -2021,13 +2010,14 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the system related to groundwater flows
+ * \brief  Compute the system related to groundwater flows module
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      time_step  pointer to a cs_time_step_t structure
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      do_logcvg  output information on convergence or not
  * \param[in, out] eqs        array of pointers to cs_equation_t structures
  * \param[in, out] gw         pointer to a cs_groundwater_t structure
  */
@@ -2039,6 +2029,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
                        double                        dt_cur,
                        const cs_cdo_connect_t       *connect,
                        const cs_cdo_quantities_t    *cdoq,
+                       bool                          do_logcvg,
                        cs_equation_t                *eqs[],
                        cs_groundwater_t             *gw)
 {
@@ -2070,7 +2061,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
       cs_equation_build_system(mesh, time_step, dt_cur, richards);
 
       /* Solve the algebraic system */
-      cs_equation_solve(time_step, richards);
+      cs_equation_solve(richards, do_logcvg);
 
       /* Compute the darcian flux */
       _update_darcian_flux(connect, cdoq, richards, gw);
@@ -2092,7 +2083,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
         cs_equation_build_system(mesh, time_step, dt_cur, eq);
 
         /* Solve the algebraic system */
-        cs_equation_solve(time_step, eq);
+        cs_equation_solve(eq, do_logcvg);
 
       } /* Solve this equation which is steady */
 
@@ -2109,7 +2100,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
         cs_equation_build_system(mesh, time_step, dt_cur, richards);
 
       /* Solve the algebraic system */
-      cs_equation_solve(time_step, richards);
+      cs_equation_solve(richards, do_logcvg);
 
       /* Compute the darcian flux */
       _update_darcian_flux(connect, cdoq, richards, gw);
@@ -2130,7 +2121,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
           cs_equation_build_system(mesh, time_step, dt_cur, eq);
 
         /* Solve the algebraic system */
-        cs_equation_solve(time_step, eq);
+        cs_equation_solve(eq, do_logcvg);
 
       } /* Solve this equation which is steady */
 
@@ -2142,7 +2133,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined postprocessing for the groundwater module
+ * \brief  Predefined extra-operations for the groundwater module
  *
  * \param[in]  time_step   pointer to a cs_time_step_t struct.
  * \param[in]  gw          pointer to a cs_groundwater_t structure
@@ -2150,29 +2141,11 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_post(const cs_time_step_t      *time_step,
-                    const cs_groundwater_t    *gw)
+cs_groundwater_extra_op(const cs_time_step_t      *time_step,
+                        const cs_groundwater_t    *gw)
 {
   if (gw == NULL)
     return;
-
-  const int  nt_cur = time_step->nt_cur;
-
-  /* Cases where a post-processing is not required */
-  if (gw->post_freq == -1)
-    return;
-  if (nt_cur == 0) {
-    if (gw->global_model != CS_GROUNDWATER_MODEL_SATURATED)
-      return;
-  }
-  else { /* nt_cur > 0 */
-    if (gw->global_model == CS_GROUNDWATER_MODEL_SATURATED)
-      return;
-    if (gw->post_freq == 0)
-      return;
-    if (nt_cur % gw->post_freq > 0)
-      return;
-  }
 
   if (gw->flag & CS_GROUNDWATER_POST_MOISTURE) {
 

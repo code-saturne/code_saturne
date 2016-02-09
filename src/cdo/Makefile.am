@@ -88,7 +88,7 @@ cs_param.c \
 cs_property.c \
 cs_quadrature.c \
 cs_reco.c \
-cs_sla_matrix.c \
+cs_sla.c \
 cs_source_term.c \
 cs_walldistance.c
 

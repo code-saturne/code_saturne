@@ -360,18 +360,18 @@ cs_equation_build_system(const cs_mesh_t            *m,
 /*!
  * \brief  Solve the linear system for this equation
  *
- * \param[in]       time_step  pointer to a time step structure
- * \param[in, out]  eq         pointer to a cs_equation_t structure
+ * \param[in, out]  eq          pointer to a cs_equation_t structure
+ * \param[in]       do_logcvg   output information on convergence or not
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(const cs_time_step_t    *time_step,
-                  cs_equation_t           *eq);
+cs_equation_solve(cs_equation_t   *eq,
+                  bool             do_logcvg);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Post-processing related to this equation
+ * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]  time_step  pointer to a time step structure
  * \param[in]  eq         pointer to a cs_equation_t structure
@@ -379,8 +379,8 @@ cs_equation_solve(const cs_time_step_t    *time_step,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_post(const cs_time_step_t       *time_step,
-                 const cs_equation_t        *eq);
+cs_equation_extra_op(const cs_time_step_t       *time_step,
+                     const cs_equation_t        *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
