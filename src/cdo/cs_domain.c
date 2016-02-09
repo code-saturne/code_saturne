@@ -52,6 +52,7 @@
 #include <bft_printf.h>
 
 #include "cs_mesh_location.h"
+#include "cs_log_iteration.h"
 #include "cs_post.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
@@ -663,6 +664,12 @@ cs_domain_init(const cs_mesh_t             *mesh,
   /* Update mesh locations */
   _add_mesh_locations(domain);
   _check_boundary_setup(domain);
+
+  /* Set the default verbosity for equation already defined */
+  char  verbstr[10];
+  sprintf(verbstr, "%d", domain->verbosity);
+  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++)
+    cs_equation_set_option(domain->equations[eq_id], "verbosity", verbstr);
 
   return domain;
 }
@@ -1886,6 +1893,11 @@ cs_domain_solve(cs_domain_t  *domain)
 void
 cs_domain_postprocess(cs_domain_t  *domain)
 {
+  /* Log output */
+  if (domain->time_step->nt_cur % domain->output_freq == 0 &&
+      domain->verbosity > -1)
+    cs_log_iteration();
+
   /* Extra-operations */
   /* ================ */
 
