@@ -119,7 +119,7 @@ typedef struct {
 
   /* Output options */
   int   output_freq;
-  int   post_freq;  
+  int   post_freq;
   int   verbosity;
 
 } cs_domain_t;

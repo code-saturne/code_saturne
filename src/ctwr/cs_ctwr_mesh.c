@@ -566,7 +566,7 @@ _search_height(cs_ctwr_zone_t   *ct,
                                 &(faces_vtx_lst));
 
   location_fac = ple_locator_get_dist_locations(locator);
-  lst_xyz_dist = ple_locator_get_dist_coords(  locator);
+  lst_xyz_dist = ple_locator_get_dist_coords(locator);
 
   for (i = 0; i < nb_dist; i++) {
 

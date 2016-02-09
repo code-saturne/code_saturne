@@ -1360,7 +1360,7 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
  *   post_mesh     <-> pointer to partially initialized post-processing mesh
  *   n_particles   <-- number of associated particles
  *   particle_list <-> list of associated particles
- *   ts            <-- time step structure, or NULL
+ *   ts            <-- time step structure
  *----------------------------------------------------------------------------*/
 
 static void

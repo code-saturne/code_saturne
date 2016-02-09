@@ -207,7 +207,7 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
  *       {e_1_layer_1, ..., e_1_layer_m, e_2_layer_1, ... e_n_layer_m}
  *
  * parameters:
- *   this_section      <-> pointer to structure that should be extruded
+ *   this_nodal       <-> pointer to structure that should be extruded
  *   n_layers          <-> number of extruded layers
  *   extrusion_vectors <-> length and direction of extrusion for each vertex;
  *                         size: mesh_spatial_dim . n_vertices

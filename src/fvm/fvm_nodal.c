@@ -1090,9 +1090,12 @@ fvm_nodal_create(const char  *name,
  *----------------------------------------------------------------------------*/
 
 fvm_nodal_t *
-fvm_nodal_destroy(fvm_nodal_t  * this_nodal)
+fvm_nodal_destroy(fvm_nodal_t   *this_nodal)
 {
   int           i;
+
+  if (this_nodal == NULL)
+    return NULL;
 
   /* Local structures */
 
@@ -1605,7 +1608,7 @@ fvm_nodal_transfer_vertices(fvm_nodal_t  *this_nodal,
  * Make vertex coordinates of a nodal mesh private.
  *
  * If vertex coordinates were previously shared, those coordinates that
- * are actually refernces are copied, and the relation to parent vertices
+ * are actually references are copied, and the relation to parent vertices
  * is discarded.
  *
  * If vertices were already private, the mesh is not modified.

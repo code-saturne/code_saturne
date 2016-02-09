@@ -141,7 +141,9 @@ _setup(cs_mesh_t             *m,
   for (int  i = n_mesh_locations_ini; i < n_mesh_locations; i++)
     cs_mesh_location_build(m, i);
 
-  /* Advanced settings (numerical scheme, hodge operators, solvers...) */
+  /* Advanced settings (numerical scheme, hodge operators, solvers...).
+     This call must be done before the field creation since the support
+     of variable field depends on the choice of the numerical scheme. */
   cs_user_cdo_numeric_settings(domain);
 
   /* Add variables related to user-defined and predefined equations */

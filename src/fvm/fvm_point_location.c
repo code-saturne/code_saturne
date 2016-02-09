@@ -2189,7 +2189,7 @@ _locate_in_cell_3d(cs_lnum_t          elt_num,
   int i, j, k, n_vertices;
   cs_lnum_t coord_idx, vertex_id;
 
-  double uvw[3], dist, shapef[8],max_dist;
+  double uvw[3], dist, shapef[8], max_dist;
   double  _vertex_coords[8][3];
 
   n_vertices = fvm_nodal_n_vertices_element[elt_type];
@@ -2802,7 +2802,6 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
                          point_tag,
                          &n_points_in_extents,
                          points_in_extents);
-
 
       if (this_section->entity_dim == 3)
 

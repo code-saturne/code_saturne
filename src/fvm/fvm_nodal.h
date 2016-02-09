@@ -280,7 +280,7 @@ fvm_nodal_transfer_vertices(fvm_nodal_t  *this_nodal,
  * Make vertex coordinates of a nodal mesh private.
  *
  * If vertex coordinates were previously shared, those coordinates that
- * are actually refernces are copied, and the relation to parent vertices
+ * are actually references are copied, and the relation to parent vertices
  * is discarded.
  *
  * If vertices were already private, the mesh is not modified.

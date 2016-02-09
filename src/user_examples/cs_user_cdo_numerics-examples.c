@@ -126,13 +126,13 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      >> val: "cdo_vb" for CDO vertex-based scheme
      >> val: "cdo_fb" for CDO face-based scheme
 
-     KEY = "verbosity"
+     key = "verbosity"
      >> val: "0" (default), "1", "2", ...
      The higher the more detailed information is displayed
      - "1" detailed setup resume and coarse grain timer stats
      - "2" fine grain timer stats
 
-     KEY = "hodge_diff_algo" or "hodge_time_algo"
+     key = "hodge_diff_algo" or "hodge_time_algo"
      >> val: "voronoi" (default for time), "cost" (default for diffusion)
              or "wbs"
      - "voronoi" leads to diagonal discrete Hodge operator but is not
@@ -142,7 +142,7 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      - "wbs" is robust and accurate but is limited to the reconstruction of
      potential-like degrees of freedom
 
-     KEY = "hodge_diff_coef" or "hodge_time_coef"
+     key = "hodge_diff_coef" or "hodge_time_coef"
      This key is only useful if "cost" is set as algorithm
      >> val: "dga", "sushi", "gcr" or "1.5", "9"..
      val is either a name or a value. Notice that
@@ -150,19 +150,19 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      - "sushi" corresponds to the value 1./sqrt(3.)
      - "gcr" corresponds to the value 1.
 
-     KEY = "solver_family"
+     key = "solver_family"
      >> val: "cs" (default), "petsc", "newton" (not implemented yet)
      For using "petsc" one needs to compile Code_Saturne with the PETSc
      library
 
-     KEY = "itsol"
+     key = "itsol"
      >> val: "cg" (default), "bicg", "gmres", "amg"
      - "cg" is the standard conjuguate gradient algorithm
-     - "bicg" is BiCGstab algorithm (for non-symmetric linear systems)
+     - "bicg" is BiCG-Stab2 algorithm (for non-symmetric linear systems)
      - "gmres" is a robust iterative solver but not as efficient
      - "amg" is an algebraic multigrid iterative solver
 
-     KEY = "precond"
+     key = "precond"
      >> val: "jacobi", "poly1", "ssor", "ilu0", "icc0", "amg", "as"
      - "jacobi" diagonal preconditoner
      - "poly1"  neumann polynomial of order 1
@@ -171,27 +171,27 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      - "icc0"   incomplete Cholesky factorization (for symmetric matrices)
      - "amg"    algebraic multigrid
 
-     KEY = "itsol_max_iter"
+     key = "itsol_max_iter"
      >> val: "2000" for instance
 
-     KEY = "itsol_eps"
+     key = "itsol_eps"
      >> val:  "1e-10" for instance
 
-     KEY = "itsol_resnorm"
+     key = "itsol_resnorm"
      >> val: "true" or "false"
 
-     KEY = "itsol_verbosity"
+     key = "itsol_verbosity"
      >> val: "0", "1", "2" or higher
 
      Set the type of enforcement of the boundary conditions
-     KEY = "bc_enforcement"
+     key = "bc_enforcement"
         >> val: "strong", "penalization", "nitsche", "sym_nitsche"
      "strong"       remove unknowns attached to a BC
      "penalization" weak enforcement using a huge penalization coefficient
      "weak"         weak enforcement using the Nitsche method
      "weak_sym"     weak enforcement keeping the symmetry of the system
 
-     KEY = "bc_quadrature"
+     key = "bc_quadrature"
         >> val: "subdiv", "bary", "higher", "highest"
      Set the quadrature algorithm used for evaluating boundary conditions
      "subdiv"  used a subdivision into tetrahedra
@@ -203,7 +203,7 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      tetrahedra
 
      Set time scheme:
-     KEY = "time_scheme"
+     key = "time_scheme"
      >> val: "implicit", "explicit", "crank_nicolson", "theta_scheme"
      "implicit": first-order in time (inconditionnally stable)
      "explicit":
@@ -213,21 +213,21 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
                      - "explicit" with theta = 0
                      - "crank_nicolson" with theta = 0.5
 
-     KEY = "time_theta" (only useful if "time_scheme" is set to "theta_scheme"
+     key = "time_theta" (only useful if "time_scheme" is set to "theta_scheme"
      >> val: "0.75" for instance (must be between 0 <=val<= 1)
 
      Post-processing options:
-     KEY = "post"
+     key = "post"
      >> val: "peclet", "upwind_coef"
      "peclet" to post-process an estimation of the Peclet number in each cell
      "upwind_coef" to post-process an estimation of the upwinding coefficient
      related a given Peclet number
 
      Advection options:
-     KEY = "adv_weight"
+     key = "adv_weight"
      >> val: "upwind", "centered", "samarskii", "sg", "d10g5"
 
-     KEY = "adv_weight_criterion"
+     key = "adv_weight_criterion"
      >> val: "xexc" or "flux"
   */
 

@@ -94,7 +94,7 @@ struct _cs_domain_boundary_t {
   /* Number of border faces related to each type of boundary */
   cs_lnum_t                   n_type_elts[CS_PARAM_N_BOUNDARY_TYPES];
 
-  /* 
+  /*
      A mesh location attached to a domain boundary can be compound of several
      existing mesh locations, hereafter called sub mesh locations
   */
@@ -657,7 +657,7 @@ cs_domain_init(const cs_mesh_t             *mesh,
   /* User-defined settings for this domain
       - time step
       - boundary of the domain
-   */
+  */
   cs_user_cdo_init_domain(domain);
 
   /* Update mesh locations */
@@ -763,7 +763,7 @@ cs_domain_set_param(cs_domain_t    *domain,
     break;
 
   case DOMKEY_OUTPUT_FREQ:
-    { 
+    {
       int  freq = atoi(keyval);
 
       if (freq == 0) freq = -1;

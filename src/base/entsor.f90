@@ -175,11 +175,11 @@ module entsor
   !> - \>0: period  (every \ref nthist time step)
   !>
   !> The default value is -1 if there is no chronological record file to
-  !> generate (if there is no probe, \ref ncapt = 0, or if \ref ihisvr "ihisvr"(n, 1)=0 for
-  !> all the variables) and 1 otherwise.
-  !> If chronological records are generated, it is usually wise to keep the default
-  !> value \ref nthist=1, in order to avoid missing any high frequency evolution (unless
-  !> the total number of time steps is much too big).
+  !> generate (if there is no probe, \ref ncapt = 0, or if
+  !> \ref ihisvr "ihisvr"(n, 1)=0 for all the variables) and 1 otherwise.
+  !> If chronological records are generated, it is usually wise to keep the
+  !> default value \ref nthist=1, in order to avoid missing any high frequency
+  !> evolution (unless the total number of time steps is much too big).
   !> Useful if and only if chronological record files are generated (
   !> i.e. there are probes (\ref ncapt>0) there is \c n for which
   !> \ref ihisvr "ihisvr"(n, 1) \f$\ne\f$ 0)

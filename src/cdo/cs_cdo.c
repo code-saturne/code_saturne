@@ -1,5 +1,5 @@
 /*============================================================================
- * General functions or variables for the INNOV module
+ * General functions or variables for the CDO module
  *============================================================================*/
 
 /*
