@@ -1064,6 +1064,8 @@ _get_eqkey(const char *keyname)
       key = EQKEY_ITSOL_MAX_ITER;
     else if (strcmp(keyname, "itsol_resnorm") == 0)
       key = EQKEY_ITSOL_RESNORM;
+    else if (strcmp(keyname, "itsol_verbosity") == 0)
+      key = EQKEY_SLES_VERBOSITY;
   }
 
   else if (strcmp(keyname, "precond") == 0)
@@ -1077,9 +1079,6 @@ _get_eqkey(const char *keyname)
 
   else if (strcmp(keyname, "verbosity") == 0)
     key = EQKEY_VERBOSITY;
-
-  else if (strcmp(keyname, "itsol_verbosity") == 0)
-    key = EQKEY_SLES_VERBOSITY;
 
   else if (strncmp(keyname, "bc", 2) == 0) { /* key begins with bc */
     if (strcmp(keyname, "bc_enforcement") == 0)
