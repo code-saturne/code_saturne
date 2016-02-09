@@ -106,7 +106,7 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: sval
-double precision, dimension(:,:), pointer :: visten
+double precision, dimension(:,:), pointer :: visten, vistes
 double precision, dimension(:), pointer :: viscl, visct, cpro_vis
 double precision, dimension(:), pointer :: cvar_voidf
 
@@ -446,6 +446,20 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
           enddo
         enddo
 
+        ! No damping with Durbing scale for the scalar
+        if (iggafm.eq.1) then
+          call field_get_val_v(ivstes, vistes)
+
+          do iel = 1, ncel
+            trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+            rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
+
+            do isou = 1, 6
+              visten(isou, iel) = rottke*cvar_rij(isou, iel)
+            enddo
+          enddo
+        endif
+
       ! LRR or SSG
       else
         do iel = 1, ncel
@@ -457,6 +471,8 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
           enddo
         enddo
       endif
+
+    ! Uncoupled version
     else
       call field_get_val_s(icrom, crom)
       call field_get_val_s(iprpfl(iviscl), viscl)
@@ -487,6 +503,23 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
           visten(5,iel) = rottke*cvar_r23(iel)
           visten(6,iel) = rottke*cvar_r13(iel)
         enddo
+
+        if (iggafm.eq.1) then
+          call field_get_val_v(ivstes, vistes)
+
+          do iel = 1, ncel
+            trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+            rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
+
+            vistes(1,iel) = rottke*cvar_r11(iel)
+            vistes(2,iel) = rottke*cvar_r22(iel)
+            vistes(3,iel) = rottke*cvar_r33(iel)
+            vistes(4,iel) = rottke*cvar_r12(iel)
+            vistes(5,iel) = rottke*cvar_r23(iel)
+            vistes(6,iel) = rottke*cvar_r13(iel)
+          enddo
+        endif
+
 
       ! LRR or SSG
       else
