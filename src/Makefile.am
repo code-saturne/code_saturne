@@ -108,8 +108,8 @@ $(top_srcdir)/src/base/cs_nz_condensation.f90: pointe.lo
 $(top_srcdir)/src/base/cs_nz_tagmr.f90: optcal.lo pointe.lo parall.lo cs_nz_condensation.lo cs_tagmr.lo
 $(top_srcdir)/src/base/cs_tagmr.f90: pointe.lo
 $(top_srcdir)/src/base/cs_tagms.f90: mesh.lo
-$(top_srcdir)/src/base/cs_field_operator.f90: paramx.lo dimens.lo mesh.lo optcal.lo field.lo
 $(top_srcdir)/src/base/entsor.f90: paramx.lo field.lo
+$(top_srcdir)/src/base/field_operator.f90: paramx.lo dimens.lo mesh.lo optcal.lo field.lo
 $(top_srcdir)/src/base/numvar.f90: paramx.lo
 $(top_srcdir)/src/base/optcal.f90: paramx.lo field.lo numvar.lo cstphy.lo
 $(top_srcdir)/src/base/pointe.f90: paramx.lo numvar.lo mesh.lo parall.lo period.lo optcal.lo entsor.lo lagran.lo radiat.lo ppincl.lo ihmpre.lo albase.lo cstnum.lo

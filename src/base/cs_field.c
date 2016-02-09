@@ -214,9 +214,10 @@ static cs_field_key_val_t  *_key_vals = NULL;
 
 /* Names for logging */
 
-static const int _n_type_flags = 6;
+static const int _n_type_flags = 7;
 static const int _type_flag_mask[] = {CS_FIELD_INTENSIVE,
                                       CS_FIELD_EXTENSIVE,
+                                      CS_FIELD_STEADY,
                                       CS_FIELD_VARIABLE,
                                       CS_FIELD_PROPERTY,
                                       CS_FIELD_POSTPROCESS,
@@ -224,6 +225,7 @@ static const int _type_flag_mask[] = {CS_FIELD_INTENSIVE,
                                       CS_FIELD_USER};
 static const char *_type_flag_name[] = {N_("intensive"),
                                         N_("extensive"),
+                                        N_("steady"),
                                         N_("variable"),
                                         N_("property"),
                                         N_("postprocess"),
@@ -1410,6 +1412,9 @@ cs_field_create(const char   *name,
                                   interleaved);
 
   cs_base_check_bool(&has_previous);
+
+  if (!has_previous)
+    f->type |= CS_FIELD_STEADY;
 
   f->n_time_vals = has_previous ? 2 : 1;
 
@@ -3189,8 +3194,8 @@ cs_field_log_defs(void)
 
   int n_cat_fields = 0;
 
-  int mask_id_start = 2; /* _type_flag_*[CS_FIELD_VARIABLE] */
-  int mask_id_end = 6;   /* _type_flag_*[CS_FIELD_USER] */
+  int mask_id_start = 3; /* _type_flag_*[CS_FIELD_VARIABLE] */
+  int mask_id_end = 7;   /* _type_flag_*[CS_FIELD_USER] */
   int mask_prev = 0;
 
   if (_n_fields == 0)
@@ -3217,6 +3222,7 @@ cs_field_log_defs(void)
       if (l > name_width)
         name_width = l;
     }
+
     if (name_width > 63)
       name_width = 63;
 
@@ -3341,8 +3347,7 @@ cs_field_log_info(const cs_field_t  *f,
 
   cs_log_printf(CS_LOG_SETUP,
                 _("    Id:                         %d\n"
-                  "    Type:                       %d"),
-                f->id, f->type);
+                  "    Type:                       %d"), f->id, f->type);
 
   if (f->type != 0) {
     int i;
@@ -3647,8 +3652,8 @@ cs_field_log_key_vals(int   key_id,
   int i, cat_id;
   cs_field_key_def_t *kd;
 
-  int mask_id_start = 2; /* _type_flag_*[CS_FIELD_VARIABLE] */
-  int mask_id_end = 6;   /* _type_flag_*[CS_FIELD_USER] */
+  int mask_id_start = 3; /* _type_flag_*[CS_FIELD_VARIABLE] */
+  int mask_id_end = 7;   /* _type_flag_*[CS_FIELD_USER] */
   int mask_prev = 0;
   const char null_str[] = "(null)";
 
@@ -3791,7 +3796,7 @@ cs_field_log_all_key_vals(bool  log_defaults)
  *   "moment_id"    (integer, restricted to
  *                   CS_FIELD_ACCUMULATOR | CS_FIELD_POSTPROCESS);
  *
- * A recommened practice for different submodules would be to use
+ * A recommended practice for different submodules would be to use
  * "cs_<module>_key_init() functions to define keys specific to those modules.
  */
 /*----------------------------------------------------------------------------*/

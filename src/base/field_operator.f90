@@ -26,32 +26,11 @@
 
 module field_operator
 
+  use field
+
   !=============================================================================
 
   implicit none
-
-  !=============================================================================
-
-  integer :: FIELD_INTENSIVE, FIELD_EXTENSIVE
-  integer :: FIELD_VARIABLE, FIELD_PROPERTY
-  integer :: FIELD_POSTPROCESS, FIELD_ACCUMULATOR, FIELD_USER
-
-  integer :: FIELD_OK, FIELD_INVALID_KEY_NAME, FIELD_INVALID_KEY_ID,   &
-             FIELD_INVALID_CATEGORY, FIELD_INVALID_TYPE
-
-  parameter (FIELD_INTENSIVE=1)
-  parameter (FIELD_EXTENSIVE=2)
-  parameter (FIELD_VARIABLE=4)
-  parameter (FIELD_PROPERTY=8)
-  parameter (FIELD_POSTPROCESS=16)
-  parameter (FIELD_ACCUMULATOR=32)
-  parameter (FIELD_USER=64)
-
-  parameter (FIELD_OK=0)
-  parameter (FIELD_INVALID_KEY_NAME=1)
-  parameter (FIELD_INVALID_KEY_ID=2)
-  parameter (FIELD_INVALID_CATEGORY=3)
-  parameter (FIELD_INVALID_TYPE=4)
 
   !=============================================================================
 
