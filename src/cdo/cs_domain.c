@@ -930,6 +930,18 @@ cs_domain_last_setup(cs_domain_t    *domain)
   if (domain == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
+  /* Set pointers of function if additional postprocessing is requested */
+  for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++) {
+
+    cs_adv_field_t *adv = domain->adv_fields[adv_id];
+
+    if (cs_advection_field_needs_post(adv))
+      /* Add default post-processing related to groundwater flow module */
+      cs_post_add_time_mesh_dep_output(cs_advection_field_extra_post,
+                                       adv);
+
+  }
+
   /* Proceed to the last settings of a cs_equation_t structure
      - Assign to a cs_equation_t structure a list of function to manage this
        structure during the computation.
@@ -1465,6 +1477,11 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
   domain->n_equations += 1;
   BFT_REALLOC(domain->equations, domain->n_equations, cs_equation_t *);
   domain->equations[richards_eq_id] = richards_eq;
+
+  /* Add default post-processing related to groundwater flow module */
+  cs_post_add_time_mesh_dep_output(cs_groundwater_extra_post,
+                                   domain->gw);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1905,16 +1922,9 @@ cs_domain_postprocess(cs_domain_t  *domain)
   for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
     cs_advection_field_update(domain->adv_fields[adv_id]);
 
-  for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
-    cs_advection_field_extra_op(domain->adv_fields[adv_id]);
-
   /* Predefined extra-operations related to equations */
   for (int eq_id = 0; eq_id < domain->n_equations; eq_id++)
     cs_equation_extra_op(domain->time_step, domain->equations[eq_id]);
-
-  /* Predefined extra-operations for the groundwater module */
-  if (domain->gw != NULL)
-    cs_groundwater_extra_op(domain->time_step, domain->gw);
 
   /* User-defined extra operations */
   cs_user_cdo_extra_op(domain);

@@ -2155,19 +2155,48 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined extra-operations for the groundwater module
+ * \brief  Predefined post-processing output for the groundwater flow module
+ *         prototype of this function is fixed since it is a function pointer
+ *         defined in cs_post.h (cs_post_time_mesh_dep_output_t)
  *
- * \param[in]  time_step   pointer to a cs_time_step_t struct.
- * \param[in]  gw          pointer to a cs_groundwater_t structure
+ * \param[in, out] input        pointer to a optional structure (here a 
+ *                              cs_groundwater_t structure)
+ * \param[in]      mesh_id      id of the output mesh for the current call
+ * \param[in]      cat_id       category id of the output mesh for this call
+ * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),
+ *                              interior faces (ent_flag[1]), boundary faces
+ *                              (ent_flag[2]), particles (ent_flag[3]) or probes
+ *                              (ent_flag[4])
+ * \param[in]      n_cells      local number of cells of post_mesh
+ * \param[in]      n_i_faces    local number of interior faces of post_mesh
+ * \param[in]      n_b_faces    local number of boundary faces of post_mesh
+ * \param[in]      cell_list    list of cells (1 to n)
+ * \param[in]      i_face_list  list of interior faces (1 to n)
+ * \param[in]      b_face_list  list of boundary faces (1 to n)
+ * \param[in]      time_step    pointer to a cs_time_step_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_extra_op(const cs_time_step_t      *time_step,
-                        const cs_groundwater_t    *gw)
+cs_groundwater_extra_post(void                      *input,
+                          int                        mesh_id,
+                          int                        cat_id,
+                          int                        ent_flag[5],
+                          cs_lnum_t                  n_cells,
+                          cs_lnum_t                  n_i_faces,
+                          cs_lnum_t                  n_b_faces,
+                          const cs_lnum_t            cell_list[],
+                          const cs_lnum_t            i_face_list[],
+                          const cs_lnum_t            b_face_list[],
+                          const cs_time_step_t      *time_step)
 {
-  if (gw == NULL)
+  if (input == NULL)
     return;
+
+  if (mesh_id != -1) /* Post-processing only on the generic volume mesh */
+    return;
+
+  const cs_groundwater_t  *gw = (const cs_groundwater_t *)input;
 
   if (gw->flag & CS_GROUNDWATER_POST_MOISTURE) {
 

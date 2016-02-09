@@ -65,6 +65,9 @@ BEGIN_C_DECLS
 /* Redefined names of function from cs_math to get shorter names */
 #define _dp3 cs_math_3_dot_product
 
+#define CS_ADVECTION_FIELD_POST_FIELD (1 << 0)  // postprocessing is activated
+#define CS_ADVECTION_FIELD_POST_UNITV (1 << 1)  // post of the unit vector
+
 #define CS_ADVECTION_FIELD_DBG  1
 
 struct _cs_adv_field_t {
@@ -72,9 +75,8 @@ struct _cs_adv_field_t {
   char  *restrict name;
 
   cs_flag_t  flag;       /* Short descriptor (mask of bits) */
-  int     post_freq;     /* -1 (no post-processing), 0 (at the beginning)
-                            otherwise every post_freq iteration(s) */
-  bool    post_unitv;    /* Postprocess or not the unit vector field */
+  cs_flag_t  post_flag;  /* Short descriptor dedicated to postprocessing */
+
   int     vtx_field_id;  /* id among cs_field_t structures (-1 if not used) */
   int     cell_field_id; /* id among cs_field_t structures (-1 if not used) */
 
@@ -92,7 +94,7 @@ struct _cs_adv_field_t {
 /* List of available keys for setting an advection field */
 typedef enum {
 
-  ADVKEY_POST_FREQ,
+  ADVKEY_POST,
   ADVKEY_POST_UNITV,
   ADVKEY_CELL_FIELD,
   ADVKEY_VERTEX_FIELD,
@@ -108,6 +110,10 @@ static const double  one_third = 1./3.;
 static const char _err_empty_adv[] =
   " Stop setting an empty cs_adv_field_t structure.\n"
   " Please check your settings.\n";
+static const char _err_truefalse_key[] =
+  N_(" Invalid value %s for setting key %s\n"
+     " Valid choices are true or false.\n"
+     " Please modify your setting.\n");
 
 /* Array support is on dual faces and scan thanks to the c2e connectivity */
 static const cs_flag_t  cs_var_support_dfbyc =
@@ -137,8 +143,8 @@ _print_advkey(advkey_t  key)
 {
   switch (key) {
 
-  case ADVKEY_POST_FREQ:
-    return "post_freq";
+  case ADVKEY_POST:
+    return "post";
   case ADVKEY_POST_UNITV:
     return "post_unitv";
   case ADVKEY_CELL_FIELD:
@@ -169,8 +175,8 @@ _get_advkey(const char  *keyname)
 {
   advkey_t  key = ADVKEY_ERROR;
 
-  if (strcmp(keyname, "post_freq") == 0)
-    key = ADVKEY_POST_FREQ;
+  if (strcmp(keyname, "post") == 0)
+    key = ADVKEY_POST;
   else if (strcmp(keyname, "post_unitv") == 0)
     key = ADVKEY_POST_UNITV;
   else if (strcmp(keyname, "cell_field") == 0)
@@ -229,11 +235,10 @@ cs_advection_field_create(const char   *name)
   strncpy(adv->name, name, len);
 
   /* Default initialization */
-  adv->post_unitv = false;
-  adv->post_freq = -1;
+  adv->flag = 0;
+  adv->post_flag = 0;
   adv->vtx_field_id = -1;
   adv->cell_field_id = -1;
-  adv->flag = 0;
   adv->def_type = CS_PARAM_N_DEF_TYPES;
   adv->def.get.val = 0;
 
@@ -452,18 +457,32 @@ cs_advection_field_set_option(cs_adv_field_t   *adv,
 
   switch(key) {
 
-  case ADVKEY_POST_FREQ:
-    adv->post_freq = atoi(keyval);
-    break;
-  case ADVKEY_POST_UNITV:
-    if (!strcmp(keyval, "false"))
-      adv->post_unitv = false;
+  case ADVKEY_POST:
+    if (strcmp(keyval, "true") == 0)
+      adv->post_flag |= CS_ADVECTION_FIELD_POST_FIELD;
+    else if (strcmp(keyval, "false") == 0) { // remove the flag if it is set
+      if (adv->post_flag & CS_ADVECTION_FIELD_POST_FIELD)
+        adv->post_flag ^= CS_ADVECTION_FIELD_POST_FIELD;
+    }
     else
-      adv->post_unitv = true;
+      bft_error(__FILE__, __LINE__, 0, _err_truefalse_key, keyval, keyname);
     break;
+
+  case ADVKEY_POST_UNITV:
+    if (strcmp(keyval, "true") == 0)
+      adv->post_flag |= CS_ADVECTION_FIELD_POST_UNITV;
+    else if (strcmp(keyval, "false") == 0) { // remove the flag if it is set
+      if (adv->post_flag & CS_ADVECTION_FIELD_POST_UNITV)
+        adv->post_flag ^= CS_ADVECTION_FIELD_POST_UNITV;
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0, _err_truefalse_key, keyval, keyname);
+    break;
+
   case ADVKEY_CELL_FIELD:
     adv->flag |= CS_PARAM_FLAG_CELL;
     break;
+
   case ADVKEY_VERTEX_FIELD:
     adv->flag |= CS_PARAM_FLAG_VERTEX;
     break;
@@ -1234,162 +1253,192 @@ cs_advection_field_update(cs_adv_field_t   *adv)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Perform the extra-operation if needed
+ * \brief  Check if additional predefined postprocessing is requested
  *
- * \param[in]      adv     pointer to a cs_adv_field_t structure
+ * \param[in]     adv     pointer to a cs_adv_field_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_advection_field_needs_post(const cs_adv_field_t   *adv)
+{
+  bool  needs_post = false;
+
+  if (adv == NULL)
+    return needs_post;
+
+  if (adv->post_flag > 0)
+    needs_post = true;
+
+  return needs_post;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined post-processing output for advection fields.
+ *         Prototype of this function is fixed since it is a function pointer
+ *         defined in cs_post.h (cs_post_time_mesh_dep_output_t)
+ *
+ * \param[in, out] input        pointer to a optional structure (here a 
+ *                              cs_groundwater_t structure)
+ * \param[in]      mesh_id      id of the output mesh for the current call
+ * \param[in]      cat_id       category id of the output mesh for this call
+ * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),
+ *                              interior faces (ent_flag[1]), boundary faces
+ *                              (ent_flag[2]), particles (ent_flag[3]) or probes
+ *                              (ent_flag[4])
+ * \param[in]      n_cells      local number of cells of post_mesh
+ * \param[in]      n_i_faces    local number of interior faces of post_mesh
+ * \param[in]      n_b_faces    local number of boundary faces of post_mesh
+ * \param[in]      cell_list    list of cells (1 to n)
+ * \param[in]      i_face_list  list of interior faces (1 to n)
+ * \param[in]      b_face_list  list of boundary faces (1 to n)
+ * \param[in]      time_step    pointer to a cs_time_step_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_extra_op(const cs_adv_field_t  *adv)
+cs_advection_field_extra_post(void                      *input,
+                              int                        mesh_id,
+                              int                        cat_id,
+                              int                        ent_flag[5],
+                              cs_lnum_t                  n_cells,
+                              cs_lnum_t                  n_i_faces,
+                              cs_lnum_t                  n_b_faces,
+                              const cs_lnum_t            cell_list[],
+                              const cs_lnum_t            i_face_list[],
+                              const cs_lnum_t            b_face_list[],
+                              const cs_time_step_t      *time_step)
 {
-  cs_lnum_t  v_id, c_id;
   cs_nvec3_t  advect;
 
-  cs_lnum_t  unitv_size = 0;
-  cs_real_t  *unitv = NULL;
-
-  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
-  const cs_time_step_t  *time_step = cs_time_step;
-  const int  nt_cur = time_step->nt_cur;
-
-  if (adv->post_freq < 0)
+  if (input == NULL)
     return;
 
-  bool  do_post = true;
+  if (mesh_id != -1) /* Post-processing only on the generic volume mesh */
+    return;
 
-  if (nt_cur == 0) {
-    if (adv->post_freq > 0)
-      do_post = false;
+  const cs_adv_field_t  *adv = (const cs_adv_field_t *)input;
+
+  cs_lnum_t  unitv_size = 0;
+  char  *label = NULL;
+  float  *unitv = NULL;
+
+  const bool post =
+    (adv->post_flag & CS_ADVECTION_FIELD_POST_FIELD) ? true : false;
+  const bool post_unitv =
+    (adv->post_flag & CS_ADVECTION_FIELD_POST_UNITV) ? true : false;
+
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
+
+  bft_printf(" <post/advection_field> %s\n", adv->name);
+
+  if (post_unitv) { /* Compute buf_size */
+
+    unitv_size = 0;
+    if (adv->cell_field_id > -1)
+      unitv_size = CS_MAX(3*cdoq->n_cells, unitv_size);
+    if (adv->vtx_field_id > -1)
+      unitv_size = CS_MAX(3*cdoq->n_vertices, unitv_size);
+
+    BFT_MALLOC(unitv, unitv_size, float);
+
   }
-  else { /* nt_cur > 0 */
-    if (adv->post_freq == 0)
-      do_post = false;
-    else if (nt_cur % adv->post_freq > 0)
-      do_post = false;
-  }
 
-  if (do_post) {
+  /* Field is defined at vertices ? */
+  cs_field_t  *fld = NULL;
+  if (adv->vtx_field_id > -1)
+    fld = cs_field_by_id(adv->vtx_field_id);
 
-    bft_printf(" <post/advection_field> %s\n", adv->name);
+  if (fld != NULL && post)
+    cs_post_write_vertex_var(-1,              // id du maillage de post
+                             fld->name,
+                             3,               // dim
+                             true,            // interlace
+                             true,            // true = original mesh
+                             CS_POST_TYPE_cs_real_t,
+                             fld->val,        // values on vertices
+                             time_step);      // time step structure
 
-    if (adv->post_unitv) {  /* Compute buf_size */
+  if (fld != NULL && post_unitv) {
 
-      cs_lnum_t  n_cells = 0, n_vertices = 0;
+    /* Evaluate the value of the advection field at each vertex */
+    for (cs_lnum_t v_id = 0; v_id < cdoq->n_vertices; v_id++) {
 
-      if (adv->cell_field_id > -1)
-        n_cells = cdoq->n_cells;
-      if (adv->vtx_field_id > -1)
-        n_vertices = cdoq->n_vertices;
+      const cs_lnum_t  shift_v = 3*v_id;
 
-      unitv_size = 3*CS_MAX(n_cells, n_vertices);
-      BFT_MALLOC(unitv, unitv_size, cs_real_t);
+      cs_nvec3(fld->val + shift_v, &advect);
+      for (int k = 0; k < 3; k++)
+        unitv[shift_v+k] = (float)advect.unitv[k];
 
-    }
+    } // Loop on vertices
 
-    if (adv->vtx_field_id > -1) {
+    BFT_MALLOC(label, strlen(fld->name) + 1 + 5, char);
+    sprintf(label, "%s.Unit", fld->name);
 
-      cs_field_t  *fld = cs_field_by_id(adv->vtx_field_id);
+    cs_post_write_vertex_var(-1,              // id du maillage de post
+                             label,
+                             3,               // dim
+                             true,            // interlace
+                             true,            // true = original mesh
+                             CS_POST_TYPE_float,
+                             unitv,           // values on vertices
+                             time_step);      // time step structure
 
-      cs_post_write_vertex_var(-1,              // id du maillage de post
-                               fld->name,
-                               3,               // dim
-                               true,            // interlace
-                               true,            // true = original mesh
-                               CS_POST_TYPE_cs_real_t,
-                               fld->val,        // values on vertices
-                               time_step);      // time step structure
+    BFT_FREE(label);
 
+  } /* Postprocessing of the unit vector */
 
-      if (adv->post_unitv) {
+  fld = NULL;
+  if (adv->cell_field_id > -1)
+    fld = cs_field_by_id(adv->cell_field_id);
 
-        /* Evaluate the value of the advection field at each vertex */
-        for (v_id = 0; v_id < cdoq->n_vertices; v_id++) {
+  if (fld != NULL && post)
+    cs_post_write_var(-1,              // id du maillage de post
+                      fld->name,
+                      3,               // dim
+                      true,            // interlace
+                      true,            // true = original mesh
+                      CS_POST_TYPE_cs_real_t,
+                      fld->val,        // values in cells
+                      NULL, NULL,      // values at internal/border faces
+                      time_step);      // time step structure
 
-          const cs_lnum_t  shift_v = 3*v_id;
+  if (fld != NULL && post_unitv) {
 
-          cs_nvec3(fld->val + shift_v, &advect);
-          for (int k = 0; k < 3; k++)
-            unitv[shift_v+k] = advect.unitv[k];
+    /* Evaluate the value of the advection field at each vertex */
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-        } // Loop on vertices
+      const cs_lnum_t  shift_c = 3*c_id;
 
-        char  *label = NULL;
-        int  len = strlen(fld->name) + 1 + 10;
+      cs_nvec3(fld->val + shift_c, &advect);
+      for (int k = 0; k < 3; k++)
+        unitv[shift_c+k] = (float)advect.unitv[k];
 
-        BFT_MALLOC(label, len, char);
-        sprintf(label, "%s.Unit", fld->name);
+    } // Loop on cells
 
-        cs_post_write_vertex_var(-1,              // id du maillage de post
-                                 label,
-                                 3,               // dim
-                                 true,            // interlace
-                                 true,            // true = original mesh
-                                 CS_POST_TYPE_cs_real_t,
-                                 unitv,           // values on vertices
-                                 time_step);      // time step structure
+    BFT_MALLOC(label, strlen(fld->name) + 1 + 5, char);
+    sprintf(label, "%s.Unit", fld->name);
 
-        BFT_FREE(label);
+    cs_post_write_var(-1,            // id du maillage de post
+                      label,
+                      3,             // dim
+                      true,          // interlace
+                      true,          // true = original mesh
+                      CS_POST_TYPE_float,
+                      unitv,         // values in cells
+                      NULL, NULL,    // values at internal/border faces
+                      time_step);    // time step structure
 
-      } /* Postprocessing of the unit vector */
+    BFT_FREE(label);
 
-    } /* Postprocessing at vertices */
+  } /* Postprocessing of the unit vector */
 
-    if (adv->cell_field_id > -1) {
-
-      cs_field_t  *fld = cs_field_by_id(adv->cell_field_id);
-
-      cs_post_write_var(-1,              // id du maillage de post
-                        fld->name,
-                        3,               // dim
-                        true,            // interlace
-                        true,            // true = original mesh
-                        CS_POST_TYPE_cs_real_t,
-                        fld->val,        // values in cells
-                        NULL, NULL,      // values at internal/border faces
-                        time_step);      // time step structure
-
-      if (adv->post_unitv) {
-
-        /* Evaluate the value of the advection field at each vertex */
-        for (c_id = 0; c_id < cdoq->n_cells; c_id++) {
-
-          const cs_lnum_t  shift_c = 3*c_id;
-
-          cs_nvec3(fld->val + shift_c, &advect);
-          for (int k = 0; k < 3; k++)
-            unitv[shift_c+k] = advect.unitv[k];
-
-        } // Loop on cells
-
-        char  *label = NULL;
-        int  len = strlen(fld->name) + 1 + 10;
-
-        BFT_MALLOC(label, len, char);
-        sprintf(label, "%s.Unit", fld->name);
-
-        cs_post_write_var(-1,            // id du maillage de post
-                          label,
-                          3,             // dim
-                          true,          // interlace
-                          true,          // true = original mesh
-                          CS_POST_TYPE_cs_real_t,
-                          unitv,         // values in cells
-                          NULL, NULL,    // values at internal/border faces
-                          time_step);    // time step structure
-
-        BFT_FREE(label);
-
-      } /* Postprocessing of the unit vector */
-
-    } /* Postprocessing at cells */
-
-      /* Free temporay buffers */
-    if (adv->post_unitv && unitv_size > 0)
-      BFT_FREE(unitv);
-
-  } // Do post
-
+  /* Free temporay buffers */
+  if (unitv_size > 0)
+    BFT_FREE(unitv);
 }
 
 /*----------------------------------------------------------------------------*/
