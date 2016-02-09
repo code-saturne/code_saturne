@@ -162,7 +162,8 @@ BEGIN_C_DECLS
                                 current call
   \param[in]       ent_flag     indicate global presence of cells
                                 (ent_flag[0]), interior faces (ent_flag[1]),
-                                or boundary faces (ent_flag[2])
+                                boundary faces (ent_flag[2]), particles
+                                (ent_flag[3]) or probes (ent_flag[4])
   \param[in]       n_cells      local number of cells of post_mesh
   \param[in]       n_i_faces    local number of interior faces of post_mesh
   \param[in]       n_b_faces    local number of boundary faces of post_mesh

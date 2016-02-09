@@ -403,6 +403,7 @@ _init_soil(const char     *ml_name,
 
   /* Set of parameters for each tracer which are related to this soil */
   BFT_MALLOC(soil->tracer_param, n_tracers, cs_gw_tracer_t);
+
   for (int i = 0; i < n_tracers; i++) /* default initialization */
     _set_tracer_param(soil->tracer_param + i,
                       0.0,  /* water molecular diffusivity */
@@ -1213,7 +1214,7 @@ cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
 
   /* Quantities related to soils */
   assert(n_soils > 0);
-  gw->n_soils = 0; /* No soil is set at the beginning */
+  gw->n_soils = 0;           /* No soil is set at the beginning */
   gw->n_max_soils = n_soils; /* Max. number of soils allocated */
   BFT_MALLOC(gw->soil_param, n_soils, cs_gw_soil_t);
 
@@ -2159,7 +2160,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
  *         prototype of this function is fixed since it is a function pointer
  *         defined in cs_post.h (cs_post_time_mesh_dep_output_t)
  *
- * \param[in, out] input        pointer to a optional structure (here a 
+ * \param[in, out] input        pointer to a optional structure (here a
  *                              cs_groundwater_t structure)
  * \param[in]      mesh_id      id of the output mesh for the current call
  * \param[in]      cat_id       category id of the output mesh for this call

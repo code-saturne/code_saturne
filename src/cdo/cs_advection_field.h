@@ -344,7 +344,7 @@ cs_advection_field_needs_post(const cs_adv_field_t   *adv);
  *         Prototype of this function is fixed since it is a function pointer
  *         defined in cs_post.h (cs_post_time_mesh_dep_output_t)
  *
- * \param[in, out] input        pointer to a optional structure (here a 
+ * \param[in, out] input        pointer to a optional structure (here a
  *                              cs_groundwater_t structure)
  * \param[in]      mesh_id      id of the output mesh for the current call
  * \param[in]      cat_id       category id of the output mesh for this call
