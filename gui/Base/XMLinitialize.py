@@ -1098,6 +1098,7 @@ class XMLinit(Variables):
         """
 
         # darcy_model -> groundwater
+        XMLThermoPhysicalNode = self.case.xmlInitNode('thermophysical_models')
         oldnode = XMLThermoPhysicalModelNode.xmlGetNode('darcy_model')
         if oldnode:
             mdl = oldnode['model']
