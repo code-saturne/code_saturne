@@ -596,7 +596,7 @@ cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
       cs_advection_field_get_cell_vector(c_id, adv, &advf);
 
       const double  dp = _dp3(advf.unitv, qf.unitv);
-      if (fabs(dp) > cs_defs_zero_threshold) {
+      if (fabs(dp) > cs_math_zero_threshold) {
 
         /* Loop on border face edges */
         for (i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {

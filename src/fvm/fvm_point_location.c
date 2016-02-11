@@ -3492,7 +3492,7 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
 
       assert(elt_id > -1); /* Sanity check */
 
-      double  min_length = cs_defs_infinite_r;
+      double  min_length = cs_math_infinite_r;
       cs_lnum_t  chosen_id = -1;
 
       if (section->type == FVM_CELL_POLY) { // There are polyhedra

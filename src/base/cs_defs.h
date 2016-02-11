@@ -485,16 +485,6 @@ typedef enum {
  * Global variables
  *============================================================================*/
 
-/* Numerical constants */
-
-extern const cs_real_t cs_defs_zero_threshold;
-extern const cs_real_t cs_defs_onethird;
-extern const cs_real_t cs_defs_onesix;
-extern const cs_real_t cs_defs_epzero;
-extern const cs_real_t cs_defs_infinite_r;
-extern const cs_real_t cs_defs_big_r;
-extern const cs_real_t cs_defs_pi;
-
 /* Sizes and names associated with datatypes */
 
 extern const size_t   cs_datatype_size[];
@@ -542,24 +532,6 @@ cs_align(cs_lnum_t  i,
 {
   return ((i > 0) ? ((i-1)/m+1)*m : 0);
 }
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value related to the machine precision
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_defs_set_eps_machine(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the value related to the machine precision
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_defs_get_eps_machine(void);
 
 /*----------------------------------------------------------------------------*/
 

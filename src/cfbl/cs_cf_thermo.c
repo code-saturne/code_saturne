@@ -190,7 +190,7 @@ cs_cf_check_pressure(cs_real_t *pres,
      probably fail. This call is done at the end of the density calculation */
   ierr = 0;
   for (cs_lnum_t ii = 0; ii < l_size; ii++)
-    if (pres[ii] <= -psginf+cs_defs_epzero)
+    if (pres[ii] <= -psginf+cs_math_epzero)
       ierr = ierr + 1;
 
   if (cs_glob_rank_id >= 0) cs_parall_counter(&ierr, 1);
@@ -234,7 +234,7 @@ cs_cf_check_internal_energy(cs_real_t   *ener,
     cs_real_t v2 = cs_math_3_square_norm(vel[ii]);
     enint = ener[ii] - 0.5*v2;
 
-    if (enint <= cs_defs_epzero)
+    if (enint <= cs_math_epzero)
       ierr++;
   }
 
@@ -273,7 +273,7 @@ cs_cf_check_density(cs_real_t *dens,
      initialization). */
   ierr = 0;
   for (cs_lnum_t ii = 0; ii < l_size; ii++)
-    if (dens[ii] <= cs_defs_epzero)
+    if (dens[ii] <= cs_math_epzero)
       ierr = ierr + 1;
 
   if (cs_glob_rank_id >= 0) cs_parall_counter(&ierr, 1);
@@ -310,7 +310,7 @@ cs_cf_check_temperature(cs_real_t *temp,
      initialization). */
   ierr = 0;
   for (cs_lnum_t ii = 0; ii < l_size; ii++)
-    if (temp[ii] <= cs_defs_epzero)
+    if (temp[ii] <= cs_math_epzero)
       ierr++;
 
   if (cs_glob_rank_id >= 0) cs_parall_counter(&ierr, 1);
@@ -980,7 +980,7 @@ cs_cf_thermo_wall_bc(cs_real_t *wbfa,
         /* In case the rarefaction is too strong, a zero Dirichlet value
            is used for pressure (the value of wbfb is used here as an
            indicator) */
-        wbfb[face_id] = cs_defs_infinite_r;
+        wbfb[face_id] = cs_math_infinite_r;
 
     }
     /*  Shock */
@@ -1077,7 +1077,7 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
     cs_real_t deltap = pinf-pri;
     cs_real_t res = CS_ABS(deltap/(pinf+psginf));
     /*  Rarefaction case */
-    if (deltap < 0. || res < cs_defs_epzero) {
+    if (deltap < 0. || res < cs_math_epzero) {
 
       /* Computation of the velocity in state 1 using Riemann invariants
          of the 1-rarefaction */
@@ -1320,7 +1320,7 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
 
     /*  Normalize the direction vector given by the user */
     norm = sqrt(cs_math_3_square_norm(bc_vel[face_id]));
-    if (norm < cs_defs_epzero)
+    if (norm < cs_math_epzero)
       bft_error(__FILE__, __LINE__, 0,
                 _("Error in thermodynamics computations for compressible "
                   "flows:\n"
@@ -1339,7 +1339,7 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
             / b_face_surf[face_id];
 
     /*  If direction vector is outward, warn the user */
-    if (cosalp > cs_defs_epzero)
+    if (cosalp > cs_math_epzero)
       bft_printf("Warning in thermodynamics computations for compressible"
                    "flows:\n"
                    "The computation of the subsonic inlet boundary condition\n"

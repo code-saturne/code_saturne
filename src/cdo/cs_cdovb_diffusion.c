@@ -272,7 +272,7 @@ _grad_lagrange_vtx_pefc(const cs_real_3_t     ubase,
   /* Height from this plane to the vertex */
   double  sgn = _dp3(udir, unormal);
   double  height = len_vc * sgn;
-  assert(fabs(height) > cs_defs_get_eps_machine()); /* Sanity check */
+  assert(fabs(height) > cs_math_get_machine_epsilon()); /* Sanity check */
   double  over_height = 1/height;
 
   for (int k = 0; k < 3; k++)

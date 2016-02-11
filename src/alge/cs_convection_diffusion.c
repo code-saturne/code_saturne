@@ -2790,12 +2790,12 @@ cs_convection_diffusion_scalar(int                       idtvar,
               }
               /* There is monotonicity at the downstream side */
               else {
-                if (CS_ABS(p_d-p_c) < cs_defs_epzero*(CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d))) {
-                  rij = cs_defs_big_r;
+                if (CS_ABS(p_d-p_c) < cs_math_epzero*(CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d))) {
+                  rij = cs_math_big_r;
                 }
                 /* consecutive downstream slopes rate */
                 else {
-                  rij = CS_MIN(CS_ABS((p_c-p_u)/(p_d-p_c)), cs_defs_big_r);
+                  rij = CS_MIN(CS_ABS((p_c-p_u)/(p_d-p_c)), cs_math_big_r);
                 }
               }
 
@@ -6024,12 +6024,12 @@ cs_convection_diffusion_thermal(int                       idtvar,
               }
               /* There is monotonicity at the downstream side */
               else {
-                if (CS_ABS(p_d-p_c) < cs_defs_epzero*(CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d))) {
-                  rij = cs_defs_big_r;
+                if (CS_ABS(p_d-p_c) < cs_math_epzero*(CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d))) {
+                  rij = cs_math_big_r;
                 }
                 /* consecutive downstream slopes rate */
                 else {
-                  rij = CS_MIN(CS_ABS((p_c-p_u)/(p_d-p_c)), cs_defs_big_r);
+                  rij = CS_MIN(CS_ABS((p_c-p_u)/(p_d-p_c)), cs_math_big_r);
                 }
               }
 

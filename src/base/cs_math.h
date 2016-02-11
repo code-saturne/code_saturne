@@ -55,6 +55,16 @@ BEGIN_C_DECLS
  *  Global variables
  *============================================================================*/
 
+/* Numerical constants */
+
+extern const cs_real_t cs_math_zero_threshold;
+extern const cs_real_t cs_math_onethird;
+extern const cs_real_t cs_math_onesix;
+extern const cs_real_t cs_math_epzero;
+extern const cs_real_t cs_math_infinite_r;
+extern const cs_real_t cs_math_big_r;
+extern const cs_real_t cs_math_pi;
+
 /*============================================================================
  * Public function prototypes for Fortran API
  *============================================================================*/
@@ -411,6 +421,24 @@ cs_math_sym_33_double_product(const cs_real_t s1[6],
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value related to the machine precision
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_math_set_machine_epsilon(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the value related to the machine precision
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_math_get_machine_epsilon(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

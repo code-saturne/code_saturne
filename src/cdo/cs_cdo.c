@@ -44,6 +44,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 #include "cs_defs.h"
+#include "cs_math.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -114,7 +115,7 @@ cs_nvec3(const cs_real_3_t    v,
   cs_real_t  magnitude = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
 
   qv->meas = magnitude;
-  if (fabs(magnitude) > cs_defs_zero_threshold) {
+  if (fabs(magnitude) > cs_math_zero_threshold) {
 
     cs_real_t  inv = 1/magnitude;
     for (int k = 0; k < 3; k++)

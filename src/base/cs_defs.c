@@ -127,24 +127,6 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
-/* Numerical constants */
-
-const cs_real_t cs_defs_zero_threshold = FLT_MIN;
-const cs_real_t cs_defs_onethird = 1./3.;
-const cs_real_t cs_defs_onesix = 1./6.;
-
-/*! epsilon \f$ 10^{-12}\f$ */
-const cs_real_t cs_defs_epzero = 1e-12;
-
-/*! infinite \f$ 10^{+30}\f$ */
-const cs_real_t cs_defs_infinite_r = 1.e30;
-
-/*! big value \f$ 10^{+12}\f$ */
-const cs_real_t cs_defs_big_r = 1.e12;
-
-/*! \f$ \pi \f$ value with 20 digits */
-const cs_real_t cs_defs_pi = 3.14159265358979323846;
-
 /* Sizes associated with datatypes */
 
 const size_t  cs_datatype_size[] = {0,
@@ -198,44 +180,9 @@ MPI_Comm  cs_glob_mpi_comm = MPI_COMM_NULL;   /* Main MPI intra-communicator */
  * Local static variables
  *============================================================================*/
 
-static cs_real_t  cs_defs_eps_machine;
-
 /*=============================================================================
  * Public functions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value related to the machine precision
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_defs_set_eps_machine(void)
-{
-  double  eps = 5e-16;
-  double  y = 1.0 + eps;
-
-  while (y > 1.0) {
-    eps /= 2.0;
-    y = 1.0 + eps;
-  }
-  eps *= 2.0;
-
-  cs_defs_eps_machine = eps;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the value related to the machine precision
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_defs_get_eps_machine(void)
-{
-  return cs_defs_eps_machine;
-}
 
 /*----------------------------------------------------------------------------*/
 

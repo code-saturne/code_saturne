@@ -1032,7 +1032,7 @@ _build_using_wbs(int                         cid,
   } // Loop on cell faces
 
   /* Take into account the value of the associated property */
-  if (fabs(hb->ptyval - 1.0) > cs_defs_get_eps_machine()) {
+  if (fabs(hb->ptyval - 1.0) > cs_math_get_machine_epsilon()) {
     for (i = 0; i < n_ent; i++) {
       int  shift_i = i*n_ent;
       for (j = i; j < n_ent; j++)

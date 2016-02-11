@@ -807,7 +807,7 @@ _enforce_bc(cs_cdovb_scaleq_t          *builder,
   case CS_PARAM_BC_ENFORCE_WEAK_PENA:
     {
       cs_real_t  pena_coef =
-        cs_weak_penalization_weight / cs_defs_get_eps_machine();
+        cs_weak_penalization_weight / cs_math_get_machine_epsilon();
 
       for (i = 0; i < builder->vtx_dir->n_elts; i++)
         full_matrix->diag[builder->vtx_dir->elt_ids[i]] += pena_coef;
@@ -1444,7 +1444,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
 
   bool do_cleaning = false; // Advanced option
   if (do_cleaning)
-    cs_sla_matrix_clean(sys_mat, cs_defs_get_eps_machine());
+    cs_sla_matrix_clean(sys_mat, cs_math_get_machine_epsilon());
   else
     cs_sla_matrix_rmzeros(sys_mat);
 

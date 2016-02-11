@@ -280,8 +280,8 @@ _get_proj_quantities(cs_lnum_t                f_id,
   } /* Loop on face edges */
 
   projq.p1  *=  0.5;
-  projq.pa  *=  cs_defs_onesix;
-  projq.pb  *= -cs_defs_onesix;
+  projq.pa  *=  cs_math_onesix;
+  projq.pb  *= -cs_math_onesix;
   projq.pab *=  one_24;
   projq.pa2 *=  one_12;
   projq.pb2 *= -one_12;
@@ -1147,7 +1147,7 @@ cs_compute_pvol_edge(const cs_cdo_connect_t      *connect,
 
       dvol  = df0q.meas * _dp3(peq.unitv, df0q.unitv);
       dvol += df1q.meas * _dp3(peq.unitv, df1q.unitv);
-      pvol[e_id] += dvol * cs_defs_onethird * peq.meas;
+      pvol[e_id] += dvol * cs_math_onethird * peq.meas;
 
     }
   }
@@ -1192,7 +1192,7 @@ cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
 
       /* Compute volume of the pyramid p_fc */
       pvol[f_id] +=
-        cs_defs_onethird * pfq.meas * deq.meas * _dp3(pfq.unitv, deq.unitv);
+        cs_math_onethird * pfq.meas * deq.meas * _dp3(pfq.unitv, deq.unitv);
 
     }
   }

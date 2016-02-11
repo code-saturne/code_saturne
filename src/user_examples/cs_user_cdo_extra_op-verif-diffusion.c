@@ -109,7 +109,7 @@ _get_sol(cs_real_t          time,
   const double  x = xyz[0], y = xyz[1], z = xyz[2];
   const double  pi = 4.0*atan(1.0);
 
-  double  solution = 1+sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_defs_onethird));
+  double  solution = 1+sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_onethird));
 
   (*retval).val = solution;
 }
@@ -246,7 +246,7 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
 
       /* Compute pvol_{f,c} */
       const double  dp = cs_math_3_dot_product(deq.unitv, fq.unitv);
-      const double  pvol = cs_defs_onethird * deq.meas * fq.meas * dp;
+      const double  pvol = cs_math_onethird * deq.meas * fq.meas * dp;
       const double  gcontrib = pvol/(deq.meas*deq.meas);
 
       gexc[i] = sgn*(face_rpex[f_id] - cell_rpex[c_id]);
@@ -273,14 +273,14 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
   } /* Loop on cells */
 
   /* Compute the L2 discrete norm on gradient */
-  if (fabs(denum_l2d) > cs_defs_zero_threshold)
+  if (fabs(denum_l2d) > cs_math_zero_threshold)
     l2dgrd = sqrt(num_l2d/denum_l2d);
   else
     l2dgrd = sqrt(num_l2d);
   printf(" >> l2dgrd       % 10.6e\n", l2dgrd);
 
   /* Compute the discrete energy norm */
-  if (fabs(denum_end) > cs_defs_zero_threshold)
+  if (fabs(denum_end) > cs_math_zero_threshold)
     enerd = sqrt(num_end/denum_end);
   else
     enerd = sqrt(num_end);
@@ -373,10 +373,10 @@ _compute_vb_l2pot(const cs_mesh_t             *m,
         }
 
         /* Should keep the same order */
-        pdi_gpts[0] = cs_defs_onesix *(pv1 + pv2 + pf) + 0.5*pc;
-        pdi_gpts[1] = cs_defs_onesix *(pv2 + pf + pc)  + 0.5*pv1;
-        pdi_gpts[2] = cs_defs_onesix *(pf + pc + pv1)  + 0.5*pv2;
-        pdi_gpts[3] = cs_defs_onesix *(pc + pv1 + pv2) + 0.5*pf;
+        pdi_gpts[0] = cs_math_onesix *(pv1 + pv2 + pf) + 0.5*pc;
+        pdi_gpts[1] = cs_math_onesix *(pv2 + pf + pc)  + 0.5*pv1;
+        pdi_gpts[2] = cs_math_onesix *(pf + pc + pv1)  + 0.5*pv2;
+        pdi_gpts[3] = cs_math_onesix *(pc + pv1 + pv2) + 0.5*pf;
         pdi_gpts[4] = 0.25*(pv1 + pv2 + pf + pc);
 
         n_add = 0, d_add = 0;
@@ -541,7 +541,7 @@ _cdovb_post(const cs_mesh_t            *m,
     /* Compute discrete L2 error norm on the potential */
     num = cs_weighted_sum_square(n_vertices, ddip, pvol);
     denum = cs_weighted_sum_square(n_vertices, rpex, pvol);
-    if (fabs(denum) > cs_defs_zero_threshold)
+    if (fabs(denum) > cs_math_zero_threshold)
       l2dpot = sqrt(num/denum);
     else
       l2dpot = sqrt(num);
@@ -554,7 +554,7 @@ _cdovb_post(const cs_mesh_t            *m,
     */
 
     _compute_vb_l2pot(m, connect, cdoq, time_step, pdi, &num, &denum);
-    if (fabs(denum) > cs_defs_zero_threshold)
+    if (fabs(denum) > cs_math_zero_threshold)
       l2pot = sqrt(num/denum);
     else
       l2pot = sqrt(num);
@@ -598,7 +598,7 @@ _cdovb_post(const cs_mesh_t            *m,
     for (i = 0; i < n_edges; i++)
       work[i] = rgex[i]/cdoq->edge[i].meas;
     denum = cs_weighted_sum_square(n_edges, work, pvol);
-    if (fabs(denum) > cs_defs_zero_threshold)
+    if (fabs(denum) > cs_math_zero_threshold)
       l2dgrd = sqrt(num/denum);
     else
       l2dgrd = sqrt(num);
@@ -623,7 +623,7 @@ _cdovb_post(const cs_mesh_t            *m,
       H = cs_sla_matrix_free(H);
     }
 
-    if (fabs(denum) > cs_defs_zero_threshold)
+    if (fabs(denum) > cs_math_zero_threshold)
       enerd = sqrt(num/denum);
     else
       enerd = sqrt(num);
@@ -848,7 +848,7 @@ _cdofb_post(const cs_mesh_t            *m,
        which approximates the normalized L2 norm */
     num = cs_weighted_sum_square(n_cells, cell_dpdi, cdoq->cell_vol);
     denum = cs_weighted_sum_square(n_cells, cell_rpex, cdoq->cell_vol);
-    if (fabs(denum) > cs_defs_zero_threshold)
+    if (fabs(denum) > cs_math_zero_threshold)
       l2dpotc = sqrt(num/denum);
     else
       l2dpotc = sqrt(num);
@@ -898,7 +898,7 @@ _cdofb_post(const cs_mesh_t            *m,
     /* Compute discrete L2 error norm on the potential */
     num = cs_weighted_sum_square(n_faces, face_dpdi, pvol);
     denum = cs_weighted_sum_square(n_faces, face_rpex, pvol);
-    if (fabs(denum) > cs_defs_zero_threshold)
+    if (fabs(denum) > cs_math_zero_threshold)
       l2dpotf = sqrt(num/denum);
     else
       l2dpotf = sqrt(num);
@@ -952,7 +952,7 @@ _cdofb_post(const cs_mesh_t            *m,
 
     num = cs_weighted_sum_square(n_cells, cell_dpdi, cdoq->cell_vol);
     denum = cs_weighted_sum_square(n_cells, work, cdoq->cell_vol);
-    if (fabs(denum) > cs_defs_zero_threshold)
+    if (fabs(denum) > cs_math_zero_threshold)
       l2r0potc = sqrt(num/denum);
     else
       l2r0potc = sqrt(num);

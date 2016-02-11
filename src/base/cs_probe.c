@@ -967,7 +967,7 @@ cs_probe_set_locate(cs_probe_set_t   *pset)
 
   for (int i = 0; i < pset->n_probes; i++)
     if (pset->entity_num[i] < 0) // Not found
-      pset->distances[i] = cs_defs_infinite_r;
+      pset->distances[i] = HUGE_VAL;
 
   /* Free memory */
   BFT_FREE(tmp_name);
@@ -979,7 +979,7 @@ cs_probe_set_locate(cs_probe_set_t   *pset)
 
   if (cs_glob_n_ranks == 1) {
     for (int i = 0; i < pset->n_probes; i++)
-      if (pset->distances[i] > 0.99*cs_defs_infinite_r)
+      if (pset->distances[i] > 0.99*HUGE_VAL)
         n_not_located_probes++;
   }
 
@@ -1002,7 +1002,7 @@ cs_probe_set_locate(cs_probe_set_t   *pset)
     for (int i = 0; i < pset->n_probes; i++) {
       if (gmin_loc[i].id != cs_glob_rank_id)
         pset->entity_num[i] = -1;
-      if (gmin_loc[i].val > 0.99*cs_defs_infinite_r)
+      if (gmin_loc[i].val > 0.99*HUGE_VAL)
         n_not_located_probes++;
     }
 

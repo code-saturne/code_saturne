@@ -75,6 +75,26 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
+static cs_real_t  _machine_epsilon = 1.11e-16;
+
+/* Numerical constants */
+
+const cs_real_t cs_math_zero_threshold = FLT_MIN;
+const cs_real_t cs_math_onethird = 1./3.;
+const cs_real_t cs_math_onesix = 1./6.;
+
+/*! epsilon \f$ 10^{-12}\f$ */
+const cs_real_t cs_math_epzero = 1e-12;
+
+/*! infinite \f$ 10^{+30}\f$ */
+const cs_real_t cs_math_infinite_r = 1.e30;
+
+/*! big value \f$ 10^{+12}\f$ */
+const cs_real_t cs_math_big_r = 1.e12;
+
+/*! \f$ \pi \f$ value with 20 digits */
+const cs_real_t cs_math_pi = 3.14159265358979323846;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -121,6 +141,39 @@ void CS_PROCF (symmetric_matrix_product, SYMMETRIC_MATRIX_PRODUCT)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the value related to the machine precision
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_math_set_machine_epsilon(void)
+{
+  double  eps = 5e-16;
+  double  y = 1.0 + eps;
+
+  while (y > 1.0) {
+    eps /= 2.0;
+    y = 1.0 + eps;
+  }
+  eps *= 2.0;
+
+  _machine_epsilon = eps;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the value related to the machine precision
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_math_get_machine_epsilon(void)
+{
+  return _machine_epsilon;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the eigenvalues of a 3x3 matrix which is symmetric and real
  *         -> Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
  *         Communication of the ACM (April 1961)
@@ -154,13 +207,13 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
 
     cs_real_t  theta;
     cs_real_t  n[3][3];
-    cs_real_t  tr = cs_defs_onethird*(m[0][0] + m[1][1] + m[2][2]);
+    cs_real_t  tr = cs_math_onethird*(m[0][0] + m[1][1] + m[2][2]);
 
     e1 = m[0][0] - tr, e2 = m[1][1] - tr, e3 = m[2][2] - tr;
     cs_real_t  p2 = e1*e1 + e2*e2 + e3*e3 + 2*p1;
 
     assert(p2 > 0);
-    cs_real_t  p = sqrt(p2*cs_defs_onesix);
+    cs_real_t  p = sqrt(p2*cs_math_onesix);
     cs_real_t  ovp = 1./p;
 
     for (int  i = 0; i < 3; i++) {
@@ -176,15 +229,15 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
     cs_real_t  r = 0.5 * cs_math_33_determinant((const cs_real_t (*)[3])n);
 
     if (r <= -1)
-      theta = cs_defs_onethird*cs_defs_pi;
+      theta = cs_math_onethird*cs_math_pi;
     else if (r >= 1)
       theta = 0.;
     else
-      theta = cs_defs_onethird*acos(r);
+      theta = cs_math_onethird*acos(r);
 
     // eigenvalues computed should satisfy e1 < e2 < e3
     e3 = tr + 2*p*cos(theta);
-    e1 = tr + 2*p*cos(theta + 2*cs_defs_pi*cs_defs_onethird);
+    e1 = tr + 2*p*cos(theta + 2*cs_math_pi*cs_math_onethird);
     e2 = 3*tr - e1 -e3; // since tr(m) = e1 + e2 + e3
 
   }
@@ -294,7 +347,7 @@ cs_math_voltet(const cs_real_t   xv[3],
   cs_math_3_length_unitv(xe, xc, &lec, uec);
   cs_math_3_cross_product(uev, uef, ucp);
 
-  return  cs_defs_onesix *lev*lef*lec* fabs(cs_math_3_dot_product(ucp, uec));
+  return  cs_math_onesix *lev*lef*lec* fabs(cs_math_3_dot_product(ucp, uec));
 }
 
 /*----------------------------------------------------------------------------*/

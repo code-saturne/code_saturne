@@ -203,9 +203,9 @@ static void
 _check_tensor_symmetry(const cs_property_t    *pty,
                        cs_get_t                get)
 {
-  if ((get.tens[0][1] - get.tens[1][0]) > cs_defs_zero_threshold ||
-      (get.tens[0][2] - get.tens[2][0]) > cs_defs_zero_threshold ||
-      (get.tens[1][2] - get.tens[2][1]) > cs_defs_zero_threshold)
+  if ((get.tens[0][1] - get.tens[1][0]) > cs_math_zero_threshold ||
+      (get.tens[0][2] - get.tens[2][0]) > cs_math_zero_threshold ||
+      (get.tens[1][2] - get.tens[2][1]) > cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0,
               _(" The definition of the tensor related to the"
                 " property %s is not symmetric.\n"
@@ -1461,7 +1461,7 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_PROPERTY_DBG > 0
     /* Sanity check */
     for (k = 0; k < 3; k++)
-      if (fabs(tensor[k][k]) < cs_defs_zero_threshold)
+      if (fabs(tensor[k][k]) < cs_math_zero_threshold)
         bft_error(__FILE__, __LINE__, 0,
                   " Potential problem in the inversion of the tensor attached"
                   " to property %s in cell %d.\n"

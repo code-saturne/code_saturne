@@ -110,8 +110,8 @@ _setup(cs_mesh_t             *m,
   bft_printf("\n -msg- Version.Tag  %s\n", cs_cdoversion);
 
   /* Initialization of several modules */
-  cs_defs_set_eps_machine(); /* Compute and set epsilon machine */
-  cs_quadrature_setup();     /* Compute constant used in quadrature rules */
+  cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
+  cs_quadrature_setup();         /* Compute constant used in quadrature rules */
 
   /* User-defined settings and default initializations
      WARNING: Change the order of call to the following routines with care
