@@ -169,9 +169,11 @@ _field_output(void           *context,
   if (w->n_cols == 0)
     w->n_rows = n_rows;
   else if (w->n_rows != n_rows) {
+    const char e[] = "";
+    const char *name = (c->name != NULL) ? c->name : e;
     bft_printf(_("Warning: inconsistent data size for plot \"%s\" between\n"
                  "field \"%s\" and previous outputs; values dropped.\n"),
-               w->name, c->name);
+               w->name, name);
     return;
   }
 
@@ -232,8 +234,8 @@ _field_output(void           *context,
 
     char name_buf[64];
 
-    if (w->name != NULL)
-      strncpy(name_buf, w->name, 63);
+    if (c->name != NULL)
+      strncpy(name_buf, c->name, 63);
     else
       name_buf[0] = '\0';
     name_buf[63] = '\0';
@@ -244,8 +246,7 @@ _field_output(void           *context,
         l = 59;
       if (l > 0)
         name_buf[l++] = '_';
-      fvm_writer_field_component_name(name_buf+l, 3, true,
-                                      dimension, component_id);
+      fvm_writer_field_component_name(name_buf+l, 3, true, dimension, i);
     }
 
     if (w->format == CS_PLOT_DAT) {
@@ -450,6 +451,7 @@ void
 fvm_to_plot_export_nodal(void               *writer,
                          const fvm_nodal_t  *mesh)
 {
+#if 0
   if (fvm_nodal_get_max_entity_dim(mesh) == 0) {
 
     fvm_to_plot_writer_t  *w
@@ -490,6 +492,11 @@ fvm_to_plot_export_nodal(void               *writer,
                                      _field_output);
 
   }
+
+  /* Free helper structures */
+
+  fvm_writer_field_helper_destroy(&helper);
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -569,9 +576,7 @@ fvm_to_plot_export_field(void                  *writer,
 
   if (location == FVM_WRITER_PER_NODE) {
 
-    _plot_context_t c;
-    c.writer = w;
-    c.name = name;
+    _plot_context_t c = {.writer = w, .name = name};
 
     fvm_writer_field_helper_output_n(helper,
                                      &c,
@@ -649,6 +654,8 @@ fvm_to_plot_flush(void  *writer)
     if (fclose(w->f) != 0)
       bft_error(__FILE__, __LINE__, errno,
                 _("Error closing file: \"%s\""), w->file_name);
+
+    w->f = NULL;
 
   }
 

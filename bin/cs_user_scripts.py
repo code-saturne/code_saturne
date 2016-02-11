@@ -185,8 +185,7 @@ def define_domain_parameters(domain):
     # The type of run may be determined using domain.solver_args.
     # For example:
     #   domain.solver_args = '--quality'
-    # allows activation of elementary mesh quality and gradient tests
-    # (for a fixed function: sin(x+2y+3z), while:
+    # allows activation of elementary mesh quality criteria output, while:
     #   domain.solver_args = '--benchmark'
     # allows running  basic linear algebra operation benchmarks.
     # To run the solver's preprocessing stage only (mesh joining, smoothing,

@@ -975,7 +975,7 @@ _lagragian_needed(const cs_time_step_t  *ts)
  *   time_varying <-- if true, mesh may be redefined over time if associated
  *                    writers allow it
  *   mode         <-- 0 for standard mesh, 1 for particles, 2 for trajectories,
- *                    3 for probes
+ *                    3 for probes, 4 for profiles
  *   n_writers    <-- number of associated writers
  *   writer_ids   <-- ids of associated writers
  *
@@ -1142,7 +1142,7 @@ _predefine_mesh(int        mesh_id,
     }
 
   }
-  else  { /* Probe mesh */
+  else  { /* Probe or profile mesh */
 
     assert(mode == 3 || mode == 4); /* Sanity check */
     post_mesh->ent_flag[4] = mode - 2; /* 1 = probe monitoring,

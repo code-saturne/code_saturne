@@ -316,11 +316,11 @@ fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
  *
  * As these are expected to be used only for small sets (i.e. probes)
  * where the point set is built from a global definition and data movement
- * would adds complexity and overhead, the labels refer to a global view
- * on rank 0; for the same reason, only shared labels are needed.
+ * would add complexity and overhead, the labels refer to a global view
+ * on rank 0.
  *
- * The size of the labels pointers array provided should be the same
- * as that returned by fvm_nodal_n_g_vertices();
+ * The size of the labels pointers array should be the same as that
+ * returned by fvm_nodal_n_g_vertices();
  *
  * This function should only be called once the nodal mesh representation
  * has been completed, as most functions modifying its vertex definitions
@@ -332,8 +332,8 @@ fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_nodal_set_global_vertex_labels(fvm_nodal_t  *this_nodal,
-                                   const char   *g_labels[]);
+fvm_nodal_transfer_global_vertex_labels(fvm_nodal_t  *this_nodal,
+                                        char         *g_labels[]);
 
 /*----------------------------------------------------------------------------
  * Obtain the name of a nodal mesh.

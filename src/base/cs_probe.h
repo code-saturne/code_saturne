@@ -209,9 +209,8 @@ cs_probe_set_create_from_array(const char         *name,
  *
  * \param[in]  name          name of the set of probes
  * \param[in]  n_probes      number of probes
- * \param[in]  start_coord   coordinate of the starting point
- * \param[in]  start_label   label of the starting point (optional)
- * \param[in]  end_coord     coordinate of the ending point
+ * \param[in]  start_coords  coordinates of the starting point
+ * \param[in]  end_coords    coordinates of the ending point
  * \param[in]  end_label     label of the ending point (optional)
  *
  * \return a pointer to a new allocated cs_probe_set_t structure
@@ -221,10 +220,8 @@ cs_probe_set_create_from_array(const char         *name,
 cs_probe_set_t *
 cs_probe_set_create_from_segment(const char        *name,
                                  int                n_probes,
-                                 const cs_real_t    start_coord[],
-                                 const char        *start_label,
-                                 const cs_real_t    end_coord[],
-                                 const char        *end_label);
+                                 const cs_real_t    start_coords[3],
+                                 const cs_real_t    end_coords[3]);
 
 /*----------------------------------------------------------------------------*/
 /*!

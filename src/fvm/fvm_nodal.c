@@ -671,6 +671,30 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Remove global vertex labels from a nodal mesh.
+ *
+ * parameters:
+ *   this_nodal <-> nodal mesh structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_remove_global_vertex_labels(fvm_nodal_t  *this_nodal)
+{
+  assert(this_nodal != NULL);
+
+  if (this_nodal->global_vertex_labels != NULL) {
+
+    cs_gnum_t n_g_vertices = fvm_nodal_n_g_vertices(this_nodal);
+
+    for (cs_gnum_t i = 0; i < n_g_vertices; i++)
+      BFT_FREE(this_nodal->global_vertex_labels[i]);
+
+    BFT_FREE(this_nodal->global_vertex_labels);
+
+  }
+}
+
 /*============================================================================
  * Semi-private function definitions (prototypes in fvm_nodal_priv.h)
  *============================================================================*/
@@ -1122,6 +1146,8 @@ fvm_nodal_destroy(fvm_nodal_t   *this_nodal)
   if (this_nodal->gc_set != NULL)
     this_nodal->gc_set = fvm_group_class_set_destroy(this_nodal->gc_set);
 
+  _remove_global_vertex_labels(this_nodal);
+
   /* Main structure destroyed and NULL returned */
 
   BFT_FREE(this_nodal);
@@ -1261,8 +1287,6 @@ fvm_nodal_reduce(fvm_nodal_t  *this_nodal,
 
   if (this_nodal->gc_set != NULL)
     this_nodal->gc_set = fvm_group_class_set_destroy(this_nodal->gc_set);
-
-  this_nodal->global_vertex_labels = NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -1390,7 +1414,7 @@ fvm_nodal_init_io_num(fvm_nodal_t       *this_nodal,
                           parent_global_numbers,
                           this_nodal->n_vertices,
                           0);
-    this_nodal->global_vertex_labels = NULL;
+    _remove_global_vertex_labels(this_nodal);
   }
 
   else {
@@ -1496,7 +1520,7 @@ fvm_nodal_define_vertex_list(fvm_nodal_t  *this_nodal,
     this_nodal->parent_vertex_num = parent_vertex_num;
   }
 
-  this_nodal->global_vertex_labels = NULL;
+  _remove_global_vertex_labels(this_nodal);
 }
 
 /*----------------------------------------------------------------------------
@@ -1535,7 +1559,7 @@ fvm_nodal_set_shared_vertices(fvm_nodal_t       *this_nodal,
 
   _renumber_vertices(this_nodal);
 
-  this_nodal->global_vertex_labels = NULL;
+  _remove_global_vertex_labels(this_nodal);
 }
 
 /*----------------------------------------------------------------------------
@@ -1599,7 +1623,7 @@ fvm_nodal_transfer_vertices(fvm_nodal_t  *this_nodal,
   this_nodal->_vertex_coords = _vertex_coords;
   this_nodal->vertex_coords = _vertex_coords;
 
-  this_nodal->global_vertex_labels = NULL;
+  _remove_global_vertex_labels(this_nodal);
 
   return _vertex_coords;
 }
@@ -1754,11 +1778,11 @@ fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
  *
  * As these are expected to be used only for small sets (i.e. probes)
  * where the point set is built from a global definition and data movement
- * would adds complexity and overhead, the labels refer to a global view
- * on rank 0; for the same reason, only shared labels are needed.
+ * would add complexity and overhead, the labels refer to a global view
+ * on rank 0.
  *
- * The size of the labels pointers array provided should be the same
- * as that returned by fvm_nodal_n_g_vertices();
+ * The size of the labels pointers array should be the same as that
+ * returned by fvm_nodal_n_g_vertices();
  *
  * This function should only be called once the nodal mesh representation
  * has been completed, as most functions modifying its vertex definitions
@@ -1770,10 +1794,12 @@ fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_nodal_set_global_vertex_labels(fvm_nodal_t  *this_nodal,
-                                   const char   *g_labels[])
+fvm_nodal_transfer_global_vertex_labels(fvm_nodal_t  *this_nodal,
+                                        char         *g_labels[])
 {
   assert(this_nodal != NULL);
+
+  _remove_global_vertex_labels(this_nodal);
 
   this_nodal->global_vertex_labels = g_labels;
 }
@@ -2039,7 +2065,7 @@ fvm_nodal_get_global_vertex_labels(const fvm_nodal_t  *this_nodal)
 {
   assert(this_nodal != NULL);
 
-  return this_nodal->global_vertex_labels;
+  return (const char **)(this_nodal->global_vertex_labels);
 }
 
 /*----------------------------------------------------------------------------
@@ -2541,8 +2567,7 @@ fvm_nodal_dump(const fvm_nodal_t  *this_nodal)
   /* Dump vertex labels */
 
   if (this_nodal->global_vertex_labels != NULL) {
-    bft_printf("\nGlobal vertex labels (%p):\n",
-               (void *)(this_nodal->global_vertex_labels));
+    bft_printf("\nGlobal vertex labels:\n");
     cs_lnum_t n_labels = (cs_lnum_t)fvm_nodal_n_g_vertices(this_nodal);
     for (i = 0; i < n_labels; i++) {
       if (this_nodal->global_vertex_labels[i] != NULL)

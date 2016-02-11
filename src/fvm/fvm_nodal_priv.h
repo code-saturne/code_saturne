@@ -218,7 +218,7 @@ struct _fvm_nodal_t {
      would adds complexity and overhead, the labels refer to a global view
      on rank 0; for the same reason, only shared labels are needed */
 
-  const char   **global_vertex_labels;  /* Pointer to vertex labesl, or NULL */
+  char   **global_vertex_labels;  /* Pointer to vertex labels, or NULL */
 
 };
 

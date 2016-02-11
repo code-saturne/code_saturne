@@ -71,6 +71,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Predefined masks to set a flag for a probe set structure */
+
 #define CS_PROBE_ACTIVATED   (1 << 0) //   1: state = activated
 #define CS_PROBE_PREDEFINED  (1 << 1) //   2: predefined (ie not user)
 #define CS_PROBE_TRANSIENT   (1 << 2) //   4: locations of probes may change
@@ -85,6 +86,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Structure to handle a set of probes */
+
 struct _cs_probe_set_t {
 
   char            *name;          /* Associated name */
@@ -106,7 +108,7 @@ struct _cs_probe_set_t {
   cs_real_t    *s_coords;       /* NULL or curvilinear abscissa for a profile */
   cs_real_t    *coords;         /* Coordinates of the set of probes
                                    Initially allocated to n_max_probes. */
-  char        **labels;         /* List of labels for each probes (optional)
+  char        **labels;         /* List of labels for each probe (optional)
                                    By default, this is set to NULL */
   cs_lnum_t    *entity_num;     /* Ids related to the entity where the probe
                                    has been located.
@@ -114,15 +116,17 @@ struct _cs_probe_set_t {
   float        *distances;      /* Distance between the probe coordinates and
                                    the entity if found */
 
-  fvm_nodal_t  *locate_mesh;    /* Nodal mesh used for locating probes */
+  fvm_nodal_t  *location_mesh;  /* Nodal mesh used for locating probes */
 
   /* User-defined writers associated to this set of probes */
+
   int           n_writers;      /* Number of writers */
   int          *writer_ids;     /* List of writer ids */
 
 };
 
 /* List of available keys for setting a set of probes */
+
 typedef enum {
 
   PSETKEY_ACTIVATED,
@@ -236,25 +240,26 @@ _get_psetkey(const char  *keyname)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Copy the name of a label into the label array
+ * \brief  Copy a label to a new string
  *
- * \param[in]       name     name of the label
  * \param[in, out]  label    label to set
+ *
+ * \return   copy of label, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
-_copy_label(char        **label,
-            const char   *name)
-
+inline static char *
+_copy_label(const char  *name)
 {
-  *label = NULL;
-  if (name == NULL)
-    return;
+  char *label = NULL;
 
-  int  len = strlen(name) + 1;
-  BFT_MALLOC(*label, len, char);
-  strncpy(*label, name, len);
+  if (name) {
+    size_t  len = strlen(name) + 1;
+    BFT_MALLOC(label, len, char);
+    strcpy(label, name);
+  }
+
+  return label;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -269,7 +274,7 @@ _copy_label(char        **label,
 /*----------------------------------------------------------------------------*/
 
 static cs_probe_set_t *
-_create_probe_set(const char    *name,
+_probe_set_create(const char    *name,
                   cs_lnum_t      n_max_probes)
 {
   /* Add a new set of probes */
@@ -301,7 +306,7 @@ _create_probe_set(const char    *name,
   pset->entity_num = NULL;
   pset->distances = NULL;
 
-  pset->locate_mesh = NULL;
+  pset->location_mesh = NULL;
 
   pset->n_writers = 0;
   pset->writer_ids = NULL;
@@ -338,7 +343,7 @@ _free_probe_set(cs_probe_set_t   *pset)
   if (pset->s_coords != NULL)
     BFT_FREE(pset->s_coords);
 
-  pset->locate_mesh = fvm_nodal_destroy(pset->locate_mesh);
+  pset->location_mesh = fvm_nodal_destroy(pset->location_mesh);
 
   if (pset->n_writers > 0)
     BFT_FREE(pset->writer_ids);
@@ -375,7 +380,6 @@ _check_probe_set_name(const cs_probe_set_t   *pset,
     return false;
 }
 
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -407,7 +411,7 @@ cs_probe_get_n_sets(void)
 /*----------------------------------------------------------------------------*/
 
 cs_probe_set_t *
-cs_probe_set_get(const char    *name)
+cs_probe_set_get(const char  *name)
 {
   cs_probe_set_t  *pset = NULL;
 
@@ -534,13 +538,13 @@ cs_probe_set_have_monitoring(void)
 /*----------------------------------------------------------------------------*/
 
 cs_probe_set_t *
-cs_probe_set_create(const char    *name)
+cs_probe_set_create(const char  *name)
 {
-  cs_probe_set_t  *pset = cs_probe_set_get(name);
+  cs_probe_set_t *pset = cs_probe_set_get(name);
 
   if (pset != NULL) /* Already defined */
     bft_error(__FILE__, __LINE__, 0,
-              _(" Stop adding a new set of probes.\n"
+              _(" Error adding a new set of probes.\n"
                 " %s is already used as a name for a set of probes.\n"
                 " Please check your settings."), name);
 
@@ -548,7 +552,7 @@ cs_probe_set_create(const char    *name)
      default but a realloc is available is the max. number of probes is
      reached) */
 
-  pset = _create_probe_set(name, 4);
+  pset = _probe_set_create(name, 4);
 
   return  pset;
 }
@@ -592,9 +596,8 @@ cs_probe_set_add_probe(cs_probe_set_t     *pset,
       BFT_MALLOC(pset->labels, pset->n_max_probes, char *);
 
     /* Copy label */
-    _copy_label(pset->labels + point_id, label);
+    pset->labels[point_id] = _copy_label(label);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -624,7 +627,7 @@ cs_probe_set_create_from_array(const char         *name,
                 " %s is already used as a name for a set of probes.\n"
                 " Please check your settings."), name);
 
-  pset = _create_probe_set(name, n_probes);
+  pset = _probe_set_create(name, n_probes);
   pset->n_probes = n_probes;
 
   /* Coordinates */
@@ -640,7 +643,7 @@ cs_probe_set_create_from_array(const char         *name,
 
     BFT_MALLOC(pset->labels, n_probes, char *);
     for (int i = 0; i < n_probes; i++)
-      _copy_label(pset->labels + i, labels[i]);
+      pset->labels[i] = _copy_label(labels[i]);
 
   } // labels != NULL
 
@@ -653,10 +656,8 @@ cs_probe_set_create_from_array(const char         *name,
  *
  * \param[in]  name          name of the set of probes
  * \param[in]  n_probes      number of probes
- * \param[in]  start_coord   coordinate of the starting point
- * \param[in]  start_label   label of the starting point (optional)
- * \param[in]  end_coord     coordinate of the ending point
- * \param[in]  end_label     label of the ending point (optional)
+ * \param[in]  start_coords  coordinates of the starting point
+ * \param[in]  end_coords    coordinates of the ending point
  *
  * \return a pointer to a new allocated cs_probe_set_t structure
  */
@@ -665,10 +666,8 @@ cs_probe_set_create_from_array(const char         *name,
 cs_probe_set_t *
 cs_probe_set_create_from_segment(const char        *name,
                                  int                n_probes,
-                                 const cs_real_t    start_coord[],
-                                 const char        *start_label,
-                                 const cs_real_t    end_coord[],
-                                 const char        *end_label)
+                                 const cs_real_t    start_coords[3],
+                                 const cs_real_t    end_coords[3])
 {
   cs_probe_set_t  *pset = cs_probe_set_get(name);
 
@@ -678,12 +677,9 @@ cs_probe_set_create_from_segment(const char        *name,
                 " %s is already used as a name for a set of probes.\n"
                 " Please check your settings."), name);
 
-  pset = _create_probe_set(name, n_probes);
+  pset = _probe_set_create(name, n_probes);
   pset->n_probes = n_probes;
   pset->flag |= CS_PROBE_PROFILE;
-
-  if (start_label != NULL || end_label != NULL)
-    BFT_MALLOC(pset->labels, n_probes, char *);
 
   BFT_MALLOC(pset->s_coords, n_probes, cs_real_t);
 
@@ -692,7 +688,7 @@ cs_probe_set_create_from_segment(const char        *name,
   cs_real_t  distance;
   cs_real_3_t  unitv, delta_vect;
 
-  cs_math_3_length_unitv(start_coord, end_coord, &distance, unitv);
+  cs_math_3_length_unitv(start_coords, end_coords, &distance, unitv);
 
   const double  delta = distance / (n_probes - 1);
   for (int k = 0; k < 3; k++)
@@ -701,9 +697,7 @@ cs_probe_set_create_from_segment(const char        *name,
   /* Set the starting probe */
   pset->s_coords[0] = 0;
   for (int k = 0; k < 3; k++)
-    pset->coords[k] = start_coord[k];
-  if (pset->labels != NULL)
-    _copy_label(pset->labels, start_label);
+    pset->coords[k] = start_coords[k];
 
   /* Set additional probes */
   for (int i = 1; i < n_probes - 1; i++) {
@@ -711,17 +705,13 @@ cs_probe_set_create_from_segment(const char        *name,
     pset->s_coords[i] = pset->s_coords[i-1] + delta;
     for (int k = 0; k < 3; k++)
       pset->coords[3*i+k] = pset->coords[3*(i-1)+k] + delta_vect[k];
-    if (pset->labels != NULL)
-      _copy_label(pset->labels + i, NULL);
 
   }
 
   /* Set the ending probe */
   pset->s_coords[n_probes-1] = distance;
   for (int k = 0; k < 3; k++)
-    pset->coords[3*(n_probes-1)+k] = end_coord[k];
-  if (pset->labels != NULL)
-    _copy_label(pset->labels + n_probes - 1, end_label);
+    pset->coords[3*(n_probes-1)+k] = end_coords[k];
 
   return  pset;
 }
@@ -913,13 +903,13 @@ cs_probe_set_locate(cs_probe_set_t   *pset)
       }
     } /* Need to define a list of faces ? */
 
-    pset->locate_mesh = cs_mesh_connect_faces_to_nodal(mesh,
-                                                       tmp_name,
-                                                       false, // no family info
-                                                       0,     // interior faces
-                                                       n_select_elements,
-                                                       NULL,  // interior faces
-                                                       selected_elements);
+    pset->location_mesh = cs_mesh_connect_faces_to_nodal(mesh,
+                                                         tmp_name,
+                                                         false, // no family info
+                                                         0,     // interior faces
+                                                         n_select_elements,
+                                                         NULL,  // interior faces
+                                                         selected_elements);
 
   }
   else { /* Deal with the volumic mesh */
@@ -933,11 +923,11 @@ cs_probe_set_locate(cs_probe_set_t   *pset)
       }
     } /* Need to define a list of cells ? */
 
-    pset->locate_mesh = cs_mesh_connect_cells_to_nodal(mesh,
-                                                       tmp_name,
-                                                       false, // no family info
-                                                       n_select_elements,
-                                                       selected_elements);
+    pset->location_mesh = cs_mesh_connect_cells_to_nodal(mesh,
+                                                         tmp_name,
+                                                         false, // no family info
+                                                         n_select_elements,
+                                                         selected_elements);
 
   } /* volumic or surfacic mesh */
 
@@ -955,7 +945,7 @@ cs_probe_set_locate(cs_probe_set_t   *pset)
     /* One needs a second step which is easier if parent_num is not used */
     locate_on_parents = 0;
 
-  fvm_point_location_nodal(pset->locate_mesh,
+  fvm_point_location_nodal(pset->location_mesh,
                            tolerance_base,
                            pset->tolerance,
                            locate_on_parents,
@@ -975,12 +965,12 @@ cs_probe_set_locate(cs_probe_set_t   *pset)
     BFT_FREE(selected_elements);
 
   /* Warning if points have not beeen located */
-  cs_gnum_t  n_not_located_probes = 0;
+  cs_gnum_t  n_unlocated_probes = 0;
 
   if (cs_glob_n_ranks == 1) {
     for (int i = 0; i < pset->n_probes; i++)
       if (pset->distances[i] > 0.99*HUGE_VAL)
-        n_not_located_probes++;
+        n_unlocated_probes++;
   }
 
 #if defined(HAVE_MPI)
@@ -1003,7 +993,7 @@ cs_probe_set_locate(cs_probe_set_t   *pset)
       if (gmin_loc[i].id != cs_glob_rank_id)
         pset->entity_num[i] = -1;
       if (gmin_loc[i].val > 0.99*HUGE_VAL)
-        n_not_located_probes++;
+        n_unlocated_probes++;
     }
 
     BFT_FREE(gmin_loc);
@@ -1011,15 +1001,13 @@ cs_probe_set_locate(cs_probe_set_t   *pset)
   }
 #endif
 
-  if (n_not_located_probes > 0) {
+  if (n_unlocated_probes > 0) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_(" Probe location:\n"
-                 " ==============\n\n"
-                 " Probe set %s\n"
-                 " %lu probes have not been located on the given mesh."),
-               pset->name, (unsigned long)n_not_located_probes);
+    bft_printf(_("\nWarning: probe set \"%s\"\n"
+                 "         %lu probes have not been located"
+                 "         on the associated mesh."),
+               pset->name, (unsigned long)n_unlocated_probes);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1071,8 +1059,7 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
             cell_tag[cell_id] = true;
 
             const cs_real_t  *xp = pset->coords + 3*i;
-            const cs_real_t  *xc = quant->cell_cen + 3*cell_id
-;
+            const cs_real_t  *xc = quant->cell_cen + 3*cell_id;
             for (int k = 0; k < 3; k++)
               probe_coords[n_exp_probes][k] = xc[k];
             pset->distances[i] = cs_math_3_length(xp, xc);
@@ -1090,7 +1077,7 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
 
   case CS_PROBE_MODE_NEAREST_VERTEX:
     {
-      fvm_point_location_closest_vertex(pset->locate_mesh,
+      fvm_point_location_closest_vertex(pset->location_mesh,
                                         1, // locate on parents
                                         pset->n_probes,
                                         pset->coords,
@@ -1168,10 +1155,29 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
   else
     gmax_distance = max_distance;
 
-  bft_printf(" -msg- Probe set %s >> Max. distance between the real and"
-             " requested coordinates is %5.3e\n", pset->name, gmax_distance);
+  bft_printf("\n Probe set: \"%s\":\n"
+             "   maximum distance between real and requested coordinates:"
+             " %5.3e\n", pset->name, gmax_distance);
 
   BFT_FREE(global_num);
+
+  /* Add global labels */
+
+  if (pset->labels != NULL) {
+    char **g_labels;
+    int ngl = fvm_nodal_get_n_g_vertices(exp_mesh);
+    BFT_MALLOC(g_labels, ngl, char *);
+
+    int j = 0;
+    for (int i = 0; i < pset->n_probes; i++) {
+      if (pset->distances[i] <= 0.99*HUGE_VAL)
+        g_labels[j++] = _copy_label(pset->labels[i]);
+    }
+    assert(j == ngl);
+    fvm_nodal_transfer_global_vertex_labels(exp_mesh, g_labels);
+
+  }
+
   // probe_coords is managed by exp_mesh
 
   return exp_mesh;
@@ -1221,7 +1227,7 @@ cs_probe_set_dump(const cs_probe_set_t   *pset)
 
   bft_printf(" n_probes:   %d; %d; %d (locally located; defined; max.)\n",
              pset->n_loc_probes, pset->n_probes, pset->n_max_probes);
-  bft_printf(" nodal mesh: %p\n\n", (void *)pset->locate_mesh);
+  bft_printf(" nodal mesh: %p\n\n", (void *)pset->location_mesh);
 
   for (int i = 0; i < pset->n_probes; i++) {
 
@@ -1239,8 +1245,8 @@ cs_probe_set_dump(const cs_probe_set_t   *pset)
 
   } // Loop on probes
 
-  if (true && pset->locate_mesh != NULL)
-    fvm_nodal_dump(pset->locate_mesh);
+  if (true && pset->location_mesh != NULL)
+    fvm_nodal_dump(pset->location_mesh);
 
 }
 

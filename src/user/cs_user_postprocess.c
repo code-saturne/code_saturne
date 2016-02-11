@@ -483,10 +483,8 @@ cs_user_postprocess_probes(void)
     cs_probe_set_t  *pset =
       cs_probe_set_create_from_segment("Prof1", // name
                                        11,      // n_probes
-                                       start,   // start coordinate
-                                       NULL,    // start label
-                                       end,     // end coordinate
-                                       NULL);   // end label
+                                       start,   // start coordinates
+                                       end);    // end coordinates
 
     //    cs_probe_set_associate_writers(pset, 1, writer_ids);
   }
@@ -498,10 +496,8 @@ cs_user_postprocess_probes(void)
 
     cs_probe_set_create_from_segment("P1",    // name
                                      11,      // n_probes
-                                     start,   // start coordinate
-                                     NULL,    // start label
-                                     end,     // end coordinate
-                                     NULL);   // end label
+                                     start,   // start coordinates
+                                     end);    // end coordinates
 
   }
 
@@ -515,9 +511,7 @@ cs_user_postprocess_probes(void)
       cs_probe_set_create_from_segment("P2",     // name
                                        21,       // n_probes
                                        start,    // start coordinate
-                                       NULL,     // start label
-                                       end,      // end coordinate
-                                       NULL);    // end label
+                                       end);     // end coordinate
 
     cs_probe_set_associate_writers(pset, 1, writer_ids);
 

@@ -1001,8 +1001,10 @@ fvm_writer_init(const char             *name,
       i1 = strlen(tmp_options);
       if (i1 > 0)
         BFT_REALLOC(tmp_options, i1+1, char);
-      else
+      else {
         BFT_FREE(tmp_options);
+        break;
+      }
 
     }
 
