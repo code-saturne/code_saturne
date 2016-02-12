@@ -594,6 +594,52 @@ cs_gui_mesh_smoothe(cs_mesh_t  *mesh)
   BFT_FREE(path);
 }
 
+/*----------------------------------------------------------------------------
+ * Define user thin wall through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_thinwall(cs_mesh_t  *mesh)
+{
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  int nwall = cs_gui_get_tag_count("/solution_domain/thin_walls/thin_wall", 1);
+
+  if (nwall == 0)
+    return;
+
+  for (int iw = 0; iw < nwall; iw++) {
+    char *path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "thin_walls");
+    cs_xpath_add_element_num(&path, "thin_wall", iw + 1);
+    cs_xpath_add_element(&path, "selector");
+    cs_xpath_add_function_text(&path);
+    char *value = cs_gui_get_text_value(path);
+    BFT_FREE(path);
+
+    cs_lnum_t   n_selected_faces = 0;
+    cs_lnum_t  *selected_faces = NULL;
+    BFT_MALLOC(selected_faces, mesh->n_i_faces, cs_lnum_t);
+
+    cs_selector_get_i_face_list(value,
+                               &n_selected_faces,
+                               selected_faces);
+
+    cs_create_thinwall(mesh,
+                       selected_faces,
+                       n_selected_faces);
+
+
+#if _XML_DEBUG_
+    bft_printf("cs_gui_mesh_thinwall==> \n");
+    bft_printf("--selector  = %s\n", value);
+#endif
+    BFT_FREE(selected_faces);
+    BFT_FREE(value);
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

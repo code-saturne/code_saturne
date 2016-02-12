@@ -24,8 +24,8 @@
 
 """
 This module contains the following classes and function:
-- SpinBoxDelegate
 - StandardItemModelMeshes
+- StandardItemModelThinWall
 - SolutionDomainView
 """
 
@@ -241,6 +241,34 @@ class GroupDelegate(QItemDelegate):
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
         model.setData(index, to_qvariant(value))
+
+#-------------------------------------------------------------------------------
+# Line edit delegate for selection
+#-------------------------------------------------------------------------------
+
+class LineEditDelegateSelector(QItemDelegate):
+    """
+    Use of a QLineEdit in the table.
+    """
+    def __init__(self, parent=None):
+        QItemDelegate.__init__(self, parent)
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        validator =  RegExpValidator(editor, QRegExp("[ -~]*"))
+        editor.setValidator(validator)
+        return editor
+
+
+    def setEditorData(self, lineEdit, index):
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        lineEdit.setText(value)
+
+
+    def setModelData(self, lineEdit, model, index):
+        value = lineEdit.text()
+        model.setData(index, to_qvariant(value), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -508,6 +536,117 @@ class StandardItemModelMeshes(QStandardItemModel):
 
 
 #-------------------------------------------------------------------------------
+# StandardItemModelThinWall class
+#-------------------------------------------------------------------------------
+
+class StandardItemModelThinWall(QStandardItemModel):
+
+    def __init__(self, parent, mdl):
+        """
+        """
+        QStandardItemModel.__init__(self)
+
+        self.headers = [ self.tr("zone id"),
+                         self.tr("selector")]
+
+        self.setColumnCount(len(self.headers))
+        self.parent = parent
+
+        self.tooltip = []
+
+        self._data  = []
+        self.mdl    = mdl
+
+
+    def data(self, index, role):
+        if not index.isValid():
+            return to_qvariant()
+
+        if role == Qt.ToolTipRole:
+            return to_qvariant()
+
+        elif role == Qt.DisplayRole:
+            data = self._data[index.row()][index.column()]
+            if data:
+                return to_qvariant(data)
+            else:
+                return to_qvariant()
+
+        elif role == Qt.TextAlignmentRole:
+            return to_qvariant(Qt.AlignCenter)
+
+        return to_qvariant()
+
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+        if index.column() == 0 :
+            return Qt.ItemIsSelectable
+        else:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+
+
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return to_qvariant(self.headers[section])
+        return to_qvariant()
+
+
+    def setData(self, index, value, role):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+
+        # Update the row in the table
+        row = index.row()
+        col = index.column()
+        name = row
+
+        if col == 1:
+            new_sup = from_qvariant(value, to_text_string)
+            self._data[row][col] = new_sup
+            self.mdl.replaceThinWall(name, new_sup)
+
+        return True
+
+
+    def getData(self, index):
+        row = index.row()
+        return self._data[row]
+
+
+    def newItem(self, existing_tw=None):
+        """
+        Add/load a scalar in the model.
+        """
+        row = self.rowCount()
+
+        name = ""
+        if existing_tw == None :
+            self.mdl.addThinWall()
+            name = row
+        else:
+            name = existing_tw
+
+        support = self.mdl.getThinWall(name)
+
+        thin = [str(name), support]
+
+        self._data.append(thin)
+        self.setRowCount(row + 1)
+
+
+    def deleteItem(self, row):
+        """
+        Delete the row in the model.
+        """
+        del self._data[row]
+        self.mdl.deleteThinWall(row)
+        row = self.rowCount()
+        self.setRowCount(row - 1)
+
+
+#-------------------------------------------------------------------------------
 # File dialog to select either file or directory
 #-------------------------------------------------------------------------------
 
@@ -685,6 +824,31 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         model = StandardItemModelFaces(self, self.mdl, 'face_joining')
         self.widgetFacesJoin.modelFaces = model
         self.widgetFacesJoin.tableView.setModel(model)
+
+        # 2.5) Thin wall
+
+        self.tableModelThinWall = StandardItemModelThinWall(self, self.mdl)
+        self.tableViewThinWall.setModel(self.tableModelThinWall)
+        self.tableViewThinWall.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
+        self.tableViewThinWall.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
+        self.tableViewThinWall.resizeColumnsToContents()
+        self.tableViewThinWall.resizeRowsToContents()
+        self.tableViewThinWall.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableViewThinWall.setSelectionMode(QAbstractItemView.SingleSelection)
+
+        delegateLabel   = MeshNumberDelegate(self.tableViewThinWall)
+        delegateSupport = LineEditDelegateSelector(self.tableViewThinWall)
+
+        self.tableViewThinWall.setItemDelegateForColumn(0, delegateLabel)
+        self.tableViewThinWall.setItemDelegateForColumn(1, delegateSupport)
+
+        # Connections
+        self.connect(self.pushButtonAddThinWall    , SIGNAL("clicked()"), self.slotAddThinWall)
+        self.connect(self.pushButtonDeleteThinWall , SIGNAL("clicked()"), self.slotDeleteThinWall)
+
+        # load values
+        for tw in range(self.mdl.getThinWallSelectionsCount()):
+            self.tableModelThinWall.newItem(tw)
 
         # 3) Periodicities
 
@@ -1584,6 +1748,26 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Changed tab
         """
         self.case['current_tab'] = index
+
+
+    @pyqtSignature("")
+    def slotAddThinWall(self):
+        """
+        Add a thin wall
+        """
+        self.tableViewThinWall.clearSelection()
+        self.tableModelThinWall.newItem()
+
+
+    @pyqtSignature("")
+    def slotDeleteThinWall(self):
+        """
+        Delete the a thin wall from the list (one by one).
+        """
+        row = self.tableViewThinWall.currentIndex().row()
+        if row >= 0 :
+            log.debug("slotDeleteThinWall -> %s" % row)
+            self.tableModelThinWall.deleteItem(row)
 
 
     def tr(self, text):

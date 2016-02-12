@@ -197,6 +197,7 @@ class SolutionDomainModel(MeshModel, Model):
         self.node_smooth     = self.node_ecs.xmlInitNode('mesh_smoothing', "status")
         self.node_join       = self.node_ecs.xmlInitNode('joining')
         self.node_perio      = self.node_ecs.xmlInitNode('periodicity')
+        self.node_thinwall   = self.node_ecs.xmlInitNode('thin_walls')
 
 
 #************************* Private methods *****************************
@@ -253,11 +254,13 @@ class SolutionDomainModel(MeshModel, Model):
         """
         Private method: Return node corresponding at item "tag"
         """
-        self.isInList(tagName, ('face_joining', 'face_periodicity'))
+        self.isInList(tagName, ('face_joining', 'face_periodicity', 'thin_wall'))
         if tagName == 'face_joining':
             node = self.node_join
         elif tagName == 'face_periodicity':
             node = self.node_perio
+        elif tagName == 'thin_wall':
+            node = self.node_thinwall
         return node
 
 
@@ -343,6 +346,46 @@ class SolutionDomainModel(MeshModel, Model):
                     'verbosity',
                     'visualization',):
             node.xmlRemoveChild(tag)
+
+
+#To follow : private methods to get or put thin wall
+#===================================================
+
+    def _getThinWallNode(self, thin_id):
+        """
+        Get node for a given joining
+        """
+        node = None
+        listNode = self.node_thinwall.xmlGetNodeList('thin_wall')
+        if thin_id < len(listNode):
+            node = listNode[thin_id]
+
+        return node
+
+    def _updateThinWallSelectionNumbers(self):
+        """
+        Update names of join selection
+        """
+        listNode = self.node_thinwall.xmlGetNodeList('thin_wall')
+        i = 0
+        for node in listNode:
+            i = i + 1
+            if int(node['name']) > i:
+                node['name'] = str(i)
+
+
+    def _addThinWallSelect(self, node, select):
+        """
+        Private method: Add faces to node.
+        """
+        node.xmlSetData('selector', select)
+
+
+    def _removeThinWallChildren(self, node):
+        """
+        Private method: Remove all child nodes of node for one selection
+        """
+        node.xmlRemoveChild('selector')
 
 
 #To follow : private methods for periodicity:
@@ -1129,6 +1172,63 @@ class SolutionDomainModel(MeshModel, Model):
         node.xmlRemoveNode()
         if join_id < self.getJoinSelectionsCount():
             self._updateJoinSelectionNumbers()
+
+
+# Methods to manage thin wall :
+#==============================
+
+    @Variables.noUndo
+    def getThinWallSelectionsCount(self):
+        """
+        Public method.
+
+        @return: number of thin wall selections
+        @rtype: C{int}
+        """
+        return len(self.node_thinwall.xmlGetNodeList('thin_wall'))
+
+
+    @Variables.undoGlobal
+    def addThinWall(self):
+        """
+        Add faces selection for thin wall.
+        Select is a dictionary with 'id', 'visualization'
+        """
+        nb = self.getThinWallSelectionsCount()
+        name = str(nb +1)
+        node = self.node_thinwall.xmlAddChild('thin_wall', name=name)
+        select = self.defaultValues()['selector']
+        self._addThinWallSelect(node, select)
+
+
+    @Variables.noUndo
+    def getThinWall(self, thin_id):
+        """
+        Return faces selection named 'number' for thin wall.
+        """
+        node = self._getThinWallNode(thin_id)
+        return node.xmlGetString('selector')
+
+
+    @Variables.undoGlobal
+    def replaceThinWall(self, thin_id, select):
+        """
+        Replace values of faces selection named 'number' for face joining, by select
+        """
+        node = self._getThinWallNode(thin_id)
+        self._removeThinWallChildren(node)
+        self._addThinWallSelect(node, select)
+
+
+    @Variables.undoGlobal
+    def deleteThinWall(self, thin_id):
+        """
+        Delete faces selection named 'number' for face joining
+        """
+        node = self._getThinWallNode(thin_id)
+        node.xmlRemoveNode()
+        if thin_id < self.getThinWallSelectionsCount():
+            self._updateThinWallSelectionNumbers()
 
 
 #-------------------------------------------------------------------------------

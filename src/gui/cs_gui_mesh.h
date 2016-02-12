@@ -77,6 +77,13 @@ cs_gui_mesh_define_periodicities(void);
 void
 cs_gui_mesh_smoothe(cs_mesh_t  *mesh);
 
+/*----------------------------------------------------------------------------
+ * Define user thin wall through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_thinwall(cs_mesh_t  *mesh);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
