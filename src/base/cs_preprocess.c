@@ -252,6 +252,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   /* Possible geometry modification */
 
+  cs_gui_mesh_extrude(cs_glob_mesh);
   cs_user_mesh_modify(cs_glob_mesh);
 
   /* Discard isolated faces if present */

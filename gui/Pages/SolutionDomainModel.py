@@ -198,6 +198,7 @@ class SolutionDomainModel(MeshModel, Model):
         self.node_join       = self.node_ecs.xmlInitNode('joining')
         self.node_perio      = self.node_ecs.xmlInitNode('periodicity')
         self.node_thinwall   = self.node_ecs.xmlInitNode('thin_walls')
+        self.node_extrude    = self.node_ecs.xmlInitNode('extrude_meshes')
 
 
 #************************* Private methods *****************************
@@ -225,6 +226,9 @@ class SolutionDomainModel(MeshModel, Model):
         defvalue['poly_status']    = "off"
         defvalue['perio_mode']     = "translation"
         defvalue['transfo_val']    = 0.0
+        defvalue['layer']          = 2
+        defvalue['thickness']      = 1.0
+        defvalue['reason']         = 1.5
 
         return defvalue
 
@@ -249,20 +253,6 @@ class SolutionDomainModel(MeshModel, Model):
 
 #To follow : private methods to get or put faces
 #================================================
-
-    def _getTagNode(self, tagName):
-        """
-        Private method: Return node corresponding at item "tag"
-        """
-        self.isInList(tagName, ('face_joining', 'face_periodicity', 'thin_wall'))
-        if tagName == 'face_joining':
-            node = self.node_join
-        elif tagName == 'face_periodicity':
-            node = self.node_perio
-        elif tagName == 'thin_wall':
-            node = self.node_thinwall
-        return node
-
 
     def _getJoinNode(self, join_id):
         """
@@ -1213,7 +1203,7 @@ class SolutionDomainModel(MeshModel, Model):
     @Variables.undoGlobal
     def replaceThinWall(self, thin_id, select):
         """
-        Replace values of faces selection named 'number' for face joining, by select
+        Replace values of faces selection named 'number' for thin wall, by select
         """
         node = self._getThinWallNode(thin_id)
         self._removeThinWallChildren(node)
@@ -1223,12 +1213,149 @@ class SolutionDomainModel(MeshModel, Model):
     @Variables.undoGlobal
     def deleteThinWall(self, thin_id):
         """
-        Delete faces selection named 'number' for face joining
+        Delete faces selection named 'number' for thin wall
         """
         node = self._getThinWallNode(thin_id)
         node.xmlRemoveNode()
         if thin_id < self.getThinWallSelectionsCount():
             self._updateThinWallSelectionNumbers()
+
+
+# Methods to manage extrude :
+#==============================
+    def _getExtrudeNode(self, ext_id):
+        """
+        """
+        node = None
+        listNode = self.node_extrude.xmlGetNodeList('extrude_mesh')
+        if ext_id < len(listNode):
+            node = listNode[ext_id]
+        return node
+
+    def _updateExtrudeNumbers(self):
+        """
+        Update names of join selection
+        """
+        listNode = self.node_extrude.xmlGetNodeList('extrude_mesh')
+        i = 0
+        for node in listNode:
+            i = i + 1
+            if int(node['name']) > i:
+                node['name'] = str(i)
+
+
+    @Variables.noUndo
+    def getExtrudeSelectionsCount(self):
+        """
+        Public method.
+
+        @return: number of thin wall selections
+        @rtype: C{int}
+        """
+        return len(self.node_extrude.xmlGetNodeList('extrude_mesh'))
+
+
+    @Variables.undoGlobal
+    def addExtrude(self):
+        """
+        Add faces selection for thin wall.
+        Select is a dictionary with 'id', 'visualization'
+        """
+        nb = self.getExtrudeSelectionsCount()
+        name = str(nb +1)
+        node = self.node_extrude.xmlAddChild('extrude_mesh', name=name)
+        select = self.defaultValues()['selector']
+        node.xmlSetData('selector', select)
+        select = self.defaultValues()['layer']
+        node.xmlSetData('layers_number', select)
+        select = self.defaultValues()['thickness']
+        node.xmlSetData('thickness', select)
+        select = self.defaultValues()['reason']
+        node.xmlSetData('reason', select)
+
+
+    @Variables.noUndo
+    def getExtrudeSelector(self, thin_id):
+        """
+        Return faces selection named 'number' for thin wall.
+        """
+        node = self._getExtrudeNode(thin_id)
+        return node.xmlGetString('selector')
+
+
+    @Variables.undoGlobal
+    def setExtrudeSelector(self, thin_id, select):
+        """
+        Replace values of faces selection named 'number' for thin wall, by select
+        """
+        node = self._getExtrudeNode(thin_id)
+        node.xmlRemoveChild('selector')
+        node.xmlSetData('selector', select)
+
+
+    @Variables.noUndo
+    def getExtrudeLayer(self, thin_id):
+        """
+        Return faces selection named 'number' for thin wall.
+        """
+        node = self._getExtrudeNode(thin_id)
+        return node.xmlGetString('layers_number')
+
+
+    @Variables.undoGlobal
+    def setExtrudeLayer(self, thin_id, select):
+        """
+        Replace values of faces selection named 'number' for thin wall, by select
+        """
+        node = self._getExtrudeNode(thin_id)
+        node.xmlSetData('layers_number', select)
+
+
+    @Variables.noUndo
+    def getExtrudeThickness(self, thin_id):
+        """
+        Return faces selection named 'number' for thin wall.
+        """
+        node = self._getExtrudeNode(thin_id)
+        return node.xmlGetString('thickness')
+
+
+    @Variables.undoGlobal
+    def setExtrudeThickness(self, thin_id, select):
+        """
+        Replace values of faces selection named 'number' for thin wall, by select
+        """
+        node = self._getExtrudeNode(thin_id)
+        node.xmlSetData('thickness', select)
+
+
+    @Variables.noUndo
+    def getExtrudeReason(self, thin_id):
+        """
+        Return faces selection named 'number' for thin wall.
+        """
+        node = self._getExtrudeNode(thin_id)
+        return node.xmlGetString('reason')
+
+
+    @Variables.undoGlobal
+    def setExtrudeReason(self, thin_id, select):
+        """
+        Replace values of faces selection named 'number' for thin wall, by select
+        """
+        node = self._getExtrudeNode(thin_id)
+        node.xmlSetData('reason', select)
+
+
+    @Variables.undoGlobal
+    def deleteExtrude(self, thin_id):
+        """
+        Delete faces selection named 'number' for thin wall
+        """
+        node = self._getExtrudeNode(thin_id)
+        node.xmlRemoveNode()
+        if thin_id < self.getExtrudeSelectionsCount():
+            self._updateExtrudeNumbers()
 
 
 #-------------------------------------------------------------------------------

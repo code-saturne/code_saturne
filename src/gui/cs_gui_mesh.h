@@ -84,6 +84,13 @@ cs_gui_mesh_smoothe(cs_mesh_t  *mesh);
 void
 cs_gui_mesh_thinwall(cs_mesh_t  *mesh);
 
+/*----------------------------------------------------------------------------
+ * Define user mesh extrude through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_extrude(cs_mesh_t  *mesh);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

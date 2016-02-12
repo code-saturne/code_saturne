@@ -26,6 +26,7 @@
 This module contains the following classes and function:
 - StandardItemModelMeshes
 - StandardItemModelThinWall
+- StandardItemModelExtrude
 - SolutionDomainView
 """
 
@@ -52,7 +53,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
+from code_saturne.Base.QtPage import ComboModel, DoubleValidator, RegExpValidator, IntValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.SolutionDomainForm import Ui_SolutionDomainForm
 from code_saturne.Pages.SolutionDomainModel import RelOrAbsPath, MeshModel, SolutionDomainModel
@@ -269,6 +270,62 @@ class LineEditDelegateSelector(QItemDelegate):
     def setModelData(self, lineEdit, model, index):
         value = lineEdit.text()
         model.setData(index, to_qvariant(value), Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
+# Line edit delegate for float (thickness and reason)
+#-------------------------------------------------------------------------------
+
+class FloatDelegate(QItemDelegate):
+    def __init__(self, parent=None):
+        super(FloatDelegate, self).__init__(parent)
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        validator = DoubleValidator(editor, min=0.)
+        validator.setExclusiveMin(True)
+        editor.setValidator(validator)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        editor.setText(value)
+
+
+    def setModelData(self, editor, model, index):
+        if editor.validator().state == QValidator.Acceptable:
+            value = from_qvariant(editor.text(), float)
+            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
+# Line edit delegate for float (thickness and reason)
+#-------------------------------------------------------------------------------
+
+class IntDelegate(QItemDelegate):
+    def __init__(self, parent=None):
+        super(IntDelegate, self).__init__(parent)
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        validator = IntValidator(editor, min=0)
+        validator.setExclusiveMin(True)
+        editor.setValidator(validator)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        editor.setText(value)
+
+
+    def setModelData(self, editor, model, index):
+        if editor.validator().state == QValidator.Acceptable:
+            value = from_qvariant(editor.text(), int)
+            model.setData(index, to_qvariant(value), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -647,6 +704,135 @@ class StandardItemModelThinWall(QStandardItemModel):
 
 
 #-------------------------------------------------------------------------------
+# StandardItemModelExtrude class
+#-------------------------------------------------------------------------------
+
+class StandardItemModelExtrude(QStandardItemModel):
+
+    def __init__(self, parent, mdl):
+        """
+        """
+        QStandardItemModel.__init__(self)
+
+        self.headers = [ self.tr("zone id"),
+                         self.tr("layer number"),
+                         self.tr("thickness"),
+                         self.tr("reason"),
+                         self.tr("selector")]
+
+        self.setColumnCount(len(self.headers))
+        self.parent = parent
+
+        self.tooltip = []
+
+        self._data  = []
+        self.mdl    = mdl
+
+
+    def data(self, index, role):
+        if not index.isValid():
+            return to_qvariant()
+
+        if role == Qt.ToolTipRole:
+            return to_qvariant()
+
+        elif role == Qt.DisplayRole:
+            data = self._data[index.row()][index.column()]
+            if data:
+                return to_qvariant(data)
+            else:
+                return to_qvariant()
+
+        elif role == Qt.TextAlignmentRole:
+            return to_qvariant(Qt.AlignCenter)
+
+        return to_qvariant()
+
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+        if index.column() == 0 :
+            return Qt.ItemIsSelectable
+        else:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+
+
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return to_qvariant(self.headers[section])
+        return to_qvariant()
+
+
+    def setData(self, index, value, role):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+
+        # Update the row in the table
+        row = index.row()
+        col = index.column()
+        name = row
+
+        if col == 1:
+            new_sup = from_qvariant(value, int)
+            self._data[row][col] = new_sup
+            self.mdl.setExtrudeLayer(name, new_sup)
+        elif col == 2:
+            new_sup = from_qvariant(value, float)
+            self._data[row][col] = new_sup
+            self.mdl.setExtrudeThickness(name, new_sup)
+        elif col == 3:
+            new_sup = from_qvariant(value, float)
+            self._data[row][col] = new_sup
+            self.mdl.setExtrudeReason(name, new_sup)
+        elif col == 4:
+            new_sup = from_qvariant(value, to_text_string)
+            self._data[row][col] = new_sup
+            self.mdl.setExtrudeSelector(name, new_sup)
+
+        return True
+
+
+    def getData(self, index):
+        row = index.row()
+        return self._data[row]
+
+
+    def newItem(self, existing_tw=None):
+        """
+        Add/load a scalar in the model.
+        """
+        row = self.rowCount()
+
+        name = ""
+        if existing_tw == None :
+            self.mdl.addExtrude()
+            name = row
+        else:
+            name = existing_tw
+
+        nlayer  = self.mdl.getExtrudeLayer(name)
+        thick   = self.mdl.getExtrudeThickness(name)
+        reason  = self.mdl.getExtrudeReason(name)
+        support = self.mdl.getExtrudeSelector(name)
+
+        thin = [str(name), nlayer, thick, reason, support]
+
+        self._data.append(thin)
+        self.setRowCount(row + 1)
+
+
+    def deleteItem(self, row):
+        """
+        Delete the row in the model.
+        """
+        del self._data[row]
+        self.mdl.deleteExtrude(row)
+        row = self.rowCount()
+        self.setRowCount(row - 1)
+
+
+#-------------------------------------------------------------------------------
 # File dialog to select either file or directory
 #-------------------------------------------------------------------------------
 
@@ -846,9 +1032,34 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.connect(self.pushButtonAddThinWall    , SIGNAL("clicked()"), self.slotAddThinWall)
         self.connect(self.pushButtonDeleteThinWall , SIGNAL("clicked()"), self.slotDeleteThinWall)
 
+        # 2.5) Extrude
+
+        self.tableModelExtrude = StandardItemModelExtrude(self, self.mdl)
+        self.tableViewExtrude.setModel(self.tableModelExtrude)
+        self.tableViewExtrude.horizontalHeader().setResizeMode(4,QHeaderView.Stretch)
+        self.tableViewExtrude.resizeColumnsToContents()
+        self.tableViewExtrude.resizeRowsToContents()
+        self.tableViewExtrude.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableViewExtrude.setSelectionMode(QAbstractItemView.SingleSelection)
+
+        delegateLabel   = MeshNumberDelegate(self.tableViewExtrude)
+        delegateLayer   = IntDelegate(self.tableViewExtrude)
+        delegateSupport = LineEditDelegateSelector(self.tableViewExtrude)
+        delegateFloat = FloatDelegate(self.tableViewExtrude)
+
+        self.tableViewExtrude.setItemDelegateForColumn(0, delegateLabel)   # Id
+        self.tableViewExtrude.setItemDelegateForColumn(1, delegateLayer)   # nlayers
+        self.tableViewExtrude.setItemDelegateForColumn(2, delegateFloat)   # thickness
+        self.tableViewExtrude.setItemDelegateForColumn(3, delegateFloat)   # reason
+        self.tableViewExtrude.setItemDelegateForColumn(4, delegateSupport) # criteria
+
+        # Connections
+        self.connect(self.pushButtonAddExtrude   , SIGNAL("clicked()"), self.slotAddExtrude)
+        self.connect(self.pushButtonDeleteExtrude, SIGNAL("clicked()"), self.slotDeleteExtrude)
+
         # load values
-        for tw in range(self.mdl.getThinWallSelectionsCount()):
-            self.tableModelThinWall.newItem(tw)
+        for tw in range(self.mdl.getExtrudeSelectionsCount()):
+            self.tableModelExtrude.newItem(tw)
 
         # 3) Periodicities
 
@@ -1768,6 +1979,26 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         if row >= 0 :
             log.debug("slotDeleteThinWall -> %s" % row)
             self.tableModelThinWall.deleteItem(row)
+
+
+    @pyqtSignature("")
+    def slotAddExtrude(self):
+        """
+        Add a thin wall
+        """
+        self.tableViewExtrude.clearSelection()
+        self.tableModelExtrude.newItem()
+
+
+    @pyqtSignature("")
+    def slotDeleteExtrude(self):
+        """
+        Delete the a thin wall from the list (one by one).
+        """
+        row = self.tableViewExtrude.currentIndex().row()
+        if row >= 0 :
+            log.debug("slotDeleteExtrude -> %s" % row)
+            self.tableModelExtrude.deleteItem(row)
 
 
     def tr(self, text):

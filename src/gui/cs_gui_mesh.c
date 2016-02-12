@@ -55,6 +55,8 @@
 #include "cs_mesh.h"
 #include "cs_mesh_warping.h"
 #include "cs_mesh_smoother.h"
+#include "cs_mesh_thinwall.h"
+#include "cs_mesh_extrude.h"
 #include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
@@ -634,6 +636,84 @@ cs_gui_mesh_thinwall(cs_mesh_t  *mesh)
 #if _XML_DEBUG_
     bft_printf("cs_gui_mesh_thinwall==> \n");
     bft_printf("--selector  = %s\n", value);
+#endif
+    BFT_FREE(selected_faces);
+    BFT_FREE(value);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Define user mesh extrude through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_extrude(cs_mesh_t  *mesh)
+{
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  int n_ext = cs_gui_get_tag_count("/solution_domain/extrude_meshes/extrude_mesh", 1);
+
+  if (n_ext == 0)
+    return;
+
+  for (int ext = 0; ext < n_ext; ext++) {
+    char *path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "extrude_meshes");
+    cs_xpath_add_element_num(&path, "extrude_mesh", ext + 1);
+    cs_xpath_add_element(&path, "selector");
+    cs_xpath_add_function_text(&path);
+    char *value = cs_gui_get_text_value(path);
+    BFT_FREE(path);
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "extrude_meshes");
+    cs_xpath_add_element_num(&path, "extrude_mesh", ext + 1);
+    cs_xpath_add_element(&path, "layers_number");
+    cs_xpath_add_function_text(&path);
+    int n_layers;
+    cs_gui_get_int(path, &n_layers);
+    BFT_FREE(path);
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "extrude_meshes");
+    cs_xpath_add_element_num(&path, "extrude_mesh", ext + 1);
+    cs_xpath_add_element(&path, "thickness");
+    cs_xpath_add_function_text(&path);
+    double thickness;
+    cs_gui_get_double(path, &thickness);
+    BFT_FREE(path);
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "extrude_meshes");
+    cs_xpath_add_element_num(&path, "extrude_mesh", ext + 1);
+    cs_xpath_add_element(&path, "reason");
+    cs_xpath_add_function_text(&path);
+    double reason;
+    cs_gui_get_double(path, &reason);
+    BFT_FREE(path);
+
+    cs_lnum_t   n_selected_faces = 0;
+    cs_lnum_t  *selected_faces = NULL;
+    BFT_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
+
+    cs_selector_get_b_face_list(value,
+                                &n_selected_faces,
+                                selected_faces);
+
+    cs_mesh_extrude_constant(mesh,
+                             n_layers,
+                             thickness,
+                             reason,
+                             n_selected_faces,
+                             selected_faces);
+
+#if _XML_DEBUG_
+    bft_printf("cs_gui_mesh_extrude==> \n");
+    bft_printf("--selector  = %s\n", value);
+    bft_printf("--n_layers  = %i\n", n_layers);
+    bft_printf("--thickness = %f\n", thickness);
+    bft_printf("--reason    = %f\n", reason);
 #endif
     BFT_FREE(selected_faces);
     BFT_FREE(value);
