@@ -727,6 +727,7 @@ integer nmodpp
 
 logical       ilved, inoprv
 integer       ii, jj, ivar, kscmin, kscmax, keydri, kbfid, kccmin, kccmax
+integer       klimiter
 integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ifcvsl, b_f_id
 
 !===============================================================================
@@ -1257,6 +1258,11 @@ endif
 !   - 2: continuous limiter ensuring positivness
 !   - 3: Roe-Sweby limiter
 !        (ensuring  Decreasing Total Variation)
+!        Then "limiter_choice" keyword must be set:
+!       * 0: minmod
+!       * 1: Van-Leer
+!       * 2: Van-Albada
+!       * 3: Superbee
 
 if (.false.) then
 
@@ -1269,7 +1275,11 @@ if (.false.) then
 
     ivar = isca(iscalt)
     ischcv(ivar) = 0
-    isstpc(ivar) = 2
+    isstpc(ivar) = 3
+
+    ! Get the Key for the limiter choice of the studied scalar
+    call field_get_key_id("limiter_choice", klimiter)
+    call field_set_key_int(ivarfl(isca(iscalt)), klimiter, 3)! Set SUPERBEE
 
     ! Set the Value for the Sup and Inf of the studied scalar
     call field_set_key_double(ivarfl(ivar), kccmin, 0.d0)

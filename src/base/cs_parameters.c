@@ -437,7 +437,7 @@ cs_parameters_define_field_keys(void)
   * 3->van-albada
   * 4->superbee */
 
-  cs_field_define_key_int("limiter_choice", -1, CS_FIELD_VARIABLE); // MODIF
+  cs_field_define_key_int("limiter_choice", -1, CS_FIELD_VARIABLE);
 
   /* Structure containing the calculation options of the field variables */
   cs_field_define_key_struct("var_cal_opt",
