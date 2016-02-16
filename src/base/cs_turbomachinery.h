@@ -145,6 +145,18 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
                               double  *t_elapsed);
 
 /*----------------------------------------------------------------------------
+ * Initialize restart mesh for unsteady rotor/stator computation
+ *
+ * parameters:
+ *   t_cur_mob <-- current rotor time
+ *   t_elapsed --> elapsed computation time
+ *----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_restart_mesh(double   t_cur_mob,
+                               double  *t_elapsed);
+
+/*----------------------------------------------------------------------------
  * Reinitialize interior face-based fields.
  *----------------------------------------------------------------------------*/
 

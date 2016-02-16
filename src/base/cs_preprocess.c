@@ -203,7 +203,8 @@ cs_preprocess_mesh_define(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_preprocess_mesh(cs_halo_type_t   halo_type)
+cs_preprocess_mesh(cs_halo_type_t   halo_type,
+                   bool             rstart_mode)
 {
   double  t1, t2;
 
@@ -241,46 +242,48 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   /* Insert thin walls if necessary */
 
-  cs_gui_mesh_thinwall(cs_glob_mesh);
-  cs_user_mesh_thinwall(cs_glob_mesh);
+  if (!rstart_mode) {
+    cs_gui_mesh_thinwall(cs_glob_mesh);
+    cs_user_mesh_thinwall(cs_glob_mesh);
 
-  /* Initialize extended connectivity, ghost cells and other remaining
-     parallelism-related structures */
+    /* Initialize extended connectivity, ghost cells and other remaining
+       parallelism-related structures */
 
-  cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
-  cs_mesh_update_auxiliary(cs_glob_mesh);
+    cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
+    cs_mesh_update_auxiliary(cs_glob_mesh);
 
-  /* Possible geometry modification */
+    /* Possible geometry modification */
 
-  cs_gui_mesh_extrude(cs_glob_mesh);
-  cs_user_mesh_modify(cs_glob_mesh);
+    cs_gui_mesh_extrude(cs_glob_mesh);
+    cs_user_mesh_modify(cs_glob_mesh);
 
-  /* Discard isolated faces if present */
+    /* Discard isolated faces if present */
 
-  cs_post_add_free_faces();
-  cs_mesh_discard_free_faces(cs_glob_mesh);
+    cs_post_add_free_faces();
+    cs_mesh_discard_free_faces(cs_glob_mesh);
 
-  /* Smoothe mesh if required */
+    /* Smoothe mesh if required */
 
-  cs_gui_mesh_smoothe(cs_glob_mesh);
-  cs_user_mesh_smoothe(cs_glob_mesh);
+    cs_gui_mesh_smoothe(cs_glob_mesh);
+    cs_user_mesh_smoothe(cs_glob_mesh);
 
-  /* Triangulate warped faces if necessary */
+    /* Triangulate warped faces if necessary */
 
-  {
-    double  cwf_threshold = -1.0;
-    int  cwf_post = 0;
+    {
+      double  cwf_threshold = -1.0;
+      int  cwf_post = 0;
 
-    cs_mesh_warping_get_defaults(&cwf_threshold, &cwf_post);
+      cs_mesh_warping_get_defaults(&cwf_threshold, &cwf_post);
 
-    if (cwf_threshold >= 0.0) {
+      if (cwf_threshold >= 0.0) {
 
-      t1 = cs_timer_wtime();
-      cs_mesh_warping_cut_faces(cs_glob_mesh, cwf_threshold, cwf_post);
-      t2 = cs_timer_wtime();
+        t1 = cs_timer_wtime();
+        cs_mesh_warping_cut_faces(cs_glob_mesh, cwf_threshold, cwf_post);
+        t2 = cs_timer_wtime();
 
-      bft_printf(_("\n Cutting warped faces (%.3g s)\n"), t2-t1);
+        bft_printf(_("\n Cutting warped faces (%.3g s)\n"), t2-t1);
 
+      }
     }
   }
 
@@ -292,7 +295,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   if (cs_glob_mesh->modified > 0 || partition_preprocess) {
     if (partition_preprocess) {
       if (cs_glob_mesh->modified > 0)
-        cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, "mesh_output");
+        cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, NULL, "mesh_output");
       else
         cs_mesh_to_builder(cs_glob_mesh, cs_glob_mesh_builder, true, NULL);
       cs_partition(cs_glob_mesh, cs_glob_mesh_builder, CS_PARTITION_MAIN);
@@ -301,7 +304,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
       cs_mesh_update_auxiliary(cs_glob_mesh);
     }
     else
-      cs_mesh_save(cs_glob_mesh, NULL, "mesh_output");
+      cs_mesh_save(cs_glob_mesh, NULL, NULL, "mesh_output");
   }
 
   /* Destroy the temporary structure used to build the main mesh */

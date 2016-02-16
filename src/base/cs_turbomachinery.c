@@ -71,6 +71,8 @@
 #include "cs_time_step.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
+#include "cs_restart.h"
+#include "cs_preprocessor_data.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1027,6 +1029,96 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * Initialize restart mesh for unsteady rotor/stator computation
+ *
+ * \param[in]   t_cur_mob  current rotor time
+ * \param[out]  t_elapsed  elapsed computation time
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_restart_mesh(double   t_cur_mob,
+                               double  *t_elapsed)
+{
+  double  t_start, t_end;
+
+  cs_halo_type_t halo_type = cs_glob_mesh->halo_type;
+  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+
+  int t_stat_id = cs_timer_stats_id_by_name("mesh_processing");
+  int t_top_id = cs_timer_stats_switch(t_stat_id);
+
+  t_start = cs_timer_wtime();
+
+  /* Indicates we are in the framework of turbomachinery */
+
+  tbm->active = true;
+
+  /* Cell and boundary face numberings can be moved from old mesh
+     to new one, as the corresponding parts of the mesh should not change */
+
+  cs_numbering_t *cell_numbering = cs_glob_mesh->cell_numbering;
+  cs_numbering_t *b_face_numbering = cs_glob_mesh->b_face_numbering;
+  cs_glob_mesh->cell_numbering = NULL;
+  cs_glob_mesh->b_face_numbering = NULL;
+
+  /* Destroy previous global mesh and related entities */
+
+  cs_mesh_location_finalize();
+  cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
+
+  cs_mesh_destroy(cs_glob_mesh);
+
+  /* Create new global mesh and related entities */
+
+  cs_mesh_location_initialize();
+  cs_glob_mesh = cs_mesh_create();
+  cs_glob_mesh->verbosity = 0;
+  cs_glob_mesh_builder = cs_mesh_builder_create();
+  cs_glob_mesh_quantities = cs_mesh_quantities_create();
+
+  cs_preprocessor_data_add_file("restart/mesh_output", 0, NULL, NULL);
+
+  cs_preprocessor_data_read_headers(cs_glob_mesh,
+                                    cs_glob_mesh_builder);
+
+  cs_preprocess_mesh(tbm->reference_mesh->halo_type, true);
+
+  /* Update Fortran mesh sizes and quantities */
+
+  cs_preprocess_mesh_update_fortran();
+
+  /* Update rotor cells flag array in case of parallelism and/or periodicity */
+
+  if (cs_glob_mesh->halo != NULL) {
+
+    const cs_mesh_t *m = cs_glob_mesh;
+
+    BFT_REALLOC(tbm->cell_rotor_num,
+                m->n_cells_with_ghosts,
+                int);
+
+    cs_halo_sync_untyped(m->halo,
+                         CS_HALO_EXTENDED,
+                         sizeof(int),
+                         tbm->cell_rotor_num);
+
+  }
+
+  /* Update linear algebra APIs relative to mesh */
+
+  cs_gradient_perio_update_mesh();
+  cs_matrix_update_mesh();
+
+  t_end = cs_timer_wtime();
+
+  *t_elapsed = t_end - t_start;
+
+  cs_timer_stats_switch(t_top_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Initializations for turbomachinery computation.
  *
  * \note This function should be called before once the mesh is built,
@@ -1068,7 +1160,11 @@ cs_turbomachinery_initialize(void)
 
   /* Complete the mesh with rotor-stator joining */
 
-  if (cs_glob_n_joinings > 0) {
+  if (cs_glob_n_joinings > 0 && cs_restart_present()) {
+    cs_real_t t_elapsed;
+    cs_turbomachinery_restart_mesh(cs_glob_time_step->t_cur, &t_elapsed);
+  }
+  else if  (cs_glob_n_joinings > 0) {
     cs_real_t t_elapsed;
     cs_turbomachinery_update_mesh(cs_glob_time_step->t_cur, &t_elapsed);
   }

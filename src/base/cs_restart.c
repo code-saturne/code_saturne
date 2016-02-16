@@ -1008,6 +1008,23 @@ void CS_PROCF (stusui, STUSUI)
 }
 
 /*----------------------------------------------------------------------------
+ * Save output mesh for turbomachinery if needed
+ *
+ * Fortran interface
+ *
+ * subroutine trbsui
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (trbsui, TRBSUI)
+(
+ void
+)
+{
+  cs_mesh_save(cs_glob_mesh, NULL, "checkpoint", "mesh_output");
+}
+
+/*----------------------------------------------------------------------------
  * Indicate if a restart directory is present.
  *
  * Fortran interface
