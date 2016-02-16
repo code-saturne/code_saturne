@@ -371,26 +371,61 @@ cs_selector_get_cell_list(const char  *criteria,
 
   *n_cells = 0;
 
-  if (cs_glob_mesh->select_cells == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("%sd: %s is not defined at this stage."),
-                __func__, "cs_glob_mesh->select_cells");
+  if (cs_glob_mesh->select_cells != NULL) {
 
-  c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
-                               criteria,
-                               0,
-                               n_cells,
-                               cell_list);
+    c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
+                                 criteria,
+                                 0,
+                                 n_cells,
+                                 cell_list);
 
-  if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0) {
-    const char *missing
-      = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The group \"%s\" in the selection criteria:\n"
-                 "\"%s\"\n"
-                 " does not correspond to any cell.\n"),
-               missing, criteria);
+    if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0) {
+      const char *missing
+        = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("The group \"%s\" in the selection criteria:\n"
+                   "\"%s\"\n"
+                   " does not correspond to any cell.\n"),
+                 missing, criteria);
+    }
+
   }
+
+  else {
+
+    cs_mesh_t *mesh = cs_glob_mesh;
+
+    bool del_class_defs = (mesh->class_defs != NULL) ? true : false;
+
+    cs_mesh_init_group_classes(mesh);
+
+    cs_real_t  *cell_cen = NULL;
+
+    cs_mesh_quantities_cell_cen(mesh, &cell_cen);
+
+    fvm_selector_t *sel_cells = fvm_selector_create(mesh->dim,
+                                                    mesh->n_cells,
+                                                    mesh->class_defs,
+                                                    mesh->cell_family,
+                                                    1,
+                                                    cell_cen,
+                                                    NULL);
+
+    c_id = fvm_selector_get_list(sel_cells,
+                                 criteria,
+                                 0,
+                                 n_cells,
+                                 cell_list);
+
+    BFT_FREE(cell_cen);
+
+    if (del_class_defs)
+      mesh->class_defs = fvm_group_class_set_destroy(mesh->class_defs);
+
+    sel_cells = fvm_selector_destroy(sel_cells);
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------

@@ -311,6 +311,21 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
                            cs_real_t         *p_b_face_normal[]);
 
 /*----------------------------------------------------------------------------
+ * Compute cell centers.
+ *
+ * The corresponding array is allocated by this function, and it is the
+ * caller's responsibility to free it when they are no longer needed.
+ *
+ * parameters:
+ *   mesh       <-- pointer to a cs_mesh_t structure
+ *   p_cell_cen <-> pointer to the cell centers array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_cell_cen(const cs_mesh_t  *mesh,
+                            cs_real_t        *cell_cen[]);
+
+/*----------------------------------------------------------------------------
  * Check that no negative volumes are present, and exit on error otherwise.
  *
  * parameters:

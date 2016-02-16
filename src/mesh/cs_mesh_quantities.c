@@ -2682,6 +2682,66 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute cell centers.
+ *
+ * The corresponding array is allocated by this function, and it is the
+ * caller's responsibility to free it when they are no longer needed.
+ *
+ * parameters:
+ *   mesh       <-- pointer to a cs_mesh_t structure
+ *   p_cell_cen <-> pointer to the cell centers array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_cell_cen(const cs_mesh_t  *mesh,
+                            cs_real_t        *cell_cen[])
+{
+  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
+
+  cs_real_t  *_cell_cen = NULL;
+
+  BFT_MALLOC(_cell_cen, n_cells_with_ghosts, cs_real_t);
+
+  /* Compute cell centers from face barycenters or vertices */
+
+  switch (cs_glob_mesh_quantities_cell_cen) {
+
+  case 0:
+    {
+      cs_real_t  *i_face_cog = NULL, *i_face_normal = NULL;
+      cs_real_t  *b_face_cog = NULL, *b_face_normal = NULL;
+
+      cs_mesh_quantities_i_faces(mesh, &i_face_cog, &i_face_normal);
+      cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
+
+      _compute_cell_cen_face(mesh,
+                             i_face_normal,
+                             i_face_cog,
+                             b_face_normal,
+                             b_face_cog,
+                             _cell_cen);
+
+      BFT_FREE(b_face_normal);
+      BFT_FREE(b_face_cog);
+      BFT_FREE(i_face_normal);
+      BFT_FREE(i_face_cog);
+    }
+    break;
+
+  case 1:
+    _compute_cell_cen_vertex(mesh,
+                            _cell_cen);
+    break;
+
+  default:
+    assert(0);
+
+  }
+
+  *cell_cen = _cell_cen;
+}
+
+/*----------------------------------------------------------------------------
  * Check that no negative volumes are present, and exit on error otherwise.
  *
  * parameters:
