@@ -891,7 +891,7 @@ _transfer_location_distant(ple_locator_t  *this_locator,
  *                          boxes added to tolerance
  *   n_points           <-- number of points to locate
  *   point_list         <-- optional indirection array to point_coords
- *   point_tag          <-- optional point tag
+ *   point_tag          <-- optional point tag (size: n_points)
  *   point_coords       <-- coordinates of points to locate
  *                          (dimension: dim * n_points)
  *   location           <-> number of distant element containing or closest
@@ -1043,7 +1043,7 @@ _locate_distant(ple_locator_t               *this_locator,
           send_coords[n_coords_loc*dim + k] = point_coords[dim*coord_idx + k];
 
         if (have_tags)
-          send_tag[n_coords_loc] = point_tag[coord_idx];
+          send_tag[n_coords_loc] = point_tag[j];
 
         n_coords_loc += 1;
       }
@@ -1183,7 +1183,7 @@ _locate_distant(ple_locator_t               *this_locator,
  *   dim               <-- spatial dimension
  *   n_points          <-- number of points to locate
  *   point_list        <-- optional indirection array to point_coords
- *   point_tag         <-- optional point tag
+ *   point_tag         <-- optional point tag (size: n_points)
  *   point_coords      <-- coordinates of points to locate
  *                         (dimension: dim * n_points)
  *   location          <-> number of distant element containing or closest
@@ -1620,7 +1620,7 @@ _intersects_local(ple_locator_t       *this_locator,
  *                          boxes added to tolerance
  *   n_points           <-- number of points to locate
  *   point_list         <-- optional indirection array to point_coords
- *   point_tag         <-- optional point tag
+ *   point_tag          <-- optional point tag (size: n_points)
  *   point_coords       <-- coordinates of points to locate
  *                          (dimension: dim * n_points)
  *   distance           --> optional distance from point to matching element:
@@ -1707,7 +1707,7 @@ _locate_all_local(ple_locator_t               *this_locator,
             = point_coords[dim*coord_idx + k];
 
         if (have_tags)
-          tag[n_coords] = point_tag[coord_idx];
+          tag[n_coords] = point_tag[j];
 
         n_coords += 1;
       }
@@ -2660,7 +2660,7 @@ ple_locator_destroy(ple_locator_t  *this_locator)
  *                                     locate
  * \param[in]      n_points            number of points to locate
  * \param[in]      point_list          optional indirection array to point_coords
- * \param[in]      point_tag           optional point tag
+ * \param[in]      point_tag           optional point tag (size: n_points)
  * \param[in]      point_coords        coordinates of points to locate
  *                                     (dimension: dim * n_points)
  * \param[out]     distance            optional distance from point to matching
@@ -2750,7 +2750,7 @@ ple_locator_set_mesh(ple_locator_t               *this_locator,
  *                                     boxes added to tolerance
  * \param[in]      n_points            number of points to locate
  * \param[in]      point_list          optional indirection array to point_coords
- * \param[in]      point_tag           optional point tag
+ * \param[in]      point_tag           optional point tag (size: n_points)
  * \param[in]      point_coords        coordinates of points to locate
  *                                     (dimension: dim * n_points)
  * \param[out]     distance            optional distance from point to matching
