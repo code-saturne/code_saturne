@@ -264,7 +264,7 @@ cs_run(void)
 
   /* Preprocess mesh */
 
-  cs_preprocess_mesh(halo_type, false);
+  cs_preprocess_mesh(halo_type);
 
   /* Initialization for turbomachinery computations */
 

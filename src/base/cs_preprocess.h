@@ -62,13 +62,11 @@ cs_preprocess_mesh_define(void);
  * Apply all mesh preprocessing operations.
  *
  * parameters:
- *   halo_type    <->  type of halo (standard or extended)
- *   rstart_mode  <--  flag for restart (turbomachinery)
+ *   halo_type  <->  type of halo (standard or extended)
  *----------------------------------------------------------------------------*/
 
 void
-cs_preprocess_mesh(cs_halo_type_t   halo_type,
-                   bool             rstart_mode);
+cs_preprocess_mesh(cs_halo_type_t   halo_type);
 
 /*----------------------------------------------------------------------------
  * Update fortran arrays relative to the global mesh.

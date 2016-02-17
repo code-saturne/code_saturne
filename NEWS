@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes
 -------
 
+ - Turbomachinery module: for better restart behavior, the joined mesh
+   is now also handled using checkpoint/restart.
+
  - GUI: remove titles from profile definitions, as these were only handled
    by the obsolete Salome VISU module.
 

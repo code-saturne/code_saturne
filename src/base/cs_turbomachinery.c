@@ -663,6 +663,229 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
     _check_geometry(m);
 }
 
+/*----------------------------------------------------------------------------
+ * Update mesh for unsteady rotor/stator computation.
+ *
+ * parameters:
+ *   restart_mode  true for restart, false otherwise
+ *   t_cur_mob     current rotor time
+ *   t_elapsed     elapsed computation time
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_mesh(bool     restart_mode,
+             double   t_cur_mob,
+             double  *t_elapsed)
+{
+  double  t_start, t_end;
+
+  cs_halo_type_t halo_type = cs_glob_mesh->halo_type;
+  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+
+  int t_stat_id = cs_timer_stats_id_by_name("mesh_processing");
+  int t_top_id = cs_timer_stats_switch(t_stat_id);
+
+  t_start = cs_timer_wtime();
+
+  /* Indicates we are in the framework of turbomachinery */
+
+  tbm->active = true;
+
+  /* Cell and boundary face numberings can be moved from old mesh
+     to new one, as the corresponding parts of the mesh should not change */
+
+  cs_numbering_t *cell_numbering = cs_glob_mesh->cell_numbering;
+  cs_numbering_t *b_face_numbering = cs_glob_mesh->b_face_numbering;
+  cs_glob_mesh->cell_numbering = NULL;
+  cs_glob_mesh->b_face_numbering = NULL;
+
+  /* Destroy previous global mesh and related entities */
+
+  cs_mesh_location_finalize();
+  cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
+
+  cs_mesh_destroy(cs_glob_mesh);
+
+  /* Create new global mesh and related entities */
+
+  cs_mesh_location_initialize();
+  cs_glob_mesh = cs_mesh_create();
+  cs_glob_mesh->verbosity = 0;
+  cs_glob_mesh_builder = cs_mesh_builder_create();
+  cs_glob_mesh_quantities = cs_mesh_quantities_create();
+
+  if (restart_mode == false) {
+
+    _copy_mesh(tbm->reference_mesh, cs_glob_mesh);
+
+    /* Update geometry, if necessary */
+
+    if (tbm->n_rotors > 0)
+      _update_geometry(cs_glob_mesh, t_cur_mob);
+
+    /* Reset the interior faces -> cells connectivity */
+    /* (in order to properly build the halo of the joined mesh) */
+
+    cs_mesh_to_builder_perio_faces(cs_glob_mesh, cs_glob_mesh_builder);
+
+    {
+      int i;
+      cs_lnum_t f_id;
+      cs_lnum_2_t *i_face_cells = (cs_lnum_2_t *)cs_glob_mesh->i_face_cells;
+      const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+      for (f_id = 0; f_id < cs_glob_mesh->n_i_faces; f_id++) {
+        for (i = 0; i < 2; i++) {
+          if (i_face_cells[f_id][i] >= n_cells)
+            i_face_cells[f_id][i] = -1;
+        }
+      }
+    }
+
+    /* Join meshes and build periodicity links */
+
+    cs_join_all(false);
+
+    cs_lnum_t boundary_changed = 0;
+    if (tbm->n_b_faces_ref > -1) {
+      if (cs_glob_mesh->n_b_faces != tbm->n_b_faces_ref)
+        boundary_changed = 1;
+    }
+    cs_parall_counter_max(&boundary_changed, 1);
+
+    /* Check that joining has not added or removed boundary faces.
+       Postprocess new faces appearing on boundary or inside of mesh:
+       this assumes that joining appends new faces at the end of the mesh */
+
+    if (boundary_changed) {
+      const int writer_id = -2;
+      const int writer_ids[] = {writer_id};
+      const int mesh_id = cs_post_get_free_mesh_id();
+      cs_lnum_t b_face_count[] = {tbm->n_b_faces_ref,
+                                  cs_glob_mesh->n_b_faces};
+      cs_gnum_t n_g_b_faces_ref = tbm->n_b_faces_ref;
+      cs_parall_counter(&n_g_b_faces_ref, 1);
+      cs_post_init_error_writer();
+      cs_post_define_surface_mesh_by_func(mesh_id,
+                                          _("Added boundary faces"),
+                                          NULL,
+                                          _post_error_faces_select,
+                                          NULL,
+                                          b_face_count,
+                                          false, /* time varying */
+                                          true,  /* add groups if present */
+                                          false, /* auto variables */
+                                          1,
+                                          writer_ids);
+      cs_post_activate_writer(writer_id, 1);
+      cs_post_write_meshes(NULL);
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error in turbomachinery mesh update:\n"
+                  "Number of boundary faces has changed from %llu to %llu.\n"
+                  "There are probably unjoined faces, "
+                  "due to an insufficiently regular mesh;\n"
+                  "adjusting mesh joining parameters might help."),
+                (unsigned long long)n_g_b_faces_ref,
+                (unsigned long long)cs_glob_mesh->n_g_b_faces);
+    }
+
+  }
+  else {
+
+    cs_preprocessor_data_add_file("restart/mesh", 0, NULL, NULL);
+
+    cs_preprocessor_data_read_headers(cs_glob_mesh,
+                                      cs_glob_mesh_builder);
+
+    cs_preprocessor_data_read_mesh(cs_glob_mesh,
+                                   cs_glob_mesh_builder);
+
+  }
+
+  tbm->n_b_faces_ref = cs_glob_mesh->n_b_faces;
+
+  /* Initialize extended connectivity, ghost cells and other remaining
+     parallelism-related structures */
+
+  cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
+  cs_mesh_update_auxiliary(cs_glob_mesh);
+
+  /* Destroy the temporary structure used to build the main mesh */
+
+  cs_mesh_builder_destroy(&cs_glob_mesh_builder);
+
+  /* Update numberings (cells saved from previous, interior
+     faces updated, boundary faces computed after first joining,
+     saved from previous afterwards) */
+
+  cs_glob_mesh->cell_numbering = cell_numbering;
+
+  cs_renumber_i_faces(cs_glob_mesh);
+
+  if (b_face_numbering == NULL)
+    cs_renumber_b_faces(cs_glob_mesh);
+  else
+    cs_glob_mesh->b_face_numbering = b_face_numbering;
+
+  /* Build group classes */
+
+  cs_mesh_init_group_classes(cs_glob_mesh);
+
+  /* Print info on mesh */
+
+  if (cs_glob_mesh->verbosity > 0)
+    cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
+
+  /* Compute geometric quantities related to the mesh */
+
+  cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
+  cs_mesh_bad_cells_detect(cs_glob_mesh, cs_glob_mesh_quantities);
+  cs_user_mesh_bad_cells_tag(cs_glob_mesh, cs_glob_mesh_quantities);
+
+  /* Initialize selectors and locations for the mesh */
+
+  cs_mesh_init_selectors();
+  cs_mesh_location_build(cs_glob_mesh, -1);
+
+  /* Check coherency if debugging */
+
+#if 0
+  cs_mesh_coherency_check();
+#endif
+
+  /* Update Fortran mesh sizes and quantities */
+
+  cs_preprocess_mesh_update_fortran();
+
+  /* Update rotor cells flag array in case of parallelism and/or periodicity */
+
+  if (cs_glob_mesh->halo != NULL) {
+
+    const cs_mesh_t *m = cs_glob_mesh;
+
+    BFT_REALLOC(tbm->cell_rotor_num,
+                m->n_cells_with_ghosts,
+                int);
+
+    cs_halo_sync_untyped(m->halo,
+                         CS_HALO_EXTENDED,
+                         sizeof(int),
+                         tbm->cell_rotor_num);
+
+  }
+
+  /* Update linear algebra APIs relative to mesh */
+
+  cs_gradient_perio_update_mesh();
+  cs_matrix_update_mesh();
+
+  t_end = cs_timer_wtime();
+
+  *t_elapsed = t_end - t_start;
+
+  cs_timer_stats_switch(t_top_id);
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -826,8 +1049,8 @@ cs_turbomachinery_join_add(const char  *sel_criteria,
 /*!
  * \brief Update mesh for unsteady rotor/stator computation.
  *
- * \param[in]   t_cur_mob  current rotor time
- * \param[out]  t_elapsed  elapsed computation time
+ * \param[in]   t_cur_mob     current rotor time
+ * \param[out]  t_elapsed     elapsed computation time
  */
 /*----------------------------------------------------------------------------*/
 
@@ -835,204 +1058,15 @@ void
 cs_turbomachinery_update_mesh(double   t_cur_mob,
                               double  *t_elapsed)
 {
-  double  t_start, t_end;
-
-  cs_halo_type_t halo_type = cs_glob_mesh->halo_type;
-  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
-
-  int t_stat_id = cs_timer_stats_id_by_name("mesh_processing");
-  int t_top_id = cs_timer_stats_switch(t_stat_id);
-
-  t_start = cs_timer_wtime();
-
-  /* Indicates we are in the framework of turbomachinery */
-
-  tbm->active = true;
-
-  /* Cell and boundary face numberings can be moved from old mesh
-     to new one, as the corresponding parts of the mesh should not change */
-
-  cs_numbering_t *cell_numbering = cs_glob_mesh->cell_numbering;
-  cs_numbering_t *b_face_numbering = cs_glob_mesh->b_face_numbering;
-  cs_glob_mesh->cell_numbering = NULL;
-  cs_glob_mesh->b_face_numbering = NULL;
-
-  /* Destroy previous global mesh and related entities */
-
-  cs_mesh_location_finalize();
-  cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
-
-  cs_mesh_destroy(cs_glob_mesh);
-
-  /* Create new global mesh and related entities */
-
-  cs_mesh_location_initialize();
-  cs_glob_mesh = cs_mesh_create();
-  cs_glob_mesh->verbosity = 0;
-  _copy_mesh(tbm->reference_mesh, cs_glob_mesh);
-  cs_glob_mesh_builder = cs_mesh_builder_create();
-  cs_glob_mesh_quantities = cs_mesh_quantities_create();
-
-  /* Update geometry, if necessary */
-
-  if (tbm->n_rotors > 0)
-    _update_geometry(cs_glob_mesh, t_cur_mob);
-
-  /* Reset the interior faces -> cells connectivity */
-  /* (in order to properly build the halo of the joined mesh) */
-
-  cs_mesh_to_builder_perio_faces(cs_glob_mesh, cs_glob_mesh_builder);
-
-  {
-    int i;
-    cs_lnum_t f_id;
-    cs_lnum_2_t *i_face_cells = (cs_lnum_2_t *)cs_glob_mesh->i_face_cells;
-    const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-    for (f_id = 0; f_id < cs_glob_mesh->n_i_faces; f_id++) {
-      for (i = 0; i < 2; i++) {
-        if (i_face_cells[f_id][i] >= n_cells)
-          i_face_cells[f_id][i] = -1;
-      }
-    }
-  }
-
-  /* Join meshes and build periodicity links */
-
-  cs_join_all(false);
-
-  cs_lnum_t boundary_changed = 0;
-  if (tbm->n_b_faces_ref > -1) {
-    if (cs_glob_mesh->n_b_faces != tbm->n_b_faces_ref)
-      boundary_changed = 1;
-  }
-  cs_parall_counter_max(&boundary_changed, 1);
-
-  /* Check that joining has not added or removed boundary faces.
-     Postprocess new faces appearing on boundary or inside of mesh:
-     this assumes that joining appends new faces at the end of the mesh */
-
-  if (boundary_changed) {
-    const int writer_id = -2;
-    const int writer_ids[] = {writer_id};
-    const int mesh_id = cs_post_get_free_mesh_id();
-    cs_lnum_t b_face_count[] = {tbm->n_b_faces_ref,
-                                cs_glob_mesh->n_b_faces};
-    cs_gnum_t n_g_b_faces_ref = tbm->n_b_faces_ref;
-    cs_parall_counter(&n_g_b_faces_ref, 1);
-    cs_post_init_error_writer();
-    cs_post_define_surface_mesh_by_func(mesh_id,
-                                        _("Added boundary faces"),
-                                        NULL,
-                                        _post_error_faces_select,
-                                        NULL,
-                                        b_face_count,
-                                        false, /* time varying */
-                                        true,  /* add groups if present */
-                                        false, /* auto variables */
-                                        1,
-                                        writer_ids);
-    cs_post_activate_writer(writer_id, 1);
-    cs_post_write_meshes(NULL);
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error in turbomachinery mesh update:\n"
-                "Number of boundary faces has changed from %llu to %llu.\n"
-                "There are probably unjoined faces, "
-                "due to an insufficiently regular mesh;\n"
-                "adjusting mesh joining parameters might help."),
-              (unsigned long long)n_g_b_faces_ref,
-              (unsigned long long)cs_glob_mesh->n_g_b_faces);
-  }
-
-  tbm->n_b_faces_ref = cs_glob_mesh->n_b_faces;
-
-  /* Initialize extended connectivity, ghost cells and other remaining
-     parallelism-related structures */
-
-  cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
-  cs_mesh_update_auxiliary(cs_glob_mesh);
-
-  /* Destroy the temporary structure used to build the main mesh */
-
-  cs_mesh_builder_destroy(&cs_glob_mesh_builder);
-
-  /* Update numberings (cells saved from previous, interior
-     faces updated, boundary faces computed after first joining,
-     saved from previous afterwards) */
-
-  cs_glob_mesh->cell_numbering = cell_numbering;
-
-  cs_renumber_i_faces(cs_glob_mesh);
-
-  if (b_face_numbering == NULL)
-    cs_renumber_b_faces(cs_glob_mesh);
-  else
-    cs_glob_mesh->b_face_numbering = b_face_numbering;
-
-  /* Build group classes */
-
-  cs_mesh_init_group_classes(cs_glob_mesh);
-
-  /* Print info on mesh */
-
-  if (cs_glob_mesh->verbosity > 0)
-    cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
-
-  /* Compute geometric quantities related to the mesh */
-
-  cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
-  cs_mesh_bad_cells_detect(cs_glob_mesh, cs_glob_mesh_quantities);
-  cs_user_mesh_bad_cells_tag(cs_glob_mesh, cs_glob_mesh_quantities);
-
-  /* Initialize selectors and locations for the mesh */
-
-  cs_mesh_init_selectors();
-  cs_mesh_location_build(cs_glob_mesh, -1);
-
-  /* Check coherency if debugging */
-
-#if 0
-  cs_mesh_coherency_check();
-#endif
-
-  /* Update Fortran mesh sizes and quantities */
-
-  cs_preprocess_mesh_update_fortran();
-
-  /* Update rotor cells flag array in case of parallelism and/or periodicity */
-
-  if (cs_glob_mesh->halo != NULL) {
-
-    const cs_mesh_t *m = cs_glob_mesh;
-
-    BFT_REALLOC(tbm->cell_rotor_num,
-                m->n_cells_with_ghosts,
-                int);
-
-    cs_halo_sync_untyped(m->halo,
-                         CS_HALO_EXTENDED,
-                         sizeof(int),
-                         tbm->cell_rotor_num);
-
-  }
-
-  /* Update linear algebra APIs relative to mesh */
-
-  cs_gradient_perio_update_mesh();
-  cs_matrix_update_mesh();
-
-  t_end = cs_timer_wtime();
-
-  *t_elapsed = t_end - t_start;
-
-  cs_timer_stats_switch(t_top_id);
+  _update_mesh(false, t_cur_mob, t_elapsed);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * Initialize restart mesh for unsteady rotor/stator computation
+ * \brief Read mesh from checkpoint for unsteady rotor/stator computation.
  *
- * \param[in]   t_cur_mob  current rotor time
- * \param[out]  t_elapsed  elapsed computation time
+ * \param[in]   t_cur_mob     current rotor time
+ * \param[out]  t_elapsed     elapsed computation time
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1040,81 +1074,7 @@ void
 cs_turbomachinery_restart_mesh(double   t_cur_mob,
                                double  *t_elapsed)
 {
-  double  t_start, t_end;
-
-  cs_halo_type_t halo_type = cs_glob_mesh->halo_type;
-  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
-
-  int t_stat_id = cs_timer_stats_id_by_name("mesh_processing");
-  int t_top_id = cs_timer_stats_switch(t_stat_id);
-
-  t_start = cs_timer_wtime();
-
-  /* Indicates we are in the framework of turbomachinery */
-
-  tbm->active = true;
-
-  /* Cell and boundary face numberings can be moved from old mesh
-     to new one, as the corresponding parts of the mesh should not change */
-
-  cs_numbering_t *cell_numbering = cs_glob_mesh->cell_numbering;
-  cs_numbering_t *b_face_numbering = cs_glob_mesh->b_face_numbering;
-  cs_glob_mesh->cell_numbering = NULL;
-  cs_glob_mesh->b_face_numbering = NULL;
-
-  /* Destroy previous global mesh and related entities */
-
-  cs_mesh_location_finalize();
-  cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
-
-  cs_mesh_destroy(cs_glob_mesh);
-
-  /* Create new global mesh and related entities */
-
-  cs_mesh_location_initialize();
-  cs_glob_mesh = cs_mesh_create();
-  cs_glob_mesh->verbosity = 0;
-  cs_glob_mesh_builder = cs_mesh_builder_create();
-  cs_glob_mesh_quantities = cs_mesh_quantities_create();
-
-  cs_preprocessor_data_add_file("restart/mesh_output", 0, NULL, NULL);
-
-  cs_preprocessor_data_read_headers(cs_glob_mesh,
-                                    cs_glob_mesh_builder);
-
-  cs_preprocess_mesh(tbm->reference_mesh->halo_type, true);
-
-  /* Update Fortran mesh sizes and quantities */
-
-  cs_preprocess_mesh_update_fortran();
-
-  /* Update rotor cells flag array in case of parallelism and/or periodicity */
-
-  if (cs_glob_mesh->halo != NULL) {
-
-    const cs_mesh_t *m = cs_glob_mesh;
-
-    BFT_REALLOC(tbm->cell_rotor_num,
-                m->n_cells_with_ghosts,
-                int);
-
-    cs_halo_sync_untyped(m->halo,
-                         CS_HALO_EXTENDED,
-                         sizeof(int),
-                         tbm->cell_rotor_num);
-
-  }
-
-  /* Update linear algebra APIs relative to mesh */
-
-  cs_gradient_perio_update_mesh();
-  cs_matrix_update_mesh();
-
-  t_end = cs_timer_wtime();
-
-  *t_elapsed = t_end - t_start;
-
-  cs_timer_stats_switch(t_top_id);
+  _update_mesh(true, t_cur_mob, t_elapsed);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1160,13 +1120,14 @@ cs_turbomachinery_initialize(void)
 
   /* Complete the mesh with rotor-stator joining */
 
-  if (cs_glob_n_joinings > 0 && cs_restart_present()) {
+  if (cs_glob_n_joinings > 0) {
     cs_real_t t_elapsed;
-    cs_turbomachinery_restart_mesh(cs_glob_time_step->t_cur, &t_elapsed);
-  }
-  else if  (cs_glob_n_joinings > 0) {
-    cs_real_t t_elapsed;
-    cs_turbomachinery_update_mesh(cs_glob_time_step->t_cur, &t_elapsed);
+    if (cs_restart_present())
+      cs_turbomachinery_restart_mesh(cs_glob_time_step->t_cur,
+                                     &t_elapsed);
+    else
+      cs_turbomachinery_update_mesh(cs_glob_time_step->t_cur,
+                                    &t_elapsed);
   }
 
   /* Adapt postprocessing options if required;

@@ -76,15 +76,15 @@ BEGIN_C_DECLS
  * Local Type Definitions
  *============================================================================*/
 
+/* Directory name separator
+   (historically, '/' for Unix/Linux, '\' for Windows, ':' for Mac
+   but '/' should work for all on modern systems) */
+
+#define DIR_SEPARATOR '/'
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
-
-#if defined(WIN32) || defined(_WIN32)
-static const char _dir_separator = '\\';
-#else
-static const char _dir_separator = '/';
-#endif
 
 /*============================================================================
  *  Global variables
@@ -161,43 +161,28 @@ cs_mesh_save(cs_mesh_t          *mesh,
                                     mesh->n_g_vertices);
 
   /* Open file for output */
-  size_t  ldir, lname;
+  size_t  ldir = 0, lname = strlen(filename);
 
-  const char  *_path = path;
+  const char  *name = filename;
   char *_name = NULL;
 
-  if (_path != NULL) {
-    if (strlen(_path) == 0)
-      _path = NULL;
-  }
-  if (_path != NULL) {
-    if (cs_file_mkdir_default(_path) != 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _("The %s directory cannot be created"), _path);
-  }
+  if (path != NULL)
+    ldir = strlen(path);
 
-  if (_path != NULL) {
-    ldir = strlen(_path);
-    lname = strlen(filename);
+  if (ldir > 0) {
+    if (cs_file_mkdir_default(path) != 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("The %s directory cannot be created"), path);
 
     BFT_MALLOC(_name, ldir + lname + 2, char);
-
-    strcpy(_name, _path);
-    _name[ldir] = _dir_separator;
-    _name[ldir+1] = '\0';
-    strcat(_name, filename);
-    _name[ldir+lname+1] = '\0';
-  }
-  else {
-    lname = strlen(filename);
-    BFT_MALLOC(_name, lname + 1, char);
-    strcpy(_name, filename);
-    _name[lname+1] = '\0';
+    sprintf(_name, "%s%c%s",
+            path, DIR_SEPARATOR, filename);
+    name = _name;
   }
 
 #if defined(HAVE_MPI)
   cs_file_get_default_access(CS_FILE_MODE_WRITE, &method, &hints);
-  pp_out = cs_io_initialize(_name,
+  pp_out = cs_io_initialize(name,
                             "Face-based mesh definition, R0",
                             CS_IO_MODE_WRITE,
                             method,
@@ -213,6 +198,8 @@ cs_mesh_save(cs_mesh_t          *mesh,
                             method,
                             echo);
 #endif
+
+  BFT_FREE(_name);
 
   /* Write data */
   /*------------*/

@@ -136,8 +136,8 @@ cs_turbomachinery_finalize(void);
  * Update mesh for unsteady rotor/stator computation
  *
  * parameters:
- *   t_cur_mob <-- current rotor time
- *   t_elapsed --> elapsed computation time
+ *   t_cur_mob    <-- current rotor time
+ *   t_elapsed    --> elapsed computation time
  *----------------------------------------------------------------------------*/
 
 void
@@ -145,11 +145,11 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
                               double  *t_elapsed);
 
 /*----------------------------------------------------------------------------
- * Initialize restart mesh for unsteady rotor/stator computation
+ * Read mesh from checkpoint for unsteady rotor/stator computation
  *
  * parameters:
- *   t_cur_mob <-- current rotor time
- *   t_elapsed --> elapsed computation time
+ *   t_cur_mob    <-- current rotor time
+ *   t_elapsed    --> elapsed computation time
  *----------------------------------------------------------------------------*/
 
 void

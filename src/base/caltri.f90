@@ -1037,6 +1037,10 @@ if (iisuit.eq.1) then
 
   call ecrava(frcxt, prhyd)
 
+  if (iturbo.eq.2 .and. iecaux.eq.1) then
+    call trbsui
+  endif
+
   if (nfpt1t.gt.0) then
     ficsui = '1dwall_module'
     call ecrt1d                                                   &
@@ -1049,7 +1053,7 @@ if (iisuit.eq.1) then
   endif
 
   if (ippmod(iaeros).ge.0) then
-     call ecrctw ('cooling_towers'//c_null_char)
+    call ecrctw ('cooling_towers'//c_null_char)
   endif
 
   if (iilagr.gt.0) then
