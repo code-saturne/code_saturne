@@ -269,12 +269,14 @@ _log_func_var_opt_cal(const void *t)
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idften", _t->idften);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iswdyn", _t->iswdyn);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ischcv", _t->ischcv);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ibdtso", _t->ibdtso);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "isstpc", _t->isstpc);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "nswrgr", _t->nswrgr);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "nswrsm", _t->nswrsm);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imrgra", _t->imrgra);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imligr", _t->imligr);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ircflu", _t->ircflu);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iwgrec", _t->iwgrec);
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "thetav", _t->thetav);
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "blencv", _t->blencv);
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsilo", _t->epsilo);

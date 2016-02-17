@@ -332,7 +332,7 @@ Changes
   * enable multiple rotors for rotor-stator model based on mesh joining.
 
 - Generalize double backward implicit Euler time scheme for all variables.
-  It can be activated with the keyword ibdtso(ivar) = 1.
+  It can be activated with the keyword ibdtso(ivar) > 1.
 
 - Add a "slope_test_upwind_id" field keyword, allowing postprocessing output
   of the contribution of slope tests to convected variables.
