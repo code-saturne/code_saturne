@@ -5727,8 +5727,11 @@ cs_renumber_i_faces(cs_mesh_t  *mesh)
   p = getenv("CS_RENUMBER");
 
   if (p != NULL) {
-    if (strcmp(p, "off") == 0 || strcmp(p, "IBM") == 0)
+    if (strcmp(p, "off") == 0 || strcmp(p, "IBM") == 0) {
+      if (mesh->i_face_numbering == NULL)
+        mesh->i_face_numbering = cs_numbering_create_default(mesh->n_i_faces);
       return;
+    }
   }
 
   /* Apply renumbering */
@@ -5776,8 +5779,11 @@ cs_renumber_b_faces(cs_mesh_t  *mesh)
   p = getenv("CS_RENUMBER");
 
   if (p != NULL) {
-    if (strcmp(p, "off") == 0 || strcmp(p, "IBM") == 0)
+    if (strcmp(p, "off") == 0 || strcmp(p, "IBM") == 0) {
+      if (mesh->b_face_numbering == NULL)
+        mesh->b_face_numbering = cs_numbering_create_default(mesh->n_b_faces);
       return;
+    }
   }
 
   /* Apply renumbering */
