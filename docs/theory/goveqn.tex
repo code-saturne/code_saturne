@@ -169,8 +169,8 @@ and $\tens{S}$ , the strain rate tensor, as:
 \nomenclature[odeviator]{$\deviator{ \left(\tens{.} \right)}$}{deviatoric part of a tensor}
 \nomenclature[otrace]{$\trace{ \left(\tens{.}\right)}$}{trace of a tensor}
 %
-Note that a fluid for which \eqref{eq:goveqn:newtonian_fluid} holds isS called a Newtonian fluid, it is generally the case
-for water, air, but not the case of a paint because the stresses do not depend linearly on the strain rate.
+Note that a fluid for which \eqref{eq:goveqn:newtonian_fluid} holds is called a Newtonian fluid, it is generally the case
+for water or air, but not the case for a paint because the stresses do not depend linearly on the strain rate.
 
 \paragraph{Navier-Stokes equations:}
 Injecting Equation \eqref{eq:goveqn:newtonian_fluid} into the momentum Equation \eqref{eq:goveqn:momentum} and combining
@@ -263,7 +263,7 @@ velocity field and called the Reynolds stress tensor:
 \begin{equation}\label{eq:goveqn:def_reynolds_stress-tensor}
 \tens{R} \equiv \overline{\vect{u}^\prime \otimes \vect{u}^ \prime}.
 \end{equation}
-the latter requires a closure modelling which depends the turbulence model adopted. Two major types of modelling exist:
+the latter requires a closure modelling which depends on the turbulence model adopted. Two major types of modelling exist:
 
 \begin{enumerate}[ label=\roman{*}/, ref=(\roman{*})]
 \item Eddy Viscosity Models (\emph{EVM}) which assume that the Reynolds stress tensor is aligned with
@@ -317,7 +317,7 @@ Applying the latter filter to the Navier-Stokes Equations \eqref{eq:goveqn:navie
 where $\vect{u}^\prime$ are non-filtered fluctuations. An eddy viscosity hypothesis is made on the additional
 resulting tensor:
 \begin{equation}
-\widetilde{\vect{u}^\prime \otimes \vect{u}^\prime }  = \dfrac{2}{3} k \tens{Id} - 2 \mu_T \deviator{\widetilde{\tens{S}}},
+\rho \widetilde{\vect{u}^\prime \otimes \vect{u}^\prime }  = \dfrac{2}{3} \rho k \tens{Id} - 2 \mu_T \deviator{\widetilde{\tens{S}}},
 \end{equation}
 %
 where the above turbulent viscosity $\mu_T$ now accounts only for sub-grid effects.
@@ -345,7 +345,7 @@ read:
 \gradt \, \vect{u} \cdot \left( \rho \vect{u}\right)
 &=& - \grad P^\star
 + \divv \left( 2\left( \mu_l  +  \mu_T \right) \deviator{\tens{S}}   \right)
-- \divv \left(\rho \tens{R} - 2 \mu_T \deviator{\tens{S}} \right)
+- \divv \left(\rho \deviator{\tens{R}} + 2 \mu_T \deviator{\tens{S}} \right)
 + \left( \rho -\rho_0 \right)\vect{g}
 \\
  &+&\vect{ST}_{\vect{u}}-\rho\tens{K}\,\vect{u} + \Gamma \left( \vect{u}^{in} - \vect{u} \right).

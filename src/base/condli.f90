@@ -38,7 +38,7 @@
 !> \f]
 !> and
 !> \f[
-!> Q_\centf = A_P^f + B_P^f P_\centi
+!> Q_\centf = -\left(A_P^f + B_P^f P_\centi\right)
 !> \f]
 !> where \f$ P_\centi \f$ is the value of the variable \f$ P \f$ at the
 !> neighboring cell.
@@ -51,7 +51,7 @@
 !>   \f]
 !>   and
 !>   \f[
-!>   \delta Q_\centf = B_P^f \delta P_\centi
+!>   \delta Q_\centf = -B_P^f \delta P_\centi
 !>   \f]
 !>
 !> - for a vector field such as the veclocity \f$ \vect{u} \f$ the boundary
@@ -61,7 +61,7 @@
 !>   \f]
 !>   and
 !>   \f[
-!>   \vect{Q}_\centf = \vect{A}_u^f + \tens{B}_u^f \vect{u}_\centi
+!>   \vect{Q}_\centf = -\left(\vect{A}_u^f + \tens{B}_u^f \vect{u}_\centi\right)
 !>   \f]
 !>   where \f$ \tens{B}_u^g \f$ and \f$ \tens{B}_u^f \f$ are 3x3 tensor matrix
 !>   which coupled veclocity components next to a boundary.

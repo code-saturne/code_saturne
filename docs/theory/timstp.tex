@@ -58,9 +58,8 @@ form; the mass equation ($\frac{\partial \rho } {\partial t}+ \dive(\rho
 %
 \begin{equation}\label{eq:timstp:transport_eq_scalar}
 \rho \der{\varia}{t} + \grad \varia \cdot \left(\rho \vect{u} \right)
-- \dive \left(\rho \vect{u} \right) \varia
 - \dive \left(K \grad \varia \right) = S_{i}\left(\Phi, \, \varphi\right) \varia + S_{e}\left(\Phi,\varphi \right)
-+ \Gamma \left( \varia - \varia^{in} \right).
++ \Gamma \left(\varia^{in} - \varia \right).
 \end{equation}
 In Equation \eqref{eq:timstp:transport_eq_scalar}, $\Phi$ represents the physical properties such as $(\rho,K,\mu_{t},...)$,
 $\varphi$ represents the variables of the problem such as $(\vect{u},k,\epsilon,...)$,
@@ -238,7 +237,7 @@ $[\,\vect{ST}_u-\tens{K}\,\vect{u} + \rho \vect{g} \,]$  are sources terms (note
 \tens{S} &=& \dfrac{1}{2} \left( \gradt \, \vect{u}+\transpose{\gradt \, \vect{u}} \right) .
 \end{array}\right.
 \end{equation}
- where  $\mu$ is the dynamic molecular viscosity
+ where  $\mu$ is the dynamic molecular viscosity,
  $\kappa$ the volume viscosity (also called the second viscosity, usually neglected in the code, excepted for compressible flows).
 $\tens{S}$ is called the strain rate and  $\Gamma$ is an eventual mass source term.
 
@@ -267,15 +266,15 @@ the momentum equation of \eqref{eq:timstp:navier_stokes}
 \text{convection}
 }%end underbrace
 &= & \underbrace{
-\divv \left[ \mu \left( \gradt \, \vect{\widetilde{u}}^{n+\theta}
+\divv \left[ \left(\mu+\mu_t\right) \left( \gradt \, \vect{\widetilde{u}}^{n+\theta}
           + \transpose{\left(\gradt \, \vect{\widetilde{u}}^{n+\theta}\right)}
           - \frac{2}{3} \trace \left( \gradt \, \vect{\widetilde{u}}^{n+\theta}  \right)\right)\right]
 }_{
 \text{viscous term}
 }% end underbrace
 \\
- &-& \grad \left( P^n \right)
- - \divv \left( \rho \tens{R} \right)
+ &-& \grad \left[ \left(P^*\right)^n \right]
+ - \divv \left( \rho \deviator{\tens{R}}  + 2 \mu_T \deviator{\tens{S}}\right)
  + \left( \rho -\rho_0 \right) \vect{g} \\
 &\displaystyle +&
 \underbrace{

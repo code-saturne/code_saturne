@@ -83,9 +83,9 @@ then defined as:
 The value at the boundary face $\fib$ of the diffusive flux $q_\ib$ of the variable $\varia$
 is then defined as (see Equation \eqref{eq:spadis:boundary_flux}):
 \begin{equation}\label{eq:bndcnd:coef_f_def}
-q_\ib \equiv \dfrac{D_\ib \left( K_\fib , \, \varia \right)}{\norm{\vect{S}}_\fib} = A^f_\ib + B^f_\ib  \varia_\centip.
+q_\ib \equiv \dfrac{D_\ib \left( K_\fib , \, \varia \right)}{\norm{\vect{S}}_\fib} = -\left(A^f_\ib + B^f_\ib  \varia_\centip\right).
 \end{equation}
-Note that the diffusive boundary coefficients are oriented, which means that they are such that $D_\ib \left( K_\fib , \, \varia \right) $ is positive,
+Note that the diffusive boundary coefficients are oriented, which means that they are such that if $D_\ib \left( K_\fib , \, \varia \right) $ is positive,
 this flux is gained by $\varia_\celli$.
  %
 \end{itemize}
@@ -477,7 +477,7 @@ wall outside of the mesh if the first cell lies in the viscous sub-layer. "Scala
 only work with the "two friction velocity scales" version.
 
 The wall functions are usually derived from Eddy Viscosity Models such as $k-\varepsilon$, thus the coming sections
-assume that $\tens{R} = \dfrac{2}{3}k \tens{1} - \nu_T \tens{S}$.
+assume that $\tens{R} = \dfrac{2}{3}k \tens{1} - 2\nu_T \deviator{\tens{S}}$.
 
 
 %-------------------------------------------------------------------------------
@@ -580,7 +580,7 @@ $L_m = C_\mu^{\frac{3}{4}} \dfrac{k^{\frac{3}{2}}}{\epsilon}$ is the integral le
 the following equation is obtained:
 %
 \begin{equation}\label{eq:bndcnd:simplified_momentum_evm_adim_2scales}
-\left( 1 + \dfrac{1}{\kappa y_k^+} \right) \dfrac{\partial u^+}{\partial y^+_k} = 1.
+\left( 1 + \kappa y_k^+ \right) \dfrac{\partial u^+}{\partial y^+_k} = 1.
 \end{equation}
 
 The two areas defined in the previous section \eqref{eq:bndcnd:ypup_1scale} that are the viscous sub-layer and the logarithmic layer still hold, but with $y^+_k$ instead of $y^+$:

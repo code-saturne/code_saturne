@@ -368,10 +368,10 @@ numerical fluxes $D_\ij \left( K_\fij , \, \varia \right)$ calculated at the int
 boundary faces of the computational domain $\Omega$ defined by Equation~\eqref{eq:spadis:diffusion_flux}.
 
 Note that $D_\ib \left( K_\fib , \, \varia \right)$ makes appear the \textbf{diffusion} boundary conditions of the field $\varia$
- and are described in detail in \chaptername~\ref{chapter:bndcnd}. The value of flux $D_\ib $ of the $\varia_\fib$ is expressed as follows:
+ and are described in detail in \chaptername~\ref{chapter:bndcnd}. The value of the flux $D_\ib $ of $\varia_\fib$ is expressed as follows:
  %
 \begin{equation}\label{eq:spadis:boundary_flux}%TODO use recall
-\dfrac{D_\ib}{\norm{\vect{S}}_\fib}  \equiv A_\ib^f + B_\ib^f \varia_\centip.
+\dfrac{D_\ib}{\norm{\vect{S}}_\fib}  \equiv -\left(A_\ib^f + B_\ib^f \varia_\centip\right).
 \end{equation}
 
 The value of the diffusive flux $D_\ij $ depends on the \emph{reconstruction} of the field $\varia$ and also on the interpolation at the face  of the diffusivity $K$ from the cell values. Two interpolations are available:
@@ -856,8 +856,8 @@ with:
 
 \begin{remark}
 Note that the matrix $\tens{C}_{\celli}$ in \eqref{eq:eq_second_membre_gradrv} is not the same as in \eqref{eq:eq_second_membre_gradrc}. First of all,
-there is no boundary term and thus its invert has not to be recomputed at each iteration (except if the mesh is not modified). This matrix thus  only
-measure the quality of the mesh (if the mesh is orthogonal, $\tens{C}_{\celli} = \tens{1}$ for all cells).
+there is no boundary term and thus its invert has not to be recomputed at each iteration (except if the mesh is modified). This matrix thus  only
+measures the quality of the mesh (if the mesh is orthogonal, $\tens{C}_{\celli} = \tens{1}$ for all cells).
 Secondly, this matrix is dimensionless, whereas in \eqref{eq:eq_second_membre_gradrc} $\tens{C}_\celli$ has the dimension of a volume. This choice has
 been motivated to minimize truncature errors.
 \end{remark}
