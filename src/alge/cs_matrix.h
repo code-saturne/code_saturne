@@ -248,6 +248,24 @@ cs_matrix_t *
 cs_matrix_create_by_variant(const cs_matrix_structure_t  *ms,
                             const cs_matrix_variant_t    *mv);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a matrix container by copying another
+ *
+ * Note that the matrix containers share the same assigned structure,
+ * so they must be both destroyed before that structure.
+ *
+ * If assigned, coefficients are not copied.
+ *
+ * \param[in]  src  reference matrix structure
+ *
+ * \return  pointer to created matrix structure;
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_matrix_create_by_copy(cs_matrix_t   *src);
+
 /*----------------------------------------------------------------------------
  * Destroy a matrix structure.
  *

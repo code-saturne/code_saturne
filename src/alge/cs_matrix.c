@@ -5399,6 +5399,58 @@ cs_matrix_create_by_variant(const cs_matrix_structure_t  *ms,
   return m;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a matrix container by copying another
+ *
+ * Note that the matrix containers share the same assigned structure,
+ * so they must be both destroyed before that structure.
+ *
+ * If assigned, coefficients are not copied.
+ *
+ * \param[in]  src  reference matrix structure
+ *
+ * \return  pointer to created matrix structure;
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_matrix_create_by_copy(cs_matrix_t   *src)
+{
+  cs_matrix_t *m;
+
+  BFT_MALLOC(m, 1, cs_matrix_t);
+
+  memcpy(m, src, sizeof(cs_matrix_t));
+
+  /* Define coefficients */
+
+  switch(m->type) {
+  case CS_MATRIX_NATIVE:
+    m->coeffs = _create_coeff_native();
+    break;
+  case CS_MATRIX_CSR:
+    m->coeffs = _create_coeff_csr();
+    break;
+  case CS_MATRIX_CSR_SYM:
+    m->coeffs = _create_coeff_csr_sym();
+    break;
+  case CS_MATRIX_MSR:
+    m->coeffs = _create_coeff_msr();
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("Handling of matrixes in %s format\n"
+                "is not operational yet."),
+              _(cs_matrix_type_name[m->type]));
+    break;
+  }
+
+  cs_matrix_release_coefficients(m);
+
+  return m;
+}
+
 /*----------------------------------------------------------------------------
  * Destroy a matrix structure.
  *
