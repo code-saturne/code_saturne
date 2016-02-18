@@ -176,7 +176,7 @@ contains
     itscvi = 1
 
     ! min/max clippings for the void fraction
-    clvfmn = 1.d-10
+    clvfmn = 1.d-12
     clvfmx = 1.d0 - clvfmn
 
   end subroutine init_cavitation
@@ -464,10 +464,12 @@ contains
           call rotation_velocity(irotce(iel1), cdgfac(:,ifac), vr1)
           call rotation_velocity(irotce(iel2), cdgfac(:,ifac), vr2)
 
-          imasfl_abs(ifac) = imasfl(ifac) + 0.5d0 *rhofac*(         &
-                              surfac(1,ifac)*(vr1(1) + vr2(1))      &
-                            + surfac(2,ifac)*(vr1(2) + vr2(2))      &
-                            + surfac(3,ifac)*(vr1(3) + vr2(3)) )
+          imasfl_abs(ifac) = imasfl_rel(ifac) + 0.5d0 *rhofac*(         &
+                                  surfac(1,ifac)*(vr1(1) + vr2(1))      &
+                                + surfac(2,ifac)*(vr1(2) + vr2(2))      &
+                                + surfac(3,ifac)*(vr1(3) + vr2(3)) )
+        else
+          imasfl_abs(ifac) = imasfl_rel(ifac)
         endif
       enddo
       !$omp parallel do private(iel, rhofac) &
@@ -479,9 +481,11 @@ contains
           rhofac = brom(ifac)
           call rotation_velocity(irotce(iel), cdgfbo(:,ifac), vr)
 
-          bmasfl_abs(ifac) = bmasfl(ifac) + rhofac*( surfbo(1,ifac)*vr(1) &
-                                               + surfbo(2,ifac)*vr(2)     &
-                                               + surfbo(3,ifac)*vr(3) )
+          bmasfl_abs(ifac) = bmasfl_rel(ifac) + rhofac*( surfbo(1,ifac)*vr(1) &
+                                              + surfbo(2,ifac)*vr(2)     &
+                                              + surfbo(3,ifac)*vr(3) )
+        else
+          bmasfl_abs(ifac) = bmasfl_rel(ifac)
         endif
       enddo
       imasfl => imasfl_abs(1:nfac)
