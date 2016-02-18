@@ -239,8 +239,11 @@ class TurbulenceModel(Variables, Model):
             self.setWallFunction(wall_function)
 
         elif model_turb in self.LESmodels():
-            self.setNewProperty(self.node_turb, 'smagorinsky_constant^2')
-            self.__removeVariablesAndProperties([], 'turbulent_viscosity')
+            if model_turb == 'LES_dynamique':
+                self.setNewProperty(self.node_turb, 'smagorinsky_constant^2')
+            else:
+                self.__removeVariablesAndProperties([], 'smagorinsky_constant^2')
+            self.setNewProperty(self.node_turb, 'turbulent_viscosity')
             self.node_turb.xmlRemoveChild('wall_function')
 
             from code_saturne.Pages.TimeStepModel import TimeStepModel
