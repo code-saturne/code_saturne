@@ -5,6 +5,10 @@ Release 4.0.5 (unreleased)
 Bug fixes:
 ----------
 
+- Fix in GUI: * turbulent viscosity should be a property even in LES
+              * and it shouldn't be hidden in log and post-processing
+              * dyn. Smagorinsky constant should be a property only in dyn. LES.
+
 - GUI: fix error extracting group names from preprocessing log in some cases.
 
 - Fix postprocessing of unlocated Syrthes coupling face centers in 2D.
