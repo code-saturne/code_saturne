@@ -98,10 +98,10 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-#undef _CS_MODULE2
+#undef _CS_MODULE2_2
 
-#define _CS_MODULE2(vect) \
-  (vect[0] * vect[0] + vect[1] * vect[1] + vect[2] * vect[2])
+#define _CS_MODULE2_2(vect) \
+  0.5*(vect[0] * vect[0] + vect[1] * vect[1] + vect[2] * vect[2])
 
 /*============================================================================
  * Public function definitions
@@ -1773,18 +1773,18 @@ cs_pressure_drop_by_zone(const int  bc_type[],
                      &term_balance);
 
     if (b_mass_flux[f_id_sel] > 0) {
-      out_debit -= b_mass_flux[f_id_sel]/rho[c_id];
-      out_pressure -= term_balance;
+      out_debit += b_mass_flux[f_id_sel]/rho[c_id];
+      out_pressure += term_balance;
     } else {
-      in_debit -= b_mass_flux[f_id_sel]/rho[c_id];
-      in_pressure -= term_balance;
+      in_debit += b_mass_flux[f_id_sel]/rho[c_id];
+      in_pressure += term_balance;
     }
 
     /* Kinematic term */
-    cs_real_t u2 = _CS_MODULE2(velocity[c_id]);
-    cs_real_t a_u2 = _CS_MODULE2(a_u[f_id_sel]);
+    cs_real_t u2 = _CS_MODULE2_2(velocity[c_id]);
+    cs_real_t a_u2 = _CS_MODULE2_2(a_u[f_id_sel]);
     /* Approximation of u^2 BC */
-    cs_real_t b_u2 = 1./3.*( b_u[f_id_sel][0][0] * b_u[f_id_sel][0][0]
+    cs_real_t b_u2 = 1./6.*( b_u[f_id_sel][0][0] * b_u[f_id_sel][0][0]
                            + b_u[f_id_sel][1][1] * b_u[f_id_sel][1][1]
                            + b_u[f_id_sel][2][2] * b_u[f_id_sel][2][2]);
 
@@ -1812,9 +1812,9 @@ cs_pressure_drop_by_zone(const int  bc_type[],
                      &term_balance);
 
     if (b_mass_flux[f_id_sel] > 0) {
-      out_u2 -= term_balance;
+      out_u2 += term_balance;
     } else {
-      in_u2 -= term_balance;
+      in_u2 += term_balance;
     }
 
 
@@ -1878,11 +1878,11 @@ cs_pressure_drop_by_zone(const int  bc_type[],
     if (bi_face_cells[f_id_sel][0] >= 0) {
       if (c_id1 < n_cells) {
         if (i_mass_flux[f_id_sel] > 0) {
-          out_pressure -= bi_bterms[0];
-          out_debit -= i_mass_flux[f_id_sel] / rho[c_id1];
+          out_pressure += bi_bterms[0];
+          out_debit += i_mass_flux[f_id_sel] / rho[c_id1];
         } else {
-          in_pressure -= bi_bterms[0];
-          in_debit -= i_mass_flux[f_id_sel] / rho[c_id1];
+          in_pressure += bi_bterms[0];
+          in_debit += i_mass_flux[f_id_sel] / rho[c_id1];
         }
       }
     }
@@ -1890,11 +1890,11 @@ cs_pressure_drop_by_zone(const int  bc_type[],
     else {
       if (c_id2 < n_cells) {
         if (i_mass_flux[f_id_sel] > 0) {
-          in_pressure += bi_bterms[1];
-          in_debit += i_mass_flux[f_id_sel] / rho[c_id2];
+          in_pressure -= bi_bterms[1];
+          in_debit -= i_mass_flux[f_id_sel] / rho[c_id2];
         } else {
-          out_pressure += bi_bterms[1];
-          out_debit += i_mass_flux[f_id_sel] / rho[c_id2];
+          out_pressure -= bi_bterms[1];
+          out_debit -= i_mass_flux[f_id_sel] / rho[c_id2];
         }
       }
     }
@@ -1903,8 +1903,8 @@ cs_pressure_drop_by_zone(const int  bc_type[],
     bi_bterms[0] = 0.;
     bi_bterms[1] = 0.;
 
-    cs_real_t u2_id1 = _CS_MODULE2(velocity[c_id1]);
-    cs_real_t u2_id2 = _CS_MODULE2(velocity[c_id2]);
+    cs_real_t u2_id1 = _CS_MODULE2_2(velocity[c_id1]);
+    cs_real_t u2_id2 = _CS_MODULE2_2(velocity[c_id2]);
 
     cs_i_cd_unsteady_upwind(ircflp,
                             weight[f_id],
@@ -1941,9 +1941,9 @@ cs_pressure_drop_by_zone(const int  bc_type[],
     if (bi_face_cells[f_id_sel][0] >= 0) {
       if (c_id1 < n_cells) {
         if (i_mass_flux[f_id_sel] > 0) {
-          out_u2 -= bi_bterms[0];
+          out_u2 += bi_bterms[0];
         } else {
-          in_u2 -= bi_bterms[0];
+          in_u2 += bi_bterms[0];
         }
       }
     }
@@ -1951,9 +1951,9 @@ cs_pressure_drop_by_zone(const int  bc_type[],
     else {
       if (c_id2 < n_cells) {
         if (i_mass_flux[f_id_sel] > 0) {
-          in_u2 += bi_bterms[1];
+          in_u2 -= bi_bterms[1];
         } else {
-          out_u2 += bi_bterms[1];
+          out_u2 -= bi_bterms[1];
         }
       }
     }
@@ -1995,8 +1995,8 @@ cs_pressure_drop_by_zone(const int  bc_type[],
                "------------------------------------------------------------\n"
                "  |                 |\n"
                "  | u2 rho u . dS   | u2 rho u . dS\n"
-               "  |        -    -   |        -    -\n"
-               "  |                 |\n"
+               "  | -      -    -   | -      -    -\n"
+               "  | 2               | 2\n"
                "  | inlet           | outlet\n"
                "  %12.4e      %12.4e\n"
                "------------------------------------------------------------\n"
