@@ -114,18 +114,10 @@ class XMLmodel(Variables):
         nodeTurb, model = self.getTurbModel()
         nodeList = []
 
-        if model in ('mixing_length',
-                     'k-epsilon',
-                     'k-epsilon-PL',
-                     'k-omega-SST',
-                     'v2f-BL-v2/k',
-                     'Rij-epsilon',
-                     'Rij-SSG',
-                     'Rij-EBRSM',
-                     'Spalart-Allmaras'):
+        if model != 'off':
             nodeList.append(nodeTurb.xmlGetNode('property', name='turbulent_viscosity'))
 
-        elif model in ('LES_Smagorinsky', 'LES_dynamique'):
+        if model == 'LES_dynamique':
             nodeList.append(nodeTurb.xmlGetNode('property', name='smagorinsky_constant^2'))
 
         return nodeList

@@ -236,8 +236,11 @@ class TurbulenceModel(Variables, Model):
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant^2')
 
         elif model_turb in self.LESmodels():
-            self.setNewProperty(self.node_turb, 'smagorinsky_constant^2')
-            self.__removeVariablesAndProperties([], 'turbulent_viscosity')
+            if model_turb == 'LES_dynamique':
+                self.setNewProperty(self.node_turb, 'smagorinsky_constant^2')
+            else:
+                self.__removeVariablesAndProperties([], 'smagorinsky_constant^2')
+            self.setNewProperty(self.node_turb, 'turbulent_viscosity')
 
             from code_saturne.Pages.TimeStepModel import TimeStepModel
             TimeStepModel(self.case).setTimePassing(0)

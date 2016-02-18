@@ -190,7 +190,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.modelTurbModel.addItem(self.tr("Mixing length"), "mixing_length")
         self.modelTurbModel.addItem(self.tr("k-epsilon"), "k-epsilon")
         self.modelTurbModel.addItem(self.tr("k-epsilon Linear Production"), "k-epsilon-PL")
-        self.modelTurbModel.addItem(self.tr("Rij-epsilon LLR"), "Rij-epsilon")
+        self.modelTurbModel.addItem(self.tr("Rij-epsilon LRR"), "Rij-epsilon")
         self.modelTurbModel.addItem(self.tr("Rij-epsilon SSG"), "Rij-SSG")
         self.modelTurbModel.addItem(self.tr("Rij-epsilon EBRSM"), "Rij-EBRSM")
         self.modelTurbModel.addItem(self.tr("v2f BL-v2/k"), "v2f-BL-v2/k")
