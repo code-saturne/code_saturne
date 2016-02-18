@@ -5,6 +5,10 @@ Release 4.2.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix in GUI: * turbulent viscosity should be a property even in LES
+              * and it shouldn't be hidden in log and post-processing
+              * dyn. Smagorinsky constant should be a property only in dyn. LES.
+
 - Fix bug in EBRSM and GGDH models on scalars.
 
 - Fix crash in some parallel CGNS output cases (bug #165).
