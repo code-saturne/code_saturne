@@ -5,6 +5,9 @@ Release 4.1.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix occasional issues in transient turbomachinery module due to
+  over-optimized handling of boundary faces renumbering.
+
 - Fix crash in some parallel CGNS output cases (bug #165).
 
 - GUI: fix error extracting group names from preprocessing log in some cases.
