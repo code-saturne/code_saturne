@@ -840,9 +840,7 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
      to new one, as the corresponding parts of the mesh should not change */
 
   cs_numbering_t *cell_numbering = cs_glob_mesh->cell_numbering;
-  cs_numbering_t *b_face_numbering = cs_glob_mesh->b_face_numbering;
   cs_glob_mesh->cell_numbering = NULL;
-  cs_glob_mesh->b_face_numbering = NULL;
 
   /* Destroy previous global mesh and related entities */
 
@@ -942,18 +940,14 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
   cs_mesh_builder_destroy(&cs_glob_mesh_builder);
 
-  /* Update numberings (cells saved from previous, interior
-     faces updated, boundary faces computed after first joining,
-     saved from previous afterwards) */
+  /* Update numberings (cells saved from previous, faces
+     faces updated; it is important that boundary faces
+     renumbering produce the same result at each iteration) */
 
   cs_glob_mesh->cell_numbering = cell_numbering;
 
   cs_renumber_i_faces(cs_glob_mesh);
-
-  if (b_face_numbering == NULL)
-    cs_renumber_b_faces(cs_glob_mesh);
-  else
-    cs_glob_mesh->b_face_numbering = b_face_numbering;
+  cs_renumber_b_faces(cs_glob_mesh);
 
   /* Build group classes */
 
