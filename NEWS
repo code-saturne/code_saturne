@@ -5,6 +5,9 @@ Release 4.2.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix occasional issues in transient turbomachinery module due to
+  over-optimized handling of boundary faces renumbering.
+
 - Fix in GUI: * turbulent viscosity should be a property even in LES
               * and it shouldn't be hidden in log and post-processing
               * dyn. Smagorinsky constant should be a property only in dyn. LES.
