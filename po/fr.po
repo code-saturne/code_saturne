@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-02-01 19:56+0100\n"
+"POT-Creation-Date: 2016-02-19 12:39+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -2847,6 +2847,37 @@ msgstr ""
 
 #, c-format
 msgid ""
+"   ** PRESSURE DROP BY ZONE at iteration %6i\n"
+"   ---------------------------------------------\n"
+"------------------------------------------------------------\n"
+"   ZONE SELECTION CRITERIA: \"%s\"\n"
+"------------------------------------------------------------\n"
+"  |                 |\n"
+"  | p u . dS        | p u . dS\n"
+"  |   -    -        |   -    -\n"
+"  |                 |\n"
+"  | inlet           | outlet\n"
+"  %12.4e      %12.4e\n"
+"------------------------------------------------------------\n"
+"  |                 |\n"
+"  | u2 rho u . dS   | u2 rho u . dS\n"
+"  | -      -    -   | -      -    -\n"
+"  | 2               | 2\n"
+"  | inlet           | outlet\n"
+"  %12.4e      %12.4e\n"
+"------------------------------------------------------------\n"
+"  |                 |\n"
+"  | u . dS          | u . dS\n"
+"  | -    -          | -    -\n"
+"  |                 |\n"
+"  | inlet           | outlet\n"
+"  %12.4e      %12.4e\n"
+"------------------------------------------------------------\n"
+"\n"
+msgstr ""
+
+#, c-format
+msgid ""
 "  N ops:       %12ld\n"
 "  Wall clock:  %12.5e\n"
 "  GFLOPS:      %12.5e\n"
@@ -4572,18 +4603,21 @@ msgid ""
 "(%llu expected, %llu determined)."
 msgstr ""
 
+msgid "boundary condition type"
+msgstr "type de conditions aux limites"
+
 #, c-format
 msgid ""
 "\n"
 "First face with boundary condition definition error\n"
 "  (out of %llu)\n"
-"  has boundary condition type %d, center (%g, %g, %g)\n"
+"  has %s %d, center (%g, %g, %g)\n"
 "\n"
 msgstr ""
 "\n"
 "Première face avec une mauvaise définition de conditions aux limites\n"
 "  (sur %llu)\n"
-"  a une condition aux limites de type %d, un centre (%g, %g, %g)\n"
+"  a comme %s %d, et centre (%g, %g, %g)\n"
 "\n"
 
 msgid "Faces with B.C. error"
@@ -4925,6 +4959,9 @@ msgstr "intensif"
 
 msgid "extensive"
 msgstr "extensif"
+
+msgid "steady"
+msgstr "stationnaire"
 
 msgid "variable"
 msgstr "variable"
@@ -6097,6 +6134,10 @@ msgstr ""
 "\n"
 
 #, c-format
+msgid " Invalid format name for writer (case: %s, dirname: %s)."
+msgstr ""
+
+#, c-format
 msgid ""
 "The requested post-processing writer number\n"
 "%d is not defined.\n"
@@ -6297,6 +6338,73 @@ msgid ""
 msgstr ""
 "Section de type <%s> sur <%s>\n"
 "inattendue."
+
+msgid ""
+" Stop execution since the given cs_probe_set_t structure is empty.\n"
+" Please check your settings.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid value %s for setting key %s\n"
+" Valid choices are true or false.\n"
+" Please modify your setting.\n"
+msgstr ""
+
+msgid "exact"
+msgstr ""
+
+msgid "nearest cell center"
+msgstr ""
+
+msgid "nearest vertex"
+msgstr ""
+
+msgid " The given name for this set of probes is empty."
+msgstr ""
+
+#, c-format
+msgid ""
+" Error adding a new set of probes.\n"
+" %s is already used as a name for a set of probes.\n"
+" Please check your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" Stop adding a new set of probes.\n"
+" %s is already used as a name for a set of probes.\n"
+" Please check your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key for setting the set of probes %s.\n"
+" Please read listing for more details and modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid value %s for setting key %s.\n"
+" Valide choices are exact, nearest_cell_center or nearest_vertex\n"
+" Please check your settings."
+msgstr ""
+
+#, c-format
+msgid " Key %s is not implemented yet."
+msgstr " La clé %s n'est pas encore gérée."
+
+#, c-format
+msgid ""
+"\n"
+"Warning: probe set \"%s\"\n"
+"         %lu probes have not been located         on the associated mesh."
+msgstr ""
+
+msgid ""
+" This mode is not yet implemented to handle probe set.\n"
+" Please modify your settings."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -7981,10 +8089,6 @@ msgid ""
 " Please read listing for more details and modify your settings."
 msgstr ""
 
-#, c-format
-msgid " Key %s is not implemented yet."
-msgstr " La clé %s n'est pas encore gérée."
-
 msgid ""
 " Incompatible type of boundary condition by default.\n"
 " Please modify your settings.\n"
@@ -8021,7 +8125,7 @@ msgid " Unsteady terms are not handled yet.\n"
 msgstr ""
 
 #, c-format
-msgid "  -t-    Free CDO structures                  %12.3f s\n"
+msgid "  -t-    Free CDO structures               %12.3f s\n"
 msgstr ""
 
 msgid "Unkwown algorithm for cell center computation\n"
@@ -8062,8 +8166,9 @@ msgid ""
 " %d boundary faces have no boundary type."
 msgstr ""
 
+#, c-format
 msgid ""
-" Invalid key for setting a parameter for this domain.\n"
+" Invalid key %s setting a parameter for this domain.\n"
 " Please read listing for more details and modify your settings."
 msgstr ""
 
@@ -8176,7 +8281,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key for setting equation %s.\n"
+" Invalid key %s for setting equation %s.\n"
 " Please read listing for more details and modify your settings."
 msgstr ""
 
@@ -8373,8 +8478,9 @@ msgstr ""
 msgid " Invalid type of model for computing the moisture content."
 msgstr ""
 
+#, c-format
 msgid ""
-" Invalid key for setting the groundwater module.\n"
+" Invalid key %s for setting the groundwater module.\n"
 " Please read listing for more details and modify your settings."
 msgstr ""
 
@@ -8389,8 +8495,10 @@ msgstr ""
 msgid " Invalid type of property for %s."
 msgstr ""
 
+#, c-format
 msgid ""
-" Invalid key for setting the soil parameters in groundwater module.\n"
+" Invalid key %s for setting the soil parameters associated to location %s in "
+"the groundwater flow module.\n"
 " Please read the listing for more details and modify your settings."
 msgstr ""
 
@@ -8979,6 +9087,17 @@ msgstr ""
 
 #, c-format
 msgid "_compute_shapef: unhandled element type %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Located element can not be found among the sections of highest dimension.\n"
+" Element num: %d\n"
+" Nodal mesh name: %s\n"
+msgstr ""
+
+#, c-format
+msgid " Closest vertex has not been found for point %d in mesh %s\n"
 msgstr ""
 
 #, c-format
@@ -9702,6 +9821,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Warning: inconsistent data size for plot \"%s\" between\n"
+"field \"%s\" and previous outputs; values dropped.\n"
+msgstr ""
+
+#, c-format
+msgid ""
 "\n"
 "Memory use summary: %s\n"
 "\n"
@@ -9766,25 +9891,22 @@ msgstr ""
 
 #, c-format
 msgid ""
-"@                                                            \n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@                                                            \n"
-"@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
-"@    *******                                                 \n"
-"@                                                            \n"
-"@    In the zone %s has a face already marked                \n"
-"@    with a zone number.                                     \n"
-"@                                                            \n"
-"@    new zone number:             %i                         \n"
-"@    previous zone number:        %i                         \n"
-"@                                                            \n"
-"@    It seems that zones definitions are overlapping.        \n"
-"@                                                            \n"
-"@    The calculation will stop.                              \n"
-"@                                                            \n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@                                                            \n"
+"\n"
+"Error: boundary face zone overlap\n"
+"======\n"
+"\n"
+"Zone %i (\"%s\") contains at least\n"
+"one face already marked with zone number %i.\n"
 msgstr ""
+"\n"
+"Erreur : recouvrement de zones de conditions aux limites\n"
+"======\n"
+"\n"
+"Zone %i (\"%s\") contient au moins\n"
+"une face déjà marquée par le numéro de zone %i.\n"
+
+msgid "zone number"
+msgstr "numéro de zone"
 
 #, c-format
 msgid ""

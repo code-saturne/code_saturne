@@ -170,7 +170,7 @@ enddo
 
 if (irangp.ge.0) call parcmx(iok)
 if(iok.ne.0) then
-  call cs_boundary_conditions_error(itypfb)
+  call boundary_conditions_error(itypfb)
 endif
 
 !===============================================================================
@@ -1207,7 +1207,7 @@ if (irangp.ge.0) call parcmx(iok)
 if (iok.gt.0) then
   if (iok.eq.1 .or. iok.eq.3) write(nfecra,6060)
   if (iok.eq.2 .or. iok.eq.3) write(nfecra,6070)
-  call cs_boundary_conditions_error(itypfb)
+  call boundary_conditions_error(itypfb)
 endif
 
 ! 6.1.1 Convective Inlet bis
@@ -1265,7 +1265,7 @@ if (irangp.ge.0) call parcmx(iok)
 if (iok.gt.0) then
   if (iok.eq.1 .or. iok.eq.3) write(nfecra,6060)
   if (iok.eq.2 .or. iok.eq.3) write(nfecra,6070)
-  call cs_boundary_conditions_error(itypfb)
+  call boundary_conditions_error(itypfb)
 endif
 
 

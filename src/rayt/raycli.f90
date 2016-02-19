@@ -661,7 +661,7 @@ if (iok.ne.0) then
                        rvferr(24), rvferr(25)
   endif
 
-  call cs_boundary_conditions_error(itypfb)
+  call boundary_conditions_error(itypfb)
 
 endif
 

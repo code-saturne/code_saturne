@@ -45,7 +45,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "ple_locator.h"
+#include <ple_locator.h>
 
 #include "bft_mem.h"
 #include "bft_error.h"
@@ -444,12 +444,17 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
  * to defined types with inconsistent or incompatible values, the
  * absolute value indicating the original boundary condition type.
  *
- * \param[in]  bc_type  array of BC type ids
+ * An optional label may be used if the error is related to another
+ * attribute than the boundary type, for appropriate error reporting.
+ *
+ * \param[in]  bc_type     array of BC type ids
+ * \param[in]  type_name   name of attribute in error, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_error(const cs_int_t  bc_type[])
+cs_boundary_conditions_error(const cs_int_t   bc_type[],
+                             const char      *type_name)
 {
   /* local variables */
 
@@ -462,6 +467,12 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
   const cs_mesh_quantities_t *mesh_q = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
+
+  const char type_name_default[] = N_("boundary condition type");
+  const char *_type_name = type_name_default;
+
+  if (type_name != NULL)
+    _type_name = type_name;
 
   /* Prepare face marker */
 
@@ -517,8 +528,9 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
 
       bft_printf(_("\nFirst face with boundary condition definition error\n"
                    "  (out of %llu)\n"
-                   "  has boundary condition type %d, center (%g, %g, %g)\n\n"),
-                 (unsigned long long)n_errors , abs(err_face_type),
+                   "  has %s %d, center (%g, %g, %g)\n\n"),
+                 (unsigned long long)n_errors,
+                 _type_name, abs(err_face_type),
                  err_face_coo[0], err_face_coo[1], err_face_coo[2]);
     }
 

@@ -161,7 +161,7 @@ enddo
 if (irangp.ge.0) call parcmx(ierror(1))
 if (ierror(1).ne.0) then
   write(nfecra,1000)
-  call cs_boundary_conditions_error(ialtyb)
+  call boundary_conditions_error(ialtyb)
 endif
 
 !===============================================================================
@@ -345,7 +345,7 @@ endif
 
 if (ierror(1).gt.0) then
   write(nfecra,4000)
-  call cs_boundary_conditions_error(ialtyb)
+  call boundary_conditions_error(ialtyb)
 endif
 
 !===============================================================================

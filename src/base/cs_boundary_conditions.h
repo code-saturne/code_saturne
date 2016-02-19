@@ -35,6 +35,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include <ple_locator.h>
+
 #include "fvm_nodal.h"
 #include "fvm_writer.h"
 
@@ -71,12 +73,17 @@ BEGIN_C_DECLS
  * to defined types with inconsistent or incompatible values, the
  * absolute value indicating the original boundary condition type.
  *
+ * An optional label may be used if the error is related to another
+ * attribute than the boundary type, for appropriate error reporting.
+ *
  * parameters:
  *   bc_type   <-- array of BC type ids
+ *   type_name <-- name of attribute in error, or NULL
  *----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_error(const cs_int_t  bc_type[]);
+cs_boundary_conditions_error(const cs_int_t   bc_type[],
+                             const char      *type_name);
 
 /*----------------------------------------------------------------------------
  * Locate shifted boundary face coordinates on possibly filtered

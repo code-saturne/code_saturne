@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes
 -------
 
+ - When using boundary condition zones defined by the GUI, error reporting
+   for overlapping zones is improved, with associated visualization.
+
  - Turbomachinery module: for better restart behavior, the joined mesh
    is now also handled using checkpoint/restart.
 

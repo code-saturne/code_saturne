@@ -661,11 +661,12 @@ module cs_c_bindings
 
     ! Interface to C function handling boundary condition errors and output
 
-    subroutine cs_boundary_conditions_error(bc_type) &
+    subroutine cs_boundary_conditions_error(bc_type, type_name) &
       bind(C, name='cs_boundary_conditions_error')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), dimension(*), intent(in) :: bc_type
+      type(c_ptr), value :: type_name
     end subroutine cs_boundary_conditions_error
 
     !---------------------------------------------------------------------------
@@ -1328,6 +1329,32 @@ contains
     return
 
   end subroutine pressure_drop_by_zone
+
+  !=============================================================================
+
+  !> \brief Handle boundary condition definition errors and associated output.
+
+  !> For each boundary face, bc_type defines the boundary condition type.
+  !> As a convention here, zero values correspond to undefined types,
+  !> positive values to defined types (with no error), and negative values
+  !> to defined types with inconsistent or incompatible values, the
+  !> absolute value indicating the original boundary condition type.
+
+  !> param[in]  bc_type    array og BC type ids
+
+  subroutine boundary_conditions_error(bc_type)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer(c_int), dimension(*), intent(in) :: bc_type
+
+    ! Call C function with default name
+
+    call cs_boundary_conditions_error(bc_type, c_null_ptr)
+
+  end subroutine boundary_conditions_error
 
   !=============================================================================
 

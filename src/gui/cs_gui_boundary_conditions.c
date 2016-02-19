@@ -51,6 +51,7 @@
 #include "mei_evaluate.h"
 
 #include "cs_base.h"
+#include "cs_boundary_conditions.h"
 #include "cs_gui_util.h"
 #include "cs_gui.h"
 #include "cs_gui_specific_physics.h"
@@ -61,6 +62,7 @@
 #include "cs_prototypes.h"
 #include "cs_thermal_model.h"
 #include "cs_timer.h"
+#include "cs_parall.h"
 #include "cs_elec_model.h"
 
 /*----------------------------------------------------------------------------
@@ -1518,8 +1520,9 @@ _init_boundaries(const cs_lnum_t  *nfabor,
 
   }  /* for izones */
 
-  for (izone = 0 ; izone < zones ; izone++)
-  {
+  int overlap_error[4] = {0, -1, -1, -1};
+
+  for (izone = 0 ; izone < zones ; izone++) {
     zone_nbr = cs_gui_boundary_zone_number(izone + 1);
     faces_list = cs_gui_get_faces_list(izone,
                                        boundaries->label[izone],
@@ -1529,33 +1532,16 @@ _init_boundaries(const cs_lnum_t  *nfabor,
 
     /* check if faces are already marked with a zone number */
 
-    for (ifac = 0; ifac < faces; ifac++)
-    {
+    for (ifac = 0; ifac < faces; ifac++) {
       ifbr = faces_list[ifac];
-
-      if (izfppp[ifbr] != 0)
-      {
-        bft_error(__FILE__, __LINE__, 0,
-            _("@                                                            \n"
-              "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-              "@                                                            \n"
-              "@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
-              "@    *******                                                 \n"
-              "@                                                            \n"
-              "@    In the zone %s has a face already marked                \n"
-              "@    with a zone number.                                     \n"
-              "@                                                            \n"
-              "@    new zone number:             %i                         \n"
-              "@    previous zone number:        %i                         \n"
-              "@                                                            \n"
-              "@    It seems that zones definitions are overlapping.        \n"
-              "@                                                            \n"
-              "@    The calculation will stop.                              \n"
-              "@                                                            \n"
-              "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-              "@                                                            \n"),
-            boundaries->label[izone], zone_nbr, izfppp[ifbr]);
-
+      if (izfppp[ifbr] > 0) {
+        if (overlap_error[0] == 0) {
+          overlap_error[0] = 1;
+          overlap_error[1] = izfppp[ifbr];
+          overlap_error[2] = zone_nbr;
+          overlap_error[3] = izone;
+        }
+        izfppp[ifbr] = - izfppp[ifbr];
       }
       else {
         izfppp[ifbr] = zone_nbr;
@@ -1563,6 +1549,38 @@ _init_boundaries(const cs_lnum_t  *nfabor,
     } /* for ifac */
     BFT_FREE(faces_list);
   } /*  for izone */
+
+  /* Check for zone overlap errors */
+
+  cs_parall_max(1, CS_INT_TYPE, overlap_error);
+
+  if (overlap_error[0] > 0) {
+
+    int old_ref, err_ref, err_izone;
+
+    err_ref = -1, err_izone = -1;
+  
+    old_ref = overlap_error[1];
+    cs_parall_max(1, CS_INT_TYPE, &old_ref);
+    if (old_ref == overlap_error[1])
+      err_ref = overlap_error[2];
+    cs_parall_max(1, CS_INT_TYPE, &err_ref);
+    if (err_ref == overlap_error[2])
+      err_izone = overlap_error[3];
+    cs_parall_max(1, CS_INT_TYPE, &err_izone);
+
+    if (cs_glob_rank_id < 1)
+      bft_printf(_("\n"
+                   "Error: boundary face zone overlap\n"
+                   "======\n\n"
+                   "Zone %i (\"%s\") contains at least\n"
+                   "one face already marked with zone number %i.\n"),
+                 err_ref, boundaries->label[err_izone], old_ref);
+
+    cs_boundary_conditions_error(izfppp, _("zone number"));
+
+  }
+
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
