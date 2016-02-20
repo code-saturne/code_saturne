@@ -431,8 +431,6 @@ if (iforbr.ge.0 .and. iterns.eq.1) then
          + gy*(cdgfbo(2,ifac)-xyzp0(2))                           &
          + gz*(cdgfbo(3,ifac)-xyzp0(3)) )                         &
          - pred0
-! on ne rajoute pas P0, pour garder un maximum de precision
-!     &         + P0
     do isou = 1, 3
       forbr(isou,ifac) = forbr(isou,ifac) + pfac*surfbo(isou,ifac)
     enddo

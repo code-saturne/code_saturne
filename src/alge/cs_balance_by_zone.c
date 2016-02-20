@@ -103,6 +103,9 @@ BEGIN_C_DECLS
 #define _CS_MODULE2_2(vect) \
   0.5*(vect[0] * vect[0] + vect[1] * vect[1] + vect[2] * vect[2])
 
+#define _CS_DOT_PRODUCT(vect1, vect2) \
+  (vect1[0] * vect2[0] + vect1[1] * vect2[1] + vect1[2] * vect2[2])
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1546,6 +1549,8 @@ cs_pressure_drop_by_zone(const int  bc_type[],
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_face_cog;
   const cs_real_3_t *restrict dijpf
     = (const cs_real_3_t *restrict)fvq->dijpf;
   const cs_real_3_t *restrict diipb
@@ -1560,6 +1565,10 @@ cs_pressure_drop_by_zone(const int  bc_type[],
   const cs_real_t *pressure = f_pres->val;
   const cs_field_t *f_vel = CS_F_(u);
   const cs_real_3_t *velocity =  (cs_real_3_t *)f_vel->val;
+  cs_real_3_t gravity;
+  gravity[0] = cs_glob_physical_constants->gx;
+  gravity[1] = cs_glob_physical_constants->gy;
+  gravity[2] = cs_glob_physical_constants->gz;
 
   /* Zone cells selection variables*/
   cs_lnum_t n_cells_sel = 0;
@@ -1583,6 +1592,8 @@ cs_pressure_drop_by_zone(const int  bc_type[],
     out_pressure  : contribution from outlets
     in_u2         : contribution from inlets
     out_u2        : contribution from outlets
+    in_rhogx      : contribution from inlets
+    out_rhogx     : contribution from outlets
     in_debit      : debit from inlets
     out_debit     : debit from outlets
      */
@@ -1591,6 +1602,8 @@ cs_pressure_drop_by_zone(const int  bc_type[],
   double out_pressure= 0.;
   double in_u2 = 0.;
   double out_u2 = 0.;
+  double in_rhogx = 0.;
+  double out_rhogx = 0.;
   double in_debit = 0.;
   double out_debit = 0.;
 
@@ -1742,7 +1755,7 @@ cs_pressure_drop_by_zone(const int  bc_type[],
 
     cs_real_t pip;
 
-    /* Pressure term */
+    /* Pressure term FIXME rho0*gravity*(X-X0) should be added */
     cs_real_t p_rho = pressure[c_id] / rho[c_id];
     cs_real_t a_p_rho = a_p[f_id_sel] / rho[c_id];
     cs_real_t b_p_rho = b_p[f_id_sel] / rho[c_id];
@@ -1816,6 +1829,42 @@ cs_pressure_drop_by_zone(const int  bc_type[],
     } else {
       in_u2 += term_balance;
     }
+
+    /* Gravity term */
+    cs_real_t rhogx = - rho[c_id] * _CS_DOT_PRODUCT(gravity, b_face_cog[f_id_sel]);
+    /* Trivial BCs */
+    cs_real_t a_rhogx = rhogx;
+    cs_real_t b_rhogx = 0;
+
+    cs_b_cd_unsteady(ircflp,
+                     diipb[f_id_sel],
+                     grad,
+                     rhogx,
+                     &pip);
+
+    term_balance = 0.;
+
+    cs_b_upwind_flux(iconvp,
+                     1., /* thetap */
+                     0, /* Conservative formulation, no mass accumulation */
+                     inc,
+                     ifaccp,
+                     bc_type[f_id_sel],
+                     rhogx,
+                     rhogx, /* no relaxation */
+                     pip,
+                     a_rhogx,
+                     b_rhogx,
+                     b_mass_flux[f_id_sel],
+                     1.,
+                     &term_balance);
+
+    if (b_mass_flux[f_id_sel] > 0) {
+      out_rhogx += term_balance;
+    } else {
+      in_rhogx += term_balance;
+    }
+
 
 
   }
@@ -1958,6 +2007,65 @@ cs_pressure_drop_by_zone(const int  bc_type[],
       }
     }
 
+    /* Gravity term */
+    bi_bterms[0] = 0.;
+    bi_bterms[1] = 0.;
+
+    cs_real_t rhogx_id1 = - rho[c_id1] * _CS_DOT_PRODUCT(gravity, i_face_cog[f_id_sel]);
+    cs_real_t rhogx_id2 = - rho[c_id2] * _CS_DOT_PRODUCT(gravity, i_face_cog[f_id_sel]);
+
+    cs_i_cd_unsteady_upwind(ircflp,
+                            weight[f_id],
+                            cell_cen[c_id1],
+                            cell_cen[c_id2],
+                            i_face_cog[f_id_sel],
+                            dijpf[f_id_sel],
+                            grad,
+                            grad,
+                            rhogx_id1,
+                            rhogx_id2,
+                            &pif,
+                            &pjf,
+                            &pip,
+                            &pjp);
+
+    cs_i_conv_flux(iconvp,
+                   1.,
+                   0, /* Conservative formulation, no mass accumulation */
+                   rhogx_id1,
+                   rhogx_id2,
+                   pif,
+                   pif, /* no relaxation */
+                   pjf,
+                   pjf, /* no relaxation */
+                   i_mass_flux[f_id_sel],
+                   1.,
+                   1.,
+                   bi_bterms);
+
+    /* (The cell is counted only once in parallel by checking that
+       the c_id is not in the halo) */
+    /* Face normal well oriented (check bi_face_cells array) */
+    if (bi_face_cells[f_id_sel][0] >= 0) {
+      if (c_id1 < n_cells) {
+        if (i_mass_flux[f_id_sel] > 0) {
+          out_rhogx += bi_bterms[0];
+        } else {
+          in_rhogx += bi_bterms[0];
+        }
+      }
+    }
+    /* Face normal direction reversed */
+    else {
+      if (c_id2 < n_cells) {
+        if (i_mass_flux[f_id_sel] > 0) {
+          in_rhogx -= bi_bterms[1];
+        } else {
+          out_rhogx -= bi_bterms[1];
+        }
+      }
+    }
+
   }
 
   /* Free memory */
@@ -1994,9 +2102,16 @@ cs_pressure_drop_by_zone(const int  bc_type[],
                "  %12.4e      %12.4e\n"
                "------------------------------------------------------------\n"
                "  |                 |\n"
-               "  | u2 rho u . dS   | u2 rho u . dS\n"
-               "  | -      -    -   | -      -    -\n"
-               "  | 2               | 2\n"
+               "  | u^2/2 rho u . dS| u^2/2 rho u . dS\n"
+               "  | -         -    -| -         -    -\n"
+               "  |                 |\n"
+               "  | inlet           | outlet\n"
+               "  %12.4e      %12.4e\n"
+               "------------------------------------------------------------\n"
+               "  |                 |\n"
+               "  |-rho(g . x)u . dS|-rho(g . x)u . dS\n"
+               "  |     -   - -    -|     -   - -    -\n"
+               "  |                 |\n"
                "  | inlet           | outlet\n"
                "  %12.4e      %12.4e\n"
                "------------------------------------------------------------\n"
@@ -2010,6 +2125,7 @@ cs_pressure_drop_by_zone(const int  bc_type[],
              nt_cur, selection_crit,
              in_pressure, out_pressure,
              in_u2, out_u2,
+             in_rhogx, out_rhogx,
              in_debit, out_debit);
 }
 /*----------------------------------------------------------------------------*/

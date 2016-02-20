@@ -272,7 +272,12 @@ BEGIN_C_DECLS
 
 /* main physical constants structure and associated pointer */
 
-static cs_physical_constants_t  _physical_constants = {8.31446, 0., 0., 0., 0};
+static cs_physical_constants_t _physical_constants = {
+  .r = 8.31446,
+  .gx = 0.,
+  .gy = 0.,
+  .gz = 0.,
+  .icorio = 0};
 
 /* main fluid properties structure and associated pointer */
 
