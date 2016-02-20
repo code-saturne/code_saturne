@@ -2700,7 +2700,7 @@ cs_mesh_quantities_cell_cen(const cs_mesh_t  *mesh,
 
   cs_real_t  *_cell_cen = NULL;
 
-  BFT_MALLOC(_cell_cen, n_cells_with_ghosts, cs_real_t);
+  BFT_MALLOC(_cell_cen, n_cells_with_ghosts * mesh->dim, cs_real_t);
 
   /* Compute cell centers from face barycenters or vertices */
 
