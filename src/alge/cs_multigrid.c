@@ -2987,7 +2987,6 @@ cs_multigrid_pc_create(void)
 
  * \param[in, out]  sles           pointer to solver object
  * \param[in]       state          convergence state
- * \param[in]       name           pointer to name of linear system
  * \param[in]       a              matrix
  * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       rhs            right hand side

@@ -73,7 +73,7 @@ BEGIN_C_DECLS
   \typedef cs_crystal_router_t
         Opaque Crystal Router distribution structure
 
-  \paragraph crystal_router_flags Using flags
+  \par Using flags
   \parblock
 
   Flags are defined as a sum (bitwise or) of constants, which may include

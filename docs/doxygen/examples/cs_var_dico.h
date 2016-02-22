@@ -167,27 +167,27 @@
   \ref cs_field_pointer.h. \n Note that \c dt is just an \c allocatable array in
   Fortran while it is mapped as a field in C.
 
-  V3.0 and older Fortran code     | Current Fortran code                             | C code                       | Description
-  ------------------------------- | ------------------------------------------------ | ---------------------------- | ------------
-  <tt> rtp(iel,ipr)               | call field_get_val_s(ivarfl(\ref ipr), cvar_pr)       | CS_F_(p)->val[cell_id]       | Pressure
-  <EM>(WARNING: removed)</EM> \n rtp(iel,iu) \n rtp(iel,iv) \n rtp(iel,iw) | call field_get_val_v(ivarfl(\ref iu), cvar_vel) \n cvar_vel(1, iel) \n cvar_vel(2, iel) \n cvar_vel(3, iel) | \n CS_F_(u)->val[cell_id][0] \n CS_F_(u)->val[cell_id][1] \n CS_F_(u)->val[cell_id][2] | Velocity
-  rtp(iel,ivoidf)                 | call field_get_val_s(ivarfl(\ref ivoidf), cvar_voidf) | CS_F_(void_f)->val[cell_id]  | Void fraction for cavitation modelling
-  rtp(iel,ik)                     | call field_get_val_s(ivarfl(\ref ik  ), cvar_k  )     | CS_F_(k)->val[cell_id]       | Turbulent kinetic energy \f$ k \f$
-  rtp(iel,iep)                    | call field_get_val_s(ivarfl(\ref iep ), cvar_eps)     | CS_F_(eps)->val[cell_id]     | Turbulent dissipation \f$ \varepsilon \f$
-  rtp(iel,ir11)                   | call field_get_val_s(ivarfl(\ref ir11), cvar_r11)     | CS_F_(r11)->val[cell_id]     | Reynolds stress component \f$ R_{xx} \f$
-  rtp(iel,ir22)                   | call field_get_val_s(ivarfl(\ref ir22), cvar_r22)     | CS_F_(r22)->val[cell_id]     | Reynolds stress component \f$ R_{yy} \f$
-  rtp(iel,ir33)                   | call field_get_val_s(ivarfl(\ref ir33), cvar_r33)     | CS_F_(r33)->val[cell_id]     | Reynolds stress component \f$ R_{zz} \f$
-  rtp(iel,ir12)                   | call field_get_val_s(ivarfl(\ref ir12), cvar_r12)     | CS_F_(r12)->val[cell_id]     | Reynolds stress component \f$ R_{xy} \f$
-  rtp(iel,ir23)                   | call field_get_val_s(ivarfl(\ref ir23), cvar_r23)     | CS_F_(r23)->val[cell_id]     | Reynolds stress component \f$ R_{yz} \f$
-  rtp(iel,ir13)                   | call field_get_val_s(ivarfl(\ref ir13), cvar_r13)     | CS_F_(r13)->val[cell_id]     | Reynolds stress component \f$ R_{xz} \f$
-  rtp(iel,iphi)                   | call field_get_val_s(ivarfl(\ref iphi), cvar_phi)     | CS_F_(phi)->val[cell_id]     | \f$ \phi \f$ for \f$ \phi-f_b \f$ model
-  rtp(iel,ifb)                    | call field_get_val_s(ivarfl(\ref ifb ), cvar_fb )     | CS_F_(f_bar)->val[cell_id]   | \f$ f_b \f$ for \f$ \phi-f_b \f$ model
-  rtp(iel,ial)                    | call field_get_val_s(ivarfl(\ref ial ), cvar_al )     | CS_F_(alpha)->val[cell_id]   | \f$ \alpha \f$ for \f$ Bl-v^2-k \f$ \n or EBRSM model
-  rtp(iel,iomg)                   | call field_get_val_s(ivarfl(\ref iomg), cvar_omg)     | CS_F_(omg)->val[cell_id]     | \f$ \omega \f$ for \f$ k-\omega \f$ SST model
-  rtp(iel,inusa)                  | call field_get_val_s(ivarfl(\ref inusa), cvar_nusa)   | CS_F_(nusa)->val[cell_id]    | \f$ \widetilde{\nu}_T \f$ for Spalart-Allmaras
-  rtp(iel,iuma) \n rtp(iel,ivma) \n rtp(iel,iwma) | call field_get_val_v(ivarfl(\ref iuma), cvar_mesh_v)  | CS_F_(mesh_u)->val[3*cell_id] \n CS_F_(mesh_u)->val[3*cell_id+1] \n CS_F_(mesh_u)->val[3*cell_id+2] | Mesh velocity
-  rtp(iel,ihm)                    | call field_get_val_s(ivarfl(isca(\ref ppincl::ihm "ihm")), cvar_hm) | CS_F_(h)->val[cell_id] | Enthalpy
-  rtp(iel,isca(iscalt)) | call field_get_val_s(ivarfl(isca(\ref optcal::iscalt "iscalt")), cvar_scalt) | CS_F_(t)->val[cell_id] | Temperature </tt>
+  Fortran code                             | C code                       | Description
+  ------------------------------------------------ | ---------------------------- | ------------
+  call field_get_val_s(ivarfl(\ref ipr), cvar_pr)       | CS_F_(p)->val[cell_id]       | Pressure
+  call field_get_val_v(ivarfl(\ref iu), cvar_vel) \n cvar_vel(1, iel) \n cvar_vel(2, iel) \n cvar_vel(3, iel) | \n CS_F_(u)->val[cell_id][0] \n CS_F_(u)->val[cell_id][1] \n CS_F_(u)->val[cell_id][2] | Velocity
+  call field_get_val_s(ivarfl(\ref ivoidf), cvar_voidf) | CS_F_(void_f)->val[cell_id]  | Void fraction for cavitation modelling
+  call field_get_val_s(ivarfl(\ref ik  ), cvar_k  )     | CS_F_(k)->val[cell_id]       | Turbulent kinetic energy \f$ k \f$
+  call field_get_val_s(ivarfl(\ref iep ), cvar_eps)     | CS_F_(eps)->val[cell_id]     | Turbulent dissipation \f$ \varepsilon \f$
+  call field_get_val_s(ivarfl(\ref ir11), cvar_r11)     | CS_F_(r11)->val[cell_id]     | Reynolds stress component \f$ R_{xx} \f$
+  call field_get_val_s(ivarfl(\ref ir22), cvar_r22)     | CS_F_(r22)->val[cell_id]     | Reynolds stress component \f$ R_{yy} \f$
+  call field_get_val_s(ivarfl(\ref ir33), cvar_r33)     | CS_F_(r33)->val[cell_id]     | Reynolds stress component \f$ R_{zz} \f$
+  call field_get_val_s(ivarfl(\ref ir12), cvar_r12)     | CS_F_(r12)->val[cell_id]     | Reynolds stress component \f$ R_{xy} \f$
+  call field_get_val_s(ivarfl(\ref ir23), cvar_r23)     | CS_F_(r23)->val[cell_id]     | Reynolds stress component \f$ R_{yz} \f$
+  call field_get_val_s(ivarfl(\ref ir13), cvar_r13)     | CS_F_(r13)->val[cell_id]     | Reynolds stress component \f$ R_{xz} \f$
+  call field_get_val_s(ivarfl(\ref iphi), cvar_phi)     | CS_F_(phi)->val[cell_id]     | \f$ \phi \f$ for \f$ \phi-f_b \f$ model
+  call field_get_val_s(ivarfl(\ref ifb ), cvar_fb )     | CS_F_(f_bar)->val[cell_id]   | \f$ f_b \f$ for \f$ \phi-f_b \f$ model
+  call field_get_val_s(ivarfl(\ref ial ), cvar_al )     | CS_F_(alpha)->val[cell_id]   | \f$ \alpha \f$ for \f$ Bl-v^2-k \f$ \n or EBRSM model
+  call field_get_val_s(ivarfl(\ref iomg), cvar_omg)     | CS_F_(omg)->val[cell_id]     | \f$ \omega \f$ for \f$ k-\omega \f$ SST model
+  call field_get_val_s(ivarfl(\ref inusa), cvar_nusa)   | CS_F_(nusa)->val[cell_id]    | \f$ \widetilde{\nu}_T \f$ for Spalart-Allmaras
+  call field_get_val_v(ivarfl(\ref iuma), cvar_mesh_v)  | CS_F_(mesh_u)->val[3*cell_id] \n CS_F_(mesh_u)->val[3*cell_id+1] \n CS_F_(mesh_u)->val[3*cell_id+2] | Mesh velocity
+  call field_get_val_s(ivarfl(isca(\ref ppincl::ihm "ihm")), cvar_hm) | CS_F_(h)->val[cell_id] | Enthalpy
+  call field_get_val_s(ivarfl(isca(\ref optcal::iscalt "iscalt")), cvar_scalt) | CS_F_(t)->val[cell_id] | Temperature </tt>
 
 
   \section cs_var_dico_props Properties

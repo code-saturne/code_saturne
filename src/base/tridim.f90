@@ -397,7 +397,6 @@ if (iperio.eq.1) then
     call field_get_val_s(ivarfl(ir23), cvar_r23)
 
     call perrte &
-    !==========
     ( cvar_r11, cvar_r12, cvar_r13,           &
       cvar_r12, cvar_r22, cvar_r23,           &
       cvar_r13, cvar_r23, cvar_r33 )
