@@ -622,7 +622,6 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   cs_real_33_t *restrict cocg = fvq->cocg_lsq;
-  cs_real_45_t *restrict cocgb_lsq = fvq->cocgb_lsq;
 
   cs_lnum_t  face_id, cell_id1, cell_id2, i, j;
   int        g_id, t_id;
@@ -631,13 +630,6 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
   cs_real_t  pfac, det_inv;
   cs_real_t  ddc;
   cs_real_3_t  dc;
-
-  /* Compute cocg */
-
-  if (cocgb_lsq == NULL) {
-    BFT_MALLOC(cocgb_lsq, m->n_b_cells, cs_real_45_t);
-    fvq->cocgb_lsq = cocgb_lsq;
-  }
 
   /* Initialization */
 
@@ -737,49 +729,6 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
     } /* loop on threads */
 
   } /* loop on thread groups */
-
-  /* Build indices bijection between [1-9] and [1-3]*[1-3] */
-
-  cs_lnum_2_t *_33_9_idx;
-  BFT_MALLOC(_33_9_idx, 9, cs_lnum_2_t);
-  int nn = 0;
-  for (int ll = 0; ll < 3; ll++) {
-    for (int mm = 0; mm < 3; mm++) {
-      _33_9_idx[nn][0] = ll;
-      _33_9_idx[nn][1] = mm;
-      nn++;
-    }
-  }
-
-  /* Save partial cocg at interior faces of boundary cells */
-
-# pragma omp parallel for
-  for (cs_lnum_t b_cell_id = 0; b_cell_id < m->n_b_cells; b_cell_id++) {
-    cs_lnum_t cell_id = m->b_cells[b_cell_id];
-    for (int ll = 0; ll < 9; ll++) {
-      /* index of row first coefficient */
-      int ll_9 = ll*(ll+1)/2;
-
-      for (int mm = 0; mm <= ll; mm++) {
-        /* initialize */
-        cocgb_lsq[b_cell_id][ll_9+mm] = 0.;
-
-        /* contribution of t[kk][qq] */
-        int pp = _33_9_idx[ll][0];
-        int qq = _33_9_idx[ll][1];
-
-        /* derivative with respect to t[rr][ss] */
-        int rr = _33_9_idx[mm][0];
-        int ss = _33_9_idx[mm][1];
-
-        /* part from cocg_s (BCs independant) */
-        if (pp == rr)
-          cocgb_lsq[b_cell_id][ll_9+mm] += cocg[cell_id][qq][ss];
-      }
-    }
-  }  /* loop on boundary cells */
-
-  BFT_FREE(_33_9_idx);
 
   /* Invert for all cells. */
   /*-----------------------*/
@@ -2172,7 +2121,6 @@ cs_mesh_quantities_create(void)
   mesh_quantities->cocg_s_lsq = NULL;
   mesh_quantities->cocg_it = NULL;
   mesh_quantities->cocg_lsq = NULL;
-  mesh_quantities->cocgb_lsq = NULL;
   mesh_quantities->b_sym_flag = NULL;
   mesh_quantities->c_solid_flag = NULL;
   mesh_quantities->bad_cell_flag = NULL;
@@ -2225,7 +2173,6 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
   BFT_FREE(mesh_quantities->cocg_s_lsq);
   BFT_FREE(mesh_quantities->cocg_it);
   BFT_FREE(mesh_quantities->cocg_lsq);
-  BFT_FREE(mesh_quantities->cocgb_lsq);
   BFT_FREE(mesh_quantities->b_sym_flag);
   BFT_FREE(mesh_quantities->c_solid_flag);
   BFT_FREE(mesh_quantities->bad_cell_flag);

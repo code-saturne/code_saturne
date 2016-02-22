@@ -101,8 +101,6 @@ typedef struct {
                                     for iterative gradients */
   cs_real_33_t  *cocg_lsq;       /* Interleaved cocg matrix
                                     for least square gradients */
-  cs_real_45_t  *cocgb_lsq;      /* Interleaved cocg matrix at boundary
-                                    for least square gradients (9x9 symmetric) */
 
   cs_int_t      *b_sym_flag;     /* Symmetry flag for boundary faces */
   cs_int_t      *c_solid_flag;   /* Is the fluid volume 0 flag */

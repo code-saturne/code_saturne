@@ -532,18 +532,6 @@ _cs_renumber_update_cells(cs_mesh_t  *mesh,
     }
   }
 
-  if (mesh->n_b_faces > 0) {
-
-    memcpy(face_cells_tmp,
-           mesh->b_face_b_cells,
-           mesh->n_b_faces * sizeof(cs_lnum_t));
-
-    for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
-      ii = face_cells_tmp[face_id];
-      mesh->b_face_b_cells[face_id] = new_cell_id[ii];
-    }
-  }
-
   /* Update cell -> cells connectivity for extended neighborhood */
 
   if (mesh->cell_cells_lst != NULL) {
@@ -779,13 +767,6 @@ _cs_renumber_update_b_faces(cs_mesh_t        *mesh,
     for (face_id = 0; face_id < n_b_faces; face_id++) {
       face_id_old = new_to_old_b[face_id];
       mesh->b_face_cells[face_id] = b_face_cells_old[face_id_old];
-    }
-
-    memcpy(b_face_cells_old, mesh->b_face_b_cells, n_b_faces*sizeof(cs_lnum_t));
-
-    for (face_id = 0; face_id < n_b_faces; face_id++) {
-      face_id_old = new_to_old_b[face_id];
-      mesh->b_face_b_cells[face_id] = b_face_cells_old[face_id_old];
     }
 
     BFT_FREE(b_face_cells_old);
