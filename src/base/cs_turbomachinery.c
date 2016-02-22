@@ -57,6 +57,7 @@
 #include "cs_halo_perio.h"
 #include "cs_matrix_default.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_mesh_coherency.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
@@ -867,6 +868,8 @@ _update_mesh(bool     restart_mode,
                          tbm->cell_rotor_num);
 
   }
+
+  cs_mesh_adjacencies_update_mesh();
 
   /* Update linear algebra APIs relative to mesh */
 

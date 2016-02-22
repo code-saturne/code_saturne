@@ -84,6 +84,7 @@
 #include "cs_log.h"
 #include "cs_numbering.h"
 #include "cs_prototypes.h"
+#include "cs_sort.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -644,106 +645,6 @@ _6_6_zero_range(cs_real_t  *restrict y,
 # pragma omp parallel for  if((end_id-start_id)*6 > CS_THR_MIN)
   for (ii = start_id*6; ii < end_id*6; ii++)
     y[ii] = 0.0;
-}
-
-/*----------------------------------------------------------------------------
- * Descend binary tree for the ordering of a cs_lnum_t (integer) array.
- *
- * parameters:
- *   number    <-> pointer to elements that should be ordered
- *   level     <-- level of the binary tree to descend
- *   n_elts    <-- number of elements in the binary tree to descend
- *----------------------------------------------------------------------------*/
-
-inline static void
-_sort_descend_tree(cs_lnum_t  number[],
-                   size_t     level,
-                   size_t     n_elts)
-{
-  size_t lv_cur;
-  cs_lnum_t num_save;
-
-  num_save = number[level];
-
-  while (level <= (n_elts/2)) {
-
-    lv_cur = (2*level) + 1;
-
-    if (lv_cur < n_elts - 1)
-      if (number[lv_cur+1] > number[lv_cur]) lv_cur++;
-
-    if (lv_cur >= n_elts) break;
-
-    if (num_save >= number[lv_cur]) break;
-
-    number[level] = number[lv_cur];
-    level = lv_cur;
-
-  }
-
-  number[level] = num_save;
-}
-
-/*----------------------------------------------------------------------------
- * Order an array of local numbers.
- *
- * parameters:
- *   number   <-> array of numbers to sort
- *   n_elts   <-- number of elements considered
- *----------------------------------------------------------------------------*/
-
-static void
-_sort_local(cs_lnum_t  number[],
-            size_t     n_elts)
-{
-  size_t i, j, inc;
-  cs_lnum_t num_save;
-
-  if (n_elts < 2)
-    return;
-
-  /* Use shell sort for short arrays */
-
-  if (n_elts < 20) {
-
-    /* Compute increment */
-    for (inc = 1; inc <= n_elts/9; inc = 3*inc+1);
-
-    /* Sort array */
-    while (inc > 0) {
-      for (i = inc; i < n_elts; i++) {
-        num_save = number[i];
-        j = i;
-        while (j >= inc && number[j-inc] > num_save) {
-          number[j] = number[j-inc];
-          j -= inc;
-        }
-        number[j] = num_save;
-      }
-      inc = inc / 3;
-    }
-
-  }
-
-  else {
-
-    /* Create binary tree */
-
-    i = (n_elts / 2);
-    do {
-      i--;
-      _sort_descend_tree(number, i, n_elts);
-    } while (i > 0);
-
-    /* Sort binary tree */
-
-    for (i = n_elts - 1 ; i > 0 ; i--) {
-      num_save   = number[0];
-      number[0] = number[i];
-      number[i] = num_save;
-      _sort_descend_tree(number, 0, i);
-    }
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1872,7 +1773,6 @@ _create_struct_csr(bool                have_diag,
                    cs_lnum_t           n_edges,
                    const cs_lnum_2_t  *edges)
 {
-  int n_cols_max;
   cs_lnum_t ii, jj, face_id;
   const cs_lnum_t *restrict face_cel_p;
 
@@ -1919,17 +1819,11 @@ _create_struct_csr(bool                have_diag,
 
   } /* if (edges != NULL) */
 
-  n_cols_max = 0;
-
   ms->_row_index[0] = 0;
   for (ii = 0; ii < ms->n_rows; ii++) {
     ms->_row_index[ii+1] = ms->_row_index[ii] + ccount[ii];
-    if (ccount[ii] > n_cols_max)
-      n_cols_max = ccount[ii];
     ccount[ii] = diag_elts; /* pre-count for diagonal terms */
   }
-
-  ms->n_cols_max = n_cols_max;
 
   /* Build structure */
 
@@ -1965,21 +1859,9 @@ _create_struct_csr(bool                have_diag,
 
   /* Sort line elements by column id (for better access patterns) */
 
-  if (n_cols_max > 1) {
-
-    for (ii = 0; ii < ms->n_rows; ii++) {
-      cs_lnum_t *col_id = ms->_col_id + ms->_row_index[ii];
-      cs_lnum_t n_cols = ms->_row_index[ii+1] - ms->_row_index[ii];
-      cs_lnum_t col_id_prev = -1;
-      _sort_local(col_id, ms->_row_index[ii+1] - ms->_row_index[ii]);
-      for (jj = 0; jj < n_cols; jj++) {
-        if (col_id[jj] == col_id_prev)
-          ms->direct_assembly = false;
-        col_id_prev = col_id[jj];
-      }
-    }
-
-  }
+  ms->direct_assembly = cs_sort_indexed(ms->n_rows,
+                                        ms->_row_index,
+                                        ms->_col_id);
 
   /* Compact elements if necessary */
 
@@ -2045,7 +1927,7 @@ _create_struct_csr_from_csr(bool         have_diag,
                             cs_lnum_t  **row_index,
                             cs_lnum_t  **col_id)
 {
-  cs_lnum_t _n_cols, n_cols_max;
+  cs_lnum_t _n_cols;
 
   cs_matrix_struct_csr_t  *ms = NULL;
 
@@ -2065,19 +1947,6 @@ _create_struct_csr_from_csr(bool         have_diag,
   ms->row_index = _row_index;
   ms->col_id = _col_id;
 
-  /* Count the max. number of nonzero elements per row */
-
-  n_cols_max = 0;
-  for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++) {
-    _n_cols = _row_index[ii+1] - _row_index[ii];
-    if (_n_cols > n_cols_max)
-      n_cols_max = _n_cols;
-  }
-
-  ms->n_cols_max = n_cols_max;
-  if (have_diag == false) /* diagonal term is stored elsewhere */
-    ms->n_cols_max += 1;
-
   ms->_row_index = NULL;
   ms->_col_id = NULL;
 
@@ -2091,12 +1960,56 @@ _create_struct_csr_from_csr(bool         have_diag,
 
     /* Sort line elements by column id (for better access patterns) */
 
-    if (n_cols_max > 1)
-      for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++)
-        _sort_local(ms->_col_id + ms->_row_index[ii],
-                    ms->_row_index[ii+1] - ms->_row_index[ii]);
+    cs_sort_indexed(ms->n_rows,
+                    ms->_row_index,
+                    ms->_col_id);
 
   }
+
+  return ms;
+}
+
+/*----------------------------------------------------------------------------
+ * Create a CSR matrix structure from an index and an array related
+ * to column id
+ *
+ * parameters:
+ *   have_diag       <-- indicates if diagonal structure contains nonzeroes
+ *   direct_assembly <-- true if each value corresponds to a unique face
+ *   n_rows          <- local number of rows
+ *   n_cols_ext      <-- local number of columns + ghosts
+ *   row_index       <-- index on rows
+ *   col_id          <-> array of colum ids related to the row index
+ *
+ * returns:
+ *    a pointer to a created CSR matrix structure
+ *----------------------------------------------------------------------------*/
+
+static cs_matrix_struct_csr_t *
+_create_struct_csr_from_shared(bool              have_diag,
+                               bool              direct_assembly,
+                               cs_lnum_t         n_rows,
+                               cs_lnum_t         n_cols_ext,
+                               const cs_lnum_t  *row_index,
+                               const cs_lnum_t  *col_id)
+{
+  cs_matrix_struct_csr_t  *ms = NULL;
+
+  /* Allocate and map */
+
+  BFT_MALLOC(ms, 1, cs_matrix_struct_csr_t);
+
+  ms->n_rows = n_rows;
+  ms->n_cols_ext = n_cols_ext;
+
+  ms->direct_assembly = direct_assembly;
+  ms->have_diag = have_diag;
+
+  ms->row_index = row_index;
+  ms->col_id = col_id;
+
+  ms->_row_index = NULL;
+  ms->_col_id = NULL;
 
   return ms;
 }
@@ -2793,7 +2706,6 @@ _create_struct_csr_sym(bool                have_diag,
                        cs_lnum_t           n_edges,
                        const cs_lnum_2_t  *edges)
 {
-  int n_cols_max;
   cs_lnum_t ii, jj, face_id;
   const cs_lnum_t *restrict edges_p;
 
@@ -2846,17 +2758,11 @@ _create_struct_csr_sym(bool                have_diag,
 
   } /* if (edges != NULL) */
 
-  n_cols_max = 0;
-
   ms->row_index[0] = 0;
   for (ii = 0; ii < ms->n_rows; ii++) {
     ms->row_index[ii+1] = ms->row_index[ii] + ccount[ii];
-    if (ccount[ii] > n_cols_max)
-      n_cols_max = ccount[ii];
     ccount[ii] = diag_elts; /* pre-count for diagonal terms */
   }
-
-  ms->n_cols_max = n_cols_max;
 
   /* Build structure */
 
@@ -5124,7 +5030,7 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
  * \param[in]       numbering   vectorization or thread-related numbering info,
  *                              or NULL
  *
- * \return  a pointer to a created CDO matrix structure
+ * \return  a pointer to a created matrix structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -5178,6 +5084,70 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
 
   /* Set pointers to structures shared from mesh here */
 
+  ms->halo = halo;
+  ms->numbering = numbering;
+
+  return ms;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create an MSR matrix structure sharing an existing connectivity
+ * definition as well as an optional edge-based definition.
+ *
+ * Note that as the structure created maps to the given existing
+ * cell global number, face -> cell connectivity arrays, and cell halo
+ * structure, it must be destroyed before they are freed
+ * (usually along with the code's main face -> cell structure).
+ *
+ * \param[in]  have_diag        indicates if the structure includes the
+ *                              diagonal (should be the same for all rows)
+ * \param[in]  direct_assembly  true if each value corresponds to
+                                a unique face
+ * \param[in]  n_rows           local number of rows
+ * \param[in]  n_cols_ext       local number of columns + ghosts
+ * \param[in]  row_index        index on rows
+ * \param[in]  col_id           array of colum ids related to the row index
+ * \param[in]  halo             halo structure for synchronization, or NULL
+ * \param[in]  numbering        vectorization or thread-related numbering
+ *                              info, or NULL
+ *
+ * \returns  a pointer to a created CDO matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_structure_t *
+cs_matrix_structure_create_msr_shared(bool                    have_diag,
+                                      bool                    direct_assembly,
+                                      cs_lnum_t               n_rows,
+                                      cs_lnum_t               n_cols_ext,
+                                      const cs_gnum_t        *cell_num,
+                                      const cs_lnum_t        *row_index,
+                                      const cs_lnum_t        *col_id,
+                                      const cs_halo_t        *halo,
+                                      const cs_numbering_t   *numbering)
+{
+  cs_matrix_structure_t *ms = NULL;
+
+  BFT_MALLOC(ms, 1, cs_matrix_structure_t);
+
+  ms->type = CS_MATRIX_MSR;
+
+  ms->n_rows = n_rows;
+  ms->n_cols_ext = n_cols_ext;
+
+  /* Define Structure */
+
+  ms->structure = _create_struct_csr_from_shared(have_diag,
+                                                 direct_assembly,
+                                                 n_rows,
+                                                 n_cols_ext,
+                                                 row_index,
+                                                 col_id);
+
+  /* Set pointers to structures shared from mesh here */
+
+  ms->row_num = cell_num;
   ms->halo = halo;
   ms->numbering = numbering;
 

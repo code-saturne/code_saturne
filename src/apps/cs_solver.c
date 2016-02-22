@@ -71,6 +71,7 @@
 #include "cs_log_iteration.h"
 #include "cs_matrix_default.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_mesh_coherency.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quality.h"
@@ -265,6 +266,7 @@ cs_run(void)
   /* Preprocess mesh */
 
   cs_preprocess_mesh(halo_type);
+  cs_mesh_adjacencies_initialize();
 
   /* Initialization for turbomachinery computations */
 
@@ -306,6 +308,8 @@ cs_run(void)
     cs_mesh_quantities_check_vol(cs_glob_mesh,
                                  cs_glob_mesh_quantities,
                                  (opts.verif ? 1 : 0));
+
+    cs_mesh_adjacencies_update_mesh();
 
     /* Initialize gradient computation */
 
@@ -444,6 +448,8 @@ cs_run(void)
   cs_lagr_destroy();
 
   /* Free main mesh after printing some statistics */
+
+  cs_mesh_adjacencies_finalize();
 
   cs_mesh_location_finalize();
   cs_mesh_quantities_destroy(cs_glob_mesh_quantities);

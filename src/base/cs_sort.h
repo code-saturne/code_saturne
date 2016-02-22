@@ -175,6 +175,23 @@ cs_sort_coupled_gnum_shell(cs_lnum_t  l,
                            cs_gnum_t  a[],
                            cs_gnum_t  b[]);
 
+/*----------------------------------------------------------------------------
+ * Sort rows of an indexed structure.
+ *
+ * parameters:
+ *   n_elts  <-- number of indexed elements
+ *   elt_idx <-- element index (size: n_elts+1)
+ *   elts    <-> indexed values
+ *
+ * returns:
+ *   true if no values were encountered multiple times in a given row
+ *---------------------------------------------------------------------------*/
+
+bool
+cs_sort_indexed(cs_lnum_t        n_elts,
+                const cs_lnum_t  elt_idx[],
+                cs_lnum_t        elts[]);
+
 /*---------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -136,8 +136,6 @@ typedef struct _cs_matrix_struct_csr_t {
 
   cs_lnum_t         n_rows;           /* Local number of rows */
   cs_lnum_t         n_cols_ext;       /* Local number of columns + ghosts */
-  cs_lnum_t         n_cols_max;       /* Maximum number of nonzero values
-                                         on a given row */
 
   /* Pointers to structure arrays and info (row_index, col_id) */
 
@@ -185,8 +183,6 @@ typedef struct _cs_matrix_struct_csr_sym_t {
   cs_lnum_t         n_rows;           /* Local number of rows */
   cs_lnum_t         n_cols;           /* Local number of columns
                                          (> n_rows in case of ghost columns) */
-  cs_lnum_t         n_cols_max;       /* Maximum number of nonzero values
-                                         on a given row */
 
   /* Pointers to structure arrays and info (row_index, col_id) */
 

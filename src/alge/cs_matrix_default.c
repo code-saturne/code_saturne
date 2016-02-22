@@ -55,6 +55,7 @@
 #include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_numbering.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
@@ -292,6 +293,7 @@ void
 cs_matrix_initialize(void)
 {
   cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_adjacencies_t  *ma = cs_glob_mesh_adjacencies;
 
   int n_tuned_types = 0;
   bool matrix_tune = false;
@@ -378,16 +380,29 @@ cs_matrix_initialize(void)
 
       _tuned_matrix_id[i] = m_id;
 
-      _matrix_struct_tuned[m_id]
-        = cs_matrix_structure_create(m_type,
-                                     true,
-                                     mesh->n_cells,
-                                     mesh->n_cells_with_ghosts,
-                                     mesh->n_i_faces,
-                                     mesh->global_cell_num,
-                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
-                                     mesh->halo,
-                                     mesh->i_face_numbering);
+      if (m_type == CS_MATRIX_MSR && ma != NULL)
+        _matrix_struct_tuned[m_id]
+          = cs_matrix_structure_create_msr_shared(true,
+                                                  ma->single_faces_to_cells,
+                                                  mesh->n_cells,
+                                                  mesh->n_cells_with_ghosts,
+                                                  mesh->global_cell_num,
+                                                  ma->cell_cells_idx,
+                                                  ma->cell_cells,
+                                                  mesh->halo,
+                                                  mesh->i_face_numbering);
+
+      else
+        _matrix_struct_tuned[m_id]
+          = cs_matrix_structure_create(m_type,
+                                       true,
+                                       mesh->n_cells,
+                                       mesh->n_cells_with_ghosts,
+                                       mesh->n_i_faces,
+                                       mesh->global_cell_num,
+                                       (const cs_lnum_2_t *)(mesh->i_face_cells),
+                                       mesh->halo,
+                                       mesh->i_face_numbering);
 
       _matrix_tuned[m_id]
         = cs_matrix_create_by_variant(_matrix_struct_tuned[m_id], mv);
@@ -447,7 +462,8 @@ cs_matrix_finalize(void)
 void
 cs_matrix_update_mesh(void)
 {
-  cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_adjacencies_t  *ma = cs_glob_mesh_adjacencies;
 
   if (_global_row_num != NULL)
     _build_block_row_num(mesh->n_cells, mesh->halo);
@@ -461,16 +477,29 @@ cs_matrix_update_mesh(void)
       cs_matrix_destroy(&(_matrix_tuned[i]));
       cs_matrix_structure_destroy(&(_matrix_struct_tuned[i]));
 
-      _matrix_struct_tuned[i]
-        = cs_matrix_structure_create(m_type,
-                                     true,
-                                     mesh->n_cells,
-                                     mesh->n_cells_with_ghosts,
-                                     mesh->n_i_faces,
-                                     mesh->global_cell_num,
-                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
-                                     mesh->halo,
-                                     mesh->i_face_numbering);
+      if (m_type == CS_MATRIX_MSR && ma != NULL)
+        _matrix_struct_tuned[i]
+          = cs_matrix_structure_create_msr_shared(true,
+                                                  ma->single_faces_to_cells,
+                                                  mesh->n_cells,
+                                                  mesh->n_cells_with_ghosts,
+                                                  mesh->global_cell_num,
+                                                  ma->cell_cells_idx,
+                                                  ma->cell_cells,
+                                                  mesh->halo,
+                                                  mesh->i_face_numbering);
+
+      else
+        _matrix_struct_tuned[i]
+          = cs_matrix_structure_create(m_type,
+                                       true,
+                                       mesh->n_cells,
+                                       mesh->n_cells_with_ghosts,
+                                       mesh->n_i_faces,
+                                       mesh->global_cell_num,
+                                       (const cs_lnum_2_t *)(mesh->i_face_cells),
+                                       mesh->halo,
+                                       mesh->i_face_numbering);
 
       assert(_matrix_variant_tuned[i] != NULL);
 
@@ -489,16 +518,28 @@ cs_matrix_update_mesh(void)
     cs_matrix_destroy(&(_matrix_msr));
     cs_matrix_structure_destroy(&(_matrix_struct_msr));
 
-    _matrix_struct_msr
-      = cs_matrix_structure_create(CS_MATRIX_MSR,
-                                   true,
-                                   mesh->n_cells,
-                                   mesh->n_cells_with_ghosts,
-                                   mesh->n_i_faces,
-                                   mesh->global_cell_num,
-                                   (const cs_lnum_2_t *)(mesh->i_face_cells),
-                                   mesh->halo,
-                                   mesh->i_face_numbering);
+    if (ma != NULL)
+      _matrix_struct_msr
+        = cs_matrix_structure_create_msr_shared(true,
+                                                ma->single_faces_to_cells,
+                                                mesh->n_cells,
+                                                mesh->n_cells_with_ghosts,
+                                                mesh->global_cell_num,
+                                                ma->cell_cells_idx,
+                                                ma->cell_cells,
+                                                mesh->halo,
+                                                mesh->i_face_numbering);
+    else
+      _matrix_struct_msr
+        = cs_matrix_structure_create(CS_MATRIX_MSR,
+                                     true,
+                                     mesh->n_cells,
+                                     mesh->n_cells_with_ghosts,
+                                     mesh->n_i_faces,
+                                     mesh->global_cell_num,
+                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
+                                     mesh->halo,
+                                     mesh->i_face_numbering);
 
     _matrix_msr = cs_matrix_create(_matrix_struct_msr);
 
@@ -595,18 +636,31 @@ cs_matrix_msr(bool        symmetric,
 
     if (_matrix_msr == NULL) {
 
-      cs_mesh_t  *mesh = cs_glob_mesh;
+      const cs_mesh_t  *mesh = cs_glob_mesh;
+      const cs_mesh_adjacencies_t  *ma = cs_glob_mesh_adjacencies;
 
-      _matrix_struct_msr
-        = cs_matrix_structure_create(CS_MATRIX_MSR,
-                                     true,
-                                     mesh->n_cells,
-                                     mesh->n_cells_with_ghosts,
-                                     mesh->n_i_faces,
-                                     mesh->global_cell_num,
-                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
-                                     mesh->halo,
-                                     mesh->i_face_numbering);
+      if (ma != NULL)
+        _matrix_struct_msr
+          = cs_matrix_structure_create_msr_shared(true,
+                                                  ma->single_faces_to_cells,
+                                                  mesh->n_cells,
+                                                  mesh->n_cells_with_ghosts,
+                                                  mesh->global_cell_num,
+                                                  ma->cell_cells_idx,
+                                                  ma->cell_cells,
+                                                  mesh->halo,
+                                                  mesh->i_face_numbering);
+      else
+        _matrix_struct_msr
+          = cs_matrix_structure_create(CS_MATRIX_MSR,
+                                       true,
+                                       mesh->n_cells,
+                                       mesh->n_cells_with_ghosts,
+                                       mesh->n_i_faces,
+                                       mesh->global_cell_num,
+                                       (const cs_lnum_2_t *)(mesh->i_face_cells),
+                                       mesh->halo,
+                                       mesh->i_face_numbering);
 
       _matrix_msr = cs_matrix_create(_matrix_struct_msr);
 

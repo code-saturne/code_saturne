@@ -60,6 +60,106 @@ BEGIN_C_DECLS
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Descend binary tree for the ordering of a cs_lnum_t (integer) array.
+ *
+ * parameters:
+ *   number    <-> pointer to elements that should be ordered
+ *   level     <-- level of the binary tree to descend
+ *   n_elts    <-- number of elements in the binary tree to descend
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_sort_descend_tree(cs_lnum_t  number[],
+                   size_t     level,
+                   size_t     n_elts)
+{
+  size_t lv_cur;
+  cs_lnum_t num_save;
+
+  num_save = number[level];
+
+  while (level <= (n_elts/2)) {
+
+    lv_cur = (2*level) + 1;
+
+    if (lv_cur < n_elts - 1)
+      if (number[lv_cur+1] > number[lv_cur]) lv_cur++;
+
+    if (lv_cur >= n_elts) break;
+
+    if (num_save >= number[lv_cur]) break;
+
+    number[level] = number[lv_cur];
+    level = lv_cur;
+
+  }
+
+  number[level] = num_save;
+}
+
+/*----------------------------------------------------------------------------
+ * Order an array of local numbers.
+ *
+ * parameters:
+ *   number   <-> array of numbers to sort
+ *   n_elts   <-- number of elements considered
+ *----------------------------------------------------------------------------*/
+
+static void
+_sort_local(cs_lnum_t  number[],
+            size_t     n_elts)
+{
+  size_t i, j, inc;
+  cs_lnum_t num_save;
+
+  if (n_elts < 2)
+    return;
+
+  /* Use shell sort for short arrays */
+
+  if (n_elts < 20) {
+
+    /* Compute increment */
+    for (inc = 1; inc <= n_elts/9; inc = 3*inc+1);
+
+    /* Sort array */
+    while (inc > 0) {
+      for (i = inc; i < n_elts; i++) {
+        num_save = number[i];
+        j = i;
+        while (j >= inc && number[j-inc] > num_save) {
+          number[j] = number[j-inc];
+          j -= inc;
+        }
+        number[j] = num_save;
+      }
+      inc = inc / 3;
+    }
+
+  }
+
+  else {
+
+    /* Create binary tree */
+
+    i = (n_elts / 2);
+    do {
+      i--;
+      _sort_descend_tree(number, i, n_elts);
+    } while (i > 0);
+
+    /* Sort binary tree */
+
+    for (i = n_elts - 1 ; i > 0 ; i--) {
+      num_save   = number[0];
+      number[0] = number[i];
+      number[i] = num_save;
+      _sort_descend_tree(number, 0, i);
+    }
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -386,6 +486,42 @@ cs_sort_coupled_gnum_shell(cs_lnum_t   l,
 
   } /* End of loop on stride */
 
+}
+
+/*----------------------------------------------------------------------------
+ * Sort rows of an indexed structure.
+ *
+ * parameters:
+ *   n_elts  <-- number of indexed elements
+ *   elt_idx <-- element index (size: n_elts+1)
+ *   elts    <-> indexed values
+ *
+ * returns:
+ *   true if no values were encountered multiple times in a given row
+ *---------------------------------------------------------------------------*/
+
+bool
+cs_sort_indexed(cs_lnum_t        n_elts,
+                const cs_lnum_t  elt_idx[],
+                cs_lnum_t        elts[])
+{
+  bool retval = true;
+
+  /* Sort line elements by column id (for better access patterns) */
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    cs_lnum_t *restrict _elts = elts + elt_idx[i];
+    cs_lnum_t _n_elts = elt_idx[i+1] - elt_idx[i];
+    cs_lnum_t id_prev = -1;
+    _sort_local(_elts, _n_elts);
+    for (cs_lnum_t j = 0; j < _n_elts; j++) {
+      if (_elts[j] == id_prev)
+        retval = false;
+      id_prev = _elts[j];
+    }
+  }
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

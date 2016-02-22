@@ -190,7 +190,7 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
  *   numbering  <-- vectorization or thread-related numbering info, or NULL
  *
  * returns:
- *   a pointer to a created CDO matrix structure
+ *   a pointer to a created matrix structure
  *----------------------------------------------------------------------------*/
 
 cs_matrix_structure_t *
@@ -203,6 +203,42 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
                                cs_lnum_t             **col_id,
                                const cs_halo_t        *halo,
                                const cs_numbering_t   *numbering);
+
+/*----------------------------------------------------------------------------
+ * Create an MSR matrix structure sharing an existing connectivity definition
+ * as well as an optional edge-based definition.
+ *
+ * Note that as the structure created maps to the given existing
+ * cell global number, face -> cell connectivity arrays, and cell halo
+ * structure, it must be destroyed before they are freed
+ * (usually along with the code's main face -> cell structure).
+ *
+ * parameters:
+ *   have_diag        <-- indicates if the structure includes the
+ *                        diagonal (should be the same for all rows)
+ *   direct_assembly  <-- true if each value corresponds to a unique face
+ *   n_rows           <-- local number of rows
+ *   n_cols_ext       <-- local number of columns + ghosts
+ *   row_index        <-- pointer to index on rows
+ *   col_id           <-- pointer to array of colum ids related to the row index
+ *   halo             <-- halo structure for synchronization, or NULL
+ *   numbering        <-- vectorization or thread-related numbering
+ *                        info, or NULL
+ *
+ * returns:
+ *   a pointer to a created CDO matrix structure
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_structure_t *
+cs_matrix_structure_create_msr_shared(bool                    have_diag,
+                                      bool                    direct_assmbly,
+                                      cs_lnum_t               n_rows,
+                                      cs_lnum_t               n_cols_ext,
+                                      const cs_gnum_t        *cell_num,
+                                      const cs_lnum_t        *row_index,
+                                      const cs_lnum_t        *col_id,
+                                      const cs_halo_t        *halo,
+                                      const cs_numbering_t   *numbering);
 
 /*----------------------------------------------------------------------------
  * Destroy a matrix structure.
