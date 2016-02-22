@@ -147,6 +147,14 @@ if test "x$ple_gcc" = "xgcc"; then
   # may not handle all flags)
 
   case "$ple_cc_vendor-$ple_cc_version" in
+    gcc-[45]*)
+      ;;
+    *)
+      cflags_default="$cflags_default -Wmisleading-indentation -Wduplicated-cond"
+      ;;
+  esac
+
+  case "$ple_cc_vendor-$ple_cc_version" in
     gcc-4.[012345678]*)
       ;;
     *)

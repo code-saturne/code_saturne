@@ -205,6 +205,14 @@ if test "x$cs_gcc" = "xgcc"; then
   # may not handle all flags)
 
   case "$cs_cc_vendor-$cs_cc_version" in
+    gcc-[45]*)
+      ;;
+    *)
+      cflags_default="$cflags_default -Wmisleading-indentation -Wduplicated-cond"
+      ;;
+  esac
+
+  case "$cs_cc_vendor-$cs_cc_version" in
     gcc-4.[012345678]*)
       ;;
     *)
@@ -535,6 +543,14 @@ if test "x$cs_gxx" = "xg++"; then
   # may not handle all flags)
 
   case "$cs_cxx_vendor-$cs_cxx_version" in
+    g++-[45]*)
+      ;;
+    *)
+      cxxflags_default="$cxxflags_default -Wmisleading-indentation -Wduplicated-cond"
+      ;;
+  esac
+
+  case "$cs_cxx_vendor-$cs_cxx_version" in
     g++-4.[012345678]*)
       ;;
     *)
@@ -789,7 +805,7 @@ if test "$?" = "0" ; then
   if test "-" != "$cs_fc_vendor-$cs_fc_version"; then
     echo "compiler '$FC' is GNU $cs_fc_vendor-$cs_fc_version"
   else
-      echo "compiler '$FC' is gfortran"
+    echo "compiler '$FC' is gfortran"
   fi
 
   # Some version numbers
@@ -808,10 +824,18 @@ if test "$?" = "0" ; then
   fcflags_default_prf="-pg"
   fcflags_default_omp="-fopenmp"
 
-  case "$cs_fc_vendor-$cs_fc_version" in
-    gfortran-4.[234]*)
-    fcflags_default_dbg="`echo $fcflags_default_dbg | sed -e 's/-fcheck=bounds/-fbounds-check/g'`"
-  esac
+  if test "xgfortran" = "x$cs_fc_vendor"; then
+    case "$cs_fc_version" in
+      4.[234]*)
+        fcflags_default_dbg="`echo $fcflags_default_dbg | sed -e 's/-fcheck=bounds/-fbounds-check/g'`"
+        ;;
+      4.[56789]*)
+        ;;
+      *)
+        fcflags_default="$fcflags_default -fdiagnostics-color=auto"
+       ;;
+    esac
+  fi
 
 fi
 
