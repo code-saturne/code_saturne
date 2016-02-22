@@ -5,6 +5,9 @@ Release 4.0.5 (unreleased)
 Bug fixes:
 ----------
 
+- Compressible: fix by adding a missing verification of ithvar before
+  the initialisation of thermodynamic properties.
+
 - Fix occasional issues in transient turbomachinery module due to
   over-optimized handling of boundary faces renumbering.
 
