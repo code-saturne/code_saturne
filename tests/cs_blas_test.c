@@ -62,6 +62,7 @@
 
 #include "cs_blas.h"
 #include "cs_defs.h"
+#include "cs_math.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------*/
@@ -333,6 +334,75 @@ _print_mem_stats(long    n_runs,
        "  N ops:       %12ld %12ld %12ld %12ld\n"
        "  Wall clock:  %12.5e %12.5e %12.5e\n"
        "  GB/s:        %12.5e %12.5e %12.5e %12.5e\n",
+       n_ops_tot/cs_glob_n_ranks, n_ops_min, n_ops_max, n_ops_tot,
+       glob_sum[0]/cs_glob_n_ranks, glob_min[0], glob_max[0],
+       glob_sum[1]/cs_glob_n_ranks, glob_min[1], glob_max[1], n_ops_tot*fmg);
+
+  }
+
+#endif
+
+  bft_printf_flush();
+}
+
+/*----------------------------------------------------------------------------
+ * Count number of operations.
+ *
+ * parameters:
+ *   n_runs       <-- Local number of runs
+ *   n_ops        <-- Local number of operations
+ *   wt           <-- wall-clock time
+ *----------------------------------------------------------------------------*/
+
+static void
+_print_time_stats(long    n_runs,
+                 long    n_ops,
+                 double  wt)
+{
+  double fm = 1.0 * n_runs / (1.e9 * (CS_MAX(wt, 1)));
+
+  if (cs_glob_n_ranks == 1)
+    bft_printf("  N ops:       %12ld\n"
+               "  Wall clock:  %12.5e\n"
+               "  Ops/s:       %12.5e\n",
+               n_ops, wt/n_runs, n_ops*fm);
+
+#if defined(HAVE_MPI)
+
+  else {
+
+    long n_ops_min, n_ops_max, n_ops_tot;
+    double loc_count[2], glob_sum[2], glob_min[2], glob_max[2], fmg;
+
+    loc_count[0] = wt;
+    loc_count[1] = n_ops*fm;
+
+    MPI_Allreduce(&n_ops, &n_ops_min, 1, MPI_LONG, MPI_MIN,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(&n_ops, &n_ops_max, 1, MPI_LONG, MPI_MAX,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(&n_ops, &n_ops_tot, 1, MPI_LONG, MPI_SUM,
+                  cs_glob_mpi_comm);
+
+    MPI_Allreduce(loc_count, glob_min, 2, MPI_DOUBLE, MPI_MIN,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(loc_count, glob_max, 2, MPI_DOUBLE, MPI_MAX,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(loc_count, glob_sum, 2, MPI_DOUBLE, MPI_SUM,
+                  cs_glob_mpi_comm);
+
+    /* global flops multiplier */
+    fmg = n_runs / (8.e9 * CS_MAX(glob_max[0], 1));
+
+    glob_sum[0] /= n_runs;
+    glob_min[0] /= n_runs;
+    glob_max[0] /= n_runs;
+
+    bft_printf
+      ("               Mean         Min          Max          Total\n"
+       "  N ops:       %12ld %12ld %12ld %12ld\n"
+       "  Wall clock:  %12.5e %12.5e %12.5e\n"
+       "  Ops/s:       %12.5e %12.5e %12.5e %12.5e\n",
        n_ops_tot/cs_glob_n_ranks, n_ops_min, n_ops_max, n_ops_tot,
        glob_sum[0]/cs_glob_n_ranks, glob_min[0], glob_max[0],
        glob_sum[1]/cs_glob_n_ranks, glob_min[1], glob_max[1], n_ops_tot*fmg);
@@ -1954,6 +2024,725 @@ _copy_test(double  t_measure)
   return test_sum;
 }
 
+/*----------------------------------------------------------------------------
+ * Solve linear system for 3x3 dense blocks: x = a.b
+ *
+ * This variant uses elimination without pivoting, and copies
+ * the matrix to allow further use; the right-hand side may be  modified,
+ * and is considered a work array.
+ *
+ * This assumes the matrix is invertible
+ *
+ * parameters:
+ *   a      <-- block matrix
+ *   b      <-> right-hand side
+ *   x      --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_dense_3_3_sv_pc(const cs_real_t   a[restrict 3][3],
+                 cs_real_t         b[restrict 3],
+                 cs_real_t         x[restrict 3])
+{
+  int i, j;
+
+  double f[2];
+  double _a[3][3];
+
+  /* Copy array */
+
+  for (i = 0; i < 3; i++) {
+    for (j = 0; j < 3; j++) {
+      _a[i][j] = a[i][j];
+    }
+  }
+
+  /* Forward elimination (unrolled) */
+
+  f[0] = _a[1][0] / _a[0][0];
+  f[1] = _a[2][0] / _a[0][0];
+
+  _a[1][0] = 0.0;
+  _a[1][1] -= _a[0][1]*f[0];
+  _a[1][2] -= _a[0][2]*f[0];
+
+  _a[2][0] = 0.0;
+  _a[2][1] -= _a[0][1]*f[1];
+  _a[2][2] -= _a[0][2]*f[1];
+
+  b[1] -= b[0]*f[0];
+  b[2] -= b[0]*f[1];
+
+  /* Eliminate values */
+
+  f[0] = _a[2][1] / _a[1][1];
+
+  _a[2][1] = 0.0;
+  _a[2][2] -= _a[1][2]*f[0];
+  b[2] -= b[1]*f[0];
+
+  /* Solve system */
+
+  x[2] =  b[2]                                   / _a[2][2];
+  x[1] = (b[1] - _a[1][2]*x[2])                  / _a[1][1];
+  x[0] = (b[0] - _a[0][2]*x[2]  - _a[0][1]*x[1]) / _a[0][0];
+}
+
+/*----------------------------------------------------------------------------
+* LU factorization of dense 3*3 matrices.
+*
+* parameters:
+*   a  <-> linear equation matrix in, lu decomposition out
+*----------------------------------------------------------------------------*/
+
+static inline void
+_fact_lu33(cs_real_t  a[restrict 3][3])
+{
+  cs_real_t lu[3][3];
+
+  lu[1][0] = a[1][0] / a[0][0];
+  lu[1][1] = a[1][1] - a[1][0]*a[0][1];
+  lu[1][2] = a[1][2] - a[1][0]*a[0][2];
+
+  lu[2][0] = a[2][0]/a[0][0];
+  lu[2][1] = (a[2][1] - lu[2][0]*a[0][1])/lu[1][1];
+  lu[2][2] = a[2][2] - lu[2][0]*a[0][2] - lu[2][1]*lu[1][2];
+
+  a[1][0] = lu[1][0];
+  a[1][1] = lu[1][1];
+  a[1][2] = lu[1][2];
+
+  a[2][0] = lu[2][0];
+  a[2][1] = lu[2][1];
+  a[2][2] = lu[2][2];
+}
+
+/*----------------------------------------------------------------------------
+ * Compute forward and backward to solve an LU 3*3 system.
+ *
+ * parameters:
+ *   mat   <-- 3*3 matrix
+ *   b     <-- RHS
+ *   x     --> solution
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_fw_and_bw_lu33(const cs_real_t  a[restrict 3][3],
+                const cs_real_t  b[restrict 3],
+                cs_real_t        x[restrict 3])
+{
+  cs_real_t aux = b[1] - b[0]*a[1][0];
+
+  x[2] = (b[2] - b[0]*a[2][0] - aux*a[2][1])/a[2][2];
+  x[1] = (aux - a[1][2]*x[2])/a[1][1];
+  x[0] = (b[0] - a[0][1]*x[1] - a[0][2]*x[2])/a[0][0];
+}
+
+/*----------------------------------------------------------------------------
+ * Solve linear system for 3x3 dense blocks: x = a.b
+ *
+ * This variant uses LU decomposition.
+ *
+ * This assumes the matrix is invertible
+ *
+ * parameters:
+ *   a      <-- block matrix
+ *   b      <-> right-hand side
+ *   x      --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_dense_3_3_sv_lu(const cs_real_t   a[restrict 3][3],
+                 cs_real_t         b[restrict 3],
+                 cs_real_t         x[restrict 3])
+{
+  cs_real_t lu[3][3];
+
+  lu[1][0] = a[1][0] / a[0][0];
+  lu[1][1] = a[1][1] - a[1][0]*a[0][1];
+  lu[1][2] = a[1][2] - a[1][0]*a[0][2];
+
+  lu[2][0] = a[2][0]/a[0][0];
+  lu[2][1] = (a[2][1] - lu[2][0]*a[0][1])/lu[1][1];
+  lu[2][2] = a[2][2] - lu[2][0]*a[0][2] - lu[2][1]*lu[1][2];
+
+  cs_real_t aux = b[1] - b[0]*lu[1][0];
+
+  x[2] = (b[2] - b[0]*lu[2][0] - aux*lu[2][1])/lu[2][2];
+  x[1] = (aux - lu[1][2]*x[2])/lu[1][1];
+  x[0] = (b[0] - a[0][1]*x[1] - a[0][2]*x[2])/a[0][0];
+}
+
+/*----------------------------------------------------------------------------
+ * Invert 3x3 matrix using Cramer's rule / Cayley Hamilton theorem
+ *
+ * This assumes the matrix is invertible
+ *
+ * parameters:
+ *   a      <-- block matrix
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_dense_3_3_ci(cs_real_t   a[3][3])
+{
+  double _a[3][3];
+  cs_real_t t[3], di;
+
+  /* Copy array */
+
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      _a[i][j] = a[i][j];
+    }
+  }
+
+  cs_math_33_inv(_a, a);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute matrix-vector product for dense blocks: y[i] = a[i].x[i]
+ *
+ * This variant uses a fixed 3x3 block, for better compiler optimization,
+ * and an inline function
+ *
+ * parameters:
+ *   a      <-- Pointer to block matrixes array (usually matrix diagonal)
+ *   b      <-- Multipliying vector values
+ *   x      --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_dense_3_3_axl(const cs_real_t  a[restrict 3][3],
+               const cs_real_t  b[restrict 3],
+               cs_real_t        x[restrict 3])
+{
+  x[0] = a[0][0]*b[0] + a[0][1]*b[1] + a[0][2]*b[2];
+  x[1] = a[1][0]*b[0] + a[1][1]*b[1] + a[1][2]*b[2];
+  x[2] = a[2][0]*b[0] + a[2][1]*b[1] + a[2][2]*b[2];
+}
+
+/*----------------------------------------------------------------------------
+ * Solve linear system for 3x3 dense blocks: x = a.b
+ *
+ * This variant uses Cramer's rule.
+ *
+ * This assumes the matrix is invertible
+ *
+ * parameters:
+ *   a      <-- block matrix
+ *   b      <-> right-hand side
+ *   x      --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_dense_3_3_sv_c(const cs_real_t   a[restrict 3][3],
+                const cs_real_t   b[restrict 3],
+                cs_real_t         x[restrict 3])
+{
+  double _a[3][3];
+  cs_real_t t[12], di;
+
+  /* Copy array */
+
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      _a[i][j] = a[i][j];
+    }
+  }
+
+  t[0]  = a[0][0] * (a[1][1]*a[2][2] - a[2][1]*a[1][2]);
+  t[1]  = a[1][0] * (a[2][1]*a[0][2] - a[0][1]*a[2][2]);
+  t[2]  = a[2][0] * (a[0][1]*a[1][2] - a[1][1]*a[0][2]);
+
+  t[3]  = b[0] * (a[1][1]*a[2][2] - a[2][1]*a[1][2]);
+  t[4]  = b[1] * (a[2][1]*a[0][2] - a[0][1]*a[2][2]);
+  t[5]  = b[2] * (a[0][1]*a[1][2] - a[1][1]*a[0][2]);
+
+  t[6]  = a[0][0] * (b[1]*a[2][2] - b[2]*a[1][2]);
+  t[7]  = a[1][0] * (b[2]*a[0][2] - b[0]*a[2][2]);
+  t[8]  = a[2][0] * (b[0]*a[2][1] - b[1]*a[0][2]);
+
+  t[9]  = a[0][0] * (a[1][1]*b[2] - a[2][1]*b[2]);
+  t[10] = a[1][0] * (a[2][1]*b[2] - a[0][1]*b[2]);
+  t[11] = a[2][0] * (a[0][1]*b[2] - a[1][1]*b[2]);
+
+  di = 1.0 / (t[0] + t[1]  + t[2]);
+
+  x[0] = (t[3] + t[4]  + t[5])*di;
+  x[1] = (t[6] + t[7]  + t[8])*di;
+  x[2] = (t[9] + t[10] + t[11])*di;
+}
+
+/*----------------------------------------------------------------------------
+ * Solve linear system for 3x3 dense blocks: x = a.b
+ *
+ * This variant uses elimination without pivoting, and may modify both
+ * the matrix and the right-hand side, which are considered work arrays.
+ *
+ * This assumes the matrix is invertible
+ *
+ * parameters:
+ *   a      <-- block matrix
+ *   b      <-> right-hand side
+ *   x      --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_dense_3_3_sv_p(cs_real_t   a[restrict 3][3],
+                cs_real_t   b[restrict 3],
+                cs_real_t   x[restrict 3])
+{
+  double factor;
+
+  /* Forward elimination (unrolled) */
+
+  factor = a[1][0] / a[0][0];
+
+  a[1][0] = 0.0;
+  a[1][1] -= a[0][1]*factor;
+  a[1][2] -= a[0][2]*factor;
+  b[1] -= b[0]*factor;
+
+  factor = a[2][0] / a[0][0];
+
+  a[2][0] = 0.0;
+  a[2][1] -= a[0][1]*factor;
+  a[2][2] -= a[0][2]*factor;
+  b[2] -= b[0]*factor;
+
+  /* Eliminate values */
+
+  factor = a[2][1] / a[1][1];
+
+  a[2][1] = 0.0;
+  a[2][2] -= a[1][2]*factor;
+  b[2] -= b[1]*factor;
+
+  /* Solve system */
+
+  x[2] =  b[2]                                 / a[2][2];
+  x[1] = (b[1] - a[1][2]*x[2])                 / a[1][1];
+  x[0] = (b[0] - a[0][2]*x[2]  - a[0][1]*x[1]) / a[0][0];
+}
+
+/*----------------------------------------------------------------------------
+ * Test solving of 3x3 linear systems using different variants.
+ *
+ * parameters:
+ *   t_measure     <-- minimum time for each measure (< 0 for single pass)
+ *
+ * returns:
+ *   test sum (ensures compiler may not optimize loops out)
+ *----------------------------------------------------------------------------*/
+
+static double
+_solve_33_test(double  t_measure)
+{
+  double     wt0, wt1, wt2, wt3;
+  int        sub_id, run_id, n_runs;
+  cs_lnum_t  n, ii;
+
+  cs_real_3_t  *restrict x = NULL, *restrict b = NULL;
+  cs_real_33_t  *restrict a = NULL;
+
+  double test_sum = 0.0;
+
+  /* Tell IBM compiler not to alias */
+# if defined(__xlc__)
+# pragma disjoint(*x, *y)
+# endif
+
+  /* Gaussian elimination */
+
+  for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
+
+    n = _n_elts[sub_id];
+
+    /* Realloc and initialize arrays for each test, as
+       first touch may affect memory locality on some systems */
+
+    BFT_MALLOC(x, n, cs_real_3_t);
+    BFT_MALLOC(b, n, cs_real_3_t);
+    BFT_MALLOC(a, n, cs_real_33_t);
+
+#   pragma omp parallel for
+    for (ii = 0; ii < n; ii++) {
+      for (int jj = 0; jj < 3; jj++) {
+        for (int kk = 0; kk < 3; kk++)
+          a[ii][jj][kk] = 1.;
+      }
+      for (int jj = 0; jj < 3; jj++) {
+        b[ii][jj] = (ii%10 + 1);
+        a[ii][jj][jj] += 2.;
+      }
+    }
+
+    test_sum = test_sum - floor(test_sum);
+
+    wt0 = cs_timer_wtime(), wt1 = wt0;
+
+    if (t_measure > 0)
+      n_runs = 8;
+    else
+      n_runs = 1;
+    run_id = 0;
+    while (run_id < n_runs) {
+      double test_sum_mult = 1.0/n_runs;
+      while (run_id < n_runs) {
+#       pragma omp parallel for
+        for (ii = 0; ii < n; ii++)
+          _dense_3_3_sv_pc(a[ii], b[ii], x[ii]);
+        test_sum += test_sum_mult*x[run_id%n][0];
+        run_id++;
+      }
+      wt1 = cs_timer_wtime();
+      if (wt1 - wt0 < t_measure)
+        n_runs *= 2;
+    }
+
+    bft_printf("\n"
+               "Solve 3x3 systems with Gaussian elimination (%d elts.)\n"
+               "-----------------\n", (int)n);
+
+    bft_printf("  (calls: %d)\n", n_runs);
+
+    _print_time_stats(n_runs, n, wt1 - wt0);
+
+    BFT_FREE(b);
+    BFT_FREE(x);
+    BFT_FREE(a);
+
+  }
+
+  /* LU */
+
+  for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
+
+    n = _n_elts[sub_id];
+
+    /* Realloc and initialize arrays for each test, as
+       first touch may affect memory locality on some systems */
+
+    BFT_MALLOC(x, n, cs_real_3_t);
+    BFT_MALLOC(b, n, cs_real_3_t);
+    BFT_MALLOC(a, n, cs_real_33_t);
+
+#   pragma omp parallel for
+    for (ii = 0; ii < n; ii++) {
+      for (int jj = 0; jj < 3; jj++) {
+        for (int kk = 0; kk < 3; kk++)
+          a[ii][jj][kk] = 1.;
+      }
+      for (int jj = 0; jj < 3; jj++) {
+        b[ii][jj] = (ii%10 + 1);
+        a[ii][jj][jj] += 2.;
+      }
+    }
+
+    test_sum = test_sum - floor(test_sum);
+
+    wt0 = cs_timer_wtime(), wt1 = wt0;
+
+    if (t_measure > 0)
+      n_runs = 8;
+    else
+      n_runs = 1;
+    run_id = 0;
+    while (run_id < n_runs) {
+      double test_sum_mult = 1.0/n_runs;
+      while (run_id < n_runs) {
+#       pragma omp parallel for
+        for (ii = 0; ii < n; ii++)
+          _dense_3_3_sv_lu(a[ii], b[ii], x[ii]);
+        test_sum += test_sum_mult*x[run_id%n][0];
+        run_id++;
+      }
+      wt1 = cs_timer_wtime();
+      if (wt1 - wt0 < t_measure)
+        n_runs *= 2;
+    }
+
+    bft_printf("\n"
+               "Solve 3x3 systems with LU (%d elts.)\n"
+               "-----------------\n", (int)n);
+
+    bft_printf("  (calls: %d)\n", n_runs);
+
+    _print_time_stats(n_runs, n, wt1 - wt0);
+
+    BFT_FREE(b);
+    BFT_FREE(x);
+    BFT_FREE(a);
+
+  }
+
+  /* Cramer */
+
+  for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
+
+    n = _n_elts[sub_id];
+
+    /* Realloc and initialize arrays for each test, as
+       first touch may affect memory locality on some systems */
+
+    BFT_MALLOC(x, n, cs_real_3_t);
+    BFT_MALLOC(b, n, cs_real_3_t);
+    BFT_MALLOC(a, n, cs_real_33_t);
+
+#   pragma omp parallel for
+    for (ii = 0; ii < n; ii++) {
+      for (int jj = 0; jj < 3; jj++) {
+        for (int kk = 0; kk < 3; kk++)
+          a[ii][jj][kk] = 1.;
+      }
+      for (int jj = 0; jj < 3; jj++) {
+        b[ii][jj] = (ii%10 + 1);
+        a[ii][jj][jj] += 2.;
+      }
+    }
+
+    test_sum = test_sum - floor(test_sum);
+
+    wt0 = cs_timer_wtime(), wt1 = wt0;
+
+    if (t_measure > 0)
+      n_runs = 8;
+    else
+      n_runs = 1;
+    run_id = 0;
+    while (run_id < n_runs) {
+      double test_sum_mult = 1.0/n_runs;
+      while (run_id < n_runs) {
+#       pragma omp parallel for
+        for (ii = 0; ii < n; ii++)
+          _dense_3_3_sv_c(a[ii], b[ii], x[ii]);
+        test_sum += test_sum_mult*x[run_id%n][0];
+        run_id++;
+      }
+      wt1 = cs_timer_wtime();
+      if (wt1 - wt0 < t_measure)
+        n_runs *= 2;
+    }
+
+    bft_printf("\n"
+               "Solve 3x3 systems with Cramer's rule (%d elts.)\n"
+               "-----------------\n", (int)n);
+
+    bft_printf("  (calls: %d)\n", n_runs);
+
+    _print_time_stats(n_runs, n, wt1 - wt0);
+
+    BFT_FREE(b);
+    BFT_FREE(x);
+    BFT_FREE(a);
+
+  }
+
+  /* 2-stage LU */
+
+  for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
+
+    n = _n_elts[sub_id];
+
+    /* Realloc and initialize arrays for each test, as
+       first touch may affect memory locality on some systems */
+
+    BFT_MALLOC(x, n, cs_real_3_t);
+    BFT_MALLOC(b, n, cs_real_3_t);
+    BFT_MALLOC(a, n, cs_real_33_t);
+
+#   pragma omp parallel for
+    for (ii = 0; ii < n; ii++) {
+      for (int jj = 0; jj < 3; jj++) {
+        for (int kk = 0; kk < 3; kk++)
+          a[ii][jj][kk] = 1.;
+      }
+      for (int jj = 0; jj < 3; jj++) {
+        b[ii][jj] = (ii%10 + 1);
+        a[ii][jj][jj] += 2.;
+      }
+    }
+
+    test_sum = test_sum - floor(test_sum);
+
+    wt0 = cs_timer_wtime(), wt1 = wt0;
+
+    if (t_measure > 0)
+      n_runs = 8;
+    else
+      n_runs = 1;
+    run_id = 0;
+    while (run_id < n_runs) {
+      double test_sum_mult = 1.0/n_runs;
+      while (run_id < n_runs) {
+        wt2 = cs_timer_wtime();
+#       pragma omp parallel for
+        for (ii = 0; ii < n; ii++) {
+          for (int jj = 0; jj < 3; jj++) {
+            for (int kk = 0; kk < 3; kk++)
+              a[ii][jj][kk] = 1.;
+          }
+          for (int jj = 0; jj < 3; jj++) {
+            a[ii][jj][jj] += 2.;
+          }
+        }
+        wt3 = cs_timer_wtime();
+#       pragma omp parallel for
+        for (ii = 0; ii < n; ii++)
+          _fact_lu33(a[ii]);
+        test_sum += test_sum_mult*a[run_id%n][0][0];
+        run_id++;
+      }
+      wt1 = cs_timer_wtime() - (wt3-wt2);
+      if (wt1 - wt0 < t_measure)
+        n_runs *= 2;
+    }
+
+    bft_printf("\n"
+               "Prepare 3x3 systems LU decomposition (%d elts.)\n"
+               "-------------------\n", (int)n);
+    bft_printf("  (calls: %d)\n", n_runs);
+    _print_time_stats(n_runs, n, wt1 - wt0);
+
+    wt0 = cs_timer_wtime(), wt1 = wt0;
+
+    if (t_measure > 0)
+      n_runs = 8;
+    else
+      n_runs = 1;
+    run_id = 0;
+    while (run_id < n_runs) {
+      double test_sum_mult = 1.0/n_runs;
+      while (run_id < n_runs) {
+#       pragma omp parallel for
+        for (ii = 0; ii < n; ii++)
+          _fw_and_bw_lu33(a[ii], b[ii], x[ii]);
+        test_sum += test_sum_mult*x[run_id%n][0];
+        run_id++;
+      }
+      wt1 = cs_timer_wtime();
+      if (wt1 - wt0 < t_measure)
+        n_runs *= 2;
+    }
+
+    bft_printf("\n"
+               "Apply LU decomposition to 3x3 systems (%d elts.)\n"
+               "-----------------\n", (int)n);
+
+    bft_printf("  (calls: %d)\n", n_runs);
+
+    _print_time_stats(n_runs, n, wt1 - wt0);
+
+    BFT_FREE(b);
+    BFT_FREE(x);
+    BFT_FREE(a);
+
+  }
+
+  /* 2-stage Cramer */
+
+  for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
+
+    n = _n_elts[sub_id];
+
+    /* Realloc and initialize arrays for each test, as
+       first touch may affect memory locality on some systems */
+
+    BFT_MALLOC(x, n, cs_real_3_t);
+    BFT_MALLOC(b, n, cs_real_3_t);
+    BFT_MALLOC(a, n, cs_real_33_t);
+
+#   pragma omp parallel for
+    for (ii = 0; ii < n; ii++) {
+      for (int jj = 0; jj < 3; jj++) {
+        for (int kk = 0; kk < 3; kk++)
+          a[ii][jj][kk] = 1.;
+      }
+      for (int jj = 0; jj < 3; jj++) {
+        b[ii][jj] = (ii%10 + 1);
+        a[ii][jj][jj] += 2.;
+      }
+    }
+
+    test_sum = test_sum - floor(test_sum);
+
+    wt0 = cs_timer_wtime(), wt1 = wt0;
+
+    if (t_measure > 0)
+      n_runs = 8;
+    else
+      n_runs = 1;
+    run_id = 0;
+    while (run_id < n_runs) {
+      double test_sum_mult = 1.0/n_runs;
+      while (run_id < n_runs) {
+        wt2 = cs_timer_wtime();
+#       pragma omp parallel for
+        for (ii = 0; ii < n; ii++) {
+          for (int jj = 0; jj < 3; jj++) {
+            for (int kk = 0; kk < 3; kk++)
+              a[ii][jj][kk] = 1.;
+          }
+          for (int jj = 0; jj < 3; jj++) {
+            a[ii][jj][jj] += 2.;
+          }
+        }
+        wt3 = cs_timer_wtime();
+#       pragma omp parallel for
+        for (ii = 0; ii < n; ii++)
+          _dense_3_3_ci(a[ii]);
+        test_sum += test_sum_mult*a[run_id%n][0][0];
+        run_id++;
+      }
+      wt1 = cs_timer_wtime() - (wt3-wt2);
+      if (wt1 - wt0 < t_measure)
+        n_runs *= 2;
+    }
+
+    bft_printf("\n"
+               "Prepare 3x3 systems Cramer (%d elts.)\n"
+               "-------------------\n", (int)n);
+    bft_printf("  (calls: %d)\n", n_runs);
+    _print_time_stats(n_runs, n, wt1 - wt0);
+
+    wt0 = cs_timer_wtime(), wt1 = wt0;
+
+    if (t_measure > 0)
+      n_runs = 8;
+    else
+      n_runs = 1;
+    run_id = 0;
+    while (run_id < n_runs) {
+      double test_sum_mult = 1.0/n_runs;
+      while (run_id < n_runs) {
+#       pragma omp parallel for
+        for (ii = 0; ii < n; ii++)
+          _dense_3_3_axl(a[ii], b[ii], x[ii]);
+        test_sum += test_sum_mult*x[run_id%n][0];
+        run_id++;
+      }
+      wt1 = cs_timer_wtime();
+      if (wt1 - wt0 < t_measure)
+        n_runs *= 2;
+    }
+
+    bft_printf("\n"
+               "Apply inverse matrix to 3x3 systems (%d elts.)\n"
+               "-----------------\n", (int)n);
+
+    bft_printf("  (calls: %d)\n", n_runs);
+
+    _print_time_stats(n_runs, n, wt1 - wt0);
+
+    BFT_FREE(b);
+    BFT_FREE(x);
+    BFT_FREE(a);
+
+  }
+
+  return test_sum;
+}
+
 /*----------------------------------------------------------------------------*/
 
 int
@@ -1990,6 +2779,7 @@ main (int argc, char *argv[])
 
   bft_printf("\n");
 
+#if 0
   /* Precision tests */
   /*-----------------*/
 
@@ -2073,6 +2863,9 @@ main (int argc, char *argv[])
   test_sum += _block_ad_x_test(t_measure);
 
   test_sum += _copy_test(t_measure);
+#endif
+
+  test_sum += _solve_33_test(t_measure);
 
   if (isnan(test_sum))
     bft_printf("test_sum is NaN\n");
