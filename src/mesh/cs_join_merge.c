@@ -198,7 +198,7 @@ _compute_length(cs_join_vertex_t  v1,
  *---------------------------------------------------------------------------*/
 
 static cs_join_vertex_t
-_get_new_vertex(float                  curv_abs,
+_get_new_vertex(cs_coord_t             curv_abs,
                 cs_gnum_t              gnum,
                 const cs_lnum_t        vtx_couple[],
                 const cs_join_mesh_t  *work)
@@ -2655,7 +2655,7 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
   assert(inter_edges->index[n_edges] <= init_list_size);
 
   BFT_REALLOC(inter_edges->vtx_lst, inter_edges->index[n_edges], cs_lnum_t);
-  BFT_REALLOC(inter_edges->abs_lst, inter_edges->index[n_edges], float);
+  BFT_REALLOC(inter_edges->abs_lst, inter_edges->index[n_edges], cs_coord_t);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump local structures */
   fprintf(logfile, " AFTER REDUNDANCIES CLEAN\n");
@@ -2679,7 +2679,7 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
     BFT_MALLOC(new_inter_edges->vtx_lst,
                inter_edges->index[n_edges] + n_adds, cs_lnum_t);
     BFT_MALLOC(new_inter_edges->abs_lst,
-               inter_edges->index[n_edges] + n_adds, float);
+               inter_edges->index[n_edges] + n_adds, cs_coord_t);
 
     n_adds = 0;
     idx_shift = 0;

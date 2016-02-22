@@ -88,8 +88,8 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_gnum_t vtx_gnum;   /* vertex global number relative to the inter. */
-  float     curv_abs;   /* curvilinear abscissa of the intersection */
+  cs_gnum_t   vtx_gnum;   /* vertex global number relative to the inter. */
+  cs_coord_t  curv_abs;   /* curvilinear abscissa of the intersection */
 
 } exch_inter_t;
 
@@ -118,10 +118,10 @@ static const double  _cs_join_tol_eps_coef = 1.0001;
  *---------------------------------------------------------------------------*/
 
 inline static void
-_adapted_lshellsort(cs_lnum_t  l,
-                    cs_lnum_t  r,
-                    float      a[],
-                    cs_lnum_t  b[])
+_adapted_lshellsort(cs_lnum_t   l,
+                    cs_lnum_t   r,
+                    cs_coord_t  a[],
+                    cs_lnum_t   b[])
 {
   int  i, j, h;
   cs_lnum_t  size = r - l;
@@ -137,8 +137,8 @@ _adapted_lshellsort(cs_lnum_t  l,
 
     for (i = l+h; i < r; i++) {
 
-      float  va = a[i];
-      cs_lnum_t  vb = b[i];
+      cs_coord_t  va = a[i];
+      cs_lnum_t   vb = b[i];
 
       j = i;
       while ( (j >= l+h) && (va < a[j-h]) ) {
@@ -167,10 +167,10 @@ _adapted_lshellsort(cs_lnum_t  l,
  *---------------------------------------------------------------------------*/
 
 inline static void
-_adapted_gshellsort(cs_lnum_t  l,
-                    cs_lnum_t  r,
-                    float      a[],
-                    cs_gnum_t  b[])
+_adapted_gshellsort(cs_lnum_t   l,
+                    cs_lnum_t   r,
+                    cs_coord_t  a[],
+                    cs_gnum_t   b[])
 {
   int  i, j, h;
   cs_lnum_t  size = r - l;
@@ -186,8 +186,8 @@ _adapted_gshellsort(cs_lnum_t  l,
 
     for (i = l+h; i < r; i++) {
 
-      float  va = a[i];
-      cs_gnum_t vb = b[i];
+      cs_coord_t  va = a[i];
+      cs_gnum_t   vb = b[i];
 
       j = i;
       while ( (j >= l+h) && (va < a[j-h]) ) {
@@ -313,7 +313,7 @@ _compute_length(cs_join_vertex_t  v1,
  *---------------------------------------------------------------------------*/
 
 static cs_join_vertex_t
-_get_new_vertex(float                  curv_abs,
+_get_new_vertex(cs_coord_t             curv_abs,
                 cs_gnum_t              gnum,
                 const cs_lnum_t       *vtx_couple,
                 const cs_join_mesh_t  *work)
@@ -366,9 +366,9 @@ static bool
 _check_equiv(const cs_join_edges_t  *edges,
              const cs_join_mesh_t   *mesh,
              cs_lnum_t               e1_id,
-             float                   curv_abs1,
+             cs_coord_t              curv_abs1,
              cs_lnum_t               e2_id,
-             float                   curv_abs2,
+             cs_coord_t              curv_abs2,
              int                     verbosity,
              FILE                   *logfile)
 {
@@ -437,8 +437,8 @@ _check_equiv(const cs_join_edges_t  *edges,
 static void
 _add_trivial_equiv(cs_lnum_t               e1_id,
                    cs_lnum_t               e2_id,
-                   double                  abs_e1,
-                   double                  abs_e2,
+                   cs_coord_t              abs_e1,
+                   cs_coord_t              abs_e2,
                    const cs_join_edges_t  *edges,
                    cs_join_eset_t         *vtx_equiv)
 {
@@ -487,8 +487,8 @@ _add_trivial_equiv(cs_lnum_t               e1_id,
 static void
 _add_inter(cs_lnum_t             e1_id,
            cs_lnum_t             e2_id,
-           double                abs_e1,
-           double                abs_e2,
+           cs_coord_t            abs_e1,
+           cs_coord_t            abs_e2,
            cs_join_inter_set_t  *inter_set)
 {
   cs_join_inter_t  new_inter_e1, new_inter_e2;
@@ -538,11 +538,11 @@ _add_inter(cs_lnum_t             e1_id,
  *---------------------------------------------------------------------------*/
 
 static void
-_break_equivalence(cs_lnum_t      n_elts,
-                   double         edge_length,
-                   bool           equiv_lst[],
-                   const float    abs_lst[],
-                   const double   tol_lst[])
+_break_equivalence(cs_lnum_t         n_elts,
+                   double            edge_length,
+                   bool              equiv_lst[],
+                   const cs_coord_t  abs_lst[],
+                   const double      tol_lst[])
 {
   int  i1, i2, i2_save;
   double  range, _rtf, rtf12, rtf21;
@@ -629,7 +629,7 @@ _break_equivalence(cs_lnum_t      n_elts,
 static cs_lnum_t
 _find_edge_equiv(cs_join_param_t  param,
                  cs_lnum_t        n_elts,
-                 float            abs_lst[],
+                 cs_coord_t       abs_lst[],
                  double           tol_lst[],
                  bool             equiv_lst[],
                  int              tag[],
@@ -2127,7 +2127,7 @@ _create_exch_inter_datatype(void)
 
   int  blocklengths[2] = {1, 1};
   MPI_Aint  displacements[2] = {0 , 0};
-  MPI_Datatype  types[2] = {CS_MPI_GNUM, MPI_FLOAT};
+  MPI_Datatype  types[2] = {CS_MPI_GNUM, CS_MPI_COORD};
 
   /* Initialize exch_inter_t */
 
@@ -2521,7 +2521,7 @@ cs_join_inter_edges_define(const cs_join_edges_t      *edges,
   /* Fill structures */
 
   BFT_MALLOC(inter_edges->vtx_lst, lst_size, cs_lnum_t);
-  BFT_MALLOC(inter_edges->abs_lst, lst_size, float);
+  BFT_MALLOC(inter_edges->abs_lst, lst_size, cs_coord_t);
 
   BFT_MALLOC(counter, edges->n_edges, cs_lnum_t);
 
@@ -2663,8 +2663,8 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
   cs_lnum_t  i, j, k, i1, i2, size, esize, n_breaks;
 
   bool  *equiv_lst = NULL;
-  cs_lnum_t  *vtx_lst = NULL, *tag_lst = NULL;
-  float  *abs_lst = NULL;
+  cs_lnum_t   *vtx_lst = NULL, *tag_lst = NULL;
+  cs_coord_t  *abs_lst = NULL;
   double  *tol_lst = NULL;
   FILE  *logfile = cs_glob_join_log;
 
@@ -2684,7 +2684,7 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
       size = inter_edges->max_sub_size + 2;
       BFT_MALLOC(vtx_lst, size, cs_lnum_t);
       BFT_MALLOC(tag_lst, size, cs_lnum_t);
-      BFT_MALLOC(abs_lst, size, float);
+      BFT_MALLOC(abs_lst, size, cs_coord_t);
       BFT_MALLOC(tol_lst, size, double);
       esize = size*(size-1)/2;
       BFT_MALLOC(equiv_lst, esize, bool);
@@ -3081,7 +3081,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   BFT_MALLOC(block->abs_lst,
              block->index[block_size],
-             float);
+             cs_coord_t);
 
   /* Second scan : fill buffers */
 
@@ -3145,7 +3145,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   block->index = new_index;
 
   BFT_REALLOC(block->vtx_glst, block->index[block_size], cs_gnum_t);
-  BFT_REALLOC(block->abs_lst, block->index[block_size], float);
+  BFT_REALLOC(block->abs_lst, block->index[block_size], cs_coord_t);
 
   /* Sort intersection by increasing curvilinear abscissa for each edge */
 
@@ -3414,7 +3414,7 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
   BFT_FREE(part->vtx_lst);
   part->vtx_lst = NULL;
   BFT_REALLOC(part->vtx_glst, recv_shift[n_ranks], cs_gnum_t);
-  BFT_REALLOC(part->abs_lst, recv_shift[n_ranks], float);
+  BFT_REALLOC(part->abs_lst, recv_shift[n_ranks], cs_coord_t);
 
   for (i = 0; i < recv_shift[n_ranks]; i++) {
 
@@ -3519,7 +3519,7 @@ cs_join_intersect_update_struct(int                      verbosity,
     BFT_MALLOC(new_inter_edges->vtx_glst,
                new_inter_edges->index[n_edges], cs_gnum_t);
     BFT_MALLOC(new_inter_edges->abs_lst,
-               new_inter_edges->index[n_edges], float);
+               new_inter_edges->index[n_edges], cs_coord_t);
 
     for (i = 0; i < n_edges; i++) {
 
@@ -3677,7 +3677,7 @@ cs_join_intersect_edges(cs_join_param_t         param,
   cs_join_eset_t  *_vtx_eset = NULL;
   FILE  *logfile = cs_glob_join_log;
 
-  const float  merge_limit = param.fraction * param.pre_merge_factor;
+  const double  merge_limit = param.fraction * param.pre_merge_factor;
   const double  parall_eps2 = 1e-6;
 
   /* Sanity checks */

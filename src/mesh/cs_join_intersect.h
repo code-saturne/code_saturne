@@ -59,7 +59,7 @@ typedef struct {
 
   cs_lnum_t   edge_id;    /* id of the edge implied in this intersection */
   cs_lnum_t   vtx_id;     /* id of the vertex resulting of the intersection */
-  float       curv_abs;   /* curvilinear abscissa of the intersection */
+  cs_coord_t  curv_abs;   /* curvilinear abscissa of the intersection */
 
 } cs_join_inter_t;
 
@@ -92,7 +92,7 @@ typedef struct {
 
   cs_lnum_t   *vtx_lst;    /* List of new vertex num */
   cs_gnum_t   *vtx_glst;   /* List of new vertex global num */
-  float       *abs_lst;    /* List of curvilinear abscissa */
+  cs_coord_t  *abs_lst;    /* List of curvilinear abscissa */
 
   cs_lnum_t    max_sub_size;
 
