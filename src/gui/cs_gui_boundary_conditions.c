@@ -1559,7 +1559,7 @@ _init_boundaries(const cs_lnum_t  *nfabor,
     int old_ref, err_ref, err_izone;
 
     err_ref = -1, err_izone = -1;
-  
+
     old_ref = overlap_error[1];
     cs_parall_max(1, CS_INT_TYPE, &old_ref);
     if (old_ref == overlap_error[1])
