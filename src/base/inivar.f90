@@ -216,6 +216,12 @@ else
   if (ippmod(icompf).ge.0.and.(    isuite.eq.0                 &
                                .or.isuite.eq.1.and.ileaux.eq.0)) then
 
+    if (    ithvar.ne. 60000.or.ithvar.ne.100000                    &
+        .or.ithvar.ne.140000.or.ithvar.ne.150000.or.ithvar.ne.210000) then
+        write(nfecra,1000) ithvar
+        iok = iok + 1
+    endif
+
     ivoid = -1
     call cs_cf_thermo(ithvar, ivoid,  rvoid, rvoid, rvoid, vvoid)
     !================
@@ -750,6 +756,30 @@ write(nfecra,3000)
 
 #if defined(_CS_LANG_FR)
 
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION:   ARRET A L''INITIALISATION DES VARIABLES    ',/,&
+'@    ==========   DANS LA THERMODYNAMIQUE COMPRESSIBLE.      ',/,&
+'@                                                            ',/,&
+'@    Le calcul ne peut etre execute.                         ',/,&
+'@                                                            ',/,&
+'@    Valeur de l''indicateur ithvar non prevue (',i10,').    ',/,&
+'@                                                            ',/,&
+'@    Deux et seulement deux variables parmi                  ',/,&
+'@    P, rho, T et E (sauf T et E) doivent etre imposees      ',/,&
+'@    a l''initialisation dans le GUI ou dans la routine      ',/,&
+'@    d''initialisation (cs_user_initialisation.f90) ou       ',/,&
+'@    encore via les deux.                                    ',/,&
+'@                                                            ',/,&
+'@    Verifier que ithvar n''ait pas ete partiellement        ',/,&
+'@    positionnee par le GUI de maniere non consistante       ',/,&
+'@    avec cs_user_initialisation.f90.                        ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
  2000 format(                                                     &
                                                                 /,&
 ' -----------------------------------------------------------', /,&
@@ -1061,6 +1091,30 @@ write(nfecra,3000)
 '@',                                                            /)
 
 #else
+
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING :     stop in compressible thermodynamics at    ',/,&
+'@    =========     initialisation.                           ',/,&
+'@                                                            ',/,&
+'@    The computation will stop.                              ',/,&
+'@                                                            ',/,&
+'@    Unexpected value of the indicator ithvar (',i10,').     ',/,&
+'@                                                            ',/,&
+'@    Two and only two independant variables among            ',/,&
+'@    P, rho, T and E (except T and E) should be imposed at   ',/,&
+'@    the initialisation in the GUI or in the user subroutine ',/,&
+'@    of initialisation (cs_user_initialisation.f90) or       ',/,&
+'@    in both.                                                ',/,&
+'@                                                            ',/,&
+'@    Check if iccfth has not been partially set through the  ',/,&
+'@    GUI in a non consistant manner with                     ',/,&
+'@    cs_user_initialisation.f90.                             ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
 
  2000 format(                                                     &
                                                                 /,&
