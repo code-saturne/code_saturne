@@ -61,6 +61,7 @@
 #include "cs_ctwr_air_props.h"
 #include "cs_ctwr_halo.h"
 #include "cs_halo.h"
+#include "cs_math.h"
 #include "cs_mesh_location.h"
 #include "cs_post.h"
 #include "cs_restart.h"
@@ -81,15 +82,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
-
-enum {X, Y, Z};
-
-#define CS_LOC_PRODUIT_SCALAIRE(vect1, vect2) \
-  (vect1[X] * vect2[X] + vect1[Y] * vect2[Y] + vect1[Z] * vect2[Z])
-
-#define CS_LOC_MODULE(vect) \
-  sqrt(vect[X] * vect[X] + vect[Y] * vect[Y] + vect[Z] * vect[Z])
-
 
 /*============================================================================
  * Static global variables
@@ -2390,7 +2382,7 @@ void cs_ctwr_bilanct
         for (idim = 0; idim<3; idim++)
           n_sortant[idim] =  mesh_quantities->b_face_normal[ifac*3+idim];
         debit = CS_ABS(flux_masse_fbr[ifac]);
-        surf  = CS_LOC_MODULE((b_face_normal + 3*ifac));
+        surf  = cs_math_3_norm((b_face_normal + 3*ifac));
       } else {
         if (j==0) ifac = (cs_lnum_t) face_sup[i] - mesh->n_b_faces - 1;
         if (j==1) ifac = (cs_lnum_t) face_inf[i] - mesh->n_b_faces - 1;
@@ -2412,13 +2404,13 @@ void cs_ctwr_bilanct
           }
         }
         debit = CS_ABS(flux_masse_fac[ifac]);
-        surf  = CS_LOC_MODULE((i_face_normal + 3*ifac));
+        surf  = cs_math_3_norm((i_face_normal + 3*ifac));
       }
       hair = (cpa+xa[icel]*cpv)*temp[icel]+xa[icel]*hv0;
       vitair[0] = vitx[icel];
       vitair[1] = vity[icel];
       vitair[2] = vitz[icel];
-      if (CS_LOC_PRODUIT_SCALAIRE(n_sortant, vitair)>0.) {
+      if (cs_math_3_dot_product(n_sortant, vitair)>0.) {
         surf_s += surf;
         ct->hair_s  += hair*debit;
         ct->xair_s  += debit*xa[icel];
@@ -2604,10 +2596,6 @@ cs_ctwr_by_id(int ct_id)
 
   return retval;
 }
-
-
-#undef CS_LOC_PRODUIT_SCALAIRE
-#undef CS_LOC_MODULE
 
 /*----------------------------------------------------------------------------*/
 

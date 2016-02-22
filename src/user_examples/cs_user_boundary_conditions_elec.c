@@ -258,7 +258,7 @@ CS_PROCF (usclim_trans, UICLIM_TRANS)(cs_int_t   *icodcl,
 
     for (cs_lnum_t ilelt = 0; ilelt < nelts; ilelt++) {
       int ifac = lstelt[ilelt];
-      int iel = ifabor[iel];
+      int iel = ifabor[ifac];
 
       itypfb[ifac] = *iparoi;
       izfppp[ifac] = i;

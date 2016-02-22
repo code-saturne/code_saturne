@@ -53,6 +53,7 @@
 
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 
@@ -1000,9 +1001,6 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 
   enum {X, Y, Z};
 
-#define CS_LOC_MODULE(vect) \
-     sqrt(vect[X] * vect[X] + vect[Y] * vect[Y] + vect[Z] * vect[Z])
-
   assert(mesh->dim == 3);
 
   /* First call: select the cells */
@@ -1081,8 +1079,8 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
           dprod += v_ij[i]*face_normal[i];
         }
 
-        norm_ij = CS_LOC_MODULE(v_ij);
-        face_norm = CS_LOC_MODULE(face_normal);
+        norm_ij = cs_math_3_norm(v_ij);
+        face_norm = cs_math_3_norm(face_normal);
 
         assert(norm_ij > 0.);
         assert(face_norm > 0.);

@@ -894,6 +894,8 @@ _variable_turbulent_flux_model(const char   *variable_name,
     *value = 20;
   else if (cs_gui_strcmp(result, "DFM"))
     *value = 30;
+  else
+    *value = 0; /* assign default */
 
   BFT_FREE(path);
   BFT_FREE(result);
@@ -1114,6 +1116,7 @@ _properties_choice_id(const char  *property_name,
   int   iok = 0;
 
   buff = _properties_choice(property_name);
+  *choice = 0; /* default */
   if (buff)
   {
     iok = 1;

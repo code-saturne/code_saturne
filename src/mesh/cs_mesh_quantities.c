@@ -47,6 +47,7 @@
 
 #include "cs_base.h"
 #include "cs_halo_perio.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
 #include "cs_parall.h"
@@ -72,19 +73,6 @@ typedef double  _vtx_coords_t[3];
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
-
-enum {X, Y, Z};
-
-#define _CS_CROSS_PRODUCT(prod_vect, vect1, vect2)  \
-  (prod_vect[X] = vect1[Y] * vect2[Z] - vect2[Y] * vect1[Z], \
-   prod_vect[Y] = vect2[X] * vect1[Z] - vect1[X] * vect2[Z], \
-   prod_vect[Z] = vect1[X] * vect2[Y] - vect2[X] * vect1[Y])
-
-#define _CS_DOT_PRODUCT(vect1, vect2) \
-  (vect1[X] * vect2[X] + vect1[Y] * vect2[Y] + vect1[Z] * vect2[Z])
-
-#define _CS_MODULE(vect) \
-  sqrt(vect[X] * vect[X] + vect[Y] * vect[Y] + vect[Z] * vect[Z])
 
 /*============================================================================
  * Static global variables
@@ -895,7 +883,7 @@ _compute_face_normal(cs_lnum_t         dim,
         vect2[i] = face_vtx_coord[tri_id + 1][i] - this_face_barycenter[i];
       }
 
-      _CS_CROSS_PRODUCT(triangle_normal[tri_id], vect1, vect2);
+      cs_math_3_cross_product(vect1, vect2, triangle_normal[tri_id]);
 
       for (i = 0; i < 3; i++)
         triangle_normal[tri_id][i] *= 0.5;
@@ -1025,14 +1013,14 @@ _compute_face_quantities(const cs_lnum_t   dim,
 
       lower_coord_id = 3 * (face_vtx_lst[vtx_id]);
 
-      for (i = X; i < 3; i++)
+      for (i = 0; i < 3; i++)
         face_vtx_coord[n_face_vertices][i] = vtx_coord[lower_coord_id + i];
 
       n_face_vertices++;
 
     }
 
-    for (i = X; i < 3; i++)
+    for (i = 0; i < 3; i++)
       face_vtx_coord[n_face_vertices][i] = face_vtx_coord[0][i];
 
     /*------------------------------------------------------------------------
@@ -1043,7 +1031,7 @@ _compute_face_quantities(const cs_lnum_t   dim,
      *         n   i=0
      *------------------------------------------------------------------------*/
 
-    for (i = X; i < 3; i++) {
+    for (i = 0; i < 3; i++) {
 
       face_barycenter[i] = 0.0;
 
@@ -1054,7 +1042,7 @@ _compute_face_quantities(const cs_lnum_t   dim,
 
     }
 
-    for (i = X; i < 3; i++) {
+    for (i = 0; i < 3; i++) {
       face_normal[i] = 0.0;
       face_center[i] = 0.0;
     }
@@ -1071,14 +1059,14 @@ _compute_face_quantities(const cs_lnum_t   dim,
        *  N(Ti) = 1/2 ( BPi X BPi+1 )
        *----------------------------------------------------------------------*/
 
-      for (i = X; i < 3; i++) {
+      for (i = 0; i < 3; i++) {
         vect1[i] = face_vtx_coord[tri_id    ][i] - face_barycenter[i];
         vect2[i] = face_vtx_coord[tri_id + 1][i] - face_barycenter[i];
       }
 
-      _CS_CROSS_PRODUCT(triangle_norm[tri_id], vect1, vect2);
+      cs_math_3_cross_product(vect1, vect2, triangle_norm[tri_id]);
 
-      for (i = X; i < 3; i++)
+      for (i = 0; i < 3; i++)
         triangle_norm[tri_id][i] *= 0.5;
 
       /*----------------------------------------------------------------------
@@ -1090,7 +1078,7 @@ _compute_face_quantities(const cs_lnum_t   dim,
        *          i=0
        *----------------------------------------------------------------------*/
 
-      for (i = X; i < 3; i++)
+      for (i = 0; i < 3; i++)
         face_normal[i] += triangle_norm[tri_id][i];
 
     } /* End of loop on triangles of the face */
@@ -1112,7 +1100,7 @@ _compute_face_quantities(const cs_lnum_t   dim,
        *  OG(Ti).N(Ti)
        *----------------------------------------------------------------------*/
 
-      for (i = X; i < 3; i++) {
+      for (i = 0; i < 3; i++) {
 
         tri_center[i] = face_barycenter[i]
                       + face_vtx_coord[tri_id    ][i]
@@ -1131,9 +1119,9 @@ _compute_face_quantities(const cs_lnum_t   dim,
        *  Surf(Ti) = | N(Ti) |
        *----------------------------------------------------------------------*/
 
-      tri_surface = _CS_MODULE(triangle_norm[tri_id]);
+      tri_surface = cs_math_3_norm(triangle_norm[tri_id]);
 
-      if (_CS_DOT_PRODUCT(triangle_norm[tri_id], face_normal) < 0.0)
+      if (cs_math_3_dot_product(triangle_norm[tri_id], face_normal) < 0.0)
         tri_surface *= -1.0;
 
       face_surface += tri_surface;
@@ -1144,7 +1132,7 @@ _compute_face_quantities(const cs_lnum_t   dim,
        *   i=0
        *----------------------------------------------------------------------*/
 
-      for (i = X; i < 3; i++)
+      for (i = 0; i < 3; i++)
         face_center[i] += tri_surface * tri_center[i];
 
     } /* End of second loop  on triangles of the face */
@@ -1168,19 +1156,19 @@ _compute_face_quantities(const cs_lnum_t   dim,
 
     face_vol_part = 0.0;
 
-    for (i = X; i < 3; i++) {
+    for (i = 0; i < 3; i++) {
       face_center[i] = face_center[i] / face_surface;
       face_vol_part += (face_center[i] * face_normal[i]);
     }
 
     rectif_cog = (tri_vol_part - face_vol_part) / (face_surface * face_surface);
 
-    for (i = X; i < 3; i++)
+    for (i = 0; i < 3; i++)
       face_center[i] += rectif_cog * face_normal[i];
 
     /* Store result in appropriate structure */
 
-    for (i = X; i < 3; i++) {
+    for (i = 0; i < 3; i++) {
       face_cog[fac_id * 3 + i] = face_center[i];
       face_norm[fac_id * 3 + i] = face_normal[i];
     }
@@ -1416,7 +1404,7 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
     for (i = 0; i < dim; i++)
       _norm[i] = i_face_norm[dim*fac_id + i];
 
-    area = _CS_MODULE(_norm);
+    area = cs_math_3_norm(_norm);
 
     cell_area[cell_id1] += area;
     cell_area[cell_id2] += area;
@@ -1448,7 +1436,7 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
     for (i = 0; i < dim; i++)
       _norm[i] = b_face_norm[dim*fac_id + i];
 
-    area = _CS_MODULE(_norm);
+    area = cs_math_3_norm(_norm);
     cell_area[cell_id1] += area;
 
     /* Computation of the numerator */
@@ -2896,15 +2884,6 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
   }
 
 #endif
-
-
-/*----------------------------------------------------------------------------*/
-
-/* Delete local macro definitions */
-
-#undef _CS_CROSS_PRODUCT
-#undef _CS_DOT_PRODUCT
-#undef _CS_MODULE
 
 /*----------------------------------------------------------------------------*/
 

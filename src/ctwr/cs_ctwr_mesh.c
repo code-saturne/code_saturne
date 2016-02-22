@@ -66,6 +66,7 @@
 #include "cs_ctwr_halo.h"
 #include "cs_halo.h"
 #include "cs_interface.h"
+#include "cs_math.h"
 #include "cs_mesh_connect.h"
 
 /*----------------------------------------------------------------------------
@@ -83,19 +84,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
-
-enum {X, Y, Z};
-
-#define CS_LOC_PRODUIT_SCALAIRE(vect1, vect2) \
-  (vect1[X] * vect2[X] + vect1[Y] * vect2[Y] + vect1[Z] * vect2[Z])
-
-#define CS_LOC_MODULE(vect) \
-  sqrt(vect[X] * vect[X] + vect[Y] * vect[Y] + vect[Z] * vect[Z])
-
-#define CS_PRODUIT_VECTORIEL(prod_vect, vect1, vect2)  \
-  (prod_vect[X] = vect1[Y] * vect2[Z] - vect2[Y] * vect1[Z], \
-   prod_vect[Y] = vect2[X] * vect1[Z] - vect1[X] * vect2[Z], \
-   prod_vect[Z] = vect1[X] * vect2[Y] - vect2[X] * vect1[Y])
 
 #define CS_CT_MPI_TAG    (int)('C'+'S'+'Z'+'E') /* MPI tag for FVM operations */
 
@@ -233,8 +221,8 @@ _is_coplanar(const cs_real_t  *coord,
         ind++;
       }
     }
-    CS_PRODUIT_VECTORIEL(tmpRes, vectBase[0],vectBase[1]);
-    det += pow(-1,i) * mat[i][0] * CS_LOC_PRODUIT_SCALAIRE(vectBase[2], tmpRes);
+    cs_math_3_cross_product(vectBase[0],vectBase[1], tmpRes);
+    det += pow(-1,i) * mat[i][0] * cs_math_3_dot_product(vectBase[2], tmpRes);
   }
 
   if (CS_ABS(det) <= (0.000001*dh)) {
@@ -251,10 +239,10 @@ _is_coplanar(const cs_real_t  *coord,
           vectBase[1][0] = coord[3*numiii  ] - coord[3*numi  ];
           vectBase[1][1] = coord[3*numiii+1] - coord[3*numi+1];
           vectBase[1][2] = coord[3*numiii+2] - coord[3*numi+2];
-          CS_PRODUIT_VECTORIEL(tmpRes, vectBase[0],vectBase[1]);
-          if (   (CS_LOC_MODULE(tmpRes) > (0.000001*dh))
-              && (CS_ABS(CS_LOC_PRODUIT_SCALAIRE(vectBase[0],
-                                                 vectBase[1])) < min)) {
+          cs_math_3_cross_product(vectBase[0],vectBase[1], tmpRes);
+          if (   (cs_math_3_norm(tmpRes) > (0.000001*dh))
+              && (CS_ABS(cs_math_3_dot_product(vectBase[0],
+                                               vectBase[1])) < min)) {
             i0 = i;
             i1 = ii;
             i2 = iii;
@@ -285,10 +273,10 @@ _is_coplanar(const cs_real_t  *coord,
     vectBase[1][0] = coord[3*(nvoi[i2]+ decF)  ] - coord[3*(nvoi[i0]+ decF)  ];
     vectBase[1][1] = coord[3*(nvoi[i2]+ decF)+1] - coord[3*(nvoi[i0]+ decF)+1];
     vectBase[1][2] = coord[3*(nvoi[i2]+ decF)+2] - coord[3*(nvoi[i0]+ decF)+2];
-    CS_PRODUIT_VECTORIEL(tmpRes, vectBase[0],vectBase[1]);
-    CS_PRODUIT_VECTORIEL(vectBase[1], tmpRes,vectBase[0]);
-    norme1= CS_LOC_MODULE(vectBase[0]);
-    norme2= CS_LOC_MODULE(vectBase[1]);
+    cs_math_3_cross_product(vectBase[0],vectBase[1], tmpRes);
+    cs_math_3_cross_product(tmpRes, vectBase[0], vectBase[1]);
+    norme1= cs_math_3_norm(vectBase[0]);
+    norme2= cs_math_3_norm(vectBase[1]);
     vectBase[0][0] /= norme1; vectBase[1][0] /= norme2;
     vectBase[0][1] /= norme1; vectBase[1][1] /= norme2;
     vectBase[0][2] /= norme1; vectBase[1][2] /= norme2;
@@ -410,25 +398,21 @@ _dot_product_ng(const cs_lnum_t  ifac,
   int idim;
   cs_real_t aux1,aux2;
 
-  n_sortant[2] = 0.0;
-  g_uni[2] = 0.0;
-
-  aux1 = CS_LOC_MODULE(gravite);
+  aux1 = cs_math_3_norm(gravite);
 
   for (idim = 0; idim < 3; idim++) {
     n_sortant[idim] = direction * surf_f[ifac*3+idim];
     g_uni[idim]= gravite[idim];
   }
 
-  aux2 = CS_LOC_MODULE(n_sortant);
+  aux2 = cs_math_3_norm(n_sortant);
   for (idim = 0; idim < dim; idim++) {
     n_sortant[idim] /= aux2;
     g_uni[idim] /= aux1;
 
   }
 
-  return CS_LOC_PRODUIT_SCALAIRE(n_sortant, g_uni);
-
+  return cs_math_3_dot_product(n_sortant, g_uni);
 }
 
 
@@ -653,8 +637,8 @@ _search_height(cs_ctwr_zone_t   *ct,
     else
       v_aux[2] = -v_f_z;
 
-    hmin_dist[i] =  CS_LOC_PRODUIT_SCALAIRE(v_aux, gravite)
-                  / CS_LOC_MODULE(gravite);
+    hmin_dist[i] =  cs_math_3_dot_product(v_aux, gravite)
+                  / cs_math_3_norm(gravite);
   }
 
 
@@ -667,8 +651,8 @@ _search_height(cs_ctwr_zone_t   *ct,
       v_aux[1] = -lst_xyz_sup[i*3 + 1];
       v_aux[2] = -lst_xyz_sup[i*3 + 2];
 
-      aux = CS_LOC_PRODUIT_SCALAIRE(v_aux, gravite);
-      hmax[i] = aux / CS_LOC_MODULE(gravite); /* project on "g" axis */
+      aux = cs_math_3_dot_product(v_aux, gravite);
+      hmax[i] = aux / cs_math_3_norm(gravite); /* project on "g" axis */
 
   }
 
@@ -1093,7 +1077,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
           v_aux[ii] = i_face_normal[3 * (  lst_par_fac_sup[ifac]
                                          - mesh->n_b_faces - 1) + ii];
       }
-      aux = CS_LOC_MODULE(v_aux);
+      aux = cs_math_3_norm(v_aux);
       ct->surface_in += aux;
       ct->surface_out += aux;
       ct->surf_fac_sup[ifac] = aux;
@@ -1153,7 +1137,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     for (i=0; i < nb; i++) {
 
-      aux =CS_ABS(hmax_vect[i] -  hmin_vect[i])/CS_LOC_MODULE(gravite);
+      aux =CS_ABS(hmax_vect[i] -  hmin_vect[i])/cs_math_3_norm(gravite);
 
       extrusion_vectors[i*3]     =  gravite[0] * aux;
       extrusion_vectors[i*3 + 1] =  gravite[1] * aux;
@@ -2162,7 +2146,7 @@ cs_ctwr_stacking(void)
           (ct_upw->face_inf_mesh, CS_INTERLACE,2,lst_xyz);
 
         tmp  = CS_ABS(ct_upw->hmax - ct_upw->hmin)/(ct_upw->nelect-1);
-        tmp /= CS_LOC_MODULE(gravite);
+        tmp /= cs_math_3_norm(gravite);
 
         for (i=0; i < (ct_upw->nbfac_ict+ct_upw->nbfbr_ict); i++) {
           lst_xyz[3*i + 0] -= tmp * gravite[0];
@@ -2199,10 +2183,6 @@ cs_ctwr_stacking(void)
       }
   }
 }
-
-#undef CS_LOC_PRODUIT_SCALAIRE
-#undef CS_LOC_MODULE
-#undef CS_PRODUIT_VECTORIEL
 
 /*----------------------------------------------------------------------------*/
 

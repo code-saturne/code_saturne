@@ -45,6 +45,7 @@
 #include "cs_base.h"
 #include "cs_field.h"
 #include "cs_log.h"
+#include "cs_math.h"
 #include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
@@ -125,17 +126,6 @@ static cs_fan_t  ** _cs_glob_fans = NULL;
  *============================================================================*/
 
 enum {X, Y, Z};
-
-#define CS_LOC_CROSS_PRODUCT(prod_vect, vect1, vect2)  \
-  (prod_vect[X] = vect1[Y] * vect2[Z] - vect2[Y] * vect1[Z], \
-   prod_vect[Y] = vect2[X] * vect1[Z] - vect1[X] * vect2[Z], \
-   prod_vect[Z] = vect1[X] * vect2[Y] - vect2[X] * vect1[Y])
-
-#define CS_LOC_DOT_PRODUCT(vect1, vect2) \
-  (vect1[X] * vect2[X] + vect1[Y] * vect2[Y] + vect1[Z] * vect2[Z])
-
-#define CS_LOC_MODULE(vect) \
-  sqrt(vect[X] * vect[X] + vect[Y] * vect[Y] + vect[Z] * vect[Z])
 
 /*============================================================================
  * Private function definitions
@@ -566,7 +556,7 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
     if (   cell_id_1 < mesh->n_cells /* ensure the contrib is from one domain */
         && cell_fan_id[cell_id_1] != cell_fan_id[cell_id_2]) {
 
-      l_surf = CS_LOC_MODULE((i_face_normal[face_id]));
+      l_surf = cs_math_3_norm((i_face_normal[face_id]));
       if (cell_fan_id[cell_id_1] > -1) {
         fan_id = cell_fan_id[cell_id_1];
         fan = _cs_glob_fans[fan_id];
@@ -586,7 +576,7 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
   for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++) {
 
     if (cell_fan_id[b_face_cells[face_id]] > -1) {
-      l_surf = CS_LOC_MODULE((b_face_normal[face_id]));
+      l_surf = cs_math_3_norm((b_face_normal[face_id]));
       fan_id = cell_fan_id[b_face_cells[face_id]];
       fan = _cs_glob_fans[fan_id];
       fan->surface += l_surf;
@@ -675,7 +665,8 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
           fan = _cs_glob_fans[fan_id];
           direction = (i == 0 ? 1 : - 1);
           flow = i_mass_flux[face_id]/c_rho[cell_id] * direction;
-          if (CS_LOC_DOT_PRODUCT(fan->axis_dir, i_face_normal[face_id]) * direction > 0.0)
+          if (  cs_math_3_dot_product(fan->axis_dir, i_face_normal[face_id])
+              * direction > 0.0)
             fan->out_flow += flow;
           else
             fan->in_flow += flow;
@@ -698,7 +689,7 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
       fan = _cs_glob_fans[fan_id];
 
       flow = b_mass_flux[face_id]/b_rho[face_id];
-      if (CS_LOC_DOT_PRODUCT(fan->axis_dir, b_face_normal[face_id]) > 0.0)
+      if (cs_math_3_dot_product(fan->axis_dir, b_face_normal[face_id]) > 0.0)
         fan->out_flow += flow;
       else
         fan->in_flow += flow;
@@ -857,11 +848,11 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
         for (int coo_id = 0; coo_id < 3; coo_id++)
           d_cel_axis[coo_id] -= coo_axis * fan->axis_dir[coo_id];
 
-        d_axis = CS_LOC_MODULE(d_cel_axis); /* Distance to the axis */
+        d_axis = cs_math_3_norm(d_cel_axis); /* Distance to the axis */
 
-        CS_LOC_CROSS_PRODUCT(f_rot, fan->axis_dir, d_cel_axis);
+        cs_math_3_cross_product(fan->axis_dir, d_cel_axis, f_rot);
 
-        aux = CS_LOC_MODULE(f_rot);
+        aux = cs_math_3_norm(f_rot);
         for (int coo_id = 0; coo_id < 3; coo_id++)
           f_rot[coo_id] /= aux;
 
