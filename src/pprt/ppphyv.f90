@@ -181,9 +181,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
 !        Des exemples physiques sont fournis dans cs_user_physical_properties.
 !     En arc electrique, on lit un fichier de donnees et on interpole.
 
-  call elphyv &
-  !==========
- (srrom)
+  call elphyv
 
 endif
 

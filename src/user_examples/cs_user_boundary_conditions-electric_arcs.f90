@@ -383,8 +383,8 @@ do ilelt = 1, nlelt
   ! Specific model for Joule Effect by direct conduction:
 
   ! If you want to make a simulation with an imposed Power PUISIM
-  ! (you want to get PUISIM imposed in useli1 and PUISIM = Amp x Volt)
-  ! you need to impose IELCOR=1 in useli1
+  ! (you want to get PUISIM imposed in cs_user_parameters.c and PUISIM = Amp x Volt)
+  ! you need to impose IELCOR=1 in cs_user_parameters.c
   ! The boundary conditions will be scaled by COEJOU coefficient
   ! for example the electrical potential will be multiplied bu COEJOU
   ! (both real and imaginary part of the electrical potential if needed)
@@ -453,18 +453,18 @@ do ilelt = 1, nlelt
   !    intensity of the electrical current is imposed (COUIMP is the value of
   !    the imposed total current).
 
-  !    In that case, you need to impose IELCOR=1 in useli1
+  !    In that case, you need to impose IELCOR=1 in cs_user_parameters.c
   !    The "electrical variables" will be scaled by COEPOT coefficient :
   !    for example the electrical potential will be multiplied by COEPOT,
-  !    Joule effect will be multipied by COEPOT * COEPOT and so on (see uselrc.f90)
+  !    Joule effect will be multipied by COEPOT * COEPOT and so on (see cs_user_electric_scaling.c)
 
-  !    COEJOU is defined in uselrc.fr : different possibilities are described in
-  !    uselrc.f90, depending on the different physics you want to simulate
+  !    COEJOU is defined in cs_user_electric_scaling.c : different possibilities are described in
+  !    cs_user_electric_scaling.c, depending on the different physics you want to simulate
   !    (scaling from current, from power, special model for restriking ...)
 
   !    The variable DPOT is defined: it corresponds to the electrical potential
   !    difference between the electrodes (Anode potential - cathode Potential).
-  !    DPOT is calculated in uselrc.f90. DPOT is saved at each time step, and
+  !    DPOT is calculated in cs_user_electric_scaling.c. DPOT is saved at each time step, and
   !    for a following calculation
 
   !    DPOT is the value of the boundary condition on anode assuming that
@@ -605,7 +605,7 @@ do ilelt = 1, nlelt
   rcodcl(ifac,isca(ii),2) = 1.d5
 
   ! Real electrical potential: anode boundary condition;
-  ! pot_diff calculated in uselrc.f
+  ! pot_diff calculated in cs_user_electric_scaling.c
 
   icodcl(ifac,ipotr)   = 1
 
@@ -618,7 +618,7 @@ do ilelt = 1, nlelt
   ! Restriking modeling:
   ! ===================
   !    example to fit depending on the case, the geometry etc...
-  !     and also in agreement with uselrc.fr
+  !     and also in agreement with cs_user_electric_scaling.c
 
   if (ippmod(ielarc).ge.1 .and. ielcor .eq.1) then
     if (irestrike.eq.1 .and. ntcabs.le.ntdcla+30) then

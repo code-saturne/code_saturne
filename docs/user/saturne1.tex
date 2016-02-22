@@ -556,14 +556,14 @@ or \texttt{cs\_user\_combustion}
             \item \texttt{cs\_user\_initialization} to initialise the enthalpy in
                   case of Joule effect
 
-            \item \texttt{uselph} (in \texttt{cs\_user\_physical\_properties.f90})
+            \item \texttt{cs\_user\_physical\_properties.c}
                   to define the physical
                   properties in case of Joule effect
         \end{list}
 
         \item {\em very useful:}
         \begin{list}{-}{}
-            \item  \texttt{useli1} (in \texttt{cs\_user\_parameters.f90})
+            \item  \texttt{cs\_user\_model} and \texttt{cs\_user\_parameters} (in \texttt{cs\_user\_parameters.c})
                    to manage the options related
                    to the variables corresponding to the electric module
 
@@ -8114,9 +8114,9 @@ effect module) or the current (electric arcs module) from the imposed values
 \item For the electric arcs, the imposed potential difference can be a fixed variable:
  for example, the cathode can be fixed at 0 and the potential at the anode
  contains the variable \texttt{dpot}. This variable is initialised in
-\texttt{useli1} (in \texttt{cs\_user\_parameters.f90})
+in \texttt{cs\_user\_parameters.c}
  by an estimated potential difference. If \texttt{ielcor}=1 (see
- \texttt{useli1}), \texttt{dpot} is updated automatically during the
+ \texttt{cs\_user\_parameters.c}), \texttt{dpot} is updated automatically during the
  calculation to obtain the required current.
 \item For the Joule effect module, \texttt{dpot} is again used with the same
  signification as in the electric arcs module. If \texttt{dpot} is not wanted
@@ -8124,7 +8124,7 @@ effect module) or the current (electric arcs module) from the imposed values
  used. \texttt{coejou} is the coefficient by which the potential difference is
  multiplied to obtain the desired power dissipation. By default this begins at
  1 and is updated automatically. If \texttt{ielcor}=1 (see \texttt
-{useli1}), multiply the imposed potentials in
+{cs\_user\_parameters.c}), multiply the imposed potentials in
 \texttt{cs\_user\_boundary\_conditions} by \texttt{coejou} at each time step to
 achieve the desired power dissipation.
  \end{list}
@@ -8170,16 +8170,15 @@ Finally, a test is performed to check if the offset is zero or if a boundary
 %====================================
 \subsubsection {Initialisation of the variable options}
 %==================================
-\label{prg_useli1}%
+\label{prg_cs_user_parameters}%
 
-The subroutine \texttt{useli1} (in \texttt{cs\_user\_parameters.f90})
+The subroutine \texttt{cs\_user\_parameters} (in \texttt{cs\_user\_parameters.c})
  is called at each time step. It allows:
 \begin{list}{$\bullet$}{}
 \item to give the coefficient of relaxation of the density \texttt{srrom}:\\
 $\rho^{n+1}=\texttt{srrom}*\rho^{n}+(1-\texttt{srrom})\rho^{n}$\\
 (for the electric arcs, the sub-relaxation is taken into account during the 2nd time
- step; for the Joule effect the sub relaxation is not accounted for unless the user
- specifies in \texttt{uselph}
+ step;)
 
 \item to indicate if the data will be fixed in the power dissipation or
  in the current, done in \texttt{ielcor}.

@@ -698,8 +698,6 @@ module ppincl
   !> With combustion and pulverized coal, \ref srrom is initialized to
   !> \ref cstnum::grand "-grand" and the user must specify a proper value through
   !> the Interface or the initialization subroutine (\ref cs_user_combustion).
-  !> With the electric module, \ref srrom is initialized in to 0
-  !> and may be modified by the user in \ref useli1.
   !> With gas combustion, pulverised coal or electric arcs, \ref srrom is
   !> automatically used after the second time-step. With Joule effect,
   !> the user decides whether or not it will be used in \ref cs_user_physical_properties

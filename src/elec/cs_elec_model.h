@@ -107,6 +107,7 @@ typedef struct {
   double  puisim;
   double  coejou;
   double  elcou;
+  double  srrom;
   char   *ficfpp;
 } cs_elec_option_t;
 
@@ -165,8 +166,7 @@ cs_electrical_model_finalize(cs_int_t ielarc,
  *----------------------------------------------------------------------------*/
 
 void
-cs_electrical_model_specific_initialization(      cs_real_t *srrom,
-                                                  cs_real_t *visls0,
+cs_electrical_model_specific_initialization(      cs_real_t *visls0,
                                                   cs_real_t *diftl0,
                                                   cs_int_t  *iconv,
                                                   cs_int_t  *istat,
@@ -212,8 +212,7 @@ cs_elec_convert_h_t(cs_int_t   mode,
 
 void
 cs_elec_physical_properties(const cs_mesh_t *mesh,
-                            const cs_mesh_quantities_t *mesh_quantities,
-                            cs_real_t srrom);
+                            const cs_mesh_quantities_t *mesh_quantities);
 
 /*----------------------------------------------------------------------------
  * compute source terms for energie and vector potential
@@ -268,8 +267,7 @@ cs_elec_scaling_function(const cs_mesh_t *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (elini1, ELINI1) (      cs_real_t *srrom,
-                                 cs_real_t *visls0,
+CS_PROCF (elini1, ELINI1) (      cs_real_t *visls0,
                                  cs_real_t *diftl0,
                                  cs_int_t  *iconv,
                                  cs_int_t  *istat,
@@ -297,7 +295,7 @@ CS_PROCF (ellecd, ELLECD) (cs_int_t *ieljou,
                            cs_int_t *ielion);
 
 void
-CS_PROCF (elphyv, ELPHYV) (cs_real_t *srrom);
+CS_PROCF (elphyv, ELPHYV) (void);
 
 void
 CS_PROCF (eltssc, ELTSSC) (const cs_int_t  *isca,

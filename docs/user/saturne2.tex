@@ -2105,7 +2105,7 @@ compressible module, it is also not used by the code, but it may be (and often
 is) referenced by the user in user subroutines; it is therefore better to
 specify its value.\\
 always useful otherwise, even if a law defining the density is given by
-the user subroutine \texttt{usphyv} or \texttt{uselph}\\
+the user subroutine \texttt{usphyv} or \texttt{cs\_user\_physical\_properties.c}\\
 indeed, except with the
 compressible module, \CS does not
 use the total pressure $P$ when solving the Navier-Stokes equation, but a
@@ -2137,11 +2137,9 @@ hence, with a zero value, there is no sub-relaxation.
 With combustion and pulverised coal, {\tt srrom} is initialised to {\tt -grand}
 and the user must specify a proper value through the Interface or the
 initialisation subroutines (\texttt{cs\_user\_combustion}). With the electric module, {\tt srrom} is initialised in to 0
-and may be modified by the user in \texttt{useli1}.\\
+and may be modified by the user in \texttt{cs\_user\_parameters}.\\
 With gas combustion, pulverised coal or electric arcs, {\tt srrom} is
-automatically used after the second time-step. With the Joule effect module,
-the user decides whether or not it will be used in \texttt{uselph}
-from the coding law giving the density.}\\
+automatically used after the second time-step.}\\
 always useful with gas combustion, pulverized coal or the electric module.
 
 \motcleb{p0}{ra}{real number}{$1.013e-5$}{O}{L1}
@@ -2243,7 +2241,7 @@ With gas or coal combustion, the molecular diffusivity of the enthalpy
 ($kg.m^{-1}.s^{-1}$) must be specified by the user in the variable {\tt diftl0}
 (\texttt{cs\_user\_combustion})\\
 With the electric module, for the Joule effect, the diffusivity is specified by
-the user in \texttt{uselph} (even if it is constant). For the electric arcs, it
+the user in \texttt{cs\_user\_physical\_properties.c} (even if it is constant). For the electric arcs, it
 is calculated from the thermochemical data file}}
 
 \motcleb{diftl0}{r}{real number $>$ 0}{\tt -grand}{C}{L1}
@@ -2738,8 +2736,7 @@ The electric arcs module is designed to take into account the Joule effect
 are taken into account in the impulse momentum equation.
 
 The keywords used in the global settings are quite few. They are
-found in the subroutine \texttt{useli1} (see the description of this
-user subroutine \S\ref{prg_useli1}).
+found in the subroutine \texttt{cs\_user\_parameters}.
 
 \motcleb{ielcor}{i}{0, 1}{0}{O}{L1}
 {when \texttt{ielcor}=1, the boundary conditions for the potential will be
@@ -2747,7 +2744,7 @@ tuned at each time step in order to reach a user-specified target dissipated
 power \texttt{puisim} (Joule effect) or a user-specified target current
 intensity \texttt{couimp} (electric arcs)\\
 the boundary condition tuning is controlled by subroutines \texttt{elreca} or
-\texttt{uselrc}\\
+\texttt{cs\_user\_electric\_scaling}\\
 always useful}
 
 \motcleb{couimp}{r}{real number $\geqslant 0$}{0}{O}{L1}
@@ -2769,16 +2766,16 @@ useful with the Joule effect module if \texttt{ielcor}=1}
 \motcleb{dpot}{r}{real number $\geqslant 0$}{0}{O}{L1}
 {\texttt{dpot} is the potential difference ($V$) which generates the current (and the Joule effect) for the
 calculations with boundary conditions tuning for the potential. This value is
-initialised set by the user (\texttt{useli1}). It is then automatically tuned
+initialised set by the user (\texttt{cs\_user\_parameters}). It is then automatically tuned
 depending on the value of dissipated power (Joule effect module) or the
 intensity of current (electric arcs module).
 In order for the correct power or intensity to be reached, the boundary
 conditions for the potential must be expressed with \texttt{dpot}
-(\texttt{uselcl}). The tuning can be controlled in \texttt{uselrc}\\
+. The tuning can be controlled in \texttt{cs\_user\_electric\_scaling}\\
 useful if \texttt{ielcor}=1}
 
 \motcleb{modrec}{i}{0, 1, 2}{1}{O}{L1}
-{when \texttt{ielcor}=0, we use user function \texttt{uselrc} for boundary condition tuning\\
+{when \texttt{ielcor}=0, we use user function \texttt{cs\_user\_electric\_scaling} for boundary condition tuning\\
 when \texttt{ielcor}=1, we use standard model for boundary condition tuning\\
 when \texttt{ielcor}=2, we use plane scaling model for boundary condition tuning. In this case, we need
 define plane and current density component used to}
