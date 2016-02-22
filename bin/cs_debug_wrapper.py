@@ -765,9 +765,9 @@ def main(argv, pkg=None):
     if 'mpiexec' in cmds.keys():
         cmd_mpi = cmds['mpiexec']
         for k in ['debugger', 'valgrind', 'program']:
-            if cmds[k]:
+            if k in cmds:
                 cmd_mpi += cmds[k]
-        return subprocess.call(cmd)
+        return subprocess.call(cmd_mpi)
 
     else:
         init_rank_id()
