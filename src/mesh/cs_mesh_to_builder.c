@@ -1426,6 +1426,66 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Transfer mesh partitioning info to mesh builder structure.
+ *
+ * \param[in]       mesh      pointer to mesh structure
+ * \param[in, out]  mb        pointer to mesh builder structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_to_builder_partition(const cs_mesh_t    *mesh,
+                             cs_mesh_builder_t  *mb)
+{
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    const cs_datatype_t int_type
+      = (sizeof(int) == 8) ? CS_INT64 : CS_INT32;
+
+    /* Distribute cell group class info to blocks */
+    /*---------------------------------------------*/
+
+    mb->cell_bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
+                                              cs_glob_n_ranks,
+                                              mb->min_rank_step,
+                                              0,
+                                              mesh->n_g_cells);
+
+    mb->have_cell_rank = true;
+    BFT_REALLOC(mb->cell_rank,
+                (mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0]),
+                int);
+
+    int *cell_rank;
+    BFT_MALLOC(cell_rank, mesh->n_cells, int);
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+      cell_rank[i] = cs_glob_rank_id;
+
+    cs_part_to_block_t *d
+      = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
+                                        mb->cell_bi,
+                                        mesh->n_cells,
+                                        mesh->global_cell_num);
+
+    cs_part_to_block_copy_array(d,
+                                int_type,
+                                1,
+                                cell_rank,
+                                mb->cell_rank);
+
+    cs_part_to_block_destroy(&d);
+
+    BFT_FREE(cell_rank);
+
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Reconstruct periodic faces info from mesh to builder.
  *
  * \param[in]       mesh   pointer to mesh structure

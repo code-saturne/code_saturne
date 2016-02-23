@@ -524,6 +524,8 @@ _update_geometry(cs_mesh_t  *mesh,
   for (f_id = 0; f_id < mesh->n_i_faces; f_id++) {
     cs_lnum_t c_id_0 = mesh->i_face_cells[f_id][0];
     cs_lnum_t c_id_1 = mesh->i_face_cells[f_id][1];
+    assert(c_id_0 > -1);
+    assert(c_id_1 > -1);
     if (c_id_0 < mesh->n_cells && cell_flag[c_id_0] != 0) {
       for (cs_lnum_t i = mesh->i_face_vtx_idx[f_id];
            i < mesh->i_face_vtx_idx[f_id+1];
@@ -791,10 +793,22 @@ _update_mesh(bool     restart_mode,
   }
   else {
 
+    cs_mesh_to_builder_partition(tbm->reference_mesh,
+                                 cs_glob_mesh_builder);
+
     cs_preprocessor_data_add_file("restart/mesh", 0, NULL, NULL);
 
     cs_preprocessor_data_read_headers(cs_glob_mesh,
                                       cs_glob_mesh_builder);
+
+    if (tbm->reference_mesh->n_g_cells != cs_glob_mesh->n_g_cells)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Error in turbomachinery mesh restart:\n"
+           "  number of cells expected/read: %llu/%llu\n"
+           "Check your restart directory."),
+         (unsigned long long)tbm->reference_mesh->n_g_cells,
+         (unsigned long long)cs_glob_mesh->n_g_cells);
 
     cs_preprocessor_data_read_mesh(cs_glob_mesh,
                                    cs_glob_mesh_builder);
@@ -857,7 +871,6 @@ _update_mesh(bool     restart_mode,
   if (cs_glob_mesh->halo != NULL) {
 
     const cs_mesh_t *m = cs_glob_mesh;
-
     BFT_REALLOC(tbm->cell_rotor_num,
                 m->n_cells_with_ghosts,
                 int);
@@ -1119,7 +1132,7 @@ cs_turbomachinery_initialize(void)
 
   if (cs_glob_n_joinings > 0) {
     cs_real_t t_elapsed;
-    if (cs_restart_present())
+    if (cs_file_isreg("restart/mesh"))
       cs_turbomachinery_restart_mesh(cs_glob_time_step->t_cur,
                                      &t_elapsed);
     else
