@@ -256,8 +256,8 @@ else
     allocate(w1(ncelet), w2(ncelet))
     imodif = 1
 
-    if (    ithvar.ne. 60000.or.ithvar.ne.100000                    &
-        .or.ithvar.ne.140000.or.ithvar.ne.150000.or.ithvar.ne.210000) then
+    if (     ithvar.ne. 60000.and.ithvar.ne.100000                    &
+        .and.ithvar.ne.140000.and.ithvar.ne.150000.and.ithvar.ne.210000) then
         write(nfecra,1000) ithvar
         iok = iok + 1
     endif
