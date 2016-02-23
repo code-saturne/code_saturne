@@ -436,6 +436,10 @@ def compile_and_link(pkg, srcdir, destdir,
             dir_files = os.listdir(temp_dir)
             o_files = fnmatch.filter(dir_files, '*.o')
             cmd = cmd + o_files
+        # If present, address sanitizer needs to come first
+        if '-lasan' in p_libs:
+           p_libs.remove('-lasan')
+           cmd += ['-lasan']
         if opt_libs != None:
             if len(opt_libs) > 0:
                 cmd += separate_args(opt_libs)
