@@ -5,6 +5,8 @@ Release 4.2.1 (unreleased)
 Bug fixes:
 ----------
 
+- SALOME_CFD: fix wrong default writer format.
+
 - Fix error in fan modeling computation of flow through a fan.
 
 - Fix occasional issues in transient turbomachinery module due to
