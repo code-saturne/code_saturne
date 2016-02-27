@@ -5,6 +5,8 @@ Release 4.0.5 (unreleased)
 Bug fixes:
 ----------
 
+- SALOME_CFD: fix wrong default writer format.
+
 - Compressible: fix by adding a missing verification of ithvar before
   the initialisation of thermodynamic properties.
 
