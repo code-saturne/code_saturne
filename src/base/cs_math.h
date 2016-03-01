@@ -248,6 +248,10 @@ cs_math_33_determinant(const cs_real_t   m[3][3])
  */
 /*----------------------------------------------------------------------------*/
 
+#if defined(__INTEL_COMPILER)
+#pragma optimization_level 0 /* Bug with O1 or above with icc 15.0.1 20141023 */
+#endif
+
 static inline void
 cs_math_3_cross_product(const cs_real_t u[3],
                         const cs_real_t v[3],
