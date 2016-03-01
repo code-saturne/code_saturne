@@ -89,6 +89,10 @@ BEGIN_C_DECLS
 
 #define CS_CL  (CS_CL_SIZE/8)
 
+/* Vector size, in cs_real_t units (large enough for AVX512) */
+
+#define CS_VS  8
+
 /*=============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -760,16 +764,48 @@ _cs_dot_kahan(cs_lnum_t         n,
     _thread_range(n, &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
+    const cs_lnum_t _nv = (_n/CS_VS)*CS_VS;
     const cs_real_t *_x = x + s_id;
     const cs_real_t *_y = y + s_id;
 
-    double c = 0;
+    double d[CS_VS], c[CS_VS];
 
-    for (cs_lnum_t i = 0; i < _n; i++) {
-      double z = (_x[i]* _y[i]) - c;
-      double t = dot + z;
-      c = (t - dot) - z;
-      dot = t;
+    for (cs_lnum_t i = 0; i < CS_VS; i ++) {
+      d[i] = 0;
+      c[i] = 0;
+    }
+
+    /* vector multiple */
+
+    for (cs_lnum_t i = 0; i < _nv; i += CS_VS) {
+      double z[CS_VS], t[CS_VS];
+      for (cs_lnum_t j = 0; j < CS_VS; j++) {
+        z[j] = (_x[i+j]* _y[i+j]) - c[j];
+        t[j] = d[j] + z[j];
+        c[j] = (t[j] - d[j]) - z[j];
+        d[j] = t[j];
+      }
+    }
+
+    /* vector remainder */
+
+    for (cs_lnum_t i = _nv; i < _n; i++) {
+      double z = (_x[i]* _y[i]) - c[0];
+      double t = d[0] + z;
+      c[0] = (t - d[0]) - z;
+      d[0] = t;
+    }
+
+    /* Kahan sum on vector */
+
+    {
+      c[0] = 0;
+      for (cs_lnum_t i = 0; i < CS_VS; i++) {
+        double z = d[i] - c[0];
+        double t = dot + z;
+        c[0] = (t - dot) - z;
+        dot = t;
+      }
     }
   }
 
@@ -800,15 +836,47 @@ _cs_dot_xx_kahan(cs_lnum_t         n,
     _thread_range(n, &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
+    const cs_lnum_t _nv = (_n/CS_VS)*CS_VS;
     const cs_real_t *_x = x + s_id;
 
-    double c = 0;
+    double d[CS_VS], c[CS_VS];
 
-    for (cs_lnum_t i = 0; i < _n; i++) {
-      double z = (_x[i]* _x[i]) - c;
-      double t = dot + z;
-      c = (t - dot) - z;
-      dot = t;
+    for (cs_lnum_t i = 0; i < CS_VS; i ++) {
+      d[i] = 0;
+      c[i] = 0;
+    }
+
+    /* vector multiple */
+
+    for (cs_lnum_t i = 0; i < _nv; i += CS_VS) {
+      double z[CS_VS], t[CS_VS];
+      for (cs_lnum_t j = 0; j < CS_VS; j++) {
+        z[j] = (_x[i+j]* _x[i+j]) - c[j];
+        t[j] = d[j] + z[j];
+        c[j] = (t[j] - d[j]) - z[j];
+        d[j] = t[j];
+      }
+    }
+
+    /* vector remainder */
+
+    for (cs_lnum_t i = _nv; i < _n; i++) {
+      double z = (_x[i]* _x[i]) - c[0];
+      double t = d[0] + z;
+      c[0] = (t - d[0]) - z;
+      d[0] = t;
+    }
+
+    /* Kahan sum on vector */
+
+    {
+      c[0] = 0;
+      for (cs_lnum_t i = 0; i < CS_VS; i++) {
+        double z = d[i] - c[0];
+        double t = dot + z;
+        c[0] = (t - dot) - z;
+        dot = t;
+      }
     }
   }
 
