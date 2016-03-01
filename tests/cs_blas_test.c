@@ -2779,7 +2779,6 @@ main (int argc, char *argv[])
 
   bft_printf("\n");
 
-#if 0
   /* Precision tests */
   /*-----------------*/
 
@@ -2863,7 +2862,6 @@ main (int argc, char *argv[])
   test_sum += _block_ad_x_test(t_measure);
 
   test_sum += _copy_test(t_measure);
-#endif
 
   test_sum += _solve_33_test(t_measure);
 
