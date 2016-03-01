@@ -113,6 +113,7 @@ double precision w1(nlayer-1), w2(nlayer)
 
 iel  = ipepa(jisor,npt)
 icha = ipepa(jinch,npt)
+ilayer = 1
 
 if (associated(ptsvar)) then
   jtshp0 = jhp(1) - 1
