@@ -3429,7 +3429,8 @@ _sync_family_combinations(int   *n_fam,
   memcpy(_family_idx, *family_idx, (_n_fam+1)*sizeof(int));
 
   BFT_MALLOC(_family, _family_idx[_n_fam], int);
-  memcpy(_family, *family, _family_idx[_n_fam]*sizeof(int));
+  if (_family != NULL)
+    memcpy(_family, *family, _family_idx[_n_fam]*sizeof(int));
 
   /* Merge all info by stages up to rank 0 */
 

@@ -954,7 +954,7 @@ fvm_morton_encode(int               dim,
   int  i;
   fvm_morton_code_t  morton_code;
 
-  fvm_morton_int_t  refinement = 1 << level;
+  fvm_morton_int_t  refinement = 1u << level;
 
   morton_code.L = level;
 
@@ -996,7 +996,7 @@ fvm_morton_encode_coords(int                dim,
   cs_coord_t s[3], d[3], n[3];
   cs_coord_t d_max = 0.0;
 
-  fvm_morton_int_t  refinement = 1 << level;
+  fvm_morton_int_t  refinement = 1u << level;
 
   for (i = 0; i < (size_t)dim; i++) {
     s[i] = extents[i];

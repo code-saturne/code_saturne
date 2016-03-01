@@ -2431,7 +2431,8 @@ cs_file_write_block(cs_file_t   *f,
 
     BFT_MALLOC(copybuf, bufsize, unsigned char);
 
-    memcpy(copybuf, buf, bufsize);
+    if (copybuf != NULL)
+      memcpy(copybuf, buf, bufsize);
 
     retval = cs_file_write_block_buffer(f,
                                         copybuf,
