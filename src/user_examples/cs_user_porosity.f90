@@ -81,6 +81,9 @@ call field_get_val_s(ipori, cpro_porosi)
 !< [example_1]
 ! Example: fixe a linear by part porosity profile
 
+ll = 2.d0
+dhc = 1.d0
+
 do iel = 1, ncel
   x = xyzcen(1,iel)
   if (x.le.(ll/2.d0)) then

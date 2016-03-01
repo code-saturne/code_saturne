@@ -1564,7 +1564,7 @@ cs_pressure_drop_by_zone(const int  bc_type[],
   const cs_field_t *f_pres = CS_F_(p);
   const cs_real_t *pressure = f_pres->val;
   const cs_field_t *f_vel = CS_F_(u);
-  const cs_real_3_t *velocity =  (cs_real_3_t *)f_vel->val;
+  const cs_real_3_t *velocity =  (const cs_real_3_t *)f_vel->val;
   cs_real_3_t gravity;
   gravity[0] = cs_glob_physical_constants->gx;
   gravity[1] = cs_glob_physical_constants->gy;
@@ -1612,8 +1612,8 @@ cs_pressure_drop_by_zone(const int  bc_type[],
   const cs_real_t *b_p = f_pres->bc_coeffs->b;
 
   /* Boundary condition coefficient for u */
-  const cs_real_3_t *a_u = (cs_real_3_t *)f_vel->bc_coeffs->a;
-  const cs_real_33_t *b_u = (cs_real_33_t *)f_vel->bc_coeffs->b;
+  const cs_real_3_t *a_u = (const cs_real_3_t *)f_vel->bc_coeffs->a;
+  const cs_real_33_t *b_u = (const cs_real_33_t *)f_vel->bc_coeffs->b;
 
   /* Convective mass fluxes for inner and boundary faces */
   int iflmas = cs_field_get_key_int(f_pres, cs_field_key_id("inner_mass_flux_id"));

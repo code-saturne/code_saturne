@@ -93,12 +93,13 @@ if (f_id.ne.-1) &
 !===============================================================================
 
 izone = 0
+met_znb = 1
 
 do izmet = 1 , met_znb
 
-  if(izmet.eq.1) then
+  if (izmet.eq.1) then
     ! Cells associated to the geometric zone
-    call getcel('z > -7.0d0 and z < 53.d0',ncmast,ltmast)
+    call getcel('z > -7.0d0 and z < 53.d0', ncmast, ltmast)
 
     izone = izone + 1
 

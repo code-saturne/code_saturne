@@ -45,6 +45,7 @@
 
 #include "cs_defs.h"
 #include "cs_base.h"
+#include "cs_math.h"
 #include "cs_timer.h"
 #include "cs_log.h"
 #include "cs_post.h"

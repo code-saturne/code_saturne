@@ -1602,7 +1602,6 @@ _init_boundaries(const cs_lnum_t  *nfabor,
  * integer          ntcabs           <-- current iteration number
  * integer          nfabor           <-- number of boundary faces
  * integer          idarcy           <-- darcy module activate or not
- * integer          darcy_gravity    <-- is gravity taken into account
  * integer          nozppm           <-- max number of boundary conditions zone
  * integer          ncharm           <-- maximal number of coals
  * integer          ncharb           <-- number of simulated coals
@@ -1655,7 +1654,6 @@ _init_boundaries(const cs_lnum_t  *nfabor,
 void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *nfabor,
                                const int  *idarcy,
-                               const int  *darcy_gravity,
                                const int  *nozppm,
                                const int  *ncharm,
                                const int  *ncharb,
@@ -2359,7 +2357,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
             mei_evaluate(ev_formula);
             rcodcl[ivar1 * (*nfabor) + ifbr]
-                = mei_tree_lookup(ev_formula, 'H');
+              = mei_tree_lookup(ev_formula, "H");
 
           }
         }
@@ -2677,7 +2675,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
             mei_evaluate(ev_formula);
             rcodcl[ivar1 * (*nfabor) + ifbr]
-                = mei_tree_lookup(ev_formula, 'H');
+              = mei_tree_lookup(ev_formula, "H");
 
           }
         }
@@ -2785,7 +2783,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
           mei_evaluate(ev_formula);
           rcodcl[ivar1 * (*nfabor) + ifbr]
-              = mei_tree_lookup(ev_formula, 'H');
+            = mei_tree_lookup(ev_formula, "H");
 
         }
       }

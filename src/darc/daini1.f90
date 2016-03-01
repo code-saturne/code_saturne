@@ -99,8 +99,7 @@ darcy_convergence_criterion = 0
 darcy_gravity = 0
 
 if (iihmpr.eq.1) then
-  call uidai1(ippmod(idarcy),                     &
-              darcy_anisotropic_permeability,     &
+  call uidai1(darcy_anisotropic_permeability,     &
               darcy_anisotropic_dispersion,       &
               darcy_unsteady,                     &
               darcy_gravity)

@@ -146,10 +146,7 @@ void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
  * for physical properties of the activated specific physics (pulverized solid fuels)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uisofu, UISOFU) (const int    *const ippmod,
-                                const int    *const iccoal,
-                                const int    *const icpl3c,
-                                const int    *const iirayo,
+void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
                                 const int    *const iihmpr,
                                 const int    *const ncharm,
                                       int    *const ncharb,
@@ -230,18 +227,16 @@ void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
  *
  * subroutine uidai1
  * *****************
- * integer         iricha          -->   richards model
  * integer         permeability    <--   permeability type
  * integer         dispersion      <--   dispersion type
  * integer         unsteady        <--   steady flow
  * integer         gravity         <--   check if gravity is taken into account
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uidai1, UIDAI1) (const int    *const idarcy,
-                                      int    *const permeability,
-                                      int    *const dispersion,
-                                      int    *const unsteady,
-                                      int    *const gravity);
+void CS_PROCF (uidai1, UIDAI1) (int    *const permeability,
+                                int    *const dispersion,
+                                int    *const unsteady,
+                                int    *const gravity);
 
 
 /*=============================================================================

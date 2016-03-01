@@ -475,7 +475,6 @@ ecs_loc_pre_gambit__lit_coords(ecs_file_t    *fic_maillage,
                                ecs_int_t      som_val_label[],
                                int           *num_ligne)
 {
-  ecs_int_t    retour;
   ecs_int_t    isom;
   ecs_int_t    icoo;
 
@@ -494,6 +493,8 @@ ecs_loc_pre_gambit__lit_coords(ecs_file_t    *fic_maillage,
   /*=========================================================*/
 
   for (isom = 0; isom < nbr_som; isom++) {
+
+    ecs_int_t  retour = 0;
 
     ecs_file_gets(chaine, ECS_LOC_LNG_MAX_CHAINE_GAMBIT,
                   fic_maillage, num_ligne);
@@ -530,7 +531,6 @@ ecs_loc_pre_gambit__lit_coords(ecs_file_t    *fic_maillage,
   /* Fin de la rubrique */
 
   ecs_loc_pre_gambit__fin_section(fic_maillage, num_ligne);
-
 
   /* Maillage en dimension 3 */
 

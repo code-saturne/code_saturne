@@ -26,6 +26,7 @@
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/gui \
 -I$(top_srcdir)/src/mei \

@@ -130,7 +130,6 @@ extern cs_boundary_t *boundaries;
 void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *nfabor,
                                const int  *idarcy,
-                               const int  *darcy_gravity,
                                const int  *nozppm,
                                const int  *ncharm,
                                const int  *ncharb,

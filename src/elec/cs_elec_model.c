@@ -52,6 +52,7 @@
 #include "cs_mesh_location.h"
 #include "cs_time_step.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_parameters.h"
 #include "cs_field_pointer.h"
 #include "cs_gradient.h"
@@ -60,6 +61,7 @@
 #include "cs_thermal_model.h"
 #include "cs_turbulence_model.h"
 #include "cs_gui_specific_physics.h"
+#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -236,7 +238,7 @@ cs_f_elec_model_get_pointers(int     **ngazge,
  * Private function definitions
  *============================================================================*/
 
-void
+static void
 _cs_electrical_model_verify(void)
 {
   bool verif = true;
@@ -2258,7 +2260,7 @@ cs_elec_scaling_function(const cs_mesh_t *mesh,
       double cdtj = 20.;
 
       for (int iel = 0; iel < ncel; iel++) {
-        if (CS_F_(rho)->val[iel] != 0.)
+        if (CS_F_(rho)->val[iel] > 0.)
           delhsh = CS_F_(joulp)->val[iel] * dt[iel]
                  / CS_F_(rho)->val[iel];
 

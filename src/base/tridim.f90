@@ -943,7 +943,7 @@ do while (iterns.le.nterup)
 
     call uiclim &
   ( ntcabs, nfabor, ippmod(idarcy),                                &
-    darcy_gravity, nozppm, ncharm, ncharb, nclpch,                 &
+    nozppm, ncharm, ncharb, nclpch,                                &
     iindef, ientre, iesicf, isspcf, iephcf,                        &
     isopcf, iparoi, iparug, isymet, isolib, ifrent, ifresf,        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
@@ -1506,7 +1506,7 @@ if (ippmod(idarcy).eq.1) then
 
     call uiclim &
   ( ntcabs, nfabor, ippmod(idarcy),                                &
-    darcy_gravity, nozppm, ncharm, ncharb, nclpch,                 &
+    nozppm, ncharm, ncharb, nclpch,                                &
     iindef, ientre, iesicf, isspcf, iephcf,                        &
     isopcf, iparoi, iparug, isymet, isolib, ifrent, ifresf,        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &

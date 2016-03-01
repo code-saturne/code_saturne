@@ -894,7 +894,6 @@ ecs_loc_pre_ens__lit_elem_gold(ecs_file_t                   *fic,
   int            nbr_som_elt;
 
   ecs_int_t      ind;
-  ecs_int_t      nbr_som_elt_lin;
   ecs_int_t      taille_connect;
   ecs_int_t      taille_lect;
 
@@ -904,6 +903,7 @@ ecs_loc_pre_ens__lit_elem_gold(ecs_file_t                   *fic,
 
   ecs_loc_elems_ens_t  *elems_loc;
 
+  ecs_int_t  nbr_som_elt_lin = 0;
   int32_t    nbr_elt_loc = 0;
   int32_t  * nbr_n_loc = NULL;
   int32_t  * nbr_f_loc = NULL;

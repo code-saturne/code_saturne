@@ -616,6 +616,7 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
   for (ityp = 0; ityp < ECS_MED_NBR_TYP_ELT; ityp++) {
 
+    taille_med = 0;
     typ_geo_med = ecs_fic_med_init_elt_liste_c[ityp].med_typ;
 
     /*
