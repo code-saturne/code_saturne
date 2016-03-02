@@ -171,15 +171,15 @@ cs_source_term_def_by_analytic(cs_source_term_t      *st,
 /*!
  * \brief  Define a cs_source_term_t structure thanks to an array of values
  *
- * \param[in, out]  st        pointer to a cs_source_term_t structure
- * \param[in]       support   flag to know where is defined the values
- * \param[in]       array     pointer to an array
+ * \param[in, out]  st       pointer to a cs_source_term_t structure
+ * \param[in]       desc     description of the main feature of this array
+ * \param[in]       array    pointer to an array
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_source_term_def_by_array(cs_source_term_t    *st,
-                            cs_flag_t            support,
+                            cs_desc_t            desc,
                             cs_real_t           *array);
 
 /*----------------------------------------------------------------------------*/
@@ -200,16 +200,16 @@ cs_source_term_set_option(cs_source_term_t  *st,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the contribution related to a user source term
+ * \brief  Compute the contribution related to a source term
  *
- * \param[in]      dof_flag   indicate where the evaluation has to be done
+ * \param[in]      dof_desc   description of the associated DoF
  * \param[in]      source     pointer to a cs_source_term_t structure
  * \param[in, out] p_values   pointer to the computed values (allocated if NULL)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_compute(cs_flag_t                     dof_flag,
+cs_source_term_compute(cs_desc_t                     dof_desc,
                        const cs_source_term_t       *source,
                        double                       *p_values[]);
 

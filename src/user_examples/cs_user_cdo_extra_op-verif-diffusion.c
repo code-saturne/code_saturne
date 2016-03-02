@@ -935,15 +935,14 @@ _cdofb_post(const cs_mesh_t            *m,
     */
 
     /* Type of degrees of freedom to consider */
-    cs_flag_t  flag =
-      CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
+    cs_flag_t  flag = cs_cdo_primal_cell | CS_FLAG_SCAL;
 
     /* Compute the integral of the solution over each primal cell */
-    cs_evaluate_from_analytic(flag,
-                              cs_mesh_location_get_id_by_name("cells"),
-                              get_sol,
-                              CS_QUADRATURE_BARY,
-                              work); // work --> int_cell solu(x,y,z)
+    cs_evaluate_density_from_analytic(flag,
+                                      cs_mesh_location_get_id_by_name("cells"),
+                                      get_sol,
+                                      CS_QUADRATURE_BARY,
+                                      work); // work --> int_cell solu(x,y,z)
 
     for (i = 0; i < n_cells; i++) {
       work[i] /= cdoq->cell_vol[i];

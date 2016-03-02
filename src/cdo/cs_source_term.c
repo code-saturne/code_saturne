@@ -64,14 +64,6 @@ static const char _err_empty_st[] =
   " Stop setting an empty cs_source_term_t structure.\n"
   " Please check your settings.\n";
 
-/* Cases currently handled */
-static const cs_flag_t  scd_dof =
-  CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_DUAL;
-static const cs_flag_t  scp_dof =
-  CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL;
-static const cs_flag_t  pvp_dof =
-  CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL;
-
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
@@ -102,7 +94,7 @@ struct _cs_source_term_t {
   cs_def_t                def;
 
   /* Useful buffers to deal with more complex definitions */
-  cs_flag_t    array_flag;  // short description of the related array
+  cs_desc_t    array_desc;  // short description of the related array
   cs_real_t   *array;       // if the source term hinges on an array
 
   const void  *struc;       // if one needs a structure. Only shared
@@ -225,7 +217,9 @@ cs_source_term_create(const char              *name,
   st->def_type = CS_PARAM_N_DEF_TYPES;
   st->quad_type = CS_QUADRATURE_BARY;
   st->def.get.val = 0.;
-  st->array_flag = 0;
+  
+  st->array_desc.location = 0;
+  st->array_desc.state = 0;
   st->array = NULL;
 
   // st->struc is only shared when used
@@ -251,7 +245,7 @@ cs_source_term_free(cs_source_term_t   *st)
 
   BFT_FREE(st->name);
 
-  if (st->array_flag & CS_PARAM_FLAG_OWNER) {
+  if (st->array_desc.state & CS_FLAG_STATE_OWNER) {
     if (st->array != NULL)
       BFT_FREE(st->array);
   }
@@ -395,22 +389,23 @@ cs_source_term_def_by_analytic(cs_source_term_t      *st,
 /*!
  * \brief  Define a cs_source_term_t structure thanks to an array of values
  *
- * \param[in, out]  st        pointer to a cs_source_term_t structure
- * \param[in]       support   flag to know where is defined the values
- * \param[in]       array     pointer to an array
+ * \param[in, out]  st       pointer to a cs_source_term_t structure
+ * \param[in]       desc     description of the main feature of this array
+ * \param[in]       array    pointer to an array
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_source_term_def_by_array(cs_source_term_t    *st,
-                            cs_flag_t            support,
+                            cs_desc_t            desc,
                             cs_real_t           *array)
 {
   if (st == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
 
   st->def_type = CS_PARAM_DEF_BY_ARRAY;
-  st->array_flag = support;
+  st->array_desc.location = desc.location;
+  st->array_desc.state = desc.state;
   st->array = array;
 }
 
@@ -480,35 +475,33 @@ cs_source_term_set_option(cs_source_term_t  *st,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the contribution related to a user source term
+ * \brief  Compute the contribution related to a source term
  *
- * \param[in]      dof_flag   indicate where the evaluation has to be done
+ * \param[in]      dof_desc   description of the associated DoF
  * \param[in]      source     pointer to a cs_source_term_t structure
- * \param[in, out] p_values   pointer to the computed values (allocated if NULL)
  * \param[in, out] p_values   pointer to the computed values (allocated if NULL)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_compute(cs_flag_t                     dof_flag,
+cs_source_term_compute(cs_desc_t                     dof_desc,
                        const cs_source_term_t       *source,
                        double                       *p_values[])
 {
-  int  stride;
-  cs_lnum_t  i, n_ent;
-
-  double  *values = *p_values;
-
+  const int  stride = 1; // Only this case is managed up to now
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  
+  double  *values = *p_values;
 
   if (source == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
 
-  stride = 0, n_ent = 0;
-  if (dof_flag == scd_dof || dof_flag == pvp_dof)
-    stride = 1, n_ent = quant->n_vertices;
-  else if (dof_flag == scp_dof)
-    stride = 1, n_ent = quant->n_cells;
+  cs_lnum_t n_ent = 0;
+  if (cs_cdo_same_support(dof_desc.location, cs_cdo_dual_cell) ||
+      cs_cdo_same_support(dof_desc.location, cs_cdo_primal_vtx))
+    n_ent = quant->n_vertices;
+  else if (cs_cdo_same_support(dof_desc.location, cs_cdo_primal_cell))
+    n_ent = quant->n_cells;
   else
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid case. Not able to compute an evaluation.\n"));
@@ -516,31 +509,59 @@ cs_source_term_compute(cs_flag_t                     dof_flag,
   /* Initialize values */
   if (values == NULL)
     BFT_MALLOC(values, n_ent*stride, double);
-  for (i = 0; i < n_ent*stride; i++)
+  for (cs_lnum_t i = 0; i < n_ent*stride; i++)
     values[i] = 0.0;
 
-  switch (source->def_type) {
+  if (dof_desc.state & CS_FLAG_STATE_POTENTIAL) {
 
-  case CS_PARAM_DEF_BY_VALUE:
-    cs_evaluate_from_value(dof_flag,
-                           source->ml_id,
-                           source->def.get.val,
-                           values);
-    break;
+    switch (source->def_type) {
 
-  case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-    cs_evaluate_from_analytic(dof_flag,
-                              source->ml_id,
-                              source->def.analytic,
-                              source->quad_type,
-                              values);
-    break;
+    case CS_PARAM_DEF_BY_VALUE:
+      cs_evaluate_potential_from_value(dof_desc.location,
+                                       source->ml_id,
+                                       source->def.get,
+                                       values);
+      break;
 
-  default:
-    bft_error(__FILE__, __LINE__, 0, _(" Invalid type of definition.\n"));
+    case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+      cs_evaluate_potential_from_analytic(dof_desc.location,
+                                          source->ml_id,
+                                          source->def.analytic,
+                                          values);
+      break;
 
-  } /* Switch according to def_type */
+    default:
+      bft_error(__FILE__, __LINE__, 0, _(" Invalid type of definition.\n"));
 
+    } /* Switch according to def_type */
+
+  }
+  else if (dof_desc.state & CS_FLAG_STATE_DENSITY) {
+
+    switch (source->def_type) {
+
+    case CS_PARAM_DEF_BY_VALUE:
+      cs_evaluate_density_from_value(dof_desc.location,
+                                     source->ml_id,
+                                     source->def.get,
+                                     values);
+      break;
+
+    case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+      cs_evaluate_density_from_analytic(dof_desc.location,
+                                        source->ml_id,
+                                        source->def.analytic,
+                                        source->quad_type,
+                                        values);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, _(" Invalid type of definition.\n"));
+
+    } /* Switch according to def_type */
+
+  } /* Density variable */
+  
   /* Return values */
   *p_values = values;
 }

@@ -1599,7 +1599,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
                               cs_equation_t       *richards)
 {
   cs_lnum_t  i, c_id;
-  cs_flag_t  flag;
+  cs_desc_t  desc;
 
   /* Sanity checks */
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
@@ -1635,10 +1635,12 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
     for (i = 0; i < n_vertices; i++)
       gw->gravity_source_term[i] = 0;
 
-    flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL;
+    cs_desc_t  desc = {.location = CS_FLAG_SCAL | cs_cdo_primal_vtx,
+                       .state = CS_FLAG_STATE_POTENTIAL};
+    
     cs_equation_add_gravity_source_term(richards,
                                         ml_id,
-                                        flag,
+                                        desc,
                                         gw->gravity_source_term);
 
   }
@@ -1655,8 +1657,9 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 
     case CS_GROUNDWATER_MODEL_GENUCHTEN:
       cs_property_def_by_law(permeability, _permeability_by_genuchten_law);
-      flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL;
-      cs_property_set_array(permeability, flag, hydraulic_head->val);
+      desc.location = CS_FLAG_SCAL | CS_FLAG_VERTEX | CS_FLAG_PRIMAL;
+      desc.state = CS_FLAG_STATE_POTENTIAL;
+      cs_property_set_array(permeability, desc, hydraulic_head->val);
       cs_property_set_struct(permeability, (const void *)soil);
 
       /* Soil capacity settings (related to unsteady term) */
@@ -1667,8 +1670,9 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 
     case CS_GROUNDWATER_MODEL_TRACY:
       cs_property_def_by_law(permeability, _permeability_by_tracy_law);
-      flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL;
-      cs_property_set_array(permeability, flag, hydraulic_head->val);
+      desc.location = CS_FLAG_SCAL | CS_FLAG_VERTEX | CS_FLAG_PRIMAL;
+      desc.state = CS_FLAG_STATE_POTENTIAL;
+      cs_property_set_array(permeability, desc, hydraulic_head->val);
       cs_property_set_struct(permeability, (const void *)soil);
 
       /* Soil capacity settings (related to unsteady term) */
@@ -1778,8 +1782,10 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
                                          ml_name,
                                          (const void *)soil,
                                          _permeability_by_tracy_law);
-        flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL;
-        cs_property_set_array(permeability, flag, hydraulic_head->val);
+
+        desc.location = CS_FLAG_SCAL | CS_FLAG_VERTEX | CS_FLAG_PRIMAL;
+        desc.state = CS_FLAG_STATE_POTENTIAL;
+        cs_property_set_array(permeability, desc, hydraulic_head->val);
 
         /* Soil capacity settings (related to unsteady term) */
         if (has_previous) {
@@ -1842,10 +1848,11 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
   } /* n_soils > 1 */
 
   /* Define and then link the advection field to each tracer equations */
-  flag = CS_PARAM_FLAG_FACE | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_BY_CELL;
-  flag |= CS_PARAM_FLAG_SCAL;
+  desc.location = CS_FLAG_FACE | CS_FLAG_DUAL | CS_FLAG_SCAN_BY_CELL;
+  desc.location |= CS_FLAG_SCAL;
+  desc.state = CS_FLAG_STATE_FLUX;
 
-  cs_advection_field_def_by_array(gw->adv_field, flag, gw->darcian_flux);
+  cs_advection_field_def_by_array(gw->adv_field, desc, gw->darcian_flux);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1923,7 +1930,7 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
                             cs_equation_t       *eq,
                             cs_groundwater_t    *gw)
 {
-  cs_flag_t  flag;
+  cs_desc_t  desc;
   cs_gw_soil_t  *soil = NULL;
   cs_gw_tracer_t  *tp = NULL;
 
@@ -1960,8 +1967,9 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
 
   } // n_soils > 1
 
-  flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL;
-  cs_property_set_array(time_pty, flag, gw->moisture_content->val);
+  desc.location = CS_FLAG_SCAL | CS_FLAG_CELL | CS_FLAG_PRIMAL;
+  desc.state = CS_FLAG_STATE_DENSITY;
+  cs_property_set_array(time_pty, desc, gw->moisture_content->val);
 
   /* Add a diffusion property */
   if (eq_flag & CS_EQUATION_DIFFUSION) {
@@ -1987,12 +1995,14 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
 
     } // n_soils > 1
 
-    flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL;
-    cs_property_set_array(diff_pty, flag, gw->moisture_content->val);
+    desc.location = CS_FLAG_SCAL | CS_FLAG_CELL | CS_FLAG_PRIMAL;
+    desc.state = CS_FLAG_STATE_DENSITY;
+    cs_property_set_array(diff_pty, desc, gw->moisture_content->val);
 
-    flag = CS_PARAM_FLAG_FACE | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_BY_CELL;
-    flag |= CS_PARAM_FLAG_SCAL;
-    cs_property_set_second_array(diff_pty, flag, gw->darcian_flux);
+    desc.location = CS_FLAG_FACE | CS_FLAG_DUAL | CS_FLAG_SCAN_BY_CELL;
+    desc.location |= CS_FLAG_SCAL;
+    desc.state = CS_FLAG_STATE_FLUX;
+    cs_property_set_second_array(diff_pty, desc, gw->darcian_flux);
 
   } /* Diffusion term has to be set */
 
@@ -2020,8 +2030,9 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
 
     } // n_soils > 1
 
-    flag = CS_PARAM_FLAG_SCAL | CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL;
-    cs_property_set_array(reac_pty, flag, gw->moisture_content->val);
+    desc.location = CS_FLAG_SCAL | CS_FLAG_CELL | CS_FLAG_PRIMAL;
+    desc.state = CS_FLAG_STATE_DENSITY;
+    cs_property_set_array(reac_pty, desc, gw->moisture_content->val);
 
   } /* Reaction term has to be set */
 

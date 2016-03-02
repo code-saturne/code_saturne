@@ -288,15 +288,15 @@ cs_property_def_by_scavec_law(cs_property_t          *pty,
  * \brief  Define a cs_property_t structure thanks to an array of values
  *
  * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       support   flag to know where is defined the values
+ * \param[in]       desc      information about this array
  * \param[in]       array     pointer to an array
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_def_by_array(cs_property_t     *pty,
-                         cs_flag_t          support,
-                         cs_real_t         *array);
+cs_property_def_by_array(cs_property_t    *pty,
+                         cs_desc_t         desc,
+                         cs_real_t        *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -397,29 +397,29 @@ cs_property_def_subdomain_by_scavec_law(cs_property_t             *pty,
  * \brief  Set "array" member of a cs_property_t structure
  *
  * \param[in, out]  pty          pointer to a cs_property_t structure
- * \param[in]       array_flag   information on the support of the array
+ * \param[in]       desc         information about this array
  * \param[in]       array        pointer to an array of values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_set_array(cs_property_t     *pty,
-                      cs_flag_t          array_flag,
-                      cs_real_t         *array);
+cs_property_set_array(cs_property_t    *pty,
+                      cs_desc_t         desc,
+                      cs_real_t        *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set a second "array" member of a cs_property_t structure
  *
- * \param[in, out]  pty          pointer to a cs_property_t structure
- * \param[in]       array_flag   information on the support of the array
- * \param[in]       array        pointer to an array of values
+ * \param[in, out]  pty        pointer to a cs_property_t structure
+ * \param[in]       desc       information about this array
+ * \param[in]       array      pointer to an array of values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_property_set_second_array(cs_property_t    *pty,
-                             cs_flag_t         array_flag,
+                             cs_desc_t         desc,
                              cs_real_t        *array);
 
 /*----------------------------------------------------------------------------*/

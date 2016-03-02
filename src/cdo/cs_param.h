@@ -43,23 +43,6 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/* Tag to build parameter flag */
-#define CS_PARAM_FLAG_UNIFORM  (1 <<  0) //     1: uniform (in space)
-#define CS_PARAM_FLAG_CELLWISE (1 <<  1) //     2: cellwise uniform
-#define CS_PARAM_FLAG_UNSTEADY (1 <<  2) //     4: unsteady
-#define CS_PARAM_FLAG_VERTEX   (1 <<  3) //     8: on vertices
-#define CS_PARAM_FLAG_EDGE     (1 <<  4) //    16: on edges
-#define CS_PARAM_FLAG_FACE     (1 <<  5) //    32: on faces
-#define CS_PARAM_FLAG_CELL     (1 <<  6) //    64: on cells
-#define CS_PARAM_FLAG_PRIMAL   (1 <<  7) //   128: on primal mesh
-#define CS_PARAM_FLAG_DUAL     (1 <<  8) //   256: on dual mesh
-#define CS_PARAM_FLAG_BORDER   (1 <<  9) //   512: scalar-valued
-#define CS_PARAM_FLAG_SCAL     (1 << 10) //  1024: scalar-valued
-#define CS_PARAM_FLAG_VECT     (1 << 11) //  2048: vector-valued
-#define CS_PARAM_FLAG_TENS     (1 << 12) //  4096: tensor-valued
-#define CS_PARAM_FLAG_BY_CELL  (1 << 13) //  8192: by cell (c2e, c2f, c2v)
-#define CS_PARAM_FLAG_OWNER    (1 << 14) // 16384: owner
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -110,6 +93,14 @@ typedef enum {
   CS_PARAM_N_DEF_TYPES
 
 } cs_param_def_type_t;
+
+typedef struct {
+
+  char                  *ml_name;   /* name of the related mesh location */
+  cs_param_def_type_t    def_type;  /* type of definition */
+  cs_def_t               def;       /* definition */
+
+} cs_param_def_t;
 
 /* Dimension of the variable to deal with */
 typedef enum {
@@ -178,9 +169,10 @@ typedef struct {
   cs_real_t          theta;      // used in theta-scheme
   bool               do_lumping; // perform mass lumping ?
 
-  /* Initial conditions */
-  cs_param_def_type_t   ic_def_type;  // type of definition
-  cs_def_t              ic_def;       // definition
+  /* Initial conditions (by default, 0 is set) */
+  int                n_ic_definitions;  /* 0 -> default settings */
+  cs_param_def_t    *ic_definitions;    /* list of definitions (mesh location
+                                           by mesh location) */
 
 } cs_param_time_t;
 

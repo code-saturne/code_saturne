@@ -459,8 +459,7 @@ _compute_dir_values(const cs_mesh_t            *mesh,
   if (vtx_dir->n_nhmg_elts == 0)
     return; // Nothing to do
 
-  cs_flag_t  dof_flag =
-    CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
+  cs_flag_t  dof_flag = CS_FLAG_VERTEX | CS_FLAG_PRIMAL | CS_FLAG_SCAL;
 
   /* Get the value of the Dirichlet for the current time */
   cs_cdo_bc_dirichlet_set(dof_flag,
@@ -1120,11 +1119,10 @@ cs_cdovb_scaleq_free(void   *builder)
 void
 cs_cdovb_scaleq_compute_source(void            *builder)
 {
-  cs_lnum_t  i;
-
   cs_cdovb_scaleq_t  *bld = (cs_cdovb_scaleq_t *)builder;
-
-  for (i = 0; i < bld->n_vertices; i++)
+  double  *st_eval = _vbscal_work;
+  
+  for (cs_lnum_t i = 0; i < bld->n_vertices; i++)
     bld->source_terms[i] = 0;
 
   const cs_equation_param_t  *eqp = bld->eqp;
@@ -1132,27 +1130,26 @@ cs_cdovb_scaleq_compute_source(void            *builder)
   if (eqp->n_source_terms == 0)
     return;
 
-  cs_flag_t  tag;
-
-  double  *st_eval = _vbscal_work;
+  cs_desc_t  desc;
 
   if (eqp->flag & CS_EQUATION_HCONF_ST) {
-    tag = CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
-
+    desc.location = CS_FLAG_SCAL | cs_cdo_primal_vtx;
+    desc.state = CS_FLAG_STATE_POTENTIAL;
+    
     if (!bld->build_hvpcd_conf)
       _build_hvpcd_conf(bld);
 
   }
-  else
-    tag = CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_SCAL;
-
+  else {
+    desc.location = CS_FLAG_SCAL | cs_cdo_dual_cell;
+    desc.state = CS_FLAG_STATE_DENSITY;
+  }
+  
   for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
 
     const cs_source_term_t  *st = eqp->source_terms[st_id];
 
-    cs_source_term_compute(tag,
-                           st,
-                           &st_eval);  // updated inside this function
+    cs_source_term_compute(desc, st, &st_eval); // updated inside this function
 
     /* Update source term array */
     if (eqp->flag & CS_EQUATION_HCONF_ST) {
@@ -1160,14 +1157,13 @@ cs_cdovb_scaleq_compute_source(void            *builder)
       double  *mv = _vbscal_work + bld->n_vertices;
 
       cs_sla_matvec(bld->hvpcd_conf, st_eval, &mv, true);
-      for (i = 0; i < bld->n_vertices; i++)
+      for (cs_lnum_t i = 0; i < bld->n_vertices; i++)
         bld->source_terms[i] += mv[i];
 
     }
-    else {
-      for (i = 0; i < bld->n_vertices; i++)
+    else
+      for (cs_lnum_t i = 0; i < bld->n_vertices; i++)
         bld->source_terms[i] += st_eval[i];
-    }
 
   } // Loop on source terms
 

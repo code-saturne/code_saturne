@@ -506,7 +506,6 @@ cs_cdo_bc_dirichlet_set(cs_flag_t                dof_flag,
                         const cs_cdo_bc_list_t  *ent_dir,
                         double                  *dir_val)
 {
-  cs_lnum_t  i, k, stride;
   cs_real_3_t  xyz;
   cs_get_t  get;
 
@@ -518,14 +517,12 @@ cs_cdo_bc_dirichlet_set(cs_flag_t                dof_flag,
   /* Sanity check */
   assert(dir_val != NULL);
 
-  for (i = 0; i < ent_dir->n_nhmg_elts; i++) {
+  for (cs_lnum_t i = 0; i < ent_dir->n_nhmg_elts; i++) {
 
     cs_lnum_t  id = ent_dir->elt_ids[i];
     cs_param_bc_def_t  *bc_def = bc->defs + ent_dir->def_ids[i];
 
-    if (bc_def->var_type == CS_PARAM_VAR_SCAL)
-      stride = 1;
-    else
+    if (bc_def->var_type != CS_PARAM_VAR_SCAL)
       bft_error(__FILE__, __LINE__, 0,
                 _(" This situation is not handled yet."));
 
@@ -537,22 +534,22 @@ cs_cdo_bc_dirichlet_set(cs_flag_t                dof_flag,
 
     case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
 
-      if (dof_flag & CS_PARAM_FLAG_VERTEX) { // Values at vertices
+      if (dof_flag & CS_FLAG_VERTEX) { // Values at vertices
 
         const cs_mesh_t *m = (const cs_mesh_t *)geom;
 
-        for (k = 0; k < 3; k++) xyz[k] = m->vtx_coord[3*id+k];
+        for (int k = 0; k < 3; k++) xyz[k] = m->vtx_coord[3*id+k];
         bc_def->def_coef1.analytic(tcur, xyz, &get);
         dir_val[i] = get.val; // stride = 1
         break;
 
       }
-      else if (dof_flag & CS_PARAM_FLAG_FACE) { // Values at face centers
+      else if (dof_flag & CS_FLAG_FACE) { // Values at face centers
 
         const cs_cdo_quantities_t *q = (const cs_cdo_quantities_t *)geom;
 
         cs_lnum_t  f_id = q->n_i_faces + id;
-        for (k = 0; k < 3; k++) xyz[k] = q->face[f_id].center[k];
+        for (int k = 0; k < 3; k++) xyz[k] = q->face[f_id].center[k];
         bc_def->def_coef1.analytic(tcur, xyz, &get);
         dir_val[i] = get.val; // stride = 1
         break;

@@ -212,14 +212,14 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
  * \brief  Define a cs_adv_field_t structure thanks to an array of values
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
- * \param[in]       support   flag to know where is defined the values
+ * \param[in]       desc      information about this array
  * \param[in]       array     pointer to an array
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_def_by_array(cs_adv_field_t     *adv,
-                                cs_flag_t           support,
+                                cs_desc_t           desc,
                                 const cs_real_t    *array);
 
 /*----------------------------------------------------------------------------*/

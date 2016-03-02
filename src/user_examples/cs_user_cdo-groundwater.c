@@ -451,6 +451,7 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
 
   /* Define the initial condition (By default: zero is set) */
   cs_equation_set_ic(eq,         // equation
+                     NULL,       // name of the related mesh location
                      "analytic", // type of definition
                      get_ic);    // pointer to the analytic function
 

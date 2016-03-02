@@ -42,6 +42,30 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Flags to identify the nature/status of an object (variable, property...) */
+#define CS_FLAG_STATE_UNIFORM     (1 << 0) //    1: uniform (in space)
+#define CS_FLAG_STATE_CELLWISE    (1 << 1) //    2: cellwise uniform
+#define CS_FLAG_STATE_UNSTEADY    (1 << 2) //    4: unsteady
+#define CS_FLAG_STATE_POTENTIAL   (1 << 3) //    8: potential
+#define CS_FLAG_STATE_CIRCULATION (1 << 4) //   16: circulation
+#define CS_FLAG_STATE_FLUX        (1 << 5) //   32: flux
+#define CS_FLAG_STATE_DENSITY     (1 << 6) //   64: density
+#define CS_FLAG_STATE_OWNER       (1 << 7) //  128: owner
+
+/* Flags to identify where is located a variable and how to access to
+   its values */
+#define CS_FLAG_PRIMAL       (1 <<  0) //    1: on primal mesh
+#define CS_FLAG_DUAL         (1 <<  1) //    2: on dual mesh
+#define CS_FLAG_VERTEX       (1 <<  2) //    4: on vertices
+#define CS_FLAG_EDGE         (1 <<  3) //    8: on edges
+#define CS_FLAG_FACE         (1 <<  4) //   16: on faces
+#define CS_FLAG_CELL         (1 <<  5) //   32: on cells
+#define CS_FLAG_BORDER       (1 <<  6) //   64: located on the boundary
+#define CS_FLAG_SCAL         (1 <<  7) //  128: scalar-valued (stride = 1)
+#define CS_FLAG_VECT         (1 <<  8) //  256: vector-valued (stride = 3)
+#define CS_FLAG_TENS         (1 <<  9) //  512: tensor-valued (stride = 9)
+#define CS_FLAG_SCAN_BY_CELL (1 << 10) // 1024: by cell (c2e, c2f, c2v)
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -54,6 +78,16 @@ typedef enum {
   CS_SPACE_N_SCHEMES
 
 } cs_space_scheme_t;
+
+/* Description of an object (property, advection field, array..) using
+   mask of bits (i.e flag) */
+
+typedef struct {
+
+  cs_flag_t  location;  /* where is defined this object */
+  cs_flag_t  state;     /* nature and additional information on this object */
+
+} cs_desc_t;
 
 /* Vector-valued quantity stored using its measure (i.e. length) and
    its direction given by a unitary vector */
@@ -177,6 +211,40 @@ typedef void
 extern const char lsepline[];
 extern const char msepline[];
 extern const char ssepline[];
+
+/* Default locations */
+extern const cs_flag_t  cs_cdo_primal_vtx;
+extern const cs_flag_t  cs_cdo_primal_face;
+extern const cs_flag_t  cs_cdo_primal_cell;
+extern const cs_flag_t  cs_cdo_dual_vtx ;
+extern const cs_flag_t  cs_cdo_dual_face;
+extern const cs_flag_t  cs_cdo_dual_cell;;
+extern const cs_flag_t  cs_cdo_dual_face_byc;
+                     
+/*============================================================================
+ * Static inline function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if a location matches a referenced support
+ *
+ * \param[in]  location      flag corresponding to the location to check
+ * \param[in]  reference     flag corresponding to the referenced support
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_cdo_same_support(cs_flag_t   location,
+                    cs_flag_t   reference)
+{
+  if ((location & reference) == reference)
+    return true;
+  else
+    return false;
+}
 
 /*============================================================================
  * Public function prototypes

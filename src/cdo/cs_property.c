@@ -79,28 +79,32 @@ struct _cs_property_t {
 
   char  *restrict name;
 
-  cs_flag_t    flag;      /* Short descriptor (mask of bits) */
-  int          post_freq; /* -1: no post, 0: at the beginning otherwise at each
-                             post_freq iteration.
-                             If post_freq > -1, a related cs_field_t structure
-                             is created. */
+  /* Short descriptor to know where is defined the property and what kind of
+     property one considers (mask of bits) */
+  cs_desc_t   flag;         
 
   /* The number of values to set depends on the type of property
-       - isotropic   = 1 => CS_PARAM_VAR_SCAL
-       - orthotropic = 3 => CS_PARAM_VAR_VECT
-       - anisotropic = 9 => CS_PARAM_VAR_TENS
+     - isotropic   = 1 => CS_PARAM_VAR_SCAL
+     - orthotropic = 3 => CS_PARAM_VAR_VECT
+     - anisotropic = 9 => CS_PARAM_VAR_TENS
   */
   cs_property_type_t   type;     // isotropic, anistotropic...
+
+  int         post_freq;   /* -1: no post, 0: at the beginning otherwise
+                                  at each post_freq iteration.
+                              If post_freq > -1, a related cs_field_t structure
+                              is created. */
+
 
   /* How the property is defined */
   cs_param_def_type_t  def_type; // by value, by analytic function...
   cs_def_t             def;      // accessor to the definition
 
   /* Useful buffers to deal with more complex definitions */
-  cs_real_t   *array1;      // if the property hinges on an array
-  cs_flag_t    array1_flag; // short description of the related array
-  cs_real_t   *array2;      // if the property hinges on a second array
-  cs_flag_t    array2_flag; // short description of the related array
+  cs_real_t   *array1;   // if the property hinges on an array
+  cs_desc_t    desc1;    // short description of the related array
+  cs_real_t   *array2;   // if the property hinges on a second array
+  cs_desc_t    desc2;    // short description of the related array
 
   const void  *struc;       // if one needs a structure. Only shared
 
@@ -128,12 +132,10 @@ static const char _err_empty_pty[] =
   " Stop setting an empty cs_property_t structure.\n"
   " Please check your settings.\n";
 
-static const cs_flag_t  cs_var_support_pc =
-  CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_CELL;
-static const cs_flag_t  cs_var_support_pv =
-  CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_VERTEX;
+static const cs_flag_t  cs_var_support_pc = CS_FLAG_PRIMAL | CS_FLAG_CELL;
+static const cs_flag_t  cs_var_support_pv = CS_FLAG_PRIMAL | CS_FLAG_VERTEX;
 static const cs_flag_t  cs_var_support_dfbyc =
-  CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_FACE | CS_PARAM_FLAG_BY_CELL;
+  CS_FLAG_DUAL | CS_FLAG_FACE | CS_FLAG_SCAN_BY_CELL;
 
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_cdo_quant;
@@ -361,11 +363,11 @@ _get_result_by_onevar_law(cs_lnum_t                 c_id,
   assert(pty->array1 != NULL); /* Sanity check */
 
   /* Test if flag has at least the pattern of the reference support */
-  if ((pty->array1_flag & cs_var_support_pc) == cs_var_support_pc)
+  if ((pty->desc1.location & cs_var_support_pc) == cs_var_support_pc)
     law(pty->array1[c_id], struc, get);
 
   /* Test if flag has at least the pattern of the reference support */
-  else if ((pty->array1_flag & cs_var_support_pv) == cs_var_support_pv) {
+  else if ((pty->desc1.location & cs_var_support_pv) == cs_var_support_pv) {
 
     cs_real_t  val_xc;
 
@@ -414,10 +416,10 @@ _get_result_by_scavec_law(cs_lnum_t                 c_id,
 
   /* Test which is the pattern of the first array and recover the scalar
      value */
-  if ((pty->array1_flag & cs_var_support_pc) == cs_var_support_pc)
+  if ((pty->desc1.location & cs_var_support_pc) == cs_var_support_pc)
     scal_val = pty->array1[c_id];
 
-  else if ((pty->array1_flag & cs_var_support_pv) == cs_var_support_pv) {
+  else if ((pty->desc1.location & cs_var_support_pv) == cs_var_support_pv) {
 
     /* Reconstruct (or interpolate) value at the current cell center */
     cs_reco_pv_at_cell_center(c_id,
@@ -433,13 +435,14 @@ _get_result_by_scavec_law(cs_lnum_t                 c_id,
 
   /* Test which is the pattern of the second array and recover the vector
      value */
-  if ((pty->array2_flag & cs_var_support_pc) == cs_var_support_pc) {
+  if ((pty->desc2.location & cs_var_support_pc) == cs_var_support_pc) {
 
     for (int k = 0; k < 3; k++)
       vect_val[k] = pty->array2[3*c_id+k];
 
   }
-  else if ((pty->array2_flag & cs_var_support_dfbyc) == cs_var_support_dfbyc) {
+  else if
+    ((pty->desc2.location & cs_var_support_dfbyc) == cs_var_support_dfbyc) {
 
     /* Reconstruct (or interpolate) value at the current cell center */
     cs_reco_dfbyc_at_cell_center(c_id,
@@ -522,14 +525,15 @@ cs_property_create(const char                  *name,
 
   /* Default initialization */
   pty->post_freq = -1;
-  pty->flag = 0;
+  pty->flag.location = 0;
+  pty->flag.state = 0;
   pty->def_type = CS_PARAM_N_DEF_TYPES;
   pty->def.get.val = 0;
 
-  /* Specific members for more complex definition */
-  pty->array1_flag = 0;
+  /* Specific members for more complex definitions */
+  pty->desc1.location = pty->desc1.state = 0;
   pty->array1 = NULL;
-  pty->array2_flag = 0;
+  pty->desc2.location = pty->desc2.state = 0;
   pty->array2 = NULL;
 
   /* Specific members for a definition by subdomain */
@@ -565,12 +569,12 @@ cs_property_free(cs_property_t   *pty)
     BFT_FREE(pty->def_ids);
   }
 
-  if (pty->array1_flag & CS_PARAM_FLAG_OWNER) {
+  if (pty->desc1.state & CS_FLAG_STATE_OWNER) {
     if (pty->array1 != NULL)
       BFT_FREE(pty->array1);
   }
 
-  if (pty->array2_flag & CS_PARAM_FLAG_OWNER) {
+  if (pty->desc2.state & CS_FLAG_STATE_OWNER) {
     if (pty->array2 != NULL)
       BFT_FREE(pty->array2);
   }
@@ -628,7 +632,7 @@ cs_property_is_uniform(const cs_property_t   *pty)
   if (pty == NULL)
     return false;
 
-  if (pty->flag & CS_PARAM_FLAG_UNIFORM)
+  if (pty->flag.state & CS_FLAG_STATE_UNIFORM)
     return true;
   else
     return false;
@@ -688,8 +692,8 @@ cs_property_summary(const cs_property_t   *pty)
 
   _Bool  is_uniform = false, is_steady = true;
 
-  if (pty->flag & CS_PARAM_FLAG_UNIFORM)  is_uniform = true;
-  if (pty->flag & CS_PARAM_FLAG_UNSTEADY) is_steady = false;
+  if (pty->flag.state & CS_FLAG_STATE_UNIFORM)  is_uniform = true;
+  if (pty->flag.state & CS_FLAG_STATE_UNSTEADY) is_steady = false;
 
   bft_printf(" %s >> uniform [%s], steady [%s], ",
              pty->name, cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
@@ -786,7 +790,7 @@ cs_property_iso_def_by_value(cs_property_t    *pty,
               " isotropic", pty->name);
 
   pty->def_type = CS_PARAM_DEF_BY_VALUE;
-  pty->flag |= CS_PARAM_FLAG_UNIFORM;
+  pty->flag.state |= CS_FLAG_STATE_UNIFORM;
   pty->def.get.val = val;
 }
 
@@ -811,7 +815,7 @@ cs_property_ortho_def_by_value(cs_property_t    *pty,
               " orthotropic", pty->name);
 
   pty->def_type = CS_PARAM_DEF_BY_VALUE;
-  pty->flag |= CS_PARAM_FLAG_UNIFORM;
+  pty->flag.state |= CS_FLAG_STATE_UNIFORM;
 
   pty->def.get.vect[0] = val[0];
   pty->def.get.vect[1] = val[1];
@@ -839,7 +843,7 @@ cs_property_aniso_def_by_value(cs_property_t    *pty,
               " anisotropic", pty->name);
 
   pty->def_type = CS_PARAM_DEF_BY_VALUE;
-  pty->flag |= CS_PARAM_FLAG_UNIFORM;
+  pty->flag.state |= CS_FLAG_STATE_UNIFORM;
 
   pty->def.get.tens[0][0] = tens[0][0];
   pty->def.get.tens[0][1] = tens[0][1];
@@ -872,7 +876,7 @@ cs_property_def_by_value(cs_property_t    *pty,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   pty->def_type = CS_PARAM_DEF_BY_VALUE;
-  pty->flag |= CS_PARAM_FLAG_UNIFORM;
+  pty->flag.state |= CS_FLAG_STATE_UNIFORM;
 
   switch (pty->type) {
 
@@ -986,21 +990,22 @@ cs_property_def_by_scavec_law(cs_property_t          *pty,
  * \brief  Define a cs_property_t structure thanks to an array of values
  *
  * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       support   flag to know where is defined the values
+ * \param[in]       desc      information about this array
  * \param[in]       array     pointer to an array
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_property_def_by_array(cs_property_t    *pty,
-                         cs_flag_t         support,
+                         cs_desc_t         desc,
                          cs_real_t        *array)
 {
   if (pty == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
   pty->def_type = CS_PARAM_DEF_BY_ARRAY;
-  pty->array1_flag = support;
+  pty->desc1.location = desc.location;
+  pty->desc1.state = desc.state;
   pty->array1 = array;
 }
 
@@ -1244,20 +1249,21 @@ cs_property_def_subdomain_by_scavec_law(cs_property_t             *pty,
  * \brief  Set "array" member of a cs_property_t structure
  *
  * \param[in, out]  pty          pointer to a cs_property_t structure
- * \param[in]       array_flag   information on the support of the array
+ * \param[in]       desc         information about this array
  * \param[in]       array        pointer to an array of values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_property_set_array(cs_property_t    *pty,
-                      cs_flag_t         array_flag,
+                      cs_desc_t         desc,
                       cs_real_t        *array)
 {
   if (pty == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  pty->array1_flag = array_flag;
+  pty->desc1.location = desc.location;
+  pty->desc1.state = desc.state;
   pty->array1 = array;
 }
 
@@ -1265,21 +1271,22 @@ cs_property_set_array(cs_property_t    *pty,
 /*!
  * \brief  Set a second "array" member of a cs_property_t structure
  *
- * \param[in, out]  pty          pointer to a cs_property_t structure
- * \param[in]       array_flag   information on the support of the array
- * \param[in]       array        pointer to an array of values
+ * \param[in, out]  pty        pointer to a cs_property_t structure
+ * \param[in]       desc       information about this array
+ * \param[in]       array      pointer to an array of values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_property_set_second_array(cs_property_t    *pty,
-                             cs_flag_t         array_flag,
+                             cs_desc_t         desc,
                              cs_real_t        *array)
 {
   if (pty == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  pty->array2_flag = array_flag;
+  pty->desc2.location = desc.location;
+  pty->desc2.state = desc.state;
   pty->array2 = array;
 }
 

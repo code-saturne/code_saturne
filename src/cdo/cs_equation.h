@@ -147,16 +147,20 @@ cs_equation_link(cs_equation_t       *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the initial condition of the unknown related to this equation
- *         def_key is among "value", "analytic"
+ *         This definition can be done by mesh location
+ *         Available types of definition are: "value" and "analytic"
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       def_key   way of defining the value of the bc
+ * \param[in]       ml_name   name of the associated mesh location (if NULL or
+ *                            "" all entities are considered)
+ * \param[in]       def_key   way of defining the value of the BC
  * \param[in]       val       pointer to the value
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_set_ic(cs_equation_t    *eq,
+                   const char       *ml_name,
                    const char       *def_key,
                    void             *val);
 
@@ -226,17 +230,17 @@ cs_equation_set_reaction_option(cs_equation_t    *eq,
  *         to a source term
  *         def_key among "value", "analytic", "user"...
  *
- * \param[in, out]  eq             pointer to a cs_equation_t structure
- * \param[in]       ml_id          id related to a mesh location
- * \param[in]       array_support  indicate where the values are defined
- * \param[in]       array_values   pointer to the array values
+ * \param[in, out] eq            pointer to a cs_equation_t structure
+ * \param[in]      ml_id         id related to a mesh location
+ * \param[in]      array_desc    short description of this array (mask of bits)
+ * \param[in]      array_values  pointer to the array values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_add_gravity_source_term(cs_equation_t   *eq,
                                     int              ml_id,
-                                    cs_flag_t        array_support,
+                                    cs_desc_t        array_desc,
                                     cs_real_t       *array_values);
 
 /*----------------------------------------------------------------------------*/
@@ -407,7 +411,7 @@ cs_equation_is_steady(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_real_t *
+cs_real_t *
 cs_equation_get_face_values(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/

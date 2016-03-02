@@ -329,8 +329,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
   /* Take into account Dirichlet BCs to update RHS */
   if (dir_faces->n_nhmg_elts > 0) {
 
-    cs_flag_t  dof_flag =
-      CS_PARAM_FLAG_FACE | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
+    cs_flag_t  dof_flag = CS_FLAG_FACE | CS_FLAG_PRIMAL | CS_FLAG_SCAL;
 
     cs_cdo_bc_dirichlet_set(dof_flag,
                             time_step,
@@ -584,11 +583,13 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
 
   /* Contribution in each cell of the source terms */
   BFT_MALLOC(builder->source_terms, builder->n_cells, cs_real_t);
+  for (i = 0; i < builder->n_cells; i++)
+    builder->source_terms[i] = 0;
 
   /* Values at each face (interior and border) i.e. take into account BCs */
   BFT_MALLOC(builder->face_values, builder->n_faces, cs_real_t);
-  for (i = 0; i < builder->n_cells; i++)
-    builder->source_terms[i] = 0;
+  for (i = 0; i < builder->n_faces; i++)
+    builder->face_values[i] = 0;
 
   return builder;
 }
@@ -645,11 +646,9 @@ cs_cdofb_scaleq_free(void   *builder)
 void
 cs_cdofb_scaleq_compute_source(void            *builder)
 {
-  cs_lnum_t  i;
-
   cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t *)builder;
 
-  for (i = 0; i < b->n_cells; i++)
+  for (cs_lnum_t i = 0; i < b->n_cells; i++)
     b->source_terms[i] = 0;
 
   const cs_equation_param_t  *eqp = b->eqp;
@@ -658,20 +657,17 @@ cs_cdofb_scaleq_compute_source(void            *builder)
     return;
 
   double  *contrib = _fbscal_work;
+  cs_desc_t  desc = {.location = CS_FLAG_SCAL | cs_cdo_primal_cell,
+                     .state = CS_FLAG_STATE_DENSITY};
 
   for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
 
     const cs_source_term_t  *st = eqp->source_terms[st_id];
 
-    cs_flag_t  dof_flag =
-      CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
-
-    cs_source_term_compute(dof_flag,
-                           st,
-                           &contrib);  // updated inside this function
+    cs_source_term_compute(desc, st, &contrib); // updated inside this function
 
     /* Update source term array */
-    for (i = 0; i < b->n_cells; i++)
+    for (cs_lnum_t i = 0; i < b->n_cells; i++)
       b->source_terms[i] += contrib[i];
 
   } // Loop on source terms

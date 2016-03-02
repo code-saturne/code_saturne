@@ -72,8 +72,8 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the contribution related to a quantity defined by analytic
- *         function for all the degrees of freedom
+ * \brief  Compute the value related to each DoF in the case of a density field
+ *         The value defined by the analytic function is by unity of volume
  *
  * \param[in]      dof_flag    indicate where the evaluation has to be done
  * \param[in]      ml_id       id related to a cs_mesh_location_t structure
@@ -84,29 +84,64 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_from_analytic(cs_flag_t              dof_flag,
-                          int                    ml_id,
-                          cs_analytic_func_t    *ana,
-                          cs_quadra_type_t       quad_type,
-                          double                 retval[]);
+cs_evaluate_density_from_analytic(cs_flag_t              dof_flag,
+                                  int                    ml_id,
+                                  cs_analytic_func_t    *ana,
+                                  cs_quadra_type_t       quad_type,
+                                  double                 retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value related to each DoF in the case of a density field
+ *         Accessor to the value is by unit of volume
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      ml_id     id related to a cs_mesh_location_t structure
+ * \param[in]      get       accessor to the constant value to set
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_density_from_value(cs_flag_t       dof_flag,
+                               int             ml_id,
+                               cs_get_t        get,
+                               double          retval[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the contribution related to a quantity defined by analytic
  *         function for all the degrees of freedom
  *
+ * \param[in]      dof_flag    indicate where the evaluation has to be done
+ * \param[in]      ml_id       id related to a cs_mesh_location_t structure
+ * \param[in]      ana         accessor to values thanks to a function pointer
+ * \param[in, out] retval      pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_from_analytic(cs_flag_t              dof_flag,
+                                    int                    ml_id,
+                                    cs_analytic_func_t    *ana,
+                                    double                 retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Store the value related to each DoF in the case of a potential field
+ *
  * \param[in]      dof_flag  indicate where the evaluation has to be done
  * \param[in]      ml_id     id related to a cs_mesh_location_t structure
- * \param[in]      value     constant value used for computing the contribution
+ * \param[in]      get       accessor to the constant value to set
  * \param[in, out] retval    pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_from_value(cs_flag_t       dof_flag,
-                       int             ml_id,
-                       double          value,
-                       double          retval[]);
+cs_evaluate_potential_from_value(cs_flag_t       dof_flag,
+                                 int             ml_id,
+                                 cs_get_t        get,
+                                 double          retval[]);
 
 /*----------------------------------------------------------------------------*/
 

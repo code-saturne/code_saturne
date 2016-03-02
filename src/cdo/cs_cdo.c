@@ -68,6 +68,16 @@ const char msepline[] =
 const char ssepline[] =
   "# =================\n";
 
+/* Default locations */
+const cs_flag_t  cs_cdo_primal_vtx  = CS_FLAG_PRIMAL | CS_FLAG_VERTEX;
+const cs_flag_t  cs_cdo_primal_face = CS_FLAG_PRIMAL | CS_FLAG_FACE;
+const cs_flag_t  cs_cdo_primal_cell = CS_FLAG_PRIMAL | CS_FLAG_CELL;
+const cs_flag_t  cs_cdo_dual_vtx  = CS_FLAG_DUAL | CS_FLAG_VERTEX;
+const cs_flag_t  cs_cdo_dual_face = CS_FLAG_DUAL | CS_FLAG_FACE;
+const cs_flag_t  cs_cdo_dual_cell = CS_FLAG_DUAL | CS_FLAG_CELL;
+const cs_flag_t  cs_cdo_dual_face_byc =
+  CS_FLAG_DUAL | CS_FLAG_FACE | CS_FLAG_SCAN_BY_CELL;
+
 /*=============================================================================
  * Local static variables
  *============================================================================*/

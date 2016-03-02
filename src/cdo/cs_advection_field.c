@@ -74,9 +74,9 @@ struct _cs_adv_field_t {
 
   char  *restrict name;
 
-  cs_flag_t  flag;       /* Short descriptor (mask of bits) */
+  cs_desc_t  desc;       /* Short descriptor (mask of bits) */
+  
   cs_flag_t  post_flag;  /* Short descriptor dedicated to postprocessing */
-
   int     vtx_field_id;  /* id among cs_field_t structures (-1 if not used) */
   int     cell_field_id; /* id among cs_field_t structures (-1 if not used) */
 
@@ -85,7 +85,7 @@ struct _cs_adv_field_t {
 
   /* Useful buffers to deal with more complex definitions
      var and struc are not owned by this structure.  */
-  cs_flag_t    array_flag;  // short description of the related array
+  cs_desc_t    array_desc;  // short description of the related array
   const cs_real_t  *array;  // if the advection field hinges on an array
   const void       *struc;  // if the advection field hinges on a structure
 
@@ -106,7 +106,6 @@ typedef enum {
  * Private variables
  *============================================================================*/
 
-static const double  one_third = 1./3.;
 static const char _err_empty_adv[] =
   " Stop setting an empty cs_adv_field_t structure.\n"
   " Please check your settings.\n";
@@ -114,10 +113,6 @@ static const char _err_truefalse_key[] =
   N_(" Invalid value %s for setting key %s\n"
      " Valid choices are true or false.\n"
      " Please modify your setting.\n");
-
-/* Array support is on dual faces and scan thanks to the c2e connectivity */
-static const cs_flag_t  cs_var_support_dfbyc =
-  CS_PARAM_FLAG_FACE | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_BY_CELL;
 
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_cdo_quant;
@@ -235,7 +230,7 @@ cs_advection_field_create(const char   *name)
   strncpy(adv->name, name, len);
 
   /* Default initialization */
-  adv->flag = 0;
+  adv->desc.location = adv->desc.state = 0;
   adv->post_flag = 0;
   adv->vtx_field_id = -1;
   adv->cell_field_id = -1;
@@ -243,7 +238,7 @@ cs_advection_field_create(const char   *name)
   adv->def.get.val = 0;
 
   /* If a complex definition is requested */
-  adv->array_flag = 0;
+  adv->array_desc.location = adv->array_desc.state = 0;
   // adv->array and adv->struc
 
   return adv;
@@ -320,7 +315,7 @@ cs_advection_field_is_uniform(const cs_adv_field_t   *adv)
   if (adv == NULL)
     return false;
 
-  if (adv->flag & CS_PARAM_FLAG_UNIFORM)
+  if (adv->desc.state & CS_FLAG_STATE_UNIFORM)
     return true;
   else
     return false;
@@ -343,9 +338,9 @@ cs_advection_field_is_cellwise(const cs_adv_field_t   *adv)
   if (adv == NULL)
     return false;
 
-  if (adv->flag & CS_PARAM_FLAG_UNIFORM)
+  if (adv->desc.state & CS_FLAG_STATE_UNIFORM)
     return true;
-  if (adv->flag & CS_PARAM_FLAG_CELLWISE)
+  if (adv->desc.state & CS_FLAG_STATE_CELLWISE)
     return true;
   else
     return false;
@@ -386,8 +381,8 @@ cs_advection_field_summary(const cs_adv_field_t   *adv)
 
   _Bool  is_uniform = false, is_steady = true;
 
-  if (adv->flag & CS_PARAM_FLAG_UNIFORM)  is_uniform = true;
-  if (adv->flag & CS_PARAM_FLAG_UNSTEADY) is_steady = false;
+  if (adv->desc.state & CS_FLAG_STATE_UNIFORM)  is_uniform = true;
+  if (adv->desc.state & CS_FLAG_STATE_UNSTEADY) is_steady = false;
 
   bft_printf(" %s >> uniform [%s], steady [%s], ",
              adv->name, cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
@@ -480,11 +475,11 @@ cs_advection_field_set_option(cs_adv_field_t   *adv,
     break;
 
   case ADVKEY_CELL_FIELD:
-    adv->flag |= CS_PARAM_FLAG_CELL;
+    adv->desc.location |= CS_FLAG_CELL;
     break;
 
   case ADVKEY_VERTEX_FIELD:
-    adv->flag |= CS_PARAM_FLAG_VERTEX;
+    adv->desc.location |= CS_FLAG_VERTEX;
     break;
 
   default:
@@ -512,7 +507,7 @@ cs_advection_field_def_by_value(cs_adv_field_t    *adv,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
 
   adv->def_type = CS_PARAM_DEF_BY_VALUE;
-  adv->flag |= CS_PARAM_FLAG_UNIFORM;
+  adv->desc.state |= CS_FLAG_STATE_UNIFORM;
 
   cs_param_set_def(adv->def_type, CS_PARAM_VAR_VECT, (const void *)val,
                    &(adv->def));
@@ -543,25 +538,26 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
  * \brief  Define a cs_adv_field_t structure thanks to an array of values
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
- * \param[in]       support   flag to know where is defined the values
+ * \param[in]       desc      information about this array
  * \param[in]       array     pointer to an array
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_def_by_array(cs_adv_field_t     *adv,
-                                cs_flag_t           support,
+                                cs_desc_t           desc,
                                 const cs_real_t    *array)
 {
   if (adv == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
 
   adv->def_type = CS_PARAM_DEF_BY_ARRAY;
-  adv->array_flag = support;
+  adv->array_desc.location = desc.location;
+  adv->array_desc.state = desc.state   ;
   adv->array = array;
 
-  if ((support & cs_var_support_dfbyc) == cs_var_support_dfbyc)
-    adv->flag |= CS_PARAM_FLAG_CELLWISE;
+  if (cs_cdo_same_support(desc.location, cs_cdo_dual_face_byc))
+    adv->desc.state |= CS_FLAG_STATE_CELLWISE;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -581,10 +577,10 @@ cs_advection_field_create_field(cs_adv_field_t   *adv)
   int  len;
   char *field_name = NULL;
 
-  _Bool has_previous = (adv->flag & CS_PARAM_FLAG_UNSTEADY) ? true : false;
+  _Bool has_previous = (adv->desc.state & CS_FLAG_STATE_UNSTEADY) ? true:false;
   int  field_mask = CS_FIELD_PROPERTY;
-
-  if (adv->flag & CS_PARAM_FLAG_VERTEX) { // Add a field attached to vertices
+  
+  if (adv->desc.location & CS_FLAG_VERTEX) { // Add a field attached to vertices
 
     /* Define the name of the field */
     len = strlen(adv->name) + strlen("_vertices") + 1;
@@ -607,7 +603,7 @@ cs_advection_field_create_field(cs_adv_field_t   *adv)
 
   } // Add a field attached to vertices
 
-  if (adv->flag & CS_PARAM_FLAG_CELL) { // Add a field attached to cells
+  if (adv->desc.location & CS_FLAG_CELL) { // Add a field attached to cells
 
     /* Define the name of the field */
     len = strlen(adv->name) + strlen("_cells") + 1;
@@ -680,8 +676,8 @@ cs_advection_field_get_cell_vector(cs_lnum_t              c_id,
     {
       cs_real_3_t  recoval;
 
-      /* Test if flag has at least the pattern of the reference support */
-      if ((adv->array_flag & cs_var_support_dfbyc) == cs_var_support_dfbyc)
+      /* Test if location has at least the pattern of the reference support */
+      if (cs_cdo_same_support(adv->array_desc.location, cs_cdo_dual_face_byc))
         cs_reco_dfbyc_at_cell_center(c_id,
                                      cs_cdo_connect->c2e,
                                      cs_cdo_quant,
@@ -723,8 +719,6 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
   if (adv == NULL)
     return;
 
-  cs_lnum_t  c_id;
-
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
 
   switch (adv->def_type) {
@@ -733,7 +727,7 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
     { // Uniform value inside the computational domain
       const cs_get_t  get = adv->def.get;
 
-      for (c_id = 0; c_id < quant->n_cells; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
         const cs_lnum_t  shift_c = 3*c_id;
 
@@ -752,7 +746,7 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
 
       const double  t_cur = cs_time_step->t_cur;
 
-      for (c_id = 0; c_id < quant->n_cells; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
         const cs_lnum_t  shift_c = 3*c_id;
         const cs_real_t  *xc = quant->cell_centers + shift_c;
@@ -773,10 +767,10 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
     {
       cs_real_3_t  recoval;
 
-      /* Test if flag has at least the pattern of the reference support */
-      if ((adv->array_flag & cs_var_support_dfbyc) == cs_var_support_dfbyc) {
+      /* Test if location has at least the pattern of the reference support */
+      if (cs_cdo_same_support(adv->array_desc.location, cs_cdo_dual_face_byc)) {
 
-        for (c_id = 0; c_id < quant->n_cells; c_id++) {
+        for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
           const cs_lnum_t  shift_c = 3*c_id;
 
@@ -879,7 +873,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
       const cs_cdo_connect_t  *topo = cs_cdo_connect;
 
       /* Test if flag has at least the pattern of the reference support */
-      if ((adv->array_flag & cs_var_support_dfbyc) == cs_var_support_dfbyc) {
+      if (cs_cdo_same_support(adv->array_desc.location, cs_cdo_dual_face_byc)) {
 
         double  *dc_vol = NULL;
 
@@ -976,8 +970,8 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const cs_connect_index_t  *c2e = connect->c2e;
 
-  if (adv->flag & CS_PARAM_FLAG_UNIFORM ||
-      adv->flag & CS_PARAM_FLAG_CELLWISE) {
+  if (adv->desc.state & CS_FLAG_STATE_UNIFORM ||
+      adv->desc.state & CS_FLAG_STATE_CELLWISE) {
 
     cs_advection_field_get_cell_vector(c_id, adv, &adv_vect);
 
@@ -1023,7 +1017,7 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
 
             case CS_QUADRATURE_BARY:
               for (k = 0; k < 3; k++)
-                xg[k] = one_third * (xc[k] + qe.center[k] + qf.center[k]);
+                xg[k] = cs_math_onethird *(xc[k] + qe.center[k] + qf.center[k]);
               adv->def.analytic(t_cur, xg, &get);
               fluxes[_i] += tef.meas * _dp3(get.vect, tef.unitv);
               break;
@@ -1059,18 +1053,15 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
 
     case CS_PARAM_DEF_BY_ARRAY:
       {
-
-        /* Test if flag has at least the pattern of the reference support */
-        if ((adv->array_flag & cs_var_support_dfbyc) == cs_var_support_dfbyc)
+        /* Test if location has at least the pattern of the reference support */
+        if (cs_cdo_same_support(adv->array_desc.location, cs_cdo_dual_face_byc))
           for (je = c2e->idx[c_id], _i = 0; je < c2e->idx[c_id+1]; je++, _i++)
             fluxes[_i] = adv->array[je];
-
         else
           bft_error(__FILE__, __LINE__, 0,
                     " Invalid support for evaluating the advection field %s"
                     " at the cell center of cell %d.", adv->name, c_id);
-
-      } // def. by array
+      }
       break;
 
     default:
@@ -1138,7 +1129,7 @@ cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
 
       case CS_QUADRATURE_BARY:
         for (k = 0; k < 3; k++)
-          xg[k] = one_third * (xv[k] + peq.center[k] + pfq.center[k]);
+          xg[k] = cs_math_onethird * (xv[k] + peq.center[k] + pfq.center[k]);
 
         /* Call the analytic function. result is stored in get */
         adv->def.analytic(t_cur, xg, &get);
@@ -1175,7 +1166,8 @@ cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
         cs_real_3_t  reco;
 
         /* Test if flag has at least the pattern of the reference support */
-        if ((adv->array_flag & cs_var_support_dfbyc) == cs_var_support_dfbyc) {
+        if (cs_cdo_same_support(adv->array_desc.location,
+                                cs_cdo_dual_face_byc)) {
 
           const cs_connect_index_t  *c2e = cs_cdo_connect->c2e;
           const cs_sla_matrix_t  *f2c = cs_cdo_connect->f2c;
