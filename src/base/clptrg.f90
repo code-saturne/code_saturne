@@ -1533,7 +1533,7 @@ integer          ifccp, ifccv, ifcvsl, itplus, itstar
 double precision cpp, rkl, prdtl, visclc, romc, tplus, cpscv
 double precision distfi, distbf, fikis, hint, heq, hflui, hext
 double precision yplus, phit, pimp, temp, tet, uk
-double precision viscis, visctc
+double precision viscis, visctc, cofimp
 double precision act, rugt
 double precision rinfiv(3), pimpv(3)
 double precision visci(3,3), hintt(6)
@@ -1839,9 +1839,14 @@ do ifac = 1, nfabor
         heq = hflui*hext/(hflui+hext)
       endif
 
+      cofimp = 1.d0 - heq/hint
+
+      ! To be coherent with a wall function, clip it to 0
+      cofimp = max(cofimp, 0.d0)
+
       ! Gradient BCs
-      coefap(ifac) = pimp*heq/hint
-      coefbp(ifac) = 1.d0 - heq/hint
+      coefap(ifac) = (1.d0 - cofimp)*pimp
+      coefbp(ifac) = cofimp
 
       ! Flux BCs
       cofafp(ifac) = -heq*pimp

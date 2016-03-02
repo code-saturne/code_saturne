@@ -1940,7 +1940,7 @@ integer          ivar, f_id, b_f_id, isvhbl
 integer          ifac, iel, isou, jsou
 integer          ifccp, ifccv, ifcvsl, itplus, itstar
 
-double precision cpp, rkl, prdtl, pfac, visclc, romc, tplus, cofimp, cpscv
+double precision cpp, rkl, prdtl, visclc, romc, tplus, cofimp, cpscv
 double precision distfi, distbf, fikis, hint, heq, yptp, hflui, hext
 double precision yplus, dplus, phit, pimp, rcprod, temp, tet, uk
 double precision viscis, visctc, xmutlm, ypth, xnuii
@@ -2274,21 +2274,19 @@ do ifac = 1, nfabor
           cofimp = 1.d0 - yptp*sigmas(iscal)/xkappa*                        &
                           (2.0d0*rcprod - 1.0d0/(2.0d0*yplus-dplus))
 
-          ! the term (rho*tet*uk) is partially implicit
-          pfac = (1.d0 -cofimp)*pimp
-
           ! In the viscous sub-layer
         else
           cofimp = 0.d0
-          pfac = pimp
         endif
       else
-        pfac = pimp * heq/hint
         cofimp = 1.d0 - heq/hint
       endif
 
+      ! To be coherent with a wall function, clip it to 0
+      cofimp = max(cofimp, 0.d0)
+
       ! Gradient BCs
-      coefap(ifac) = pfac
+      coefap(ifac) = (1.d0 - cofimp)*pimp
       coefbp(ifac) = cofimp
 
       ! Flux BCs

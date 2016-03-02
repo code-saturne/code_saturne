@@ -36,6 +36,9 @@ Changes
 Numerics
 --------
 
+ - Improve robustness of Boundary conditions for wall functions of scalars.
+   Mainly impact Atmospheric flows.
+
  - Handling of linear solver errors is improved to allow re-try with
    different solvers or parameters.
 
