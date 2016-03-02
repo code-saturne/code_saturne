@@ -156,6 +156,8 @@ _setup(cs_mesh_t             *m,
       >> Groundwater flows
   */
   cs_domain_setup_predefined_equations(domain);
+  cs_user_cdo_numeric_settings(domain); /* Overwrite predefined settings
+                                           if this is what user wants */
 
   /* Set the definition of user-defined properties and/or advection
      fields */
