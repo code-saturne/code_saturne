@@ -957,6 +957,25 @@ cs_groundwater_finalize(cs_groundwater_t   *gw)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the number of requested soils
+ *
+ * \param[in]  gw        pointer to a cs_groundwater_t structure
+ *
+ * \return the number of requested soils
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_groundwater_get_n_soils(const cs_groundwater_t    *gw)
+{
+  if (gw == NULL)
+    return 0;
+
+  return gw->n_max_soils;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set parameters related to a cs_groundwater_t structure
  *
  * \param[in, out]  gw        pointer to a cs_groundwater_t structure
@@ -1207,6 +1226,7 @@ cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
 
   /* Up to now Richards equation is only set with CS_SPACE_SCHEME_CDOVB */
   BFT_MALLOC(gw->darcian_flux, c2e->idx[n_cells], cs_real_t);
+# pragma omp parallel for
   for (cs_lnum_t i = 0; i < c2e->idx[n_cells]; i++)
     gw->darcian_flux[i] = 0;
 
@@ -1223,6 +1243,7 @@ cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
   if (n_soils > 1) {
     BFT_MALLOC(gw->soil_id, n_cells, short int);
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_cells; i++)
       gw->soil_id[i] = n_soils; /* Default value => not set */
   }
@@ -1598,9 +1619,6 @@ void
 cs_groundwater_richards_setup(cs_groundwater_t    *gw,
                               cs_equation_t       *richards)
 {
-  cs_lnum_t  i, c_id;
-  cs_desc_t  desc;
-
   /* Sanity checks */
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
@@ -1632,7 +1650,9 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
     const cs_lnum_t  n_vertices = n_elts[0];
 
     BFT_MALLOC(gw->gravity_source_term, n_vertices, cs_real_t);
-    for (i = 0; i < n_vertices; i++)
+
+# pragma omp parallel for if (n_vertices > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_vertices; i++)
       gw->gravity_source_term[i] = 0;
 
     cs_desc_t  desc = {.location = CS_FLAG_SCAL | cs_cdo_primal_vtx,
@@ -1647,145 +1667,76 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 
   /* Set the values for the permeability and the moisture content
      and if needed set also the value of the soil capacity */
-  if (gw->n_soils == 1) {
 
-    cs_gw_soil_t  *soil = gw->soil_param;
+  gw->global_model = gw->soil_param[0].model;
 
-    gw->global_model = soil->model;
+  for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
+
+    const cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+    const double  theta_s = soil->saturated_moisture;
+
+    /* Is there a unique model ? */
+    if (soil->model != gw->global_model)
+      gw->global_model = CS_GROUNDWATER_MODEL_COMPOSITE;
+
+    const char  *ml_name = cs_mesh_location_get_name(soil->ml_id);
+    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(soil->ml_id);
+    const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(soil->ml_id);
+
+    /* Initialization of soil_id and moisture content */
+    if (gw->n_soils > 1) {
+
+      assert(elt_ids != NULL); /* sanity check */
+
+# pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
+
+        cs_lnum_t  c_id = elt_ids[i];
+
+        gw->moisture_content->val[c_id] = theta_s;
+        gw->soil_id[c_id] = soil_id;
+
+      } // Loop on selected cells
+
+    }
+    else { /* n_soils == 1 => all cells are selected */
+
+# pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_elts[0]; i++)
+        gw->moisture_content->val[i] = theta_s;
+
+    }
 
     switch (soil->model) {
 
     case CS_GROUNDWATER_MODEL_GENUCHTEN:
-      cs_property_def_by_law(permeability, _permeability_by_genuchten_law);
-      desc.location = CS_FLAG_SCAL | CS_FLAG_VERTEX | CS_FLAG_PRIMAL;
-      desc.state = CS_FLAG_STATE_POTENTIAL;
-      cs_property_set_array(permeability, desc, hydraulic_head->val);
-      cs_property_set_struct(permeability, (const void *)soil);
+      {
+        cs_desc_t  desc = {.location = CS_FLAG_SCAL | cs_cdo_primal_vtx,
+                           .state = CS_FLAG_STATE_POTENTIAL};
 
-      /* Soil capacity settings (related to unsteady term) */
-      if (has_previous)
-        bft_error(__FILE__, __LINE__, 0, "Not implemented. To do.");
+        cs_property_set_array(permeability, desc, hydraulic_head->val);
+        cs_property_def_by_law(permeability,
+                               ml_name,
+                               (const void *)soil,
+                               _permeability_by_genuchten_law);
 
+        /* Soil capacity settings (related to unsteady term) */
+        if (has_previous)
+          bft_error(__FILE__, __LINE__, 0, "Not implemented. To do.");
+
+      }
       break;
 
     case CS_GROUNDWATER_MODEL_TRACY:
-      cs_property_def_by_law(permeability, _permeability_by_tracy_law);
-      desc.location = CS_FLAG_SCAL | CS_FLAG_VERTEX | CS_FLAG_PRIMAL;
-      desc.state = CS_FLAG_STATE_POTENTIAL;
-      cs_property_set_array(permeability, desc, hydraulic_head->val);
-      cs_property_set_struct(permeability, (const void *)soil);
+      {
+        cs_desc_t desc = {.location = CS_FLAG_SCAL | cs_cdo_primal_vtx,
+                          .state = CS_FLAG_STATE_POTENTIAL};
 
-      /* Soil capacity settings (related to unsteady term) */
-      if (has_previous) {
-
-        cs_property_t  *capacity = cs_equation_get_time_property(richards);
-
-        const cs_gw_tracy_t  law = soil->tracy_param;
-        const double  delta_h = law.h_s - law.h_r;
-        const double  delta_theta =
-          soil->saturated_moisture - soil->residual_moisture;
-
-        cs_property_iso_def_by_value(capacity, delta_theta/delta_h);
-
-      } /* Set the soil capacity */
-      break;
-
-    case CS_GROUNDWATER_MODEL_SATURATED:
-      switch (cs_property_get_type(permeability)) {
-
-      case CS_PROPERTY_ISO:
-        cs_property_iso_def_by_value(permeability,
-                                     soil->saturated_permeability.val);
-        break;
-
-      case CS_PROPERTY_ORTHO:
-        cs_property_ortho_def_by_value(permeability,
-                                       soil->saturated_permeability.vect);
-        break;
-
-      case CS_PROPERTY_ANISO:
-        cs_property_aniso_def_by_value(permeability,
-                      (const double (*)[3])soil->saturated_permeability.tens);
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, _(" Invalid type of property."));
-        break;
-
-      } // End of switch on permeability type
-
-      if (has_previous)
-        bft_error(__FILE__, __LINE__, 0,
-                  " Saturated model should lead to steady Richards equation.");
-
-      break; // Switch on saturated model
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                " Incompatible model for groundwater flows.\n"
-                " Availaible models: saturated, genutchen, tracy");
-      // Nothing to do
-      break;
-
-    } // switch on modelling
-
-#if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
-    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(soil->ml_id);
-    const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(soil->ml_id);
-
-    assert(elt_ids == NULL && gw->n_cells == n_elts[0]);
-#endif
-
-    /* Default initialization of the moisture content */
-    const double  theta_s = soil->saturated_moisture;
-
-    for (i = 0; i < gw->n_cells; i++)
-      gw->moisture_content->val[i] = theta_s;
-
-  }
-  else { /* n_soils > 1 */
-
-    cs_groundwater_model_t  model = gw->soil_param[0].model;
-
-    gw->global_model = model;
-
-    /* Is there a unique model ? */
-    for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
-
-      const cs_gw_soil_t  *soil = gw->soil_param + soil_id;
-      const double  theta_s = soil->saturated_moisture;
-
-      if (soil->model != model)
-        gw->global_model = CS_GROUNDWATER_MODEL_COMPOSITE;
-
-      const char  *ml_name = cs_mesh_location_get_name(soil->ml_id);
-      const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(soil->ml_id);
-      const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(soil->ml_id);
-
-      /* Sanity check */
-      assert(elt_ids != NULL);
-
-      /* Initialization of soil_id and moisture content */
-      for (i = 0; i < n_elts[0]; i++) {
-
-        c_id = elt_ids[i];
-        gw->soil_id[c_id] = soil_id;
-        gw->moisture_content->val[c_id] = theta_s;
-
-      } // Loop on selected cells
-
-      switch (soil->model) {
-
-      case CS_GROUNDWATER_MODEL_TRACY:
-
-        cs_property_def_subdomain_by_law(permeability,
-                                         ml_name,
-                                         (const void *)soil,
-                                         _permeability_by_tracy_law);
-
-        desc.location = CS_FLAG_SCAL | CS_FLAG_VERTEX | CS_FLAG_PRIMAL;
-        desc.state = CS_FLAG_STATE_POTENTIAL;
         cs_property_set_array(permeability, desc, hydraulic_head->val);
+        cs_property_def_by_law(permeability,
+                               ml_name,
+                               (const void *)soil,
+                               _permeability_by_tracy_law);
 
         /* Soil capacity settings (related to unsteady term) */
         if (has_previous) {
@@ -1793,35 +1744,36 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
           cs_property_t  *capacity = cs_equation_get_time_property(richards);
 
           const cs_gw_tracy_t  law = soil->tracy_param;
-          const double  delta_h = law.h_s - law.h_r;
-          const double  delta_theta =
+          const double  dh = law.h_s - law.h_r;
+          const double  dtheta =
             soil->saturated_moisture - soil->residual_moisture;
 
-          cs_property_iso_def_subdomain_by_value(capacity,
-                                                 ml_name,
-                                                 delta_theta/delta_h);
+          cs_property_iso_def_by_value(capacity, ml_name, dtheta/dh);
 
         } /* Set the soil capacity */
-
-        break; // Tracy model
+      }
+      break; // Tracy model
 
       case CS_GROUNDWATER_MODEL_SATURATED:
 
         switch (cs_property_get_type(permeability)) {
 
         case CS_PROPERTY_ISO:
-          cs_property_iso_def_subdomain_by_value(permeability, ml_name,
+          cs_property_iso_def_by_value(permeability,
+                                       ml_name,
                                        soil->saturated_permeability.val);
           break;
 
         case CS_PROPERTY_ORTHO:
-          cs_property_ortho_def_subdomain_by_value(permeability, ml_name,
-                                        soil->saturated_permeability.vect);
+          cs_property_ortho_def_by_value(permeability,
+                                         ml_name,
+                                         soil->saturated_permeability.vect);
           break;
 
         case CS_PROPERTY_ANISO:
-          cs_property_aniso_def_subdomain_by_value(permeability, ml_name,
-                   (const double (*)[3])soil->saturated_permeability.tens);
+          cs_property_aniso_def_by_value(permeability,
+                                         ml_name,
+                    (const double (*)[3])soil->saturated_permeability.tens);
           break;
 
         default:
@@ -1845,14 +1797,12 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 
     } // Loop on the different type of soils
 
-  } /* n_soils > 1 */
+  { /* Define and then link the advection field to each tracer equations */
+    cs_desc_t  desc = {.location = CS_FLAG_SCAL | cs_cdo_dual_face_byc,
+                       .state = CS_FLAG_STATE_FLUX};
 
-  /* Define and then link the advection field to each tracer equations */
-  desc.location = CS_FLAG_FACE | CS_FLAG_DUAL | CS_FLAG_SCAN_BY_CELL;
-  desc.location |= CS_FLAG_SCAL;
-  desc.state = CS_FLAG_STATE_FLUX;
-
-  cs_advection_field_def_by_array(gw->adv_field, desc, gw->darcian_flux);
+    cs_advection_field_def_by_array(gw->adv_field, desc, gw->darcian_flux);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1930,79 +1880,53 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
                             cs_equation_t       *eq,
                             cs_groundwater_t    *gw)
 {
-  cs_desc_t  desc;
-  cs_gw_soil_t  *soil = NULL;
-  cs_gw_tracer_t  *tp = NULL;
+  const cs_flag_t  eq_flag = cs_equation_get_flag(eq);
+  const cs_desc_t  desc1 = {.location = CS_FLAG_SCAL | cs_cdo_primal_cell,
+                            .state = CS_FLAG_STATE_DENSITY};
 
   /* Sanity check */
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
-  int  tracer_id = _get_tracer_id(gw, tracer_eq_id);
-  cs_flag_t  eq_flag = cs_equation_get_flag(eq);
-
-  if (gw->n_soils == 1) {
-    soil = gw->soil_param;
-    tp = soil->tracer_param + tracer_id;
-  }
-
   /* Set time property */
+  const int  tracer_id = _get_tracer_id(gw, tracer_eq_id);
   cs_property_t  *time_pty = cs_equation_get_time_property(eq);
 
-  if (gw->n_soils == 1) {
-    cs_property_def_by_law(time_pty, _get_tracer_time_coeff);
-    cs_property_set_struct(time_pty, (const void *)tp);
-  }
-  else {
+  for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
 
-    for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
+    cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+    cs_gw_tracer_t  *tp = soil->tracer_param + tracer_id;
 
-      soil = gw->soil_param + soil_id;
-      tp = soil->tracer_param + tracer_id;
-      cs_property_def_subdomain_by_law(time_pty,
-                                       cs_mesh_location_get_name(soil->ml_id),
-                                       (const void *)tp,
-                                       _get_tracer_time_coeff);
+    cs_property_def_by_law(time_pty,
+                           cs_mesh_location_get_name(soil->ml_id),
+                           (const void *)tp,
+                           _get_tracer_time_coeff);
 
-    } // Loop on soils
+  } // Loop on soils
 
-  } // n_soils > 1
-
-  desc.location = CS_FLAG_SCAL | CS_FLAG_CELL | CS_FLAG_PRIMAL;
-  desc.state = CS_FLAG_STATE_DENSITY;
-  cs_property_set_array(time_pty, desc, gw->moisture_content->val);
+  cs_property_set_array(time_pty, desc1, gw->moisture_content->val);
 
   /* Add a diffusion property */
   if (eq_flag & CS_EQUATION_DIFFUSION) {
 
     cs_property_t  *diff_pty = cs_equation_get_diffusion_property(eq);
 
-    if (gw->n_soils == 1) {
-      cs_property_def_by_scavec_law(diff_pty, _get_tracer_diffusion_tensor);
-      cs_property_set_struct(diff_pty, (const void *)tp);
-    }
-    else {
+    for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
 
-      for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
+      cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+      cs_gw_tracer_t  *tp = soil->tracer_param + tracer_id;
 
-        soil = gw->soil_param + soil_id;
-        tp = soil->tracer_param + tracer_id;
-        cs_property_def_subdomain_by_scavec_law(diff_pty,
-                                         cs_mesh_location_get_name(soil->ml_id),
-                                         (const void *)tp,
-                                         _get_tracer_diffusion_tensor);
+      cs_property_def_by_scavec_law(diff_pty,
+                                    cs_mesh_location_get_name(soil->ml_id),
+                                    (const void *)tp,
+                                    _get_tracer_diffusion_tensor);
 
-      } // Loop on soils
+    } // Loop on soils
 
-    } // n_soils > 1
+    cs_property_set_array(diff_pty, desc1, gw->moisture_content->val);
 
-    desc.location = CS_FLAG_SCAL | CS_FLAG_CELL | CS_FLAG_PRIMAL;
-    desc.state = CS_FLAG_STATE_DENSITY;
-    cs_property_set_array(diff_pty, desc, gw->moisture_content->val);
-
-    desc.location = CS_FLAG_FACE | CS_FLAG_DUAL | CS_FLAG_SCAN_BY_CELL;
-    desc.location |= CS_FLAG_SCAL;
-    desc.state = CS_FLAG_STATE_FLUX;
-    cs_property_set_second_array(diff_pty, desc, gw->darcian_flux);
+    cs_desc_t  desc2 = {.location = CS_FLAG_SCAL | cs_cdo_dual_face_byc,
+                        .state = CS_FLAG_STATE_FLUX};
+    cs_property_set_second_array(diff_pty, desc2, gw->darcian_flux);
 
   } /* Diffusion term has to be set */
 
@@ -2011,28 +1935,19 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
 
     cs_property_t  *reac_pty = cs_equation_get_reaction_property(eq, "decay");
 
-    if (gw->n_soils == 1) {
-      cs_property_def_by_law(reac_pty, _get_tracer_reaction_coeff);
-      cs_property_set_struct(reac_pty, (const void *)tp);
-    }
-    else {
+    for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
 
-      for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
+      cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+      cs_gw_tracer_t  *tp = soil->tracer_param + tracer_id;
 
-        soil = gw->soil_param + soil_id;
-        tp = soil->tracer_param + tracer_id;
-        cs_property_def_subdomain_by_law(reac_pty,
-                                         cs_mesh_location_get_name(soil->ml_id),
-                                         (const void *)tp,
-                                         _get_tracer_reaction_coeff);
+      cs_property_def_by_law(reac_pty,
+                             cs_mesh_location_get_name(soil->ml_id),
+                             (const void *)tp,
+                             _get_tracer_reaction_coeff);
 
-      } // Loop on soils
+    } // Loop on soils
 
-    } // n_soils > 1
-
-    desc.location = CS_FLAG_SCAL | CS_FLAG_CELL | CS_FLAG_PRIMAL;
-    desc.state = CS_FLAG_STATE_DENSITY;
-    cs_property_set_array(reac_pty, desc, gw->moisture_content->val);
+    cs_property_set_array(reac_pty, desc1, gw->moisture_content->val);
 
   } /* Reaction term has to be set */
 

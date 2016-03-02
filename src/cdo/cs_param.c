@@ -73,7 +73,6 @@ cs_param_def_type_name[CS_PARAM_N_DEF_TYPES][CS_BASE_STRING_LEN]=
     N_("by law (one argument)"),
     N_("by law (two arguments)"),
     N_("by law (two arguments: scalar+vector)"),
-    N_("by subdomain"),
     N_("by time function"),
     N_("by user function"),
     N_("by value") };

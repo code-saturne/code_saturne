@@ -112,6 +112,19 @@ cs_groundwater_finalize(cs_groundwater_t   *gw);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the number of requested soils
+ *
+ * \param[in]  gw        pointer to a cs_groundwater_t structure
+ *
+ * \return the number of requested soils
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_groundwater_get_n_soils(const cs_groundwater_t    *gw);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set parameters related to a cs_groundwater_t structure
  *
  * \param[in, out]  gw        pointer to a cs_groundwater_t structure

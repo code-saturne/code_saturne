@@ -277,16 +277,18 @@ cs_domain_increment_time(cs_domain_t  *domain);
 /*!
  * \brief  Add a new property to the current computational domain
  *
- * \param[in, out]   domain       pointer to a cs_domain_t structure
- * \param[in]        pty_name     name of the property to add
- * \param[in]        type_name    key name related to the type of property
+ * \param[in, out]  domain        pointer to a cs_domain_t structure
+ * \param[in]       pty_name      name of the property to add
+ * \param[in]       type_name     key name related to the type of property
+ * \param[in]       n_subdomains  specify a definition in n_subdomains
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_domain_add_property(cs_domain_t     *domain,
                        const char      *pty_name,
-                       const char      *type_name);
+                       const char      *type_name,
+                       int              n_subdomains);
 
 /*----------------------------------------------------------------------------*/
 /*!

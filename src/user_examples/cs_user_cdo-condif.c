@@ -325,19 +325,27 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      Users can also define additional material properties
      cs_domain_add_property(domain,
                             "name_of_property",
-                            "type_keyword");
+                            "type_keyword",
+                            n_subdomains);
 
       type_keyword has predefined values among:
         >> "isotropic", "orthotropic" or "anisotropic"
+
+      n_subdomains corresponds to the number of subdomains used to define
+      this property (if 1 is given, use "cells" as mesh location, otherwise
+      give the name of a mesh locations based on a selection of cells which
+      has been previously defined).
   */
 
   cs_domain_add_property(domain,
                          "conductivity",  // property name
-                         "anisotropic");  // type of material property
+                         "anisotropic",   // type of material property
+                         1);              // definition in n_subdomains
 
   cs_domain_add_property(domain,
                          "rho.cp",       // property name
-                         "isotropic");   // type of material property
+                         "isotropic",    // type of material property
+                         1);             // definition in n_subdomains
 
   /* =============================
      User-defined advection fields
@@ -377,24 +385,26 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
      cs_property_t  *pty = cs_domain_get_property(domain, "pty_name");
 
     Several ways exist to define a property
-      >> cs_property_def_by_value(pty, value);
-         -- pty is the structure related to the property to set
-         -- value is "1.0" for instance for an isotropic property
-            or "0.5 0.1 1." for instance for an orthotropic property
+      >> cs_property_def_by_value(pty, "location_name", value);
+      >> cs_property_def_by_analytic(pty, "location_name", func);
+      >> cs_property_def_by_law(pty, "location_name", func);
 
-      >> cs_property_def_by_analytic(pty, func);
-         -- pty is the structure related to the property to set
-         -- func is a function with a predefined prototype
+      -- pty is the structure related to the property to set
+      -- "location_name" is the name of the mesh location (based on cells)
+      where the given definition has to be applied
 
-      >> cs_property_def_by_law(pty, func);
-         -- pty is the structure related to the property to set
-         -- func is a function with a predefined prototype
+      For a definition by value:
+      -- value is "1.0" for instance for an isotropic property
+         or "0.5 0.1 1." for instance for an orthotropic property
+      For a definition by analytical function or law
+      -- func is a function with a predefined prototype
 
   */
 
   cs_property_t  *conductivity = cs_domain_get_property(domain, "conductivity");
 
   cs_property_def_by_value(conductivity,     // property structure
+                           "cells",          // name of the mesh location
                            "1.0  0.5  0.0\n" // values of the property
                            "0.5  1.0  0.5\n"
                            "0.0  0.5  1.0\n");
@@ -402,6 +412,7 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
   cs_property_t  *rhocp = cs_domain_get_property(domain, "rho.cp");
 
   cs_property_def_by_value(rhocp,    // property structure
+                           "cells",  // name of the mesh location
                            "1.0");   // value of the property
 
   /* =============================

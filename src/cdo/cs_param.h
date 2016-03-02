@@ -86,7 +86,6 @@ typedef enum {
   CS_PARAM_DEF_BY_ONEVAR_LAW,
   CS_PARAM_DEF_BY_TWOVAR_LAW,
   CS_PARAM_DEF_BY_SCAVEC_LAW,
-  CS_PARAM_DEF_BY_SUBDOMAIN,
   CS_PARAM_DEF_BY_TIME_FUNCTION,
   CS_PARAM_DEF_BY_USER_FUNCTION,
   CS_PARAM_DEF_BY_VALUE,
@@ -99,6 +98,9 @@ typedef struct {
   char                  *ml_name;   /* name of the related mesh location */
   cs_param_def_type_t    def_type;  /* type of definition */
   cs_def_t               def;       /* definition */
+
+  const void            *context;   /* If this definition hinges on a related
+                                       structure. Always shared */
 
 } cs_param_def_t;
 

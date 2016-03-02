@@ -647,9 +647,9 @@ cs_domain_init(const cs_mesh_t             *mesh,
   domain->properties = NULL;
 
   /* Add predefined properties */
-  cs_domain_add_property(domain, "unity", "isotropic");
+  cs_domain_add_property(domain, "unity", "isotropic", 1);
   cs_property_t  *pty = cs_domain_get_property(domain, "unity");
-  cs_property_def_by_value(pty, "1.0");
+  cs_property_iso_def_by_value(pty, N_("cells"), 1.0);
 
   /* Advection fields */
   domain->n_adv_fields = 0;
@@ -1228,16 +1228,18 @@ cs_domain_increment_time(cs_domain_t  *domain)
 /*!
  * \brief  Add a new property to the current computational domain
  *
- * \param[in, out]   domain       pointer to a cs_domain_t structure
- * \param[in]        pty_name     name of the property to add
- * \param[in]        type_name    key name related to the type of property
+ * \param[in, out]  domain        pointer to a cs_domain_t structure
+ * \param[in]       pty_name      name of the property to add
+ * \param[in]       type_name     key name related to the type of property
+ * \param[in]       n_subdomains  specify a definition in n_subdomains
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_domain_add_property(cs_domain_t     *domain,
                        const char      *pty_name,
-                       const char      *type_name)
+                       const char      *type_name,
+                       int              n_subdomains)
 {
   if (domain == NULL)
     return;
@@ -1257,7 +1259,8 @@ cs_domain_add_property(cs_domain_t     *domain,
   BFT_REALLOC(domain->properties, domain->n_properties, cs_property_t *);
 
   domain->properties[pty_id] = cs_property_create(pty_name,
-                                                  type_name);
+                                                  type_name,
+                                                  n_subdomains);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1436,7 +1439,7 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
   domain->gw = cs_groundwater_create();
 
   /* Add a property related to the diffusion term of the Richards eq. */
-  cs_domain_add_property(domain, "permeability", kw_type);
+  cs_domain_add_property(domain, "permeability", kw_type, n_soils);
 
   cs_property_t  *permeability = cs_domain_get_property(domain,
                                                         "permeability");
@@ -1445,7 +1448,7 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
   cs_property_t  *soil_capacity = NULL;
 
   if (strcmp(kw_time, "unsteady") == 0) {
-    cs_domain_add_property(domain, "soil_capacity", "isotropic");
+    cs_domain_add_property(domain, "soil_capacity", "isotropic", n_soils);
     soil_capacity = cs_domain_get_property(domain, "soil_capacity");
   }
 
@@ -1553,9 +1556,13 @@ cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
   len = strlen(eq_name) + strlen("_time") + 1;
   BFT_MALLOC(pty_name, len, char);
   sprintf(pty_name, "%s_time", eq_name);
-  cs_domain_add_property(domain, pty_name, "isotropic");
 
-  cs_property_t *time_pty = cs_domain_get_property(domain, pty_name);
+  cs_domain_add_property(domain,
+                         pty_name,
+                         "isotropic",
+                         cs_groundwater_get_n_soils(domain->gw));
+
+  cs_property_t  *time_pty = cs_domain_get_property(domain, pty_name);
 
   cs_equation_link(tracer_eq, "time", time_pty);
 
@@ -1678,6 +1685,8 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
 
         if (cs_equation_get_type(eq) == CS_EQUATION_TYPE_GROUNDWATER) {
 
+          int  n_soils = cs_groundwater_get_n_soils(domain->gw);
+
           if (cs_groundwater_tracer_needs_diffusion(domain->gw, eq_id)) {
 
             /* Add a new property related to the diffusion property */
@@ -1688,7 +1697,7 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
               max_len = len, BFT_REALLOC(pty_name, len, char);
             sprintf(pty_name, "%s_diffusivity", eq_name);
 
-            cs_domain_add_property(domain, pty_name, "anisotropic");
+            cs_domain_add_property(domain, pty_name, "anisotropic", n_soils);
 
             cs_property_t *diff_pty = cs_domain_get_property(domain, pty_name);
 
@@ -1706,7 +1715,7 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
               max_len = len, BFT_REALLOC(pty_name, len, char);
             sprintf(pty_name, "%s_reaction", eq_name);
 
-            cs_domain_add_property(domain, pty_name, "isotropic");
+            cs_domain_add_property(domain, pty_name, "isotropic", n_soils);
 
             cs_property_t *reac_pty = cs_domain_get_property(domain, pty_name);
 

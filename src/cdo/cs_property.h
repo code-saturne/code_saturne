@@ -88,16 +88,18 @@ cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*!
  * \brief  Create and initialize a new property structure
  *
- * \param[in]  name        name of the property
- * \param[in]  key_type    keyname of the type of property
+ * \param[in]  name          name of the property
+ * \param[in]  key_type      keyname of the type of property
+ * \param[in]  n_subdomains  piecewise definition on n_subdomains
  *
  * \return a pointer to a new allocated cs_property_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_property_t *
-cs_property_create(const char                  *name,
-                   const char                  *key_type);
+cs_property_create(const char    *name,
+                   const char    *key_type,
+                   int            n_subdomains);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -179,109 +181,140 @@ cs_property_summary(const cs_property_t   *pty);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the value of an isotropic property
- *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       val      value of the property
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_iso_def_by_value(cs_property_t    *pty,
-                             double            val);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the values of an orthotropic property
- *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       val      values of the property
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_ortho_def_by_value(cs_property_t    *pty,
-                               const double      val[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the values of an anisotropic property
- *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       tens     3x3 matrix with the values of the property
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_aniso_def_by_value(cs_property_t    *pty,
-                               const double      tens[3][3]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the value of a cs_property_t structure
+ * \brief  Define a cs_property_t structure by value for entities attached to
+ *         the mesh location named ml_name
  *
  * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       ml_name   name of the related mesh location
  * \param[in]       keyval    accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_property_def_by_value(cs_property_t    *pty,
-                         const char       *val);
+                         const char       *ml_name,
+                         const char       *key_val);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to an analytic function
+ * \brief  Define an isotropic cs_property_t structure by value for entities
+ *         attached to the mesh location named ml_name
  *
- * \param[in, out]  pty     pointer to a cs_property_t structure
- * \param[in]       func    pointer to a function
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       ml_name   name of the related mesh location
+ * \param[in]       val       value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_iso_def_by_value(cs_property_t    *pty,
+                             const char       *ml_name,
+                             double            val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define orthotropic cs_property_t structure by value for entities
+ *         attached to the mesh location named ml_name
+ *
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       ml_name   name of the related mesh location
+ * \param[in]       val       values to set (vector of size 3)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_ortho_def_by_value(cs_property_t    *pty,
+                               const char       *ml_name,
+                               const double      val[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define an anisotropic cs_property_t structure by value for entities
+ *         attached to the mesh location named ml_name
+ *
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       ml_name   name of the related mesh location
+ * \param[in]       tens      values to set (3x3 tensor)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_aniso_def_by_value(cs_property_t    *pty,
+                               const char       *ml_name,
+                               const double      tens[3][3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_property_t structure thanks to an analytic function in
+ *         a subdomain attached to the mesh location named ml_name
+ *
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       ml_name   name of the related mesh location
+ * \param[in]       func      pointer to a cs_analytic_func_t function
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_property_def_by_analytic(cs_property_t        *pty,
+                            const char           *ml_name,
                             cs_analytic_func_t   *func);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to a law function
+ * \brief  Define a cs_property_t structure thanks to law depending on one
+ *         scalar variable in a subdomain attached to the mesh location named
+ *         ml_name
  *
- * \param[in, out]  pty     pointer to a cs_property_t structure
- * \param[in]       func    pointer to a function
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       ml_name   name of the related mesh location
+ * \param[in]       context   pointer to a structure (may be NULL)
+ * \param[in]       func      pointer to a law function defined by subdomain
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_def_by_law(cs_property_t          *pty,
-                       cs_onevar_law_func_t   *func);
+cs_property_def_by_law(cs_property_t             *pty,
+                       const char                *ml_name,
+                       const void                *context,
+                       cs_onevar_law_func_t      *func);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to a law function with
- *         two scalars arguments
+ * \brief  Define a cs_property_t structure thanks to a law depending on
+ *         two scalars variables in a subdomain attached to the mesh location
+ *         named ml_name
  *
- * \param[in, out]  pty     pointer to a cs_property_t structure
- * \param[in]       func    pointer to a function
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       ml_name   name of the related mesh location
+ * \param[in]       context     pointer to a structure (may be NULL)
+ * \param[in]       func      pointer to a function
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_property_def_by_twovar_law(cs_property_t          *pty,
+                              const char             *ml_name,
+                              const void             *context,
                               cs_twovar_law_func_t   *func);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to a law function with
- *         two arguments: one scalar and one vector-valued
+ * \brief  Define a cs_property_t structure by a law (using as arguments a
+ *         scalar and a vector) for entities attached to the mesh location
+ *         named ml_name
  *
- * \param[in, out]  pty     pointer to a cs_property_t structure
- * \param[in]       func    pointer to a function
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       ml_name   name of the related mesh location
+ * \param[in]       context   pointer to a structure (may be NULL)
+ * \param[in]       func      pointer to a law function defined by subdomain
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_def_by_scavec_law(cs_property_t          *pty,
-                              cs_scavec_law_func_t   *func);
+cs_property_def_by_scavec_law(cs_property_t             *pty,
+                              const char                *ml_name,
+                              const void                *context,
+                              cs_scavec_law_func_t      *func);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -300,101 +333,7 @@ cs_property_def_by_array(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure in a subdomain by value
- *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       keyval    accessor to the value to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_def_subdomain_by_value(cs_property_t    *pty,
-                                   const char       *ml_name,
-                                   const char       *key_val);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define an isotropic cs_property_t structure in a subdomain by value
- *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       val       value to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_iso_def_subdomain_by_value(cs_property_t    *pty,
-                                       const char       *ml_name,
-                                       double            val);
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define orthotropic cs_property_t structure in a subdomain by value
- *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       val       values to set (vector of size 3)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_ortho_def_subdomain_by_value(cs_property_t    *pty,
-                                         const char       *ml_name,
-                                         const double      val[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define an anisotropic cs_property_t structure in a subdomain by value
- *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       tens      values to set (3x3 tensor)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_aniso_def_subdomain_by_value(cs_property_t    *pty,
-                                         const char       *ml_name,
-                                         const double      tens[3][3]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a cs_property_t structure in a subdomain by law
- *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       struc     pointer to a structure (may be NULL)
- * \param[in]       func      pointer to a law function defined by subdomain
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_def_subdomain_by_law(cs_property_t             *pty,
-                                 const char                *ml_name,
-                                 const void                *struc,
-                                 cs_onevar_law_func_t      *func);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a cs_property_t structure in a subdomain by a law using as
- *         arguments a scalar and a vector
- *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       struc     pointer to a structure (may be NULL)
- * \param[in]       func      pointer to a law function defined by subdomain
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_def_subdomain_by_scavec_law(cs_property_t             *pty,
-                                        const char                *ml_name,
-                                        const void                *struc,
-                                        cs_scavec_law_func_t      *func);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set "array" member of a cs_property_t structure
+ * \brief  Set the "array" member of a cs_property_t structure
  *
  * \param[in, out]  pty          pointer to a cs_property_t structure
  * \param[in]       desc         information about this array
@@ -409,7 +348,7 @@ cs_property_set_array(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a second "array" member of a cs_property_t structure
+ * \brief  Set the second "array" member of a cs_property_t structure
  *
  * \param[in, out]  pty        pointer to a cs_property_t structure
  * \param[in]       desc       information about this array
@@ -421,34 +360,6 @@ void
 cs_property_set_second_array(cs_property_t    *pty,
                              cs_desc_t         desc,
                              cs_real_t        *array);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set "struc" member of a cs_property_t structure
- *
- * \param[in, out]  pty          pointer to a cs_property_t structure
- * \param[in]       structure    structure to associate to this property
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_set_struct(cs_property_t    *pty,
-                       const void       *structure);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set optional parameters related to a cs_property_t structure
- *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       keyname   name of key related to the member of pty to set
- * \param[in]       keyval    accessor to the value to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_set_option(cs_property_t    *pty,
-                       const char       *keyname,
-                       const char       *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!
