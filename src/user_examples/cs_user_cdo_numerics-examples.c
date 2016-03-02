@@ -156,15 +156,19 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      library
 
      key = "itsol"
-     >> val: "cg" (default), "bicg", "gmres", "amg"
+     >> val: "cg" (default), "bicg", "bicgstab2", "cr3", "gmres", "amg"
      - "cg" is the standard conjuguate gradient algorithm
-     - "bicg" is BiCG-Stab2 algorithm (for non-symmetric linear systems)
+     - "bicg" is Bi-CG algorithm (for non-symmetric linear systems)
+     - "bicgstab2" is BiCG-Stab2 algorithm (for non-symmetric linear systems)
+     - "cr3" is a 3-layer conjugate residual solver
      - "gmres" is a robust iterative solver but not as efficient
      - "amg" is an algebraic multigrid iterative solver
 
      key = "precond"
-     >> val: "jacobi", "poly1", "ssor", "ilu0", "icc0", "amg", "as"
+     >> val: "jacobi", "block_jacobi", "poly1", "ssor", "ilu0", "icc0", "amg"
+              and "as"
      - "jacobi" diagonal preconditoner
+     - "block_jacobi"
      - "poly1"  neumann polynomial of order 1
      - "ssor"   symmetric successive over-relaxation (only with PETSC)
      - "ilu0"   incomplete LU factorization

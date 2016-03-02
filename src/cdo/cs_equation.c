@@ -351,7 +351,7 @@ static const char _err_empty_eq[] =
  * \param[in]  ksp     Krylov SubSpace structure
  *----------------------------------------------------------------------------*/
 
-static void
+static inline void
 _add_view(KSP          ksp)
 {
   const char *p = getenv("CS_USER_PETSC_MAT_VIEW");
@@ -392,243 +392,128 @@ _add_view(KSP          ksp)
 }
 
 /*----------------------------------------------------------------------------
- * \brief PETSc solver using CG with Jacobi preconditioner
+ * \brief Set PETSc solver and preconditioner
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
-_cg_diag_setup_hook(void   *context,
-                    KSP     ksp)
-{
-  PC pc;
-
-  KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
-
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
-
-  KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCJACOBI);  /* Jacobi (diagonal) preconditioning */
-
-  _add_view(ksp);
-}
-
-/*----------------------------------------------------------------------------
- * \brief PETSc solver using CG with SSOR preconditioner
- *        Warning: this PETSc implementation is only available in serial mode
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
-
-static void
-_cg_ssor_setup_hook(void   *context,
-                    KSP     ksp)
-{
-  PC pc;
-
-  KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
-
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
-
-  KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCSOR);  /* SSOR preconditioning */
-  PCSORSetSymmetric(pc, SOR_SYMMETRIC_SWEEP);
-
-  _add_view(ksp);
-}
-
-/*----------------------------------------------------------------------------
- * \brief PETSc solver using CG with Additive Schwarz preconditioner
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
-
-static void
-_cg_as_setup_hook(void   *context,
+_petsc_setup_hook(void   *context,
                   KSP     ksp)
 {
   PC pc;
 
-  KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
+  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
 
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
+  cs_param_itsol_t  info = eqp->itsol_info;
+  cs_param_precond_type_t  precond = info.precond;
 
+  /* Set the solver */
+  switch (info.solver) {
+
+  case CS_PARAM_ITSOL_CG:  /* Preconditioned Conjugate Gradient */
+    KSPSetType(ksp, KSPCG);
+    break;
+
+  case CS_PARAM_ITSOL_GMRES:  /* Preconditioned GMRES */
+    {
+      const int  n_max_restart = 30;
+
+      KSPSetType(ksp, KSPGMRES);
+      KSPGMRESSetRestart(ksp, n_max_restart);
+    }
+    break;
+
+  case CS_PARAM_ITSOL_BICG: /* Preconditioned Bi-CG */
+    KSPSetType(ksp, KSPBCGS);
+    break;
+
+  case CS_PARAM_ITSOL_BICGSTAB2: /* Preconditioned BiCGstab2 */
+    KSPSetType(ksp, KSPBCGSL);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " Iterative solver not interfaced with PETSc.");
+  }
+
+  /* Set the preconditioner */
   KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCASM);
 
-  _add_view(ksp);
-}
+  if (cs_glob_n_ranks > 1) {
+    if (precond == CS_PARAM_PRECOND_SSOR ||
+        precond == CS_PARAM_PRECOND_ILU0) {
+      precond = CS_PARAM_PRECOND_BJACOB;
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(" Modify the requested preconditioner to able a parallel"
+                 " computation with PETSC.\n"
+                 " Switch to a block jacobi preconditioner.\n"
+                 " Please check your settings.");
+    }
+  }
 
-/*----------------------------------------------------------------------------
- * \brief PETSc solver using CG with ICC preconditioner
- *        Warning: this PETSc implementation is only available in serial mode
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
 
-static void
-_cg_icc_setup_hook(void    *context,
-                   KSP      ksp)
-{
-  PC pc;
+  switch (precond) {
 
-  KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
+  case CS_PARAM_PRECOND_DIAG:
+    PCSetType(pc, PCJACOBI);  /* Jacobi (diagonal) preconditioning */
+    break;
+  case CS_PARAM_PRECOND_SSOR:
+    PCSetType(pc, PCSOR);
+    PCSORSetSymmetric(pc, SOR_SYMMETRIC_SWEEP);
+    break;
+  case CS_PARAM_PRECOND_ICC0:
+    PCSetType(pc, PCICC);
+    PCFactorSetLevels(pc, 0);
+    break;
+  case CS_PARAM_PRECOND_ILU0:
+    PCSetType(pc, PCILU);
+    PCFactorSetLevels(pc, 0);
+    break;
 
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
+  case CS_PARAM_PRECOND_AS:
+    PCSetType(pc, PCASM);
+    break;
 
-  KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCICC);
-  PCFactorSetLevels(pc, 0);
+  case CS_PARAM_PRECOND_AMG:
+    {
+      int  amg_type = 1;
 
-  _add_view(ksp);
-}
+      if (amg_type == 0) { // GAMG
+        PetscOptionsSetValue("-pc_gamg_agg_nsmooths", "1");
+        PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
+        PetscOptionsSetValue("-mg_levels_pc_type", "sor");
+        PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
+        PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
+        PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
+        PetscOptionsSetValue("-pc_gamg_square_graph", "4");
 
-/*----------------------------------------------------------------------------
- * \brief PETSc solver using CG with GAMG preconditioner
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
+        PCSetType(pc, PCGAMG);
+      }
+      else if (amg_type == 1) { // Boomer AMG (hypre)
+        PetscOptionsSetValue("-pc_type", "hypre");
+        PetscOptionsSetValue("-pc_hypre_type","boomeramg");
+        PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
+        PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type","ext+i-cc");
+        PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl","2");
+        PetscOptionsSetValue("-pc_hypre_boomeramg_P_max","4");
+        PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
+        PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
 
-static void
-_cg_gamg_setup_hook(void    *context,
-                    KSP      ksp)
-{
-  PC pc;
+        PCSetType(pc, PCHYPRE);
+      }
 
-  KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
+    }
+    break;
 
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " Preconditioner not interfaced with PETSc.");
+  }
 
-  KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCGAMG);
-
-  _add_view(ksp);
-}
-
-/*----------------------------------------------------------------------------
- * \brief PETSc solver using CG with Boomer AMG preconditioner (Hypre library)
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
-
-static void
-_cg_bamg_setup_hook(void    *context,
-                    KSP      ksp)
-{
-  PC pc;
-
-  KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
-
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
-
-  KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCHYPRE);
-
-  _add_view(ksp);
-}
-
-/*----------------------------------------------------------------------------
- * \brief PETSc solver using GMRES with ILU0 preconditioner
- *        Warning: this PETSc implementation is only available in serial mode
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
-
-static void
-_gmres_ilu_setup_hook(void    *context,
-                      KSP      ksp)
-{
-  PC pc;
-
-  const int  n_max_restart = 30;
-
-  KSPSetType(ksp, KSPGMRES);   /* Preconditioned GMRES */
-
-  KSPGMRESSetRestart(ksp, n_max_restart);
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
-
-  KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCILU);
-  PCFactorSetLevels(pc, 0);
-
-  _add_view(ksp);
-}
-
-/*----------------------------------------------------------------------------
- * \brief PETSc solver using GMRES with block Jacobi preconditioner
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
-
-static void
-_gmres_bjacobi_setup_hook(void    *context,
-                          KSP      ksp)
-{
-  PC pc;
-
-  const int  n_max_restart = 30;
-
-  KSPSetType(ksp, KSPGMRES);   /* Preconditioned GMRES */
-
-  KSPGMRESSetRestart(ksp, n_max_restart);
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
-
-  KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCBJACOBI);
-
-  _add_view(ksp);
-}
-
-/*----------------------------------------------------------------------------
- * \brief PETSc solver using BiCGStab with ILU0 preconditioner
- *        Warning: this PETSc implementation is only available in serial mode
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
-
-static void
-_bicg_ilu_setup_hook(void    *context,
-                     KSP      ksp)
-{
-  PC pc;
-
-  KSPSetType(ksp, KSPBCGS);   /* Preconditioned BiCGStab */
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
-
-  KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCILU);
-  PCFactorSetLevels(pc, 0);
-
-  _add_view(ksp);
-}
-
-/*----------------------------------------------------------------------------
- * \brief PETSc solver using BiCGStab with block Jacobi preconditioner
- *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
-
-static void
-_bicg_bjacobi_setup_hook(void    *context,
-                         KSP      ksp)
-{
-  PC pc;
-
-  KSPSetType(ksp, KSPBCGS);   /* Preconditioned BICGStab */
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
-
-  KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCBJACOBI);
+  /* Try to have "true" norm */
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
 
   _add_view(ksp);
 }
@@ -674,6 +559,20 @@ _sles_initialization(const cs_equation_t  *eq)
         cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
                           NULL,
                           CS_SLES_BICGSTAB,
+                          poly_degree,
+                          itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_BICGSTAB2:
+        cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_BICGSTAB2,
+                          poly_degree,
+                          itsol.n_max_iter);
+        break;
+      case CS_PARAM_ITSOL_CR3:
+        cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_PCR3,
                           poly_degree,
                           itsol.n_max_iter);
         break;
@@ -752,147 +651,20 @@ _sles_initialization(const cs_equation_t  *eq)
         PetscInitializeNoArguments();
       }
 
-      switch (eqp->itsol_info.solver) {
-
-      case CS_PARAM_ITSOL_CG:
-        switch (eqp->itsol_info.precond) {
-
-        case CS_PARAM_PRECOND_DIAG:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATMPIAIJ,
-                               _cg_diag_setup_hook,
-                               NULL);
-          break;
-        case CS_PARAM_PRECOND_SSOR:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATSEQAIJ, // Warning SEQ not MPI
-                               _cg_ssor_setup_hook,
-                               NULL);
-          break;
-        case CS_PARAM_PRECOND_ICC0:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATSEQAIJ, // Warning SEQ not MPI
-                               _cg_icc_setup_hook,
-                               NULL);
-          break;
-
-        case CS_PARAM_PRECOND_AMG:
-          {
-            int  amg_type = 1;
-
-            if (amg_type == 0) { // GAMG
-
-              PetscOptionsSetValue("-pc_gamg_agg_nsmooths", "1");
-              PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
-              PetscOptionsSetValue("-mg_levels_pc_type", "sor");
-              PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
-              PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
-              PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
-              PetscOptionsSetValue("-pc_gamg_square_graph", "4");
-
-              cs_sles_petsc_define(eq->field_id,
-                                   NULL,
-                                   MATMPIAIJ,
-                                   _cg_gamg_setup_hook,
-                                   NULL);
-
-            }
-            else if (amg_type == 1) { // Boomer AMG (hypre)
-
-              PetscOptionsSetValue("-pc_type", "hypre");
-              PetscOptionsSetValue("-pc_hypre_type","boomeramg");
-              PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
-              PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type","ext+i-cc");
-              PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl","2");
-              PetscOptionsSetValue("-pc_hypre_boomeramg_P_max","4");
-              PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
-              PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
-
-              cs_sles_petsc_define(eq->field_id,
-                                   NULL,
-                                   MATMPIAIJ,
-                                   _cg_bamg_setup_hook,
-                                   NULL);
-
-            }
-
-          }
-          break;
-        case CS_PARAM_PRECOND_AS:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATMPIAIJ,
-                               _cg_as_setup_hook,
-                               NULL);
-          break;
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    " Couple (solver, preconditioner) not handled with PETSc.");
-          break;
-
-        } // switch on PETSc preconditionner
-        break;
-
-      case CS_PARAM_ITSOL_GMRES:
-
-        switch (eqp->itsol_info.precond) {
-        case CS_PARAM_PRECOND_ILU0:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATSEQAIJ, // Warning SEQ not MPI
-                               _gmres_ilu_setup_hook,
-                               NULL);
-          break;
-        case CS_PARAM_PRECOND_DIAG:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATMPIAIJ,
-                               _gmres_bjacobi_setup_hook,
-                               NULL);
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    " Couple (solver, preconditioner) not handled with PETSc.");
-          break;
-
-        } // switch on PETSc preconditionner
-        break;
-
-      case CS_PARAM_ITSOL_BICG:
-
-        switch (eqp->itsol_info.precond) {
-        case CS_PARAM_PRECOND_ILU0:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATSEQAIJ, // Warning SEQ not MPI
-                               _bicg_ilu_setup_hook,
-                               NULL);
-          break;
-        case CS_PARAM_PRECOND_DIAG:
-          cs_sles_petsc_define(eq->field_id,
-                               NULL,
-                               MATMPIAIJ,
-                               _bicg_bjacobi_setup_hook,
-                               NULL);
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    " Couple (solver, preconditioner) not handled with PETSc.");
-          break;
-
-        } // switch on PETSc preconditionner
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, " Solver not handled.");
-        break;
-
-      } // switch on PETSc solver
+      if (eqp->itsol_info.precond == CS_PARAM_PRECOND_SSOR ||
+          eqp->itsol_info.precond == CS_PARAM_PRECOND_ILU0 ||
+          eqp->itsol_info.precond == CS_PARAM_PRECOND_ICC0)
+        cs_sles_petsc_define(eq->field_id,
+                             NULL,
+                             MATSEQAIJ, // Warning SEQ not MPI
+                             _petsc_setup_hook,
+                             (void *)eqp);
+      else
+        cs_sles_petsc_define(eq->field_id,
+                             NULL,
+                             MATMPIAIJ,
+                             _petsc_setup_hook,
+                             (void *)eqp);
 #else
       bft_error(__FILE__, __LINE__, 0,
                 _(" PETSC algorithms used to solve %s are not linked.\n"
@@ -1974,6 +1746,10 @@ cs_equation_set_option(cs_equation_t       *eq,
       eqp->itsol_info.solver = CS_PARAM_ITSOL_CG;
     else if (strcmp(val, "bicg") == 0)
       eqp->itsol_info.solver = CS_PARAM_ITSOL_BICG;
+    else if (strcmp(val, "bicgstab2") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_BICGSTAB2;
+    else if (strcmp(val, "cr3") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_CR3;
     else if (strcmp(val, "gmres") == 0)
       eqp->itsol_info.solver = CS_PARAM_ITSOL_GMRES;
     else if (strcmp(val, "amg") == 0)
@@ -1989,6 +1765,8 @@ cs_equation_set_option(cs_equation_t       *eq,
   case EQKEY_PRECOND:
     if (strcmp(val, "jacobi") == 0)
       eqp->itsol_info.precond = CS_PARAM_PRECOND_DIAG;
+    else if (strcmp(val, "block_jacobi") == 0)
+      eqp->itsol_info.precond = CS_PARAM_PRECOND_BJACOB;
     else if (strcmp(val, "poly1") == 0)
       eqp->itsol_info.precond = CS_PARAM_PRECOND_POLY1;
     else if (strcmp(val, "ssor") == 0)

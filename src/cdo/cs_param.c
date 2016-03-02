@@ -585,7 +585,13 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
     return  "CG";
     break;
   case CS_PARAM_ITSOL_BICG:
-    return "BiCGstab";
+    return "BiCG";
+    break;
+  case CS_PARAM_ITSOL_BICGSTAB2:
+    return "BiCGstab2";
+    break;
+  case CS_PARAM_ITSOL_CR3:
+    return "Conjugate.Residual.3Layers";
     break;
   case CS_PARAM_ITSOL_GMRES:
     return "GMRES";
@@ -617,6 +623,9 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
   switch (precond) {
   case CS_PARAM_PRECOND_DIAG:
     return  "Diagonal";
+    break;
+  case CS_PARAM_PRECOND_BJACOB:
+    return  "Block-Jacobi";
     break;
   case CS_PARAM_PRECOND_POLY1:
     return  "Neumann.Poly.O1";
