@@ -319,7 +319,7 @@ _compute_vb_l2pot(const cs_mesh_t             *m,
                   double                      *denum)
 {
   int  i, j, k, p, c_id;
-  double  ddip_gpts, voltet, n_add, d_add;
+  double  ddip_gpts, n_add, d_add;
   cs_real_3_t  xc, gpts[5];
   double  rpex_gpts[5], weights[5], pdi_gpts[5];
 
