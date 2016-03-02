@@ -2,11 +2,16 @@
 Trunk (unreleased)
 ==================
 
-Changes
--------
+User changes
+------------
+
+ - Automatic computation of head loss for a given volumic zone.
 
  - When using boundary condition zones defined by the GUI, error reporting
    for overlapping zones is improved, with associated visualization.
+
+Changes
+-------
 
  - Turbomachinery module: for better restart behavior, the joined mesh
    is now also handled using checkpoint/restart.
