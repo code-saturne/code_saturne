@@ -832,6 +832,57 @@ cs_domain_summary(const cs_domain_t   *domain)
   bft_printf(" -msg- n_user_equations         %d\n", domain->n_user_equations);
   bft_printf(" -msg- n_properties             %d\n", domain->n_properties);
 
+  /* Boundary */
+  cs_domain_boundary_t  *bdy = domain->boundaries;
+
+  bft_printf("\n  Domain boundary by default: ");
+  switch (bdy->default_boundary) {
+  case CS_PARAM_BOUNDARY_WALL:
+    bft_printf(" wall\n");
+    break;
+  case CS_PARAM_BOUNDARY_SYMMETRY:
+    bft_printf(" symmetry\n");
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid boundary by default.\n"
+                " Please modify your settings."));
+  }
+
+  /* Number of border faces for each type of boundary */
+  bft_printf("  >> Number of faces with a wall boundary:      %d\n",
+             bdy->n_type_elts[CS_PARAM_BOUNDARY_WALL]);
+  bft_printf("  >> Number of faces with an inlet boundary:    %d\n",
+             bdy->n_type_elts[CS_PARAM_BOUNDARY_INLET]);
+  bft_printf("  >> Number of faces with an outlet boundary:   %d\n",
+             bdy->n_type_elts[CS_PARAM_BOUNDARY_OUTLET]);
+  bft_printf("  >> Number of faces with a symmetry boundary:  %d\n",
+             bdy->n_type_elts[CS_PARAM_BOUNDARY_SYMMETRY]);
+
+  /* Time step summary */
+  bft_printf("\n  Time step information\n");
+  if (domain->only_steady)
+    bft_printf("  >> Steady-state computation");
+
+  else { /* Time information */
+
+    bft_printf("  >> Time step status:");
+    if (domain->time_options.idtvar == 0)
+      bft_printf("  constant\n");
+    else if (domain->time_options.idtvar == 1)
+      bft_printf("  variable in time\n");
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid idtvar value for the CDO module.\n"));
+    bft_printf("  >> Type of definition: %s",
+               cs_param_get_def_type_name(domain->time_step_def_type));
+    if (domain->time_step_def_type == CS_PARAM_DEF_BY_VALUE)
+      bft_printf(" => %5.3e\n", domain->dt_cur);
+    else
+      bft_printf("\n");
+  }
+  bft_printf("\n");
+
   if (domain->verbosity > 0) {
 
     /* Properties */
@@ -853,57 +904,6 @@ cs_domain_summary(const cs_domain_t   *domain)
         cs_advection_field_summary(domain->adv_fields[i]);
 
     }
-
-    /* Boundary */
-    cs_domain_boundary_t  *bdy = domain->boundaries;
-
-    bft_printf("\n  Domain boundary by default: ");
-    switch (bdy->default_boundary) {
-    case CS_PARAM_BOUNDARY_WALL:
-      bft_printf(" wall\n");
-      break;
-    case CS_PARAM_BOUNDARY_SYMMETRY:
-      bft_printf(" symmetry\n");
-      break;
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid boundary by default.\n"
-                  " Please modify your settings."));
-    }
-
-    /* Number of border faces for each type of boundary */
-    bft_printf("  >> Number of faces with a wall boundary:      %d\n",
-               bdy->n_type_elts[CS_PARAM_BOUNDARY_WALL]);
-    bft_printf("  >> Number of faces with an inlet boundary:    %d\n",
-               bdy->n_type_elts[CS_PARAM_BOUNDARY_INLET]);
-    bft_printf("  >> Number of faces with an outlet boundary:   %d\n",
-               bdy->n_type_elts[CS_PARAM_BOUNDARY_OUTLET]);
-    bft_printf("  >> Number of faces with a symmetry boundary:  %d\n",
-               bdy->n_type_elts[CS_PARAM_BOUNDARY_SYMMETRY]);
-
-    /* Time step summary */
-    bft_printf("\n  Time step information\n");
-    if (domain->only_steady)
-      bft_printf("  >> Steady-state computation");
-
-    else { /* Time information */
-
-      bft_printf("  >> Time step status:");
-      if (domain->time_options.idtvar == 0)
-        bft_printf("  constant\n");
-      else if (domain->time_options.idtvar == 1)
-        bft_printf("  variable in time\n");
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" Invalid idtvar value for the CDO module.\n"));
-      bft_printf("  >> Type of definition: %s",
-                 cs_param_get_def_type_name(domain->time_step_def_type));
-      if (domain->time_step_def_type == CS_PARAM_DEF_BY_VALUE)
-        bft_printf(" => %5.3e\n", domain->dt_cur);
-      else
-        bft_printf("\n");
-    }
-    bft_printf("\n");
 
     /* Summary of the groundwater module */
     cs_groundwater_summary(domain->gw);

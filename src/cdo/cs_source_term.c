@@ -217,7 +217,7 @@ cs_source_term_create(const char              *name,
   st->def_type = CS_PARAM_N_DEF_TYPES;
   st->quad_type = CS_QUADRATURE_BARY;
   st->def.get.val = 0.;
-  
+
   st->array_desc.location = 0;
   st->array_desc.state = 0;
   st->array = NULL;
@@ -490,7 +490,7 @@ cs_source_term_compute(cs_desc_t                     dof_desc,
 {
   const int  stride = 1; // Only this case is managed up to now
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-  
+
   double  *values = *p_values;
 
   if (source == NULL)
@@ -561,7 +561,7 @@ cs_source_term_compute(cs_desc_t                     dof_desc,
     } /* Switch according to def_type */
 
   } /* Density variable */
-  
+
   /* Return values */
   *p_values = values;
 }

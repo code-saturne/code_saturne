@@ -220,7 +220,7 @@ _dcsd_by_analytic(cs_analytic_func_t       *ana,
   const cs_sla_matrix_t  *c2f = connect->c2f;
   const cs_sla_matrix_t  *f2e = connect->f2e;
   const double  tcur = cs_time_step->t_cur;
-  
+
   /* Compute dual volumes */
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
@@ -266,7 +266,7 @@ _dcsd_by_analytic(cs_analytic_func_t       *ana,
         values[v2_id] += add2;
 
       } // Loop on edges
-      
+
     } // Loop on faces
 
   } // Loop on cells
@@ -298,7 +298,7 @@ _pcsd_by_analytic(cs_analytic_func_t       *ana,
   const cs_sla_matrix_t  *c2f = connect->c2f;
   const cs_sla_matrix_t  *f2e = connect->f2e;
   const double  tcur = cs_time_step->t_cur;
-  
+
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
     const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
@@ -318,7 +318,7 @@ _pcsd_by_analytic(cs_analytic_func_t       *ana,
         const cs_real_t  *xv2 = quant->vtx_coord + 3*v2_id;
 
         double  add = 0.0;
-        
+
         switch(quad_type) {
 
         case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
@@ -338,7 +338,7 @@ _pcsd_by_analytic(cs_analytic_func_t       *ana,
         values[c_id] += add;
 
       } // Loop on edges
-      
+
     } // Loop on faces
 
   } // Loop on cells
@@ -373,7 +373,7 @@ _dcsd_by_value(const double       const_val,
     for (cs_lnum_t c_id = 0; c_id < n_elts; c_id++)
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
         values[c2v->ids[j]] += dual_vol[j]*const_val;
-    
+
   }
   else { /* Loop on selected cells */
 
@@ -416,7 +416,6 @@ _pcsd_by_value(const double       const_val,
   else { /* Loop on selected cells */
 # pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
-
       cs_lnum_t  c_id = elt_ids[i];
       values[c_id] = quant->cell_vol[c_id]*const_val;
     }
@@ -768,7 +767,7 @@ cs_evaluate_potential_from_analytic(cs_flag_t              dof_flag,
                                     double                 retval[])
 {
   cs_get_t  result;
-  
+
   /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array);

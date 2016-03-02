@@ -706,27 +706,7 @@ cs_mesh_location_add_by_union(const char               *name,
 int
 cs_mesh_location_get_id_by_name(const char  *ref_name)
 {
-  int  i, ml_id = -1;
-
   return _find_id_by_name(ref_name);
-
-  int  reflen = strlen(ref_name);
-
-  for (i = 0; i < _n_mesh_locations; i++) {
-
-    cs_mesh_location_t  *ml = _mesh_location + i;
-    int len = strlen(ml->name);
-
-    if (reflen == len) {
-      if (strcmp(ref_name, ml->name) == 0) {
-        ml_id = i;
-        break;
-      }
-    }
-
-  } /* Loops on mesh locations */
-
-  return ml_id;
 }
 
 /*----------------------------------------------------------------------------*/

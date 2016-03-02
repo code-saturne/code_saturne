@@ -81,7 +81,7 @@ struct _cs_property_t {
 
   /* Short descriptor to know where is defined the property and what kind of
      property one considers (mask of bits) */
-  cs_desc_t   flag;         
+  cs_desc_t   flag;
 
   /* The number of values to set depends on the type of property
      - isotropic   = 1 => CS_PARAM_VAR_SCAL
@@ -695,7 +695,7 @@ cs_property_summary(const cs_property_t   *pty)
   if (pty->flag.state & CS_FLAG_STATE_UNIFORM)  is_uniform = true;
   if (pty->flag.state & CS_FLAG_STATE_UNSTEADY) is_steady = false;
 
-  bft_printf(" %s >> uniform [%s], steady [%s], ",
+  bft_printf("  %s >> uniform [%s], steady [%s], ",
              pty->name, cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
 
   switch(pty->type) {

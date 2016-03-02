@@ -75,7 +75,7 @@ struct _cs_adv_field_t {
   char  *restrict name;
 
   cs_desc_t  desc;       /* Short descriptor (mask of bits) */
-  
+
   cs_flag_t  post_flag;  /* Short descriptor dedicated to postprocessing */
   int     vtx_field_id;  /* id among cs_field_t structures (-1 if not used) */
   int     cell_field_id; /* id among cs_field_t structures (-1 if not used) */
@@ -384,7 +384,7 @@ cs_advection_field_summary(const cs_adv_field_t   *adv)
   if (adv->desc.state & CS_FLAG_STATE_UNIFORM)  is_uniform = true;
   if (adv->desc.state & CS_FLAG_STATE_UNSTEADY) is_steady = false;
 
-  bft_printf(" %s >> uniform [%s], steady [%s], ",
+  bft_printf("  %s >> uniform [%s], steady [%s], ",
              adv->name, cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
 
   switch (adv->def_type) {
@@ -579,7 +579,7 @@ cs_advection_field_create_field(cs_adv_field_t   *adv)
 
   _Bool has_previous = (adv->desc.state & CS_FLAG_STATE_UNSTEADY) ? true:false;
   int  field_mask = CS_FIELD_PROPERTY;
-  
+
   if (adv->desc.location & CS_FLAG_VERTEX) { // Add a field attached to vertices
 
     /* Define the name of the field */

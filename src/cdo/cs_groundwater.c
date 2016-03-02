@@ -1637,7 +1637,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 
     cs_desc_t  desc = {.location = CS_FLAG_SCAL | cs_cdo_primal_vtx,
                        .state = CS_FLAG_STATE_POTENTIAL};
-    
+
     cs_equation_add_gravity_source_term(richards,
                                         ml_id,
                                         desc,

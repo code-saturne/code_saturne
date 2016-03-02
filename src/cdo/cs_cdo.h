@@ -216,11 +216,11 @@ extern const char ssepline[];
 extern const cs_flag_t  cs_cdo_primal_vtx;
 extern const cs_flag_t  cs_cdo_primal_face;
 extern const cs_flag_t  cs_cdo_primal_cell;
-extern const cs_flag_t  cs_cdo_dual_vtx ;
+extern const cs_flag_t  cs_cdo_dual_vtx;
 extern const cs_flag_t  cs_cdo_dual_face;
-extern const cs_flag_t  cs_cdo_dual_cell;;
+extern const cs_flag_t  cs_cdo_dual_cell;
 extern const cs_flag_t  cs_cdo_dual_face_byc;
-                     
+
 /*============================================================================
  * Static inline function prototypes
  *============================================================================*/

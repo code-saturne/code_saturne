@@ -1121,7 +1121,7 @@ cs_cdovb_scaleq_compute_source(void            *builder)
 {
   cs_cdovb_scaleq_t  *bld = (cs_cdovb_scaleq_t *)builder;
   double  *st_eval = _vbscal_work;
-  
+
   for (cs_lnum_t i = 0; i < bld->n_vertices; i++)
     bld->source_terms[i] = 0;
 
@@ -1135,7 +1135,7 @@ cs_cdovb_scaleq_compute_source(void            *builder)
   if (eqp->flag & CS_EQUATION_HCONF_ST) {
     desc.location = CS_FLAG_SCAL | cs_cdo_primal_vtx;
     desc.state = CS_FLAG_STATE_POTENTIAL;
-    
+
     if (!bld->build_hvpcd_conf)
       _build_hvpcd_conf(bld);
 
@@ -1144,7 +1144,7 @@ cs_cdovb_scaleq_compute_source(void            *builder)
     desc.location = CS_FLAG_SCAL | cs_cdo_dual_cell;
     desc.state = CS_FLAG_STATE_DENSITY;
   }
-  
+
   for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
 
     const cs_source_term_t  *st = eqp->source_terms[st_id];
