@@ -176,7 +176,7 @@ contains
     itscvi = 1
 
     ! min/max clippings for the void fraction
-    clvfmn = 1.d-10
+    clvfmn = 1.d-12
     clvfmx = 1.d0 - clvfmn
 
   end subroutine init_cavitation
@@ -417,23 +417,29 @@ contains
   !> \param[in]  bmasfl Mass flux at internal boundary faces array
 
   subroutine cavitation_print_mass_budget  &
-            ( crom, croma, dt, imasfl, bmasfl )
+            ( crom, croma, brom, dt, imasfl_rel, bmasfl_rel )
 
+    use cstphy
     use entsor
     use mesh
     use parall
+    use rotation
+    use turbomachinery
 
     ! Arguments
 
     double precision crom(ncelet), croma(ncelet)
+    double precision brom(nfabor)
     double precision dt(ncelet)
-    double precision imasfl(nfac), bmasfl(nfabor)
+    double precision, dimension(:), target :: imasfl_rel, bmasfl_rel
 
     ! Local variables
 
-    integer init, iel
-    double precision bilglo
+    integer init, iel, iel1, iel2, ifac
+    double precision bilglo, rhofac, vr(3), vr1(3), vr2(3)
     double precision, dimension(:), allocatable :: divro, tinsro
+    double precision, dimension(:), allocatable, target :: imasfl_abs, bmasfl_abs
+    double precision, dimension(:), pointer :: imasfl, bmasfl
 
     ! Initialization
     allocate(divro(ncelet))
@@ -443,7 +449,50 @@ contains
       tinsro(iel) = 0.d0
     enddo
 
-    ! Mass flux divergence
+    if (.not.(icorio.eq.1.or.iturbo.eq.1)) then
+      imasfl => imasfl_rel(1:nfac)
+      bmasfl => bmasfl_rel(1:nfabor)
+    else
+      allocate(imasfl_abs(nfac), bmasfl_abs(nfabor))
+      !$omp parallel do private(iel1, iel2, rhofac)
+      do ifac = 1, nfac
+        iel1 = ifacel(1,ifac)
+        iel2 = ifacel(2,ifac)
+        if (irotce(iel1).ne.0 .or. irotce(iel2).ne.0) then
+
+          rhofac = 0.5d0*(crom(iel1) + crom(iel2))
+          call rotation_velocity(irotce(iel1), cdgfac(:,ifac), vr1)
+          call rotation_velocity(irotce(iel2), cdgfac(:,ifac), vr2)
+
+          imasfl_abs(ifac) = imasfl_rel(ifac) + 0.5d0 *rhofac*(         &
+                                  surfac(1,ifac)*(vr1(1) + vr2(1))      &
+                                + surfac(2,ifac)*(vr1(2) + vr2(2))      &
+                                + surfac(3,ifac)*(vr1(3) + vr2(3)) )
+        else
+          imasfl_abs(ifac) = imasfl_rel(ifac)
+        endif
+      enddo
+      !$omp parallel do private(iel, rhofac) &
+      !$omp          if(nfabor > thr_n_min)
+      do ifac = 1, nfabor
+        iel = ifabor(ifac)
+        if (irotce(iel).ne.0) then
+
+          rhofac = brom(ifac)
+          call rotation_velocity(irotce(iel), cdgfbo(:,ifac), vr)
+
+          bmasfl_abs(ifac) = bmasfl_rel(ifac) + rhofac*( surfbo(1,ifac)*vr(1) &
+                                              + surfbo(2,ifac)*vr(2)     &
+                                              + surfbo(3,ifac)*vr(3) )
+        else
+          bmasfl_abs(ifac) = bmasfl_rel(ifac)
+        endif
+      enddo
+      imasfl => imasfl_abs(1:nfac)
+      bmasfl => bmasfl_abs(1:nfabor)
+    endif
+
+    ! (Absolute) Mass flux divergence
     init = 1
     call divmas(init, imasfl, bmasfl, divro)
 
@@ -464,6 +513,7 @@ contains
 
     ! Finalization
     deallocate(divro, tinsro)
+    if(allocated(imasfl_abs)) deallocate(imasfl_abs, bmasfl_abs)
 
     !Format
 #if defined(_CS_LANG_FR)
