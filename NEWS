@@ -5,6 +5,8 @@ Release 4.0.5 (unreleased)
 Bug fixes:
 ----------
 
+- Fix time moment weight when no moment is active at the initial time step.
+
 - SALOME_CFD: fix wrong default writer format.
 
 - Compressible: fix by adding a missing verification of ithvar before
