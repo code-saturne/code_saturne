@@ -5,7 +5,7 @@ Release 4.2.1 (unreleased)
 Bug fixes:
 ----------
 
-- Fixes in cavitation module for turbomachinery (erroneous mass budget).
+- Fix time moment weight when no moment is active at the initial time step.
 
 - SALOME_CFD: fix wrong default writer format.
 

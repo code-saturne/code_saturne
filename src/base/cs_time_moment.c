@@ -2194,10 +2194,10 @@ cs_time_moment_update_all(void)
 
   }
 
+  _t_prev_iter = ts->t_cur;
+
   if (!active_moments)
     return;
-
-  _t_prev_iter = ts->t_cur;
 
   BFT_MALLOC(wa_cur_data, _n_moment_wa, cs_real_t *);
   BFT_MALLOC(wa_cur_data0, _n_moment_wa, cs_real_t);
