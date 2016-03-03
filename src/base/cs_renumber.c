@@ -96,6 +96,7 @@ extern "C" {
 #include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_post.h"
+#include "cs_sort.h"
 #include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
@@ -1014,106 +1015,6 @@ _renumber_for_threads_ibm(cs_mesh_t  *mesh)
 #endif /* defined(HAVE_IBM_RENUMBERING_LIB) */
 
 /*----------------------------------------------------------------------------
- * Descend binary tree for the ordering of a cs_lnum_t (integer) array.
- *
- * parameters:
- *   number    <-> pointer to elements that should be ordered
- *   level     <-- level of the binary tree to descend
- *   n_elts    <-- number of elements in the binary tree to descend
- *----------------------------------------------------------------------------*/
-
-inline static void
-_sort_descend_tree(cs_lnum_t  number[],
-                   size_t     level,
-                   size_t     n_elts)
-{
-  size_t lv_cur;
-  cs_lnum_t num_save;
-
-  num_save = number[level];
-
-  while (level <= (n_elts/2)) {
-
-    lv_cur = (2*level) + 1;
-
-    if (lv_cur < n_elts - 1)
-      if (number[lv_cur+1] > number[lv_cur]) lv_cur++;
-
-    if (lv_cur >= n_elts) break;
-
-    if (num_save >= number[lv_cur]) break;
-
-    number[level] = number[lv_cur];
-    level = lv_cur;
-
-  }
-
-  number[level] = num_save;
-}
-
-/*----------------------------------------------------------------------------
- * Order an array of global numbers.
- *
- * parameters:
- *   number   <-> number of arrays to sort
- *   n_elts   <-- number of elements considered
- *----------------------------------------------------------------------------*/
-
-static void
-_sort_local(cs_lnum_t  number[],
-            size_t     n_elts)
-{
-  size_t i, j, inc;
-  cs_lnum_t num_save;
-
-  if (n_elts < 2)
-    return;
-
-  /* Use shell sort for short arrays */
-
-  if (n_elts < 20) {
-
-    /* Compute increment */
-    for (inc = 1; inc <= n_elts/9; inc = 3*inc+1);
-
-    /* Sort array */
-    while (inc > 0) {
-      for (i = inc; i < n_elts; i++) {
-        num_save = number[i];
-        j = i;
-        while (j >= inc && number[j-inc] > num_save) {
-          number[j] = number[j-inc];
-          j -= inc;
-        }
-        number[j] = num_save;
-      }
-      inc = inc / 3;
-    }
-
-  }
-
-  else {
-
-    /* Create binary tree */
-
-    i = (n_elts / 2);
-    do {
-      i--;
-      _sort_descend_tree(number, i, n_elts);
-    } while (i > 0);
-
-    /* Sort binary tree */
-
-    for (i = n_elts - 1 ; i > 0 ; i--) {
-      num_save   = number[0];
-      number[0] = number[i];
-      number[i] = num_save;
-      _sort_descend_tree(number, 0, i);
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Create a CSR graph structure from a native face-based connectivity.
  *
  * parameters:
@@ -1189,21 +1090,7 @@ _csr_graph_create(cs_lnum_t         n_cells_ext,
 
   /* Sort line elements by column id (for better access patterns) */
 
-  if (n_cols_max > 1) {
-
-    for (ii = 0; ii < g->n_rows; ii++) {
-      cs_lnum_t *col_id = g->col_id + g->row_index[ii];
-      cs_lnum_t n_cols = g->row_index[ii+1] - g->row_index[ii];
-      cs_lnum_t col_id_prev = -1;
-      _sort_local(col_id, g->row_index[ii+1] - g->row_index[ii]);
-      for (jj = 0; jj < n_cols; jj++) {
-        if (col_id[jj] == col_id_prev)
-          unique_faces = false;
-        col_id_prev = col_id[jj];
-      }
-    }
-
-  }
+  unique_faces = cs_sort_indexed(g->n_rows, g->row_index, g->col_id);
 
   /* Compact elements if necessary */
 
