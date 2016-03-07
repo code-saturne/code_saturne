@@ -509,6 +509,7 @@ cs_sort_indexed(cs_lnum_t        n_elts,
 
   /* Sort line elements by column id (for better access patterns) */
 
+# pragma omp parallel for  if(n_elts > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_elts; i++) {
     cs_lnum_t *restrict _elts = elts + elt_idx[i];
     cs_lnum_t _n_elts = elt_idx[i+1] - elt_idx[i];
