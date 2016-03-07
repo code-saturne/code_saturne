@@ -96,6 +96,22 @@ void CS_PROCF (symmetric_matrix_product, SYMMETRIC_MATRIX_PRODUCT)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the square of a real value
+ *
+ * \param[in]  x  value
+ *
+ * \return the square of the given value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_sq(cs_real_t  x)
+{
+  return x*x;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the (euclidean) length between two points xa and xb in
  *         a cartesian coordinate system of dimension 3
  *
