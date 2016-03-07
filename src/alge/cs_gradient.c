@@ -125,11 +125,11 @@ static cs_gradient_info_t **cs_glob_gradient_systems = NULL;
 
 /* Short names for gradient computation types */
 
-const char *cs_gradient_type_name[] = {N_("Iterative reconstruction"),
-                                       N_("Least-squares (standard)"),
-                                       N_("Least-squares (extended)"),
-                                       N_("Least-squares (partially extended)"),
-                                       N_("Least-squares then iterative")};
+const char *cs_gradient_type_name[]
+  = {N_("Iterative reconstruction"),
+     N_("Least-squares"),
+     N_("Least-squares, then iterative (old))"),
+     N_("Iterative (old)")};
 
 /* Timer statistics */
 

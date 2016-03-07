@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-02-22 10:11+0100\n"
+"POT-Creation-Date: 2016-03-05 17:10+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3042,17 +3042,14 @@ msgstr "valeur invalide pour init"
 msgid "Iterative reconstruction"
 msgstr "Reconstruction itérative"
 
-msgid "Least-squares (standard)"
-msgstr "Moindres carrés (standard)"
+msgid "Least-squares"
+msgstr "Moindres carrés"
 
-msgid "Least-squares (extended)"
-msgstr "Moindres carrés (support étendu)"
+msgid "Least-squares, then iterative (old))"
+msgstr "Moindres carrés puis itérative (ancienne)"
 
-msgid "Least-squares (partially extended)"
-msgstr "Moindres carrés (support partiellement étendu)"
-
-msgid "Least-squares then iterative"
-msgstr "Moindres carrés puis itérative"
+msgid "Iterative (old)"
+msgstr "Itérative (ancienne)"
 
 #, c-format
 msgid ""
@@ -8075,6 +8072,13 @@ msgstr ""
 "irrégulier ;\n"
 "il peut être utile d'ajuster les paramètres de recollement."
 
+#, c-format
+msgid ""
+"Error in turbomachinery mesh restart:\n"
+"  number of cells expected/read: %llu/%llu\n"
+"Check your restart directory."
+msgstr ""
+
 msgid "bft_mem_init() has already been called"
 msgstr ""
 
@@ -8173,6 +8177,9 @@ msgid ""
 " %d boundary faces have no boundary type."
 msgstr ""
 
+msgid "cells"
+msgstr "cellules"
+
 #, c-format
 msgid ""
 " Invalid key %s setting a parameter for this domain.\n"
@@ -8270,6 +8277,13 @@ msgid ""
 " Algorithm requested to solve %s is not implemented yet.\n"
 " Please modify your settings."
 msgstr ""
+
+#, c-format
+msgid " Incompatible type of variable for equation %s."
+msgstr ""
+
+msgid "vertices"
+msgstr "sommets"
 
 msgid ""
 " No variable name associated to an equation structure.\n"
@@ -8387,7 +8401,7 @@ msgstr ""
 msgid ""
 " Invalid key for setting the initial condition.\n"
 " Given key: %s\n"
-" Choice among value and analytic.\n"
+" Available choices are 'value' and 'analytic'.\n"
 " Please modify your settings."
 msgstr ""
 
@@ -8442,12 +8456,6 @@ msgid ""
 "structure.\n"
 msgstr ""
 
-msgid "vertices"
-msgstr "sommets"
-
-msgid "cells"
-msgstr "cellules"
-
 #, c-format
 msgid ""
 " Space scheme for eq. %s is incompatible with a field.\n"
@@ -8464,16 +8472,6 @@ msgid ""
 msgstr ""
 
 msgid "Invalid quadrature type.\n"
-msgstr ""
-
-msgid ""
-" Invalid type of degrees of freedom.\n"
-" This case is not handled yet."
-msgstr ""
-
-msgid ""
-" Invalid type of degree of freedom.\n"
-" This case is not handled yet."
 msgstr ""
 
 #, c-format
@@ -8559,9 +8557,6 @@ msgstr ""
 msgid "by law (two arguments: scalar+vector)"
 msgstr ""
 
-msgid "by subdomain"
-msgstr ""
-
 msgid "by time function"
 msgstr ""
 
@@ -8630,6 +8625,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+" Max. number of subdomains has been reached for property %s.\n"
+" Please check your settings."
+msgstr ""
+
+#, c-format
+msgid ""
 " mesh location %s has not been found.\n"
 " Please check your settings."
 msgstr ""
@@ -8642,12 +8643,6 @@ msgid ""
 msgstr ""
 
 msgid " Invalid type of definition for a property."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid key for setting the property %s.\n"
-" Please read listing for more details and modify your settings."
 msgstr ""
 
 msgid "barycentric"
@@ -12373,3 +12368,9 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
+
+#~ msgid "Least-squares (extended)"
+#~ msgstr "Moindres carrés (support étendu)"
+
+#~ msgid "Least-squares (partially extended)"
+#~ msgstr "Moindres carrés (support partiellement étendu)"
