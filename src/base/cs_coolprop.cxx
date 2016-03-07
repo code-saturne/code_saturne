@@ -50,6 +50,7 @@
 #include "bft_error.h"
 #include "bft_mem.h"
 #include "bft_printf.h"
+#include "cs_fp_exception.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -178,6 +179,8 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
   }
   fractions.push_back(1.0);
 
+  cs_fp_exception_disable_trap();
+
   std::vector<std::vector<double> > out = CoolProp::PropsSImulti(outputs,
                                                                  Name1,
                                                                  val1,
@@ -186,6 +189,8 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
                                                                  Backend,
                                                                  fluids,
                                                                  fractions);
+
+  cs_fp_exception_restore_trap();
 
   if (out.size() != n_vals)
     bft_error(__FILE__, __LINE__, 0,
