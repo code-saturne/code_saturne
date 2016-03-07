@@ -622,9 +622,9 @@ do ilelt = 1, nlelt
 
   if (ippmod(ielarc).ge.1 .and. ielcor .eq.1) then
     if (irestrike.eq.1 .and. ntcabs.le.ntdcla+30) then
-      z1 = restrike_pointZ - 2.d-4
+      z1 = restrike_point_z - 2.d-4
       if (z1.le.0.d0) z1 = 0.d0
-      z2 = restrike_pointZ + 2.d-4
+      z2 = restrike_point_z + 2.d-4
       if (z2.ge.2.d-2) z2 = 2.d-2
 
       if (cdgfbo(3,ifac).ge.z1 .and. cdgfbo(3,ifac).le.z2) then

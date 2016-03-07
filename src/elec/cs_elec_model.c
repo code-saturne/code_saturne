@@ -266,6 +266,49 @@ cs_f_elec_model_get_pointers(int     **ngazge,
                              double  **restrike_point_y,
                              double  **restrike_point_z);
 
+/*----------------------------------------------------------------------------
+ * Get pointers to members of the global electric model structure.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   ngazge         --> pointer to cs_glob_elec_properties->ngaz
+ *   ielcor         --> pointer to cs_glob_elec_option->ielcor
+ *   pot_diff       --> pointer to cs_glob_elec_option->pot_diff
+ *   coejou         --> pointer to cs_glob_elec_option->coejou
+ *   elcou          --> pointer to cs_glob_elec_option->elcou
+ *   irestrike      --> pointer to cs_glob_elec_option->irestrike
+ *   ntdcla         --> pointer to cs_glob_elec_option->ntdcla
+ *   restrike_point --> pointer to cs_glob_elec_option->restrike_point
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_elec_model_get_pointers(int     **ngazge,
+                             int     **ielcor,
+                             double  **pot_diff,
+                             double  **coejou,
+                             double  **elcou,
+                             double  **couimp,
+                             int     **irestrike,
+                             int     **ntdcla,
+                             double  **restrike_point_x,
+                             double  **restrike_point_y,
+                             double  **restrike_point_z)
+{
+  *ngazge           = &(_elec_properties.ngaz);
+  *ielcor           = &(_elec_option.ielcor);
+  *pot_diff         = &(_elec_option.pot_diff);
+  *coejou           = &(_elec_option.coejou);
+  *elcou            = &(_elec_option.elcou);
+  *couimp           = &(_elec_option.couimp);
+  *irestrike        = &(_elec_option.irestrike);
+  *ntdcla           = &(_elec_option.ntdcla);
+  *restrike_point_x = &(_elec_option.restrike_point[0]);
+  *restrike_point_y = &(_elec_option.restrike_point[1]);
+  *restrike_point_z = &(_elec_option.restrike_point[2]);
+}
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -2461,49 +2504,6 @@ void
 CS_PROCF (elreca, ELRECA) (cs_real_t *dt)
 {
   cs_elec_scaling_function(cs_glob_mesh, cs_glob_mesh_quantities, dt);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global electric model structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   ngazge         --> pointer to cs_glob_elec_properties->ngaz
- *   ielcor         --> pointer to cs_glob_elec_option->ielcor
- *   pot_diff       --> pointer to cs_glob_elec_option->pot_diff
- *   coejou         --> pointer to cs_glob_elec_option->coejou
- *   elcou          --> pointer to cs_glob_elec_option->elcou
- *   irestrike      --> pointer to cs_glob_elec_option->irestrike
- *   ntdcla         --> pointer to cs_glob_elec_option->ntdcla
- *   restrike_point --> pointer to cs_glob_elec_option->restrike_point
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_elec_model_get_pointers(int     **ngazge,
-                             int     **ielcor,
-                             double  **pot_diff,
-                             double  **coejou,
-                             double  **elcou,
-                             double  **couimp,
-                             int     **irestrike,
-                             int     **ntdcla,
-                             double  **restrike_point_x,
-                             double  **restrike_point_y,
-                             double  **restrike_point_z)
-{
-  *ngazge           = &(_elec_properties.ngaz);
-  *ielcor           = &(_elec_option.ielcor);
-  *pot_diff         = &(_elec_option.pot_diff);
-  *coejou           = &(_elec_option.coejou);
-  *elcou            = &(_elec_option.elcou);
-  *couimp           = &(_elec_option.couimp);
-  *irestrike        = &(_elec_option.irestrike);
-  *ntdcla           = &(_elec_option.ntdcla);
-  *restrike_point_x = &(_elec_option.restrike_point[0]);
-  *restrike_point_y = &(_elec_option.restrike_point[1]);
-  *restrike_point_z = &(_elec_option.restrike_point[2]);
 }
 
 END_C_DECLS

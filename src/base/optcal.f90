@@ -1042,9 +1042,9 @@ module optcal
   integer(c_int), pointer, save :: irestrike
 
   !> restrike_point : coordinate of restrike point
-  real(c_double), pointer, save :: restrike_pointX
-  real(c_double), pointer, save :: restrike_pointY
-  real(c_double), pointer, save :: restrike_pointZ
+  real(c_double), pointer, save :: restrike_point_x
+  real(c_double), pointer, save :: restrike_point_y
+  real(c_double), pointer, save :: restrike_point_z
 
   !> ntdcla : start iteration for restrike
   integer(c_int), pointer, save :: ntdcla
@@ -1205,14 +1205,15 @@ module optcal
 
     subroutine cs_f_elec_model_get_pointers(ngazge, ielcor, pot_diff, coejou,  &
                                             elcou, couimp, irestrike, ntdcla,  &
-                                            restrike_pointX, restrike_pointY,  &
-                                            restrike_pointZ) &
+                                            restrike_point_x,                  &
+                                            restrike_point_y,                  &
+                                            restrike_point_z)                  &
       bind(C, name='cs_f_elec_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: ngazge, ielcor, pot_diff, coejou, elcou
-      type(c_ptr), intent(out) :: couimp, irestrike, ntdcla, restrike_pointX
-      type(c_ptr), intent(out) :: restrike_pointY, restrike_pointZ
+      type(c_ptr), intent(out) :: couimp, irestrike, ntdcla, restrike_point_x
+      type(c_ptr), intent(out) :: restrike_point_y, restrike_point_z
     end subroutine cs_f_elec_model_get_pointers
 
     !---------------------------------------------------------------------------
@@ -1542,25 +1543,26 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_ngazge, c_ielcor, c_pot_diff, c_coejou, c_couimp
-    type(c_ptr) :: c_elcou, c_irestrike, c_ntdcla, c_restrike_pointX
-    type(c_ptr) :: c_restrike_pointY, c_restrike_pointZ
+    type(c_ptr) :: c_elcou, c_irestrike, c_ntdcla, c_restrike_point_x
+    type(c_ptr) :: c_restrike_point_y, c_restrike_point_z
 
-    call cs_f_elec_model_get_pointers(c_ngazge, c_ielcor, c_pot_diff, c_coejou,  &
-                                      c_elcou, c_couimp, c_irestrike, c_ntdcla,  &
-                                      c_restrike_pointX, c_restrike_pointY,      &
-                                      c_restrike_pointZ)
+    call cs_f_elec_model_get_pointers(c_ngazge, c_ielcor, c_pot_diff,          &
+                                      c_coejou, c_elcou, c_couimp,             &
+                                      c_irestrike, c_ntdcla,                   &
+                                      c_restrike_point_x, c_restrike_point_y,  &
+                                      c_restrike_point_z)
 
-    call c_f_pointer(c_ngazge,          ngazge)
-    call c_f_pointer(c_ielcor,          ielcor)
-    call c_f_pointer(c_pot_diff,        pot_diff)
-    call c_f_pointer(c_coejou,          coejou)
-    call c_f_pointer(c_elcou,           elcou)
-    call c_f_pointer(c_couimp,          couimp)
-    call c_f_pointer(c_irestrike,       irestrike)
-    call c_f_pointer(c_ntdcla,          ntdcla)
-    call c_f_pointer(c_restrike_pointX, restrike_pointX)
-    call c_f_pointer(c_restrike_pointY, restrike_pointY)
-    call c_f_pointer(c_restrike_pointZ, restrike_pointZ)
+    call c_f_pointer(c_ngazge,           ngazge)
+    call c_f_pointer(c_ielcor,           ielcor)
+    call c_f_pointer(c_pot_diff,         pot_diff)
+    call c_f_pointer(c_coejou,           coejou)
+    call c_f_pointer(c_elcou,            elcou)
+    call c_f_pointer(c_couimp,           couimp)
+    call c_f_pointer(c_irestrike,        irestrike)
+    call c_f_pointer(c_ntdcla,           ntdcla)
+    call c_f_pointer(c_restrike_point_x, restrike_point_x)
+    call c_f_pointer(c_restrike_point_y, restrike_point_y)
+    call c_f_pointer(c_restrike_point_z, restrike_point_y)
 
   end subroutine elec_option_init
 
