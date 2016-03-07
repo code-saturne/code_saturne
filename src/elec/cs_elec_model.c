@@ -198,8 +198,37 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-static cs_elec_option_t        *_elec_option = NULL;
-static cs_data_elec_t          *_elec_properties = NULL;
+static cs_elec_option_t  _elec_option = {.ieljou = -1,
+                                         .ielarc = -1,
+                                         .ielion = -1,
+                                         .ixkabe = -1,
+                                         .ntdcla = -1,
+                                         .irestrike = -1,
+                                         .restrike_point = {0., 0., 0.},
+                                         .crit_reca = {0, 0, 0, 0, 0},
+                                         .ielcor = -1,
+                                         .modrec = -1,
+                                         .idreca = -1,
+                                         .izreca = NULL,
+                                         .couimp = 0.,
+                                         .pot_diff = 0.,
+                                         .puisim = 0.,
+                                         .coejou = 0.,
+                                         .elcou = 0.,
+                                         .srrom = 0.,
+                                         .ficfpp = NULL};
+
+static cs_data_elec_t  _elec_properties = {.ngaz = 0,
+                                           .npoint = 0,
+                                           .th = NULL,
+                                           .ehgaz = NULL,
+                                           .rhoel = NULL,
+                                           .cpel = NULL,
+                                           .sigel = NULL,
+                                           .visel = NULL,
+                                           .xlabel = NULL,
+                                           .xkabel = NULL};
+
 static cs_data_joule_effect_t  *_transformer     = NULL;
 
 const cs_elec_option_t        *cs_glob_elec_option = NULL;
@@ -325,7 +354,7 @@ _cs_electrical_model_verify(void)
 cs_elec_option_t *
 cs_get_glob_elec_option(void)
 {
-  return _elec_option;
+  return &_elec_option;
 }
 
 /*----------------------------------------------------------------------------
@@ -347,51 +376,44 @@ cs_electrical_model_initialize(cs_int_t ielarc,
                                cs_int_t ieljou,
                                cs_int_t ielion)
 {
-  BFT_MALLOC(_elec_option, 1, cs_elec_option_t);
-
-  if (ielarc > 0)
-    BFT_MALLOC(_elec_properties, 1, cs_data_elec_t);
-
   if (ieljou >= 3)
     BFT_MALLOC(_transformer, 1, cs_data_joule_effect_t);
 
-  _elec_option->ielarc    = ielarc;
-  _elec_option->ieljou    = ieljou;
-  _elec_option->ielion    = ielion;
-  _elec_option->ixkabe    = 0;
-  _elec_option->ntdcla    = 1;
-  _elec_option->irestrike = 0;
-  for (int i = 0; i < 2; i++)
-    _elec_option->restrike_point[i] = 0.;
-  _elec_option->izreca    = NULL;
-  _elec_option->elcou     = 0.;
-  _elec_option->ficfpp    = NULL;
-  _elec_option->ielcor    = 0;
-  _elec_option->couimp    = 0.;
-  _elec_option->puisim    = 0.;
-  _elec_option->pot_diff  = 0.;
-  _elec_option->coejou    = 1.;
-  _elec_option->modrec    = 1;    /* standard model */
-  _elec_option->idreca    = 3;
-  _elec_option->srrom     = 0.;
+  _elec_option.ielarc    = ielarc;
+  _elec_option.ieljou    = ieljou;
+  _elec_option.ielion    = ielion;
+  _elec_option.ixkabe    = 0;
+  _elec_option.ntdcla    = 1;
+  _elec_option.irestrike = 0;
+  for (int i = 0; i < 3; i++)
+    _elec_option.restrike_point[i] = 0.;
+  _elec_option.izreca    = NULL;
+  _elec_option.elcou     = 0.;
+  _elec_option.ficfpp    = NULL;
+  _elec_option.ielcor    = 0;
+  _elec_option.couimp    = 0.;
+  _elec_option.puisim    = 0.;
+  _elec_option.pot_diff  = 0.;
+  _elec_option.coejou    = 1.;
+  _elec_option.modrec    = 1;    /* standard model */
+  _elec_option.idreca    = 3;
+  _elec_option.srrom     = 0.;
 
   for (int i = 0; i < 3; i++)
-    _elec_option->crit_reca[i] = 0.;
-  _elec_option->crit_reca[4] = 0.0002;
+    _elec_option.crit_reca[i] = 0.;
+  _elec_option.crit_reca[4] = 0.0002;
 
-  BFT_MALLOC(_elec_option->ficfpp, 7, char);
-  strcpy(_elec_option->ficfpp, "dp_ELE");
+  BFT_MALLOC(_elec_option.ficfpp, 7, char);
+  strcpy(_elec_option.ficfpp, "dp_ELE");
 
-  cs_glob_elec_option     = _elec_option;
-  cs_glob_elec_properties = _elec_properties;
+  cs_glob_elec_option     = &_elec_option;
+  cs_glob_elec_properties = &_elec_properties;
   cs_glob_transformer     = _transformer;
 
   cs_fluid_properties_t *fluid_properties = cs_get_glob_fluid_properties();
   fluid_properties->icp = 1;
   fluid_properties->irovar = 1;
   fluid_properties->ivivar = 1;
-
-  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -404,15 +426,14 @@ cs_electrical_model_finalize(cs_int_t ielarc,
                              cs_int_t ieljou)
 {
   if (ielarc > 0) {
-    BFT_FREE(_elec_properties->th);
-    BFT_FREE(_elec_properties->ehgaz);
-    BFT_FREE(_elec_properties->rhoel);
-    BFT_FREE(_elec_properties->cpel);
-    BFT_FREE(_elec_properties->sigel);
-    BFT_FREE(_elec_properties->visel);
-    BFT_FREE(_elec_properties->xlabel);
-    BFT_FREE(_elec_properties->xkabel);
-    BFT_FREE(_elec_properties);
+    BFT_FREE(_elec_properties.th);
+    BFT_FREE(_elec_properties.ehgaz);
+    BFT_FREE(_elec_properties.rhoel);
+    BFT_FREE(_elec_properties.cpel);
+    BFT_FREE(_elec_properties.sigel);
+    BFT_FREE(_elec_properties.visel);
+    BFT_FREE(_elec_properties.xlabel);
+    BFT_FREE(_elec_properties.xkabel);
   }
 
   if (ieljou >= 3) {
@@ -428,10 +449,8 @@ cs_electrical_model_finalize(cs_int_t ielarc,
     BFT_FREE(_transformer);
   }
 
-  BFT_FREE(_elec_option->ficfpp);
-  BFT_FREE(_elec_option->izreca);
-
-  BFT_FREE(_elec_option);
+  BFT_FREE(_elec_option.ficfpp);
+  BFT_FREE(_elec_option.izreca);
 }
 
 /*----------------------------------------------------------------------------
@@ -608,9 +627,9 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
   }
 
   if (iihmpr == 1) {
-    CS_PROCF(uicpi1,UICPI1) (&(_elec_option->srrom), diftl0);
+    CS_PROCF(uicpi1,UICPI1) (&(_elec_option.srrom), diftl0);
     uieli1();
-    _elec_option->pot_diff = 1000.;
+    _elec_option.pot_diff = 1000.;
   }
 
   _cs_electrical_model_verify();
@@ -657,32 +676,32 @@ cs_electrical_properties_read(cs_int_t ielarc,
       /* read number of fluids and number of points */
       if (nb_line_tot == 8)
         sscanf(str, "%d %d",
-               &(_elec_properties->ngaz),
-               &(_elec_properties->npoint));
+               &(_elec_properties.ngaz),
+               &(_elec_properties.npoint));
 
-      if (_elec_properties->ngaz <= 0)
+      if (_elec_properties.ngaz <= 0)
         bft_error(__FILE__, __LINE__, 0,
                   _("incorrect number of species \"%i\";\n"),
-                  _elec_properties->ngaz);
+                  _elec_properties.ngaz);
 
       double size = cs_glob_elec_properties->ngaz * cs_glob_elec_properties->npoint;
 
       if (nb_line_tot == 8) {
-        BFT_MALLOC(_elec_properties->th,  cs_glob_elec_properties->npoint, double);
-        BFT_MALLOC(_elec_properties->ehgaz,  size, double);
-        BFT_MALLOC(_elec_properties->rhoel,  size, double);
-        BFT_MALLOC(_elec_properties->cpel,   size, double);
-        BFT_MALLOC(_elec_properties->sigel,  size, double);
-        BFT_MALLOC(_elec_properties->visel,  size, double);
-        BFT_MALLOC(_elec_properties->xlabel, size, double);
-        BFT_MALLOC(_elec_properties->xkabel, size, double);
+        BFT_MALLOC(_elec_properties.th,  cs_glob_elec_properties->npoint, double);
+        BFT_MALLOC(_elec_properties.ehgaz,  size, double);
+        BFT_MALLOC(_elec_properties.rhoel,  size, double);
+        BFT_MALLOC(_elec_properties.cpel,   size, double);
+        BFT_MALLOC(_elec_properties.sigel,  size, double);
+        BFT_MALLOC(_elec_properties.visel,  size, double);
+        BFT_MALLOC(_elec_properties.xlabel, size, double);
+        BFT_MALLOC(_elec_properties.xkabel, size, double);
       }
 
       if (nb_line_tot < 14)
         continue;
 
       if (nb_line_tot == 14)
-        sscanf(str, "%i", &(_elec_option->ixkabe));
+        sscanf(str, "%i", &(_elec_option.ixkabe));
 
       if (cs_glob_elec_option->ixkabe < 0 || cs_glob_elec_option->ixkabe >= 3)
         bft_error(__FILE__, __LINE__, 0,
@@ -694,14 +713,14 @@ cs_electrical_properties_read(cs_int_t ielarc,
 
       if (nb_line_tot >= 22) {
         sscanf(str, "%lf %lf %lf %lf %lf %lf %lf %lf",
-               &(_elec_properties->th[it]),
-               &(_elec_properties->ehgaz[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
-               &(_elec_properties->rhoel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
-               &(_elec_properties->cpel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
-               &(_elec_properties->sigel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
-               &(_elec_properties->visel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
-               &(_elec_properties->xlabel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
-               &(_elec_properties->xkabel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]));
+               &(_elec_properties.th[it]),
+               &(_elec_properties.ehgaz[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
+               &(_elec_properties.rhoel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
+               &(_elec_properties.cpel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
+               &(_elec_properties.sigel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
+               &(_elec_properties.visel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
+               &(_elec_properties.xlabel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
+               &(_elec_properties.xkabel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]));
         it++;
         if (it == cs_glob_elec_properties->npoint) {
           iesp++;
@@ -714,14 +733,14 @@ cs_electrical_properties_read(cs_int_t ielarc,
 #if 0
   for (int it = 0; it < cs_glob_elec_properties->npoint; it++)
   bft_printf("read ficfpp %15.8E %15.8E %15.8E %15.8E %15.8E %15.8E %15.8E %15.8E\n",
-             _elec_properties->th[it],
-             _elec_properties->ehgaz[it],
-             _elec_properties->rhoel[it],
-             _elec_properties->cpel[it],
-             _elec_properties->sigel[it],
-             _elec_properties->visel[it],
-             _elec_properties->xlabel[it],
-             _elec_properties->xkabel[it]);
+             _elec_properties.th[it],
+             _elec_properties.ehgaz[it],
+             _elec_properties.rhoel[it],
+             _elec_properties.cpel[it],
+             _elec_properties.sigel[it],
+             _elec_properties.visel[it],
+             _elec_properties.xlabel[it],
+             _elec_properties.xkabel[it]);
 #endif
 
   /* read file for joule effect */
@@ -2067,9 +2086,9 @@ cs_elec_fields_initialize(const cs_mesh_t            *mesh,
                           cs_int_t                    nscal,
                           cs_real_t                  *dt)
 {
-  BFT_MALLOC(_elec_option->izreca, mesh->n_i_faces, int);
+  BFT_MALLOC(_elec_option.izreca, mesh->n_i_faces, int);
   for (int i = 0; i < mesh->n_i_faces; i++)
-    _elec_option->izreca[i] = 0;
+    _elec_option.izreca[i] = 0;
 
   cs_lnum_t  ncel = mesh->n_cells;
 
@@ -2248,7 +2267,7 @@ cs_elec_scaling_function(const cs_mesh_t *mesh,
         coepoa = cs_glob_elec_option->couimp / elcou;
 
       bft_printf("ELCOU %15.8E\n", elcou);
-      _elec_option->elcou = elcou;
+      _elec_option.elcou = elcou;
     }
 
     if (cs_glob_elec_option->modrec == 1 ||
@@ -2286,10 +2305,10 @@ cs_elec_scaling_function(const cs_mesh_t *mesh,
       bft_printf(" Cpmx   = %14.5E\n", cpmx);
       bft_printf(" COEPOA   = %14.5E\n", coepoa);
       bft_printf(" COEPOT   = %14.5E\n", coepot);
-      bft_printf(" Dpot recale   = %14.5E\n", _elec_option->pot_diff * coepot);
+      bft_printf(" Dpot recale   = %14.5E\n", _elec_option.pot_diff * coepot);
 
       /* scaling electric fields */
-      _elec_option->pot_diff *= coepot;
+      _elec_option.pot_diff *= coepot;
 
       /* electric potential (for post treatment) */
       for (cs_lnum_t iel = 0; iel < ncel; iel++)
@@ -2327,8 +2346,8 @@ cs_elec_scaling_function(const cs_mesh_t *mesh,
     bft_printf("imposed power / sum(jE) %14.5E, scaling coef. %14.5E\n", coefav, coepot);
 
     /* scaling electric fields */
-    _elec_option->pot_diff *= coepot;
-    _elec_option->coejou *= coepot;
+    _elec_option.pot_diff *= coepot;
+    _elec_option.coejou *= coepot;
 
     /* electric potential (for post treatment) */
     if (cs_glob_elec_option->ieljou != 3 &&
@@ -2481,21 +2500,21 @@ cs_f_elec_model_get_pointers(int     **ngazge,
                              double  **couimp,
                              int     **irestrike,
                              int     **ntdcla,
-                             double  **restrike_pointX,
-                             double  **restrike_pointY,
-                             double  **restrike_pointZ)
+                             double  **restrike_point_x,
+                             double  **restrike_point_y,
+                             double  **restrike_point_z)
 {
-  *ngazge          = &(_elec_properties->ngaz);
-  *ielcor          = &(_elec_option->ielcor);
-  *pot_diff        = &(_elec_option->pot_diff);
-  *coejou          = &(_elec_option->coejou);
-  *elcou           = &(_elec_option->elcou);
-  *couimp          = &(_elec_option->couimp);
-  *irestrike       = &(_elec_option->irestrike);
-  *ntdcla          = &(_elec_option->ntdcla);
-  *restrike_pointX = &(_elec_option->restrike_point[0]);
-  *restrike_pointY = &(_elec_option->restrike_point[1]);
-  *restrike_pointZ = &(_elec_option->restrike_point[2]);
+  *ngazge           = &(_elec_properties.ngaz);
+  *ielcor           = &(_elec_option.ielcor);
+  *pot_diff         = &(_elec_option.pot_diff);
+  *coejou           = &(_elec_option.coejou);
+  *elcou            = &(_elec_option.elcou);
+  *couimp           = &(_elec_option.couimp);
+  *irestrike        = &(_elec_option.irestrike);
+  *ntdcla           = &(_elec_option.ntdcla);
+  *restrike_point_x = &(_elec_option.restrike_point[0]);
+  *restrike_point_y = &(_elec_option.restrike_point[1]);
+  *restrike_point_z = &(_elec_option.restrike_point[2]);
 }
 
 END_C_DECLS
