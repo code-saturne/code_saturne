@@ -192,9 +192,8 @@ cs_electrical_properties_read(cs_int_t ielarc,
  *----------------------------------------------------------------------------*/
 
 void
-cs_compute_electric_field(const cs_mesh_t *mesh,
-                          const cs_mesh_quantities_t *mesh_quantities,
-                          cs_int_t iappel);
+cs_compute_electric_field(const cs_mesh_t  *mesh,
+                          int               call_id);
 
 /*----------------------------------------------------------------------------
  * convert enthalpy-temperature
@@ -248,12 +247,8 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
  *----------------------------------------------------------------------------*/
 
 void
-cs_elec_fields_initialize(const cs_mesh_t *mesh,
-                          const cs_mesh_quantities_t *mesh_quantities,
-                                cs_int_t   isuite,
-                                cs_int_t   nvar,
-                                cs_int_t   nscal,
-                                cs_real_t *dt);
+cs_elec_fields_initialize(const cs_mesh_t  *mesh,
+                          cs_int_t          isuite);
 
 /*----------------------------------------------------------------------------
  * scaling electric quantities
@@ -313,10 +308,7 @@ CS_PROCF (elprop, ELPROP) (cs_int_t *ieljou,
                            cs_int_t *ielion);
 
 void
-CS_PROCF (eliniv, ELINIV) (cs_int_t *isuite,
-                           cs_int_t  *nvar,
-                           cs_int_t  *nscal,
-                           cs_real_t *dt);
+CS_PROCF (eliniv, ELINIV) (cs_int_t *isuite);
 
 void
 CS_PROCF (elreca, ELRECA) (cs_real_t *dt);

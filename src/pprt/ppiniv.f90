@@ -156,7 +156,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
      ippmod(ielarc).ge.1 .or.                                     &
      ippmod(ielion).ge.1       ) then
 
-  call eliniv(isuite, nvar, nscal, dt)
+  call eliniv(isuite)
 
 endif
 
@@ -197,7 +197,6 @@ if (ippmod(icompf).ge.0) then
   call cfiniv(nvar, nscal, dt)
 
 endif
-
 
 !----
 ! Formats
