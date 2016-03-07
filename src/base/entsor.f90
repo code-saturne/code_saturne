@@ -385,7 +385,8 @@ contains
 
   !> \return  starting position of this field in the \ref ihisvr array.
 
-  function field_post_id(f_id) result(ipp)
+  function field_post_id(f_id) result(ipp) &
+    bind(C, name='cs_field_post_id')
 
     use, intrinsic :: iso_c_binding
     use field

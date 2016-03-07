@@ -211,6 +211,22 @@ int
 cs_add_model_field_indexes(int f_id);
 
 /*----------------------------------------------------------------------------
+ * Map a field to time plot (probes) activation array.
+ *
+ * This will set the "post_id" keyword for the given field, if not
+ * already set.
+
+ * parameters:
+ *   f_id <--   field id
+ *
+ * returns:
+ *   starting position of this field in the \ref ihisvr array.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_field_post_id(int f_id);
+
+/*----------------------------------------------------------------------------
  * Initialize Lagrangian module parameters for a given zone and class
  *
  * parameters:
@@ -624,26 +640,16 @@ cs_user_cdo_end_extra_op(const cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------
- *!
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define scaling parameter for electric model
- *----------------------------------------------------------------------------*/
+*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_scaling_elec(const cs_mesh_t             *mesh,
                      const cs_mesh_quantities_t  *mesh_quantities,
                            cs_real_t             *dt);
-
-/*----------------------------------------------------------------------------
- * Add post processing for properties
- *----------------------------------------------------------------------------*/
-
-extern void
-CS_PROCF (add_property_field_post, ADD_PROPERTY_FIELD_POST)
-(
- const cs_int_t  *f_id,  /* <-- field id               */
- const cs_int_t  *dim    /* <-- dimension of the field */
-);
 
 END_C_DECLS
 

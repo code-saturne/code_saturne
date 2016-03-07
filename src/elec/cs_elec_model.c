@@ -1863,8 +1863,8 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Temperature");
 
-    /* Property number and mapping to field and postprocessing */
-    CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+    /* Mapping to field and postprocessing */
+    cs_field_post_id(f->id);
   }
 
   {
@@ -1878,8 +1878,8 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "PuisJoul");
 
-    /* Property number and mapping to field and postprocessing */
-    CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+    /* Mapping to field and postprocessing */
+    cs_field_post_id(f->id);
   }
 
   {
@@ -1893,8 +1893,8 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Cour_re1");
 
-    /* Property number and mapping to field and postprocessing */
-    CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+    /* Mapping to field and postprocessing */
+    cs_field_post_id(f->id);
   }
 
   {
@@ -1908,8 +1908,8 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Cour_re2");
 
-    /* Property number and mapping to field and postprocessing */
-    CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+    /* Mapping to field and postprocessing */
+    cs_field_post_id(f->id);
   }
 
   {
@@ -1923,8 +1923,8 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Cour_re3");
 
-    /* Property number and mapping to field and postprocessing */
-    CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+    /* Mapping to field and postprocessing */
+    cs_field_post_id(f->id);
   }
 
   /* specific for joule effect */
@@ -1940,8 +1940,8 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
       cs_field_set_key_int(f, keylog, 1);
       cs_field_set_key_str(f, klbl, "CouImag1");
 
-      /* Property number and mapping to field and postprocessing */
-      CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+      /* Mapping to field and postprocessing */
+      cs_field_post_id(f->id);
     }
 
     {
@@ -1955,8 +1955,8 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
       cs_field_set_key_int(f, keylog, 1);
       cs_field_set_key_str(f, klbl, "CouImag2");
 
-      /* Property number and mapping to field and postprocessing */
-      CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+      /* Mapping to field and postprocessing */
+      cs_field_post_id(f->id);
     }
 
     {
@@ -1970,12 +1970,12 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
       cs_field_set_key_int(f, keylog, 1);
       cs_field_set_key_str(f, klbl, "CouImag3");
 
-      /* Property number and mapping to field and postprocessing */
-      CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+      /* Mapping to field and postprocessing */
+      cs_field_post_id(f->id);
     }
   }
 
-  /* specific for electric arc */
+  /* specific for electric arcs */
   if (*ielarc > 0) {
     {
       f = cs_field_create("laplace_force_1",
@@ -1988,8 +1988,8 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
       cs_field_set_key_int(f, keylog, 1);
       cs_field_set_key_str(f, klbl, "For_Lap1");
 
-      /* Property number and mapping to field and postprocessing */
-      CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+      /* Mapping to field and postprocessing */
+      cs_field_post_id(f->id);
     }
 
     {
@@ -2004,7 +2004,7 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
       cs_field_set_key_str(f, klbl, "For_Lap2");
 
       /* Property number and mapping to field and postprocessing */
-      CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+      cs_field_post_id(f->id);
     }
 
     {
@@ -2018,8 +2018,8 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
       cs_field_set_key_int(f, keylog, 1);
       cs_field_set_key_str(f, klbl, "For_Lap3");
 
-      /* Property number and mapping to field and postprocessing */
-      CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+      /* Mapping to field and postprocessing */
+      cs_field_post_id(f->id);
     }
 
     if (cs_glob_elec_option->ixkabe == 1) {
@@ -2033,8 +2033,8 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
       cs_field_set_key_int(f, keylog, 1);
       cs_field_set_key_str(f, klbl, "Coef_Abso");
 
-      /* Property number and mapping to field and postprocessing */
-      CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+      /* Mapping to field and postprocessing */
+      cs_field_post_id(f->id);
     }
     else if (cs_glob_elec_option->ixkabe == 2) {
       f = cs_field_create("radiation_source",
@@ -2048,7 +2048,7 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
       cs_field_set_key_str(f, klbl, "TS_radia");
 
       /* Property number and mapping to field and postprocessing */
-      CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+      cs_field_post_id(f->id);
     }
   }
 
@@ -2065,7 +2065,7 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
     cs_field_set_key_str(f, klbl, "Charge");
 
     /* Property number and mapping to field and postprocessing */
-    CS_PROCF(add_property_field_post, ADD_PROPERTY_FIELD_POST)(&(f->id), &dim);
+    cs_field_post_id(f->id);
   }
 
   cs_field_pointer_properties_map_electric_arcs();

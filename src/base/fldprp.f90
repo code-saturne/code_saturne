@@ -392,7 +392,7 @@ integer, intent(out)         :: iprop
 
 ! Local variables
 
-integer  type_flag, location_id, ii, keyprp, f_id
+integer  type_flag, location_id, ii, f_id
 logical  has_previous, interleaved
 
 !===============================================================================
@@ -401,8 +401,6 @@ type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
 location_id = 1 ! variables defined on cells
 has_previous = .false.
 interleaved = .false. ! TODO set to .true. once PROPCE mapping is removed
-
-call field_get_key_id("property_id", keyprp)
 
 ! Test if the field has already been defined
 call field_get_id_try(trim(name), f_id)
@@ -444,10 +442,6 @@ enddo
 
 call field_set_key_int(f_id, keyipp, ipppro(iprop))
 
-! Mapping
-
-call field_set_key_int(f_id, keyprp, iprop)
-
 return
 
 !---
@@ -479,78 +473,6 @@ return
 #endif
 
 end subroutine add_property_field_nd
-
-!===============================================================================
-
-!> \brief complete property field for post.
-!
-!
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     f_id          field id
-!> \param[in]     dim           field dimension
-!_______________________________________________________________________________
-
-subroutine add_property_field_post &
- ( f_id, dim )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use entsor
-use numvar
-use field
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer, intent(in)          :: f_id, dim
-
-! Local variables
-
-integer  iprop, ii, keyprp
-
-!===============================================================================
-
-call field_get_key_id("property_id", keyprp)
-
-! Property number and mapping to field
-
-iprop = nproce + 1
-nproce = nproce + dim
-
-call fldprp_check_nproce
-
-do ii = 1, dim
-  iprpfl(iprop + ii -1) = f_id
-  ipproc(iprop + ii - 1) = iprop + ii - 1
-enddo
-
-! Postprocessing slots
-
-ipppro(iprop) = field_post_id(f_id)
-do ii = 2, dim
-  ipppro(iprop+ii-1) = ipppro(iprop) -1 + ii
-enddo
-
-call field_set_key_int(f_id, keyipp, ipppro(iprop))
-
-! Mapping
-
-call field_set_key_int(f_id, keyprp, iprop)
-
-return
-
-end subroutine add_property_field_post
 
 !===============================================================================
 
@@ -591,7 +513,7 @@ integer, intent(out)         :: iprop
 
 ! Local variables
 
-integer  id, type_flag, location_id, ii, keyprp
+integer  id, type_flag, location_id, ii
 logical  has_previous, interleaved
 
 !===============================================================================
@@ -600,8 +522,6 @@ type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
 location_id = 1 ! variables defined on cells
 has_previous = .false.
 interleaved = .true.
-
-call field_get_key_id("property_id", keyprp)
 
 ! Test if the field has already been defined
 call field_get_id_try(trim(name), id)
@@ -635,10 +555,6 @@ enddo
 do ii = 1, dim
   ipppro(iprop+ii-1) = 1
 enddo
-
-! Mapping
-
-call field_set_key_int(id, keyprp, iprop)
 
 return
 

@@ -397,7 +397,6 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("boundary_mass_flux_id", -1, 0);
 
   cs_field_define_key_int("variable_id", -1, 0); /* inverse of ivarfl(ivar) */
-  cs_field_define_key_int("property_id", -1, 0); /* inverse of iprpfl(iprop) */
   cs_field_define_key_int("scalar_id", -1, 0);   /* inverse of isca(iscal) */
   cs_field_define_key_int("post_id", -1, 0);     /* inverse of the ipp array */
 
