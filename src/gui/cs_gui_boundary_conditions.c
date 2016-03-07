@@ -2309,7 +2309,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       }
 
       if (cs_gui_strcmp(vars->model, "groundwater_model")) {
-        for (int ifac = 0; ifac < faces; ifac++) {
+        for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac] -1;
           for (i = 0; i < 3; i++)
           {
@@ -2324,27 +2324,27 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       if (cs_gui_strcmp(vars->model, "groundwater_model")) {
         const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
         int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
-        char *choice_d = _boundary_choice(boundaries->nature[izone], boundaries->label[izone], "hydraulicHead", "choice");
+        char *_choice_d = _boundary_choice(boundaries->nature[izone],
+                                           boundaries->label[izone],
+                                           "hydraulicHead", "choice");
 
-        if (cs_gui_strcmp(choice_d, "dirichlet"))
-        {
-          for (int ifac = 0; ifac < faces; ifac++) {
+        if (cs_gui_strcmp(_choice_d, "dirichlet")) {
+          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac] -1;
             icodcl[ivar1 * (*nfabor) + ifbr] = 1;
             rcodcl[ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
           }
         }
-        else if (cs_gui_strcmp(choice_d, "neumann"))
-        {
-          for (int ifac = 0; ifac < faces; ifac++) {
+        else if (cs_gui_strcmp(_choice_d, "neumann")) {
+          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac] -1;
             icodcl[ivar1 * (*nfabor) + ifbr] = 3;
-            rcodcl[2 * (*nfabor) * (*nvarcl) + ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
+            rcodcl[2 * (*nfabor) * (*nvarcl) + ivar1 * (*nfabor) + ifbr]
+              = boundaries->preout[izone];
           }
         }
-        else if (cs_gui_strcmp(choice_d, "dirichlet_formula"))
-        {
-          for (int ifac = 0; ifac < faces; ifac++) {
+        else if (cs_gui_strcmp(_choice_d, "dirichlet_formula")) {
+          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac] -1;
             icodcl[ivar1 * (*nfabor) + ifbr] = 1;
 
@@ -2361,7 +2361,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
 
           }
         }
-        BFT_FREE(choice_d);
+        BFT_FREE(_choice_d);
       }
 
       /* turbulent inlet, with formula */
@@ -2456,8 +2456,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
             const char *symbols[] = {"r11", "r22", "r33", "r12", "r13", "r23", "epsilon", "alpha"};
             if (mei_tree_find_symbols(ev_formula, 8, symbols))
-              bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"),
-                         "R11, R22, R33, R12, R13, R23, eps or alpha");
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Error: can not find the required symbol: %s\n"),
+                        "R11, R22, R33, R12, R13, R23, eps or alpha");
 
             cs_field_t *c_r11 = cs_field_by_name("r11");
             cs_field_t *c_r22 = cs_field_by_name("r22");
@@ -2642,27 +2643,27 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
         const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
         const int var_key_id = cs_field_key_id("variable_id");
         int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
-        char *choice_d = _boundary_choice(boundaries->nature[izone], boundaries->label[izone], "hydraulicHead", "choice");
+        char *choice_d = _boundary_choice(boundaries->nature[izone],
+                                          boundaries->label[izone],
+                                          "hydraulicHead", "choice");
 
-        if (cs_gui_strcmp(choice_d, "dirichlet"))
-        {
-          for (int ifac = 0; ifac < faces; ifac++) {
+        if (cs_gui_strcmp(choice_d, "dirichlet")) {
+          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac] -1;
             icodcl[ivar1 * (*nfabor) + ifbr] = 1;
             rcodcl[ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
           }
         }
-        else if (cs_gui_strcmp(choice_d, "neumann"))
-        {
-          for (int ifac = 0; ifac < faces; ifac++) {
+        else if (cs_gui_strcmp(choice_d, "neumann")) {
+          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac] -1;
             icodcl[ivar1 * (*nfabor) + ifbr] = 3;
-            rcodcl[2 * (*nfabor) * (*nvarcl) + ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
+            rcodcl[2 * (*nfabor) * (*nvarcl) + ivar1 * (*nfabor) + ifbr]
+              = boundaries->preout[izone];
           }
         }
-        else if (cs_gui_strcmp(choice_d, "dirichlet_formula"))
-        {
-          for (int ifac = 0; ifac < faces; ifac++) {
+        else if (cs_gui_strcmp(choice_d, "dirichlet_formula")) {
+          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac] -1;
             icodcl[ivar1 * (*nfabor) + ifbr] = 1;
 
@@ -2744,7 +2745,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       const cs_field_t  *fp2 = cs_field_by_name_try("velocity");
       int ivar2 = cs_field_get_key_int(fp2, var_key_id) -1;
 
-      for (int ifac = 0; ifac < faces; ifac++) {
+      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
         ifbr = faces_list[ifac];
         for (i = 0; i < 3; i++) {
           icodcl[(ivar2 + i) * (*nfabor) + ifbr] = 3;
@@ -2754,7 +2755,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
 
       if (cs_gui_strcmp(choice_d, "dirichlet"))
       {
-        for (int ifac = 0; ifac < faces; ifac++) {
+        for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac];
           icodcl[ivar1 * (*nfabor) + ifbr] = 1;
           rcodcl[ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
@@ -2762,7 +2763,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       }
       else if (cs_gui_strcmp(choice_d, "neumann"))
       {
-        for (int ifac = 0; ifac < faces; ifac++) {
+        for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac];
           icodcl[ivar1 * (*nfabor) + ifbr] = 3;
           rcodcl[2 * (*nfabor) * (*nvarcl) + ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
@@ -2770,7 +2771,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       }
       else if (cs_gui_strcmp(choice_d, "dirichlet_formula"))
       {
-        for (int ifac = 0; ifac < faces; ifac++) {
+        for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac];
           icodcl[ivar1 * (*nfabor) + ifbr] = 1;
 

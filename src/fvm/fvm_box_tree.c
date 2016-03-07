@@ -802,9 +802,10 @@ _copy_tree(fvm_box_tree_t        *dest,
          src->child_ids,
          dest->n_nodes * src->n_children * sizeof(cs_lnum_t));
 
-  memcpy(dest->box_ids,
-         src->box_ids,
-         (dest->stats).n_linked_boxes * sizeof(cs_lnum_t));
+  if ((dest->stats).n_linked_boxes > 0)
+    memcpy(dest->box_ids,
+           src->box_ids,
+           (dest->stats).n_linked_boxes * sizeof(cs_lnum_t));
 }
 
 /*----------------------------------------------------------------------------

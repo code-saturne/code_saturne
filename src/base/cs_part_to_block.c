@@ -490,7 +490,8 @@ _copy_array_gatherv(cs_part_to_block_t  *d,
   BFT_MALLOC(recv_buf, n_recv_ents*stride_size, unsigned char);
 
   BFT_MALLOC(send_buf, d->n_part_ents*stride_size, unsigned char);
-  memcpy(send_buf, part_values, d->n_part_ents*stride_size);
+  if (d->n_part_ents > 0)
+    memcpy(send_buf, part_values, d->n_part_ents*stride_size);
 
   /* Exchange values */
 

@@ -1528,7 +1528,6 @@ cs_pressure_drop_by_zone(const int  bc_type[],
                          const char *selection_crit)
 {
   int nt_cur = cs_glob_time_step->nt_cur;
-  int idtvar = cs_glob_time_step_options->idtvar;
 
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;

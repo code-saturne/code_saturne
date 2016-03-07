@@ -598,7 +598,7 @@ endif
 !    dt rom romb viscl visct viscls (tpucou with periodicity)
 !===============================================================================
 
-call inivar(nvar, nscal, dt, propce)
+call inivar(nvar, nscal, dt)
 
 !===============================================================================
 ! Radiative transfer: possible restart

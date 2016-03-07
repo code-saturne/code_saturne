@@ -35,12 +35,11 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            value of time step
-!> \param[in,out] propce        physical properties at cell centers
 !______________________________________________________________________________
 
 subroutine inivar &
  ( nvar   , nscal  ,                                              &
-   dt     , propce )
+   dt     )
 
 !===============================================================================
 ! Module files
@@ -73,7 +72,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -189,10 +188,7 @@ endif
 
 if (ippmod(iphpar).eq.0) then
 
-  call cs_user_initialization &
-  !==========================
-( nvar   , nscal  ,                                                             &
-  dt     )
+  call cs_user_initialization(nvar, nscal, dt)
 
   !     Avec l'interface, il peut y avoir eu initialisation,
   !       meme si usiniv n'est pas utilise.
@@ -210,8 +206,9 @@ else
 
   iusini = 1
 
-  call ppiniv(nvar, nscal, dt, propce)
-  !==========
+  call ppiniv(nvar, nscal, dt)
+
+  call cs_user_initialization(nvar, nscal, dt)
 
   if (ippmod(icompf).ge.0.and.(    isuite.eq.0                 &
                                .or.isuite.eq.1.and.ileaux.eq.0)) then
@@ -224,7 +221,6 @@ else
 
     ivoid = -1
     call cs_cf_thermo(ithvar, ivoid,  rvoid, rvoid, rvoid, vvoid)
-    !================
 
   endif
 
@@ -259,8 +255,6 @@ if  (ippmod(icompf).lt.0) then
     endif
   enddo
 endif
-
-
 
 !===============================================================================
 ! 3.  CLIPPING DES GRANDEURS TURBULENTES (UTILISATEUR OU SUITE)
@@ -297,7 +291,7 @@ endif
 !          fait au moins une erreur qui peut en cacher d'autres)
 !===============================================================================
 
-if(iusini.eq.1.or.isuite.eq.1) then
+if (iusini.eq.1.or.isuite.eq.1) then
 
   if(itytur.eq.2 .or. itytur.eq.5) then
 
@@ -312,16 +306,12 @@ if(iusini.eq.1.or.isuite.eq.1) then
     enddo
     if (irangp.ge.0) then
       call parmin (xekmin)
-      !==========
       call parmin (xepmin)
-      !==========
     endif
 
     if(xekmin.ge.0.d0.and.xepmin.ge.0.d0) then
       iclip = 1
-      call clipke( ncelet , ncel   , nvar   ,          &
-      !==========
-                   iclip  , iwarni(ik) )
+      call clipke(ncelet, ncel, nvar, iclip, iwarni(ik))
     else
       write(nfecra,3020) xekmin,xepmin
       iok = iok + 1
@@ -341,9 +331,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
       enddo
       if (irangp.ge.0) then
         call parmin (xphmin)
-        !==========
         call parmax (xphmax)
-        !==========
       endif
 
       !     Par coherence avec clpv2f, on ne clippe qu'a zero et pas a 2
@@ -365,9 +353,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
         enddo
         if (irangp.ge.0) then
           call parmin (xalmin)
-          !==========
           call parmax (xalmax)
-          !==========
         endif
 
         if(xalmin.lt.0.d0 .or. xalmax.gt.1.d0) then
@@ -437,9 +423,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
       enddo
       if (irangp.ge.0) then
         call parmin (xalmin)
-        !==========
         call parmax (xalmax)
-        !==========
       endif
       if (xalmin.lt.0.or.xalmax.gt.1.d0) then
         write(nfecra,3033) xalmin, xalmax
@@ -460,9 +444,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
     enddo
     if (irangp.ge.0) then
       call parmin (xekmin)
-      !==========
       call parmin (xomgmn)
-      !==========
     endif
 
     !     En k-omega on clippe seulement a 0
@@ -481,7 +463,6 @@ if(iusini.eq.1.or.isuite.eq.1) then
     enddo
     if (irangp.ge.0) then
       call parmin (xnumin)
-      !==========
     endif
 
     !     En Spalart-Allmaras on clippe seulement a 0
@@ -559,9 +540,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
         enddo
         if (irangp.ge.0) then
           call parmax (valmax)
-          !==========
           call parmin (valmin)
-          !==========
         endif
 
 !     Verification de la coherence pour les clippings
@@ -603,9 +582,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
         enddo
         if (irangp.ge.0) then
           call parmax (valmax)
-          !==========
           call parmin (valmin)
-          !==========
         endif
 
 !     Verification de la coherence pour les clippings de variance.
@@ -699,9 +676,7 @@ do ivar = 1, nvar
 
   if (irangp.ge.0) then
     call parmax (valmax)
-    !==========
     call parmin (valmin)
-    !==========
   endif
   call field_get_label(f_id, chaine)
   write(nfecra,2010)chaine(1:16),valmin,valmax
@@ -719,9 +694,7 @@ if (idtvar.ge.0) then
   enddo
   if (irangp.ge.0) then
     call parmax (vdtmax)
-    !==========
     call parmin (vdtmin)
-    !==========
   endif
   write(nfecra,2010) 'dt', vdtmin, vdtmax
   write(nfecra,2020)

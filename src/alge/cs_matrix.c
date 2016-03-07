@@ -1927,8 +1927,6 @@ _create_struct_csr_from_csr(bool         have_diag,
                             cs_lnum_t  **row_index,
                             cs_lnum_t  **col_id)
 {
-  cs_lnum_t _n_cols;
-
   cs_matrix_struct_csr_t  *ms = NULL;
 
   cs_lnum_t  *_row_index = *row_index;

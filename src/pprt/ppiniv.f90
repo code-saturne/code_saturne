@@ -24,7 +24,7 @@ subroutine ppiniv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , propce )
+   dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -58,7 +58,6 @@ subroutine ppiniv &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -91,7 +90,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -113,7 +112,6 @@ double precision dt(ncelet), propce(ncelet,*)
 
  if ( ippmod(icod3p).ge.0 ) then
   call d3pini                                                     &
-  !==========
  ( nvar   , nscal  ,                                              &
    dt     )
   endif
@@ -123,7 +121,6 @@ double precision dt(ncelet), propce(ncelet,*)
 
  if (ippmod(icoebu).ge.0) then
   call ebuini(nvar, nscal, dt)
-  !==========
 endif
 
 ! ---> Combustion gaz
@@ -131,28 +128,24 @@ endif
 
 if (ippmod(icolwc).ge.0) then
   call lwcini(nvar, nscal, dt)
-  !==========
 endif
 
 ! ---> Combustion charbon pulverise
 
 if (ippmod(iccoal).ge.0) then
   call cs_coal_varini(nvar, nscal, dt)
-  !==================
 endif
 
 ! ---> Combustion charbon pulverise couples Lagrangien
 
 if (ippmod(icpl3c).ge.0) then
   call cplini
-  !==========
 endif
 
 ! ---> Combustion fuel
 
 if  (ippmod(icfuel).ge.0) then
   call cs_fuel_varini(nvar, nscal, dt)
-  !==================
 endif
 
 ! ---> Version electrique
@@ -164,7 +157,6 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
      ippmod(ielion).ge.1       ) then
 
   call eliniv(isuite, nvar, nscal, dt)
-  !==========
 
 endif
 
@@ -173,7 +165,6 @@ endif
 if ( ippmod(iatmos).ge.0 ) then
 
   call atiniv                                                     &
-  !==========
  ( nvar   , nscal  ,                                              &
    dt     )
 
@@ -184,7 +175,6 @@ endif
 if ( ippmod(iaeros).ge.0 ) then
 
   call ctiniv(nvar, nscal, dt)
-  !==========
 
 endif
 

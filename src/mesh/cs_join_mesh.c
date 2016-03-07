@@ -2479,9 +2479,10 @@ cs_join_mesh_exchange(int                    n_ranks,
 
   BFT_MALLOC(recv_mesh->vertices, recv_shift[n_ranks], cs_join_vertex_t);
 
-  memcpy(recv_mesh->vertices,
-         recv_vtx_buf,
-         recv_shift[n_ranks]*sizeof(cs_join_vertex_t));
+  if (recv_shift[n_ranks] > 0)
+    memcpy(recv_mesh->vertices,
+           recv_vtx_buf,
+           recv_shift[n_ranks]*sizeof(cs_join_vertex_t));
 
   /* Delete vertices which appear several times */
 

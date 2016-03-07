@@ -281,8 +281,8 @@ cs_user_extra_operations(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_physical_properties(cs_mesh_t             *mesh,
-                            cs_mesh_quantities_t  *mesh_quantities);
+cs_user_physical_properties(const cs_mesh_t             *mesh,
+                            const cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
  * Define mesh joinings.
@@ -643,18 +643,6 @@ CS_PROCF (add_property_field_post, ADD_PROPERTY_FIELD_POST)
 (
  const cs_int_t  *f_id,  /* <-- field id               */
  const cs_int_t  *dim    /* <-- dimension of the field */
-);
-
-/*----------------------------------------------------------------------------
- * User field initialization
- *----------------------------------------------------------------------------*/
-
-extern void
-CS_PROCF (cs_user_initialization, CS_USER_INITIALIZATION)
-(
- const cs_int_t  *nvar,   /* <-- number of variable     */
- const cs_int_t  *nscal,  /* <-- number of scalar       */
- const cs_real_t *dt      /* <-- local time step        */
 );
 
 END_C_DECLS

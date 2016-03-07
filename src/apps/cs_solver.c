@@ -163,7 +163,7 @@ static cs_opts_t  opts;
 void
 cs_run(void)
 {
-  cs_int_t  ivoset;
+  cs_int_t  ivoset = 0;
 
   int  check_mask = 0;
   cs_halo_type_t halo_type = CS_HALO_STANDARD;

@@ -972,9 +972,10 @@ fvm_neighborhood_by_boxes(fvm_neighborhood_t  *n,
   n->n_elts = fvm_box_set_get_size(boxes);
 
   BFT_MALLOC(n->elt_num, n->n_elts, cs_gnum_t);
-  memcpy(n->elt_num,
-         fvm_box_set_get_g_num(boxes),
-         n->n_elts*sizeof(cs_gnum_t));
+  if (n->n_elts > 0)
+    memcpy(n->elt_num,
+           fvm_box_set_get_g_num(boxes),
+           n->n_elts*sizeof(cs_gnum_t));
 
   fvm_box_tree_get_intersects(bt,
                               boxes,

@@ -2278,7 +2278,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         else {
 
           cs_lnum_t i, one = 1;
-          cs_real_t random;
+          cs_real_t random = -1;
           cs_real_t scov_cdf;
           void *cur_part = NULL;
 

@@ -191,17 +191,20 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
+
 #define LG_MAX 1000
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
 
-static cs_elec_option_t       *_elec_option     = NULL;
-static cs_data_elec_t         *_elec_properties = NULL;
-static cs_data_joule_effect_t *_transformer     = NULL;
-const cs_elec_option_t        *cs_glob_elec_option;
-const cs_data_elec_t          *cs_glob_elec_properties;
-const cs_data_joule_effect_t  *cs_glob_transformer;
+static cs_elec_option_t        *_elec_option = NULL;
+static cs_data_elec_t          *_elec_properties = NULL;
+static cs_data_joule_effect_t  *_transformer     = NULL;
+
+const cs_elec_option_t        *cs_glob_elec_option = NULL;
+const cs_data_elec_t          *cs_glob_elec_properties = NULL;
+const cs_data_joule_effect_t  *cs_glob_transformer     = NULL;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -230,9 +233,9 @@ cs_f_elec_model_get_pointers(int     **ngazge,
                              double  **couimp,
                              int     **irestrike,
                              int     **ntdcla,
-                             double  **restrike_pointX,
-                             double  **restrike_pointY,
-                             double  **restrike_pointZ);
+                             double  **restrike_point_x,
+                             double  **restrike_point_y,
+                             double  **restrike_point_z);
 
 /*============================================================================
  * Private function definitions
@@ -344,51 +347,51 @@ cs_electrical_model_initialize(cs_int_t ielarc,
                                cs_int_t ieljou,
                                cs_int_t ielion)
 {
-    BFT_MALLOC(_elec_option, 1, cs_elec_option_t);
+  BFT_MALLOC(_elec_option, 1, cs_elec_option_t);
 
-    if (ielarc > 0)
-      BFT_MALLOC(_elec_properties, 1, cs_data_elec_t);
+  if (ielarc > 0)
+    BFT_MALLOC(_elec_properties, 1, cs_data_elec_t);
 
-    if (ieljou >= 3)
-      BFT_MALLOC(_transformer, 1, cs_data_joule_effect_t);
+  if (ieljou >= 3)
+    BFT_MALLOC(_transformer, 1, cs_data_joule_effect_t);
 
-    _elec_option->ielarc    = ielarc;
-    _elec_option->ieljou    = ieljou;
-    _elec_option->ielion    = ielion;
-    _elec_option->ixkabe    = 0;
-    _elec_option->ntdcla    = 1;
-    _elec_option->irestrike = 0;
-    for (int i = 0; i < 2; i++)
-      _elec_option->restrike_point[i] = 0.;
-    _elec_option->izreca    = NULL;
-    _elec_option->elcou     = 0.;
-    _elec_option->ficfpp    = NULL;
-    _elec_option->ielcor    = 0;
-    _elec_option->couimp    = 0.;
-    _elec_option->puisim    = 0.;
-    _elec_option->pot_diff  = 0.;
-    _elec_option->coejou    = 1.;
-    _elec_option->modrec    = 1;    /* standard model */
-    _elec_option->idreca    = 3;
-    _elec_option->srrom     = 0.;
+  _elec_option->ielarc    = ielarc;
+  _elec_option->ieljou    = ieljou;
+  _elec_option->ielion    = ielion;
+  _elec_option->ixkabe    = 0;
+  _elec_option->ntdcla    = 1;
+  _elec_option->irestrike = 0;
+  for (int i = 0; i < 2; i++)
+    _elec_option->restrike_point[i] = 0.;
+  _elec_option->izreca    = NULL;
+  _elec_option->elcou     = 0.;
+  _elec_option->ficfpp    = NULL;
+  _elec_option->ielcor    = 0;
+  _elec_option->couimp    = 0.;
+  _elec_option->puisim    = 0.;
+  _elec_option->pot_diff  = 0.;
+  _elec_option->coejou    = 1.;
+  _elec_option->modrec    = 1;    /* standard model */
+  _elec_option->idreca    = 3;
+  _elec_option->srrom     = 0.;
 
-    for (int i = 0; i < 3; i++)
-      _elec_option->crit_reca[i] = 0.;
-    _elec_option->crit_reca[4] = 0.0002;
+  for (int i = 0; i < 3; i++)
+    _elec_option->crit_reca[i] = 0.;
+  _elec_option->crit_reca[4] = 0.0002;
 
-    BFT_MALLOC(_elec_option->ficfpp, 7, char);
-    strcpy(_elec_option->ficfpp, "dp_ELE");
+  BFT_MALLOC(_elec_option->ficfpp, 7, char);
+  strcpy(_elec_option->ficfpp, "dp_ELE");
 
-    cs_glob_elec_option     = _elec_option;
-    cs_glob_elec_properties = _elec_properties;
-    cs_glob_transformer     = _transformer;
+  cs_glob_elec_option     = _elec_option;
+  cs_glob_elec_properties = _elec_properties;
+  cs_glob_transformer     = _transformer;
 
-    cs_fluid_properties_t *fluid_properties = cs_get_glob_fluid_properties();
-    fluid_properties->icp = 1;
-    fluid_properties->irovar = 1;
-    fluid_properties->ivivar = 1;
+  cs_fluid_properties_t *fluid_properties = cs_get_glob_fluid_properties();
+  fluid_properties->icp = 1;
+  fluid_properties->irovar = 1;
+  fluid_properties->ivivar = 1;
 
-    return;
+  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -436,18 +439,18 @@ cs_electrical_model_finalize(cs_int_t ielarc,
  *----------------------------------------------------------------------------*/
 
 void
-cs_electrical_model_specific_initialization(      cs_real_t *visls0,
-                                                  cs_real_t *diftl0,
-                                                  cs_int_t  *iconv,
-                                                  cs_int_t  *istat,
-                                                  cs_int_t  *idiff,
-                                                  cs_int_t  *idifft,
-                                                  cs_int_t  *idircl,
-                                                  cs_int_t  *isca,
-                                                  cs_real_t *blencv,
-                                                  cs_real_t *sigmas,
-                                                  cs_int_t  *iwarni,
-                                            const cs_int_t   iihmpr)
+cs_electrical_model_specific_initialization(cs_real_t  *visls0,
+                                            cs_real_t  *diftl0,
+                                            cs_int_t   *iconv,
+                                            cs_int_t   *istat,
+                                            cs_int_t   *idiff,
+                                            cs_int_t   *idifft,
+                                            cs_int_t   *idircl,
+                                            cs_int_t   *isca,
+                                            cs_real_t  *blencv,
+                                            cs_real_t  *sigmas,
+                                            cs_int_t   *iwarni,
+                                            cs_int_t    iihmpr)
 {
   cs_field_t *f = NULL;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -664,8 +667,7 @@ cs_electrical_properties_read(cs_int_t ielarc,
 
       double size = cs_glob_elec_properties->ngaz * cs_glob_elec_properties->npoint;
 
-      if (nb_line_tot == 8)
-      {
+      if (nb_line_tot == 8) {
         BFT_MALLOC(_elec_properties->th,  cs_glob_elec_properties->npoint, double);
         BFT_MALLOC(_elec_properties->ehgaz,  size, double);
         BFT_MALLOC(_elec_properties->rhoel,  size, double);
@@ -902,7 +904,6 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
   static long ipass = 0;
   int nt_cur = cs_glob_time_step->nt_cur;
   int isrrom = 0;
-  cs_field_t *f = NULL;
   cs_lnum_t  ncel = mesh->n_cells;
   const int keysca = cs_field_key_id("scalar_diffusivity_id");
   int diff_id = cs_field_get_key_int(CS_F_(potr), keysca);
@@ -911,25 +912,28 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
     c_prop = cs_field_by_id(diff_id);
   ipass++;
 
+  const cs_data_elec_t  *e_props = cs_glob_elec_properties; /* local name */
+
   if (nt_cur > 1 && cs_glob_elec_option->srrom > 0.)
     isrrom = 1;
 
-  /* joule effect                  */
-  /* law must be specified by user */
+  /* Joule effect (law must be specified by user) */
+
   int ifcvsl = cs_field_get_key_int(CS_F_(h), keysca);
   cs_field_t *diff_th;
   if (ifcvsl > 0)
     diff_th = cs_field_by_id(ifcvsl);
 
-  /* electric arc                  */
+  /* Electric arc */
+
   if (cs_glob_elec_option->ielarc > 0) {
     if (ipass == 1)
-      bft_printf("electric arc module : properties read on file\n");
+      bft_printf("electric arc module: properties read on file.\n");
 
     /* compute temperature from enthalpy */
     int mode = 1;
-    int ngaz = cs_glob_elec_properties->ngaz;
-    int npt  = cs_glob_elec_properties->npoint;
+    int ngaz = e_props->ngaz;
+    int npt  = e_props->npoint;
 
     double *ym, *yvol, *roesp, *visesp, *cpesp, *sigesp, *xlabes, *xkabes, *coef;
     BFT_MALLOC(ym,     ngaz, double);
@@ -947,19 +951,17 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
     if (ngaz == 1) {
       ym[0] = 1.;
 
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
         cs_elec_convert_h_t(mode, ym,
                           &(CS_F_(h)->val[iel]),
                           &(CS_F_(t)->val[iel]));
     }
     else {
 
-      for (int iel = 0; iel < ncel; iel++)
-      {
+      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
         ym[ngaz - 1] = 1.;
 
-        for (int ii = 0; ii < ngaz - 1; ii++)
-        {
+        for (int ii = 0; ii < ngaz - 1; ii++) {
           ym[ii] = CS_FI_(ycoel, ii)->val[iel];
           ym[ngaz - 1] -= ym[ii];
         }
@@ -971,105 +973,99 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
     }
 
     /* interpolate properties */
-    for (int iel = 0; iel < ncel; iel++)
-    {
+    for (cs_lnum_t iel = 0; iel < ncel; iel++) {
       // temperature
       double tp = CS_F_(t)->val[iel];
 
       // determine point
       int it = -1;
-      if (tp <= cs_glob_elec_properties->th[0])
+      if (tp <= e_props->th[0])
         it = 0;
-      else if (tp >= cs_glob_elec_properties->th[npt - 1])
+      else if (tp >= e_props->th[npt - 1])
         it = npt - 1;
       else {
         for (int iiii = 0; iiii < npt - 1; iiii++)
-          if (tp > cs_glob_elec_properties->th[iiii] &&
-              tp <= cs_glob_elec_properties->th[iiii + 1]) {
+          if (tp > e_props->th[iiii] &&
+              tp <= e_props->th[iiii + 1]) {
             it = iiii;
             break;
           }
       }
       if (it == -1)
         bft_error(__FILE__, __LINE__, 0,
-                  _("electric module : properties read on file\n"
-                    "Warning : error in cs_elec_physical_properties\n"
+                  _("electric module: properties read on file\n"
+                    "Warning: error in cs_elec_physical_properties\n"
                     "Invalid reading with temperature : %f.\n"),
                   tp);
 
       /* mass frction */
       ym[ngaz - 1] = 1.;
 
-      for (int ii = 0; ii < ngaz - 1; ii++)
-      {
+      for (int ii = 0; ii < ngaz - 1; ii++) {
         ym[ii] = CS_FI_(ycoel, ii)->val[iel];
         ym[ngaz - 1] -= ym[ii];
       }
 
       /* density, viscosity, ... for each species */
       if (it == 0) {
-        for (int ii = 0; ii < ngaz; ii++)
-        {
-          roesp[ii]  = cs_glob_elec_properties->rhoel[ii * (npt - 1)];
-          visesp[ii] = cs_glob_elec_properties->visel[ii * (npt - 1)];
-          cpesp[ii]  = cs_glob_elec_properties->cpel[ii * (npt - 1)];
-          sigesp[ii] = cs_glob_elec_properties->sigel[ii * (npt - 1)];
-          xlabes[ii] = cs_glob_elec_properties->xlabel[ii * (npt - 1)];
+        for (int ii = 0; ii < ngaz; ii++) {
+          roesp[ii]  = e_props->rhoel[ii * (npt - 1)];
+          visesp[ii] = e_props->visel[ii * (npt - 1)];
+          cpesp[ii]  = e_props->cpel[ii * (npt - 1)];
+          sigesp[ii] = e_props->sigel[ii * (npt - 1)];
+          xlabes[ii] = e_props->xlabel[ii * (npt - 1)];
 
           if (cs_glob_elec_option->ixkabe > 0)
-            xkabes[ii] = cs_glob_elec_properties->xkabel[ii * (npt - 1)];
+            xkabes[ii] = e_props->xkabel[ii * (npt - 1)];
         }
       }
       else if (it == npt - 1) {
-        bft_printf("valeur constante = derniere valeur de la table\n");
-        for (int ii = 0; ii < ngaz; ii++)
-        {
-          roesp[ii]  = cs_glob_elec_properties->rhoel[ii * (npt - 1) + npt - 1];
-          visesp[ii] = cs_glob_elec_properties->visel[ii * (npt - 1) + npt - 1];
-          cpesp[ii]  = cs_glob_elec_properties->cpel[ii * (npt - 1) + npt - 1];
-          sigesp[ii] = cs_glob_elec_properties->sigel[ii * (npt - 1) + npt - 1];
-          xlabes[ii] = cs_glob_elec_properties->xlabel[ii * (npt - 1) + npt - 1];
+        bft_printf("constant value = last value of array\n");
+        for (int ii = 0; ii < ngaz; ii++) {
+          roesp[ii]  = e_props->rhoel[ii * (npt - 1) + npt - 1];
+          visesp[ii] = e_props->visel[ii * (npt - 1) + npt - 1];
+          cpesp[ii]  = e_props->cpel[ii * (npt - 1) + npt - 1];
+          sigesp[ii] = e_props->sigel[ii * (npt - 1) + npt - 1];
+          xlabes[ii] = e_props->xlabel[ii * (npt - 1) + npt - 1];
 
           if (cs_glob_elec_option->ixkabe > 0)
-            xkabes[ii] = cs_glob_elec_properties->xkabel[ii * (npt - 1) + npt - 1];
+            xkabes[ii] = e_props->xkabel[ii * (npt - 1) + npt - 1];
         }
       }
       else {
-        double delt = cs_glob_elec_properties->th[it + 1] -
-                      cs_glob_elec_properties->th[it];
+        double delt = e_props->th[it + 1] - e_props->th[it];
 
-        for (int ii = 0; ii < ngaz; ii++)
-        {
-          double alpro = (cs_glob_elec_properties->rhoel[ii * (npt - 1) + it + 1] -
-                         cs_glob_elec_properties->rhoel[ii * (npt - 1) + it]) / delt;
-          roesp[ii]  = cs_glob_elec_properties->rhoel[ii * (npt - 1) + it] +
-                       alpro * (tp -cs_glob_elec_properties->th[it]);
+        for (int ii = 0; ii < ngaz; ii++) {
+          double alpro = (e_props->rhoel[ii * (npt - 1) + it + 1] -
+                          e_props->rhoel[ii * (npt - 1) + it]) / delt;
+          roesp[ii]  =   e_props->rhoel[ii * (npt - 1) + it]
+                       + alpro * (tp -e_props->th[it]);
 
-          double alpvis = (cs_glob_elec_properties->visel[ii * (npt - 1) + it + 1] -
-                          cs_glob_elec_properties->visel[ii * (npt - 1) + it]) / delt;
-          visesp[ii] = cs_glob_elec_properties->visel[ii * (npt - 1) + it] +
-                       alpvis * (tp -cs_glob_elec_properties->th[it]);
+          double alpvis =  (e_props->visel[ii * (npt - 1) + it + 1]
+                          - e_props->visel[ii * (npt - 1) + it]) / delt;
+          visesp[ii] =   e_props->visel[ii * (npt - 1) + it]
+                       + alpvis * (tp -e_props->th[it]);
 
-          double alpcp = (cs_glob_elec_properties->cpel[ii * (npt - 1) + it + 1] -
-                         cs_glob_elec_properties->cpel[ii * (npt - 1) + it]) / delt;
-          cpesp[ii]  = cs_glob_elec_properties->cpel[ii * (npt - 1) + it] +
-                       alpcp * (tp -cs_glob_elec_properties->th[it]);
+          double alpcp = (e_props->cpel[ii * (npt - 1) + it + 1] -
+                         e_props->cpel[ii * (npt - 1) + it]) / delt;
+          cpesp[ii]  = e_props->cpel[ii * (npt - 1) + it] +
+                       alpcp * (tp -e_props->th[it]);
 
-          double alpsig = (cs_glob_elec_properties->sigel[ii * (npt - 1) + it + 1] -
-                          cs_glob_elec_properties->sigel[ii * (npt - 1) + it]) / delt;
-          sigesp[ii] = cs_glob_elec_properties->sigel[ii * (npt - 1) + it] +
-                       alpsig * (tp -cs_glob_elec_properties->th[it]);
+          double alpsig = (e_props->sigel[ii * (npt - 1) + it + 1] -
+                          e_props->sigel[ii * (npt - 1) + it]) / delt;
+          sigesp[ii] = e_props->sigel[ii * (npt - 1) + it] +
+                       alpsig * (tp -e_props->th[it]);
 
-          double alplab = (cs_glob_elec_properties->xlabel[ii * (npt - 1) + it + 1] -
-                          cs_glob_elec_properties->xlabel[ii * (npt - 1) + it]) / delt;
-          xlabes[ii] = cs_glob_elec_properties->xlabel[ii * (npt - 1) + it] +
-                       alplab * (tp -cs_glob_elec_properties->th[it]);
+          double alplab = (e_props->xlabel[ii * (npt - 1) + it + 1] -
+                          e_props->xlabel[ii * (npt - 1) + it]) / delt;
+          xlabes[ii] = e_props->xlabel[ii * (npt - 1) + it] +
+                       alplab * (tp -e_props->th[it]);
 
           if (cs_glob_elec_option->ixkabe > 0) {
-            double alpkab = (cs_glob_elec_properties->xkabel[ii * (npt - 1) + it + 1] -
-                            cs_glob_elec_properties->xkabel[ii * (npt - 1) + it]) / delt;
-            xkabes[ii] = cs_glob_elec_properties->xkabel[ii * (npt - 1) + it] +
-                         alpkab * (tp -cs_glob_elec_properties->th[it]);
+            double alpkab = (e_props->xkabel[ii * (npt - 1) + it + 1] -
+                            e_props->xkabel[ii * (npt - 1) + it]) / delt;
+            xkabes[ii] = e_props->xkabel[ii * (npt - 1) + it] +
+                         alpkab * (tp -e_props->th[it]);
           }
         }
       }
@@ -1083,13 +1079,12 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
       rhonp1 = 1. / rhonp1;
 
       if (isrrom == 1)
-        CS_F_(rho)->val[iel] = CS_F_(rho)->val[iel] * cs_glob_elec_option->srrom +
-                              (1. - cs_glob_elec_option->srrom) * rhonp1;
+        CS_F_(rho)->val[iel] = CS_F_(rho)->val[iel] * cs_glob_elec_option->srrom
+                               + (1. - cs_glob_elec_option->srrom) * rhonp1;
       else
         CS_F_(rho)->val[iel] = rhonp1;
 
-      for (int ii = 0; ii < ngaz; ii++)
-      {
+      for (int ii = 0; ii < ngaz; ii++) {
         yvol[ii] = ym[ii] * roesp[ii] / CS_F_(rho)->val[iel];
         if (yvol[ii] <= 0.)
           yvol[ii] = epzero * epzero;
@@ -1097,8 +1092,7 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
 
       /* compute molecular viscosity : kg/(m s) */
       for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
-        for (int iesp2 = 0; iesp2 < ngaz; iesp2++)
-        {
+        for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
           coef[iesp1 * (ngaz - 1) + iesp2] = 1. + sqrt(visesp[iesp1] / visesp[iesp2]) *
                                              sqrt(sqrt(roesp[iesp2] / roesp[iesp1]));
           coef[iesp1 * (ngaz - 1) + iesp2] *= coef[iesp1 * (ngaz - 1) + iesp2];
@@ -1107,12 +1101,12 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
 
       CS_F_(mu)->val[iel] = 0.;
 
-      for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
-      {
+      for (int iesp1 = 0; iesp1 < ngaz; iesp1++) {
         double somphi = 0.;
-        for (int iesp2 = 0; iesp2 < ngaz; iesp2++)
+        for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
           if (iesp1 != iesp2)
             somphi += coef[iesp1 * (ngaz - 1) + iesp2] * yvol[iesp2] / yvol[iesp1];
+        }
 
         CS_F_(mu)->val[iel] += visesp[iesp1] / (1. + somphi);
       }
@@ -1127,22 +1121,25 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
       /* compute Lambda/Cp : kg/(m s) */
       if (ifcvsl >= 0) {
         for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
-          for (int iesp2 = 0; iesp2 < ngaz; iesp2++)
-          {
-            coef[iesp1 * (ngaz - 1) + iesp2] = 1. + sqrt(xlabes[iesp1] / xlabes[iesp2]) *
-                                                    sqrt(sqrt(roesp[iesp2] / roesp[iesp1]));
-            coef[iesp1 * (ngaz - 1) + iesp2] *= coef[iesp1 * (ngaz - 1) + iesp2];
-            coef[iesp1 * (ngaz - 1) + iesp2] /= (sqrt(1. + roesp[iesp1] / roesp[iesp2]) * sqrt(8.));
+          for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
+            coef[iesp1 * (ngaz - 1) + iesp2]
+              = 1. +   sqrt(xlabes[iesp1] / xlabes[iesp2])
+                     * sqrt(sqrt(roesp[iesp2] / roesp[iesp1]));
+            coef[iesp1 * (ngaz - 1) + iesp2]
+              *= coef[iesp1 * (ngaz - 1) + iesp2];
+            coef[iesp1 * (ngaz - 1) + iesp2]
+              /= (sqrt(1. + roesp[iesp1] / roesp[iesp2]) * sqrt(8.));
           }
         /* Lambda */
         diff_th->val[iel] = 0.;
 
-        for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
-        {
+        for (int iesp1 = 0; iesp1 < ngaz; iesp1++) {
           double somphi = 0.;
-          for (int iesp2 = 0; iesp2 < ngaz; iesp2++)
+          for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
             if (iesp1 != iesp2)
-              somphi += coef[iesp1 * (ngaz - 1) + iesp2] * yvol[iesp2] / yvol[iesp1];
+              somphi += coef[  iesp1 * (ngaz - 1) + iesp2]
+                             * yvol[iesp2] / yvol[iesp1];
+          }
 
           diff_th->val[iel] += xlabes[iesp1] / (1. + 1.065 * somphi);
         }
@@ -1204,24 +1201,24 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
   /* not used yet */
   if (cs_glob_elec_option->ielion > 0) {
     /* compute density */
-    for (int iel = 0; iel < ncel; iel++)
+    for (cs_lnum_t iel = 0; iel < ncel; iel++)
       CS_F_(rho)->val[iel] = 1.;
 
     /* compute molecular viscosity : kg/(m s) */
-    for (int iel = 0; iel < ncel; iel++)
+    for (cs_lnum_t iel = 0; iel < ncel; iel++)
       CS_F_(mu)->val[iel] = 1.e-2;
 
     /* compute specific heat : J/(kg degres) */
-    for (int iel = 0; iel < ncel; iel++)
+    for (cs_lnum_t iel = 0; iel < ncel; iel++)
       CS_F_(cp)->val[iel] = 1000.;
 
     /* compute Lambda/Cp : kg/(m s) */
     if (ifcvsl >= 0) {
       if (cs_glob_fluid_properties->icp <= 0)
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
           CS_F_(mu_t)->val[iel] = 1. / cs_glob_fluid_properties->cp0;
       else
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
           CS_F_(mu_t)->val[iel] = 1 / CS_F_(cp)->val[iel];
     }
 
@@ -1234,15 +1231,14 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
   cs_user_physical_properties(mesh, mesh_quantities);
 }
 
-
 /*----------------------------------------------------------------------------
  * compute specific electric arc fields
  *----------------------------------------------------------------------------*/
 
 void
-cs_compute_electric_field(const cs_mesh_t *mesh,
-                          const cs_mesh_quantities_t *mesh_quantities,
-                          cs_int_t iappel)
+cs_compute_electric_field(const cs_mesh_t             *mesh,
+                          const cs_mesh_quantities_t  *mesh_quantities,
+                          cs_int_t                     call_id)
 {
   cs_lnum_t  ncel   = mesh->n_cells;
   cs_lnum_t  ncelet = mesh->n_cells_with_ghosts;
@@ -1265,7 +1261,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
   /* ----------------------------------------------------- */
   /* first call : J, E => J.E                              */
   /* ----------------------------------------------------- */
-  if (iappel == 1) {
+  if (call_id == 1) {
     /* compute grad(potR) */
 
     /* Get the calculation option from the field */
@@ -1292,7 +1288,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
       c_prop = cs_field_by_id(diff_id);
 
     if (cs_glob_elec_option->ieljou > 0 || cs_glob_elec_option->ielarc > 0) {
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
       {
         CS_FI_(curre, 0)->val[iel] = -c_prop->val[iel] * grad[iel][0];
         CS_FI_(curre, 1)->val[iel] = -c_prop->val[iel] * grad[iel][1];
@@ -1301,7 +1297,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
     }
 
     /* compute joule effect : j . E */
-    for (int iel = 0; iel < ncel; iel++)
+    for (cs_lnum_t iel = 0; iel < ncel; iel++)
     {
       CS_F_(joulp)->val[iel] =  c_prop->val[iel] *
                                (grad[iel][0] * grad[iel][0] +
@@ -1322,7 +1318,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
         vrmin = grad[0][i];
         vrmax = grad[0][i];
 
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
         {
           vrmin = CS_MIN(vrmin, grad[iel][i]);
           vrmax = CS_MAX(vrmax, grad[iel][i]);
@@ -1343,7 +1339,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
         vrmin = -c_prop->val[0] * grad[0][i];
         vrmax = -c_prop->val[0] * grad[0][i];
 
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
         {
           vrmin = CS_MIN(vrmin, -c_prop->val[iel] * grad[iel][i]);
           vrmax = CS_MAX(vrmax, -c_prop->val[iel] * grad[iel][i]);
@@ -1389,7 +1385,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
         c_propi = cs_field_by_id(diff_id_i);
 
       if (cs_glob_elec_option->ieljou == 4) {
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
         {
           CS_FI_(curim, 0)->val[iel] = -c_propi->val[iel] * grad[iel][0];
           CS_FI_(curim, 1)->val[iel] = -c_propi->val[iel] * grad[iel][1];
@@ -1398,7 +1394,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
       }
 
       /* compute joule effect : j . E */
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
       {
         CS_F_(joulp)->val[iel] +=  c_propi->val[iel] *
                                   (grad[iel][0] * grad[iel][0] +
@@ -1416,7 +1412,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
           vrmin = grad[0][i];
           vrmax = grad[0][i];
 
-          for (int iel = 0; iel < ncel; iel++)
+          for (cs_lnum_t iel = 0; iel < ncel; iel++)
           {
             vrmin = CS_MIN(vrmin, grad[iel][0]);
             vrmax = CS_MAX(vrmax, grad[iel][0]);
@@ -1439,7 +1435,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
           vrmin = -c_propi->val[0] * grad[0][i];
           vrmax = -c_propi->val[0] * grad[0][i];
 
-          for (int iel = 0; iel < ncel; iel++)
+          for (cs_lnum_t iel = 0; iel < ncel; iel++)
           {
             vrmin = CS_MIN(vrmin, -c_propi->val[iel] * grad[iel][i]);
             vrmax = CS_MAX(vrmax, -c_propi->val[iel] * grad[iel][i]);
@@ -1463,7 +1459,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
   /* ----------------------------------------------------- */
   /* second call : A, B, JXB                               */
   /* ----------------------------------------------------- */
-  else if (iappel == 2) {
+  else if (call_id == 2) {
 
     double *Bx, *By, *Bz;
     BFT_MALLOC(Bx, ncelet, double);
@@ -1492,7 +1488,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
                                true, /* recompute_cocg */
                                grad);
 
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
       {
         Bx[iel] =  0.;
         By[iel] =  grad[iel][2];
@@ -1509,7 +1505,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
                                true, /* recompute_cocg */
                                grad);
 
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
       {
         Bx[iel] -=  grad[iel][2];
         By[iel] +=  0.;
@@ -1526,7 +1522,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
                                true, /* recompute_cocg */
                                grad);
 
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
       {
         Bx[iel] +=  grad[iel][1];
         By[iel] -=  grad[iel][0];
@@ -1539,7 +1535,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
 
     /* compute laplace effect j x B */
     if (cs_glob_elec_option->ielarc > 0)
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
       {
         CS_FI_(laplf, 0)->val[iel] = CS_FI_(curre, 1)->val[iel] * Bz[iel] -
                                      CS_FI_(curre, 2)->val[iel] * By[iel];
@@ -1557,7 +1553,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
         vrmin = Bx[0];
         vrmax = Bx[0];
 
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
         {
           vrmin = CS_MIN(vrmin, Bx[iel]);
           vrmax = CS_MAX(vrmax, Bx[iel]);
@@ -1571,7 +1567,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
         vrmin = By[0];
         vrmax = By[0];
 
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
         {
           vrmin = CS_MIN(vrmin, By[iel]);
           vrmax = CS_MAX(vrmax, By[iel]);
@@ -1585,7 +1581,7 @@ cs_compute_electric_field(const cs_mesh_t *mesh,
         vrmin = Bz[0];
         vrmax = Bz[0];
 
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
         {
           vrmin = CS_MIN(vrmin, Bz[iel]);
           vrmax = CS_MAX(vrmax, Bz[iel]);
@@ -1636,22 +1632,22 @@ cs_elec_source_terms(const cs_mesh_t *mesh,
       bft_printf("compute source terms for variable : %s\n", name);
 
     if (cs_glob_time_step->nt_cur > 2) {
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
         w1[iel] = CS_F_(joulp)->val[iel] * volume[iel];
 
       if (cs_glob_elec_option->ielarc >= 1)
         if (cs_glob_elec_option->ixkabe == 2)
-          for (int iel = 0; iel < ncel; iel++)
+          for (cs_lnum_t iel = 0; iel < ncel; iel++)
             w1[iel] -= CS_F_(radsc)->val[iel] * volume[iel];
 
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
         smbrs[iel] += w1[iel];
 
       if (var_cal_opt.iwarni > 1) {
         double valmin = w1[0];
         double valmax = w1[0];
 
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
         {
           valmin = CS_MIN(valmin, w1[iel]);
           valmax = CS_MAX(valmax, w1[iel]);
@@ -1671,21 +1667,21 @@ cs_elec_source_terms(const cs_mesh_t *mesh,
         if (var_cal_opt.iwarni > 0)
           bft_printf("compute source terms for variable : %s\n", name);
 
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
           smbrs[iel] += cs_elec_permvi * CS_FI_(curre, 0)->val[iel] * volume[iel];
       }
       else if (strcmp(name, "vec_potential_02") == 0) {
         if (var_cal_opt.iwarni > 0)
           bft_printf("compute source terms for variable : %s\n", name);
 
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
           smbrs[iel] += cs_elec_permvi * CS_FI_(curre, 1)->val[iel] * volume[iel];
       }
       else if (strcmp(name, "vec_potential_03") == 0) {
         if (var_cal_opt.iwarni > 0)
           bft_printf("compute source terms for variable : %s\n", name);
 
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
           smbrs[iel] += cs_elec_permvi * CS_FI_(curre, 2)->val[iel] * volume[iel];
       }
   }
@@ -1705,19 +1701,20 @@ cs_elec_add_variable_fields(const cs_int_t *ielarc,
                             const cs_int_t *iihmpr)
 {
   cs_field_t *f;
-  int field_type = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
   int dim = 1;
-  bool has_previous = true;
-  bool interleaved = false;
   double grand = 1.e12;
 
   const int kscmin = cs_field_key_id("min_scalar_clipping");
   const int kscmax = cs_field_key_id("max_scalar_clipping");
   const int kivisl = cs_field_key_id("scalar_diffusivity_id");
+
+  const cs_data_elec_t  *e_props = cs_glob_elec_properties; /* local name */
+
   //const int keysca = cs_field_key_id("scalar_id");
 
   {
-    int f_id = cs_variable_field_create("enthalpy", "Enthalpy", CS_MESH_LOCATION_CELLS, dim);
+    int f_id = cs_variable_field_create("enthalpy", "Enthalpy",
+                                        CS_MESH_LOCATION_CELLS, dim);
     f = cs_field_by_id(f_id);
     cs_field_set_key_double(f, kscmin, -grand);
     cs_field_set_key_int(f, kivisl, 0);
@@ -1730,54 +1727,59 @@ cs_elec_add_variable_fields(const cs_int_t *ielarc,
   }
 
   {
-    int f_id = cs_variable_field_create("elec_pot_r", "POT_EL_R", CS_MESH_LOCATION_CELLS, dim);
+    int f_id = cs_variable_field_create("elec_pot_r", "POT_EL_R",
+                                        CS_MESH_LOCATION_CELLS, dim);
     f = cs_field_by_id(f_id);
     cs_field_set_key_double(f, kscmin, -grand);
     cs_field_set_key_double(f, kscmax,  grand);
     cs_field_set_key_int(f, kivisl, 0);
-    int isca = cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f->id);
   }
 
   if (*ieljou == 2 || *ieljou == 4) {
-    int f_id = cs_variable_field_create("elec_pot_i", "POT_EL_I", CS_MESH_LOCATION_CELLS, dim);
+    int f_id = cs_variable_field_create("elec_pot_i", "POT_EL_I",
+                                        CS_MESH_LOCATION_CELLS, dim);
     f = cs_field_by_id(f_id);
     cs_field_set_key_double(f, kscmin, -grand);
     cs_field_set_key_double(f, kscmax,  grand);
     cs_field_set_key_int(f, kivisl, 0);
-    int isca = cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f->id);
   }
 
   if (*ielarc > 1) {
     {
-      int f_id = cs_variable_field_create("vec_potential_01", "POT_VEC1", CS_MESH_LOCATION_CELLS, dim);
+      int f_id = cs_variable_field_create("vec_potential_01", "POT_VEC1",
+                                          CS_MESH_LOCATION_CELLS, dim);
       f = cs_field_by_id(f_id);
       cs_field_set_key_double(f, kscmin, -grand);
       cs_field_set_key_double(f, kscmax,  grand);
       cs_field_set_key_int(f, kivisl, -1);
-      int isca = cs_add_model_field_indexes(f->id);
+      cs_add_model_field_indexes(f->id);
     }
 
     {
-      int f_id = cs_variable_field_create("vec_potential_02", "POT_VEC2", CS_MESH_LOCATION_CELLS, dim);
+      int f_id = cs_variable_field_create("vec_potential_02", "POT_VEC2",
+                                          CS_MESH_LOCATION_CELLS, dim);
       f = cs_field_by_id(f_id);
       cs_field_set_key_double(f, kscmin, -grand);
       cs_field_set_key_double(f, kscmax,  grand);
       cs_field_set_key_int(f, kivisl, -1);
-      int isca = cs_add_model_field_indexes(f->id);
+      cs_add_model_field_indexes(f->id);
     }
 
     {
-      int f_id = cs_variable_field_create("vec_potential_03", "POT_VEC3", CS_MESH_LOCATION_CELLS, dim);
+      int f_id = cs_variable_field_create("vec_potential_03", "POT_VEC3",
+                                          CS_MESH_LOCATION_CELLS, dim);
       f = cs_field_by_id(f_id);
       cs_field_set_key_double(f, kscmin, -grand);
       cs_field_set_key_double(f, kscmax,  grand);
       cs_field_set_key_int(f, kivisl, -1);
-      int isca = cs_add_model_field_indexes(f->id);
+      cs_add_model_field_indexes(f->id);
     }
   }
 
-  if (cs_glob_elec_properties->ngaz > 1) {
-    for (int igaz = 0; igaz < cs_glob_elec_properties->ngaz - 1; igaz++) {
+  if (e_props->ngaz > 1) {
+    for (int igaz = 0; igaz < e_props->ngaz - 1; igaz++) {
       char *name = NULL;
       char *label = NULL;
       char *suf = NULL;
@@ -1790,20 +1792,21 @@ cs_elec_add_variable_fields(const cs_int_t *ielarc,
       strcat(name, suf);
       strcat(label, suf);
 
-      int f_id = cs_variable_field_create(name, label, CS_MESH_LOCATION_CELLS, dim);
+      int f_id = cs_variable_field_create(name, label,
+                                          CS_MESH_LOCATION_CELLS, dim);
       f = cs_field_by_id(f_id);
 
       cs_field_set_key_double(f, kscmin, 0.);
       cs_field_set_key_double(f, kscmax, 1.);
       cs_field_set_key_int(f, kivisl, 0);
-      int isca = cs_add_model_field_indexes(f->id);
+      cs_add_model_field_indexes(f->id);
       BFT_FREE(name);
       BFT_FREE(label);
       BFT_FREE(suf);
     }
   }
 
-  int n_gasses = cs_glob_elec_properties->ngaz;
+  int n_gasses = e_props->ngaz;
   cs_field_pointer_map_electric_arcs(n_gasses);
 
   /* Map labels for GUI */
@@ -2057,12 +2060,12 @@ cs_elec_add_property_fields(const cs_int_t *ielarc,
  *----------------------------------------------------------------------------*/
 
 void
-cs_elec_fields_initialize(const cs_mesh_t *mesh,
+cs_elec_fields_initialize(const cs_mesh_t            *mesh,
                           const cs_mesh_quantities_t *mesh_quantities,
-                                cs_int_t  isuite,
-                                cs_int_t  nvar,
-                                cs_int_t  nscal,
-                                cs_real_t *dt)
+                          cs_int_t                    isuite,
+                          cs_int_t                    nvar,
+                          cs_int_t                    nscal,
+                          cs_real_t                  *dt)
 {
   BFT_MALLOC(_elec_option->izreca, mesh->n_i_faces, int);
   for (int i = 0; i < mesh->n_i_faces; i++)
@@ -2080,13 +2083,13 @@ cs_elec_fields_initialize(const cs_mesh_t *mesh,
     double xeent = 1.e-10;
 
     if (cs_glob_turb_model->itytur == 2) {
-      for (int iel = 0; iel < ncel; iel++) {
+      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
         CS_F_(k)->val[iel] = xkent;
         CS_F_(eps)->val[iel] = xeent;
       }
     }
     else if (cs_glob_turb_model->itytur == 3) {
-      for (int iel = 0; iel < ncel; iel++) {
+      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
         CS_F_(r11)->val[iel] = d2s3 * xkent;
         CS_F_(r22)->val[iel] = d2s3 * xkent;
         CS_F_(r33)->val[iel] = d2s3 * xkent;
@@ -2097,7 +2100,7 @@ cs_elec_fields_initialize(const cs_mesh_t *mesh,
       }
     }
     else if (cs_glob_turb_model->itytur == 5) {
-      for (int iel = 0; iel < ncel; iel++) {
+      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
         CS_F_(k)->val[iel] = xkent;
         CS_F_(eps)->val[iel] = xeent;
         CS_F_(phi)->val[iel] = d2s3;
@@ -2105,13 +2108,13 @@ cs_elec_fields_initialize(const cs_mesh_t *mesh,
       }
     }
     else if (cs_glob_turb_model->itytur == 6) {
-      for (int iel = 0; iel < ncel; iel++) {
+      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
         CS_F_(k)->val[iel] = xkent;
         CS_F_(omg)->val[iel] = xeent / cs_turb_cmu / xkent;
       }
     }
     else if (cs_glob_turb_model->itytur == 7) {
-      for (int iel = 0; iel < ncel; iel++) {
+      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
         CS_F_(nusa)->val[iel] = cs_turb_cmu * xkent * xkent / xeent;
       }
     }
@@ -2131,26 +2134,26 @@ cs_elec_fields_initialize(const cs_mesh_t *mesh,
       BFT_FREE(ym);
     }
 
-    for (int iel = 0; iel < ncel; iel++) {
+    for (cs_lnum_t iel = 0; iel < ncel; iel++) {
       CS_F_(h)->val[iel] = hinit;
     }
 
     /* volumic fraction */
     if (cs_glob_elec_properties->ngaz > 1) {
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
         CS_FI_(ycoel, 0)->val[iel] = 1.;
 
       for (int igaz = 1; igaz < cs_glob_elec_properties->ngaz - 1; igaz++)
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
           CS_FI_(ycoel, igaz)->val[iel] = 0.;
     }
 
     /* electric potential */
-    for (int iel = 0; iel < ncel; iel++)
+    for (cs_lnum_t iel = 0; iel < ncel; iel++)
       CS_F_(potr)->val[iel] = 0.;
 
     if (cs_glob_elec_option->ieljou == 2 || cs_glob_elec_option->ieljou == 4)
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
         CS_F_(poti)->val[iel] = 0.;
 
     /* potential vector */
@@ -2163,7 +2166,7 @@ cs_elec_fields_initialize(const cs_mesh_t *mesh,
       cs_field_t  *fp1 = cs_field_by_name_try("vec_potential_01");
       cs_field_t  *fp2 = cs_field_by_name_try("vec_potential_02");
       cs_field_t  *fp3 = cs_field_by_name_try("vec_potential_03");
-      for (int iel = 0; iel < ncel; iel++) {
+      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
         fp1->val[iel] = 0.;
         fp2->val[iel] = 0.;
         fp3->val[iel] = 0.;
@@ -2171,18 +2174,14 @@ cs_elec_fields_initialize(const cs_mesh_t *mesh,
     }
 
     /* source term */
-    for (int iel = 0; iel < ncel; iel++)
+    for (cs_lnum_t iel = 0; iel < ncel; iel++)
       CS_F_(joulp)->val[iel] = 0.;
 
     if (cs_glob_elec_option->ielarc > 1)
       for (int i = 0; i < 3; i++)
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
           CS_FI_(laplf, i)->val[iel] = 0.;
   }
-
-  /* user function */
-  if (ipass == 1)
-    CS_PROCF(cs_user_initialization, CS_USER_INITIALIZATION)(nvar, nscal, dt);
 }
 
 /*----------------------------------------------------------------------------
@@ -2206,7 +2205,7 @@ cs_elec_scaling_function(const cs_mesh_t *mesh,
     if (cs_glob_elec_option->modrec == 1) {
       /* standard model */
       double somje = 0.;
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
         somje += CS_F_(joulp)->val[iel] * volume[iel];
 
       cs_parall_sum(1, CS_DOUBLE, &somje);
@@ -2259,7 +2258,7 @@ cs_elec_scaling_function(const cs_mesh_t *mesh,
       double delhsh = 0.;
       double cdtj = 20.;
 
-      for (int iel = 0; iel < ncel; iel++) {
+      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
         if (CS_F_(rho)->val[iel] > 0.)
           delhsh = CS_F_(joulp)->val[iel] * dt[iel]
                  / CS_F_(rho)->val[iel];
@@ -2293,17 +2292,17 @@ cs_elec_scaling_function(const cs_mesh_t *mesh,
       _elec_option->pot_diff *= coepot;
 
       /* electric potential (for post treatment) */
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
         CS_F_(potr)->val[iel] *= coepot;
 
       /* current density */
       if (cs_glob_elec_option->ielarc > 0)
         for (int i = 0; i < 3; i++)
-          for (int iel = 0; iel < ncel; iel++)
+          for (cs_lnum_t iel = 0; iel < ncel; iel++)
             CS_FI_(curre, i)->val[iel] *= coepot;
 
       /* joule effect */
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
         CS_F_(joulp)->val[iel] *= coepot * coepot;
     }
   }
@@ -2312,7 +2311,7 @@ cs_elec_scaling_function(const cs_mesh_t *mesh,
   if (cs_glob_elec_option->ieljou > 0) {
     /* standard model */
     double somje = 0.;
-    for (int iel = 0; iel < ncel; iel++)
+    for (cs_lnum_t iel = 0; iel < ncel; iel++)
       somje += CS_F_(joulp)->val[iel] * volume[iel];
 
     cs_parall_sum(1, CS_DOUBLE, &somje);
@@ -2334,17 +2333,17 @@ cs_elec_scaling_function(const cs_mesh_t *mesh,
     /* electric potential (for post treatment) */
     if (cs_glob_elec_option->ieljou != 3 &&
         cs_glob_elec_option->ieljou != 4)
-      for (int iel = 0; iel < ncel; iel++)
+      for (cs_lnum_t iel = 0; iel < ncel; iel++)
         CS_F_(potr)->val[iel] *= coepot;
 
     /* current density */
     if (cs_glob_elec_option->ieljou == 2)
       for (int i = 0; i < 3; i++)
-        for (int iel = 0; iel < ncel; iel++)
+        for (cs_lnum_t iel = 0; iel < ncel; iel++)
           CS_F_(poti)->val[iel] *= coepot;
 
     /* joule effect */
-    for (int iel = 0; iel < ncel; iel++)
+    for (cs_lnum_t iel = 0; iel < ncel; iel++)
       CS_F_(joulp)->val[iel] *= coepot * coepot;
   }
 
@@ -2377,9 +2376,9 @@ CS_PROCF (elini1, ELINI1) (      cs_real_t *visls0,
 void
 CS_PROCF (elflux, ELFLUX) (cs_int_t *iappel)
 {
-  cs_mesh_t *mesh = cs_glob_mesh;
-  cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
-  cs_compute_electric_field(mesh, mesh_quantities, *iappel);
+  cs_compute_electric_field(cs_glob_mesh,
+                            cs_glob_mesh_quantities,
+                            *iappel);
 }
 
 void
@@ -2403,17 +2402,16 @@ CS_PROCF (ellecd, ELLECD) (cs_int_t *ieljou,
 void
 CS_PROCF (elphyv, ELPHYV) (void)
 {
-  cs_mesh_t *mesh = cs_glob_mesh;
-  cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
-  cs_elec_physical_properties(mesh, mesh_quantities);
+  cs_elec_physical_properties(cs_glob_mesh,
+                              cs_glob_mesh_quantities);
 }
 
 void
 CS_PROCF (eltssc, ELTSSC) (const cs_int_t  *isca,
                                  cs_real_t *smbrs)
 {
-  cs_mesh_t *mesh = cs_glob_mesh;
-  cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
   const int keysca = cs_field_key_id("scalar_id");
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
@@ -2446,17 +2444,15 @@ CS_PROCF (eliniv, ELINIV) (cs_int_t  *isuite,
                            cs_int_t  *nscal,
                            cs_real_t *dt)
 {
-  cs_mesh_t *mesh = cs_glob_mesh;
-  cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
-  cs_elec_fields_initialize(mesh, mesh_quantities, *isuite, *nvar, *nscal, dt);
+  cs_elec_fields_initialize(cs_glob_mesh,
+                            cs_glob_mesh_quantities,
+                            *isuite, *nvar, *nscal, dt);
 }
 
 void
 CS_PROCF (elreca, ELRECA) (cs_real_t *dt)
 {
-  cs_mesh_t *mesh = cs_glob_mesh;
-  cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
-  cs_elec_scaling_function(mesh, mesh_quantities, dt);
+  cs_elec_scaling_function(cs_glob_mesh, cs_glob_mesh_quantities, dt);
 }
 
 /*----------------------------------------------------------------------------

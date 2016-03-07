@@ -88,16 +88,20 @@ BEGIN_C_DECLS
  * User function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * This function is called each time step to define physical properties.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function is called each time step to define physical properties.
+ *
+ * \param[in]  mesh             mesh structure
+ * \param[in]  mesh_quantities  mesh quantities structure
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_physical_properties(cs_mesh_t             *mesh,
-                            cs_mesh_quantities_t  *mesh_quantities)
+cs_user_physical_properties(const cs_mesh_t             *mesh,
+                            const cs_mesh_quantities_t  *mesh_quantities)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+
 }
 
 END_C_DECLS

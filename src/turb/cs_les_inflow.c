@@ -459,7 +459,7 @@ _synthetic_eddy_method(const cs_int_t    n_points,
   int        one = 1;
 
   double     alpha;
-  double     random;
+  double     random = -1.;
 
   double     pond_tot;
 
@@ -654,9 +654,9 @@ _synthetic_eddy_method(const cs_int_t    n_points,
 
         for (coo_id = 0; coo_id < 3; coo_id++) {
 
-          CS_PROCF(zufall, ZUFALL)(&one,&random);
-          inflow->energy[struct_id*3 + coo_id] =
-            (random < 0.5) ? -1. : 1.;
+          CS_PROCF(zufall, ZUFALL)(&one, &random);
+          inflow->energy[struct_id*3 + coo_id]
+            = (random < 0.5) ? -1. : 1.;
 
         }
 
