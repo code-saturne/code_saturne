@@ -762,6 +762,7 @@ class Study(object):
         # Create cases
         os.chdir(self.__dest)
 
+        log_lines = []
         for c in self.Cases:
             if not os.path.isdir(c.label):
                 e = os.path.join(c.pkg.get_dir('bindir'), c.exe)
@@ -769,13 +770,16 @@ class Study(object):
                     os.mkdir(c.label)
                     os.chdir(c.label)
                     refdir = os.path.join(self.__repo, c.label)
+                    retval = 1
                     for node in os.listdir(refdir):
                         ref = os.path.join(self.__repo, c.label, node)
                         if node in c.subdomains:
                             cmd = e + " create --case " + node \
                                   + " --quiet --noref --copy-from " \
                                   + ref
-                            retval, t = run_autovnv_command(cmd, self.__log)
+                            node_retval, t = run_autovnv_command(cmd, self.__log)
+                            # negative retcode is kept
+                            retval = min(node_retval,retval)
                         elif os.path.isdir(ref):
                             shutil.copytree(ref, node, symlinks=True)
                         else:
@@ -787,10 +791,16 @@ class Study(object):
                           + " --quiet --noref --copy-from "    \
                           + os.path.join(self.__repo, c.label)
                     retval, t = run_autovnv_command(cmd, self.__log)
+                if retval == 0:
+                    log_lines += ['    - create case: ' + c.label]
+                else:
+                    log_lines += ['    - create case: %s --> FAILED' % c.label]
             else:
                 print("Warning: the case %s already exists in the destination." % c.label)
 
         os.chdir(repbase)
+
+        return log_lines
 
 
     def getRunDirectories(self):
@@ -983,9 +993,9 @@ class Studies(object):
         """
         for l, s in self.studies:
             self.reporting('  o Create study: ' + l)
-            s.createCases()
-            for c in s.getCasesLabel():
-                self.reporting('    - create case: ' + c)
+            log_lines = s.createCases()
+            for line in log_lines:
+                self.reporting(line)
 
 
     def compilation(self):
