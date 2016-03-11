@@ -26,14 +26,7 @@
 !> \brief Calls the computation of reaction rates for atmospheric chemistry
 
 !-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     propce        physical properties at cell centers
-!_______________________________________________________________________________
-
-subroutine kinrates (propce)
+subroutine kinrates ()
 
 !===============================================================================
 ! Module files
@@ -60,10 +53,6 @@ implicit none
 
 !===============================================================================
 
-! Arguments
-
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer iel,ii
@@ -80,6 +69,7 @@ double precision fo                  ! solar constant, useless here
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_totwt
+double precision, dimension(:), pointer :: cpro_tempc, cpro_liqwt
 
 ! Initialisation
 
@@ -88,8 +78,15 @@ dens = ro0
 press = dens*rair*temp ! ideal gas law
 hspec = 0.0d0
 
-if (ippmod(iatmos).ge.1) call field_get_val_s(icrom, crom)
-if (ippmod(iatmos).ge.2) call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+if (ippmod(iatmos).ge.1) then
+  call field_get_val_s(icrom, crom)
+  call field_get_val_s(iprpfl(itempc), cpro_tempc)
+endif
+
+if (ippmod(iatmos).ge.2) then
+  call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+  call field_get_val_s(iprpfl(iliqwt), cpro_liqwt)
+endif
 
 ! Computation of kinetic rates in every cell
 
@@ -111,7 +108,7 @@ do iel = 1, ncel
   ! Temperature and density
   ! Dry or humid atmosphere
   if (ippmod(iatmos).ge.1) then
-    temp = propce(iel,ipproc(itempc)) + tkelvi
+    temp = cpro_tempc(iel) + tkelvi
     dens = crom(iel)
     press = dens*rair*temp
 
@@ -135,8 +132,8 @@ do iel = 1, ncel
   ! Specific hymidity
   ! Humid atmosphere
   if (ippmod(iatmos).ge.2) then
-    hspec = (cvar_totwt(iel)-propce(iel,ipproc(iliqwt)))    &
-          / (1.d0-propce(iel,ipproc(iliqwt)))
+    hspec = (cvar_totwt(iel)-cpro_liqwt(iel))    &
+          / (1.d0-cpro_liqwt(iel))
 
   ! Constant density or dry atmosphere with a meteo file
   else if (imeteo.eq.1) then

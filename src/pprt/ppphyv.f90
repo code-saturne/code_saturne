@@ -194,7 +194,7 @@ endif
 ! ---> Atmospheric Flows (except constant density: ippmod(iatmos) = 0)
 
 if (ippmod(iatmos).ge.1) then
-   call atphyv(propce)
+   call atphyv()
 endif
 
 

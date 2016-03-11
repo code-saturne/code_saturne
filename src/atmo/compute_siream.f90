@@ -31,10 +31,9 @@
 !   mode          name          role
 !------------------------------------------------------------------------------
 !> \param[in]     dt             time step (per cell)
-!> \param[in]     propce         physical properties at cell centers
 !______________________________________________________________________________
 
-subroutine compute_siream ( dt , propce)
+subroutine compute_siream ( dt )
 
 !===============================================================================
 ! Module files
@@ -66,7 +65,6 @@ implicit none
 ! Arguments
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 
 ! Local Variables
 
@@ -82,6 +80,7 @@ type(pmapper_double_r1), dimension(:), allocatable :: cvar_espg
 type(pmapper_double_r1), dimension(:), allocatable :: cvar_aer
 type(pmapper_double_r1), dimension(:), allocatable :: cvar_naer
 double precision, dimension(:), pointer :: cvar_totwt
+double precision, dimension(:), pointer :: cpro_tempc, cpro_liqwt
 
 ! Initialisation
 
@@ -98,7 +97,12 @@ allocate(cvar_espg(nespg_siream+nesp_aer*nbin_aer+nbin_aer))
 ! Densisty
 call field_get_val_s(icrom, crom)
 
-if (ippmod(iatmos).ge.2) call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+if (ippmod(iatmos).ge.1) call field_get_val_s(iprpfl(itempc), cpro_tempc)
+
+if (ippmod(iatmos).ge.2) then
+  call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+  call field_get_val_s(iprpfl(iliqwt), cpro_liqwt)
+endif
 
 ! Arrays of pointers containing the fields values for each species
 ! (loop on cells outside loop on species)
@@ -145,7 +149,7 @@ do iel = 1, ncel
   ! Temperature and density
   ! Dry or humid atmosphere
   if (ippmod(iatmos).ge.1) then
-    dltemp = propce(iel,ipproc(itempc)) + tkelvi
+    dltemp = cpro_tempc(iel) + tkelvi
     dldens = crom(iel)
     dlpress = dldens*rair*dltemp
 
@@ -169,8 +173,8 @@ do iel = 1, ncel
   ! Specific hymidity
   ! Humid atmosphere
   if (ippmod(iatmos).ge.2) then
-    dlhumid = (cvar_totwt(iel)-propce(iel,ipproc(iliqwt)))   &
-              /(1.d0-propce(iel,ipproc(iliqwt)))
+    dlhumid = (cvar_totwt(iel)-cpro_liqwt(iel))   &
+              /(1.d0-cpro_liqwt(iel))
 
   ! Constant density or dry atmosphere with a meteo file
   else if (imeteo.eq.1) then

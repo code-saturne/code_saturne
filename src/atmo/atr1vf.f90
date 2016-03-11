@@ -27,13 +27,7 @@
 !>    from radiative forcing (uv and ir radiative fluxes)
 !>    computed with the 1d atmo radiative scheme.
 !-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]   propce   properties cell centers (current time step)
-!-------------------------------------------------------------------------------
-subroutine atr1vf ( propce )
+subroutine atr1vf ()
 
 !===============================================================================
 ! Module files
@@ -58,10 +52,6 @@ use atsoil
 
 implicit none
 
-! Arguments
-
-double precision propce(ncelet,*)
-
 ! Local variables
 integer k, ii, jj
 integer k1
@@ -80,7 +70,7 @@ double precision, allocatable :: zproj(:), ttvert(:), qvvert(:), romvert(:)
 double precision, allocatable :: aeroso(:)
 double precision, allocatable :: coords(:,:,:), infrad(:)
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: cvara_totwt
+double precision, dimension(:), pointer :: cvara_totwt, cpro_tempc
 
 save ideb
 data ideb/0/
@@ -132,6 +122,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
   call field_get_val_s(icrom, crom)
   call field_get_val_prev_s(ivarfl(isca(itotwt)), cvara_totwt)
+  call field_get_val_s(iprpfl(itempc), cpro_tempc)
 
   !===============================================================================
   ! 2.  Computing long-wave and short-wave radiative fluxes
@@ -155,7 +146,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
          (igrid, nvert*kmx, coords)
   endif
 
-  call gripol(igrid, propce(:,ipproc(itempc)), ttvert)
+  call gripol(igrid, cpro_tempc, ttvert)
   !===========
   call gripol(igrid, cvara_totwt, qvvert)
   !===========

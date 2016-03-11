@@ -33,10 +33,9 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]   iscal           scalar number
-!> \param[in]   propce          physical properties at cell centers
 !> \param[in]   crvexp          explicit part of the second term
 !-------------------------------------------------------------------------------
-subroutine attssc ( iscal, propce, crvexp )
+subroutine attssc ( iscal, crvexp )
 
 !===============================================================================
 ! Module files
@@ -61,7 +60,6 @@ implicit none
 
 integer          iscal
 
-double precision propce(ncelet,*)
 double precision crvexp(ncelet)
 
 ! Local variables
@@ -84,6 +82,7 @@ double precision, dimension(:), allocatable :: pphy
 double precision, dimension(:), allocatable :: refrad
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_scapp3
+double precision, dimension(:), pointer :: cpro_liqwt, cpro_tempc
 double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
@@ -121,7 +120,7 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
     ! --- Computes the divergence of the ir and solar radiative fluxes :
 
     ! --- Cressman interpolation of the 1D radiative fluxes on the 3D mesh:
-    call atr1vf(propce)
+    call atr1vf()
 
     call mscrss   &
          (idrayi, 1, ray3Di)
@@ -151,10 +150,13 @@ endif
 
 if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics only
 
+  call field_get_val_s(iprpfl(iliqwt), cpro_liqwt)
+  call field_get_val_s(iprpfl(itempc), cpro_tempc)
+
   ! Test minimum liquid water to carry out drop sedimentation
   qliqmax = 0.d0
   do iel = 1, ncelet
-    qliqmax = max(propce(iel,ipproc(iliqwt)),qliqmax)
+    qliqmax = max(cpro_liqwt(iel),qliqmax)
   enddo
 
   if(qliqmax.gt.1e-8)then
@@ -195,8 +197,8 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
              cvar_scapp3,                                             &
              vel,                                                     &
              crom,                                                    &
-             propce(1,ipproc(itempc)),                                &
-             propce(1,ipproc(iliqwt)),                                &
+             cpro_tempc(1),                                           &
+             cpro_liqwt(1),                                           &
              pphy, refrad)
 
         deallocate(pphy)
@@ -296,7 +298,7 @@ parameter (conversion=1d+6)! passing from 1/cm**3 to 1/m**3
 r3max = 0.d0
 do iel = 1, ncel
   rho = crom(iel)
-  qliq = propce(iel,ipproc(iliqwt))
+  qliq = cpro_liqwt(iel)
   nc = cvar_scapp3(iel)
   if(qliq.ge.1e-8)then
     nc = max(nc,1.d0)
@@ -388,7 +390,7 @@ allocate(local_field(ncelet))
 
 do iel = 1, ncel
   local_field(iel) = crom(iel)       & ! volumic mass of the air kg/m3
-       *propce(iel,ipproc(iliqwt))   & ! total liquid water content kg/kg
+       *cpro_liqwt(iel)              & ! total liquid water content kg/kg
        *vit_sed( r3(iel) )           & ! deposition velocity m/s
        *exp(5*sigc**2)                 ! coefficient coming from log-norm
                                        ! law of the droplet spectrum

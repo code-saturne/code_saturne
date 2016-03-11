@@ -111,7 +111,7 @@ ipass = ipass + 1
 
 if (ichemistry.ge.1 .and. nscal.gt.0) then
   ! Computation of kinetics rates
-  call kinrates(propce)
+  call kinrates()
   !==========
 endif
 
@@ -467,7 +467,7 @@ endif
 
 ! Atmospheric aerosol chemistry
 if (iaerosol.eq.1 .and. nscal.gt.0) then
-  call compute_siream(dt, propce)
+  call compute_siream(dt)
 endif
 
 ! Free memory

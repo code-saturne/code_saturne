@@ -29,14 +29,7 @@
 !>
 
 !-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]   propce      physical properties at cell centers
-!_______________________________________________________________________________
-
-subroutine atphyv ( propce )
+subroutine atphyv ()
 
 !===============================================================================
 ! Module files
@@ -63,14 +56,9 @@ use field_operator
 
 implicit none
 
-! Arguments
-
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          ivart, iel
-integer          ipctem, ipcliq
 
 double precision xvart, rhum, rscp, pp, zent
 double precision lrhum, lrscp
@@ -79,6 +67,7 @@ double precision qliq, qwt, tliq, dum
 
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cvar_vart, cvar_totwt
+double precision, dimension(:), pointer :: cpro_tempc, cpro_liqwt
 
 logical activate
 
@@ -129,10 +118,9 @@ endif
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
+call field_get_val_s(iprpfl(itempc),cpro_tempc)
 call field_get_val_s(ivarfl(ivart), cvar_vart)
 if (ippmod(iatmos).ge.2) call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
-
-ipctem = ipproc(itempc)
 
 ! From potential temperature, compute:
 ! - Temperature in Celsius
@@ -173,8 +161,8 @@ do iel = 1, ncel
   ! ---------------------------------------
   ! law: T = theta * (p/ps) ** (Rair/Cp0)
 
-  propce(iel, ipctem) = xvart*(pp/ps)**lrscp
-  propce(iel, ipctem) = propce(iel, ipctem) - tkelvi
+  cpro_tempc(iel) = xvart*(pp/ps)**lrscp
+  cpro_tempc(iel) = cpro_tempc(iel) - tkelvi
 
   !   Density in cell centers:
   !   ------------------------
@@ -185,7 +173,8 @@ do iel = 1, ncel
 enddo
 
 if (ippmod(iatmos).ge.2) then ! humid atmosphere physics
-  ipcliq = ipproc(iliqwt)
+
+  call field_get_val_s(iprpfl(iliqwt),cpro_liqwt)
 
   if (moddis.eq.1)then ! all or nothing condensation scheme
     call all_or_nothing()
@@ -274,11 +263,11 @@ do iel = 1, ncel
   if (deltaq.le.0.d0) then ! unsaturated air parcel
     lrhum = rair*(1.d0 + (rvsra - 1.d0)*qwt)
     !Celcius temperature of the air parcel
-    propce(iel, ipctem) = tliq - tkelvi
+    cpro_tempc(iel) = tliq - tkelvi
     !density of the air parcel
     crom(iel) = pp/(lrhum*tliq)
     !liquid water content
-    propce(iel,ipcliq) = 0.d0
+    cpro_liqwt(iel) = 0.d0
     nebdia(iel) = 0.d0
     nn(iel) = 0.d0
   else ! saturated (ie. with liquid water) air parcel
@@ -286,9 +275,9 @@ do iel = 1, ncel
          (1.d0 + qsl*clatev**2/(rair*rvsra*cp0*tliq**2))
     lrhum = rair*(1.d0 - qliq + (rvsra - 1.d0)*(qwt - qliq))
     ! liquid water content
-    propce(iel,ipcliq) = qliq
+    cpro_liqwt(iel) = qliq
     ! Celcius temperature of the air parcel
-    propce(iel, ipctem) = tliq + (clatev/cp0)*qliq - tkelvi
+    cpro_tempc(iel) = tliq + (clatev/cp0)*qliq - tkelvi
     ! density
     crom(iel) = pp/(lrhum*(tliq + (clatev/cp0)*qliq))
     nebdia(iel) = 1.d0
@@ -383,20 +372,20 @@ do iel = 1, ncel
     if (deltaq.le.0.d0) then ! unsaturated air parcel
       lrhum = rair*(1.d0 + (rvsra-1.d0)*qwt)
       !Celcius temperature of the air parcel
-      propce(iel, ipctem) = tliq - tkelvi
+      cpro_tempc(iel) = tliq - tkelvi
       !density of the air parcel
       crom(iel) = pp/(lrhum*tliq)
       !liquid water content
-      propce(iel,ipcliq) = 0.d0
+      cpro_liqwt(iel) = 0.d0
       nebdia(iel) = 0.d0
       nn(iel) = 0.d0
     else ! saturated (ie. with liquid water) air parcel
       qliq = deltaq / (1.d0 + qsl*clatev**2/(rair*rvsra*cp0*tliq**2))
       lrhum = rair*(1.d0 - qliq + (rvsra - 1.d0)*(qwt - qliq))
       ! liquid water content
-      propce(iel,ipcliq) = qliq
+      cpro_liqwt(iel) = qliq
       ! Celcius temperature of the air parcel
-      propce(iel,ipctem) = tliq+(clatev/cp0)*qliq - tkelvi
+      cpro_tempc(iel) = tliq+(clatev/cp0)*qliq - tkelvi
       ! density
       crom(iel) = pp/(lrhum*(tliq + (clatev/cp0)*qliq))
       nebdia(iel) = 1.d0
@@ -405,9 +394,9 @@ do iel = 1, ncel
   else ! coherent subgrid diagnostic
     lrhum = rair*(1.d0 - qliq + (rvsra - 1.d0)*(qwt - qliq))
     ! liquid water content
-    propce(iel,ipcliq) = qliq
+    cpro_liqwt(iel) = qliq
     !Celcius temperature of the air parcel
-    propce(iel, ipctem) = tliq + (clatev/cp0)*qliq - tkelvi
+    cpro_tempc(iel) = tliq + (clatev/cp0)*qliq - tkelvi
     !density
     crom(iel) = pp/(lrhum*(tliq + (clatev/cp0)*qliq))
   endif ! qwt.lt.qliq
