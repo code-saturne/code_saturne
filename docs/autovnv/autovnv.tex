@@ -120,18 +120,25 @@ The command line options can be found with the command: \texttt{code\_saturne
 autovnv -h}.
 
 \begin{list}{$\bullet$}{}
-\item \texttt{-f FILE, --file=FILE}: gives the file of parameters for
+\item \texttt{-h, --help}: show the help message and exit;
+\item \texttt{-f FILE, --file=FILE}: give the file of parameters for
 \textsc{Autovnv}. This file is mandatory, and therefore this option must be
 completed;
-\item \texttt{-q, --quiet}: does not print status messages to stdout;
+\item \texttt{-q, --quiet}: do not print status messages to stdout;
 \item \texttt{-u, --update}: update installation pathes in scripts (i.e. \texttt{SaturneGUI} and
-\texttt{runcase}) only in the repository, reinitialize xml files of parameters and compile;
-\item \texttt{-r, --run}: runs all cases;
-\item \texttt{-c, --compare}: compares chekpoint files between
-\textbf{repository} and \textbf{destination};
+  \texttt{runcase}) only in the repository, reinitialize xml files of parameters and compile;
+\item \texttt{-x, --update-xml}: update only xml files in the repository;
+\item \texttt{-t, --test-compile}: compile all cases;
+\item \texttt{-r, --run}: run all cases;
+\item \texttt{-n N\_ITERATIONS, --n-iterations=N\_ITERATIONS}: maximum number of iterations for cases of the study;
+\item \texttt{-c, --compare}: compare chekpoint files between
+  \textbf{repository} and \textbf{destination};
+\item \texttt{-d REFERENCE, --ref-dir=REFERENCE}: absolute reference directory to compare dest with;
 \item \texttt{-p, --post}: postprocess results of computations;
 \item \texttt{-m ADDRESS1 ADDRESS2 ..., --mail=ADDRESS1 ADDRESS2 ...}: addresses
-for sending the reports.
+  for sending the reports.
+\item \texttt{-l LOG\_FILE, --log=LOG\_FILE}: name of autovnv log file (default value is 'auto\_vnv.log';
+\item \texttt{-z, --disable-tex}: disable text rendering with LaTex in Matplotlib (use Mathtext);
 \end{list}
 
 \underline{Examples:}
@@ -320,9 +327,10 @@ change the related setup (see sections \ref{sec:prepro} and \ref{sec:tricks}).
 The comparison is activated if the option \texttt{-c, --compare} is present in
 the command line.
 
-In order to compare two checkpoint files, markups \texttt{<compare>} have to
-be added as a child of the considered case. In the following exemple, a
-checkpoint file comparison is switched on for the case \textit{Grid1} (for all
+In order to compare two checkpoint files for a given case, a markup
+\texttt{<compare>} has to be added as child of the considered case.
+In the following exemple, a checkpoint file comparison is switched on for the
+case \textit{Grid1} (for all
 variables, with the default threshold), whereas no comparison is planed for
 the case \textit{Grid2}. The comparison is done by the external
 script \texttt{cs\_io\_dump} with the option \texttt{--diff}.
@@ -400,6 +408,12 @@ VelocityY &0.364351 &0.00764912 &1.0e-3 \\
 \hline
 \end{longtable}
 \end{center}
+
+Alternatively, in order to compare all activated cases (status at on) listed
+in an \textsc{Autovnv} parameter file, a reference directory can be provided
+directly in the command line, as follows:
+
+\texttt{code\_saturne autovnv -f sample.xml -c -d /scratch/***/reference\_destination\_directory}.
 
 \subsection{Run external additional preprocessing scripts with options}\label{sec:prepro}
 

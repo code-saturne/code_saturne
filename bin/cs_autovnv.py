@@ -105,7 +105,7 @@ def process_cmd_line(argv, pkg):
                       help="compare results between repository and destination")
 
     parser.add_option("-d", "--ref-dir", dest="reference", type="string",
-                      help="provide a reference directory to compare dest with")
+                      help="absolute reference directory to compare dest with")
 
     parser.add_option("-p", "--post",
                       action="store_true", dest="post", default=False,
@@ -117,7 +117,7 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("-l", "--log", dest="log_file", default="auto_vnv.log",
                       type="string",
-                      help="addresses for sending the reports")
+                      help="name of autovnv log file (default value is 'auto_vnv.log'")
 
     parser.add_option("-z", "--disable-tex",
                       action="store_true", dest="disable_tex", default=False,
