@@ -303,7 +303,7 @@ enddo
 
 nbspdf = 0
 do iel=1,ncel
-  if ( hrec(iel) .le. 0.d0 .and. indpdf(iel).eq.1 ) then
+  if ( hrec(iel) .le. epzero .and. indpdf(iel).eq.1 ) then
 
     indpdf(iel) = 0
     nbspdf      = nbspdf + 1
