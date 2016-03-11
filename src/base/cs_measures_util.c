@@ -244,16 +244,7 @@ cs_cressman_interpol(cs_measures_set_t         *ms,
                      cs_real_t                 *interpolated_values,
                      int                        id_type)
 {
-  cs_lnum_t ii;
-  cs_lnum_t jj;
-  cs_lnum_t n_elts;
-  cs_real_t interpolated_value;
-  cs_real_t dist_x;
-  cs_real_t dist_y;
-  cs_real_t dist_z;
-  cs_real_t weight;
-  cs_real_t total_weight;
-  cs_real_t r2;
+  cs_lnum_t n_elts = 0;
   cs_real_t *xyz_cen;
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
@@ -267,29 +258,27 @@ cs_cressman_interpol(cs_measures_set_t         *ms,
     xyz_cen = mesh_quantities->b_face_cog;
   }
 
-#   pragma omp parallel for private(jj)
-  for (ii = 0; ii < n_elts; ii++) {
-    total_weight = 0.;
-    interpolated_value = 0.;
-    for (jj = 0; jj < ms->nb_measures; jj++) {
+# pragma omp parallel for
+  for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
+    cs_real_t total_weight = 0.;
+    cs_real_t interpolated_value = 0.;
+    for (cs_lnum_t jj = 0; jj < ms->nb_measures; jj++) {
       if (ms->is_cressman[jj] == 1) {
-        dist_x = (xyz_cen[ii*3   ] - ms->coords[jj*3   ])
-                *ms->inf_radius[jj*3   ];
-        dist_y = (xyz_cen[ii*3 +1] - ms->coords[jj*3 +1])
-                *ms->inf_radius[jj*3 +1];
-        dist_z = (xyz_cen[ii*3 +2] - ms->coords[jj*3 +2])
-                *ms->inf_radius[jj*3 +2];
+        cs_real_t dist_x = (xyz_cen[ii*3   ] - ms->coords[jj*3   ])
+                          *ms->inf_radius[jj*3   ];
+        cs_real_t dist_y = (xyz_cen[ii*3 +1] - ms->coords[jj*3 +1])
+                          *ms->inf_radius[jj*3 +1];
+        cs_real_t dist_z = (xyz_cen[ii*3 +2] - ms->coords[jj*3 +2])
+                          *ms->inf_radius[jj*3 +2];
 
-        r2 = dist_x*dist_x + dist_y*dist_y + dist_z*dist_z;
+        cs_real_t r2 = dist_x*dist_x + dist_y*dist_y + dist_z*dist_z;
 
-          if (r2/4. > 700.)
-            weight = 0.;
-          else
-            weight = exp(-r2/4.);
+        cs_real_t weight = 0.;
+        if (r2/4. <= 700.)
+          weight = exp(-r2/4.);
 
-
-          total_weight += weight;
-          interpolated_value += (ms->measures[jj])*weight;
+        total_weight += weight;
+        interpolated_value += (ms->measures[jj])*weight;
       }
     }
 
