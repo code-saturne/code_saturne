@@ -83,6 +83,9 @@ BEGIN_C_DECLS
   \typedef cs_lnum_2_t
            \brief vector of 2 local mesh-entity ids
 
+  \typedef cs_real_t
+           \brief Floating-point value
+
   \typedef cs_real_2_t
            \brief vector of 2 floating-point values
 
