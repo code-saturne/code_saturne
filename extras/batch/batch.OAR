@@ -1,0 +1,27 @@
+#-------------------------------------------------------------------------------
+#
+# Batch options for OAR
+# =====================
+#
+#OAR -l nodes=2,walltime=00:30:00
+#OAR -O nameandcase.%jobid%.out
+#OAR -E nameandcase.%jobid%.out
+#OAR -n nameandcase
+
+#  -l, --resource=<list>              : set the requested resources for the job.
+#                                       The different parameters are resource
+#                                       properties registered in OAR database,
+#                                       and `walltime' format is
+#                                       [hour:mn:sec|hour:mn|hour].
+#  -q, --queue=<queue>                : set the queue to submit the job to
+#  -p, --property="<list>"            : add constraints to properties for the job.
+#  -r, --reservation=<name>           : allocate resources from reservation
+#  -O, --stdout=<file>                : output file name pattern
+#  -E, --stderr=<file>                : error file name pattern
+#  -n, --name=<jobname>               : job name
+#
+#-------------------------------------------------------------------------------
+
+# Change to submission directory
+if test -n "$OAR_WORKING_DIRECTORY" ; then cd $OAR_WORKING_DIRECTORY ; fi
+

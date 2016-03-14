@@ -19,6 +19,8 @@ Bug fixes:
 Architectural changes
 ---------------------
 
+- Add basic (non-GUI) support for OAR resource manager.
+
 - Improve flushing of error* files in case of error to avoid empty error
   files on some systems.
 

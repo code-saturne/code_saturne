@@ -5,7 +5,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2013 EDF S.A.
+# Copyright (C) 1998-2016 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -339,6 +339,14 @@ class batch_info:
                 self.queue = os.getenv('PBS_QUEUE')
 
         if self.batch_type == None:
+            s = os.getenv('OAR_JOBID') # OAR
+            if s != None:
+                self.batch_type = 'OAR'
+                self.submit_dir = os.getenv('OAR_WORKING_DIRECTORY')
+                self.job_name = os.getenv('OAR_JOBNAME')
+                self.job_id = os.getenv('OAR_JOBID')
+
+        if self.batch_type == None:
             s = os.getenv('LOADL_JOB_NAME') # LoadLeveler
             if s != None:
                 self.batch_type = 'LOADL'
@@ -486,6 +494,14 @@ class resource_info(batch_info):
             if s != None:
                 self.manager = 'PBS'
                 self.hosts_file = '$PBS_NODEFILE'
+
+        # Test for OAR
+
+        if self.manager == None and self.batch_type == 'OAR':
+            s = os.getenv('OAR_NODEFILE')
+            if s != None:
+                self.manager = 'OAR'
+                self.hosts_file = '$OAR_NODEFILE'
 
         # Test for Oracle Grid Engine.
 
@@ -1275,6 +1291,8 @@ class mpi_environment:
                 hostsfile = resource_info.get_hosts_file(wdir)
                 if hostsfile != None:
                     self.mpiexec += ' --machinefile ' + hostsfile
+                if resource_info.manager == 'OAR':
+                    self.mpiexec += ' -mca plm_rsh_agent "oarsh"'
 
         # Info commands
 
