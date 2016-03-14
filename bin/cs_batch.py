@@ -788,6 +788,8 @@ class batch:
             cmd_prefix = 'llsubmit '
         elif rm_type == 'LSF':
             cmd_prefix = 'bsub < '
+        elif rm_type == 'OAR':
+            cmd_prefix = 'oarsub'
         elif rm_type == 'PBS' or rm_type == 'SGE':
             cmd_prefix = 'qsub '
         else:
