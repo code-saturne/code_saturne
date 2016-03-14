@@ -1256,6 +1256,8 @@ _decompose_data_g(cs_mesh_t          *mesh,
                 "(number of cells / number of processes ratio too low)."),
               (int)cs_glob_rank_id);
 
+  mesh->n_cells_with_ghosts = mesh->n_cells; /* will be increased later */
+
   /* Distribute faces */
   /*------------------*/
 
@@ -1493,6 +1495,7 @@ _decompose_data_l(cs_mesh_t          *mesh,
   assert((sizeof(cs_lnum_t) == 4) || (sizeof(cs_lnum_t) == 8));
 
   mesh->n_cells = mb->cell_bi.gnum_range[1] - 1;
+  mesh->n_cells_with_ghosts = mesh->n_cells; /* may be increased later */
 
   /* Cell families are already of the correct type,
      so they can simply be moved */
