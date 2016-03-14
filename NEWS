@@ -4,6 +4,9 @@ Version 3.0.8 (unreleased)
 Bug fixes:
 ----------
 
+- Fix reallocation bug for FVM selector containing more than 32
+  operators (dating back to October 2007).
+
 - Fix incorrect memory access in velocity prediction with porosity.
 
 - Remove unneeded allocation leading to crash for some large meshes when
@@ -12,7 +15,6 @@ Bug fixes:
 - Fix bad argument in call of the user function for radiative bcs.
 
 - Fix in bad cell detection and mesh quality criterion for offsetting.
-
 
 Architectural changes
 ---------------------
