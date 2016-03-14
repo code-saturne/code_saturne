@@ -5,6 +5,9 @@ Release 4.1.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix reallocation bug for FVM selector containing more than 32
+  operators (dating back to October 2007).
+
 - Fix time moment weight when no moment is active at the initial time step.
 
 - Fix occasional issues in transient turbomachinery module due to

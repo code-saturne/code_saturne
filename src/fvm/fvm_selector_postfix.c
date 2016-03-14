@@ -3135,8 +3135,10 @@ fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
 
     if (eval_size == eval_max_size) {
       eval_max_size *= 2;
-      if (eval_stack == _eval_stack)
+      if (eval_stack == _eval_stack) {
         BFT_MALLOC(eval_stack, eval_max_size, _Bool);
+        memcpy(eval_stack, _eval_stack, BASE_STACK_SIZE*sizeof(_Bool));
+      }
       else
         BFT_REALLOC(eval_stack, eval_max_size, _Bool);
     }
