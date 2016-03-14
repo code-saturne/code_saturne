@@ -197,8 +197,8 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
              cvar_scapp3,                                             &
              vel,                                                     &
              crom,                                                    &
-             cpro_tempc(1),                                           &
-             cpro_liqwt(1),                                           &
+             cpro_tempc,                                              &
+             cpro_liqwt,                                              &
              pphy, refrad)
 
         deallocate(pphy)
