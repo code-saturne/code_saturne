@@ -746,6 +746,14 @@ class batch_info:
                 self.queue = os.getenv('PBS_QUEUE')
 
         if self.batch_type == None:
+            s = os.getenv('OAR_JOBID') # OAR
+            if s != None:
+                self.batch_type = 'OAR'
+                self.submit_dir = os.getenv('OAR_WORKING_DIRECTORY')
+                self.job_name = os.getenv('OAR_JOBNAME')
+                self.job_id = os.getenv('OAR_JOBID')
+
+        if self.batch_type == None:
             s = os.getenv('LOADL_JOB_NAME') # LoadLeveler
             if s != None:
                 self.batch_type = 'LOADL'
@@ -857,7 +865,7 @@ class resource_info(batch_info):
             if s != None:
                 self.nthreads = int(s)
 
-        # Test for Platform LSF.
+        # Test for Platform LSF or OpenLava.
 
         if self.manager == None and self.batch_type == 'LSF':
             self.manager = 'LSF'
@@ -909,7 +917,15 @@ class resource_info(batch_info):
                     if s != None:
                         self.n_procs = int(s)*self.n_nodes
 
-        # Test for Oracle Grid Engine.
+        # Test for OAR
+
+        if self.manager == None and self.batch_type == 'OAR':
+            s = os.getenv('OAR_NODEFILE')
+            if s != None:
+                self.manager = 'OAR'
+                self.hosts_file = '$OAR_NODEFILE'
+
+        # Test for Sun (/Oracle/Whowever keeps this zombie going) Grid Engine
 
         if self.manager == None and self.batch_type == 'SGE':
             s = os.getenv('NSLOTS')
@@ -1672,6 +1688,10 @@ class mpi_environment:
                     info = get_command_output(info_name)
                     if info.find(rc_mca_by_type[resource_info.manager]) > -1:
                         known_manager = True
+            elif resource_info.manager == 'OAR':
+                self.mpiexec += ' -machinefile $OAR_FILE_NODES'
+                self.mpiexec += ' -mca pls_rsh_agent "oarsh"'
+                known_manager = True
             if known_manager == False:
                 hostsfile = resource_info.get_hosts_file(wdir)
                 if hostsfile != None:

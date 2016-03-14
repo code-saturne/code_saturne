@@ -34,6 +34,11 @@ Bug fixes:
 
 - Fix hang in GUI when starting run where the case's path contains whitespace.
 
+Architectural changes
+---------------------
+
+- Add basic (non-GUI) support for OAR resource manager.
+
 Version 4.0.4 (23 Dec 2015)
 ===========================
 
