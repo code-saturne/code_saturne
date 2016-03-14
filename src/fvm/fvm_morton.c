@@ -1479,7 +1479,7 @@ fvm_morton_dump(int                dim,
   int  i;
   double  coord[3];
 
-  const cs_gnum_t   n = 1 << code.L;
+  const cs_gnum_t   n = 1u << code.L;
   const double  stride = 1/(double)n;
 
   for (i = 0; i < dim; i++)
