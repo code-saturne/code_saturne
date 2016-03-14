@@ -53,6 +53,8 @@ Numerics
 Architectural changes
 ---------------------
 
+ - Add basic (non-GUI) support for OAR resource manager.
+
  - Add mesh adjacencies structure to allow direct access to a cell's
    neighbor cells and boundary faces. This allows looping on
    cells, as when computing a SpMV product using a CSR matrix,
