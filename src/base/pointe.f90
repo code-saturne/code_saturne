@@ -577,8 +577,6 @@ contains
     ! Strain rate tensor at the previous time step
     ! for rotation-curvature correction of eddy viscosity
 
-    deallocate(buffer)
-
     if (allocated(straio)) then
       allocate(buff2(ncel,6))
       do isou = 1, 6
@@ -598,6 +596,33 @@ contains
                    straio(1,4), straio(1,2), straio(1,6), &
                    straio(1,5), straio(1,6), straio(1,3))
     endif
+
+    ! liquid-vapour mass transfer term for cavitating flows
+    ! and its part implicit in pressure
+
+    if (allocated(gamcav)) then
+      do iel = 1, ncel
+        buffer(iel) = gamcav(iel)
+      enddo
+      deallocate(gamcav)
+      call synsca (buffer)
+      allocate(gamcav(ncelet))
+      do iel = 1, ncelet
+        gamcav(iel) = buffer(iel)
+      enddo
+
+      do iel = 1, ncel
+        buffer(iel) = dgdpca(iel)
+      enddo
+      deallocate(dgdpca)
+      call synsca (buffer)
+      allocate(dgdpca(ncelet))
+      do iel = 1, ncelet
+        dgdpca(iel) = buffer(iel)
+      enddo
+    endif
+
+    deallocate(buffer)
 
     return
 
