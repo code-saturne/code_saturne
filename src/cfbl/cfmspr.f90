@@ -208,7 +208,7 @@ enddo
 if (ncesmp.gt.0) then
   do ii = 1, ncesmp
     iel = icetsm(ii)
-    smbrs(iel) = smbrs(iel) + smacel(iel,ipr)*volume(iel)
+    smbrs(iel) = smbrs(iel) + smacel(ii,ipr)*volume(iel)
   enddo
 endif
 

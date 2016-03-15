@@ -5,6 +5,8 @@ Release 4.0.5 (unreleased)
 Bug fixes:
 ----------
 
+- Compressible model: fix index of mass source term in continuity equation.
+
 - Fix reallocation bug for FVM selector containing more than 32
   operators (dating back to October 2007).
 
