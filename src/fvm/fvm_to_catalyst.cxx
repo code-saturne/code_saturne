@@ -566,7 +566,7 @@ _export_vertex_coords(const fvm_nodal_t        *mesh,
     vtkIdTypeArray *g_vtx_id = vtkIdTypeArray::New();
 
     g_vtx_id->SetNumberOfComponents(1);
-    g_vtx_id->SetName("GlobalNodeId");
+    g_vtx_id->SetName("GlobalNodeIds");
     g_vtx_id->SetNumberOfTuples(n_vertices);
 
     for (i = 0; i < n_vertices; i++) {
