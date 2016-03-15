@@ -91,6 +91,7 @@ use cs_tagmr, only: rob, condb, cpb, hext, text
 use cs_tagms, only: t_metal, tmet0
 use cs_nz_tagmr
 use cs_nz_condensation
+use turbomachinery
 
 ! les " use pp* " ne servent que pour recuperer le pointeur IIZFPP
 
@@ -1407,6 +1408,12 @@ do while (iterns.le.nterup)
         dt     , propce ,                                              &
         frcxt  , prhyd  ,                                              &
         trava  , ximpav , uvwk   )
+
+      ! Update local pointer arrays for transient turbomachinery computations
+      if (iturbo.eq.2) then
+        call field_get_val_s(ivarfl(ipr), cvar_pr)
+        call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
+      endif
 
     else
 
