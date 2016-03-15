@@ -5,6 +5,8 @@ Release 4.0.5 (unreleased)
 Bug fixes:
 ----------
 
+- Fix in transient turbomachinery computations when nterup > 1.
+
 - Catalyst output: align name of global node ids with expected default for
   ghost cells generator.
 
