@@ -7,6 +7,8 @@ Bug fixes:
 
 - Fix in transient turbomachinery computations when nterup > 1.
 
+- Fix in cavitation module in case of transient turbomachinery computation.
+
 - Catalyst output: align name of global node ids with expected default for
   ghost cells generator.
 
