@@ -727,6 +727,11 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
     if (idtten.ge.0) call field_get_val_v(idtten, dttens)
 
+    if (icavit.ge.0) then
+      call field_get_val_s(ivarfl(ivoidf), cvar_voidf)
+      call field_get_val_prev_s(ivarfl(ivoidf), cvara_voidf)
+    endif
+
   endif
 
   ! Update the Dirichlet wall boundary conditions for velocity (based on the

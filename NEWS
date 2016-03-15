@@ -5,13 +5,15 @@ Release 4.2.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix in cavitation module in case of transient turbomachinery computation.
+
 - Catalyst output: align name of global node ids with expected default for
   ghost cells generator.
 
 - Fix reallocation bug for FVM selector containing more than 32
   operators (dating back to October 2007).
 
-- Fix OpenMP for loop in Cressman interpolation (atmo.).
+- Fix OpenMP for loop in Cressman interpolation (atmospheric model).
 
 - Fix time moment weight when no moment is active at the initial time step.
 
