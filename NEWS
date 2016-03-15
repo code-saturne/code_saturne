@@ -5,6 +5,9 @@ Release 4.1.3 (unreleased)
 Bug fixes:
 ----------
 
+- Catalyst output: align name of global node ids with expected default for
+  ghost cells generator.
+
 - Fix reallocation bug for FVM selector containing more than 32
   operators (dating back to October 2007).
 
