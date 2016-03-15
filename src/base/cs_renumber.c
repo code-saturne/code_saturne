@@ -5569,6 +5569,55 @@ cs_renumber_mesh(cs_mesh_t  *mesh)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Renumber cells depending on code options and target machine.
+ *
+ * parameters:
+ *   mesh  <->  pointer to global mesh structure
+ *
+ * \param[in, out]  mesh  pointer to global mesh structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_renumber_cells(cs_mesh_t  *mesh)
+{
+  if (mesh->cell_numbering != NULL)
+    cs_numbering_destroy(&(mesh->cell_numbering));
+
+  const char *p = NULL;
+
+  /* Initialization */
+
+  if (_cs_renumber_n_threads < 1)
+    cs_renumber_set_n_threads(cs_glob_n_threads);
+
+  p = getenv("CS_RENUMBER");
+
+  if (p != NULL) {
+    if (strcmp(p, "off") == 0 || strcmp(p, "IBM") == 0) {
+      if (mesh->cell_numbering == NULL)
+        mesh->cell_numbering = cs_numbering_create_default(mesh->n_cells);
+      return;
+    }
+  }
+
+  /* Apply renumbering */
+
+  _renumber_cells(mesh);
+
+  if (mesh->verbosity > 0)
+    bft_printf
+      ("\n ----------------------------------------------------------\n");
+
+  if (mesh->cell_numbering == NULL)
+    mesh->cell_numbering = cs_numbering_create_default(mesh->n_cells);
+
+  if (mesh->verbosity > 0)
+    _log_bandwidth_info(mesh, _("volume mesh"));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Renumber interior faces for vectorization or threading depending on
  * code options and target machine.
  *
@@ -5614,9 +5663,39 @@ cs_renumber_i_faces(cs_mesh_t  *mesh)
     mesh->i_face_numbering = cs_numbering_create_default(mesh->n_i_faces);
 
   _renumber_i_test(mesh);
+}
 
-  if (mesh->verbosity > 0)
-    _log_bandwidth_info(mesh, _("volume mesh"));
+/*----------------------------------------------------------------------------
+ * Renumber interior faces by global number.
+ *
+ * This effectively resets the interior faces to their initial numbering.
+ *
+ * parameters:
+ *   mesh  <->  pointer to global mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_renumber_i_faces_by_gnum(cs_mesh_t  *mesh)
+{
+  if (mesh->i_face_numbering != NULL)
+    cs_numbering_destroy(&(mesh->i_face_numbering));
+
+  if (mesh->global_i_face_num != NULL) {
+
+    cs_lnum_t *new_to_old_i = cs_order_gnum(NULL,
+                                            mesh->global_i_face_num,
+                                            mesh->n_i_faces);
+
+    _cs_renumber_update_i_faces(mesh, new_to_old_i);
+
+    mesh->i_face_numbering
+      = cs_numbering_create_default(mesh->n_i_faces);
+
+    BFT_FREE(new_to_old_i);
+
+    if (mesh->n_domains < 2)
+      BFT_FREE(mesh->global_i_face_num);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5666,6 +5745,40 @@ cs_renumber_b_faces(cs_mesh_t  *mesh)
     mesh->b_face_numbering = cs_numbering_create_default(mesh->n_b_faces);
 
   _renumber_b_test(mesh);
+}
+
+/*----------------------------------------------------------------------------
+ * Renumber boundary faces by global number.
+ *
+ * This effectively resets the boundary faces to their initial numbering.
+ *
+ * parameters:
+ *   mesh  <->  pointer to global mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_renumber_b_faces_by_gnum(cs_mesh_t  *mesh)
+{
+  if (mesh->b_face_numbering != NULL)
+    cs_numbering_destroy(&(mesh->b_face_numbering));
+
+  if (mesh->global_b_face_num != NULL) {
+
+    cs_lnum_t *new_to_old_b = cs_order_gnum(NULL,
+                                            mesh->global_b_face_num,
+                                            mesh->n_b_faces);
+
+    _cs_renumber_update_b_faces(mesh, new_to_old_b);
+
+    mesh->b_face_numbering
+      = cs_numbering_create_default(mesh->n_b_faces);
+
+    BFT_FREE(new_to_old_b);
+
+    if (mesh->n_domains < 2)
+      BFT_FREE(mesh->global_b_face_num);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

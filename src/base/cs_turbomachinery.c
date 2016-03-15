@@ -403,28 +403,28 @@ _copy_mesh(const cs_mesh_t  *mesh,
 
   /* Global numbering */
 
-  if (mesh->n_g_cells != (cs_gnum_t)mesh->n_cells) {
+  if (mesh->global_cell_num != NULL) {
     BFT_MALLOC(mesh_copy->global_cell_num, mesh->n_cells, cs_gnum_t);
     memcpy(mesh_copy->global_cell_num,
            mesh->global_cell_num,
            mesh->n_cells*sizeof(cs_gnum_t));
   }
 
-  if (mesh->n_g_i_faces != (cs_gnum_t)mesh->n_i_faces) {
+  if (mesh->global_i_face_num != NULL) {
     BFT_MALLOC(mesh_copy->global_i_face_num, mesh->n_i_faces, cs_gnum_t);
     memcpy(mesh_copy->global_i_face_num,
            mesh->global_i_face_num,
            mesh->n_i_faces*sizeof(cs_gnum_t));
   }
 
-  if (mesh->n_g_b_faces != (cs_gnum_t)mesh->n_b_faces) {
+  if (mesh->global_b_face_num != NULL) {
     BFT_MALLOC(mesh_copy->global_b_face_num, mesh->n_b_faces, cs_gnum_t);
     memcpy(mesh_copy->global_b_face_num,
            mesh->global_b_face_num,
            mesh->n_b_faces*sizeof(cs_gnum_t));
   }
 
-  if (mesh->n_g_vertices != (cs_gnum_t)mesh->n_vertices) {
+  if (mesh->global_vtx_num != NULL) {
     BFT_MALLOC(mesh_copy->global_vtx_num, mesh->n_vertices, cs_gnum_t);
     memcpy(mesh_copy->global_vtx_num,
            mesh->global_vtx_num,
@@ -813,6 +813,7 @@ _update_mesh(bool     restart_mode,
     cs_preprocessor_data_read_mesh(cs_glob_mesh,
                                    cs_glob_mesh_builder);
 
+    cs_renumber_cells(cs_glob_mesh);
   }
 
   tbm->n_b_faces_ref = cs_glob_mesh->n_b_faces;
@@ -1127,6 +1128,13 @@ cs_turbomachinery_initialize(void)
     cs_numbering_destroy(&(cs_glob_mesh->b_face_numbering));
 
   _copy_mesh(cs_glob_mesh, tbm->reference_mesh);
+
+  /* Reorder reference mesh by global number to avoid some issues with
+     joining, especially in serial mode where global numbers are not
+     expected to be present at joining stages */
+
+  cs_renumber_i_faces_by_gnum(tbm->reference_mesh);
+  cs_renumber_b_faces_by_gnum(tbm->reference_mesh);
 
   /* Complete the mesh with rotor-stator joining */
 
