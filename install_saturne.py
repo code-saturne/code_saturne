@@ -602,8 +602,8 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.14",
-                    archive="hdf5-1.8.14.tar.gz",
+                    version="1.8.16",
+                    archive="hdf5-1.8.16.tar.gz",
                     url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.14/src/%s")
 
         p = self.packages['hdf5']
