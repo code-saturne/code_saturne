@@ -105,6 +105,7 @@ typedef struct {
   /* Main soil properties */
   double                  residual_moisture;       /* theta_r */
   double                  saturated_moisture;      /* theta_s */
+  double                  delta_moisture;          /* theta_s - theta_r */
   cs_get_t                saturated_permeability;  /* k_s [m.s^-1] */
 
 } cs_gw_soil_t;
@@ -402,6 +403,8 @@ _init_soil(const char     *ml_name,
               " Value given: %s\n"
               " Availaible models: saturated, genutchen, tracy", model_kw);
 
+  soil->delta_moisture = soil->saturated_moisture - soil->residual_moisture;
+  
   /* Set of parameters for each tracer which are related to this soil */
   BFT_MALLOC(soil->tracer_param, n_tracers, cs_gw_tracer_t);
 
@@ -468,32 +471,43 @@ _get_tracer_diffusion_tensor(double          theta,
                              const void     *tracer_struc,
                              cs_get_t       *result)
 {
-  const cs_gw_tracer_t  *tp = (const cs_gw_tracer_t  *)tracer_struc;
+  const cs_gw_tracer_t  *tp = (const cs_gw_tracer_t *)tracer_struc;
 
-  const double  vxx = v[0]*v[0], vyy = v[1]*v[1], vzz = v[2]*v[2];
-  const double  vxy = v[0]*v[1], vxz = v[0]*v[1], vyz = v[1]*v[2];
-  const double  vnorm = sqrt(vxx + vyy + vzz);
+  const double  vxy = v[0]*v[1], vxz = v[0]*v[2], vyz = v[1]*v[2];
+  const cs_real_33_t  vv = {{v[0]*v[0], vxy, vxz},
+                            {vxy, v[1]*v[1], vyz},
+                            {vxz, vyz, v[2]*v[2]}};
+  const double  vnorm = sqrt(vv[0][0] + vv[1][1] + vv[2][2]);
+  const double  theta_wmd = tp->wmd * theta;
 
-  assert(vnorm > cs_math_zero_threshold);
-  const double  onv = 1/vnorm;
-  const double  delta_coef = (tp->alpha_l - tp->alpha_t)*onv;
-
-  /* Extra diagonal terms */
-  result->tens[0][1] = result->tens[1][0] = delta_coef * vxy;
-  result->tens[0][2] = result->tens[2][0] = delta_coef * vxz;
-  result->tens[1][2] = result->tens[2][1] = delta_coef * vyz;
-
-  /* Diagonal terms */
-  const double  diag_coef = tp->wmd * theta;
-
-  result->tens[0][0] = tp->alpha_l*vxx + tp->alpha_t*vyy + tp->alpha_t*vzz;
-  result->tens[1][1] = tp->alpha_t*vxx + tp->alpha_l*vyy + tp->alpha_t*vzz;
-  result->tens[2][2] = tp->alpha_t*vxx + tp->alpha_t*vyy + tp->alpha_l*vzz;
-
-  for (int k = 0; k < 3; k++) {
-    result->tens[k][k] *= onv;
-    result->tens[k][k] += diag_coef;
+  /* Initialization */
+  for (int ki = 0; ki < 3; ki++) {
+    result->tens[ki][ki] = theta_wmd;
+    for (int kj = ki + 1; kj < 3; kj++)
+      result->tens[ki][kj] = 0.;
   }
+  
+  if (vnorm > cs_math_zero_threshold) {
+
+    const double  onv = 1/vnorm;
+    const double  delta_coef = (tp->alpha_l - tp->alpha_t)*onv;
+    
+    for (int ki = 0; ki < 3; ki++) {
+
+      /* Diagonal terms */
+      result->tens[ki][ki] += tp->alpha_t*vnorm + delta_coef*vv[ki][ki];
+
+      /* Extra-diagonal terms */
+      for (int kj = ki + 1; kj < 3; kj++)
+        result->tens[ki][kj] = delta_coef*vv[ki][kj];
+    }
+    
+  }
+
+  /* Diffusion tensor is symmetric by construction */
+  result->tens[1][0] = result->tens[0][1];
+  result->tens[2][0] = result->tens[0][2];
+  result->tens[2][1] = result->tens[1][2];
 
 }
 
@@ -564,13 +578,13 @@ _permeability_by_genuchten_law(double        h,
   if (h < 0) {
 
     /* S_e(h) = [1 + |alpha*h|^n]^(-m) */
-    const double  alpha_h = fabs(law.scale*h);
-    const double  one_alpha_hn = 1 + pow(alpha_h, law.n);
-    const double  se_pow_overm = 1/one_alpha_hn;
-    const double  se_L = pow(one_alpha_hn, -law.m*law.tortuosity);
+    const double  one_alpha_hn = 1 + pow(fabs(law.scale*h), law.n);
+    const double  se = pow(one_alpha_hn, -law.m);
+    const double  se_pow_L = pow(se, law.tortuosity);
+    const double  se_pow_overm = pow(se, 1/law.m);
     const double  coef_base = 1 - pow(1 - se_pow_overm, law.m);
 
-    isoval *= se_L * coef_base*coef_base;
+    isoval *= se_pow_L * coef_base*coef_base;
 
   }
 
@@ -582,6 +596,65 @@ _permeability_by_genuchten_law(double        h,
     }
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the moisture content using the Tracy law
+ *
+ * \param[in]      h             value of the hydralic head
+ * \param[in]      soil_struc    pointer to a soil structure
+ * \param[in, out] result        pointer to a cs_get_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_moisture_by_genuchten_law(double        h,
+                           const void   *soil_struc,
+                           cs_get_t     *result)
+{
+  const cs_gw_soil_t  *soil = (const cs_gw_soil_t  *)soil_struc;
+  const cs_gw_genuchten_t  law = soil->genuchten_param;
+
+  double  Se = 1; // dimensionless moisture
+
+  if (h < 0) {
+    double  tmp_coef = pow(fabs(law.scale * h), law.n);
+    Se = pow(1 + tmp_coef, -law.m);
+  }
+
+  /* Return the computed moisture content */
+  result->val = Se*soil->delta_moisture + soil->residual_moisture;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the moisture content using the Tracy law
+ *
+ * \param[in]      h             value of the hydralic head
+ * \param[in]      soil_struc    pointer to a soil structure
+ * \param[in, out] result        pointer to a cs_get_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_capacity_by_genuchten_law(double        h,
+                           const void   *soil_struc,
+                           cs_get_t     *result)
+{
+  const cs_gw_soil_t  *soil = (const cs_gw_soil_t  *)soil_struc;
+  const cs_gw_genuchten_t  law = soil->genuchten_param;
+
+  result->val = 0.; // default initialization for saturated soil
+
+  if (h >= 0)
+    return;
+
+  const double  mult_coef = -law.n * law.m * soil->delta_moisture;
+  const double  alpha_h_pow_n = pow(fabs(law.scale * h), law.n);
+  const double  se_m1 = pow(1 + alpha_h_pow_n, -law.m-1);
+
+  result->val = mult_coef * alpha_h_pow_n/h * se_m1;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -635,10 +708,9 @@ _moisture_by_tracy_law(double        h,
 {
   const cs_gw_soil_t  *soil = (const cs_gw_soil_t  *)soil_struc;
   const cs_gw_tracy_t  law = soil->tracy_param;
-  const double  delta_theta = soil->saturated_moisture - soil->residual_moisture;
 
   double  k_r = (h - law.h_r)/(law.h_s - law.h_r);
-  double  moisture = k_r * delta_theta + soil->residual_moisture;
+  double  moisture = k_r * soil->delta_moisture + soil->residual_moisture;
 
   result->val = moisture;
 }
@@ -662,7 +734,7 @@ _update_pressure_head(const cs_cdo_quantities_t   *cdoq,
   if (richards == NULL || gw == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " Groundwater module or Richards eq. is not allocated.");
-  
+
   cs_field_t  *pressure_head = gw->pressure_head;
 
   /* Sanity checks */
@@ -681,12 +753,12 @@ _update_pressure_head(const cs_cdo_quantities_t   *cdoq,
 
 # pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
-    
+
     const cs_real_t  gpot = cs_math_3_dot_product(cdoq->vtx_coord + 3*i,
                                                   gw->gravity);
-    
+
     pressure_head->val[i] = hydraulic_head->val[i] - gpot;
-    
+
   }
 
 }
@@ -709,8 +781,6 @@ _update_darcian_flux(const cs_cdo_connect_t      *connect,
                      const cs_equation_t         *richards,
                      cs_groundwater_t            *gw)
 {
-  cs_lnum_t  i, _i, c_id;
-
   /* Sanity checks */
   if (richards == NULL || gw == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -729,7 +799,7 @@ _update_darcian_flux(const cs_cdo_connect_t      *connect,
 
   /* Define the flux by cellwise contributions
      loc_flux = - loc_hodge * loc_gradient(h) */
-  for (c_id = 0; c_id < cdoq->n_cells; c_id++) {
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
     if (c_id == 0 || diff_tensor_uniform == false) {
       cs_property_get_cell_tensor(c_id,
@@ -742,7 +812,7 @@ _update_darcian_flux(const cs_cdo_connect_t      *connect,
     /* Build a local discrete Hodge op. and return a local dense matrix */
     const cs_locmat_t  *hloc = cs_hodge_build_local(c_id, connect, cdoq, hb);
 
-    for (i = c2e->idx[c_id], _i = 0; i < c2e->idx[c_id+1]; i++, _i++) {
+    for (cs_lnum_t i = c2e->idx[c_id], k = 0; i < c2e->idx[c_id+1]; i++, k++) {
 
       const cs_lnum_t  e_shft = 2*c2e->ids[i];
       const cs_lnum_t  v1_id = e2v->col_id[e_shft];
@@ -750,7 +820,7 @@ _update_darcian_flux(const cs_cdo_connect_t      *connect,
       const short int  sgn_v1 = e2v->sgn[e_shft];
       const short int  sgn_v2 = e2v->sgn[e_shft+1];
 
-      loc_grdh[_i] = -(sgn_v1*h->val[v1_id] + sgn_v2*h->val[v2_id]);
+      loc_grdh[k] = -(sgn_v1*h->val[v1_id] + sgn_v2*h->val[v2_id]);
 
     } // Loop on cell edges
 
@@ -760,7 +830,7 @@ _update_darcian_flux(const cs_cdo_connect_t      *connect,
   } // Loop on cells
 
   /* Free builder */
-  hb = cs_hodge_builder_free(hb);
+  hb = cs_hodge_builder_free(hb);  
 }
 
 /*----------------------------------------------------------------------------*/
@@ -793,9 +863,9 @@ _update_moisture_content(const cs_cdo_connect_t      *connect,
   if (moisture == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " The field related to the moisture content is not allocated.");
-  
+
   const cs_field_t  *h;
-  
+
   if (gw->with_gravitation)
     h = pressure_head;
   else
@@ -819,13 +889,29 @@ _update_moisture_content(const cs_cdo_connect_t      *connect,
 
       switch (soil->model) {
 
+      case CS_GROUNDWATER_MODEL_GENUCHTEN:
+# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+        for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+          double  val_xc;
+          cs_get_t  get;
+
+          /* Reconstruct (or interpolate) value at the current cell center */
+          cs_reco_pv_at_cell_center(c_id, connect->c2v, cdoq, h->val, &val_xc);
+
+          _moisture_by_genuchten_law(val_xc, (const void *)soil, &get);
+          moisture->val[c_id] = get.val;
+
+        } // Loop on cells
+        break;
+
       case CS_GROUNDWATER_MODEL_TRACY:
 # pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
           double  val_xc;
           cs_get_t  get;
-          
+
           /* Reconstruct (or interpolate) value at the current cell center */
           cs_reco_pv_at_cell_center(c_id, connect->c2v, cdoq, h->val, &val_xc);
 
@@ -848,11 +934,30 @@ _update_moisture_content(const cs_cdo_connect_t      *connect,
         break; // Nothing to do
 
       }
-      
+
     }
     else { /* elt_ids != NULL */
-        
+
       switch (soil->model) {
+
+      case CS_GROUNDWATER_MODEL_GENUCHTEN:
+# pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i <  n_elts[0]; i++) {
+
+          double  val_xc;
+          cs_get_t  get;
+
+          /* Reconstruct (or interpolate) value at the current cell center */
+          const cs_lnum_t c_id = elt_ids[i];
+
+          /* Reconstruct (or interpolate) value at the current cell center */
+          cs_reco_pv_at_cell_center(c_id, connect->c2v, cdoq, h->val, &val_xc);
+
+          _moisture_by_genuchten_law(val_xc, (const void *)soil, &get);
+          moisture->val[c_id] = get.val;
+
+        } // Loop on cells
+        break;
 
       case CS_GROUNDWATER_MODEL_TRACY:
 # pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
@@ -863,7 +968,7 @@ _update_moisture_content(const cs_cdo_connect_t      *connect,
 
           /* Reconstruct (or interpolate) value at the current cell center */
           const cs_lnum_t c_id = elt_ids[i];
-          
+
           cs_reco_pv_at_cell_center(c_id, connect->c2v, cdoq, h->val, &val_xc);
 
           _moisture_by_tracy_law(val_xc, (const void *)soil, &get);
@@ -887,7 +992,7 @@ _update_moisture_content(const cs_cdo_connect_t      *connect,
       } /* Switch according to the kind of modelling */
 
     } /* elt_ids != NULL */
-    
+
   } /* Loop on soils */
 
 }
@@ -927,7 +1032,7 @@ _check_settings(const cs_groundwater_t  *gw)
 # pragma omp parallel reduction(+:n_unset_cells) if (n_elts[0] > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts[0]; i++)
       if (gw->soil_id[i] == gw->n_max_soils) n_unset_cells++;
-    
+
     if (n_unset_cells > 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %d cells are not associated to any soil.\n"
@@ -1261,7 +1366,7 @@ cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
 
   /* Sanity check */
   assert(n_soils > 0);
-  
+
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
   gw->richards_eq_id = richards_eq_id;
@@ -1434,14 +1539,28 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
     {
       double  theta_s = atof(keyval);
 
-      if (ml_id == -1)
-        for (i = 0; i < gw->n_soils; i++)
+      if (ml_id == -1) {
+        
+        for (i = 0; i < gw->n_soils; i++) {
           gw->soil_param[i].saturated_moisture = theta_s;
-      else
-        for (i = 0; i < gw->n_soils; i++)
-          if (ml_id == gw->soil_param[i].ml_id)
+          /* Update delta_moisture */
+          gw->soil_param[i].delta_moisture =
+            theta_s - gw->soil_param[i].residual_moisture;
+        } // Loop on soils
+        
+      } // All soils are updated
+      else {
+        
+        for (i = 0; i < gw->n_soils; i++) {          
+          if (ml_id == gw->soil_param[i].ml_id) {
             gw->soil_param[i].saturated_moisture = theta_s;
-
+            /* Update delta_moisture */
+            gw->soil_param[i].delta_moisture =
+              theta_s - gw->soil_param[i].residual_moisture;
+          }
+        } // Loop on soils
+        
+      }
     }
     break;
 
@@ -1449,14 +1568,28 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
     {
       double  theta_r = atof(keyval);
 
-      if (ml_id == -1)
-        for (i = 0; i < gw->n_soils; i++)
+      if (ml_id == -1) {
+        
+        for (i = 0; i < gw->n_soils; i++) {
           gw->soil_param[i].residual_moisture = theta_r;
-      else
-        for (i = 0; i < gw->n_soils; i++)
-          if (ml_id == gw->soil_param[i].ml_id)
+          /* Update delta_moisture */
+          gw->soil_param[i].delta_moisture =
+            gw->soil_param[i].saturated_moisture - theta_r;
+        } // Loop on soils
+        
+      }
+      else {
+        
+        for (i = 0; i < gw->n_soils; i++) {
+          if (ml_id == gw->soil_param[i].ml_id) {
             gw->soil_param[i].residual_moisture = theta_r;
-
+            /* Update delta_moisture */
+            gw->soil_param[i].delta_moisture =
+              gw->soil_param[i].saturated_moisture - theta_r;
+          }
+        } // Loop on soils
+        
+      }
     }
     break;
 
@@ -1568,9 +1701,8 @@ cs_groundwater_add_tracer(cs_groundwater_t    *gw,
 
   /* Set default option */
   cs_equation_set_option(eq, "space_scheme", "cdo_vb");
-  cs_equation_set_option(eq, "itsol", "bicg");
+  cs_equation_set_option(eq, "itsol", "bicgstab2");
   cs_equation_set_option(eq, "bc_enforcement", "weak");
-  cs_equation_set_option(eq, "time_scheme", "crank_nicolson");
 
   return eq;
 }
@@ -1704,7 +1836,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
   cs_field_allocate_values(gw->moisture_content);
 
   if (gw->with_gravitation) { /* Gravitation effect */
-    
+
     gw->pressure_head = cs_field_create("pressure_head",
                                         field_mask,
                                         hydraulic_head->location_id,
@@ -1770,15 +1902,28 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
           cs_property_set_array(permeability, desc, gw->pressure_head->val);
         else
           cs_property_set_array(permeability, desc, hydraulic_head->val);
-        
+
         cs_property_def_by_law(permeability,
                                ml_name,
                                (const void *)soil,
                                _permeability_by_genuchten_law);
 
         /* Soil capacity settings (related to unsteady term) */
-        if (has_previous)
-          bft_error(__FILE__, __LINE__, 0, "Not implemented. To do.");
+        if (has_previous) {
+
+          cs_property_t  *capacity = cs_equation_get_time_property(richards);
+
+        if (gw->with_gravitation)
+          cs_property_set_array(capacity, desc, gw->pressure_head->val);
+        else
+          cs_property_set_array(capacity, desc, hydraulic_head->val);
+
+          cs_property_def_by_law(capacity,
+                                 ml_name,
+                                 (const void *)soil,
+                                 _capacity_by_genuchten_law);
+
+        }
 
       }
       break;
@@ -1792,7 +1937,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
           cs_property_set_array(permeability, desc, gw->pressure_head->val);
         else
           cs_property_set_array(permeability, desc, hydraulic_head->val);
-        
+
         cs_property_def_by_law(permeability,
                                ml_name,
                                (const void *)soil,
@@ -1805,8 +1950,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 
           const cs_gw_tracy_t  law = soil->tracy_param;
           const double  dh = law.h_s - law.h_r;
-          const double  dtheta =
-            soil->saturated_moisture - soil->residual_moisture;
+          const double  dtheta = soil->delta_moisture;
 
           cs_property_iso_def_by_value(capacity, ml_name, dtheta/dh);
 
@@ -2064,7 +2208,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
 
     if (gw->with_gravitation) /* Initialize pressure head */
       _update_pressure_head(cdoq, richards, gw);
-      
+
     /* Build and solve the linear system related to the Richards equations */
     if (cs_equation_is_steady(richards)) {
 
@@ -2223,9 +2367,9 @@ cs_groundwater_extra_post(void                      *input,
                              CS_POST_TYPE_cs_real_t,
                              f->val,          // values on cells
                              time_step);      // time step structure
-    
+
   }
-  
+
 }
 
 /*----------------------------------------------------------------------------*/
