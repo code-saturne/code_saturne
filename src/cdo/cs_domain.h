@@ -118,9 +118,9 @@ typedef struct {
   /* TODO: NAVIER-STOKES */
 
   /* Output options */
-  int   output_freq;
-  int   post_freq;
-  int   verbosity;
+  int        output_nt;  /* Log information every nt iteration(s) */
+  cs_real_t  output_dt;  /* Log information every dt elapsed simulated time */
+  int        verbosity;  /* Level of details given in log */
 
 } cs_domain_t;
 
@@ -174,6 +174,19 @@ void
 cs_domain_set_param(cs_domain_t    *domain,
                     const char     *keyname,
                     const char     *keyval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if an ouput is requested according to the domain setting
+ *
+ * \param[in]   domain    pointer to a cs_domain_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_domain_needs_log(const cs_domain_t      *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

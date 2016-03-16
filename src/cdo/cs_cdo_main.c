@@ -90,7 +90,7 @@ static const char cs_cdoversion[] = "0.5";
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup a computation within the CDO framework
+ * \brief  Setup a computational domain within the CDO framework
  *
  * \param[in, out]  m     pointer to a cs_mesh_t struct.
  * \param[in]       mq    pointer to a cs_quantities_t struct.
@@ -100,20 +100,9 @@ static const char cs_cdoversion[] = "0.5";
 /*----------------------------------------------------------------------------*/
 
 static cs_domain_t *
-_setup(cs_mesh_t             *m,
-       cs_mesh_quantities_t  *mq)
+_setup_domain(cs_mesh_t             *m,
+              cs_mesh_quantities_t  *mq)
 {
-  /* Output information */
-  bft_printf("\n");
-  bft_printf("%s", lsepline);
-  bft_printf("\tStart CDO Module  *** Experimental ***\n");
-  bft_printf("%s", lsepline);
-  bft_printf("\n -msg- Version.Tag  %s\n", cs_cdoversion);
-
-  /* Initialization of several modules */
-  cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
-  cs_quadrature_setup();         /* Compute constant used in quadrature rules */
-
   /* User-defined settings and default initializations
      WARNING: Change the order of call to the following routines with care
               This may incur bugs */
@@ -225,14 +214,31 @@ void
 cs_cdo_main(cs_mesh_t             *m,
             cs_mesh_quantities_t  *mq)
 {
-  cs_timer_t  t0, t1;
-  cs_timer_counter_t  time_count;
+  /* Timer statistics */
+  const int  cdo_ts_id = cs_timer_stats_create("stages", "cdo", "cdo");
+  const int  cdo_solve_ts_id = cs_timer_stats_create("cdo",
+                                                     "cdo_solve",
+                                                     "cdo_solve");
+  const int  cdo_post_ts_id = cs_timer_stats_create("cdo",
+                                                    "cdo_post",
+                                                    "cdo_post");
 
-  /* Build high-level structures */
-  t0 = cs_timer_time();
+    /* Initialization of several modules */
+  cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
+  cs_quadrature_setup();         /* Compute constant used in quadrature rules */
 
-  /* Create algebraic systems */
-  cs_domain_t  *domain = _setup(m, mq);
+  /* Output information */
+  bft_printf("\n");
+  bft_printf("%s", lsepline);
+  bft_printf("\tStart CDO Module  *** Experimental ***\n");
+  bft_printf("%s", lsepline);
+  bft_printf("\n -msg- Version.Tag  %s\n", cs_cdoversion);
+
+  cs_timer_t t0 = cs_timer_time();
+  cs_timer_stats_start(cdo_ts_id);
+
+  /*  Build high-level structures and create algebraic systems */
+  cs_domain_t  *domain = _setup_domain(m, mq);
 
   t1 = cs_timer_time();
   time_count = cs_timer_diff(&t0, &t1);
@@ -240,21 +246,25 @@ cs_cdo_main(cs_mesh_t             *m,
                 "  -t-    CDO setup runtime                 %12.3f s\n",
                 time_count.wall_nsec*1e-9);
 
-  while (cs_domain_needs_iterate(domain)) {
+  bft_printf("\n%s", lsepline);
+  bft_printf("      Start main loop on time iteration\n");
+  bft_printf("%s", lsepline);
+
+  while (cs_domain_needs_iterate(domain)) { // Main time loop
 
     t0 = cs_timer_time();
 
     /* Define the current time step */
     cs_domain_define_current_time_step(domain);
 
-    /* Solve equations */
+    /* Build and solve equations related to the computational domain */
     cs_domain_solve(domain);
 
     t1 = cs_timer_time();
     time_count = cs_timer_diff(&t0, &t1);
 
     /* Perfomance statistics */
-    if (domain->time_step->nt_cur % domain->output_freq == 0)
+    if (cs_domain_needs_log(domain))
       cs_log_printf(CS_LOG_PERFORMANCE,
                     "  -t-    CDO solver runtime    (iter: %d)   %12.3f s\n",
                     domain->time_step->nt_cur, time_count.wall_nsec*1e-9);
@@ -268,7 +278,7 @@ cs_cdo_main(cs_mesh_t             *m,
     time_count = cs_timer_diff(&t0, &t1);
 
     /* Perfomance statistics */
-    if (domain->time_step->nt_cur % domain->output_freq == 0)
+    if (cs_domain_needs_log(domain))
       cs_log_printf(CS_LOG_PERFORMANCE,
                     "  -t-    CDO extra operations  (iter: %d)   %12.3f s\n",
                     domain->time_step->nt_cur, time_count.wall_nsec*1e-9);
@@ -276,7 +286,7 @@ cs_cdo_main(cs_mesh_t             *m,
     /* Increment time */
     cs_domain_increment_time(domain);
 
-  } // Time loop
+  }
 
   /* Free main CDO structures */
   t0 = cs_timer_time();
@@ -292,7 +302,8 @@ cs_cdo_main(cs_mesh_t             *m,
   bft_printf("\n%s", lsepline);
   bft_printf("\tExit CDO Module\n");
   bft_printf("%s", lsepline);
-  printf("\n  --> Exit CDO module\n\n");
+
+  printf("\n  --> Exit: simulation completed for the CDO module\n\n");
 
   return;
 }

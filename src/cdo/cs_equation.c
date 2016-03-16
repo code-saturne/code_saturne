@@ -291,8 +291,7 @@ struct _cs_equation_t {
 
   cs_equation_param_t   *param;   /* Set of parameters related to an equation */
 
-  /* Variable atached to this equation is also attached to a cs_field_t
-     structure */
+  /* Variable attached to this equation is defined as a cs_field_t structure */
   char *restrict         varname;
   int                    field_id;
 
@@ -308,7 +307,7 @@ struct _cs_equation_t {
                              steps afterthe resolution of the linear systems
                              (post, balance...) */
 
-  bool    do_build;       /* false => keep the system as it is */
+  bool    do_build;     /* false => keep the system as it is */
 
   /* Algebraic system */
   cs_matrix_structure_t    *ms;      /* matrix structure (how are stored
@@ -319,7 +318,7 @@ struct _cs_equation_t {
   /* System builder depending on the numerical scheme*/
   void                     *builder;
 
-  /* Pointer to functions */
+  /* Pointer to functions (see prototypes just above) */
   cs_equation_init_builder_t    *init_builder;
   cs_equation_free_builder_t    *free_builder;
   cs_equation_build_system_t    *build_system;

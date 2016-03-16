@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define  CS_SLA_MATRIX_DBG 0
+#define  CS_SLA_DBG 1
 
 /* Sparse Accumulator: see Gilbert etal. and Buluc (PhD) */
 /* ===================================================== */
@@ -1766,7 +1766,7 @@ cs_sla_matrix_rmzeros(cs_sla_matrix_t   *m)
     BFT_REALLOC(m->col_id, shift, cs_lnum_t);
   }
 
-#if CS_SLA_MATRIX_DBG > 0 /* Output message */
+#if CS_SLA_DBG > 0 /* Output message */
   bft_printf(" -dbg- cs_sla_matrix_clean >>"
              " type: %s; n_rows: %6d; threshold: %6.3e; nnz: %d -> %d\n",
              _sla_matrix_type[m->type], m->n_rows, threshold, init_nnz, shift);
@@ -1842,7 +1842,7 @@ cs_sla_matrix_clean(cs_sla_matrix_t   *m,
       BFT_REALLOC(m->col_id, shift, int);
     }
 
-#if CS_SLA_MATRIX_DBG > 0 /* Output message */
+#if CS_SLA_DBG > 0 /* Output message */
     bft_printf(" -dbg- cs_sla_matrix_clean >>"
                " type: %s; n_rows: %6d; threshold: %6.3e; nnz: %d -> %d\n",
                _sla_matrix_type[m->type], m->n_rows, eps, init_nnz, shift);
@@ -2340,12 +2340,26 @@ cs_sla_assemble_msr_sym(const cs_locmat_t   *loc,
 
           /* First add: loc(i,j) */
           k_ij = cs_search_binary(n_i_ents, j_id, &(ass->col_id[start_i]));
-          assert(k_ij > -1);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_SLA_DBG > 0 /* Sanity check */
+          if (k_ij < 0)
+            bft_error(__FILE__, __LINE__, 0,
+                      " Error detected while assembling a matrix.\n"
+                      " An non-zero entry has not been found.");
+#endif
+
           ass->val[start_i+k_ij] += val_ij;
 
           /* Second add: loc(j,i) */
           k_ji = cs_search_binary(n_j_ents, i_id, &(ass->col_id[start_j]));
-          assert(k_ji > -1);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_SLA_DBG > 0 /* Sanity check */
+          if (k_ji < 0)
+            bft_error(__FILE__, __LINE__, 0,
+                      " Error detected while assembling a matrix.\n"
+                      " An non-zero entry has not been found.");
+#endif
+
           ass->val[start_j+k_ji] += val_ij;
 
         } /* loc[ij] != 0.0 */
@@ -2400,7 +2414,13 @@ cs_sla_assemble_msr(const cs_locmat_t   *loc,
 
         /* First add: loc(i,j) */
         k_ij = cs_search_binary(n_i_ents, j_id, &(ass->col_id[start_i]));
-        assert(k_ij > -1);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_SLA_DBG > 0 /* Sanity check */
+        if (k_ij < 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    " Error detected while assembling a matrix.\n"
+                    " An non-zero entry has not been found.");
+#endif
         ass->val[start_i+k_ij] += val_ij;
 
       } /* loc[ij] != 0.0 */
@@ -2414,7 +2434,14 @@ cs_sla_assemble_msr(const cs_locmat_t   *loc,
 
         /* Second add: loc(j,i) */
         k_ji = cs_search_binary(n_j_ents, i_id, &(ass->col_id[start_j]));
-        assert(k_ji > -1);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_SLA_DBG > 0 /* Sanity check */
+        if (k_ji < 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    " Error detected while assembling a matrix.\n"
+                    " An non-zero entry has not been found.");
+#endif
+
         ass->val[start_j+k_ji] += val_ji;
 
       } /* loc[ji] != 0.0 */

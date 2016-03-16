@@ -371,7 +371,7 @@ _init_soil(const char     *ml_name,
     soil->residual_moisture = 0.0;
 
   }
-  else if (strcmp(model_kw, "genutchten") == 0) {
+  else if (strcmp(model_kw, "genuchten") == 0) {
 
     soil->model = CS_GROUNDWATER_MODEL_GENUCHTEN;
 
@@ -379,7 +379,7 @@ _init_soil(const char     *ml_name,
     soil->saturated_moisture = 0.75;
     soil->residual_moisture = 0.15;
 
-    double  n = 1.56;
+    const double  n = 1.56;
     soil->genuchten_param.n = n;
     soil->genuchten_param.m = 1 - 1/n;
     soil->genuchten_param.scale = 0.036;
@@ -401,10 +401,10 @@ _init_soil(const char     *ml_name,
     bft_error(__FILE__, __LINE__, 0,
               " Incompatible model for a soil in the groundwater module.\n"
               " Value given: %s\n"
-              " Availaible models: saturated, genutchen, tracy", model_kw);
+              " Availaible models: saturated, genuchten, tracy", model_kw);
 
   soil->delta_moisture = soil->saturated_moisture - soil->residual_moisture;
-  
+
   /* Set of parameters for each tracer which are related to this soil */
   BFT_MALLOC(soil->tracer_param, n_tracers, cs_gw_tracer_t);
 
@@ -486,12 +486,12 @@ _get_tracer_diffusion_tensor(double          theta,
     for (int kj = ki + 1; kj < 3; kj++)
       result->tens[ki][kj] = 0.;
   }
-  
+
   if (vnorm > cs_math_zero_threshold) {
 
     const double  onv = 1/vnorm;
     const double  delta_coef = (tp->alpha_l - tp->alpha_t)*onv;
-    
+
     for (int ki = 0; ki < 3; ki++) {
 
       /* Diagonal terms */
@@ -501,7 +501,7 @@ _get_tracer_diffusion_tensor(double          theta,
       for (int kj = ki + 1; kj < 3; kj++)
         result->tens[ki][kj] = delta_coef*vv[ki][kj];
     }
-    
+
   }
 
   /* Diffusion tensor is symmetric by construction */
@@ -600,7 +600,7 @@ _permeability_by_genuchten_law(double        h,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the moisture content using the Tracy law
+ * \brief  Define the moisture content using the Van Genuchten law
  *
  * \param[in]      h             value of the hydralic head
  * \param[in]      soil_struc    pointer to a soil structure
@@ -608,7 +608,7 @@ _permeability_by_genuchten_law(double        h,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+static void
 _moisture_by_genuchten_law(double        h,
                            const void   *soil_struc,
                            cs_get_t     *result)
@@ -629,7 +629,7 @@ _moisture_by_genuchten_law(double        h,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the moisture content using the Tracy law
+ * \brief  Define the moisture content using the Van Genuchten law
  *
  * \param[in]      h             value of the hydralic head
  * \param[in]      soil_struc    pointer to a soil structure
@@ -830,7 +830,7 @@ _update_darcian_flux(const cs_cdo_connect_t      *connect,
   } // Loop on cells
 
   /* Free builder */
-  hb = cs_hodge_builder_free(hb);  
+  hb = cs_hodge_builder_free(hb);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1540,18 +1540,18 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
       double  theta_s = atof(keyval);
 
       if (ml_id == -1) {
-        
+
         for (i = 0; i < gw->n_soils; i++) {
           gw->soil_param[i].saturated_moisture = theta_s;
           /* Update delta_moisture */
           gw->soil_param[i].delta_moisture =
             theta_s - gw->soil_param[i].residual_moisture;
         } // Loop on soils
-        
+
       } // All soils are updated
       else {
-        
-        for (i = 0; i < gw->n_soils; i++) {          
+
+        for (i = 0; i < gw->n_soils; i++) {
           if (ml_id == gw->soil_param[i].ml_id) {
             gw->soil_param[i].saturated_moisture = theta_s;
             /* Update delta_moisture */
@@ -1559,7 +1559,7 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
               theta_s - gw->soil_param[i].residual_moisture;
           }
         } // Loop on soils
-        
+
       }
     }
     break;
@@ -1569,17 +1569,17 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
       double  theta_r = atof(keyval);
 
       if (ml_id == -1) {
-        
+
         for (i = 0; i < gw->n_soils; i++) {
           gw->soil_param[i].residual_moisture = theta_r;
           /* Update delta_moisture */
           gw->soil_param[i].delta_moisture =
             gw->soil_param[i].saturated_moisture - theta_r;
         } // Loop on soils
-        
+
       }
       else {
-        
+
         for (i = 0; i < gw->n_soils; i++) {
           if (ml_id == gw->soil_param[i].ml_id) {
             gw->soil_param[i].residual_moisture = theta_r;
@@ -1588,7 +1588,7 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
               gw->soil_param[i].saturated_moisture - theta_r;
           }
         } // Loop on soils
-        
+
       }
     }
     break;

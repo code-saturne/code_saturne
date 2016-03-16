@@ -1294,7 +1294,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
 
       cs_locmat_add(adr_loc, diff_loc);
 
-#if CS_CDOVB_SCALEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
       bft_printf(">> Local diffusion matrix");
       cs_locmat_dump(c_id, diff_loc);
 #endif
@@ -1309,7 +1309,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
                                        (const cs_real_3_t (*))diff_tensor,
                                        adv);
 
-#if CS_CDOVB_SCALEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
       bft_printf(">> Local advection matrix");
       cs_locmat_dump(c_id, adv_loc);
 #endif
@@ -1326,7 +1326,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
         cs_hodge_builder_t  *hb = reac_builder[i];
         cs_locmat_t  *rea_loc = cs_hodge_build_local(c_id, connect, quant, hb);
 
-#if CS_CDOVB_SCALEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
         bft_printf(">> Local reaction matrix for term %d", i);
         cs_locmat_dump(c_id, rea_loc);
 #endif
@@ -1347,7 +1347,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
       cs_locmat_t  *time_loc = cs_hodge_build_local(c_id, connect, quant,
                                                     time_builder);
 
-#if CS_CDOVB_SCALEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
       bft_printf(">> Local time matrix");
       cs_locmat_dump(c_id, time_loc);
 #endif
@@ -1355,7 +1355,12 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
       /* Assemble the local matrix into the system matrix */
       cs_sla_assemble_msr_sym(time_loc, time_mat, only_time_diag);
 
-    }
+    } /* Unsteady term */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
+    bft_printf(">> Local system matrix");
+    cs_locmat_dump(c_id, adr_loc);
+#endif
 
     /* Assemble the matrix related to the advcetion/diffusion/reaction terms
        If advection is activated, the resulting system is not symmetric
@@ -1364,11 +1369,6 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
       cs_sla_assemble_msr_sym(adr_loc, sys_mat, false);
     else
       cs_sla_assemble_msr(adr_loc, sys_mat);
-
-#if CS_CDOVB_SCALEQ_DBG > 0
-    bft_printf(">> Local system matrix");
-    cs_locmat_dump(c_id, adr_loc);
-#endif
 
   } // Main loop on cells
 
@@ -1438,13 +1438,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
      Must be call after the application of the time scheme */
   _enforce_bc(sys_builder, &full_rhs, &sys_mat);
 
-  bool do_cleaning = false; // Advanced option
-  if (do_cleaning)
-    cs_sla_matrix_clean(sys_mat, cs_math_get_machine_epsilon());
-  else
-    cs_sla_matrix_rmzeros(sys_mat);
-
-#if CS_CDOVB_SCALEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
   cs_sla_system_dump("system.log", NULL, sys_mat, full_rhs);
 #endif
 

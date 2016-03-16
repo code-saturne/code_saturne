@@ -158,7 +158,6 @@ struct _wbs_quant_t {
  * Private constant variables
  *============================================================================*/
 
-static const double  invdim = 1./3.;
 
 /*! \endcond (end ignore by Doxygen) */
 
@@ -1377,7 +1376,7 @@ cs_hodge_build_local(int                         c_id,
 
   }
 
-#if CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   cs_locmat_dump(c_id, hb->hloc);
 #endif
 

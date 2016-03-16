@@ -115,7 +115,8 @@ struct _cs_domain_boundary_t {
 typedef enum {
 
   DOMKEY_DEFAULT_BOUNDARY,
-  DOMKEY_OUTPUT_FREQ,
+  DOMKEY_OUTPUT_NT,
+  DOMKEY_OUTPUT_DT,
   DOMKEY_NTMAX,
   DOMKEY_TMAX,
   DOMKEY_VERBOSITY,
@@ -164,8 +165,10 @@ _print_domkey(domkey_t  key)
   switch (key) {
   case DOMKEY_DEFAULT_BOUNDARY:
     return "default_boundary";
-  case DOMKEY_OUTPUT_FREQ:
-    return "output_freq";
+  case DOMKEY_OUTPUT_NT:
+    return "output_nt";
+  case DOMKEY_OUTPUT_DT:
+    return "output_dt";
   case DOMKEY_NTMAX:
     return "nt_max";
   case DOMKEY_TMAX:
@@ -198,8 +201,10 @@ _get_domkey(const char  *keyname)
 
   if (strcmp(keyname, "default_boundary") == 0)
     key = DOMKEY_DEFAULT_BOUNDARY;
-  else if (strcmp(keyname, "output_freq") == 0)
-    key = DOMKEY_OUTPUT_FREQ;
+  else if (strcmp(keyname, "output_nt") == 0)
+    key = DOMKEY_OUTPUT_NT;
+  else if (strcmp(keyname, "output_dt") == 0)
+    key = DOMKEY_OUTPUT_DT;
   else if (strcmp(keyname, "nt_max") == 0)
     key = DOMKEY_NTMAX;
   else if (strcmp(keyname, "time_max") == 0)
@@ -597,7 +602,7 @@ cs_domain_init(const cs_mesh_t             *mesh,
   domain->time_step->nt_ini = 2;   // Not useful in CDO module
   domain->time_step->t_prev = 0.;
   domain->time_step->t_cur = 0.;   // Assume initial time is 0.0
-  domain->time_step->t_max = -1.;
+  domain->time_step->t_max = 0.;
 
   domain->time_options.inpdt0 = 0; // standard calculation
   domain->time_options.iptlro = 0;
@@ -624,7 +629,8 @@ cs_domain_init(const cs_mesh_t             *mesh,
   domain->only_steady = true;
 
   /* Other options */
-  domain->output_freq = 10;
+  domain->output_nt = -1;
+  domain->output_dt = 0.;
   domain->verbosity = 1;
 
   /* Predefined equations or modules */
@@ -763,13 +769,17 @@ cs_domain_set_param(cs_domain_t    *domain,
     _set_default_boundary(domain, keyval);
     break;
 
-  case DOMKEY_OUTPUT_FREQ:
+  case DOMKEY_OUTPUT_NT:
     {
       int  freq = atoi(keyval);
 
       if (freq == 0) freq = -1;
-      domain->output_freq = freq;
+      domain->output_nt = freq;
     }
+    break;
+
+  case DOMKEY_OUTPUT_DT:
+    domain->output_dt = atof(keyval);
     break;
 
   case DOMKEY_NTMAX:
@@ -790,6 +800,38 @@ cs_domain_set_param(cs_domain_t    *domain,
 
   } /* Switch on keys */
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if an ouput is requested according to the domain setting
+ *
+ * \param[in]   domain    pointer to a cs_domain_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_domain_needs_log(const cs_domain_t      *domain)
+{
+  const cs_time_step_t   *ts = domain->time_step;
+
+  if (domain->verbosity < 0)
+    return false;
+
+  if (domain->output_nt > -1)
+    if (ts->nt_cur % domain->output_nt == 0)
+      return true;
+
+  if (domain->output_dt > 0) {
+    if (ts->t_cur - floor(ts->t_cur/domain->output_dt)*domain->output_dt > 0)
+      return false;
+    else
+      return true;
+  }
+
+  return false;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1112,28 +1154,19 @@ cs_domain_needs_iterate(cs_domain_t  *domain)
 
   cs_time_step_t  *ts = domain->time_step;
 
-  if (ts->nt_max > -1) // nt_max has been set
+  if (ts->nt_max > 0) // nt_max has been set
     if (ts->nt_cur > ts->nt_max)
       one_more_iter = false;
 
-  if (ts->nt_cur > 0) {
-
-    if (domain->only_steady)
+  if (ts->t_max > 0) // t_max has been set
+    if (ts->t_cur > ts->t_max)
       one_more_iter = false;
-    else {
-      if (ts->nt_max == -1 && ts->t_max < 0.0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" Unsteady computation without stopping criterion on the"
-                    " max number of iteration or a maximal time."));
-    }
 
-    /* Avoid a wrong stop due to an accumulation of small truncation errors */
-    const  double  dt_coef_threshold = 0.01;
-    if (ts->t_max > 0.0)
-      if (ts->t_cur > ts->t_max + dt_coef_threshold*domain->dt_cur)
-        one_more_iter = false;
+  if (domain->only_steady && ts->nt_cur > 0)
+    one_more_iter = false;
 
-  } /* nt_cur > 0 */
+  if (ts->nt_max <= 0 && ts->t_max <= 0)
+    one_more_iter = false;
 
   return one_more_iter;
 }
@@ -1443,6 +1476,9 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
 
   cs_adv_field_t  *adv_field = cs_domain_get_advection_field(domain,
                                                              "darcian_flux");
+
+  cs_advection_field_set_option(adv_field, "cell_field", "true");
+  cs_advection_field_set_option(adv_field, "post", "true");
 
   /* Create a new equation */
   cs_equation_t  *richards_eq = cs_groundwater_initialize(domain->connect,
@@ -1818,19 +1854,27 @@ void
 cs_domain_solve(cs_domain_t  *domain)
 {
   int  nt_cur = domain->time_step->nt_cur;
+  bool  do_output = cs_domain_needs_log(domain);
   bool  do_logcvg = false;
 
-  if (domain->verbosity > 1 && (nt_cur % domain->output_freq == 0))
+  if (domain->verbosity > 1 && do_output)
     do_logcvg = true;
 
   /* Setup step for all equations */
   if (nt_cur == 0) {
 
     /* Output information */
-    bft_printf("\n%s", lsepline);
-    bft_printf("      Solve steady-state problem(s)\n");
-    bft_printf("%s", lsepline);
-
+    if (domain->only_steady) {
+      bft_printf("\n%s", lsepline);
+      bft_printf("      Solve steady-state problem(s)\n");
+      bft_printf("%s", lsepline);
+    }
+    else if (do_output) {
+      bft_printf("\n%s", lsepline);
+      bft_printf("-ite- %5d; time = %5.3e s >> Solve domain\n",
+                 nt_cur, domain->time_step->t_cur);
+      bft_printf("%s", lsepline);
+    }
     /* Predefined equation for the computation of the wall distance */
     if (domain->wall_distance_eq_id > -1) {
 
@@ -1869,9 +1913,9 @@ cs_domain_solve(cs_domain_t  *domain)
   else { /* nt_cur > 0: solve unsteady problems */
 
     /* Output information */
-    if (nt_cur % domain->output_freq == 0 && domain->verbosity > -1) {
+    if (do_output) {
       bft_printf("\n%s", lsepline);
-      bft_printf("-ite- Solve domain for iteration %5d (time = %5.3e s)\n",
+      bft_printf("-ite- %5d; time = %5.3e s >> Solve domain\n",
                  nt_cur, domain->time_step->t_cur);
       bft_printf("%s", lsepline);
     }
@@ -1904,11 +1948,6 @@ cs_domain_solve(cs_domain_t  *domain)
 void
 cs_domain_postprocess(cs_domain_t  *domain)
 {
-  /* Log output */
-  if (domain->time_step->nt_cur % domain->output_freq == 0 &&
-      domain->verbosity > -1)
-    cs_log_iteration();
-
   /* Extra-operations */
   /* ================ */
 
@@ -1922,6 +1961,10 @@ cs_domain_postprocess(cs_domain_t  *domain)
 
   /* User-defined extra operations */
   cs_user_cdo_extra_op(domain);
+
+  /* Log output */
+  if (cs_domain_needs_log(domain))
+    cs_log_iteration();
 
   /* Post-processing */
   /* =============== */

@@ -65,7 +65,7 @@ BEGIN_C_DECLS
 /* Redefined names of function from cs_math to get shorter names */
 #define _dp3 cs_math_3_dot_product
 
-#define CS_ADVECTION_FIELD_POST_FIELD (1 << 0)  // postprocessing is activated
+#define CS_ADVECTION_FIELD_POST_ACTIV (1 << 0)  // postprocessing is activated
 #define CS_ADVECTION_FIELD_POST_UNITV (1 << 1)  // post of the unit vector
 
 #define CS_ADVECTION_FIELD_DBG  1
@@ -454,10 +454,10 @@ cs_advection_field_set_option(cs_adv_field_t   *adv,
 
   case ADVKEY_POST:
     if (strcmp(keyval, "true") == 0)
-      adv->post_flag |= CS_ADVECTION_FIELD_POST_FIELD;
+      adv->post_flag |= CS_ADVECTION_FIELD_POST_ACTIV;
     else if (strcmp(keyval, "false") == 0) { // remove the flag if it is set
-      if (adv->post_flag & CS_ADVECTION_FIELD_POST_FIELD)
-        adv->post_flag ^= CS_ADVECTION_FIELD_POST_FIELD;
+      if (adv->post_flag & CS_ADVECTION_FIELD_POST_ACTIV)
+        adv->post_flag ^= CS_ADVECTION_FIELD_POST_ACTIV;
     }
     else
       bft_error(__FILE__, __LINE__, 0, _err_truefalse_key, keyval, keyname);
@@ -1319,13 +1319,16 @@ cs_advection_field_extra_post(void                      *input,
   float  *unitv = NULL;
 
   const bool post =
-    (adv->post_flag & CS_ADVECTION_FIELD_POST_FIELD) ? true : false;
+    (adv->post_flag & CS_ADVECTION_FIELD_POST_ACTIV) ? true : false;
   const bool post_unitv =
     (adv->post_flag & CS_ADVECTION_FIELD_POST_UNITV) ? true : false;
 
   const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
 
-  bft_printf(" <post/advection_field> %s\n", adv->name);
+#if defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(" <post/advection_field %s> iter: %d; mesh_id: %d\n",
+             adv->name, time_step->nt_cur, mesh_id);
+#endif
 
   if (post_unitv) { /* Compute buf_size */
 

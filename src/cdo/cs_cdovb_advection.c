@@ -103,8 +103,6 @@ struct _cs_cdovb_adv_t {
  * Local variables
  *============================================================================*/
 
-static cs_real_t  one_third = 1./3;
-
 /*============================================================================
  * Private constant variables
  *============================================================================*/
@@ -229,7 +227,11 @@ _init_with_diffusion(cs_lnum_t                    c_id,
 
     cs_math_33_3_product((const cs_real_t (*)[3])matpty, dface.unitv, matnu);
 
-    b->criter[id] = quant->edge[e_id].meas*mean_flux /_dp3(dface.unitv, matnu);
+    cs_real_t  diff_contrib = _dp3(dface.unitv, matnu);
+    if (diff_contrib > cs_math_zero_threshold)
+      b->criter[id] = quant->edge[e_id].meas*mean_flux / diff_contrib;
+    else
+      b->criter[id] = mean_flux*cs_math_big_r; // dominated by convection
 
   } // Loop on cell edges
 
@@ -724,7 +726,7 @@ cs_cdovb_advection_get_peclet_cell(const cs_cdo_quantities_t   *cdoq,
 
     cs_advection_field_get_cell_vector(c_id, adv, &adv_field);
 
-    cs_real_t  hc = pow(cdoq->cell_vol[c_id], one_third);
+    cs_real_t  hc = pow(cdoq->cell_vol[c_id], cs_math_onethird);
     cs_real_t  dp = adv_field.meas * _dp3(adv_field.unitv, dir_vect);
 
     cs_math_33_3_product((const cs_real_t (*)[3])ptymat, dir_vect, ptydir);
