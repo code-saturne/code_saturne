@@ -4143,9 +4143,9 @@ cs_post_activate_by_time_step(const cs_time_step_t  *ts)
         writer->active = 1;
       else
         writer->active = 0;
-      delta_t = ts->t_cur - ts->t_prev;
-      if (delta_t < writer->frequency_t*(1-1e-6))
-        writer->active = 0;
+      /* delta_t = ts->t_cur - ts->t_prev; */
+      /* if (delta_t < writer->frequency_t*(1-1e-6)) */
+      /*   writer->active = 0; */
     }
     else if (writer->frequency_n > 0) {
       if (   ts->nt_cur % (writer->frequency_n) == 0
