@@ -1257,7 +1257,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
   if (do_unsteady) {
     time_mat = _init_time_matrix(sys_builder);
     time_builder = cs_hodge_builder_init(connect, eqp->time_hodge);
-    time_pty_uniform = cs_property_is_uniform(eqp->diffusion_property);
+    time_pty_uniform = cs_property_is_uniform(eqp->time_property);
   }
 
   const bool  only_time_diag =
