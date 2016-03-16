@@ -1251,5 +1251,55 @@ cs_probe_set_dump(const cs_probe_set_t   *pset)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the main members of a cs_probe_set_t structure
+ *
+ * \param[in]      pset      pointer to a cs_probe_set_t structure
+ * \param[in, out] mode      mode of location
+ * \param[in, out] n_probes  number of probes
+ * \param[in, out] coords    probe coordinates
+ * \param[in, out] ent_num   entity numbers (-1 if not located on this rank)
+ * \param[in, out] distances distance of each probe from its related cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_set_get_members(const cs_probe_set_t   *pset,
+                         int                    *mode,
+                         int                    *n_probes,
+                         cs_real_t              *coords[],
+                         cs_lnum_t              *ent_num[],
+                         float                  *distances[])
+{
+  if (pset == NULL)
+    return;
+
+  switch (pset->mode) {
+
+  case CS_PROBE_MODE_NEAREST_CELL_CENTER:
+    *mode = 0;
+    break;
+  case CS_PROBE_MODE_NEAREST_VERTEX:
+    *mode = 1;
+    break;
+  case CS_PROBE_MODE_EXACT:
+    *mode = 2;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              N_(" This mode is not yet implemented to handle probe set.\n"
+                 " Please modify your settings."));
+
+  } // Switch on pset->mode
+
+  /* Return pointers */
+  *n_probes = pset->n_probes;
+  *coords = pset->coords;
+  *ent_num = pset->entity_num;
+  *distances = pset->distances;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
