@@ -261,7 +261,7 @@ cs_cdo_main(cs_mesh_t             *m,
 
     t0 = cs_timer_time();
 
-    /* Extra operations and post-processing of the computino solutions */
+    /* Extra operations and post-processing of the computed solutions */
     cs_domain_postprocess(domain);
 
     t1 = cs_timer_time();

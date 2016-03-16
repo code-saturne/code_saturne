@@ -65,11 +65,11 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
-                      const cs_cdo_quantities_t  *quant,
-                      const double                 *dof,
-                      double                       *p_crec[],
-                      double                       *p_frec[]);
+cs_reco_conf_vtx_dofs(const cs_cdo_connect_t      *connect,
+                      const cs_cdo_quantities_t   *quant,
+                      const double                *dof,
+                      double                      *p_crec[],
+                      double                      *p_frec[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

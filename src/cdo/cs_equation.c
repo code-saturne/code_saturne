@@ -1528,7 +1528,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
 
       char *label = NULL;
 
-      int len = strlen("_extra_op") + strlen(eq->name) + 1;
+      int  len = strlen("_extra_op") + strlen(eq->name) + 1;
       BFT_MALLOC(label, len, char);
       sprintf(label, "%s_pre", eq->name);
       eq->pre_ts_id = cs_timer_stats_create(eq->name, label, label);
@@ -1636,15 +1636,15 @@ cs_equation_set_option(cs_equation_t       *eq,
   eqkey_t  key = _get_eqkey(keyname);
 
   if (key == EQKEY_ERROR) {
-    bft_printf("\n\n Current key: %s\n", keyname);
-    bft_printf(" Possible keys: ");
+    bft_printf("\n\n Current key: \"%s\"\n", keyname);
+    bft_printf(" Valid keys: ");
     for (int i = 0; i < EQKEY_ERROR; i++) {
-      bft_printf("%s ", _print_eqkey(i));
+      bft_printf("\"%s\" ", _print_eqkey(i));
       if (i > 0 && i % 3 == 0)
         bft_printf("\n\t");
     }
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key %s for setting equation %s.\n"
+              _(" Invalid key \"%s\" for setting equation \"%s\".\n"
                 " Please read listing for more details and"
                 " modify your settings."), keyname, eq->name);
 
@@ -1841,9 +1841,10 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value %s for setting the quadrature behaviour"
-                  " of boundary conditions.\n"
-                  " Choices are among subdiv, bary, higher and highest."), _val);
+                _(" Invalid key value \"%s\" for setting the quadrature"
+                  " behaviour of the boundary conditions.\n"
+                  " Valid choices are \"subdiv\", \"bary\", \"higher\" and"
+                  " \"highest\"."), _val);
     }
     break;
 
@@ -1864,9 +1865,9 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value %s for setting the form of the convection"
-                  " term.\n"
-                  " Choices are among conservative and non_conservative."),
+                _(" Invalid key value \"%s\" for setting the formulation of the"
+                  " convection term.\n"
+                  " Valid keys are \"conservative\" or \"non_conservative\"."),
                 _val);
     }
     break;
@@ -1885,10 +1886,10 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value %s for setting the algorithm for defining"
-                  " the proportion of upwinding.\n"
-                  " Choices are among upwind, samarskii, sg and centered."),
-                _val);
+                _(" Invalid key value \"%s\" for setting the algorithm for"
+                  " defining the proportion of upwinding.\n"
+                  " Valid choices are \"upwind\", \"samarskii\", \"sg\","
+                  " \"centered\" or \"d10g5\"."), _val);
     }
     break;
 
@@ -1900,10 +1901,9 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value %s for setting the algorithm for"
+                _(" Invalid key value \"%s\" for setting the algorithm for"
                   " computing the upwinding weight.\n"
-                  " Choices are among flux and xexc."),
-                _val);
+                  " Valid choices are \"flux\" and \"xexc\"."), _val);
     }
     break;
 
@@ -1917,9 +1917,10 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value %s for setting the quadrature behaviour"
-                  " used for computing the advection flux.\n"
-                  " Choices are among bary, higher and highest."), _val);
+                _(" Invalid key value \"%s\" for setting the quadrature\n"
+                  " rules used for computing the advection flux.\n"
+                  " Valid choices are \"bary\", \"higher\" and \"highest\"."),
+                _val);
     }
     break;
 
@@ -1941,9 +1942,9 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value %s for setting the time scheme.\n"
-                  " Choices are among implicit, explicit, crank_nicolson"
-                  " and theta_scheme"), _val);
+                _(" Invalid key value \"%s\" for setting the time scheme.\n"
+                  " Valid choices are \"implicit\", \"explicit\","
+                  " \"crank_nicolson\", and \"theta_scheme\"."), _val);
     }
     break;
 
@@ -1953,7 +1954,7 @@ cs_equation_set_option(cs_equation_t       *eq,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Key %s is not implemented yet."), keyname);
+              _(" The key \"%s\" is not implemented yet."), keyname);
 
   } /* Switch on keys */
 
@@ -2003,8 +2004,8 @@ cs_equation_link(cs_equation_t       *eq,
   else
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid keyword for linking an equation.\n"
-                " Current value: %s\n"
-                " Possible choices: diffusion, time, advection\n"),
+                " Current value: \"%s\"\n"
+                " Valid choices: \"diffusion\", \"time\", \"advection\"."),
               keyword);
 
 }
@@ -2012,7 +2013,7 @@ cs_equation_link(cs_equation_t       *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the initial condition of the unknown related to this equation
- *         This definition can be done by mesh location
+ *         This definition can be done mesh location by mesh location
  *         Available types of definition are: "value" and "analytic"
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
@@ -2048,8 +2049,8 @@ cs_equation_set_ic(cs_equation_t    *eq,
   else
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid key for setting the initial condition.\n"
-                " Given key: %s\n"
-                " Available choices are 'value' and 'analytic'.\n"
+                " Given key: \"%s\"\n"
+                " Valid choices are \"value\" and \"analytic\".\n"
                 " Please modify your settings."), def_key);
 
   /* Handle the name of the mesh location */
@@ -2125,9 +2126,8 @@ cs_equation_add_bc(cs_equation_t    *eq,
   else
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid key for setting the type of definition.\n"
-                " Given key: %s\n"
-                " Choice among value, field, evaluator, analytic, user, law"
-                " or file\n"
+                " Given key: \"%s\"\n"
+                " Valid keys: \"analytic\", \"user\", \"law\" or \"array\"\n"
                 " Please modify your settings."), def_key);
 
   /* Get the type of boundary condition */
@@ -2140,8 +2140,8 @@ cs_equation_add_bc(cs_equation_t    *eq,
   else
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid key for setting the type of boundary condition.\n"
-                " Given key: %s\n"
-                " Choice among dirichlet, neumann or robin.\n"
+                " Given key: \"%s\"\n"
+                " Valid keys: \"dirichlet\", \"neumann\" or \"robin\".\n"
                 " Please modify your settings."), bc_key);
 
   /* Check if this is a homogeneous boundary condition */
@@ -2313,9 +2313,9 @@ cs_equation_set_reaction_option(cs_equation_t    *eq,
         bft_printf("\n\t");
     }
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting a reaction term %s.\n"
+              _(" Invalid key \"%s\" for setting the reaction term \"%s\".\n"
                 " Please read listing for more details and"
-                " modify your settings."), r_name);
+                " modify your settings."), keyname, r_name);
 
   } /* Error message */
 
@@ -2334,8 +2334,9 @@ cs_equation_set_reaction_option(cs_equation_t    *eq,
       else {
         const char *_val = keyval;
         bft_error(__FILE__, __LINE__, 0,
-                  _(" Invalid val %s related to key %s\n"
-                    " Choice between cost, wbs or voronoi"), _val, keyname);
+                  _(" Invalid key value \"%s\" for key \"%s\"\n"
+                    " Valid choices: \"cost\", \"wbs\" or \"voronoi\"."),
+                  _val, keyname);
       }
 
       if (r_id != -1)
@@ -2403,7 +2404,7 @@ cs_equation_set_reaction_option(cs_equation_t    *eq,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Key %s is not implemented yet."), keyname);
+              _(" The key \"%s\" is not implemented yet."), keyname);
 
   } /* Switch on keys */
 

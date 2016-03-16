@@ -436,17 +436,17 @@ cs_advection_field_set_option(cs_adv_field_t   *adv,
 
   if (key == ADVKEY_ERROR) {
 
-    bft_printf("\n\n Current key: %s\n", keyname);
-    bft_printf(" Possible keys: ");
+    bft_printf("\n\n Current key: \"%s\"\n", keyname);
+    bft_printf(" Valid keys: ");
     for (int i = 0; i < ADVKEY_ERROR; i++) {
-      bft_printf("%s ", _print_advkey(i));
+      bft_printf("\"%s\" ", _print_advkey(i));
       if (i > 0 && i % 3 == 0)
         bft_printf("\n\t");
     }
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting the advection field %s.\n"
-                " Please read listing for more details and"
-                " modify your settings."), adv->name);
+              _(" Invalid key \"%s\" for setting the advection field \"%s\".\n"
+                " Please read listing for more details and modify"
+                " your settings."), keyname, adv->name);
 
   } /* Error message */
 

@@ -431,15 +431,15 @@ cs_source_term_set_option(cs_source_term_t  *st,
   stkey_t  key = _get_stkey(keyname);
 
   if (key == STKEY_ERROR) {
-    bft_printf("\n\n Current key: %s\n", keyname);
-    bft_printf(" Possible keys: ");
+    bft_printf("\n\n Current key: \"%s\"\n", keyname);
+    bft_printf(" Valid keys: ");
     for (int i = 0; i < STKEY_ERROR; i++) {
-      bft_printf("%s ", _print_stkey(i));
+      bft_printf("\"%s\" ", _print_stkey(i));
       if (i > 0 && i % 3 == 0)
         bft_printf("\n\t");
     }
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting source term %s.\n"
+              _(" Invalid key \"%s\" for setting the source term \"%s\".\n"
                 " Please read listing for more details and"
                 " modify your settings."), st->name);
 

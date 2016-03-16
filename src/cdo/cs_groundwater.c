@@ -1058,15 +1058,15 @@ cs_groundwater_set_param(cs_groundwater_t    *gw,
 
   if (key == GWKEY_ERROR) {
 
-    bft_printf("\n\n Current key: %s\n", keyname);
-    bft_printf(" Possible keys: ");
+    bft_printf("\n\n Current key: \"%s\"\n", keyname);
+    bft_printf(" Valid keys: ");
     for (int i = 0; i < GWKEY_ERROR; i++) {
-      bft_printf("%s ", _print_gwkey(i));
+      bft_printf("\"%s\" ", _print_gwkey(i));
       if (i > 0 && i % 3 == 0)
         bft_printf("\n\t");
     }
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key %s for setting the groundwater module.\n"
+              _(" Invalid key \"%s\" for setting the groundwater module.\n"
                 " Please read listing for more details and modify your"
                 " settings."), keyname);
 
@@ -1420,8 +1420,8 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
         bft_printf("\n\t");
     }
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key %s for setting the soil parameters associated to"
-                " location %s in the groundwater flow module.\n"
+              _(" Invalid key \"%s\" for setting the soil parameters"
+                " associated to location \"%s\".\n"
                 " Please read the listing for more details and modify your"
                 " settings."), keyname, ml_name);
 

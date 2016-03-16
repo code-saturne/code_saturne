@@ -477,9 +477,9 @@ cs_property_create(const char    *name,
     pty->type = CS_PROPERTY_ANISO;
   else
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key %s for setting the type of property.\n"
-                " Key is one of the following: isotropic, orthotropic or"
-                " anisotropic.\n"
+              _(" Invalid key \"%s\" for setting the type of property.\n"
+                " Valid keys: \"isotropic\", \"orthotropic\" and"
+                " \"anisotropic\".\n"
                 " Please modify your settings."), key_type);
 
   /* Default initialization */

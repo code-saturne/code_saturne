@@ -116,7 +116,6 @@ typedef enum {
 
   DOMKEY_DEFAULT_BOUNDARY,
   DOMKEY_OUTPUT_FREQ,
-  DOMKEY_POST_FREQ,
   DOMKEY_NTMAX,
   DOMKEY_TMAX,
   DOMKEY_VERBOSITY,
@@ -169,8 +168,6 @@ _print_domkey(domkey_t  key)
     return "output_freq";
   case DOMKEY_NTMAX:
     return "nt_max";
-  case DOMKEY_POST_FREQ:
-    return "post_freq";
   case DOMKEY_TMAX:
     return "time_max";
   case DOMKEY_VERBOSITY:
@@ -205,8 +202,6 @@ _get_domkey(const char  *keyname)
     key = DOMKEY_OUTPUT_FREQ;
   else if (strcmp(keyname, "nt_max") == 0)
     key = DOMKEY_NTMAX;
-  else if (strcmp(keyname, "post_freq") == 0)
-    key = DOMKEY_POST_FREQ;
   else if (strcmp(keyname, "time_max") == 0)
     key = DOMKEY_TMAX;
   else if (strcmp(keyname, "verbosity") == 0)
@@ -301,7 +296,7 @@ _set_default_boundary(cs_domain_t     *domain,
     default_type = CS_PARAM_BOUNDARY_SYMMETRY;
   else
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key name %s for setting a boundary by default.\n"
+              _(" Invalid key name \"%s\" for setting a boundary by default.\n"
                 " Available choices are: wall or symmetry."),
               bdy_name);
 
@@ -630,7 +625,6 @@ cs_domain_init(const cs_mesh_t             *mesh,
 
   /* Other options */
   domain->output_freq = 10;
-  domain->post_freq = 10;
   domain->verbosity = 1;
 
   /* Predefined equations or modules */
@@ -749,15 +743,15 @@ cs_domain_set_param(cs_domain_t    *domain,
 
   if (key == DOMKEY_ERROR) {
 
-    bft_printf("\n\n Current key: %s\n", keyname);
-    bft_printf(" Possible keys: ");
+    bft_printf("\n\n Current key: \"%s\"\n", keyname);
+    bft_printf(" Valid keys: ");
     for (int i = 0; i < DOMKEY_ERROR; i++) {
-      bft_printf("%s ", _print_domkey(i));
+      bft_printf("\"%s\" ", _print_domkey(i));
       if (i > 0 && i % 3 == 0)
         bft_printf("\n\t");
     }
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key %s setting a parameter for this domain.\n"
+              _(" Invalid key \"%s\" setting a parameter for this domain.\n"
                 " Please read listing for more details and"
                 " modify your settings."), keyname);
 
@@ -780,15 +774,6 @@ cs_domain_set_param(cs_domain_t    *domain,
 
   case DOMKEY_NTMAX:
     domain->time_step->nt_max = atoi(keyval);
-    break;
-
-  case DOMKEY_POST_FREQ:
-    {
-      int  freq = atoi(keyval);
-
-      if (freq == 0) freq = -1;
-      domain->post_freq = freq;
-    }
     break;
 
   case DOMKEY_TMAX:
@@ -935,8 +920,8 @@ cs_domain_last_setup(cs_domain_t    *domain)
 
     cs_adv_field_t *adv = domain->adv_fields[adv_id];
 
+    /* Add default post-processing */
     if (cs_advection_field_needs_post(adv))
-      /* Add default post-processing related to groundwater flow module */
       cs_post_add_time_mesh_dep_output(cs_advection_field_extra_post,
                                        adv);
 
@@ -1028,7 +1013,7 @@ cs_domain_add_boundary(cs_domain_t               *domain,
     type = CS_PARAM_BOUNDARY_SYMMETRY;
   else
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key name %s for setting a boundary.\n"
+              _(" Invalid key name \"%s\" for setting a boundary.\n"
                 " Available choices are: wall, inlet, outlet or symmetry."),
               bdy_name);
 
@@ -1435,7 +1420,7 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
 
   int  richards_eq_id = domain->n_equations;
 
-  /* Allocate a new strcuture for managing groundwater module */
+  /* Allocate a new structure for managing groundwater module */
   domain->gw = cs_groundwater_create();
 
   /* Add a property related to the diffusion term of the Richards eq. */
@@ -1950,10 +1935,6 @@ cs_domain_postprocess(cs_domain_t  *domain)
                                domain->time_step->t_cur);
 
   cs_post_write_vars(domain->time_step);
-
-  /* Monitoring */
-  /* ========== */
-
 }
 
 /*----------------------------------------------------------------------------*/
