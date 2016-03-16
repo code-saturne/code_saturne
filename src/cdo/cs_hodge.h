@@ -57,6 +57,17 @@ typedef struct _hodge_builder_t cs_hodge_builder_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Iitialize cs_timer_stats_t structure for monitoring purpose
+ *
+ * \param[in]  level      level of details requested
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_set_timer_stats(int   level);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Allocate and initialize a cs_hodge_builder_t structure
  *
  * \param[in]  connect       pointer to a cs_cdo_connect_t struct.

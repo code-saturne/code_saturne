@@ -46,6 +46,7 @@
 
 #include "cs_math.h"
 #include "cs_sort.h"
+#include "cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -158,6 +159,11 @@ struct _wbs_quant_t {
  * Private constant variables
  *============================================================================*/
 
+/* Id related to cs_timer_stats structure used for monitoring */
+static int  hodge_ts_id = -1;
+static int  hodge_cost_ts_id = -1;
+static int  hodge_wbs_ts_id = -1;
+static int  hodge_vor_ts_id = -1;
 
 /*! \endcond (end ignore by Doxygen) */
 
@@ -575,6 +581,9 @@ _build_using_cost(int                         cid,
   int  i, j, k;
   double  invsurf;
 
+  if (hodge_cost_ts_id > -1)
+    cs_timer_stats_start(hodge_cost_ts_id);
+
   int  n_ent = 0;
   cs_locmat_t  *hloc = hb->hloc;
 
@@ -750,6 +759,8 @@ _build_using_cost(int                         cid,
 
   } /* End of loop on I entities */
 
+  if (hodge_cost_ts_id > -1)
+    cs_timer_stats_stop(hodge_cost_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -914,6 +925,9 @@ _build_using_wbs(int                         cid,
   cs_real_3_t  xc;
   cs_lnum_t  ii, jj, v_id;
 
+  if (hodge_wbs_ts_id > -1)
+    cs_timer_stats_start(hodge_wbs_ts_id);
+
   cs_locmat_t  *hl = hb->hloc;
 
   const double  volc = quant->cell_vol[cid];
@@ -1046,6 +1060,8 @@ _build_using_wbs(int                         cid,
       hl->mat[i*n_ent+j] = hl->mat[shift_j+i];
   }
 
+  if (hodge_wbs_ts_id > -1)
+    cs_timer_stats_stop(hodge_wbs_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1069,6 +1085,9 @@ _build_using_voronoi(cs_lnum_t                    c_id,
   cs_lnum_t  i;
   double  contrib;
   cs_real_3_t  mv;
+
+  if (hodge_vor_ts_id > -1)
+    cs_timer_stats_start(hodge_vor_ts_id);
 
   cs_locmat_t  *hl = hb->hloc;
 
@@ -1140,11 +1159,37 @@ _build_using_voronoi(cs_lnum_t                    c_id,
 
   } // End of switch
 
+  if (hodge_vor_ts_id > -1)
+    cs_timer_stats_stop(hodge_vor_ts_id);
 }
 
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Iitialize cs_timer_stats_t structure for monitoring purpose
+ *
+ * \param[in]  level      level of details requested
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_set_timer_stats(int   level)
+{
+  if (level < 1)
+    return;
+
+  /* Timer statistics */
+  hodge_ts_id = cs_timer_stats_create("operations", "hodge", "hodge");
+
+  if (level > 1) {
+    hodge_cost_ts_id = cs_timer_stats_create("hodge", "hodgeC", "hodgeC");
+    hodge_wbs_ts_id = cs_timer_stats_create("hodge", "hodgeW", "hodgeW");
+    hodge_vor_ts_id = cs_timer_stats_create("hodge", "hodgeV", "hodgeV");
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1162,6 +1207,9 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
                       cs_param_hodge_t          h_info)
 {
   cs_hodge_builder_t  *hb = NULL;
+
+  if (hodge_ts_id > -1)
+    cs_timer_stats_start(hodge_ts_id);
 
   BFT_MALLOC(hb, 1, cs_hodge_builder_t);
 
@@ -1223,6 +1271,9 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
   hb->ptymat[2][2] = 1., hb->ptymat[2][1] = hb->ptymat[2][0] = 0.;
   hb->ptyval = 1.0; /* for VpCd, CpVd */
 
+  if (hodge_ts_id > -1)
+    cs_timer_stats_stop(hodge_ts_id);
+
   return hb;
 }
 
@@ -1242,6 +1293,9 @@ cs_hodge_builder_free(cs_hodge_builder_t  *hb)
   if (hb == NULL)
     return hb;
 
+  if (hodge_ts_id > -1)
+    cs_timer_stats_start(hodge_ts_id);
+
   hb->hloc = cs_locmat_free(hb->hloc);
 
   switch (hb->h_info.algo) {
@@ -1259,6 +1313,9 @@ cs_hodge_builder_free(cs_hodge_builder_t  *hb)
   }
 
   BFT_FREE(hb);
+
+  if (hodge_ts_id > -1)
+    cs_timer_stats_stop(hodge_ts_id);
 
   return NULL;
 }
@@ -1324,6 +1381,9 @@ cs_hodge_build_local(int                         c_id,
 {
   int  n_ent = 0;
 
+  if (hodge_ts_id > -1)
+    cs_timer_stats_start(hodge_ts_id);
+
   /* Sanity check */
   assert(hb != NULL);
 
@@ -1380,6 +1440,9 @@ cs_hodge_build_local(int                         c_id,
   cs_locmat_dump(c_id, hb->hloc);
 #endif
 
+  if (hodge_ts_id > -1)
+    cs_timer_stats_stop(hodge_ts_id);
+
   return hb->hloc;
 }
 
@@ -1404,6 +1467,9 @@ cs_hodge_compute(const cs_cdo_connect_t      *connect,
 {
   bool  only_diag = (h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI) ? true : false;
   cs_sla_matrix_t  *h_mat = NULL;
+
+  if (hodge_ts_id > -1)
+    cs_timer_stats_start(hodge_ts_id);
 
   /* Allocate and initialize a cs_hodge_builder_t structure */
   cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, h_info);
@@ -1476,6 +1542,9 @@ cs_hodge_compute(const cs_cdo_connect_t      *connect,
 
   /* Free temporary memory */
   hb = cs_hodge_builder_free(hb);
+
+  if (hodge_ts_id > -1)
+    cs_timer_stats_start(hodge_ts_id);
 
   return h_mat;
 }

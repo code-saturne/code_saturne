@@ -969,6 +969,9 @@ cs_domain_last_setup(cs_domain_t    *domain)
 
   }
 
+  if (domain->verbosity > 1)
+    cs_hodge_set_timer_stats(domain->verbosity -1);
+
   /* Proceed to the last settings of a cs_equation_t structure
      - Assign to a cs_equation_t structure a list of function to manage this
        structure during the computation.

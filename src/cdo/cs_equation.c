@@ -296,16 +296,15 @@ struct _cs_equation_t {
   int                    field_id;
 
   /* Timer statistic for a "light" profiling */
-  int     main_ts_id;     /* Id of the main timer states structure related
-                             to this equation */
-  int     pre_ts_id;      /* Id of the timer stats structure gathering all
-                             steps before the resolution of the linear
-                             systems */
-  int     solve_ts_id;    /* Id of the timer stats structure related
-                             to the inversion of the linear system */
-  int     extra_op_ts_id; /* Id of the timer stats structure gathering all
-                             steps afterthe resolution of the linear systems
-                             (post, balance...) */
+  int     main_ts_id;   /* Id of the main timer states structure related
+                           to this equation */
+  int     pre_ts_id;    /* Id of the timer stats structure gathering all
+                           steps before the resolution of the linear systems */
+  int     solve_ts_id;  /* Id of the timer stats structure related to the
+                           inversion of the linear system */
+  int     post_ts_id;   /* Id of the timer stats structure gathering all steps
+                           after the resolution of the linear systems
+                           (post, balance...) */
 
   bool    do_build;     /* false => keep the system as it is */
 
@@ -1159,7 +1158,7 @@ cs_equation_create(const char            *eqname,
   eq->do_build = true;  // Force the construction of the algebraic system
 
   /* Set timer statistic structure to a default value */
-  eq->main_ts_id = eq->pre_ts_id = eq->solve_ts_id = eq->extra_op_ts_id = -1;
+  eq->main_ts_id = eq->pre_ts_id = eq->solve_ts_id = eq->post_ts_id = -1;
 
   /* Algebraic system: allocated later */
   eq->ms = NULL;
@@ -1199,7 +1198,7 @@ cs_equation_free(cs_equation_t  *eq)
     return eq;
 
   if (eq->main_ts_id > -1)
-    cs_timer_stats_stop(eq->main_ts_id);
+    cs_timer_stats_start(eq->main_ts_id);
 
   BFT_FREE(eq->name);
   BFT_FREE(eq->varname);
@@ -1516,30 +1515,26 @@ cs_equation_last_setup(cs_equation_t  *eq)
   /* Set timer statistics */
   if (eqp->verbosity > 0) {
 
-    eq->main_ts_id = cs_timer_stats_create("stages", // parent name
+    eq->main_ts_id = cs_timer_stats_create(NULL, // new root
                                            eq->name,
                                            eq->name);
 
     cs_timer_stats_start(eq->main_ts_id);
-    cs_timer_stats_set_plot(eq->main_ts_id, 1);
 
     if (eqp->verbosity > 1) {
 
       char *label = NULL;
 
-      int  len = strlen("_extra_op") + strlen(eq->name) + 1;
+      int  len = strlen("_solve") + strlen(eq->name) + 1;
       BFT_MALLOC(label, len, char);
       sprintf(label, "%s_pre", eq->name);
       eq->pre_ts_id = cs_timer_stats_create(eq->name, label, label);
-      cs_timer_stats_set_plot(eq->pre_ts_id, 1);
 
       sprintf(label, "%s_solve", eq->name);
       eq->solve_ts_id = cs_timer_stats_create(eq->name, label, label);
-      cs_timer_stats_set_plot(eq->solve_ts_id, 1);
 
-      sprintf(label, "%s_extra_op", eq->name);
-      eq->extra_op_ts_id = cs_timer_stats_create(eq->name, label, label);
-      cs_timer_stats_set_plot(eq->extra_op_ts_id, 1);
+      sprintf(label, "%s_post", eq->name);
+      eq->post_ts_id = cs_timer_stats_create(eq->name, label, label);
 
       BFT_FREE(label);
 
@@ -2739,8 +2734,11 @@ cs_equation_init_system(const cs_mesh_t            *mesh,
   if (eq == NULL)
     return;
 
-  if (eq->main_ts_id > -1)
+  if (eq->main_ts_id > -1) {
     cs_timer_stats_start(eq->main_ts_id);
+    if (eq->pre_ts_id > -1)
+      cs_timer_stats_start(eq->pre_ts_id);
+  }
 
   const double  t_ini = 0;
   const cs_equation_param_t  *eqp = eq->param;
@@ -2753,23 +2751,32 @@ cs_equation_init_system(const cs_mesh_t            *mesh,
 
   /* Initialize the associated field to the initial condition if unsteady */
   if (!(eqp->flag & CS_EQUATION_UNSTEADY)) {
-    if (eq->main_ts_id > -1)
+    if (eq->main_ts_id > -1) {
+      if (eq->pre_ts_id > -1)
+        cs_timer_stats_stop(eq->pre_ts_id);
       cs_timer_stats_stop(eq->main_ts_id);
+    }
     return;
   }
 
   cs_param_time_t  t_info = eqp->time_info;
 
   if (t_info.n_ic_definitions == 0) {
-    if (eq->main_ts_id > -1)
+    if (eq->main_ts_id > -1) {
+      if (eq->pre_ts_id > -1)
+        cs_timer_stats_stop(eq->pre_ts_id);
       cs_timer_stats_stop(eq->main_ts_id);
+    }
     return; // By default, 0 is set
   }
 
   _initialize_field_from_ic(eq, connect, cdoq);
 
-  if (eq->main_ts_id > -1)
+  if (eq->main_ts_id > -1) {
     cs_timer_stats_stop(eq->main_ts_id);
+    if (eq->pre_ts_id > -1)
+      cs_timer_stats_stop(eq->pre_ts_id);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2811,8 +2818,11 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
   const cs_equation_param_t  *eqp = eq->param;
   const cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
-  if (eq->pre_ts_id > -1)
-    cs_timer_stats_start(eq->pre_ts_id);
+  if (eq->main_ts_id > -1) {
+    cs_timer_stats_start(eq->main_ts_id);
+    if (eq->pre_ts_id > -1)
+      cs_timer_stats_start(eq->pre_ts_id);
+  }
 
   eq->build_system(mesh, fld->val, dt_cur,
                    eq->builder,
@@ -2875,8 +2885,11 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
 
   eq->do_build = false;
 
-  if (eq->pre_ts_id > -1)
-    cs_timer_stats_stop(eq->pre_ts_id);
+  if (eq->main_ts_id > -1) {
+    if (eq->pre_ts_id > -1)
+      cs_timer_stats_stop(eq->pre_ts_id);
+    cs_timer_stats_stop(eq->main_ts_id);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2895,6 +2908,8 @@ cs_equation_solve(cs_equation_t   *eq,
   int  n_iters = 0;
   double  r_norm = DBL_MAX, residual = DBL_MAX;
 
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
   if (eq->solve_ts_id > -1)
     cs_timer_stats_start(eq->solve_ts_id);
 
@@ -2944,10 +2959,8 @@ cs_equation_solve(cs_equation_t   *eq,
 
   if (eq->solve_ts_id > -1)
     cs_timer_stats_stop(eq->solve_ts_id);
-
-  /* Store the solution in the related field structure */
-  if (eq->extra_op_ts_id > -1)
-    cs_timer_stats_start(eq->extra_op_ts_id);
+  if (eq->post_ts_id > -1)
+    cs_timer_stats_start(eq->post_ts_id);
 
   /* Copy current field values to previous values */
   cs_field_current_to_previous(fld);
@@ -2955,8 +2968,10 @@ cs_equation_solve(cs_equation_t   *eq,
   /* Define the new field value for the current time */
   eq->update_field(x, eq->builder, fld->val);
 
-  if (eq->extra_op_ts_id > -1)
-    cs_timer_stats_stop(eq->extra_op_ts_id);
+  if (eq->post_ts_id > -1)
+    cs_timer_stats_stop(eq->post_ts_id);
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
 
   if (eq->param->flag & CS_EQUATION_UNSTEADY)
     eq->do_build = true; /* Improvement: exhibit cases where a new build
@@ -2988,14 +3003,20 @@ cs_equation_extra_op(const cs_time_step_t       *time_step,
   if (eqp->process_flag & CS_EQUATION_POST_NONE)
     return;
 
-  /* Perform the post-processing */
-  if (eq->extra_op_ts_id > -1)
-    cs_timer_stats_start(eq->extra_op_ts_id);
+  if (eq->main_ts_id > -1) {
+    cs_timer_stats_start(eq->main_ts_id);
+    if (eq->solve_ts_id > -1)
+      cs_timer_stats_start(eq->solve_ts_id);
+  }
 
+  /* Perform the post-processing */
   eq->postprocess(eq->name, field, eq->builder);
 
-  if (eq->extra_op_ts_id > -1)
-    cs_timer_stats_stop(eq->extra_op_ts_id);
+  if (eq->main_ts_id > -1) {
+    if (eq->post_ts_id > -1)
+      cs_timer_stats_stop(eq->post_ts_id);
+    cs_timer_stats_stop(eq->main_ts_id);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
