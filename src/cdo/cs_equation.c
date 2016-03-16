@@ -425,11 +425,11 @@ _petsc_setup_hook(void   *context,
     break;
 
   case CS_PARAM_ITSOL_BICG: /* Preconditioned Bi-CG */
-    KSPSetType(ksp, KSPBCGS);
+    KSPSetType(ksp, KSPBICG);
     break;
 
   case CS_PARAM_ITSOL_BICGSTAB2: /* Preconditioned BiCGstab2 */
-    KSPSetType(ksp, KSPBCGSL);
+    KSPSetType(ksp, KSPBCGS);
     break;
 
   default:
