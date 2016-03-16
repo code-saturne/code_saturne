@@ -1209,6 +1209,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
   const bool  do_reaction = (eqp->flag & CS_EQUATION_REACTION) ? true:false;
 
   /* Structures used to build the linear system */
+  bool  *reac_pty_uniform = NULL;
   cs_cdovb_diff_t  *diff = NULL;
   cs_cdovb_adv_t  *adv = NULL;
   cs_hodge_builder_t  **reac_builder = NULL;
@@ -1231,11 +1232,18 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
 
   /* Preparatory step for diffusion term */
   if (do_diffusion) {
+
     diff_pty_uniform = cs_property_is_uniform(eqp->diffusion_property);
     diff = cs_cdovb_diffusion_builder_init(connect,
                                            diff_pty_uniform,
                                            eqp->diffusion_hodge,
                                            sys_builder->enforce);
+    if (diff_pty_uniform)
+      cs_property_get_cell_tensor(0,
+                                  eqp->diffusion_property,
+                                  eqp->diffusion_hodge.inv_pty,
+                                  diff_tensor);
+
   }
 
   /* Preparatory step for advection term */
@@ -1247,17 +1255,38 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
 
   /* Preparatory step for reaction term */
   if (do_reaction) {
+
     BFT_MALLOC(reac_builder, eqp->n_reaction_terms, cs_hodge_builder_t *);
-    for (i = 0; i < eqp->n_reaction_terms; i++)
+    BFT_MALLOC(reac_pty_uniform, eqp->n_reaction_terms, bool);
+
+    for (i = 0; i < eqp->n_reaction_terms; i++) {
+
+      cs_property_t  *r_pty = eqp->reaction_properties[i];
+
+      reac_pty_uniform[i] = cs_property_is_uniform(r_pty);
       reac_builder[i] = cs_hodge_builder_init(connect,
                                               eqp->reaction_terms[i].hodge);
+
+      if (reac_pty_uniform[i])
+        cs_hodge_builder_set_val(reac_builder[i],
+                                 cs_property_get_cell_value(0, r_pty));
+
+    }
+
   }
 
   /* Preparatory step for unsteady term */
   if (do_unsteady) {
+
     time_mat = _init_time_matrix(sys_builder);
     time_builder = cs_hodge_builder_init(connect, eqp->time_hodge);
     time_pty_uniform = cs_property_is_uniform(eqp->time_property);
+
+    if (time_pty_uniform) {
+      ptyval = cs_property_get_cell_value(0, eqp->time_property);
+      cs_hodge_builder_set_val(time_builder, ptyval);
+    }
+
   }
 
   const bool  only_time_diag =
@@ -1280,7 +1309,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
     if (do_diffusion) { /* Define the local matrix related to diffusion
                            ==> stiffness matrix */
 
-      if (c_id == 0 || diff_pty_uniform == false)
+      if (diff_pty_uniform == false)
         cs_property_get_cell_tensor(c_id,
                                     eqp->diffusion_property,
                                     eqp->diffusion_hodge.inv_pty,
@@ -1324,14 +1353,21 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
       for (i = 0; i < eqp->n_reaction_terms; i++) {
 
         cs_hodge_builder_t  *hb = reac_builder[i];
+        cs_property_t  *r_pty = eqp->reaction_properties[i];
+
+        if (reac_pty_uniform[i] == false) {
+          ptyval = cs_property_get_cell_value(c_id, r_pty);
+          cs_hodge_builder_set_val(hb, ptyval);
+        }
+
         cs_locmat_t  *rea_loc = cs_hodge_build_local(c_id, connect, quant, hb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
         bft_printf(">> Local reaction matrix for term %d", i);
         cs_locmat_dump(c_id, rea_loc);
 #endif
-        cs_locmat_add(adr_loc, rea_loc);
 
+        cs_locmat_add(adr_loc, rea_loc);
       }
 
     }
@@ -1339,7 +1375,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
     /* TIME TERM */
     if (do_unsteady) { /* Build mass matrix to take into account time effect */
 
-      if (c_id == 0 || time_pty_uniform == false) {
+      if (time_pty_uniform == false) {
         ptyval = cs_property_get_cell_value(c_id, eqp->time_property);
         cs_hodge_builder_set_val(time_builder, ptyval);
       }
@@ -1376,9 +1412,12 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
   adr_loc = cs_locmat_free(adr_loc);
 
   if (do_reaction) {
+
     for (i = 0; i < eqp->n_reaction_terms; i++)
       reac_builder[i] = cs_hodge_builder_free(reac_builder[i]);
     BFT_FREE(reac_builder);
+    BFT_FREE(reac_pty_uniform);
+
   }
 
   if (do_unsteady)
