@@ -598,7 +598,7 @@ cs_domain_init(const cs_mesh_t             *mesh,
   domain->time_step->is_local = 0; // In CDO, this is always equal to 0
   domain->time_step->nt_prev = 0;  // Changed in case of restart
   domain->time_step->nt_cur =  0;  // Do not modify this value
-  domain->time_step->nt_max = -1;
+  domain->time_step->nt_max = 0;
   domain->time_step->nt_ini = 2;   // Not useful in CDO module
   domain->time_step->t_prev = 0.;
   domain->time_step->t_cur = 0.;   // Assume initial time is 0.0
