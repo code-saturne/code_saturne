@@ -24,7 +24,7 @@ subroutine pptbht &
 !================
 
  ( ncoel  ,                                                       &
-   nomcoe , ehcoel , cpcoel , wmolce )
+   nomcel , ehcoel , cpcoel , wmolce )
 
 !===============================================================================
 ! FONCTION :
@@ -41,7 +41,7 @@ subroutine pptbht &
 !    nom        !type!mode !                   role                         !
 !_______________!____!_____!________________________________________________!
 ! ncoel         ! e  ! <-- ! nombre de const. elem.                         !
-! nomcoe(ngazem)! a  ! <-- ! nom des constituants elementaires              !
+! nomcel(ngazem)! a  ! <-- ! nom des constituants elementaires              !
 ! ehcoel        ! tr !  <- ! enthalpie pour chaque constituant              !
 ! (ngazem,npot) !    !     !                elementaire                     !
 ! cpcoel        ! tr !  <- ! cp pour chaque constituant                     !
@@ -76,7 +76,7 @@ implicit none
 
 integer          ncoel
 
-character(len=12) :: nomcoe(ngazem)
+character(len=12) :: nomcel(ngazem)
 
 double precision ehcoel(ngazem,npot) , cpcoel(ngazem,npot)
 double precision wmolce (ngazem)
@@ -155,7 +155,7 @@ read (impjnf,*) (wcoeff(2,injcff), injcff=4,7)
 !  l'espece consideree fait partie de l'exemple
 
 do ne = 1, ncoel
-  if ( nomcoe(ne).eq.nomesp ) then
+  if ( nomcel(ne).eq.nomesp ) then
     icoeff(ne) = 1
      do inicff = 1, 2
        do injcff = 1, 7
@@ -180,7 +180,7 @@ iok = 0
 do ne = 1, ncoel
   if(icoeff(ne).eq.0) then
     iok = iok + 1
-    write(nfecra,1000) nomcoe(ne)
+    write(nfecra,1000) nomcel(ne)
   endif
 enddo
 if(iok.ne.0) then

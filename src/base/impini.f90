@@ -85,6 +85,7 @@ integer          ipp   , iwar  , kval
 integer          nbccou, nbsucp, nbvocp, issurf, isvol
 integer          kscmin, kscmax, keypp, keyvar
 integer          c_id, f_id, f_dim, n_fields
+integer          igg, ige
 double precision scmaxp, scminp
 
 character(len=3), dimension(3) :: nomext3
@@ -116,6 +117,13 @@ if (ippmod(icod3p).ne.-1) then
   write(nfecra,1020) ippmod(icod3p)
   write(nfecra,1060) indjon
   write(nfecra,1070) namgas, pcigas
+  write(nfecra,1080) trim(nomcog(igfuel(1))), &
+  -nreact(igoxy(1)), trim(nomcog(igoxy(1))), trim(nomcog(igprod(1)))
+  write(nfecra,'(a15,10(1x,a14))') "Composition", "Fuel", "Oxydizer", "Products"
+  write(nfecra,'(a15,10(1x,a14))') "-----------", "----", "--------", "--------"
+  do ige = 1, ngaze
+    write(nfecra,'(a15,10(1x,f14.5))') trim(nomcoe(ige)), (coefeg(ige,igg), igg=1, ngazg)
+  enddo
 else if (ippmod(icoebu).ne.-1) then
   write(nfecra,1010)
   write(nfecra,1030) ippmod(icoebu), cebu
@@ -162,6 +170,9 @@ endif
 ' --- Caracteristiques du combustible',                         /,&
 '       Combustible : ',4x,a,                                   /,&
 '       PCI = ',4x,e14.5,  ' J/kg',                             /)
+ 1080 format(                                                     &
+" --- Reaction chimique : ",                                    /,&
+"       ", a," + ",f6.3," (",a,") --> ",a,                      /)
 
 #else
 
@@ -198,8 +209,12 @@ endif
 ' --- Combustible characteristics',                             /,&
 '       Combustible : ',4x,a,                                   /,&
 '       PCI = ',4x,e14.5,  ' J/kg',                             /)
+ 1080 format(                                                     &
+" --- Chemical reaction: ",                                     /,&
+"       ", a," + ",f6.3," (",a,") --> ",a,                      /)
 
 #endif
+
 
 !===============================================================================
 ! 2. DEFINITION GENERALE DU CAS

@@ -55,7 +55,7 @@ implicit none
 ! Local variables
 integer k, ii, jj
 integer k1
-integer iico2,imer1
+integer ico2,imer1
 integer ideb, icompt
 integer kmray, ktamp
 
@@ -98,9 +98,9 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
          + (ntcabs-1)*dtref/3600.d0
 
   if (ntcabs.le.2) then
-    iico2 = 1
+    ico2 = 1
   else
-    iico2 = 0
+    ico2 = 0
   endif
 
   ! --- Initialization:
@@ -268,7 +268,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     k1 = 1
 
     ! --- Long-wave:
-    call rayir ( k1,kmray,iico2,emis,                           &
+    call rayir ( k1,kmray,ico2,emis,                           &
          tauzq, tauz, tausup, zq,                       &
          acinfe, dacinfe, aco2, daco2, acsup, dacsup,   &
          zray,temray,qvray,                             &

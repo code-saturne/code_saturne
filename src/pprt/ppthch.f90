@@ -74,6 +74,11 @@ module ppthch
   integer    iatc, iath, iato, iatn , iats
   parameter( iatc = 1, iath = 2, iato = 3, iatn = 4 , iats = 5 )
 
+  !> name of global species
+  character(len=150) :: nomcog(ngazgm)
+  !> name of elementary species
+  character(len=12) :: nomcoe(ngazem)
+
   !> number of tabulation points
   integer, save ::           npo
   !> number of elementary gas components
@@ -85,6 +90,25 @@ module ppthch
 
   !> number of global reactions in gas phase
   integer, save ::           nrgaz
+
+  !> rank of H2O in gas composition
+  integer, save ::           iih2o
+  !> rank of CO2 in gas composition
+  integer, save ::           iico2
+  !> rank of CO in gas composition
+  integer, save ::           iico
+  !> rank of C in gas composition
+  integer, save ::           iic
+
+  !> rank of fuel in the r-th reaction
+  integer, save ::           igfuel(nrgazm)
+  !> rank of oxydiser in the r-th reaction
+  integer, save ::           igoxy(nrgazm)
+  !> rank of products in the r-th reaction
+  integer, save ::           igprod(nrgazm)
+
+  !> stoechiometric coefficient of global species
+  double precision, save ::  nreact(ngazgm)
 
   !> temperature (in K)
   double precision, save ::  th(npot)

@@ -4,15 +4,15 @@
 3000.                   TMAX
                         Especes Gazeuses
             C3H8        O2         CO2        H2O        N2
-            .35        .35        .35        .35        .35        coeff absorption (ray) 
-4                       Nb especes elementaires / Composition CHON
- .012        3          0          1          0          0          
+            .35        .35        .35        .35        .35        Coeff absorption (ray) 
+4                                                                  Nb especes elementaires
+ .012        3          0          1          0          0         Composition CHON
  .001        8          0          0          2          0        
  .016        0          2          2          1          0        
  .014        0          0          0          0          2      
-3                       Nb d'especes globales (ici : / Fuel / Oxydant / Produits)/ composition en especes elementaires
-             1.         0.         0.         0.         0.         
-             0.         1.         0.         0.         3.76
-             0.         0.         3.         4.        18.80 
-1                       Nb de reactions mises en jeu pour les especes globales/stoechiometrie en nb de mole especes globales
-1     2        -1.        -23.80        25.80
+3                                                                  Nb d'especes globales connues (ici : / Fuel / Oxydant / Produits)
+             1.         0.         0.         0.         0.        Composition Fuel     en especes elementaires
+             0.         1.         0.         0.         3.76      Composition Oxydant  en especes elementaires
+             0.         0.         3.         4.        18.80      Composition Produits en especes elementaires
+1                                                                  Nb de reactions mises en jeu pour les especes globales
+1     2        -1.        -23.80        25.80                      Stoechiometrie en nb de mole especes globales

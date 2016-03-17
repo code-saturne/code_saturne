@@ -67,6 +67,7 @@ ebuphy.f90 \
 ebutcl.f90 \
 ebutss.f90 \
 ebuver.f90 \
+gauss.f90 \
 lwcgfu.f90 \
 lwcini.f90 \
 lwcphy.f90 \

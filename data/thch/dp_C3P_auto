@@ -1,0 +1,16 @@
+7                       Nb especes courantes
+10                      Nb de points de tabulation ENTH-TEMP
+273.                    TMIN
+3000.                   TMAX
+                        Especes Gazeuses (reactives puis autres)
+           C3H8         O2         CO2        H2O        N2           CO         C(S)
+            .35        .35        .35        .35        .35          .35        .35          Coeff absorption (ray) 
+4                                                                                            Nb especes elementaires
+ .012        3          0          1          0          0            1          1           Composition CHON
+ .001        8          0          0          2          0            0          0      
+ .016        0          2          2          1          0            1          0      
+ .014        0          0          0          0          2            0          0      
+2                                                                                            Nb d'especes globales connues (ici : / Fuel / Oxydant / Produits)
+             1.         0.         0.         0.         0.           0.         0.          Composition Fuel     en especes elementaires
+             0.         1.         0.         0.         3.76         0.         0.          Composition Oxydant  en especes elementaires
+             0.         0.         0.         0.         0.           0.005      0.024       Composition Produits en especes elementaires, donnees par unite de masse combustible

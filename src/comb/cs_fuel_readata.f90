@@ -68,7 +68,6 @@ implicit none
 ! Local variables
 
 character(len=150) :: chain1,chain2
-character(len=12)  :: nomcoe(ngazem)
 
 integer          it     , ice    , iat    , ios , ii , ioxy
 integer          ncoel  , inicoe
