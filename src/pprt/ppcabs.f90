@@ -95,7 +95,7 @@ double precision kgas(ncelet,nwsgg), agas(ncelet,nwsgg), agasbo(nfabor,nwsgg)
 ! Local variables
 
 integer          iel, ifac, icla, ipck, icha, iok, f_id
-double precision xm, dd2, vv, sf, xlc, xkmin, pp
+double precision xm, dd2, vv, sf, xlc, xkmin, pp, Ys, Xpro, fv
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, dimension(:), pointer :: crom
@@ -132,13 +132,18 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
       w1(iel) = propce(iel,ipproc(iym(3)))*xm/wmolg(3)*xco2
       w2(iel) = propce(iel,ipproc(iym(3)))*xm/wmolg(3)*xh2o
 
-      w3(iel) = 0.d0
-
       ! Soot model
-      if (isoot.eq.0) w3(iel) = Xsoot * propce(iel,ipproc(iym(3))) &
-                       * crom(iel) / rosoot
-      if (isoot.ge.1) w3(iel) = cvar_fsm(iel) &
-                        * crom(iel) / rosoot
+      if (isoot.eq.0.and.iic.gt.0) then
+        Ys = propce(iel,ipproc(iym(3)))*coefeg(iic,3)
+      elseif (isoot.eq.0) then
+        Ys = Xsoot * propce(iel,ipproc(iym(3)))
+      else if (isoot.ge.1) then
+        Ys = cvar_fsm(iel)
+      else
+        Ys = 0.d0
+      endif
+      w3(iel) = Ys * crom(iel) / rosoot
+
     enddo
     call raydak(ncel,ncelet,                                      &
     !==========
