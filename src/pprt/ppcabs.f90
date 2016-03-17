@@ -135,7 +135,7 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
       w3(iel) = 0.d0
 
       ! Soot model
-      if (isoot.eq.0) w3(iel) = Xsoot * propce(iel,ipproc(iym(1))) &
+      if (isoot.eq.0) w3(iel) = Xsoot * propce(iel,ipproc(iym(3))) &
                        * crom(iel) / rosoot
       if (isoot.ge.1) w3(iel) = cvar_fsm(iel) &
                         * crom(iel) / rosoot
