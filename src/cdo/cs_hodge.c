@@ -119,7 +119,6 @@ struct _hodge_builder_t {
 
 struct _cost_quant_t {
 
-  double     *invsvol;    /* size = n_ent*/
   double     *qmq;        /* symmetric dense matrix of size n_ent */
   double     *T;          /* dense matrix of size n_ent (not symmetric) */
 
@@ -451,7 +450,6 @@ _init_cost_quant(int    n_max_ent)
 
   BFT_MALLOC(hq, 1, struct _cost_quant_t);
 
-  hq->invsvol = NULL;
   hq->qmq = NULL;
   hq->T = NULL;
   hq->pq = NULL;
@@ -459,17 +457,13 @@ _init_cost_quant(int    n_max_ent)
 
   if (n_max_ent > 0) {
 
-    int  msize = n_max_ent*n_max_ent;
-    int  tot_size = n_max_ent + 2*msize;
+    const int  tot_size = n_max_ent*(1 + n_max_ent);
 
-    /* Allocate invsvol with the total requested size and then reference
-       other pointers from this one */
-    BFT_MALLOC(hq->invsvol, tot_size, double);
+    BFT_MALLOC(hq->qmq, tot_size, double);
     for (int i = 0; i < tot_size; i++)
-      hq->invsvol[i] = 0;
+      hq->qmq[i] = 0;
 
-    hq->qmq = hq->invsvol + n_max_ent;
-    hq->T = hq->invsvol + n_max_ent + msize;
+    hq->T = hq->qmq + n_max_ent;
 
     BFT_MALLOC(hq->pq, n_max_ent, cs_nvec3_t);
     BFT_MALLOC(hq->dq, n_max_ent, cs_nvec3_t);
@@ -495,7 +489,7 @@ _free_cost_quant(struct _cost_quant_t  *hq)
   if (hq == NULL)
     return hq;
 
-  BFT_FREE(hq->invsvol); /* Free in the same time qmq and T */
+  BFT_FREE(hq->qmq); /* Free in the same time T */
   BFT_FREE(hq->pq);
   BFT_FREE(hq->dq);
 
@@ -507,51 +501,66 @@ _free_cost_quant(struct _cost_quant_t  *hq)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute quantities used for defining the entries of the discrete
- *          Hodge for COST algo. and edge/face quantities
+ *          Hodge for COST algo.
+ *          Initialize the local discrete Hodge op. with the consistancy part
  *
  * \param[in]      n_loc_ent  number of local entities
+ * \param[in]      invcvol    1/|c|
  * \param[in]      ptymat     values of the tensor related to the material pty
  * \param[in]      pq         pointer to the first set of quantities
  * \param[in]      dq         pointer to the second set of quantities
+ * \param[in, out] hloc       pointer to a cs_locmat_t struct.
  * \param[in, out] hq         pointer to a _cost_quant_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _compute_cost_quant(int                     n_loc_ent,
+                    double                  invcvol,
                     const cs_real_33_t      ptymat,
                     const cs_nvec3_t       *pq,
                     const cs_nvec3_t       *dq,
-                    struct _cost_quant_t   *hq)
+                    struct _cost_quant_t   *hq,
+                    cs_locmat_t            *hloc)
 {
-  int  i, j, ii, ij, ji;
-  double  dpq, tmp_val;
-  cs_real_3_t  mdq_i;
+  /* Sanity check */
+  assert(n_loc_ent == hloc->n_ent);
 
-  /* Compute T and qmq matrices */
-  for (i = 0; i < n_loc_ent; i++) {
+  /* Compute several useful quantities
+     T_ij = pq_i.Consist_j where Consist_j = 1/|c| dq_j
+     T_ji = pq_j.Consist_i
+     qmq_i = 1/|subvol_i| dq_i.mat.dq_i
+  */
 
-    /* Compute invsvol related to each entity */
-    dpq = pq[i].meas*dq[i].meas * _dp3(dq[i].unitv, pq[i].unitv);
-    hq->invsvol[i] = 3./dpq; /* 1/subvol where subvol = 1/d * dpq */
+  for (int i = 0; i < n_loc_ent; i++) {
 
-    /* Compute diagonal entries */
+    cs_real_3_t  mdq_i;
+
+    const int  shift_i = i*n_loc_ent;
+    const double svol3 = pq[i].meas*dq[i].meas * _dp3(dq[i].unitv, pq[i].unitv);
+
+    /* Compute T_ii */
+    hq->T[shift_i+i] = invcvol * svol3;
+
+    /* Compute qmq_i and initialize hloc with the consistency part */
     cs_math_33_3_product(ptymat, dq[i].unitv, mdq_i);
-    ii = i*n_loc_ent+i;
-    hq->qmq[ii] = dq[i].meas * dq[i].meas * _dp3(dq[i].unitv, mdq_i);
-    hq->T[ii] = dpq;
+    const double cmc_i = dq[i].meas * dq[i].meas * _dp3(dq[i].unitv, mdq_i);
 
-    for (j = i+1; j < n_loc_ent; j++) {
+    hloc->mat[shift_i+i] = invcvol * cmc_i;
+    hq->qmq[i] = cmc_i * 3/svol3;
 
-      ij = i*n_loc_ent+j, ji = j*n_loc_ent+i;
+    for (int j = 0; j < i; j++) {
 
-      /* Compute qmq (symmetric) */
-      tmp_val = dq[j].meas * dq[i].meas * _dp3(dq[j].unitv, mdq_i);
-      hq->qmq[ji] = hq->qmq[ij] = tmp_val;
+      const int  ij = shift_i+j, ji = j*n_loc_ent+i;
+
+      /* Initialize the lower left part of hloc with the consistency part */
+      const double  cmc_ij = dq[j].meas * dq[i].meas * _dp3(dq[j].unitv, mdq_i);
+
+      hloc->mat[ij] = invcvol * cmc_ij;
 
       /* Compute T (not symmetric) */
-      hq->T[ij] = dq[i].meas*pq[j].meas * _dp3(dq[i].unitv, pq[j].unitv);
-      hq->T[ji] = dq[j].meas*pq[i].meas * _dp3(dq[j].unitv, pq[i].unitv);
+      hq->T[ij] = invcvol*pq[j].meas*dq[i].meas * _dp3(pq[j].unitv, dq[i].unitv);
+      hq->T[ji] = invcvol*pq[i].meas*dq[j].meas * _dp3(pq[i].unitv, dq[j].unitv);
 
     } /* Loop on entities (J) */
 
@@ -687,73 +696,75 @@ _build_using_cost(int                         cid,
   assert(n_ent < hloc->n_max_ent + 1);
   assert(n_ent == hloc->n_ent);
 
-  /* Compute additional geometrical quantities: invsvol, qmq and T
+  /* Compute additional geometrical quantities: qmq and T
+     Initial the local Hodge matrix with the consistency part which is
+     constant over a cell.
      Switch arguments between discrete Hodge operator from PRIMAL->DUAL space
      and discrete Hodge operator from DUAL->PRIMAL space */
+
+  const double  invcvol = 1 / quant->cell_vol[cid];
+  const double  beta2 = h_info.coef * h_info.coef;
 
   /* PRIMAL --> DUAL */
   if (h_info.type == CS_PARAM_HODGE_TYPE_FPED ||
       h_info.type == CS_PARAM_HODGE_TYPE_EPFD)
-    _compute_cost_quant(n_ent, (const cs_real_3_t *)hb->ptymat,
-                        hq->pq, hq->dq, hq);
+    _compute_cost_quant(n_ent, invcvol, (const cs_real_3_t *)hb->ptymat,
+                        hq->pq, hq->dq, hq, hloc);
 
   /* DUAL --> PRIMAL */
   else if (h_info.type == CS_PARAM_HODGE_TYPE_EDFP)
-    _compute_cost_quant(n_ent, (const cs_real_3_t *)hb->ptymat,
-                        hq->dq, hq->pq, hq);
+    _compute_cost_quant(n_ent, invcvol, (const cs_real_3_t *)hb->ptymat,
+                        hq->dq, hq->pq, hq, hloc);
 
-  /* Coefficients related to the value of beta */
-  const double  beta = h_info.coef;
-  const double  beta2 = beta*beta;
-  const double  invcvol = 1 / quant->cell_vol[cid];
-  const double  invcvol2 = invcvol*invcvol;
-  const double  coef1 = beta*invcvol2;
-  const double  coef2 = (1+ 2*beta)*invcvol;
-  const double  coef3 = coef2 - 6*beta2*invcvol;
-  const double  coef4 = beta2*invcvol;
+  double  stab_part;
 
-  /* Add contribution from each sub-volume related to each edge */
-  for (k = 0; k < n_ent; k++) { /* Loop over sub-volumes */
+  for (i = 0; i < n_ent; i++) { /* Loop on cell entities I */
 
-    int  kk =  k*n_ent+k;
-    double  val_kk = beta * hq->qmq[kk] * hq->invsvol[k];
+    const int  shift_i = i*n_ent;
 
-    for (i = 0; i < n_ent; i++) { /* Loop on cell entities I */
+    /* Add contribution from the stabilization part for
+       each sub-volume related to a primal entity */
+    stab_part = 0;
+    for (k = 0; k < n_ent; k++) { /* Loop over sub-volumes */
 
-      int  ik = i*n_ent+k;
-      double  Tik = hq->T[ik];
+      const int  ik = shift_i+k;
+      const double  ekci = hq->T[ik];
 
-      hloc->mat[i*n_ent+i] += Tik*(Tik*val_kk - 2*hq->qmq[ik]);
+      double coef = ekci*ekci;
+      if (k == i)
+        coef += 1 - 2*ekci;
+      stab_part += hq->qmq[k] * coef;
 
-      for (j = i + 1; j < n_ent; j++) { /* Loop on cell entities J */
+    } /* Loop over subvolumes (K) */
 
-        int  jk = j*n_ent+k, ij = i*n_ent+j;
-        double  Tjk = hq->T[jk];
+    hloc->mat[shift_i+i] += beta2*stab_part;
 
-        hloc->mat[ij] += Tik*Tjk*val_kk - Tik*hq->qmq[jk] - Tjk*hq->qmq[ik];
+    /* Compute extra-diag entries */
+    for (j = 0; j < i; j++) { /* Loop on cell entities J */
 
-      } /* End of loop on J entities */
+      const int  shift_j = j*n_ent;
 
-    } /* End of loop on I entities */
+      /* Add contribution from the stabilization part for
+         each sub-volume related to a primal entity */
+      stab_part = 0;
+      for (k = 0; k < n_ent; k++) { /* Loop over sub-volumes */
 
-  } /* End of loop on P sub-regions */
+        const int  ik = shift_i+k;
+        const int  jk = shift_j+k;
+        const double  ekci = hq->T[ik];
+        const double  ekcj = hq->T[jk];
 
-  /* Add contribution independent of the sub-region */
-  for (i = 0; i < n_ent; i++) {/* Loop on cell entities I */
+        double coef = ekci*ekcj;
+        if (k == i)
+          coef -= ekcj;
+        if (k == j)
+          coef -= ekci;
+        stab_part += hq->qmq[k] * coef;
 
-    int  ii = i*n_ent+i;
-    double  miis = hq->qmq[ii]*hq->invsvol[i];
+      } /* Loop over subvolumes (K) */
 
-    hloc->mat[ii] = coef1*hloc->mat[ii] + coef3*hq->qmq[ii] + beta2*miis;
-
-    for (j = i + 1; j < n_ent; j++) { /* Loop on cell entities J */
-
-      int  jj = j*n_ent+j, ij = i*n_ent+j, ji = j*n_ent+i;
-      double  mjjs = hq->qmq[jj]*hq->invsvol[j];
-      double  contrib =  hq->T[ij]*mjjs + hq->T[ji]*miis;
-
-      hloc->mat[ij] = coef1*hloc->mat[ij] + coef2*hq->qmq[ij] - coef4*contrib;
-      hloc->mat[ji] = hloc->mat[ij];
+      hloc->mat[shift_i+j] += beta2*stab_part;
+      hloc->mat[shift_j+i] = hloc->mat[shift_i+j]; // Symmetric by construction
 
     } /* End of loop on J entities */
 
