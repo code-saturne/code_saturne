@@ -457,6 +457,10 @@ _petsc_setup_hook(void   *context,
   case CS_PARAM_PRECOND_DIAG:
     PCSetType(pc, PCJACOBI);  /* Jacobi (diagonal) preconditioning */
     break;
+  case CS_PARAM_PRECOND_BJACOB:
+    PCSetType(pc, PCBJACOBI);  /* Block-Jacobi (diagonal) preconditioning */
+    PetscOptionsSetValue("-sub_pc_factor_levels", "2");
+    break;
   case CS_PARAM_PRECOND_SSOR:
     PCSetType(pc, PCSOR);
     PCSORSetSymmetric(pc, SOR_SYMMETRIC_SWEEP);
