@@ -217,8 +217,11 @@ module numvar
   !> convective mass flux of the variables at the previous time-step
   integer, save :: ifluaa(nvarmx)
 
-  !> cell and boundary density field ids of the variables
-  integer, save :: icrom, ibrom
+  !> cell density field ids of the variables
+  integer, save :: icrom
+
+  !> boundary density field ids of the variables
+  integer, save :: ibrom
 
   !> cell density at the second previous time step key id of the variables
   integer, save :: icroaa

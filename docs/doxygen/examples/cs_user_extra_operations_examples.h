@@ -364,7 +364,7 @@
 
   \subsection cs_user_extra_operations_examples_example_5_po Example 5
 
-  Minimum of a real 'rrr', here the volume.
+  Maximum of a real 'rrr', here the volume.
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_5
 

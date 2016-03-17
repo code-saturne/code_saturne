@@ -131,6 +131,8 @@
       - For one-dimensional arrays :\n\n
       <tt>call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref numvar::ipr "ipr"), cvar_pr)
           \n pres =  cvar_pr(iel)</tt>, \n\n
+      <tt>call \ref field::field_get_val_s_by_name "field_get_val_s_by_name"("pressure", cvar_pr)
+          \n pres =  cvar_pr(iel)</tt>, \n\n
       <tt>call \ref field::field_get_val_s "field_get_val_s"(iprpfl(\ref cstphy::icp "icp"), cpro_cp) \n
           cp = cpro_cp(iel)</tt>, \n\n
           The scalar values are accessed as follows:\n\n
