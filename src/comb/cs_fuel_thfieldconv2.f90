@@ -36,12 +36,10 @@
 !______________________________________________________________________________!
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
-!> \param[in,out] propce        physical properties at cell centers
 !______________________________________________________________________________!
 
 subroutine cs_fuel_thfieldconv2 &
- ( ncelet , ncel   ,            &
-   propce )
+ ( ncelet , ncel )
 
 !==============================================================================
 ! Module files
@@ -65,12 +63,10 @@ implicit none
 ! Arguments
 
 integer          ncelet, ncel
-double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          iel    , icla
-integer          ipcte1 , ipcte2
 integer          mode
 
 double precision eh2
@@ -78,17 +74,19 @@ double precision xsolid(2), mkfini , diamgt
 double precision masgut  , mfgout , mkgout , rhofol
 
 double precision, dimension(:), pointer :: cvar_yfolcl, cvar_h2cl
+double precision, dimension(:), pointer :: cpro_temp2, cpro_temp1
+double precision, dimension(:), pointer :: cpro_rom2, cpro_diam2
 
 !===============================================================================
 ! 1. Preliminary calculations
 !===============================================================================
 ! --- Initialization of T2 as T1
 
-ipcte1 = ipproc(itemp1)
+call field_get_val_s(iprpfl(itemp1),cpro_temp1)
 do icla = 1, nclafu
-  ipcte2 = ipproc(itemp2(icla))
+  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
   do iel = 1, ncel
-    propce(iel,ipcte2) = propce(iel,ipcte1)
+    cpro_temp2(iel) = cpro_temp1(iel)
   enddo
 enddo
 
@@ -100,14 +98,16 @@ do icla = 1, nclafu
 
   call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
   call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
-  ipcte2 = ipproc(itemp2(icla))
+  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+  call field_get_val_s(iprpfl(idiam2(icla)),cpro_rom2)
+  call field_get_val_s(iprpfl(irom2(icla)),cpro_diam2)
 
   mkfini = rho0fl*pi/6.d0*dinikf(icla)**3
 
   do iel = 1, ncel
 
-    rhofol = propce(iel,ipproc(irom2 (icla)))
-    diamgt = propce(iel,ipproc(idiam2(icla)))
+    rhofol = cpro_rom2(iel)
+    diamgt = cpro_diam2(iel)
     masgut = rho0fl*pi/6.d0*(diamgt**3.d0)
     if (diamgt.le.dinikf(icla)) then
       mkgout = masgut
@@ -129,7 +129,7 @@ do icla = 1, nclafu
       eh2 =  cvar_h2cl(iel)/cvar_yfolcl(iel)
 
       mode = 1
-      call cs_fuel_htconvers2(mode, eh2, xsolid, propce(iel,ipcte2))
+      call cs_fuel_htconvers2(mode, eh2, xsolid, cpro_temp2(iel))
 
     endif
 

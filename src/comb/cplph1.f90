@@ -25,7 +25,7 @@ subroutine cplph1 &
    nitbcp , nrtbcp , nitbmc , nrtbmc , nitbwo , nrtbwo ,          &
    f1m    , f2m    , f3m    , f4m    , f3p2m  , f4p2m  ,          &
    enth   ,                                                       &
-   propce , rom1   )
+   rom1   )
 
 !===============================================================================
 ! FONCTION :
@@ -105,7 +105,6 @@ subroutine cplph1 &
 ! f4p2m            ! tr ! <-- ! variance du traceur 4 (air)                    !
 ! enth             ! tr ! <-- ! enthalpie en j/kg  soit du gaz                 !
 !                  !    !     !                    soit du melange             !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -129,6 +128,8 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use pointe
+use field
 
 !===============================================================================
 
@@ -146,21 +147,21 @@ double precision f3m(ncelet), f4m(ncelet)
 double precision f3p2m(ncelet), f4p2m(ncelet)
 double precision enth(ncelet), rom1(ncelet)
 
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          iel    , ice
 integer          iitbcp , iitbmc , iitbwo
-integer          ipcte1
-integer          ipcyf1 , ipcyf2 , ipcyf3 , ipcyox
-integer          ipcyp1 , ipcyp2 , ipcyin , ipcyce
 
 double precision wmolme , wmchx1 , wmchx2
 
 integer, allocatable, dimension(:,:) :: itbcp, itbmc, itbwo
 
 double precision, allocatable, dimension(:,:) :: rtbcp, rtbmc, rtbwo
+
+double precision, dimension(:), pointer :: cpro_cyf1, cpro_cyf2, cpro_cyf3
+double precision, dimension(:), pointer :: cpro_cyox, cpro_cyp1, cpro_cyp2
+double precision, dimension(:), pointer :: cpro_cyin, cpro_temp1, cpro_mmel
+type(pmapper_double_r1), dimension(:), pointer :: cpro_cyce
 
 !===============================================================================
 
@@ -176,6 +177,8 @@ allocate(itbwo(ncelet,nitbwo))
 allocate(rtbcp(ncelet,nrtbcp))
 allocate(rtbmc(ncelet,nrtbmc))
 allocate(rtbwo(ncelet,nrtbwo))
+
+allocate(cpro_cyce(ngaze-2*ncharb))
 
 ! --- Initialisation memoire
 
@@ -246,14 +249,13 @@ call cppdfr                                                       &
 ! 4. CALCUL DES CONCENTRATIONS MOYENNES
 !===============================================================================
 
-
-ipcyf1 = ipproc(iym1(ichx1))
-ipcyf2 = ipproc(iym1(ichx2))
-ipcyf3 = ipproc(iym1(ico  ))
-ipcyox = ipproc(iym1(io2  ))
-ipcyp1 = ipproc(iym1(ico2 ))
-ipcyp2 = ipproc(iym1(ih2o ))
-ipcyin = ipproc(iym1(in2  ))
+call field_get_val_s(iprpfl(iym1(ichx1)),cpro_cyf1)
+call field_get_val_s(iprpfl(iym1(ichx2)),cpro_cyf2)
+call field_get_val_s(iprpfl(iym1(ico)),cpro_cyf3)
+call field_get_val_s(iprpfl(iym1(io2)),cpro_cyox)
+call field_get_val_s(iprpfl(iym1(ico2)),cpro_cyp1)
+call field_get_val_s(iprpfl(iym1(ih2o)),cpro_cyp2)
+call field_get_val_s(iprpfl(iym1(in2)),cpro_cyin)
 
 call cplym1                                                       &
 !==========
@@ -267,9 +269,9 @@ call cplym1                                                       &
 !          DSI7         DSI8         SDEB         SFIN
    rtbcp(1,9) ,                                                   &
 !          HAUT
-   propce(1,ipcyf1) , propce(1,ipcyf2) , propce(1,ipcyf3) ,       &
-   propce(1,ipcyox) , propce(1,ipcyp1) , propce(1,ipcyp2) ,       &
-   propce(1,ipcyin) ,                                             &
+   cpro_cyf1 , cpro_cyf2 , cpro_cyf3 ,                            &
+   cpro_cyox , cpro_cyp1 , cpro_cyp2 ,                            &
+   cpro_cyin ,                                                    &
    itbmc      , rtbmc      ,                                      &
 !          MACRO TABLEAU MULTI CHARBONS ENTIERS REELS
    itbwo(1,1) ,                                                   &
@@ -280,11 +282,14 @@ call cplym1                                                       &
 
 ! --> Clipping eventuel des fractions massiques
 
+do ice = 1, (ngaze-2*ncharb)
+  call field_get_val_s(iprpfl(iym1(ice)),cpro_cyce(ice)%p)
+enddo
+
 do iel = 1, ncel
   do ice = 1, (ngaze-2*ncharb)
-    ipcyce = ipproc(iym1(ice))
-    if ( abs(propce(iel,ipcyce)).lt.epsicp )                      &
-         propce(iel,ipcyce) = zero
+    if ( abs(cpro_cyce(ice)%p(iel)).lt.epsicp )                      &
+         cpro_cyce(ice)%p(iel) = zero
   enddo
 enddo
 
@@ -293,7 +298,8 @@ enddo
 ! 4. CALCUL DE LA TEMPERATURE ET DE LA MASSE VOLUMIQUE
 !===============================================================================
 
-ipcte1 = ipproc(itemp1)
+call field_get_val_s(iprpfl(itemp1),cpro_temp1)
+call field_get_val_s(iprpfl(immel),cpro_mmel)
 
 !  CALCUL DE LA TEMPERATURE DU GAZ
 !     EN FONCTION DE L'ENTHALPIE DU GAZ ET DES CONCENTRATIONS
@@ -302,40 +308,40 @@ ipcte1 = ipproc(itemp1)
   !==========
  ( ncelet , ncel   , nitbmc , nrtbmc ,                            &
    enth,                                                          &
-   propce(1,ipcyf1), propce(1,ipcyf2), propce(1,ipcyf3),          &
-   propce(1,ipcyox), propce(1,ipcyp1), propce(1,ipcyp2),          &
-   propce(1,ipcyin),                                              &
-   propce(1,ipcte1),                                              &
+   cpro_cyf1 , cpro_cyf2 , cpro_cyf3 ,                            &
+   cpro_cyox , cpro_cyp1 , cpro_cyp2 ,                            &
+   cpro_cyin ,                                                    &
+   cpro_temp1 ,                                                   &
    itbmc      , rtbmc      ,                                      &
 !          MACRO TABLEAU MULTI CHARBONS ENTIERS REELS
    rtbwo(1,1) , rtbwo(1,2) )
 !          TABLEAUX DE TRAVAIL
 
-ipcte1 = ipproc(itemp1)
 do iel = 1, ncel
   wmchx1 = wmolat(iatc)+rtbmc(iel,ix1mc)*wmolat(iath)
   wmchx2 = wmolat(iatc)+rtbmc(iel,ix2mc)*wmolat(iath)
-  wmolme = propce(iel,ipcyf1)/wmchx1                              &
-         + propce(iel,ipcyf2)/wmchx2                              &
-         + propce(iel,ipcyf3)/wmole(ico )                         &
-         + propce(iel,ipcyox)/wmole(io2 )                         &
-         + propce(iel,ipcyp1)/wmole(ico2)                         &
-         + propce(iel,ipcyp2)/wmole(ih2o)                         &
-         + propce(iel,ipcyin)/wmole(in2 )
+  wmolme = cpro_cyf1(iel)/wmchx1                              &
+         + cpro_cyf2(iel)/wmchx2                              &
+         + cpro_cyf3(iel)/wmole(ico )                         &
+         + cpro_cyox(iel)/wmole(io2 )                         &
+         + cpro_cyp1(iel)/wmole(ico2)                         &
+         + cpro_cyp2(iel)/wmole(ih2o)                         &
+         + cpro_cyin(iel)/wmole(in2 )
 
 ! stockage de la masse molaire du melange
 
-  propce(iel,ipproc(immel)) = 1.d0 / wmolme
+  cpro_mmel(iel) = 1.d0 / wmolme
 
 ! ---- On ne met pas la pression mecanique IPR
 !      mais P0
 
-  rom1(iel) = p0/(wmolme*cs_physical_constants_r*propce(iel,ipcte1))
+  rom1(iel) = p0/(wmolme*cs_physical_constants_r*cpro_temp1(iel))
 enddo
 
 ! Free memory
 deallocate(itbcp, itbmc, itbwo)
 deallocate(rtbcp, rtbmc, rtbwo)
+deallocate(cpro_cyce)
 
 !===============================================================================
 

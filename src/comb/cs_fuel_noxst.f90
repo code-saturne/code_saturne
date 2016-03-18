@@ -27,8 +27,7 @@ subroutine cs_fuel_noxst &
    indpdf ,                                                               &
    pdfm1  , pdfm2  , doxyd  , dfuel  , hrec ,                             &
    f3m    , f4m    , f5m    , f6m    , f7m  , f8m , f9m ,                 &
-   fs3no  , fs4no  , yfs4no , enthox ,                                    &
-   propce )
+   fs3no  , fs4no  , yfs4no , enthox )
 
 !===============================================================================
 ! FONCTION :
@@ -92,14 +91,11 @@ double precision doxyd(ncel) , hrec(ncel)
 double precision fs3no(ncel) , fs4no(ncel) , yfs4no(ncel,ngazg)
 double precision enthox(ncel)
 
-double precision propce(ncelet,*)
 !
 ! VARIABLES LOCALES
 !
 integer          iel , icla , i
 integer          ipdf1 , ipdf2 , ipdf3
-integer          iexp1 , iexp2 , iexp3
-integer          ipctem
 integer          npart
 parameter        (npart = 200 )
 
@@ -130,7 +126,10 @@ double precision yo2min,yo2max,yo2min1,yo2max1
 double precision yo2oxmin,yo2oxmax
 double precision toxmin,toxmax
 
+double precision, dimension(:), pointer :: cpro_exp1, cpro_exp2, cpro_exp3
+double precision, dimension(:), pointer :: cpro_temp1, cpro_yo2, cpro_mmel
 type(pmapper_double_r1), dimension(:), allocatable :: cvar_yfolcl, cvar_h2cl
+type(pmapper_double_r1), dimension(:), allocatable :: cpro_temp2
 
 !
 !
@@ -144,9 +143,9 @@ wmo2   = wmole(io2  )
 !
 ! --- pointeurs
 !
-iexp1 = ipproc(ighcn1)
-iexp2 = ipproc(ighcn2)
-iexp3 = ipproc(ignoth)
+call field_get_val_s(iprpfl(ighcn1),cpro_exp1)
+call field_get_val_s(iprpfl(ighcn2),cpro_exp2)
+call field_get_val_s(iprpfl(ignoth),cpro_exp3)
 !
 ! Parametres des lois d'Arrhenius
 !
@@ -168,24 +167,28 @@ ipdf3 = 1
 ! Initialisation
 !
 do iel = 1, ncel
-  propce(iel,iexp1)  = zero
-  propce(iel,iexp2)  = zero
-  propce(iel,iexp3)  = zero
+  cpro_exp1(iel)  = zero
+  cpro_exp2(iel)  = zero
+  cpro_exp3(iel)  = zero
 enddo
 
 !===============================================================================
 ! 2. CALCUL SANS LES PDF
 !===============================================================================
 
+call field_get_val_s(iprpfl(itemp1),cpro_temp1)
+call field_get_val_s(iprpfl(iym1(io2)),cpro_yo2)
+call field_get_val_s(iprpfl(immel),cpro_mmel)
+
 do iel = 1, ncel
 !
-  tg  = propce(iel,ipproc(itemp1))
-  yo2 = propce(iel,ipproc(iym1(io2)))
-  xo2 = yo2*propce(iel,ipproc(immel))/wmo2
+  tg  = cpro_temp1(iel)
+  yo2 = cpro_yo2(iel)
+  xo2 = yo2*cpro_mmel(iel)/wmo2
 !
 ! Reaction HCN + NO + 1/4 O2 ---> N2 + 1/2 H2O + CO
 !
-  propce(iel,iexp1)  = kk1*exp(-ee1/tg)
+  cpro_exp1(iel)  = kk1*exp(-ee1/tg)
 !
 ! Reaction HCN + 5/4 O2 --> NO + 1/2 H2O  + CO
 !
@@ -196,11 +199,11 @@ do iel = 1, ncel
   else
     bb=(0.018d0-xo2)/(0.018d0-0.0025d0)
   endif
-  propce(iel,iexp2)  = kk2*exp(-ee2/tg)*(xo2**bb)
+  cpro_exp2(iel)  = kk2*exp(-ee2/tg)*(xo2**bb)
 !
 ! No thermique : Zeldovich
 !
-  propce(iel,iexp3)  = kk3*exp(-ee3/tg)*(xo2**0.5d0)
+  cpro_exp3(iel)  = kk3*exp(-ee3/tg)*(xo2**0.5d0)
 !
 enddo
 !
@@ -213,9 +216,11 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
   ! Arrays of pointers containing the fields values for each class
   ! (loop on cells outside loop on classes)
   allocate(cvar_yfolcl(nclafu), cvar_h2cl(nclafu))
+  allocate(cpro_temp2(nclafu))
   do icla = 1, nclafu
     call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl(icla)%p)
     call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl(icla)%p)
+    call field_get_val_s(iprpfl(itemp2(icla)), cpro_temp2(icla)%p)
   enddo
 
 !
@@ -274,13 +279,13 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
       gt3 = doxyd(iel)
       yo2cb = 0.d0
 
-      if (  propce(iel, ipproc(iym1(io2))) .gt. 0.d0 ) then
-        yo2ox = propce(iel, ipproc(iym1(io2)))/(-gt1+gt2+gt3)
+      if (  cpro_yo2(iel) .gt. 0.d0 ) then
+        yo2ox = cpro_yo2(iel)/(-gt1+gt2+gt3)
 !
         yo2oxmin = min(yo2oxmin,yo2ox)
         yo2oxmax = max(yo2oxmax,yo2ox)
 !
-        yo2moy = propce(iel, ipproc(iym1(io2)))
+        yo2moy = cpro_yo2(iel)
         dirac  =  dfuel(iel)*yo2cb + doxyd(iel)*yo2ox
 !
         bb1 = max(0.D0      ,pdfm1(iel))
@@ -347,14 +352,13 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
       enddo
       if ( xmx2 .gt. 0.d0 ) then
         do icla=1,nclafu
-          ipctem=ipproc(itemp2(icla))
-          tfuel = tfuel +cvar_yfolcl(icla)%p(iel)*propce(iel,ipctem)
+          tfuel = tfuel +cvar_yfolcl(icla)%p(iel)*cpro_temp2(icla)%p(iel)
         enddo
 !
         tfuel = tfuel/xmx2
 !
       else
-        tfuel = propce(iel,ipproc(itemp1))
+        tfuel = cpro_temp1(iel)
       endif
 !
 !    On recupere la valeur de Toxyd a partir de hoxyd
@@ -418,8 +422,8 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
       toxmin = min(toxmin,toxyd)
       toxmax = max(toxmax,toxyd)
 !
-      if ( toxyd .gt. propce(iel,ipproc(itemp1)) ) then
-        toxyd = propce(iel,ipproc(itemp1))
+      if ( toxyd .gt. cpro_temp1(iel) ) then
+        toxyd = cpro_temp1(iel)
       endif
 !
 !    On initialise par les temperatures Toxy et Tfuel aux extremites
@@ -428,7 +432,7 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
 !
 !    On recupere la valeur de la temperature moyenne
 !
-      tmpgaz = propce(iel,ipproc(itemp1))
+      tmpgaz = cpro_temp1(iel)
 !
       bb1 = max(0.D0      ,pdfm1(iel))
       bb2 = min(fs4no(iel),pdfm2(iel))
@@ -558,8 +562,8 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
 !
 !   Concentration oxygene
 !
-        xo2 = propce(iel,ipproc(iym1(io2  )))                 &
-             *propce(iel,ipproc(immel))/wmole(io2)
+        xo2 = cpro_yo2(iel)                 &
+             *cpro_mmel(iel)/wmole(io2)
 !
 !  Integration
 !
@@ -591,7 +595,7 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
 !
         if ( ipdf1 .eq. 1 ) then
 !
-          propce(iel,iexp1)= kk1*exp(-ee1/toxyd)*doxyd(iel)        &
+          cpro_exp1(iel) = kk1*exp(-ee1/toxyd)*doxyd(iel)        &
                             +kk1*exp(-ee1/tfuel)*dfuel(iel)
 
           do i = 1, npart+1
@@ -599,7 +603,7 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
           enddo
 
           do i = 1, npart
-            propce(iel,iexp1) = propce(iel,iexp1)                 &
+            cpro_exp1(iel) = cpro_exp1(iel)                 &
                                +0.5d0*dgs*(val(i)+val(i+1))
           enddo
 
@@ -619,7 +623,7 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
                 bb=(0.018d0-xo2)/(0.018d0-0.0025d0)
               endif
 !
-              propce(iel,iexp2) = kk2*exp(-ee2/toxyd)*doxyd(iel)*(xo2**bb) &
+              cpro_exp2(iel) = kk2*exp(-ee2/toxyd)*doxyd(iel)*(xo2**bb) &
                                  +kk2*exp(-ee2/tfuel)*dfuel(iel)*(xo2**bb)
 !
               do i = 1, npart+1
@@ -627,11 +631,11 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
               enddo
 
               do i = 1, npart
-                propce(iel,iexp2) = propce(iel,iexp2)                      &
+                cpro_exp2(iel) = cpro_exp2(iel)                      &
                                    +0.5d0*dgs*(val(i)+val(i+1))*(xo2**bb)
               enddo
             else
-              propce(iel,iexp2) = 0.d0
+              cpro_exp2(iel) = 0.d0
             endif
 
           endif
@@ -642,7 +646,7 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
 
             if ( xo2 .gt. 0.d0 ) then
 !
-              propce(iel,iexp3) = kk3*exp(-ee3/toxyd)                  &
+              cpro_exp3(iel) = kk3*exp(-ee3/toxyd)                  &
                                          *doxyd(iel)*(yo2ox**0.5d0)    &
                                  +kk3*exp(-ee3/tfuel)                  &
                                          *dfuel(iel)*(yo2cb**0.5d0)
@@ -660,12 +664,12 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
               enddo
 
               do i = 1, npart
-                propce(iel,iexp3) = propce(iel,iexp3)                  &
+                cpro_exp3(iel) = cpro_exp3(iel)                  &
                                    +0.5d0*dgs*(val(i)+val(i+1))
               enddo
 !
             else
-              propce(iel,iexp3)= 0.d0
+              cpro_exp3(iel) = 0.d0
             endif
           endif
 !
@@ -675,6 +679,7 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
   enddo
 
   deallocate(cvar_yfolcl, cvar_h2cl)
+  deallocate(cpro_temp2)
 
 !
   if ( irangp .ge. 0 ) then

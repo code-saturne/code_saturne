@@ -44,11 +44,10 @@
 !______________________________________________________________________________!
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
-!> \param[in,out] propce        physic properties at cell centers
 !______________________________________________________________________________!
 
 subroutine cs_coal_physprop2 &
- ( ncelet , ncel , propce )
+ ( ncelet , ncel )
 
 !===============================================================================
 ! Module files
@@ -76,16 +75,14 @@ implicit none
 
 integer          ncelet , ncel
 
-double precision propce(ncelet,*)
-
 ! Local variables
 character(len=80) :: name
 
 integer          nbrint
 parameter       (nbrint=8)
-integer          iel    , icla   , ipcro2 , ipcdi2
+integer          iel    , icla
 integer          n1     , n2     , n3     , n4     , n5    , n6
-integer          n7     , n8     , ipcx2c
+integer          n7     , n8
 integer          inttmp(nbrint)
 
 double precision xch    , dch    , xnp    , xck    , dck , d1s3
@@ -97,6 +94,7 @@ double precision ro2ini , roh2o
 double precision, dimension(:), pointer :: nagcpi, agecpi
 double precision, dimension(:), pointer :: cvar_xchcl, cvar_xckcl, cvar_xnpcl
 double precision, dimension(:), pointer :: cvar_xwtcl
+double precision, dimension(:), pointer :: cpro_x2, cpro_rom2, cpro_diam2
 
 !===============================================================================
 
@@ -149,9 +147,9 @@ do icla = 1, nclacp
     call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
   endif
 
-  ipcx2c = ipproc(ix2(icla))
-  ipcro2 = ipproc(irom2(icla))
-  ipcdi2 = ipproc(idiam2(icla))
+  call field_get_val_s(iprpfl(ix2(icla)),cpro_x2)
+  call field_get_val_s(iprpfl(irom2(icla)),cpro_rom2)
+  call field_get_val_s(iprpfl(idiam2(icla)),cpro_diam2)
   xashcl = xashch(ichcor(icla))
 
   do iel = 1, ncel
@@ -160,28 +158,28 @@ do icla = 1, nclacp
     xnp    = cvar_xnpcl(iel)
     xuash  = xnp*xmp0(icla)*(1.d0-xashcl)
     ! --- Calculation of the solid mass fraction
-    propce(iel,ipcx2c) = xch + xck + xnp*xmash(icla)
+    cpro_x2(iel) = xch + xck + xnp*xmash(icla)
     !     Taking into account the humidity
     if ( ippmod(iccoal) .ge. 1 ) then
-      propce(iel,ipcx2c) = propce(iel,ipcx2c)                     &
+      cpro_x2(iel) = cpro_x2(iel)                     &
                           +cvar_xwtcl(iel)
     endif
     ! ---- Eventual clipping for the solid mass fraction
-    if ( propce(iel,ipcx2c) .gt. (1.d0+epsicp) ) then
+    if ( cpro_x2(iel) .gt. (1.d0+epsicp) ) then
       n1 = n1 + 1
-      x2max = max(propce(iel,ipcx2c),x2max)
-      propce(iel,ipcx2c) = 1.d0
-    else if ( propce(iel,ipcx2c) .lt. (zero-epsicp) ) then
+      x2max = max(cpro_x2(iel),x2max)
+      cpro_x2(iel) = 1.d0
+    else if ( cpro_x2(iel) .lt. (zero-epsicp) ) then
       n2 = n2 + 1
-      x2min = min(propce(iel,ipcx2c),x2min)
-      propce(iel,ipcx2c) = zero
+      x2min = min(cpro_x2(iel),x2min)
+      cpro_x2(iel) = zero
     endif
 
 
     ! --- Initialization
 
-    propce(iel,ipcro2) = rho20(icla)
-    propce(iel,ipcdi2) = diam20(icla)
+    cpro_rom2(iel) = rho20(icla)
+    cpro_diam2(iel) = diam20(icla)
 
     if ( xuash.gt.epsicp ) then
 
@@ -201,7 +199,7 @@ do icla = 1, nclacp
         dch = zero
       endif
 
-      ! --- Calculation of the coke diamter: Dck stores in propce(iel,ipcdi2)
+      ! --- Calculation of the coke diamter: Dck stores in cpro_diam2(iel)
 
       dck = ( (xch/rho20(icla)+xck/rhock(ichcor(icla)))/          &
               ((1.d0-xashcl)*pi/6.d0*xnp) )**d1s3
@@ -217,7 +215,7 @@ do icla = 1, nclacp
         dckmin = min(dck,dckmin)
         dck = zero
       endif
-      propce(iel,ipcdi2) = dck
+      cpro_diam2(iel) = dck
 
       ! --- Density
 
@@ -230,7 +228,7 @@ do icla = 1, nclacp
                              *roh2o
       endif
 
-      propce(iel,ipcro2) =                                        &
+      cpro_rom2(iel) =                                        &
         ( xashcl*diam20(icla)**3*rho20(icla) +                    &
           (1.d0-xashcl)*(dck**3-dch**3)*rhock(ichcor(icla)) +     &
           (1.d0-xashcl)*dch**3*ro2ini ) /                         &
@@ -239,16 +237,16 @@ do icla = 1, nclacp
 
       ! ---- Clipping for density
 
-      if ( propce(iel,ipcro2) .gt. (ro2ini+epsicp) ) then
+      if ( cpro_rom2(iel) .gt. (ro2ini+epsicp) ) then
         n7 = n7 + 1
-        romax = max(propce(iel,ipcro2),romax)
-        propce(iel,ipcro2) = rho20(icla)
+        romax = max(cpro_rom2(iel),romax)
+        cpro_rom2(iel) = rho20(icla)
       endif
-      if ( propce(iel,ipcro2) .lt. (rhock(ichcor(icla))-epsicp) ) &
+      if ( cpro_rom2(iel) .lt. (rhock(ichcor(icla))-epsicp) ) &
                               then
         n8 = n8 + 1
-        romin = min(propce(iel,ipcro2),romin)
-        propce(iel,ipcro2) = rhock(ichcor(icla))
+        romin = min(cpro_rom2(iel),romin)
+        cpro_rom2(iel) = rhock(ichcor(icla))
       endif
     endif
 
@@ -301,7 +299,7 @@ do icla = 1, nclacp
     call parmin (romin )
     !==========
 
-    call synsca(propce(:,ipcx2c))
+    call synsca(cpro_x2)
 
   endif
 

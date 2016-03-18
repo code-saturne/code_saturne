@@ -23,7 +23,7 @@
 subroutine cs_coal_radst &
 !=======================
   ( ivar   , ncelet , ncel   ,        &
-    volume , propce , smbrs  , rovsdt )
+    volume , smbrs  , rovsdt )
 !===============================================================================
 !  FONCTION  :
 !  ---------
@@ -44,7 +44,6 @@ subroutine cs_coal_radst &
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! volume(ncelet    ! tr ! <-- ! volume des cellules                            !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smbrs(ncelet     ! tr ! <-- ! second membre du systeme                       !
 ! rovsdt(ncelet    ! tr ! <-- ! diagonale du systeme                           !
 !__________________!____!_____!________________________________________________!
@@ -82,12 +81,13 @@ integer          ivar , ncelet, ncel
 double precision volume(ncelet)
 double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
-double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          iel , numcla , ipcl
 integer          keyccl
+
+double precision, dimension(:), pointer :: cpro_tsri, cpro_x2, cpro_tsre
 
 !===============================================================================
 ! 1. Initialization
@@ -104,22 +104,25 @@ ipcl   = 1+numcla
 ! 2. PRISE EN COMPTE DES TERMES SOURCES RADIATIFS
 !===============================================================================
 
+call field_get_val_s(iprpfl(itsri(ipcl)),cpro_tsri)
+call field_get_val_s(iprpfl(itsre(ipcl)),cpro_tsre)
+call field_get_val_s(iprpfl(ix2(numcla)),cpro_x2)
 
 do iel = 1, ncel
-  propce(iel,ipproc(itsri(ipcl))) = max(-propce(iel,ipproc(itsri(ipcl))),zero)
+  cpro_tsri(iel) = max(-cpro_tsri(iel),zero)
 enddo
 
 do iel = 1, ncel
-  if ( propce(iel,ipproc(ix2(numcla))) .gt. epzero ) then
+  if ( cpro_x2(iel) .gt. epzero ) then
 
 !--> PARTIE EXPLICITE
 
-    smbrs(iel)  = smbrs(iel) +  propce(iel,ipproc(itsre(ipcl)))*volume(iel) &
-                               *propce(iel,ipproc(ix2(numcla)))
+    smbrs(iel)  = smbrs(iel) +  cpro_tsre(iel)*volume(iel) &
+                               *cpro_x2(iel)
 
 !--> PARTIE IMPLICITE
 
-    rovsdt(iel) = rovsdt(iel) + propce(iel,ipproc(itsri(ipcl)))*volume(iel)
+    rovsdt(iel) = rovsdt(iel) + cpro_tsri(iel)*volume(iel)
   endif
 
 enddo

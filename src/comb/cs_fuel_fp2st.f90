@@ -24,7 +24,6 @@ subroutine cs_fuel_fp2st &
 !=======================
 
  ( iscal  ,                                                        &
-   propce ,                                                        &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -40,7 +39,6 @@ subroutine cs_fuel_fp2st &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -82,7 +80,6 @@ implicit none
 
 integer          iscal
 
-double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
@@ -90,7 +87,6 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 integer           iel    , ifac   , f_id0
 integer           icla
 integer           inc    , iccocg , nswrgp , imligp , iwarnp
-integer           ipcte1 , ipcte2
 
 double precision xk     , xe     , rhovst
 double precision epsrgp , climgp , extrap
@@ -101,7 +97,8 @@ integer           iok1,iok2
 double precision, dimension(:), allocatable :: x1,f1f2
 double precision, dimension(:), allocatable :: coefap , coefbp
 double precision, allocatable, dimension(:,:) :: grad
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer ::  crom, cpro_rom1
+double precision, dimension(:), pointer ::  cpro_temp1, cpro_temp2, cpro_gmeva
 double precision, dimension(:), pointer :: visct
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
@@ -131,6 +128,7 @@ call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
 
 ! --- Numero des grandeurs physiques
 call field_get_val_s(icrom, crom)
+call field_get_val_s(iprpfl(irom1), cpro_rom1)
 call field_get_val_s(iprpfl(ivisct), visct)
 
 call field_get_val_s(ivarfl(isca(ifvap)), cvar_fvap)
@@ -221,7 +219,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
       xe = cmu*xk*cvara_omg(iel)
     endif
 
-    rhovst = propce(iel,ipproc(irom1))*xe/(xk*rvarfl(iscal))*volume(iel)
+    rhovst = cpro_rom1(iel)*xe/(xk*rvarfl(iscal))*volume(iel)
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
     smbrs(iel) = smbrs(iel)                                                   &
                 +2.d0*visct(iel)*volume(iel)/sigmas(iscal)                    &
@@ -236,15 +234,15 @@ endif
 !==============================================================================
 
 call field_get_val_s(icrom, crom)
-ipcte1 = ipproc(itemp1)
+call field_get_val_s(iprpfl(itemp1),cpro_temp1)
 do icla=1,nclafu
 !
-  ipcte2 = ipproc(itemp2(icla))
-!
+  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+  call field_get_val_s(iprpfl(igmeva(icla)),cpro_gmeva)
   do iel = 1, ncel
 !
-    t2mt1  = propce(iel,ipcte2)-propce(iel,ipcte1)
-    gvap = -propce(iel,ipproc(igmeva(icla)))*t2mt1*crom(iel)
+    t2mt1  = cpro_temp2(iel)-cpro_temp1(iel)
+    gvap = -cpro_gmeva(iel)*t2mt1*crom(iel)
 !
     aux  = gvap*(1.d0-f1f2(iel))**2.d0
 !

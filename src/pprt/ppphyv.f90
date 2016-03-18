@@ -149,7 +149,7 @@ endif
 ! ---> Flamme charbon pulverise
 
 if (ippmod(iccoal).ge.0) then
-  call cs_coal_physprop(mbrom, izfppp, propce)
+  call cs_coal_physprop(mbrom, izfppp)
 endif
 
 
@@ -157,13 +157,13 @@ endif
 !      des particules de charbon
 
 if (ippmod(icpl3c).ge.0) then
-  call cplphy(mbrom, izfppp, propce)
+  call cplphy(mbrom, izfppp)
 endif
 
 ! ---> Flamme fuel
 
 if (ippmod(icfuel).ge.0) then
-  call cs_fuel_physprop(mbrom, izfppp, propce)
+  call cs_fuel_physprop(mbrom, izfppp)
 endif
 
 

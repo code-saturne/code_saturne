@@ -155,7 +155,6 @@ if ( ippmod(iccoal).ge.0 ) then
   call cs_coal_scast                                              &
    !================
  ( iscal  ,                                                       &
-   propce ,                                                       &
    smbrs  , rovsdt )
 endif
 
@@ -176,7 +175,6 @@ if ( ippmod(icfuel).ge.0 ) then
   call cs_fuel_scast                                              &
   !=================
  ( iscal  ,                                                       &
-   propce ,                                                       &
    smbrs  , rovsdt )
 endif
 

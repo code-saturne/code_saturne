@@ -37,13 +37,11 @@
 !______________________________________________________________________________!
 !> \param[in]     mbrom         filling indicator of romb
 !> \param[in]     izfpp        zone number of the edge face for the
-!>                              specific physic modul
-!> \param[in]     propce        physical properties at cell centers
+!>                              specific physic module
 !______________________________________________________________________________!
 
 subroutine cs_fuel_physprop &
- ( mbrom  , izfpp ,                                              &
-   propce )
+ ( mbrom  , izfpp )
 
 !===============================================================================
 ! Module files
@@ -78,13 +76,11 @@ implicit none
 integer          mbrom
 integer          izfpp(nfabor)
 
-double precision propce(ncelet,*)
-
 ! Local variables
 
-integer          iel, icla, ipcro2
+integer          iel, icla
 integer          izone, ifac
-integer          iromf , ioxy , nbclip1,nbclip2
+integer          ioxy , nbclip1,nbclip2
 integer          iscdri, keydri, iflid, nfld, keyccl
 integer          f_id
 integer          iok1,iok2,iok3
@@ -105,7 +101,7 @@ double precision, dimension (:), allocatable :: enth1 , fvp2m
 double precision, dimension (:), allocatable :: xoxyd,enthox
 double precision, dimension(:), pointer :: cpro_taup
 double precision, dimension(:), pointer :: cpro_x1
-double precision, dimension(:), pointer :: cpro_x2
+double precision, dimension(:), pointer :: cpro_x2, cpro_rom1
 double precision, dimension(:), pointer :: cpro_rom2, cpro_diam2
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:,:), pointer :: cvar_vel
@@ -120,6 +116,7 @@ double precision, dimension(:), pointer :: cvar_f4m, cvar_f5m, cvar_f7m
 double precision, dimension(:), pointer :: cvar_fvp2m, cvar_hox
 double precision, dimension(:), pointer :: cvar_scalt
 type(pmapper_double_r1), dimension(:), allocatable :: cvar_yfol
+type(pmapper_double_r1), dimension(:) , allocatable :: cpro_ro2
 
 !===============================================================================
 !
@@ -168,6 +165,7 @@ allocate(f1m(1:ncelet), f2m(1:ncelet), f3m(1:ncelet), STAT=iok1)
 allocate(f4m(1:ncelet), f5m(1:ncelet), STAT=iok1)
 allocate(f6m(1:ncelet), f7m(1:ncelet), f8m(1:ncelet), f9m(1:ncelet), STAT=iok2)
 allocate(enth1(1:ncel), fvp2m(1:ncel), STAT=iok3)
+allocate(cpro_ro2(nclafu))
 !----
 if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0) then
   write(nfecra,*) ' Memory allocation error inside: '
@@ -183,11 +181,7 @@ if (ieqnox .eq. 1) then
     write(nfecra,*) '   cs_fuel_physprop for xoxyd and enthox '
   endif
 endif
-!===============================================================================
 
-!     Pointer on mass density of the cells gas
-iromf = ipproc(irom1)
-!
 !===============================================================================
 ! 2. Calculation of the physical properties of the dispersed phase
 !                    cell values
@@ -197,7 +191,7 @@ iromf = ipproc(irom1)
 !    Mass density
 !===============================================================================
 
-call cs_fuel_physprop2 ( ncelet , ncel , propce )
+call cs_fuel_physprop2 ( ncelet , ncel )
 !=====================
 
 !===============================================================================
@@ -348,13 +342,15 @@ do iel = 1, ncel
   enth1(iel) = (cvar_scalt(iel)-enth1(iel))/ cpro_x1(iel)
 enddo
 
+call field_get_val_s(iprpfl(irom1), cpro_rom1)
+
 call cs_fuel_physprop1 &
 !=====================
  ( ncelet , ncel   ,                                      &
    f1m    , f2m    , f3m    , f4m    , f5m    ,           &
    f6m    , f7m    , f8m    , f9m    , fvp2m  ,           &
    enth1  , enthox ,                                      &
-   propce , propce(1,iromf)   )
+   cpro_rom1 )
 
 !===============================================================================
 ! 4. Calculation of the physical properties of the dispersed phase
@@ -365,7 +361,7 @@ call cs_fuel_physprop1 &
 
 ! --- Transport of H2
 
-call  cs_fuel_thfieldconv2 ( ncelet , ncel , propce )
+call  cs_fuel_thfieldconv2 ( ncelet , ncel )
 !=========================
 
 !===============================================================================
@@ -382,6 +378,11 @@ call  cs_fuel_thfieldconv2 ( ncelet , ncel , propce )
 
 call field_get_val_s(icrom, crom)
 
+do icla = 1, nclafu
+  call field_get_val_s(iprpfl(irom2(icla)),cpro_ro2(icla)%p)
+enddo
+
+
 if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
   srrom1 = srrom
 else
@@ -391,10 +392,9 @@ endif
 do iel = 1, ncel
   x2sro2 = 0.d0
   do icla = 1, nclafu
-    ipcro2 = ipproc(irom2(icla))
-    x2sro2 = x2sro2 + cvar_yfol(icla)%p(iel) / propce(iel,ipcro2)
+    x2sro2 = x2sro2 + cvar_yfol(icla)%p(iel) / cpro_ro2(icla)%p(iel)
   enddo
-  x1sro1 = cpro_x1(iel) / propce(iel,iromf)
+  x1sro1 = cpro_x1(iel) / cpro_rom1(iel)
   ! ---- Eventual relaxation to give in ppini1.f90
   crom(iel) = srrom1*crom(iel)                  &
             + (1.d0-srrom1)/(x1sro1+x2sro2)
@@ -637,7 +637,7 @@ endif
 deallocate(f1m,f2m,f3m,f4m,f5m,STAT=iok1)
 deallocate(f6m,f7m,f8m,f9m,    STAT=iok2)
 deallocate(enth1,fvp2m,     STAT=iok3)
-deallocate(cvar_yfol)
+deallocate(cvar_yfol, cpro_ro2)
 
 if (iok1 > 0 .or. iok2 > 0 .or. iok3 > 0) then
   write(nfecra,*) ' Memory deallocation error inside: '

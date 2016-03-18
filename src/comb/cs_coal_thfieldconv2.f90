@@ -35,12 +35,10 @@
 !______________________________________________________________________________!
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
-!> \param[in,out] propce        physical properties at cell centers
 !______________________________________________________________________________!
 
 subroutine cs_coal_thfieldconv2 &
- ( ncelet , ncel   ,                                              &
-   propce )
+ ( ncelet , ncel )
 
 !==============================================================================
 ! Module files
@@ -66,12 +64,10 @@ implicit none
 ! Arguments
 
 integer          ncelet, ncel
-double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          i      , icla   , icha   , iel
-integer          ipcte1 , ipcte2
 integer          ihflt2
 double precision h2     , x2     , xch    , xck
 double precision xash   , xnp    , xtes   , xwat
@@ -82,6 +78,7 @@ double precision , dimension ( : )     , allocatable :: eh0,eh1
 double precision, dimension(:), pointer :: cvar_xchcl, cvar_xckcl, cvar_xnpcl
 double precision, dimension(:), pointer :: cvar_xwtcl
 double precision, dimension(:), pointer :: cvar_h2cl
+double precision, dimension(:), pointer :: cpro_temp2, cpro_temp1
 
 !===============================================================================
 ! Conversion method
@@ -110,11 +107,11 @@ eh1( : ) = zero
 
 ! --- Initialization from T2 to T1
 
-ipcte1 = ipproc(itemp1)
+call field_get_val_s(iprpfl(itemp1),cpro_temp1)
 do icla = 1, nclacp
-  ipcte2 = ipproc(itemp2(icla))
+  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
   do iel = 1, ncel
-    propce(iel,ipcte2) = propce(iel,ipcte1)
+    cpro_temp2(iel) = cpro_temp1(iel)
   enddo
 enddo
 
@@ -128,10 +125,10 @@ if ( ihflt2.eq.0 ) then
 
   do icla = 1, nclacp
     call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
-    ipcte2 = ipproc(itemp2(icla))
+    call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
     icha = ichcor(icla)
     do iel = 1, ncel
-      propce(iel,ipcte2) =                                       &
+      cpro_temp2(iel) =                                       &
             (cvar_h2cl(iel)-h02ch(icha))                         &!FIXME divide by x2
             / cp2ch(icha) + trefth
     enddo
@@ -150,7 +147,7 @@ else
       call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
     endif
     call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
-    ipcte2 = ipproc(itemp2(icla))
+    call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
 
     i = npoc-1
     do iel = 1, ncel
@@ -177,7 +174,7 @@ else
                   + xash/x2 * ehsoli(iash(ichcor(icla)),i+1)    &
                   + xwat/x2 * ehsoli(iwat(ichcor(icla)),i+1)
         if ( h2.ge.eh1(iel) ) then
-          propce(iel,ipcte2) = thc(i+1)
+          cpro_temp2(iel) = thc(i+1)
 
         endif
 
@@ -210,7 +207,7 @@ else
                   + xash/x2 * ehsoli(iash(ichcor(icla)),i)      &
                   + xwat/x2 * ehsoli(iwat(ichcor(icla)),i)
         if ( h2.le.eh0(iel) ) then
-          propce(iel,ipcte2) = thc(i)
+          cpro_temp2(iel) = thc(i)
         endif
 
       endif
@@ -247,7 +244,7 @@ else
                     + xwat/x2 * ehsoli(iwat(ichcor(icla)),i+1)
 
           if ( h2.ge.eh0(iel) .and. h2.le.eh1(iel) ) then
-            propce(iel,ipcte2) = thc(i) + (h2-eh0(iel)) *     &
+            cpro_temp2(iel) = thc(i) + (h2-eh0(iel)) *     &
                   (thc(i+1)-thc(i))/(eh1(iel)-eh0(iel))
           endif
 

@@ -85,7 +85,6 @@
 !> \param[in]     enth          enthalpy in \f$ j . kg^{-1} \f$  either of
 !>                                         the gas or of the mixture
 !> \param[in]     enthox        oxydant enthalpy
-!> \param[in,out] propce        physical properties at cell centers
 !> \param[out]    rom1          gas density
 !______________________________________________________________________________!
 
@@ -94,7 +93,7 @@ subroutine cs_fuel_physprop1 &
    f1m    , f2m    , f3m    , f4m    , f5m    ,           &
    f6m    , f7m    , f8m    , f9m    , fvp2m  ,           &
    enth   , enthox ,                                      &
-   propce , rom1   )
+   rom1   )
 
 !===============================================================================
 ! Module files
@@ -117,6 +116,7 @@ use ppcpfu
 use cs_fuel_incl
 use field
 use cs_c_bindings
+use pointe
 
 !===============================================================================
 
@@ -130,15 +130,11 @@ double precision f4m(ncelet), f5m(ncelet) , f6m(ncelet)
 double precision f7m(ncelet), f8m(ncelet) , f9m(ncelet)
 double precision fvp2m(ncelet)
 double precision enth(ncelet),enthox(ncelet)
-double precision propce(ncelet,*)
 double precision rom1(ncelet)
 
 ! Local variables
 
 integer          iel , ii ,ice , icla
-integer          ipcyf1,ipcyf2,ipcyf3,ipcyf4,ipcyf5,ipcyf6,ipcyf7
-integer          ipcyox,ipcyp1,ipcyp2,ipcyp3,ipcyin
-integer          ipcte1
 integer          iok1 , iok2 , iok3 , iok4 , iok5
 
 double precision wmolme
@@ -152,8 +148,15 @@ double precision , dimension ( : , : ) , allocatable :: af1    , af2
 double precision , dimension ( : )     , allocatable :: fs3no  , fs4no
 double precision , dimension ( : , : ) , allocatable :: yfs4no
 double precision, allocatable, dimension(:) :: tpdf
-double precision, dimension(:), pointer :: cpro_x1
+double precision, dimension(:), pointer :: cpro_x1, cpro_mmel, cpro_temp1
 double precision, dimension(:), pointer :: cvar_yfolcl
+double precision, dimension(:), pointer :: cpro_cyf1, cpro_cyf2, cpro_cyf3
+double precision, dimension(:), pointer :: cpro_cyf4, cpro_cyf5, cpro_cyf6
+double precision, dimension(:), pointer :: cpro_cyf7, cpro_cyox, cpro_cyp1
+double precision, dimension(:), pointer :: cpro_cyp2, cpro_cyp3, cpro_cyin
+double precision, dimension(:), pointer :: cpro_ghcn1, cpro_ghcn2, cpro_gnoth
+double precision, dimension(:), pointer :: cpro_bcarbone, cpro_boxygen, cpro_bhydrogen
+type(pmapper_double_r1), dimension(:), allocatable :: cpro_ym1
 
 integer          ipass
 data ipass / 0 /
@@ -201,18 +204,18 @@ endif
 !===============================================================================
 
 ! pointer
-ipcyf1 = ipproc(iym1(ifo0))
-ipcyf2 = ipproc(iym1(ifov))
-ipcyf3 = ipproc(iym1(ico  ))
-ipcyf4 = ipproc(iym1(ih2s ))
-ipcyf5 = ipproc(iym1(ihy  ))
-ipcyf6 = ipproc(iym1(ihcn ))
-ipcyf7 = ipproc(iym1(inh3 ))
-ipcyox = ipproc(iym1(io2  ))
-ipcyp1 = ipproc(iym1(ico2 ))
-ipcyp2 = ipproc(iym1(ih2o ))
-ipcyp3 = ipproc(iym1(iso2 ))
-ipcyin = ipproc(iym1(in2  ))
+call field_get_val_s(iprpfl(iym1(ifo0 )),cpro_cyf1)
+call field_get_val_s(iprpfl(iym1(ifov )),cpro_cyf2)
+call field_get_val_s(iprpfl(iym1(ico  )),cpro_cyf3)
+call field_get_val_s(iprpfl(iym1(ih2s )),cpro_cyf4)
+call field_get_val_s(iprpfl(iym1(ihy  )),cpro_cyf5)
+call field_get_val_s(iprpfl(iym1(ihcn )),cpro_cyf6)
+call field_get_val_s(iprpfl(iym1(inh3 )),cpro_cyf7)
+call field_get_val_s(iprpfl(iym1(io2  )),cpro_cyox)
+call field_get_val_s(iprpfl(iym1(ico2 )),cpro_cyp1)
+call field_get_val_s(iprpfl(iym1(ih2o )),cpro_cyp2)
+call field_get_val_s(iprpfl(iym1(iso2 )),cpro_cyp3)
+call field_get_val_s(iprpfl(iym1(in2  )),cpro_cyin)
 
 ipass = ipass + 1
 
@@ -275,27 +278,32 @@ call cs_gascomb &
    f1m    , f2m , f3m , f4m , f5m , f6m , f7m , f8m , f9m ,       &
    pdfm1  , pdfm2  , doxyd    , dfuel  , hrec ,                   &
    af1    , af2    , cx1m     , cx2m   , wmf1   , wmf2 ,          &
-   propce(1,ipcyf1) , propce(1,ipcyf2) , propce(1,ipcyf3) ,       &
-   propce(1,ipcyf4) , propce(1,ipcyf5) , propce(1,ipcyf6) ,       &
-   propce(1,ipcyf7) , propce(1,ipcyox) , propce(1,ipcyp1) ,       &
-   propce(1,ipcyp2) , propce(1,ipcyp3) , propce(1,ipcyin) ,       &
+   cpro_cyf1 , cpro_cyf2 , cpro_cyf3 ,                            &
+   cpro_cyf4 , cpro_cyf5 , cpro_cyf6 ,                            &
+   cpro_cyf7 , cpro_cyox , cpro_cyp1 ,                            &
+   cpro_cyp2 , cpro_cyp3 , cpro_cyin ,                            &
    fs3no , fs4no , yfs4no )
 
 ! --> Eventual clipping of mass fractions
 
+allocate(cpro_ym1(ngazg))
+do ice = 1, ngazg
+  call field_get_val_s(iprpfl(iym1(ice)), cpro_ym1(ice)%p)
+enddo
+
 do iel = 1, ncel
   do ice = 1, ngazg
 
-    if ( propce(iel,ipproc(iym1(ice))) .lt. zero )  then
-       propce(iel,ipproc(iym1(ice))) = zero
+    if ( cpro_ym1(ice)%p(iel) .lt. zero )  then
+       cpro_ym1(ice)%p(iel) = zero
     endif
 
-    if ( propce(iel,ipproc(iym1(ice))) .gt. 1.d0 )  then
-       propce(iel,ipproc(iym1(ice))) = 1.d0
+    if ( cpro_ym1(ice)%p(iel) .gt. 1.d0 )  then
+       cpro_ym1(ice)%p(iel) = 1.d0
     endif
 
-    if ( abs(propce(iel,ipproc(iym1(ice)))) .lt. epsicp )  then
-       propce(iel,ipproc(iym1(ice))) = zero
+    if ( abs(cpro_ym1(ice)%p(iel)) .lt. epsicp )  then
+       cpro_ym1(ice)%p(iel) = zero
     endif
   enddo
 enddo
@@ -304,32 +312,33 @@ enddo
 ! 4. Calculation of temperature and density
 !===============================================================================
 
-ipcte1 = ipproc(itemp1)
+call field_get_val_s(iprpfl(itemp1),cpro_temp1)
+call field_get_val_s(iprpfl(immel),cpro_mmel)
 
-call cs_fuel_thfieldconv1(MESH_LOCATION_CELLS, enth, propce(:,ipcte1))
+call cs_fuel_thfieldconv1(MESH_LOCATION_CELLS, enth, cpro_temp1)
 
 do iel = 1, ncel
-  wmolme = propce(iel,ipcyf1)/wmole(ifo0)                         &
-         + propce(iel,ipcyf2)/wmole(ifov)                         &
-         + propce(iel,ipcyf3)/wmole(ico )                         &
-         + propce(iel,ipcyf4)/wmole(ih2s)                         &
-         + propce(iel,ipcyf5)/wmole(ihy )                         &
-         + propce(iel,ipcyf6)/wmole(ihcn)                         &
-         + propce(iel,ipcyf7)/wmole(inh3)                         &
-         + propce(iel,ipcyox)/wmole(io2 )                         &
-         + propce(iel,ipcyp1)/wmole(ico2)                         &
-         + propce(iel,ipcyp2)/wmole(ih2o)                         &
-         + propce(iel,ipcyp3)/wmole(iso2)                         &
-         + propce(iel,ipcyin)/wmole(in2 )
+  wmolme = cpro_cyf1(iel)/wmole(ifo0)                         &
+         + cpro_cyf2(iel)/wmole(ifov)                         &
+         + cpro_cyf3(iel)/wmole(ico )                         &
+         + cpro_cyf4(iel)/wmole(ih2s)                         &
+         + cpro_cyf5(iel)/wmole(ihy )                         &
+         + cpro_cyf6(iel)/wmole(ihcn)                         &
+         + cpro_cyf7(iel)/wmole(inh3)                         &
+         + cpro_cyox(iel)/wmole(io2 )                         &
+         + cpro_cyp1(iel)/wmole(ico2)                         &
+         + cpro_cyp2(iel)/wmole(ih2o)                         &
+         + cpro_cyp3(iel)/wmole(iso2)                         &
+         + cpro_cyin(iel)/wmole(in2 )
 
   ! storage of the mixture molar mass
 
-  propce(iel,ipproc(immel)) = 1.d0 / wmolme
+  cpro_mmel(iel) = 1.d0 / wmolme
 
   ! ---- We do not include the mecanical pressure IPR
   !      but P0
 
-  rom1(iel) = p0 / (wmolme*cs_physical_constants_r*propce(iel,ipcte1))
+  rom1(iel) = p0 / (wmolme*cs_physical_constants_r*cpro_temp1(iel))
 enddo
 
 !===============================================================================
@@ -347,15 +356,18 @@ if ( ieqnox .eq. 1 .and. ipass .gt. 1 ) then
    intpdf ,                                                       &
    pdfm1  , pdfm2  , doxyd  , dfuel  , hrec ,                     &
    f3m    , f4m    , f5m    , f6m    , f7m  , f8m , f9m ,         &
-   fs3no  , fs4no  , yfs4no , enthox ,                            &
-   propce  )
+   fs3no  , fs4no  , yfs4no , enthox )
 
 else if ( ieqnox .eq. 1 ) then
 
+  call field_get_val_s(iprpfl(ighcn1),cpro_ghcn1)
+  call field_get_val_s(iprpfl(ighcn2),cpro_ghcn2)
+  call field_get_val_s(iprpfl(ignoth),cpro_gnoth)
+
   do iel = 1, ncel
-    propce(iel,ipproc(ighcn1)) = 0.d0
-    propce(iel,ipproc(ighcn2)) = 0.d0
-    propce(iel,ipproc(ignoth)) = 0.d0
+    cpro_ghcn1(iel) = 0.d0
+    cpro_ghcn2(iel) = 0.d0
+    cpro_gnoth(iel) = 0.d0
   enddo
 
 endif
@@ -364,29 +376,33 @@ endif
 ! 6. Calculation of balances in C, O et H
 !===============================================================================
 
+call field_get_val_s(iprpfl(ibcarbone),cpro_bcarbone)
+call field_get_val_s(iprpfl(iboxygen),cpro_boxygen)
+call field_get_val_s(iprpfl(ibhydrogen),cpro_bhydrogen)
+
 do iel=1,ncel
-  propce(iel,ipproc(ibcarbone )) = cpro_x1(iel)                        &
-            *( propce(iel,ipcyf1)*wmolat(iatc)/wmole(ifo0)             &
-              +propce(iel,ipcyf2)*wmolat(iatc)/wmole(ifov)             &
-              +propce(iel,ipcyf3)*wmolat(iatc)/wmole(ico )             &
-              +propce(iel,ipcyf6)*wmolat(iatc)/wmole(ihcn)             &
-              +propce(iel,ipcyp1)*wmolat(iatc)/wmole(ico2) )
+  cpro_bcarbone(iel) = cpro_x1(iel)                                &
+            *( cpro_cyf1(iel)*wmolat(iatc)/wmole(ifo0)             &
+              +cpro_cyf2(iel)*wmolat(iatc)/wmole(ifov)             &
+              +cpro_cyf3(iel)*wmolat(iatc)/wmole(ico )             &
+              +cpro_cyf6(iel)*wmolat(iatc)/wmole(ihcn)             &
+              +cpro_cyp1(iel)*wmolat(iatc)/wmole(ico2) )
 
-  propce(iel,ipproc(iboxygen  )) = cpro_x1(iel)                        &
-            *( propce(iel,ipcyf3)*     wmolat(iato)/wmole(ico )        &
-              +propce(iel,ipcyox)*2.d0*wmolat(iato)/wmole(io2 )        &
-              +propce(iel,ipcyp1)*2.d0*wmolat(iato)/wmole(ico2)        &
-              +propce(iel,ipcyp2)*     wmolat(iato)/wmole(ih2o)        &
-              +propce(iel,ipcyp3)*2.d0*wmolat(iato)/wmole(iso2) )
+  cpro_boxygen(iel) = cpro_x1(iel)                                 &
+            *( cpro_cyf3(iel)*     wmolat(iato)/wmole(ico )        &
+              +cpro_cyox(iel)*2.d0*wmolat(iato)/wmole(io2 )        &
+              +cpro_cyp1(iel)*2.d0*wmolat(iato)/wmole(ico2)        &
+              +cpro_cyp2(iel)*     wmolat(iato)/wmole(ih2o)        &
+              +cpro_cyp3(iel)*2.d0*wmolat(iato)/wmole(iso2) )
 
-  propce(iel,ipproc(ibhydrogen)) = cpro_x1(iel)                        &
-            *( propce(iel,ipcyf1)*nhcfov*wmolat(iath)/wmole(ifo0)      &
-              +propce(iel,ipcyf2)*nhcfov*wmolat(iath)/wmole(ifov)      &
-              +propce(iel,ipcyf4)*2.d0     *wmolat(iath)/wmole(ih2s)   &
-              +propce(iel,ipcyf5)*2.d0     *wmolat(iath)/wmole(ihy )   &
-              +propce(iel,ipcyf6)*          wmolat(iath)/wmole(ihcn)   &
-              +propce(iel,ipcyf7)*3.d0     *wmolat(iath)/wmole(inh3)   &
-              +propce(iel,ipcyp2)*2.d0     *wmolat(iath)/wmole(ih2o) )
+  cpro_bhydrogen(iel) = cpro_x1(iel)                               &
+            *( cpro_cyf1(iel)*nhcfov*wmolat(iath)/wmole(ifo0)      &
+              +cpro_cyf2(iel)*nhcfov*wmolat(iath)/wmole(ifov)      &
+              +cpro_cyf4(iel)*2.d0     *wmolat(iath)/wmole(ih2s)   &
+              +cpro_cyf5(iel)*2.d0     *wmolat(iath)/wmole(ihy )   &
+              +cpro_cyf6(iel)*          wmolat(iath)/wmole(ihcn)   &
+              +cpro_cyf7(iel)*3.d0     *wmolat(iath)/wmole(inh3)   &
+              +cpro_cyp2(iel)*2.d0     *wmolat(iath)/wmole(ih2o) )
 
 enddo
 
@@ -399,13 +415,13 @@ do icla = 1, nclafu
     cfolh  = hfol/somch
     cfolo  = ofol/somch
 
-    propce(iel,ipproc(ibcarbone )) = propce(iel,ipproc(ibcarbone ))    &
+    cpro_bcarbone(iel) = cpro_bcarbone(iel)    &
                                     +cvar_yfolcl(iel)*cfolc
 
-    propce(iel,ipproc(iboxygen )) = propce(iel,ipproc(iboxygen ))    &
+    cpro_boxygen(iel) = cpro_boxygen(iel)      &
                                    +cvar_yfolcl(iel)*cfolo
 
-    propce(iel,ipproc(ibhydrogen)) = propce(iel,ipproc(ibhydrogen))  &
+    cpro_bhydrogen(iel) = cpro_bhydrogen(iel)  &
                                     +cvar_yfolcl(iel)*cfolh
 
   enddo

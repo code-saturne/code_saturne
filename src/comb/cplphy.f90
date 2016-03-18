@@ -23,8 +23,7 @@
 subroutine cplphy &
 !================
 
- ( mbrom  , izfppp ,                                              &
-   propce )
+ ( mbrom  , izfppp )
 
 !===============================================================================
 ! FONCTION :
@@ -90,7 +89,6 @@ subroutine cplphy &
 ! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -127,8 +125,6 @@ implicit none
 
 integer          mbrom
 integer          izfppp(nfabor)
-
-double precision propce(ncelet,*)
 
 ! Local variables
 
@@ -254,7 +250,7 @@ call cplph1                                                       &
 !         F1M      F2M      F3M      F4M      F3P2M    F4P2M
    w8     ,                                                       &
 !         ENTH
-   propce  , w1    )
+   w1    )
 !                          ----
 !                 ATTENTION W1 contient RHO1
 

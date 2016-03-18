@@ -60,14 +60,12 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     iscal         scalar number
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] smbrs         second explicit member
 !> \param[in,out] rovsdt        implicit diagonal part
 !______________________________________________________________________________!
 
 subroutine cs_fuel_scast &
  ( iscal  ,                                                       &
-   propce ,                                                       &
    smbrs  , rovsdt )
 !===============================================================================
 ! Module files
@@ -101,18 +99,13 @@ implicit none
 
 integer          iscal
 
-double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
 character(len=80) :: chaine, fname, name
 integer          ivar , iel, icla , numcla
-integer          iexp1 , iexp2 , iexp3
-integer          ipcro2 , ipcte1 , ipcte2
-integer          ipcdia
 integer          imode  , iesp
-integer          ipcgev , ipcght , ipchgl
 integer          itermx,nbpauv,nbrich,nbepau,nberic
 integer          nbarre,nbimax,nbpass
 integer          iterch
@@ -148,6 +141,12 @@ double precision, dimension(:), pointer :: taup
 double precision, dimension(:), pointer :: smbrsh1, rovsdth1
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:,:), pointer ::  vg_lim_pi
+double precision, dimension(:), pointer :: cpro_temp1, cpro_temp2, cpro_rom2
+double precision, dimension(:), pointer :: cpro_diam2, cpro_cgev, cpro_cght
+double precision, dimension(:), pointer :: cpro_chgl, cpro_yox, cpro_yco2
+double precision, dimension(:), pointer :: cpro_yco, cpro_yh2o, cpro_rom1
+double precision, dimension(:), pointer :: cpro_exp1, cpro_exp2, cpro_exp3
+double precision, dimension(:), pointer :: cpro_mmel, cpro_yn2
 
 !===============================================================================
 ! 1. Initialization
@@ -167,7 +166,13 @@ call field_get_val_s(icrom, crom)
 
 ! --- Gas phase temperature
 
-ipcte1 = ipproc(itemp1)
+call field_get_val_s(iprpfl(itemp1), cpro_temp1)
+call field_get_val_s(iprpfl(irom1), cpro_rom1)
+
+call field_get_val_prev_s(iprpfl(iym1(io2)), cpro_yox)
+call field_get_val_prev_s(iprpfl(iym1(ico2)), cpro_yco2)
+call field_get_val_prev_s(iprpfl(iym1(ico)), cpro_yco)
+call field_get_val_prev_s(iprpfl(iym1(ih2o)), cpro_yh2o)
 
 call field_get_val_v(ivarfl(iu), vel)
 
@@ -205,12 +210,12 @@ if ( ivar .ge. isca(ih2(1)) .and. ivar .le. isca(ih2(nclafu)) ) then
   call field_get_key_int(ivarfl(ivar), keyccl, numcla)
 
   call field_get_val_prev_s(ivarfl(isca(iyfol(numcla))), cvara_yfolcl)
-  ipcro2 = ipproc(irom2 (numcla))
-  ipcdia = ipproc(idiam2(numcla))
-  ipcte2 = ipproc(itemp2(numcla))
-  ipcgev = ipproc(igmeva(numcla))
-  ipcght = ipproc(igmhtf(numcla))
-  ipchgl = ipproc(ih1hlf(numcla))
+  call field_get_val_s(iprpfl(irom2(numcla)),cpro_rom2)
+  call field_get_val_s(iprpfl(idiam2(numcla)),cpro_diam2)
+  call field_get_val_s(iprpfl(itemp2(numcla)),cpro_temp2)
+  call field_get_val_s(iprpfl(igmeva(numcla)),cpro_cgev)
+  call field_get_val_s(iprpfl(igmhtf(numcla)),cpro_cght)
+  call field_get_val_s(iprpfl(ih1hlf(numcla)),cpro_chgl)
 
   !       The variable is the liquid enthalpy for the mixture mass
   !       The interfacial flux contribute to the variation of the liquid
@@ -241,28 +246,28 @@ if ( ivar .ge. isca(ih2(1)) .and. ivar .le. isca(ih2(nclafu)) ) then
       enddo
 
       xesp(ifov) = 1.d0
-      call cs_fuel_htconvers1(imode,hfov,xesp,propce(iel,ipcte2))
+      call cs_fuel_htconvers1(imode,hfov,xesp,cpro_temp2(iel))
 
       xesp(ifov) = zero
       xesp(io2)  = 1.d0
-      call cs_fuel_htconvers1(imode,ho2 ,xesp,propce(iel,ipcte1))
+      call cs_fuel_htconvers1(imode,ho2 ,xesp,cpro_temp1(iel))
 
       xesp(io2)  = zero
       xesp(ico)  = 1.d0
-      call cs_fuel_htconvers1(imode,hco,xesp,propce(iel,ipcte2))
+      call cs_fuel_htconvers1(imode,hco,xesp,cpro_temp2(iel))
 
-      t2mt1 = propce(iel,ipcte2)-propce(iel,ipcte1)
+      t2mt1 = cpro_temp2(iel)-cpro_temp1(iel)
 
-      gmech = -propce(iel,ipchgl)*t2mt1
-      gmvap = propce(iel,ipcgev)*hfov*t2mt1
-      gmhet = 16.d0/12.d0*propce(iel,ipcght)*ho2                    &
-             -28.d0/12.d0*propce(iel,ipcght)*hco
+      gmech = -cpro_chgl(iel)*t2mt1
+      gmvap = cpro_cgev(iel)*hfov*t2mt1
+      gmhet = 16.d0/12.d0*cpro_cght(iel)*ho2                    &
+             -28.d0/12.d0*cpro_cght(iel)*hco
 
       smbrs(iel) = smbrs(iel) + (gmech+gmvap+gmhet)*rom*volume(iel)
       ! FIXME better time stepping?
       smbrsh1(iel) = smbrsh1(iel) -(gmech+gmvap+gmhet)*rom*volume(iel)
-      rhovst = ( propce(iel,ipchgl)                                 &
-                -propce(iel,ipcgev)*hfov )/cp2fol                   &
+      rhovst = ( cpro_chgl(iel)                                 &
+                -cpro_cgev(iel)*hfov )/cp2fol                   &
               *rom*volume(iel)
       rovsdt(iel) = rovsdt(iel) +  max(zero,rhovst)
 
@@ -282,18 +287,18 @@ elseif ( ivar .ge. isca(iyfol(1))     .and.                       &
   ! index of the droplet class
   call field_get_key_int(ivarfl(ivar), keyccl, numcla)
 
-  ipcro2 = ipproc(irom2 (numcla))
-  ipcdia = ipproc(idiam2(numcla))
-  ipcte2 = ipproc(itemp2(numcla))
-  ipcgev = ipproc(igmeva(numcla))
-  ipcght = ipproc(igmhtf(numcla))
-  ipchgl = ipproc(ih1hlf(numcla))
+  call field_get_val_s(iprpfl(irom2(numcla)),cpro_rom2)
+  call field_get_val_s(iprpfl(idiam2(numcla)),cpro_diam2)
+  call field_get_val_s(iprpfl(itemp2(numcla)),cpro_temp2)
+  call field_get_val_s(iprpfl(igmeva(numcla)),cpro_cgev)
+  call field_get_val_s(iprpfl(igmhtf(numcla)),cpro_cght)
+  call field_get_val_s(iprpfl(ih1hlf(numcla)),cpro_chgl)
 
   do iel = 1, ncel
 
-    t2mt1 =  propce(iel,ipcte2)-propce(iel,ipcte1)
-    gmvap = -propce(iel,ipcgev)*t2mt1
-    gmhet = -propce(iel,ipcght)
+    t2mt1 =  cpro_temp2(iel)-cpro_temp1(iel)
+    gmvap = -cpro_cgev(iel)*t2mt1
+    gmhet = -cpro_cght(iel)
 
     smbrs(iel) = smbrs(iel)                                       &
          - crom(iel)*volume(iel)*(gmvap+gmhet)
@@ -437,17 +442,17 @@ if ( ivar .eq. isca(ifvap) ) then
 
     call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
     call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfolcl)
-    ipcte2 = ipproc(itemp2(icla))
-    ipcgev = ipproc(igmeva(icla))
+    call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+    call field_get_val_s(iprpfl(igmeva(icla)),cpro_cgev)
 
     do iel = 1, ncel
 
-      t2mt1 = propce(iel,ipcte2)-propce(iel,ipcte1)
+      t2mt1 = cpro_temp2(iel)-cpro_temp1(iel)
       if ( cvara_yfolcl(iel) .gt. epsifl ) then
-        gmvap = -propce(iel,ipcgev)*t2mt1*cvar_yfolcl(iel)        &
+        gmvap = -cpro_cgev(iel)*t2mt1*cvar_yfolcl(iel)        &
                 / cvara_yfolcl(iel)
       else
-        gmvap = -propce(iel,ipcgev)*t2mt1
+        gmvap = -cpro_cgev(iel)*t2mt1
       endif
 
       smbrs(iel) = smbrs(iel)                                     &
@@ -468,17 +473,17 @@ elseif ( ivar .eq. isca(if7m) ) then
 
     call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
     call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfolcl)
-    ipcght = ipproc(igmhtf(icla))
+    call field_get_val_s(iprpfl(igmhtf(icla)),cpro_cght)
 
     do iel = 1, ncel
       if (cvara_yfolcl(iel) .gt. epsifl) then
         smbrs(iel) = smbrs(iel)                                        &
-             -crom(iel)*propce(iel,ipcght)*volume(iel)                 &
+             -crom(iel)*cpro_cght(iel)*volume(iel)                 &
                                 *cvar_yfolcl(iel)                      &
                                 /cvara_yfolcl(iel)
       else
         smbrs(iel) = smbrs(iel)                                        &
-                    -crom(iel)*propce(iel,ipcght)*volume(iel)
+                    -crom(iel)*cpro_cght(iel)*volume(iel)
       endif
 
     enddo
@@ -501,7 +506,6 @@ if ( ivar.eq.isca(ifvp2m) ) then
   call cs_fuel_fp2st &
  !==================
  ( iscal  ,                                                        &
-   propce ,                                                        &
    smbrs  , rovsdt )
 
 endif
@@ -586,14 +590,14 @@ if ( ieqco2 .ge. 1 ) then
 
    do iel = 1, ncel
 
-     xxco  = propce(iel,ipproc(iym1(ico  )))/wmole(ico)           &
-            *propce(iel,ipproc(irom1))
-     xxo2  = propce(iel,ipproc(iym1(io2  )))/wmole(io2)           &
-            *propce(iel,ipproc(irom1))
-     xxco2 = propce(iel,ipproc(iym1(ico2 )))/wmole(ico2)          &
-            *propce(iel,ipproc(irom1))
-     xxh2o = propce(iel,ipproc(iym1(ih2o )))/wmole(ih2o)          &
-            *propce(iel,ipproc(irom1))
+     xxco  = cpro_yco(iel)/wmole(ico)           &
+            *cpro_rom1(iel)
+     xxo2  = cpro_yox(iel)/wmole(io2)           &
+            *cpro_rom1(iel)
+     xxco2 = cpro_yco2(iel)/wmole(ico2)         &
+            *cpro_rom1(iel)
+     xxh2o = cpro_yh2o(iel)/wmole(ih2o)         &
+            *cpro_rom1(iel)
 
      xxco  = max(xxco ,zero)
      xxo2  = max(xxo2 ,zero)
@@ -601,12 +605,12 @@ if ( ieqco2 .ge. 1 ) then
      xxh2o = max(xxh2o,zero)
      sqh2o = sqrt(xxh2o)
 
-     xkp = exp(lnk0p-t0p/propce(iel,ipproc(itemp1)))
-     xkm = exp(lnk0m-t0m/propce(iel,ipproc(itemp1)))
+     xkp = exp(lnk0p-t0p/cpro_temp1(iel))
+     xkm = exp(lnk0m-t0m/cpro_temp1(iel))
 
-     xkpequ = 10.d0**(l10k0e-t0e/propce(iel,ipproc(itemp1)))
+     xkpequ = 10.d0**(l10k0e-t0e/cpro_temp1(iel))
      xkcequ = xkpequ                                              &
-             /sqrt(8.32d0*propce(iel,ipproc(itemp1))/1.015d5)
+             /sqrt(8.32d0*cpro_temp1(iel)/1.015d5)
 
      !        initialization per transported state
 
@@ -614,7 +618,7 @@ if ( ieqco2 .ge. 1 ) then
      xcom  = xxco + xxco2
      xo2m  = xxo2 + 0.5d0*xxco2
 
-     if ( propce(iel,ipproc(itemp1)) .gt. 1200.d0 ) then
+     if ( cpro_temp1(iel) .gt. 1200.d0 ) then
 
      !           Search for the equilibrum state
      !           Iterative search with convergence control
@@ -703,7 +707,7 @@ if ( ieqco2 .ge. 1 ) then
        !    We transport CO2
 
        smbrs(iel)  = smbrs(iel)                                   &
-                    +wmole(ico2)/propce(iel,ipproc(irom1))        &
+                    +wmole(ico2)/cpro_rom1(iel)        &
          * (xco2eq-xxco2)/(tauchi+tautur)                         &
          * (1.d0-x2)                                              &
          * volume(iel) * crom(iel)
@@ -746,9 +750,11 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
   if ( ivar.eq.isca(iyhcn) .or. ivar.eq.isca(iyno) ) then
 
-    iexp1  = ipproc(ighcn1)
-    iexp2  = ipproc(ighcn2)
-    iexp3  = ipproc(ignoth)
+    call field_get_val_s(iprpfl(ighcn1),cpro_exp1)
+    call field_get_val_s(iprpfl(ighcn2),cpro_exp2)
+    call field_get_val_s(iprpfl(ignoth),cpro_exp3)
+    call field_get_val_s(iprpfl(immel), cpro_mmel)
+    call field_get_val_s(iprpfl(iym1(in2)),cpro_yn2)
 
     ! QPR= %N released during the evaporation/average volatile materials
     !          rate
@@ -783,32 +789,32 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
       do iel=1,ncel
 
-        xxo2 = propce(iel,ipproc(iym1(io2)))                       &
-              *propce(iel,ipproc(immel))/wmo2
+        xxo2 = cpro_yox(iel)                       &
+              *cpro_mmel(iel)/wmo2
 
         aux = volume(iel)*crom(iel)                                &
-             *( propce(iel,iexp2)                                  &
-               +propce(iel,iexp1)*cvara_yno(iel)                   &
-                                 *propce(iel,ipproc(immel))/wmno )
+             *( cpro_exp2(iel)                                  &
+               +cpro_exp1(iel)*cvara_yno(iel)                   &
+                                 *cpro_mmel(iel)/wmno )
 
         smbrs(iel)  = smbrs(iel)  - aux*cvara_var(iel)
         rovsdt(iel) = rovsdt(iel) + aux
 
         gmvap = 0.d0
         gmhet = 0.d0
+
         do icla=1,nclafu
 
-          ipcgev = ipproc(igmeva(icla))
-          ipcght = ipproc(igmhtf(icla))
-          ipcte2 = ipproc(itemp2(icla))
-          ipcte1 = ipproc(itemp1)
+          call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+          call field_get_val_s(iprpfl(igmeva(icla)),cpro_cgev)
+          call field_get_val_s(iprpfl(igmhtf(icla)),cpro_cght)
 
           gmvap = gmvap                                           &
-                 + crom(iel)*propce(iel,ipcgev)                   &
-                  *(propce(iel,ipcte2)-propce(iel,ipcte1))
+                 + crom(iel)*cpro_cgev(iel)                   &
+                  *(cpro_temp2(iel)-cpro_temp1(iel))
 
           gmhet = gmhet                                           &
-                 +crom(iel)*propce(iel,ipcght)
+                 +crom(iel)*cpro_cght(iel)
 
         enddo
         if ( xxo2 .gt. 0.03d0 ) then
@@ -837,14 +843,14 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
       do iel=1,ncel
 
         aux1 = volume(iel)*crom(iel)                     &
-              *propce(iel,iexp1)*cvara_yhcn(iel)         &
-              *propce(iel,ipproc(immel))/wmhcn
+              *cpro_exp1(iel)*cvara_yhcn(iel)            &
+              *cpro_mmel(iel)/wmhcn
         aux2 = volume(iel)*crom(iel)                     &
-              *propce(iel,iexp2)*cvara_yhcn(iel)         &
+              *cpro_exp2(iel)*cvara_yhcn(iel)            &
               *wmno/wmhcn
         aux3 = volume(iel)*crom(iel)**1.5d0              &
-              *propce(iel,iexp3)                         &
-              *propce(iel,ipproc(iym1(in2)))
+              *cpro_exp3(iel)                            &
+              *cpro_yn2(iel)
 
         smbrs(iel)  = smbrs(iel) - aux1*cvara_var(iel)   &
                                + aux2 + aux3

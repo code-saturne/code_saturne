@@ -24,7 +24,6 @@ subroutine cs_coal_fp2st &
 !=======================
 
  ( iscal  ,                                                        &
-   propce ,                                                        &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -40,7 +39,6 @@ subroutine cs_coal_fp2st &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -82,16 +80,13 @@ implicit none
 
 integer          iscal
 
-double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
 integer           iel    , ifac   , f_id0
-integer           icla   , icha   , numcha
+integer           icla   , icha
 integer           inc    , iccocg , nswrgp , imligp , iwarnp
-integer           ipcx2c
-integer           ipcgd1 , ipcgd2
 integer           iold
 
 double precision xk     , xe     , rhovst
@@ -112,6 +107,7 @@ double precision, dimension(:), pointer :: cvar_xchcl, cvar_xckcl, cvar_xnpcl
 double precision, dimension(:), pointer :: cvar_xwtcl
 double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m
 double precision, dimension(:), pointer :: cvara_scal
+double precision, dimension(:), pointer :: cpro_rom1, cpro_cgd1, cpro_cgd2
 
 !===============================================================================
 ! 1. Initialization
@@ -135,6 +131,8 @@ call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
 ! --- Numero des grandeurs physiques
 call field_get_val_s(icrom, crom)
 call field_get_val_s(iprpfl(ivisct), visct)
+
+call field_get_val_s(iprpfl(irom1), cpro_rom1)
 
 if ( itytur.eq.2 .or. iturb.eq.50 ) then
   call field_get_val_prev_s(ivarfl(ik), cvara_k)
@@ -239,7 +237,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
       xe = cmu*xk*cvara_omg(iel)
     endif
 
-    rhovst = propce(iel,ipproc(irom1))*xe/(xk*rvarfl(iscal))*volume(iel)
+    rhovst = cpro_rom1(iel)*xe/(xk*rvarfl(iscal))*volume(iel)
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
     smbrs(iel) = smbrs(iel)                                            &
                 + 2.d0*visct(iel)*volume(iel)/sigmas(iscal)            &
@@ -263,16 +261,14 @@ iold = 1
 if ( iold .eq. 1 ) then
 !
   do icla=1,nclacp
-    numcha = ichcor(icla)
-    ipcx2c = ipproc(ix2(icla))
     call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
     call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
-    ipcgd1 = ipproc(igmdv1(icla))
-    ipcgd2 = ipproc(igmdv2(icla))
+    call field_get_val_s(iprpfl(igmdv1(icla)), cpro_cgd1)
+    call field_get_val_s(iprpfl(igmdv2(icla)), cpro_cgd2)
     do iel = 1, ncel
-      gdev1 = -crom(iel)*propce(iel,ipcgd1)               &
+      gdev1 = -crom(iel)*cpro_cgd1(iel)               &
                                  *cvar_xchcl(iel)
-      gdev2 = -crom(iel)*propce(iel,ipcgd2)               &
+      gdev2 = -crom(iel)*cpro_cgd2(iel)               &
                                  *cvar_xchcl(iel)
       gdev  = gdev1 + gdev2
 !
@@ -280,7 +276,7 @@ if ( iold .eq. 1 ) then
         diamdv = diam20(icla)
         fsd  =  1.d0 - (1.d0-f1f2(iel))                            &
                * exp( ( cvar_xchcl(iel)                            &
-                       *(propce(iel,ipcgd1)+propce(iel,ipcgd2))  ) &
+                       *(cpro_cgd1(iel)+cpro_cgd2(iel))  ) &
                      /( 2.d0*pi*2.77d-4*diamdv                     &
                         *cvar_xnpcl(iel)*crom(iel) ) )
         fdev = 1.d0
@@ -300,13 +296,13 @@ if ( iold .eq. 1 ) then
 else
 !
   do icla=1,nclacp
-    numcha = ichcor(icla)
-    ipcx2c = ipproc(ix2(icla))
     call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
+    call field_get_val_s(iprpfl(igmdv1(icla)), cpro_cgd1)
+    call field_get_val_s(iprpfl(igmdv2(icla)), cpro_cgd2)
     do iel = 1, ncel
-      gdev1 = -crom(iel)*propce(iel,ipproc(igmdv1(icla)))       &
+      gdev1 = -crom(iel)*cpro_cgd1(iel)       &
                                  *cvar_xchcl(iel)
-      gdev2 = -crom(iel)*propce(iel,ipproc(igmdv2(icla)))       &
+      gdev2 = -crom(iel)*cpro_cgd2(iel)       &
                                  *cvar_xchcl(iel)
 !
       aux  = (gdev1+gdev2)               *(1.d0-f1f2(iel))**2.d0

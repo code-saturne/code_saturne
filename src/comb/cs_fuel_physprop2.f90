@@ -44,11 +44,10 @@
 !______________________________________________________________________________!
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
-!> \param[in,out] propce        physic properties at cell centers
 !______________________________________________________________________________!
 
 subroutine cs_fuel_physprop2 &
- ( ncelet , ncel , propce )
+ ( ncelet , ncel )
 
 !===============================================================================
 ! Module files
@@ -77,17 +76,16 @@ implicit none
 
 integer          ncelet , ncel
 
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          iel
-integer          n1     , n2     , ipcdia , ipcro2 , icla
+integer          n1     , n2     , icla
 
 double precision xnp    ,  d1s3
 double precision diam2m , diam2x
 
 double precision, dimension(:), pointer :: cvar_yfolcl, cvar_ngcl
+double precision, dimension(:), pointer :: cpro_diam2, cpro_rom2
 
 !===============================================================================
 
@@ -113,13 +111,13 @@ do icla = 1, nclafu
 
   call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
   call field_get_val_s(ivarfl(isca(ing(icla))), cvar_ngcl)
-  ipcdia = ipproc(idiam2(icla))
-  ipcro2 = ipproc(irom2 (icla))
+  call field_get_val_s(iprpfl(idiam2(icla)), cpro_diam2)
+  call field_get_val_s(iprpfl(irom2(icla)), cpro_rom2)
 
   do iel = 1, ncel
 
     !  Mass density
-    propce(iel,ipcro2) = rho0fl
+    cpro_rom2(iel) = rho0fl
 
     ! --- Calculation of the particle diameter
 
@@ -127,23 +125,23 @@ do icla = 1, nclafu
     xnp    = cvar_ngcl(iel)
     if ( yfol .gt. epsifl .and. (xnp*yfol) .gt. 0.d0) then
 
-      propce(iel,ipcdia) = ( (yfol / propce(iel,ipcro2) )           &
+      cpro_diam2(iel) = ( (yfol / cpro_rom2(iel) )           &
                             /(pi/6.d0 * xnp) ) ** d1s3
 
-      if ( propce(iel,ipcdia) .gt. dinifl(icla) ) then
+      if ( cpro_diam2(iel) .gt. dinifl(icla) ) then
         n1 = n1+1
-        diam2x = max(diam2x,propce(iel,ipcdia))
-        propce(iel,ipcdia) = dinifl(icla)
+        diam2x = max(diam2x,cpro_diam2(iel))
+        cpro_diam2(iel) = dinifl(icla)
       endif
 
-      if ( propce(iel,ipcdia) .lt. diniin(icla) ) then
+      if ( cpro_diam2(iel) .lt. diniin(icla) ) then
         n2 = n2+1
-        diam2m = min(diam2m,propce(iel,ipcdia))
-        propce(iel,ipcdia) = diniin(icla)
+        diam2m = min(diam2m,cpro_diam2(iel))
+        cpro_diam2(iel) = diniin(icla)
       endif
 
     else
-      propce(iel,ipcdia) = dinifl(icla)
+      cpro_diam2(iel) = dinifl(icla)
     endif
 
   enddo

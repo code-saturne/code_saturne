@@ -39,12 +39,11 @@
 !______________________________________________________________________________!
 !> \param[in]      ncelet        number of extended (real + ghost) cells
 !> \param[in]      ncel          number of cells
-!> \param[in,out]  propce        physic properties at cell centers
 !> \param[in]      volume        cell volumes
 !______________________________________________________________________________!
 
 subroutine cs_coal_masstransfer &
- ( ncelet , ncel , propce , volume )
+ ( ncelet , ncel , volume )
 
 !===============================================================================
 ! Module files
@@ -74,18 +73,14 @@ implicit none
 
 integer          ncelet , ncel
 
-double precision propce(ncelet,*)
 double precision volume(ncelet)
 
 ! Local variables
 
-integer          iel    , icha   , icla
-integer          ipcte1 , ipctem , ipcro2 , ipcdia
-integer          ipcgd1 , ipcgd2 , ipcgch , ipcght , ipcyox
-integer          ipcsec
-integer          ifcvsl , iromf , ipcte2
+integer          iel    , icla
 integer          npoin1,npoin2,npoin3,npoin4,npoin63,npoint
 integer          npyv, modntl
+integer          icha, ifcvsl
 
 double precision xx2     , xch    , xck    , xash   , xnp , xuash
 double precision pparo2 , xdfchi , xdfext , xdftot0 , xdftot1
@@ -95,7 +90,6 @@ double precision dp , lv, yvs, yv , tebl , shrd , xmeau, xmgaz
 double precision xnuss, tlimit , tmini
 double precision tmin, tmax, yvmin, yvmax, yymax
 
-integer          ipyco2,ipyh2o
 double precision pprco2,pprh2o
 
 integer          iok1
@@ -104,6 +98,11 @@ double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: cpro_cp, cpro_viscls
 double precision, dimension(:), pointer :: cvara_xchcl, cvara_xckcl, cvara_xnpcl
 double precision, dimension(:), pointer :: cvara_xwtcl
+double precision, dimension(:), pointer :: cpro_cgd1, cpro_cgd2, cpro_cgch
+double precision, dimension(:), pointer :: cpro_cght, cpro_rom2, cpro_temp2
+double precision, dimension(:), pointer :: cpro_diam2, cpro_temp1, cpro_mmel
+double precision, dimension(:), pointer :: cpro_yox, cpro_yco2, cpro_yh2o
+double precision, dimension(:), pointer :: cpro_rom1, cpro_csec
 
 !===============================================================================
 ! 1. Initialization and preliminary computations
@@ -122,15 +121,15 @@ endif
 ! --- Initialization of mass transfert terms
 
 do icla = 1, nclacp
-  ipcgd1 = ipproc(igmdv1(icla))
-  ipcgd2 = ipproc(igmdv2(icla))
-  ipcgch = ipproc(igmdch(icla))
-  ipcght = ipproc(igmhet(icla))
+  call field_get_val_s(iprpfl(igmdv1(icla)),cpro_cgd1)
+  call field_get_val_s(iprpfl(igmdv2(icla)),cpro_cgd2)
+  call field_get_val_s(iprpfl(igmdch(icla)),cpro_cgch)
+  call field_get_val_s(iprpfl(igmhet(icla)),cpro_cght)
   do iel = 1, ncel
-    propce(iel,ipcgd1) = zero
-    propce(iel,ipcgd2) = zero
-    propce(iel,ipcgch) = zero
-    propce(iel,ipcght) = zero
+    cpro_cgd1(iel) = zero
+    cpro_cgd2(iel) = zero
+    cpro_cgch(iel) = zero
+    cpro_cght(iel) = zero
   enddo
 enddo
 
@@ -143,7 +142,7 @@ call field_get_val_s(icrom, crom)
 x2     ( : ) = zero
 x2srho2( : ) = zero
 do icla = 1, nclacp
-  ipcro2 = ipproc(irom2(icla))
+  call field_get_val_s(iprpfl(irom2(icla)),cpro_rom2)
   call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xchcl)
   call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xckcl)
   call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
@@ -164,7 +163,7 @@ do icla = 1, nclacp
     endif
 
     x2    (iel) = x2(iel)     + xx2
-    x2srho2(iel) = x2srho2(iel) + xx2 / propce(iel,ipcro2)
+    x2srho2(iel) = x2srho2(iel) + xx2 / cpro_rom2(iel)
   enddo
 enddo
 
@@ -174,44 +173,39 @@ do iel = 1, ncel
   rho1(iel) = (1.d0-x2(iel)) / (1.d0/crom(iel)-x2srho2(iel))
 enddo
 
-
-
 !===============================================================================
 ! 2. Mass transfert by devolatilization
 !===============================================================================
 
-ipcte1 = ipproc(itemp1)
-
 do icla = 1, nclacp
 
-  ipcgd1 = ipproc(igmdv1(icla))
-  ipcgd2 = ipproc(igmdv2(icla))
-  ipcgch = ipproc(igmdch(icla))
-  ipctem = ipproc(itemp2(icla))
+  call field_get_val_s(iprpfl(igmdv1(icla)),cpro_cgd1)
+  call field_get_val_s(iprpfl(igmdv2(icla)),cpro_cgd2)
+  call field_get_val_s(iprpfl(igmdch(icla)),cpro_cgch)
+  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
 
   do iel = 1, ncel
 
   ! --- Mass transfert due to degagement of light mass density (s-1) < 0
 
-    propce(iel,ipcgd1) = -y1ch(ichcor(icla))*a1ch(ichcor(icla))   &
-      * exp(-e1ch(ichcor(icla))/(cs_physical_constants_r*propce(iel,ipctem)))
+    cpro_cgd1(iel) = -y1ch(ichcor(icla))*a1ch(ichcor(icla))   &
+      * exp(-e1ch(ichcor(icla))/(cs_physical_constants_r*cpro_temp2(iel)))
 
   ! --- Mass transfert due to degagement of heavy mass density (s-1) < 0
 
-    propce(iel,ipcgd2) = -y2ch(ichcor(icla))*a2ch(ichcor(icla))   &
-      * exp(-e2ch(ichcor(icla))/(cs_physical_constants_r*propce(iel,ipctem)))
+    cpro_cgd2(iel) = -y2ch(ichcor(icla))*a2ch(ichcor(icla))   &
+      * exp(-e2ch(ichcor(icla))/(cs_physical_constants_r*cpro_temp2(iel)))
 
   ! --- Rate of disappearance of reactive coal (s-1) < 0
 
-    propce(iel,ipcgch) = - a1ch(ichcor(icla))                                 &
-      * exp(-e1ch(ichcor(icla))/(cs_physical_constants_r*propce(iel,ipctem))) &
+    cpro_cgch(iel) = - a1ch(ichcor(icla))                                 &
+      * exp(-e1ch(ichcor(icla))/(cs_physical_constants_r*cpro_temp2(iel))) &
                          - a2ch(ichcor(icla))                                 &
-      * exp(-e2ch(ichcor(icla))/(cs_physical_constants_r*propce(iel,ipctem)))
+      * exp(-e2ch(ichcor(icla))/(cs_physical_constants_r*cpro_temp2(iel)))
 
   enddo
 
 enddo
-
 
 !===============================================================================
 ! 3. Calculation of average RHO_COKE for each coal
@@ -232,15 +226,15 @@ enddo
 call field_get_val_s(icrom, crom)
 do icla = 1, nclacp
   call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xchcl)
-  ipcgd1 = ipproc(igmdv1(icla))
-  ipcgd2 = ipproc(igmdv2(icla))
+  call field_get_val_s(iprpfl(igmdv1(icla)),cpro_cgd1)
+  call field_get_val_s(iprpfl(igmdv2(icla)),cpro_cgd2)
   do iel = 1, ncel
     xch = cvara_xchcl(iel)
     devto1(ichcor(icla)) = devto1(ichcor(icla)) -                 &
-      ( propce(iel,ipcgd1)*xch*crom(iel)                 &
+      ( cpro_cgd1(iel)*xch*crom(iel)                 &
         *volume(iel) )
     devto2(ichcor(icla)) = devto2(ichcor(icla)) -                 &
-      ( propce(iel,ipcgd2)*xch*crom(iel)                 &
+      ( cpro_cgd2(iel)*xch*crom(iel)                 &
         *volume(iel) )
   enddo
   if(irangp.ge.0) then
@@ -263,16 +257,18 @@ enddo
 ! 4. Mass transfert by heterogeneous combustion with O2
 !===============================================================================
 
-ipcyox = ipproc(iym1(io2))
-ipcte1 = ipproc(itemp1)
+call field_get_val_s(iprpfl(iym1(io2)),cpro_yox)
+call field_get_val_s(iprpfl(itemp1),cpro_temp1)
+call field_get_val_s(iprpfl(irom1),cpro_rom1)
 
 do icla = 1, nclacp
 
   call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
-  ipcght = ipproc(igmhet(icla))
-  ipcdia = ipproc(idiam2(icla))
-  icha   = ichcor(icla)
-  ipctem = ipproc(itemp2(icla))
+  call field_get_val_s(iprpfl(idiam2(icla)),cpro_diam2)
+  call field_get_val_s(iprpfl(igmhet(icla)),cpro_cght)
+  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+
+  icha = ichcor(icla)
 
   do iel = 1, ncel
 
@@ -283,8 +279,8 @@ do icla = 1, nclacp
     !                                                 ---
     !       PO2 = RHO1*CS_PHYSICAL_CONSTANTS_R*T*YO2/MO2
 
-    pparo2 = rho1(iel)*cs_physical_constants_r*propce(iel,ipcte1) &
-            *propce(iel,ipcyox)/wmole(io2)
+    pparo2 = rho1(iel)*cs_physical_constants_r*cpro_temp1(iel) &
+            *cpro_yox(iel)/wmole(io2)
     pparo2 = pparo2 / prefth
 
     ! --- Coefficient of chemical kinetics of formation of CO
@@ -292,16 +288,16 @@ do icla = 1, nclacp
 
     xdfchi = ahetch(ichcor(icla))                                 &
       * exp(-ehetch(ichcor(icla))*4185.d0                         &
-             / (cs_physical_constants_r * propce(iel,ipctem)) )
+             / (cs_physical_constants_r * cpro_temp2(iel)) )
 
     ! --- Diffusion coefficient  in kg/m2/s/[atm] : XDFEXT
     !     Global coefficient for n=0.5 in kg/m2/s : XDFTOT0
     !     Global coefficient for n=1   in Kg/m2/s : XDFTOT1
 
-    diacka = propce(iel,ipcdia)/diam20(icla)
+    diacka = cpro_diam2(iel)/diam20(icla)
     if ( diacka .gt. epsicp ) then
-      xdfext = 2.53d-7*((propce(iel,ipctem))**0.75d0)             &
-              / propce(iel,ipcdia)*2.d0
+      xdfext = 2.53d-7*(cpro_temp2(iel)**0.75d0)             &
+              / cpro_diam2(iel)*2.d0
       xdftot1 = pparo2 / ( 1.d0/xdfchi + 1.d0/xdfext )
       xdftot0 = -(xdfchi**2)/(2.d0*xdfext)+(pparo2*xdfchi**2      &
                 + (xdfchi**4)/(4.d0*xdfext**2))**0.5d0
@@ -325,9 +321,9 @@ do icla = 1, nclacp
     ! --- or  propce(iel,ipcght) = - coxck*XDFTOT1*PPARO2*Xnp < 0
 
     if (iochet(icha).eq.1) then
-      propce(iel,ipcght) = - xdftot1*coxck*xnp
+      cpro_cght(iel) = - xdftot1*coxck*xnp
     else
-      propce(iel,ipcght) = - xdftot0*coxck*xnp
+      cpro_cght(iel) = - xdftot0*coxck*xnp
     endif
 
   enddo
@@ -340,16 +336,16 @@ enddo
 
 if ( ihtco2 .eq. 1) then
 
-  ipyco2 = ipproc(iym1(ico2))
-  ipcte1 = ipproc(itemp1)
+  call field_get_val_s(iprpfl(iym1(ico2)),cpro_yco2)
 
   do icla = 1, nclacp
 
     call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
-    ipcght = ipproc(ighco2(icla))
-    ipcdia = ipproc(idiam2(icla))
-    icha   = ichcor(icla)
-    ipctem = ipproc(itemp2(icla))
+    call field_get_val_s(iprpfl(idiam2(icla)),cpro_diam2)
+    call field_get_val_s(iprpfl(ighco2(icla)),cpro_cght)
+    call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+
+    icha = ichcor(icla)
 
     do iel = 1, ncel
 
@@ -360,8 +356,8 @@ if ( ihtco2 .eq. 1) then
       !                                                 ---
       !       PCO2 = RHO1*CS_PHYSICAL_CONSTANTS_R*T*YCO2/MCO2
 
-      pprco2 = rho1(iel)*cs_physical_constants_r*propce(iel,ipcte1)  &
-                           *propce(iel,ipyco2)/wmole(ico2)
+      pprco2 = rho1(iel)*cs_physical_constants_r*cpro_temp1(iel)  &
+                           *cpro_yco2(iel)/wmole(ico2)
       pprco2 = pprco2 / prefth
 
       ! --- Coefficient of chemical kinetics of formation of CO
@@ -369,16 +365,16 @@ if ( ihtco2 .eq. 1) then
 
       xdfchi = ahetc2(ichcor(icla))                               &
         * exp(-ehetc2(ichcor(icla))*4185.d0                       &
-               / (cs_physical_constants_r * propce(iel,ipctem)) )
+               / (cs_physical_constants_r * cpro_temp2(iel)) )
 
       ! --- Diffusion coefficient in kg/m2/s/[atm] : XDFEXT
       !     Global coefficient for n=0.5 in kg/m2/s : XDFTOT0
       !     Glabal coefficient for n=1   in [g/m2/s : XDFTOT1
 
-      diacka = propce(iel,ipcdia)/diam20(icla)
+      diacka = cpro_diam2(iel)/diam20(icla)
       if ( diacka .gt. epsicp ) then
-        xdfext = 2.53d-7*((propce(iel,ipctem))**0.75d0)           &
-                / propce(iel,ipcdia)*2.d0
+        xdfext = 2.53d-7*(cpro_temp2(iel)**0.75d0)           &
+                / cpro_diam2(iel)*2.d0
         xdftot1 = pprco2 / ( 1.d0/xdfchi + 1.d0/xdfext )
         xdftot0 = -(xdfchi**2)/(2.d0*xdfext)+(pprco2*xdfchi**2    &
                   +(xdfchi**4)/(4.d0*xdfext**2))**0.5d0
@@ -402,9 +398,9 @@ if ( ihtco2 .eq. 1) then
       ! --- or  propce(iel,ipcght) = - coxck*XDFTOT1*PPRCO2*Xnp < 0
 
       if (ioetc2(icha).eq.1) then
-        propce(iel,ipcght) = - xdftot1*coxck*xnp
+        cpro_cght(iel) = - xdftot1*coxck*xnp
       else
-        propce(iel,ipcght) = - xdftot0*coxck*xnp
+        cpro_cght(iel) = - xdftot0*coxck*xnp
       endif
 
     enddo
@@ -419,16 +415,16 @@ endif
 
 if ( ihth2o .eq. 1) then
 
-  ipyh2o = ipproc(iym1(ih2o))
-  ipcte1 = ipproc(itemp1)
+  call field_get_val_s(iprpfl(iym1(ih2o)),cpro_yh2o)
 
   do icla = 1, nclacp
 
     call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
-    ipcght = ipproc(ighh2o(icla))
-    ipcdia = ipproc(idiam2(icla))
-    icha   = ichcor(icla)
-    ipctem = ipproc(itemp2(icla))
+    call field_get_val_s(iprpfl(idiam2(icla)),cpro_diam2)
+    call field_get_val_s(iprpfl(ighh2o(icla)),cpro_cght)
+    call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+
+    icha = ichcor(icla)
 
     do iel = 1, ncel
 
@@ -439,8 +435,8 @@ if ( ihth2o .eq. 1) then
       !                                                 ---
       !       PH2O = RHO1*CS_PHYSICAL_CONSTANTS_R*T*YH2O/MH2O
 
-      pprh2o = rho1(iel)*cs_physical_constants_r*propce(iel,ipcte1) &
-              *propce(iel,ipyh2o)/wmole(ih2o)
+      pprh2o = rho1(iel)*cs_physical_constants_r*cpro_temp1(iel) &
+              *cpro_yh2o(iel)/wmole(ih2o)
       pprh2o = pprh2o/ prefth
 
       ! --- Coefficient of chemical kinetics of formation of CO
@@ -448,16 +444,16 @@ if ( ihth2o .eq. 1) then
 
       xdfchi = ahetwt(ichcor(icla))                               &
         * exp(-ehetwt(ichcor(icla))*4185.d0                       &
-               / (cs_physical_constants_r * propce(iel,ipctem)) )
+               / (cs_physical_constants_r * cpro_temp2(iel)) )
 
       ! --- Diffusion coefficient in kg/m2/s/[atm]: XDFEXT
       !     Global coefficient for n=0.5 in kg/m2/s: XDFTOT0
       !     Global coefficient for n=1 in kg/m2/s: XDFTOT1
 
-      diacka = propce(iel,ipcdia)/diam20(icla)
+      diacka = cpro_diam2(iel)/diam20(icla)
       if ( diacka .gt. epsicp ) then
-        xdfext = 2.53d-7*((propce(iel,ipctem))**0.75d0)           &
-                / propce(iel,ipcdia)*2.d0
+        xdfext = 2.53d-7*(cpro_temp2(iel)**0.75d0)           &
+                / cpro_diam2(iel)*2.d0
         xdftot1 = pprh2o / ( 1.d0/xdfchi + 1.d0/xdfext )
         xdftot0 = -(xdfchi**2)/(2.d0*xdfext)+(pprh2o*xdfchi**2    &
                   +(xdfchi**4)/(4.d0*xdfext**2))**0.5d0
@@ -481,9 +477,9 @@ if ( ihth2o .eq. 1) then
       ! --- or propce(iel,ipcght) = - coxck*XDFTOT1*PPRH2O*Xnp < 0
 
       if (ioetwt(icha).eq.1) then
-        propce(iel,ipcght) = - xdftot1*coxck*xnp
+        cpro_cght(iel) = - xdftot1*coxck*xnp
       else
-        propce(iel,ipcght) = - xdftot0*coxck*xnp
+        cpro_cght(iel) = - xdftot0*coxck*xnp
       endif
 
     enddo
@@ -548,17 +544,17 @@ if ( ippmod(iccoal) .ge. 1 ) then
     npoin4 = 0
     npoin63 = 0
 
-    icha   = ichcor(icla)
+    icha = ichcor(icla)
 
-    iromf  = ipproc(irom1)
-    ipcte1 = ipproc(itemp1)
-    ipcte2 = ipproc(itemp2(icla))
-    ipcsec = ipproc(igmsec(icla))
-    ipcro2 = ipproc(irom2(icla))
+    call field_get_val_s(iprpfl(irom2(icla)),cpro_rom2)
+    call field_get_val_s(iprpfl(igmsec(icla)),cpro_csec)
+    call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+    call field_get_val_s(iprpfl(idiam2(icla)),cpro_diam2)
+    call field_get_val_s(iprpfl(immel),cpro_mmel)
+    call field_get_val_s(iprpfl(iym1(ih2o)),cpro_yh2o)
 
     ! -------- Calculation of the diameter of particles in W2
     !          d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
-
 
     tmax = -1.d+20
     tmin =  1.d+20
@@ -573,7 +569,7 @@ if ( ippmod(iccoal) .ge. 1 ) then
 
     do iel = 1, ncel
 
-      propce(iel,ipcsec) = 0.d0
+      cpro_csec(iel) = 0.d0
 
       if ( cvara_xwtcl(iel) .gt. epsicp  ) then
 
@@ -585,33 +581,33 @@ if ( ippmod(iccoal) .ge. 1 ) then
         !             d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
 
         dp  = ( xashch(icha)*diam20(icla)**2 +                    &
-                 (1.d0-xashch(icha))*propce(iel,ipcdia)**2        &
+                 (1.d0-xashch(icha))*cpro_diam2(iel)**2        &
                   )**0.5d0
 
         npoin2 = npoin2 + 1
 
-        if ( propce(iel,ipcte2) .gt. tlimit )then
-          xmgaz = propce(iel,ipproc(immel))
+        if ( cpro_temp2(iel) .gt. tlimit )then
+          xmgaz = cpro_mmel(iel)
           yvs   = xmeau/xmgaz                                   &
                  *exp( lv*xmeau                                 &
-                      *(1.d0/tebl-1.d0/propce(iel,ipcte2))      &
+                      *(1.d0/tebl-1.d0/cpro_temp2(iel))      &
                       /cs_physical_constants_r )
 
         else
-          xmgaz = propce(iel,ipproc(immel))
+          xmgaz = cpro_mmel(iel)
           yvs   = xmeau/xmgaz                                   &
                  *exp( lv*xmeau                                 &
                       *(1.d0/tebl-1.d0/tlimit)                  &
                       /cs_physical_constants_r )                                     &
-                 *(lv*xmeau*(propce(iel,ipcte2)-tmini))         &
+                 *(lv*xmeau*(cpro_temp2(iel)-tmini))         &
                  /(tlimit*tlimit)
         endif
 
         yv = yvs
 
         if ( yv .lt. 0.d0 ) then
-          write(nfecra,*) yv,yvs,propce(iel,ipproc(iym1(ih2o)))
-          write(nfecra,*) propce(iel,ipcte2),tmini
+          write(nfecra,*) yv,yvs,cpro_yh2o(iel)
+          write(nfecra,*) cpro_temp2(iel),tmini
           call csexit(1)
         endif
         if ( yv .ge. 1.d0) then
@@ -627,27 +623,27 @@ if ( ippmod(iccoal) .ge. 1 ) then
 
           npoin3 = npoin3 + 1
 
-          propce(iel,ipcsec) = pi*dp*propce(iel,iromf)                    &
+          cpro_csec(iel) = pi*dp*cpro_rom1(iel)                    &
                               *diftl0*shrd*xnp                            &
-                   *log((1.D0-propce(iel,ipproc(iym1(ih2o))))/(1.d0-yv))
+                   *log((1.D0-cpro_yh2o(iel))/(1.d0-yv))
 
-          if ( propce(iel,ipcsec) .lt. 0.d0 ) then
-            propce(iel,ipcsec) = 0.d0
+          if ( cpro_csec(iel) .lt. 0.d0 ) then
+            cpro_csec(iel) = 0.d0
             npoin63 = npoin63 + 1
           endif
         else
           npoin4 = npoin4 + 1
-          propce(iel,ipcsec) = 0.d0
+          cpro_csec(iel) = 0.d0
         endif
 
       else
 
-        propce(iel,ipcsec) = 0.d0
+        cpro_csec(iel) = 0.d0
 
       endif
 
-      tmax = max(propce(iel,ipcsec),tmax)
-      tmin = min(propce(iel,ipcsec),tmin)
+      tmax = max(cpro_csec(iel),tmax)
+      tmin = min(cpro_csec(iel),tmin)
 
     enddo
 
