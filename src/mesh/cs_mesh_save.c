@@ -76,6 +76,16 @@ BEGIN_C_DECLS
  * Local Type Definitions
  *============================================================================*/
 
+/* Directory name separator
+   (historically, '/' for Unix/Linux, '\' for Windows, ':' for Mac
+   but '/' should work for all on modern systems) */
+
+#define DIR_SEPARATOR '/'
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -96,12 +106,15 @@ BEGIN_C_DECLS
  * parameters:
  *   mesh     <-- pointer to mesh structure
  *   mb       <-- pointer to optional mesh builder structure, or NULL
+ *   path     <-- optional directory name for output, or NULL for default
+ *                (directory automatically created if necessary)
  *   filename <-- file name
  *----------------------------------------------------------------------------*/
 
 void
 cs_mesh_save(cs_mesh_t          *mesh,
              cs_mesh_builder_t  *mb,
+             const char         *path,
              const char         *filename)
 {
   cs_file_access_t  method;
@@ -148,10 +161,28 @@ cs_mesh_save(cs_mesh_t          *mesh,
                                     mesh->n_g_vertices);
 
   /* Open file for output */
+  size_t  ldir = 0, lname = strlen(filename);
+
+  const char  *name = filename;
+  char *_name = NULL;
+
+  if (path != NULL)
+    ldir = strlen(path);
+
+  if (ldir > 0) {
+    if (cs_file_mkdir_default(path) != 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("The %s directory cannot be created"), path);
+
+    BFT_MALLOC(_name, ldir + lname + 2, char);
+    sprintf(_name, "%s%c%s",
+            path, DIR_SEPARATOR, filename);
+    name = _name;
+  }
 
 #if defined(HAVE_MPI)
   cs_file_get_default_access(CS_FILE_MODE_WRITE, &method, &hints);
-  pp_out = cs_io_initialize(filename,
+  pp_out = cs_io_initialize(name,
                             "Face-based mesh definition, R0",
                             CS_IO_MODE_WRITE,
                             method,
@@ -161,12 +192,14 @@ cs_mesh_save(cs_mesh_t          *mesh,
                             comm);
 #else
   cs_file_get_default_access(CS_FILE_MODE_WRITE, &method);
-  pp_out = cs_io_initialize(filename,
+  pp_out = cs_io_initialize(_name,
                             "Face-based mesh definition, R0",
                             CS_IO_MODE_WRITE,
                             method,
                             echo);
 #endif
+
+  BFT_FREE(_name);
 
   /* Write data */
   /*------------*/

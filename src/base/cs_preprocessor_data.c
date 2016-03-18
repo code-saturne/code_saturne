@@ -122,11 +122,6 @@ typedef struct {
   cs_gnum_t    n_g_faces_connect_read;
   cs_gnum_t    n_g_vertices_read;
 
-  /* Temporary mesh data */
-
-  int          read_cell_rank;
-  int         *cell_rank;
-
 } _mesh_reader_t;
 
 /*============================================================================
@@ -256,8 +251,6 @@ _mesh_reader_create(int                 *n_mesh_files,
   mr->n_g_cells_read = 0;
   mr->n_g_faces_read = 0;
   mr->n_g_faces_connect_read = 0;
-
-  mr->cell_rank = NULL;
 
   return mr;
 }
@@ -2298,7 +2291,41 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
   long  echo = CS_IO_ECHO_OPEN_CLOSE;
   _mesh_reader_t  *mr = _cs_glob_mesh_reader;
 
-  _set_block_ranges(mesh, mesh_builder);
+  bool pre_partitioned = false;
+
+  /* Check for existing partitioning and cell block info (set by
+     cs_mesh_to_builder_partition and valid if the global number of
+     cells has not changed), in which case the existing
+     partitioning may be used */
+
+  if (mesh_builder->have_cell_rank) {
+
+    cs_block_dist_info_t cell_bi_ref;
+    memcpy(&cell_bi_ref,
+           &(mesh_builder->cell_bi),
+           sizeof(cs_block_dist_info_t));
+    _set_block_ranges(mesh, mesh_builder);
+    cs_gnum_t n_g_cells_ref = 0;
+    if (cell_bi_ref.gnum_range[1] > cell_bi_ref.gnum_range[0])
+      n_g_cells_ref = cell_bi_ref.gnum_range[1] - cell_bi_ref.gnum_range[0];
+    cs_parall_counter(&n_g_cells_ref, 1);
+
+    _set_block_ranges(mesh, mesh_builder);
+
+    if (n_g_cells_ref == mesh->n_g_cells) {
+      memcpy(&(mesh_builder->cell_bi),
+             &cell_bi_ref,
+             sizeof(cs_block_dist_info_t));
+      pre_partitioned = true;
+    }
+    else {
+      mesh_builder->have_cell_rank = false;
+      BFT_FREE(mesh_builder->cell_rank);
+    }
+
+  }
+  else
+    _set_block_ranges(mesh, mesh_builder);
 
   for (file_id = 0; file_id < mr->n_files; file_id++)
     _read_data(file_id, mesh, mesh_builder, mr, echo);
@@ -2308,7 +2335,8 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
 
   /* Partition data */
 
-  cs_partition(mesh, mesh_builder, partition_stage);
+  if (! pre_partitioned)
+    cs_partition(mesh, mesh_builder, partition_stage);
 
   bft_printf("\n");
 

@@ -55,6 +55,7 @@
 #include "cs_file.h"
 #include "cs_io.h"
 #include "cs_mesh.h"
+#include "cs_mesh_save.h"
 #include "cs_mesh_location.h"
 #include "cs_part_to_block.h"
 #include "cs_parall.h"
@@ -1005,6 +1006,23 @@ void CS_PROCF (stusui, STUSUI)
 )
 {
   cs_restart_checkpoint_done(cs_glob_time_step);
+}
+
+/*----------------------------------------------------------------------------
+ * Save output mesh for turbomachinery if needed
+ *
+ * Fortran interface
+ *
+ * subroutine trbsui
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (trbsui, TRBSUI)
+(
+ void
+)
+{
+  cs_mesh_save(cs_glob_mesh, NULL, "checkpoint", "mesh");
 }
 
 /*----------------------------------------------------------------------------

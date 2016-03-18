@@ -209,6 +209,20 @@ cs_renumber_get_algorithm(bool                        *halo_adjacent_cells_last,
 void
 cs_renumber_mesh(cs_mesh_t  *mesh);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Renumber cells depending on code options and target machine.
+ *
+ * parameters:
+ *   mesh  <->  pointer to global mesh structure
+ *
+ * \param[in, out]  mesh  pointer to global mesh structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_renumber_cells(cs_mesh_t  *mesh);
+
 /*----------------------------------------------------------------------------
  * Renumber interior faces for vectorization or threading depending on code
  * options and target machine.
@@ -221,6 +235,18 @@ void
 cs_renumber_i_faces(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
+ * Renumber interior faces by global number.
+ *
+ * This effectively resets the interior faces to their initial numbering.
+ *
+ * parameters:
+ *   mesh  <->  pointer to global mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_renumber_i_faces_by_gnum(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
  * Renumber boundary faces for vectorization or threading depending on code
  * options and target machine.
  *
@@ -230,6 +256,18 @@ cs_renumber_i_faces(cs_mesh_t  *mesh);
 
 void
 cs_renumber_b_faces(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
+ * Renumber boundary faces by global number.
+ *
+ * This effectively resets the boundary faces to their initial numbering.
+ *
+ * parameters:
+ *   mesh  <->  pointer to global mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_renumber_b_faces_by_gnum(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------*/
 

@@ -290,7 +290,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   if (cs_glob_mesh->modified > 0 || partition_preprocess) {
     if (partition_preprocess) {
       if (cs_glob_mesh->modified > 0)
-        cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, "mesh_output");
+        cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, NULL, "mesh_output");
       else
         cs_mesh_to_builder(cs_glob_mesh, cs_glob_mesh_builder, true, NULL);
       cs_partition(cs_glob_mesh, cs_glob_mesh_builder, CS_PARTITION_MAIN);
@@ -299,7 +299,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
       cs_mesh_update_auxiliary(cs_glob_mesh);
     }
     else
-      cs_mesh_save(cs_glob_mesh, NULL, "mesh_output");
+      cs_mesh_save(cs_glob_mesh, NULL, NULL, "mesh_output");
   }
 
   /* Destroy the temporary structure used to build the main mesh */

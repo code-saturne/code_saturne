@@ -5,6 +5,9 @@ Release 4.2.1 (unreleased)
 Bug fixes:
 ----------
 
+- Turbomachinery module: for better restart behavior, the joined mesh
+  is now also handled using checkpoint/restart.
+
 - Fix in transient turbomachinery computations when nterup > 1.
 
 - Fix in cavitation module in case of transient turbomachinery computation.

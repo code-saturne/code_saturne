@@ -52,12 +52,15 @@ BEGIN_C_DECLS
  * parameters:
  *   mesh     <-- pointer to mesh structure
  *   mb       <-- pointer to optional mesh builder structure, or NULL
+ *   path     <-- optional directory name for output, or NULL for default
+ *                (directory automatically created if necessary)
  *   filename <-- file name
  *----------------------------------------------------------------------------*/
 
 void
 cs_mesh_save(cs_mesh_t          *mesh,
              cs_mesh_builder_t  *mb,
+             const char         *path,
              const char         *filename);
 
 /*----------------------------------------------------------------------------*/

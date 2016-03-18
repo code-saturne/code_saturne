@@ -87,6 +87,18 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
                    cs_io_t            *pp_out);
 
 /*----------------------------------------------------------------------------
+ * Transfer mesh partitioning info to mesh builder structure.
+ *
+ * parameters:
+ *   mesh <-- pointer to mesh structure
+ *   mb   <-> pointer to mesh builder structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_to_builder_partition(const cs_mesh_t    *mesh,
+                             cs_mesh_builder_t  *mb);
+
+/*----------------------------------------------------------------------------
  * Reconstruct periodic faces info from mesh to builder.
  *
  * parameters:
