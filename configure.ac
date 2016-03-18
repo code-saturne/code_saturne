@@ -1096,7 +1096,7 @@ echo " CoolProp support: "$cs_have_coolprop""
 echo " PETSc support: "$cs_have_petsc""
 echo " SALOME GUI support: "$cs_have_salome_gui""
 echo " SALOME Kernel support: "$cs_have_salome_kernel""
-echo " Dynamic loader support (for YACS): "$cs_have_dlloader""
+echo " Dynamic loader support: "$cs_have_dlloader""
 echo
 echo "The package has been configured. Type:"
 echo " make"
