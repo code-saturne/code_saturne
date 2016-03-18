@@ -122,7 +122,7 @@
   \page field How to access and manage variables and properties using the cs_field API and the deprecated array \c propce ?
 
   \ref cs_var_dico_vars "Variables" and \ref cs_var_dico_props "properties" can be accessed both in Fortran and in C using the \ref field.f90 "cs_field" API. Some Fortran
-  properties can be also be accessed through the deprecated array \c propce.
+  properties can also still be accessed through the deprecated array \c propce.
 
   \par Accessing variables and properties in Fortran:
 
@@ -138,7 +138,7 @@
           The scalar values are accessed as follows:\n\n
        <tt>call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref isca "isca"(iscalt)), cvar_scalt) \n
           temp = cvar_scalt(iel)</tt>, \n\n
-      - For multidimensional arrays:\n\n
+      - For interleaved multidimensional arrays:\n\n
             <tt>call \ref field::field_get_val_v "field_get_val_v"(ivarfl(\ref numvar::iu "iu"), cvar_vel)
           \n ux = cvar_vel(1,iel)</tt>, \n\n
       .

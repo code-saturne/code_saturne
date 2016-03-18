@@ -51,4 +51,5 @@ Here is a list of user examples. Thorougly documented snippets are provided.
    - \subpage cs_user_extra_operations-nusselt_calculation
    - \subpage cs_user_source_terms-scalar_in_a_channel
    - \subpage richards
+   - \subpage cs_user_fluid_structure_interaction
 */
