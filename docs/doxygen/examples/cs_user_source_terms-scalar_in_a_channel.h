@@ -24,12 +24,12 @@
 
 /*-----------------------------------------------------------------------------*/
 
-  
+
 
 /*!
 
   \page cs_user_source_terms-scalar_in_a_channel Examples of data settings for source terms with scalar in a channel (cs_user_source_terms-scalar_in_a_channel.f90)
-  
+
 \brief Additional right-hand side source terms for scalar equations (user
  scalars and specific physics scalars) with \ref ustssc subroutine.
 
@@ -69,7 +69,7 @@ When using the second-order in time scheme, one should supply:
 
 The selection of cells where to apply the source terms is based on a getcel
 command. For more info on the syntax of the getcel command, refer to the
-user manual or to the comments on the similar command getfbr in the routine
+user manual or to the comments on the similar command \ref getfbr in the routine
 \ref cs_user_boundary_conditions.
 
 \warning If scalar is the temperature, the resulting equation
@@ -126,7 +126,7 @@ Parallelism
  \snippet cs_user_source_terms-scalar_in_a_channel.f90 format_scal
 
 \subsection end_scal End
- \snippet cs_user_source_terms-scalar_in_a_channel.f90 end_scal 
+ \snippet cs_user_source_terms-scalar_in_a_channel.f90 end_scal
 
 
 */

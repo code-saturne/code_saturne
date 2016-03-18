@@ -268,8 +268,8 @@ end subroutine ustsnv
 !>
 !> The selection of cells where to apply the source terms is based on a getcel
 !> command. For more info on the syntax of the getcel command, refer to the
-!> user manual or to the comments on the similar command getfbr in the routine
-!> cs_user_boundary_conditions.
+!> user manual or to the comments on the similar command \ref getfbr in the
+!> routine cs_user_boundary_conditions.
 
 !> WARNING: If scalar is the temperature, the resulting equation
 !>          solved by the code is:

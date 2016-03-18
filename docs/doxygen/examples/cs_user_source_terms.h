@@ -24,20 +24,20 @@
 
 /*-----------------------------------------------------------------------------*/
 
-  
+
 
 /*!
 
   \page cs_user_source_terms Examples of data settings for source terms (cs_user_source_terms.f90)
-  
 
- 
+
+
 
   \brief Additional right-hand side source terms
 
 
-   - \subpage subroutine_ustsnv 
-   - \subpage subroutine_ustssc 
+   - \subpage subroutine_ustsnv
+   - \subpage subroutine_ustssc
    - \subpage subroutine_cs_user_turbulence_source_terms
 
 
@@ -85,22 +85,22 @@
   refer to the user manual or to the comments on the similar command
   \ref getfbr in the routine \ref cs_user_boundary_conditions.
 
- 
- 
-   \section loc_var1 Local variables 
- 
+
+
+   \section loc_var1 Local variables
+
    \snippet cs_user_source_terms.f90 loc_var_dec_1
- 
+
    \section init_and_finit_1 Initialization and finalization
- 
-The following initialization block needs to be added for the following examples:   
+
+The following initialization block needs to be added for the following examples:
    \snippet cs_user_source_terms.f90 allocate_1
- 
+
 At the end of the subroutine, it is recommended to deallocate the work array:
    \snippet cs_user_source_terms.f90 deallocate_1
- 
+
 In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their alloacation is good pratice, and avoids using a different logic C and Fortran.
- 
+
    \section example_source_terms_1  Example
 Example of arbitrary source term for component \f$\vect{u}\f$:
 
@@ -121,7 +121,7 @@ which yields:
  - <tt>  crvimp(1, 1, iel) = volume(iel)* A = - volume(iel)*(rho*CKP )</tt> \n
  - <tt>  crvexp(1, iel) = volume(iel)* B = volume(iel)*(XMMT) </tt>
 
- \section body1 Body 
+ \section body1 Body
 
    \snippet  cs_user_source_terms.f90 remaining_1
 
@@ -129,7 +129,7 @@ which yields:
 //_________________________________________________________________________________________________
 /*!
    \page subroutine_ustssc For transported scalar: ustssc subroutine
-  
+
 
  \brief The routine is called for each scalar, user or specific physisc. It is
         therefore necessary to test the value of the scalar number iscal to separate
@@ -165,7 +165,7 @@ which yields:
 
  The selection of cells where to apply the source terms is based on a \ref getcel
  command. For more info on the syntax of the \ref getcel command, refer to the
- user manual or to the comments on the similar command getfbr in the routine
+ user manual or to the comments on the similar command \ref getfbr in the routine
  \ref cs_user_boundary_conditions.
 
  \warning  If the scalar is the temperature, the resulting equation
@@ -203,17 +203,17 @@ which yields:
    - <tt> crvimp = volume*dF/df </tt>
 
 
-   \section loc_var2 Local variables 
+   \section loc_var2 Local variables
 
    \snippet cs_user_source_terms.f90 loc_var_dec_2
 
    \subsection init_and_finit_2 Initialization and finalization
 
-The following initialization block needs to be added for the following examples:   
+The following initialization block needs to be added for the following examples:
    \snippet cs_user_source_terms.f90 allocate_2
 
 At the end of the subroutine, it is recommended to deallocate the work array:
- 
+
   \snippet cs_user_source_terms.f90 deallocate_2
 
 In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symmetric manner to their alloacation is good pratice, and avoids using a different logic between C and Fortran.
@@ -225,8 +225,8 @@ In theory Fortran 95 deallocates locally-allocated arrays automatically, but dea
    \snippet cs_user_source_terms.f90 index_2
 
  Name of the variable associated to scalar iscal
-  
-   \snippet cs_user_source_terms.f90 name_2 
+
+   \snippet cs_user_source_terms.f90 name_2
 
  Indicator of variance scalars
 
@@ -238,7 +238,7 @@ In theory Fortran 95 deallocates locally-allocated arrays automatically, but dea
 \n
 
   \snippet cs_user_source_terms.f90 test_2
-  
+
  Density
 
   \snippet cs_user_source_terms.f90 density_2
@@ -266,7 +266,7 @@ which yields:
  - <tt> crvexp(iem) = volume(iel)*B= volume(iel)*rho*prod_f </tt>
 
  \subsection bodysource2 Body
- 
+
  <b> Source term applied to second scalar</b>
 
   \snippet cs_user_source_terms.f90 src_term_applied
@@ -293,8 +293,8 @@ Example of arbitrary volumic heat term in the equation for enthalpy h.
  \f[ \rho C_p \norm{\vol{\celli}} \frac{dT}{dt} + ... = \norm{\vol{\celli}(iel)} \frac{pwatt}{voltf} \f]
 
 with  <tt> pwatt = 100.d0 </tt>
- 
-   \subsection cs_user_st_3_cal_volf Calculation of voltf 
+
+   \subsection cs_user_st_3_cal_volf Calculation of voltf
 
    \snippet cs_user_source_terms.f90 ex_3_compute_voltf
 
@@ -304,7 +304,7 @@ with  <tt> pwatt = 100.d0 </tt>
 
 */
 //________________________________________________________________________________________________
-/*! 
+/*!
 
    \page subroutine_cs_user_turbulence_source_terms For turbulence model: cs_user_turbulence_source_terms subroutine
 
@@ -312,8 +312,8 @@ with  <tt> pwatt = 100.d0 </tt>
 
    \section use_src3 Usage
 
- The additional source term is decomposed into an explicit part \f$(crvexp)\f$ and an implic it part \f$(crvimp)\f$ that must be provided here. The resulting equations solved by the code are: 
- 
+ The additional source term is decomposed into an explicit part \f$(crvexp)\f$ and an implic it part \f$(crvimp)\f$ that must be provided here. The resulting equations solved by the code are:
+
 \f[
   \rho \norm{\vol{\celli}} \DP{\varia} + ....
    = crvimp \cdot \varia + crvexp
@@ -345,13 +345,13 @@ with  <tt> pwatt = 100.d0 </tt>
  \ref cs_user_boundary_conditions.
 
 
-   \section loc_var3 Local variables 
+   \section loc_var3 Local variables
 
    \snippet cs_user_source_terms.f90 loc_var_dec_3
 
    \section init_and_finit_3 Initialization and finalization
 
-The following initialization block needs to be added for the following examples:   
+The following initialization block needs to be added for the following examples:
    \snippet cs_user_source_terms.f90 allocate_3
 
 At the end of the subroutine, it is recommended to deallocate the work array:
@@ -365,14 +365,14 @@ In theory Fortran 95 deallocates locally-allocated arrays automatically, but dea
 
   Get the density array in \c cpro_rom
 
-   \snippet cs_user_source_terms.f90 dens_array_3    
+   \snippet cs_user_source_terms.f90 dens_array_3
 
  Get the array of the current turbulent variable and its name
 
-   \snippet cs_user_source_terms.f90  current_turb_3    
-  
+   \snippet cs_user_source_terms.f90  current_turb_3
 
-   \section example3_1 Example 
+
+   \section example3_1 Example
 Example of arbitrary additional source term for turbulence models (Source term on the TKE "k" here).
 
 
@@ -400,5 +400,5 @@ Example of arbitrary additional source term for turbulence models (Source term o
   \subsection format3 Format
 
   \snippet cs_user_source_terms.f90 format_3
-  
+
 */
