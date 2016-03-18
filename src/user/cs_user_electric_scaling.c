@@ -64,10 +64,8 @@ const double epzerol = 1.e-12;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Define global options for couplings.
- *
- * These options allow defining the time step synchronization policy,
- * as well as a time step multiplier.
+ * Rescale all electro-magnetic physical fields (electric potential,
+ * current density and Joule effect).
  *----------------------------------------------------------------------------*/
 
 void
@@ -286,4 +284,3 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
 }
 
 END_C_DECLS
-
