@@ -63,7 +63,7 @@ Runcase script:
 
   Shell script containing "%s run" command.
 """
-    print(help_string % sys.argv[0], pkg.name, submit_cmd)
+    print(help_string % (sys.argv[0], submit_cmd, pkg.name))
 
 #-------------------------------------------------------------------------------
 # Process the command line arguments
@@ -117,6 +117,9 @@ def main(argv, pkg):
         raise Exception(err_str)
 
     runcase_path = process_cmd_line(argv, submit_cmd, pkg)
+
+    if not runcase_path:
+        return 1
 
     scripts_dir = os.path.dirname(runcase_path)
 

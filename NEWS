@@ -5,6 +5,8 @@ Release 4.2.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix "code_saturne help submit" command.
+
 - Turbomachinery module: for better restart behavior, the joined mesh
   is now also handled using checkpoint/restart.
 
