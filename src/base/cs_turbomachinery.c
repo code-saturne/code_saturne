@@ -812,8 +812,6 @@ _update_mesh(bool     restart_mode,
 
     cs_preprocessor_data_read_mesh(cs_glob_mesh,
                                    cs_glob_mesh_builder);
-
-    cs_renumber_cells(cs_glob_mesh);
   }
 
   tbm->n_b_faces_ref = cs_glob_mesh->n_b_faces;
@@ -832,7 +830,10 @@ _update_mesh(bool     restart_mode,
      faces updated; it is important that boundary faces
      renumbering produce the same result at each iteration) */
 
-  cs_glob_mesh->cell_numbering = cell_numbering;
+  if (restart_mode)
+    cs_renumber_cells(cs_glob_mesh);
+  else
+    cs_glob_mesh->cell_numbering = cell_numbering;
 
   cs_renumber_i_faces(cs_glob_mesh);
   cs_renumber_b_faces(cs_glob_mesh);
