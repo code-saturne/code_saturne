@@ -2418,6 +2418,8 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
     if (ivar.eq.isca(iyno)) then
 
+      call field_get_val_s(iprpfl(iym1(in2)),cpro_yn2)
+
       do iel = 1, ncel
         cpro_cnorb(iel) = zero
         cpro_fnoch(iel) = zero
