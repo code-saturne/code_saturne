@@ -1105,9 +1105,6 @@ fvm_hilbert_get_coord_extents(int               dim,
 #endif
 {
   size_t  i, j;
-  cs_coord_t d[3];
-  cs_coord_t d_max = 0.0;
-  const double epsilon = 1e-10;
 
   /* Get global min/max coordinates */
 
@@ -1126,24 +1123,9 @@ fvm_hilbert_get_coord_extents(int               dim,
   }
 
 #if defined(HAVE_MPI)
-
   if (comm != MPI_COMM_NULL)
     _local_to_global_extents(dim, g_extents, comm);
-
 #endif
-
-  /* Ensure box is not flat */
-
-  for (i = 0; i < (size_t)dim; i++) {
-    d[i] = g_extents[i+dim] - g_extents[i];
-    d_max = CS_MAX(d_max, d[i]);
-  }
-
-  for (i = 0; i < (size_t)dim; i++) {
-    if (d[i] < d_max * epsilon)
-      g_extents[i+3] = g_extents[i] + (d_max * epsilon);
-  }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1167,36 +1149,89 @@ fvm_hilbert_encode_coords(int                 dim,
                           const cs_coord_t    coords[],
                           fvm_hilbert_code_t  h_code[])
 {
-  cs_lnum_t i, j;
+  cs_lnum_t i, j, k;
   cs_coord_t s[3], d[3], n[3];
+
+  int e_dim = 0;
+  int dim_map[3] = {-1, -1, -1};
+
+  cs_coord_t d_max = 0.0;
+  const double epsilon = 1e-10;
 
   for (i = 0; i < dim; i++) {
     s[i] = extents[i];
     d[i] = extents[i+dim] - extents[i];
   }
 
+  /* Check if box is not flat */
+
+  for (i = 0; i < dim; i++) {
+    d[i] = extents[i+dim] - extents[i];
+    d_max = CS_MAX(d_max, d[i]);
+  }
+
+  for (i = 0; i < dim; i++) {
+    if (d[i] >= d_max * epsilon) {
+      dim_map[e_dim] = i;
+      e_dim += 1;
+    }
+  }
+
   switch(dim) {
 
   case 3:
-    for (i = 0; i < n_coords; i++) {
-      for (j = 0; j < 3; j++)
-        n[j] = (coords[i*3 + j] - s[j]) / d[j];
-      h_code[i] = _hilbert_encode_3d(n);
+    {
+      if (e_dim == 3) {
+        for (i = 0; i < n_coords; i++) {
+          for (j = 0; j < 3; j++)
+            n[j] = (coords[i*3 + j] - s[j]) / d[j];
+          h_code[i] = _hilbert_encode_3d(n);
+        }
+      }
+      else if (e_dim == 2) {
+        for (i = 0; i < n_coords; i++) {
+          for (j = 0; j < 2; j++) {
+            k = dim_map[j];
+            n[j] = (coords[i*3 + k] - s[k]) / d[k];
+          }
+          h_code[i] = _hilbert_encode_2d(n);
+        }
+      }
+      else if (e_dim == 1) {
+        for (i = 0; i < n_coords; i++) {
+          k = dim_map[0];
+          n[0] = (coords[i*3 + k] - s[k]) / d[k];
+          h_code[i] = _hilbert_encode_1d(n);
+        }
+      }
     }
     break;
 
   case 2:
-    for (i = 0; i < n_coords; i++) {
-      for (j = 0; j < 2; j++)
-        n[j] = (coords[i*2 + j] - s[j]) / d[j];
-      h_code[i] = _hilbert_encode_2d(n);
+    {
+      if (e_dim == 2) {
+        for (i = 0; i < n_coords; i++) {
+          for (j = 0; j < 2; j++)
+            n[j] = (coords[i*2 + j] - s[j]) / d[j];
+          h_code[i] = _hilbert_encode_2d(n);
+        }
+      }
+      else if (e_dim == 1) {
+        for (i = 0; i < n_coords; i++) {
+          k = dim_map[0];
+          n[0] = (coords[i*3 + k] - s[k]) / d[k];
+          h_code[i] = _hilbert_encode_1d(n);
+        }
+      }
     }
     break;
 
   case 1:
-    for (i = 0; i < n_coords; i++) {
-      n[0] = (coords[i] - s[0]) / d[0];
-      h_code[i] = _hilbert_encode_1d(n);
+    {
+      for (i = 0; i < n_coords; i++) {
+        n[0] = (coords[i] - s[0]) / d[0];
+        h_code[i] = _hilbert_encode_1d(n);
+      }
     }
     break;
 
