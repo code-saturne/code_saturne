@@ -211,7 +211,6 @@ cs_probe_set_create_from_array(const char         *name,
  * \param[in]  n_probes      number of probes
  * \param[in]  start_coords  coordinates of the starting point
  * \param[in]  end_coords    coordinates of the ending point
- * \param[in]  end_label     label of the ending point (optional)
  *
  * \return a pointer to a new allocated cs_probe_set_t structure
  */

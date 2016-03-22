@@ -138,6 +138,7 @@ cs_user_physical_properties-richards_sat.f90 \
 cs_user_physical_properties-richards_unsat.f90 \
 cs_user_physical_properties-scalar_drift.f90 \
 cs_user_porosity.f90 \
+cs_user_postprocess.c \
 cs_user_postprocess-sfc.c \
 cs_user_radiative_transfer_bcs.f90 \
 cs_user_source_terms.f90 \

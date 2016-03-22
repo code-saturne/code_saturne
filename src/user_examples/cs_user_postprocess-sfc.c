@@ -1,5 +1,5 @@
 /*============================================================================
- *  Define postprocessing output.
+ * Define postprocessing output.
  *============================================================================*/
 
 /* VERS */
@@ -45,9 +45,9 @@
 #include "cs_field.h"
 #include "cs_mesh.h"
 #include "cs_selector.h"
-
+#include "cs_probe.h"
 #include "cs_post.h"
-
+#include "cs_time_plot.h"
 #include "cs_order.h"
 #include "cs_part_to_block.h"
 #include "fvm_nodal_append.h"
@@ -380,7 +380,14 @@ cs_user_postprocess_writers(void)
    *   'discard_polygons'  (ignore polygon-type faces)
    *   'discard_polyhedra' (ignore polyhedron-type cells)
    *   'divide_polygons'   (subdivides polygon-type faces)
-   *   'divide_polyhedra'  (subdivides polyhedron-type cells) */
+   *   'divide_polyhedra'  (subdivides polyhedron-type cells)
+   *   'separate_meshes'   (use separate outputs for different meshes) */
+
+  /* Set time plot file writer flush behavior defaults.
+   *   flush_wtime     <-- elapsed time interval between file flushes;
+   *                       if < 0, no forced flush
+   *   n_buffer_steps  <-- number of time steps in output buffer if
+   *                       file is not to be kept open */
 }
 
 /*----------------------------------------------------------------------------

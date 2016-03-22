@@ -256,7 +256,6 @@ cs_run(void)
 
   cs_gui_postprocess_writers();
   cs_user_postprocess_writers();
-  cs_user_postprocess_probes();
   cs_post_init_writers();
 
   /* Print info on fields and associated keys and other setup options */
@@ -278,6 +277,7 @@ cs_run(void)
 
   cs_gui_postprocess_meshes();
   cs_user_postprocess_meshes();
+  cs_user_postprocess_probes();
   cs_post_init_meshes(check_mask);
 
   /* Compute iterations or quality criteria depending on verification options */

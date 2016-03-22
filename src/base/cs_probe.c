@@ -64,6 +64,16 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_probe.c
+
+  \brief Probes and profiles management.
+*/
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -477,7 +487,7 @@ cs_probe_set_get_name(cs_probe_set_t   *pset)
  * \param[out] time_varying  true if probe coords may change during computation
  * \param[out] is_profile    true if probe set is related to a profile
  * \param[out] on_boundary   true if probes are located on boundary
- * \param[out] is_automatic  true if the set of variables to post is predefined
+ * \param[out] is_automatic  true if set of variables to output is predefined
  * \param[out] n_writers     number of associated  user-defined writers
  * \param[out] writer_ids    pointer to a list of writer ids
  */
@@ -746,6 +756,17 @@ cs_probe_set_associate_writers(cs_probe_set_t   *pset,
 /*!
  * \brief  Set optional parameters related to the management of a set of probes
  *
+ * Available option key names are the following:
+ *
+ * \li \c \b activated where keyval is either \c true or \c false (default)
+ * \li \c \b boundary  where keyval is either \c true or \c false (default)
+ * \li \c \b mode      where keyval is \c exact, \c nearest_vertex or
+ *                   \c nearest_center (default)
+ * \li \c \b profile   where keyval is either \c true or \c false
+ * \li \c \b selection_criteria where keyval is selection criteria string
+ * \li \c \b tolerance  where keyval is for instance "0.05" (default "0.10")
+ * \li \c \b moving_probes  where keyval is either \c true or \c false (default)
+ *
  * \param[in, out] pset     pointer to a cs_probe_set_t structure to set
  * \param[in]      keyname  name of the keyword related to the parameter to set
  * \param[in]      keyval   value of the keyword to set
@@ -815,7 +836,7 @@ cs_probe_set_option(cs_probe_set_t   *pset,
     else
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid value %s for setting key %s.\n"
-                  " Valide choices are exact, nearest_cell_center or"
+                  " Valid choices are exact, nearest_center or"
                   " nearest_vertex\n"
                   " Please check your settings."), keyval, keyname);
     break;
@@ -1039,7 +1060,7 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
   BFT_MALLOC(probe_coords, pset->n_probes, cs_coord_3_t);
   BFT_MALLOC(global_num, pset->n_probes, cs_gnum_t);
 
-  /* Build the final list of probes coordinates */
+  /* Build the final list of probe coordinates */
   switch (pset->mode) {
 
   case CS_PROBE_MODE_NEAREST_CELL_CENTER:
@@ -1247,7 +1268,6 @@ cs_probe_set_dump(const cs_probe_set_t   *pset)
 
   if (true && pset->location_mesh != NULL)
     fvm_nodal_dump(pset->location_mesh);
-
 }
 
 /*----------------------------------------------------------------------------*/

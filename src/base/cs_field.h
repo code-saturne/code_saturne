@@ -41,22 +41,43 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/*!
+ * @defgroup field_flags Flags specifying general field attributes
+ *
+ * @{
+ */
+
 /*
  * Field property type
  */
 
+/*! represents an intensive quantity */
 #define CS_FIELD_INTENSIVE           (1 << 0)
+
+/*! represents an extensive quantity */
 #define CS_FIELD_EXTENSIVE           (1 << 1)
+
+/*! steady (non-time-varying) quantity */
 #define CS_FIELD_STEADY              (1 << 2)
 
 /* Field category */
 
+/*! resolved variable */
 #define CS_FIELD_VARIABLE            (1 << 3)
+
+/*! computed property */
 #define CS_FIELD_PROPERTY            (1 << 4)
+
+/*! intended for postprocessing */
 #define CS_FIELD_POSTPROCESS         (1 << 5)
+
+/*! accumulator for ssom statisicial values */
 #define CS_FIELD_ACCUMULATOR         (1 << 6)
 
+/*! user-defined */
 #define CS_FIELD_USER                (1 << 7)
+
+/*! @} */
 
 /*============================================================================
  * Type definitions

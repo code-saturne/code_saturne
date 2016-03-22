@@ -38,6 +38,7 @@ Here is a list of user examples. Thorougly documented snippets are provided.
    - \subpage turbomachinery
    - \subpage cavit
    - \subpage physical_properties
+   - \subpage cs_user_postprocess
    - \subpage drift_coal_scalars
    - \subpage drift_scalars
    - \subpage cs_porosity

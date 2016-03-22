@@ -357,7 +357,7 @@ static cs_post_mesh_t  *_cs_post_meshes = NULL;
 
 /* Array of writers for post-processing; */
 /* writers -1 (default), -2 (show errors), -3 (probe monitoring),
-   -4 (particles default)  and -5 (trajectories default) are reserved */
+   -4 (particles default) and -5 (trajectories default) are reserved */
 
 static int                _cs_post_min_writer_id = -5;
 static int                _cs_post_n_writers = 0;
@@ -1559,7 +1559,7 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_define_probe_export_mesh(cs_post_mesh_t         *post_mesh)
+_define_probe_export_mesh(cs_post_mesh_t  *post_mesh)
 {
   /* Sanity checks */
   assert(post_mesh != NULL);
@@ -2907,15 +2907,73 @@ cs_f_post_write_var(int               mesh_id,
  * given id is defined multiple times, the last definition supercedes the
  * previous ones.
  *
- * \param[in]  writer_id      number of writer to create
- *                            (< 0 reserved, > 0 for user)
+ * Current reserved ids are the following: -1 for main/default output,
+ * -2 for error visualization, -3 for main probes, -4 for particles,
+ * -5 for trajectories. Other negative ids may be dynamically reserved
+ * by the code depending on options.
+ * Positive ids identify user-defined writers.
+ *
+ * \warning depending on the chosen format, the \em case_name may be
+ * shortened (maximum number of characters: 32 for \em MED, 19 for \em EnSight,
+ * or modified automatically (white-space or forbidden characters will be
+ * replaced by "_").
+ *
+ * The \c \b format_name argument is used to choose the output format, and the
+ * following values are allowed (assuming the matching
+ * support was built):
+ *
+ * - \c \b EnSight \c \b Gold (\c \b EnSight also accepted)
+ * - \c \b MED \li
+ * - \c \b CGNS \li
+ * - \c \b CCM (only for the full volume and boundary meshes)
+ * - \c \b Catalyst (in-situ visualization)
+ * - \c \b MEDCoupling (in-memory structure, to be used from other code)
+ * - \c \b plot (comma or whitespace separated 2d plot files)
+ * - \c \b time_plot (comma or whitespace separated time plot files)
+ *
+ * The format name is case-sensitive, so \c \b ensight or \c \b cgns are also valid.
+ *
+ * The optional \c \b fmt_opts character string contains a list of options related
+ * to the format, separated by spaces or commas; these options include:
+ *
+ * - \c \b binary for a binary format version (default)
+ * - \c \b big_endian to force outputs to be in \c \b big-endian mode
+ *         (for \c \b EnSight).
+ * - \c \b text for a text format version (for \c \b EnSight).
+ * - \c \b adf for ADF file type (for \c \b CGNS).
+ * - \c \b hdf5 for HDF5 file type (for \c \b CGNS, normally the default if
+ *         HDF5 support is available).
+ * - \c \b discard_polygons to prevent from exporting faces with more than
+ *         four edges (which may not be recognized by some post-processing
+ *         tools); such faces will therefore not appear in the post-processing
+ *         mesh.
+ * - \c \b discard_polyhedra to prevent from exporting elements which are
+ *         neither tetrahedra, prisms, pyramids nor hexahedra (which may not
+ *         be recognized by some post-processing tools); such elements will
+ *         therefore not appear in the post-processing mesh.
+ * - \c \b divide_polygons to divide faces with more than four edges into
+ *         triangles, so that any post-processing tool can recognize them.
+ * - \c \b divide_polyhedra} to divide elements which are neither tetrahedra,
+ *         prisms, pyramids nor hexahedra into simpler elements (tetrahedra and
+ *         pyramids), so that any post-processing tool can recognize them.
+ * - \c \b separate_meshes to multiple meshes and associated fields to
+ *         separate outputs.
+ *
+ * Note that the white-spaces in the beginning or in the end of the
+ * character strings given as arguments here are suppressed automatically.
+ *
+ * \param[in]  writer_id      id of writer to create. (< 0 reserved,
+ *                            > 0 for user); eveb for reserved ids,
+ *                            the matching writer's options
+ *                            may be redifined by calls to this function
  * \param[in]  case_name      associated case name
  * \param[in]  dir_name       associated directory name
  * \param[in]  fmt_name       associated format name
  * \param[in]  fmt_opts       associated format options string
- * \param[in]  time_dep       FVM_WRITER_FIXED_MESH if mesh definitions are
- *                            fixed, FVM_WRITER_TRANSIENT_COORDS if coordinates
- *                            change, FVM_WRITER_TRANSIENT_CONNECT if
+ * \param[in]  time_dep       \ref FVM_WRITER_FIXED_MESH if mesh definitions
+ *                            are fixed, \ref FVM_WRITER_TRANSIENT_COORDS if
+ *                            coordinates change,
+ *                            \ref FVM_WRITER_TRANSIENT_CONNECT if
  *                            connectivity changes
  * \param[in]  output_at_end  force output at calculation end if not 0
  * \param[in]  frequency_n    default output frequency in time-steps, or < 0
@@ -3460,7 +3518,10 @@ cs_post_define_probe_mesh(int                    mesh_id,
  *
  * An alias is thus treated in all points like its associated mesh;
  * if the definition of either one is modified, that of the other is
- * modified also.
+ * modified also. Modification of a post-processing mesh or its alias
+ * over time is always limited by the most restrictive "writer" to which its
+ * meshes have been associated (parts of the structures being shared in
+ * memory).
  *
  * It is forbidden to associate an alias to another alias (as there is no
  * identified use for this, and it would make consistency checking more
@@ -5107,17 +5168,16 @@ cs_post_init_writers(void)
 
   /* Additional writer for probe monitoring */
 
-  if (cs_probe_set_have_monitoring())
-    if (!cs_post_writer_exists(-3))
-      cs_post_define_writer(-3,             /* writer_id */
-                            "",             /* writer name */
-                            "monitoring",
-                            "time_plot",    /* format name */
-                            "",             /* format options */
-                            FVM_WRITER_FIXED_MESH,
-                            true,             /* output at end */
-                            5,                /* time step output frequency */
-                            -1.0);            /* time value output frequency */
+  if (!cs_post_writer_exists(-3))
+    cs_post_define_writer(-3,               /* writer_id */
+                          "",               /* writer name */
+                          "monitoring",
+                          "time_plot",      /* format name */
+                          "",               /* format options */
+                          FVM_WRITER_FIXED_MESH,
+                          true,             /* output at end */
+                          5,                /* time step output frequency */
+                          -1.0);            /* time value output frequency */
 
   /* Additional writers for Lagrangian output */
 
