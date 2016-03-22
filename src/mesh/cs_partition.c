@@ -936,6 +936,7 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
  *
  * parameters:
  *   n_g_cells   <-- global number of cells
+ *   n_ranks     <-- number of ranks in partition
  *   mb          <-- pointer to mesh builder helper structure
  *   sfc_type    <-- type of space-filling curve
  *   cell_rank   --> cell rank (1 to n numbering)
@@ -946,6 +947,7 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
 
 static void
 _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
+                  int                       n_ranks,
                   const cs_mesh_builder_t  *mb,
                   fvm_io_num_sfc_t          sfc_type,
                   int                       cell_rank[],
@@ -955,6 +957,7 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
 
 static void
 _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
+                  int                       n_ranks,
                   const cs_mesh_builder_t  *mb,
                   fvm_io_num_sfc_t          sfc_type,
                   int                       cell_rank[])
@@ -963,7 +966,6 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
 {
   cs_lnum_t i;
   double  start_time, end_time;
-  int n_ranks = cs_glob_n_ranks;
 
   cs_lnum_t n_cells = 0, block_size = 0;
 
@@ -1033,8 +1035,10 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
        ranks will have no data (a solution to this would be
        to build a slightly smaller MPI communicator). */
 
-    for (i = 0; i < n_cells; i++)
+    for (i = 0; i < n_cells; i++) {
       cell_rank[i] = ((cell_num[i] - 1) / block_size);
+      assert(cell_rank[i] > -1 && cell_rank[i] < n_ranks);
+    }
 
   }
 
@@ -3418,6 +3422,7 @@ cs_partition(cs_mesh_t             *mesh,
 
 #if defined(HAVE_MPI)
       _cell_rank_by_sfc(mesh->n_g_cells,
+                        n_ranks,
                         mb,
                         sfc_type,
                         cell_part,
