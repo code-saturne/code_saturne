@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *   n_elts    <-- number of elements in the binary tree to descend
  *----------------------------------------------------------------------------*/
 
-inline static void
+static inline void
 _sort_descend_tree(cs_lnum_t  number[],
                    size_t     level,
                    size_t     n_elts)
@@ -106,13 +106,14 @@ _sort_descend_tree(cs_lnum_t  number[],
  *   n_elts   <-- number of elements considered
  *----------------------------------------------------------------------------*/
 
+#if defined(__INTEL_COMPILER)
+#pragma optimization_level 0 /* Bug above this with icc 15.0.1 20141023 ? */
+#endif
+
 static void
 _sort_local(cs_lnum_t  number[],
             size_t     n_elts)
 {
-  size_t i, j, inc;
-  cs_lnum_t num_save;
-
   if (n_elts < 2)
     return;
 
@@ -120,14 +121,16 @@ _sort_local(cs_lnum_t  number[],
 
   if (n_elts < 20) {
 
+    size_t inc;
+
     /* Compute increment */
     for (inc = 1; inc <= n_elts/9; inc = 3*inc+1);
 
     /* Sort array */
     while (inc > 0) {
-      for (i = inc; i < n_elts; i++) {
-        num_save = number[i];
-        j = i;
+      for (size_t i = inc; i < n_elts; i++) {
+        cs_lnum_t num_save = number[i];
+        size_t j = i;
         while (j >= inc && number[j-inc] > num_save) {
           number[j] = number[j-inc];
           j -= inc;
@@ -143,7 +146,7 @@ _sort_local(cs_lnum_t  number[],
 
     /* Create binary tree */
 
-    i = (n_elts / 2);
+    size_t i = (n_elts / 2);
     do {
       i--;
       _sort_descend_tree(number, i, n_elts);
@@ -151,11 +154,11 @@ _sort_local(cs_lnum_t  number[],
 
     /* Sort binary tree */
 
-    for (i = n_elts - 1 ; i > 0 ; i--) {
-      num_save   = number[0];
-      number[0] = number[i];
-      number[i] = num_save;
-      _sort_descend_tree(number, 0, i);
+    for (size_t j = n_elts - 1; j > 0; j--) {
+      cs_lnum_t num_save   = number[0];
+      number[0] = number[j];
+      number[j] = num_save;
+      _sort_descend_tree(number, 0, j);
     }
   }
 }
