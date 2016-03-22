@@ -167,10 +167,7 @@ if (nscapp.gt.0) then
 
   if (ippmod(icfuel).ne.-1) then
 
-    call cs_fuel_masstransfer &
-    !=======================
-   ( ncelet , ncel   ,        &
-     propce )
+    call cs_fuel_masstransfer(ncelet, ncel)
 
   endif
 
