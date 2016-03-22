@@ -346,8 +346,8 @@ module pointe
   integer, allocatable, dimension(:) :: izmast
 
   !> type of condensation source terms for each variable
-  !> - 0 for an variable at ambient value,
-  !> - 1 for an variable at imposed value.
+  !> - 0 for a variable at ambient value,
+  !> - 1 for a variable at imposed value.
   !> See the user subroutine \ref  cs_user_metal_structures_source_terms.
   integer, allocatable, dimension(:,:) :: itypst
 

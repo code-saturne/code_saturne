@@ -38,17 +38,20 @@
 !>
 !> \brief Additional right-hand side source terms
 !>
+!> See \subpage cs_user_source_terms and \subpage cs_user_source_terms-scalar_in_a_channel
+!> for examples.
+!>
 !> \brief Additional right-hand side source terms for velocity components equation
 !> (Navier-Stokes)
 !>
-!> \section example_ustsnv_use  Usage
+!> \section ustsnv_use  Usage
 !>
 !> The additional source term is decomposed into an explicit part (\c crvexp) and
 !> an implicit part (\c crvimp) that must be provided here.
 !> The resulting equation solved by the code for a velocity is:
 !> \f[
 !>  \rho \norm{\vol{\celli}} \DP{\vect{u}} + ....
-!>   = \tens{crvimp} \vect{u} + \vect{crvexp}
+!>   = \tens{crvimp} \cdot \vect{u} + \vect{crvexp}
 !> \f]
 !>
 !> Note that \c crvexp and \c crvimp are defined after the Finite Volume integration
@@ -59,6 +62,9 @@
 !> The \c crvexp and \c crvimp arrays are already initialized to 0
 !> before entering the
 !> the routine. It is not needed to do it in the routine (waste of CPU time).
+!>
+!> \remark The additional force on \f$ x_i \f$ direction is given by
+!>  \c crvexp(i, iel) + vel(j, iel)* crvimp(j, i).
 !>
 !> For stability reasons, Code_Saturne will not add -crvimp directly to the
 !> diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
@@ -152,15 +158,6 @@ double precision ckp, qdm
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer ::  cpro_rom
 !< [loc_var_dec_1]
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 ! 1. Initialization
@@ -398,17 +395,6 @@ integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer ::  cpro_rom
 
 !< [loc_var_dec_2]
-
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
 
 !===============================================================================
 ! 1. Initialization
@@ -692,17 +678,6 @@ double precision, dimension(:), pointer ::  cvar_var
 !< [loc_var_dec_3]
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (.true.) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-
-!===============================================================================
 ! 1. Initialization
 !===============================================================================
 
@@ -752,25 +727,25 @@ endif
 ! - 'nu_tilda' for the Spalart Allmaras model
 
 !< [rem_code_3]
-if (.false.) then
-  if (trim(fname).eq.'k') then
 
-    ff  = 3.d0
-    tau = 4.d0
+if (trim(fname).eq.'k') then
 
-    ! --- Explicit source terms
-    do iel = 1, ncel
-      crvexp(iel) = -cpro_rom(iel)*cell_f_vol(iel)*ff
-    enddo
+  ff  = 3.d0
+  tau = 4.d0
 
-    ! --- Implicit source terms
-    !        crvimp is already initialized to 0, no need to set it here
-    do iel = 1, ncel
-      crvimp(iel) = -cpro_rom(iel)*cell_f_vol(iel)/tau
-    enddo
+  ! --- Explicit source terms
+  do iel = 1, ncel
+    crvexp(iel) = -cpro_rom(iel)*cell_f_vol(iel)*ff
+  enddo
 
-  endif
+  ! --- Implicit source terms
+  !        crvimp is already initialized to 0, no need to set it here
+  do iel = 1, ncel
+    crvimp(iel) = -cpro_rom(iel)*cell_f_vol(iel)/tau
+  enddo
+
 endif
+
 !< [rem_code_3]
 
 !--------

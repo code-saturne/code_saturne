@@ -27,6 +27,7 @@
 ! --------
 
 !> \file cs_user_head_losses.f90
+!>
 !> \brief Define Head losses
 !>
 !> The subroutine cs_user_head_losses is called at three different stages
@@ -79,11 +80,10 @@
 !>
 !>
 !> Cells identification
-!> ====================
 !>
-!> Cells may be identified using the 'getcel' subroutine.
+!> Cells may be identified using the \ref getcel subroutine.
 !> The syntax of this subroutine is described in the
-!> 'cs_user_boundary_conditions' subroutine,
+!> \ref cs_user_boundary_conditions subroutine,
 !> but a more thorough description can be found in the user guide.
 !-------------------------------------------------------------------------------
 
@@ -136,8 +136,6 @@ integer          izcpdc(ncel)
 
 double precision dt(ncelet)
 double precision ckupdc(ncepdp,6)
-
-! Local variables
 
 !===============================================================================
 

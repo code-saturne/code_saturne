@@ -22,34 +22,36 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
 ! Purpose:
 ! -------
 
-! User subroutines for input of calculation parameters (Fortran modules).
-!   These subroutines are called in all cases.
-
-! If the Code_Saturne GUI is used, this file is not required (but may be
-!   used to override parameters entered through the GUI, and to set
-!   parameters not accessible through the GUI).
-
-! Several routines are present in the file, each destined to defined
-!   specific parameters.
-
-! To modify the default value of parameters which do not appear in the
-!   examples provided, code should be placed as follows:
-!   - usipsu   for numerical and physical options
-!   - usipes   for input-output related options
-
-! As a convention, "specific physics" defers to the following modules only:
-!   pulverized coal, gas combustion, electric arcs.
-
-! In addition, specific routines are provided for the definition of some
-!   "specific physics" options.
-!   These routines are described at the end of this file and will be activated
-!   when the corresponding option is selected in the usppmo routine.
-
+!> \file cs_user_parameters-rotation.f90
+!>
+!> \brief Rotation parameters example.
+!>
+!>  See \subpage f_parameters for examples.
+!>
+!>   If the Code_Saturne GUI is used, this file is not required (but may be
+!>   used to override parameters entered through the GUI, and to set
+!>   parameters not accessible through the GUI).
+!>
+!>   Several routines are present in the file, each destined to defined
+!>   specific parameters.
+!>
+!>   To modify the default value of parameters which do not appear in the
+!>   examples provided, code should be placed as follows:
+!>   - usipsu   for numerical and physical options
+!>   - usipes   for input-output related options
+!>
+!>   As a convention, "specific physics" defers to the following modules only:
+!>   pulverized coal, gas combustion, electric arcs.
+!>
+!>   In addition, specific routines are provided for the definition of some
+!>   "specific physics" options.
+!>   These routines are described at the end of this file and will be activated
+!>   when the corresponding option is selected in the usppmo routine.
 !-------------------------------------------------------------------------------
-
 
 !===============================================================================
 
@@ -151,5 +153,3 @@ call rotation_define(0.d0, 0.d0, 2.d0,  &    ! rotation vector
 
 return
 end subroutine usipsu
-
-!===============================================================================

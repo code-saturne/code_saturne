@@ -22,6 +22,60 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Purpose:
+! -------
+
+!> \file cs_user_source_terms-richards_decay.f90
+!>
+!> \brief User source terms example.
+!>
+!> See \subpage cs_user_source_terms and \subpage cs_user_source_terms-scalar_in_a_channel
+!> for examples.
+!>
+!> \brief Additional right-hand side source terms for velocity components equation
+!> (Navier-Stokes)
+!>
+!> \section ustsnv_use  Usage
+!>
+!> The additional source term is decomposed into an explicit part (\c crvexp) and
+!> an implicit part (\c crvimp) that must be provided here.
+!> The resulting equation solved by the code for a velocity is:
+!> \f[
+!>  \rho \norm{\vol{\celli}} \DP{\vect{u}} + ....
+!>   = \tens{crvimp} \cdot \vect{u} + \vect{crvexp}
+!> \f]
+!>
+!> Note that \c crvexp and \c crvimp are defined after the Finite Volume integration
+!> over the cells, so they include the "volume" term. More precisely:
+!>   - crvexp is expressed in kg.m/s2
+!>   - crvimp is expressed in kg/s
+!>
+!> The \c crvexp and \c crvimp arrays are already initialized to 0
+!> before entering the
+!> the routine. It is not needed to do it in the routine (waste of CPU time).
+!>
+!> \remark The additional force on \f$ x_i \f$ direction is given by
+!>  \c crvexp(i, iel) + vel(j, iel)* crvimp(j, i).
+!>
+!> For stability reasons, Code_Saturne will not add -crvimp directly to the
+!> diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
+!> treated implicitely only if it strengthens the diagonal of the matrix.
+!> However, when using the second-order in time scheme, this limitation cannot
+!> be done anymore and -crvimp is added directly. The user should therefore test
+!> the negativity of crvimp by himself.
+!>
+!> When using the second-order in time scheme, one should supply:
+!>   - crvexp at time n
+!>   - crvimp at time n+1/2
+!>
+!> The selection of cells where to apply the source terms is based on a
+!> \ref getcel command. For more info on the syntax of the \ref getcel command,
+!> refer to the user manual or to the comments on the similar command
+!> \ref getfbr in the routine \ref cs_user_boundary_conditions.
+!
+!-------------------------------------------------------------------------------
+
 subroutine ustssc &
 !================
 

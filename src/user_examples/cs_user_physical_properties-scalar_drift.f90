@@ -22,14 +22,17 @@
 
 !-------------------------------------------------------------------------------
 
+
 !===============================================================================
 ! Purpose:
 ! -------
 
 !> \file cs_user_physical_properties-scalar-drift.f90
-!> \brief Definition of physical variable laws for scalars with a drift.
 !>
-!-------------------------------------------------------------------------------
+!> brief Definition of physical variable laws for scalars with a drift.
+!>
+!> See \subpage physical_properties for examples.
+!>
 
 !-------------------------------------------------------------------------------
 ! Arguments

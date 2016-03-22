@@ -22,14 +22,17 @@
 
 !-------------------------------------------------------------------------------
 
-
 !===============================================================================
 ! Purpose:
 ! -------
 
-!> \file cs_user_initialization-unified_combustion.f90
-!> \brief Unified combustion example
+!> \file cs_user_initialization-unified_combustion_coal.f90
 !>
+!> \brief Unified combustion coal example
+!>
+!> See \subpage cs_user_initialization for examples.
+!>
+!
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

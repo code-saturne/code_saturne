@@ -60,13 +60,14 @@ BEGIN_C_DECLS
  * Additional doxygen documentation
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
 /*!
-  \file cs_user_cdo.c
-
-  \brief  Set main parameters for the current simulation when the CDO kernel
-          is used
-
-*/
+ * \file cs_user_cdo.c
+ *
+ * \brief  Set main parameters for the current simulation when the CDO kernel
+ *         is used
+ */
+/*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

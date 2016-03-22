@@ -77,11 +77,13 @@ BEGIN_C_DECLS
  * Additional doxygen documentation
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
 /*!
-  \file cs_user_cdo_extra_op.c
-
-  \brief User-defined extra operations for post-processing and analysis
+ * \file cs_user_cdo_extra_op-verif-diffusion.c
+ *
+ * \brief Additional user-defined post-processing and analysis functions
 */
+/*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

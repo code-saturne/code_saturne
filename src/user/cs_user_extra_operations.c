@@ -86,6 +86,17 @@
 
 BEGIN_C_DECLS
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_user_extra_operations.c
+ *
+ * \brief This function is called at the end of each time step, and has a very
+ * general purpose (i.e. anything that does not have another dedicated
+ * user subroutine)
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -94,7 +105,7 @@ BEGIN_C_DECLS
 /*!
  * \brief This function is called at the end of each time step.
  *
- * It and has a very general purpose, although it is recommended to handle
+ * It has a very general purpose, although it is recommended to handle
  * mainly postprocessing or data-extraction type operations.
  */
 /*----------------------------------------------------------------------------*/

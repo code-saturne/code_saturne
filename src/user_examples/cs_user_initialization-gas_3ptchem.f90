@@ -27,8 +27,12 @@
 ! -------
 
 !> \file cs_user_initialization-gas_3ptchem.f90
+!>
 !> \brief 3 PTCHEM gas example
 !>
+!> See \subpage cs_user_initialization for examples.
+!>
+!
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

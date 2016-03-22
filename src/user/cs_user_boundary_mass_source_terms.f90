@@ -118,6 +118,11 @@
 !>  - if spcond(ieltcd,ipr)<0, mass is removed from the system,
 !>     therefore Code_Saturna automatically considers f_i=f^(n+1),
 !>     whatever the values of itypcd or smacel specified by the user
+!>
+!>   \par Examples of settings for boundary condensation mass source terms
+!>        Examples are available
+!>        \ref condens_h_boundary "here".
+!>
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -187,10 +192,6 @@ double precision spcond(nfbpcd,nvar)
 double precision tpar
 
 ! Local variables
-
-! INSERT_VARIABLE_DEFINITIONS_HERE
-
-integer          ieltcd
 
 integer, allocatable, dimension(:) :: lstelt
 

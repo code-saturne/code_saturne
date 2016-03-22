@@ -30,25 +30,34 @@
 !>
 !> \brief Initialize variables
 !>
+!> See \subpage cs_user_initialization for examples.
+!>
 !> This subroutine is called at beginning of the computation
 !> (restart or not) before the loop time step.
 !>
 !> This subroutine enables to initialize or modify (for restart)
 !> unkown variables and time step values.
 !>
-!> \c rom and \c viscl values are equal to \c ro0 and \c viscl0 or initialize
-!> by reading the restart file.
-!> variable diffusivity and cp variables (when there are defined) have no value
-!> excepted if they are read from a restart file.
-!>
 !> Modification of the behaviour law of physical quantities (rom, viscl,
 !> viscls, cp) is not done here. It is the purpose of the user subroutine
 !> \ref usphyv (in cs_user_physical_properties.f90)
 !>
-!> \section cs_user_initialization_cell_id Cells identification
+!> \c rom and \c viscl values are equal to \c ro0 and \c viscl0 or initialize
+!> by reading the restart file.
+!> Variables diffusivity and specific heat (when they are defined) have no value
+!> except if they are read from a restart file.
 !>
-!> Cell value field ids
+!> \par cs_user_initialization_cell_id Cells identification
 !>
+!> Cells may be identified using the \ref getcel subroutine.
+!> The syntax of this subroutine is described in the
+!> \ref cs_user_boundary_conditions subroutine,
+!> but a more thorough description can be found in the user guide.
+!>
+!> Field cell values arrays can be retrieved using the appropriate access
+!> functions as described \ref field "here".
+!>
+!> Example of field ids:
 !> - Density:                        \c iprpfl(irom)
 !> - Dynamic molecular viscosity:    \c iprpfl(iviscl)
 !> - Turbulent viscosity:            \c iprpfl(ivisct)
@@ -56,10 +65,6 @@
 !> - Diffusivity(lambda):            \c field_get_key_int(ivarfl(isca(iscal)),
 !>                                      kivisl, ...)
 !>
-!> Cells may be identified using the \ref getcel subroutine.
-!> The syntax of this subroutine is described in the
-!> \ref cs_user_boundary_conditions subroutine,
-!> but a more thorough description can be found in the user guide.
 !
 !-------------------------------------------------------------------------------
 

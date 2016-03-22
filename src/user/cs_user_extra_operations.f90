@@ -32,6 +32,9 @@
 !>  general purpose
 !>  (i.e. anything that does not have another dedicated user subroutine)
 !>
+!> See \subpage cs_user_extra_operations_examples and
+!> \subpage cs_user_extra_operations-nusselt_calculation for examples.
+!>
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -86,24 +89,6 @@ integer          nvar   , nscal
 
 double precision dt(ncelet)
 
-! Local variables
-
-! INSERT_VARIABLE_DEFINITIONS_HERE
-
-!===============================================================================
-
-!===============================================================================
-! Initialization
-!===============================================================================
-
-! INSERT_ADDITIONAL_INITIALIZATION_CODE_HERE
-
-!===============================================================================
-! User operations
-!===============================================================================
-
-! INSERT_MAIN_CODE_HERE
-
 !--------
 ! Formats
 !--------
@@ -111,7 +96,6 @@ double precision dt(ncelet)
 !----
 ! End
 !----
-
 
 return
 end subroutine cs_f_user_extra_operations

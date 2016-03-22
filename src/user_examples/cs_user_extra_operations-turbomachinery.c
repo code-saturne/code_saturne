@@ -91,6 +91,18 @@
 
 BEGIN_C_DECLS
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_user_extra_operations-turbomachinery.c
+ *
+ * \brief This function is called at the end of each time step, and has a very
+ * general purpose (i.e. anything that does not have another dedicated
+ * user subroutine)
+ *
+ * This example is a part of the \subpage turbomachinery example.
+ */
+/*----------------------------------------------------------------------------*/
+
 /*============================================================================
  * User function definitions
  *============================================================================*/

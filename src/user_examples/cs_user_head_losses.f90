@@ -27,6 +27,7 @@
 ! --------
 
 !> \file cs_user_head_losses.f90
+!>
 !> \brief Define Head losses
 !>
 !> The subroutine cs_user_head_losses is called at three different stages
@@ -79,11 +80,10 @@
 !>
 !>
 !> Cells identification
-!> ====================
 !>
-!> Cells may be identified using the 'getcel' subroutine.
+!> Cells may be identified using the \ref getcel subroutine.
 !> The syntax of this subroutine is described in the
-!> 'cs_user_boundary_conditions' subroutine,
+!> \ref cs_user_boundary_conditions subroutine,
 !> but a more thorough description can be found in the user guide.
 !-------------------------------------------------------------------------------
 
@@ -152,17 +152,6 @@ double precision, dimension(:,:), pointer :: cvara_vel
 
 integer, allocatable, dimension(:) :: lstelt
 !< [loc_var_dec]
-
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
 
 !===============================================================================
 !< [map_field_array]
@@ -276,7 +265,6 @@ if (iappel.eq.1.or.iappel.eq.2) then
   !     Example of head losses in direction x
 
 !< [example_3]
-  if (.true.) return  ! (replace .true. with .false. or remove test to activate)
 
   do ielpdc = 1, ncepdp
     iel=icepdc(ielpdc)
@@ -301,7 +289,6 @@ if (iappel.eq.1.or.iappel.eq.2) then
   !                    \
   !                     \ x
 !< [example_4]
-  if (.true.) return  ! (replace .true. with .false. or remove test to activate)
 
   alpha  = pi/4.d0
   cosalp = cos(alpha)

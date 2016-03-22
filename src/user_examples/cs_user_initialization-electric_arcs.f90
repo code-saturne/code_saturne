@@ -26,9 +26,13 @@
 ! Purpose:
 ! -------
 
-!> \file cs_user_initialization-electrics_arcs.f90
-!> \brief Electrics arcs example
+!> \file cs_user_initialization-eletric_arcs.f90
 !>
+!> \brief Electric arcs example
+!>
+!> See \subpage cs_user_initialization for examples.
+!>
+!
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -97,60 +101,6 @@ double precision, dimension(:), pointer :: cvar_potr, cvar_poti, cvar_potva
 !< [loc_var_dec]
 
 !===============================================================================
-
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-! 0.  This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     If a file from the GUI is used, this subroutine may not be mandatory,
-!       thus the default (library reference) version returns immediately.
-!===============================================================================
-!
-!< [init1]
-! For Joule heating by direct conduction, it stops
-!   you have tot be sure that the enthalpy function H(T) is the right one
-!
-if ( ippmod(ieljou).ge.1 ) then
-
-  write(nfecra,9010)
-  call csexit (1)
-
-! For electric arc, we continue because the value are given by defauft
-!       (H(T) is given from the data file dp_ELE)
-elseif (ippmod(ielarc).ge.1) then
-
-  if (ntcabs.eq.1) then
-    write(nfecra,9011)
-  endif
-
-  return
-
-endif
-!< [init1]
-
- 9010 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ CAUTION : Stop in the definition of Thermal properties  ',/,&
-'@    =========                                               ',/,&
-'@                      for Electric module                   ',/,&
-'@                                                            ',/,&
-'@     The user routine cs_user_physical_properties           ',/,&
-'@     has to be completed                                    ',/,&
-'@                                                            ',/,&
-'@     This user routine is used to define thermal properties ',/,&
-'@     It is unavoidable.                                     ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9011 format(/,                                                   &
-' ELECTRIC ARC MODULE : THERMAL PROPERTIES ARE READ IN A FILE',/)
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !---------------
 ! Initialization

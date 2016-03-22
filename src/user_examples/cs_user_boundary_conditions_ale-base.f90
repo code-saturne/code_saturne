@@ -156,84 +156,76 @@ delta  = sin(3.141596d0*ntcabs/50.d0)
 
 ! Example: For boundary faces of color 4 assign a fixed velocity
 !< [example_1]
-if (.false.) then
 
-  call getfbr('4', nlelt, lstelt)
-  !==========
+call getfbr('4', nlelt, lstelt)
+!==========
 
-  do ilelt = 1, nlelt
+do ilelt = 1, nlelt
 
-    ifac = lstelt(ilelt)
-    ! Element adjacent a la face de bord
-    iel = ifabor(ifac)
+  ifac = lstelt(ilelt)
+  ! Element adjacent a la face de bord
+  iel = ifabor(ifac)
 
-    ialtyb(ifac) = ivimpo
-    rcodcl(ifac,iuma,1) = 0.d0
-    rcodcl(ifac,ivma,1) = 0.d0
-    rcodcl(ifac,iwma,1) = (delta-deltaa)/dt(iel)
+  ialtyb(ifac) = ivimpo
+  rcodcl(ifac,iuma,1) = 0.d0
+  rcodcl(ifac,ivma,1) = 0.d0
+  rcodcl(ifac,iwma,1) = (delta-deltaa)/dt(iel)
 
-  enddo
+enddo
 
-endif
 !< [example_1]
 ! Example: For boundary faces of color 5 assign a fixed displacement on nodes
 !< [example_2]
-if (.false.) then
 
-  call getfbr('5', nlelt, lstelt)
-  !==========
+call getfbr('5', nlelt, lstelt)
+!==========
 
-  do ilelt = 1, nlelt
+do ilelt = 1, nlelt
 
-    ifac = lstelt(ilelt)
+  ifac = lstelt(ilelt)
 
-    do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
-      inod = nodfbr(ii)
-      if (impale(inod).eq.0) then
-        disale(1,inod) = 0.d0
-        disale(2,inod) = 0.d0
-        disale(3,inod) = delta
-        impale(inod) = 1
-      endif
-    enddo
-
+  do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
+    inod = nodfbr(ii)
+    if (impale(inod).eq.0) then
+      disale(1,inod) = 0.d0
+      disale(2,inod) = 0.d0
+      disale(3,inod) = delta
+      impale(inod) = 1
+    endif
   enddo
 
-endif
+enddo
+
 !< [example_2]
 ! Example: For boundary faces of color 6 assign a sliding boundary
 !< [example_3]
-if (.false.) then
 
-  call getfbr('6', nlelt, lstelt)
-  !==========
+call getfbr('6', nlelt, lstelt)
+!==========
 
-  do ilelt = 1, nlelt
+do ilelt = 1, nlelt
 
-    ifac = lstelt(ilelt)
+  ifac = lstelt(ilelt)
 
-    ialtyb(ifac) = igliss
+  ialtyb(ifac) = igliss
 
-  enddo
+enddo
 
-endif
 !< [example_3]
 ! Example: prescribe elsewhere a fixed boundary
 !< [example_4]
-if (.false.) then
 
-  call getfbr('not (4 or 5 or 6)', nlelt, lstelt)
-  !==========
+call getfbr('not (4 or 5 or 6)', nlelt, lstelt)
+!==========
 
-  do ilelt = 1, nlelt
+do ilelt = 1, nlelt
 
-    ifac = lstelt(ilelt)
+  ifac = lstelt(ilelt)
 
-    ialtyb(ifac) = ibfixe
+  ialtyb(ifac) = ibfixe
 
-  enddo
+enddo
 
-endif
 !< [example_4]
 !--------
 ! Formats

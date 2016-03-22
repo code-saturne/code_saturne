@@ -53,13 +53,15 @@ BEGIN_C_DECLS
  * Additional doxygen documentation
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
 /*!
-  \file cs_user_cdo_numerics.c
-
-  \brief Set advanced parameters about the numerical schemes for each
-         equation to solve.
-         Useful to change the default behaviour.
-*/
+ * \file cs_user_cdo_numerics.c
+ *
+ * \brief Set advanced parameters about the numerical schemes for each
+ *        equation to solve.
+ *        Useful to change the default behaviour.
+ */
+/*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -109,7 +111,3 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
-
-
-
-

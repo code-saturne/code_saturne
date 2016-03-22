@@ -27,8 +27,12 @@
 ! -------
 
 !> \file cs_user_initialization-pulverized_coal.f90
+!>
 !> \brief Pulverized coal example
 !>
+!> See \subpage cs_user_initialization for examples.
+!>
+!
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

@@ -41,8 +41,16 @@
 
   To modify the default value of parameters which do not appear in the
     examples provided, code should be placed as follows:
-    - usipsu   for numerical and physical options
-    - usipes   for input-output related options
+    - \ref cs_f_user_parameters_h_usipsu "usipsu" for numerical and physical options
+    - \ref cs_f_user_parameters_h_usipes "usipes" for input-output related options
+    - \ref cs_f_user_parameters_h_usppmo "usppmo" for specific physics options
+    - \ref cs_f_user_parameters_h_usipph "usipph" for additional input of parameters
+    - \ref cs_f_user_parameters_h_usati1 "usati1" for calculation options for the atmospheric module
+    - \ref cs_f_user_parameters_h_cs_user_combustion "cs_user_combustion" for calculation options for the combustion module
+    - \ref cs_f_user_parameters_h_cs_user_radiative_transfer_param "cs_user_radiative_transfer_param" for calculation options for the radiative transfer module
+    - \ref cs_f_user_parameters_h_uscfx1 "uscfx1" and \ref cs_f_user_parameters_h_uscfx2 "uscfx2" for non-standard options for the compressible module
+    - \ref cs_f_user_parameters_h_uscti1 "uscti1" for the definition of cooling tower model and exchange zones
+    - \ref cs_f_user_parameters_h_user_darcy_ini1 "user_darcy_ini1" for calculation options for the Darcy module
 
   As a convention, "specific physics" defers to the following modules only:
     pulverized coal, gas combustion, electric arcs.
@@ -50,15 +58,22 @@
   In addition, specific routines are provided for the definition of some
     "specific physics" options.
     These routines are described at the end of this file and will be activated
-    when the corresponding option is selected in the usppmo routine.
+    when the corresponding option is selected in the \ref usppmo routine.
 
   \section cs_f_user_parameters_h_usipsu  General options (usipsu)
+
+  \subsection cs_f_user_parameters_h_usipsu_0 All options
+
+  The following code block presents all the options available
+  in the \ref usipsu subroutine.
+
+  \snippet cs_user_parameters.f90 usipsu
 
   \subsection cs_f_user_parameters_h_usipsu_1 Special fields
 
   Enforce existence of 'tplus' and 'tstar' fields, so that
   a boundary temperature or Nusselt number may be computed using the
-  post_boundary_temperature or post_boundary_nusselt subroutines.
+  \ref post_boundary_temperature or \ref post_boundary_nusselt subroutines.
   When postprocessing of these quantities is activated, those fields
   are present, but if we need to compute them in the
   \ref cs_user_extra_operations user subroutine without postprocessing them,
@@ -126,8 +141,7 @@
 
   \snippet cs_user_parameters-output.f90 usipes_ex_08
 
-
-	Probes for Radiative Transfer (Luminance and radiative density flux vector)
+  Probes for Radiative Transfer (Luminance and radiative density flux vector)
   for all probes (ihisvr = -1)
 
   \snippet cs_user_parameters-output.f90 usipes_ex_10
@@ -141,5 +155,59 @@
    to that key value).
 
   \snippet cs_user_parameters-output.f90 usipes_ex_09
+
+  \section cs_f_user_parameters_h_usppmo Specific physic activation (usppmo)
+
+  The \ref usppmo routine can be found in the \ref cs_user_parameters.f90 file.
+
+  \snippet cs_user_parameters.f90 usppmo
+
+  \section cs_f_user_parameters_h_usipph Additional input of parameters (usipph)
+
+  The \ref usipph routine can be found in the \ref cs_user_parameters.f90 file.
+
+  \snippet cs_user_parameters.f90 usipph
+
+  \section cs_f_user_parameters_h_usati1 Calculation options for the atmospheric module (usati1)
+
+  The \ref usati1 routine can be found in the \ref cs_user_parameters.f90 file.
+
+  \snippet cs_user_parameters.f90 usati1
+
+  \section cs_f_user_parameters_h_cs_user_combustion Calculation options for the combustion module (cs_user_combustion)
+
+  The \ref cs_user_combustion routine can be found in the \ref cs_user_parameters.f90 file.
+
+  \snippet cs_user_parameters.f90 cs_user_combustion
+
+  \section cs_f_user_parameters_h_cs_user_radiative_transfer_param Calculation options for the radiative transfer module (cs_user_radiative_transfer_param)
+
+  The \ref cs_user_radiative_transfer_param routine can be found in the \ref cs_user_parameters.f90 file.
+
+  \snippet cs_user_parameters.f90 cs_user_radiative_transfer_param
+
+  \section cs_f_user_parameters_h_uscfx1 Non-standard options for the compressible module (uscfx1)
+
+  The \ref uscfx1 routine can be found in the \ref cs_user_parameters.f90 file.
+
+  \snippet cs_user_parameters.f90 uscfx1
+
+  \section cs_f_user_parameters_h_uscfx2 Non-standard options for the compressible module (uscfx2)
+
+  The \ref uscfx2 routine can be found in the \ref cs_user_parameters.f90 file.
+
+  \snippet cs_user_parameters.f90 uscfx2
+
+  \section cs_f_user_parameters_h_uscti1 Definition of cooling tower model and exchange zones (uscti1)
+
+  The \ref uscti1 routine can be found in the \ref cs_user_parameters.f90 file.
+
+  \snippet cs_user_parameters.f90 uscti1
+
+  \section cs_f_user_parameters_h_user_darcy_ini1 Calculation options for the Darcy module (user_darcy_ini1)
+
+  The \ref user_darcy_ini1 routine can be found in the \ref cs_user_parameters.f90 file.
+
+  \snippet cs_user_parameters.f90 user_darcy_ini1
 
 */

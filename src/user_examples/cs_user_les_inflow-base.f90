@@ -31,22 +31,26 @@
 !-------------------------------------------------------------------------------
 
 !===============================================================================
-! Purpose :
-! --------
+! Purpose:
+! -------
 
-!> Generation of synthetic turbulence at LES inlets
-
-!> Definition of global characteristics of synthetic turbulence inlets
-
-!> nent and isuisy might be defined.
-
-!> nent = Number of inlets
-!> isuisy = 1: Reading of the LES inflow module restart file
-!>        = 0: not activated (synthetic turbulence reinitialized)
+!> \file cs_user_les_inflow-base.f90
+!>
+!> \brief Generation of synthetic turbulence at LES inlets initialization
+!>
+!> See \subpage les_inflow for examples.
+!>
+!> \c nent and \c isuisy might be defined.
+!>
+!> \c nent = Number of inlets
+!> \c isuisy = 1: Reading of the LES inflow module restart file
+!>           = 0: not activated (synthetic turbulence reinitialized)
+!>
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!______________________________________________________________________________.
+!______________________________________________________________________________!
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[out]    nent          number of synthetic turbulence inlets

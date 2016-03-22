@@ -22,34 +22,38 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
 ! Purpose:
 ! -------
 
-! User subroutines for input of calculation parameters (Fortran modules).
-!   These subroutines are called in all cases.
-
-! If the Code_Saturne GUI is used, this file is not required (but may be
-!   used to override parameters entered through the GUI, and to set
-!   parameters not accessible through the GUI).
-
-! Several routines are present in the file, each destined to defined
-!   specific parameters.
-
-! To modify the default value of parameters which do not appear in the
-!   examples provided, code should be placed as follows:
-!   - usipsu   for numerical and physical options
-!   - usipes   for input-output related options
-
-! As a convention, "specific physics" defers to the following modules only:
-!   pulverized coal, gas combustion, electric arcs.
-
-! In addition, specific routines are provided for the definition of some
-!   "specific physics" options.
-!   These routines are described at the end of this file and will be activated
-!   when the corresponding option is selected in the usppmo routine.
-
+!> \file cs_user_parameters-cavitation.f90
+!>
+!> \brief Cavitation parameters example.
+!>
+!>  See \subpage f_parameters for examples.
+!>
+!>   If the Code_Saturne GUI is used, this file is not required (but may be
+!>   used to override parameters entered through the GUI, and to set
+!>   parameters not accessible through the GUI).
+!>
+!>   Several routines are present in the file, each destined to defined
+!>   specific parameters.
+!>
+!>   To modify the default value of parameters which do not appear in the
+!>   examples provided, code should be placed as follows:
+!>   - usipsu   for numerical and physical options
+!>   - usipes   for input-output related options
+!>
+!>   As a convention, "specific physics" defers to the following modules only:
+!>   pulverized coal, gas combustion, electric arcs.
+!>
+!>   In addition, specific routines are provided for the definition of some
+!>   "specific physics" options.
+!>   These routines are described at the end of this file and will be activated
+!>   when the corresponding option is selected in the usppmo routine.
 !-------------------------------------------------------------------------------
 
+!===============================================================================
 
 subroutine usipsu &
 !================
@@ -133,36 +137,6 @@ integer ii, jj, imom, kscmin, kscmax
 
 !===============================================================================
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-! 0.  This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     This subroutine is  mandatory for compressible flow,
-!       thus the default (library reference) version stops immediately.
-!===============================================================================
-
-if (iihmpr.eq.0) then
-  write(nfecra,9000)
-  call csexit (1)
-endif
-
- 9000 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in data input for cavitating flow',/,      &
-'@    =======',/,                                                 &
-'@     The user subroutine ''user_cavitation_init'' must be',/,   &
-'@       completed',/,                                            &
-'@',/,                                                            &
-'@  The calculation will not be run.',/,                          &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
-
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
 !-------------------------------------------------------------------------------
 !>
 !> \file cs_user_parameters-cavitation.f90
@@ -235,4 +209,3 @@ icvevm = 1
 !----
 
 end subroutine usipsu
-

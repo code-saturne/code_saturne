@@ -27,8 +27,12 @@
 ! -------
 
 !> \file cs_user_initialization-gas_libby_williams.f90
+!>
 !> \brief Libby-Williams gas example
 !>
+!> See \subpage cs_user_initialization for examples.
+!>
+!
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

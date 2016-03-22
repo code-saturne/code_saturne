@@ -26,9 +26,17 @@
 ! Purpose:
 ! -------
 
-! \file cs_user_extra_operations-global_efforts.f90
-! This is an example of cs_user_extra_operations.f90 which
-! performs global efforts
+!> \file cs_user_extra_operations-global_efforts.f90
+!>
+!> \brief This function is called at the end of each time step, and has a very
+!>  general purpose
+!>  (i.e. anything that does not have another dedicated user subroutine)
+!>
+!> See \subpage cs_user_extra_operations_examples and
+!> \subpage cs_user_extra_operations-nusselt_calculation for examples.
+!>
+!> This is an example of cs_user_extra_operations.f90 which
+!> performs global efforts
 
 !-------------------------------------------------------------------------------
 

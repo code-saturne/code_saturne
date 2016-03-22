@@ -26,9 +26,13 @@
 ! Purpose:
 ! -------
 
-!> \file cs_user_initialization.f90
-!> \brief Basic example
+!> \file cs_user_initialization-base.f90
 !>
+!> \brief Basic examples
+!>
+!> See \subpage cs_user_initialization for examples.
+!>
+!
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

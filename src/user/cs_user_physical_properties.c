@@ -84,6 +84,15 @@
 
 BEGIN_C_DECLS
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_user_physical_properties.c
+ *
+ * \brief Function is called each time step to define physical properties.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -92,8 +101,8 @@ BEGIN_C_DECLS
 /*!
  * \brief Function is called each time step to define physical properties.
  *
- * \param[in]  mesh             mesh structure
- * \param[in]  mesh_quantities  mesh quantities structure
+ * \param[in]  mesh             pointer to a cs_mesh_t structure
+ * \param[in]  mesh_quantities  pointer to a cs_mesh_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -101,7 +110,6 @@ void
 cs_user_physical_properties(const cs_mesh_t             *mesh,
                             const cs_mesh_quantities_t  *mesh_quantities)
 {
-
 }
 
 END_C_DECLS

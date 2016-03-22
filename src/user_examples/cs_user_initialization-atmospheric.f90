@@ -26,8 +26,12 @@
 ! Purpose:
 ! -------
 
-!> \file cs_user_initialization.f90 atmospheric example
+!> \file cs_user_initialization-atmospheric.f90
 !>
+!> \brief Atmospheric example
+!>
+!> See \subpage cs_user_initialization for examples.
+!
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

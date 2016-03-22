@@ -27,8 +27,10 @@
 ! -------
 
 !> \file cs_user_physical_properties-coal_drift.f90
+!>
 !> \brief Definition of physical variable laws for scalars with a drift.
 !>
+!> See \subpage physical_properties for examples.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

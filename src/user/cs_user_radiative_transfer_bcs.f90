@@ -27,9 +27,10 @@
 ! Purpose:
 ! --------
 !> \file cs_user_radiative_transfer_bcs.f90
-!> \brief User subroutine for input of radiative transfer parameters: boundary conditions
+!> \brief User subroutine for input of radiative transfer parameters: boundary
+!> conditions
 
-!> See \subpage cs_user_radiative_transfer for more information.
+!> See \subpage cs_user_radiative_transfer for examples.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -127,9 +128,6 @@ double precision textp(nfabor), tintp(nfabor)
 
 ! Local variables
 
-integer          ifac , ivar, iok
-integer          ilelt, nlelt
-
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
@@ -172,140 +170,6 @@ endif
 ! Allocate a temporary array for boundary faces selection
 allocate(lstelt(nfabor))
 
-
-!===============================================================================
-! 1. IVAR: number of the thermal variable
-!===============================================================================
-
-ivar = isca(iscalt)
-
-!===============================================================================
-!  2. Min and max values for the wall temperatures (clipping otherwise)
-!   TMIN and TMAX are given in Kelvin.
-!===============================================================================
-
-tmin = 0.d0
-tmax = grand + tkelvi
-
-!===============================================================================
-! 3. Assign boundary conditions to boundary wall
-!===============================================================================
-
-!     ZONES DEFINITION
-!     ================
-
-!     We define zones of wall boundary, and we assign a type.
-!       This allows to apply the boundary conditions and realize
-!       balance sheets by treating them separately for each zone.
-
-!     For each boundary face ifac (not just the faces of wall)
-!       the user defines his own choice by a number of zone
-!       IZFRDP(ifac) from color of the boundary face
-!         or more generally, their properties (color, groups ...),
-!         or boundary conditions specified in cs_user_boundary_conditions,
-!         or even of their coordinates.
-!     Warning: it is essential that ALL boundary faces
-!       have been assigned to a zone.
-!     The number of zones (the value of IZFRDP(ifac)) is
-!       arbitrarily chosen by the user, but must be a
-!       positive integer and less than or equal to NBZRDM
-!       (value set in parameter radiat.h).
-
-
-
-!     WALL CARACTERISTICS
-!     ===================
-
-!      WARNING: the unity of the temperature is the Kelvin
-!      -------
-
-!      Mandatory data:
-!      ---------------
-!      isothp(ifac) boundary face type
-!                  = itpimp -> Gray wall with fixed inside temperature
-!                  = ipgrno -> Gray wall with fixed outside temperature
-!                  = iprefl -> Reflecting wall with fixed outside temperature
-!                  = ifgrno -> Gray wall with fixed conduction flux
-!                  = ifrefl -> Reflecting wall with fixed conduction flux
-!                  = itpt1d -> Gray wall with solved inside temperature
-
-!      tintp(ifac) inside wall temperature (Kelvin)
-!                  initialize thwall at the first time step.
-!                  If isothp = itpimp, the value of thwall is fixed to tintp
-!                  In the other case, tintp is only for initialization.
-
-
-!      Other data (depend of the isothp):
-!      ----------------------------------
-
-!      rcodcl = conduction flux
-!      epsp   = emissivity
-!      xlamp  = conductivity (W/m/K)
-!      epap   = thickness (m)
-!      textp  = outside temperature (K)
-
-
-!     EXAMPLE
-!     =======
-
-!        Wall boundary faces (IPAROI and IPARUG), are devided into 5 zones
-!          located with IFRFAC(IFAC) in the range of number from 51 to 55.
-!          For each location a different radiative boundary condition is applied.
-!        For all other boundary that are not wall (i.e. inlet, oulet, symetry)
-!          the user can define arbritay new zone using the array IFRFAC(IFAC),
-!          for wich a value can be arbitrarily choosen between 1 and NBZRDM.
-!
-!     Warning: it is forbidden to modify thwall and qincid in this subroutine
-!     ========
-
-!    Indicator for forgotten faces.
-iok = 0
-
-!                           WARNING
-
-!   -------------------------------------------------------------------
-!-->   For all boundary faces that are not wall it is MANDATORY to
-!      impose a number of zone in the array izfrdp.
-!      For each zone, informations will be displayed in the listing.
-!       ------------------------------------
-
-do ifac = 1, nfabor
-
-  if     (itypfb(ifac).eq.isolib) then
-    izfrdp(ifac) = 60
-  elseif (itypfb(ifac).eq.ifrent) then
-    izfrdp(ifac) = 61
-  elseif (itypfb(ifac).eq.ientre) then
-    izfrdp(ifac) = 62
-  elseif (itypfb(ifac).eq.i_convective_inlet) then
-    izfrdp(ifac) = 63
-  elseif (itypfb(ifac).eq.isymet) then
-    izfrdp(ifac) = 64
-
-
-!   -------------------------------------------------------------------
-!-->
-!      Verification that all boundary faces have been treated.
-!       ------------------------------------
-
-  elseif ( itypfb(ifac).eq.iparoi .or.                      &
-           itypfb(ifac).eq.iparug     ) then
-    if (izfrdp(ifac) .eq. -1) then
-      write(nfecra,1000)ifac
-      iok = iok + 1
-    endif
-  endif
-
-!     End of the loop on the boundary faces
-!     -------------------------------------
-
-enddo
-
-! Stop if there are forgotten faces
-if(iok.ne.0) then
-  call csexit (1)
-  !==========
-endif
 
 ! -------
 ! Format

@@ -813,28 +813,32 @@ void CS_PROCF (ctbvsy, CTBVSY)
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Define new SYRTHES coupling.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define new SYRTHES coupling.
+ *
+ * The arguments to \ref cs_syr_coupling_define are:
+ * \param[in] syrthes_name      matching SYRTHES application name
+ * \param[in] boundary_criteria surface selection criteria, or NULL
+ * \param[in] volume_criteria   volume selection criteria, or NULL
+ * \param[in] projection_axis   x', 'y', or 'y' for 2D projection axis (case
+ *                              independent), or ' ' for standard 3D coupling
+ * \param[in] allow_nonmatching allow nearest-neighbor mapping where matching
+ *                              within tolerance is not available (useful
+ *                              when meshes have a different level of detail)
+ * \param[in] tolerance         addition to local extents of each element
+ *                              extent = base_extent * (1 + tolerance)
+ * \param[in] verbosity         verbosity level
+ * \param[in] visualization     visualization output level (0 or 1)
  *
  * In the case of a single Code_Saturne and single SYRTHES instance, the
- * syrthes_name argument is ignored.
+ * 'syrthes_name' argument is ignored, as there is only one matching
+ * possibility.
  *
  * In case of multiple couplings, a coupling will be matched with available
- * SYRTHES instances based on the syrthes_name argument.
- *
- * parameters:
- *   syrthes_name      <-- name of SYRTHES instance
- *   boundary_criteria <-- boundary face selection criteria, or NULL
- *   volume_criteria   <-- volume cell selection criteria, or NULL
- *   projection_axis   <-- 'x', 'y', or 'y' for 2D projection axis (case
- *                         independent), or ' ' for standard 3D coupling
- *   allow_nonmatching <-- allow nearest-neighbor mapping where matching
- *                         within tolerance is not available
- *   tolerance         <-- addition to local extents of each element
- *                         extent = base_extent * (1 + tolerance)
- *   verbosity         <-- verbosity level
- *   visualization     <-- visualization output level (0 or 1)
- *----------------------------------------------------------------------------*/
+ * SYRTHES instances based on the 'syrthes_name' argument.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_syr_coupling_define(const char  *syrthes_name,

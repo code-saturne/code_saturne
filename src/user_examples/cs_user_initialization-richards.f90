@@ -25,9 +25,13 @@
 ! Purpose:
 ! -------
 
-!> \file cs_user_initialization.f90
+!> \file cs_user_initialization-richards.f90
+!>
 !> \brief Basic example
 !>
+!> See \subpage cs_user_initialization for examples.
+!>
+!
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

@@ -27,6 +27,7 @@
 ! -------
 
 !> \file cs_user_physical_properties-compressible_flow.f90
+!>
 !> \brief Set (variable) physical properties for the compressible flow scheme.
 !>
 !> This subroutine is called at the beginning of each time step.

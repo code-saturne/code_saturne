@@ -68,6 +68,7 @@ double precision tmet
 
 ! Local variables
 
+!< [loc_var_dec]
 integer          icmst
 integer          ifac, iel, iscal
 integer          ivarh
@@ -80,16 +81,21 @@ type(gas_mix_species_prop) s_h2o_g
 
 double precision, dimension(:), pointer :: cpro_cp
 double precision, dimension(:), pointer :: cvar_h
+!< [loc_var_dec]
 
 !===============================================================================
 
+!< [init]
 call field_get_id_try("y_h2o_g", f_id)
 if (f_id.ne.-1) &
   call field_get_key_struct_gas_mix_species_prop(f_id, s_h2o_g)
+!< [init]
+
+!< [cells_selection]
 
 !===============================================================================
 ! Select the cells which are associated to the metal structures volume
-! with a function, getcel(), already defined by the sources code.
+! with the subroutine getcel
 !===============================================================================
 
 izone = 0
@@ -111,13 +117,17 @@ do izmet = 1 , met_znb
 
 enddo
 
+!< [cells_selection]
+
+!< [model_settings]
+
 !===============================================================================
-! Parameters padding of the 0-D thermal model and condensation model
+! Parameters padding of the wall thermal model and condensation model
 ! ------------------------------------------------------------------
-! the both models can be activated and coupled together or
-! the condensation model can be use without activated the 0-D thermal model
-! in this case a constant wall temperature must be specified by the user at
-! the cold wall (tmet=tmet0 in this case).
+! The condensation model can be used alone with a constant temperature
+! specified by the user at the cold wall (tmet=tmet0 in this case)
+! or together with a 0-D thermal model. In the latter case, the two models are
+! coupled.
 !===============================================================================
 
 if (icond.eq.1) then
@@ -138,9 +148,9 @@ if (icond.eq.1) then
   itagms = 1
 
   ! Wall temperature computed by a 0-D thermal model
-  ! with a explicit scheme and variable over time.
+  ! with an explicit scheme and variable over time.
   ! ------------------------------------------------
-  ! Remark : the wall temperature is in unit [°C].
+  ! Remark : the wall temperature unit is [°C].
   if(itagms.eq.1) then
     !----------------------------------------
     ! (xem) thickness of the metal structures
@@ -167,14 +177,17 @@ if (icond.eq.1) then
 
 endif
 
+!< [model_settings]
+
+!< [source_terms_values]
+
 !===============================================================================
-! Define here by the user the values to specify arrays used by the modelling of
-! the metal structures condensation.
-!               -----------------------------------------
-! with :
+! The user can specify here the values of the following arrays used by the
+! modelling of the metal structures condensation:
 !         - itypst(:,ivar) to specify the condensation source term type,
 !         - svcond(:,ivar) the scalar value to multiply by the sink term array
 !                          of the metal structures condensation model.
+! These two arrays can be filled for each transported scalar.
 !===============================================================================
 
 !-- pointer to the specific heat
@@ -184,10 +197,8 @@ if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 ivarh = isca(iscalt)
 call field_get_val_s(ivarfl(ivarh), cvar_h)
 
-! To fill the svcond(ncelet,ivar) array
-! if we want to specify a variable value
-!---------------------------------------
-
+! loop over the cells associated to the metal structure
+! source terms zone
 do icmst = 1, ncmast
   iel = ltmast(icmst)
 
@@ -222,6 +233,8 @@ do icmst = 1, ncmast
   endif
 
 enddo
+
+!< [source_terms_values]
 
 !--------
 ! Formats

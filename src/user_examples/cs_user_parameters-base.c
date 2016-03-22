@@ -93,6 +93,17 @@
 
 BEGIN_C_DECLS
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_user_parameters-base.c
+ *
+ * \brief User subroutines for input of calculation parameters.
+ *
+ * See \subpage parameters for examples.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -132,10 +143,8 @@ cs_user_model(void)
    *   dim              <-- variable dimension
    */
 
-  if (false) {
     cs_parameters_add_variable("species_1", 1);
     cs_parameters_add_variable("tracer", 1);
-  }
 
   /*--------------------------------------------------------------------------*/
 
@@ -146,10 +155,8 @@ cs_user_model(void)
    *   variable_name <-- name of associated variable
    */
 
-  if (false) {
     cs_parameters_add_variable_variance("variance_1",
                                         "species_1");
-  }
 
   /*--------------------------------------------------------------------------*/
 
@@ -165,11 +172,9 @@ cs_user_model(void)
    *                     CS_MESH_LOCATION_VERTICES
    */
 
-  if (false) {
     cs_parameters_add_property("user_b_property_1",
                                1,
                                CS_MESH_LOCATION_BOUNDARY_FACES);
-  }
 }
 
 /*----------------------------------------------------------------------------*/

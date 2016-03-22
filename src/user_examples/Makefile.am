@@ -70,6 +70,7 @@ EXTRA_DIST =
 # Library source files
 
 examplefiles = \
+cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions_ale-base.f90 \
 cs_user_boundary_conditions-advanced.f90 \
 cs_user_boundary_conditions-atmospheric.f90 \
@@ -94,6 +95,10 @@ cs_user_cdo-condif.c \
 cs_user_cdo-groundwater.c \
 cs_user_cdo_extra_op-verif-diffusion.c \
 cs_user_cdo_numerics-examples.c \
+cs_user_coupling.c \
+cs_user_coupling-saturne.c \
+cs_user_coupling-syrthes.c \
+cs_user_electric_scaling.c \
 cs_user_extra_operations-energy_balance.f90 \
 cs_user_extra_operations-extract_1d_profile.f90 \
 cs_user_extra_operations-force_temperature.f90 \
@@ -104,6 +109,7 @@ cs_user_extra_operations-richards_flux.f90 \
 cs_user_extra_operations-scalar_balance_by_zone.f90 \
 cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-turbomachinery.c \
+cs_user_fluid_structure_interaction.f90 \
 cs_user_head_losses.f90 \
 cs_user_initialization-atmospheric.f90 \
 cs_user_initialization-base.f90 \
@@ -122,8 +128,14 @@ cs_user_lagrangian_particle_tracking_module.f90 \
 cs_user_les_inflow-base.f90 \
 cs_user_mass_source_terms.f90 \
 cs_user_mesh-groups_from_free_faces.c \
+cs_user_mesh-input-save.c \
+cs_user_mesh-joining.c \
 cs_user_mesh-modify.c \
+cs_user_mesh-periodicity.c \
+cs_user_mesh-quality.c \
+cs_user_mesh-thinwall.c \
 cs_user_metal_structures_source_terms-condensation.f90 \
+cs_user_modules-user-arrays.f90 \
 cs_user_parameters-cavitation.f90 \
 cs_user_parameters-base.c \
 cs_user_parameters-fans.c \
@@ -132,6 +144,10 @@ cs_user_parameters-output.f90 \
 cs_user_parameters-richards.f90 \
 cs_user_parameters-rotation.f90 \
 cs_user_parameters-time_moments.c \
+cs_user_performance_tuning-matrix.c \
+cs_user_performance_tuning-numbering.c \
+cs_user_performance_tuning-parallel-io.c \
+cs_user_performance_tuning-partition.c \
 cs_user_physical_properties-coal_drift.f90 \
 cs_user_physical_properties-compressible_flow.f90 \
 cs_user_physical_properties-richards_sat.f90 \
@@ -141,11 +157,19 @@ cs_user_porosity.f90 \
 cs_user_postprocess.c \
 cs_user_postprocess-sfc.c \
 cs_user_radiative_transfer_bcs.f90 \
+cs_user_radiative_transfer.f90 \
+cs_user_solver-heat-equation.c \
 cs_user_source_terms.f90 \
 cs_user_source_terms-richards_decay.f90 \
 cs_user_source_terms-scalar_in_a_channel.f90 \
 cs_user_turbomachinery.c \
-usatch_4spe5reac.f90
+usatch_4spe5reac.f90 \
+usctdz.f90 \
+ushist.f90 \
+uspt1d.f90 \
+usthht.f90 \
+usvort.f90 \
+usvosy.f90
 
 noinst_LTLIBRARIES = libcsexample.la
 libcsexample_la_SOURCES = $(examplefiles)
@@ -159,7 +183,6 @@ clean-local:
 
 # Finish example files installation
 # - tag with the package version number
-# - remove the test preventing from using a source file
 # Done with two sed passes (does not work otherwise)
 
 install-data-hook:

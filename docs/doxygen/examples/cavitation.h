@@ -26,11 +26,11 @@
 
 /*!
   \page cavit Data setting for the cavitation module
- 
+
   \section cavitation_h_intro Introduction
 
   The cavitation module is based on a homogeneous mixture model.
-  The physical properties (density and dynamic viscosity) of the mixture depends
+  The physical properties (density and dynamic viscosity) of the mixture depend
   on a resolved void fraction and constant reference properties of the liquid
   phase and the gas phase.
   The void fraction is given by an advection equation with a
@@ -39,17 +39,17 @@
   Reboud.
 
   \section cavit_activ Activation of the module
-  
+
   The module can be activated in the \ref usipph routine in
   \ref cs_user_parameters.f90. The corresponding keyword is icavit in the
   \ref optcal module.
   This keyword can take the values:
    - \ref optcal::icavit "icavit" = -1: module desactivated (single-phase flow).
-   - icavit =  0: the module is activated but there is no
+   - \ref optcal::icavit "icavit" =  0: the module is activated but there is no
         vaporization/condensation source term. The void fraction is only
         advected by the mixture velocity.
-   - icavit =  1: the module is activated and the Merkle
-        vaporiosation/condensation source/sink term is taken into account.
+   - \ref optcal::icavit "icavit" =  1: the module is activated and the Merkle
+        vaporisation/condensation source/sink term is taken into account.
 
   \section cavit_parameters Cavitation module specific parameters.
 
@@ -89,6 +89,6 @@ If icvevm = 0, the Reboud correction is desactivated. Using an eddy-viscosity mo
 
   \subsection cavit_numerics Numerical options
 
-  Advanced numerical parameters may also be set in this routine, if necessary. The concerned variables are listed in \ref cav_numerics. 
+  Advanced numerical parameters may also be set in this routine, if necessary. The concerned variables are listed in \ref cav_numerics.
 
 */

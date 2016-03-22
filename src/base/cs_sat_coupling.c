@@ -1866,17 +1866,28 @@ void CS_PROCF (mxicpl, MXICPL)
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Define new Code_Saturne coupling.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define new Code_Saturne coupling.
  *
- * arguments:
- *   saturne_name      <-- name of Code_Saturne instance
- *   boundary_criteria <-- boundary face selection criteria, or NULL
- *   volume_criteria   <-- volume cell selection criteria, or NULL
- *   projection_axis   <-- 'x', 'y', or 'y' for 2D projection axis (case
- *                         independent), or ' ' for standard 3D coupling
- *   verbosity         <-- verbosity level
- *----------------------------------------------------------------------------*/
+ * The arguments to \ref cs_sat_coupling_define are:
+ * \param[in] saturne_name          matching Code_Saturne application name
+ * \param[in] boundary_cpl_criteria boundary face selection criteria for coupled
+ *                                  faces, or NULL
+ * \param[in] volume_cpl_criteria   cell selection criteria for coupled cells, or
+                                    NULL
+ * \param[in] boundary_sup_criteria boundary face selection criteria for support
+ *                                  (not functional)
+ * \param[in] volume_sup_criteria   cell selection criteria for support
+ * \param[in] verbosity             verbosity level
+ *
+ * In the case of only 2 Code_Saturne instances, the 'saturne_name' argument
+ * is ignored, as there is only one matching possibility.
+ *
+ * In case of multiple couplings, a coupling will be matched with available
+ * Code_Saturne instances based on the 'saturne_name' argument.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_sat_coupling_define(const char  *saturne_name,

@@ -64,11 +64,13 @@ BEGIN_C_DECLS
  * Additional doxygen documentation
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
 /*!
-  \file cs_user_cdo_extra_op.c
-
-  \brief Additional user-defined post-processing and analysis functions
+ * \file cs_user_cdo_extra_op.c
+ *
+ * \brief Additional user-defined post-processing and analysis functions
 */
+/*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

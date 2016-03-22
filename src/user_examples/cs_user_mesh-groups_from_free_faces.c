@@ -81,6 +81,16 @@
 
 BEGIN_C_DECLS
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_user_mesh-groups_from_free_faces.c
+ *
+ * \brief Mesh modification example.
+ *
+ * See \subpage cs_user_mesh for examples.
+ */
+/*----------------------------------------------------------------------------*/
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -90,10 +100,11 @@ BEGIN_C_DECLS
  *
  * Values are transferred only to boundary faces with no group.
  *
- * parameters:
- *   mesh      <-> pointer to mesh structure
- *   tolerance <-- tolerance for mesh location
- *----------------------------------------------------------------------------*/
+ * parameters :
+ * - mesh : pointer to cs_mesh_t structure
+ * - tolerance : tolerance for mesh location
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
@@ -252,14 +263,16 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
  * User function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Modify mesh.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Modify geometry and mesh.
  *
  * In this example, group information from free faces is projected to
- * the neighboring boundary faces that are missing such information.
+ * the neighboring boundary faces that are missing such information. *
  *
- * The mesh structure is described in cs_mesh.h
- *----------------------------------------------------------------------------*/
+ * \param[in,out] mesh  pointer to a cs_mesh_t structure
+*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_mesh_modify(cs_mesh_t  *mesh)

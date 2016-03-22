@@ -31,6 +31,8 @@
 !> \brief This function computes the porosity (volume factor \f$ \epsilon \f$
 !> when porosity module is activated (iporos = 1 in cs_user_parameters.f90).
 !>
+!> See \subpage cs_porosity for examples.
+!>
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -62,26 +64,6 @@ use field
 
 implicit none
 
-! Local variables
-
-! INSERT_VARIABLE_DEFINITIONS_HERE
-
-double precision, dimension(:), pointer :: cpro_porosi
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-!===============================================================================
-
-! Retrieve porosity field
-call field_get_val_s(ipori, cpro_porosi)
-
-! INSERT_ADDITIONAL_INITIALIZATION_CODE_HERE
 
 return
 end subroutine usporo

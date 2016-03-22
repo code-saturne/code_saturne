@@ -21,6 +21,8 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+
+!===============================================================================
 ! Purpose:
 ! -------
 
@@ -28,7 +30,9 @@
 !>
 !> \brief Mass source term user subroutine.
 !>
-!-------------------------------------------------------------------------------
+!> See \subpage cs_user_mass_source_terms for examples.
+!>
+
 !-------------------------------------------------------------------------------
 !>           Arguments
 !______________________________________________________________________________.
@@ -93,17 +97,6 @@ double precision smacel(ncesmp,nvar)
 
 ! Local variables
 
-integer          ieltsm
-integer          ifac, ii
-integer          ilelt, nlelt
-integer          izone
-
-double precision vent, vent2
-double precision dh, ustar2
-double precision xkent, xeent
-double precision flucel
-double precision vtot  , gamma
-
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
@@ -137,24 +130,6 @@ if (iappel.eq.1.or.iappel.eq.2) then
 !     potentially becomea mass source term.
 
 !===============================================================================
-
-
-!  1.1 To be completed by the user: cell selection
-!  -----------------------------------------------
-
-! Example 1: No mass source term (default)
-  ieltsm = 0
-
-
-!  1.2 Generic subsection: do not modify
-!  -------------------------------------
-
-! --- For iappel = 1,
-!      Specification of ncesmp. This block is valid for both examples.
-
-  if (iappel.eq.1) then
-    ncesmp = ieltsm
-  endif
 
 !-------------------------------------------------------------------------------
 

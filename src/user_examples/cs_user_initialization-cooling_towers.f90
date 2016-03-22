@@ -27,8 +27,11 @@
 ! -------
 
 !> \file cs_user_initialization-cooling_towers.f90
+!>
 !> \brief Cooling towers example
 !>
+!> See \subpage cs_user_initialization for examples.
+!
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

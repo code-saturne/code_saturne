@@ -36,9 +36,9 @@
 
 !> \file cs_user_les_inflow.f90
 !>
-!> \brief Generation of synthetic turbulence at LES inlets
-!>
 !> \brief Generation of synthetic turbulence at LES inlets initialization
+!>
+!> See \subpage les_inflow for examples.
 !>
 !> \c nent and \c isuisy might be defined.
 !>
@@ -50,11 +50,11 @@
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!______________________________________________________________________________.
+!______________________________________________________________________________!
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[out]    nent          number of synthetic turbulence inlets
-!_______________________________________________________________________________
+!______________________________________________________________________________!
 
 subroutine cs_user_les_inflow_init (nent)
 
@@ -73,20 +73,6 @@ implicit none
 ! Arguments
 
 integer nent
-
-! Local variables
-
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-! INSERT_MAIN_CODE_HERE
 
 !--------
 ! Formats
@@ -203,19 +189,7 @@ integer          lfbent(nfabor)
 
 double precision vitent(3), enrent, dspent
 
-! Local variables
-
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-! INSERT_MAIN_CODE_HERE
 
 !--------
 ! Formats
@@ -316,19 +290,7 @@ double precision dt(ncelet)
 double precision uvwent(ndim,nfbent), rijent(6,nfbent)
 double precision epsent(nfbent)
 
-! Local variables
-
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-! INSERT_MAIN_CODE_HERE
 
 !--------
 ! Formats

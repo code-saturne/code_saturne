@@ -22,6 +22,18 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Purpose:
+! -------
+
+!> \file cs_user_physical_properties-richards_unsat.f90
+!>
+!> \brief Definition of physical variable laws.
+!>
+!> See \subpage physical_properties for examples.
+!>
+!-------------------------------------------------------------------------------
+
 subroutine usphyv &
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &

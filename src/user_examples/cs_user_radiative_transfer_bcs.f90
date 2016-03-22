@@ -27,9 +27,10 @@
 ! Purpose:
 ! --------
 !> \file cs_user_radiative_transfer_bcs.f90
-!> \brief User subroutine for input of radiative transfer parameters: boundary conditions
+!> \brief User subroutine for input of radiative transfer parameters: boundary
+!> conditions
 
-!> See \subpage cs_user_radiative_transfer for more information.
+!> See \subpage cs_user_radiative_transfer for examples.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -60,6 +61,7 @@
 !>                                      conduction flux
 !> \param[in]     tmin          min value of the wall temperature
 !> \param[in]     tmax          max value of the wall temperature
+!> \param[in]     tx            relaxation coefficient (0 < tx < 1)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rcodcl        boundary condition values
 !>                                rcodcl(3) = flux density value

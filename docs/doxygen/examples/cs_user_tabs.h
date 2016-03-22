@@ -30,7 +30,7 @@
 Here is a list of user examples. Thorougly documented snippets are provided.
 
    - \subpage cs_user_mesh
-   - \subpage cs_user_initialization "Physical fields user initialization"
+   - \subpage user_initialization "Physical fields user initialization"
    - \subpage cs_user_boundary_conditions_examples "User boundary condition definitions"
    - \subpage les_inflow "Inflow Boundary conditions for LES"
    - \subpage f_parameters
@@ -39,6 +39,7 @@ Here is a list of user examples. Thorougly documented snippets are provided.
    - \subpage cavit
    - \subpage physical_properties
    - \subpage cs_user_postprocess
+   - \subpage cs_user_postprocess_var
    - \subpage drift_coal_scalars
    - \subpage drift_scalars
    - \subpage cs_porosity
@@ -46,6 +47,7 @@ Here is a list of user examples. Thorougly documented snippets are provided.
    - \subpage cs_lagrangian_particle_tracking_module
    - \subpage cs_user_source_terms
    - \subpage cs_user_mass_source_terms
+   - \subpage condens
    - \subpage cs_user_boundary_conditions_ale
    - \subpage cs_user_radiative_transfer
    - \subpage cs_user_extra_operations_examples "User extra operations"
@@ -53,4 +55,16 @@ Here is a list of user examples. Thorougly documented snippets are provided.
    - \subpage cs_user_source_terms-scalar_in_a_channel
    - \subpage richards
    - \subpage cs_user_fluid_structure_interaction
+   - \subpage user_coupling
+   - \subpage cs_user_performance_tuning
+   - \subpage cs_user_electric_scaling
+   - \subpage cs_user_atmospheric_model
+   - \subpage cs_user_modules
+   - \subpage user_solver
+   - \subpage us_hist
+   - \subpage us_ctdz
+   - \subpage us_thht
+   - \subpage us_vosy
+   - \subpage us_pt1d
+   - \subpage us_vort
 */

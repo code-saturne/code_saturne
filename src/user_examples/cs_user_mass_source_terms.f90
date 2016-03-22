@@ -28,9 +28,11 @@
 
 !> \file cs_user_mass_source_terms.f90
 !>
-!> \brief Mass source term example
+!> \brief Mass source term example.
 !>
-!-------------------------------------------------------------------------------
+!> See \subpage cs_user_mass_source_terms for examples.
+!>
+
 !-------------------------------------------------------------------------------
 !>           Arguments
 !______________________________________________________________________________.
@@ -39,7 +41,7 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncepdp        number of cells with head loss terms
-!> \param[in]     ncssmp        number of cells with mass source terms
+!> \param[in]     ncesmp        number of cells with mass source terms
 !> \param[in]     iappel        indicates which at which stage the routine is
 !>                              is called
 !> \param[in]     icepdc        index number of cells with head loss terms
@@ -60,7 +62,6 @@ subroutine cs_user_mass_source_terms &
    icepdc , icetsm , itypsm , izctsm ,                            &
    dt     ,                                                       &
    ckupdc , smacel )
-
 
 !===============================================================================
 ! Module files

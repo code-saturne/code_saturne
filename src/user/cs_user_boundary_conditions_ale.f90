@@ -33,6 +33,8 @@
 !>  - Fills boundary conditions (ialtyb, icodcl, rcodcl) for mesh velocity.
 !>  - This subroutine also enables one to fix displacement on nodes.
 !>
+!> See \subpage cs_user_boundary_conditions_ale for examples.
+!>
 !> \section intro_usa Introduction
 !>
 !> Here one defines boundary conditions on a per-face basis.
@@ -364,16 +366,6 @@ integer          impale(nnod)
 double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision disale(3,nnod), xyzno0(3,nnod)
-
-! Local variables
-
-integer          ifac, iel, ii
-integer          inod
-integer          ilelt, nlelt
-
-double precision delta, deltaa
-
-integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 

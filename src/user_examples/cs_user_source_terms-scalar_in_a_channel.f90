@@ -34,21 +34,24 @@
 ! Purpose:
 ! -------
 
-!> \file cs_user_source_terms.f90
+!> \file cs_user_source_terms-scalar_in_a_channel.f90
 !>
-!> \brief Additional right-hand side source terms
+!> \brief User source terms for a scalar in a channel example.
+!>
+!> See \subpage cs_user_source_terms and \subpage cs_user_source_terms-scalar_in_a_channel
+!> for examples.
 !>
 !> \brief Additional right-hand side source terms for velocity components equation
 !> (Navier-Stokes)
 !>
-!> \section use  Usage
+!> \section ustsnv_use  Usage
 !>
 !> The additional source term is decomposed into an explicit part (\c crvexp) and
 !> an implicit part (\c crvimp) that must be provided here.
 !> The resulting equation solved by the code for a velocity is:
 !> \f[
 !>  \rho \norm{\vol{\celli}} \DP{\vect{u}} + ....
-!>   = \tens{crvimp} \vect{u} + \vect{crvexp}
+!>   = \tens{crvimp} \cdot \vect{u} + \vect{crvexp}
 !> \f]
 !>
 !> Note that \c crvexp and \c crvimp are defined after the Finite Volume integration
@@ -59,6 +62,9 @@
 !> The \c crvexp and \c crvimp arrays are already initialized to 0
 !> before entering the
 !> the routine. It is not needed to do it in the routine (waste of CPU time).
+!>
+!> \remark The additional force on \f$ x_i \f$ direction is given by
+!>  \c crvexp(i, iel) + vel(j, iel)* crvimp(j, i).
 !>
 !> For stability reasons, Code_Saturne will not add -crvimp directly to the
 !> diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
@@ -188,10 +194,6 @@ call field_get_val_s(icrom, cpro_rom)
 !     crvexp(1, iel) = volume(iel)* B = volume(iel)*(XMMT)
 
 ! ----------------------------------------------
-
-! It is quite frequent to forget to remove this example when it is
-!  not needed. Therefore the following test is designed to prevent
-!  any bad surprise.
 
 ckp  = 0.d0
 qdm  = 1.d0

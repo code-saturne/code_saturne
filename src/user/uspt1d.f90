@@ -22,6 +22,17 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Purpose:
+! -------
+!>
+!> \file uspt1d.f90
+!>
+!> \brief Data Entry of the thermal module in 1-Dimension Wall.
+!>
+!> See \subpage us_pt1d for examples.
+!-------------------------------------------------------------------------------
+
 subroutine uspt1d &
 !================
 
@@ -33,75 +44,65 @@ subroutine uspt1d &
    dt     )
 
 !===============================================================================
-! Purpose:
-! -------
-
-!     User subroutine.
-
-!     Data Entry ot the thermal module in 1-Dimension Wall.
-
-
-! Introduction:
-!=============
-
-! Define the different values which can be taken by iappel:
-!--------------------------------------------------------
-
-! iappel = 1 (only one call on initialization):
-!            Computation of the cells number where we prescribe a wall
-
-! iappel = 2 (only one call on initialization):
-!            Locating cells where we prescribe a wall
-!            Data linked to the meshing.
-
-! iappel = 3 (call on each time step):
-!            Value of the physical computational coefficients and
-!            boundary condition type on the exterior wall:
-!            --------------------------------------------
-!
-!             iclt1d = 1 -> constant temperature prescribed
-!             iclt1d = 3 -> heat flux prescribed
-
-!            Initialization of the temperature on the wall.
-
-
-! Boundary faces identification
-! =============================
-
-! Boundary faces may be identified using the 'getfbr' subroutine.
-! The syntax of this subroutine is described in the
-! 'cs_user_boundary_conditions' subroutine,
-! but a more thorough description can be found in the user guide.
+!> \brief Data Entry of the thermal module in 1-Dimension Wall.
+!>
+!> Introduction:
+!>
+!> Define the different values which can be taken by iappel:
+!>
+!>
+!> iappel = 1 (only one call on initialization):
+!>            Computation of the cells number where we prescribe a wall
+!>
+!> iappel = 2 (only one call on initialization):
+!>            Locating cells where we prescribe a wall
+!>            Data linked to the meshing.
+!>
+!> iappel = 3 (call on each time step):
+!>            Value of the physical computational coefficients and
+!>            boundary condition type on the exterior wall:
+!>
+!>
+!>            iclt1d = 1 -> constant temperature prescribed
+!>            iclt1d = 3 -> heat flux prescribed
+!>
+!>            Initialization of the temperature on the wall.
+!>
+!> Boundary faces identification
+!>
+!>
+!> Boundary faces may be identified using the \ref getfbr subroutine.
+!> The syntax of this subroutine is described in the
+!> \ref cs_user_boundary_conditions subroutine,
+!> but a more thorough description can be found in the user guide.
+!>
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! nfpt1d           ! i  ! <-- ! number of faces with the 1-D thermal module    !
-! iappel           ! i  ! <-- ! data type to send                              !
-! ifpt1d           ! ia ! <-- ! number of the face treated                     !
-! izft1d           ! ia ! <-- ! boundary faces zone for 1d-module definition   !
-! nppt1d           ! ia ! <-- ! number of discretized points                   !
-! iclt1d           ! ia ! <-- ! boundary condition type                        !
-! eppt1d           ! ra ! <-- ! wall thickness                                 !
-! rgpt1d           ! ra ! <-- ! geometric ratio of the meshing refinement      !
-! tppt1d           ! ra ! <-- ! wall temperature initialization                !
-! tept1d           ! ra ! <-- ! exterior temperature                           !
-! hept1d           ! ra ! <-- ! exterior exchange coefficient                  !
-! fept1d           ! ra ! <-- ! flux applied to the exterior                   !
-! xlmt1d           ! ra ! <-- ! lambda wall conductivity coefficient           !
-! rcpt1d           ! ra ! <-- ! rhoCp wall coefficient                         !
-! dtpt1d           ! ra ! <-- ! wall time step                                 !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode         name          role                                             !
+!______________________________________________________________________________!
+!> \param[in]   nvar          total number of variables
+!> \param[in]   nscal         total number of scalars
+!> \param[in]   nfpt1d        number of faces with the 1-D thermal module
+!> \param[in]   iappel        data type to send
+!> \param[in]   ifpt1d        number of the face treated
+!> \param[in]   izft1d        boundary faces zone for 1d-module definition
+!> \param[in]   nppt1d        number of discretized points
+!> \param[in]   iclt1d        boundary condition type
+!> \param[in]   eppt1d        wall thickness
+!> \param[in]   rgpt1d        geometric ratio of the meshing refinement
+!> \param[in]   tppt1d        wall temperature initialization
+!> \param[in]   tept1d        exterior temperature
+!> \param[in]   hept1d        exterior exchange coefficient
+!> \param[in]   fept1d        flux applied to the exterior
+!> \param[in]   xlmt1d        lambda wall conductivity coefficient
+!> \param[in]   rcpt1d        rhoCp wall coefficient
+!> \param[in]   dtpt1d        wall time step
+!> \param[in]   dt            time step (per cell)
+!______________________________________________________________________________!
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
 !===============================================================================
 ! Data in common
@@ -136,13 +137,15 @@ double precision xlmt1d(nfpt1d) , rcpt1d(nfpt1d) , dtpt1d(nfpt1d)
 
 ! Local variables
 
-integer          ifbt1d , ii , ifac
-integer          ilelt, nlelt
-integer          izone
-
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+if (1.eq.1) return
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 ! Allocate a temporary array for boundary faces selection
 allocate(lstelt(nfabor))
@@ -163,128 +166,6 @@ allocate(lstelt(nfabor))
 
 isuit1 = isuite
 
-izone = 0
-ifbt1d = 0
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-if (1.eq.1) return
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-if (iappel.eq.1.or.iappel.eq.2) then
-
-!===============================================================================
-! Faces determining with the 1-D thermal module:
-!----------------------------------------------
-!
-!     nfpt1d    : Total number of faces with the 1-D thermal module
-!     ifpt1d(ii): Number of the (ii)th face with the 1-D thermal module
-
-! Remarks:
-!--------
-!     During the rereading of the restart file, nfpt1d and ifpt1d are
-!     compared with the other values from the restart file being the result of
-!     the start or restarting computation.
-!
-!     A total similarity is required to continue with the previous computation.
-!     Regarding the test case on ifpt1d, it is necessary that the array be
-!     arranged in increasing order (ifpt1d(jj) > ifpt1d(ii) if jj > ii).
-!
-!     If it is impossible, contact the developer team to deactivate this test.
-!===============================================================================
-
-  call getfbr('3', nlelt, lstelt)
-  !==========
-
-  izone = izone + 1
-
-  do ilelt = 1, nlelt
-
-    ifac = lstelt(ilelt)
-    izft1d(ifac) = izone
-    ifbt1d = ifbt1d + 1
-    if (iappel.eq.2) ifpt1d(ifbt1d) = ifac
-
-  enddo
-
-endif
-
-if (iappel.eq.1) then
-  nfpt1d = ifbt1d
-endif
-
-!===============================================================================
-! Parameters padding of the mesh and initialization:
-!--------------------------------------------------
-!
-!     (Only one pass during the beginning of the computation)
-
-!     nppt1d(ii): number of discretized points associated to the (ii)th face
-!                 with the 1-D thermal module.
-!     eppt1d(ii): wall thickness associated to the (ii)th face
-!                 with the 1-D thermal module.
-!     rgpt1d(ii): geometric progression ratio of the meshing refinement
-!                 associated to the (ii)th face with the 1-D thermal module.
-!                 (with : rgpt1d(ii) > 1 => small meshes  on the fluid side)
-!     tppt1d(ii): wall temperature initialization associated to the (ii)th face
-!                 with the 1-D thermal module.
-
-! Remarks:
-!--------
-!     During the rereading of the restart file for the 1-D thermal module,
-!     the tppt1d variable is not used.
-!
-!     The nfpt1d, eppt1d and rgpt1d variables are compared to the previous
-!     values being the result of the restart file.
-!
-!     An exact similarity is necessary to continue with the previous computation.
-!===============================================================================
-if (iappel.eq.2) then
-  do ii = 1, nfpt1d
-    ifac = ifpt1d(ii)
-    nppt1d(ii) = 8
-    eppt1d(ii) = 0.01144d0
-    rgpt1d(ii) = 1.d0
-    tppt1d(ii) = 25.d0 + tkelvi ! FIXME gerer les K et °C
-  enddo
-endif
-!===============================================================================
-! Padding of the wall exterior boundary conditions:
-!-------------------------------------------------
-!
-!     iclt1d(ii): boundary condition type
-!     ----------
-!                  iclt1d(ii) = 1: dirichlet condition,
-!                                  with exchange coefficient
-!                  iclt1d(ii) = 3: flux condition
-!
-!     tept1d(ii): exterior temperature
-!     hept1d(ii): exterior exchange coefficient
-!     fept1d(ii): flux applied to the exterior (flux<0 = coming flux)
-!     xlmt1d(ii): lambda wall conductivity coefficient (W/m/C)
-!     rcpt1d(ii): wall coefficient rho*Cp (J/m3/C)
-!     dtpt1d(ii): time step resolution of the thermal equation to the
-!                 (ii)th boundary face with the 1-D thermal module (s)
-!===============================================================================
-if (iappel.eq.3) then
-  do ii = 1, nfpt1d
-    iclt1d(ii) = 1
-    ! Physical parameters
-    ifac = ifpt1d(ii)
-    if (cdgfbo(2,ifac).le.0.025d0) then
-      iclt1d(ii) = 3
-      fept1d(ii) = -1.d4
-    else
-      iclt1d(ii) = 3
-      fept1d(ii) =  1.d4
-    endif
-    xlmt1d(ii) = 31.5d0
-    rcpt1d(ii) = 3.5d6
-    dtpt1d(ii) = 0.3d0
-  enddo
-endif
-
 !===============================================================================
 ! End of the uspt1d subroutine
 !===============================================================================
@@ -294,4 +175,3 @@ deallocate(lstelt)
 
 return
 end subroutine uspt1d
-

@@ -22,26 +22,24 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine usctdz
-!================
-
 !===============================================================================
 ! Purpose:
 ! -------
-
-! Define cooling tower parameters
+!>
+!> \file usctdz.f90
+!>
+!> \brief Define cooling tower parameters.
+!>
+!> See \subpage us_ctdz for examples.
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+subroutine usctdz
+!================
 
 !===============================================================================
 ! Module files
@@ -63,51 +61,7 @@ use mesh
 
 implicit none
 
-! Local variables
-
-integer          imzech,ntypze,idimze,neleze
-
-double precision teaueze,qeaueze,deltat
-double precision xap,xnp,surface,dgout
-
 !===============================================================================
-
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-
-! The chosen model must be consistent with ippmod
-
-! IMZECH = 0 - no model
-!          1 - Merkels model
-!          2 - Poppe's model
-
-imzech  = ippmod(iaeros)
-
-! Define exchange zone
-
-idimze  = 2
-ntypze  = 2
-neleze  = 20
-deltat  = 10.0d0
-teaueze = 36d0
-qeaueze = 33737.d0
-xap     = 0.2d0
-xnp     = 0.5d0
-surface = 5183.6d0
-dgout   = 0.005d0
-
-call defct &
-!=========
- (idimze, '2 or 3', imzech, ntypze, neleze,           &
-  deltat, teaueze, qeaueze, xap, xnp, surface, dgout)
-
 
 !----
 ! End
@@ -115,4 +69,3 @@ call defct &
 
 return
 end subroutine usctdz
-

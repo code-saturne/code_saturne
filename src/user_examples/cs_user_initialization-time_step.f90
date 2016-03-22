@@ -27,8 +27,12 @@
 ! -------
 
 !> \file cs_user_initialization-time_step.f90
+!>
 !> \brief Time step example
 !>
+!> See \subpage cs_user_initialization for examples.
+!>
+!
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

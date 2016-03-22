@@ -27,8 +27,11 @@
 ! -------
 
 !> \file cs_user_initialization-compressible.f90
+!>
 !> \brief Compressible example
 !>
+!> See \subpage cs_user_initialization for examples.
+!
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
