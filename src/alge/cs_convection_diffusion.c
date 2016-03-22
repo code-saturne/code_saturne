@@ -3184,13 +3184,13 @@ cs_convection_diffusion_scalar(int                       idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in]     coefap        boundary condition array for the variable
+ * \param[in]     coefav        boundary condition array for the variable
  *                               (explicit part)
- * \param[in]     coefbp        boundary condition array for the variable
+ * \param[in]     coefbv        boundary condition array for the variable
  *                               (implicit part)
- * \param[in]     cofafp        boundary condition array for the diffusion
+ * \param[in]     cofafv        boundary condition array for the diffusion
  *                               of the variable (explicit part)
- * \param[in]     cofbfp        boundary condition array for the diffusion
+ * \param[in]     cofbfv        boundary condition array for the diffusion
  *                               of the variable (implicit part)
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
@@ -3216,10 +3216,10 @@ cs_convection_diffusion_vector(int                         idtvar,
                                const cs_real_3_t *restrict pvara,
                                const cs_int_t              bc_type[],
                                const cs_int_t              icvfli[],
-                               const cs_real_3_t           coefap[],
-                               const cs_real_33_t          coefbp[],
-                               const cs_real_3_t           cofafp[],
-                               const cs_real_33_t          cofbfp[],
+                               const cs_real_3_t           coefav[],
+                               const cs_real_33_t          coefbv[],
+                               const cs_real_3_t           cofafv[],
+                               const cs_real_33_t          cofbfv[],
                                const cs_real_t             i_massflux[],
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
@@ -3287,7 +3287,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   cs_real_t *bndcel;
 
   cs_real_3_t *coface;
-  cs_real_33_t *cofbce;
+  const cs_real_33_t *cofbce;
 
   cs_field_t *f;
 
@@ -3360,8 +3360,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                        imligp,
                        epsrgp,
                        climgp,
-                       coefap,
-                       coefbp,
+                       coefav,
+                       coefbv,
                        pvar,
                        grad);
 
@@ -3394,8 +3394,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   grad,
                                   grdpa,
                                   pvar,
-                                  coefap,
-                                  coefbp,
+                                  coefav,
+                                  coefbv,
                                   i_massflux);
 
   }
@@ -3983,8 +3983,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     pvar[ii],
                                     pir,
                                     pipr,
-                                    coefap[face_id],
-                                    coefbp[face_id],
+                                    coefav[face_id],
+                                    coefbv[face_id],
                                     b_massflux[face_id],
                                     fluxi);
 
@@ -3992,8 +3992,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   1., /* thetap */
                                   inc,
                                   pipr,
-                                  cofafp[face_id],
-                                  cofbfp[face_id],
+                                  cofafv[face_id],
+                                  cofbfv[face_id],
                                   b_visc[face_id],
                                   fluxi);
 
@@ -4038,8 +4038,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     pvar[ii],
                                     pvar[ii], /* no relaxation */
                                     pip,
-                                    coefap[face_id],
-                                    coefbp[face_id],
+                                    coefav[face_id],
+                                    coefbv[face_id],
                                     b_massflux[face_id],
                                     fluxi);
 
@@ -4047,8 +4047,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   thetap,
                                   inc,
                                   pip,
-                                  cofafp[face_id],
-                                  cofbfp[face_id],
+                                  cofafv[face_id],
+                                  cofbfv[face_id],
                                   b_visc[face_id],
                                   fluxi);
 
@@ -4068,7 +4068,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     /* Retrieve the value of the convective flux to be imposed */
     if (f_id != -1) {
       coface = (cs_real_3_t *)(f->bc_coeffs->ac);
-      cofbce = (cs_real_33_t *)(f->bc_coeffs->bc);
+      cofbce = (const cs_real_33_t *)(f->bc_coeffs->bc);
     } else {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of icvflb and f_id"));
@@ -4111,8 +4111,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                           pvar[ii],
                                           pir,
                                           pipr,
-                                          coefap[face_id],
-                                          coefbp[face_id],
+                                          coefav[face_id],
+                                          coefbv[face_id],
                                           coface[face_id],
                                           cofbce[face_id],
                                           b_massflux[face_id],
@@ -4122,8 +4122,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   1., /* thetap */
                                   inc,
                                   pipr,
-                                  cofafp[face_id],
-                                  cofbfp[face_id],
+                                  cofafv[face_id],
+                                  cofbfv[face_id],
                                   b_visc[face_id],
                                   fluxi);
 
@@ -4169,8 +4169,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                           pvar[ii],
                                           pvar[ii], /* no relaxation */
                                           pip,
-                                          coefap[face_id],
-                                          coefbp[face_id],
+                                          coefav[face_id],
+                                          coefbv[face_id],
                                           coface[face_id],
                                           cofbce[face_id],
                                           b_massflux[face_id],
@@ -4180,8 +4180,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   thetap,
                                   inc,
                                   pip,
-                                  cofafp[face_id],
-                                  cofbfp[face_id],
+                                  cofafv[face_id],
+                                  cofbfv[face_id],
                                   b_visc[face_id],
                                   fluxi);
 

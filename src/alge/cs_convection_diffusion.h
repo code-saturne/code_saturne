@@ -85,6 +85,7 @@ cs_real_t cs_limiter_function(const int   limiter,
  * \param[in]     iconvp       convection flag
  * \param[in]     thetap       weighting coefficient for the theta-schema
  * \param[in]     imasac       take mass accumulation into account?
+ * \param[in]     limiter      choice of the limiter function
  * \param[in]     pi           value at cell i
  * \param[in]     pj           value at cell j
  * \param[in]     pifri        contribution of i to flux from i to j
@@ -2319,8 +2320,6 @@ cs_i_cd_unsteady(const int          ircflp,
  *
  * \param[in]     ircflp       recontruction flag
  * \param[in]     ischcp       second order convection scheme flag
- * \param[in]     blencp       proportion of centered or SOLU scheme,
- *                             (1-blencp) is the proportion of upwind.
  * \param[in]     weight       geometrical weight
  * \param[in]     cell_ceni    center of gravity coordinates of cell i
  * \param[in]     cell_cenj    center of gravity coordinates of cell i
@@ -3353,7 +3352,6 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
  * \param[in]     iconvp          convection flag
  * \param[in]     ircflp          recontruction flag
  * \param[in]     ischcp          second order convection scheme flag
- * \param[in]     relaxp          relaxation coefficient
  * \param[in]     blencp          proportion of centered or SOLU scheme,
  *                                (1-blencp) is the proportion of upwind.
  * \param[in]     weight          geometrical weight

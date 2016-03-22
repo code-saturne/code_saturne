@@ -2923,8 +2923,8 @@ cs_f_post_write_var(int               mesh_id,
  * support was built):
  *
  * - \c \b EnSight \c \b Gold (\c \b EnSight also accepted)
- * - \c \b MED \li
- * - \c \b CGNS \li
+ * - \c \b MED
+ * - \c \b CGNS
  * - \c \b CCM (only for the full volume and boundary meshes)
  * - \c \b Catalyst (in-situ visualization)
  * - \c \b MEDCoupling (in-memory structure, to be used from other code)
