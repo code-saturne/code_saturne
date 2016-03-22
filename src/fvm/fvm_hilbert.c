@@ -284,164 +284,6 @@ _hilbert_encode_3d(const double  coord[3])
   return ldexp ((double) key[0], -25)  +  ldexp ((double) key[1], -57);
 }
 
-/*----------------------------------------------------------------------------
- * Compare 2 normalized coordinates based on their position on
- * the Hilbert curve.
- *
- * parameters:
- *   coord_0 <-- 2-d coordinates, normalized
- *   coord_1 <-- 2-d coordinates, normalized
- *
- * returns:
- *   -1 if coord_0 < coord_1, 0 if coord_0 = coord_1, 1 if coord_0 > coord_1
- *----------------------------------------------------------------------------*/
-
-static int
-_hilbert_compare_2d(const double  coord_0[2],
-                    const double  coord_1[2])
-{
-  int level, i;
-  unsigned int c0[2], c1[2], temp0, temp1, state0, state1;
-  int cmp = 0;
-  const int maxlevel = 32; /* 32 bits of significance per dimension */
-
-  static const unsigned *d[]
-    = {_idata2d,  _idata2d+4, _idata2d+8, _idata2d+12};
-  static const unsigned *s[]
-    ={_istate2d, _istate2d+4, _istate2d+8, _istate2d+12};
-
-  assert(coord_0[0] >= 0.0 && coord_0[0] <= 1.0);
-  assert(coord_0[1] >= 0.0 && coord_0[1] <= 1.0);
-  assert(coord_1[0] >= 0.0 && coord_1[0] <= 1.0);
-  assert(coord_1[1] >= 0.0 && coord_1[1] <= 1.0);
-
-  /* convert x, y coordinates to integers in range [0, imax] */
-  c0[0] = (unsigned int) (coord_0[0] * (double) _imax);     /* x */
-  c0[1] = (unsigned int) (coord_0[1] * (double) _imax);     /* y */
-  c1[0] = (unsigned int) (coord_1[0] * (double) _imax);     /* x */
-  c1[1] = (unsigned int) (coord_1[1] * (double) _imax);     /* y */
-
-  state0 = 0; state1 = 0;
-  for (level = 0; level < maxlevel && cmp == 0; level++) {
-    int cmp0, cmp1;
-    /* extract 2 bits at current level */
-    temp0 = (  (c0[0]  >> (30-level)) & 2)
-             | ((c0[1] >> (31-level)) & 1);
-    temp1 = (  (c1[0]  >> (30-level)) & 2)
-             | ((c1[1] >> (31-level)) & 1);
-    cmp0 = *(d[state0] + temp0);
-    cmp1 = *(d[state1] + temp1);
-    if (cmp0 < cmp1)
-      cmp = -1;
-    else if (cmp0 > cmp1)
-      cmp = 1;
-    state0 = *(s[state0] + temp0);
-    state1 = *(s[state1] + temp1);
-  }
-
-  /* If the coodinates are identical at the Hilbert code level,
-     use lexicographical ordering. */
-
-  if (cmp == 0) {
-    for (i = 0; i < 2 && cmp == 0; i++) {
-      if (coord_0[i] < coord_1[i])
-        cmp = -1;
-      else if (coord_0[i] > coord_1[i])
-        cmp = 1;
-    }
-  }
-
-  return cmp;
-}
-
-/*----------------------------------------------------------------------------
- * Compare 2 normalized coordinates based on their position on
- * the Hilbert curve.
- *
- * parameters:
- *   coord_0 <-- 3-d coordinates, normalized
- *   coord_1 <-- 3-d coordinates, normalized
- *
- * returns:
- *   -1 if coord_0 < coord_1, 0 if coord_0 = coord_1, 1 if coord_0 > coord_1
- *----------------------------------------------------------------------------*/
-
-static int
-_hilbert_compare_3d(const double  coord_0[3],
-                    const double  coord_1[3])
-{
-  int level, i;
-  unsigned int c0[3], c1[3], temp0, temp1, state0, state1;
-  int cmp = 0;
-  const int maxlevel = 32; /* 32 bits of significance per dimension */
-
-  static const unsigned int *d[]
-    = {_idata3d,     _idata3d+8,   _idata3d+16,  _idata3d+24,
-       _idata3d+32,  _idata3d+40,  _idata3d+48,  _idata3d+56,
-       _idata3d+64,  _idata3d+72,  _idata3d+80,  _idata3d+88,
-       _idata3d+96,  _idata3d+104, _idata3d+112, _idata3d+120,
-       _idata3d+128, _idata3d+136, _idata3d+144, _idata3d+152,
-       _idata3d+160, _idata3d+168, _idata3d+176, _idata3d+184};
-
-  static const unsigned int *s[]
-    = {_istate3d,     _istate3d+8,   _istate3d+16,  _istate3d+24,
-       _istate3d+32,  _istate3d+40,  _istate3d+48,  _istate3d+56,
-       _istate3d+64,  _istate3d+72,  _istate3d+80,  _istate3d+88,
-       _istate3d+96,  _istate3d+104, _istate3d+112, _istate3d+120,
-       _istate3d+128, _istate3d+136, _istate3d+144, _istate3d+152,
-       _istate3d+160, _istate3d+168, _istate3d+176, _istate3d+184};
-
-  assert(coord_0[0] >= 0.0 && coord_0[0] <= 1.0);
-  assert(coord_0[1] >= 0.0 && coord_0[1] <= 1.0);
-  assert(coord_0[2] >= 0.0 && coord_0[2] <= 1.0);
-  assert(coord_1[0] >= 0.0 && coord_1[0] <= 1.0);
-  assert(coord_1[1] >= 0.0 && coord_1[1] <= 1.0);
-  assert(coord_1[2] >= 0.0 && coord_1[2] <= 1.0);
-
-  /* convert x,y,z coordinates to integers in range [0, _imax] */
-
-  c0[0] = (unsigned int) (coord_0[0] * (double) _imax);     /* x */
-  c0[1] = (unsigned int) (coord_0[1] * (double) _imax);     /* y */
-  c0[2] = (unsigned int) (coord_0[2] * (double) _imax);     /* z */
-  c1[0] = (unsigned int) (coord_1[0] * (double) _imax);     /* x */
-  c1[1] = (unsigned int) (coord_1[1] * (double) _imax);     /* y */
-  c1[2] = (unsigned int) (coord_1[2] * (double) _imax);     /* z */
-
-  state0 = 0; state1 = 0;
-  for (level = 0; level < maxlevel && cmp == 0; level++) {
-    int cmp0, cmp1;
-    /* extract 3 bits at current level */
-    temp0 = (  (c0[0]  >> (29-level)) & 4)
-             | ((c0[1] >> (30-level)) & 2)
-             | ((c0[2] >> (31-level)) & 1);
-    temp1 = (  (c1[0]  >> (29-level)) & 4)
-             | ((c1[1] >> (30-level)) & 2)
-             | ((c1[2] >> (31-level)) & 1);
-    cmp0 = *(d[state0] + temp0);
-    cmp1 = *(d[state1] + temp1);
-    if (cmp0 < cmp1)
-      cmp = -1;
-    else if (cmp0 > cmp1)
-      cmp = 1;
-    state0 = *(s[state0] + temp0);
-    state1 = *(s[state1] + temp1);
-  }
-
-  /* If the coodinates are identical at the Hilbert code level,
-     use lexicographical ordering. */
-
-  if (cmp == 0) {
-    for (i = 0; i < 3 && cmp == 0; i++) {
-      if (coord_0[i] < coord_1[i])
-        cmp = -1;
-      else if (coord_0[i] > coord_1[i])
-        cmp = 1;
-    }
-  }
-
-  return cmp;
-}
-
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
@@ -509,140 +351,6 @@ _descend_hilbert_heap(cs_gnum_t                  parent,
     child = 2 * parent + 1;
 
   } /* End while */
-}
-
-/*----------------------------------------------------------------------------
- * Build a heap structure or order a heap structure with a working array
- * to save the ordering.
- *
- * parameters:
- *  dim      <-- 1D, 2D or 3D
- *  extents  <-- coordinate extents for normalization (size: dim*2)
- *  parent   <-- parent id in the Hilbert code list
- *  n_coords <-- nomber of coordinates in array
- *  coords   <-- coordinates in the grid (interlaced, not normalized)
- *  order    <-> working array to save the ordering
- *----------------------------------------------------------------------------*/
-
-static void
-_descend_hilbert_heap_coords(int                dim,
-                             const cs_coord_t   extents[],
-                             cs_gnum_t          parent,
-                             cs_lnum_t          n_coords,
-                             const cs_coord_t   coords[],
-                             cs_lnum_t         *order)
-{
-  size_t      i, j;
-  cs_lnum_t   tmp, a_id, b_id;
-  cs_lnum_t   child = 2 * parent + 1;
-
-  cs_coord_t s[3], d[3], a[3], b[3];
-  cs_coord_t d_max = 0.0;
-
-  for (i = 0; i < (size_t)dim; i++) {
-    s[i] = extents[i];
-    d[i] = extents[i+dim] - extents[i];
-    d_max = CS_MAX(d_max, d[i]);
-  }
-
-  for (i = 0; i < (size_t)dim; i++) { /* Reduce effective dimension */
-    if (d[i] < d_max * 1e-10)
-      d[i] = d_max * 1e-10;
-  }
-
-  /* 3D case */
-
-  if (dim == 3) {
-
-    while (child < n_coords) {
-
-      if (child + 1 < n_coords) {
-        a_id = order[child + 1];
-        b_id = order[child];
-        for (j = 0; j < 3; j++) {
-          a[j] = (coords[a_id*3 + j] - s[j]) / d[j];
-          b[j] = (coords[b_id*3 + j] - s[j]) / d[j];
-        }
-        if (_hilbert_compare_3d(a, b) > 0)
-          child++;
-      }
-
-      a_id = order[parent];
-      b_id = order[child];
-      for (j = 0; j < 3; j++) {
-        a[j] = (coords[a_id*3 + j] - s[j]) / d[j];
-        b[j] = (coords[b_id*3 + j] - s[j]) / d[j];
-      }
-      if (_hilbert_compare_3d(a, b) >= 0)
-        return;
-
-      tmp = order[parent];
-      order[parent] = order[child];
-      order[child] = tmp;
-      parent = child;
-      child = 2 * parent + 1;
-
-    } /* End while */
-  }
-
-  /* 2D case */
-
-  else if (dim == 2) {
-
-    while (child < n_coords) {
-
-      if (child + 1 < n_coords) {
-        a_id = order[child + 1];
-        b_id = order[child];
-        for (j = 0; j < 2; j++) {
-          a[j] = (coords[a_id*2 + j] - s[j]) / d[j];
-          b[j] = (coords[b_id*2 + j] - s[j]) / d[j];
-        }
-        if (_hilbert_compare_2d(a, b) > 0)
-          child++;
-      }
-
-      a_id = order[parent];
-      b_id = order[child];
-      for (j = 0; j < 2; j++) {
-        a[j] = (coords[a_id*2 + j] - s[j]) / d[j];
-        b[j] = (coords[b_id*2 + j] - s[j]) / d[j];
-      }
-      if (_hilbert_compare_2d(a, b) >= 0)
-        return;
-
-      tmp = order[parent];
-      order[parent] = order[child];
-      order[child] = tmp;
-      parent = child;
-      child = 2 * parent + 1;
-
-    } /* End while */
-  }
-
-  /* 1D case */
-
-  else if (dim == 1) {
-
-    while (child < n_coords) {
-
-      if (child + 1 < n_coords) {
-        if (coords[order[child + 1]] > coords[order[child]])
-          child++;
-      }
-
-      if (coords[order[parent]] >= coords[order[child]])
-        return;
-
-      tmp = order[parent];
-      order[parent] = order[child];
-      order[child] = tmp;
-      parent = child;
-      child = 2 * parent + 1;
-
-    } /* End while */
-  }
-
 }
 
 #if defined(HAVE_MPI)
@@ -1156,7 +864,7 @@ fvm_hilbert_encode_coords(int                 dim,
   int dim_map[3] = {-1, -1, -1};
 
   cs_coord_t d_max = 0.0;
-  const double epsilon = 1e-10;
+  const double epsilon = 1e-4;
 
   for (i = 0; i < dim; i++) {
     s[i] = extents[i];
@@ -1302,40 +1010,15 @@ fvm_hilbert_local_order_coords(int                dim,
                                const cs_coord_t   coords[],
                                cs_lnum_t          order[])
 {
-  cs_lnum_t   i, tmp;
+  fvm_hilbert_code_t *h_code = NULL;
 
-  assert(n_coords == 0 || coords != NULL);
-  assert(n_coords == 0 || order != NULL);
+  BFT_MALLOC(h_code, n_coords, fvm_hilbert_code_t);
 
-  for (i = 0; i < n_coords; i++)
-    order[i] = i;
+  fvm_hilbert_encode_coords(dim, extents, n_coords, coords, h_code);
 
-  /* Build heap */
+  fvm_hilbert_local_order(n_coords, h_code, order);
 
-  for (i = n_coords/2 - 1; (int)i >= 0; i--)
-    _descend_hilbert_heap_coords(dim,
-                                 extents,
-                                 i,
-                                 n_coords,
-                                 coords,
-                                 order);
-
-  /* Sort array */
-
-  for (i = n_coords - 1; (int)i >= 0; i--) {
-
-    tmp = order[0];
-    order[0] = order[i];
-    order[i] = tmp;
-
-    _descend_hilbert_heap_coords(dim,
-                                 extents,
-                                 0,
-                                 i,
-                                 coords,
-                                 order);
-  }
-
+  BFT_FREE(h_code);
 }
 
 /*----------------------------------------------------------------------------
