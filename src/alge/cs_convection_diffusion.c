@@ -634,7 +634,6 @@ cs_real_t cs_limiter_function(const int   limiter,
  * \brief Compute The Upstream "Y_{U}" Value of a scalar in order to use it in new limiters
     or slope tests.
  *
- * \param[out]    p_u                  upstream point value for the face
  * \param[in]     p_c                  current  point value for the face
  * \param[in]     c_vol                current  volume (related to current cell)
  * \param[in]     surf                 surface of the studied face
@@ -1416,13 +1415,14 @@ cs_slope_test_gradient(const int               f_id,
  * \param[in]     f_id         field index
  * \param[in]     inc          Not an increment flag
  * \param[in]     halo_type    halo type
- * \param[out]    grdpa        upwind gradient
- * \param[in]     pvar         values
  * \param[in]     coefap       boundary condition array for the variable
  *                             (explicit part)
  * \param[in]     coefbp       boundary condition array for the variable
  *                             (implicit part)
  * \param[in]     i_massflux   mass flux at interior faces
+ * \param[in]     b_massflux   mass flux at boundary faces
+ * \param[in]     pvar         values
+ * \param[out]    grdpa        upwind gradient
  */
 /*----------------------------------------------------------------------------*/
 

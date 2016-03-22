@@ -410,11 +410,12 @@ contains
   !> \f]
   !>
 
-  !> \param[in]  crom   Density at cell center array at current time step
-  !> \param[in]  croma  Density at cell center array at previous time step
-  !> \param[in]  dt     Time step
-  !> \param[in]  imasfl Mass flux at internal faces array
-  !> \param[in]  bmasfl Mass flux at internal boundary faces array
+  !> \param[in]  crom        Density at cell centers at current time step
+  !> \param[in]  croma       Density at cell centers at previous time step
+  !> \param[in]  brom        Density at boundary faces at current time step
+  !> \param[in]  dt          Time step
+  !> \param[in]  imasfl_rel  Mass flux at internal faces array
+  !> \param[in]  bmasfl_rel  Mass flux at internal boundary faces array
 
   subroutine cavitation_print_mass_budget  &
             ( crom, croma, brom, dt, imasfl_rel, bmasfl_rel )

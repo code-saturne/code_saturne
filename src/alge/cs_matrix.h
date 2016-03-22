@@ -219,6 +219,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
  *   direct_assembly  <-- true if each value corresponds to a unique face
  *   n_rows           <-- local number of rows
  *   n_cols_ext       <-- local number of columns + ghosts
+ *   cell_num         <-- global cell numbers, or NULL
  *   row_index        <-- pointer to index on rows
  *   col_id           <-- pointer to array of colum ids related to the row index
  *   halo             <-- halo structure for synchronization, or NULL

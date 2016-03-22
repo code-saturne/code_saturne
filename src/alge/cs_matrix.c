@@ -5104,6 +5104,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
                                 a unique face
  * \param[in]  n_rows           local number of rows
  * \param[in]  n_cols_ext       local number of columns + ghosts
+ * \param[in]  cell_num         global cell numbers, or NULL
  * \param[in]  row_index        index on rows
  * \param[in]  col_id           array of colum ids related to the row index
  * \param[in]  halo             halo structure for synchronization, or NULL
