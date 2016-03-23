@@ -441,7 +441,7 @@ cs_source_term_set_option(cs_source_term_t  *st,
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid key \"%s\" for setting the source term \"%s\".\n"
                 " Please read listing for more details and"
-                " modify your settings."), st->name);
+                " modify your settings."), keyname, st->name);
 
   } /* Error message */
 

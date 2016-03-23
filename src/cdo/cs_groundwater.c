@@ -1362,7 +1362,7 @@ cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
   cs_equation_t  *eq = NULL;
 
   const cs_connect_index_t  *c2e = connect->c2e;
-  const cs_lnum_t  n_cells = connect->c_info->n_ent;
+  const cs_lnum_t  n_cells = connect->c_info->n_elts;
 
   /* Sanity check */
   assert(n_soils > 0);

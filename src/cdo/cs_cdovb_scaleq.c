@@ -45,16 +45,17 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
-#include "cs_log.h"
-#include "cs_math.h"
-#include "cs_search.h"
-#include "cs_post.h"
-#include "cs_quadrature.h"
-#include "cs_source_term.h"
 #include "cs_cdo_bc.h"
-#include "cs_hodge.h"
 #include "cs_cdovb_advection.h"
 #include "cs_cdovb_diffusion.h"
+#include "cs_hodge.h"
+#include "cs_log.h"
+#include "cs_math.h"
+#include "cs_post.h"
+#include "cs_quadrature.h"
+#include "cs_reco.h"
+#include "cs_search.h"
+#include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -861,8 +862,8 @@ cs_cdovb_scaleq_initialize(const cs_cdo_connect_t      *connect)
   /* Sanity check */
   assert(_vbscal_work == NULL && _vbscal_work_size == 0);
 
-  const cs_lnum_t  n_vertices = connect->v_info->n_ent;
-  const cs_lnum_t  n_cells = connect->c_info->n_ent;
+  const cs_lnum_t  n_vertices = connect->v_info->n_elts;
+  const cs_lnum_t  n_cells = connect->c_info->n_elts;
 
   /* Work buffers */
   _vbscal_work_size = CS_MAX(3*n_vertices, n_cells);
@@ -966,8 +967,8 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);
   assert(eqp->var_type == CS_PARAM_VAR_SCAL);
 
-  const cs_lnum_t  n_vertices = connect->v_info->n_ent;
-  const cs_lnum_t  n_b_faces = connect->f_info->n_ent_bd;
+  const cs_lnum_t  n_vertices = connect->v_info->n_elts;
+  const cs_lnum_t  n_b_faces = connect->f_info->n_b_elts;
 
   cs_cdovb_scaleq_t  *builder = NULL;
 

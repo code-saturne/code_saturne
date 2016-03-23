@@ -51,6 +51,7 @@
 #include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_mesh_location.h"
+#include "cs_timer_stats.h"
 
 /* CDO module */
 #include "cs_cdo.h"

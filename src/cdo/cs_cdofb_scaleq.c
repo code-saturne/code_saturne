@@ -429,7 +429,7 @@ cs_cdofb_scaleq_initialize(const cs_cdo_connect_t      *connect)
   /* Sanity check */
   assert(_fbscal_work == NULL && _fbscal_work_size == 0);
 
-  const cs_lnum_t  n_faces = connect->f_info->n_ent;
+  const cs_lnum_t  n_faces = connect->f_info->n_elts;
 
   /* Work buffers */
   _fbscal_work_size = 3*n_faces;
@@ -817,7 +817,7 @@ cs_cdofb_scaleq_extra_op(const char            *eqname,
   cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t  *)builder;
 
   const cs_cdo_connect_t  *connect = b->connect;
-  const cs_lnum_t  n_i_faces = connect->f_info->n_ent_in;
+  const cs_lnum_t  n_i_faces = connect->f_info->n_i_elts;
   const cs_real_t  *face_pdi = cs_cdofb_scaleq_get_face_values(b, field);
 
   /* Field post-processing */

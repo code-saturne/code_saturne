@@ -68,13 +68,13 @@ typedef union {
   /* For a definition by an user-defined function */
   cs_user_func_t                  *user_func;
 
-  /* For a definition by law depending on one variable */
+  /* For a definition by law depending on one scalar variable */
   cs_onevar_law_func_t            *law1_func;
 
-  /* For a definition by law depending on two variables */
+  /* For a definition by law depending on two scalar variables */
   cs_twovar_law_func_t            *law2_func;
 
-  /* For a definition by law depending on two variables */
+  /* For a definition by law depending on two variables (scalar + vector) */
   cs_scavec_law_func_t            *law_scavec_func;
 
 } cs_def_t;
@@ -83,9 +83,9 @@ typedef enum {
 
   CS_PARAM_DEF_BY_ANALYTIC_FUNCTION,
   CS_PARAM_DEF_BY_ARRAY,
-  CS_PARAM_DEF_BY_ONEVAR_LAW,
-  CS_PARAM_DEF_BY_TWOVAR_LAW,
-  CS_PARAM_DEF_BY_SCAVEC_LAW,
+  CS_PARAM_DEF_BY_LAW_ONESCA,
+  CS_PARAM_DEF_BY_LAW_TWOSCA,
+  CS_PARAM_DEF_BY_LAW_SCAVEC,
   CS_PARAM_DEF_BY_TIME_FUNCTION,
   CS_PARAM_DEF_BY_USER_FUNCTION,
   CS_PARAM_DEF_BY_VALUE,

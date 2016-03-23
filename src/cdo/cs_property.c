@@ -182,7 +182,7 @@ _init_new_def(cs_property_t     *pty,
   if (pty->n_max_subdomains > 1) { /* Assign new id to the selected cells */
 
     const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
-    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(ml_id);
+    const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
     const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
 
     if (elt_ids == NULL) {
@@ -718,11 +718,11 @@ cs_property_summary(const cs_property_t   *pty)
       bft_printf("  definition by an analytical function\n");
       break;
 
-    case CS_PARAM_DEF_BY_ONEVAR_LAW:
+    case CS_PARAM_DEF_BY_LAW_ONESCA:
       bft_printf("  definition by a law based on one scalar\n");
       break;
 
-    case CS_PARAM_DEF_BY_SCAVEC_LAW:
+    case CS_PARAM_DEF_BY_LAW_SCAVEC:
       bft_printf("  definition by law based on one scalar + one vector\n");
       break;
 
@@ -932,7 +932,7 @@ cs_property_def_by_law(cs_property_t             *pty,
 {
   cs_param_def_t  *new_def = _init_new_def(pty, ml_name);
 
-  new_def->def_type = CS_PARAM_DEF_BY_ONEVAR_LAW;
+  new_def->def_type = CS_PARAM_DEF_BY_LAW_ONESCA;
   new_def->def.law1_func = func;
   new_def->context = context;
 }
@@ -958,7 +958,7 @@ cs_property_def_by_twovar_law(cs_property_t          *pty,
 {
   cs_param_def_t  *new_def = _init_new_def(pty, ml_name);
 
-  new_def->def_type = CS_PARAM_DEF_BY_TWOVAR_LAW;
+  new_def->def_type = CS_PARAM_DEF_BY_LAW_TWOSCA;
   new_def->def.law2_func = func;
   new_def->context = context;
 }
@@ -984,7 +984,7 @@ cs_property_def_by_scavec_law(cs_property_t             *pty,
 {
   cs_param_def_t  *new_def = _init_new_def(pty, ml_name);
 
-  new_def->def_type = CS_PARAM_DEF_BY_SCAVEC_LAW;
+  new_def->def_type = CS_PARAM_DEF_BY_LAW_SCAVEC;
   new_def->def.law_scavec_func = func;
   new_def->context = context;
 }
@@ -1121,19 +1121,19 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
     }
     break;
 
-  case CS_PARAM_DEF_BY_ONEVAR_LAW:
+  case CS_PARAM_DEF_BY_LAW_ONESCA:
     _get_result_by_onevar_law(c_id, pty, sub->def.law1_func, sub->context,
                               &get);
     _get_tensor_by_value(pty, get, tensor);
     break;
 
-  case CS_PARAM_DEF_BY_TWOVAR_LAW:
+  case CS_PARAM_DEF_BY_LAW_TWOSCA:
     _get_result_by_twovar_law(c_id, pty, sub->def.law2_func, sub->context,
                               &get);
     _get_tensor_by_value(pty, get, tensor);
     break;
 
-  case CS_PARAM_DEF_BY_SCAVEC_LAW:
+  case CS_PARAM_DEF_BY_LAW_SCAVEC:
     _get_result_by_scavec_law(c_id, pty, sub->def.law_scavec_func, sub->context,
                               &get);
     _get_tensor_by_value(pty, get, tensor);
@@ -1238,13 +1238,13 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
     }
     break;
 
-  case CS_PARAM_DEF_BY_ONEVAR_LAW:
+  case CS_PARAM_DEF_BY_LAW_ONESCA:
     _get_result_by_onevar_law(c_id, pty, sub->def.law1_func, sub->context,
                               &get);
     result = get.val;
     break;
 
-  case CS_PARAM_DEF_BY_TWOVAR_LAW:
+  case CS_PARAM_DEF_BY_LAW_TWOSCA:
     _get_result_by_twovar_law(c_id, pty, sub->def.law2_func, sub->context,
                               &get);
     result = get.val;
@@ -1254,7 +1254,7 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
     result = _get_cell_value_from_array(c_id, pty->desc1, pty->array1);
     break;
 
-  case CS_PARAM_DEF_BY_SCAVEC_LAW:
+  case CS_PARAM_DEF_BY_LAW_SCAVEC:
     _get_result_by_scavec_law(c_id,
                               pty, sub->def.law_scavec_func, sub->context,
                               &get);

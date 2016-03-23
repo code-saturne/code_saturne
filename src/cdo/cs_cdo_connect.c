@@ -491,8 +491,6 @@ _free_edge_builder(_edge_builder_t  **p_builder)
 static cs_sla_matrix_t *
 _build_c2f_connect(const cs_mesh_t   *mesh)
 {
-  int  i, shift;
-
   int  idx_size = 0;
   int  *cell_shift = NULL;
   cs_sla_matrix_t  *c2f = NULL;
@@ -505,15 +503,16 @@ _build_c2f_connect(const cs_mesh_t   *mesh)
   c2f = cs_sla_matrix_create(n_cells, n_faces, 1, CS_SLA_MAT_DEC, false);
 
   BFT_MALLOC(cell_shift, n_cells, int);
-  for (i = 0; i < n_cells; i++)
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_cells; i++)
     cell_shift[i] = 0;
 
-  for (i = 0; i < n_b_faces; i++) {
+  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
     c2f->idx[mesh->b_face_cells[i]+1] += 1;
     idx_size += 1;
   }
 
-  for (i = 0; i < n_i_faces; i++) {
+  for (cs_lnum_t i = 0; i < n_i_faces; i++) {
 
     int  c1_id = mesh->i_face_cells[i][0];
     int  c2_id = mesh->i_face_cells[i][1];
@@ -524,7 +523,7 @@ _build_c2f_connect(const cs_mesh_t   *mesh)
       c2f->idx[c2_id+1] += 1, idx_size += 1;
   }
 
-  for (i = 0; i < n_cells; i++)
+  for (cs_lnum_t i = 0; i < n_cells; i++)
     c2f->idx[i+1] += c2f->idx[i];
 
   assert(c2f->idx[n_cells] == idx_size);
@@ -534,12 +533,12 @@ _build_c2f_connect(const cs_mesh_t   *mesh)
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
-    cs_lnum_t  c1_id = mesh->i_face_cells[f_id][0];
-    cs_lnum_t  c2_id = mesh->i_face_cells[f_id][1];
+    const cs_lnum_t  c1_id = mesh->i_face_cells[f_id][0];
+    const cs_lnum_t  c2_id = mesh->i_face_cells[f_id][1];
 
     if (c1_id < n_cells) { /* Don't want ghost cells */
 
-      shift = c2f->idx[c1_id] + cell_shift[c1_id];
+      const cs_lnum_t  shift = c2f->idx[c1_id] + cell_shift[c1_id];
       c2f->col_id[shift] = f_id;
       c2f->sgn[shift] = 1;
       cell_shift[c1_id] += 1;
@@ -548,7 +547,7 @@ _build_c2f_connect(const cs_mesh_t   *mesh)
 
     if (c2_id < n_cells) { /* Don't want ghost cells */
 
-      shift = c2f->idx[c2_id] + cell_shift[c2_id];
+      const cs_lnum_t  shift = c2f->idx[c2_id] + cell_shift[c2_id];
       c2f->col_id[shift] = f_id;
       c2f->sgn[shift] = -1;
       cell_shift[c2_id] += 1;
@@ -559,9 +558,9 @@ _build_c2f_connect(const cs_mesh_t   *mesh)
 
   for (cs_lnum_t  f_id = 0; f_id < n_b_faces; f_id++) {
 
-    cs_lnum_t  c_id = mesh->b_face_cells[f_id];
+    const cs_lnum_t  c_id = mesh->b_face_cells[f_id];
+    const cs_lnum_t  shift = c2f->idx[c_id] + cell_shift[c_id];
 
-    shift = c2f->idx[c_id] + cell_shift[c_id];
     c2f->col_id[shift] = n_i_faces + f_id;
     c2f->sgn[shift] = 1;
     cell_shift[c_id] += 1;
@@ -684,13 +683,13 @@ _connect_info_create(cs_lnum_t     n_elts)
 
   BFT_MALLOC(info, 1, cs_connect_info_t);
 
+  info->n_elts = n_elts;
+  info->n_i_elts = 0;
+  info->n_b_elts = 0;
+
   BFT_MALLOC(info->flag, n_elts, cs_flag_t);
   for (i = 0; i < n_elts; i++)
     info->flag[i] = 0;
-
-  info->n_ent = n_elts;
-  info->n_ent_in = 0;
-  info->n_ent_bd = 0;
 
   return info;
 }
@@ -787,29 +786,29 @@ _define_connect_info(const cs_mesh_t    *m,
   /* Count number of border vertices */
   for (i = 0; i < n_vertices; i++)
     if (vi->flag[i] & CS_CDO_CONNECT_BD)
-      vi->n_ent_bd++;
-  vi->n_ent_in = vi->n_ent - vi->n_ent_bd;
+      vi->n_b_elts++;
+  vi->n_i_elts = vi->n_elts - vi->n_b_elts;
 
   /* Count number of border edges */
   for (i = 0; i < n_edges; i++)
     if (ei->flag[i] & CS_CDO_CONNECT_BD)
-      ei->n_ent_bd++;
-  ei->n_ent_in = ei->n_ent - ei->n_ent_bd;
+      ei->n_b_elts++;
+  ei->n_i_elts = ei->n_elts - ei->n_b_elts;
 
   /* Count number of border faces */
   for (i = 0; i < n_faces; i++)
     if (fi->flag[i] & CS_CDO_CONNECT_BD)
-      fi->n_ent_bd++;
-  fi->n_ent_in = fi->n_ent - fi->n_ent_bd;
+      fi->n_b_elts++;
+  fi->n_i_elts = fi->n_elts - fi->n_b_elts;
 
   /* Sanity check */
-  assert(m->n_i_faces == fi->n_ent_in);
+  assert(m->n_i_faces == fi->n_i_elts);
 
   /* Count number of border cells */
   for (i = 0; i < n_cells; i++)
     if (ci->flag[i] & CS_CDO_CONNECT_BD)
-      ci->n_ent_bd++;
-  ci->n_ent_in = ci->n_ent - ci->n_ent_bd;
+      ci->n_b_elts++;
+  ci->n_i_elts = ci->n_elts - ci->n_b_elts;
 
   /* Return pointers */
   connect->v_info = vi;
@@ -867,20 +866,19 @@ cs_cdo_connect_build(const cs_mesh_t      *m)
   /* Build the connectivity structure */
   BFT_MALLOC(connect, 1, cs_cdo_connect_t);
 
-  /* Build DEC matrices related to connectivity
-     cell / face connectivity */
+  /* Build DEC matrices related to connectivity cell / face connectivity */
   connect->c2f = _build_c2f_connect(m);
   cs_sla_matrix_set_info(connect->c2f);
   connect->f2c = cs_sla_matrix_transpose(connect->c2f);
   cs_sla_matrix_set_info(connect->f2c);
 
-  /* face / edge conncetivity */
+  /*  Build DEC matrices related to face / edge connectivity */
   connect->f2e = _build_f2e_connect(m, builder);
   cs_sla_matrix_set_info(connect->f2e);
   connect->e2f = cs_sla_matrix_transpose(connect->f2e);
   cs_sla_matrix_set_info(connect->e2f);
 
-  /* edge / vertex connectivity */
+  /*  Build DEC matrices related to edge / vertex connectivity */
   connect->e2v = _build_e2v_connect(builder);
   cs_sla_matrix_set_info(connect->e2v);
   connect->v2e = cs_sla_matrix_transpose(connect->e2v);
@@ -891,13 +889,13 @@ cs_cdo_connect_build(const cs_mesh_t      *m)
   /* Build additional connectivity c2e, c2v */
   _build_additional_connect(connect);
 
-  /* Build status flag: interior/border and related connection to
-     interior/border entities */
+  /* Build a flag indicated if an element belongs to the interior or border of
+     the computatinoal domain. Indicate also the related number of interior and
+     border entities */
   _define_connect_info(m, connect);
 
   /* Max number of entities (vertices, edges and faces) by cell */
   _compute_max_ent(connect);
-
 
   return connect;
 }
@@ -966,22 +964,22 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect)
     bft_printf("\n");
     bft_printf("                     |   full  |  intern |  border |\n");
     bft_printf("  --dim-- n_vertices | %7d | %7d | %7d |\n",
-               i->n_ent, i->n_ent_in, i->n_ent_bd);
+               i->n_elts, i->n_i_elts, i->n_b_elts);
   }
   if (connect->e_info != NULL) {
     i = connect->e_info;
     bft_printf("  --dim-- n_edges    | %7d | %7d | %7d |\n",
-               i->n_ent, i->n_ent_in, i->n_ent_bd);
+               i->n_elts, i->n_i_elts, i->n_b_elts);
   }
   if (connect->f_info != NULL) {
     i = connect->f_info;
     bft_printf("  --dim-- n_faces    | %7d | %7d | %7d |\n",
-               i->n_ent, i->n_ent_in, i->n_ent_bd);
+               i->n_elts, i->n_i_elts, i->n_b_elts);
   }
   if (connect->c_info != NULL) {
     i = connect->c_info;
     bft_printf("  --dim-- n_cells    | %7d | %7d | %7d |\n",
-               i->n_ent, i->n_ent_in, i->n_ent_bd);
+               i->n_elts, i->n_i_elts, i->n_b_elts);
   }
   bft_printf("\n");
 

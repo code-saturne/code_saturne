@@ -212,9 +212,8 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
                    const double                 cell_pdi[],
                    const double                 face_pdi[])
 {
-  int  i, j, k;
+  int  i, j;
   double  l2dgrd, enerd, gdic;
-  cs_real_3_t  xc;
 
   double  num_l2d = 0, denum_l2d = 0, num_end = 0, denum_end = 0;
   double  *gexc = NULL, *dgc = NULL;
@@ -232,9 +231,6 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
 
     /* Build a local discrete Hodge operator */
     cs_locmat_t  *_h = cs_hodge_build_local(c_id, topo, cdoq, hb);
-
-    for (k = 0; k < 3; k++)
-      xc[k] = cdoq->cell_centers[3*c_id+k];
 
     for (i = 0; i < _h->n_ent; i++) {
 

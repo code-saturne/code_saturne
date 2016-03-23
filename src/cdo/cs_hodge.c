@@ -1180,7 +1180,7 @@ _build_using_voronoi(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Iitialize cs_timer_stats_t structure for monitoring purpose
+ * \brief   Initialize cs_timer_stats_t structure for monitoring purpose
  *
  * \param[in]  level      level of details requested
  */
@@ -1228,16 +1228,16 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
 
   case CS_PARAM_HODGE_TYPE_VPCD:
     hb->n_maxloc_ent = connect->n_max_vbyc;
-    hb->n_ent = connect->v_info->n_ent;
+    hb->n_ent = connect->v_info->n_elts;
     break;
   case CS_PARAM_HODGE_TYPE_EPFD:
     hb->n_maxloc_ent = connect->n_max_ebyc;
-    hb->n_ent = connect->e_info->n_ent;
+    hb->n_ent = connect->e_info->n_elts;
     break;
   case CS_PARAM_HODGE_TYPE_FPED:
   case CS_PARAM_HODGE_TYPE_EDFP:
     hb->n_maxloc_ent = connect->n_max_fbyc;
-    hb->n_ent = connect->f_info->n_ent;
+    hb->n_ent = connect->f_info->n_elts;
     break;
   default:
     hb->n_ent = 0;

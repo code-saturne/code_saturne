@@ -58,9 +58,9 @@ typedef struct {
 
   cs_flag_t  *flag;   // CS_CDO_CONNECT_IN/BD
 
-  cs_lnum_t   n_ent;     // number of entities
-  cs_lnum_t   n_ent_in;  // number of interior entities
-  cs_lnum_t   n_ent_bd;  // number of border entities
+  cs_lnum_t   n_elts;    // number of entities
+  cs_lnum_t   n_i_elts;  // number of interior entities
+  cs_lnum_t   n_b_elts;  // number of border entities
 
 } cs_connect_info_t;
 

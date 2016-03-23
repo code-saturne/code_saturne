@@ -231,7 +231,7 @@ cs_param_set_def(cs_param_def_type_t      def_type,
       def->time_func = (cs_timestep_func_t *)val;
     break;
 
-  case CS_PARAM_DEF_BY_ONEVAR_LAW:
+  case CS_PARAM_DEF_BY_LAW_ONESCA:
     if (val == NULL)
       def->law1_func = NULL;
     else

@@ -57,7 +57,7 @@ typedef struct _hodge_builder_t cs_hodge_builder_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Iitialize cs_timer_stats_t structure for monitoring purpose
+ * \brief   Initialize cs_timer_stats_t structure for monitoring purpose
  *
  * \param[in]  level      level of details requested
  */

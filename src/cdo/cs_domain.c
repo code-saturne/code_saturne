@@ -51,18 +51,19 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
-#include "cs_mesh_location.h"
-#include "cs_log_iteration.h"
-#include "cs_post.h"
-#include "cs_restart.h"
-#include "cs_restart_default.h"
-#include "cs_walldistance.h"
-#include "cs_groundwater.h"
-#include "cs_prototypes.h"
-#include "cs_evaluate.h"
-#include "cs_source_term.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
+#include "cs_evaluate.h"
+#include "cs_groundwater.h"
+#include "cs_hodge.h"
+#include "cs_log_iteration.h"
+#include "cs_mesh_location.h"
+#include "cs_post.h"
+#include "cs_prototypes.h"
+#include "cs_restart.h"
+#include "cs_restart_default.h"
+#include "cs_source_term.h"
+#include "cs_walldistance.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

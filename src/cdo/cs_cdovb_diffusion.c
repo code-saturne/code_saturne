@@ -537,7 +537,7 @@ cs_cdovb_diffusion_builder_init(const cs_cdo_connect_t       *connect,
     vect_size = connect->n_max_ebyc + connect->n_max_vbyc;
     vol_size = connect->n_max_ebyc;
 
-    cs_lnum_t  n_ent = CS_MAX(connect->e_info->n_ent, connect->f_info->n_ent);
+    cs_lnum_t  n_ent = CS_MAX(connect->e_info->n_elts, connect->f_info->n_elts);
     BFT_MALLOC(diff->tmp_ids, n_ent, short int);
     for (i = 0; i < n_ent; i++)
       diff->tmp_ids[i] = -1;
