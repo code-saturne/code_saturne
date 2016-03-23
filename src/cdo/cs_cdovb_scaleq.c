@@ -1649,7 +1649,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
                                     eqp->diffusion_hodge.inv_pty,
                                     pty_tens);
         cs_math_33_3_product((const cs_real_t (*)[3])pty_tens, gc, pty_gc);
-        *diff_flux += coef * _dp3(f.unitv, pty_gc);
+        *diff_flux += -coef * _dp3(f.unitv, pty_gc);
 
         cs_reco_grd_cell_from_pv(c2_id, connect, quant, pdi, gc);
         cs_property_get_cell_tensor(c2_id,
@@ -1657,7 +1657,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
                                     eqp->diffusion_hodge.inv_pty,
                                     pty_tens);
         cs_math_33_3_product((const cs_real_t (*)[3])pty_tens, gc, pty_gc);
-        *diff_flux += coef * _dp3(f.unitv, pty_gc);
+        *diff_flux += -coef * _dp3(f.unitv, pty_gc);
 
       }
 
