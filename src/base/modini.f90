@@ -224,6 +224,8 @@ endif
 call indsui(isuite)
 !==========
 
+if (isuit1.eq.-1) isuit1 = isuite
+
 ! ---> Schema en temps
 
 !   -- Flux de masse
