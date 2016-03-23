@@ -73,6 +73,7 @@ cs_param_def_type_name[CS_PARAM_N_DEF_TYPES][CS_BASE_STRING_LEN]=
     N_("by law (one argument)"),
     N_("by law (two arguments)"),
     N_("by law (two arguments: scalar+vector)"),
+    N_("quantity over a volume"),
     N_("by time function"),
     N_("by user function"),
     N_("by value") };
@@ -174,6 +175,7 @@ cs_param_set_def(cs_param_def_type_t      def_type,
   switch (def_type) {
 
   case CS_PARAM_DEF_BY_VALUE:
+  case CS_PARAM_DEF_BY_QOV:
     if (val == NULL) {
       if (var_type == CS_PARAM_VAR_SCAL)
         def->get.val = 0.0;

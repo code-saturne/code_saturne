@@ -128,6 +128,25 @@ cs_evaluate_potential_from_analytic(cs_flag_t              dof_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a value to each DoF in the case of a potential field in order
+ *         to put a given quantity inside the volume associated to ml_id
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      ml_id     id related to a cs_mesh_location_t structure
+ * \param[in]      get       accessor to the constant value related to the
+ *                           quantity to put in the volume spanned by ml_id
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_from_qov(cs_flag_t       dof_flag,
+                               int             ml_id,
+                               cs_get_t        get,
+                               double          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Store the value related to each DoF in the case of a potential field
  *
  * \param[in]      dof_flag  indicate where the evaluation has to be done

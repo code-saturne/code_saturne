@@ -1077,7 +1077,9 @@ _initialize_field_from_ic(cs_equation_t              *eq,
       if (ic->def_type == CS_PARAM_DEF_BY_VALUE)
         cs_evaluate_potential_from_value(dof_flag, ml_id, ic->def.get,
                                          field->val);
-
+      else if (ic->def_type == CS_PARAM_DEF_BY_QOV)
+        cs_evaluate_potential_from_qov(dof_flag, ml_id, ic->def.get,
+                                       field->val);
       else if (ic->def_type == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION)
         cs_evaluate_potential_from_analytic(dof_flag, ml_id, ic->def.analytic,
                                             field->val);
@@ -2099,6 +2101,8 @@ cs_equation_set_ic(cs_equation_t    *eq,
   /* Get the type of definition */
   if (strcmp(def_key, "value") == 0)
     ic->def_type = CS_PARAM_DEF_BY_VALUE;
+  else if (strcmp(def_key, "quantity_over_volume") == 0)
+    ic->def_type = CS_PARAM_DEF_BY_QOV;
   else if (strcmp(def_key, "analytic") == 0)
     ic->def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
   else

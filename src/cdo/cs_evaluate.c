@@ -577,6 +577,113 @@ _pfsp_by_value(const double       const_val,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a value to each DoF such that a given quantity is put inside
+ *         the volume associated to the list of cells
+ *
+ * \param[in]      quantity_val  amount of quantity to distribute
+ * \param[in]      n_loc_elts    number of elements to consider
+ * \param[in]      elt_ids       pointer to the list od selected ids
+ * \param[in, out] values        pointer to the array storing the values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pvsp_by_qov(const double       quantity_val,
+             cs_lnum_t          n_elts,
+             const cs_lnum_t   *elt_ids,
+             double             values[])
+{
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_real_t  *dc_vol = quant->dcell_vol;
+  const cs_connect_index_t  *c2v = cs_cdo_connect->c2v;
+  const cs_sla_matrix_t  *c2f = cs_cdo_connect->c2f;
+  const cs_sla_matrix_t  *f2c = cs_cdo_connect->f2c;
+  const cs_sla_matrix_t  *f2e = cs_cdo_connect->f2e;
+  const cs_sla_matrix_t  *e2v = cs_cdo_connect->e2v;
+
+  /* Initialize todo array */
+  bool  *cell_tag = NULL, *vtx_tag = NULL;
+
+  BFT_MALLOC(cell_tag, quant->n_cells, bool);
+  BFT_MALLOC(vtx_tag, quant->n_vertices, bool);
+
+# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++)
+    vtx_tag[v_id] = false;
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+    cell_tag[c_id] = false;
+
+  /* First pass: flag cells and vertices */
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+
+    const cs_lnum_t  c_id = elt_ids[i];
+
+    cell_tag[c_id] = true;
+    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+      vtx_tag[c2v->ids[j]] = true;
+
+  } // Loop on selected cells
+
+  /* Second pass: detect cells at the frontier of the selection */
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+
+    const cs_lnum_t  c_id = elt_ids[i];
+
+    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+      const cs_lnum_t  f_id = c2f->col_id[j];
+
+      bool is_ext_face = false;
+      for (cs_lnum_t l = f2c->idx[f_id]; l < f2c->idx[f_id+1]; l++)
+        if (!cell_tag[f2c->col_id[l]]) is_ext_face = true;
+
+      if (is_ext_face) {
+        for (cs_lnum_t l = f2e->idx[f_id]; l < f2e->idx[f_id+1]; l++) {
+
+          const cs_lnum_t  e_id = f2e->col_id[l];
+          const cs_lnum_t  shift_e = 2*e_id;
+
+          vtx_tag[e2v->col_id[shift_e]] = false;
+          vtx_tag[e2v->col_id[shift_e+1]] = false;
+
+        } // Loop on face edges
+      } // This face belongs to the frontier of the selection (only interior)
+
+    } // Loop on cell faces
+
+  } // Loop on selected cells
+
+  /* Third pass: compute the (really) available volume */
+  double  volume = 0.;
+# pragma omp parallel for reduction(+:volume) if (n_elts > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+
+    const cs_lnum_t  c_id = elt_ids[i];
+
+    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+      if (vtx_tag[c2v->ids[j]])
+        volume += dc_vol[j];
+
+  } // Loop on selected cells
+
+  double val_to_set = quantity_val;
+  if (volume > 0)
+    val_to_set /= volume;
+
+# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++)
+    if (vtx_tag[v_id])
+      values[v_id] = val_to_set;
+
+  BFT_FREE(cell_tag);
+  BFT_FREE(vtx_tag);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Get the values at each primal vertices for a scalar potential
  *
  * \param[in]      const_val   constant value
@@ -842,6 +949,57 @@ cs_evaluate_potential_from_analytic(cs_flag_t              dof_flag,
   else
     bft_error(__FILE__, __LINE__, 0, _err_not_handled);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a value to each DoF in the case of a potential field in order
+ *         to put a given quantity inside the volume associated to ml_id
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      ml_id     id related to a cs_mesh_location_t structure
+ * \param[in]      get       accessor to the constant value related to the
+ *                           quantity to put in the volume spanned by ml_id
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_from_qov(cs_flag_t       dof_flag,
+                               int             ml_id,
+                               cs_get_t        get,
+                               double          retval[])
+{
+  /* Sanity check */
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array);
+
+  /* Retrieve information from mesh location structures */
+  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
+  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
+
+  /* Sanity checks */
+  assert(n_elts != NULL);
+  cs_mesh_location_type_t  ml_type = cs_mesh_location_get_type(ml_id);
+  if (elt_ids != NULL && ml_type != CS_MESH_LOCATION_CELLS)
+    bft_error(__FILE__, __LINE__, 0, _err_not_handled);
+
+  /* Perform the evaluation */
+  bool check = false;
+  if (dof_flag & CS_FLAG_SCAL) { /* DoF is scalar-valued */
+
+    if (cs_cdo_same_support(dof_flag, cs_cdo_primal_vtx))
+      if (elt_ids != NULL) {
+        _pvsp_by_qov(get.val, n_elts[0], elt_ids, retval);
+        check = true;
+      }
+
+  } /* Located at primal vertices */
+
+  if (!check)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Stop evaluating a potential from 'quantity over volume'.\n"
+                " This situation is not handled yet."));
 }
 
 /*----------------------------------------------------------------------------*/
