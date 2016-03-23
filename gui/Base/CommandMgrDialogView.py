@@ -174,7 +174,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         self.pushButtonSaveAs.clicked.connect(self.__slotSaveAs)
         self.pushButtonKill.clicked.connect(self.__slotKill)
         self.proc.started.connect(self.slotStarted)
-        self.proc.finished[int].connect(self.slotFinished)
+        self.proc.finished.connect(self.slotFinished)
 
         self.cmd = cmd
 
@@ -182,7 +182,6 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         QApplication.setOverrideCursor(cursor)
 
 
-    @pyqtSlot("int, QProcess::ExitStatus")
     def slotStarted(self):
         """
         Public slot. Process is started.
@@ -190,7 +189,6 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         print("started: " + self.cmd)
 
 
-    @pyqtSlot("int, QProcess::ExitStatus")
     def slotFinished(self, exitCode, exitStatus):
         """
         Public slot. Enable the close button of the dialog window.
