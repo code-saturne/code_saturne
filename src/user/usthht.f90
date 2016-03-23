@@ -111,4 +111,5 @@ call csexit (1)
 ! End
 !----
 
+return
 end subroutine usthht
