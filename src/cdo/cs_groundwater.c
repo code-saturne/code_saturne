@@ -1107,13 +1107,14 @@ cs_groundwater_finalize(cs_groundwater_t   *gw)
   BFT_FREE(gw->darcian_flux);
   BFT_FREE(gw->work);
 
-  if (gw->n_soils > 1) {
-    for (int i = 0; i < gw->n_soils; i++) {
-      cs_gw_soil_t *soil = gw->soil_param + i;
-      BFT_FREE(soil->tracer_param);
-    }
-    BFT_FREE(gw->soil_id);
+  for (int i = 0; i < gw->n_soils; i++) {
+    cs_gw_soil_t *soil = gw->soil_param + i;
+    BFT_FREE(soil->tracer_param);
   }
+
+  if (gw->n_soils > 1)
+    BFT_FREE(gw->soil_id);
+
   BFT_FREE(gw->soil_param);
 
   BFT_FREE(gw);

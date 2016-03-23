@@ -1261,6 +1261,15 @@ cs_equation_free(cs_equation_t  *eq)
 
   }
 
+  cs_param_time_t  t_info = eqp->time_info;
+  if (t_info.n_ic_definitions > 0) {
+    for (int i = 0; i < t_info.n_ic_definitions; i++) {
+      cs_param_def_t  *ic = t_info.ic_definitions + i;
+      BFT_FREE(ic->ml_name);
+    }
+    BFT_FREE(t_info.ic_definitions);
+  }
+
   BFT_FREE(eq->param);
 
   cs_matrix_structure_destroy(&(eq->ms));

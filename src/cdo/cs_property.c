@@ -553,8 +553,10 @@ cs_property_free(cs_property_t   *pty)
     return pty;
 
   BFT_FREE(pty->name);
-  BFT_FREE(pty->defs);
   BFT_FREE(pty->def_ids);
+  for (int i = 0; i < pty->n_subdomains; i++)
+    BFT_FREE(pty->defs[i].ml_name);
+  BFT_FREE(pty->defs);
 
   if (pty->desc1.state & CS_FLAG_STATE_OWNER)
     if (pty->array1 != NULL)
