@@ -37,8 +37,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -85,16 +86,16 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.modelTimeOptions.addItem(self.tr("Variable"), '1')
 
         # Connections
-        self.connect(self.comboBoxOptions, SIGNAL("activated(const QString&)"), self.slotTimePassing)
-        self.connect(self.lineEditDTREF, SIGNAL("textChanged(const QString &)"), self.slotTimeStep)
-        self.connect(self.lineEditNTMABS, SIGNAL("textChanged(const QString &)"), self.slotIter)
-        self.connect(self.lineEditCOUMAX, SIGNAL("textChanged(const QString &)"), self.slotTimeOptionCOUMAX)
-        self.connect(self.lineEditFOUMAX, SIGNAL("textChanged(const QString &)"), self.slotTimeOptionFOUMAX)
-        self.connect(self.lineEditCDTMIN, SIGNAL("textChanged(const QString &)"), self.slotTimeOptionCDTMIN)
-        self.connect(self.lineEditCDTMAX, SIGNAL("textChanged(const QString &)"), self.slotTimeOptionCDTMAX)
-        self.connect(self.lineEditVARRDT, SIGNAL("textChanged(const QString &)"), self.slotTimeOptionVARRDT)
-        self.connect(self.checkBoxIPTLRO, SIGNAL("clicked()"), self.slotThermalTimeStep)
-        self.connect(self.checkBoxINPDT0, SIGNAL("clicked()"), self.slotZeroTimeStep)
+        self.comboBoxOptions.activated[str].connect(self.slotTimePassing)
+        self.lineEditDTREF.textChanged[str].connect(self.slotTimeStep)
+        self.lineEditNTMABS.textChanged[str].connect(self.slotIter)
+        self.lineEditCOUMAX.textChanged[str].connect(self.slotTimeOptionCOUMAX)
+        self.lineEditFOUMAX.textChanged[str].connect(self.slotTimeOptionFOUMAX)
+        self.lineEditCDTMIN.textChanged[str].connect(self.slotTimeOptionCDTMIN)
+        self.lineEditCDTMAX.textChanged[str].connect(self.slotTimeOptionCDTMAX)
+        self.lineEditVARRDT.textChanged[str].connect(self.slotTimeOptionVARRDT)
+        self.checkBoxIPTLRO.clicked.connect(self.slotThermalTimeStep)
+        self.checkBoxINPDT0.clicked.connect(self.slotZeroTimeStep)
 
         # Validators
 
@@ -185,7 +186,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("")
+    @pyqtSlot(str)
     def slotTimePassing(self, text):
         """
         Input IDTVAR.
@@ -212,7 +213,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.groupBoxLabels.hide()
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotTimeStep(self, text):
         """
         Input DTREF.
@@ -222,7 +223,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setTimeStep(time_step)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotIter(self, text):
         """
         Input NTMABS.
@@ -232,7 +233,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setIterationsNumber(iteration)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotTimeOptionCOUMAX(self, text):
         """
         Input COUMAX.
@@ -242,7 +243,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setOptions('max_courant_num', courant_max)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotTimeOptionFOUMAX(self, text):
         """
         Input FOUMAX.
@@ -252,7 +253,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setOptions('max_fourier_num', fourier_max)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotTimeOptionCDTMIN(self, text):
         """
         Input CDTMIN.
@@ -262,7 +263,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setOptions('time_step_min_factor', time_step_min_factor)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotTimeOptionCDTMAX(self, text):
         """
         Input CDTMAX.
@@ -272,7 +273,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setOptions('time_step_max_factor', time_step_max_factor)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotTimeOptionVARRDT(self, text):
         """
         Input VARRDT.
@@ -282,7 +283,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setOptions('time_step_var', time_step_var)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotThermalTimeStep(self):
         """
         Input IPTLRO.
@@ -293,7 +294,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setThermalTimeStep("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotZeroTimeStep(self):
         """
         Input INPDT0.

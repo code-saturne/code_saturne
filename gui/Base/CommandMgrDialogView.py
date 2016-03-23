@@ -44,8 +44,9 @@ import signal, subprocess
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules
@@ -93,15 +94,11 @@ class CommandMgrLinesDisplayedDialogView(QDialog, Ui_CommandMgrLinesDisplayedDia
         self.lines = self.default['lines']
         self.lineEditLines.setText(str(self.lines))
 
-        self.connect(self.lineEditLines,
-                     SIGNAL("textChanged(const QString &)"),
-                     self.__slotLines)
-        self.connect(self.pushButtonLines,
-                     SIGNAL("clicked()"),
-                     self.__slotUnlimited)
+        self.lineEditLines.textChanged[str].connect(self.__slotLines)
+        self.pushButtonLines.clicked.connect(self.__slotUnlimited)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def __slotLines(self, text):
         """
         Private slot. Manage the number of lines allowed in the display zone.
@@ -111,7 +108,7 @@ class CommandMgrLinesDisplayedDialogView(QDialog, Ui_CommandMgrLinesDisplayedDia
             self.lines = lines
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotUnlimited(self):
         """
         Private slot. Set a unlimited number of lines in the display zone.
@@ -171,27 +168,13 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
 
         self.objBr = obj_salome
 
-        self.connect(self.proc,
-                     SIGNAL('readyReadStandardOutput()'),
-                     self.slotReadFromStdout)
-        self.connect(self.proc,
-                     SIGNAL('readyReadStandardError()'),
-                     self.slotReadFromStderr)
-        self.connect(self.pushButtonLines,
-                     SIGNAL('clicked()'),
-                     self.__slotLines)
-        self.connect(self.pushButtonSaveAs,
-                     SIGNAL('clicked()'),
-                     self.__slotSaveAs)
-        self.connect(self.pushButtonKill,
-                     SIGNAL('clicked()'),
-                     self.__slotKill)
-        self.connect(self.proc,
-                     SIGNAL('started()'),
-                     self.slotStarted)
-        self.connect(self.proc,
-                     SIGNAL('finished(int, QProcess::ExitStatus)'),
-                     self.slotFinished)
+        self.proc.readyReadStandardOutput.connect(self.slotReadFromStdout)
+        self.proc.readyReadStandardError.connect(self.slotReadFromStderr)
+        self.pushButtonLines.clicked.connect(self.__slotLines)
+        self.pushButtonSaveAs.clicked.connect(self.__slotSaveAs)
+        self.pushButtonKill.clicked.connect(self.__slotKill)
+        self.proc.started.connect(self.slotStarted)
+        self.proc.finished[int].connect(self.slotFinished)
 
         self.cmd = cmd
 
@@ -199,7 +182,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         QApplication.setOverrideCursor(cursor)
 
 
-    @pyqtSignature("int, QProcess::ExitStatus")
+    @pyqtSlot("int, QProcess::ExitStatus")
     def slotStarted(self):
         """
         Public slot. Process is started.
@@ -207,7 +190,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         print("started: " + self.cmd)
 
 
-    @pyqtSignature("int, QProcess::ExitStatus")
+    @pyqtSlot("int, QProcess::ExitStatus")
     def slotFinished(self, exitCode, exitStatus):
         """
         Public slot. Enable the close button of the dialog window.
@@ -242,7 +225,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         self.pushButtonOK.setEnabled(True)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotLines(self):
         """
         Private slot. Manage the number of lines allowed in the display zone.
@@ -257,7 +240,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
                 self.logText.document().setMaximumBlockCount(n)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotKill(self):
         """
         Private slot. Kill the subprocess.
@@ -311,7 +294,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
                          universal_newlines=True)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotSaveAs(self):
         """
         Private slot. Save the contain of the display zone.
@@ -340,7 +323,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         logFile.close()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotReadFromStdout(self):
         """
         Public slot. Handle the readyReadStandardOutput signal of the subprocess.
@@ -356,7 +339,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
             self.logText.append(s)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotReadFromStderr(self):
         """
         Public slot. Handle the readyReadStandardError signal of the subprocess.

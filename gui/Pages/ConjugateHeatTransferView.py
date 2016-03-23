@@ -44,8 +44,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -224,7 +225,7 @@ class StandardItemModelSyrthes(QStandardItemModel):
 
         id1 = self.index(0, 0)
         id2 = self.index(self.rowCount(), 0)
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), id1, id2)
+        self.dataChanged.emit(id1, id2)
         return True
 
 
@@ -273,9 +274,14 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
         self.modelSyrthes = StandardItemModelSyrthes(self.__model)
         self.tableViewSyrthes.setModel(self.modelSyrthes)
 
-        self.tableViewSyrthes.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-        self.tableViewSyrthes.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-        self.tableViewSyrthes.horizontalHeader().setResizeMode(4, QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewSyrthes.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
+            self.tableViewSyrthes.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
+            self.tableViewSyrthes.horizontalHeader().setResizeMode(4, QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewSyrthes.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+            self.tableViewSyrthes.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+            self.tableViewSyrthes.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
 
         delegateSyrthesVerbosity = SyrthesVerbosityDelegate(self.tableViewSyrthes)
         self.tableViewSyrthes.setItemDelegateForColumn(1, delegateSyrthesVerbosity)
@@ -286,8 +292,8 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
         self.tableViewSyrthes.setItemDelegateForColumn(4, delegateSelectionCriteria)
 
         # Connections
-        self.connect(self.pushButtonAdd,    SIGNAL("clicked()"), self.slotAddSyrthes)
-        self.connect(self.pushButtonDelete, SIGNAL("clicked()"), self.slotDeleteSyrthes)
+        self.pushButtonAdd.clicked.connect(self.slotAddSyrthes)
+        self.pushButtonDelete.clicked.connect(self.slotDeleteSyrthes)
 
         # Insert list of Syrthes couplings for view
         for c in self.__model.getSyrthesCouplingList():
@@ -301,7 +307,7 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddSyrthes(self):
         """
         Set in view label and variables to see on profile
@@ -320,7 +326,7 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
             self.tableViewSyrthes.showColumn(0)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteSyrthes(self):
         """
         Delete the profile from the list (one by one).

@@ -37,8 +37,9 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -47,7 +48,7 @@ from PyQt4.QtGui  import *
 from code_saturne.Pages.BoundaryConditionsVelocityInletForm import Ui_BoundaryConditionsVelocityInletForm
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.Boundary import Boundary
 from code_saturne.Pages.CompressibleModel import CompressibleModel
@@ -95,29 +96,29 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.gas = GasCombustionModel(self.__case)
 
         # Connections
-        self.connect(self.comboBoxVelocity, SIGNAL("activated(const QString&)"), self.__slotChoiceVelocity)
-        self.connect(self.lineEditVelocity, SIGNAL("textChanged(const QString &)"), self.__slotVelocityValue)
+        self.comboBoxVelocity.activated[str].connect(self.__slotChoiceVelocity)
+        self.lineEditVelocity.textChanged[str].connect(self.__slotVelocityValue)
 
-        self.connect(self.comboBoxDirection,  SIGNAL("activated(const QString&)"), self.__slotChoiceDirection)
-        self.connect(self.lineEditDirectionX, SIGNAL("textChanged(const QString &)"), self.__slotDirX)
-        self.connect(self.lineEditDirectionY, SIGNAL("textChanged(const QString &)"), self.__slotDirY)
-        self.connect(self.lineEditDirectionZ, SIGNAL("textChanged(const QString &)"), self.__slotDirZ)
+        self.comboBoxDirection.activated[str].connect(self.__slotChoiceDirection)
+        self.lineEditDirectionX.textChanged[str].connect(self.__slotDirX)
+        self.lineEditDirectionY.textChanged[str].connect(self.__slotDirY)
+        self.lineEditDirectionZ.textChanged[str].connect(self.__slotDirZ)
 
-        self.connect(self.comboBoxTypeInlet,     SIGNAL("activated(const QString&)"),    self.__slotInletType)
-        self.connect(self.checkBoxPressure,      SIGNAL("clicked()"),                    self.__slotPressure)
-        self.connect(self.checkBoxDensity,       SIGNAL("clicked()"),                    self.__slotDensity)
-        self.connect(self.checkBoxTemperature,   SIGNAL("clicked()"),                    self.__slotTemperature)
-        self.connect(self.checkBoxEnergy,        SIGNAL("clicked()"),                    self.__slotEnergy)
-        self.connect(self.lineEditPressure,      SIGNAL("textChanged(const QString &)"), self.__slotPressureValue)
-        self.connect(self.lineEditDensity,       SIGNAL("textChanged(const QString &)"), self.__slotDensityValue)
-        self.connect(self.lineEditTotalPressure, SIGNAL("textChanged(const QString &)"), self.__slotTotalPressure)
-        self.connect(self.lineEditTotalEnthalpy, SIGNAL("textChanged(const QString &)"), self.__slotTotalEnthalpy)
-        self.connect(self.lineEditTemperature,   SIGNAL("textChanged(const QString &)"), self.__slotTemperatureValue)
-        self.connect(self.lineEditEnergy,        SIGNAL("textChanged(const QString &)"), self.__slotEnergyValue)
+        self.comboBoxTypeInlet.activated[str].connect(self.__slotInletType)
+        self.checkBoxPressure.clicked.connect(self.__slotPressure)
+        self.checkBoxDensity.clicked.connect(self.__slotDensity)
+        self.checkBoxTemperature.clicked.connect(self.__slotTemperature)
+        self.checkBoxEnergy.clicked.connect(self.__slotEnergy)
+        self.lineEditPressure.textChanged[str].connect(self.__slotPressureValue)
+        self.lineEditDensity.textChanged[str].connect(self.__slotDensityValue)
+        self.lineEditTotalPressure.textChanged[str].connect(self.__slotTotalPressure)
+        self.lineEditTotalEnthalpy.textChanged[str].connect(self.__slotTotalEnthalpy)
+        self.lineEditTemperature.textChanged[str].connect(self.__slotTemperatureValue)
+        self.lineEditEnergy.textChanged[str].connect(self.__slotEnergyValue)
 
-        self.connect(self.comboBoxTypeInletGasComb,   SIGNAL("activated(const QString&)"), self.__slotInletTypeGasComb)
-        self.connect(self.lineEditTemperatureGasComb, SIGNAL("textChanged(const QString &)"),  self.__slotTemperatureGasComb)
-        self.connect(self.lineEditFraction,           SIGNAL("textChanged(const QString &)"),  self.__slotMeanMixtureFraction)
+        self.comboBoxTypeInletGasComb.activated[str].connect(self.__slotInletTypeGasComb)
+        self.lineEditTemperatureGasComb.textChanged[str].connect(self.__slotTemperatureGasComb)
+        self.lineEditFraction.textChanged[str].connect(self.__slotMeanMixtureFraction)
 
         # Combo models
         self.modelVelocity = ComboModel(self.comboBoxVelocity, 6, 1)
@@ -174,8 +175,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.lineEditTemperatureGasComb.setValidator(validatorTemp)
         self.lineEditFraction.setValidator(validatorFrac)
 
-        self.connect(self.pushButtonVelocityFormula, SIGNAL("clicked()"), self.__slotVelocityFormula)
-        self.connect(self.pushButtonDirectionFormula, SIGNAL("clicked()"), self.__slotDirectionFormula)
+        self.pushButtonVelocityFormula.clicked.connect(self.__slotVelocityFormula)
+        self.pushButtonDirectionFormula.clicked.connect(self.__slotDirectionFormula)
 
         self.__case.undoStartGlobal()
 
@@ -341,7 +342,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.hide()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotChoiceVelocity(self, text):
         """
         Private slot.
@@ -357,12 +358,17 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
 
         if c[-7:] == "formula":
             self.pushButtonVelocityFormula.setEnabled(True)
-            setGreenColor(self.pushButtonVelocityFormula, True)
+            exp = self.__boundary.getVelocity()
+            if exp:
+                self.pushButtonVelocityFormula.setStyleSheet("background-color: green")
+                self.pushButtonVelocityFormula.setToolTip(exp)
+            else:
+                self.pushButtonVelocityFormula.setStyleSheet("background-color: red")
             self.lineEditVelocity.setEnabled(False)
             self.lineEditVelocity.setText("")
         else:
             self.pushButtonVelocityFormula.setEnabled(False)
-            setGreenColor(self.pushButtonVelocityFormula, False)
+            self.pushButtonVelocityFormula.setStyleSheet("background-color: None")
             self.lineEditVelocity.setEnabled(True)
             v = self.__boundary.getVelocity()
             self.lineEditVelocity.setText(str(v))
@@ -383,7 +389,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.labelUnitVelocity.setText(str('m<sup>3</sup>/s'))
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotVelocityValue(self, text):
         """
         Private slot.
@@ -398,7 +404,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setVelocity(v)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotVelocityFormula(self):
         """
         """
@@ -431,10 +437,11 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
             self.__boundary.setVelocity(result)
-            setGreenColor(self.pushButtonVelocityFormula, False)
+            self.pushButtonVelocityFormula.setStyleSheet("background-color: green")
+            self.pushButtonVelocityFormula.setToolTip(result)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotChoiceDirection(self, text):
         """
         Input the direction type choice.
@@ -445,11 +452,16 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
 
         if c == "formula":
             self.pushButtonDirectionFormula.setEnabled(True)
-            setGreenColor(self.pushButtonDirectionFormula, True)
+            exp = self.__boundary.getDirection('direction_formula')
+            if exp:
+                self.pushButtonDirectionFormula.setStyleSheet("background-color: green")
+                self.pushButtonDirectionFormula.setToolTip(exp)
+            else:
+                self.pushButtonDirectionFormula.setStyleSheet("background-color: red")
             self.frameDirectionCoordinates.hide()
         elif c == "coordinates":
             self.pushButtonDirectionFormula.setEnabled(False)
-            setGreenColor(self.pushButtonDirectionFormula, False)
+            self.pushButtonDirectionFormula.setStyleSheet("background-color: None")
             self.frameDirectionCoordinates.show()
             v = self.__boundary.getDirection('direction_x')
             self.lineEditDirectionX.setText(str(v))
@@ -459,11 +471,11 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.lineEditDirectionZ.setText(str(v))
         elif c == "normal":
             self.pushButtonDirectionFormula.setEnabled(False)
-            setGreenColor(self.pushButtonDirectionFormula, False)
+            self.pushButtonDirectionFormula.setStyleSheet("background-color: None")
             self.frameDirectionCoordinates.hide()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotDirX(self, text):
         """
         INPUT value into direction of inlet flow
@@ -473,7 +485,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setDirection('direction_x', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotDirY(self, text):
         """
         INPUT value into direction of inlet flow
@@ -483,7 +495,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setDirection('direction_y', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotDirZ(self, text):
         """
         INPUT value into direction of inlet flow
@@ -493,7 +505,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setDirection('direction_z', value)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotDirectionFormula(self):
         """
         """
@@ -522,10 +534,11 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             result = dialog.get_result()
             log.debug("slotFormulaDirection -> %s" % str(result))
             self.__boundary.setDirection('direction_formula', result)
-            setGreenColor(self.pushButtonDirectionFormula, False)
+            self.pushButtonDirectionFormula.setToolTip(result)
+            self.pushButtonDirectionFormula.setStyleSheet("background-color: green")
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotInletType(self, text):
         """
         INPUT inlet type : 'oxydant'/'fuel' or 'burned'/'unburned'
@@ -537,7 +550,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.initialize()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotPressure(self):
         """
         Pressure selected or not for the initialisation.
@@ -549,7 +562,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.initialize()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotDensity(self):
         """
         Density selected or not for the initialisation.
@@ -561,7 +574,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.initialize()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotTemperature(self):
         """
         Temperature selected or not for the initialisation.
@@ -573,7 +586,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.initialize()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotEnergy(self):
         """
         Energy selected or not for the initialisation.
@@ -585,7 +598,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.initialize()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotPressureValue(self, text):
         """
         INPUT inlet Pressure
@@ -595,7 +608,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setThermoValue('pressure', t)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotDensityValue(self, text):
         """
         INPUT inlet Density
@@ -605,7 +618,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setThermoValue('density', t)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotTemperatureValue(self, text):
         """
         INPUT inlet Temperature
@@ -615,7 +628,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setThermoValue('temperature', t)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotEnergyValue(self, text):
         """
         INPUT inlet Energy
@@ -625,7 +638,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setThermoValue('energy', t)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotTotalPressure(self, text):
         """
         INPUT inlet total pressure
@@ -635,7 +648,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setThermoValue('total_pressure', t)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotTotalEnthalpy(self, text):
         """
         INPUT inlet total enthalpy
@@ -645,7 +658,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setThermoValue('enthalpy', t)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotTemperatureGasComb(self, text):
         """
         INPUT inlet temperature
@@ -655,17 +668,17 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setGasCombustionTemperature(t)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotMeanMixtureFraction(self, text):
         """
         INPUT inlet mean mixutre fraction
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            t = from_qvariant(text, float)
+            f = from_qvariant(text, float)
             self.__boundary.setMeanMixtureFraction(f)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotInletTypeGasComb(self, text):
         """
         INPUT inlet type : 'oxydant'/'fuel' or 'burned'/'unburned'

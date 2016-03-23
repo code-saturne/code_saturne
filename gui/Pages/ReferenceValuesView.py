@@ -39,8 +39,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -92,14 +93,14 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         self.comboBoxLength.setSizeAdjustPolicy(QComboBox.AdjustToContents)
 
         # Connections
-        self.connect(self.lineEditP0,        SIGNAL("textChanged(const QString &)"), self.slotPressure)
-        self.connect(self.lineEditV0,        SIGNAL("textChanged(const QString &)"), self.slotVelocity)
-        self.connect(self.comboBoxLength,    SIGNAL("activated(const QString&)"),    self.slotLengthChoice)
-        self.connect(self.lineEditL0,        SIGNAL("textChanged(const QString &)"), self.slotLength)
-        self.connect(self.lineEditT0,        SIGNAL("textChanged(const QString &)"), self.slotTemperature)
-        self.connect(self.lineEditOxydant,   SIGNAL("textChanged(const QString &)"), self.slotTempOxydant)
-        self.connect(self.lineEditFuel,      SIGNAL("textChanged(const QString &)"), self.slotTempFuel)
-        self.connect(self.lineEditMassMolar, SIGNAL("textChanged(const QString &)"), self.slotMassemol)
+        self.lineEditP0.textChanged[str].connect(self.slotPressure)
+        self.lineEditV0.textChanged[str].connect(self.slotVelocity)
+        self.comboBoxLength.activated[str].connect(self.slotLengthChoice)
+        self.lineEditL0.textChanged[str].connect(self.slotLength)
+        self.lineEditT0.textChanged[str].connect(self.slotTemperature)
+        self.lineEditOxydant.textChanged[str].connect(self.slotTempOxydant)
+        self.lineEditFuel.textChanged[str].connect(self.slotTempFuel)
+        self.lineEditMassMolar.textChanged[str].connect(self.slotMassemol)
 
         # Validators
 
@@ -200,7 +201,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPressure(self,  text):
         """
         Input PRESS.
@@ -210,7 +211,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
             self.mdl.setPressure(p)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotVelocity(self,  text):
         """
         Input Velocity.
@@ -220,7 +221,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
             self.mdl.setVelocity(v)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotLengthChoice(self,text):
         """
         Set value for parameterNTERUP
@@ -237,7 +238,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         log.debug("slotlengthchoice-> %s" % choice)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotLength(self,  text):
         """
         Input reference length.
@@ -247,7 +248,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
             self.mdl.setLength(l)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotTemperature(self,  text):
         """
         Input TEMPERATURE.
@@ -257,7 +258,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
             self.mdl.setTemperature(t)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotTempOxydant(self,  text):
         """
         Input oxydant TEMPERATURE.
@@ -267,7 +268,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
             self.mdl.setTempOxydant(t)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotTempFuel(self,  text):
         """
         Input fuel TEMPERATURE.
@@ -277,7 +278,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
             self.mdl.setTempFuel(t)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMassemol(self,  text):
         """
         Input Mass molar.

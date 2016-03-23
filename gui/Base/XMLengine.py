@@ -53,7 +53,7 @@ from code_saturne.Base.Toolbox import GuiParam
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import QObject, SIGNAL
+from code_saturne.Base.QtCore    import *
 
 #-------------------------------------------------------------------------------
 # log config
@@ -1197,6 +1197,8 @@ class XMLDocument(XMLElement):
 #-------------------------------------------------------------------------------
 
 class Case(Dico, XMLDocument, QObject):
+    undo_signal = pyqtSignal()
+
     def __init__(self, package=None, file_name=""):
         """
         Instantiate a new dico and a new xml doc
@@ -1325,7 +1327,7 @@ class Case(Dico, XMLDocument, QObject):
                     self.xml_prev = self.toString()
                     self.record_func_prev = None
                     self.record_argument_prev = c
-                    self.emit(SIGNAL("undo"))
+                    self.undo_signal.emit()
 
 
     def undo(self, f, c):
@@ -1348,7 +1350,7 @@ class Case(Dico, XMLDocument, QObject):
                     self.record_argument_prev = c
                     self['undo'].append([self['current_page'], self.toString(), self['current_index'], self['current_tab']])
                     self.xml_prev = self.toString()
-                    self.emit(SIGNAL("undo"))
+                    self.undo_signal.emit()
 
 
 #-------------------------------------------------------------------------------

@@ -39,8 +39,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -48,7 +49,7 @@ from PyQt4.QtGui  import *
 
 from code_saturne.Base.Toolbox   import GuiParam
 from code_saturne.Pages.MobileMeshForm  import Ui_MobileMeshForm
-from code_saturne.Base.QtPage    import setGreenColor, IntValidator,  ComboModel, from_qvariant
+from code_saturne.Base.QtPage    import IntValidator,  ComboModel, from_qvariant
 from code_saturne.Pages.MobileMeshModel import MobileMeshModel
 
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
@@ -134,10 +135,10 @@ if (xray2 < xr2) {
         self.modelVISCOSITY.addItem(self.tr("orthotropic"), 'orthotrop')
 
         # Connections
-        self.connect(self.groupBoxALE, SIGNAL("clicked(bool)"), self.slotMethod)
-        self.connect(self.lineEditNALINF, SIGNAL("textChanged(const QString &)"), self.slotNalinf)
-        self.connect(self.comboBoxVISCOSITY, SIGNAL("activated(const QString&)"), self.slotViscosityType)
-        self.connect(self.pushButtonFormula, SIGNAL("clicked(bool)"), self.slotFormula)
+        self.groupBoxALE.clicked[bool].connect(self.slotMethod)
+        self.lineEditNALINF.textChanged[str].connect(self.slotNalinf)
+        self.comboBoxVISCOSITY.activated[str].connect(self.slotViscosityType)
+        self.pushButtonFormula.clicked[bool].connect(self.slotFormula)
 
         # Validators
         validatorNALINF = IntValidator(self.lineEditNALINF, min=0)
@@ -153,12 +154,12 @@ if (xray2 < xr2) {
         self.slotMethod(checked)
 
         # Enable / disable formula state
-        setGreenColor(self.pushButtonFormula, False)
+        self.pushButtonFormula.setStyleSheet("background-color: None")
 
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("bool")
+    @pyqtSlot(bool)
     def slotMethod(self, checked):
         """
         Private slot.
@@ -179,10 +180,15 @@ if (xray2 < xr2) {
         else:
             self.frame.hide()
             self.mdl.setMethod("off")
-        setGreenColor(self.pushButtonFormula, True)
+        exp = self.mdl.getFormula()
+        if exp:
+            self.pushButtonFormula.setStyleSheet("background-color: green")
+            self.pushButtonFormula.setToolTip(exp)
+        else:
+            self.pushButtonFormula.setStyleSheet("background-color: red")
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotNalinf(self, text):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
@@ -192,7 +198,7 @@ if (xray2 < xr2) {
             self.mdl.setSubIterations(nalinf)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotViscosityType(self, text):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
@@ -200,11 +206,16 @@ if (xray2 < xr2) {
         self.viscosity_type = self.modelVISCOSITY.dicoV2M[str(text)]
         visco = self.viscosity_type
         self.mdl.setViscosity(visco)
-        setGreenColor(self.pushButtonFormula, True)
+        exp = self.mdl.getFormula()
+        if exp:
+            self.pushButtonFormula.setStyleSheet("background-color: green")
+            self.pushButtonFormula.setToolTip(exp)
+        else:
+            self.pushButtonFormula.setStyleSheet("background-color: red")
         return visco
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotFormula(self, text):
         """
         Run formula editor.
@@ -241,7 +252,8 @@ if (xray2 < xr2) {
             result = dialog.get_result()
             log.debug("slotFormulaMobileMeshView -> %s" % str(result))
             self.mdl.setFormula(result)
-            setGreenColor(self.pushButtonFormula, False)
+            self.pushButtonFormula.setStyleSheet("background-color: green")
+            self.pushButtonFormula.setToolTip(result)
 
 
     def tr(self, text):

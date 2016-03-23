@@ -40,8 +40,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -98,12 +99,12 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         self.modelIDIRLA.addItem(self.tr("Z"), "3")
 
         # Connections
-        self.connect(self.comboBoxNORDRE, SIGNAL("activated(const QString&)"),    self.slotNORDRE)
-        self.connect(self.checkBoxIDISTU, SIGNAL("clicked()"),                    self.slotIDISTU)
-        self.connect(self.checkBoxIDIFFL, SIGNAL("clicked()"),                    self.slotIDIFFL)
-        self.connect(self.groupBoxModel,  SIGNAL("clicked(bool)"),                self.slotModel)
-        self.connect(self.lineEditMODCPL, SIGNAL("textChanged(const QString &)"), self.slotMODCPL)
-        self.connect(self.comboBoxIDIRLA, SIGNAL("activated(const QString&)"),    self.slotIDIRLA)
+        self.comboBoxNORDRE.activated[str].connect(self.slotNORDRE)
+        self.checkBoxIDISTU.clicked.connect(self.slotIDISTU)
+        self.checkBoxIDIFFL.clicked.connect(self.slotIDIFFL)
+        self.groupBoxModel.clicked[bool].connect(self.slotModel)
+        self.lineEditMODCPL.textChanged[str].connect(self.slotMODCPL)
+        self.comboBoxIDIRLA.activated[str].connect(self.slotIDIRLA)
 
         validatorMODCPL = IntValidator(self.lineEditMODCPL, min=1)
         self.lineEditMODCPL.setValidator(validatorMODCPL)
@@ -134,7 +135,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotNORDRE(self, text):
         """
         Input NORDRE.
@@ -143,7 +144,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         self.result['scheme_order'] = value
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIDISTU(self):
         """
         Input IDISTU.
@@ -155,7 +156,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         self.result['turbulent_dispertion'] = status
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIDIFFL(self):
         """
         Input IDIFFL.
@@ -167,7 +168,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         self.result['fluid_particles_turbulent_diffusion'] = status
 
 
-    @pyqtSignature("bool")
+    @pyqtSlot(bool)
     def slotModel(self, checked):
         if checked:
              value = self.default['complete_model_iteration']
@@ -179,7 +180,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
              self.result['complete_model_iteration'] = 0
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMODCPL(self, text):
         """
         Input MODCPL.
@@ -188,7 +189,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
             self.result['complete_model_iteration'] = from_qvariant(text, int)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotIDIRLA(self, text):
         """
         Input IDIRLA.
@@ -375,7 +376,7 @@ class StandardItemModelCoals(QStandardItemModel):
         elif col == 4:
             self.model.setCoef2OfFouling(row+1, val)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -412,21 +413,21 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.modelIPHYLA.addItem(self.tr("Pulverised coal model"), 'coal')
 
         # Connections
-        self.connect(self.comboBoxIILAGR, SIGNAL("activated(const QString&)"), self.slotIILAGR)
-        self.connect(self.checkBoxISUILA, SIGNAL("clicked()"), self.slotISUILA)
-        self.connect(self.checkBoxISTTIO, SIGNAL("clicked()"), self.slotISTTIO)
-        self.connect(self.checkBoxINJCON, SIGNAL("clicked()"), self.slotINJCON)
-        self.connect(self.checkBoxIDEPST, SIGNAL("clicked()"), self.slotIDEPST)
-        self.connect(self.comboBoxIPHYLA, SIGNAL("activated(const QString&)"), self.slotIPHYLA)
-        self.connect(self.checkBoxITPVAR, SIGNAL("clicked()"), self.slotITPVAR)
-        self.connect(self.checkBoxIMPVAR, SIGNAL("clicked()"), self.slotIMPVAR)
-        self.connect(self.checkBoxIENCRA, SIGNAL("clicked()"), self.slotIENCRA)
+        self.comboBoxIILAGR.activated[str].connect(self.slotIILAGR)
+        self.checkBoxISUILA.clicked.connect(self.slotISUILA)
+        self.checkBoxISTTIO.clicked.connect(self.slotISTTIO)
+        self.checkBoxINJCON.clicked.connect(self.slotINJCON)
+        self.checkBoxIDEPST.clicked.connect(self.slotIDEPST)
+        self.comboBoxIPHYLA.activated[str].connect(self.slotIPHYLA)
+        self.checkBoxITPVAR.clicked.connect(self.slotITPVAR)
+        self.checkBoxIMPVAR.clicked.connect(self.slotIMPVAR)
+        self.checkBoxIENCRA.clicked.connect(self.slotIENCRA)
         #
-        self.connect(self.lineEditNSTITS, SIGNAL("textChanged(const QString &)"), self.slotNSTITS)
-        self.connect(self.checkBoxLTSDYN, SIGNAL("clicked()"), self.slotLTSDYN)
-        self.connect(self.checkBoxLTSMAS, SIGNAL("clicked()"), self.slotLTSMAS)
-        self.connect(self.checkBoxLTSTHE, SIGNAL("clicked()"), self.slotLTSTHE)
-        self.connect(self.toolButtonAdvanced, SIGNAL("clicked()"), self.slotAdvancedOptions)
+        self.lineEditNSTITS.textChanged[str].connect(self.slotNSTITS)
+        self.checkBoxLTSDYN.clicked.connect(self.slotLTSDYN)
+        self.checkBoxLTSMAS.clicked.connect(self.slotLTSMAS)
+        self.checkBoxLTSTHE.clicked.connect(self.slotLTSTHE)
+        self.toolButtonAdvanced.clicked.connect(self.slotAdvancedOptions)
 
         # Validators
         validatorNSTITS = IntValidator(self.lineEditNSTITS)
@@ -493,7 +494,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotIILAGR(self, text):
         """
         Input IILAGR.
@@ -538,7 +539,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.checkBoxISTTIO.setDisabled(True)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotISUILA(self):
         """
         Input ISUILA.
@@ -549,7 +550,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setRestart("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotISTTIO(self):
         """
         Input ISTTIO.
@@ -560,7 +561,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setCarrierFlowStationary("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotINJCON(self):
         """
         Input INJCON.
@@ -571,7 +572,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setContinuousInjection("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIDEPST(self):
         """
         Input IDEPST.
@@ -582,7 +583,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setDepositionSubmodel("off")
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotIPHYLA(self, text):
         """
         Input IPHYLA.
@@ -628,7 +629,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.slotIENCRA()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotITPVAR(self):
         """
         Input ITPVAR.
@@ -639,7 +640,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setHeating("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIMPVAR(self):
         """
         Input IMPVAR.
@@ -650,7 +651,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setEvaporation("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIENCRA(self):
         """
         Input IENCRA.
@@ -669,9 +670,14 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.tableViewCoals.setItemDelegateForColumn(3, delegateValue2)
             self.tableViewCoals.setItemDelegateForColumn(4, delegateValue2)
             self.tableViewCoals.show()
-            self.tableViewCoals.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewCoals.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewCoals.horizontalHeader().setResizeMode(0, QHeaderView.Stretch)
+            if QT_API == "PYQT4":
+                self.tableViewCoals.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
+                self.tableViewCoals.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
+                self.tableViewCoals.horizontalHeader().setResizeMode(0, QHeaderView.Stretch)
+            elif QT_API == "PYQT5":
+                self.tableViewCoals.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+                self.tableViewCoals.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+                self.tableViewCoals.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         else:
             self.model.setCoalFouling("off")
             if hasattr(self, "modelCoals"):
@@ -679,7 +685,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.tableViewCoals.hide()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotNSTITS(self, text):
         """
         Input NSTITS.
@@ -689,7 +695,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.set2WayCouplingStartIteration(value)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotLTSDYN(self):
         """
         Input LTSDYN.
@@ -700,7 +706,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.set2WayCouplingDynamic("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotLTSMAS(self):
         """
         Input LTSMAS.
@@ -711,7 +717,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.set2WayCouplingMass("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotLTSTHE(self):
         """
         Input LTSTHE.
@@ -722,7 +728,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.set2WayCouplingTemperature("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAdvancedOptions(self):
         """
         Ask one popup for advanced specifications

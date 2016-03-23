@@ -36,8 +36,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -183,7 +184,7 @@ class StandardItemModelRotor(QStandardItemModel):
             self._data[row][col] = criteria
             self.mdl.setRotorCriteria(row, criteria)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -262,7 +263,10 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
 
         self.tableViewTurboMachinery.resizeColumnsToContents()
         self.tableViewTurboMachinery.resizeRowsToContents()
-        self.tableViewTurboMachinery.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewTurboMachinery.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewTurboMachinery.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
 
         # Faces to join selection (Custom Widgets)
         model = StandardItemModelFaces(self, self.mdl, 'face_joining')
@@ -270,20 +274,20 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.widgetFacesJoin.tableView.setModel(model)
 
         # Connections
-        self.connect(self.comboBoxTurboMachineryType, SIGNAL("activated(const QString&)"), self.slotTurboModel)
-        self.connect(self.rotorModel                , SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.dataChanged)
-        self.connect(self.tableViewTurboMachinery   , SIGNAL("clicked(const QModelIndex &)"), self.slotChangeSelection)
+        self.comboBoxTurboMachineryType.activated[str].connect(self.slotTurboModel)
+        self.rotorModel.dataChanged.connect(self.dataChanged)
+        self.tableViewTurboMachinery.clicked[QModelIndex].connect(self.slotChangeSelection)
 
-        self.connect(self.pushButtonAdd, SIGNAL("clicked()"), self.slotAddRotor)
-        self.connect(self.pushButtonDelete, SIGNAL("clicked()"), self.slotDeleteRotor)
+        self.pushButtonAdd.clicked.connect(self.slotAddRotor)
+        self.pushButtonDelete.clicked.connect(self.slotDeleteRotor)
 
-        self.connect(self.lineEditDX, SIGNAL("textChanged(const QString &)"), self.slotRotationX)
-        self.connect(self.lineEditDY, SIGNAL("textChanged(const QString &)"), self.slotRotationY)
-        self.connect(self.lineEditDZ, SIGNAL("textChanged(const QString &)"), self.slotRotationZ)
+        self.lineEditDX.textChanged[str].connect(self.slotRotationX)
+        self.lineEditDY.textChanged[str].connect(self.slotRotationY)
+        self.lineEditDZ.textChanged[str].connect(self.slotRotationZ)
 
-        self.connect(self.lineEditX1, SIGNAL("textChanged(const QString &)"), self.slotCenterRotationX1)
-        self.connect(self.lineEditY1, SIGNAL("textChanged(const QString &)"), self.slotCenterRotationY1)
-        self.connect(self.lineEditZ1, SIGNAL("textChanged(const QString &)"), self.slotCenterRotationZ1)
+        self.lineEditX1.textChanged[str].connect(self.slotCenterRotationX1)
+        self.lineEditY1.textChanged[str].connect(self.slotCenterRotationY1)
+        self.lineEditZ1.textChanged[str].connect(self.slotCenterRotationZ1)
 
         if self.mdl.getRotorList() != None:
             for i in range(len(self.mdl.getRotorList())):
@@ -341,16 +345,18 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.groupBoxJoin.hide()
 
 
-    @pyqtSignature("const QModelIndex &, const QModelIndex &")
     def dataChanged(self, topLeft, bottomRight):
         self.tableViewTurboMachinery.resizeColumnsToContents()
         self.tableViewTurboMachinery.resizeRowsToContents()
-        self.tableViewTurboMachinery.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewTurboMachinery.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewTurboMachinery.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
 
         self.updateView()
 
 
-    @pyqtSignature("const QModelIndex &")
+    @pyqtSlot("QModelIndex")
     def slotChangeSelection(self, text=None):
         """
         detect change selection to update constant properties
@@ -358,7 +364,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.updateView()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotTurboModel(self, text):
         """
         Input turbomachinery model.
@@ -376,7 +382,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.updateView()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddRotor(self):
         """
         Add rotor
@@ -387,7 +393,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.updateView()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteRotor(self):
         """
         Delete the selected rotor from the list
@@ -399,7 +405,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.updateView()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotRotationX(self, text):
         """
         Periodicity rotation for X
@@ -410,7 +416,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationVector(rotor_id, "axis_x", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotRotationY(self, text):
         """
         Periodicity rotation for Y
@@ -421,7 +427,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationVector(rotor_id, "axis_y", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotRotationZ(self, text):
         """
         Periodicity rotation for Z
@@ -432,7 +438,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationVector(rotor_id, "axis_z", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotCenterRotationX1(self, text):
         """
         Periodicity : center of rotation
@@ -443,7 +449,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationCenter(rotor_id, "invariant_x", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotCenterRotationY1(self, text):
         """
         Periodicity : center of rotation
@@ -454,7 +460,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationCenter(rotor_id, "invariant_y", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotCenterRotationZ1(self, text):
         """
         Periodicity : center of rotation

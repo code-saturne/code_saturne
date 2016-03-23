@@ -39,8 +39,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -51,7 +52,7 @@ from code_saturne.Pages.BoundaryConditionsWallRadiativeTransferForm import \
 from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel, setGreenColor
+from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant
 from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.Boundary import Boundary
@@ -128,7 +129,7 @@ class StandardItemModelScalars(QStandardItemModel):
             val = from_qvariant(value, float)
             self.bdModel.setValRay(val, tag)
             self.dataScalars[key] = val
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -212,12 +213,8 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         self.lineEditZone.setValidator(validatorZone)
 
         # Connections
-        self.connect(self.comboBoxRadiative,
-                     SIGNAL("activated(const QString&)"),
-                     self.slotRadiativeChoice)
-        self.connect(self.lineEditZone,
-                     SIGNAL("textChanged(const QString &)"),
-                     self.slotZone)
+        self.comboBoxRadiative.activated[str].connect(self.slotRadiativeChoice)
+        self.lineEditZone.textChanged[str].connect(self.slotZone)
 
         self.__case.undoStartGlobal()
 
@@ -252,7 +249,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         self.hide()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotZone(self, text):
         if self.sender().validator().state == QValidator.Acceptable:
             nb_zone = from_qvariant(text, int)
@@ -260,7 +257,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
             return nb_zone
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotRadiativeChoice(self, text):
         cond = self.modelRadiative.dicoV2M[str(text)]
         log.debug("slotRadiativeChoice cond = %s "%cond)

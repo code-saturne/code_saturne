@@ -37,8 +37,9 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -48,7 +49,7 @@ from code_saturne.Pages.BoundaryConditionsTurbulenceInletForm import Ui_Boundary
 from code_saturne.Pages.TurbulenceModel import TurbulenceModel
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
@@ -86,17 +87,17 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
 
         self.__case.undoStopGlobal()
 
-        self.connect(self.comboBoxTurbulence, SIGNAL("activated(const QString&)"), self.__slotChoiceTurbulence)
+        self.comboBoxTurbulence.activated[str].connect(self.__slotChoiceTurbulence)
 
         self.__modelTurbulence = ComboModel(self.comboBoxTurbulence, 2, 1)
         self.__modelTurbulence.addItem(self.tr("Calculation by hydraulic diameter"), 'hydraulic_diameter')
         self.__modelTurbulence.addItem(self.tr("Calculation by turbulent intensity"), 'turbulent_intensity')
         self.__modelTurbulence.addItem(self.tr("Calculation by formula"), 'formula')
 
-        self.connect(self.lineEditDiameter, SIGNAL("textChanged(const QString &)"), self.__slotDiam)
-        self.connect(self.lineEditIntensity, SIGNAL("textChanged(const QString &)"), self.__slotIntensity)
-        self.connect(self.lineEditDiameterIntens, SIGNAL("textChanged(const QString &)"), self.__slotDiam)
-        self.connect(self.pushButtonTurb, SIGNAL("clicked()"), self.__slotTurbulenceFormula)
+        self.lineEditDiameter.textChanged[str].connect(self.__slotDiam)
+        self.lineEditIntensity.textChanged[str].connect(self.__slotIntensity)
+        self.lineEditDiameterIntens.textChanged[str].connect(self.__slotDiam)
+        self.pushButtonTurb.clicked.connect(self.__slotTurbulenceFormula)
 
         validatorDiam = DoubleValidator(self.lineEditDiameter, min=0.)
         validatorDiam.setExclusiveMin(True)
@@ -118,18 +119,16 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         if TurbulenceModel(self.__case).getTurbulenceVariable():
             turb_choice = boundary.getTurbulenceChoice()
             self.__modelTurbulence.setItem(str_model=turb_choice)
+            self.pushButtonTurb.setEnabled(False)
+            self.pushButtonTurb.setStyleSheet("background-color: None")
             if turb_choice == "hydraulic_diameter":
                 self.frameTurbDiameter.show()
                 self.frameTurbIntensity.hide()
-                self.pushButtonTurb.setEnabled(False)
-                setGreenColor(self.pushButtonTurb, False)
                 d = boundary.getHydraulicDiameter()
                 self.lineEditDiameter.setText(str(d))
             elif turb_choice == "turbulent_intensity":
                 self.frameTurbIntensity.show()
                 self.frameTurbDiameter.hide()
-                self.pushButtonTurb.setEnabled(False)
-                setGreenColor(self.pushButtonTurb, False)
                 i = boundary.getTurbulentIntensity()
                 d = boundary.getHydraulicDiameter()
                 self.lineEditIntensity.setText(str(i))
@@ -138,7 +137,12 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
                 self.frameTurbIntensity.hide()
                 self.frameTurbDiameter.hide()
                 self.pushButtonTurb.setEnabled(True)
-                setGreenColor(self.pushButtonTurb, True)
+                exp = self.__boundary.getTurbFormula()
+                if exp:
+                    self.pushButtonTurb.setStyleSheet("background-color: green")
+                    self.pushButtonTurb.setToolTip(exp)
+                else:
+                    self.pushButtonTurb.setStyleSheet("background-color: red")
             self.show()
         else:
             self.hideWidget()
@@ -151,7 +155,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         self.hide()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotChoiceTurbulence(self, text):
         """
         INPUT choice of method of calculation of the turbulence
@@ -162,7 +166,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         self.frameTurbDiameter.hide()
         self.frameTurbIntensity.hide()
         self.pushButtonTurb.setEnabled(False)
-        setGreenColor(self.pushButtonTurb, False)
+        self.pushButtonTurb.setStyleSheet("background-color: None")
 
         if turb_choice  == 'hydraulic_diameter':
             self.frameTurbDiameter.show()
@@ -176,10 +180,15 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
             self.lineEditDiameterIntens.setText(str(d))
         elif turb_choice == 'formula':
             self.pushButtonTurb.setEnabled(True)
-            setGreenColor(self.pushButtonTurb, True)
+            exp = self.__boundary.getTurbFormula()
+            if exp:
+                self.pushButtonTurb.setStyleSheet("background-color: green")
+                self.pushButtonTurb.setToolTip(exp)
+            else:
+                self.pushButtonTurb.setStyleSheet("background-color: red")
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotDiam(self, text):
         """
         INPUT hydraulic diameter
@@ -189,7 +198,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
             self.__boundary.setHydraulicDiameter(diam)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotIntensity(self, text):
         """
         INPUT turbulent intensity
@@ -199,7 +208,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
             self.__boundary.setTurbulentIntensity(intens)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotTurbulenceFormula(self):
         """
         INPUT user formula
@@ -253,7 +262,8 @@ epsilon = ustar2^1.5/(kappa*dh*0.1);"""
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(result)
-                setGreenColor(self.pushButtonTurb, False)
+                self.pushButtonTurb.setStyleSheet("background-color: green")
+                self.pushButtonTurb.setToolTip(result)
 
         elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
 
@@ -316,7 +326,8 @@ r23 = 0;
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(result)
-                setGreenColor(self.pushButtonTurb, False)
+                self.pushButtonTurb.setStyleSheet("background-color: green")
+                self.pushButtonTurb.setToolTip(result)
 
         elif turb_model == 'Rij-EBRSM':
 
@@ -381,7 +392,8 @@ alpha =  1.;
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(result)
-                setGreenColor(self.pushButtonTurb, False)
+                self.pushButtonTurb.setStyleSheet("background-color: green")
+                self.pushButtonTurb.setToolTip(result)
 
         elif turb_model == 'v2f-BL-v2/k':
 
@@ -436,7 +448,8 @@ alpha = 0;"""
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(result)
-                setGreenColor(self.pushButtonTurb, False)
+                self.pushButtonTurb.setStyleSheet("background-color: green")
+                self.pushButtonTurb.setToolTip(result)
 
         elif turb_model == 'k-omega-SST':
 
@@ -487,7 +500,8 @@ omega = eps/(cmu * k);"""
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(result)
-                setGreenColor(self.pushButtonTurb, False)
+                self.pushButtonTurb.setStyleSheet("background-color: green")
+                self.pushButtonTurb.setToolTip(result)
 
         elif turb_model == 'Spalart-Allmaras':
 
@@ -537,7 +551,8 @@ nu_tilda = eps/(cmu * k);"""
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(result)
-                setGreenColor(self.pushButtonTurb, False)
+                self.pushButtonTurb.setStyleSheet("background-color: green")
+                self.pushButtonTurb.setToolTip(result)
 
 
     def tr(self, text):

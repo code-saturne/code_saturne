@@ -50,11 +50,12 @@ if not hasattr(sys, 'version_info') or sys.version_info <= (2, 4, 0, 'final'):
 #    sip.setapi('QUrl', 2)
 
 try:
-    from PyQt4.QtCore import *
-    from PyQt4.QtGui  import *
+    from code_saturne.Base.QtCore    import *
+    from code_saturne.Base.QtGui     import *
+    from code_saturne.Base.QtWidgets import *
 except ImportError:
-    print("\n  Error: Unable to import PyQt4.QtCore or PyQt4.QtGui modules.")
-    print("  Please check your PyQt4 installation.\n")
+    print("\n  Error: Unable to import QtCore or QtGui modules.")
+    print("  Please check your PyQt4 or PyQt5 installation.\n")
     sys.exit(0)
 
 
@@ -169,7 +170,7 @@ def main(argv, pkg):
     app.setOrganizationDomain(pkg.url)
     app.setApplicationName("gui") # Defines the name of the configuration file
     #app.setWindowIcon(QIcon(":/icon.png"))
-    app.connect(app, SIGNAL("lastWindowClosed()"), app, SLOT("quit()"))
+    app.lastWindowClosed.connect(app.quit)
 
     # Locale detection
     locale = QLocale.system().name()

@@ -44,8 +44,9 @@ import subprocess
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -262,12 +263,12 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
         self.expressionDoc = self.textEditExpression.document()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotClearBackground(self):
         """
         Private slot.
         """
-        QObject.disconnect(self.textEditExpression, SIGNAL("textChanged()"), self.slotClearBackground)
+        QObject.disconnect(self.textEditExpression)
         doc = self.textEditExpression.document()
 
         for i in range(0, doc.blockCount()):
@@ -339,7 +340,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                        "    column: " + str(c) + " \n\n"
 
             QMessageBox.critical(self, self.tr('Expression Editor'), str(msg))
-            QObject.connect(self.textEditExpression, SIGNAL("textChanged()"), self.slotClearBackground)
+            self.textEditExpression.textChanged.connect(self.slotClearBackground)
             return
 
         # If required symbols are missing
@@ -362,7 +363,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                 cursor.setBlockFormat(block_format)
             for i in range(0, n_errors): msg += errors[i+1] + " \n"
             QMessageBox.critical(self, self.tr('Expression Editor'), str(msg))
-            QObject.connect(self.textEditExpression, SIGNAL("textChanged()"), self.slotClearBackground)
+            self.textEditExpression.textChanged.connect(self.slotClearBackground)
             return
 
         # If another error was found
@@ -374,7 +375,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
 
             msg = "Warning, expression check failed unexpectedly:\n\n"
             QMessageBox.critical(self, self.tr('Expression Editor'), str(msg))
-            QObject.connect(self.textEditExpression, SIGNAL("textChanged()"), self.slotClearBackground)
+            self.textEditExpression.textChanged.connect(self.slotClearBackground)
             return
 
         QDialog.accept(self)
@@ -408,7 +409,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
 if __name__ == "__main__":
     import sys, signal
     app = QApplication(sys.argv)
-    app.connect(app, SIGNAL("lastWindowClosed()"), app, SLOT("quit()"))
+    app.lastWindowClosed.connect(app.quit)
     parent = QWidget()
     dlg = QMeiEditorView(parent)
     dlg.show()

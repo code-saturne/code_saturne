@@ -39,8 +39,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -208,30 +209,14 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
 
         # Connections
 
-        self.connect(self.comboBoxRadModel,
-                     SIGNAL("activated(const QString&)"),
-                     self.slotRadiativeTransfer)
-        self.connect(self.radioButtonOn,
-                     SIGNAL("clicked()"),
-                     self.slotStartRestart)
-        self.connect(self.radioButtonOff,
-                     SIGNAL("clicked()"),
-                     self.slotStartRestart)
-        self.connect(self.comboBoxQuadrature,
-                     SIGNAL("activated(const QString&)"),
-                     self.slotDirection)
-        self.connect(self.lineEditNdirec,
-                     SIGNAL("textChanged(const QString &)"),
-                     self.slotNdirec)
-        self.connect(self.comboBoxAbsorption,
-                     SIGNAL("activated(const QString&)"),
-                     self.slotTypeCoefficient)
-        self.connect(self.lineEditCoeff,
-                     SIGNAL("textChanged(const QString &)"),
-                     self.slotAbsorptionCoefficient)
-        self.connect(self.toolButtonAdvanced,
-                     SIGNAL("clicked()"),
-                     self.slotAdvancedOptions)
+        self.comboBoxRadModel.activated[str].connect(self.slotRadiativeTransfer)
+        self.radioButtonOn.clicked.connect(self.slotStartRestart)
+        self.radioButtonOff.clicked.connect(self.slotStartRestart)
+        self.comboBoxQuadrature.activated[str].connect(self.slotDirection)
+        self.lineEditNdirec.textChanged[str].connect(self.slotNdirec)
+        self.comboBoxAbsorption.activated[str].connect(self.slotTypeCoefficient)
+        self.lineEditCoeff.textChanged[str].connect(self.slotAbsorptionCoefficient)
+        self.toolButtonAdvanced.clicked.connect(self.slotAdvancedOptions)
 
         # Validator
 
@@ -281,7 +266,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotRadiativeTransfer(self):
         """
         """
@@ -312,7 +297,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotStartRestart(self):
         """
         """
@@ -322,7 +307,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
             self.mdl.setRestart("off")
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotDirection(self, text):
         """
         """
@@ -338,7 +323,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
             self.lineEditNdirec.hide()
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotNdirec(self, text):
         """
         """
@@ -347,7 +332,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
             self.mdl.setNbDir(n)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotTypeCoefficient(self, text):
         """
         """
@@ -362,7 +347,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
             self.lineEditCoeff.setDisabled(True)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotAbsorptionCoefficient(self, text):
         """
         """
@@ -371,7 +356,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
             self.mdl.setAbsorCoeff(c)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAdvancedOptions(self):
         """
         Ask one popup for advanced specifications

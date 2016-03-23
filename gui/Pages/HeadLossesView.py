@@ -40,8 +40,9 @@ import sys, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -96,7 +97,7 @@ class StandardItemModelHeadLosses(QStandardItemModel):
 
 
     def setData(self, index, value, role):
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -136,22 +137,22 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         self.treeView.setModel(self.modelHeadLosses)
 
         # Connections
-        self.connect(self.treeView, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectHeadLossesZones)
-        self.connect(self.groupBox_3, SIGNAL("clicked(bool)"), self.slotTransfoMatrix)
+        self.treeView.clicked[QModelIndex].connect(self.slotSelectHeadLossesZones)
+        self.groupBox_3.clicked[bool].connect(self.slotTransfoMatrix)
 
-        self.connect(self.lineEdit, SIGNAL("textChanged(const QString &)"), self.slotKxx)
-        self.connect(self.lineEdit_2, SIGNAL("textChanged(const QString &)"), self.slotKyy)
-        self.connect(self.lineEdit_3, SIGNAL("textChanged(const QString &)"), self.slotKzz)
+        self.lineEdit.textChanged[str].connect(self.slotKxx)
+        self.lineEdit_2.textChanged[str].connect(self.slotKyy)
+        self.lineEdit_3.textChanged[str].connect(self.slotKzz)
 
-        self.connect(self.lineEdit_4, SIGNAL("textChanged(const QString &)"), self.slotA11)
-        self.connect(self.lineEdit_5, SIGNAL("textChanged(const QString &)"), self.slotA12)
-        self.connect(self.lineEdit_6, SIGNAL("textChanged(const QString &)"), self.slotA13)
-        self.connect(self.lineEdit_8, SIGNAL("textChanged(const QString &)"), self.slotA21)
-        self.connect(self.lineEdit_9, SIGNAL("textChanged(const QString &)"), self.slotA22)
-        self.connect(self.lineEdit_7, SIGNAL("textChanged(const QString &)"), self.slotA23)
-        self.connect(self.lineEdit_11, SIGNAL("textChanged(const QString &)"), self.slotA31)
-        self.connect(self.lineEdit_12, SIGNAL("textChanged(const QString &)"), self.slotA32)
-        self.connect(self.lineEdit_10, SIGNAL("textChanged(const QString &)"), self.slotA33)
+        self.lineEdit_4.textChanged[str].connect(self.slotA11)
+        self.lineEdit_5.textChanged[str].connect(self.slotA12)
+        self.lineEdit_6.textChanged[str].connect(self.slotA13)
+        self.lineEdit_8.textChanged[str].connect(self.slotA21)
+        self.lineEdit_9.textChanged[str].connect(self.slotA22)
+        self.lineEdit_7.textChanged[str].connect(self.slotA23)
+        self.lineEdit_11.textChanged[str].connect(self.slotA31)
+        self.lineEdit_12.textChanged[str].connect(self.slotA32)
+        self.lineEdit_10.textChanged[str].connect(self.slotA33)
 
         # Validators
 
@@ -201,7 +202,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QModelIndex&")
+    @pyqtSlot("QModelIndex")
     def slotSelectHeadLossesZones(self, index):
         model = HeadLossesModel(self.case)
         label, name, local = self.modelHeadLosses.getItem(index.row())
@@ -234,7 +235,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
 
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotKxx(self, text):
         cindex = self.treeView.currentIndex()
         if cindex != (-1,-1):
@@ -245,7 +246,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
                 value = from_qvariant(text, float)
                 model.setCoefficient(name,'kxx',value )
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotKyy(self, text):
         cindex = self.treeView.currentIndex()
         if cindex != (-1,-1):
@@ -256,7 +257,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
                 value = from_qvariant(text, float)
                 model.setCoefficient(name,'kyy',value )
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotKzz(self, text):
         cindex = self.treeView.currentIndex()
         if cindex != (-1,-1):
@@ -267,7 +268,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
                 value = from_qvariant(text, float)
                 model.setCoefficient(name,'kzz',value )
 
-    @pyqtSignature("bool")
+    @pyqtSlot(bool)
     def slotTransfoMatrix(self,  checked):
         self.groupBox_3.setFlat(not checked)
         cindex = self.treeView.currentIndex()
@@ -298,7 +299,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             self.lineEdit_10.setText(str(a33))
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotA11(self, text):
         cindex = self.treeView.currentIndex()
         if cindex != (-1,-1):
@@ -309,7 +310,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
                 value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a11',value )
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotA12(self, text):
         cindex = self.treeView.currentIndex()
         if cindex != (-1,-1):
@@ -320,7 +321,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
                 value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a12',value )
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotA13(self, text):
         cindex = self.treeView.currentIndex()
         if cindex != (-1,-1):
@@ -331,7 +332,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
                 value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a13',value )
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotA21(self, text):
         cindex = self.treeView.currentIndex()
         if cindex != (-1,-1):
@@ -342,7 +343,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
                 value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a21',value )
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotA22(self, text):
         cindex = self.treeView.currentIndex()
         if cindex != (-1,-1):
@@ -353,7 +354,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
                 value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a22',value )
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotA23(self, text):
         cindex = self.treeView.currentIndex()
         if cindex != (-1,-1):
@@ -364,7 +365,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
                 value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a23',value )
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotA31(self, text):
         cindex = self.treeView.currentIndex()
         if cindex != (-1,-1):
@@ -375,7 +376,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
                 value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a31',value )
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotA32(self, text):
         cindex = self.treeView.currentIndex()
         if cindex != (-1,-1):
@@ -386,7 +387,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
                 value = from_qvariant(text, float)
                 model.setMatrixComposant(name,'a32',value )
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotA33(self, text):
         cindex = self.treeView.currentIndex()
         if cindex != (-1,-1):

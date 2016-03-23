@@ -45,8 +45,9 @@ except Exception:
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -520,7 +521,7 @@ class StandardItemModelMeshes(QStandardItemModel):
             if v:
                 self.mdl.setMeshGroupCells(mesh, v)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -877,7 +878,7 @@ class MeshInputDialog(QFileDialog):
             search_urls.append(QUrl.fromLocalFile(d))
         self.setSidebarUrls(search_urls)
 
-        QObject.connect(self, SIGNAL('currentChanged(const QString &)'), self._selectChange)
+        self.currentChanged[str].connect(self._selectChange)
 
         self.setFileMode(QFileDialog.ExistingFile)
 
@@ -927,9 +928,9 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.radioButtonExists.setChecked(False)
             self.frameMeshInput.hide()
 
-        self.connect(self.radioButtonImport, SIGNAL("clicked()"), self.slotSetImportMesh)
-        self.connect(self.radioButtonExists, SIGNAL("clicked()"), self.slotSetInputMesh)
-        self.connect(self.toolButtonMeshInput, SIGNAL("pressed()"), self.selectInputMesh)
+        self.radioButtonImport.clicked.connect(self.slotSetImportMesh)
+        self.radioButtonExists.clicked.connect(self.slotSetInputMesh)
+        self.toolButtonMeshInput.pressed.connect(self.selectInputMesh)
 
         # 1) Meshes directory
 
@@ -992,12 +993,12 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         # 2.2) Connections
 
-        self.connect(self.pushButtonAddMesh, SIGNAL("clicked()"), self.slotSearchMesh)
-        self.connect(self.pushButtonDeleteMesh, SIGNAL("clicked()"), self.slotDeleteMesh)
-        self.connect(self.groupBoxWarp, SIGNAL("clicked(bool)"), self.slotFacesCutting)
-        self.connect(self.lineEditWarp, SIGNAL("textChanged(const QString &)"), self.slotWarpParam)
-        self.connect(self.groupBoxMeshSmooth, SIGNAL("clicked(bool)"), self.slotMeshSmooth)
-        self.connect(self.lineEditMeshSmooth, SIGNAL("textChanged(const QString &)"), self.slotMeshSmoothParam)
+        self.pushButtonAddMesh.clicked.connect(self.slotSearchMesh)
+        self.pushButtonDeleteMesh.clicked.connect(self.slotDeleteMesh)
+        self.groupBoxWarp.clicked[bool].connect(self.slotFacesCutting)
+        self.lineEditWarp.textChanged[str].connect(self.slotWarpParam)
+        self.groupBoxMeshSmooth.clicked[bool].connect(self.slotMeshSmooth)
+        self.lineEditMeshSmooth.textChanged[str].connect(self.slotMeshSmoothParam)
 
         # 2.3) Set up validators
         validatorWarp = DoubleValidator(self.lineEditWarp, min=0.0)
@@ -1015,8 +1016,12 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         self.tableModelThinWall = StandardItemModelThinWall(self, self.mdl)
         self.tableViewThinWall.setModel(self.tableModelThinWall)
-        self.tableViewThinWall.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-        self.tableViewThinWall.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewThinWall.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
+            self.tableViewThinWall.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewThinWall.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
+            self.tableViewThinWall.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
         self.tableViewThinWall.resizeColumnsToContents()
         self.tableViewThinWall.resizeRowsToContents()
         self.tableViewThinWall.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -1029,14 +1034,17 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.tableViewThinWall.setItemDelegateForColumn(1, delegateSupport)
 
         # Connections
-        self.connect(self.pushButtonAddThinWall    , SIGNAL("clicked()"), self.slotAddThinWall)
-        self.connect(self.pushButtonDeleteThinWall , SIGNAL("clicked()"), self.slotDeleteThinWall)
+        self.pushButtonAddThinWall.clicked.connect(self.slotAddThinWall)
+        self.pushButtonDeleteThinWall.clicked.connect(self.slotDeleteThinWall)
 
         # 2.5) Extrude
 
         self.tableModelExtrude = StandardItemModelExtrude(self, self.mdl)
         self.tableViewExtrude.setModel(self.tableModelExtrude)
-        self.tableViewExtrude.horizontalHeader().setResizeMode(4,QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewExtrude.horizontalHeader().setResizeMode(4,QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewExtrude.horizontalHeader().setSectionResizeMode(4,QHeaderView.Stretch)
         self.tableViewExtrude.resizeColumnsToContents()
         self.tableViewExtrude.resizeRowsToContents()
         self.tableViewExtrude.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -1054,8 +1062,8 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.tableViewExtrude.setItemDelegateForColumn(4, delegateSupport) # criteria
 
         # Connections
-        self.connect(self.pushButtonAddExtrude   , SIGNAL("clicked()"), self.slotAddExtrude)
-        self.connect(self.pushButtonDeleteExtrude, SIGNAL("clicked()"), self.slotDeleteExtrude)
+        self.pushButtonAddExtrude.clicked.connect(self.slotAddExtrude)
+        self.pushButtonDeleteExtrude.clicked.connect(self.slotDeleteExtrude)
 
         # load values
         for tw in range(self.mdl.getExtrudeSelectionsCount()):
@@ -1111,52 +1119,48 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         # Connections
 
-        self.connect(self.widgetFacesPerio.tableView,
-                     SIGNAL("clicked(const QModelIndex &)"),
-                     self.slotUpdatePeriodicity)
+        self.widgetFacesPerio.tableView.clicked[QModelIndex].connect(self.slotUpdatePeriodicity)
 
-        self.connect(self.widgetFacesPerio.pushButtonDelete,
-                     SIGNAL("clicked()"),
-                     self.slotDeletePeriodicity)
+        self.widgetFacesPerio.pushButtonDelete.clicked.connect(self.slotDeletePeriodicity)
 
         # self.connect(self.modelPeriod, SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.slotUpdateByModel)
 
-        self.connect(self.comboBoxPeriodicity, SIGNAL("activated(const QString&)"), self.slotPeriodicityMode)
+        self.comboBoxPeriodicity.activated[str].connect(self.slotPeriodicityMode)
 
-        self.connect(self.lineEditTX, SIGNAL("textChanged(const QString &)"), self.slotTranslationX)
-        self.connect(self.lineEditTY, SIGNAL("textChanged(const QString &)"), self.slotTranslationY)
-        self.connect(self.lineEditTZ, SIGNAL("textChanged(const QString &)"), self.slotTranslationZ)
+        self.lineEditTX.textChanged[str].connect(self.slotTranslationX)
+        self.lineEditTY.textChanged[str].connect(self.slotTranslationY)
+        self.lineEditTZ.textChanged[str].connect(self.slotTranslationZ)
 
-        self.connect(self.lineEditAngle, SIGNAL("textChanged(const QString &)"), self.slotAngleRotation)
+        self.lineEditAngle.textChanged[str].connect(self.slotAngleRotation)
 
-        self.connect(self.lineEditDX, SIGNAL("textChanged(const QString &)"), self.slotRotationX)
-        self.connect(self.lineEditDY, SIGNAL("textChanged(const QString &)"), self.slotRotationY)
-        self.connect(self.lineEditDZ, SIGNAL("textChanged(const QString &)"), self.slotRotationZ)
+        self.lineEditDX.textChanged[str].connect(self.slotRotationX)
+        self.lineEditDY.textChanged[str].connect(self.slotRotationY)
+        self.lineEditDZ.textChanged[str].connect(self.slotRotationZ)
 
-        self.connect(self.lineEditX1, SIGNAL("textChanged(const QString &)"), self.slotCenterRotationX1)
-        self.connect(self.lineEditY1, SIGNAL("textChanged(const QString &)"), self.slotCenterRotationY1)
-        self.connect(self.lineEditZ1, SIGNAL("textChanged(const QString &)"), self.slotCenterRotationZ1)
+        self.lineEditX1.textChanged[str].connect(self.slotCenterRotationX1)
+        self.lineEditY1.textChanged[str].connect(self.slotCenterRotationY1)
+        self.lineEditZ1.textChanged[str].connect(self.slotCenterRotationZ1)
 
-        self.connect(self.lineEditM11, SIGNAL("textChanged(const QString &)"), self.slotMatrix11)
-        self.connect(self.lineEditM12, SIGNAL("textChanged(const QString &)"), self.slotMatrix12)
-        self.connect(self.lineEditM13, SIGNAL("textChanged(const QString &)"), self.slotMatrix13)
-        self.connect(self.lineEditM14, SIGNAL("textChanged(const QString &)"), self.slotMatrix14)
-        self.connect(self.lineEditM21, SIGNAL("textChanged(const QString &)"), self.slotMatrix21)
-        self.connect(self.lineEditM22, SIGNAL("textChanged(const QString &)"), self.slotMatrix22)
-        self.connect(self.lineEditM23, SIGNAL("textChanged(const QString &)"), self.slotMatrix23)
-        self.connect(self.lineEditM24, SIGNAL("textChanged(const QString &)"), self.slotMatrix24)
-        self.connect(self.lineEditM31, SIGNAL("textChanged(const QString &)"), self.slotMatrix31)
-        self.connect(self.lineEditM32, SIGNAL("textChanged(const QString &)"), self.slotMatrix32)
-        self.connect(self.lineEditM33, SIGNAL("textChanged(const QString &)"), self.slotMatrix33)
-        self.connect(self.lineEditM34, SIGNAL("textChanged(const QString &)"), self.slotMatrix34)
-        self.connect(self.tabWidget,   SIGNAL("currentChanged(int)"), self.slotchanged)
+        self.lineEditM11.textChanged[str].connect(self.slotMatrix11)
+        self.lineEditM12.textChanged[str].connect(self.slotMatrix12)
+        self.lineEditM13.textChanged[str].connect(self.slotMatrix13)
+        self.lineEditM14.textChanged[str].connect(self.slotMatrix14)
+        self.lineEditM21.textChanged[str].connect(self.slotMatrix21)
+        self.lineEditM22.textChanged[str].connect(self.slotMatrix22)
+        self.lineEditM23.textChanged[str].connect(self.slotMatrix23)
+        self.lineEditM24.textChanged[str].connect(self.slotMatrix24)
+        self.lineEditM31.textChanged[str].connect(self.slotMatrix31)
+        self.lineEditM32.textChanged[str].connect(self.slotMatrix32)
+        self.lineEditM33.textChanged[str].connect(self.slotMatrix33)
+        self.lineEditM34.textChanged[str].connect(self.slotMatrix34)
+        self.tabWidget.currentChanged[int].connect(self.slotchanged)
 
         # 5) Initialize meshes list
 
         # 5.1) Meshes default directory
 
-        self.connect(self.toolButtonMeshDir, SIGNAL("pressed()"), self.searchDir)
-        self.connect(self.toolButtonMeshDirClear, SIGNAL("pressed()"), self.clearDir)
+        self.toolButtonMeshDir.pressed.connect(self.searchDir)
+        self.toolButtonMeshDirClear.pressed.connect(self.clearDir)
 
         # 5.1) Meshes list
 
@@ -1343,13 +1347,20 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 if cmp_width > last_width:
                     last_width = cmp_width
 
-        self.tableViewMeshes.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
-        self.tableViewMeshes.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
+        if QT_API == "PYQT4":
+            self.tableViewMeshes.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
+            self.tableViewMeshes.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
+        elif QT_API == "PYQT5":
+            self.tableViewMeshes.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+            self.tableViewMeshes.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         if n_num == 0:
             self.tableViewMeshes.setColumnHidden(2, True)
         else:
             self.tableViewMeshes.setColumnHidden(2, False)
-            self.tableViewMeshes.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
+            if QT_API == "PYQT4":
+                self.tableViewMeshes.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
+            elif QT_API == "PYQT5":
+                self.tableViewMeshes.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
 
         if n_groups == 0:
             self.tableViewMeshes.setColumnHidden(4, True)
@@ -1357,11 +1368,15 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         else:
             self.tableViewMeshes.setColumnHidden(4, False)
             self.tableViewMeshes.setColumnHidden(5, False)
-            self.tableViewMeshes.horizontalHeader().setResizeMode(4, QHeaderView.ResizeToContents)
-            self.tableViewMeshes.horizontalHeader().setResizeMode(5, QHeaderView.ResizeToContents)
+            if QT_API == "PYQT4":
+                self.tableViewMeshes.horizontalHeader().setResizeMode(4, QHeaderView.ResizeToContents)
+                self.tableViewMeshes.horizontalHeader().setResizeMode(5, QHeaderView.ResizeToContents)
+            elif QT_API == "PYQT5":
+                self.tableViewMeshes.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
+                self.tableViewMeshes.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
 
         # We have a bug under KDE (but not Gnome) if the line below is not commented.
-        # self.tableViewMeshes.horizontalHeader().setResizeMode(6, QHeaderView.ResizeToContents)
+        # self.tableViewMeshes.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
 
         self.tableViewMeshes.horizontalHeader().setStretchLastSection(True)
 
@@ -1406,7 +1421,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self._tableViewLayout()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def selectInputMesh(self):
 
         # Open a File Dialog in order to search the mesh_input file or directory.
@@ -1434,7 +1449,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.mesh_input = mi
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotSetInputMesh(self):
 
         self.radioButtonImport.setChecked(False)
@@ -1451,7 +1466,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.slotSetImportMesh()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotSetImportMesh(self):
 
         self.radioButtonImport.setChecked(True)
@@ -1466,7 +1481,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.mdl.setMeshInput(self.mesh_input)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotSearchMesh(self):
         msg = self.tr("Select a mesh file.")
         self.stbar.showMessage(msg, 2000)
@@ -1477,7 +1492,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self._addMeshInList(file_name)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteMesh(self):
         """
         Delete the selected mesh from the list
@@ -1498,7 +1513,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self._tableViewLayout()
 
 
-    @pyqtSignature("bool")
+    @pyqtSlot(bool)
     def slotFacesCutting(self, checked):
         """
         Private slot.
@@ -1517,7 +1532,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.frameWarp.hide()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotWarpParam(self, text):
         """
         Private slot.
@@ -1530,7 +1545,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.mdl.setCutAngle(var)
 
 
-    @pyqtSignature("bool")
+    @pyqtSlot(bool)
     def slotMeshSmooth(self, checked):
         """
         Private slot.
@@ -1549,7 +1564,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.frameSmooth.hide()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMeshSmoothParam(self, text):
         """
         Private slot.
@@ -1562,7 +1577,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.mdl.setSmoothAngle(var)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeletePeriodicity(self):
         """
         Delete a periodicity from the list.
@@ -1655,7 +1670,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.__setValuesMixed(perio)
 
 
-    @pyqtSignature("const QModelIndex&, const QModelIndex&")
+    @pyqtSlot("QModelIndex, QModelIndex")
     def slotUpdateByModel(self, index1, index2):
         """
         This slot updates the display for the periodicity modified in the
@@ -1665,7 +1680,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.slotUpdatePeriodicity(index1)
 
 
-    @pyqtSignature("const QModelIndex&")
+    @pyqtSlot("QModelIndex")
     def slotUpdatePeriodicity(self, index):
         """
         This slot updates the display for the periodicity selected
@@ -1684,7 +1699,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         txt = str(self.comboBoxPeriodicity.currentText())
         self.slotPeriodicityMode(txt)
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPeriodicityMode(self, text):
         """
         Do we have a periodicity ?
@@ -1739,7 +1754,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.__setValuesPeriodicTransformation(self.perio_id, self.perio_mode)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotTranslationX(self, text):
         """
         Periodicity translation for X
@@ -1750,7 +1765,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_x', val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotTranslationY(self, text):
         """
         Periodicity translation for Y
@@ -1761,7 +1776,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_y', val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotTranslationZ(self, text):
         """
         Periodicity translation for Z
@@ -1772,7 +1787,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_z', val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotAngleRotation(self, text):
         """
         Periodicity rotation angle
@@ -1783,7 +1798,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.mdl.setRotationAngle(self.perio_id, angle)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotRotationX(self, text):
         """
         Periodicity rotation for X
@@ -1794,7 +1809,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.mdl.setRotationVector(self.perio_id, "axis_x", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotRotationY(self, text):
         """
         Periodicity rotation for Y
@@ -1805,7 +1820,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.mdl.setRotationVector(self.perio_id, "axis_y", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotRotationZ(self, text):
         """
         Periodicity rotation for Z
@@ -1816,7 +1831,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.mdl.setRotationVector(self.perio_id, "axis_z", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotCenterRotationX1(self, text):
         """
         Periodicity : center of rotation
@@ -1827,7 +1842,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.mdl.setRotationCenter(self.perio_id, "invariant_x", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotCenterRotationY1(self, text):
         """
         Periodicity : center of rotation
@@ -1838,7 +1853,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.mdl.setRotationCenter(self.perio_id, "invariant_y", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotCenterRotationZ1(self, text):
         """
         Periodicity : center of rotation
@@ -1850,62 +1865,62 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
 
     # Methods for matrix components
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMatrix11(self, text):
         self.__cmdTransformationMatrix("matrix_11", text)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMatrix12(self, text):
         self.__cmdTransformationMatrix("matrix_12", text)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMatrix13(self, text):
         self.__cmdTransformationMatrix("matrix_13", text)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMatrix14(self, text):
         self.__cmdTransformationMatrix("matrix_14", text)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMatrix21(self, text):
         self.__cmdTransformationMatrix("matrix_21", text)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMatrix22(self, text):
         self.__cmdTransformationMatrix("matrix_22", text)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMatrix23(self, text):
         self.__cmdTransformationMatrix("matrix_23", text)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMatrix24(self, text):
         self.__cmdTransformationMatrix("matrix_24", text)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMatrix31(self, text):
         self.__cmdTransformationMatrix("matrix_31", text)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMatrix32(self, text):
         self.__cmdTransformationMatrix("matrix_32", text)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMatrix33(self, text):
         self.__cmdTransformationMatrix("matrix_33", text)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMatrix34(self, text):
         self.__cmdTransformationMatrix("matrix_34", text)
 
@@ -1920,7 +1935,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.mdl.setTransformationMatrix(self.perio_id, pos, val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotCenterRotationX2(self, text):
         """
         Periodicity : center of rotation
@@ -1931,7 +1946,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.mdl.setRotationCenter(self.perio_id, "invariant_x", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotCenterRotationY2(self, text):
         """
         Periodicity : center of rotation
@@ -1942,7 +1957,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.mdl.setRotationCenter(self.perio_id, "invariant_y", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotCenterRotationZ2(self, text):
         """
         Periodicity : center of rotation
@@ -1953,7 +1968,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 self.mdl.setRotationCenter(self.perio_id, "invariant_z", val)
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotchanged(self, index):
         """
         Changed tab
@@ -1961,7 +1976,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.case['current_tab'] = index
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddThinWall(self):
         """
         Add a thin wall
@@ -1970,7 +1985,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.tableModelThinWall.newItem()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteThinWall(self):
         """
         Delete the a thin wall from the list (one by one).
@@ -1981,7 +1996,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.tableModelThinWall.deleteItem(row)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddExtrude(self):
         """
         Add a thin wall
@@ -1990,7 +2005,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.tableModelExtrude.newItem()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteExtrude(self):
         """
         Delete the a thin wall from the list (one by one).

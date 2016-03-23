@@ -251,7 +251,8 @@ class Variables:
             we suspend global record to prevent infinity loop
             use when call another class function
             """
-
+            #print f.func_name
+            #print c
             if self.case.record_global == True:
                 self.case.undoGlobal(f, c)
                 self.case.undoStop()
@@ -266,7 +267,8 @@ class Variables:
     @staticmethod
     def undoLocal(f):
         def _wrapper2(self, *c, **d):
-
+            #print f.func_name
+            #print c
             self.case.undo(f, c)
             return f(self, *c, **d)
         return _wrapper2

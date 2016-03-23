@@ -37,8 +37,9 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -87,11 +88,11 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
 
         self.__case.undoStopGlobal()
 
-        self.connect(self.groupBoxSliding, SIGNAL("clicked(bool)"), self.__slotSlidingWall)
+        self.groupBoxSliding.clicked[bool].connect(self.__slotSlidingWall)
 
-        self.connect(self.lineEditSlideU, SIGNAL("textChanged(const QString &)"), self.__slotVelocityU)
-        self.connect(self.lineEditSlideV, SIGNAL("textChanged(const QString &)"), self.__slotVelocityV)
-        self.connect(self.lineEditSlideW, SIGNAL("textChanged(const QString &)"), self.__slotVelocityW)
+        self.lineEditSlideU.textChanged[str].connect(self.__slotVelocityU)
+        self.lineEditSlideV.textChanged[str].connect(self.__slotVelocityV)
+        self.lineEditSlideW.textChanged[str].connect(self.__slotVelocityW)
 
         validatorSlideU = DoubleValidator(self.lineEditSlideU)
         validatorSlideV = DoubleValidator(self.lineEditSlideV)
@@ -129,7 +130,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         self.hide()
 
 
-    @pyqtSignature("bool")
+    @pyqtSlot(bool)
     def __slotSlidingWall(self, checked):
         """
         Private slot.
@@ -154,7 +155,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         self.lineEditSlideW.setText(str(w))
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotVelocityU(self, text):
         """
         Private slot.
@@ -169,7 +170,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
             self.__boundary.setVelocityComponent(value, '0')
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotVelocityV(self, text):
         """
         Private slot.
@@ -184,7 +185,7 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
             self.__boundary.setVelocityComponent(value, '1')
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotVelocityW(self, text):
         """
         Private slot.

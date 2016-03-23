@@ -39,15 +39,16 @@ import sys, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import ComboModel, setGreenColor, DoubleValidator
+from code_saturne.Base.QtPage import ComboModel, DoubleValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.GroundwaterLawForm import Ui_GroundwaterLawForm
 from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
@@ -98,7 +99,7 @@ class StandardItemModelGroundwaterLaw(QStandardItemModel):
 
 
     def setData(self, index, value, role):
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -192,35 +193,35 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
                 self.modelNameDiff.addItem(scalar)
 
         # Connections
-        self.connect(self.treeView,                SIGNAL("pressed(const QModelIndex &)"), self.slotSelectGroundwaterLawZones)
-        self.connect(self.comboBoxType,            SIGNAL("activated(const QString&)"),    self.slotGroundwaterLaw)
-        self.connect(self.lineEditKs,              SIGNAL("textChanged(const QString &)"), self.slotKs)
-        self.connect(self.lineEditKsXX,            SIGNAL("textChanged(const QString &)"), self.slotKsXX)
-        self.connect(self.lineEditKsYY,            SIGNAL("textChanged(const QString &)"), self.slotKsYY)
-        self.connect(self.lineEditKsZZ,            SIGNAL("textChanged(const QString &)"), self.slotKsZZ)
-        self.connect(self.lineEditKsXY,            SIGNAL("textChanged(const QString &)"), self.slotKsXY)
-        self.connect(self.lineEditKsXZ,            SIGNAL("textChanged(const QString &)"), self.slotKsXZ)
-        self.connect(self.lineEditKsYZ,            SIGNAL("textChanged(const QString &)"), self.slotKsYZ)
-        self.connect(self.lineEditThetas,          SIGNAL("textChanged(const QString &)"), self.slotThetas)
-        self.connect(self.lineEditThetar,          SIGNAL("textChanged(const QString &)"), self.slotThetar)
-        self.connect(self.lineEditN,               SIGNAL("textChanged(const QString &)"), self.slotN)
-        self.connect(self.lineEditL,               SIGNAL("textChanged(const QString &)"), self.slotL)
-        self.connect(self.lineEditAlpha,           SIGNAL("textChanged(const QString &)"), self.slotAlpha)
-        self.connect(self.lineEditLongitudinal,    SIGNAL("textChanged(const QString &)"), self.slotLongitudinal)
-        self.connect(self.lineEditTransverse,      SIGNAL("textChanged(const QString &)"), self.slotTransverse)
-        self.connect(self.lineEditKsSaturated,     SIGNAL("textChanged(const QString &)"), self.slotKs)
-        self.connect(self.lineEditKsSaturatedXX,   SIGNAL("textChanged(const QString &)"), self.slotKsXX)
-        self.connect(self.lineEditKsSaturatedYY,   SIGNAL("textChanged(const QString &)"), self.slotKsYY)
-        self.connect(self.lineEditKsSaturatedZZ,   SIGNAL("textChanged(const QString &)"), self.slotKsZZ)
-        self.connect(self.lineEditKsSaturatedXY,   SIGNAL("textChanged(const QString &)"), self.slotKsXY)
-        self.connect(self.lineEditKsSaturatedXZ,   SIGNAL("textChanged(const QString &)"), self.slotKsXZ)
-        self.connect(self.lineEditKsSaturatedYZ,   SIGNAL("textChanged(const QString &)"), self.slotKsYZ)
-        self.connect(self.lineEditThetasSaturated, SIGNAL("textChanged(const QString &)"), self.slotThetas)
-        self.connect(self.lineEditDispersion,      SIGNAL("textChanged(const QString &)"), self.slotDispersion)
-        self.connect(self.pushButtonUserLaw,       SIGNAL("clicked()"),                    self.slotFormula)
-        self.connect(self.comboBoxNameDiff,        SIGNAL("activated(const QString&)"),    self.slotNameDiff)
-        self.connect(self.comboBoxDiff,            SIGNAL("activated(const QString&)"),    self.slotStateDiff)
-        self.connect(self.pushButtonDiff,          SIGNAL("clicked()"),                    self.slotFormulaDiff)
+        self.treeView.pressed[QModelIndex].connect(self.slotSelectGroundwaterLawZones)
+        self.comboBoxType.activated[str].connect(self.slotGroundwaterLaw)
+        self.lineEditKs.textChanged[str].connect(self.slotKs)
+        self.lineEditKsXX.textChanged[str].connect(self.slotKsXX)
+        self.lineEditKsYY.textChanged[str].connect(self.slotKsYY)
+        self.lineEditKsZZ.textChanged[str].connect(self.slotKsZZ)
+        self.lineEditKsXY.textChanged[str].connect(self.slotKsXY)
+        self.lineEditKsXZ.textChanged[str].connect(self.slotKsXZ)
+        self.lineEditKsYZ.textChanged[str].connect(self.slotKsYZ)
+        self.lineEditThetas.textChanged[str].connect(self.slotThetas)
+        self.lineEditThetar.textChanged[str].connect(self.slotThetar)
+        self.lineEditN.textChanged[str].connect(self.slotN)
+        self.lineEditL.textChanged[str].connect(self.slotL)
+        self.lineEditAlpha.textChanged[str].connect(self.slotAlpha)
+        self.lineEditLongitudinal.textChanged[str].connect(self.slotLongitudinal)
+        self.lineEditTransverse.textChanged[str].connect(self.slotTransverse)
+        self.lineEditKsSaturated.textChanged[str].connect(self.slotKs)
+        self.lineEditKsSaturatedXX.textChanged[str].connect(self.slotKsXX)
+        self.lineEditKsSaturatedYY.textChanged[str].connect(self.slotKsYY)
+        self.lineEditKsSaturatedZZ.textChanged[str].connect(self.slotKsZZ)
+        self.lineEditKsSaturatedXY.textChanged[str].connect(self.slotKsXY)
+        self.lineEditKsSaturatedXZ.textChanged[str].connect(self.slotKsXZ)
+        self.lineEditKsSaturatedYZ.textChanged[str].connect(self.slotKsYZ)
+        self.lineEditThetasSaturated.textChanged[str].connect(self.slotThetas)
+        self.lineEditDispersion.textChanged[str].connect(self.slotDispersion)
+        self.pushButtonUserLaw.clicked.connect(self.slotFormula)
+        self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
+        self.comboBoxDiff.activated[str].connect(self.slotStateDiff)
+        self.pushButtonDiff.clicked.connect(self.slotFormulaDiff)
 
         # Initialize Widgets
 
@@ -239,7 +240,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QModelIndex&")
+    @pyqtSlot("QModelIndex")
     def slotSelectGroundwaterLawZones(self, index):
         label, name, local = self.modelGroundwaterLaw.getItem(index.row())
 
@@ -260,7 +261,12 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             if choice == "user":
                 self.groupBoxVanGenuchten.hide()
                 self.groupBoxUser.show()
-                setGreenColor(self.pushButtonUserLaw, True)
+                exp = self.mdl.getGroundwaterLawFormula(name)
+                if exp:
+                    self.pushButtonUserLaw.setStyleSheet("background-color: green")
+                    self.pushButtonUserLaw.setToolTip(exp)
+                else:
+                    self.pushButtonUserLaw.setStyleSheet("background-color: red")
             else:
                 self.groupBoxVanGenuchten.show()
                 self.groupBoxUser.hide()
@@ -311,10 +317,15 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.modelNameDiff.setItem(str_model=str(self.scalar))
             if diff_choice  != 'variable':
                 self.pushButtonDiff.setEnabled(False)
-                setGreenColor(self.pushButtonDiff, False)
+                self.pushButtonDiff.setStyleSheet("background-color: None")
             else:
                 self.pushButtonDiff.setEnabled(True)
-                setGreenColor(self.pushButtonDiff, True)
+                exp = self.mdl.getDiffFormula(self.scalar, name)
+                if exp:
+                    self.pushButtonDiff.setStyleSheet("background-color: green")
+                    self.pushButtonDiff.setToolTip(exp)
+                else:
+                    self.pushButtonDiff.setStyleSheet("background-color: red")
 
         if GroundwaterModel(self.case).getDispersionType() == 'anisotropic':
             self.groupBoxIsotropicDispersion.hide()
@@ -391,7 +402,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.groupBoxSoluteProperties.hide()
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotGroundwaterLaw(self, text):
         """
         Method to call 'getState' with correct arguements for 'rho'
@@ -404,14 +415,19 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         if choice == "user":
             self.groupBoxVanGenuchten.hide()
             self.groupBoxUser.show()
-            setGreenColor(self.pushButtonUserLaw, True)
+            exp = self.mdl.getGroundwaterLawFormula(name)
+            if exp:
+                self.pushButtonUserLaw.setStyleSheet("background-color: green")
+                self.pushButtonUserLaw.setToolTip(exp)
+            else:
+                self.pushButtonUserLaw.setStyleSheet("background-color: red")
         else:
             self.groupBoxVanGenuchten.show()
             self.groupBoxUser.hide()
             self.initializeVanGenuchten(name)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotKs(self, text):
         """
         """
@@ -421,7 +437,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setValue(name, "ks", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotKsXX(self, text):
         """
         """
@@ -431,7 +447,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setValue(name, "ks_xx", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotKsYY(self, text):
         """
         """
@@ -441,7 +457,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setValue(name, "ks_yy", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotKsZZ(self, text):
         """
         """
@@ -451,7 +467,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setValue(name, "ks_zz", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotKsXY(self, text):
         """
         """
@@ -461,7 +477,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setValue(name, "ks_xy", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotKsXZ(self, text):
         """
         """
@@ -471,7 +487,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setValue(name, "ks_xz", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotKsYZ(self, text):
         """
         """
@@ -481,7 +497,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setValue(name, "ks_yz", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotThetas(self, text):
         """
         """
@@ -491,7 +507,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setValue(name, "thetas", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotThetar(self, text):
         """
         """
@@ -501,7 +517,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setValue(name, "thetar", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotN(self, text):
         """
         """
@@ -511,7 +527,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setValue(name, "n", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotL(self, text):
         """
         """
@@ -521,7 +537,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setValue(name, "l", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotAlpha(self, text):
         """
         """
@@ -531,7 +547,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setValue(name, "alpha", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotLongitudinal(self, text):
         """
         """
@@ -541,7 +557,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setDispersionCoefficient(name, "longitudinal", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotTransverse(self, text):
         """
         """
@@ -551,7 +567,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setDispersionCoefficient(name, "transverse", val)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotDispersion(self, text):
         """
         """
@@ -561,7 +577,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.mdl.setDispersionCoefficient(name, "isotropic", val)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotFormula(self):
         """
         User formula for Groundwater functions
@@ -603,10 +619,11 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             result = dialog.get_result()
             log.debug("slotFormula -> %s" % str(result))
             self.mdl.setGroundwaterLawFormula(name, result)
-            setGreenColor(self.sender(), False)
+            self.pushButtonUserLaw.setStyleSheet("background-color: green")
+            self.pushButtonUserLaw.setToolTip(result)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotNameDiff(self, text):
         """
         Method to set the variance scalar choosed
@@ -617,10 +634,15 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.scalar = str(text)
 
         self.modelDiff.setItem(str_model=self.mdl.getScalarDiffusivityChoice(self.scalar, name))
-        setGreenColor(self.pushButtonDiff, True)
+        exp = self.mdl.getDiffFormula(self.scalar, name)
+        if exp:
+            self.pushButtonDiff.setStyleSheet("background-color: green")
+            self.pushButtonDiff.setToolTip(exp)
+        else:
+            self.pushButtonDiff.setStyleSheet("background-color: red")
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotStateDiff(self, text):
         """
         Method to set diffusion choice for the coefficient
@@ -631,15 +653,20 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
 
         if choice != 'variable':
             self.pushButtonDiff.setEnabled(False)
-            setGreenColor(self.pushButtonDiff, False)
+            self.pushButtonDiff.setStyleSheet("background-color: None")
         else:
             self.pushButtonDiff.setEnabled(True)
-            setGreenColor(self.pushButtonDiff, True)
+            exp = self.mdl.getDiffFormula(self.scalar, name)
+            if exp:
+                self.pushButtonDiff.setStyleSheet("background-color: green")
+                self.pushButtonDiff.setToolTip(exp)
+            else:
+                self.pushButtonDiff.setStyleSheet("background-color: red")
 
         self.mdl.setScalarDiffusivityChoice(self.scalar, name, choice)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotFormulaDiff(self):
         """
         User formula for the diffusion coefficient
@@ -666,7 +693,8 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             result = dialog.get_result()
             log.debug("slotFormulaDiff -> %s" % str(result))
             self.mdl.setDiffFormula(self.scalar, namesca, result)
-            setGreenColor(self.pushButtonDiff, False)
+            self.pushButtonDiff.setStyleSheet("background-color: green")
+            self.pushButtonDiff.setToolTip(result)
 
 
     def tr(self, text):

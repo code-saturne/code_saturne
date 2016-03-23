@@ -21,6 +21,17 @@
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 #-------------------------------------------------------------------------------
+if HAVE_QT5
+  PYUIC=$(PYUIC5)
+else
+  PYUIC=$(PYUIC4)
+endif
+
+if HAVE_QT5
+  PYRCC = $(PYRCC5)
+else
+  PYRCC = $(PYRCC4) -py$(PYRCC4VER)
+endif
 
 # Python files
 
@@ -30,7 +41,10 @@ CommandMgrDialogView.py \
 Common.py \
 IdView.py \
 MainView.py \
+QtCore.py \
+QtGui.py \
 QtPage.py \
+QtWidgets.py \
 Toolbox.py \
 XMLengine.py \
 XMLinitialize.py \
@@ -71,10 +85,10 @@ PYRCC4VER = `$(PYTHON) --version 2>&1 | cut -c 8`
 SUFFIXES = .ui .qrc _rc.py
 
 .ui.py:
-	$(PYUIC4) -o $@ $<
+	$(PYUIC) -o $@ $<
 
 .qrc_rc.py:
-	$(PYRCC4) -py$(PYRCC4VER) -o $@ $<
+	$(PYRCC) -o $@ $<
 
 all-local: $(FORMS) $(RESOURCES)
 

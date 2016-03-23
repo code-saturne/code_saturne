@@ -37,7 +37,9 @@ This module defines the following classes:
 
 import sys
 
-from PyQt4 import QtGui, QtCore
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -49,7 +51,7 @@ from code_saturne.Base.IdForm import Ui_IdForm
 #
 #-------------------------------------------------------------------------------
 
-class IdView(QtGui.QWidget, Ui_IdForm):
+class IdView(QWidget, Ui_IdForm):
     """
     Class for the identity dock widget
     """
@@ -57,7 +59,7 @@ class IdView(QtGui.QWidget, Ui_IdForm):
         """
         Constructor
         """
-        QtGui.QWidget.__init__(self)
+        QWidget.__init__(self)
         Ui_IdForm.__init__(self)
         self.setupUi(self)
 
@@ -96,7 +98,7 @@ class IdView(QtGui.QWidget, Ui_IdForm):
 
 if __name__ == "__main__":
 
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
 
     IdView = IdView()
     IdView.setStudyName("toto")

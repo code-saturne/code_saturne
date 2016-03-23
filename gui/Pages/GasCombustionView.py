@@ -37,15 +37,16 @@ import logging, os
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import ComboModel, setGreenColor
+from code_saturne.Base.QtPage import ComboModel
 from code_saturne.Pages.GasCombustionForm import Ui_GasCombustionForm
 from code_saturne.Pages.GasCombustionModel import GasCombustionModel
 
@@ -84,8 +85,8 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         self.modelGasCombustionOption = ComboModel(self.comboBoxGasCombustionOption,1,1)
 
         # Connections
-        self.connect(self.comboBoxGasCombustionOption, SIGNAL("activated(const QString&)"), self.slotGasCombustionOption)
-        self.connect(self.pushButtonThermochemistryData, SIGNAL("pressed()"), self.__slotSearchThermochemistryData)
+        self.comboBoxGasCombustionOption.activated[str].connect(self.slotGasCombustionOption)
+        self.pushButtonThermochemistryData.pressed.connect(self.__slotSearchThermochemistryData)
 
         # Initialize Widgets
         model = self.mdl.getGasCombustionModel()
@@ -112,14 +113,14 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         name = self.mdl.getThermoChemistryDataFileName()
         if name != None:
             self.labelThermochemistryFile.setText(str(name))
-            setGreenColor(self.pushButtonThermochemistryData, False)
+            self.pushButtonThermochemistryData.setStyleSheet("background-color: green")
         else:
-            setGreenColor(self.pushButtonThermochemistryData, True)
+            self.pushButtonThermochemistryData.setStyleSheet("background-color: red")
 
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotGasCombustionOption(self, text):
         """
         Private slot.
@@ -129,7 +130,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         self.mdl.setGasCombustionOption(option)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotSearchThermochemistryData(self):
         """
         Select a properties file of data for electric arc
@@ -137,7 +138,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         data = self.case['data_path']
         title = self.tr("Thermochemistry file of data.")
         filetypes = self.tr("Thermochemistry (*dp_*);;All Files (*)")
-        file = QFileDialog.getOpenFileName(self, title, data, filetypes)
+        file = QFileDialog.getOpenFileName(self, title, data, filetypes)[0]
         file = str(file)
         if not file:
             return
@@ -149,7 +150,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         else:
             self.labelThermochemistryFile.setText(str(file))
             self.mdl.setThermoChemistryDataFileName(file)
-            setGreenColor(self.pushButtonThermochemistryData, False)
+            self.pushButtonThermochemistryData.setStyleSheet("background-color: green")
 
 
     def tr(self, text):

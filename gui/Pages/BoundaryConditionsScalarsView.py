@@ -37,15 +37,16 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage  import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+from code_saturne.Base.QtPage  import DoubleValidator, ComboModel, from_qvariant
 
 from code_saturne.Pages.BoundaryConditionsScalarsForm import Ui_BoundaryConditionsScalarsForm
 from code_saturne.Pages.LocalizationModel             import LocalizationModel, Zone
@@ -90,22 +91,22 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
         self.__case.undoStopGlobal()
 
-        self.connect(self.lineEditValueThermal, SIGNAL("textChanged(const QString &)"), self.slotValueThermal)
-        self.connect(self.lineEditValueSpecies, SIGNAL("textChanged(const QString &)"), self.slotValueSpecies)
-        self.connect(self.lineEditValueMeteo,   SIGNAL("textChanged(const QString &)"), self.slotValueMeteo)
-        self.connect(self.lineEditExThermal,    SIGNAL("textChanged(const QString &)"), self.slotExThermal)
-        self.connect(self.lineEditExSpecies,    SIGNAL("textChanged(const QString &)"), self.slotExSpecies)
-        self.connect(self.lineEditExMeteo,      SIGNAL("textChanged(const QString &)"), self.slotExMeteo)
+        self.lineEditValueThermal.textChanged[str].connect(self.slotValueThermal)
+        self.lineEditValueSpecies.textChanged[str].connect(self.slotValueSpecies)
+        self.lineEditValueMeteo.textChanged[str].connect(self.slotValueMeteo)
+        self.lineEditExThermal.textChanged[str].connect(self.slotExThermal)
+        self.lineEditExSpecies.textChanged[str].connect(self.slotExSpecies)
+        self.lineEditExMeteo.textChanged[str].connect(self.slotExMeteo)
 
-        self.connect(self.pushButtonThermal,    SIGNAL("clicked()"), self.slotThermalFormula)
-        self.connect(self.pushButtonSpecies,    SIGNAL("clicked()"), self.slotSpeciesFormula)
-        self.connect(self.pushButtonMeteo,      SIGNAL("clicked()"), self.slotMeteoFormula)
-        self.connect(self.comboBoxThermal,      SIGNAL("activated(const QString&)"), self.slotThermalChoice)
-        self.connect(self.comboBoxTypeThermal,  SIGNAL("activated(const QString&)"), self.slotThermalTypeChoice)
-        self.connect(self.comboBoxSpecies,      SIGNAL("activated(const QString&)"), self.slotSpeciesChoice)
-        self.connect(self.comboBoxTypeSpecies,  SIGNAL("activated(const QString&)"), self.slotSpeciesTypeChoice)
-        self.connect(self.comboBoxMeteo,        SIGNAL("activated(const QString&)"), self.slotMeteoChoice)
-        self.connect(self.comboBoxTypeMeteo,    SIGNAL("activated(const QString&)"), self.slotMeteoTypeChoice)
+        self.pushButtonThermal.clicked.connect(self.slotThermalFormula)
+        self.pushButtonSpecies.clicked.connect(self.slotSpeciesFormula)
+        self.pushButtonMeteo.clicked.connect(self.slotMeteoFormula)
+        self.comboBoxThermal.activated[str].connect(self.slotThermalChoice)
+        self.comboBoxTypeThermal.activated[str].connect(self.slotThermalTypeChoice)
+        self.comboBoxSpecies.activated[str].connect(self.slotSpeciesChoice)
+        self.comboBoxTypeSpecies.activated[str].connect(self.slotSpeciesTypeChoice)
+        self.comboBoxMeteo.activated[str].connect(self.slotMeteoChoice)
+        self.comboBoxTypeMeteo.activated[str].connect(self.slotMeteoTypeChoice)
 
         ## Validators
         validatorValueThermal = DoubleValidator(self.lineEditValueThermal)
@@ -244,7 +245,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.lineEditValueThermal.hide()
         self.labelValueThermal.hide()
         self.pushButtonThermal.setEnabled(False)
-        setGreenColor(self.pushButtonThermal, False)
+        self.pushButtonThermal.setStyleSheet("background-color: None")
 
         if self.model_th != 'off' and self.comp.getCompressibleModel() == 'off':
             self.thermal_type = self.__boundary.getScalarChoice(self.thermal)
@@ -274,13 +275,18 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
             elif self.thermal_type in ('exchange_coefficient_formula', 'dirichlet_formula', 'neumann_formula'):
                 self.pushButtonThermal.setEnabled(True)
-                setGreenColor(self.pushButtonThermal, True)
+                exp = self.__boundary.getScalarFormula(self.thermal, self.thermal_type)
+                if exp:
+                    self.pushButtonThermal.setStyleSheet("background-color: green")
+                    self.pushButtonThermal.setToolTip(exp)
+                else:
+                    self.pushButtonThermal.setStyleSheet("background-color: red")
 
         # Initalize species
         self.labelValueSpecies.hide()
         self.lineEditValueSpecies.hide()
         self.pushButtonSpecies.setEnabled(False)
-        setGreenColor(self.pushButtonSpecies, False)
+        self.pushButtonSpecies.setStyleSheet("background-color: None")
 
         if self.species_list != None and self.species_list != []:
             self.species_type = self.__boundary.getScalarChoice(self.species)
@@ -313,7 +319,12 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
             elif self.species_type in ('exchange_coefficient_formula', 'dirichlet_formula', 'neumann_formula'):
                 self.pushButtonSpecies.setEnabled(True)
-                setGreenColor(self.pushButtonSpecies, True)
+                exp = self.__boundary.getScalarFormula(self.species, self.species_type)
+                if exp:
+                    self.pushButtonSpecies.setStyleSheet("background-color: green")
+                    self.pushButtonSpecies.setToolTip(exp)
+                else:
+                    self.pushButtonSpecies.setStyleSheet("background-color: red")
 
             if self.nature == 'groundwater':
                 self.groupBoxSpecies.setTitle('Transport equation')
@@ -322,7 +333,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.labelValueMeteo.hide()
         self.lineEditValueMeteo.hide()
         self.pushButtonMeteo.setEnabled(False)
-        setGreenColor(self.pushButtonMeteo, False)
+        self.pushButtonMeteo.setStyleSheet("background-color: None")
 
         if (self.meteo_list and (self.nature == 'inlet' or self.nature == 'outlet')):
             label = self.__boundary.getLabel()
@@ -357,7 +368,12 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
                 if self.meteo_type in ('exchange_coefficient_formula', 'dirichlet_formula', 'neumann_formula'):
                     self.pushButtonMeteo.setEnabled(True)
-                    setGreenColor(self.pushButtonMeteo, True)
+                    exp = self.__boundary.getScalarFormula(self.meteo, self.meteo_type)
+                    if exp:
+                        self.pushButtonMeteo.setStyleSheet("background-color: green")
+                        self.pushButtonMeteo.setToolTip(exp)
+                    else:
+                        self.pushButtonMeteo.setStyleSheet("background-color: red")
 
 
     def showWidget(self, boundary):
@@ -380,7 +396,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.hide()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotThermalChoice(self, text):
         """
         INPUT label for choice of zone
@@ -389,7 +405,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotThermalTypeChoice(self, text):
         """
         INPUT label for choice of zone
@@ -399,7 +415,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotSpeciesChoice(self, text):
         """
         INPUT label for choice of zone
@@ -408,7 +424,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotSpeciesTypeChoice(self, text):
         """
         INPUT label for choice of zone
@@ -418,7 +434,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMeteoChoice(self, text):
         """
         INPUT label for choice of zone
@@ -427,7 +443,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMeteoTypeChoice(self, text):
         """
         INPUT label for choice of zone
@@ -437,7 +453,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotThermalFormula(self):
         """
         """
@@ -468,10 +484,11 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             result = dialog.get_result()
             log.debug("slotThermalFormula -> %s" % str(result))
             self.__boundary.setScalarFormula(self.thermal, self.thermal_type, result)
-            setGreenColor(self.pushButtonThermal, False)
+            self.pushButtonThermal.setStyleSheet("background-color: green")
+            self.pushButtonThermal.setToolTip(exp)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotSpeciesFormula(self):
         """
         """
@@ -501,10 +518,11 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             result = dialog.get_result()
             log.debug("slotSpeciesFormula -> %s" % str(result))
             self.__boundary.setScalarFormula(self.species, self.species_type, result)
-            setGreenColor(self.pushButtonSpecies, False)
+            self.pushButtonSpecies.setStyleSheet("background-color: green")
+            self.pushButtonSpecies.setToolTip(exp)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotMeteoFormula(self):
         """
         """
@@ -535,10 +553,11 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             result = dialog.get_result()
             log.debug("slotMeteoFormula -> %s" % str(result))
             self.__boundary.setScalarFormula(self.meteo, self.meteo_type, result)
-            setGreenColor(self.pushButtonMeteo, False)
+            self.pushButtonMeteo.setStyleSheet("background-color: green")
+            self.pushButtonMeteo.setToolTip(exp)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotValueThermal(self, var):
         """
         """
@@ -550,7 +569,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 self.__boundary.setScalarValue(self.thermal, 'dirichlet', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotValueSpecies(self, var):
         """
         """
@@ -562,7 +581,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 self.__boundary.setScalarValue(self.species, 'dirichlet', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotValueMeteo(self, var):
         """
         """
@@ -574,7 +593,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 self.__boundary.setScalarValue(self.meteo, 'dirichlet', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotExThermal(self, var):
         """
         """
@@ -583,7 +602,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.__boundary.setScalarValue(self.thermal, 'exchange_coefficient', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotExSpecies(self, var):
         """
         """
@@ -592,7 +611,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.__boundary.setScalarValue(self.species, 'exchange_coefficient', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotExMeteo(self, var):
         """
         """

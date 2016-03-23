@@ -44,8 +44,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -350,7 +351,7 @@ class StandardItemModelScalars(QStandardItemModel):
             [name, var] = self._data[row]
             self.mdl.setTurbulentFluxModel(name, turbFlux)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -467,7 +468,7 @@ class StandardItemModelVariance(QStandardItemModel):
             [name, var] = self._data[row]
             self.mdl.setScalarVariance(name,var)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -544,8 +545,12 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         # tableView
         self.modelScalars = StandardItemModelScalars(self, self.mdl)
         self.modelVariance = StandardItemModelVariance(self, self.mdl)
-        self.tableScalars.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        self.tableVariance.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableScalars.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+            self.tableVariance.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableScalars.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            self.tableVariance.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         # Delegates
         delegateLabel        = NameDelegate(self.tableScalars)
@@ -559,12 +564,12 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.tableVariance.setItemDelegateForColumn(1, delegateVariance)
 
         # Connections
-        self.connect(self.pushButtonNew,       SIGNAL("clicked()"), self.slotAddScalar)
-        self.connect(self.pushButtonDelete,    SIGNAL("clicked()"), self.slotDeleteScalar)
-        self.connect(self.modelScalars,        SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.dataChanged)
-        self.connect(self.pushButtonVarNew,    SIGNAL("clicked()"), self.slotAddVariance)
-        self.connect(self.pushButtonVarDelete, SIGNAL("clicked()"), self.slotDeleteVariance)
-        self.connect(self.modelVariance,       SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.dataChanged)
+        self.pushButtonNew.clicked.connect(self.slotAddScalar)
+        self.pushButtonDelete.clicked.connect(self.slotDeleteScalar)
+        self.modelScalars.dataChanged.connect(self.dataChanged)
+        self.pushButtonVarNew.clicked.connect(self.slotAddVariance)
+        self.pushButtonVarDelete.clicked.connect(self.slotDeleteVariance)
+        self.modelVariance.dataChanged.connect(self.dataChanged)
 
         # widget initialization
         self.tableScalars.reset()
@@ -590,7 +595,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddScalar(self):
         """
         Add a new item in the table when the 'Create' button is pushed.
@@ -599,7 +604,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.modelScalars.newItem()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteScalar(self):
         """
         Just delete the current selected entries from the table and
@@ -635,7 +640,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.tableScalars.clearSelection()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddVariance(self):
         """
         Add a new item in the table when the 'Create' button is pushed.
@@ -644,7 +649,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.modelVariance.newItem()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteVariance(self):
         """
         Just delete the current selected entries from the table and
@@ -666,7 +671,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.tableVariance.clearSelection()
 
 
-    @pyqtSignature("const QModelIndex &, const QModelIndex &")
+    @pyqtSlot("QModelIndex, QModelIndex")
     def dataChanged(self, topLeft, bottomRight):
         for row in range(topLeft.row(), bottomRight.row()+1):
             self.tableView.resizeRowToContents(row)

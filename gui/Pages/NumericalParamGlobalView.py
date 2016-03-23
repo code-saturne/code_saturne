@@ -37,8 +37,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -106,16 +107,16 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.comboBoxNTERUP.setSizeAdjustPolicy(QComboBox.AdjustToContents)
 
         # Connections
-        self.connect(self.checkBoxIVISSE, SIGNAL("clicked()"), self.slotIVISSE)
-        self.connect(self.checkBoxIPUCOU, SIGNAL("clicked()"), self.slotIPUCOU)
-        self.connect(self.checkBoxICFGRP, SIGNAL("clicked()"), self.slotICFGRP)
-        self.connect(self.checkBoxImprovedPressure, SIGNAL("clicked()"), self.slotImprovedPressure)
-        self.connect(self.comboBoxEXTRAG, SIGNAL("activated(const QString&)"), self.slotEXTRAG)
-        self.connect(self.lineEditRELAXP, SIGNAL("textChanged(const QString &)"), self.slotRELAXP)
-        self.connect(self.comboBoxIMRGRA, SIGNAL("activated(const QString&)"), self.slotIMRGRA)
-        self.connect(self.lineEditSRROM,  SIGNAL("textChanged(const QString &)"), self.slotSRROM)
-        self.connect(self.comboBoxNTERUP, SIGNAL("activated(const QString&)"), self.slotNTERUP)
-        self.connect(self.spinBoxNTERUP, SIGNAL("valueChanged(int)"), self.slotNTERUP2)
+        self.checkBoxIVISSE.clicked.connect(self.slotIVISSE)
+        self.checkBoxIPUCOU.clicked.connect(self.slotIPUCOU)
+        self.checkBoxICFGRP.clicked.connect(self.slotICFGRP)
+        self.checkBoxImprovedPressure.clicked.connect(self.slotImprovedPressure)
+        self.comboBoxEXTRAG.activated[str].connect(self.slotEXTRAG)
+        self.lineEditRELAXP.textChanged[str].connect(self.slotRELAXP)
+        self.comboBoxIMRGRA.activated[str].connect(self.slotIMRGRA)
+        self.lineEditSRROM.textChanged[str].connect(self.slotSRROM)
+        self.comboBoxNTERUP.activated[str].connect(self.slotNTERUP)
+        self.spinBoxNTERUP.valueChanged[int].connect(self.slotNTERUP2)
 
         # Validators
         validatorRELAXP = DoubleValidator(self.lineEditRELAXP, min=0., max=1.)
@@ -215,7 +216,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIVISSE(self):
         """
         Set value for parameter IVISSE
@@ -226,7 +227,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.model.setTransposedGradient("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIPUCOU(self):
         """
         Set value for parameter IPUCOU
@@ -237,7 +238,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.model.setVelocityPressureCoupling("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotICFGRP(self):
         """
         Set value for parameter IPUCOU
@@ -248,7 +249,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.model.setHydrostaticEquilibrium("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotImprovedPressure(self):
         """
         Input IHYDPR.
@@ -259,7 +260,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.model.setHydrostaticPressure("off")
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotEXTRAG(self, text):
         """
         Set value for parameter EXTRAG
@@ -269,7 +270,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         log.debug("slotEXTRAG-> %s" % extrag)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotRELAXP(self, text):
         """
         Set value for parameter RELAXP
@@ -280,7 +281,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             log.debug("slotRELAXP-> %s" % relaxp)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotSRROM(self, text):
         """
         Set value for parameter SRROM
@@ -291,7 +292,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             log.debug("slotSRROM-> %s" % srrom)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotIMRGRA(self, text):
         """
         Set value for parameter IMRGRA
@@ -301,7 +302,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         log.debug("slotIMRGRA-> %s" % imrgra)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotNTERUP(self,text):
         """
         Set value for parameterNTERUP
@@ -318,7 +319,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         log.debug("slotNTERUP-> %s" % NTERUP)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotNTERUP2(self, var):
         """
         Set value for parameter piso sweep number

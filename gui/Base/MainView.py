@@ -53,8 +53,9 @@ except Exception:
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules
@@ -89,7 +90,7 @@ except:
 from code_saturne.Pages.WelcomeView import WelcomeView
 from code_saturne.Pages.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.Pages.XMLEditorView import XMLEditorView
-from code_saturne.Base.QtPage import setGreenColor, getexistingdirectory
+from code_saturne.Base.QtPage import getexistingdirectory
 from code_saturne.Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
 
 
@@ -141,16 +142,17 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
 
         self.pushButtonCopyFrom.setEnabled(False)
 
-        self.connect(self.listViewDirectory,   SIGNAL("doubleClicked(QModelIndex)"),   self.slotParentDirectory)
-        self.connect(self.listViewFolder,      SIGNAL("clicked(QModelIndex)"),         self.slotSelectFolder)
-        self.connect(self.lineEditCurrentPath, SIGNAL("textChanged(const QString &)"), self.slotChangeDirectory)
-        self.connect(self.lineEditCaseName,    SIGNAL("textChanged(const QString &)"), self.slotChangeName)
-        self.connect(self.checkBoxPost,        SIGNAL("clicked()"),                    self.slotPostStatus)
-        self.connect(self.checkBoxMesh,        SIGNAL("clicked()"),                    self.slotMeshStatus)
-        self.connect(self.checkBoxCopyFrom,    SIGNAL("clicked()"),                    self.slotCopyFromStatus)
-        self.connect(self.pushButtonCopyFrom,  SIGNAL("clicked()"),                    self.slotCopyFromCase)
+        self.listViewDirectory.doubleClicked[QModelIndex].connect(self.slotParentDirectory)
+        self.listViewFolder.clicked[QModelIndex].connect(self.slotSelectFolder)
+        self.lineEditCurrentPath.textChanged[str].connect(self.slotChangeDirectory)
+        self.lineEditCaseName.textChanged[str].connect(self.slotChangeName)
+        self.checkBoxPost.clicked.connect(self.slotPostStatus)
+        self.checkBoxMesh.clicked.connect(self.slotMeshStatus)
+        self.checkBoxCopyFrom.clicked.connect(self.slotCopyFromStatus)
+        self.pushButtonCopyFrom.clicked.connect(self.slotCopyFromCase)
 
 
+    @pyqtSlot("QModelIndex")
     def slotParentDirectory(self, index):
         if index.row() == 1 and index.column() == 0:
             # ".." change directory
@@ -183,12 +185,13 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         self.modelFolder.setStringList(lst)
 
 
+    @pyqtSlot("QModelIndex")
     def slotSelectFolder(self, index):
         if index.row() > 1:
             self.lineEditCaseName.setText(str(self.model.fileName(index)))
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotChangeDirectory(self, text):
         """
         change directory
@@ -199,7 +202,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
             self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotChangeName(self, text):
         """
         change case name
@@ -207,7 +210,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         self.caseName = str(text)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotPostStatus(self):
         if self.checkBoxPost.isChecked():
             self.createMesh = True
@@ -215,7 +218,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
             self.createMesh = False
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotMeshStatus(self):
         if self.checkBoxMesh.isChecked():
             self.createPost = True
@@ -223,19 +226,19 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
             self.createPost = False
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotCopyFromStatus(self):
         if self.checkBoxCopyFrom.isChecked():
             self.copyFrom = True
             self.pushButtonCopyFrom.setEnabled(True)
-            setGreenColor(self.pushButtonCopyFrom, True)
+            self.pushButtonCopyFrom.setStyleSheet("background-color: red")
         else:
             self.copyFrom = False
-            setGreenColor(self.pushButtonCopyFrom, False)
+            self.pushButtonCopyFrom.setStyleSheet("background-color: green")
             self.pushButtonCopyFrom.setEnabled(False)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotCopyFromCase(self):
         title = self.tr("Choose an existing case")
 
@@ -251,10 +254,10 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
             self.copyFromName = None
         else:
             self.copyFromName = str(dirName)
-            setGreenColor(self.pushButtonCopyFrom, False)
+            self.pushButtonCopyFrom.setStyleSheet("background-color: green")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def accept(self):
         """
         Method called when user clicks 'OK'
@@ -282,10 +285,12 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
 
             if self.createMesh == True:
                 path = os.path.join(self.currentPath, "MESH")
-                os.mkdir(path)
+                if not os.path.isdir(path):
+                    os.mkdir(path)
             if self.createPost == True:
                 path = os.path.join(self.currentPath, "POST")
-                os.mkdir(path)
+                if not os.path.isdir(path):
+                    os.mkdir(path)
 
             self.currentPath = os.path.join(self.currentPath,
                                             self.caseName,
@@ -350,7 +355,7 @@ class MainView(object):
 
         self.scrollArea = QScrollArea(self.frame)
         self.gridlayout1.addWidget(self.scrollArea,0,0,1,1)
-        self.gridlayout1.setMargin(0)
+        #self.gridlayout1.setMargin(0)
         self.gridlayout1.setSpacing(0)
         self.gridlayout.addWidget(self.frame,0,0,1,1)
 
@@ -361,32 +366,32 @@ class MainView(object):
 
         # connections
 
-        self.connect(self.fileOpenAction,   SIGNAL("triggered()"),   self.fileOpen)
-        self.connect(self.caseNewAction,    SIGNAL("triggered()"),   self.caseNew)
-        self.connect(self.fileNewAction,    SIGNAL("triggered()"),   self.fileNew)
-        self.connect(self.menuRecent,       SIGNAL("aboutToShow()"), self.updateRecentFileMenu)
-        self.connect(self.fileSaveAction,   SIGNAL("triggered()"),   self.fileSave)
-        self.connect(self.fileSaveAsAction, SIGNAL("triggered()"),   self.fileSaveAs)
-        self.connect(self.fileCloseAction,  SIGNAL("triggered()"),   self.close)
-        self.connect(self.fileQuitAction,   SIGNAL("triggered()"),   self.fileQuit)
+        self.fileOpenAction.triggered.connect(self.fileOpen)
+        self.caseNewAction.triggered.connect(self.caseNew)
+        self.fileNewAction.triggered.connect(self.fileNew)
+        self.menuRecent.aboutToShow.connect(self.updateRecentFileMenu)
+        self.fileSaveAction.triggered.connect(self.fileSave)
+        self.fileSaveAsAction.triggered.connect(self.fileSaveAs)
+        self.fileCloseAction.triggered.connect(self.close)
+        self.fileQuitAction.triggered.connect(self.fileQuit)
 
-        self.connect(self.openXtermAction,      SIGNAL("triggered()"), self.openXterm)
-        self.connect(self.displayCaseAction,    SIGNAL("triggered()"), self.displayCase)
+        self.openXtermAction.triggered.connect(self.openXterm)
+        self.displayCaseAction.triggered.connect(self.displayCase)
 
-        self.connect(self.IdentityAction, SIGNAL("toggled(bool)"), self.dockWidgetIdentityDisplay)
-        self.connect(self.BrowserAction,  SIGNAL("toggled(bool)"), self.dockWidgetBrowserDisplay)
+        self.IdentityAction.toggled.connect(self.dockWidgetIdentityDisplay)
+        self.BrowserAction.toggled.connect(self.dockWidgetBrowserDisplay)
 
-        self.connect(self.displayAboutAction,    SIGNAL("triggered()"), self.displayAbout)
-        self.connect(self.backgroundColorAction, SIGNAL("triggered()"), self.setColor)
-        self.connect(self.actionFont,            SIGNAL("triggered()"), self.setFontSize)
-        self.connect(self.RestoreStyleDefaults,  SIGNAL("triggered()"), self.restoreStyleDefaults)
+        self.displayAboutAction.triggered.connect(self.displayAbout)
+        self.backgroundColorAction.triggered.connect(self.setColor)
+        self.actionFont.triggered.connect(self.setFontSize)
+        self.RestoreStyleDefaults.triggered.connect(self.restoreStyleDefaults)
 
-        self.connect(self.displayLicenceAction,  SIGNAL("triggered()"), self.displayLicence)
+        self.displayLicenceAction.triggered.connect(self.displayLicence)
 
         # connection for page layout
 
-        self.connect(self.Browser.treeView, SIGNAL("pressed(const QModelIndex &)"), self.displayNewPage)
-        self.connect(self, SIGNAL("destroyed(QObject*)"), MainView.updateInstances)
+        self.Browser.treeView.pressed.connect(self.displayNewPage)
+        self.destroyed.connect(MainView.updateInstances)
 
         # Ctrl+C signal handler (allow to shutdown the GUI with Ctrl+C)
 
@@ -485,7 +490,6 @@ class MainView(object):
             self.dockWidgetBrowserDisplay(False)
 
 
-    @pyqtSignature("bool")
     def dockWidgetIdentityDisplay(self, bool=True):
         """
         Private slot.
@@ -501,7 +505,6 @@ class MainView(object):
             self.dockWidgetIdentity.hide()
 
 
-    @pyqtSignature("bool")
     def dockWidgetBrowserDisplay(self, bool=True):
         """
         Private slot.
@@ -517,7 +520,6 @@ class MainView(object):
             self.dockWidgetBrowser.hide()
 
 
-    @pyqtSignature("")
     def updateRecentFileMenu(self):
         """
         private method
@@ -541,9 +543,7 @@ class MainView(object):
                 action = QAction(QIcon(":/icons/22x22/document-open.png"), "&%d %s" % (
                            i + 1, QFileInfo(f).fileName()), self)
                 action.setData(f)
-                self.connect(action,
-                             SIGNAL("triggered()"),
-                             self.loadRecentFile)
+                action.triggered.connect(self.loadRecentFile)
                 self.menuRecent.addAction(action)
 
 
@@ -630,7 +630,6 @@ class MainView(object):
         return True
 
 
-    @pyqtSignature("")
     def fileQuit(self):
         """
         Public slot.
@@ -640,7 +639,6 @@ class MainView(object):
         QApplication.closeAllWindows()
 
 
-    @pyqtSignature("")
     def fileNew(self):
         """
         Public slot.
@@ -663,14 +661,13 @@ class MainView(object):
             self.scrollArea.setWidget(self.displayFisrtPage())
             self.case['saved'] = "yes"
 
-            self.connect(self.case, SIGNAL("undo"), self.slotUndoRedoView)
+            self.case.undo_signal.connect(self.slotUndoRedoView)
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()
         self.actionPrepro.setEnabled(True)
         self.actionCalculation.setEnabled(True)
 
 
-    @pyqtSignature("")
     def caseNew(self):
         """
         Public slot.
@@ -695,7 +692,7 @@ class MainView(object):
                 self.scrollArea.setWidget(self.displayFisrtPage())
                 self.case['saved'] = "yes"
 
-                self.connect(self.case, SIGNAL("undo"), self.slotUndoRedoView)
+                self.case.undo_signal.connect(self.slotUndoRedoView)
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()
 
@@ -841,12 +838,11 @@ class MainView(object):
 
         # Update the Tree Navigator layout
 
-        self.connect(self.case, SIGNAL("undo"), self.slotUndoRedoView)
+        self.case.undo_signal.connect(self.slotUndoRedoView)
         self.actionPrepro.setEnabled(True)
         self.actionCalculation.setEnabled(True)
 
 
-    @pyqtSignature("")
     def fileOpen(self):
         """
         public slot
@@ -887,7 +883,6 @@ class MainView(object):
         self.statusbar.clearMessage()
 
 
-    @pyqtSignature("")
     def openXterm(self):
         """
         public slot
@@ -909,7 +904,6 @@ class MainView(object):
                              universal_newlines=True)
 
 
-    @pyqtSignature("")
     def displayCase(self):
         """
         public slot
@@ -935,7 +929,6 @@ class MainView(object):
         self.Id.setXMLFileName(file_name)
 
 
-    @pyqtSignature("")
     def fileSave(self):
         """
         public slot
@@ -979,7 +972,6 @@ class MainView(object):
         self.statusbar.showMessage(msg, 2000)
 
 
-    @pyqtSignature("")
     def fileSaveAs(self):
         """
         public slot
@@ -1067,7 +1059,7 @@ class MainView(object):
         self.updateStudyId()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def batchFileSave(self):
         """
         public slot
@@ -1101,7 +1093,6 @@ class MainView(object):
                 pass
 
 
-    @pyqtSignature("const QModelIndex &")
     def displayNewPage(self, index):
         """
         private slot
@@ -1142,7 +1133,6 @@ class MainView(object):
             raise
 
 
-    @pyqtSignature("")
     def displayAbout(self):
         """
         public slot
@@ -1162,7 +1152,6 @@ class MainView(object):
         QMessageBox.about(self, self.package.name + ' Interface', msg)
 
 
-    @pyqtSignature("")
     def displayLicence(self):
         """
         public slot
@@ -1172,7 +1161,6 @@ class MainView(object):
         QMessageBox.about(self, self.package.code_name + ' Interface', "see COPYING file") # TODO
 
 
-    @pyqtSignature("")
     def displayConfig(self):
         """
         public slot
@@ -1182,8 +1170,6 @@ class MainView(object):
         QMessageBox.about(self, self.package.code_name + ' Interface', "see config.py") # TODO
 
 
-
-    @pyqtSignature("")
     def setColor(self):
         """
         public slot
@@ -1202,7 +1188,6 @@ class MainView(object):
                               self.palette().color(QPalette.Window).name())
 
 
-    @pyqtSignature("")
     def setFontSize(self):
         """
         public slot
@@ -1222,7 +1207,6 @@ class MainView(object):
                               self.font().toString())
 
 
-    @pyqtSignature("")
     def restoreStyleDefaults(self):
         """
         public slot
@@ -1300,15 +1284,15 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.Browser = BrowserView()
         self.ui_initialize()
 
-        self.connect(self.displayCSManualAction,   SIGNAL("triggered()"), self.displayCSManual)
-        self.connect(self.displayCSTutorialAction, SIGNAL("triggered()"), self.displayCSTutorial)
-        self.connect(self.displayCSKernelAction,   SIGNAL("triggered()"), self.displayCSKernel)
-        self.connect(self.displayCSRefcardAction,  SIGNAL("triggered()"), self.displayCSRefcard)
-        self.connect(self.displayCSDoxygenAction,  SIGNAL("triggered()"), self.displayCSDoxygen)
-        self.connect(self.actionUndo,              SIGNAL("activated()"), self.slotUndo)
-        self.connect(self.actionRedo,              SIGNAL("activated()"), self.slotRedo)
-        self.connect(self.actionPrepro,            SIGNAL("activated()"), self.slotPreproMode)
-        self.connect(self.actionCalculation,       SIGNAL("activated()"), self.slotCalculationMode)
+        self.displayCSManualAction.triggered.connect(self.displayCSManual)
+        self.displayCSTutorialAction.triggered.connect(self.displayCSTutorial)
+        self.displayCSKernelAction.triggered.connect(self.displayCSKernel)
+        self.displayCSRefcardAction.triggered.connect(self.displayCSRefcard)
+        self.displayCSDoxygenAction.triggered.connect(self.displayCSDoxygen)
+        self.actionUndo.triggered.connect(self.slotUndo)
+        self.actionRedo.triggered.connect(self.slotRedo)
+        self.actionPrepro.triggered.connect(self.slotPreproMode)
+        self.actionCalculation.triggered.connect(self.slotCalculationMode)
 
         docdir = self.package.get_dir('docdir')
         if os.path.isdir(docdir):
@@ -1357,7 +1341,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                     tree=self.Browser)
 
 
-    @pyqtSignature("")
     def displayCSManual(self):
         """
         public slot
@@ -1367,7 +1350,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.displayManual(self.package, 'user')
 
 
-    @pyqtSignature("")
     def displayCSTutorial(self):
         """
         public slot
@@ -1378,7 +1360,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         QMessageBox.about(self, self.package.name + ' Interface', msg)
 
 
-    @pyqtSignature("")
     def displayCSKernel(self):
         """
         public slot
@@ -1388,7 +1369,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.displayManual(self.package, 'theory')
 
 
-    @pyqtSignature("")
     def displayCSRefcard(self):
         """
         public slot
@@ -1398,7 +1378,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.displayManual(self.package, 'refcard')
 
 
-    @pyqtSignature("")
     def displayCSDoxygen(self):
         """
         public slot
@@ -1408,7 +1387,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.displayManual(self.package, 'Doxygen')
 
 
-    @pyqtSignature("")
     def slotUndo(self):
         """
         public slot
@@ -1421,6 +1399,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                       self.case.toString(),
                                       last_record[2],
                                       last_record[3]])
+            print last_record
 
             self.case.parseString(last_record[1])
             self.Browser.activeSelectedPage(last_record[2])
@@ -1439,7 +1418,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
             self.scrollArea.setWidget(p)
 
 
-    @pyqtSignature("")
     def slotRedo(self):
         """
         public slot
@@ -1470,7 +1448,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
             self.scrollArea.setWidget(p)
 
 
-    @pyqtSignature("")
     def slotPreproMode(self):
         """
         mode prepro slot
@@ -1480,7 +1457,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.Browser.configureTree(self.case)
 
 
-    @pyqtSignature("")
     def slotCalculationMode(self):
         """
         mode calculation slot
@@ -1490,7 +1466,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.Browser.configureTree(self.case)
 
 
-    @pyqtSignature("")
     def slotUndoRedoView(self):
         if self.case['undo']:
             self.actionUndo.setEnabled(True)

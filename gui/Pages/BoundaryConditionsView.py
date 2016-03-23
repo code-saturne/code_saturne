@@ -38,8 +38,9 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -99,7 +100,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
 
     def setData(self, index, value, role):
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -158,9 +159,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
             if nature in lst:
                 self.__modelBoundaries.insertItem(label, codeNumber, nature, local)
 
-        self.connect(self.treeViewBoundaries,
-                     SIGNAL("clicked(const QModelIndex &)"),
-                     self.__slotSelectBoundary)
+        self.treeViewBoundaries.clicked[QModelIndex].connect(self.__slotSelectBoundary)
 
         # Set the case for custom widgets
         self.roughWidget.setup(self.__case)
@@ -182,7 +181,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.__case.undoStartGlobal()
 
 
-    @pyqtSignature("const QModelIndex&")
+    @pyqtSlot("QModelIndex")
     def __slotSelectBoundary(self, index):
         """
         Select a boundary in the QTreeView.

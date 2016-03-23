@@ -121,6 +121,7 @@ _code_saturne() {
                 --libs|--deplibs)     COMPREPLY=( ); return 0;;
                 *) cmdOpts="--cc --cxx --fc --cflags --cxxflags --fcflags \
                      --rpath --pyuic4 --pyrcc4 \
+                             --pyuic5 --pyrcc5 \
                      --have --cppflags --ldflags --libs --deplibs";;
             esac
             ;;

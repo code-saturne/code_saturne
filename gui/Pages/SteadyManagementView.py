@@ -39,8 +39,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -83,9 +84,9 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
 
         # Connections
 
-        self.connect(self.lineEditRELXST, SIGNAL("textChanged(const QString &)"), self.slotRelaxCoef)
-        self.connect(self.lineEditNTMABS, SIGNAL("textChanged(const QString &)"), self.slotNbIter)
-        self.connect(self.checkBoxINPDT0, SIGNAL("clicked()"), self.slotZeroIteration)
+        self.lineEditRELXST.textChanged[str].connect(self.slotRelaxCoef)
+        self.lineEditNTMABS.textChanged[str].connect(self.slotNbIter)
+        self.checkBoxINPDT0.clicked.connect(self.slotZeroIteration)
 
         # Validators
 
@@ -112,7 +113,7 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotRelaxCoef(self, text):
         """
         Input relaxation coefficient.
@@ -122,7 +123,7 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
             self.mdl.setRelaxCoefficient(relax_coef)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotNbIter(self, text):
         """
         Input itarations number.
@@ -132,7 +133,7 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
             self.mdl.setNbIter(nb_iter)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotZeroIteration(self):
         """
         Input zero iteration number.

@@ -37,8 +37,9 @@ This module contains the following classes:
 import os, string
 import logging
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -95,7 +96,7 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
         self.mdl = IdentityAndPathesModel(self.case)
 
         # Create the Page layout.
-        self.connect(self.toolButton, SIGNAL("pressed()"), self.searchDir)
+        self.toolButton.pressed.connect(self.searchDir)
         self.lineEditCasePath.setReadOnly(True)
 
         # Initialize the contens of the widgets.

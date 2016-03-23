@@ -39,9 +39,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
-
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -173,7 +173,7 @@ class StandardItemModelVolumicNames(QStandardItemModel):
             vname = self.dataVolumicNames[index.row()][0]
             self.model.setPostprocessingVolStatusFromName(vname, status)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -268,7 +268,7 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
             self.model.setPostprocessingStatusFromName(vname, status)
 
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -294,18 +294,18 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         self.case.undoStopGlobal()
         self.model = LagrangianStatisticsModel(self.case)
 
-        self.connect(self.checkBoxISUIST, SIGNAL("clicked()"), self.slotISUIST)
-        self.connect(self.lineEditNBCLST, SIGNAL("textChanged(const QString &)"), self.slotNBCLST)
+        self.checkBoxISUIST.clicked.connect(self.slotISUIST)
+        self.lineEditNBCLST.textChanged[str].connect(self.slotNBCLST)
 
-        self.connect(self.groupBoxISTALA, SIGNAL("clicked()"), self.slotISTALA)
-        self.connect(self.lineEditIDSTNT, SIGNAL("editingFinished()"), self.slotIDSTNT)
-        self.connect(self.lineEditNSTIST, SIGNAL("editingFinished()"), self.slotNSTIST)
+        self.groupBoxISTALA.clicked.connect(self.slotISTALA)
+        self.lineEditIDSTNT.editingFinished.connect(self.slotIDSTNT)
+        self.lineEditNSTIST.editingFinished.connect(self.slotNSTIST)
 
-        self.connect(self.lineEditSEUIL,  SIGNAL("textChanged(const QString &)"), self.slotSEUIL)
+        self.lineEditSEUIL.textChanged[str].connect(self.slotSEUIL)
 
-        self.connect(self.groupBoxIENSI3, SIGNAL("clicked()"), self.slotIENSI3)
-        self.connect(self.lineEditNSTBOR, SIGNAL("textChanged(const QString &)"), self.slotNSTBOR)
-        self.connect(self.lineEditSEUILF, SIGNAL("textChanged(const QString &)"), self.slotSEUILF)
+        self.groupBoxIENSI3.clicked.connect(self.slotIENSI3)
+        self.lineEditNSTBOR.textChanged[str].connect(self.slotNSTBOR)
+        self.lineEditSEUILF.textChanged[str].connect(self.slotSEUILF)
 
 
         validatorNBCLST = IntValidator(self.lineEditNBCLST, min=0) # max=100
@@ -372,7 +372,10 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         self.tableViewVolumicNames.setSelectionBehavior(QAbstractItemView.SelectItems)
         self.tableViewVolumicNames.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableViewVolumicNames.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableViewVolumicNames.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewVolumicNames.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewVolumicNames.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
 
     def _initBoundariesNames(self):
@@ -386,10 +389,13 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         self.tableViewBoundariesNames.setSelectionBehavior(QAbstractItemView.SelectItems)
         self.tableViewBoundariesNames.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableViewBoundariesNames.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableViewBoundariesNames.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewBoundariesNames.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewBoundariesNames.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotISUIST(self):
         """
         Input ISUIST.
@@ -401,7 +407,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         self.model.setRestartStatisticsStatus(status)
 
 
-    @pyqtSignature("const QString")
+    @pyqtSlot(str)
     def slotNBCLST(self, text):
         """
         Input NBCLST.
@@ -411,7 +417,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
             self.model.setGroupOfParticlesValue(value)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotISTALA(self):
         """
         Input ISTALA.
@@ -437,7 +443,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
                 del self.modelVolumicNames
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIDSTNT(self):
         """
         Input IDSTNT.
@@ -457,7 +463,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
             self.model.setIterationStartVolume(value)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotNSTIST(self):
         """
         Input NSTIST.
@@ -477,7 +483,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
             self.model.setIterSteadyStartVolume(value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotSEUIL(self, text):
         """
         Input SEUIL.
@@ -487,7 +493,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
             self.model.setThresholdValueVolume(value)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIENSI3(self):
         """
         Input IENSI3.
@@ -510,7 +516,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
                 del self.modelBoundariesNames
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotNSTBOR(self, text):
         """
         Input NSTBOR.
@@ -520,7 +526,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
             self.model.setIterationStartBoundary(value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotSEUILF(self, text):
         """
         Input SEUILF.

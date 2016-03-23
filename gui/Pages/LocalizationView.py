@@ -47,8 +47,9 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -294,7 +295,7 @@ class StandardItemVolumeNature(QStandardItemModel):
 
         id1 = self.index(0, 0)
         id2 = self.index(self.rowCount(), 0)
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), id1, id2)
+        self.dataChanged.emit(id1, id2)
         return True
 
 
@@ -319,10 +320,10 @@ class FlagBox(QComboBox):
         if (self.style().styleHint(QStyle.SH_ComboBox_Popup, opt)):
             self.setItemDelegate(QItemDelegate(self))
 
-        self.connect(self, SIGNAL("activated(int)"), self.slotActivated)
+        self.activated[int].connect(self.slotActivated)
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotActivated(self, index):
         value = self.itemData(index, Qt.CheckStateRole)
         state = from_qvariant(value, int)
@@ -521,7 +522,7 @@ class StandardItemModelLocalization(QStandardItemModel):
 
         self.mdl.replaceZone(old_zone, new_zone)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         self.browser.configureTree(self.case)
         return True
 
@@ -617,29 +618,34 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         for zone in self.mdl.getZones():
             self.modelLocalization.addItem(zone)
 
-        self.tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-        self.tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-        self.tableView.horizontalHeader().setResizeMode(3, QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
+            self.tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
+            self.tableView.horizontalHeader().setResizeMode(3, QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+            self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+            self.tableView.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
 
         # Connections
-        self.connect(self.pushButtonNew,      SIGNAL("clicked()"), self.slotAddZone)
-        self.connect(self.pushButtonDelete,   SIGNAL("clicked()"), self.slotDeleteZone)
-        self.connect(self.toolButtonCreation, SIGNAL("clicked()"), self.slotAddFromPrePro)
-        self.connect(self.modelLocalization,  SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.dataChanged)
+        self.pushButtonNew.clicked.connect(self.slotAddZone)
+        self.pushButtonDelete.clicked.connect(self.slotDeleteZone)
+        self.toolButtonCreation.clicked.connect(self.slotAddFromPrePro)
+        self.modelLocalization.dataChanged.connect(self.dataChanged)
 
         self.pushButtonSalome.hide()
         if case['salome']:
             self.pushButtonSalome.show()
-            self.connect(self.pushButtonSalome, SIGNAL("clicked()"), self.slotAddFromSalome)
+            self.pushButtonSalome.clicked.connect(self.slotAddFromSalome)
 
         # Context menu
         self.tableView.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.connect(self.tableView, SIGNAL("customContextMenuRequested(QPoint)"), self.slotContextMenu)
+        self.tableView.customContextMenuRequested[QPoint].connect(self.slotContextMenu)
 
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddZone(self):
         """
         Insert a new item in the table view.
@@ -647,7 +653,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         self.modelLocalization.addItem()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteZone(self):
         """
         Private Slot.
@@ -668,7 +674,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
                 self.modelLocalization.deleteItem(row)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddFromPrePro(self):
         """
         Research a Preprocessor listing to pick colors or groups of cells or faces.
@@ -688,7 +694,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
                     self.modelLocalization.addItem(zone)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotContextMenu(self):
         """
         Public slot
@@ -698,33 +704,33 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         fileMenu = QMenu(self.tableView)
 
         actionMerge = QAction(self.tr("Merge selected zones"), self.tableView)
-        self.connect(actionMerge, SIGNAL("triggered()"), self.slotMerge)
+        actionMerge.triggered.connect(self.slotMerge)
         fileMenu.addAction(actionMerge)
 
         if self.zoneType == 'BoundaryZone':
             fileMenu.addSeparator()
 
             self.actionInlet = QAction(self.tr("Select all inlets"), self.tableView)
-            self.connect(self.actionInlet, SIGNAL("triggered()"), self.slotSelectBoudaries)
+            self.actionInlet.triggered.connect(self.slotSelectBoudaries)
             fileMenu.addAction(self.actionInlet)
 
             self.actionOutlet = QAction(self.tr("Select all outlets"), self.tableView)
-            self.connect(self.actionOutlet, SIGNAL("triggered()"), self.slotSelectBoudaries)
+            self.actionOutlet.triggered.connect(self.slotSelectBoudaries)
             fileMenu.addAction(self.actionOutlet)
 
             self.actionWall = QAction(self.tr("Select all walls"), self.tableView)
-            self.connect(self.actionWall, SIGNAL("triggered()"), self.slotSelectBoudaries)
+            self.actionWall.triggered.connect(self.slotSelectBoudaries)
             fileMenu.addAction(self.actionWall)
 
             self.actionSymmetry = QAction(self.tr("Select all symmetries"), self.tableView)
-            self.connect(self.actionSymmetry, SIGNAL("triggered()"), self.slotSelectBoudaries)
+            self.actionSymmetry.triggered.connect(self.slotSelectBoudaries)
             fileMenu.addAction(self.actionSymmetry)
 
         fileMenu.popup(QCursor().pos())
         fileMenu.show()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotMerge(self):
         """
         public slot
@@ -752,7 +758,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
             self.modelLocalization.addItem(zone)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddFromSalome(self):
         """
         When GUI is embeded in the Salome desktop. Add selection criteria from
@@ -774,7 +780,6 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
                 self.modelLocalization.addItem(zone)
 
 
-    @pyqtSignature("const QModelIndex &, const QModelIndex &")
     def dataChanged(self, topLeft, bottomRight):
         for row in range(topLeft.row(), bottomRight.row()+1):
             self.tableView.resizeRowToContents(row)
@@ -840,7 +845,7 @@ class BoundaryLocalizationView(LocalizationView):
         self.tableView.setItemDelegateForColumn(2, delegateNature)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotSelectBoudaries(self):
         """
         Public slot.

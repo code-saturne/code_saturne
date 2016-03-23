@@ -41,8 +41,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -205,7 +206,7 @@ class XMLEditorView(QDialog, Ui_XMLEditor):
 
         expression = self.case.toPrettyString()
 
-        self.connect(self.pushButtonValidate, SIGNAL("clicked()"), self.accept)
+        self.pushButtonValidate.clicked.connect(self.accept)
 
         # lay out the text
 
@@ -235,7 +236,7 @@ class XMLEditorView(QDialog, Ui_XMLEditor):
 if __name__ == "__main__":
     import sys, signal
     app = QApplication(sys.argv)
-    app.connect(app, SIGNAL("lastWindowClosed()"), app, SLOT("quit()"))
+    app.lastWindowClosed.connect(app.quit)
     parent = QWidget()
     dlg = XMLEditorView(parent)
     dlg.show()

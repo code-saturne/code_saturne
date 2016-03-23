@@ -37,8 +37,9 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -85,7 +86,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressureForm)
         self.__case.undoStopGlobal()
 
         # Connections
-        self.connect(self.lineEditPressure,   SIGNAL("textChanged(const QString &)"), self.slotPressureValue)
+        self.lineEditPressure.textChanged[str].connect(self.slotPressureValue)
 
         # Validators
         validatorP = DoubleValidator(self.lineEditPressure, min = 0.0)
@@ -122,7 +123,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressureForm)
         self.hide()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPressureValue(self, text):
         """
         INPUT outlet pressure

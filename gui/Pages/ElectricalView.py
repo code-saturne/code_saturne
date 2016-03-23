@@ -37,8 +37,9 @@ import os, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -48,7 +49,7 @@ from PyQt4.QtGui  import *
 from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.Common import LABEL_LENGTH_MAX
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
-from code_saturne.Base.QtPage import setGreenColor, from_qvariant
+from code_saturne.Base.QtPage import from_qvariant
 
 from code_saturne.Pages.ElectricalForm import Ui_ElectricalForm
 from code_saturne.Pages.ElectricalModel import ElectricalModel
@@ -103,19 +104,19 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.modelDirection.addItem(self.tr("Z"), "Z")
 
         # Connections
-        self.connect(self.pushButtonPropertiesData, SIGNAL("pressed()"), self.__slotSearchPropertiesData)
-        self.connect(self.lineEditSRROM,            SIGNAL("textChanged(const QString &)"), self.slotSRROM)
-        self.connect(self.lineEditPower,            SIGNAL("textChanged(const QString &)"), self.slotPower)
-        self.connect(self.lineEditCurrent,          SIGNAL("textChanged(const QString &)"), self.slotCurrent)
-        self.connect(self.checkBoxScaling,          SIGNAL("clicked()"), self.slotScaling)
-        self.connect(self.comboBoxJouleModel,       SIGNAL("activated(const QString&)"), self.slotJouleModel)
-        self.connect(self.comboBoxScalingModel,     SIGNAL("activated(const QString&)"), self.slotScalingModel)
-        self.connect(self.comboBoxDirection,        SIGNAL("clicked()"), self.slotDirection)
-        self.connect(self.lineEditPlaneDefinitionA, SIGNAL("textChanged(const QString &)"), self.slotPlaneDefA)
-        self.connect(self.lineEditPlaneDefinitionB, SIGNAL("textChanged(const QString &)"), self.slotPlaneDefB)
-        self.connect(self.lineEditPlaneDefinitionC, SIGNAL("textChanged(const QString &)"), self.slotPlaneDefC)
-        self.connect(self.lineEditPlaneDefinitionD, SIGNAL("textChanged(const QString &)"), self.slotPlaneDefD)
-        self.connect(self.lineEditEpsilon,          SIGNAL("textChanged(const QString &)"), self.slotPlaneDefEpsilon)
+        self.pushButtonPropertiesData.pressed.connect(self.__slotSearchPropertiesData)
+        self.lineEditSRROM.textChanged[str].connect(self.slotSRROM)
+        self.lineEditPower.textChanged[str].connect(self.slotPower)
+        self.lineEditCurrent.textChanged[str].connect(self.slotCurrent)
+        self.checkBoxScaling.clicked.connect(self.slotScaling)
+        self.comboBoxJouleModel.activated[str].connect(self.slotJouleModel)
+        self.comboBoxScalingModel.activated[str].connect(self.slotScalingModel)
+        self.comboBoxDirection.activated[str].connect(self.slotDirection)
+        self.lineEditPlaneDefinitionA.textChanged[str].connect(self.slotPlaneDefA)
+        self.lineEditPlaneDefinitionB.textChanged[str].connect(self.slotPlaneDefB)
+        self.lineEditPlaneDefinitionC.textChanged[str].connect(self.slotPlaneDefC)
+        self.lineEditPlaneDefinitionD.textChanged[str].connect(self.slotPlaneDefD)
+        self.lineEditEpsilon.textChanged[str].connect(self.slotPlaneDefEpsilon)
 
         # Validators
         validatorSRROM = DoubleValidator(self.lineEditSRROM, min=0.0, max=1.0)
@@ -144,7 +145,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __initializeWidget(self):
         """
         Initialize widget
@@ -152,9 +153,9 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         name = self.model.getPropertiesDataFileName()
         if name != None:
             self.labelPropertiesFile.setText(str(name))
-            setGreenColor(self.pushButtonPropertiesData, False)
+            self.pushButtonPropertiesData.setStyleSheet("background-color: green")
         else:
-            setGreenColor(self.pushButtonPropertiesData, True)
+            self.pushButtonPropertiesData.setStyleSheet("background-color: red")
 
         srrom = self.model.getSRROM()
         self.lineEditSRROM.setText(str(srrom))
@@ -213,7 +214,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
                     self.lineEditEpsilon.setText(str(definition))
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotSearchPropertiesData(self):
         """
         Select a properties file of data for electric arc
@@ -221,7 +222,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         data = self.case['data_path']
         title = self.tr("Properties file of data.")
         filetypes = self.tr("Properties data (*dp_ELE*);;All Files (*)")
-        file = QFileDialog.getOpenFileName(self, title, data, filetypes)
+        file = QFileDialog.getOpenFileName(self, title, data, filetypes)[0]
         file = str(file)
         if not file:
             return
@@ -233,10 +234,10 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         else:
             self.labelPropertiesFile.setText(str(file))
             self.model.setPropertiesDataFileName(file)
-            setGreenColor(self.pushButtonPropertiesData, False)
+            self.pushButtonPropertiesData.setStyleSheet("background-color: green")
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotSRROM(self, text):
         """
         Input Relaxation coefficient for mass density
@@ -246,7 +247,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setSRROM(srrom)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotPower(self, text):
         """
         Input Imposed Power
@@ -256,7 +257,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setPower(power)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotCurrent(self, text):
         """
         Input Imposed current intensity
@@ -266,7 +267,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setCurrent(current)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotJouleModel(self, text):
         """
         Input Joule model.
@@ -275,7 +276,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.model.setJouleModel(model)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotScaling(self):
         """
         Input "Electric variables" scaling.
@@ -288,7 +289,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.__initializeWidget()
 
 
-    @pyqtSignature("")
+    @pyqtSlot(str)
     def slotScalingModel(self, text):
         """
         Input scaling model.
@@ -298,7 +299,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.__initializeWidget()
 
 
-    @pyqtSignature("")
+    @pyqtSlot(str)
     def slotDirection(self, text):
         """
         Input current density direction for scaling.
@@ -307,7 +308,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.model.setDirection(direction)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotPlaneDefA(self, text):
         """
         Input define plane
@@ -317,7 +318,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setPlaneDefinition("A", current)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotPlaneDefB(self, text):
         """
         Input define plane
@@ -327,7 +328,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setPlaneDefinition("B", current)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotPlaneDefC(self, text):
         """
         Input define plane
@@ -337,7 +338,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setPlaneDefinition("C", current)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotPlaneDefD(self, text):
         """
         Input define plane
@@ -347,7 +348,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setPlaneDefinition("D", current)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotPlaneDefEpsilon(self, text):
         """
         Input define plane

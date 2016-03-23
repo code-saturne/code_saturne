@@ -40,15 +40,16 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 
 from code_saturne.Pages.BoundaryConditionsCoalInletForm import Ui_BoundaryConditionsCoalInletForm
@@ -144,7 +145,7 @@ class StandardItemModelCoal(QStandardItemModel):
             self.modelBoundary.setCoalFlow(v, row)
         elif col == 2:
             self.modelBoundary.setCoalTemperature(v, row)
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -243,7 +244,7 @@ class StandardItemModelCoalMass(QStandardItemModel):
         else :
             self.ratio[coal][classe] = lst[classe]
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -276,34 +277,16 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         self.__case.undoStopGlobal()
 
         # Connections
-        self.connect(self.comboBoxTypeInlet,
-                     SIGNAL("activated(const QString&)"),
-                     self.__slotInletType)
-        self.connect(self.comboBoxVelocity,
-                     SIGNAL("activated(const QString&)"),
-                     self.__slotChoiceVelocity)
-        self.connect(self.lineEditVelocity,
-                     SIGNAL("textChanged(const QString &)"),
-                     self.__slotVelocityValue)
-        self.connect(self.lineEditTemperature,
-                     SIGNAL("textChanged(const QString &)"),
-                     self.__slotTemperature)
-        self.connect(self.spinBoxOxydantNumber,
-                     SIGNAL("valueChanged(int)"),
-                     self.__slotOxydantNumber)
+        self.comboBoxTypeInlet.activated[str].connect(self.__slotInletType)
+        self.comboBoxVelocity.activated[str].connect(self.__slotChoiceVelocity)
+        self.lineEditVelocity.textChanged[str].connect(self.__slotVelocityValue)
+        self.lineEditTemperature.textChanged[str].connect(self.__slotTemperature)
+        self.spinBoxOxydantNumber.valueChanged[int].connect(self.__slotOxydantNumber)
 
-        self.connect(self.comboBoxDirection,
-                     SIGNAL("activated(const QString&)"),
-                     self.__slotChoiceDirection)
-        self.connect(self.lineEditDirectionX,
-                     SIGNAL("textChanged(const QString &)"),
-                     self.__slotDirX)
-        self.connect(self.lineEditDirectionY,
-                     SIGNAL("textChanged(const QString &)"),
-                     self.__slotDirY)
-        self.connect(self.lineEditDirectionZ,
-                     SIGNAL("textChanged(const QString &)"),
-                     self.__slotDirZ)
+        self.comboBoxDirection.activated[str].connect(self.__slotChoiceDirection)
+        self.lineEditDirectionX.textChanged[str].connect(self.__slotDirX)
+        self.lineEditDirectionY.textChanged[str].connect(self.__slotDirY)
+        self.lineEditDirectionZ.textChanged[str].connect(self.__slotDirZ)
 
         # Combo models
         self.modelTypeInlet = ComboModel(self.comboBoxTypeInlet, 2, 1)
@@ -335,12 +318,8 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         self.lineEditDirectionZ.setValidator(validatorZ)
         self.lineEditTemperature.setValidator(validatorTemp)
 
-        self.connect(self.pushButtonVelocityFormula,
-                     SIGNAL("clicked()"),
-                     self.__slotVelocityFormula)
-        self.connect(self.pushButtonDirectionFormula,
-                     SIGNAL("clicked()"),
-                     self.__slotDirectionFormula)
+        self.pushButtonVelocityFormula.clicked.connect(self.__slotVelocityFormula)
+        self.pushButtonDirectionFormula.clicked.connect(self.__slotDirectionFormula)
 
         # Useful information about coals, classes, and ratios
 
@@ -487,7 +466,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         self.__modelCoalMass.setRatio(self.__ratio)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotChoiceVelocity(self, text):
         """
         Private slot.
@@ -503,12 +482,17 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
         if c[-7:] == "formula":
             self.pushButtonVelocityFormula.setEnabled(True)
-            setGreenColor(self.pushButtonVelocityFormula, True)
+            exp = self.__boundary.getVelocity()
+            if exp:
+                self.pushButtonVelocityFormula.setStyleSheet("background-color: green")
+                self.pushButtonVelocityFormula.setToolTip(exp)
+            else:
+                self.pushButtonVelocityFormula.setStyleSheet("background-color: red")
             self.lineEditVelocity.setEnabled(False)
             self.lineEditVelocity.setText("")
         else:
             self.pushButtonVelocityFormula.setEnabled(False)
-            setGreenColor(self.pushButtonVelocityFormula, False)
+            self.pushButtonVelocityFormula.setStyleSheet("background-color: None")
             self.lineEditVelocity.setEnabled(True)
             v = self.__boundary.getVelocity()
             self.lineEditVelocity.setText(str(v))
@@ -529,7 +513,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.labelUnitVelocity.setText(str('m<sup>3</sup>/s'))
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotVelocityValue(self, text):
         """
         Private slot.
@@ -544,7 +528,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.__boundary.setVelocity(v)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotVelocityFormula(self):
         """
         """
@@ -577,10 +561,11 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
             self.__boundary.setVelocity(result)
-            setGreenColor(self.pushButtonVelocityFormula, False)
+            self.pushButtonVelocityFormula.setToolTip(result)
+            self.pushButtonVelocityFormula.setStyleSheet("background-color: green")
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotChoiceDirection(self, text):
         """
         Input the direction type choice.
@@ -591,11 +576,16 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
         if c == "formula":
             self.pushButtonDirectionFormula.setEnabled(True)
-            setGreenColor(self.pushButtonDirectionFormula, True)
+            exp = self.__boundary.getDirection('direction_formula')
+            if exp:
+                self.pushButtonDirectionFormula.setStyleSheet("background-color: green")
+                self.pushButtonDirectionFormula.setToolTip(exp)
+            else:
+                self.pushButtonDirectionFormula.setStyleSheet("background-color: red")
             self.frameDirectionCoordinates.hide()
         elif c == "coordinates":
             self.pushButtonDirectionFormula.setEnabled(False)
-            setGreenColor(self.pushButtonDirectionFormula, False)
+            self.pushButtonDirectionFormula.setStyleSheet("background-color: None")
             self.frameDirectionCoordinates.show()
             v = self.__boundary.getDirection('direction_x')
             self.lineEditDirectionX.setText(str(v))
@@ -605,11 +595,11 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.lineEditDirectionZ.setText(str(v))
         elif c == "normal":
             self.pushButtonDirectionFormula.setEnabled(False)
-            setGreenColor(self.pushButtonDirectionFormula, False)
+            self.pushButtonDirectionFormula.setStyleSheet("background-color: None")
             self.frameDirectionCoordinates.hide()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotDirX(self, text):
         """
         INPUT value into direction of inlet flow
@@ -619,7 +609,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.__boundary.setDirection('direction_x', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotDirY(self, text):
         """
         INPUT value into direction of inlet flow
@@ -629,7 +619,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.__boundary.setDirection('direction_y', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotDirZ(self, text):
         """
         INPUT value into direction of inlet flow
@@ -639,7 +629,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.__boundary.setDirection('direction_z', value)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotDirectionFormula(self):
         """
         """
@@ -668,11 +658,12 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             result = dialog.get_result()
             log.debug("slotFormulaDirection -> %s" % str(result))
             self.__boundary.setDirection('direction_formula', result)
-            setGreenColor(self.pushButtonDirectionFormula, False)
+            self.pushButtonDirectionFormula.setToolTip(result)
+            self.pushButtonDirectionFormula.setStyleSheet("background-color: green")
 
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotInletType(self, text):
         """
         INPUT inlet type : 'oxydant' or 'oxydant + coal'
@@ -691,14 +682,14 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.__updateTables()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotTemperature(self, text):
         if self.sender().validator().state == QValidator.Acceptable:
             t = from_qvariant(text, float)
             self.__boundary.setOxydantTemperature(t)
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def __slotOxydantNumber(self, i):
         self.__boundary.setOxydantNumber(i)
 

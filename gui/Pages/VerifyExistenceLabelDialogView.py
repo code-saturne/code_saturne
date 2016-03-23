@@ -26,8 +26,9 @@
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -61,10 +62,10 @@ class VerifyExistenceLabelDialogView(QDialog, Ui_VerifyExistenceLabelDialogForm)
         v = RegExpValidator(self.lineEdit, self.default['regexp'])
         self.lineEdit.setValidator(v)
 
-        self.connect(self.lineEdit, SIGNAL("textChanged(const QString &)"), self.slotLabel)
+        self.lineEdit.textChanged[str].connect(self.slotLabel)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotLabel(self, text):
         """
         Get label.

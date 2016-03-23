@@ -39,8 +39,8 @@ import os.path
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore import *
+from code_saturne.Base.QtGui  import *
 
 #-------------------------------------------------------------------------------
 # Application modules import

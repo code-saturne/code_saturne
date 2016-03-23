@@ -40,8 +40,9 @@ import sys, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -202,9 +203,9 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
 
         # Connections
 
-        self.connect(self.comboBoxTurbModel, SIGNAL("activated(const QString&)"), self.slotTurbulenceModel)
-        self.connect(self.pushButtonAdvanced, SIGNAL("clicked()"), self.slotAdvancedOptions)
-        self.connect(self.lineEditLength, SIGNAL("textChanged(const QString &)"), self.slotLengthScale)
+        self.comboBoxTurbModel.activated[str].connect(self.slotTurbulenceModel)
+        self.pushButtonAdvanced.clicked.connect(self.slotAdvancedOptions)
+        self.lineEditLength.textChanged[str].connect(self.slotLengthScale)
 
         # Frames display
 
@@ -238,7 +239,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotLengthScale(self, text):
         """
         Private slot.
@@ -249,7 +250,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.model.setLengthScale(l_scale)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotTurbulenceModel(self, text):
         """
         Private slot.
@@ -275,7 +276,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.line.show()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAdvancedOptions(self):
         """
         Private slot.

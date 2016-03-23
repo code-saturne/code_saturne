@@ -37,8 +37,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -83,9 +84,9 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
 
         # Connections
 
-        self.connect(self.lineEditX, SIGNAL("textChanged(const QString &)"), self.slotGravityX)
-        self.connect(self.lineEditY, SIGNAL("textChanged(const QString &)"), self.slotGravityY)
-        self.connect(self.lineEditZ, SIGNAL("textChanged(const QString &)"), self.slotGravityZ)
+        self.lineEditX.textChanged[str].connect(self.slotGravityX)
+        self.lineEditY.textChanged[str].connect(self.slotGravityY)
+        self.lineEditZ.textChanged[str].connect(self.slotGravityZ)
 
         # Validators
         validatorX = DoubleValidator(self.lineEditX)
@@ -109,7 +110,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotGravityX(self, text):
         """
         Input GX
@@ -119,7 +120,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
             self.mdl.setGravity('gravity_x', gravity_x)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotGravityY(self, text):
         """
         Input GY
@@ -129,7 +130,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
             self.mdl.setGravity('gravity_y', gravity_y)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotGravityZ(self, text):
         """
         Input GZ

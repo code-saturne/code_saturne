@@ -40,8 +40,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -151,14 +152,14 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         # Connect signals to slots
 
-        self.connect(self.comboBoxSteadyFlow,         SIGNAL("activated(const QString&)"), self.slotSteadyFlow)
-        self.connect(self.comboBoxLagrangian,         SIGNAL("activated(const QString&)"), self.slotLagrangian)
-        self.connect(self.comboBoxAtmospheric,        SIGNAL("activated(const QString&)"), self.slotAtmospheric)
-        self.connect(self.comboBoxGasCombustionModel, SIGNAL("activated(const QString&)"), self.slotGasCombustionModel)
-        self.connect(self.comboBoxPulverizedCoal,     SIGNAL("activated(const QString&)"), self.slotPulverizedCoal)
-        self.connect(self.comboBoxJouleEffect,        SIGNAL("activated(const QString&)"), self.slotJouleEffect)
-        self.connect(self.comboBoxCompressible,       SIGNAL("activated(const QString&)"), self.slotCompressibleModel)
-        self.connect(self.comboBoxGroundwater,        SIGNAL("activated(const QString&)"), self.slotGroundwaterModel)
+        self.comboBoxSteadyFlow.activated[str].connect(self.slotSteadyFlow)
+        self.comboBoxLagrangian.activated[str].connect(self.slotLagrangian)
+        self.comboBoxAtmospheric.activated[str].connect(self.slotAtmospheric)
+        self.comboBoxGasCombustionModel.activated[str].connect(self.slotGasCombustionModel)
+        self.comboBoxPulverizedCoal.activated[str].connect(self.slotPulverizedCoal)
+        self.comboBoxJouleEffect.activated[str].connect(self.slotJouleEffect)
+        self.comboBoxCompressible.activated[str].connect(self.slotCompressibleModel)
+        self.comboBoxGroundwater.activated[str].connect(self.slotGroundwaterModel)
 
         # Initialize Widgets
 
@@ -374,7 +375,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         return string
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotSteadyFlow(self, text):
         """
         Private slot.
@@ -394,7 +395,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotLagrangian(self, text):
         """
         Private slot.
@@ -420,7 +421,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotAtmospheric(self, text):
         """
         Called when the comboBoxAtmospheric changed
@@ -437,7 +438,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotGasCombustionModel(self, text):
         """
         Private slot.
@@ -455,7 +456,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPulverizedCoal(self, text):
         """
         Private slot.
@@ -478,7 +479,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotJouleEffect(self, text):
         """
         Private slot.
@@ -496,7 +497,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotCompressibleModel(self, text):
         """
         Private slot.
@@ -531,7 +532,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotGroundwaterModel(self, text):
         """
         Called when the comboBoxGroundwater changed

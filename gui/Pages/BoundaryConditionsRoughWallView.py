@@ -37,8 +37,9 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -84,10 +85,10 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
 
         self.case.undoStopGlobal()
 
-        self.connect(self.radioButtonSmooth, SIGNAL("clicked()"), self.__slotRoughness)
-        self.connect(self.radioButtonRough,  SIGNAL("clicked()"), self.__slotRoughness)
+        self.radioButtonSmooth.clicked.connect(self.__slotRoughness)
+        self.radioButtonRough.clicked.connect(self.__slotRoughness)
 
-        self.connect(self.lineEditRoughCoef, SIGNAL("textChanged(const QString &)"), self.__slotRoughnessHeight)
+        self.lineEditRoughCoef.textChanged[str].connect(self.__slotRoughnessHeight)
 
         validatorRoughCoef = DoubleValidator(self.lineEditRoughCoef)
         self.lineEditRoughCoef.setValidator(validatorRoughCoef)
@@ -119,7 +120,7 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
         self.hide()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotRoughness(self):
         """
         Private slot.
@@ -137,7 +138,7 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
             self.lineEditRoughCoef.setText(str(r))
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotRoughnessHeight(self, text):
         """
         Private slot.

@@ -37,15 +37,16 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 
 from code_saturne.Pages.BoundaryConditionsElectricalForm import Ui_BoundaryConditionsElectricalForm
 from code_saturne.Pages.ElectricalModel import ElectricalModel
@@ -89,17 +90,17 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.__model = ElectricalModel(self.__case)
         self.species_list = []
 
-        self.connect(self.lineEditValuePotElec,   SIGNAL("textChanged(const QString &)"), self.slotPotElec)
-        self.connect(self.lineEditValuePotElecIm, SIGNAL("textChanged(const QString &)"), self.slotPotElecIm)
-        self.connect(self.lineEditValueSpecies,   SIGNAL("textChanged(const QString &)"), self.slotSpecies)
+        self.lineEditValuePotElec.textChanged[str].connect(self.slotPotElec)
+        self.lineEditValuePotElecIm.textChanged[str].connect(self.slotPotElecIm)
+        self.lineEditValueSpecies.textChanged[str].connect(self.slotSpecies)
 
-        self.connect(self.pushButtonPotVectorFormula, SIGNAL("clicked()"), self.slotPotVectorFormula)
+        self.pushButtonPotVectorFormula.clicked.connect(self.slotPotVectorFormula)
 
-        self.connect(self.comboBoxTypePotElec,   SIGNAL("activated(const QString&)"), self.slotPotElecChoice)
-        self.connect(self.comboBoxTypePotElecIm, SIGNAL("activated(const QString&)"), self.slotPotElecImChoice)
-        self.connect(self.comboBoxTypePotVector, SIGNAL("activated(const QString&)"), self.slotPotVectorChoice)
-        self.connect(self.comboBoxSpecies,       SIGNAL("activated(const QString&)"), self.slotSpeciesChoice)
-        self.connect(self.comboBoxPotVector,     SIGNAL("activated(const QString&)"), self.slotPotVectorComponentChoice)
+        self.comboBoxTypePotElec.activated[str].connect(self.slotPotElecChoice)
+        self.comboBoxTypePotElecIm.activated[str].connect(self.slotPotElecImChoice)
+        self.comboBoxTypePotVector.activated[str].connect(self.slotPotVectorChoice)
+        self.comboBoxSpecies.activated[str].connect(self.slotSpeciesChoice)
+        self.comboBoxPotVector.activated[str].connect(self.slotPotVectorComponentChoice)
 
         ## Validators
         validatorPotElec      = DoubleValidator(self.lineEditValuePotElec)
@@ -201,11 +202,11 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.labelValuePotElecIm.hide()
 
         self.pushButtonPotVectorFormula.setEnabled(False)
-        setGreenColor(self.pushButtonPotVectorFormula, False)
+        self.pushButtonPotVectorFormula.setStyleSheet("background-color: None")
         self.pushButtonPotElecFormula.setEnabled(False)
-        setGreenColor(self.pushButtonPotElecFormula, False)
+        self.pushButtonPotElecFormula.setStyleSheet("background-color: None")
         self.pushButtonPotElecImFormula.setEnabled(False)
-        setGreenColor(self.pushButtonPotElecImFormula, False)
+        self.pushButtonPotElecImFormula.setStyleSheet("background-color: None")
 
         # Initialize electric potential
         self.potElec_type = self.__b.getElecScalarChoice(self.potElec)
@@ -237,7 +238,12 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
 
             if self.potVec_type == 'dirichlet_formula':
                 self.pushButtonPotVectorFormula.setEnabled(True)
-                setGreenColor(self.pushButtonPotVectorFormula, True)
+                exp = self.__b.getElecScalarFormula(self.potVect, self.potVec_type)
+                if exp:
+                    self.pushButtonPotVectorFormula.setStyleSheet("background-color: green")
+                    self.pushButtonPotVectorFormula.setToolTip(exp)
+                else:
+                    self.pushButtonPotVectorFormula.setStyleSheet("background-color: red")
 
             # Initialize species
             if self.species :
@@ -245,7 +251,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                 self.lineEditValueSpecies.setText(str(v))
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPotElecChoice(self, text):
         """
         INPUT choice for electric potential type
@@ -255,7 +261,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.initializeVariables()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPotElecImChoice(self, text):
         """
         INPUT choice for imaginary electric potential type
@@ -265,7 +271,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.initializeVariables()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPotVectorChoice(self, text):
         """
         INPUT choice for potential vector type
@@ -275,7 +281,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.initializeVariables()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotSpeciesChoice(self, text):
         """
         INPUT species choice
@@ -284,7 +290,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.initializeVariables()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPotVectorComponentChoice(self, text):
         """
         INPUT potential vector component choice
@@ -293,7 +299,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.initializeVariables()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPotElec(self, var):
         """
         """
@@ -302,7 +308,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.__b.setElecScalarValue(self.potElec, self.potElec_type, value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPotElecIm(self, var):
         """
         """
@@ -311,7 +317,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.__b.setElecScalarValue(self.potElecIm, self.potElecIm_type, value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotSpecies(self, var):
         """
         """
@@ -320,7 +326,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.__b.setElecScalarValue(self.species, 'dirichlet', value)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotPotVectorFormula(self):
         """
         """
@@ -346,7 +352,8 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             result = dialog.get_result()
             log.debug("slotPotVectorFormula -> %s" % str(result))
             self.__b.setElecScalarFormula(self.potVect, self.potVec_type, result)
-            setGreenColor(self.pushButtonPotVectorFormula, False)
+            self.pushButtonPotVectorFormula.setToolTip(result)
+            self.pushButtonPotVectorFormula.setStyleSheet("background-color: green")
 
 
     def showWidget(self, b):

@@ -130,6 +130,8 @@ class config:
         self.python = "@PYTHON@"
         self.pyuic4 = "@PYUIC4@"
         self.pyrcc4 = "@PYRCC4@"
+        self.pyuic5 = "@PYUIC5@"
+        self.pyrcc5 = "@PYRCC5@"
 
         # Execution environment
 
@@ -399,6 +401,14 @@ def process_cmd_line(argv):
                       action="store_true",
                       help="pyrcc4 tool for PyQt4 support")
 
+    parser.add_option("--pyuic5", dest="print_pyuic5",
+                      action="store_true",
+                      help="pyuic5 tool for PyQt5 support")
+
+    parser.add_option("--pyrcc5", dest="print_pyrcc5",
+                      action="store_true",
+                      help="pyrcc5 tool for PyQt5 support")
+
     parser.add_option("--have", dest="have", metavar="<lib>",
                       help="supported feature or library")
 
@@ -434,6 +444,8 @@ def process_cmd_line(argv):
     parser.set_defaults(print_python=False)
     parser.set_defaults(print_pyrcc4=False)
     parser.set_defaults(print_pyuic4=False)
+    parser.set_defaults(print_pyrcc5=False)
+    parser.set_defaults(print_pyuic5=False)
 
     parser.set_defaults(have=None)
     parser.set_defaults(cppflags=None)
@@ -503,6 +515,8 @@ def main(argv, pkg):
     if opts.print_python  == True: print(cfg.python)
     if opts.print_pyuic4  == True: print(cfg.pyuic4)
     if opts.print_pyrcc4  == True: print(cfg.pyrcc4)
+    if opts.print_pyuic5  == True: print(cfg.pyuic5)
+    if opts.print_pyrcc5  == True: print(cfg.pyrcc5)
 
     if opts.have is not None:
         if opts.have in cfg.deplibs: print(cfg.libs[opts.have].have)

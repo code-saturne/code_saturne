@@ -39,8 +39,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -98,18 +99,18 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.modelUnsaturated.addItem(self.tr("False"), 'false')
 
         # Connections
-        self.connect(self.comboBoxPermeability, SIGNAL("activated(const QString&)"), self.slotPermeabilityType)
-        self.connect(self.comboBoxDispersion, SIGNAL("activated(const QString&)"), self.slotDispersionType)
-        self.connect(self.comboBoxFlowType, SIGNAL("activated(const QString&)"), self.slotFlowType)
-        self.connect(self.comboBoxUnsaturated, SIGNAL("activated(const QString&)"), self.slotUnsaturated)
-        self.connect(self.checkBoxGravity, SIGNAL("clicked()"), self.slotGravity)
+        self.comboBoxPermeability.activated[str].connect(self.slotPermeabilityType)
+        self.comboBoxDispersion.activated[str].connect(self.slotDispersionType)
+        self.comboBoxFlowType.activated[str].connect(self.slotFlowType)
+        self.comboBoxUnsaturated.activated[str].connect(self.slotUnsaturated)
+        self.checkBoxGravity.clicked.connect(self.slotGravity)
 
         self.initializeWidget()
 
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def initializeWidget(self):
         """
         """
@@ -131,7 +132,7 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
             self.checkBoxGravity.setChecked(False)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPermeabilityType(self, text):
         """
         Input permeability type : isotrop or anisotrop.
@@ -140,7 +141,7 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.mdl.setPermeabilityType(mdl)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotDispersionType(self, text):
         """
         Input viscosity type : isotrop or anisotrop.
@@ -149,7 +150,7 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.mdl.setDispersionType(mdl)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotFlowType(self, text):
         """
         Input flow type : steady or unsteady.
@@ -158,7 +159,7 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.mdl.setFlowType(mdl)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotUnsaturated(self, text):
         """
         Input flow type : steady or unsteady.
@@ -167,7 +168,7 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.mdl.setUnsaturatedZone(mdl)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotGravity(self):
         """
         Input if gravity is taken into account or not

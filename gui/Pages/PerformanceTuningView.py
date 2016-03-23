@@ -40,15 +40,16 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import ComboModel, IntValidator, RegExpValidator, setGreenColor
+from code_saturne.Base.QtPage import ComboModel, IntValidator, RegExpValidator
 from code_saturne.Pages.SolutionDomainModel import RelOrAbsPath
 from code_saturne.Pages.PerformanceTuningForm import Ui_PerformanceTuningForm
 from code_saturne.Pages.PerformanceTuningModel import PerformanceTuningModel
@@ -85,7 +86,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         # Combo models and items
 
         self.modelPartType = ComboModel(self.comboBox_PartType, 4, 1)
-        self.modelPartOut = ComboModel(self.comboBox_PartOutput, 4, 1)
+        self.modelPartOut = ComboModel(self.comboBox_PartOutput, 3, 1)
 
         self.modelPartType.addItem(self.tr("Default"), 'default')
         self.modelPartType.addItem(self.tr("PT-SCOTCH / SCOTCH"), 'scotch')
@@ -109,7 +110,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.modelPartOut.addItem(self.tr("Yes"), 'yes')
 
         self.modelBlockIORead = ComboModel(self.comboBox_IORead, 6, 1)
-        self.modelBlockIOWrite = ComboModel(self.comboBox_IOWrite, 5, 1)
+        self.modelBlockIOWrite = ComboModel(self.comboBox_IOWrite, 4, 1)
 
         self.modelBlockIORead.addItem(self.tr("Default"), 'default')
         self.modelBlockIORead.addItem(self.tr("Standard I/O, serial"), 'stdio serial')
@@ -130,24 +131,24 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
 
         # Connections
 
-        self.connect(self.radioButtonYes, SIGNAL("clicked()"), self.slotPartition)
-        self.connect(self.radioButtonNo, SIGNAL("clicked()"), self.slotPartition)
-        self.connect(self.toolButton_PartInputDir, SIGNAL("pressed()"), self.slotSearchPartInputDirectory)
-        self.connect(self.comboBox_PartOutput, SIGNAL("activated(const QString&)"), self.slotPartOut)
+        self.radioButtonYes.clicked.connect(self.slotPartition)
+        self.radioButtonNo.clicked.connect(self.slotPartition)
+        self.toolButton_PartInputDir.pressed.connect(self.slotSearchPartInputDirectory)
+        self.comboBox_PartOutput.activated[str].connect(self.slotPartOut)
 
-        self.connect(self.comboBox_PartType, SIGNAL("activated(const QString&)"), self.slotPartType)
-        self.connect(self.lineEdit_PartList, SIGNAL("textChanged(const QString &)"), self.slotPartitionList)
-        self.connect(self.spinBoxRankStep, SIGNAL("valueChanged(int)"), self.slotRankStep)
+        self.comboBox_PartType.activated[str].connect(self.slotPartType)
+        self.lineEdit_PartList.textChanged[str].connect(self.slotPartitionList)
+        self.spinBoxRankStep.valueChanged[int].connect(self.slotRankStep)
 
-        self.connect(self.checkBox_IgnorePerio, SIGNAL("clicked(bool)"), self.slotIgnorePerio)
+        self.checkBox_IgnorePerio.clicked[bool].connect(self.slotIgnorePerio)
 
-        self.connect(self.comboBox_IORead, SIGNAL("activated(const QString&)"), self.slotBlockIOReadMethod)
-        self.connect(self.comboBox_IOWrite, SIGNAL("activated(const QString&)"), self.slotBlockIOWriteMethod)
+        self.comboBox_IORead.activated[str].connect(self.slotBlockIOReadMethod)
+        self.comboBox_IOWrite.activated[str].connect(self.slotBlockIOWriteMethod)
 
-        self.connect(self.spinBoxIORankStep, SIGNAL("valueChanged(int)"), self.slotBlockIORankStep)
-        self.connect(self.spinBoxIOMinBlockSize, SIGNAL("valueChanged(int)"), self.slotBlockIOMinSize)
+        self.spinBoxIORankStep.valueChanged[int].connect(self.slotBlockIORankStep)
+        self.spinBoxIOMinBlockSize.valueChanged[int].connect(self.slotBlockIOMinSize)
 
-        self.connect(self.tabWidget, SIGNAL("currentChanged(int)"), self.slotchanged)
+        self.tabWidget.currentChanged[int].connect(self.slotchanged)
 
         # Widget initialization
 
@@ -205,7 +206,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotSearchPartInputDirectory(self):
         """
         Search for the partition input directory in list of directories
@@ -250,7 +251,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
             log.debug("slotSearchPartInputDirectory-> %s" % self.partinput_path)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotPartition(self):
         """
         Determine if existing partitioning is used.
@@ -270,9 +271,9 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
             self.lineEditPartInputDir.setText(self.partinput_path)
             if not os.path.isdir(os.path.join(self.case['resu_path'],
                                               self.partinput_path)):
-                setGreenColor(self.toolButton_PartInputDir)
+                self.toolButton_PartInputDir.setStyleSheet("background-color: red")
             else:
-                setGreenColor(self.toolButton_PartInputDir, False)
+                self.toolButton_PartInputDir.setStyleSheet("background-color: green")
 
         else:
             self.mdl.setPartitionInputPath(None)
@@ -283,7 +284,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
             self.lineEditPartInputDir.setText("")
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotPartitionList(self, text):
         """
         Input for Partitioner.
@@ -292,7 +293,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setPartitionList(self.partition_list.strip())
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotPartOut(self, text):
         """
         Partitioner execution mode option.
@@ -301,7 +302,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setPartitionOut(self.partition_out)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotPartType(self, text):
         """
         Partitioner execution mode option.
@@ -310,7 +311,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setPartitionType(self.partition_alg)
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotRankStep(self, text):
         """
         Input for Partitioner.
@@ -319,7 +320,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setPartitionRankStep(self.rank_step)
 
 
-    @pyqtSignature("bool")
+    @pyqtSlot(bool)
     def slotIgnorePerio(self, checked):
         """
         Ignore periodicity.
@@ -330,7 +331,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
             self.mdl.setIgnorePerio("off")
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotBlockIOReadMethod(self, text):
         """
         Partitioner execution mode option.
@@ -339,7 +340,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setBlockIOReadMethod(self.blockio_read_method)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotBlockIOWriteMethod(self, text):
         """
         Partitioner execution mode option.
@@ -348,7 +349,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setBlockIOWriteMethod(self.blockio_write_method)
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotBlockIORankStep(self, text):
         """
         Input for Partitioner.
@@ -357,7 +358,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setBlockIORankStep(self.blockio_rank_step)
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotBlockIOMinSize(self, text):
         """
         Input for Partitioner.
@@ -366,7 +367,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setBlockIOMinSize(self.blockio_min_size)
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotchanged(self, index):
         """
         Changed tab

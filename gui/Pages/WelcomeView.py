@@ -30,7 +30,8 @@ This module defines the welcome page.
 # Library modules import
 #-------------------------------------------------------------------------------
 
-from PyQt4 import QtGui
+from code_saturne.Base           import QtGui
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -47,7 +48,7 @@ except Exception:
 # This class defines the welcome page
 #-------------------------------------------------------------------------------
 
-class WelcomeView(QtGui.QWidget, Ui_WelcomeForm):
+class WelcomeView(QWidget, Ui_WelcomeForm):
     """
     Class for the welcome page
     """
@@ -55,7 +56,7 @@ class WelcomeView(QtGui.QWidget, Ui_WelcomeForm):
         """
         Constructor
         """
-        QtGui.QWidget.__init__(self)
+        QWidget.__init__(self)
         Ui_WelcomeForm.__init__(self)
         self.setupUi(self)
 

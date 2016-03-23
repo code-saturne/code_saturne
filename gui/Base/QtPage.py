@@ -47,7 +47,9 @@ Py3 = sys.version[0] == '3'
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4 import QtGui, QtCore
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -115,16 +117,19 @@ import collections
 if os.environ.get('QT_API', 'pyqt') == 'pyqt':
     import sip
     try:
-        PYQT_API_1 = sip.getapi('QVariant') == 1
-    except AttributeError:
-        PYQT_API_1 = True
+        from PyQt5.QtCore import QT_VERSION_STR
+    except:
+        try:
+            PYQT_API_1 = sip.getapi('QVariant') == 1
+        except AttributeError:
+            PYQT_API_1 = True
 
     def to_qvariant(pyobj=None):
         """Convert Python object to QVariant
         This is a transitional function from PyQt API #1 (QVariant exist)
         to PyQt API #2 and Pyside (QVariant does not exist)"""
         if PYQT_API_1:
-            from PyQt4.QtCore import QVariant
+            from code_saturne.Base.QtCore import QVariant
             return QVariant(pyobj)
         else:
             return pyobj
@@ -178,7 +183,7 @@ def qbytearray_to_str(qba):
 #==============================================================================
 
 def getexistingdirectory(parent=None, caption='', basedir='',
-                         options=QtGui.QFileDialog.ShowDirsOnly):
+                         options=QFileDialog.ShowDirsOnly):
     """Wrapper around QtGui.QFileDialog.getExistingDirectory static method
     Compatible with PyQt >=v4.4 (API #1 and #2) and PySide >=v1.0"""
     # Calling QFileDialog static method
@@ -187,8 +192,8 @@ def getexistingdirectory(parent=None, caption='', basedir='',
         _temp1, _temp2 = sys.stdout, sys.stderr
         sys.stdout, sys.stderr = None, None
     try:
-        result = QtGui.QFileDialog.getExistingDirectory(parent, caption, basedir,
-                                                        options)
+        result = QFileDialog.getExistingDirectory(parent, caption, basedir,
+                                                  options)
     finally:
         if sys.platform == "win32":
             # On Windows platforms: restore standard outputs
@@ -202,18 +207,18 @@ def getexistingdirectory(parent=None, caption='', basedir='',
 def _qfiledialog_wrapper(attr, parent=None, caption='', basedir='',
                          filters='', selectedfilter='', options=None):
     if options is None:
-        options = QtGui.QFileDialog.Options(0)
+        options = QFileDialog.Options(0)
 
     try:
-        from QtCore import QString
+        from code_saturne.Base.QtCore import QString
     except ImportError:
         QString = None  # analysis:ignore
 
     tuple_returned = True
     try:
-        func = getattr(QtGui.QFileDialog, attr+'AndFilter')
+        func = getattr(QFileDialog, attr+'AndFilter')
     except AttributeError:
-        func = getattr(QtGui.QFileDialog, attr)
+        func = getattr(QFileDialog, attr)
         if QString is not None:
             selectedfilter = QString()
             tuple_returned = False
@@ -324,7 +329,7 @@ class ComboModel:
         self.columns = columns
         self.last    = 0
 
-        self.model   = QtGui.QStandardItemModel()
+        self.model   = QStandardItemModel()
         self.model.clear()
         self.model.setRowCount(rows)
         self.model.setColumnCount(columns)
@@ -348,15 +353,15 @@ class ComboModel:
 
         warn: If True, entry is marked with a color.
         """
-        item  = QtGui.QStandardItem(str(str_view))
+        item  = QStandardItem(str(str_view))
 
         index = self.last
         self.model.setItem(index, item)
 
         if warn:
             self.combo.setItemData(index,
-                                   QtGui.QColor(QtCore.Qt.red),
-                                   QtCore.Qt.TextColorRole)
+                                   QColor(Qt.red),
+                                   Qt.TextColorRole)
 
         self.last = index + 1
 
@@ -509,7 +514,7 @@ class ComboModel:
 vmax = 2147483647
 vmin = -vmax
 
-class IntValidator(QtGui.QIntValidator):
+class IntValidator(QIntValidator):
     """
     Validator for integer data.
     """
@@ -517,9 +522,9 @@ class IntValidator(QtGui.QIntValidator):
         """
         Initialization for validator
         """
-        QtGui.QIntValidator.__init__(self, parent)
+        QIntValidator.__init__(self, parent)
         self.parent = parent
-        self.state = QtGui.QValidator.Invalid
+        self.state = QValidator.Invalid
         self.__min = min
         self.__max = max
 
@@ -612,7 +617,7 @@ class IntValidator(QtGui.QIntValidator):
         QValidator.Intermediate  1  The string is a plausible intermediate value during editing.
         QValidator.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
         """
-        state = QtGui.QIntValidator.validate(self, stri, pos)[0]
+        state = QIntValidator.validate(self, stri, pos)[0]
 
         try:
             x = from_qvariant(stri, int)
@@ -622,21 +627,21 @@ class IntValidator(QtGui.QIntValidator):
             x = 0
             valid = False
 
-        if state == QtGui.QValidator.Acceptable:
+        if state == QValidator.Acceptable:
             if self.exclusiveMin and x == self.bottom():
-                state = QtGui.QValidator.Intermediate
+                state = QValidator.Intermediate
             elif self.exclusiveMax and x == self.top():
-                state = QtGui.QValidator.Intermediate
+                state = QValidator.Intermediate
             elif x in self.exclusiveValues:
-                state = QtGui.QValidator.Intermediate
+                state = QValidator.Intermediate
 
         palette = self.parent.palette()
 
-        if not valid or state == QtGui.QValidator.Intermediate:
-            palette.setColor(QtGui.QPalette.Text, QtGui.QColor("red"))
+        if not valid or state == QValidator.Intermediate:
+            palette.setColor(QPalette.Text, QColor("red"))
             self.parent.setPalette(palette)
         else:
-            palette.setColor(QtGui.QPalette.Text, QtGui.QColor("black"))
+            palette.setColor(QPalette.Text, QColor("black"))
             self.parent.setPalette(palette)
 
         self.state = state
@@ -653,7 +658,7 @@ class IntValidator(QtGui.QIntValidator):
         return text
 
 
-class DoubleValidator(QtGui.QDoubleValidator):
+class DoubleValidator(QDoubleValidator):
     """
     Validator for real data.
     """
@@ -661,9 +666,9 @@ class DoubleValidator(QtGui.QDoubleValidator):
         """
         Initialization for validator
         """
-        QtGui.QDoubleValidator.__init__(self, parent)
+        QDoubleValidator.__init__(self, parent)
         self.parent = parent
-        self.state = QtGui.QValidator.Invalid
+        self.state = QValidator.Invalid
         self.__min = min
         self.__max = max
 
@@ -744,7 +749,7 @@ class DoubleValidator(QtGui.QDoubleValidator):
         QValidator.Intermediate  1  The string is a plausible intermediate value during editing.
         QValidator.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
         """
-        state = QtGui.QDoubleValidator.validate(self, stri, pos)[0]
+        state = QDoubleValidator.validate(self, stri, pos)[0]
 
         try:
             x = from_qvariant(stri, float)
@@ -754,19 +759,19 @@ class DoubleValidator(QtGui.QDoubleValidator):
             x = 0.0
             valid = False
 
-        if state == QtGui.QValidator.Acceptable:
+        if state == QValidator.Acceptable:
             if self.exclusiveMin and x == self.bottom():
-                state = QtGui.QValidator.Intermediate
+                state = QValidator.Intermediate
             elif self.exclusiveMax and x == self.top():
-                state = QtGui.QValidator.Intermediate
+                state = QValidator.Intermediate
 
         palette = self.parent.palette()
 
-        if not valid or state == QtGui.QValidator.Intermediate:
-            palette.setColor(QtGui.QPalette.Text, QtGui.QColor("red"))
+        if not valid or state == QValidator.Intermediate:
+            palette.setColor(QPalette.Text, QColor("red"))
             self.parent.setPalette(palette)
         else:
-            palette.setColor(QtGui.QPalette.Text, QtGui.QColor("black"))
+            palette.setColor(QPalette.Text, QColor("black"))
             self.parent.setPalette(palette)
 
         self.state = state
@@ -783,7 +788,7 @@ class DoubleValidator(QtGui.QDoubleValidator):
         return text
 
 
-class RegExpValidator(QtGui.QRegExpValidator):
+class RegExpValidator(QRegExpValidator):
     """
     Validator for regular expression.
     """
@@ -791,11 +796,11 @@ class RegExpValidator(QtGui.QRegExpValidator):
         """
         Initialization for validator
         """
-        QtGui.QRegExpValidator.__init__(self, parent)
+        QRegExpValidator.__init__(self, parent)
         self.parent = parent
-        self.state = QtGui.QRegExpValidator.Invalid
+        self.state = QRegExpValidator.Invalid
 
-        self.__validator = QtGui.QRegExpValidator(rx, parent)
+        self.__validator = QRegExpValidator(rx, parent)
 
         if "{1," + str(LABEL_LENGTH_MAX) + "}" in rx.pattern():
             msg = self.tr("The maximum length of the label is %i characters" % LABEL_LENGTH_MAX)
@@ -814,11 +819,11 @@ class RegExpValidator(QtGui.QRegExpValidator):
 
         palette = self.parent.palette()
 
-        if state == QtGui.QValidator.Intermediate:
-            palette.setColor(QtGui.QPalette.Text, QtGui.QColor("red"))
+        if state == QValidator.Intermediate:
+            palette.setColor(QPalette.Text, QColor("red"))
             self.parent.setPalette(palette)
         else:
-            palette.setColor(QtGui.QPalette.Text, QtGui.QColor("black"))
+            palette.setColor(QPalette.Text, QColor("black"))
             self.parent.setPalette(palette)
 
         self.state = state
@@ -838,7 +843,7 @@ class RegExpValidator(QtGui.QRegExpValidator):
 # SpinBox progressing by multiplication and division
 #-------------------------------------------------------------------------------
 
-class RankSpinBoxWidget(QtGui.QSpinBox):
+class RankSpinBoxWidget(QSpinBox):
     """
     Special Spin box for rank stepping.
     """
@@ -846,7 +851,7 @@ class RankSpinBoxWidget(QtGui.QSpinBox):
         """
         Constructor
         """
-        QtGui.QSpinBox.__init__(self, parent)
+        QSpinBox.__init__(self, parent)
 
     def stepBy(self, steps):
         v = self.value()
@@ -858,15 +863,15 @@ class RankSpinBoxWidget(QtGui.QSpinBox):
     def stepEnabled(self):
         v = self.value()
         if v < 2:
-            return QtGui.QAbstractSpinBox.StepUpEnabled
+            return QAbstractSpinBox.StepUpEnabled
         else:
-            return QtGui.QAbstractSpinBox.StepUpEnabled | QtGui.QAbstractSpinBox.StepDownEnabled
+            return QAbstractSpinBox.StepUpEnabled | QAbstractSpinBox.StepDownEnabled
 
 #-------------------------------------------------------------------------------
 # SpinBox progressing by multiplication and division for Buffer size
 #-------------------------------------------------------------------------------
 
-class BufferSpinBoxWidget(QtGui.QSpinBox):
+class BufferSpinBoxWidget(QSpinBox):
     """
     Special Spin box for buffer size.
     """
@@ -874,7 +879,7 @@ class BufferSpinBoxWidget(QtGui.QSpinBox):
         """
         Constructor
         """
-        QtGui.QSpinBox.__init__(self, parent)
+        QSpinBox.__init__(self, parent)
         self.basesize = 1024*1024
 
     def stepBy(self, steps):
@@ -910,35 +915,14 @@ class BufferSpinBoxWidget(QtGui.QSpinBox):
         else:
             tv = 0
             suffix = ''
-        return QtGui.QSpinBox.textFromValue(self, tv) + suffix
+        return QSpinBox.textFromValue(self, tv) + suffix
 
     def stepEnabled(self):
         v = self.value()
         if v < 1:
-            return QtGui.QAbstractSpinBox.StepUpEnabled
+            return QAbstractSpinBox.StepUpEnabled
         else:
-            return QtGui.QAbstractSpinBox.StepUpEnabled | QtGui.QAbstractSpinBox.StepDownEnabled
-
-#-------------------------------------------------------------------------------
-# Paint in green a given widget
-#-------------------------------------------------------------------------------
-
-def setGreenColor(w, green=True):
-    """
-    Paint in green color the QWidget I{w} if I{green} is equal to C{True}.
-    If not, the QWidget I{w} is paint with the color of its parents.
-
-    @type w: C{QWidget}
-    @param w: widget to paint
-    @type green: C{True} or C{False}
-    @param green: I{w} is paint in green if C{True}
-    """
-    if green:
-        color = QtGui.QColor(QtCore.Qt.green)
-    else:
-        color = w.parentWidget().palette().color(QtGui.QPalette.Window)
-
-    w.setPalette(QtGui.QPalette(color))
+            return QAbstractSpinBox.StepUpEnabled | QAbstractSpinBox.StepDownEnabled
 
 #-------------------------------------------------------------------------------
 # End of QtPage

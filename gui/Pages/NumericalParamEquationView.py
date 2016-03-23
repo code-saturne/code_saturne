@@ -39,8 +39,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -469,7 +470,7 @@ class StandardItemModelScheme(QStandardItemModel):
             self.dataScheme[row]['nswrsm'] = from_qvariant(value, int)
             self.NPE.setRhsReconstruction(name, self.dataScheme[row]['nswrsm'])
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 #-------------------------------------------------------------------------------
@@ -621,7 +622,7 @@ class StandardItemModelSolver(QStandardItemModel):
             self.dataSolver[row]['cdtvar'] = from_qvariant(value, float)
             self.NPE.setScalarTimeStepFactor(name, self.dataSolver[row]['cdtvar'])
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -791,7 +792,7 @@ class StandardItemModelClipping(QStandardItemModel):
             self._data[row]['scamax'] = from_qvariant(value, float)
             self.NPE.setMaxValue(name, self._data[row]['scamax'])
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -847,7 +848,10 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.tableViewScheme.setSelectionBehavior(QAbstractItemView.SelectItems)
         self.tableViewScheme.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableViewScheme.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableViewScheme.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewScheme.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewScheme.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         delegateISCHCV = SchemeOrderDelegate(self.tableViewScheme)
         self.tableViewScheme.setItemDelegateForColumn(1, delegateISCHCV)
@@ -867,7 +871,10 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.tableViewSolver.setSelectionBehavior(QAbstractItemView.SelectItems)
         self.tableViewSolver.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableViewSolver.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableViewSolver.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewSolver.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewSolver.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         if self.SM.getSteadyFlowManagement() == 'on':
             self.tableViewSolver.setColumnHidden(4, True)
@@ -890,7 +897,10 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.tableViewClipping.setSelectionBehavior(QAbstractItemView.SelectItems)
         self.tableViewClipping.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableViewClipping.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableViewClipping.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewClipping.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewClipping.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         delegateMin = MinimumDelegate(self.tableViewClipping)
         self.tableViewClipping.setItemDelegateForColumn(1, delegateMin)
@@ -903,12 +913,12 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
 
         self.tabWidgetScheme.setCurrentIndex(self.case['current_tab'])
 
-        self.connect(self.tabWidgetScheme, SIGNAL("currentChanged(int)"), self.slotchanged)
+        self.tabWidgetScheme.currentChanged[int].connect(self.slotchanged)
 
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotchanged(self, index):
         """
         Changed tab

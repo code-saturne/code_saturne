@@ -37,8 +37,9 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -396,7 +397,7 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
             self.dataProbe[row] = probes
             self.mdl.updateProbes(self.dataLabel[row], probes)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -429,7 +430,10 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.tableViewOutput.setSelectionBehavior(QAbstractItemView.SelectItems)
         self.tableViewOutput.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableViewOutput.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableViewOutput.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewOutput.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewOutput.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         labelDelegate = LabelDelegate(self.tableViewOutput, self.mdl)
         self.tableViewOutput.setItemDelegateForColumn(0, labelDelegate)

@@ -80,9 +80,14 @@ CFDSTUDY_images.ts \
 CFDSTUDY_msg_en.ts \
 CFDSTUDY_msg_fr.ts
 
+if HAVE_QT5
+  PYUIC=$(PYUIC5)
+else
+  PYUIC=$(PYUIC4)
+endif
 
 ui_%.py: %.ui
-	$(PYUIC4) $< -x -o $@
+	$(PYUIC) $< -x -o $@
 
 install-exec-local: $(PYUI_FILES)
 	for f in $^ ; do\

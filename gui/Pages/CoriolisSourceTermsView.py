@@ -37,8 +37,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -84,9 +85,9 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
 
         # Connections
 
-        self.connect(self.lineEditOMEGAX, SIGNAL("textChanged(const QString &)"), self.slotOmegaX)
-        self.connect(self.lineEditOMEGAY, SIGNAL("textChanged(const QString &)"), self.slotOmegaY)
-        self.connect(self.lineEditOMEGAZ, SIGNAL("textChanged(const QString &)"), self.slotOmegaZ)
+        self.lineEditOMEGAX.textChanged[str].connect(self.slotOmegaX)
+        self.lineEditOMEGAY.textChanged[str].connect(self.slotOmegaY)
+        self.lineEditOMEGAZ.textChanged[str].connect(self.slotOmegaZ)
 
         # Validators
         validatorOmegaX = DoubleValidator(self.lineEditOMEGAX)
@@ -109,7 +110,7 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotOmegaX(self, text):
         """
         Input OMEGAX
@@ -119,7 +120,7 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
             self.mdl.setOmega('omega_x', omega_x)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotOmegaY(self, text):
         """
         Input OMEGAY
@@ -129,7 +130,7 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
             self.mdl.setOmega('omega_y', omega_y)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotOmegaZ(self, text):
         """
         Input OmegaZ

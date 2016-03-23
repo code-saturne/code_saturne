@@ -37,8 +37,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -78,16 +79,16 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         self.model = LagrangianOutputModel(self.case)
 
         # Connections
-        self.connect(self.checkBoxIVISV1,   SIGNAL("clicked()"),    self.slotIVISV1)
-        self.connect(self.checkBoxIVISV2,   SIGNAL("clicked()"),    self.slotIVISV2)
-        self.connect(self.checkBoxIVISTP,   SIGNAL("clicked()"),    self.slotIVISTP)
-        self.connect(self.checkBoxIVISDM,   SIGNAL("clicked()"),    self.slotIVISDM)
-        self.connect(self.checkBoxIVISTE,   SIGNAL("clicked()"),    self.slotIVISTE)
-        self.connect(self.checkBoxIVISMP,   SIGNAL("clicked()"),    self.slotIVISMP)
-        self.connect(self.checkBoxIVISDK,   SIGNAL("clicked()"),    self.slotIVISDK)
-        self.connect(self.checkBoxIVISCH,   SIGNAL("clicked()"),    self.slotIVISCH)
-        self.connect(self.checkBoxIVISCK,   SIGNAL("clicked()"),    self.slotIVISCK)
-        self.connect(self.checkBoxMoisture, SIGNAL("clicked()"),    self.slotMoisture)
+        self.checkBoxIVISV1.clicked.connect(self.slotIVISV1)
+        self.checkBoxIVISV2.clicked.connect(self.slotIVISV2)
+        self.checkBoxIVISTP.clicked.connect(self.slotIVISTP)
+        self.checkBoxIVISDM.clicked.connect(self.slotIVISDM)
+        self.checkBoxIVISTE.clicked.connect(self.slotIVISTE)
+        self.checkBoxIVISMP.clicked.connect(self.slotIVISMP)
+        self.checkBoxIVISDK.clicked.connect(self.slotIVISDK)
+        self.checkBoxIVISCH.clicked.connect(self.slotIVISCH)
+        self.checkBoxIVISCK.clicked.connect(self.slotIVISCK)
+        self.checkBoxMoisture.clicked.connect(self.slotMoisture)
 
         # initialize Widgets
         status = self.model.getFluidVelocityStatus()
@@ -155,7 +156,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIVISV1(self):
         """
         Input IVISV1.
@@ -166,7 +167,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setFluidVelocityStatus("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIVISV2(self):
         """
         Input IVISV2.
@@ -177,7 +178,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setParticlesVelocityStatus("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIVISTP(self):
         """
         Input IVISTP.
@@ -188,7 +189,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setResidentTimeStatus("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIVISDM(self):
         """
         Input IVISDM.
@@ -199,7 +200,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setParticleDiameterStatus("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIVISTE(self):
         """
         Input IVISTE.
@@ -210,7 +211,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setParticleTemperatureStatus("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIVISMP(self):
         """
         Input IVISMP.
@@ -221,7 +222,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setParticleMassStatus("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIVISDK(self):
         """
         Input IVISDK.
@@ -232,7 +233,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setCoalParticleDiameterStatus("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIVISCH(self):
         """
         Input IVISCH.
@@ -243,7 +244,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setCoalParticleMassStatus("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotIVISCK(self):
         """
         Input IVISCK.
@@ -254,7 +255,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setCokeParticleMassStatus("off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotMoisture(self):
         """
         Input IVISCK.

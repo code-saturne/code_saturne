@@ -37,8 +37,9 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -96,12 +97,8 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
 
         self.__model = AtmosphericFlowsModel(self.__case)
 
-        self.connect(self.checkBoxReadData,
-                     SIGNAL("clicked(bool)"),
-                     self.__slotReadData)
-        self.connect(self.checkBoxAutoNature,
-                     SIGNAL("clicked(bool)"),
-                     self.__slotAutoNature)
+        self.checkBoxReadData.clicked[bool].connect(self.__slotReadData)
+        self.checkBoxAutoNature.clicked[bool].connect(self.__slotAutoNature)
 
         self.__case.undoStartGlobal()
 

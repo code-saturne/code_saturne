@@ -51,8 +51,9 @@ except Exception:
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 import cs_case
 import cs_exec_environment
@@ -69,7 +70,7 @@ from code_saturne.Pages.BatchRunningDebugOptionsHelpDialogForm import Ui_BatchRu
 from code_saturne.Pages.BatchRunningStopByIterationDialogForm import Ui_BatchRunningStopByIterationDialogForm
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import ComboModel, IntValidator, RegExpValidator, setGreenColor
+from code_saturne.Base.QtPage import ComboModel, IntValidator, RegExpValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant
 from code_saturne.Base.CommandMgrDialogView import CommandMgrDialogView
 from code_saturne.Pages.BatchRunningModel import BatchRunningModel
@@ -106,10 +107,10 @@ class BatchRunningDebugOptionsHelpDialogView(QDialog, Ui_BatchRunningDebugOption
         self.parent = parent
 
         # Connections
-        self.connect(self.pushButtonClose, SIGNAL("clicked()"), self.slotDebugclose)
+        self.pushButtonClose.clicked.connect(self.slotDebugclose)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDebugclose(self):
         """
         Close debugging page
@@ -153,10 +154,10 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.modelCSOUT2.addItem(self.tr("to listing_r<r>"), 'listing')
 
         # Connections
-        self.connect(self.toolButton_2, SIGNAL("clicked()"), self.slotDebugHelp)
-        self.connect(self.lineEdit_3, SIGNAL("textChanged(const QString &)"), self.slotDebug)
-        self.connect(self.comboBox_6, SIGNAL("activated(const QString&)"), self.slotLogType)
-        self.connect(self.comboBox_7, SIGNAL("activated(const QString&)"), self.slotLogType)
+        self.toolButton_2.clicked.connect(self.slotDebugHelp)
+        self.lineEdit_3.textChanged[str].connect(self.slotDebug)
+        self.comboBox_6.activated[str].connect(self.slotLogType)
+        self.comboBox_7.activated[str].connect(self.slotLogType)
 
         # Previous values
         self.debug = self.parent.mdl.getString('debug')
@@ -166,7 +167,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.setLogType()
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotDebug(self, text):
         """
         Input for Debug.
@@ -183,7 +184,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.modelCSOUT2.setItem(str_model=self.log_type[1])
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotLogType(self, text):
         """
         Input logging options.
@@ -192,7 +193,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
                          self.modelCSOUT2.dicoV2M[str(self.comboBox_7.currentText())]]
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDebugHelp(self):
         """
         Show help page for debugging
@@ -266,12 +267,10 @@ class BatchRunningStopByIterationDialogView(QDialog, Ui_BatchRunningStopByIterat
         self.iter = self.default['iter']
         self.lineEditStopIter.setText(str(self.iter))
 
-        self.connect(self.lineEditStopIter,
-                     SIGNAL("textChanged(const QString &)"),
-                     self.__slotStopIter)
+        self.lineEditStopIter.textChanged[str].connect(self.__slotStopIter)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def __slotStopIter(self, text):
         """
         Private slot to set an iteration number to stop the code.
@@ -312,8 +311,8 @@ class ListingDialogView(CommandMgrDialogView):
 
         CommandMgrDialogView.__init__(self, parent, title, cmd, self.case['scripts_path'], self.case['salome'])
 
-        self.connect(self.pushButtonStop,   SIGNAL('clicked()'), self.__slotStop)
-        self.connect(self.pushButtonStopAt, SIGNAL('clicked()'), self.__slotStopAt)
+        self.pushButtonStop.clicked.connect(self.__slotStop)
+        self.pushButtonStopAt.clicked.connect(self.__slotStopAt)
 
         self.scratch_dir = ""
         self.result_dir = ""
@@ -389,7 +388,7 @@ class ListingDialogView(CommandMgrDialogView):
         QMessageBox.warning(self, self.tr("Warning"), msg)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotStop(self):
         """
         Private slot. Stops the code at the end of the current iteration.
@@ -399,7 +398,7 @@ class ListingDialogView(CommandMgrDialogView):
         self.__stopExec(iter, msg)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def __slotStopAt(self):
         """
         Private slot. Stops the code at the end of the given iteration.
@@ -413,7 +412,7 @@ class ListingDialogView(CommandMgrDialogView):
             self.__stopExec(result['iter'], msg)
 
 
-    @pyqtSignature("QProcess::ProcessState")
+    @pyqtSlot("QProcess::ProcessState")
     def slotStateChanged(self, state):
         """
         Public slot. Handle the current status of the process.
@@ -525,39 +524,27 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         # Connections
 
         if self.jmdl.batch.rm_type != None:
-            self.connect(self.lineEditJobName, SIGNAL("textChanged(const QString &)"),
-                         self.slotJobName)
-            self.connect(self.spinBoxNodes, SIGNAL("valueChanged(int)"),
-                         self.slotJobNodes)
-            self.connect(self.spinBoxPpn, SIGNAL("valueChanged(int)"),
-                         self.slotJobPpn)
-            self.connect(self.spinBoxProcs, SIGNAL("valueChanged(int)"),
-                         self.slotJobProcs)
-            self.connect(self.spinBoxThreads, SIGNAL("valueChanged(int)"),
-                         self.slotJobThreads)
-            self.connect(self.spinBoxDays, SIGNAL("valueChanged(int)"),
-                         self.slotJobWallTime)
-            self.connect(self.spinBoxHours, SIGNAL("valueChanged(int)"),
-                         self.slotJobWallTime)
-            self.connect(self.spinBoxMinutes, SIGNAL("valueChanged(int)"),
-                         self.slotJobWallTime)
-            self.connect(self.spinBoxSeconds, SIGNAL("valueChanged(int)"),
-                         self.slotJobWallTime)
-            self.connect(self.comboBoxClass, SIGNAL("activated(const QString&)"),
-                         self.slotClass)
-            self.connect(self.lineEditJobAccount, SIGNAL("textChanged(const QString &)"),
-                         self.slotJobAccount)
-            self.connect(self.lineEditJobWCKey, SIGNAL("textChanged(const QString &)"),
-                         self.slotJobWCKey)
+            self.lineEditJobName.textChanged[str].connect(self.slotJobName)
+            self.spinBoxNodes.valueChanged[int].connect(self.slotJobNodes)
+            self.spinBoxPpn.valueChanged[int].connect(self.slotJobPpn)
+            self.spinBoxProcs.valueChanged[int].connect(self.slotJobProcs)
+            self.spinBoxThreads.valueChanged[int].connect(self.slotJobThreads)
+            self.spinBoxDays.valueChanged[int].connect(self.slotJobWallTime)
+            self.spinBoxHours.valueChanged[int].connect(self.slotJobWallTime)
+            self.spinBoxMinutes.valueChanged[int].connect(self.slotJobWallTime)
+            self.spinBoxSeconds.valueChanged[int].connect(self.slotJobWallTime)
+            self.comboBoxClass.activated[str].connect(self.slotClass)
+            self.lineEditJobAccount.textChanged[str].connect(self.slotJobAccount)
+            self.lineEditJobWCKey.textChanged[str].connect(self.slotJobWCKey)
 
         else:
-            self.connect(self.spinBoxNProcs, SIGNAL("valueChanged(int)"), self.slotNProcs)
-            self.connect(self.spinBoxNThreads, SIGNAL("valueChanged(int)"), self.slotNThreads)
+            self.spinBoxNProcs.valueChanged[int].connect(self.slotNProcs)
+            self.spinBoxNThreads.valueChanged[int].connect(self.slotNThreads)
 
-        self.connect(self.toolButtonSearchBatch, SIGNAL("clicked()"), self.slotSearchBatchFile)
-        self.connect(self.comboBoxRunType, SIGNAL("activated(const QString&)"), self.slotArgRunType)
-        self.connect(self.toolButtonAdvanced, SIGNAL("clicked()"), self.slotAdvancedOptions)
-        self.connect(self.pushButtonRunSubmit, SIGNAL("clicked()"), self.slotBatchRunning)
+        self.toolButtonSearchBatch.clicked.connect(self.slotSearchBatchFile)
+        self.comboBoxRunType.activated[str].connect(self.slotArgRunType)
+        self.toolButtonAdvanced.clicked.connect(self.slotAdvancedOptions)
+        self.pushButtonRunSubmit.clicked.connect(self.slotBatchRunning)
 
         # Combomodels
 
@@ -580,9 +567,9 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         if self.case['runcase']:
             name = os.path.basename(self.case['runcase'].path)
             self.labelBatchName.setText(str(name))
-            setGreenColor(self.toolButtonSearchBatch, False)
+            self.toolButtonSearchBatch.setStyleSheet("background-color: green")
         else:
-            setGreenColor(self.toolButtonSearchBatch, True)
+            self.toolButtonSearchBatch.setStyleSheet("background-color: red")
 
         if self.jmdl.batch.rm_type != None and self.case['runcase']:
             self.displayBatchInfo()
@@ -594,7 +581,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotJobName(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -604,7 +591,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_name')
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotJobNodes(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -613,7 +600,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_nodes')
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotJobPpn(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -622,7 +609,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_ppn')
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotJobProcs(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -631,7 +618,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_procs')
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotJobThreads(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -640,7 +627,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_threads')
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotJobWallTime(self):
 
         h_cput = self.spinBoxDays.value()*24 + self.spinBoxHours.value()
@@ -650,7 +637,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_walltime')
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotClass(self):
 
         self.jmdl.batch.params['job_class'] = str(self.comboBoxClass.currentText())
@@ -658,7 +645,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_class')
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotJobAccount(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -668,7 +655,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_account')
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotJobWCKey(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -678,7 +665,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_wckey')
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotArgRunType(self, text):
         """
         Input run type option.
@@ -687,7 +674,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.mdl.setRunType(run_type)
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotNProcs(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -699,7 +686,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.jmdl.updateBatchFile('run_nprocs')
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotNThreads(self, v):
         """
         Increment, decrement and colorize the input argument entry
@@ -711,7 +698,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.jmdl.updateBatchFile('run_nthreads')
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAdvancedOptions(self):
         """
         Ask one popup for advanced specifications
@@ -724,7 +711,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             log.debug("slotAdvancedOptions validated")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotBatchRunning(self):
         """
         Launch Code_Saturne batch running.
@@ -1021,7 +1008,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             pass
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotSearchBatchFile(self):
         """
         Open a FileDialog in order to search the batch command file
@@ -1034,13 +1021,13 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             path = os.getcwd()
         title = self.tr("Select the batch script")
         filetypes = self.tr("All Files (*)")
-        file_name = QFileDialog.getOpenFileName(self, title, path, filetypes)
+        file_name = QFileDialog.getOpenFileName(self, title, path, filetypes)[0]
         file_name = str(file_name)
 
         if file_name:
 
             launcher = os.path.basename(file_name)
-            setGreenColor(self.toolButtonSearchBatch, False)
+            self.toolButtonSearchBatch.setStyleSheet("background-color: green")
 
             if self.case['scripts_path'] == os.path.dirname(file_name):
                 self.case['runcase'] = cs_runcase.runcase(os.path.join(self.case['scripts_path'],

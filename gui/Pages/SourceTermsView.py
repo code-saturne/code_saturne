@@ -37,8 +37,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -47,7 +48,7 @@ from PyQt4.QtGui  import *
 from code_saturne.Pages.SourceTermsForm import Ui_SourceTermsForm
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel, setGreenColor
+from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel
 from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
 from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.Pages.LocalizationModel import VolumicLocalizationModel, LocalizationModel
@@ -143,14 +144,14 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
 
         # 2/ Connections
 
-        self.connect(self.comboBoxZone,         SIGNAL("activated(const QString&)"),   self.slotZone)
-        self.connect(self.comboBoxSpecies,      SIGNAL("activated(const QString&)"),   self.slotSpeciesChoice)
-        self.connect(self.pushButtonMomentum,   SIGNAL("clicked()"),                   self.slotMomentumFormula)
-        self.connect(self.pushButtonThermal,    SIGNAL("clicked()"),                   self.slotThermalFormula)
-        self.connect(self.pushButtonSpecies,    SIGNAL("clicked()"),                   self.slotSpeciesFormula)
-        self.connect(self.comboBoxSpecies2,     SIGNAL("activated(const QString&)"),   self.slotSpeciesChoice)
-        self.connect(self.pushButtonSpecies2,   SIGNAL("clicked()"),                   self.slotSpeciesGroundWaterFormula)
-        self.connect(self.pushButtonRichards,   SIGNAL("clicked()"),                   self.slotRichardsFormula)
+        self.comboBoxZone.activated[str].connect(self.slotZone)
+        self.comboBoxSpecies.activated[str].connect(self.slotSpeciesChoice)
+        self.pushButtonMomentum.clicked.connect(self.slotMomentumFormula)
+        self.pushButtonThermal.clicked.connect(self.slotThermalFormula)
+        self.pushButtonSpecies.clicked.connect(self.slotSpeciesFormula)
+        self.comboBoxSpecies2.activated[str].connect(self.slotSpeciesChoice)
+        self.pushButtonSpecies2.clicked.connect(self.slotSpeciesGroundWaterFormula)
+        self.pushButtonRichards.clicked.connect(self.slotRichardsFormula)
 
         # 3/ Initialize widget
 
@@ -168,7 +169,12 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         if zone['momentum_source_term'] == "on":
             self.labelMomentum.show()
             self.pushButtonMomentum.show()
-            setGreenColor(self.pushButtonMomentum, True)
+            exp = self.mdl.getMomentumFormula(self.zone)
+            if exp:
+                self.pushButtonMomentum.setToolTip(exp)
+                self.pushButtonMomentum.setStyleSheet("background-color: green")
+            else:
+                self.pushButtonMomentum.setStyleSheet("background-color: red")
         else:
             self.labelMomentum.hide()
             self.pushButtonMomentum.hide()
@@ -176,7 +182,12 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         if zone['thermal_source_term']  == "on":
             self.pushButtonThermal.show()
             self.labelThermal.show()
-            setGreenColor(self.pushButtonThermal, True)
+            exp = self.mdl.getThermalFormula(self.zone, self.th_sca_name)
+            if exp:
+                self.pushButtonThermal.setToolTip(exp)
+                self.pushButtonThermal.setStyleSheet("background-color: green")
+            else:
+                self.pushButtonThermal.setStyleSheet("background-color: red")
         else:
             self.pushButtonThermal.hide()
             self.labelThermal.hide()
@@ -185,7 +196,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
             self.comboBoxSpecies.show()
             self.pushButtonSpecies.show()
             self.labelSpecies.show()
-            setGreenColor(self.pushButtonSpecies, True)
+
             self.scalar = ""
             scalar_list = self.th_sca.getUserScalarNameList()
             for s in self.th_sca.getScalarsVarianceList():
@@ -195,18 +206,32 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
                     self.scalar = scalar
                     self.modelSpecies.addItem(self.tr(scalar),self.scalar)
                 self.modelSpecies.setItem(str_model = self.scalar)
+                exp = self.mdl.getSpeciesFormula(self.zone, self.scalar)
+                if exp:
+                    self.pushButtonSpecies.setToolTip(exp)
+                    self.pushButtonSpecies.setStyleSheet("background-color: green")
+                else:
+                    self.pushButtonSpecies.setStyleSheet("background-color: red")
 
-            self.groupBoxTransport.show()
-            setGreenColor(self.pushButtonSpecies2, True)
-            self.scalar = ""
-            scalar_list = self.th_sca.getUserScalarNameList()
-            for s in self.th_sca.getScalarsVarianceList():
-                if s in scalar_list: scalar_list.remove(s)
-            if scalar_list != []:
-                for scalar in scalar_list:
-                    self.scalar = scalar
-                    self.modelSpecies2.addItem(self.tr(scalar),self.scalar)
-                self.modelSpecies2.setItem(str_model = self.scalar)
+            if GroundwaterModel(self.case).getGroundwaterModel() != "off":
+                self.groupBoxTransport.show()
+                self.scalar = ""
+                scalar_list = self.th_sca.getUserScalarNameList()
+                for s in self.th_sca.getScalarsVarianceList():
+                    if s in scalar_list: scalar_list.remove(s)
+                if scalar_list != []:
+                    for scalar in scalar_list:
+                        self.scalar = scalar
+                        self.modelSpecies2.addItem(self.tr(scalar),self.scalar)
+                    self.modelSpecies2.setItem(str_model = self.scalar)
+                    exp = self.mdl.getGroundWaterSpeciesFormula(self.zone, self.scalar)
+                    if exp:
+                        self.pushButtonSpecies2.setToolTip(exp)
+                        self.pushButtonSpecies2.setStyleSheet("background-color: green")
+                    else:
+                        self.pushButtonSpecies2.setStyleSheet("background-color: red")
+            else:
+                self.groupBoxTransport.hide()
         else:
             self.comboBoxSpecies.hide()
             self.pushButtonSpecies.hide()
@@ -214,7 +239,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
             self.groupBoxTransport.hide()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotZone(self, text):
         """
         INPUT label for choice of zone
@@ -223,16 +248,21 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         self.initialize(self.zone)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotSpeciesChoice(self, text):
         """
         INPUT label for choice of zone
         """
         self.scalar= self.modelSpecies.dicoV2M[str(text)]
-        setGreenColor(self.pushButtonSpecies, True)
+        exp = self.mdl.getSpeciesFormula(self.zone, self.scalar)
+        if exp:
+            self.pushButtonSpecies.setToolTip(exp)
+            self.pushButtonSpecies.setStyleSheet("background-color: green")
+        else:
+            self.pushButtonSpecies.setStyleSheet("background-color: red")
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMomentumFormula(self):
         """
         Set momentumFormula of the source term
@@ -274,10 +304,11 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
             self.mdl.setMomentumFormula(self.zone, result)
-            setGreenColor(self.sender(), False)
+            self.pushButtonMomentum.setToolTip(result)
+            self.pushButtonMomentum.setStyleSheet("background-color: green")
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotSpeciesFormula(self):
         """
         """
@@ -304,10 +335,11 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
             self.mdl.setSpeciesFormula(self.zone, self.scalar, result)
-            setGreenColor(self.sender(), False)
+            self.pushButtonSpecies.setToolTip(result)
+            self.pushButtonSpecies.setStyleSheet("background-color: green")
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotSpeciesGroundWaterFormula(self):
         """
         """
@@ -335,10 +367,11 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
             result = dialog.get_result()
             log.debug("slotSpeciesGroundWaterFormula -> %s" % str(result))
             self.mdl.setGroundWaterSpeciesFormula(self.zone, self.scalar, result)
-            setGreenColor(self.sender(), False)
+            self.pushButtonSpecies2.setToolTip(result)
+            self.pushButtonSpecies2.setStyleSheet("background-color: green")
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotRichardsFormula(self):
         """
         """
@@ -362,7 +395,8 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
             result = dialog.get_result()
             log.debug("slotRichardsFormula -> %s" % str(result))
             self.mdl.setRichardsFormula(self.zone, result)
-            setGreenColor(self.sender(), False)
+            self.pushButtonRichards.setToolTip(result)
+            self.pushButtonRichards.setStyleSheet("background-color: green")
 
 
     def getThermalLabelAndUnit(self):
@@ -388,7 +422,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         return th_sca_name, unit
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotThermalFormula(self):
         """
         Input the initial formula of thermal scalar
@@ -418,7 +452,8 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
             self.mdl.setThermalFormula(self.zone, self.th_sca_name, result)
-            setGreenColor(self.sender(), False)
+            self.pushButtonThermal.setToolTip(result)
+            self.pushButtonThermal.setStyleSheet("background-color: green")
 
 
     def tr(self, text):

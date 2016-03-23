@@ -37,15 +37,16 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import ComboModel, setGreenColor
+from code_saturne.Base.QtPage import ComboModel
 
 from code_saturne.Pages.BoundaryConditionsMobileMeshForm import Ui_BoundaryConditionsMobileMeshForm
 from code_saturne.Pages.MobileMeshModel import MobileMeshModel
@@ -99,17 +100,13 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         self.__comboModel.addItem(self.tr("Fixed velocity"), "fixed_velocity")
         self.__comboModel.addItem(self.tr("Fixed displacement"), "fixed_displacement")
 
-        self.connect(self.comboMobilBoundary,
-                     SIGNAL("activated(const QString&)"),
-                     self.__slotCombo)
-        self.connect(self.pushButtonMobilBoundary,
-                     SIGNAL("clicked(bool)"),
-                     self.__slotFormula)
+        self.comboMobilBoundary.activated[str].connect(self.__slotCombo)
+        self.pushButtonMobilBoundary.clicked[bool].connect(self.__slotFormula)
 
         self.__case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotFormula(self, text):
         """
         Run formula editor.
@@ -146,10 +143,11 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
             result = dialog.get_result()
             log.debug("slotFormulaMobileMeshBoundary -> %s" % str(result))
             self.__boundary.setFormula(result)
-            setGreenColor(self.pushButtonMobilBoundary, False)
+            self.pushButtonMobilBoundary.setStyleSheet("background-color: green")
+            self.pushButtonMobilBoundary.setToolTip(result)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotCombo(self, text):
         """
         Called when the combobox changed.
@@ -158,7 +156,12 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         # Enable/disable formula button.
         isFormulaEnabled = modelData in ["fixed_velocity", "fixed_displacement"]
         self.pushButtonMobilBoundary.setEnabled(isFormulaEnabled)
-        setGreenColor(self.pushButtonMobilBoundary, isFormulaEnabled)
+        exp = self.__boundary.getFormula()
+        if exp:
+            self.pushButtonMobilBoundary.setStyleSheet("background-color: green")
+            self.pushButtonMobilBoundary.setToolTip(exp)
+        else:
+            self.pushButtonMobilBoundary.setStyleSheet("background-color: red")
         self.__boundary.setALEChoice(modelData)
 
 

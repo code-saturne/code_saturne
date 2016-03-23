@@ -41,8 +41,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -50,7 +51,7 @@ from PyQt4.QtGui  import *
 
 from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.Common import LABEL_LENGTH_MAX
-from code_saturne.Base.QtPage import ComboModel, DoubleValidator, RegExpValidator, setGreenColor
+from code_saturne.Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 
 from code_saturne.Pages.CoalCombustionForm import Ui_CoalCombustionForm
@@ -352,7 +353,7 @@ class StandardItemModelCoals(QStandardItemModel):
             self.dataCoals[row]['type'] = self.dicoV2M[str(from_qvariant(value, to_text_string))]
             self.mdl.setFuelType(row + 1, self.dataCoals[row]['type'])
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -463,7 +464,7 @@ class StandardItemModelClasses(QStandardItemModel):
             elif diameter_type == 'rosin-rammler_law':
                 self.model.setMassPercent(self.fuel, ClassId, newDiameter)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -558,7 +559,7 @@ class StandardItemModelOxidant(QStandardItemModel):
         elif col == 4:
             self.model.setElementComposition(oxId, "CO2", v)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -652,7 +653,7 @@ class StandardItemModelRefusal(QStandardItemModel):
         elif col == 2:
             self.model.setRefusalValue(self.fuel, row+1, v)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -788,74 +789,74 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
 
         # Connections
         # -----------
-        self.connect(self.treeViewCoals,           SIGNAL("clicked(const QModelIndex &)"), self.slotSelectCoal)
-        self.connect(self.pushButtonAddCoal,       SIGNAL("clicked()"), self.slotCreateCoal)
-        self.connect(self.pushButtonDeleteCoal,    SIGNAL("clicked()"), self.slotDeleteCoal)
-        self.connect(self.pushButtonAddClass,      SIGNAL("clicked()"), self.slotCreateClass)
-        self.connect(self.pushButtonDeleteClass,   SIGNAL("clicked()"), self.slotDeleteClass)
-        self.connect(self.pushButtonAddRefusal,    SIGNAL("clicked()"), self.slotCreateRefusal)
-        self.connect(self.pushButtonDeleteRefusal, SIGNAL("clicked()"), self.slotDeleteRefusal)
-        self.connect(self.comboBoxDiameter,        SIGNAL("activated(const QString&)"), self.slotDiameterType)
-        self.connect(self.pushButtonAddOxidant,    SIGNAL("clicked()"), self.slotCreateOxidant)
-        self.connect(self.pushButtonDeleteOxidant, SIGNAL("clicked()"), self.slotDeleteOxidant)
+        self.treeViewCoals.clicked[QModelIndex].connect(self.slotSelectCoal)
+        self.pushButtonAddCoal.clicked.connect(self.slotCreateCoal)
+        self.pushButtonDeleteCoal.clicked.connect(self.slotDeleteCoal)
+        self.pushButtonAddClass.clicked.connect(self.slotCreateClass)
+        self.pushButtonDeleteClass.clicked.connect(self.slotDeleteClass)
+        self.pushButtonAddRefusal.clicked.connect(self.slotCreateRefusal)
+        self.pushButtonDeleteRefusal.clicked.connect(self.slotDeleteRefusal)
+        self.comboBoxDiameter.activated[str].connect(self.slotDiameterType)
+        self.pushButtonAddOxidant.clicked.connect(self.slotCreateOxidant)
+        self.pushButtonDeleteOxidant.clicked.connect(self.slotDeleteOxidant)
 
-        self.connect(self.lineEditC,               SIGNAL("textChanged(const QString &)"), self.slotCComposition)
-        self.connect(self.lineEditH,               SIGNAL("textChanged(const QString &)"), self.slotHComposition)
-        self.connect(self.lineEditO,               SIGNAL("textChanged(const QString &)"), self.slotOComposition)
-        self.connect(self.lineEditN,               SIGNAL("textChanged(const QString &)"), self.slotNComposition)
-        self.connect(self.lineEditS,               SIGNAL("textChanged(const QString &)"), self.slotSComposition)
-        self.connect(self.lineEditPCI,             SIGNAL("textChanged(const QString &)"), self.slotPCI)
-        self.connect(self.lineEditVolatileMatter,  SIGNAL("textChanged(const QString &)"), self.slotVolatileMatter)
-        self.connect(self.lineEditMoisture,        SIGNAL("textChanged(const QString &)"), self.slotMoisture)
-        self.connect(self.lineEditCp,              SIGNAL("textChanged(const QString &)"), self.slotThermalCapacity)
-        self.connect(self.lineEditThermalCond,     SIGNAL("textChanged(const QString &)"), self.slotThermalConductivity)
-        self.connect(self.lineEditDensity,         SIGNAL("textChanged(const QString &)"), self.slotDensity)
-        self.connect(self.comboBoxPCIList,         SIGNAL("activated(const QString&)"), self.slotPCIChoice)
-        self.connect(self.comboBoxPCIType,         SIGNAL("activated(const QString&)"), self.slotPCIType)
-        self.connect(self.lineEditCCoke,           SIGNAL("textChanged(const QString &)"), self.slotCCompositionCoke)
-        self.connect(self.lineEditHCoke,           SIGNAL("textChanged(const QString &)"), self.slotHCompositionCoke)
-        self.connect(self.lineEditOCoke,           SIGNAL("textChanged(const QString &)"), self.slotOCompositionCoke)
-        self.connect(self.lineEditNCoke,           SIGNAL("textChanged(const QString &)"), self.slotNCompositionCoke)
-        self.connect(self.lineEditSCoke,           SIGNAL("textChanged(const QString &)"), self.slotSCompositionCoke)
+        self.lineEditC.textChanged[str].connect(self.slotCComposition)
+        self.lineEditH.textChanged[str].connect(self.slotHComposition)
+        self.lineEditO.textChanged[str].connect(self.slotOComposition)
+        self.lineEditN.textChanged[str].connect(self.slotNComposition)
+        self.lineEditS.textChanged[str].connect(self.slotSComposition)
+        self.lineEditPCI.textChanged[str].connect(self.slotPCI)
+        self.lineEditVolatileMatter.textChanged[str].connect(self.slotVolatileMatter)
+        self.lineEditMoisture.textChanged[str].connect(self.slotMoisture)
+        self.lineEditCp.textChanged[str].connect(self.slotThermalCapacity)
+        self.lineEditThermalCond.textChanged[str].connect(self.slotThermalConductivity)
+        self.lineEditDensity.textChanged[str].connect(self.slotDensity)
+        self.comboBoxPCIList.activated[str].connect(self.slotPCIChoice)
+        self.comboBoxPCIType.activated[str].connect(self.slotPCIType)
+        self.lineEditCCoke.textChanged[str].connect(self.slotCCompositionCoke)
+        self.lineEditHCoke.textChanged[str].connect(self.slotHCompositionCoke)
+        self.lineEditOCoke.textChanged[str].connect(self.slotOCompositionCoke)
+        self.lineEditNCoke.textChanged[str].connect(self.slotNCompositionCoke)
+        self.lineEditSCoke.textChanged[str].connect(self.slotSCompositionCoke)
 
-        self.connect(self.lineEditAshesRatio,      SIGNAL("textChanged(const QString &)"), self.slotAshesRatio)
-        self.connect(self.lineEditAshesEnthalpy,   SIGNAL("textChanged(const QString &)"), self.slotAshesFormingEnthalpy)
-        self.connect(self.lineEditAshesCp,         SIGNAL("textChanged(const QString &)"), self.slotAshesThermalCapacity)
+        self.lineEditAshesRatio.textChanged[str].connect(self.slotAshesRatio)
+        self.lineEditAshesEnthalpy.textChanged[str].connect(self.slotAshesFormingEnthalpy)
+        self.lineEditAshesCp.textChanged[str].connect(self.slotAshesThermalCapacity)
 
-        self.connect(self.comboBoxY1Y2,   SIGNAL("activated(const QString&)"), self.slotY1Y2)
-        self.connect(self.lineEditCoefY1, SIGNAL("textChanged(const QString &)"), self.slotY1CH)
-        self.connect(self.lineEditCoefY2, SIGNAL("textChanged(const QString &)"), self.slotY2CH)
-        self.connect(self.lineEditCoefA1, SIGNAL("textChanged(const QString &)"), self.slotA1CH)
-        self.connect(self.lineEditCoefA2, SIGNAL("textChanged(const QString &)"), self.slotA2CH)
-        self.connect(self.lineEditCoefE1, SIGNAL("textChanged(const QString &)"), self.slotE1CH)
-        self.connect(self.lineEditCoefE2, SIGNAL("textChanged(const QString &)"), self.slotE2CH)
+        self.comboBoxY1Y2.activated[str].connect(self.slotY1Y2)
+        self.lineEditCoefY1.textChanged[str].connect(self.slotY1CH)
+        self.lineEditCoefY2.textChanged[str].connect(self.slotY2CH)
+        self.lineEditCoefA1.textChanged[str].connect(self.slotA1CH)
+        self.lineEditCoefA2.textChanged[str].connect(self.slotA2CH)
+        self.lineEditCoefE1.textChanged[str].connect(self.slotE1CH)
+        self.lineEditCoefE2.textChanged[str].connect(self.slotE2CH)
 
-        self.connect(self.lineEditConstO2,   SIGNAL("textChanged(const QString &)"), self.slotPreExpoCstO2)
-        self.connect(self.lineEditEnergyO2,  SIGNAL("textChanged(const QString &)"), self.slotActivEnergyO2)
-        self.connect(self.comboBoxReactO2,   SIGNAL("activated(const QString&)"), self.slotReactTypeO2)
-        self.connect(self.lineEditConstCO2,  SIGNAL("textChanged(const QString &)"), self.slotPreExpoCstCO2)
-        self.connect(self.lineEditEnergyCO2, SIGNAL("textChanged(const QString &)"), self.slotActivEnergyCO2)
-        self.connect(self.comboBoxReactCO2,  SIGNAL("activated(const QString&)"), self.slotReactTypeCO2)
-        self.connect(self.lineEditConstH2O,  SIGNAL("textChanged(const QString &)"), self.slotPreExpoCstH2O)
-        self.connect(self.lineEditEnergyH2O, SIGNAL("textChanged(const QString &)"), self.slotActivEnergyH2O)
-        self.connect(self.comboBoxReactH2O,  SIGNAL("activated(const QString&)"), self.slotReactTypeH2O)
-        self.connect(self.comboBoxOxidant,   SIGNAL("activated(const QString&)"), self.slotOxidantType)
-        self.connect(self.comboBoxReburning, SIGNAL("activated(const QString&)"), self.slotReburning)
+        self.lineEditConstO2.textChanged[str].connect(self.slotPreExpoCstO2)
+        self.lineEditEnergyO2.textChanged[str].connect(self.slotActivEnergyO2)
+        self.comboBoxReactO2.activated[str].connect(self.slotReactTypeO2)
+        self.lineEditConstCO2.textChanged[str].connect(self.slotPreExpoCstCO2)
+        self.lineEditEnergyCO2.textChanged[str].connect(self.slotActivEnergyCO2)
+        self.comboBoxReactCO2.activated[str].connect(self.slotReactTypeCO2)
+        self.lineEditConstH2O.textChanged[str].connect(self.slotPreExpoCstH2O)
+        self.lineEditEnergyH2O.textChanged[str].connect(self.slotActivEnergyH2O)
+        self.comboBoxReactH2O.activated[str].connect(self.slotReactTypeH2O)
+        self.comboBoxOxidant.activated[str].connect(self.slotOxidantType)
+        self.comboBoxReburning.activated[str].connect(self.slotReburning)
 
-        self.connect(self.lineEditQPR,                   SIGNAL("textChanged(const QString &)"), self.slotQPR)
-        self.connect(self.lineEditNitrogenConcentration, SIGNAL("textChanged(const QString &)"), self.slotNitrogenConcentration)
-        self.connect(self.lineEditKobayashi1,            SIGNAL("textChanged(const QString &)"), self.slotKobayashi1)
-        self.connect(self.lineEditKobayashi2,            SIGNAL("textChanged(const QString &)"), self.slotKobayashi2)
-        self.connect(self.lineEditNitrogenLowTemp,       SIGNAL("textChanged(const QString &)"), self.slotNLowTemp)
-        self.connect(self.lineEditNitrogenHighTemp,      SIGNAL("textChanged(const QString &)"), self.slotNHighTemp)
-        self.connect(self.lineEditHCNChar,               SIGNAL("textChanged(const QString &)"), self.slotHCNChar)
+        self.lineEditQPR.textChanged[str].connect(self.slotQPR)
+        self.lineEditNitrogenConcentration.textChanged[str].connect(self.slotNitrogenConcentration)
+        self.lineEditKobayashi1.textChanged[str].connect(self.slotKobayashi1)
+        self.lineEditKobayashi2.textChanged[str].connect(self.slotKobayashi2)
+        self.lineEditNitrogenLowTemp.textChanged[str].connect(self.slotNLowTemp)
+        self.lineEditNitrogenHighTemp.textChanged[str].connect(self.slotNHighTemp)
+        self.lineEditHCNChar.textChanged[str].connect(self.slotHCNChar)
 
-        self.connect(self.checkBoxNOxFormation, SIGNAL("clicked(bool)"), self.slotNOxFormation)
-        self.connect(self.checkBoxNOxFormationFeature,  SIGNAL("clicked(bool)"), self.slotNOxFeature)
-        self.connect(self.checkBoxCO2Kinetics,  SIGNAL("clicked(bool)"), self.slotCO2Kinetics)
-        self.connect(self.checkBoxH2OKinetics,  SIGNAL("clicked(bool)"), self.slotH2OKinetics)
+        self.checkBoxNOxFormation.clicked[bool].connect(self.slotNOxFormation)
+        self.checkBoxNOxFormationFeature.clicked[bool].connect(self.slotNOxFeature)
+        self.checkBoxCO2Kinetics.clicked[bool].connect(self.slotCO2Kinetics)
+        self.checkBoxH2OKinetics.clicked[bool].connect(self.slotH2OKinetics)
 
-        self.connect(self.tabWidget,            SIGNAL("currentChanged(int)"), self.slotchanged)
+        self.tabWidget.currentChanged[int].connect(self.slotchanged)
 
         # Validators
         # ----------
@@ -1232,7 +1233,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.lineEditMoisture.setDisabled(True)
 
 
-    @pyqtSignature("const QModelIndex &")
+    @pyqtSlot("QModelIndex")
     def slotSelectCoal(self, text=None):
         """
         Display values for the current coal selected in the view.
@@ -1245,7 +1246,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.initializeView()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotCreateCoal(self):
         """ create a new coal"""
         # Init
@@ -1261,7 +1262,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self._updateCoalButton()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteCoal(self):
         """ cancel a coal"""
         row = self.treeViewCoals.currentIndex().row()
@@ -1287,7 +1288,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self._updateCoalButton()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotCreateClass(self):
         """Create a new class"""
         self.model.createClass(self.fuel)
@@ -1309,7 +1310,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self._updateClassButton()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteClass(self):
         """ cancel a class diameter"""
         row = self.treeViewClasses.currentIndex().row()
@@ -1328,7 +1329,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self._updateClassButton()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotCreateRefusal(self):
         """Create a new refusal"""
         diameter = self.model.defaultValues()['diameter']
@@ -1345,7 +1346,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self._updateRefusalButton()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteRefusal(self):
         """ cancel a refusal"""
         row = self.treeViewRefusal.currentIndex().row()
@@ -1369,7 +1370,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self._updateRefusalButton()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotCreateOxidant(self):
         """Create a new oxidant"""
         self.model.createOxidant()
@@ -1382,7 +1383,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self._updateOxidantButton()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteOxidant(self):
         """ delete an oxidant"""
         row = self.tableViewOxidants.currentIndex().row()
@@ -1401,7 +1402,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self._updateOxidantButton()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotCComposition(self, text):
         """
         Change the C composition
@@ -1414,7 +1415,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.stbar.showMessage(msg, 2000)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotHComposition(self, text):
         """
         Change the H composition
@@ -1427,7 +1428,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.stbar.showMessage(msg, 2000)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotOComposition(self, text):
         """
         Change the O composition
@@ -1440,7 +1441,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.stbar.showMessage(msg, 2000)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotNComposition(self, text):
         """
         Change the N composition
@@ -1453,7 +1454,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.stbar.showMessage(msg, 2000)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotSComposition(self, text):
         """
         Change the S composition
@@ -1466,7 +1467,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.stbar.showMessage(msg, 2000)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPCI(self, text):
         """
         Change the PCI value
@@ -1476,7 +1477,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setPCIValue(self.fuel, PCI)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPCIType(self, text):
         """
         Change the PCI type
@@ -1485,7 +1486,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.model.setPCIType(self.fuel, key)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPCIChoice(self, text):
         """
         Change the PCI choice
@@ -1505,7 +1506,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.lineEditPCI.setText(str(self.model.getPCIValue(self.fuel)))
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotCCompositionCoke(self, text):
         """
         Change the C composition for coke
@@ -1518,7 +1519,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.stbar.showMessage(msg, 2000)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotHCompositionCoke(self, text):
         """
         Change the H composition for coke
@@ -1531,7 +1532,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.stbar.showMessage(msg, 2000)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotOCompositionCoke(self, text):
         """
         Change the O composition for coke
@@ -1544,7 +1545,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.stbar.showMessage(msg, 2000)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotNCompositionCoke(self, text):
         """
         Change the N composition for coke
@@ -1557,7 +1558,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.stbar.showMessage(msg, 2000)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotSCompositionCoke(self, text):
         """
         Change the S composition for coke
@@ -1570,7 +1571,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.stbar.showMessage(msg, 2000)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotDiameterType(self, text):
         """
         Change the diameter type
@@ -1587,7 +1588,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self._updateClassButton()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotVolatileMatter(self, text):
         """
         Change the volatile matter
@@ -1597,7 +1598,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setProperty(self.fuel, "volatile_matter", value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotThermalCapacity(self, text):
         """
         Change the thermal capacity
@@ -1607,7 +1608,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setProperty(self.fuel, "specific_heat_average", Cp)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotThermalConductivity(self, text):
         """
         Change the thermal conductivity
@@ -1617,7 +1618,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setProperty(self.fuel, "thermal_conductivity", lam)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotDensity(self, text):
         """
         Change the density
@@ -1627,7 +1628,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setProperty(self.fuel, "density", density)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotMoisture(self, text):
         """
         Change the moisture
@@ -1640,7 +1641,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.stbar.showMessage(msg, 2000)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotAshesRatio(self, text):
         """
         Change the ashes ratio
@@ -1653,7 +1654,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.stbar.showMessage(msg, 2000)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotAshesFormingEnthalpy(self, text):
         """
         Change the ashes forming enthalpy
@@ -1663,7 +1664,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setProperty(self.fuel, "ashes_enthalpy", ashesFormingEnthalpy)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotAshesThermalCapacity(self, text):
         """
         Change the ashes thermal capacity
@@ -1673,7 +1674,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setProperty(self.fuel, "ashes_thermal_capacity", ashesThermalCapacity)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotY1CH(self, text):
         """
         Change the Y1 stoichiometric coefficient
@@ -1683,7 +1684,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setY1StoichiometricCoefficient(self.fuel, Y1CH)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotY2CH(self, text):
         """
         Change the Y2 stoichiometric coefficient
@@ -1693,7 +1694,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setY2StoichiometricCoefficient(self.fuel, Y2CH)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotY1Y2(self, text):
         """
         Change the Y1Y2 type
@@ -1708,7 +1709,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.lineEditCoefY2.setText(str(self.model.getY2StoichiometricCoefficient(self.fuel)))
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotA1CH(self, text):
         """
         Change the pre exponential factor A1
@@ -1718,7 +1719,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setDevolatilisationParameter(self.fuel, "A1_pre-exponential_factor", A1CH)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotA2CH(self, text):
         """
         Change the pre exponentiel factor A2
@@ -1728,7 +1729,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setDevolatilisationParameter(self.fuel, "A2_pre-exponential_factor", A2CH)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotE1CH(self, text):
         """
         Change the energy of activation E1
@@ -1738,7 +1739,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setDevolatilisationParameter(self.fuel, "E1_energy_of_activation", E1CH)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotE2CH(self, text):
         """
         Change the Energy of activation E2
@@ -1748,7 +1749,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setDevolatilisationParameter(self.fuel, "E2_energy_of_activation", E2CH)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPreExpoCstO2(self, text):
         """
         Change the pre exponential constant for O2
@@ -1758,7 +1759,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setPreExponentialConstant(self.fuel, "O2", value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotActivEnergyO2(self, text):
         """
         Change the energy of activation for O2
@@ -1768,7 +1769,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setEnergyOfActivation(self.fuel, "O2", value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotReactTypeO2(self, text):
         """
         Change the order of reaction of O2
@@ -1781,7 +1782,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.labelUnitConstO2.setText('kg/m<sup>2</sup>/s/atm<sup>1/2</sup>')
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPreExpoCstCO2(self, text):
         """
         Change the preexponential constant for CO2
@@ -1791,7 +1792,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setPreExponentialConstant(self.fuel, "CO2", value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotActivEnergyCO2(self, text):
         """
         Change the energy of activation for CO2
@@ -1801,7 +1802,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setEnergyOfActivation(self.fuel, "CO2", value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotReactTypeCO2(self, text):
         """
         Change the order of reaction for CO2
@@ -1814,7 +1815,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.labelUnitConstCO2.setText('kg/m<sup>2</sup>/s/atm<sup>1/2</sup>')
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPreExpoCstH2O(self, text):
         """
         Change the pre exponential constant for H2O
@@ -1824,7 +1825,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setPreExponentialConstant(self.fuel, "H2O", value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotActivEnergyH2O(self, text):
         """
         Change the energy of activation for H2O
@@ -1834,7 +1835,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setEnergyOfActivation(self.fuel, "H2O", value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotReactTypeH2O(self, text):
         """
         Change the order of reaction
@@ -1847,7 +1848,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.labelUnitConstH2O.setText('kg/m<sup>2</sup>/s/atm<sup>1/2</sup>')
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotQPR(self, text):
         """
         Change the nitrogen fraction
@@ -1857,7 +1858,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setNOxFormationParameter(self.fuel, 'nitrogen_fraction', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotNitrogenConcentration(self, text):
         """
         Change the nitrogen concentration
@@ -1867,7 +1868,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setNOxFormationParameter(self.fuel, 'nitrogen_concentration', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotKobayashi1(self, text):
         """
         Change the nitrogen partition reaction of reaction 1
@@ -1877,7 +1878,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setHCNParameter(self.fuel, "HCN_NH3_partitionning_reaction_1", value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotKobayashi2(self, text):
         """
         Change the Nitrogen partition reaction of reaction 2
@@ -1887,7 +1888,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setHCNParameter(self.fuel, "HCN_NH3_partitionning_reaction_2", value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotNLowTemp(self, text):
         """
         Change the nitrogen in char at low temperatures
@@ -1897,7 +1898,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setNOxFormationParameter(self.fuel, 'nitrogen_in_char_at_low_temperatures', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotNHighTemp(self, text):
         """
         Change the nitrogen in char at  temperatures
@@ -1907,7 +1908,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setNOxFormationParameter(self.fuel, 'nitrogen_in_char_at_high_temperatures', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotHCNChar(self, text):
         """
         Change the nitrogen percentage in char combustion
@@ -1917,7 +1918,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setNOxFormationParameter(self.fuel, 'percentage_HCN_char_combustion', value)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotOxidantType(self, text):
         """
         Change the oxidant type
@@ -1926,7 +1927,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.model.setOxidantType(key)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotReburning(self, text):
         """
         Change the reburning type
@@ -1935,7 +1936,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.model.setReburning(self.fuel, key)
 
 
-    @pyqtSignature("bool")
+    @pyqtSlot(bool)
     def slotNOxFormation(self, checked):
         """
         check box for NOx formation
@@ -1947,7 +1948,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.initializeNOxView()
 
 
-    @pyqtSignature("bool")
+    @pyqtSlot(bool)
     def slotNOxFeature(self, checked):
         """
         check box for NOx formation
@@ -1959,7 +1960,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.initializeNOxView()
 
 
-    @pyqtSignature("bool")
+    @pyqtSlot(bool)
     def slotCO2Kinetics(self, checked):
         """
         check box for CO2 kinetics
@@ -1971,7 +1972,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.initializeKineticsView()
 
 
-    @pyqtSignature("bool")
+    @pyqtSlot(bool)
     def slotH2OKinetics(self, checked):
         """
         check box for H2O kinetics
@@ -1983,7 +1984,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.initializeKineticsView()
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotchanged(self, index):
         """
         Changed tab

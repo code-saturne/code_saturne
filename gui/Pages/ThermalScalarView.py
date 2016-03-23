@@ -39,8 +39,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -99,7 +100,7 @@ class ThermalScalarView(QWidget, Ui_ThermalScalarForm):
         self.modelThermal.addItem(self.tr("Liquid potential temperature"), 'liquid_potential_temperature')
         self.modelThermal.addItem(self.tr("Total energy (J/kg)"), 'total_energy')
 
-        self.connect(self.comboBoxThermal, SIGNAL("activated(const QString&)"), self.slotThermalScalar)
+        self.comboBoxThermal.activated[str].connect(self.slotThermalScalar)
 
         # Update the thermal scalar list with the calculation features
 
@@ -135,7 +136,7 @@ class ThermalScalarView(QWidget, Ui_ThermalScalarForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotThermalScalar(self, text):
         """
         Update the thermal scalar markup.

@@ -37,15 +37,16 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 
 from code_saturne.Pages.BoundaryConditionsCompressibleOutletForm import \
      Ui_BoundaryConditionsCompressibleOutletForm
@@ -88,8 +89,8 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         self.mdl = CompressibleModel(self.__case)
 
         # Connections
-        self.connect(self.comboBoxTypeOutlet, SIGNAL("activated(const QString&)"),    self.slotOutletType)
-        self.connect(self.lineEditPressure,   SIGNAL("textChanged(const QString &)"), self.slotPressureValue)
+        self.comboBoxTypeOutlet.activated[str].connect(self.slotOutletType)
+        self.lineEditPressure.textChanged[str].connect(self.slotPressureValue)
 
         # Combo models
         self.modelTypeOutlet = ComboModel(self.comboBoxTypeOutlet, 2, 1)
@@ -138,7 +139,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         self.hide()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotOutletType(self, text):
         """
         INPUT outlet type
@@ -150,7 +151,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         self.initialize()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotPressureValue(self, text):
         """
         INPUT outlet pressure

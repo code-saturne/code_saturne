@@ -37,8 +37,9 @@ import os, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -47,7 +48,6 @@ from PyQt4.QtGui  import *
 from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Pages.AtmosphericFlowsForm   import Ui_AtmosphericFlowsForm
 from code_saturne.Pages.AtmosphericFlowsModel  import AtmosphericFlowsModel
-from code_saturne.Base.QtPage                  import setGreenColor
 
 #-------------------------------------------------------------------------------
 # log config
@@ -82,12 +82,8 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.case.undoStopGlobal()
 
         # Define connection
-        self.connect(self.checkBoxMeteoData,
-                     SIGNAL("clicked(bool)"),
-                     self.__slotCheckBoxMeteoData)
-        self.connect(self.pushButtonMeteoData,
-                     SIGNAL("pressed()"),
-                     self.__slotSearchMeteoData)
+        self.checkBoxMeteoData.clicked[bool].connect(self.__slotCheckBoxMeteoData)
+        self.pushButtonMeteoData.pressed.connect(self.__slotSearchMeteoData)
 
         # Initialize the widgets
         isMeteoDataChecked = model.getMeteoDataStatus() == 'on'
@@ -99,7 +95,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("bool")
+    @pyqtSlot(bool)
     def __slotCheckBoxMeteoData(self, checked):
         """
         Called when checkBox state changed
@@ -108,13 +104,15 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         if checked:
             status = 'on'
 
-        setGreenColor(self.pushButtonMeteoData, checked)
         self.labelMeteoData.setEnabled(checked)
         self.labelMeteoFile.setEnabled(checked)
         self.__model.setMeteoDataStatus(status)
 
+        if checked:
+            self.__slotSearchMeteoData()
 
-    @pyqtSignature("")
+
+    @pyqtSlot()
     def __slotSearchMeteoData(self):
         """
         Select a meteorological file of data
@@ -122,7 +120,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         data = self.case['data_path']
         title = self.tr("Meteorological file of data.")
         filetypes = self.tr("Meteo data (*meteo*);;All Files (*)")
-        file = QFileDialog.getOpenFileName(self, title, data, filetypes)
+        file = QFileDialog.getOpenFileName(self, title, data, filetypes)[0]
         file = str(file)
         if not file:
             return
@@ -134,7 +132,6 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         else:
             self.labelMeteoFile.setText(str(file))
             self.__model.setMeteoDataFileName(file)
-            setGreenColor(self.pushButtonMeteoData, False)
 
 
     def tr(self, text):

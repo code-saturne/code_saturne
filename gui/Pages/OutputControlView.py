@@ -45,8 +45,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 import os
 
 #-------------------------------------------------------------------------------
@@ -56,7 +57,7 @@ import os
 from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.Common import LABEL_LENGTH_MAX
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, IntValidator
-from code_saturne.Base.QtPage import RegExpValidator, setGreenColor, to_qvariant
+from code_saturne.Base.QtPage import RegExpValidator, to_qvariant
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.OutputControlForm import Ui_OutputControlForm
 from code_saturne.Pages.OutputControlModel import OutputControlModel
@@ -542,8 +543,7 @@ class StandardItemModelMesh(QStandardItemModel):
             self.dataMesh[row]['location'] = new_location
             self.mdl.setMeshLocation(self.dataMesh[row]['id'], new_location)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"),
-                  index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -704,8 +704,7 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
             self.dataMesh[row]['location'] = new_location
             self.mdl.setMeshLocation(self.dataMesh[row]['id'], new_location)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"),
-                  index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -862,7 +861,7 @@ class StandardItemModelWriter(QStandardItemModel):
             self.mdl.setWriterDirectory(writer_id, new_rep)
 
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -961,7 +960,7 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
                 writer_list.append(self.mdl.getWriterIdFromLabel(self._data[r]))
             self.mdl.setAssociatedWriterChoice(self.mesh_id, writer_list)
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -1088,7 +1087,7 @@ class StandardItemModelMonitoring(QStandardItemModel):
             Z = from_qvariant(value, float)
             self.dataMonitoring[row]['Z'] = Z
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -1161,7 +1160,7 @@ class MonitoringPointDelegate(QItemDelegate):
             editor = QLineEdit(parent)
             editor.setValidator(DoubleValidator(editor))
             editor.setFrame(False)
-            self.connect(editor, SIGNAL("returnPressed()"), self.commitAndCloseEditor)
+            editor.returnPressed.connect(self.commitAndCloseEditor)
             editor.setCursorPosition(0)
         return editor
 
@@ -1169,8 +1168,8 @@ class MonitoringPointDelegate(QItemDelegate):
     def commitAndCloseEditor(self):
         editor = self.sender()
         if isinstance(editor, QLineEdit):
-            self.emit(SIGNAL("commitData(QWidget*)"), editor)
-            self.emit(SIGNAL("closeEditor(QWidget*)"), editor)
+            self.commitData.emit(editor)
+            self.closeEditor.emit(editor)
 
 
     def setEditorData(self, editor, index):
@@ -1287,7 +1286,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewPoints.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableViewPoints.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableViewPoints.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableViewPoints.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewPoints.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewPoints.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.delegate = MonitoringPointDelegate(self.tableViewPoints, self.case, self.mdl)
         self.tableViewPoints.setItemDelegate(self.delegate)
 
@@ -1299,7 +1301,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewWriter.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableViewWriter.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableViewWriter.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableViewWriter.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewWriter.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewWriter.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         delegate_label_writer = LabelWriterDelegate(self.tableViewWriter)
         self.tableViewWriter.setItemDelegateForColumn(0, delegate_label_writer)
@@ -1316,9 +1321,14 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewMesh.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableViewMesh.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableViewMesh.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableViewMesh.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
-        self.tableViewMesh.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
-        self.tableViewMesh.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
+        if QT_API == "PYQT4":
+            self.tableViewMesh.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
+            self.tableViewMesh.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
+            self.tableViewMesh.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
+        elif QT_API == "PYQT5":
+            self.tableViewMesh.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+            self.tableViewMesh.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+            self.tableViewMesh.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.tableViewMesh.horizontalHeader().setStretchLastSection(True)
 
         delegate_label_mesh = LabelMeshDelegate(self.tableViewMesh)
@@ -1337,10 +1347,16 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewLagrangianMesh.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableViewLagrangianMesh.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableViewLagrangianMesh.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
-        self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
-        self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
-        self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(3, QHeaderView.ResizeToContents)
+        if QT_API == "PYQT4":
+            self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
+            self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
+            self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
+            self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(3, QHeaderView.ResizeToContents)
+        elif QT_API == "PYQT5":
+            self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+            self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+            self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+            self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.tableViewLagrangianMesh.horizontalHeader().setStretchLastSection(True)
 
         delegate_label_lag_mesh = LabelMeshDelegate(self.tableViewLagrangianMesh)
@@ -1354,44 +1370,48 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # Connections
 
-        self.connect(self.modelWriter,     SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.dataChanged)
-        self.connect(self.tableViewMesh, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectMesh)
-        self.connect(self.tableViewLagrangianMesh, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectLagrangianMesh)
-        self.connect(self.tableViewWriter, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectWriter)
-        self.connect(self.comboBoxOutput, SIGNAL("activated(const QString&)"), self.slotOutputListing)
-        self.connect(self.comboBoxTimeDependency, SIGNAL("activated(const QString&)"), self.slotWriterTimeDependency)
-        self.connect(self.checkBoxOutputEnd, SIGNAL("clicked()"), self.slotWriterOutputEnd)
-        self.connect(self.checkBoxAllVariables, SIGNAL("clicked()"), self.slotAllVariables)
-        self.connect(self.checkBoxAllLagrangianVariables, SIGNAL("clicked()"), self.slotAllLagrangianVariables)
-        self.connect(self.lineEditNTLIST, SIGNAL("textChanged(const QString &)"), self.slotListingFrequency)
-        self.connect(self.lineEditNTLAL,  SIGNAL("textChanged(const QString &)"), self.slotNTLAL)
-        self.connect(self.comboBoxFrequency, SIGNAL("activated(const QString&)"), self.slotWriterFrequencyChoice)
-        self.connect(self.lineEditFrequency, SIGNAL("textChanged(const QString &)"), self.slotWriterFrequency)
-        self.connect(self.lineEditFrequencyTime, SIGNAL("textChanged(const QString &)"), self.slotWriterFrequencyTime)
-        self.connect(self.comboBoxFormat, SIGNAL("activated(const QString&)"), self.slotWriterOptions)
-        self.connect(self.comboBoxPolygon, SIGNAL("activated(const QString&)"), self.slotWriterOptions)
-        self.connect(self.comboBoxPolyhedra, SIGNAL("activated(const QString&)"), self.slotWriterOptions)
-        self.connect(self.pushButtonFrequency, SIGNAL("clicked()"), self.slotWriterFrequencyFormula)
+        self.tabWidget.currentChanged[int].connect(self.slotchanged)
+        self.modelWriter.dataChanged.connect(self.dataChanged)
+        self.tableViewMesh.clicked.connect(self.slotSelectMesh)
+        self.tableViewLagrangianMesh.clicked.connect(self.slotSelectLagrangianMesh)
+        self.tableViewWriter.clicked.connect(self.slotSelectWriter)
+        self.checkBoxOutputEnd.clicked.connect(self.slotWriterOutputEnd)
+        self.checkBoxAllVariables.clicked.connect(self.slotAllVariables)
+        self.checkBoxAllLagrangianVariables.clicked.connect(self.slotAllLagrangianVariables)
+        self.pushButtonFrequency.clicked.connect(self.slotWriterFrequencyFormula)
 
-        self.connect(self.pushButtonAddWriter, SIGNAL("clicked()"), self.slotAddWriter)
-        self.connect(self.pushButtonDeleteWriter, SIGNAL("clicked()"), self.slotDeleteWriter)
-        self.connect(self.pushButtonAddMesh, SIGNAL("clicked()"), self.slotAddMesh)
-        self.connect(self.pushButtonDeleteMesh, SIGNAL("clicked()"), self.slotDeleteMesh)
-        self.connect(self.pushButtonAddAssociatedWriter, SIGNAL("clicked()"), self.slotAddAssociatedWriter)
-        self.connect(self.pushButtonDeleteAssociatedWriter, SIGNAL("clicked()"), self.slotDeleteAssociatedWriter)
-        self.connect(self.pushButtonAddLagrangianMesh, SIGNAL("clicked()"), self.slotAddLagrangianMesh)
-        self.connect(self.pushButtonDeleteLagrangianMesh, SIGNAL("clicked()"), self.slotDeleteLagrangianMesh)
-        self.connect(self.pushButtonAddAssociatedLagrangianWriter, SIGNAL("clicked()"), self.slotAddAssociatedLagrangianWriter)
-        self.connect(self.pushButtonDeleteAssociatedLagrangianWriter, SIGNAL("clicked()"), self.slotDeleteAssociatedLagrangianWriter)
-        self.connect(self.toolButtonAdd, SIGNAL("clicked()"), self.slotAddMonitoringPoint)
-        self.connect(self.toolButtonDelete, SIGNAL("clicked()"), self.slotDeleteMonitoringPoints)
-        self.connect(self.toolButtonDuplicate, SIGNAL("clicked()"), self.slotDuplicateMonitoringPoints)
-        self.connect(self.toolButtonImportCSV, SIGNAL("clicked()"), self.slotImportMonitoringPoints)
-        self.connect(self.comboBoxHisto, SIGNAL("activated(const QString&)"), self.slotMonitoringPoint)
-        self.connect(self.lineEditHisto, SIGNAL("textChanged(const QString &)"), self.slotMonitoringPointFrequency)
-        self.connect(self.lineEditFRHisto, SIGNAL("textChanged(const QString &)"), self.slotMonitoringPointFrequencyTime)
-        self.connect(self.comboBoxProbeFmt, SIGNAL("activated(const QString&)"), self.slotOutputProbeFmt)
-        self.connect(self.tabWidget, SIGNAL("currentChanged(int)"), self.slotchanged)
+        self.pushButtonAddWriter.clicked.connect(self.slotAddWriter)
+        self.pushButtonDeleteWriter.clicked.connect(self.slotDeleteWriter)
+        self.pushButtonAddMesh.clicked.connect(self.slotAddMesh)
+        self.pushButtonDeleteMesh.clicked.connect(self.slotDeleteMesh)
+        self.pushButtonAddAssociatedWriter.clicked.connect(self.slotAddAssociatedWriter)
+        self.pushButtonDeleteAssociatedWriter.clicked.connect(self.slotDeleteAssociatedWriter)
+        self.pushButtonAddLagrangianMesh.clicked.connect(self.slotAddLagrangianMesh)
+        self.pushButtonDeleteLagrangianMesh.clicked.connect(self.slotDeleteLagrangianMesh)
+        self.pushButtonAddAssociatedLagrangianWriter.clicked.connect(self.slotAddAssociatedLagrangianWriter)
+        self.pushButtonDeleteAssociatedLagrangianWriter.clicked.connect(self.slotDeleteAssociatedLagrangianWriter)
+        self.toolButtonAdd.clicked.connect(self.slotAddMonitoringPoint)
+        self.toolButtonDelete.clicked.connect(self.slotDeleteMonitoringPoints)
+        self.toolButtonDuplicate.clicked.connect(self.slotDuplicateMonitoringPoints)
+        self.toolButtonImportCSV.clicked.connect(self.slotImportMonitoringPoints)
+
+        # lineEdit
+        self.lineEditNTLIST.textChanged[str].connect(self.slotListingFrequency)
+        self.lineEditNTLAL.textChanged[str].connect(self.slotNTLAL)
+        self.lineEditFrequency.textChanged[str].connect(self.slotWriterFrequency)
+        self.lineEditFrequencyTime.textChanged[str].connect(self.slotWriterFrequencyTime)
+        self.lineEditHisto.textChanged[str].connect(self.slotMonitoringPointFrequency)
+        self.lineEditFRHisto.textChanged[str].connect(self.slotMonitoringPointFrequencyTime)
+
+        # comboBox
+        self.comboBoxOutput.activated[str].connect(self.slotOutputListing)
+        self.comboBoxTimeDependency.activated[str].connect(self.slotWriterTimeDependency)
+        self.comboBoxFrequency.activated[str].connect(self.slotWriterFrequencyChoice)
+        self.comboBoxFormat.activated[str].connect(self.slotWriterOptions)
+        self.comboBoxPolygon.activated[str].connect(self.slotWriterOptions)
+        self.comboBoxPolyhedra.activated[str].connect(self.slotWriterOptions)
+        self.comboBoxHisto.activated[str].connect(self.slotMonitoringPoint)
+        self.comboBoxProbeFmt.activated[str].connect(self.slotOutputProbeFmt)
 
 
         # Validators
@@ -1484,10 +1504,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.groupBoxProbesDisplay.setEnabled(True)
             self.lineEditProbesRadius.setText(str(self.case['probes'].getRadius()))
 
-            self.connect(self.tableViewPoints, SIGNAL("pressed(const QModelIndex &)"), self.slotSelectedActors)
-            self.connect(self.tableViewPoints, SIGNAL("entered(const QModelIndex &)"), self.slotSelectedActors)
-            self.connect(self.groupBoxProbesDisplay, SIGNAL("clicked(bool)"), self.slotProbesDisplay)
-            self.connect(self.lineEditProbesRadius, SIGNAL("textChanged(const QString &)"), self.slotProbesRadius)
+            self.tableViewPoints.pressed[QModelIndex].connect(self.slotSelectedActors)
+            self.tableViewPoints.entered[QModelIndex].connect(self.slotSelectedActors)
+            self.groupBoxProbesDisplay.clicked[bool].connect(self.slotProbesDisplay)
+            self.lineEditProbesRadius.textChanged.connect(self.slotProbesRadius)
 
         self.toolButtonDuplicate.setEnabled(False)
         if self.mdl.getNumberOfMonitoringPoints() > 0:
@@ -1525,7 +1545,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotOutputListing(self, text):
         """
         INPUT choice of the output listing
@@ -1552,7 +1572,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.lineEditNTLIST.setText(str(ntlist))
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotChoiceNTLAL(self, text):
         """
         INPUT choice of the output listing for lagrangian variables
@@ -1581,7 +1601,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.lineEditNTLAL.setText(str(ntlist))
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotListingFrequency(self, text):
         """
         Input the frequency of the listing output
@@ -1592,7 +1612,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.mdl.setListingFrequency(n)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotNTLAL(self, text):
         """
         Input the frequency of the listing output for lagrangian variables
@@ -1610,7 +1630,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelWriter.newData(name, writer_id, format, directory)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddWriter(self):
         """
         Add one monitoring point with these coordinates in the list in the Hlist
@@ -1623,7 +1643,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                             self.mdl.getWriterDirectory(writer_id))
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteWriter(self):
         """
         Just delete the current selected entries from the Hlist and
@@ -1667,7 +1687,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.groupBoxAssociatedLagrangianWriter.hide()
 
 
-    @pyqtSignature("const QModelIndex &, const QModelIndex &")
+    @pyqtSlot("QModelIndex, QModelIndex")
     def dataChanged(self, topLeft, bottomRight):
         for row in range(topLeft.row(), bottomRight.row()+1):
             self.tableViewWriter.resizeRowToContents(row)
@@ -1689,7 +1709,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             mesh_id = self.modelMesh.getItem(row)['id']
 
             self.modelAssociatedWriter = StandardItemModelAssociatedWriter(self, self.mdl, mesh_id)
-            self.tableViewAssociatedWriter.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+            if QT_API == "PYQT4":
+                self.tableViewAssociatedWriter.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+            elif QT_API == "PYQT5":
+                self.tableViewAssociatedWriter.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
             delegate_associated_writer = AssociatedWriterDelegate(self.tableViewAssociatedWriter, 0)
             self.tableViewAssociatedWriter.setItemDelegateForColumn(0, delegate_associated_writer)
@@ -1712,7 +1735,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             mesh_id = self.modelLagrangianMesh.getItem(row)['id']
 
             self.modelAssociatedLagrangianWriter = StandardItemModelAssociatedWriter(self, self.mdl, mesh_id)
-            self.tableViewAssociatedLagrangianWriter.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+            if QT_API == "PYQT4":
+                self.tableViewAssociatedLagrangianWriter.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+            elif QT_API == "PYQT5":
+                self.tableViewAssociatedLagrangianWriter.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
             delegate_associated_writer = AssociatedWriterDelegate(self.tableViewAssociatedLagrangianWriter, 1)
             self.tableViewAssociatedLagrangianWriter.setItemDelegateForColumn(0, delegate_associated_writer)
@@ -1728,7 +1754,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 writer_row = writer_row +1
 
 
-    @pyqtSignature("const QModelIndex&")
+    @pyqtSlot("QModelIndex")
     def slotSelectWriter(self, index):
         cindex = self.tableViewWriter.currentIndex()
         if cindex != (-1,-1):
@@ -1774,7 +1800,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.lineEditFrequencyTime.hide()
                 self.pushButtonFrequency.show()
                 self.pushButtonFrequency.setEnabled(True)
-                setGreenColor(self.pushButtonFrequency, True)
+                exp = self.mdl.getWriterFrequency(writer_id)
+                if exp:
+                    self.pushButtonFrequency.setStyleSheet("background-color: green")
+                    self.pushButtonFrequency.setToolTip(exp)
+                else:
+                    self.pushButtonFrequency.setStyleSheet("background-color: red")
 
             if self.mdl.getWriterOutputEndStatus(writer_id) == 'on':
                 self.checkBoxOutputEnd.setChecked(True)
@@ -1787,7 +1818,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.__updateOptionsFormat(options, row)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotWriterFrequencyChoice(self, text):
         """
         INPUT choice of the output frequency for a writer
@@ -1829,11 +1860,17 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.lineEditFrequency.hide()
                 self.lineEditFrequencyTime.hide()
                 self.pushButtonFrequency.setEnabled(True)
-                setGreenColor(self.pushButtonFrequency, True)
+                exp = self.mdl.getWriterFrequency(writer_id)
+                if exp:
+                    self.pushButtonFrequency.setStyleSheet("background-color: green")
+                    self.pushButtonFrequency.setToolTip(exp)
+                else:
+                    self.pushButtonFrequency.setStyleSheet("background-color: red")
                 self.pushButtonFrequency.show()
 
 
-    @pyqtSignature("const QString &")
+
+    @pyqtSlot(str)
     def slotWriterFrequency(self, text):
         """
         Input the frequency of the post-processing output
@@ -1849,7 +1886,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.mdl.setWriterFrequency(writer_id, str(n))
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotWriterFrequencyTime(self, text):
         """
         Input the frequency of the post-processing output
@@ -1864,7 +1901,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.mdl.setWriterFrequency(writer_id, str(n))
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotWriterFrequencyFormula(self):
         """
         """
@@ -1889,10 +1926,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 result = str(dialog.get_result())
                 log.debug("slotWriterFrequencyFormula -> %s" % result)
                 self.mdl.setWriterFrequency(writer_id, result)
-                setGreenColor(self.pushButtonFrequency, False)
+                self.pushButtonFrequency.setStyleSheet("background-color: green")
+                self.pushButtonFrequency.setToolTip(result)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotWriterTimeDependency(self, text):
         """
         Input type of post-processing for mesh
@@ -1905,7 +1943,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                                              self.modelTimeDependency.dicoV2M[str(text)])
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotWriterOutputEnd(self):
         """
         Input output end flag
@@ -1920,7 +1958,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.mdl.setWriterOutputEndStatus(writer_id, st)
 
 
-    @pyqtSignature("")
+    @pyqtSlot(str)
     def slotWriterOptions(self):
         """
         Create line for command of format's options
@@ -2019,7 +2057,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelLagrangianMesh.newData(name, mesh_id, mesh_type, density, selection)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddMesh(self):
         """
         Add one monitoring point with these coordinates in the list in the Hlist
@@ -2032,7 +2070,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                           self.mdl.getMeshLocation(mesh_id))
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteMesh(self):
         """
         Just delete the current selected entries from the Hlist and
@@ -2081,7 +2119,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.__insertLagrangianMesh(label, str(new_id), mesh_type, density, location)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddLagrangianMesh(self):
         """
         Add one monitoring point with these coordinates in the list in the Hlist
@@ -2095,7 +2133,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                                     self.mdl.getMeshLocation(mesh_id))
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteLagrangianMesh(self):
         """
         Just delete the current selected entries from the Hlist and
@@ -2144,7 +2182,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.__insertLagrangianMesh(label, str(new_id), mesh_type, density, location)
 
 
-    @pyqtSignature("const QModelIndex&")
+    @pyqtSlot("QModelIndex")
     def slotSelectMesh(self, index):
         cindex = self.tableViewMesh.currentIndex()
         if cindex != (-1,-1):
@@ -2166,7 +2204,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.showAssociatedWriterTable()
 
 
-    @pyqtSignature("const QModelIndex&")
+    @pyqtSlot("QModelIndex")
     def slotSelectLagrangianMesh(self, index):
         cindex = self.tableViewLagrangianMesh.currentIndex()
         if cindex != (-1,-1):
@@ -2188,7 +2226,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.showAssociatedLagrangianWriterTable()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAllVariables(self):
         """
         Input INPDT0.
@@ -2203,7 +2241,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.mdl.setMeshAllVariablesStatus(mesh_id, "off")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAllLagrangianVariables(self):
         """
         Input INPDT0.
@@ -2232,7 +2270,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelAssociatedLagrangianWriter.newItem(name)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddAssociatedWriter(self):
         """
         Add one monitoring point with these coordinates in the list in the Hlist
@@ -2253,7 +2291,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.__insertAssociatedWriter(self.mdl.getWriterLabel(associated_writer_id))
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteAssociatedWriter(self):
         """
         Just delete the current selected entries from the Hlist and
@@ -2278,7 +2316,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                     self.__insertAssociatedWriter(label)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddAssociatedLagrangianWriter(self):
         """
         Add one monitoring point with these coordinates in the list in the Hlist
@@ -2299,7 +2337,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.__insertAssociatedLagrangianWriter(self.mdl.getWriterLabel(associated_writer_id))
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteAssociatedLagrangianWriter(self):
         """
         Just delete the current selected entries from the Hlist and
@@ -2324,7 +2362,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                     self.__insertAssociatedLagrangianWriter(label)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotOutputProbeFmt(self, text):
         """
         INPUT choice of the output for the probes (.dat, .csv)
@@ -2334,7 +2372,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.mdl.setMonitoringPointFormat(fmt)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotMonitoringPoint(self, text):
         """
         Input choice of the output of monitoring points files
@@ -2377,7 +2415,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.lineEditFRHisto.setText(str(frlist))
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotMonitoringPointFrequencyTime(self, text):
         """
         Input the frequency of the monitoring point output
@@ -2388,7 +2426,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.mdl.setMonitoringPointFrequencyTime(n)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotMonitoringPointFrequency(self, text):
         """
         Input the frequency of the monitoring point output
@@ -2406,7 +2444,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelMonitoring.insertData(num, X, Y, Z)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddMonitoringPoint(self):
         """
         Add one monitoring point with these coordinates in the list in the Hlist
@@ -2422,7 +2460,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.__salomeHandlerAddMonitoringPoint(n, 0., 0., 0.)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteMonitoringPoints(self):
         """
         Just delete the current selected entries from the Hlist and
@@ -2454,7 +2492,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.toolButtonDuplicate.setEnabled(False)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDuplicateMonitoringPoints(self):
         """
         Duplicate monitoring points selected with these coordinates in the list in the Hlist
@@ -2482,7 +2520,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             idx = idx + 1
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotImportMonitoringPoints(self):
         """
         select a csv file to add probes
@@ -2492,7 +2530,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         data = self.case['data_path']
         title = self.tr("Probes location")
         filetypes = self.tr("csv file (*.csv);;All Files (*)")
-        fle = QFileDialog.getOpenFileName(self, title, data, filetypes)
+        fle = QFileDialog.getOpenFileName(self, title, data, filetypes)[0]
         fle = str(fle)
         if not fle:
             return
@@ -2527,7 +2565,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 l2[i] = l2[i] - 1
 
 
-    @pyqtSignature("const QModelIndex&")
+    @pyqtSlot("QModelIndex")
     def slotSelectedActors(self, idx):
         """
         If salome, hightlights monitoring points in the VTK view.
@@ -2541,7 +2579,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.case['probes'].select(str(name))
 
 
-    @pyqtSignature("bool")
+    @pyqtSlot(bool)
     def slotProbesDisplay(self, checked):
         """
         @type checked: C{True} or C{False}
@@ -2553,7 +2591,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.case['probes'].setVisibility(0)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot('QString')
     def slotProbesRadius(self, text):
         """
         @type text: C{QString}
@@ -2580,7 +2618,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         return steady
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def slotchanged(self, index):
         """
         Changed tab

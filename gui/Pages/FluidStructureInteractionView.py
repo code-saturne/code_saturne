@@ -46,9 +46,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import Qt, SIGNAL, pyqtSignature
-from PyQt4.QtGui  import QDialog, QHeaderView, QStandardItemModel, QWidget
-from PyQt4.QtGui  import QAbstractItemView, QItemSelectionModel, QValidator
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -369,8 +369,7 @@ class LineEditCoupling(Coupling):
         # Add validator.
         validator = DoubleValidator(lineEdit)
         lineEdit.setValidator(validator)
-        lineEdit.connect(lineEdit, SIGNAL("textChanged(const QString &)"),
-                         self.__slotTextChanged)
+        lineEdit.textChanged[str].connect(self.__slotTextChanged)
 
 
     def onBoundarySet(self):
@@ -381,7 +380,7 @@ class LineEditCoupling(Coupling):
         self.getWidget().setText(str(value))
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotTextChanged(self, text):
         """
         Update the model
@@ -407,7 +406,7 @@ class FormulaCoupling(Coupling):
         self.__required = required
         self.__examples = examples
         self.__symbols  = symbols
-        button.connect(button, SIGNAL("clicked(bool)"), self.__slotFormula)
+        button.clicked.connect(self.__slotFormula)
 
 
     def onBoundarySet(self):
@@ -418,7 +417,7 @@ class FormulaCoupling(Coupling):
         self.getBoundaryDefinedValue()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotFormula(self, text):
         """
         Run formula editor.
@@ -455,8 +454,7 @@ class CheckBoxCoupling(Coupling):
         Constructor
         """
         Coupling.__init__(self, checkBox, getter, setter)
-        checkBox.connect(checkBox, SIGNAL("stateChanged(int)"),
-                         self.__slotStateChanged)
+        checkBox.stateChanged[int].connect(self.__slotStateChanged)
 
 
     def onBoundarySet(self):
@@ -472,7 +470,7 @@ class CheckBoxCoupling(Coupling):
         self.getWidget().setCheckState(state)
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def __slotStateChanged(self, state):
         """
         Called when checkbox state changed
@@ -640,7 +638,7 @@ fx = fluid_fx;\nfy = 0;\nfz = fluid_fz;"""
 
 
 
-    @pyqtSignature("QModelIndex  const&, QModelIndex  const&")
+    @pyqtSlot("QModelIndex  const&, QModelIndex  const&")
     def slotInternalSelectionChanged(self, selected, deselected):
         """
         Called when internal tableView selection changed
@@ -649,7 +647,7 @@ fx = fluid_fx;\nfy = 0;\nfz = fluid_fz;"""
                                self.__internalCouplings, selected)
 
 
-    @pyqtSignature("QModelIndex  const&, QModelIndex  const&")
+    @pyqtSlot("QModelIndex  const&, QModelIndex  const&")
     def slotExternalSelectionChanged(self, selected, deselected):
         """
         Called when external tableView selection changed
@@ -730,16 +728,11 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         """
         Define coonection for widget that do not depend on the boundary
         """
-        self.connect(self.lineEditNALIMX,
-                     SIGNAL("textChanged(const QString &)"), self.__slotNalimx)
+        self.lineEditNALIMX.textChanged[str].connect(self.__slotNalimx)
 
-        self.connect(self.lineEditEPALIM,
-                     SIGNAL("textChanged(const QString &)"), self.__slotEpalim)
-        self.connect(self.pushButtonAdvanced,
-                     SIGNAL("clicked(bool)"), self.__slotAdvanced)
-        self.connect(self.checkBoxPostSynchronization,
-                     SIGNAL("stateChanged (int)"),
-                     self.__slotPostSynchronization)
+        self.lineEditEPALIM.textChanged[str].connect(self.__slotEpalim)
+        self.pushButtonAdvanced.clicked[bool].connect(self.__slotAdvanced)
+        self.checkBoxPostSynchronization.stateChanged[int].connect(self.__slotPostSynchronization)
 
 
     def __addValidators(self):
@@ -788,9 +781,14 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         tableView.setModel(tableViewItemModel)
 
         # set the column size
-        tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-        tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-        tableView.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
+            tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
+            tableView.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+            tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+            tableView.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
 
         # Connect slot when selection changed
         tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -802,7 +800,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
                      slotSelectionChanged)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotNalimx(self, text):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
@@ -812,7 +810,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
             self.__model.setMaxIterations(nalimx)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotEpalim(self, text):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
@@ -822,7 +820,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
             self.__model.setPrecision(epalim)
 
 
-    @pyqtSignature("int")
+    @pyqtSlot(int)
     def __slotPostSynchronization(self, value):
         """
         Called when check box state changed
@@ -834,7 +832,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
 
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def __slotAdvanced(self, text):
         """
         Private slot.

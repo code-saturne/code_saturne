@@ -116,15 +116,16 @@ if cs_config.config().libs['coolprop'].have != "no" and not coolprop_fluids:
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 from code_saturne.Pages.FluidCharacteristicsForm import Ui_FluidCharacteristicsForm
 from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
@@ -432,29 +433,29 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.updateMethod()
 
         # Connections
-        self.connect(self.comboBoxRho,      SIGNAL("activated(const QString&)"), self.slotStateRho)
-        self.connect(self.comboBoxMu,       SIGNAL("activated(const QString&)"), self.slotStateMu)
-        self.connect(self.comboBoxCp,       SIGNAL("activated(const QString&)"), self.slotStateCp)
-        self.connect(self.comboBoxAl,       SIGNAL("activated(const QString&)"), self.slotStateAl)
-        self.connect(self.comboBoxDiff,     SIGNAL("activated(const QString&)"), self.slotStateDiff)
-        self.connect(self.comboBoxNameDiff, SIGNAL("activated(const QString&)"), self.slotNameDiff)
-        self.connect(self.comboBoxViscv0,   SIGNAL("activated(const QString&)"), self.slotStateViscv0)
-        self.connect(self.comboBoxMaterial, SIGNAL("activated(const QString&)"), self.slotMaterial)
-        self.connect(self.comboBoxMethod,   SIGNAL("activated(const QString&)"), self.slotMethod)
-        self.connect(self.comboBoxPhas,     SIGNAL("activated(const QString&)"), self.slotPhas)
-        self.connect(self.lineEditRho,      SIGNAL("textChanged(const QString &)"), self.slotRho)
-        self.connect(self.lineEditMu,       SIGNAL("textChanged(const QString &)"), self.slotMu)
-        self.connect(self.lineEditCp,       SIGNAL("textChanged(const QString &)"), self.slotCp)
-        self.connect(self.lineEditAl,       SIGNAL("textChanged(const QString &)"), self.slotAl)
-        self.connect(self.lineEditDiff,     SIGNAL("textChanged(const QString &)"), self.slotDiff)
-        self.connect(self.lineEditDiftl0,   SIGNAL("textChanged(const QString &)"), self.slotDiftl0)
-        self.connect(self.lineEditViscv0,   SIGNAL("textChanged(const QString &)"), self.slotViscv0)
-        self.connect(self.pushButtonRho,    SIGNAL("clicked()"), self.slotFormulaRho)
-        self.connect(self.pushButtonMu,     SIGNAL("clicked()"), self.slotFormulaMu)
-        self.connect(self.pushButtonCp,     SIGNAL("clicked()"), self.slotFormulaCp)
-        self.connect(self.pushButtonAl,     SIGNAL("clicked()"), self.slotFormulaAl)
-        self.connect(self.pushButtonDiff,   SIGNAL("clicked()"), self.slotFormulaDiff)
-        self.connect(self.pushButtonViscv0, SIGNAL("clicked()"), self.slotFormulaViscv0)
+        self.comboBoxRho.activated[str].connect(self.slotStateRho)
+        self.comboBoxMu.activated[str].connect(self.slotStateMu)
+        self.comboBoxCp.activated[str].connect(self.slotStateCp)
+        self.comboBoxAl.activated[str].connect(self.slotStateAl)
+        self.comboBoxDiff.activated[str].connect(self.slotStateDiff)
+        self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
+        self.comboBoxViscv0.activated[str].connect(self.slotStateViscv0)
+        self.comboBoxMaterial.activated[str].connect(self.slotMaterial)
+        self.comboBoxMethod.activated[str].connect(self.slotMethod)
+        self.comboBoxPhas.activated[str].connect(self.slotPhas)
+        self.lineEditRho.textChanged[str].connect(self.slotRho)
+        self.lineEditMu.textChanged[str].connect(self.slotMu)
+        self.lineEditCp.textChanged[str].connect(self.slotCp)
+        self.lineEditAl.textChanged[str].connect(self.slotAl)
+        self.lineEditDiff.textChanged[str].connect(self.slotDiff)
+        self.lineEditDiftl0.textChanged[str].connect(self.slotDiftl0)
+        self.lineEditViscv0.textChanged[str].connect(self.slotViscv0)
+        self.pushButtonRho.clicked.connect(self.slotFormulaRho)
+        self.pushButtonMu.clicked.connect(self.slotFormulaMu)
+        self.pushButtonCp.clicked.connect(self.slotFormulaCp)
+        self.pushButtonAl.clicked.connect(self.slotFormulaAl)
+        self.pushButtonDiff.clicked.connect(self.slotFormulaDiff)
+        self.pushButtonViscv0.clicked.connect(self.slotFormulaViscv0)
 
         self.initializeWidget()
 
@@ -483,10 +484,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.modelNameDiff.setItem(str_model=str(self.scalar))
             if diff_choice  != 'variable':
                 self.pushButtonDiff.setEnabled(False)
-                setGreenColor(self.pushButtonDiff, False)
+                self.pushButtonDiff.setStyleSheet("background-color: None")
             else:
                 self.pushButtonDiff.setEnabled(True)
-                setGreenColor(self.pushButtonDiff, True)
+                name = self.m_sca.getScalarDiffusivityName(self.scalar)
+                exp = self.m_sca.getDiffFormula(self.scalar)
+                if exp:
+                    self.pushButtonDiff.setStyleSheet("background-color: green")
+                    self.pushButtonDiff.setToolTip(exp)
+                else:
+                    self.pushButtonDiff.setStyleSheet("background-color: red")
 
         # Standard Widget initialization
         for tag, symbol in self.lst:
@@ -671,7 +678,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.lineEditReference.setText(self.mdl.getReference())
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotMaterial(self, text):
         """
         Method to call 'setMaterial'
@@ -683,7 +690,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.updateTypeChoice(old_choice)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotPhas(self, text):
         """
         Method to call 'setFieldNature'
@@ -694,7 +701,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.updateReference()
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotMethod(self, text):
         """
         Method to call 'setMethod'
@@ -713,7 +720,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.updateReference()
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotStateRho(self, text):
         """
         Method to call 'getState' with correct arguements for 'rho'
@@ -721,7 +728,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.__changeChoice(str(text), 'Rho', 'density')
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotStateMu(self, text):
         """
         Method to call 'getState' with correct arguements for 'Mu'
@@ -729,7 +736,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.__changeChoice(str(text), 'Mu', 'molecular_viscosity')
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotStateCp(self, text):
         """
         Method to call 'getState' with correct arguements for 'Cp'
@@ -737,7 +744,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.__changeChoice(str(text), 'Cp', 'specific_heat')
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotStateViscv0(self, text):
         """
         Method to call 'getState' with correct arguements for 'Viscv0'
@@ -745,7 +752,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.__changeChoice(str(text), 'Viscv0', 'volume_viscosity')
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotStateAl(self, text):
         """
         Method to call 'getState' with correct arguements for 'Al'
@@ -753,7 +760,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.__changeChoice(str(text), 'Al', 'thermal_conductivity')
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotStateDiff(self, text):
         """
         Method to set diffusion choice for the coefficient
@@ -763,15 +770,21 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         if choice != 'variable':
             self.pushButtonDiff.setEnabled(False)
-            setGreenColor(self.pushButtonDiff, False)
+            self.pushButtonDiff.setStyleSheet("background-color: None")
         else:
             self.pushButtonDiff.setEnabled(True)
-            setGreenColor(self.pushButtonDiff, True)
+            name = self.m_sca.getScalarDiffusivityName(self.scalar)
+            exp = self.m_sca.getDiffFormula(self.scalar)
+            if exp:
+                self.pushButtonDiff.setStyleSheet("background-color: green")
+                self.pushButtonDiff.setToolTip(exp)
+            else:
+                self.pushButtonDiff.setStyleSheet("background-color: red")
 
         self.m_sca.setScalarDiffusivityChoice(self.scalar, choice)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotNameDiff(self, text):
         """
         Method to set the variance scalar choosed
@@ -787,10 +800,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         if  mdl!= 'variable':
             self.pushButtonDiff.setEnabled(False)
-            setGreenColor(self.pushButtonDiff, False)
+            self.pushButtonDiff.setStyleSheet("background-color: None")
         else:
             self.pushButtonDiff.setEnabled(True)
-            setGreenColor(self.pushButtonDiff, True)
+            name = self.m_sca.getScalarDiffusivityName(self.scalar)
+            exp = self.m_sca.getDiffFormula(self.scalar)
+            if exp:
+                self.pushButtonDiff.setStyleSheet("background-color: green")
+                self.pushButtonDiff.setToolTip(exp)
+            else:
+                self.pushButtonDiff.setStyleSheet("background-color: red")
 
 
     def __changeChoice(self, text, sym, tag):
@@ -810,10 +829,29 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         if choice != 'variable':
             __button.setEnabled(False)
-            setGreenColor(__button, False)
+            __button.setStyleSheet("background-color: None")
         else:
             __button.setEnabled(True)
-            setGreenColor(__button, True)
+            exp = None
+            if sym == "Rho":
+                exp = self.mdl.getFormula('density')
+            elif sym == "Mu":
+                exp = self.mdl.getFormula('molecular_viscosity')
+            elif sym == "Cp":
+                exp = self.mdl.getFormula('specific_heat')
+            elif sym == "Viscv0":
+                exp = self.mdl.getFormula('volume_viscosity')
+            elif sym == "Al":
+                exp = self.mdl.getFormula('thermal_conductivity')
+            elif sym == "Diff":
+                name = self.m_sca.getScalarDiffusivityName(self.scalar)
+                exp = self.m_sca.getDiffFormula(self.scalar)
+
+            if exp:
+                __button.setStyleSheet("background-color: green")
+                __button.setToolTip(exp)
+            else:
+                __button.setStyleSheet("background-color: red")
         if choice == 'thermal_law':
             __line.hide()
             __label.hide()
@@ -828,7 +866,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.mdl.setPropertyMode(tag, choice)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotRho(self, text):
         """
         Update the density
@@ -838,7 +876,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setInitialValueDensity(rho)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotMu(self, text):
         """
         Update the molecular viscosity
@@ -848,7 +886,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setInitialValueViscosity(mu)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotCp(self, text):
         """
         Update the specific heat
@@ -858,7 +896,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setInitialValueHeat(cp)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotViscv0(self, text):
         """
         Update the volumic viscosity
@@ -868,7 +906,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setInitialValueVolumicViscosity(viscv0)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotAl(self, text):
         """
         Update the thermal conductivity
@@ -878,7 +916,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setInitialValueCond(al)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotDiftl0(self, text):
         """
         Update the thermal conductivity
@@ -888,7 +926,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setInitialValueDyn(diftl0)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotDiff(self, text):
         """
         Update the thermal conductivity
@@ -898,7 +936,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotFormulaRho(self):
         """
         User formula for density
@@ -934,10 +972,11 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula('density', result)
-            setGreenColor(self.sender(), False)
+            self.pushButtonRho.setToolTip(result)
+            self.pushButtonRho.setStyleSheet("background-color: green")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotFormulaMu(self):
         """
         User formula for molecular viscosity
@@ -980,10 +1019,11 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             result = dialog.get_result()
             log.debug("slotFormulaMu -> %s" % str(result))
             self.mdl.setFormula('molecular_viscosity', result)
-            setGreenColor(self.sender(), False)
+            self.pushButtonMu.setToolTip(result)
+            self.pushButtonMu.setStyleSheet("background-color: green")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotFormulaCp(self):
         """
         User formula for specific heat
@@ -1010,10 +1050,11 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula('specific_heat', result)
-            setGreenColor(self.sender(), False)
+            self.pushButtonCp.setToolTip(result)
+            self.pushButtonCp.setStyleSheet("background-color: green")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotFormulaViscv0(self):
         """
         User formula for volumic viscosity
@@ -1041,10 +1082,11 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             result = dialog.get_result()
             log.debug("slotFormulaViscv0 -> %s" % str(result))
             self.mdl.setFormula('volume_viscosity', result)
-            setGreenColor(self.sender(), False)
+            self.pushButtonViscv0.setToolTip(result)
+            self.pushButtonViscv0.setStyleSheet("background-color: green")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotFormulaAl(self):
         """
         User formula for thermal conductivity
@@ -1080,10 +1122,11 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             result = dialog.get_result()
             log.debug("slotFormulaAl -> %s" % str(result))
             self.mdl.setFormula('thermal_conductivity', result)
-            setGreenColor(self.sender(), False)
+            self.pushButtonAl.setToolTip(result)
+            self.pushButtonAl.setStyleSheet("background-color: green")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotFormulaDiff(self):
         """
         User formula for the diffusion coefficient
@@ -1108,7 +1151,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             result = dialog.get_result()
             log.debug("slotFormulaDiff -> %s" % str(result))
             self.m_sca.setDiffFormula(self.scalar, result)
-            setGreenColor(self.pushButtonDiff, False)
+            self.pushButtonDiff.setToolTip(result)
+            self.pushButtonDiff.setStyleSheet("background-color: green")
 
 
     def tr(self, text):

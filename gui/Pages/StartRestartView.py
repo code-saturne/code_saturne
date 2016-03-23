@@ -41,15 +41,16 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import ComboModel, IntValidator, setGreenColor, from_qvariant
+from code_saturne.Base.QtPage import ComboModel, IntValidator, from_qvariant
 from code_saturne.Pages.SolutionDomainModel import RelOrAbsPath
 from code_saturne.Pages.StartRestartForm import Ui_StartRestartForm
 from code_saturne.Pages.StartRestartAdvancedDialogForm import Ui_StartRestartAdvancedDialogForm
@@ -97,8 +98,8 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
 
         # Connections
 
-        self.connect(self.comboBoxFreq, SIGNAL("activated(const QString&)"), self.slotFreq)
-        self.connect(self.lineEditNSUIT, SIGNAL("textChanged(const QString&)"), self.slotNsuit)
+        self.comboBoxFreq.activated[str].connect(self.slotFreq)
+        self.lineEditNSUIT.textChanged[str].connect(self.slotNsuit)
 
         # Validator
 
@@ -141,7 +142,7 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotFreq(self, text):
         """
         Creation of popup window's widgets
@@ -170,7 +171,7 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
             self.lineEditNSUIT.setEnabled(True)
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotNsuit(self, text):
         if self.sender().validator().state == QValidator.Acceptable:
             n = from_qvariant(text, int)
@@ -233,11 +234,11 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         self.case = case
         self.case.undoStopGlobal()
 
-        self.connect(self.radioButtonYes, SIGNAL("clicked()"), self.slotStartRestart)
-        self.connect(self.radioButtonNo, SIGNAL("clicked()"), self.slotStartRestart)
-        self.connect(self.toolButton, SIGNAL("pressed()"), self.slotSearchRestartDirectory)
-        self.connect(self.checkBox, SIGNAL("clicked()"), self.slotFrozenField)
-        self.connect(self.toolButtonAdvanced, SIGNAL("pressed()"), self.slotAdvancedOptions)
+        self.radioButtonYes.clicked.connect(self.slotStartRestart)
+        self.radioButtonNo.clicked.connect(self.slotStartRestart)
+        self.toolButton.pressed.connect(self.slotSearchRestartDirectory)
+        self.checkBox.clicked.connect(self.slotFrozenField)
+        self.toolButtonAdvanced.pressed.connect(self.slotAdvancedOptions)
 
         self.model = StartRestartModel(self.case)
 
@@ -269,7 +270,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotSearchRestartDirectory(self):
         """
         Search restart file (directory) in list of directories
@@ -314,7 +315,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             log.debug("slotSearchRestartDirectory-> %s" % self.restart_path)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotStartRestart(self):
         """
         Input IRESTART Code_Saturne keyword.
@@ -332,12 +333,6 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             self.radioButtonNo.setChecked(False)
             self.frameRestart.show()
             self.lineEdit.setText(self.restart_path)
-            if not os.path.isdir(os.path.join(self.case['resu_path'],
-                                              self.restart_path)):
-                setGreenColor(self.toolButton)
-            else:
-                setGreenColor(self.toolButton, False)
-
         else:
             self.model.setRestartPath(None)
             self.model.setFrozenField("off")
@@ -348,7 +343,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             self.lineEdit.setText("")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotFrozenField(self):
         """
         Input if calculation on frozen velocity and pressure fields or not
@@ -359,7 +354,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             self.model.setFrozenField('off')
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAdvancedOptions(self):
         """
         Ask one popup for advanced specifications

@@ -37,15 +37,16 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant, setGreenColor
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 
 from code_saturne.Pages.BoundaryConditionsHydraulicHeadForm import \
      Ui_BoundaryConditionsHydraulicHeadForm
@@ -99,10 +100,10 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         self.modelTypeHydraulic.addItem(self.tr("Prescribed flux"), 'neumann')
 
         # Connections
-        self.connect(self.lineEditValueHydraulicHead,   SIGNAL("textChanged(const QString &)"), self.slotHydraulicHeadValue)
-        self.connect(self.lineEditExHydraulicHead,      SIGNAL("textChanged(const QString &)"), self.slotHydraulicHeadFlux)
-        self.connect(self.pushButtonHydraulicHead,      SIGNAL("clicked()"), self.slotHydraulicHeadFormula)
-        self.connect(self.comboBoxTypeHydraulicHead,    SIGNAL("activated(const QString&)"), self.slotHydraulicHeadChoice)
+        self.lineEditValueHydraulicHead.textChanged[str].connect(self.slotHydraulicHeadValue)
+        self.lineEditExHydraulicHead.textChanged[str].connect(self.slotHydraulicHeadFlux)
+        self.pushButtonHydraulicHead.clicked.connect(self.slotHydraulicHeadFormula)
+        self.comboBoxTypeHydraulicHead.activated[str].connect(self.slotHydraulicHeadChoice)
 
         self.__case.undoStartGlobal()
 
@@ -123,7 +124,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         self.lineEditValueHydraulicHead.hide()
         self.lineEditExHydraulicHead.hide()
         self.pushButtonHydraulicHead.setEnabled(False)
-        setGreenColor(self.pushButtonHydraulicHead, False)
+        self.pushButtonHydraulicHead.setStyleSheet("background-color: None")
 
         HydraulicChoice = self.__boundary.getHydraulicHeadChoice()
         if HydraulicChoice == 'dirichlet':
@@ -138,7 +139,13 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
             self.lineEditExHydraulicHead.setText(str(pressure))
         elif HydraulicChoice == 'dirichlet_formula':
             self.pushButtonHydraulicHead.setEnabled(True)
-            setGreenColor(self.pushButtonHydraulicHead, True)
+
+            exp = self.__boundary.getHydraulicHeadFormula()
+            if exp:
+                self.pushButtonHydraulicHead.setStyleSheet("background-color: green")
+                self.pushButtonHydraulicHead.setToolTip(exp)
+            else:
+                self.pushButtonHydraulicHead.setStyleSheet("background-color: red")
 
         self.show()
 
@@ -150,7 +157,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         self.hide()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotHydraulicHeadValue(self, text):
         """
         INPUT hydraulic head value
@@ -160,7 +167,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
             self.__boundary.setHydraulicHeadValue(t)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotHydraulicHeadFlux(self, text):
         """
         INPUT hydraulic head flux
@@ -170,7 +177,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
             self.__boundary.setHydraulicHeadFlux(t)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotHydraulicHeadFormula(self):
         """
         """
@@ -195,10 +202,11 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
             result = dialog.get_result()
             log.debug("slotHydraulicHeadFormula -> %s" % str(result))
             self.__boundary.setHydraulicHeadFormula(result)
-            setGreenColor(self.pushButtonHydraulicHead, False)
+            self.pushButtonHydraulicHead.setStyleSheet("background-color: green")
+            self.pushButtonHydraulicHead.setToolTip(result)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotHydraulicHeadChoice(self, text):
         """
         INPUT label for choice of zone

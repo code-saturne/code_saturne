@@ -39,8 +39,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -105,7 +106,7 @@ class StandardItemModelAverage(QStandardItemModel):
 
 
     def setData(self, index, value, role):
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -210,17 +211,17 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.modelStartType.addItem(self.tr('iteration'), 'iteration')
 
         # Connections
-        self.connect(self.pushButtonAdd,         SIGNAL("clicked()"),                    self.slotAddAverage)
-        self.connect(self.pushButtonDelete,      SIGNAL("clicked()"),                    self.slotdeleteTimeAverage)
-        self.connect(self.pushButtonAddVar,      SIGNAL("clicked()"),                    self.slotAddVarAverage)
-        self.connect(self.pushButtonSuppressVar, SIGNAL("clicked()"),                    self.slotDeleteVarAverage)
-        self.connect(self.treeViewAverage,       SIGNAL("pressed(const QModelIndex &)"), self.slotSelectAverage)
-        self.connect(self.lineEditStart,         SIGNAL("textChanged(const QString &)"), self.slotStart)
-        self.connect(self.lineEditStartTime,     SIGNAL("textChanged(const QString &)"), self.slotStartTime)
-        self.connect(self.comboBoxIMOOLD,        SIGNAL("activated(const QString&)"),    self.slotRestartChoice)
-        self.connect(self.comboBoxStartType,     SIGNAL("activated(const QString&)"),    self.slotTimeChoice)
-        self.connect(self.lineEditRestart,       SIGNAL("textChanged(const QString &)"), self.slotRestart)
-        self.connect(self.lineEditAverage,       SIGNAL("textChanged(const QString &)"), self.slotBaseName)
+        self.pushButtonAdd.clicked.connect(self.slotAddAverage)
+        self.pushButtonDelete.clicked.connect(self.slotdeleteTimeAverage)
+        self.pushButtonAddVar.clicked.connect(self.slotAddVarAverage)
+        self.pushButtonSuppressVar.clicked.connect(self.slotDeleteVarAverage)
+        self.treeViewAverage.pressed[QModelIndex].connect(self.slotSelectAverage)
+        self.lineEditStart.textChanged[str].connect(self.slotStart)
+        self.lineEditStartTime.textChanged[str].connect(self.slotStartTime)
+        self.comboBoxIMOOLD.activated[str].connect(self.slotRestartChoice)
+        self.comboBoxStartType.activated[str].connect(self.slotTimeChoice)
+        self.lineEditRestart.textChanged[str].connect(self.slotRestart)
+        self.lineEditAverage.textChanged[str].connect(self.slotBaseName)
 
         # Validators
         validatorStart = IntValidator(self.lineEditStart, min=-1)
@@ -267,7 +268,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotStart(self, text):
         """
         Return an integer for ntdmom, value of start of calculation.
@@ -280,7 +281,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.updateView()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotStartTime(self, text):
         """
         Return an float for ttdmom, value of start of calculation.
@@ -294,7 +295,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.updateView()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotRestartChoice(self, text):
         choice = self.modelIMOOLD.dicoV2M[str(text)]
         if choice == "automatic":
@@ -314,7 +315,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.updateView()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotTimeChoice(self, text):
         choice = self.modelStartType.dicoV2M[str(text)]
         self.modelStartType.setItem(str_model=choice)
@@ -340,7 +341,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             self.labelStartTime.hide()
         self.updateView()
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotRestart(self, text):
         """
         Return an integer for imoold, value of restart of calculation.
@@ -377,7 +378,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.modelAverage.addItem(label, ntdmom, ttdmom, imoold, idfmom_view)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddAverage(self):
         """
         Set in view IMOM, NTDMOM, IMOOLD, IDFMOM
@@ -388,7 +389,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.__eraseEntries()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotdeleteTimeAverage(self):
         """
         Delete the selected average from the list (one by one).
@@ -410,7 +411,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.__eraseEntries()
 
 
-    @pyqtSignature("const QModelIndex &")
+    @pyqtSlot("QModelIndex")
     def slotSelectAverage(self, index):
         """
         Return the selected item from the Hlist.
@@ -449,7 +450,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.modelDrop.setStringList(lst)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddVarAverage(self):
         """
         Add a new var from list to profile
@@ -467,7 +468,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             self.updateView()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteVarAverage(self):
         """
         Supress a var from profile
@@ -480,7 +481,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.updateView()
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotBaseName(self, text):
         """
         """

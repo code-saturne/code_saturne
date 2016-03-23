@@ -40,15 +40,16 @@ import sys, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import ComboModel, setGreenColor
+from code_saturne.Base.QtPage import ComboModel
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.PorosityForm import Ui_PorosityForm
 from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
@@ -97,7 +98,7 @@ class StandardItemModelPorosity(QStandardItemModel):
 
 
     def setData(self, index, value, role):
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -144,9 +145,9 @@ class PorosityView(QWidget, Ui_PorosityForm):
         self.modelPorosityType.addItem(self.tr("anisotropic"), 'anisotropic')
 
         # Connections
-        self.connect(self.treeView,           SIGNAL("clicked(const QModelIndex &)"), self.slotSelectPorosityZones)
-        self.connect(self.comboBoxType,       SIGNAL("activated(const QString&)"), self.slotPorosity)
-        self.connect(self.pushButtonPorosity, SIGNAL("clicked()"), self.slotFormulaPorosity)
+        self.treeView.clicked[QModelIndex].connect(self.slotSelectPorosityZones)
+        self.comboBoxType.activated[str].connect(self.slotPorosity)
+        self.pushButtonPorosity.clicked.connect(self.slotFormulaPorosity)
 
         # Initialize Widgets
 
@@ -164,7 +165,7 @@ class PorosityView(QWidget, Ui_PorosityForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSignature("const QModelIndex&")
+    @pyqtSlot(QModelIndex)
     def slotSelectPorosityZones(self, index):
         label, name, local = self.modelPorosity.getItem(index.row())
 
@@ -176,7 +177,12 @@ class PorosityView(QWidget, Ui_PorosityForm):
         choice = self.mdl.getPorosityModel(name)
         self.modelPorosityType.setItem(str_model=choice)
 
-        setGreenColor(self.pushButtonPorosity, True)
+        exp = self.mdl.getPorosityFormula(name)
+        if exp:
+            self.pushButtonPorosity.setToolTip(exp)
+            self.pushButtonPorosity.setStyleSheet("background-color: green")
+        else:
+            self.pushButtonPorosity.setStyleSheet("background-color: red")
 
         self.entriesNumber = index.row()
 
@@ -189,7 +195,7 @@ class PorosityView(QWidget, Ui_PorosityForm):
         self.groupBoxDef.hide()
 
 
-    @pyqtSignature("const QString &")
+    @pyqtSlot(str)
     def slotPorosity(self, text):
         """
         Method to call 'getState' with correct arguements for 'rho'
@@ -200,7 +206,7 @@ class PorosityView(QWidget, Ui_PorosityForm):
         self.mdl.setPorosityModel(name, choice)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotFormulaPorosity(self):
         """
         User formula for density
@@ -240,7 +246,8 @@ class PorosityView(QWidget, Ui_PorosityForm):
             result = dialog.get_result()
             log.debug("slotFormulaPorosity -> %s" % str(result))
             self.mdl.setPorosityFormula(name, result)
-            setGreenColor(self.sender(), False)
+            self.pushButtonPorosity.setToolTip(result)
+            self.pushButtonPorosity.setStyleSheet("background-color: green")
 
 
     def tr(self, text):

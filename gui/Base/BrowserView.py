@@ -37,8 +37,9 @@ import sys, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -393,12 +394,12 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
         # Popup menu
         self.treeView.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.connect(self.treeView, SIGNAL("customContextMenuRequested(QPoint)"), self.displayPopup)
+        self.treeView.customContextMenuRequested[QPoint].connect(self.displayPopup)
 
         # Receive change in selection
-        self.connect(self.treeView, SIGNAL('pressed(const QModelIndex &)'), self.onItemPressed)
-        self.connect(self.treeView, SIGNAL('expanded(const QModelIndex &)'), self.onFolderOpen)
-        self.connect(self.treeView, SIGNAL('collapsed(const QModelIndex &)'), self.onFolderClose)
+        self.treeView.pressed[QModelIndex].connect(self.onItemPressed)
+        self.treeView.expanded[QModelIndex].connect(self.onFolderOpen)
+        self.treeView.collapsed[QModelIndex].connect(self.onFolderClose)
 
 
     def _browser(self):
@@ -493,14 +494,14 @@ Calculation management
             return self.treeView.isRowHidden(row, index)
 
 
-    @pyqtSignature('const QModelIndex &')
+    @pyqtSlot('QModelIndex')
     def onItemPressed(self, index):
         item = index.internalPointer()
         if item.itemType == "file-new":
             item.itemType = "file-open"
 
 
-    @pyqtSignature('const QModelIndex &')
+    @pyqtSlot('QModelIndex')
     def onFolderOpen(self, index):
         """
         public slot
@@ -515,7 +516,7 @@ Calculation management
             item.itemType = "folder-open"
 
 
-    @pyqtSignature('const QModelIndex &')
+    @pyqtSlot('QModelIndex')
     def onFolderClose(self, index):
         """
         public slot
@@ -530,7 +531,7 @@ Calculation management
             item.itemType = "folder-close"
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def displayPopup(self):
         """
         public slot
@@ -541,11 +542,11 @@ Calculation management
 
         self.actionExpand = QAction(self.tr("Expand"), self.treeView)
         #self.actionExpand.setShortcut(self.tr("F5"))
-        self.connect(self.actionExpand, SIGNAL("triggered()"), self.openTreeFolder)
+        self.actionExpand.triggered.connect(self.openTreeFolder)
 
         self.actionCollapse = QAction(self.tr("Collapse"), self.treeView)
         #self.actionCollapse.setShortcut(self.tr("F6"))
-        self.connect(self.actionCollapse, SIGNAL("triggered()"), self.closeTreeFolder)
+        self.actionCollapse.triggered.connect(self.closeTreeFolder)
 
         # ... TODO
         #self.actionWelcome = QAction(self.tr("Welcome page"), self.treeView)
@@ -561,7 +562,8 @@ Calculation management
     def activeSelectedPage(self, index):
         """
         """
-        self.treeView.selectionModel().select(index, QItemSelectionModel.SelectCurrent)
+        if index != None:
+            self.treeView.selectionModel().select(index, QItemSelectionModel.SelectCurrent)
 
         return
 
@@ -599,7 +601,7 @@ Calculation management
             self.treeView.expand(index)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def openTreeFolder(self):
         """
         public slot
@@ -631,7 +633,7 @@ Calculation management
             self.treeView.collapse(index)
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def closeTreeFolder(self):
         """
         public slot

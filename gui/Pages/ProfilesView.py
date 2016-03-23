@@ -40,8 +40,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -50,7 +51,7 @@ from PyQt4.QtGui  import *
 from code_saturne.Base.Common import LABEL_LENGTH_MAX
 from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from code_saturne.Base.QtPage import setGreenColor, to_qvariant, from_qvariant
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant
 from code_saturne.Pages.ProfilesForm import Ui_ProfilesForm
 from code_saturne.Pages.ProfilesModel import ProfilesModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
@@ -106,7 +107,7 @@ class StandardItemModelProfile(QStandardItemModel):
 
 
     def setData(self, index, value, role):
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -179,12 +180,12 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
 
         # QListView layout
         self.gridlayout1 = QGridLayout(self.widgetDrag)
-        self.gridlayout1.setMargin(0)
+        self.gridlayout1.setContentsMargins(0, 0, 0, 0)
         self.DragList = QListView(self.widgetDrag)
         self.gridlayout1.addWidget(self.DragList,0,0,1,1)
 
         self.gridlayout2 = QGridLayout(self.widgetDrop)
-        self.gridlayout2.setMargin(0)
+        self.gridlayout2.setContentsMargins(0, 0, 0, 0)
         self.DropList = QListView(self.widgetDrop)
         self.gridlayout2.addWidget(self.DropList,0,0,1,1)
 
@@ -208,18 +209,18 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.modelFormat.addItem(self.tr(".csv"), "CSV")
 
         # Connections
-        self.connect(self.treeViewProfile,       SIGNAL("pressed(const QModelIndex &)"), self.slotSelectProfile)
-        self.connect(self.pushButtonAdd,         SIGNAL("clicked()"), self.slotAddProfile)
-        self.connect(self.pushButtonDelete,      SIGNAL("clicked()"), self.slotDeleteProfile)
-        self.connect(self.pushButtonAddVar,      SIGNAL("clicked()"), self.slotAddVarProfile)
-        self.connect(self.pushButtonSuppressVar, SIGNAL("clicked()"), self.slotDeleteVarProfile)
-        self.connect(self.comboBoxFreq,          SIGNAL("activated(const QString&)"), self.slotFrequencyType)
-        self.connect(self.comboBoxFormat,        SIGNAL("activated(const QString&)"), self.slotFormatType)
-        self.connect(self.pushButtonFormula,     SIGNAL("clicked()"), self.slotFormula)
-        self.connect(self.lineEditBaseName,      SIGNAL("textChanged(const QString &)"), self.slotBaseName)
-        self.connect(self.lineEditFreq,          SIGNAL("textChanged(const QString &)"), self.slotFrequence)
-        self.connect(self.lineEditFreqTime,      SIGNAL("textChanged(const QString &)"), self.slotFrequenceTime)
-        self.connect(self.lineEditNbPoint,       SIGNAL("textChanged(const QString &)"), self.slotNbPoint)
+        self.treeViewProfile.pressed[QModelIndex].connect(self.slotSelectProfile)
+        self.pushButtonAdd.clicked.connect(self.slotAddProfile)
+        self.pushButtonDelete.clicked.connect(self.slotDeleteProfile)
+        self.pushButtonAddVar.clicked.connect(self.slotAddVarProfile)
+        self.pushButtonSuppressVar.clicked.connect(self.slotDeleteVarProfile)
+        self.comboBoxFreq.activated[str].connect(self.slotFrequencyType)
+        self.comboBoxFormat.activated[str].connect(self.slotFormatType)
+        self.pushButtonFormula.clicked.connect(self.slotFormula)
+        self.lineEditBaseName.textChanged[str].connect(self.slotBaseName)
+        self.lineEditFreq.textChanged[str].connect(self.slotFrequence)
+        self.lineEditFreqTime.textChanged[str].connect(self.slotFrequenceTime)
+        self.lineEditNbPoint.textChanged[str].connect(self.slotNbPoint)
 
         # Validators
         validatorFreq = IntValidator(self.lineEditFreq, min=0)
@@ -275,7 +276,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         return label
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotFrequencyType(self, text):
         """
         Input choice for frequency for profile.
@@ -310,7 +311,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.mdl.setOutputFrequency(self.label_select, nfreq)
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotFormatType(self, text):
         """
         Input choice for frequency for profile.
@@ -335,7 +336,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.modelProfile.addItem(label, " ; ".join(lst))
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddProfile(self):
         """
         Set in view label and variables to see on profile
@@ -346,7 +347,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.__eraseEntries()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteProfile(self):
         """
         Delete the profile from the list (one by one).
@@ -364,7 +365,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             self.__eraseEntries()
 
 
-    @pyqtSignature("const QModelIndex &")
+    @pyqtSlot("QModelIndex")
     def slotSelectProfile(self, index):
         """
         Return the selected item from the list.
@@ -405,10 +406,10 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
 
         self.modelDrop.setStringList(liste)
 
-        setGreenColor(self.pushButtonFormula, True)
+        self.pushButtonFormula.setStyleSheet("background-color: red")
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotAddVarProfile(self):
         """
         Add a new var from list to profile
@@ -427,7 +428,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             self.modelProfile.replaceItem(row, self.label_select, " ; ".join(liste))
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotDeleteVarProfile(self):
         """
         Supress a var from profile
@@ -451,7 +452,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.treeViewProfile.clearSelection()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotFormula(self):
         """
         """
@@ -481,11 +482,12 @@ z = z1*s + z0*(1.-s);"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotLineFormula -> %s" % str(result))
-            setGreenColor(self.pushButtonFormula, False)
             self.mdl.setFormula(self.label_select, result)
+            self.pushButtonFormula.setToolTip(result)
+            self.pushButtonFormula.setStyleSheet("background-color: green")
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotBaseName(self, text):
         """
         """
@@ -500,7 +502,7 @@ z = z1*s + z0*(1.-s);"""
                 self.modelProfile.replaceItem(row, self.label_select, " ; ".join(liste))
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotFrequence(self, text):
         """
         """
@@ -508,7 +510,7 @@ z = z1*s + z0*(1.-s);"""
             self.mdl.setOutputFrequency(self.label_select, int(text))
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotFrequenceTime(self, text):
         """
         """
@@ -516,7 +518,7 @@ z = z1*s + z0*(1.-s);"""
             self.mdl.setOutputFrequency(self.label_select, float(text))
 
 
-    @pyqtSignature("const QString&")
+    @pyqtSlot(str)
     def slotNbPoint(self, text):
         """
         """

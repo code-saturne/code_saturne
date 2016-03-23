@@ -40,8 +40,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -258,7 +259,7 @@ class StandardItemModelFaces(QStandardItemModel):
             self.mdl.replacePeriodicFaces(row, self.dataFaces[row])
 
         log.debug("setData -> dataFaces = %s" % self.dataFaces)
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.dataChanged.emit(index, index)
         return True
 
 
@@ -317,8 +318,12 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
 
         self.tableView.setModel(self.modelFaces)
 
-        self.tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-        self.tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
+        if QT_API == "PYQT4":
+            self.tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
+            self.tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
+        elif QT_API == "PYQT5":
+            self.tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+            self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.tableView.horizontalHeader().setStretchLastSection(True)
 
         delegateFraction = FractionPlaneDelegate(self.tableView)
@@ -339,11 +344,10 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
 
         # Connections
 
-        self.connect(self.pushButtonAdd,    SIGNAL("clicked()"), self.slotAddItem)
-        self.connect(self.pushButtonDelete, SIGNAL("clicked()"), self.slotDelItem)
+        self.pushButtonAdd.clicked.connect(self.slotAddItem)
+        self.pushButtonDelete.clicked.connect(self.slotDelItem)
 
 
-    @pyqtSignature("")
     def slotAddItem(self):
         """
         Create a new faces selection.
@@ -351,7 +355,6 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
         self.modelFaces.addItem()
 
 
-    @pyqtSignature("")
     def slotDelItem(self):
         """
         Delete a single selected row.

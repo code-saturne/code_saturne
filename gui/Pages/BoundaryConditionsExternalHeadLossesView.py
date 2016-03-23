@@ -37,15 +37,15 @@ import string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui  import *
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import setGreenColor
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 
 from code_saturne.Pages.BoundaryConditionsExternalHeadLossesForm import Ui_BoundaryConditionsExternalHeadLossesForm
@@ -87,9 +87,7 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
 
         self.__case.undoStopGlobal()
 
-        self.connect(self.pushButtonHeadLossesFormula,
-                     SIGNAL("clicked()"),
-                     self.slotHeadLossesFormula)
+        self.pushButtonHeadLossesFormula.clicked.connect(self.slotHeadLossesFormula)
 
         self.__case.undoStartGlobal()
 
@@ -100,7 +98,12 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
         """
         label = b.getLabel()
         self.__boundary = Boundary('free_inlet_outlet', label, self.__case)
-        setGreenColor(self.pushButtonHeadLossesFormula, True)
+        exp = self.__boundary.getHeadLossesFormula()
+        if exp:
+            self.pushButtonHeadLossesFormula.setStyleSheet("background-color: green")
+            self.pushButtonHeadLossesFormula.setToolTip(exp)
+        else:
+            self.pushButtonHeadLossesFormula.setStyleSheet("background-color: red")
 
         self.show()
 
@@ -112,7 +115,7 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
         self.hide()
 
 
-    @pyqtSignature("")
+    @pyqtSlot()
     def slotHeadLossesFormula(self):
         """
         """
@@ -139,7 +142,8 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
             result = dialog.get_result()
             log.debug("slotFormulaDirection -> %s" % str(result))
             self.__boundary.setHeadLossesFormula(result)
-            setGreenColor(self.pushButtonHeadLossesFormula, False)
+            self.pushButtonHeadLossesFormula.setStyleSheet("background-color: green")
+            self.pushButtonHeadLossesFormula.setToolTip(result)
 
 
     def tr(self, text):
