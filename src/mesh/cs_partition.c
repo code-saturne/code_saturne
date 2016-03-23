@@ -984,10 +984,10 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
   BFT_MALLOC(cell_center, n_cells*3, cs_coord_t);
 
 #if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1)
+  if (n_ranks > 1)
     _precompute_cell_center_g(mb, cell_center, comm);
 #endif
-  if (cs_glob_n_ranks == 1)
+  if (n_ranks == 1)
     _precompute_cell_center_l(mb, cell_center);
 
   cell_io_num = fvm_io_num_create_from_sfc(cell_center,
@@ -3428,7 +3428,7 @@ cs_partition(cs_mesh_t             *mesh,
                         cell_part,
                         cs_glob_mpi_comm);
 #else
-      _cell_rank_by_sfc(mesh->n_g_cells, mb, sfc_type, cell_part);
+      _cell_rank_by_sfc(mesh->n_g_cells, n_ranks, mb, sfc_type, cell_part);
 #endif
 
       _cell_part_histogram(mb->cell_bi.gnum_range, n_ranks, cell_part);
