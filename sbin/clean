@@ -5,6 +5,7 @@ echo "cleaning *~, #* and .#*"
 find . -name "*~" -print0 | xargs -0r \rm
 find . -name \#* -print0 | xargs -0r \rm
 find . -name "\.#*" -print0 | xargs -0r \rm
+find . -name "*.orig" -print0 | xargs -0r \rm
 find . -name semantic.cache -print0 | xargs -0r \rm
 find . -name autom4te.cache -print0 | xargs -0r \rm -r
 
