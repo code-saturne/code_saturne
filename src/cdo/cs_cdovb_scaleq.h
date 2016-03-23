@@ -177,6 +177,27 @@ cs_cdovb_scaleq_update_field(const cs_real_t     *solu,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the diffusive and convective flux across a list of faces
+ *
+ * \param[in]       builder    pointer to a builder structure
+ * \param[in]       pdi        pointer to an array of field values
+ * \param[in]       ml_id      id related to a cs_mesh_location_t struct.
+ * \param[in]       direction  indicate in which direction flux is > 0
+ * \param[in, out]  diff_flux  pointer to the value of the diffusive flux
+ * \param[in, out]  conv_flux  pointer to the value of the convective flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
+                                          const cs_real_t     *pdi,
+                                          int                  ml_id,
+                                          cs_real_3_t          direction,
+                                          double              *diff_flux,
+                                          double              *conv_flux);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation

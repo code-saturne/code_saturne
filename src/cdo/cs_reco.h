@@ -111,6 +111,26 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct the value at the face center from an array of values
+ *         defined on primal vertices.
+ *
+ *  \param[in]      f_id     face id (interior and border faces)
+ *  \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      pdi      pointer to the array of values
+ *  \param[in, out] pdi_f    value of the reconstruction at the face center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_pv_at_face_center(cs_lnum_t                    f_id,
+                          const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *quant,
+                          const double                *pdi,
+                          cs_real_t                   *pdi_f);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct a constant vector at the cell center from an array of
  *         values defined on dual faces lying inside each cell.
  *         This array is scanned thanks to the c2e connectivity.
@@ -176,6 +196,26 @@ cs_reco_cost_edge_dof(cs_lnum_t                    cid,
                       const cs_cdo_quantities_t   *quant,
                       const double                *dof,
                       double                       reco[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value at the cell center of the gradient of a field
+ *         defined on primal vertices.
+ *
+ * \param[in]      c_id    cell id
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant   pointer to the additional quantities struct.
+ * \param[in]      pdi     pointer to the array of values
+ * \param[in, out] val_xc  value of the reconstructed graident at cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_grd_cell_from_pv(cs_lnum_t                    c_id,
+                         const cs_cdo_connect_t      *connect,
+                         const cs_cdo_quantities_t   *quant,
+                         const double                *pdi,
+                         cs_real_t                    val_xc[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

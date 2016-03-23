@@ -564,6 +564,26 @@ cs_equation_type_t
 cs_equation_get_type(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the diffusive and convective flux accross a plane defined
+ *         by a mesh location structure attached to the name ml_name.
+ *
+ * \param[in]      eq          pointer to a cs_equation_t structure
+ * \param[in]      ml_name     name of the related mesh location
+ * \param[in]      direction   vector indicating in which direction flux is > 0
+ * \param[in, out] diff_flux   value of the diffusive part of the flux
+ * \param[in, out] conv_flux   value of the convective part of the flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
+                                      const char            *ml_name,
+                                      const cs_real_3_t      direction,
+                                      cs_real_t             *diff_flux,
+                                      cs_real_t             *conv_flux);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

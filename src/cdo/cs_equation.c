@@ -185,6 +185,27 @@ typedef const double *
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the diffusive and convective flux across a list of faces
+ *
+ * \param[in]       builder    pointer to a builder structure
+ * \param[in]       f_vals     pointer to an array of field values
+ * \param[in]       ml_id      id related to a cs_mesh_location_t struct.
+ * \param[in]       direction  indicate in which direction flux is > 0
+ * \param[in, out]  diff_flux  pointer to the value of the diffusive flux
+ * \param[in, out]  conv_flux  pointer to the value of the convective flux
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_get_fap_t)(const void            *builder,
+                        const cs_real_t       *f_vals,
+                        int                    ml_id,
+                        const cs_real_t        direction[],
+                        double                *diff_flux,
+                        double                *conv_flux);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve a pointer to a buffer of size at least the number of unknows
  *
  * \param[in, out]  builder    pointer to a builder structure
@@ -324,6 +345,7 @@ struct _cs_equation_t {
   cs_equation_compute_source_t  *compute_source;
   cs_equation_update_field_t    *update_field;
   cs_equation_extra_op_t        *postprocess;
+  cs_equation_get_fap_t         *compute_flux_across_plane;
   cs_equation_get_f_values_t    *get_f_values;
   cs_equation_get_tmpbuf_t      *get_tmpbuf;
 
@@ -699,6 +721,9 @@ static void
 _check_ml_name(const char   *ml_name,
                int          *p_ml_id)
 {
+  if (ml_name == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(" Mesh location name is NULL."));
+
   *p_ml_id = cs_mesh_location_get_id_by_name(ml_name);
 
   if (*p_ml_id == -1)
@@ -1579,6 +1604,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
     eq->postprocess = cs_cdovb_scaleq_extra_op;
     eq->get_tmpbuf = cs_cdovb_scaleq_get_tmpbuf;
     eq->get_f_values = NULL;
+    eq->compute_flux_across_plane = cs_cdovb_scaleq_compute_flux_across_plane;
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
@@ -1590,6 +1616,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
     eq->postprocess = cs_cdofb_scaleq_extra_op;
     eq->get_tmpbuf = cs_cdofb_scaleq_get_tmpbuf;
     eq->get_f_values = cs_cdofb_scaleq_get_face_values;
+    eq->compute_flux_across_plane = NULL;
     break;
 
   default:
@@ -3067,27 +3094,6 @@ cs_equation_is_steady(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the values of the associated field at each face of the mesh
- *         If the pointer storing the values is NULL, it is allocated inside the
- *         function
- *
- * \param[in]   eq        pointer to a cs_equation_t structure
- *
- * \return a pointer to the values (which can be modified)
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_equation_get_face_values(cs_equation_t    *eq)
-{
-  if (eq == NULL)
-    return NULL;
-
-  return eq->get_f_values(eq->builder, cs_field_by_id(eq->field_id));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Return the name related to the given cs_equation_t structure
  *         to an equation
  *
@@ -3305,6 +3311,69 @@ cs_equation_get_type(const cs_equation_t    *eq)
     return CS_EQUATION_N_TYPES;
   else
     return eq->param->type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the values of the associated field at each face of the mesh
+ *         If the pointer storing the values is NULL, it is allocated inside the
+ *         function
+ *
+ * \param[in]   eq        pointer to a cs_equation_t structure
+ *
+ * \return a pointer to the values (which can be modified)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_equation_get_face_values(cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+
+  return eq->get_f_values(eq->builder, cs_field_by_id(eq->field_id));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the diffusive and convective flux accross a plane defined
+ *         by a mesh location structure attached to the name ml_name.
+ *
+ * \param[in]      eq          pointer to a cs_equation_t structure
+ * \param[in]      ml_name     name of the related mesh location
+ * \param[in]      direction   vector indicating in which direction flux is > 0
+ * \param[in, out] diff_flux   value of the diffusive part of the flux
+ * \param[in, out] conv_flux   value of the convective part of the flux
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
+                                      const char            *ml_name,
+                                      const cs_real_3_t      direction,
+                                      cs_real_t             *diff_flux,
+                                      cs_real_t             *conv_flux)
+{
+  int  ml_id;
+
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+  if (eq->compute_flux_across_plane == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Computation of the diffusive and convective flux across\n"
+                " a plane is not available for equation %s\n"), eq->name);
+
+  cs_field_t  *fld = cs_field_by_id(eq->field_id);
+
+  /* Get the mesh location id from its name */
+  _check_ml_name(ml_name, &ml_id);
+
+  /* Do the computation */
+  eq->compute_flux_across_plane(eq->builder,
+                                fld->val,
+                                ml_id,
+                                direction,
+                                diff_flux, conv_flux);
 }
 
 /*----------------------------------------------------------------------------*/

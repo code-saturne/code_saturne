@@ -51,6 +51,7 @@
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_math.h"
+#include "cs_mesh_location.h"
 #include "cs_post.h"
 #include "cs_quadrature.h"
 #include "cs_reco.h"
@@ -72,6 +73,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #define CS_CDOVB_SCALEQ_DBG  0
+
+/* Redefined the name of functions from cs_math to get shorter names */
+#define _dp3  cs_math_3_dot_product
 
 /* Algebraic system for CDO vertex-based discretization */
 
@@ -1531,6 +1535,151 @@ cs_cdovb_scaleq_update_field(const cs_real_t     *solu,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the diffusive and convective flux across a list of faces
+ *
+ * \param[in]       builder    pointer to a builder structure
+ * \param[in]       pdi        pointer to an array of field values
+ * \param[in]       ml_id      id related to a cs_mesh_location_t struct.
+ * \param[in]       direction  indicate in which direction flux is > 0
+ * \param[in, out]  diff_flux  pointer to the value of the diffusive flux
+ * \param[in, out]  conv_flux  pointer to the value of the convective flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
+                                          const cs_real_t     *pdi,
+                                          int                  ml_id,
+                                          cs_real_3_t          direction,
+                                          double              *diff_flux,
+                                          double              *conv_flux)
+{
+  const cs_cdovb_scaleq_t  *b = (cs_cdovb_scaleq_t  *)builder;
+  const cs_equation_param_t  *eqp = b->eqp;
+  const bool  do_adv = eqp->flag & CS_EQUATION_CONVECTION;
+  const bool  do_diff = eqp->flag & CS_EQUATION_DIFFUSION;
+
+  cs_mesh_location_type_t  ml_t = cs_mesh_location_get_type(ml_id);
+
+  *diff_flux = 0.;
+  *conv_flux = 0.;
+
+  if (pdi == NULL)
+    return;
+
+  if (ml_t != CS_MESH_LOCATION_INTERIOR_FACES &&
+      ml_t != CS_MESH_LOCATION_BOUNDARY_FACES) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_(" Mesh location type is incompatible with the computation\n"
+                 " of the flux across faces.\n"));
+    return;
+  }
+
+  const cs_cdo_connect_t  *connect = b->connect;
+  const cs_sla_matrix_t  *f2c = connect->f2c;
+  const cs_cdo_quantities_t  *quant = b->quant;
+  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
+  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
+
+  if (n_elts[0] > 0 && elt_ids == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Computing the flux across all interior or border faces is not"
+                " managed yet."));
+
+  short int  sgn;
+  double  pf, df, af;
+  cs_real_3_t  gc, pty_gc;
+  cs_real_33_t  pty_tens;
+  cs_nvec3_t  adv_c;
+
+  if (ml_t == CS_MESH_LOCATION_BOUNDARY_FACES) {
+
+    const cs_lnum_t  n_i_faces = connect->f_info->n_i_elts;
+    const cs_lnum_t  shift_if = 2*n_i_faces;
+
+    for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
+
+      const cs_lnum_t  bf_id = elt_ids[i];
+      const cs_lnum_t  f_id = n_i_faces + bf_id;
+      const cs_lnum_t  c_id = f2c->col_id[shift_if + bf_id];
+      const cs_quant_t  f = quant->face[f_id];
+      const short int  sgn = (_dp3(f.unitv, direction) < 0) ? -1 : 1;
+      const double  coef = sgn * f.meas;
+
+      if (do_diff) { /* Compute the local diffusive flux */
+
+        cs_reco_grd_cell_from_pv(c_id, connect, quant, pdi, gc);
+        cs_property_get_cell_tensor(c_id,
+                                    eqp->diffusion_property,
+                                    eqp->diffusion_hodge.inv_pty,
+                                    pty_tens);
+        cs_math_33_3_product((const cs_real_t (*)[3])pty_tens, gc, pty_gc);
+        *diff_flux += -coef * _dp3(f.unitv, pty_gc);
+
+      }
+
+      if (do_adv) { /* Compute the local advective flux */
+
+        cs_advection_field_get_cell_vector(c_id, eqp->advection_field, &adv_c);
+        cs_reco_pv_at_face_center(f_id, connect, quant, pdi, &pf);
+        *conv_flux += coef * adv_c.meas * _dp3(adv_c.unitv, f.unitv) * pf;
+
+      }
+
+    } // Loop on selected border faces
+
+  }
+  else if (ml_t == CS_MESH_LOCATION_INTERIOR_FACES) {
+
+    for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
+
+      const cs_lnum_t  f_id = elt_ids[i];
+      const cs_lnum_t  shift_f = 2*f_id;
+      const cs_lnum_t  c1_id = f2c->col_id[shift_f];
+      const cs_lnum_t  c2_id = f2c->col_id[shift_f+1];
+      const cs_quant_t  f = quant->face[f_id];
+      const short int  sgn = (_dp3(f.unitv, direction) < 0) ? -1 : 1;
+      const double  coef = 0.5 * sgn * f.meas;
+
+      if (do_diff) { /* Compute the local diffusive flux */
+
+        cs_reco_grd_cell_from_pv(c1_id, connect, quant, pdi, gc);
+        cs_property_get_cell_tensor(c1_id,
+                                    eqp->diffusion_property,
+                                    eqp->diffusion_hodge.inv_pty,
+                                    pty_tens);
+        cs_math_33_3_product((const cs_real_t (*)[3])pty_tens, gc, pty_gc);
+        *diff_flux += coef * _dp3(f.unitv, pty_gc);
+
+        cs_reco_grd_cell_from_pv(c2_id, connect, quant, pdi, gc);
+        cs_property_get_cell_tensor(c2_id,
+                                    eqp->diffusion_property,
+                                    eqp->diffusion_hodge.inv_pty,
+                                    pty_tens);
+        cs_math_33_3_product((const cs_real_t (*)[3])pty_tens, gc, pty_gc);
+        *diff_flux += coef * _dp3(f.unitv, pty_gc);
+
+      }
+
+      if (do_adv) { /* Compute the local advective flux */
+
+        cs_reco_pv_at_face_center(f_id, connect, quant, pdi, &pf);
+
+        cs_advection_field_get_cell_vector(c1_id, eqp->advection_field, &adv_c);
+        *conv_flux += coef * adv_c.meas * _dp3(adv_c.unitv, f.unitv) * pf;
+
+        cs_advection_field_get_cell_vector(c2_id, eqp->advection_field, &adv_c);
+        *conv_flux += coef * adv_c.meas * _dp3(adv_c.unitv, f.unitv) * pf;
+
+      }
+
+    } // Loop on selected interior faces
+
+  } // Set of interior or border faces
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation
@@ -1633,5 +1782,7 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
 }
 
 /*----------------------------------------------------------------------------*/
+
+#undef _dp3
 
 END_C_DECLS

@@ -306,6 +306,53 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct the value at the face center from an array of values
+ *         defined on primal vertices.
+ *
+ *  \param[in]      f_id     face id (interior and border faces)
+ *  \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      pdi      pointer to the array of values
+ *  \param[in, out] pdi_f    value of the reconstruction at the face center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_pv_at_face_center(cs_lnum_t                    f_id,
+                          const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *quant,
+                          const double                *pdi,
+                          cs_real_t                   *pdi_f)
+{
+  *pdi_f = 0.;
+
+  if (pdi == NULL)
+    return;
+
+  const cs_quant_t  qf = quant->face[f_id];
+  const cs_real_t  *xyz = quant->vtx_coord;
+  const cs_sla_matrix_t  *e2v = connect->e2v;
+  const cs_sla_matrix_t  *f2e = connect->f2e;
+
+  for (cs_lnum_t i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
+
+    const cs_lnum_t  e_id = f2e->col_id[i];
+    const cs_lnum_t  shift_e = 2*e_id;
+    const cs_lnum_t  v1_id = e2v->col_id[shift_e];
+    const cs_lnum_t  v2_id = e2v->col_id[shift_e+1];
+    const double  pdi_e = 0.5*(pdi[v1_id] + pdi[v2_id]);
+    const cs_real_t  *xv1 = xyz + 3*v1_id;
+    const cs_real_t  *xv2 = xyz + 3*v2_id;
+
+    *pdi_f += pdi_e * cs_math_surftri(xv1, xv2, qf.center);
+
+  } // Loop on face edges
+
+  *pdi_f /= qf.meas;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct a constant vector at the cell center from an array of
  *         values defined on dual faces lying inside each cell.
  *         This array is scanned thanks to the c2e connectivity.
@@ -419,6 +466,56 @@ cs_reco_dfbyc_in_pec(cs_lnum_t                    c_id,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value at the cell center of the gradient of a field
+ *         defined on primal vertices.
+ *
+ * \param[in]      c_id     cell id
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to the additional quantities struct.
+ * \param[in]      pdi      pointer to the array of values
+ * \param[in, out] val_xc   value of the reconstructed graident at cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_grd_cell_from_pv(cs_lnum_t                    c_id,
+                         const cs_cdo_connect_t      *connect,
+                         const cs_cdo_quantities_t   *quant,
+                         const double                *pdi,
+                         cs_real_t                    val_xc[])
+{
+  val_xc[0] = val_xc[1] = val_xc[2] = 0.;
+
+  if (pdi == NULL)
+    return;
+
+  const cs_connect_index_t  *c2e = connect->c2e;
+  const cs_sla_matrix_t  *e2v = connect->e2v;
+
+  for (cs_lnum_t i = c2e->idx[c_id]; i < c2e->idx[c_id+1]; i++) {
+
+    const cs_lnum_t  e_id = c2e->ids[i];
+    const cs_lnum_t  shift_e = 2*e_id;
+    const cs_lnum_t  v1_id = e2v->col_id[shift_e];
+    const short int  sgn_v1 = e2v->sgn[shift_e];
+    const cs_lnum_t  v2_id = e2v->col_id[shift_e+1];
+    const short int  sgn_v2 = e2v->sgn[shift_e+1];
+    const double  gdi_e = sgn_v1*pdi[v1_id] + sgn_v2*pdi[v2_id];
+    const cs_dface_t  dfq = quant->dface[i];  /* Dual face quantities */
+
+    for (int k = 0; k < 3; k++)
+      val_xc[k] += gdi_e*dfq.vect[k];
+
+  } // Loop on cell edges
+
+  /* Divide by cell volume */
+  const double  invvol = 1/quant->cell_vol[c_id];
+  for (int k = 0; k < 3; k++)
+    val_xc[k] *= invvol;
+
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Reconstruct at the cell center a field of edge-based DoFs
