@@ -1501,15 +1501,14 @@ cs_equation_summary(const cs_equation_t  *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assign a set of pointer functions for managing the cs_equation_t
- *         structure during the computation
+ * \brief  Create timer statistics structures to enable a "home-made" profiling
  *
  * \param[in, out]  eq       pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_last_setup(cs_equation_t  *eq)
+cs_equation_set_timer_stats(cs_equation_t  *eq)
 {
   if (eq == NULL)
     return;
@@ -1545,6 +1544,28 @@ cs_equation_last_setup(cs_equation_t  *eq)
     } // verbosity > 1
 
   } // verbosity > 0
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a set of pointer functions for managing the cs_equation_t
+ *         structure during the computation
+ *
+ * \param[in, out]  eq       pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_last_setup(cs_equation_t  *eq)
+{
+  if (eq == NULL)
+    return;
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  cs_equation_param_t  *eqp = eq->param;
 
   /* Set function pointers */
   switch(eqp->space_scheme) {

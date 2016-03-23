@@ -47,6 +47,7 @@
 #include "cs_math.h"
 #include "cs_mesh_location.h"
 #include "cs_reco.h"
+#include "cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -113,6 +114,9 @@ static const char _err_empty_pty[] =
 static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
 static const cs_time_step_t  *cs_time_step;
+
+/* Id related to cs_timer_stats structure used for monitoring */
+static int  property_ts_id = -1;
 
 /*============================================================================
  * Private function prototypes
@@ -440,6 +444,25 @@ cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
   cs_cdo_quant = quant;
   cs_cdo_connect = connect;
   cs_time_step = time_step;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Initialize cs_timer_stats_t structure for monitoring purpose
+ *
+ * \param[in]  level      level of details requested
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_timer_stats(int   level)
+{
+  if (level < 1)
+    return;
+
+  /* Timer statistics */
+  property_ts_id = cs_timer_stats_create("operations", "property", "property");
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1089,6 +1112,9 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
   if (pty == NULL)
     return;
 
+  if (property_ts_id > -1)
+    cs_timer_stats_start(property_ts_id);
+
   /* Initialize extra-diag. values of the tensor */
   for (int k = 0; k < 3; k++)
     for (int l = k+1; l < 3; l++)
@@ -1185,6 +1211,9 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
              tensor[1][0], tensor[1][1], tensor[1][2],
              tensor[2][0], tensor[2][1], tensor[2][2]);
 #endif
+
+  if (property_ts_id > -1)
+    cs_timer_stats_stop(property_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1207,6 +1236,9 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
 
   if (pty == NULL)
     return result;
+
+  if (property_ts_id > -1)
+    cs_timer_stats_start(property_ts_id);
 
   if (pty->type != CS_PROPERTY_ISO)
     bft_error(__FILE__, __LINE__, 0,
@@ -1261,15 +1293,18 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
     result = get.val;
     break;
 
- default:
-   bft_error(__FILE__, __LINE__, 0,
-             " Stop computing the cell value related to property %s.\n"
-             " Type of definition not handled yet.", pty->name);
-   break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " Stop computing the cell value related to property %s.\n"
+              " Type of definition not handled yet.", pty->name);
+    break;
 
- } /* type of definition */
+  } /* type of definition */
 
- return result;
+  if (property_ts_id > -1)
+    cs_timer_stats_stop(property_ts_id);
+
+  return result;
 }
 
 /*----------------------------------------------------------------------------*/

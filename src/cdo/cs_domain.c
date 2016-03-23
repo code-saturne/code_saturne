@@ -118,6 +118,7 @@ typedef enum {
   DOMKEY_DEFAULT_BOUNDARY,
   DOMKEY_OUTPUT_NT,
   DOMKEY_OUTPUT_DT,
+  DOMKEY_PROFILING,
   DOMKEY_NTMAX,
   DOMKEY_TMAX,
   DOMKEY_VERBOSITY,
@@ -166,12 +167,14 @@ _print_domkey(domkey_t  key)
   switch (key) {
   case DOMKEY_DEFAULT_BOUNDARY:
     return "default_boundary";
+  case DOMKEY_NTMAX:
+    return "nt_max";
   case DOMKEY_OUTPUT_NT:
     return "output_nt";
   case DOMKEY_OUTPUT_DT:
     return "output_dt";
-  case DOMKEY_NTMAX:
-    return "nt_max";
+  case DOMKEY_PROFILING:
+    return "profiling";
   case DOMKEY_TMAX:
     return "time_max";
   case DOMKEY_VERBOSITY:
@@ -202,12 +205,14 @@ _get_domkey(const char  *keyname)
 
   if (strcmp(keyname, "default_boundary") == 0)
     key = DOMKEY_DEFAULT_BOUNDARY;
+  else if (strcmp(keyname, "nt_max") == 0)
+    key = DOMKEY_NTMAX;
   else if (strcmp(keyname, "output_nt") == 0)
     key = DOMKEY_OUTPUT_NT;
   else if (strcmp(keyname, "output_dt") == 0)
     key = DOMKEY_OUTPUT_DT;
-  else if (strcmp(keyname, "nt_max") == 0)
-    key = DOMKEY_NTMAX;
+  else if (strcmp(keyname, "profiling") == 0)
+    key = DOMKEY_PROFILING;
   else if (strcmp(keyname, "time_max") == 0)
     key = DOMKEY_TMAX;
   else if (strcmp(keyname, "verbosity") == 0)
@@ -633,6 +638,7 @@ cs_domain_init(const cs_mesh_t             *mesh,
   domain->output_nt = -1;
   domain->output_dt = 0.;
   domain->verbosity = 1;
+  domain->profiling = false;
 
   /* Predefined equations or modules */
   domain->richards_eq_id = -1;
@@ -770,6 +776,10 @@ cs_domain_set_param(cs_domain_t    *domain,
     _set_default_boundary(domain, keyval);
     break;
 
+  case DOMKEY_NTMAX:
+    domain->time_step->nt_max = atoi(keyval);
+    break;
+
   case DOMKEY_OUTPUT_NT:
     {
       int  freq = atoi(keyval);
@@ -783,8 +793,8 @@ cs_domain_set_param(cs_domain_t    *domain,
     domain->output_dt = atof(keyval);
     break;
 
-  case DOMKEY_NTMAX:
-    domain->time_step->nt_max = atoi(keyval);
+  case DOMKEY_PROFILING:
+    domain->profiling = true;
     break;
 
   case DOMKEY_TMAX:
@@ -820,6 +830,9 @@ cs_domain_needs_log(const cs_domain_t      *domain)
 
   if (domain->verbosity < 0)
     return false;
+
+  if (domain->only_steady)
+    return true;
 
   if (domain->output_nt > -1)
     if (ts->nt_cur % domain->output_nt == 0)
@@ -970,8 +983,10 @@ cs_domain_last_setup(cs_domain_t    *domain)
 
   }
 
-  if (domain->verbosity > 1)
-    cs_hodge_set_timer_stats(domain->verbosity -1);
+  if (domain->verbosity > 0 && domain->profiling) {
+    cs_hodge_set_timer_stats(domain->verbosity);
+    cs_property_set_timer_stats(domain->verbosity);
+  }
 
   /* Proceed to the last settings of a cs_equation_t structure
      - Assign to a cs_equation_t structure a list of function to manage this
@@ -987,6 +1002,9 @@ cs_domain_last_setup(cs_domain_t    *domain)
   for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
 
     cs_equation_t  *eq = domain->equations[eq_id];
+
+    if (domain->profiling)
+      cs_equation_set_timer_stats(eq);
 
     cs_equation_last_setup(eq);
 
@@ -1169,7 +1187,7 @@ cs_domain_needs_iterate(cs_domain_t  *domain)
   if (domain->only_steady && ts->nt_cur > 0)
     one_more_iter = false;
 
-  if (ts->nt_max <= 0 && ts->t_max <= 0)
+  if (!domain->only_steady && ts->nt_max <= 0 && ts->t_max <= 0)
     one_more_iter = false;
 
   return one_more_iter;

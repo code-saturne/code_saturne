@@ -86,6 +86,17 @@ cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Initialize cs_timer_stats_t structure for monitoring purpose
+ *
+ * \param[in]  level      level of details requested
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_timer_stats(int   level);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create and initialize a new property structure
  *
  * \param[in]  name          name of the property

@@ -103,6 +103,17 @@ cs_equation_summary(const cs_equation_t  *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Create timer statistics structures to enable a "home-made" profiling
+ *
+ * \param[in, out]  eq       pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_timer_stats(cs_equation_t  *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Assign a set of pointer functions for managing the cs_equation_t
  *         structure during the computation
  *

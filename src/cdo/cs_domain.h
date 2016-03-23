@@ -121,6 +121,8 @@ typedef struct {
   int        output_nt;  /* Log information every nt iteration(s) */
   cs_real_t  output_dt;  /* Log information every dt elapsed simulated time */
   int        verbosity;  /* Level of details given in log */
+  bool       profiling;  /* Activate a set of timer statistics (details differ
+                            according to the verbosity level) */
 
 } cs_domain_t;
 
