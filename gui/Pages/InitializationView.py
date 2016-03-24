@@ -799,7 +799,7 @@ pressure = p0 + g * ro * z;\n"""
             if not th_formula:
                 th_formula = self.init.getDefaultThermalFormula()
                 self.pushButtonThermal.setStyleSheet("background-color: red")
-            else
+            else:
                 self.pushButtonThermal.setStyleSheet("background-color: green")
             self.init.setThermalFormula(zone, th_formula)
             self.pushButtonThermal.setToolTip(th_formula)

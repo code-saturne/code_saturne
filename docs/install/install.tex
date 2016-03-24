@@ -146,8 +146,8 @@ For a minimal build of \CS on a Linux or Posix system, the requirements are:
 \end{itemize}
 
 For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
-To build and use the GUI, Libxml2 and PyQt4 (which in turn requires
-Qt4 and SIP) are required.
+To build and use the GUI, Libxml2 and PyQt 4 or 5 (which in turn requires
+Qt 4 or 5 and SIP) are required.
 Other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
 and their role is given in \S\ref{sec:list_ext_lib}.
@@ -177,8 +177,8 @@ For a minimal build of \CS, a Linux or Posix system with C and Fortran compilers
 (C99 and Fortran 95 with Fortran 2003 ISO C bindings conforming respectively),
 a Python (2.6 or later) interpreter and a {\tt make} tool should be sufficient.
 For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
-To build and use the GUI, Libxml2 and Qt4 with PyQt4 Python bindings (which in
-turn requires SIP) are required.
+To build and use the GUI, Libxml2 and Qt 4 or 5 with PyQt 4 or 5 Python bindings
+(which in turn requires SIP) are required.
 Other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
 and their role is given in \S\ref{sec:list_ext_lib}.
@@ -249,9 +249,9 @@ The list of third-party software usable with \CS is provided here:
 
 \begin{itemize}
 
-\item PyQt4 is required by the \CS GUI. PyQt4 in turn requires Qt4,
-      Python,and SIP. Without this library, the GUI may not be built,
-      although XML files generated with another install of \CS
+\item PyQt version 4 or 5 is required by the \CS GUI. PyQt in turn requires
+      Qt (4 or 5), Python, and SIP. Without this library, the GUI may not be
+      built, although XML files generated with another install of \CS
       may be used if Libxml2 is available.
 
       If desired, Using PySide instead of PyQt4/SIP should require a relatively
@@ -358,12 +358,18 @@ pdf\LaTeX{} and \texttt{fig2dev} (part of TransFig) will be necessary.
 
 \subsection{Notes on some third-party tools and libraries}
 
-\subsubsection{Python and PyQt4\label{sec:ext:python}}
+\subsubsection{Python and PyQt\label{sec:ext:python}}
 
-The GUI is written in PyQt4 (Python bindings for Qt4), so but Qt4 and
-the matching Python bindings must be available. On most modern
+The GUI is written in PyQt (Python bindings for Qt), so Qt (version 4 or 5)
+and the matching Python bindings must be available. On most modern
 Linux distributions, this is available through the package manager,
-which is by far the preferred solution. When running on a system which does
+which is by far the preferred solution.
+
+On systems on which both PyQt4 and Pyqt5 are available, PyQt4 will be selected
+by default, but the selection may be forced by defining
+\texttt{QT\_SELECT=4} or \texttt{QT\_SELECT=5}.
+
+When running on a system which does
 not provide these libraries, there are several alternatives:
 
 \begin{itemize}
@@ -373,26 +379,20 @@ not provide these libraries, there are several alternatives:
       with the GUI is available on an other machine, the XML files
       may be copied on the current machine. This is certainly not an optimal
       solution, but in the case where users have a mix of desktop or virtual
-      machines with modern Linux distributions and PyQt4 installed, and
+      machines with modern Linux distributions and PyQt installed, and
       a compute cluster with an older system, this may avoid requiring
-      a build of Qt4 and PyQt4 on the cluster if users find this too daunting.
+      a build of Qt and PyQt on the cluster if users find this too daunting.
 
-\item Install a local Python interpreter, and add Qt4 bindings to this
+\item Install a local Python interpreter, and add Qt5 bindings to this
       interpreter.
 
-      Python (\url{http://www.python.org}) and Qt4
-      (\url{http://qt.nokia.com/products}) must be downloaded  and
+      Python (\url{http://www.python.org}) and Qt
+      (\url{https://www.qt.io}) must be downloaded  and
       installed first, in any order. The installation instructions of
       both of these tools are quite clear, and though the installation of these
-      large packages (especially Qt4) may be a lengthy process in terms of
+      large packages (especially Qt) may be a lengthy process in terms of
       compilation time, but is well automated and usually devoid of nasty
-      surprises.\footnote{The only case in which the \CS developers
-      have has issues with Qt4 was when trying to force an install into
-      64-bit mode with the GNU compilers (version 4.1.2) on a PowerPC 64
-      architecture running SLES 10 Linux, on which compilers default
-      to building 32 bit code, although 64 bit is available. Using default
-      options on the same machine led to a perfectly functional 32-bit Qt
-      installation}.
+      surprises.
 
       Once Python is installed, the SIP bindings generator
       (\url{http://riverbankcomputing.co.uk/software/sip/intro})
@@ -400,15 +400,15 @@ not provide these libraries, there are several alternatives:
       simply requires running \texttt{python configure.py} in its source
       tree, using the Python interpreter just installed.
 
-      Finally, the PyQt4 bindings
+      Finally, the PyQt bindings
       (\url{http://riverbankcomputing.co.uk/software/pyqt/intro}) may be
       installed, in a manner similar to SIP.
 
       When this is finished, the local Python interpreter contains
-      the PyQt4 bindings, and may be used by \CS's \texttt{configure}
+      the PyQt bindings, and may be used by \CS's \texttt{configure}
       script by passing \texttt{PYTHON=<path\_to\_python\_executable}.
 
-\item add Python Qt4 bindings as a Python extension module for an existing
+\item add Python Qt bindings as a Python extension module for an existing
       Python installation. This is a more elegant solution than the previous
       one, and avoids requiring rebuilding Python, but if the user does not
       have administrator privileges, the extensions will be placed in a
@@ -420,9 +420,9 @@ not provide these libraries, there are several alternatives:
       the \texttt{PYTHONPATH} variable and save its state in the build so as
       to ensure all the requisite directories are searched for.}
 
-      The process is similar to the previous one, but SIP and PyQt4
+      The process is similar to the previous one, but SIP and PyQt
       installation requires a few additional configuration options
-      in this case. See the SIP and PyQt4 reference guides for
+      in this case. See the SIP and PyQt reference guides for
       detailed instructions, especially the \emph{Building a Private
       Copy of the SIP Module} section of the SIP guide.
 
@@ -1111,8 +1111,7 @@ either for the front-end, for the compute nodes, or both:
 In our example, the front-end node is based on an IBM Power architecture,
 runnning under Red Hat Enterprise Linux 6, on which the Python/Qt4
 environment should be available as an RPM package, and installed by the
-administrators. If this is not possible, the Python/Qt4 aspects of the
-Blue Gene/P example may be adapted here.
+administrators.
 
 On the compute nodes, the IBM XL compilers produce static object files
 by default, so specifying the \texttt{--disable-shared} option is not necessary
@@ -1123,11 +1122,6 @@ is the suggested default, and prevents shared library builds.
 To allow building with shared libraries while still ensuring the
 cross-compiling environment is detected,
 use \texttt{--host=powerpc64-bgq-linux} instead.
-
-As the front-end nodes of Blue Gene/Q machines may be expected to run
-Red Hat EL 6.x linux variants, instead of 5.x for blue Gene/P, more
-up-to date compilers and libraries (such as Python/Qt4) should be available
-as packages, easily installable by the system administrators.
 
 For the compute nodes, the following remarks may be mode for prerequisites:
 

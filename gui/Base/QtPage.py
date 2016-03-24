@@ -116,9 +116,7 @@ import collections
 
 if os.environ.get('QT_API', 'pyqt') == 'pyqt':
     import sip
-    try:
-        from PyQt5.QtCore import QT_VERSION_STR
-    except:
+    if QT_API == "PYQT4":
         try:
             PYQT_API_1 = sip.getapi('QVariant') == 1
         except AttributeError:

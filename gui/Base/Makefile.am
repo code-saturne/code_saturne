@@ -21,6 +21,7 @@
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 #-------------------------------------------------------------------------------
+
 if HAVE_QT5
   PYUIC=$(PYUIC5)
 else
@@ -41,15 +42,18 @@ CommandMgrDialogView.py \
 Common.py \
 IdView.py \
 MainView.py \
-QtCore.py \
-QtGui.py \
 QtPage.py \
-QtWidgets.py \
 Toolbox.py \
 XMLengine.py \
 XMLinitialize.py \
 XMLmodel.py \
 XMLvariables.py
+
+if HAVE_QT5
+  PYFILES += qt5/QtCore.py qt5/QtGui.py qt5/QtWidgets.py
+else
+  PYFILES += qt4/QtCore.py qt4/QtGui.py qt4/QtWidgets.py
+endif
 
 # PyQt User Interface files
 

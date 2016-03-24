@@ -1399,7 +1399,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                       self.case.toString(),
                                       last_record[2],
                                       last_record[3]])
-            print last_record
+            print(last_record)
 
             self.case.parseString(last_record[1])
             self.Browser.activeSelectedPage(last_record[2])
