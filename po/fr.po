@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-03-05 17:10+0100\n"
+"POT-Creation-Date: 2016-03-24 11:17+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6390,7 +6390,7 @@ msgstr ""
 #, c-format
 msgid ""
 " Invalid value %s for setting key %s.\n"
-" Valide choices are exact, nearest_cell_center or nearest_vertex\n"
+" Valid choices are exact, nearest_center or nearest_vertex\n"
 " Please check your settings."
 msgstr ""
 
@@ -8096,7 +8096,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key for setting the advection field %s.\n"
+" Invalid key \"%s\" for setting the advection field \"%s\".\n"
 " Please read listing for more details and modify your settings."
 msgstr ""
 
@@ -8135,10 +8135,6 @@ msgstr ""
 msgid " Unsteady terms are not handled yet.\n"
 msgstr ""
 
-#, c-format
-msgid "  -t-    Free CDO structures               %12.3f s\n"
-msgstr ""
-
 msgid "Unkwown algorithm for cell center computation\n"
 msgstr ""
 
@@ -8151,6 +8147,15 @@ msgstr ""
 msgid ""
 " Weighted operation needs weigth array to be allocated.\n"
 " Stop execution.\n"
+msgstr ""
+
+msgid ""
+" Mesh location type is incompatible with the computation\n"
+" of the flux across faces.\n"
+msgstr ""
+
+msgid ""
+" Computing the flux across all interior or border faces is not managed yet."
 msgstr ""
 
 msgid "domain_walls"
@@ -8167,7 +8172,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key name %s for setting a boundary by default.\n"
+" Invalid key name \"%s\" for setting a boundary by default.\n"
 " Available choices are: wall or symmetry."
 msgstr ""
 
@@ -8182,7 +8187,7 @@ msgstr "cellules"
 
 #, c-format
 msgid ""
-" Invalid key %s setting a parameter for this domain.\n"
+" Invalid key \"%s\" setting a parameter for this domain.\n"
 " Please read listing for more details and modify your settings."
 msgstr ""
 
@@ -8207,13 +8212,8 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key name %s for setting a boundary.\n"
+" Invalid key name \"%s\" for setting a boundary.\n"
 " Available choices are: wall, inlet, outlet or symmetry."
-msgstr ""
-
-msgid ""
-" Unsteady computation without stopping criterion on the max number of "
-"iteration or a maximal time."
 msgstr ""
 
 #, c-format
@@ -8278,6 +8278,9 @@ msgid ""
 " Please modify your settings."
 msgstr ""
 
+msgid " Mesh location name is NULL."
+msgstr ""
+
 #, c-format
 msgid " Incompatible type of variable for equation %s."
 msgstr ""
@@ -8302,7 +8305,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key %s for setting equation %s.\n"
+" Invalid key \"%s\" for setting equation \"%s\".\n"
 " Please read listing for more details and modify your settings."
 msgstr ""
 
@@ -8352,72 +8355,79 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key value %s for setting the quadrature behaviour of boundary "
-"conditions.\n"
-" Choices are among subdiv, bary, higher and highest."
+" Invalid key value \"%s\" for setting the quadrature behaviour of the "
+"boundary conditions.\n"
+" Valid choices are \"subdiv\", \"bary\", \"higher\" and \"highest\"."
 msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key value %s for setting the form of the convection term.\n"
-" Choices are among conservative and non_conservative."
+" Invalid key value \"%s\" for setting the formulation of the convection "
+"term.\n"
+" Valid keys are \"conservative\" or \"non_conservative\"."
 msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key value %s for setting the algorithm for defining the proportion "
-"of upwinding.\n"
-" Choices are among upwind, samarskii, sg and centered."
+" Invalid key value \"%s\" for setting the algorithm for defining the "
+"proportion of upwinding.\n"
+" Valid choices are \"upwind\", \"samarskii\", \"sg\", \"centered\" or "
+"\"d10g5\"."
 msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key value %s for setting the algorithm for computing the upwinding "
-"weight.\n"
-" Choices are among flux and xexc."
+" Invalid key value \"%s\" for setting the algorithm for computing the "
+"upwinding weight.\n"
+" Valid choices are \"flux\" and \"xexc\"."
 msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key value %s for setting the quadrature behaviour used for "
-"computing the advection flux.\n"
-" Choices are among bary, higher and highest."
+" Invalid key value \"%s\" for setting the quadrature\n"
+" rules used for computing the advection flux.\n"
+" Valid choices are \"bary\", \"higher\" and \"highest\"."
 msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key value %s for setting the time scheme.\n"
-" Choices are among implicit, explicit, crank_nicolson and theta_scheme"
+" Invalid key value \"%s\" for setting the time scheme.\n"
+" Valid choices are \"implicit\", \"explicit\", \"crank_nicolson\", and "
+"\"theta_scheme\"."
 msgstr ""
+
+#, c-format
+msgid " The key \"%s\" is not implemented yet."
+msgstr " La clé \"%s\" n'est pas encore gérée."
 
 #, c-format
 msgid ""
 " Invalid keyword for linking an equation.\n"
-" Current value: %s\n"
-" Possible choices: diffusion, time, advection\n"
+" Current value: \"%s\"\n"
+" Valid choices: \"diffusion\", \"time\", \"advection\"."
 msgstr ""
 
 #, c-format
 msgid ""
 " Invalid key for setting the initial condition.\n"
-" Given key: %s\n"
-" Available choices are 'value' and 'analytic'.\n"
+" Given key: \"%s\"\n"
+" Valid choices are \"value\" and \"analytic\".\n"
 " Please modify your settings."
 msgstr ""
 
 #, c-format
 msgid ""
 " Invalid key for setting the type of definition.\n"
-" Given key: %s\n"
-" Choice among value, field, evaluator, analytic, user, law or file\n"
+" Given key: \"%s\"\n"
+" Valid keys: \"analytic\", \"user\", \"law\" or \"array\"\n"
 " Please modify your settings."
 msgstr ""
 
 #, c-format
 msgid ""
 " Invalid key for setting the type of boundary condition.\n"
-" Given key: %s\n"
-" Choice among dirichlet, neumann or robin.\n"
+" Given key: \"%s\"\n"
+" Valid keys: \"dirichlet\", \"neumann\" or \"robin\".\n"
 " Please modify your settings."
 msgstr ""
 
@@ -8440,8 +8450,14 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key for setting a reaction term %s.\n"
+" Invalid key \"%s\" for setting the reaction term \"%s\".\n"
 " Please read listing for more details and modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key value \"%s\" for key \"%s\"\n"
+" Valid choices: \"cost\", \"wbs\" or \"voronoi\"."
 msgstr ""
 
 #, c-format
@@ -8471,7 +8487,18 @@ msgid ""
 " Please check your settings.\n"
 msgstr ""
 
+#, c-format
+msgid ""
+" Computation of the diffusive and convective flux across\n"
+" a plane is not available for equation %s\n"
+msgstr ""
+
 msgid "Invalid quadrature type.\n"
+msgstr ""
+
+msgid ""
+" Stop evaluating a potential from 'quantity over volume'.\n"
+" This situation is not handled yet."
 msgstr ""
 
 #, c-format
@@ -8480,12 +8507,12 @@ msgid ""
 " The expected type is CS_MESH_LOCATION_CELLS.\n"
 msgstr ""
 
-msgid " Invalid type of model for computing the moisture content."
+msgid " Invalid type of model for estimating the moisture content."
 msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key %s for setting the groundwater module.\n"
+" Invalid key \"%s\" for setting the groundwater module.\n"
 " Please read listing for more details and modify your settings."
 msgstr ""
 
@@ -8502,8 +8529,8 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key %s for setting the soil parameters associated to location %s in "
-"the groundwater flow module.\n"
+" Invalid key \"%s\" for setting the soil parameters associated to location "
+"\"%s\".\n"
 " Please read the listing for more details and modify your settings."
 msgstr ""
 
@@ -8555,6 +8582,9 @@ msgid "by law (two arguments)"
 msgstr ""
 
 msgid "by law (two arguments: scalar+vector)"
+msgstr ""
+
+msgid "quantity over a volume"
 msgstr ""
 
 msgid "by time function"
@@ -8637,8 +8667,8 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key %s for setting the type of property.\n"
-" Key is one of the following: isotropic, orthotropic or anisotropic.\n"
+" Invalid key \"%s\" for setting the type of property.\n"
+" Valid keys: \"isotropic\", \"orthotropic\" and \"anisotropic\".\n"
 " Please modify your settings."
 msgstr ""
 
@@ -8664,7 +8694,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key for setting source term %s.\n"
+" Invalid key \"%s\" for setting the source term \"%s\".\n"
 " Please read listing for more details and modify your settings."
 msgstr ""
 
@@ -8908,8 +8938,8 @@ msgstr ""
 
 #, c-format
 msgid ""
-"electric module : properties read on file\n"
-"Warning : error in cs_elec_physical_properties\n"
+"electric module: properties read on file\n"
+"Warning: error in cs_elec_physical_properties\n"
 "Invalid reading with temperature : %f.\n"
 msgstr ""
 
