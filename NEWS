@@ -5,6 +5,9 @@ Release 4.0.5 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bug in Scotch detection on some systems with
+  /usr/include/scotch/ptscotch.h present.
+
 - Fix postprocessing output of parallel rank for sub-meshes.
 
 - Fix in transient turbomachinery computations when nterup > 1.
