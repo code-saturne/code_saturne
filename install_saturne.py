@@ -604,7 +604,7 @@ class Setup:
                     package="hdf5",
                     version="1.8.16",
                     archive="hdf5-1.8.16.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.14/src/%s")
+                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.16/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -1020,9 +1020,9 @@ Check the setup file and some utilities presence.
             # Compilers
             p.cc = self.cc
             p.cxx = self.cxx
-            if lib in ['code_saturne'] and self.mpicc:
+            if lib in ['scotch'] and self.mpicc:
                 p.cc = self.mpicc
-            elif lib in ['scotch', 'parmetis']:
+            elif lib in ['code_saturne', 'parmetis']:
                 if self.mpicc:
                     p.cc = self.mpicc
                 if self.mpicxx:

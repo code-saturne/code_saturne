@@ -5,6 +5,8 @@ Release 4.1.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix MPI C++ wrapper use and HDF5 URL in automatic installer.
+
 - Fix bug in Scotch detection on some systems with
   /usr/include/scotch/ptscotch.h present.
 
