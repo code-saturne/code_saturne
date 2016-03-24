@@ -1,4 +1,13 @@
 
+Release 4.2.2 (unreleased)
+==========================
+
+Bug fixes:
+----------
+
+- Fix postprocessing output of parallel rank for sub-meshes.
+
+
 Release 4.2.1 (Mar 18 2016)
 ===========================
 
