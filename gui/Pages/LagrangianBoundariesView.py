@@ -295,7 +295,10 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.modelBoundaries = StandardItemModelBoundaries(self.case, self.model)
         self.tableViewBoundaries.setModel(self.modelBoundaries)
         self.tableViewBoundaries.setAlternatingRowColors(True)
-        self.tableViewBoundaries.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        if QT_API == "PYQT4":
+            self.tableViewBoundaries.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        elif QT_API == "PYQT5":
+            self.tableViewBoundaries.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         delegateInteraction = ParticleBoundaryInteractionDelegate(self.tableViewBoundaries)
         delegateClassNumber = ValueDelegate(self.tableViewBoundaries)
