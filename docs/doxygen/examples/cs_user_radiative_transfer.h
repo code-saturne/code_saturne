@@ -273,7 +273,7 @@ The absorption coefficient is defined in \ref usray3 .
 
 \snippet cs_user_radiative_transfer.f90 format_1
 
-\subsection flux Net radiation flux
+\subsection usray5_flux Net radiation flux
 
 The net radiation flux is computed in \ref usray5 .
 

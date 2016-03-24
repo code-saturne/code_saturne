@@ -276,8 +276,8 @@ subroutine usray5 &
 !> emiting part of a boudary face (and not the reflecting one)
 !> and the radiative absorbing part.
 !>
-!> The provided example is consistent with the proposed boundary
-!> conditions for the intensity.
+!> The example provided \ref usray5_flux "here" is consistent with the
+!> proposed boundary conditions for the intensity.
 
 !-------------------------------------------------------------------------------
 ! Arguments
