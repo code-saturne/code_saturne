@@ -1020,9 +1020,9 @@ Check the setup file and some utilities presence.
             # Compilers
             p.cc = self.cc
             p.cxx = self.cxx
-            if lib in ['code_saturne'] and self.mpicc:
+            if lib in ['scotch'] and self.mpicc:
                 p.cc = self.mpicc
-            elif lib in ['scotch', 'parmetis']:
+            elif lib in ['code_saturne', 'parmetis']:
                 if self.mpicc:
                     p.cc = self.mpicc
                 if self.mpicxx:
