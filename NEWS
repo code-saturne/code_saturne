@@ -5,6 +5,9 @@ Release 3.0.9 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bug in Scotch detection on some systems with
+  /usr/include/scotch/ptscotch.h present.
+
 - Fix postprocessing output of parallel rank for sub-meshes.
 
 Release 3.0.8 (15 Mar 2016)
