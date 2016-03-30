@@ -87,12 +87,17 @@ typedef struct {
                                  perfect gas) (Pa) */
   double        gammasg;      /* stiffened gas (ieos=2) polytropic coefficient,
                                  (dimensionless) */
+  int           ipthrm;       /* Uniform variable thermodynamic pressure for the
+                                 low-Mach algorithm */
   double        pther;        /* uniform thermodynamic pressure for the low-Mach
                                  algorithm */
   double        pthera;       /* thermodynamic pressure for the previous time
                                  step */
   double        pthermax;     /* thermodynamic maximum pressure for user
                                  clipping, used to model a venting effect */
+  double        sleak;        /* Leak surface */
+  double        kleak;        /* Leak head loss (2.9 by default, from Idelcick) */
+  double        roref;        /* Initial reference density */
 
 } cs_fluid_properties_t;
 

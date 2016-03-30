@@ -359,7 +359,7 @@ if (iecaux.eq.1) then
 
   ! The physical variables here below are required for the low-Mach algorithm
 
-  if (idilat.eq.3) then
+  if (idilat.eq.3.or.ipthrm.eq.1) then
 
     !the reference density updated with the low-Mach algorithm
     rubriq = 'ro001'

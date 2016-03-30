@@ -204,7 +204,7 @@ call field_get_val_s(ibrom, brom)
 do iel = 1, ncel
   crom(iel)  = ro0
 enddo
-if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0) then
+if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0.or.ipthrm.eq.1) then
   call field_current_to_previous(icrom)
 endif
 if (icavit.ge.0.or.idilat.gt.1) then

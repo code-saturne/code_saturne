@@ -439,13 +439,10 @@ endif
 
 ! Add thermodynamic pressure variation for the low-Mach algorithm:
 ! NB: iscalt is the Enthalpy
-if (idilat.eq.3 .and. iscalt.gt.0) then
-  if (ivar.eq.isca(iscalt)) then
-    ! unsteady thermodynamic source term added
-    do iel = 1, ncel
-      smbrs(iel) = smbrs(iel) + (pther - pthera)/dt(iel)*cell_f_vol(iel)
-    enddo
-  endif
+if ((idilat.eq.3.or.ipthrm.eq.1).and.iscal.eq.iscalt) then
+  do iel = 1, ncel
+    smbrs(iel) = smbrs(iel) + (pther - pthera)/dt(iel)*cell_f_vol(iel)
+  enddo
 endif
 
 ! --> Couplage volumique avec Syrthes

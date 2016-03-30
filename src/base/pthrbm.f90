@@ -97,9 +97,9 @@ integer          iel , ifac, ieltsm, ipcd,icmet
 
 integer          iflmab
 
-double precision roamoy, romoy,ro0moy
+double precision roamoy, romoy, ro0moy
 double precision debt
-
+double precision dp, rho
 double precision debin, debout, debtot
 
 double precision, dimension(:), pointer :: bmasfl
@@ -150,10 +150,10 @@ debtot = 0.d0
 
 ! Computation of mass flux imposed on the boundary faces
 do ifac = 1, nfabor
-  if (itypfb(ifac).eq.ientre) then
+  if (itypfb(ifac).eq.ientre.or.itypfb(ifac).eq.i_convective_inlet) then
     ! the inlet mass flux integrated in space
     debin = debin - bmasfl(ifac)
-  else if (itypfb(ifac).eq.isolib) then
+  else if (itypfb(ifac).eq.isolib.or.itypfb(ifac).eq.ifrent) then
     ! the outlet mass flux integrated in space:
     debout = debout - bmasfl(ifac)
   endif
@@ -205,8 +205,23 @@ if (irangp.ge.0) then
   call parsom (debtot)
 endif
 
+
 !===============================================================================
-! 5. Thermodynamic pressure and density computation
+! 5. Global leak
+!===============================================================================
+
+dp = Pther-P0
+
+if (dp.gt.0.d0) then
+  rho = ro0
+else
+  rho = roref
+endif
+
+debtot = debtot - sign(1.d0,dp) * sleak * sqrt(2.d0*rho/kleak*abs(dp))
+
+!===============================================================================
+! 6. Thermodynamic pressure and density computation
 !===============================================================================
 
 ! for the first time step : rho^(n-1) = rho^(n)
@@ -216,7 +231,7 @@ if (isuite.eq.0 .and. ntcabs.eq.1) then
   enddo
 endif
 
-!initialization
+! initialization
 roamoy = 0.d0
 romoy  = 0.d0
 
@@ -249,13 +264,21 @@ if (irangp.ge.0 .or. iperio.eq.1) then
 endif
 
 ! Update the density at the boundary face
-do ifac = 1, nfabor
-  iel = ifabor(ifac)
-  brom(ifac) = crom(iel)
-enddo
+! with cell value for severe accident low-Mach algorithm
+if (idilat.eq.3) then
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    brom(ifac) = crom(iel)
+  enddo
+! else with boundary values
+else
+  do ifac = 1, nfabor
+    brom(ifac) = pther/pthera*brom(ifac)
+  enddo
+endif
 
 !===============================================================================
-! 6. Change the reference variable rho0
+! 7. Change the reference variable rho0
 !===============================================================================
 
 !initialization
@@ -272,10 +295,11 @@ endif
 ro0 = ro0moy/voltot
 
 !===============================================================================
-! 7. Printing
+! 8. Printing for severe accident low-Mach algorithm
 !===============================================================================
 
-if (mod(ntcabs,ntlist).eq.0 .or. ntcabs.eq.1) then
+if (idilat.eq.3.and. &
+    (mod(ntcabs,ntlist).eq.0 .or. ntcabs.eq.1)) then
 
   ! Compute the mass flux at the boundary faces
   debt = 0.d0

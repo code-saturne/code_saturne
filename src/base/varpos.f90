@@ -432,7 +432,7 @@ endif
 
 ! The density at the previous time step is required if idilat>1 or icavit>=0 or
 ! if we perform a hydrostatic pressure correction (icalhy=1)
-if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0 &
+if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0.or.ipthrm.eq.1 &
      .or.ippmod(icompf).ge.0) then
   nproce = nproce + 1
   iroma  = nproce

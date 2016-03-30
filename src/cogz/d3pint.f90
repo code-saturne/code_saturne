@@ -553,7 +553,7 @@ do iel = 1, ncel
   if (ipass.ge.1.or.(isuite.eq.1.and.initro.eq.1)) then
     cpro_rho(iel) = srrom*cpro_rho(iel)               &
                   + (1.d0-srrom)*                         &
-                  ( p0/(cs_physical_constants_r*temsmm) )
+                  ( pther/(cs_physical_constants_r*temsmm) )
   endif
 
   ! Weakly compressible algorithm: Derivative calculation of pdf parameters
@@ -639,9 +639,9 @@ do iel = 1, ncel
     endif
 
     ! Scalar contribution is computed and add to the total source term
-    propce(iel,iptsro) =  (-cs_physical_constants_r/p0 * dtsmdf)  &
+    propce(iel,iptsro) =  (-cs_physical_constants_r/pther * dtsmdf)  &
                          *propce(iel,ipproc(iustdy(ifm)))         &
-                        + (-cs_physical_constants_r/p0 * dtsmdfp2)&
+                        + (-cs_physical_constants_r/pther * dtsmdfp2)&
                          *propce(iel,ipproc(iustdy(ifp2m)))
 
     yprod = propce(iel,ipproc(iym(3)))
@@ -650,7 +650,7 @@ do iel = 1, ncel
     if (ippmod(icod3p).eq.1.and.abs(yprod).gt.epzero) then
 
       propce(iel,iptsro) =  propce(iel,iptsro)                            &
-                          + (-cs_physical_constants_r/p0 * dtsmdhs)/yprod &
+                          + (-cs_physical_constants_r/pther * dtsmdhs)/yprod &
                            *propce(iel,ipproc(iustdy(iscalt)))
 
     endif

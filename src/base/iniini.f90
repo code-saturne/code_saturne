@@ -804,7 +804,10 @@ idirsm = 1
 
 iporos = 0
 
-! --- Algorithm to take into account the density variation in time
+! --- Algorithm to take into account the thermodynamic pressure variation in time
+!     (not used by default except if idilat = 3)
+
+ipthrm = 0
 
 !     by default:
 !     ----------
@@ -812,10 +815,14 @@ iporos = 0
 !      - the maximum thermodynamic pressure (pthermax) is initialized with -1
 !        (no maximum by default, this term is used to model a venting effect when
 !         a positive value is given by the user)
+!      - a global leak can be set through a leakage surface sleak with a head
+!      loss kleak of 2.9 (Idelcick)
 
 pther  = -1.d0
 pthermax= -1.d0
 
+sleak = 0.d0
+kleak = 2.9d0
 
 ! --- Cavitation module (not activated by default)
 !       -1: module not activated
@@ -1015,6 +1022,7 @@ icorio = 0
 irovar = 0
 ivivar = 0
 ro0    = 1.17862d0
+roref  = ro0
 viscl0 = 1.83337d-5
 p0     = 1.01325d5
 ! Reset pther to p0

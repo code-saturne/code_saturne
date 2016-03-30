@@ -277,7 +277,7 @@ if (ixyzp0.eq.1) then
 endif
 
 ! Here the physical variables below are required for the low-Mach algorithm
-if (idilat.eq.3) then
+if (idilat.eq.3.or.ipthrm.eq.1) then
 
   !the reference density updated with the low-Mach algorithm
   rubriq = 'ro001'

@@ -473,7 +473,7 @@ if (icavit.ge.0.or.idilat.gt.1) then
 endif
 
 ! If required, the density at time step n-1 is updated
-if (icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0) then
+if (icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0.or.ipthrm.eq.1) then
   call field_get_val_s(icrom, crom)
   call field_get_val_prev_s(icrom, crom_prev)
   do iel = 1, ncelet
@@ -805,7 +805,7 @@ endif
 !     POUR L'ALGORITHME A MASSE VOLUMIQUE VARIABLE.
 !===============================================================================
 
-if (idilat.eq.3) then
+if (idilat.eq.3.or.ipthrm.eq.1) then
   call pthrbm &
  ( nvar   , ncetsm , nfbpcd , ncmast,                             &
    dt     , smacel , spcond , svcond )

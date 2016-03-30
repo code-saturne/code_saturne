@@ -245,15 +245,23 @@ BEGIN_C_DECLS
   \var  cs_fluid_properties_t::gammasg
         stiffened gas (\ref ppincl::ieos "ieos"=2) polytropic coefficient
         (dimensionless)
+  \var  cs_fluid_properties_t::ipthrm
+        uniform variable thermodynamic pressure:
+        - 0: false
+        - 1: true
   \var  cs_fluid_properties_t::pther
-        uniform thermodynamic pressure for the low-Mach algorithm
-
         Thermodynamic pressure for the current time step.
   \var  cs_fluid_properties_t::pthera
         thermodynamic pressure for the previous time step
   \var  cs_fluid_properties_t::pthermax
         thermodynamic maximum pressure for user clipping, used to model a
         venting effect
+  \var  cs_fluid_properties_t::sleak
+        Leak surface
+  \var  cs_fluid_properties_t::kleak
+        Leak head loss (2.9 by default, from Idelcick)
+  \var  cs_fluid_properties_t::roref
+        Initial reference density
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -300,9 +308,13 @@ static cs_fluid_properties_t  _fluid_properties = {
   .xmasmr   = 0.028966, /* air molar mass */
   .psginf   = 0.,
   .gammasg  = 1.4,
+  .ipthrm   = 0,
   .pther    = 1.013e5,
   .pthera   = 0.,
-  .pthermax = -1.};
+  .pthermax = -1.,
+  .sleak    = 0.,
+  .kleak    = 2.9,
+  .roref    = 1.17862};
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -347,9 +359,13 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **xmasmr,
                                    double  **psginf,
                                    double  **gammasg,
+                                   int     **ipthrm,
                                    double  **pther,
                                    double  **pthera,
-                                   double  **pthermax);
+                                   double  **pthermax,
+                                   double  **sleak,
+                                   double  **kleak,
+                                   double  **roref);
 
 /*============================================================================
  * Private function definitions
@@ -412,9 +428,13 @@ cs_f_physical_constants_get_pointers(double  **r,
  *   xmasmr   --> pointer to cs_glob_fluid_properties->xmasmr
  *   psginf   --> pointer to cs_glob_fluid_properties->psginf
  *   gammasg  --> pointer to cs_glob_fluid_properties->gammasg
+ *   ipthrm   --> pointer to cs_glob_fluid_properties->ipthrm
  *   pther    --> pointer to cs_glob_fluid_properties->pther
  *   pthera   --> pointer to cs_glob_fluid_properties->pthera
  *   pthermax --> pointer to cs_glob_fluid_properties->pthermax
+ *   sleak    --> pointer to cs_glob_fluid_properties->sleak
+ *   kleak    --> pointer to cs_glob_fluid_properties->kleak
+ *   roref    --> pointer to cs_glob_fluid_properties->roref
  *----------------------------------------------------------------------------*/
 
 void
@@ -436,9 +456,13 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **xmasmr,
                                    double  **psginf,
                                    double  **gammasg,
+                                   int     **ipthrm,
                                    double  **pther,
                                    double  **pthera,
-                                   double  **pthermax)
+                                   double  **pthermax,
+                                   double  **sleak,
+                                   double  **kleak,
+                                   double  **roref)
 {
   *ixyzp0   = &(_fluid_properties.ixyzp0);
   *ieos     = &(_fluid_properties.ieos);
@@ -458,9 +482,13 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
   *xmasmr   = &(_fluid_properties.xmasmr);
   *psginf   = &(_fluid_properties.psginf);
   *gammasg  = &(_fluid_properties.gammasg);
+  *ipthrm   = &(_fluid_properties.ipthrm);
   *pther    = &(_fluid_properties.pther);
   *pthera   = &(_fluid_properties.pthera);
   *pthermax = &(_fluid_properties.pthermax);
+  *sleak    = &(_fluid_properties.sleak);
+  *kleak    = &(_fluid_properties.kleak);
+  *roref    = &(_fluid_properties.roref);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

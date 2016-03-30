@@ -731,6 +731,25 @@ iphydr = 1
 
 idilat = 1
 
+! --- Algorithm to take into account the thermodynamical pressure variation in time
+!     (not used by default except if idilat = 3)
+
+!     by default:
+!     ----------
+!      - the thermodynamic pressure (pther) is initialized with p0 = p_atmos
+!      - the maximum thermodynamic pressure (pthermax) is initialized with -1
+!        (no maximum by default, this term is used to model a venting effect when
+!         a positive value is given by the user)
+!      - a global leak can be set through a leakage surface sleak with a head
+!      loss kleak of 2.9 (Idelcick)
+
+ipthrm = 0
+
+pthermax= -1.d0
+
+sleak = 0.d0
+kleak = 2.9d0
+
 
 ! --- Temperature or enthalpy
 
