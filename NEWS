@@ -39,6 +39,20 @@ Numerics
 - Improve robustness of Boundary conditions for wall functions of scalars.
   Mainly impact Atmospheric flows.
 
+- Add many convective flux limiters for convective schemes:
+  * Fix in Convection scheme when the density is variable and the theta
+  scheme is 1/2 so that the scheme is now conservative over time.
+  * add inline functions for vectors
+  * simplify non-relaxed inline functions
+  * use inline functions for temperature explicit balance (bilsct)
+  * Add an add hoc limiter, called Beta, which ensures that, for any
+  convective scheme and any time stepping, that the variable remains
+  between "min_scalar" and "max_scalar", to be given by the user.
+  * Implementation of the Roe-Sweby Limiters for all the convective
+schemes (Original SOLU, CENTER, Standard SOLU)
+  * Creation of a new keyword: kst, for key source term;
+  we use it to add source terms in the Beta limiter
+
 - Handling of linear solver errors is improved to allow re-try with
   different solvers or parameters.
 
