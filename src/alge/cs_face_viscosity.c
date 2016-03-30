@@ -582,6 +582,10 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_t *restrict i_face_surf
+    = (const cs_real_t *restrict)fvq->i_face_surf;
+  const cs_real_t *restrict i_f_face_surf
+    = (const cs_real_t *restrict)fvq->i_f_face_surf;
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *restrict)fvq->b_face_normal;
   const cs_real_3_t *restrict i_face_cog
@@ -707,6 +711,13 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
 
     i_visc[face_id] = 1./(weighf[face_id][0] + weighf[face_id][1]);
 
+  }
+
+  /* For the porous modelling based on integral formulation Section and fluid
+   * Section are different */
+  if (cs_glob_porous_model == 3) {
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++)
+      i_visc[face_id] *= i_f_face_surf[face_id] / i_face_surf[face_id];
   }
 
   for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
