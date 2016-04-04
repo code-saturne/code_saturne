@@ -53,6 +53,8 @@ Bug fixes:
 Architectural changes
 ---------------------
 
+- Fix detection of MEDCoupling library when not explicitely specified.
+
 - Add basic (non-GUI) support for OAR resource manager.
 
 Version 4.0.4 (23 Dec 2015)

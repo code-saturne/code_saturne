@@ -124,7 +124,7 @@ if test "x$with_salome" != "xno" ; then
 
   KERNEL_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $KERNEL_ROOT_DIR)
   GUI_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $GUI_ROOT_DIR)
-  MED_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $MED_ROOT_DIR)
+  MEDCOUPLING_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $MEDCOUPLING_ROOT_DIR)
   YACS_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $YACS_ROOT_DIR)
 
   OMNIIDL=$(eval $SALOMEENVCMD ; which omniidl)
@@ -464,16 +464,16 @@ AC_ARG_WITH(salome-med,
             [AS_HELP_STRING([--with-salome-med=PATH],
                             [specify directory for MEDCoupling and ParaMEDMEM])],
             [if test "x$withval" = "x"; then
-               if test -z "$MED_ROOT_DIR"; then
+               if test -z "$MEDCOUPLING_ROOT_DIR"; then
                  with_salome_med=yes
                else
-                 with_salome_med=$MED_ROOT_DIR
+                 with_salome_med=$MEDCOUPLING_ROOT_DIR
                fi
              fi],
-            [if test -z "$MED_ROOT_DIR"; then
+            [if test -z "$MEDCOUPLING_ROOT_DIR"; then
                with_salome_med=check
              else
-               with_salome_med=$MED_ROOT_DIR
+               with_salome_med=$MEDCOUPLING_ROOT_DIR
              fi])
 
 if test "x$with_salome_med" != "xno" -a "x$enable_shared" = "xno" ; then
