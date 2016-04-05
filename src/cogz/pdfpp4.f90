@@ -24,8 +24,7 @@ subroutine pdfpp4 &
 !================
 
  ( ncelet , ncel  ,                                               &
-   fm     , fp2m  , yfm    , yfp2m , coyfp  ,                     &
-   propce )
+   fm     , fp2m  , yfm    , yfp2m , coyfp )
 
 !===============================================================================
 ! FONCTION :
@@ -77,7 +76,6 @@ subroutine pdfpp4 &
 ! yfm              ! tr ! <-- ! moyenne de la fraction massique                !
 ! yfp2m            ! tr ! <-- ! variance de la fraction massique               !
 ! coyfp            ! tr ! <-- ! covariance                                     !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -103,6 +101,7 @@ use ppthch
 use ppincl
 use coincl
 use field
+
 !===============================================================================
 
 implicit none
@@ -115,7 +114,6 @@ integer          ncelet, ncel
 double precision fm(ncelet)   , fp2m(ncelet)
 double precision yfm(ncelet)  , yfp2m(ncelet)
 double precision coyfp(ncelet)
-double precision propce(ncelet,*)
 
 !===============================================================================
 ! Local variables
@@ -124,13 +122,6 @@ double precision propce(ncelet,*)
 integer          iel, igg, idirac
 integer          mode
 
-integer          ipctem, ipcmam
-integer          ipampl(ndracm), ipfmel(ndracm)
-integer          ipfmal(ndracm), ipteml(ndracm)
-integer          ipmaml(ndracm)
-integer          iprhol(ndracm)
-integer          iptscl(ndracm)
-integer          ipcfue, ipcoxy, ipcpro, ipctsc
 !      INTEGER          IPCKAB, IPT4 , IPT3
 
 double precision f(ndracm), y(ndracm), d(ndracm)
@@ -176,6 +167,12 @@ double precision mcy2p1, mcy2p3
 double precision mcy2p2, mcy2p4
 double precision my2p1 , my2p3, my2p2, my2p4
 double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer ::  cpro_temp, cpro_tsc, cpro_mam
+double precision, dimension(:), pointer ::  cpro_ym1, cpro_ym2, cpro_ym3
+type(pmapper_double_r1), dimension(:), pointer :: cpro_fmel, cpro_fmal, cpro_teml
+type(pmapper_double_r1), dimension(:), pointer :: cpro_tscl, cpro_rhol, cpro_maml
+type(pmapper_double_r1), dimension(:), pointer :: cpro_ampl
+
 integer ipass
 data    ipass /0/
 save    ipass
@@ -186,23 +183,31 @@ save    ipass
 !     0. POSITION ET INITIALISATION DES VARIABLES
 !===============================================================================
 
-do idirac = 1, ndirac
-  ipampl(idirac) = ipproc(iampl(idirac))
-  ipfmel(idirac) = ipproc(ifmel(idirac))
-  ipfmal(idirac) = ipproc(ifmal(idirac))
-  ipteml(idirac) = ipproc(iteml(idirac))
-  ipmaml(idirac) = ipproc(imaml(idirac))
-  iprhol(idirac) = ipproc(irhol(idirac))
-  iptscl(idirac) = ipproc(itscl(idirac))
-enddo
-
-ipcfue = ipproc(iym(1))
-ipcoxy = ipproc(iym(2))
-ipcpro = ipproc(iym(3))
-ipctsc = ipproc(itsc)
-ipctem = ipproc(itemp)
 call field_get_val_s(icrom, crom)
-ipcmam = ipproc(imam)
+call field_get_val_s(iprpfl(itemp), cpro_temp)
+call field_get_val_s(iprpfl(iym(1)), cpro_ym1)
+call field_get_val_s(iprpfl(iym(2)), cpro_ym2)
+call field_get_val_s(iprpfl(iym(3)), cpro_ym3)
+call field_get_val_s(iprpfl(itsc), cpro_tsc)
+call field_get_val_s(iprpfl(imam), cpro_mam)
+
+allocate(cpro_fmel(ndirac))
+allocate(cpro_fmal(ndirac))
+allocate(cpro_teml(ndirac))
+allocate(cpro_tscl(ndirac))
+allocate(cpro_rhol(ndirac))
+allocate(cpro_maml(ndirac))
+allocate(cpro_ampl(ndirac))
+
+do idirac = 1, ndirac
+  call field_get_val_s(iprpfl(iampl(idirac)), cpro_ampl(idirac)%p)
+  call field_get_val_s(iprpfl(ifmel(idirac)), cpro_fmel(idirac)%p)
+  call field_get_val_s(iprpfl(ifmal(idirac)), cpro_fmal(idirac)%p)
+  call field_get_val_s(iprpfl(iteml(idirac)), cpro_teml(idirac)%p)
+  call field_get_val_s(iprpfl(imaml(idirac)), cpro_maml(idirac)%p)
+  call field_get_val_s(iprpfl(irhol(idirac)), cpro_rhol(idirac)%p)
+  call field_get_val_s(iprpfl(itscl(idirac)), cpro_tscl(idirac)%p)
+enddo
 
 !      IF ( IIRAYO.GT.0 ) THEN
 !        IPCKAB = IPPROC(ICKABS)
@@ -390,26 +395,26 @@ coyfpp=coyfp(iel)
       sum15 = sum15 +rhol(idirac)*d(idirac)
       sum16 = sum16 +w(idirac)
 
-! ---> Stockage des proprietes via PROPCE
+! ---> Stockage des proprietes
 
-      propce(iel,ipampl(idirac)) = d(idirac)
-      propce(iel,ipfmel(idirac)) = f(idirac)
-      propce(iel,ipfmal(idirac)) = y(idirac)
-      propce(iel,ipteml(idirac)) = teml(idirac)
-      propce(iel,ipmaml(idirac)) = maml(idirac)
-      propce(iel,iprhol(idirac)) = rhol(idirac)
-      propce(iel,iptscl(idirac)) = w(idirac)
+      cpro_ampl(idirac)%p(iel) = d(idirac)
+      cpro_fmel(idirac)%p(iel) = f(idirac)
+      cpro_fmal(idirac)%p(iel) = y(idirac)
+      cpro_teml(idirac)%p(iel) = teml(idirac)
+      cpro_maml(idirac)%p(iel) = maml(idirac)
+      cpro_rhol(idirac)%p(iel) = rhol(idirac)
+      cpro_tscl(idirac)%p(iel) = w(idirac)
 
 !fin de boucle sur chaque DIRAC
     enddo
 
-    propce(iel,ipcmam) = sum1
-    propce(iel,ipctem) = sum2
-    temsmm             = sum3
-    propce(iel,ipcfue) = sum4
-    propce(iel,ipcoxy) = sum5
-    propce(iel,ipcpro) = sum6
-    propce(iel,ipctsc) = sum16
+    cpro_mam(iel)  = sum1
+    cpro_temp(iel) = sum2
+    temsmm         = sum3
+    cpro_ym1(iel)  = sum4
+    cpro_ym2(iel)  = sum5
+    cpro_ym3(iel)  = sum6
+    cpro_tsc(iel)  = sum16
 
 ! ---> Masse volumique du melange
 
@@ -790,15 +795,15 @@ coyfpp=coyfp(iel)
 
     sum17 = sum17 + w(idirac)
 
-! ---> Stockage des proprietes via PROPCE
+! ---> Stockage des proprietes
 
-    propce(iel,ipampl(idirac)) = d(idirac)
-    propce(iel,ipfmel(idirac)) = f(idirac)
-    propce(iel,ipfmal(idirac)) = y(idirac)
-    propce(iel,ipmaml(idirac)) = maml(idirac)
-    propce(iel,ipteml(idirac)) = teml(idirac)
-    propce(iel,iprhol(idirac)) = rhol(idirac)
-    propce(iel,iptscl(idirac)) = w(idirac)
+    cpro_ampl(idirac)%p(iel) = d(idirac)
+    cpro_fmel(idirac)%p(iel) = f(idirac)
+    cpro_fmal(idirac)%p(iel) = y(idirac)
+    cpro_maml(idirac)%p(iel) = maml(idirac)
+    cpro_teml(idirac)%p(iel) = teml(idirac)
+    cpro_rhol(idirac)%p(iel) = rhol(idirac)
+    cpro_tscl(idirac)%p(iel) = w(idirac)
 
 ! ---> Grandeurs relatives au rayonnement
 
@@ -811,14 +816,13 @@ coyfpp=coyfp(iel)
 ! fin de boucle sur chaque DIRAC
   enddo
 
-
-  propce(iel,ipcmam) = sum7
-  propce(iel,ipctem) = sum8
-  temsmm             = sum9
-  propce(iel,ipcfue) = sum10
-  propce(iel,ipcoxy) = sum11
-  propce(iel,ipcpro) = sum12
-  propce(iel,ipctsc) = sum17
+  cpro_mam(iel)  = sum7
+  cpro_temp(iel) = sum8
+  temsmm         = sum9
+  cpro_ym1(iel)  = sum10
+  cpro_ym2(iel)  = sum11
+  cpro_ym3(iel)  = sum12
+  cpro_tsc(iel)  = sum17
 
 ! ---> Masse volumique du melange
 
@@ -833,6 +837,10 @@ endif
 
 ! fin de boucle sur les cellules
 enddo
+
+deallocate(cpro_fmel, cpro_fmal, cpro_teml)
+deallocate(cpro_tscl, cpro_rhol, cpro_maml)
+deallocate(cpro_ampl)
 
 ! ---> impression clipping
 

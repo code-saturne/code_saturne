@@ -50,14 +50,13 @@
 !                               - 2: Dirac's peak at \f$ f_{min} \f$
 !                               - 3: Dirac's peak at \f$ f_{max} \f$
 !                               - 4: rectangle and 2 Dirac's pics
-!> \param[in,out] propce        physical properties at cell centers
 !> \param[in]     w1            work array
 !_______________________________________________________________________________
 
 subroutine d3pint &
  ( indpdf ,                                                       &
    dirmin , dirmax , fdeb   , ffin   , hrec   , tpdf ,            &
-   propce , w1      )
+   w1      )
 
 !===============================================================================
 
@@ -78,6 +77,7 @@ use ppincl
 use radiat
 use mesh
 use field
+use pointe
 
 !===============================================================================
 
@@ -88,14 +88,13 @@ implicit none
 integer          indpdf(ncelet)
 double precision dirmin(ncelet), dirmax(ncelet)
 double precision fdeb(ncelet), ffin(ncelet), hrec(ncelet), tpdf(ncelet)
-double precision propce(ncelet,*), w1(ncelet)
+double precision w1(ncelet)
 
 
 ! Local variables
 
 integer          iel, icg
-integer          ih, if, jh, jf, iptsro
-integer          ipcsca, ipctem, ipckab, ipct4, ipct3
+integer          ih, if, jh, jf
 double precision aa1, bb1, aa2, bb2, f1, f2, a, b, fmini, fmaxi
 double precision u, v, c, d, temsmm, fsir
 double precision fm, fp2m
@@ -104,10 +103,14 @@ double precision dtsmdf  , dd1df  , dd2df  , df1df  , df2df  , dhrecdf
 double precision dtsmdfp2, dd1dfp2, dd2dfp2, df1dfp2, df2dfp2, dhrecdfp2
 double precision dtsmdd1, dtsmdd2, dtsmdf1, dtsmdf2, dtsmdhrec, dtsmdhs
 double precision dadhs, dbdhs, yprod
-double precision, dimension(:), pointer :: cpro_rho
+double precision, dimension(:), pointer :: cpro_rho, cpro_tsrho
 double precision, dimension(:), pointer :: cproaa_rho
-double precision, dimension(:), pointer :: cvar_scalt
+double precision, dimension(:), pointer :: cvar_scalt, cpro_scalt
 double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
+double precision, dimension(:), pointer :: cpro_fm, cpro_fp2m, cpro_ym3
+double precision, dimension(:), pointer :: cpro_temp
+double precision, dimension(:), pointer :: cpro_ckabs, cpro_t4m, cpro_t3m
+type(pmapper_double_r1), dimension(:), pointer :: cpro_csca
 
 !===============================================================================
 
@@ -122,17 +125,18 @@ save          ipass
 ! 0. ON COMPTE LES PASSAGES
 !===============================================================================
 
-! Initialize variables to avoid compiler warnings
+allocate(cpro_csca(ngazg))
 
-ipckab = 0
-ipct3 = 0
-ipct4 = 0
+do icg = 1, ngazg
+  call field_get_val_s(iprpfl(iym(icg)), cpro_csca(icg)%p)
+enddo
+
+! Initialize variables to avoid compiler warnings
 
 aa1 = 0.d0
 aa2 = 0.d0
 bb1 = 0.d0
 bb2 = 0.d0
-
 
 ipass = ipass + 1
 
@@ -191,34 +195,32 @@ do iel = 1, ncel
       bb2 = -1.d0/(1.d0-fsir)
     endif
 
-    ipcsca = ipproc(iym(icg))
-
     if (indpdf(iel) .eq. 1) then
 
 ! ---> Integration de la PDF
 
-      propce(iel,ipcsca) = dirmin(iel) * ( aa1 + bb1 * fmini )  &
-                          + dirmax(iel) * ( aa2 + bb2 * fmaxi )
+      cpro_csca(icg)%p(iel) = dirmin(iel) * ( aa1 + bb1 * fmini )  &
+                            + dirmax(iel) * ( aa2 + bb2 * fmaxi )
       if (fdeb(iel).lt.fsir) then
         f1 = fdeb(iel)
         f2 = min( fsir,ffin(iel) )
-        propce(iel,ipcsca) = propce(iel,ipcsca)                 &
-             + hrec(iel)*(f2-f1)*(aa1+bb1*5.d-1*(f2+f1))
+        cpro_csca(icg)%p(iel) = cpro_csca(icg)%p(iel)                 &
+                              + hrec(iel)*(f2-f1)*(aa1+bb1*5.d-1*(f2+f1))
       endif
       if (ffin(iel).gt.fsir) then
         f1 = max(fsir,fdeb(iel))
         f2 = ffin(iel)
-        propce(iel,ipcsca) = propce(iel,ipcsca)                 &
-             + hrec(iel)*(f2-f1)*(aa2+bb2*5.d-1*(f2+f1))
+        cpro_csca(icg)%p(iel) = cpro_csca(icg)%p(iel)                 &
+                              + hrec(iel)*(f2-f1)*(aa2+bb2*5.d-1*(f2+f1))
       endif
     else
 
 ! ---> Degenerescence sur la valeur moyenne
 
       if (fm.le.fsir) then
-        propce(iel,ipcsca) = aa1+bb1*fm
+        cpro_csca(icg)%p(iel) = aa1+bb1*fm
       else
-        propce(iel,ipcsca) = aa2+bb2*fm
+        cpro_csca(icg)%p(iel) = aa2+bb2*fm
       endif
 
     endif
@@ -264,17 +266,22 @@ endif
 
 ! ---> Positions des variables, coefficients
 
-ipctem = ipproc(itemp)
-if ( iirayo.gt.0 ) then
-  ipckab = ipproc(ickabs)
-  ipct4  = ipproc(it4m)
-  ipct3  = ipproc(it3m)
+call field_get_val_s(iprpfl(itemp), cpro_temp)
+call field_get_val_s(icrom, cpro_rho)
+
+if (idilat.ge.4) then
+  call field_get_val_s(icroaa, cproaa_rho)
+  call field_get_val_s(iprpfl(iustdy(itsrho)), cpro_tsrho)
+  call field_get_val_s(iprpfl(iustdy(ifm  )), cpro_fm)
+  call field_get_val_s(iprpfl(iustdy(ifp2m  )), cpro_fp2m)
+  call field_get_val_s(iprpfl(iustdy(iscalt)), cpro_scalt)
+  call field_get_val_s(iprpfl(iym(3)), cpro_ym3)
 endif
 
-call field_get_val_s(icrom, cpro_rho)
-if (idilat.ge.4) then
-  iptsro = ipproc(iustdy(itsrho))
-  call field_get_val_s(icroaa, cproaa_rho)
+if ( iirayo.gt.0 ) then
+  call field_get_val_s(iprpfl(ickabs), cpro_ckabs)
+  call field_get_val_s(iprpfl(it4m), cpro_t4m)
+  call field_get_val_s(iprpfl(it3m), cpro_t3m)
 endif
 
 do iel = 1, ncel
@@ -293,9 +300,9 @@ do iel = 1, ncel
     enddo
     if (w1(iel) .ge. hh(1)) ih = 1
     if (w1(iel) .le. hh(nmaxh)) ih = nmaxh-1
-    propce(iel,ipctem) = dirmin(iel)*tinoxy +                   &
-                          dirmax(iel)*tinfue
-    temsmm = dirmin(iel)/wmolg(2)*tinoxy                         &
+    cpro_temp(iel) = dirmin(iel)*tinoxy +                     &
+                     dirmax(iel)*tinfue
+    temsmm = dirmin(iel)/wmolg(2)*tinoxy                      &
            + dirmax(iel)/wmolg(1)*tinfue
 
     ! Weakly compressible algorithm: d T/M /d D1, d T/M /d D2
@@ -305,12 +312,9 @@ do iel = 1, ncel
     endif
 
     if (iirayo.gt.0) then
-      propce(iel,ipckab) =                                       &
-        dirmin(iel)*ckabsg(2)  + dirmax(iel)*ckabsg(1)
-      propce(iel,ipct4) =                                        &
-        dirmin(iel)*tinoxy**4 + dirmax(iel)*tinfue**4
-      propce(iel,ipct3) =                                        &
-        dirmin(iel)*tinoxy**3 + dirmax(iel)*tinfue**3
+      cpro_ckabs(iel) = dirmin(iel)*ckabsg(2)  + dirmax(iel)*ckabsg(1)
+      cpro_t4m(iel) =   dirmin(iel)*tinoxy**4 + dirmax(iel)*tinfue**4
+      cpro_t3m(iel) =   dirmin(iel)*tinoxy**3 + dirmax(iel)*tinfue**3
     endif
     if = 1
     do jf = 1, (nmaxf-1)
@@ -344,8 +348,8 @@ do iel = 1, ncel
 
 ! ----- Calcul de la temperature par integration
 
-      propce(iel,ipctem) = propce(iel,ipctem)                   &
-         + hrec(iel)*(f2-f1)*(a+b*(f1+f2)/2.d0)
+      cpro_temp(iel) = cpro_temp(iel)                           &
+                     + hrec(iel)*(f2-f1)*(a+b*(f1+f2)/2.d0)
 
 ! ----- Preparation aux calculs du coefficient d'absorption
 !                               de T^4 et de T^3
@@ -389,23 +393,23 @@ do iel = 1, ncel
 ! ----- Calcul du coefficient d'absorption
 !           et des termes T^4 et de T^3 (si rayonnement)
 
-        propce(iel,ipckab) = propce(iel,ipckab) +               &
+        cpro_ckabs(iel) = cpro_ckabs(iel) +               &
           hrec(iel)*( u*(f2-f1) + v*(f2**2-f1**2)*0.5d0 )
 
-        propce(iel,ipct4) = propce(iel,ipct4) +                 &
-          hrec(iel)*                                             &
-      (      a**4            * (f2-f1)                            &
-   +   (4.d0*a**3  *b      ) * (f2**2-f1**2)/2.d0                 &
-   +   (6.d0*(a**2)*(b**2) ) * (f2**3-f1**3)/3.d0                 &
-   +   (4.d0*a     *(b**3) ) * (f2**4-f1**4)/4.d0                 &
-   +   (            (b**4) ) * (f2**5-f1**5)/5.d0  )
+        cpro_t4m(iel) = cpro_t4m(iel) +                             &
+                        hrec(iel)*                                  &
+                        (      a**4            * (f2-f1)            &
+                      +(4.d0*a**3  *b      ) * (f2**2-f1**2)/2.d0   &
+                      +(6.d0*(a**2)*(b**2) ) * (f2**3-f1**3)/3.d0   &
+                      +(4.d0*a     *(b**3) ) * (f2**4-f1**4)/4.d0   &
+                      +(            (b**4) ) * (f2**5-f1**5)/5.d0  )
 
-        propce(iel,ipct3) = propce(iel,ipct3) +                 &
-          hrec(iel)*                                             &
-      (      (a**3)          * (f2-f1)                            &
-   +   (3.d0*(a**2)*b      ) * (f2**2-f1**2)/2.d0                 &
-   +   (3.d0*a     *(b**2) ) * (f2**3-f1**3)/3.d0                 &
-   +   (            (b**3) ) * (f2**4-f1**4)/4.d0  )
+        cpro_t3m(iel) = cpro_t3m(iel) +                              &
+                        hrec(iel)*                                   &
+                        (      (a**3)          * (f2-f1)             &
+                      +   (3.d0*(a**2)*b      ) * (f2**2-f1**2)/2.d0 &
+                      +   (3.d0*a     *(b**2) ) * (f2**3-f1**3)/3.d0 &
+                      +   (            (b**3) ) * (f2**4-f1**4)/4.d0  )
 
       endif
 
@@ -483,7 +487,7 @@ do iel = 1, ncel
 
 ! ----- Calcul de la temperature a partir de la valeur moyenne
 
-    propce(iel,ipctem) = a+b*fm
+    cpro_temp(iel) = a+b*fm
 
     if (fm.lt.fsir) then
 !         On a demarre cote pauvre
@@ -510,17 +514,17 @@ do iel = 1, ncel
 !         et des termes T^4 et de T^3
 !         a partir de la valeur moyenne (si rayonnement)
 
-      propce(iel,ipckab) = u + v*fm
-      propce(iel,ipct4) = a**4                                   &
-       + (4.d0*(a**3)*b      ) * fm                              &
-       + (6.d0*(a**2)*(b**2) ) * fm**2                           &
-       + (4.d0*a     *(b**3) ) * fm**3                           &
-       + (            (b**4) ) * fm**4
+      cpro_ckabs(iel) = u + v*fm
+      cpro_t4m(iel) = a**4                                     &
+                    + (4.d0*(a**3)*b      ) * fm               &
+                    + (6.d0*(a**2)*(b**2) ) * fm**2            &
+                    + (4.d0*a     *(b**3) ) * fm**3            &
+                    + (            (b**4) ) * fm**4
 
-      propce(iel,ipct3) = a**3                                   &
-       + ( 3.d0*(a**2)*b      ) * fm                             &
-       + ( 3.d0*a     *(b**2) ) * fm**2                          &
-       + (             (b**3) ) * fm**3
+      cpro_t3m(iel) = a**3                                     &
+                    + ( 3.d0*(a**2)*b      ) * fm              &
+                    + ( 3.d0*a     *(b**2) ) * fm**2           &
+                    + (             (b**3) ) * fm**3
 
     endif
 
@@ -639,37 +643,37 @@ do iel = 1, ncel
     endif
 
     ! Scalar contribution is computed and add to the total source term
-    propce(iel,iptsro) =  (-cs_physical_constants_r/pther * dtsmdf)  &
-                         *propce(iel,ipproc(iustdy(ifm)))         &
-                        + (-cs_physical_constants_r/pther * dtsmdfp2)&
-                         *propce(iel,ipproc(iustdy(ifp2m)))
+    cpro_tsrho(iel) =  (-cs_physical_constants_r/pther * dtsmdf)        &
+                       *cpro_fm(iel)                                    &
+                     + (-cs_physical_constants_r/pther * dtsmdfp2)      &
+                       *cpro_fp2m(iel)
 
-    yprod = propce(iel,ipproc(iym(3)))
+    yprod = cpro_ym3(iel)
 
     ! Note that h*=hm/Yp
     if (ippmod(icod3p).eq.1.and.abs(yprod).gt.epzero) then
 
-      propce(iel,iptsro) =  propce(iel,iptsro)                            &
-                          + (-cs_physical_constants_r/pther * dtsmdhs)/yprod &
-                           *propce(iel,ipproc(iustdy(iscalt)))
+      cpro_tsrho(iel) =  cpro_tsrho(iel)                                 &
+                       + (-cs_physical_constants_r/pther * dtsmdhs)      &
+                         /yprod*cpro_scalt(iel)
 
     endif
 
     ! D(rho)/Dt = 1/rho d(rho)/dz Diff(z) = -rho d(1/rho)/dz Diff(z)
     ! iptsro contains -d(1/rho)/dz Diff(z) > x rho
-    propce(iel,iptsro) = propce(iel,iptsro) * cpro_rho(iel)**2              &
+    cpro_tsrho(iel) = cpro_tsrho(iel) * cpro_rho(iel)**2              &
                                             / cproaa_rho(iel)
 
     ! arrays are re-initialize for source terms of next time step
-    propce(iel,ipproc(iustdy(ifm  ))) = 0.d0
-    propce(iel,ipproc(iustdy(ifp2m))) = 0.d0
-    if (ippmod(icod3p).ge.1) propce(iel,ipproc(iustdy(iscalt))) = 0.d0
+    cpro_fm(iel) = 0.d0
+    cpro_fp2m(iel) = 0.d0
+    if (ippmod(icod3p).ge.1) cpro_scalt(iel) = 0.d0
 
   endif
 
 enddo
 
+deallocate(cpro_csca)
 
 return
 end subroutine
-

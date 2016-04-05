@@ -32,15 +32,7 @@
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in,out] propce        physical properties at cell centers
-!_______________________________________________________________________________
-
-subroutine d3pphy &
- ( propce )
+subroutine d3pphy ()
 
 !===============================================================================
 
@@ -67,15 +59,10 @@ use field
 
 implicit none
 
-! Arguments
-
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          if, ih, iel, igg
 integer          ifac, mode
-integer          ipcycg
 
 double precision coefg(ngazgm), fsir, hhloc, tstoea, tin
 
@@ -87,6 +74,7 @@ double precision, allocatable, dimension(:) :: hrec, tpdf
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, dimension(:), pointer :: bsval
 double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
+double precision, dimension(:), pointer :: cpro_ymgg
 
 integer       ipass
 data          ipass /0/
@@ -258,7 +246,7 @@ call d3pint &
 !==========
  ( indpdf ,                                                       &
    dirmin , dirmax , fdeb   , ffin , hrec , tpdf ,                &
-   propce , w1 )
+   w1 )
 
 ! Free memory
 deallocate(indpdf)
@@ -270,13 +258,12 @@ deallocate(indpdf)
 ! --> Fractions massiques des especes globales au bord
 do igg = 1, ngazg
   call field_get_val_s(ibym(igg), bsval)
-  ipcycg = ipproc(iym(igg))
+  call field_get_val_s(iprpfl(iym(igg)),cpro_ymgg)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    bsval(ifac) = propce(iel,ipcycg)
+    bsval(ifac) = cpro_ymgg(iel)
   enddo
 enddo
-
 
 ! Free memory
 deallocate(dirmin, dirmax)

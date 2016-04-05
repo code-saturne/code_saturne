@@ -23,8 +23,7 @@
 subroutine ebuphy &
 !================
 
- ( mbrom  , izfppp ,                                              &
-   propce )
+ ( mbrom  , izfppp )
 
 !===============================================================================
 ! FONCTION :
@@ -41,7 +40,6 @@ subroutine ebuphy &
 ! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -77,15 +75,11 @@ implicit none
 integer          mbrom
 integer          izfppp(nfabor)
 
-double precision propce(ncelet,*)
-
 ! Local variables
 
-integer          ipctem, ipcfue, ipcoxy, ipcpro
 integer          igg, iel
-integer          ipckab, ipt4, ipt3
 integer          ifac, izone
-integer          ipcycg, mode
+integer          mode
 double precision coefg(ngazgm), ygfm, ygbm, epsi
 double precision nbmol , temsmm , fmel , ckabgf, ckabgb
 double precision masmgb, hgb, tgb, masmgf, masmg
@@ -97,7 +91,9 @@ double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: bsval
 double precision, dimension(:), pointer :: cvar_ygfm, cvar_fm
 double precision, dimension(:), pointer :: cvar_scalt
-
+double precision, dimension(:), pointer :: cpro_temp,cpro_ymgg
+double precision, dimension(:), pointer :: cpro_ym1, cpro_ym2, cpro_ym3
+double precision, dimension(:), pointer :: cpro_ckabs, cpro_t4m, cpro_t3m
 integer       ipass
 data          ipass /0/
 save          ipass
@@ -121,10 +117,6 @@ allocate(temp(ncelet), masmel(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
-ipckab = 0
-ipt3 = 0
-ipt4 = 0
-
 ckabgb = 0.d0
 ckabgf = 0.d0
 
@@ -141,14 +133,15 @@ enddo
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
-ipctem = ipproc(itemp)
-ipcfue = ipproc(iym(1))
-ipcoxy = ipproc(iym(2))
-ipcpro = ipproc(iym(3))
+call field_get_val_s(iprpfl(itemp), cpro_temp)
+call field_get_val_s(iprpfl(iym(1)), cpro_ym1)
+call field_get_val_s(iprpfl(iym(2)), cpro_ym2)
+call field_get_val_s(iprpfl(iym(3)), cpro_ym3)
+
 if ( iirayo.gt.0 ) then
-  ipckab = ipproc(ickabs)
-  ipt4 = ipproc(it4m)
-  ipt3 = ipproc(it3m)
+  call field_get_val_s(iprpfl(ickabs), cpro_ckabs)
+  call field_get_val_s(iprpfl(it4m), cpro_t4m)
+  call field_get_val_s(iprpfl(it3m), cpro_t3m)
 endif
 
 call field_get_val_s(ivarfl(isca(iygfm)), cvar_ygfm)
@@ -192,13 +185,13 @@ endif
 
 ! ---> Grandeurs MELANGE
 
-!       MASMEL           --> Masse molaire du melange
-!       PROPCE(    .,IPCTEM) --> Temperature du melange
-!       PROPCE(    .,IPCROM) --> Masse volumique du melange
-!       PROPCE(,.F,O,P ) --> Fractions massiques en F, O, P
-!       PROPCE(    .,IPCKAB) --> Coefficient d'absorption
-!       PROPCE(    .,IPT4  ) --> terme T^4
-!       PROPCE(    .,IPT3  ) --> terme T^3
+!       masmel           --> Masse molaire du melange
+!       cpro_temp        --> Temperature du melange
+!       crom             --> Masse volumique du melange
+!       cpro_.f,o,p      --> Fractions massiques en F, O, P
+!       cpro_ckabs       --> Coefficient d'absorption
+!       cpro_t4m         --> terme T^4
+!       cpro_t3m         --> terme T^3
 
 
 ! ---> Fractions massiques des gaz frais et brules en F, O, P
@@ -297,7 +290,7 @@ do iel = 1, ncel
 
 ! ---> Temperature du melange
 !      Rq PPl : Il serait plus judicieux de ponderer par les CP (GF et GB)
-  propce(iel,ipctem) = ygfm*tgf + ygbm*tgb
+  cpro_temp(iel) = ygfm*tgf + ygbm*tgb
 
 ! ---> Temperature / Masse molaire
 
@@ -306,23 +299,23 @@ do iel = 1, ncel
 ! ---> Masse volumique du melange
 
   if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
-    crom(iel) = srrom*crom(iel)                 &
-                       + (1.d0-srrom)*                            &
-                         ( p0/(cs_physical_constants_r*temsmm) )
+    crom(iel) = srrom*crom(iel)                          &
+              + (1.d0-srrom)*                            &
+                ( p0/(cs_physical_constants_r*temsmm) )
   endif
 
 ! ---> Fractions massiques des especes globales
 
-  propce(iel,ipcfue) = yfuegf(iel)*ygfm + yfuegb(iel)*ygbm
-  propce(iel,ipcoxy) = yoxygf(iel)*ygfm + yoxygb(iel)*ygbm
-  propce(iel,ipcpro) = yprogf(iel)*ygfm + yprogb(iel)*ygbm
+  cpro_ym1(iel) = yfuegf(iel)*ygfm + yfuegb(iel)*ygbm
+  cpro_ym2(iel) = yoxygf(iel)*ygfm + yoxygb(iel)*ygbm
+  cpro_ym3(iel) = yprogf(iel)*ygfm + yprogb(iel)*ygbm
 
 ! ---> Grandeurs relatives au rayonnement
 
   if ( iirayo.gt.0 ) then
-    propce(iel,ipckab) = ygfm*ckabgf + ygbm*ckabgb
-    propce(iel,ipt4)   = ygfm*tgf**4 + ygbm*tgb**4
-    propce(iel,ipt3)   = ygfm*tgf**3 + ygbm*tgb**3
+    cpro_ckabs(iel) = ygfm*ckabgf + ygbm*ckabgb
+    cpro_t4m(iel)  = ygfm*tgf**4 + ygbm*tgb**4
+    cpro_t3m(iel)  = ygfm*tgf**3 + ygbm*tgb**3
   endif
 
 enddo
@@ -394,10 +387,10 @@ endif
 
 do igg = 1, ngazg
   call field_get_val_s(ibym(1), bsval)
-  ipcycg = ipproc(iym(igg))
+  call field_get_val_s(iprpfl(iym(igg)),cpro_ymgg)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    bsval(ifac) = propce(iel,ipcycg)
+    bsval(ifac) = cpro_ymgg(iel)
   enddo
 enddo
 

@@ -56,14 +56,12 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     iscal         scalar index
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] smbrs         explicit right hand side
 !> \param[in,out] rovsdt        implicit terms
 !_______________________________________________________________________________
 
 subroutine sootsc &
  ( iscal  ,                                                       &
-   propce ,                                                       &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -96,7 +94,6 @@ implicit none
 
 integer          iscal
 
-double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
@@ -113,6 +110,8 @@ double precision aa, bb, cc, taa, tcc, caa, cbb, ccc, dd
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_scal, cvara_scal
 double precision, dimension(:), pointer :: cvara_fsm, cvara_npm
+double precision, dimension(:), pointer :: cpro_temp
+double precision, dimension(:), pointer :: cpro_ym1, cpro_ym2, cpro_ym3
 
 !===============================================================================
 
@@ -126,6 +125,10 @@ call field_get_val_s(icrom, crom)
 
 if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
   call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
+  call field_get_val_s(iprpfl(itemp), cpro_temp)
+  call field_get_val_s(iprpfl(iym(1)), cpro_ym1)
+  call field_get_val_s(iprpfl(iym(2)), cpro_ym2)
+  call field_get_val_s(iprpfl(iym(3)), cpro_ym3)
   call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
   call field_get_val_prev_s(ivarfl(isca(ifsm)), cvara_fsm)
   call field_get_val_prev_s(ivarfl(isca(inpm)), cvara_npm)
@@ -159,7 +162,7 @@ if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
   d2s3 = 2.d0/3.d0
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(propce(1,ipproc(itemp)))
+    call synsca(cpro_temp(1))
     call synsca(cvar_scal)
   endif
 
@@ -170,13 +173,13 @@ if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
 
     nn0 = 6.0223d23
     rho = crom(iel)                  ! Mixture density (kg/m3)
-    temp = propce(iel,ipproc(itemp)) ! Temperature
+    temp = cpro_temp(iel) ! Temperature
 
-    xm = 1.d0/ (  propce(iel,ipproc(iym(1)))/wmolg(1)             &
-                + propce(iel,ipproc(iym(2)))/wmolg(2)             &
-                + propce(iel,ipproc(iym(3)))/wmolg(3) )
+    xm = 1.d0/ (  cpro_ym1(iel)/wmolg(1)             &
+                + cpro_ym2(iel)/wmolg(2)             &
+                + cpro_ym3(iel)/wmolg(3) )
 
-    xfu = propce(iel,ipproc(iym(1))) * xm / wmolg(1) ! Fuel molar fraction
+    xfu = cpro_ym1(iel) * xm / wmolg(1) ! Fuel molar fraction
 
     ! --- rate of particule nucleation
     aa = caa * rho**2 * temp**0.5d0 * xfu * exp(-taa/temp)
@@ -187,7 +190,7 @@ if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
     ! --- surface growth of soot
     cc = ccc * rho * temp**0.5d0 * xfu * exp(-tcc/temp)
 
-    po2 = propce(iel,ipproc(iym(2)))*xm/wmolg(2)*1.d0/4.76d0
+    po2 = cpro_ym2(iel)*xm/wmolg(2)*1.d0/4.76d0
 
     ! --- oxidation
     ka = 20.d0*exp(-15098.d0/temp)

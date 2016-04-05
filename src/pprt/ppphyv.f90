@@ -122,7 +122,7 @@ endif
 ! ---> Flamme de diffusion chimie 3 points
 
 if (ippmod(icod3p).ge.0) then
-  call d3pphy(propce)
+  call d3pphy()
 endif
 
 ! ---> Flamme de diffusion chimie equilibre
@@ -132,7 +132,7 @@ endif
 ! ---> Flamme de premelange : Modele EBU
 
 if (ippmod(icoebu).ge.0) then
-  call ebuphy(mbrom, izfppp, propce)
+  call ebuphy(mbrom, izfppp)
 endif
 
 ! ---> Flamme de premelange : Modele BML
@@ -143,7 +143,7 @@ endif
 ! ---> Flamme de premelange : Modele LWC
 
 if (ippmod(icolwc).ge.0) then
-  call lwcphy(mbrom, izfppp, propce)
+  call lwcphy(mbrom, izfppp)
 endif
 
 ! ---> Flamme charbon pulverise

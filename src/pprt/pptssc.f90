@@ -122,7 +122,6 @@ if (isoot.eq.1) then
   call sootsc                                                     &
   !==========
  ( iscal  ,                                                       &
-   propce ,                                                       &
    smbrs  , rovsdt )
 endif
 
@@ -145,7 +144,6 @@ if (ippmod(icolwc).ge.0) then
   call lwctss                                                     &
   !==========
  ( iscal  ,                                                       &
-   propce ,                                                       &
    smbrs  , rovsdt )
 endif
 

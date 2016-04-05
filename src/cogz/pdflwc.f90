@@ -24,8 +24,7 @@ subroutine pdflwc &
 !================
 
  ( ncelet , ncel  ,                                               &
-   fm     , fp2m  , yfm    , yfp2m ,                              &
-   propce )
+   fm     , fp2m  , yfm    , yfp2m )
 
 !===============================================================================
 ! FONCTION :
@@ -71,7 +70,6 @@ subroutine pdflwc &
 ! fp2m             ! tr ! <-- ! variance de la fraction de melange             !
 ! yfm              ! tr ! <-- ! moyenne de la fraction massique                !
 ! yfp2m            ! tr ! <-- ! variance de la fraction massique               !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -107,7 +105,6 @@ integer          ncelet, ncel
 
 double precision fm(ncelet)   , fp2m(ncelet)
 double precision yfm(ncelet)  , yfp2m(ncelet)
-double precision propce(ncelet,*)
 
 ! Local variables
 
@@ -119,7 +116,7 @@ double precision yfuel
 double precision yoxyd, yo2
 double precision yprod,fmp,fp2mp,yfmp,yfp2mp
 
-! --- Expression des droites
+! --- Lines expression
 
 double precision aa1, aa2
 double precision aa3, aa6
@@ -135,7 +132,7 @@ double precision g1max, g2max, g3max
 double precision g1min, g2min
 double precision g3min, g4min
 
-! --- Position des Diracs
+! --- Diracs position
 
 double precision f(ndracm)    , y(ndracm) , d(ndracm)
 double precision g(ndracm)    , h(ndracm)
@@ -143,20 +140,17 @@ double precision teml(ndracm) , maml(ndracm)
 double precision w(ndracm)    , rhol(ndracm)
 double precision theta(ndracm)
 
-! --- Pointeurs & autres
-
-integer ipctem, ipcmam
-integer ipampl(ndracm), ipfmel(ndracm)
-integer ipfmal(ndracm), ipteml(ndracm)
-integer ipmaml(ndracm)
-integer iprhol(ndracm), iptscl(ndracm)
-integer ipcfue, ipcoxy, ipcpro, ipctsc
-!      INTEGER IPCKAB, IPT4 , IPT3
 double precision nbmol,  temsmm
 double precision sum1, sum2, sum3, sum4,  sum5,  sum6 , sum16
 double precision sum7, sum8, sum9, sum10, sum11, sum12, sum15
 double precision sum17
 double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer ::  cpro_temp, cpro_tsc, cpro_mam
+double precision, dimension(:), pointer ::  cpro_ym1, cpro_ym2, cpro_ym3
+type(pmapper_double_r1), dimension(:), pointer :: cpro_fmel, cpro_fmal
+type(pmapper_double_r1), dimension(:), pointer :: cpro_tscl, cpro_rhol
+type(pmapper_double_r1), dimension(:), pointer :: cpro_ampl, cpro_teml
+type(pmapper_double_r1), dimension(:), pointer :: cpro_maml
 integer ipass
 data    ipass /0/
 save    ipass
@@ -169,31 +163,34 @@ gmin =  grand
 gmax = -grand
 
 !===============================================================================
-! 0.  POSITION DES VARIABLES
+! 0.  initialization
 !===============================================================================
 
-do idirac = 1, ndirac
-  ipampl(idirac) = ipproc(iampl(idirac))
-  ipfmel(idirac) = ipproc(ifmel(idirac))
-  ipfmal(idirac) = ipproc(ifmal(idirac))
-  ipteml(idirac) = ipproc(iteml(idirac))
-  ipmaml(idirac) = ipproc(imaml(idirac))
-  iprhol(idirac) = ipproc(irhol(idirac))
-  iptscl(idirac) = ipproc(itscl(idirac))
-enddo
-ipcfue = ipproc(iym(1))
-ipcoxy = ipproc(iym(2))
-ipcpro = ipproc(iym(3))
-ipctsc = ipproc(itsc)
-ipctem = ipproc(itemp)
 call field_get_val_s(icrom, crom)
-ipcmam = ipproc(imam)
+call field_get_val_s(iprpfl(itemp), cpro_temp)
+call field_get_val_s(iprpfl(iym(1)), cpro_ym1)
+call field_get_val_s(iprpfl(iym(2)), cpro_ym2)
+call field_get_val_s(iprpfl(iym(3)), cpro_ym3)
+call field_get_val_s(iprpfl(itsc), cpro_tsc)
+call field_get_val_s(iprpfl(imam), cpro_mam)
 
-!      IF ( IIRAYO.GT.0 ) THEN
-!        IPCKAB = IPPROC(ICKABS)
-!        IPT4  = IPPROC(IT4M)
-!        IPT3  = IPPROC(IT3M)
-!      ENDIF
+allocate(cpro_fmel(ndirac))
+allocate(cpro_fmal(ndirac))
+allocate(cpro_teml(ndirac))
+allocate(cpro_tscl(ndirac))
+allocate(cpro_rhol(ndirac))
+allocate(cpro_maml(ndirac))
+allocate(cpro_ampl(ndirac))
+
+do idirac = 1, ndirac
+  call field_get_val_s(iprpfl(iampl(idirac)), cpro_ampl(idirac)%p)
+  call field_get_val_s(iprpfl(ifmel(idirac)), cpro_fmel(idirac)%p)
+  call field_get_val_s(iprpfl(ifmal(idirac)), cpro_fmal(idirac)%p)
+  call field_get_val_s(iprpfl(iteml(idirac)), cpro_teml(idirac)%p)
+  call field_get_val_s(iprpfl(imaml(idirac)), cpro_maml(idirac)%p)
+  call field_get_val_s(iprpfl(irhol(idirac)), cpro_rhol(idirac)%p)
+  call field_get_val_s(iprpfl(itscl(idirac)), cpro_tscl(idirac)%p)
+enddo
 
 ! ---> Initialisation
 
@@ -203,7 +200,7 @@ enddo
 epsi = 1.d-09
 
 !===============================================================================
-! 1.  CALCULS PRELIMINAIRES
+! 1.  preliminary calculations
 !===============================================================================
 
 ipass = ipass + 1
@@ -223,7 +220,7 @@ do iel = 1, ncel
 
 
 !===============================================================================
-! 2. NON PASSAGE PAR LA PDF
+! 2. do not pass through PDF
 !===============================================================================
 
   if ( (fp2mp.le.epsi).and.(yfp2mp.le.epsi )) then
@@ -242,12 +239,12 @@ do iel = 1, ncel
       f(idirac) = fmp
       y(idirac) = yfmp
 
-! ---> Calcul de l'enthalpie
+! ---> enthalpy computation
 
       h(idirac) = ((hmax-hmin)*f(idirac) + hmin*fmax - hmax*fmin) &
                 / (fmax-fmin)
 
-! ---> Calcul de la fraction massique des gaz (F, O et P)
+! ---> computation of mass fractions of gas (F, O et P)
 
       yfuel = y(idirac)
       yoxyd = 1.d0 - (coeff3+1.0d0)*f(idirac) + coeff3*y(idirac)
@@ -255,13 +252,13 @@ do iel = 1, ncel
       yo2   = coeff1 - (coeff1 + coeff2) * f(idirac)              &
                       + coeff2 * y(idirac)
 
-! ---> Calcul de la masse molaire et de la temperature
+! ---> molar mass and temperature computation
 
       coefg(1) = yfuel
       coefg(2) = yoxyd
       coefg(3) = yprod
 
-! ------ Masse molaire
+! ------ molar mass
 
       nbmol = 0.d0
       do igg = 1, ngazg
@@ -269,7 +266,7 @@ do iel = 1, ncel
       enddo
       maml(idirac) = 1.d0/nbmol
 
-! ------ Calcul de la temperature pour le pic 1 et 2
+! ------ temperature computation for peak 1 and 2
 
       mode    = 1
       call cothht                                                 &
@@ -278,7 +275,7 @@ do iel = 1, ncel
         npo    , npot  , th      , ehgazg ,                       &
         h(idirac)     , teml(idirac)    )
 
-! ---> Calcul de la masse volumique en 1 et 2
+! ---> density computation in 1 and 2
 
       if ( ipass.gt.1.or.                                         &
           (isuite.eq.1.and.initro.eq.1) ) then
@@ -288,7 +285,7 @@ do iel = 1, ncel
         rhol(idirac) = ro0
       endif
 
-! ---> Calcul du terme source en 1 et 2 du scalaire YFM
+! ---> source term computation in 1 and 2 for scalar yfm
 
       theta(idirac) = ta / teml(idirac)                           &
                     * (1.d0 - teml(idirac) / tstar)
@@ -297,19 +294,19 @@ do iel = 1, ncel
                   * yfuel*yo2                                     &
                   * exp( -theta(idirac) ))
 
-! ---> Masse molaire du melange
+! ---> mix molar mass
 
       sum1 = sum1 + d(idirac)*maml(idirac)
 
-! ---> Temperature du melange
+! ---> mix temperature
 
       sum2 = sum2 + d(idirac)*teml(idirac)
 
-! ---> Temperature / Masse molaire
+! ---> temperature / molar mass
 
       sum3 = sum3 + d(idirac)*teml(idirac)/maml(idirac)
 
-! ---> Fractions massiques des especes globales
+! ---> global species mass fractions
 
       sum4 = sum4 + yfuel*d(idirac)
 
@@ -321,56 +318,53 @@ do iel = 1, ncel
 
       sum16 = sum16 +w(idirac)
 
-! ---> Stockage des proprietes via PROPCE
+! ---> property storage in fields
 
-      propce(iel,ipampl(idirac)) = d(idirac)
-      propce(iel,ipfmel(idirac)) = f(idirac)
-      propce(iel,ipfmal(idirac)) = y(idirac)
-      propce(iel,ipteml(idirac)) = teml(idirac)
-      propce(iel,ipmaml(idirac)) = maml(idirac)
-      propce(iel,iprhol(idirac)) = rhol(idirac)
-      propce(iel,iptscl(idirac)) = w(idirac)
+      cpro_ampl(idirac)%p(iel) = d(idirac)
+      cpro_fmel(idirac)%p(iel) = f(idirac)
+      cpro_fmal(idirac)%p(iel) = y(idirac)
+      cpro_teml(idirac)%p(iel) = teml(idirac)
+      cpro_maml(idirac)%p(iel) = maml(idirac)
+      cpro_rhol(idirac)%p(iel) = rhol(idirac)
+      cpro_tscl(idirac)%p(iel) = w(idirac)
 
     enddo
 
-    propce(iel,ipcmam) = sum1
-    propce(iel,ipctem) = sum2
-    temsmm             = sum3
-    propce(iel,ipcfue) = sum4
-    propce(iel,ipcoxy) = sum5
-    propce(iel,ipcpro) = sum6
-    propce(iel,ipctsc) = sum16
+    cpro_mam(iel)  = sum1
+    cpro_temp(iel) = sum2
+    temsmm         = sum3
+    cpro_ym1(iel)  = sum4
+    cpro_ym2(iel)  = sum5
+    cpro_ym3(iel)  = sum6
+    cpro_tsc(iel)  = sum16
 
-! ---> Masse volumique du melange
+! ---> mix density
 
-    if ( ipass.gt.1 .or.                                          &
+    if ( ipass.gt.1 .or.              &
         (isuite.eq.1.and.initro.eq.1) ) then
-      crom(iel) = srrom * crom(iel)             &
-                         + (1.d0-srrom) * (p0/(cs_physical_constants_r*temsmm))
+      crom(iel) = srrom * crom(iel)                                   &
+                + (1.d0-srrom) * (p0/(cs_physical_constants_r*temsmm))
     endif
 
   else
 
 !===============================================================================
-! 3.  PASSAGE PAR LA PDF
+! 3.  pass through PDF
 !===============================================================================
 
     if  ( ( (fp2mp.gt.epsi) .and. (yfp2mp.lt.epsi) )              &
       .or.( (fp2mp.lt.epsi) .and. (yfp2mp.gt.epsi) ) )then
 
-! -- Choix suivant les differents cas
-
-! --- CAS 1 : Droite Verticale
-!     =====
+! --- case 1 : vertical straight line
       if (fp2mp .lt. epsi) then
 
-! ---> Choix des extrema
+! ---> extrema choices
 
         gmin =   max ( -  yfmp,                                   &
                     -  (yfmp-(fmp-fs(1))/(1.d0-fs(1))))
         gmax = fmp - yfmp
 
-! ---> Calcul des amplitudes des Diracs
+! ---> Diracs amplitudes computation
 
         d(1) = gmax / ( gmax-gmin )
         d(2) = (1.d0 - d(1))
@@ -379,7 +373,7 @@ do iel = 1, ncel
 
         gp2m = fp2mp + yfp2mp
 
-! ---> Test sur GP2M
+! ---> test on gp2m
 
         g(1) = -sqrt( -gmin/gmax*gp2m )
         g(2) =  -d(1) * g(1) / d(2)
@@ -391,36 +385,35 @@ do iel = 1, ncel
                     yfmp + g(idirac) * sqrt( yfp2mp/gp2m)
         enddo
 
-! --- CAS 2 : Droite Horizontale
-!     =====
+! --- case 2 : horizontal straight line
 
       elseif    (yfp2mp .lt. epsi) then
 
-! ---> Calcul des differentes intersections des droites
+! ---> computation of the different intersections of the lines
 
         f12 = yfmp
         f13 = fs(1) + yfmp * (1-fs(1))
         f14 = fmin
         f15 = fmax
 
-! ---> Calcul des extrema de l'abscisse curviligne
-!      Appel de la function G
+! ---> curviline coordinate computation
+!      call to G function
 
         call lwcgfu(g2max, f15, fmp, yfp2mp, fp2mp)
         call lwcgfu(g3max, f13, fmp, yfp2mp, fp2mp)
         call lwcgfu(g1min, f12, fmp, yfp2mp, fp2mp)
         call lwcgfu(g2min, f14, fmp, yfp2mp, fp2mp)
 
-! ---> Choix des extrema
+! ---> extrema choices
 
         gmin =   max(  g1min,  g2min)
         gmax =   min(  g2max,  g3max)
-! ---> Calcul des amplitudes des Diracs
+! ---> computation of Diracs amplitudes
 
         d(1) = gmax / ( gmax-gmin )
         d(2) = (1.d0 - d(1))
 
-! ---> Calcul de la variance de l'abscisse curviligne (GP2M)
+! ---> computation of curviline coordinate variance (gp2m)
 
         gp2m = fp2mp + yfp2mp
 
@@ -437,8 +430,7 @@ do iel = 1, ncel
 
     elseif ( (fp2mp.gt.epsi) .and. (yfp2mp.gt.epsi) ) then
 
-! --- CAS 3 : Parallelisme avec la Droite de Melange
-!     =====
+! --- case 3 : parallelism and mix line
 
       if ( ((yfp2mp / fp2mp) .lt. 1.d0 + epsi)                    &
         .and. ((yfp2mp / fp2mp) .gt. 1.d0 - epsi) ) then
@@ -452,15 +444,15 @@ do iel = 1, ncel
         aa6 = zero
         bb6 = zero
 
-! ---> Calcul des differentes intersections de ces droites
+! ---> computation of the different intersections of the lines
 
         f13 = (bb3-bb1) / (aa1-aa3)
         f14 = fmin
         f15 = fmax
         f16 = (bb6-bb1) / (aa1-aa6)
 
-! ---> Calcul des extrema de l'abscisse curviligne
-!      Appel de la function G
+! ---> curviline coordinate computation
+!      call to G function
 
         call lwcgfu(g2max,f15, fmp, yfp2mp, fp2mp)
         call lwcgfu(g3max,f13, fmp, yfp2mp, fp2mp)
@@ -470,16 +462,16 @@ do iel = 1, ncel
         gmin =   max(  g2min,  g3min)
         gmax =   min(  g2max,  g3max)
 
-! ---> Calcul des amplitudes des Diracs
+! ---> computation of Diracs amplitudes
 
         d(1) = gmax / ( gmax-gmin )
         d(2) = (1.d0 - d(1))
 
-! ---> Calcul de la variance de l'abscisse curviligne (GP2M)
+! ---> computation of curviline coordinate variance (gp2m)
 
         gp2m = fp2mp + yfp2mp
 
-! ---> Test sur GP2M
+! ---> Test on gp2m
 
         g(1) = -sqrt( -gmin/gmax*gp2m )
         g(2) =  -d(1) * g(1) / d(2)
@@ -491,8 +483,8 @@ do iel = 1, ncel
               yfmp + g(idirac) * sqrt( yfp2mp/gp2m)
         enddo
 
-! --- CAS 4 : Parallelisme avec la Droite de Combustion Complete
-!     =====
+! --- case 4 : parallelism with complete combustion line
+
       elseif ( ((sqrt(yfp2mp/fp2mp) * (1.d0-fs(1)))               &
                                         .lt. 1.d0 + epsi)         &
         .and.  ((sqrt(yfp2mp/fp2mp) * (1.d0-fs(1)))               &
@@ -507,15 +499,15 @@ do iel = 1, ncel
         aa6 = zero
         bb6 = zero
 
-! ---> Calcul des differentes intersections de ces droites
+! ---> computation of the different intersections of the lines
 
         f12 = (bb2-bb1) / (aa1-aa2)
         f14 = fmin
         f15 = fmax
         f16 = (bb6-bb1) / (aa1-aa6)
 
-! ---> Calcul des extrema de l'abscisse curviligne
-!      Appel de la function G
+! ---> curviline coordinate extrema computation
+!      call to G function
 
         call lwcgfu(g2max,f15, fmp, yfp2mp, fp2mp)
         call lwcgfu(g1max,f12, fmp, yfp2mp, fp2mp)
@@ -525,16 +517,16 @@ do iel = 1, ncel
         gmin =   max(  g2min,  g3min)
         gmax =   min(  g1max,  g2max)
 
-! ---> Calcul des amplitudes des Diracs
+! ---> Diracs amplitudes computations
 
         d(1) = gmax / ( gmax-gmin )
         d(2) = (1.d0 - d(1))
 
-! ---> Calcul de la variance de l'abscisse curviligne (GP2M)
+! ---> computation of curviline coordinate variance (gp2m)
 
         gp2m = fp2mp + yfp2mp
 
-! ---> Test sur GP2M
+! ---> Test on gp2m
 
         g(1) = -sqrt( -gmin/gmax*gp2m )
         g(2) =  -d(1) * g(1) / d(2)
@@ -546,11 +538,10 @@ do iel = 1, ncel
              yfmp + g(idirac) * sqrt( yfp2mp/gp2m)
         enddo
 
-! --- CAS GENERAL
-!==========
+! --- general case
       else
 
-! ---> Expression des differentes droites: Y=AX+B
+! ---> expression for the different lines: Y=AX+B
 
 
         aa1 = -sqrt( yfp2mp/fp2mp )
@@ -565,7 +556,7 @@ do iel = 1, ncel
         aa6 = zero
         bb6 = zero
 
-! ---> Calcul des differentes intersections de ces droites
+! ---> computation of the different intersections of the lines
 
         f12 = (bb2-bb1) / (aa1-aa2)
         f13 = (bb3-bb1) / (aa1-aa3)
@@ -573,8 +564,8 @@ do iel = 1, ncel
         f15 = fmax
         f16 = (bb6-bb1) / (aa1-aa6)
 
-! ---> Calcul des extrema de l'abscisse curviligne
-!      Appel de la function G
+! ---> curviline coordinate extrema computation
+!      call to G function
 
         call lwcgfu(g1max, f12, fmp, yfp2mp, fp2mp)
         call lwcgfu(g2max, f15, fmp, yfp2mp, fp2mp)
@@ -585,10 +576,10 @@ do iel = 1, ncel
         call lwcgfu(g4min, f13, fmp, yfp2mp, fp2mp)
 
 !===============================================================================
-! 4.  CALCUL DES PARAMETRES DES DEUX PICS DE DIRAC
+! 4.  computation of the parameters of the two Dirac peaks
 !===============================================================================
 
-! ---> Choix des extrema suivant les pentes des droites
+! ---> extrema choice according to the lines slope
 
         if ( aa1 .gt. aa3 ) then
           gmin =   max (  g2min,  g3min,  g4min )
@@ -603,7 +594,7 @@ do iel = 1, ncel
           gmax =   min ( g2max, g3max )
         endif
 
-! ---> Calcul des amplitudes des Diracs
+! ---> Dirac amplitudes computations
 
         d(1) = gmax / ( gmax-gmin )
         d(2) = (1.d0 - d(1))
@@ -626,10 +617,10 @@ do iel = 1, ncel
     endif
 
 !===============================================================================
-! 5.  DETERMINATION DES GRANDEURS THERMOCHIMIQUES DES DEUX PICS
+! 5.  computations of the thermochemical quantities at the two peaks
 !===============================================================================
 
-! ---> Calcul de l'enthalpies en 1 et 2
+! ---> enthalpy computation in 1 and 2
 
     sum7  = zero
     sum8  = zero
@@ -643,7 +634,7 @@ do iel = 1, ncel
       h(idirac) = ((hmax-hmin)*f(idirac) + hmin*fmax - hmax*fmin) &
                 / (fmax-fmin)
 
-! ---> Calcul de la fraction massique des gaz (F, O et P) en 1 et 2
+! ---> computation of the mass fraction of the gas (F, O et P) in 1 and 2
 
       yfuel = y(idirac)
       yoxyd = 1.d0 - (coeff3+1.0d0)*f(idirac) + coeff3*y(idirac)
@@ -651,7 +642,7 @@ do iel = 1, ncel
       yo2   = coeff1 - (coeff1 + coeff2) * f(idirac)              &
                       + coeff2 * y(idirac)
 
-! ---> Coefficients d'absorption pour les pics 1 et 2
+! ---> absorption coefficients for peaks 1 and 2
 
 !            IF ( IIRAYO .GT. 0  ) THEN
 !              KABSGF = YFUEGF(IEL)*KABSG(1) + YOXYGF(IEL)*KABSG(2)
@@ -661,13 +652,13 @@ do iel = 1, ncel
 !            ENDIF
 
 
-! ---> Calcul de la masse molaire et de la temperature en 1 et 2
+! ---> computation of molar mass and temperature in 1 and 2
 
       coefg(1) = yfuel
       coefg(2) = yoxyd
       coefg(3) = yprod
 
-! ------ Masse molaire pour le pic 1 et 2
+! ------ molar mass for peaks 1 and 2
 
       nbmol = 0.d0
       do igg = 1, ngazg
@@ -675,7 +666,7 @@ do iel = 1, ncel
       enddo
       maml(idirac) = 1.d0/nbmol
 
-! ------ Calcul de la temperature pour le pic 1 et 2
+! ------ computation of temperature for peaks 1 and 2
 
       mode    = 1
       call cothht                                                 &
@@ -684,7 +675,7 @@ do iel = 1, ncel
         npo    , npot  , th      , ehgazg ,                       &
         h(idirac)     , teml(idirac)    )
 
-! ---> Calcul de la masse volumique en 1 et 2
+! ---> computation of density in 1 and 2
 
       if ( ipass.gt.1 .or.                                        &
           (isuite.eq.1.and.initro.eq.1) ) then
@@ -694,7 +685,7 @@ do iel = 1, ncel
         rhol(idirac) = ro0
       endif
 
-! ---> Calcul du terme source en 1 et 2 du scalaire YFM
+! ---> term source computation in 1 and 2 for scalar yfm
 
       theta(idirac) = ta / teml(idirac)                           &
                     * (1.d0 - teml(idirac) / tstar)
@@ -703,19 +694,19 @@ do iel = 1, ncel
                   * yfuel*yo2                                     &
                   * exp( -theta(idirac) ))
 
-! ---> Masse molaire du melange
+! ---> mix molar mass
 
       sum7 = sum7 + d(idirac)*maml(idirac)
 
-! ---> Temperature du melange
+! ---> mix temperature
 
       sum8 = sum8 + d(idirac)*teml(idirac)
 
-! ---> Temperature / Masse molaire
+! ---> temperature / molar mass
 
       sum9 = sum9 + d(idirac)*teml(idirac)/maml(idirac)
 
-! ---> Fractions massiques des especes globales
+! ---> global species mass fractions
 
       sum10 = sum10 + yfuel*d(idirac)
 
@@ -725,17 +716,17 @@ do iel = 1, ncel
 
       sum17 = sum17 +w(idirac)
 
-! ---> Stockage des proprietes via PROPCE
+! ---> property storage in fields
 
-      propce(iel,ipampl(idirac)) = d(idirac)
-      propce(iel,ipfmel(idirac)) = f(idirac)
-      propce(iel,ipfmal(idirac)) = y(idirac)
-      propce(iel,ipmaml(idirac)) = maml(idirac)
-      propce(iel,ipteml(idirac)) = teml(idirac)
-      propce(iel,iprhol(idirac)) = rhol(idirac)
-      propce(iel,iptscl(idirac)) = w(idirac)
+      cpro_ampl(idirac)%p(iel) = d(idirac)
+      cpro_fmel(idirac)%p(iel) = f(idirac)
+      cpro_fmal(idirac)%p(iel) = y(idirac)
+      cpro_maml(idirac)%p(iel) = maml(idirac)
+      cpro_teml(idirac)%p(iel) = teml(idirac)
+      cpro_rhol(idirac)%p(iel) = rhol(idirac)
+      cpro_tscl(idirac)%p(iel) = w(idirac)
 
-! ---> Grandeurs relatives au rayonnement
+! ---> radiative transfer quantities
 
 !            IF ( IIRAYO .GT. 0  ) THEN
 !              PROPCE(IEL,IPCKAB) = YGFM*KABSGF + YGBM*KABSGB
@@ -745,15 +736,15 @@ do iel = 1, ncel
 
     enddo
 
-    propce(iel,ipcmam) = sum7
-    propce(iel,ipctem) = sum8
-    temsmm             = sum9
-    propce(iel,ipcfue) = sum10
-    propce(iel,ipcoxy) = sum11
-    propce(iel,ipcpro) = sum12
-    propce(iel,ipctsc) = sum17
+    cpro_mam(iel)  = sum7
+    cpro_temp(iel) = sum8
+    temsmm         = sum9
+    cpro_ym1(iel)  = sum10
+    cpro_ym2(iel)  = sum11
+    cpro_ym3(iel)  = sum12
+    cpro_tsc(iel)  = sum17
 
-! ---> Masse volumique du melange
+! ---> mix density
 
   if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
       crom(iel) = srrom * crom(iel)             &
@@ -763,6 +754,10 @@ do iel = 1, ncel
   endif
 
 enddo
+
+deallocate(cpro_fmel, cpro_fmal, cpro_teml)
+deallocate(cpro_tscl, cpro_rhol, cpro_maml)
+deallocate(cpro_ampl)
 
 !----
 ! FIN

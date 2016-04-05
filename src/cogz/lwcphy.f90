@@ -23,8 +23,7 @@
 subroutine lwcphy &
 !================
 
- ( mbrom  , izfppp ,                                              &
-   propce )
+ ( mbrom  , izfppp )
 
 !===============================================================================
 ! FONCTION :
@@ -41,7 +40,6 @@ subroutine lwcphy &
 ! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -77,13 +75,10 @@ implicit none
 integer          mbrom
 integer          izfppp(nfabor)
 
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          igg, iel
 integer          izone , ifac
-integer          ipcycg
 double precision coefg(ngazgm)
 double precision nbmol , temsmm
 double precision masmg
@@ -91,7 +86,7 @@ double precision, dimension(:), pointer :: brom,  crom
 double precision, dimension(:), pointer :: bsval
 double precision, dimension(:), pointer :: cvar_yfm, cvar_yfp2m
 double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
-double precision, dimension(:), pointer :: cvar_coyfp
+double precision, dimension(:), pointer :: cvar_coyfp, cpro_ymgg
 
 integer       ipass
 data          ipass /0/
@@ -140,8 +135,7 @@ if ( (ippmod(icolwc).eq.0) .or. (ippmod(icolwc).eq.1) ) then
   !==========
    ( ncelet        , ncel          ,                              &
      cvar_fm       , cvar_fp2m     ,                              &
-     cvar_yfm      , cvar_yfp2m    ,                              &
-     propce   )
+     cvar_yfm      , cvar_yfp2m )
 
 endif
 
@@ -152,8 +146,7 @@ if ( (ippmod(icolwc).eq.2) .or. (ippmod(icolwc).eq.3) ) then
    ( ncelet        , ncel          ,                              &
      cvar_fm       , cvar_fp2m     ,                              &
      cvar_yfm      , cvar_yfp2m    ,                              &
-     cvar_coyfp    ,                                              &
-     propce   )
+     cvar_coyfp )
 
 endif
 
@@ -164,8 +157,7 @@ if ( (ippmod(icolwc).eq.4).or.(ippmod(icolwc).eq.5) ) then
    ( ncelet        , ncel          ,                              &
      cvar_fm       , cvar_fp2m     ,                              &
      cvar_yfm      , cvar_yfp2m    ,                              &
-     cvar_coyfp    ,                                              &
-     propce   )
+     cvar_coyfp )
 
 endif
 
@@ -217,10 +209,10 @@ endif
 ! --> Fractions massiques des especes globales au bord
 do igg = 1, ngazg
   call field_get_val_s(ibym(igg), bsval)
-  ipcycg = ipproc(iym(igg))
+  call field_get_val_s(iym(igg), cpro_ymgg)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    bsval(ifac) = propce(iel,ipcycg)
+    bsval(ifac) = cpro_ymgg(iel)
   enddo
 enddo
 

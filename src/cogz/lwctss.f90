@@ -24,7 +24,6 @@ subroutine lwctss &
 !================
 
  ( iscal  ,                                                       &
-   propce ,                                                       &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -67,7 +66,6 @@ subroutine lwctss &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iscal            ! i  ! <-- ! scalar number                                  !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -98,6 +96,7 @@ use ppincl
 use mesh
 use field
 use field_operator
+use pointe
 
 !===============================================================================
 
@@ -107,7 +106,6 @@ implicit none
 
 integer          iscal
 
-double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
@@ -115,9 +113,6 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 integer          ivar, iel, idirac
 integer          inc , iccocg, iprev
 integer          ii
-
-integer          iptscl(ndracm), ipfmal(ndracm)
-integer          ipfmel(ndracm), iprhol(ndracm)
 
 double precision sum, epsi
 double precision tsgrad, tschim, tsdiss
@@ -130,6 +125,8 @@ double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_scal
 double precision, dimension(:), pointer :: cvara_yfm, cvara_fm
+type(pmapper_double_r1), dimension(:), pointer :: cpro_fmel, cpro_fmal
+type(pmapper_double_r1), dimension(:), pointer :: cpro_tscl, cpro_rhol
 
 !===============================================================================
 
@@ -165,12 +162,16 @@ elseif (iturb.eq.60) then
   call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
 endif
 
-! --- Numero des grandeurs physiques (voir cs_user_boundary_conditions)
+allocate(cpro_fmel(ndirac))
+allocate(cpro_fmal(ndirac))
+allocate(cpro_tscl(ndirac))
+allocate(cpro_rhol(ndirac))
+
 do idirac = 1, ndirac
-  iptscl(idirac) = ipproc(itscl(idirac))
-  ipfmal(idirac) = ipproc(ifmal(idirac))
-  ipfmel(idirac) = ipproc(ifmel(idirac))
-  iprhol(idirac) = ipproc(irhol(idirac))
+  call field_get_val_s(iprpfl(ifmel(idirac)), cpro_fmel(idirac)%p)
+  call field_get_val_s(iprpfl(ifmal(idirac)), cpro_fmal(idirac)%p)
+  call field_get_val_s(iprpfl(irhol(idirac)), cpro_rhol(idirac)%p)
+  call field_get_val_s(iprpfl(itscl(idirac)), cpro_tscl(idirac)%p)
 enddo
 
 !===============================================================================
@@ -184,8 +185,8 @@ if (ivar.eq.isca(iyfm)) then
   do iel = 1, ncel
       sum = zero
       do idirac = 1, ndirac
-        sum  = sum + propce(iel,iprhol(idirac))                   &
-           *propce(iel,iptscl(idirac))*volume(iel)
+        sum  = sum + cpro_rhol(idirac)%p(iel)                   &
+           *cpro_tscl(idirac)%p(iel)*volume(iel)
       enddo
 
 ! terme implicite
@@ -209,9 +210,9 @@ if (ivar.eq.isca(iyfp2m)) then
   do iel = 1, ncel
     sum = zero
     do idirac = 1, ndirac
-      sum  = sum + (propce(iel,iptscl(idirac))*volume(iel)        &
-        *(propce(iel,ipfmal(idirac)) - cvara_yfm(iel))           &
-             *propce(iel,iprhol(idirac)))
+      sum  = sum + (cpro_tscl(idirac)%p(iel)*volume(iel)        &
+        *(cpro_fmal(idirac)%p(iel) - cvara_yfm(iel))           &
+             *cpro_rhol(idirac)%p(iel))
     enddo
     smbrs(iel) = smbrs(iel) + sum
   enddo
@@ -335,9 +336,9 @@ if (ivar.eq.isca(icoyfp)) then
     tschim = zero
     do idirac = 1, ndirac
       tschim =   tschim                                           &
-           + (propce(iel,iptscl(idirac))                          &
-           *(propce(iel,ipfmel(idirac))-cvara_fm(iel))      &
-           *volume(iel))*propce(iel,iprhol(idirac))
+           + (cpro_tscl(idirac)%p(iel)                          &
+           *(cpro_fmel(idirac)%p(iel)-cvara_fm(iel))      &
+           *volume(iel))*cpro_rhol(idirac)%p(iel)
     enddo
 
 ! --> Somme des termes
@@ -351,6 +352,9 @@ if (ivar.eq.isca(icoyfp)) then
   deallocate(w10, w11)
 
 endif
+
+deallocate(cpro_fmel, cpro_fmal)
+deallocate(cpro_tscl, cpro_rhol)
 
 !----
 ! FIN
