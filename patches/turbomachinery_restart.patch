@@ -1,0 +1,1192 @@
+Index: src/mesh/cs_mesh_to_builder.h
+===================================================================
+--- src/mesh/cs_mesh_to_builder.h	(révision 8690)
++++ src/mesh/cs_mesh_to_builder.h	(copie de travail)
+@@ -87,6 +87,18 @@
+                    cs_io_t            *pp_out);
+ 
+ /*----------------------------------------------------------------------------
++ * Transfer mesh partitioning info to mesh builder structure.
++ *
++ * parameters:
++ *   mesh <-- pointer to mesh structure
++ *   mb   <-> pointer to mesh builder structure
++ *----------------------------------------------------------------------------*/
++
++void
++cs_mesh_to_builder_partition(const cs_mesh_t    *mesh,
++                             cs_mesh_builder_t  *mb);
++
++/*----------------------------------------------------------------------------
+  * Reconstruct periodic faces info from mesh to builder.
+  *
+  * parameters:
+Index: src/mesh/cs_mesh_save.c
+===================================================================
+--- src/mesh/cs_mesh_save.c	(révision 8690)
++++ src/mesh/cs_mesh_save.c	(copie de travail)
+@@ -76,7 +76,17 @@
+  * Local Type Definitions
+  *============================================================================*/
+ 
++/* Directory name separator
++   (historically, '/' for Unix/Linux, '\' for Windows, ':' for Mac
++   but '/' should work for all on modern systems) */
++
++#define DIR_SEPARATOR '/'
++
+ /*============================================================================
++ * Static global variables
++ *============================================================================*/
++
++/*============================================================================
+  *  Global variables
+  *============================================================================*/
+ 
+@@ -96,12 +106,15 @@
+  * parameters:
+  *   mesh     <-- pointer to mesh structure
+  *   mb       <-- pointer to optional mesh builder structure, or NULL
++ *   path     <-- optional directory name for output, or NULL for default
++ *                (directory automatically created if necessary)
+  *   filename <-- file name
+  *----------------------------------------------------------------------------*/
+ 
+ void
+ cs_mesh_save(cs_mesh_t          *mesh,
+              cs_mesh_builder_t  *mb,
++             const char         *path,
+              const char         *filename)
+ {
+   cs_file_access_t  method;
+@@ -148,10 +161,28 @@
+                                     mesh->n_g_vertices);
+ 
+   /* Open file for output */
++  size_t  ldir = 0, lname = strlen(filename);
+ 
++  const char  *name = filename;
++  char *_name = NULL;
++
++  if (path != NULL)
++    ldir = strlen(path);
++
++  if (ldir > 0) {
++    if (cs_file_mkdir_default(path) != 0)
++      bft_error(__FILE__, __LINE__, 0,
++                _("The %s directory cannot be created"), path);
++
++    BFT_MALLOC(_name, ldir + lname + 2, char);
++    sprintf(_name, "%s%c%s",
++            path, DIR_SEPARATOR, filename);
++    name = _name;
++  }
++
+ #if defined(HAVE_MPI)
+   cs_file_get_default_access(CS_FILE_MODE_WRITE, &method, &hints);
+-  pp_out = cs_io_initialize(filename,
++  pp_out = cs_io_initialize(name,
+                             "Face-based mesh definition, R0",
+                             CS_IO_MODE_WRITE,
+                             method,
+@@ -161,13 +192,15 @@
+                             comm);
+ #else
+   cs_file_get_default_access(CS_FILE_MODE_WRITE, &method);
+-  pp_out = cs_io_initialize(filename,
++  pp_out = cs_io_initialize(_name,
+                             "Face-based mesh definition, R0",
+                             CS_IO_MODE_WRITE,
+                             method,
+                             echo);
+ #endif
+ 
++  BFT_FREE(_name);
++
+   /* Write data */
+   /*------------*/
+ 
+Index: src/mesh/cs_mesh_save.h
+===================================================================
+--- src/mesh/cs_mesh_save.h	(révision 8690)
++++ src/mesh/cs_mesh_save.h	(copie de travail)
+@@ -52,12 +52,15 @@
+  * parameters:
+  *   mesh     <-- pointer to mesh structure
+  *   mb       <-- pointer to optional mesh builder structure, or NULL
++ *   path     <-- optional directory name for output, or NULL for default
++ *                (directory automatically created if necessary)
+  *   filename <-- file name
+  *----------------------------------------------------------------------------*/
+ 
+ void
+ cs_mesh_save(cs_mesh_t          *mesh,
+              cs_mesh_builder_t  *mb,
++             const char         *path,
+              const char         *filename);
+ 
+ /*----------------------------------------------------------------------------*/
+Index: src/mesh/cs_mesh_to_builder.c
+===================================================================
+--- src/mesh/cs_mesh_to_builder.c	(révision 8690)
++++ src/mesh/cs_mesh_to_builder.c	(copie de travail)
+@@ -1426,6 +1426,66 @@
+ 
+ /*----------------------------------------------------------------------------*/
+ /*!
++ * \brief Transfer mesh partitioning info to mesh builder structure.
++ *
++ * \param[in]       mesh      pointer to mesh structure
++ * \param[in, out]  mb        pointer to mesh builder structure
++ */
++/*----------------------------------------------------------------------------*/
++
++void
++cs_mesh_to_builder_partition(const cs_mesh_t    *mesh,
++                             cs_mesh_builder_t  *mb)
++{
++#if defined(HAVE_MPI)
++
++  if (cs_glob_n_ranks > 1) {
++
++    const cs_datatype_t int_type
++      = (sizeof(int) == 8) ? CS_INT64 : CS_INT32;
++
++    /* Distribute cell group class info to blocks */
++    /*---------------------------------------------*/
++
++    mb->cell_bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
++                                              cs_glob_n_ranks,
++                                              mb->min_rank_step,
++                                              0,
++                                              mesh->n_g_cells);
++
++    mb->have_cell_rank = true;
++    BFT_REALLOC(mb->cell_rank,
++                (mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0]),
++                int);
++
++    int *cell_rank;
++    BFT_MALLOC(cell_rank, mesh->n_cells, int);
++    for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
++      cell_rank[i] = cs_glob_rank_id;
++
++    cs_part_to_block_t *d
++      = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
++                                        mb->cell_bi,
++                                        mesh->n_cells,
++                                        mesh->global_cell_num);
++
++    cs_part_to_block_copy_array(d,
++                                int_type,
++                                1,
++                                cell_rank,
++                                mb->cell_rank);
++
++    cs_part_to_block_destroy(&d);
++
++    BFT_FREE(cell_rank);
++
++  }
++
++#endif
++}
++
++/*----------------------------------------------------------------------------*/
++/*!
+  * \brief Reconstruct periodic faces info from mesh to builder.
+  *
+  * \param[in]       mesh   pointer to mesh structure
+Index: src/base/cs_turbomachinery.c
+===================================================================
+--- src/base/cs_turbomachinery.c	(révision 8690)
++++ src/base/cs_turbomachinery.c	(copie de travail)
+@@ -70,6 +70,8 @@
+ #include "cs_rotation.h"
+ #include "cs_time_step.h"
+ #include "cs_timer.h"
++#include "cs_restart.h"
++#include "cs_preprocessor_data.h"
+ 
+ /*----------------------------------------------------------------------------
+  * Header for the current file
+@@ -399,28 +401,28 @@
+ 
+   /* Global numbering */
+ 
+-  if (mesh->n_g_cells != (cs_gnum_t)mesh->n_cells) {
++  if (mesh->global_cell_num != NULL) {
+     BFT_MALLOC(mesh_copy->global_cell_num, mesh->n_cells, cs_gnum_t);
+     memcpy(mesh_copy->global_cell_num,
+            mesh->global_cell_num,
+            mesh->n_cells*sizeof(cs_gnum_t));
+   }
+ 
+-  if (mesh->n_g_i_faces != (cs_gnum_t)mesh->n_i_faces) {
++  if (mesh->global_i_face_num != NULL) {
+     BFT_MALLOC(mesh_copy->global_i_face_num, mesh->n_i_faces, cs_gnum_t);
+     memcpy(mesh_copy->global_i_face_num,
+            mesh->global_i_face_num,
+            mesh->n_i_faces*sizeof(cs_gnum_t));
+   }
+ 
+-  if (mesh->n_g_b_faces != (cs_gnum_t)mesh->n_b_faces) {
++  if (mesh->global_b_face_num != NULL) {
+     BFT_MALLOC(mesh_copy->global_b_face_num, mesh->n_b_faces, cs_gnum_t);
+     memcpy(mesh_copy->global_b_face_num,
+            mesh->global_b_face_num,
+            mesh->n_b_faces*sizeof(cs_gnum_t));
+   }
+ 
+-  if (mesh->n_g_vertices != (cs_gnum_t)mesh->n_vertices) {
++  if (mesh->global_vtx_num != NULL) {
+     BFT_MALLOC(mesh_copy->global_vtx_num, mesh->n_vertices, cs_gnum_t);
+     memcpy(mesh_copy->global_vtx_num,
+            mesh->global_vtx_num,
+@@ -520,6 +522,8 @@
+   for (f_id = 0; f_id < mesh->n_i_faces; f_id++) {
+     cs_lnum_t c_id_0 = mesh->i_face_cells[f_id][0];
+     cs_lnum_t c_id_1 = mesh->i_face_cells[f_id][1];
++    assert(c_id_0 > -1);
++    assert(c_id_1 > -1);
+     if (c_id_0 < mesh->n_cells && cell_flag[c_id_0] != 0) {
+       for (cs_lnum_t i = mesh->i_face_vtx_idx[f_id];
+            i < mesh->i_face_vtx_idx[f_id+1];
+@@ -583,8 +587,6 @@
+ {
+   cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+ 
+-  cs_lnum_t  f_id;
+-
+   cs_gnum_t n_errors = 0;
+ 
+   const int  *cell_flag = tbm->cell_rotor_num;
+@@ -606,7 +608,6 @@
+          "rotor/stator sections.\n"
+          "These sections must be initially disjoint to rotate freely."),
+        __func__);
+-
+ }
+ 
+ /*----------------------------------------------------------------------------
+@@ -653,6 +654,231 @@
+     _check_geometry(m);
+ }
+ 
++/*----------------------------------------------------------------------------
++ * Update mesh for unsteady rotor/stator computation.
++ *
++ * parameters:
++ *   restart_mode  true for restart, false otherwise
++ *   t_cur_mob     current rotor time
++ *   t_elapsed     elapsed computation time
++ */
++/*----------------------------------------------------------------------------*/
++
++static void
++_update_mesh(bool     restart_mode,
++             double   t_cur_mob,
++             double  *t_elapsed)
++{
++  double  t_start, t_end;
++
++  cs_halo_type_t halo_type = cs_glob_mesh->halo_type;
++  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
++
++  t_start = cs_timer_wtime();
++
++  /* Indicates we are in the framework of turbomachinery */
++
++  tbm->active = true;
++
++  /* Cell and boundary face numberings can be moved from old mesh
++     to new one, as the corresponding parts of the mesh should not change */
++
++  cs_numbering_t *cell_numbering = cs_glob_mesh->cell_numbering;
++  cs_glob_mesh->cell_numbering = NULL;
++
++  /* Destroy previous global mesh and related entities */
++
++  cs_mesh_location_finalize();
++  cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
++
++  cs_mesh_destroy(cs_glob_mesh);
++
++  /* Create new global mesh and related entities */
++
++  cs_mesh_location_initialize();
++  cs_glob_mesh = cs_mesh_create();
++  cs_glob_mesh->verbosity = 0;
++  cs_glob_mesh_builder = cs_mesh_builder_create();
++  cs_glob_mesh_quantities = cs_mesh_quantities_create();
++
++  if (restart_mode == false) {
++
++    _copy_mesh(tbm->reference_mesh, cs_glob_mesh);
++
++    /* Update geometry, if necessary */
++
++    if (tbm->n_rotors > 0)
++      _update_geometry(cs_glob_mesh, t_cur_mob);
++
++    /* Reset the interior faces -> cells connectivity */
++    /* (in order to properly build the halo of the joined mesh) */
++
++    cs_mesh_to_builder_perio_faces(cs_glob_mesh, cs_glob_mesh_builder);
++
++    {
++      int i;
++      cs_lnum_t f_id;
++      cs_lnum_2_t *i_face_cells = (cs_lnum_2_t *)cs_glob_mesh->i_face_cells;
++      const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
++      for (f_id = 0; f_id < cs_glob_mesh->n_i_faces; f_id++) {
++        for (i = 0; i < 2; i++) {
++          if (i_face_cells[f_id][i] >= n_cells)
++            i_face_cells[f_id][i] = -1;
++        }
++      }
++    }
++
++    /* Join meshes and build periodicity links */
++
++    cs_join_all(false);
++
++    cs_lnum_t boundary_changed = 0;
++    if (tbm->n_b_faces_ref > -1) {
++      if (cs_glob_mesh->n_b_faces != tbm->n_b_faces_ref)
++        boundary_changed = 1;
++    }
++    cs_parall_counter_max(&boundary_changed, 1);
++
++    /* Check that joining has not added or removed boundary faces.
++       Postprocess new faces appearing on boundary or inside of mesh:
++       this assumes that joining appends new faces at the end of the mesh */
++
++    if (boundary_changed) {
++      const int writer_id = -2;
++      const int writer_ids[] = {writer_id};
++      const int mesh_id = cs_post_get_free_mesh_id();
++      cs_lnum_t b_face_count[] = {tbm->n_b_faces_ref,
++                                  cs_glob_mesh->n_b_faces};
++      cs_gnum_t n_g_b_faces_ref = tbm->n_b_faces_ref;
++      cs_parall_counter(&n_g_b_faces_ref, 1);
++      cs_post_init_error_writer();
++      cs_post_define_surface_mesh_by_func(mesh_id,
++                                          _("Added boundary faces"),
++                                          NULL,
++                                          _post_error_faces_select,
++                                          NULL,
++                                          b_face_count,
++                                          false, /* time varying */
++                                          true,  /* add groups if present */
++                                          false, /* auto variables */
++                                          1,
++                                          writer_ids);
++      cs_post_activate_writer(writer_id, 1);
++      cs_post_write_meshes(NULL);
++      bft_error(__FILE__, __LINE__, 0,
++                _("Error in turbomachinery mesh update:\n"
++                  "Number of boundary faces has changed from %llu to %llu.\n"
++                  "There are probably unjoined faces, "
++                  "due to an insufficiently regular mesh;\n"
++                  "adjusting mesh joining parameters might help."),
++                (unsigned long long)n_g_b_faces_ref,
++                (unsigned long long)cs_glob_mesh->n_g_b_faces);
++    }
++
++  }
++  else {
++
++    cs_mesh_to_builder_partition(tbm->reference_mesh,
++                                 cs_glob_mesh_builder);
++
++    cs_preprocessor_data_add_file("restart/mesh", 0, NULL, NULL);
++
++    cs_preprocessor_data_read_headers(cs_glob_mesh,
++                                      cs_glob_mesh_builder);
++
++    if (tbm->reference_mesh->n_g_cells != cs_glob_mesh->n_g_cells)
++      bft_error
++        (__FILE__, __LINE__, 0,
++         _("Error in turbomachinery mesh restart:\n"
++           "  number of cells expected/read: %llu/%llu\n"
++           "Check your restart directory."),
++         (unsigned long long)tbm->reference_mesh->n_g_cells,
++         (unsigned long long)cs_glob_mesh->n_g_cells);
++
++    cs_preprocessor_data_read_mesh(cs_glob_mesh,
++                                   cs_glob_mesh_builder);
++  }
++
++  tbm->n_b_faces_ref = cs_glob_mesh->n_b_faces;
++
++  /* Initialize extended connectivity, ghost cells and other remaining
++     parallelism-related structures */
++
++  cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
++  cs_mesh_update_auxiliary(cs_glob_mesh);
++
++  /* Destroy the temporary structure used to build the main mesh */
++
++  cs_mesh_builder_destroy(&cs_glob_mesh_builder);
++
++  /* Update numberings (cells saved from previous, faces
++     faces updated; it is important that boundary faces
++     renumbering produce the same result at each iteration) */
++
++  if (restart_mode)
++    cs_renumber_cells(cs_glob_mesh);
++  else
++    cs_glob_mesh->cell_numbering = cell_numbering;
++
++  cs_renumber_i_faces(cs_glob_mesh);
++  cs_renumber_b_faces(cs_glob_mesh);
++
++  /* Build group classes */
++
++  cs_mesh_init_group_classes(cs_glob_mesh);
++
++  /* Print info on mesh */
++
++  if (cs_glob_mesh->verbosity > 0)
++    cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
++
++  /* Compute geometric quantities related to the mesh */
++
++  cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
++  cs_mesh_bad_cells_detect(cs_glob_mesh, cs_glob_mesh_quantities);
++  cs_user_mesh_bad_cells_tag(cs_glob_mesh, cs_glob_mesh_quantities);
++
++  /* Initialize selectors and locations for the mesh */
++
++  cs_mesh_init_selectors();
++  cs_mesh_location_build(cs_glob_mesh, -1);
++
++  /* Check coherency if debugging */
++
++#if 0
++  cs_mesh_coherency_check();
++#endif
++
++  /* Update Fortran mesh sizes and quantities */
++
++  cs_preprocess_mesh_update_fortran();
++
++  /* Update rotor cells flag array in case of parallelism and/or periodicity */
++
++  if (cs_glob_mesh->halo != NULL) {
++
++    const cs_mesh_t *m = cs_glob_mesh;
++    BFT_REALLOC(tbm->cell_rotor_num,
++                m->n_cells_with_ghosts,
++                int);
++
++    cs_halo_sync_untyped(m->halo,
++                         CS_HALO_EXTENDED,
++                         sizeof(int),
++                         tbm->cell_rotor_num);
++
++  }
++
++  /* Update linear algebra APIs relative to mesh */
++
++  cs_gradient_perio_update_mesh();
++  cs_matrix_update_mesh();
++
++  t_end = cs_timer_wtime();
++
++  *t_elapsed = t_end - t_start;
++}
++
+ /*============================================================================
+  * Fortran wrapper function definitions
+  *============================================================================*/
+@@ -816,8 +1042,8 @@
+ /*!
+  * \brief Update mesh for unsteady rotor/stator computation.
+  *
+- * \param[in]   t_cur_mob  current rotor time
+- * \param[out]  t_elapsed  elapsed computation time
++ * \param[in]   t_cur_mob     current rotor time
++ * \param[out]  t_elapsed     elapsed computation time
+  */
+ /*----------------------------------------------------------------------------*/
+ 
+@@ -825,185 +1051,23 @@
+ cs_turbomachinery_update_mesh(double   t_cur_mob,
+                               double  *t_elapsed)
+ {
+-  double  t_start, t_end;
++  _update_mesh(false, t_cur_mob, t_elapsed);
++}
+ 
+-  cs_halo_type_t halo_type = cs_glob_mesh->halo_type;
+-  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
++/*----------------------------------------------------------------------------*/
++/*!
++ * \brief Read mesh from checkpoint for unsteady rotor/stator computation.
++ *
++ * \param[in]   t_cur_mob     current rotor time
++ * \param[out]  t_elapsed     elapsed computation time
++ */
++/*----------------------------------------------------------------------------*/
+ 
+-  t_start = cs_timer_wtime();
+-
+-  /* Indicates we are in the framework of turbomachinery */
+-
+-  tbm->active = true;
+-
+-  /* Cell and boundary face numberings can be moved from old mesh
+-     to new one, as the corresponding parts of the mesh should not change */
+-
+-  cs_numbering_t *cell_numbering = cs_glob_mesh->cell_numbering;
+-  cs_glob_mesh->cell_numbering = NULL;
+-
+-  /* Destroy previous global mesh and related entities */
+-
+-  cs_mesh_location_finalize();
+-  cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
+-
+-  cs_mesh_destroy(cs_glob_mesh);
+-
+-  /* Create new global mesh and related entities */
+-
+-  cs_mesh_location_initialize();
+-  cs_glob_mesh = cs_mesh_create();
+-  cs_glob_mesh->verbosity = 0;
+-  _copy_mesh(tbm->reference_mesh, cs_glob_mesh);
+-  cs_glob_mesh_builder = cs_mesh_builder_create();
+-  cs_glob_mesh_quantities = cs_mesh_quantities_create();
+-
+-  /* Update geometry, if necessary */
+-
+-  if (tbm->n_rotors > 0)
+-    _update_geometry(cs_glob_mesh, t_cur_mob);
+-
+-  /* Reset the interior faces -> cells connectivity */
+-  /* (in order to properly build the halo of the joined mesh) */
+-
+-  cs_mesh_to_builder_perio_faces(cs_glob_mesh, cs_glob_mesh_builder);
+-
+-  {
+-    int i;
+-    cs_lnum_t f_id;
+-    cs_lnum_2_t *i_face_cells = (cs_lnum_2_t *)cs_glob_mesh->i_face_cells;
+-    const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+-    for (f_id = 0; f_id < cs_glob_mesh->n_i_faces; f_id++) {
+-      for (i = 0; i < 2; i++) {
+-        if (i_face_cells[f_id][i] >= n_cells)
+-          i_face_cells[f_id][i] = -1;
+-      }
+-    }
+-  }
+-
+-  /* Join meshes and build periodicity links */
+-
+-  cs_join_all(false);
+-
+-  cs_lnum_t boundary_changed = 0;
+-  if (tbm->n_b_faces_ref > -1) {
+-    if (cs_glob_mesh->n_b_faces != tbm->n_b_faces_ref)
+-      boundary_changed = 1;
+-  }
+-  cs_parall_counter_max(&boundary_changed, 1);
+-
+-  /* Check that joining has not added or removed boundary faces.
+-     Postprocess new faces appearing on boundary or inside of mesh:
+-     this assumes that joining appends new faces at the end of the mesh */
+-
+-  if (boundary_changed) {
+-    const int writer_id = -2;
+-    const int writer_ids[] = {writer_id};
+-    const int mesh_id = cs_post_get_free_mesh_id();
+-    cs_lnum_t b_face_count[] = {tbm->n_b_faces_ref,
+-                                cs_glob_mesh->n_b_faces};
+-    cs_gnum_t n_g_b_faces_ref = tbm->n_b_faces_ref;
+-    cs_parall_counter(&n_g_b_faces_ref, 1);
+-    cs_post_init_error_writer();
+-    cs_post_define_surface_mesh_by_func(mesh_id,
+-                                        _("Added boundary faces"),
+-                                        NULL,
+-                                        _post_error_faces_select,
+-                                        NULL,
+-                                        b_face_count,
+-                                        false, /* time varying */
+-                                        true,  /* add groups if present */
+-                                        false, /* auto variables */
+-                                        1,
+-                                        writer_ids);
+-    cs_post_activate_writer(writer_id, 1);
+-    cs_post_write_meshes(NULL);
+-    bft_error(__FILE__, __LINE__, 0,
+-              _("Error in turbomachinery mesh update:\n"
+-                "Number of boundary faces has changed from %llu to %llu.\n"
+-                "There are probably unjoined faces, "
+-                "due to an insufficiently regular mesh;\n"
+-                "adjusting mesh joining parameters might help."),
+-              (unsigned long long)n_g_b_faces_ref,
+-              (unsigned long long)cs_glob_mesh->n_g_b_faces);
+-  }
+-
+-  tbm->n_b_faces_ref = cs_glob_mesh->n_b_faces;
+-
+-  /* Initialize extended connectivity, ghost cells and other remaining
+-     parallelism-related structures */
+-
+-  cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
+-  cs_mesh_update_auxiliary(cs_glob_mesh);
+-
+-  /* Destroy the temporary structure used to build the main mesh */
+-
+-  cs_mesh_builder_destroy(&cs_glob_mesh_builder);
+-
+-  /* Update numberings (cells saved from previous, faces
+-     faces updated; it is important that boundary faces
+-     renumbering produce the same result at each iteration) */
+-
+-  cs_glob_mesh->cell_numbering = cell_numbering;
+-
+-  cs_renumber_i_faces(cs_glob_mesh);
+-  cs_renumber_b_faces(cs_glob_mesh);
+-
+-  /* Build group classes */
+-
+-  cs_mesh_init_group_classes(cs_glob_mesh);
+-
+-  /* Print info on mesh */
+-
+-  if (cs_glob_mesh->verbosity > 0)
+-    cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
+-
+-  /* Compute geometric quantities related to the mesh */
+-
+-  cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
+-  cs_mesh_bad_cells_detect(cs_glob_mesh, cs_glob_mesh_quantities);
+-  cs_user_mesh_bad_cells_tag(cs_glob_mesh, cs_glob_mesh_quantities);
+-
+-  /* Initialize selectors and locations for the mesh */
+-
+-  cs_mesh_init_selectors();
+-  cs_mesh_location_build(cs_glob_mesh, -1);
+-
+-  /* Check coherency if debugging */
+-
+-#if 0
+-  cs_mesh_coherency_check();
+-#endif
+-
+-  /* Update Fortran mesh sizes and quantities */
+-
+-  cs_preprocess_mesh_update_fortran();
+-
+-  /* Update rotor cells flag array in case of parallelism and/or periodicity */
+-
+-  if (cs_glob_mesh->halo != NULL) {
+-
+-    const cs_mesh_t *m = cs_glob_mesh;
+-
+-    BFT_REALLOC(tbm->cell_rotor_num,
+-                m->n_cells_with_ghosts,
+-                int);
+-
+-    cs_halo_sync_untyped(m->halo,
+-                         CS_HALO_EXTENDED,
+-                         sizeof(int),
+-                         tbm->cell_rotor_num);
+-
+-  }
+-
+-  /* Update linear algebra APIs relative to mesh */
+-
+-  cs_gradient_perio_update_mesh();
+-  cs_matrix_update_mesh();
+-
+-  t_end = cs_timer_wtime();
+-
+-  *t_elapsed = t_end - t_start;
++void
++cs_turbomachinery_restart_mesh(double   t_cur_mob,
++                               double  *t_elapsed)
++{
++  _update_mesh(true, t_cur_mob, t_elapsed);
+ }
+ 
+ /*----------------------------------------------------------------------------*/
+@@ -1047,11 +1111,23 @@
+ 
+   _copy_mesh(cs_glob_mesh, tbm->reference_mesh);
+ 
++  /* Reorder reference mesh by global number to avoid some issues with
++     joining, especially in serial mode where global numbers are not
++     expected to be present at joining stages */
++
++  cs_renumber_i_faces_by_gnum(tbm->reference_mesh);
++  cs_renumber_b_faces_by_gnum(tbm->reference_mesh);
++
+   /* Complete the mesh with rotor-stator joining */
+ 
+   if (cs_glob_n_joinings > 0) {
+     cs_real_t t_elapsed;
+-    cs_turbomachinery_update_mesh(0., &t_elapsed);
++    if (cs_file_isreg("restart/mesh"))
++      cs_turbomachinery_restart_mesh(cs_glob_time_step->t_cur,
++                                     &t_elapsed);
++    else
++      cs_turbomachinery_update_mesh(cs_glob_time_step->t_cur,
++                                    &t_elapsed);
+   }
+ 
+   /* Adapt postprocessing options if required;
+Index: src/base/cs_turbomachinery.h
+===================================================================
+--- src/base/cs_turbomachinery.h	(révision 8690)
++++ src/base/cs_turbomachinery.h	(copie de travail)
+@@ -145,6 +145,18 @@
+                               double  *t_elapsed);
+ 
+ /*----------------------------------------------------------------------------
++ * Read mesh from checkpoint for unsteady rotor/stator computation
++ *
++ * parameters:
++ *   t_cur_mob    <-- current rotor time
++ *   t_elapsed    --> elapsed computation time
++ *----------------------------------------------------------------------------*/
++
++void
++cs_turbomachinery_restart_mesh(double   t_cur_mob,
++                               double  *t_elapsed);
++
++/*----------------------------------------------------------------------------
+  * Reinitialize interior face-based fields.
+  *----------------------------------------------------------------------------*/
+ 
+Index: src/base/cs_restart.c
+===================================================================
+--- src/base/cs_restart.c	(révision 8690)
++++ src/base/cs_restart.c	(copie de travail)
+@@ -55,6 +55,7 @@
+ #include "cs_file.h"
+ #include "cs_io.h"
+ #include "cs_mesh.h"
++#include "cs_mesh_save.h"
+ #include "cs_mesh_location.h"
+ #include "cs_part_to_block.h"
+ #include "cs_parall.h"
+@@ -1074,6 +1075,23 @@
+ }
+ 
+ /*----------------------------------------------------------------------------
++ * Save output mesh for turbomachinery if needed
++ *
++ * Fortran interface
++ *
++ * subroutine trbsui
++ * *****************
++ *----------------------------------------------------------------------------*/
++
++void CS_PROCF (trbsui, TRBSUI)
++(
++ void
++)
++{
++  cs_mesh_save(cs_glob_mesh, NULL, "checkpoint", "mesh");
++}
++
++/*----------------------------------------------------------------------------
+  * Indicate if a restart directory is present.
+  *
+  * Fortran interface
+Index: src/base/cs_restart.h
+===================================================================
+--- src/base/cs_restart.h	(révision 8690)
++++ src/base/cs_restart.h	(copie de travail)
+@@ -150,6 +150,20 @@
+ );
+ 
+ /*----------------------------------------------------------------------------
++ * Save output mesh for turbomachinery if needed
++ *
++ * Fortran interface
++ *
++ * subroutine trbsui
++ * *****************
++ *----------------------------------------------------------------------------*/
++
++void CS_PROCF (trbsui, TRBSUI)
++(
++ void
++);
++
++/*----------------------------------------------------------------------------
+  * Indicate if a restart directory is present.
+  *
+  * Fortran interface
+Index: src/base/caltri.f90
+===================================================================
+--- src/base/caltri.f90	(révision 8690)
++++ src/base/caltri.f90	(copie de travail)
+@@ -584,45 +584,6 @@
+ 
+   endif
+ 
+-  ! Using unsteady rotor/stator, geometric parameters must be recalculated
+-  if (iturbo.eq.2) then
+-
+-    ! Update mesh
+-
+-    call turbomachinery_update_mesh(ttpmob, rvoid(1))
+-    !==============================
+-
+-    ! Update arrays whose size could have changed (nfac, ncelet)
+-
+-    ! Main internal faces properties array
+-    call turbomachinery_reinit_i_face_fields
+-
+-    if (irangp.ge.0 .or. iperio.eq.1) then
+-
+-      ! Main and auxiliary arrays
+-      call resize_aux_arrays
+-      call resize_main_real_array ( dt , propce )
+-
+-      ! Turbo module
+-      call turbomachinery_update
+-
+-      ! Fields
+-      call fldtri(nproce, dt, propce)
+-
+-      ! Other arrays, depending on user options
+-      if (iilagr.gt.0) &
+-           call resize_n_sca_real_arrays ( ntersl, tslagr )
+-
+-      if (iphydr.eq.1) then
+-        call resize_vec_real_array_ni ( frcxt )
+-      elseif (iphydr.eq.2) then
+-        call resize_sca_real_array ( prhyd )
+-      endif
+-
+-    endif
+-
+-  endif
+-
+ endif
+ 
+ !===============================================================================
+@@ -1047,6 +1008,10 @@
+ 
+   call ecrava(frcxt, prhyd)
+ 
++  if (iturbo.eq.2 .and. iecaux.eq.1) then
++    call trbsui
++  endif
++
+   if (nfpt1t.gt.0) then
+     ficsui = '1dwall_module'
+     call ecrt1d                                                   &
+Index: src/base/cs_renumber.c
+===================================================================
+--- src/base/cs_renumber.c	(révision 8690)
++++ src/base/cs_renumber.c	(copie de travail)
+@@ -5680,6 +5680,55 @@
+ 
+ /*----------------------------------------------------------------------------*/
+ /*!
++ * \brief Renumber cells depending on code options and target machine.
++ *
++ * parameters:
++ *   mesh  <->  pointer to global mesh structure
++ *
++ * \param[in, out]  mesh  pointer to global mesh structure
++ */
++/*----------------------------------------------------------------------------*/
++
++void
++cs_renumber_cells(cs_mesh_t  *mesh)
++{
++  if (mesh->cell_numbering != NULL)
++    cs_numbering_destroy(&(mesh->cell_numbering));
++
++  const char *p = NULL;
++
++  /* Initialization */
++
++  if (_cs_renumber_n_threads < 1)
++    cs_renumber_set_n_threads(cs_glob_n_threads);
++
++  p = getenv("CS_RENUMBER");
++
++  if (p != NULL) {
++    if (strcmp(p, "off") == 0 || strcmp(p, "IBM") == 0) {
++      if (mesh->cell_numbering == NULL)
++        mesh->cell_numbering = cs_numbering_create_default(mesh->n_cells);
++      return;
++    }
++  }
++
++  /* Apply renumbering */
++
++  _renumber_cells(mesh);
++
++  if (mesh->verbosity > 0)
++    bft_printf
++      ("\n ----------------------------------------------------------\n");
++
++  if (mesh->cell_numbering == NULL)
++    mesh->cell_numbering = cs_numbering_create_default(mesh->n_cells);
++
++  if (mesh->verbosity > 0)
++    _log_bandwidth_info(mesh, _("volume mesh"));
++}
++
++/*----------------------------------------------------------------------------*/
++/*!
+  * \brief Renumber interior faces for vectorization or threading depending on
+  * code options and target machine.
+  *
+@@ -5725,9 +5774,39 @@
+     mesh->i_face_numbering = cs_numbering_create_default(mesh->n_i_faces);
+ 
+   _renumber_i_test(mesh);
++}
+ 
+-  if (mesh->verbosity > 0)
+-    _log_bandwidth_info(mesh, _("volume mesh"));
++/*----------------------------------------------------------------------------
++ * Renumber interior faces by global number.
++ *
++ * This effectively resets the interior faces to their initial numbering.
++ *
++ * parameters:
++ *   mesh  <->  pointer to global mesh structure
++ *----------------------------------------------------------------------------*/
++
++void
++cs_renumber_i_faces_by_gnum(cs_mesh_t  *mesh)
++{
++  if (mesh->i_face_numbering != NULL)
++    cs_numbering_destroy(&(mesh->i_face_numbering));
++
++  if (mesh->global_i_face_num != NULL) {
++
++    cs_lnum_t *new_to_old_i = cs_order_gnum(NULL,
++                                            mesh->global_i_face_num,
++                                            mesh->n_i_faces);
++
++    _cs_renumber_update_i_faces(mesh, new_to_old_i);
++
++    mesh->i_face_numbering
++      = cs_numbering_create_default(mesh->n_i_faces);
++
++    BFT_FREE(new_to_old_i);
++
++    if (mesh->n_domains < 2)
++      BFT_FREE(mesh->global_i_face_num);
++  }
+ }
+ 
+ /*----------------------------------------------------------------------------*/
+@@ -5779,6 +5858,40 @@
+   _renumber_b_test(mesh);
+ }
+ 
++/*----------------------------------------------------------------------------
++ * Renumber boundary faces by global number.
++ *
++ * This effectively resets the boundary faces to their initial numbering.
++ *
++ * parameters:
++ *   mesh  <->  pointer to global mesh structure
++ *----------------------------------------------------------------------------*/
++
++void
++cs_renumber_b_faces_by_gnum(cs_mesh_t  *mesh)
++{
++  if (mesh->b_face_numbering != NULL)
++    cs_numbering_destroy(&(mesh->b_face_numbering));
++
++  if (mesh->global_b_face_num != NULL) {
++
++    cs_lnum_t *new_to_old_b = cs_order_gnum(NULL,
++                                            mesh->global_b_face_num,
++                                            mesh->n_b_faces);
++
++    _cs_renumber_update_b_faces(mesh, new_to_old_b);
++
++    mesh->b_face_numbering
++      = cs_numbering_create_default(mesh->n_b_faces);
++
++    BFT_FREE(new_to_old_b);
++
++    if (mesh->n_domains < 2)
++      BFT_FREE(mesh->global_b_face_num);
++
++  }
++}
++
+ /*----------------------------------------------------------------------------*/
+ 
+ END_C_DECLS
+Index: src/base/cs_preprocessor_data.c
+===================================================================
+--- src/base/cs_preprocessor_data.c	(révision 8690)
++++ src/base/cs_preprocessor_data.c	(copie de travail)
+@@ -122,11 +122,6 @@
+   cs_gnum_t    n_g_faces_connect_read;
+   cs_gnum_t    n_g_vertices_read;
+ 
+-  /* Temporary mesh data */
+-
+-  int          read_cell_rank;
+-  int         *cell_rank;
+-
+ } _mesh_reader_t;
+ 
+ /*============================================================================
+@@ -257,8 +252,6 @@
+   mr->n_g_faces_read = 0;
+   mr->n_g_faces_connect_read = 0;
+ 
+-  mr->cell_rank = NULL;
+-
+   return mr;
+ }
+ 
+@@ -2298,8 +2291,42 @@
+   long  echo = CS_IO_ECHO_OPEN_CLOSE;
+   _mesh_reader_t  *mr = _cs_glob_mesh_reader;
+ 
+-  _set_block_ranges(mesh, mesh_builder);
++  bool pre_partitioned = false;
+ 
++  /* Check for existing partitioning and cell block info (set by
++     cs_mesh_to_builder_partition and valid if the global number of
++     cells has not changed), in which case the existing
++     partitioning may be used */
++
++  if (mesh_builder->have_cell_rank) {
++
++    cs_block_dist_info_t cell_bi_ref;
++    memcpy(&cell_bi_ref,
++           &(mesh_builder->cell_bi),
++           sizeof(cs_block_dist_info_t));
++    _set_block_ranges(mesh, mesh_builder);
++    cs_gnum_t n_g_cells_ref = 0;
++    if (cell_bi_ref.gnum_range[1] > cell_bi_ref.gnum_range[0])
++      n_g_cells_ref = cell_bi_ref.gnum_range[1] - cell_bi_ref.gnum_range[0];
++    cs_parall_counter(&n_g_cells_ref, 1);
++
++    _set_block_ranges(mesh, mesh_builder);
++
++    if (n_g_cells_ref == mesh->n_g_cells) {
++      memcpy(&(mesh_builder->cell_bi),
++             &cell_bi_ref,
++             sizeof(cs_block_dist_info_t));
++      pre_partitioned = true;
++    }
++    else {
++      mesh_builder->have_cell_rank = false;
++      BFT_FREE(mesh_builder->cell_rank);
++    }
++
++  }
++  else
++    _set_block_ranges(mesh, mesh_builder);
++
+   for (file_id = 0; file_id < mr->n_files; file_id++)
+     _read_data(file_id, mesh, mesh_builder, mr, echo);
+ 
+@@ -2308,7 +2335,8 @@
+ 
+   /* Partition data */
+ 
+-  cs_partition(mesh, mesh_builder, partition_stage);
++  if (! pre_partitioned)
++    cs_partition(mesh, mesh_builder, partition_stage);
+ 
+   bft_printf("\n");
+ 
+Index: src/base/cs_renumber.h
+===================================================================
+--- src/base/cs_renumber.h	(révision 8690)
++++ src/base/cs_renumber.h	(copie de travail)
+@@ -209,6 +209,20 @@
+ void
+ cs_renumber_mesh(cs_mesh_t  *mesh);
+ 
++/*----------------------------------------------------------------------------*/
++/*!
++ * \brief Renumber cells depending on code options and target machine.
++ *
++ * parameters:
++ *   mesh  <->  pointer to global mesh structure
++ *
++ * \param[in, out]  mesh  pointer to global mesh structure
++ */
++/*----------------------------------------------------------------------------*/
++
++void
++cs_renumber_cells(cs_mesh_t  *mesh);
++
+ /*----------------------------------------------------------------------------
+  * Renumber interior faces for vectorization or threading depending on code
+  * options and target machine.
+@@ -221,6 +235,18 @@
+ cs_renumber_i_faces(cs_mesh_t  *mesh);
+ 
+ /*----------------------------------------------------------------------------
++ * Renumber interior faces by global number.
++ *
++ * This effectively resets the interior faces to their initial numbering.
++ *
++ * parameters:
++ *   mesh  <->  pointer to global mesh structure
++ *----------------------------------------------------------------------------*/
++
++void
++cs_renumber_i_faces_by_gnum(cs_mesh_t  *mesh);
++
++/*----------------------------------------------------------------------------
+  * Renumber boundary faces for vectorization or threading depending on code
+  * options and target machine.
+  *
+@@ -231,6 +257,18 @@
+ void
+ cs_renumber_b_faces(cs_mesh_t  *mesh);
+ 
++/*----------------------------------------------------------------------------
++ * Renumber boundary faces by global number.
++ *
++ * This effectively resets the boundary faces to their initial numbering.
++ *
++ * parameters:
++ *   mesh  <->  pointer to global mesh structure
++ *----------------------------------------------------------------------------*/
++
++void
++cs_renumber_b_faces_by_gnum(cs_mesh_t  *mesh);
++
+ /*----------------------------------------------------------------------------*/
+ 
+ END_C_DECLS
+Index: src/base/cs_preprocess.c
+===================================================================
+--- src/base/cs_preprocess.c	(révision 8690)
++++ src/base/cs_preprocess.c	(copie de travail)
+@@ -279,7 +279,7 @@
+   if (cs_glob_mesh->modified > 0 || partition_preprocess) {
+     if (partition_preprocess) {
+       if (cs_glob_mesh->modified > 0)
+-        cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, "mesh_output");
++        cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, NULL, "mesh_output");
+       else
+         cs_mesh_to_builder(cs_glob_mesh, cs_glob_mesh_builder, true, NULL);
+       cs_partition(cs_glob_mesh, cs_glob_mesh_builder, CS_PARTITION_MAIN);
+@@ -288,7 +288,7 @@
+       cs_mesh_update_auxiliary(cs_glob_mesh);
+     }
+     else
+-      cs_mesh_save(cs_glob_mesh, NULL, "mesh_output");
++      cs_mesh_save(cs_glob_mesh, NULL, NULL, "mesh_output");
+   }
+ 
+   /* Destroy the temporary structure used to build the main mesh */

@@ -50,6 +50,13 @@ Bug fixes:
 
 - Fix hang in GUI when starting run where the case's path contains whitespace.
 
+Optional patches
+----------------
+
+- For better transient turbomachinery restart behavior, the joined mesh is now
+  also handled using checkpoint/restart.
+  * to apply this patch, see instructions in patches/README.
+
 Architectural changes
 ---------------------
 

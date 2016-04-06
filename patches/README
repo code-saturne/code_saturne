@@ -12,4 +12,20 @@ The tracking algorithm assumes perfectly planar faces. A partial rewrite of
 this algorithm, using new location tests, has been done for versions > 4.
 The following patch provides this algorithm for version 4.0.
 
-patch: cs_lagr_tracking.c 
+patch file : cs_lagr_tracking.c
+
+To apply this patch, copy it to src/lagr in the source tree and reinstall,
+or copy it to a user sources directory.
+
+* Transient turbomachinery restart
+  --------------------------------
+
+For better transient turbomachinery restart behavior, the joined mesh is now
+also handled using checkpoint/restart, starting from versions 4.3 and 4.2.1.
+The following patch provides the algorithm for version 4.0:
+
+patch file: turbomachinery_restart.patch
+
+To apply this patch, run "patch -p0 < patches/turbomachinery_restart.patch"
+in the top-level source directory, then reinstall the code.
+
