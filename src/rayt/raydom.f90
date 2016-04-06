@@ -20,43 +20,32 @@
 
 !-------------------------------------------------------------------------------
 
+!> \file raydom.f90
+!> \brief Main subroutine for solving of the radiative transfer equation.
+!>
+!> Two types of method are available:
+!> - Discretes Ordinates Methods (DOM)
+!> - P-1 approximation (only recommended for the CP)
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     itypfb        boundary face types
+!> \param[in]     izfrad        zone number of boundary faces
+!> \param[in]     dt            time step (per cell)
+!_______________________________________________________________________________
+
 subroutine raydom &
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    izfrad ,                                                       &
-   dt     , propce )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-!   SOUS-PROGRAMME DU MODULE RAYONNEMENT :
-!   --------------------------------------
-
-!  Enveloppe principale du module de resolution de l'equation
-!  des transferts radiatifs
-
-!  Deux methodes sont disponibles :
-
-!    1) La methode : "Discretes Ordinates Methods" (DOM)
-!    2) L'approximation P-1 (recommande uniquement pour le CP)
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! itypfb           ! ia ! <-- ! boundary face types                            !
-! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+   dt )
 
 !===============================================================================
 ! Module files
@@ -81,6 +70,7 @@ use dimens, only: ndimfb
 use mesh
 use field
 use cs_c_bindings
+use pointe, only:pmapper_double_r1
 
 !===============================================================================
 
@@ -94,7 +84,6 @@ integer          itypfb(ndimfb)
 integer          izfrad(ndimfb)
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 
 ! Local variables
 
@@ -132,6 +121,12 @@ double precision, dimension(:), pointer :: cvara_scalt
 double precision, dimension(:), pointer :: cvara_yfol
 double precision, dimension(:), pointer :: cpro_cp
 double precision, dimension(:,:), pointer :: bqinsp
+double precision, dimension(:), pointer :: cpro_qx, cpro_qy, cpro_qz
+double precision, dimension(:), pointer :: cpro_cak1, cpro_tsri1, cpro_tsre1
+double precision, dimension(:), pointer :: cpro_abso1, cpro_emi1, cpro_temp2
+double precision, dimension(:), pointer :: cpro_cak, cpro_tsri, cpro_tsre
+double precision, dimension(:), pointer :: cpro_abso, cpro_emi
+double precision, dimension(:), pointer :: cpro_x2, cpro_lumin
 
 integer    ipadom
 data       ipadom /0/
@@ -226,17 +221,27 @@ write(nfecra,1000)
 !---> Constants initialization
 unspi = 1.d0/pi
 
+call field_get_val_s(iprpfl(icak(1)),cpro_cak1)
+call field_get_val_s(iprpfl(itsri(1)),cpro_tsri1)
+call field_get_val_s(iprpfl(itsre(1)),cpro_tsre1)
+call field_get_val_s(iprpfl(iabso(1)),cpro_abso1)
+call field_get_val_s(iprpfl(iemi(1)),cpro_emi1)
+call field_get_val_s(iprpfl(iqx),cpro_qx)
+call field_get_val_s(iprpfl(iqy),cpro_qy)
+call field_get_val_s(iprpfl(iqz),cpro_qz)
+call field_get_val_s(iprpfl(ilumin),cpro_lumin)
+
 !--> Working arrays
 do iel = 1, ncel
-  propce(iel,ipproc(icak(1)))  = 0.d0  ! Radiation coefficient k of the gas phase
-  propce(iel,ipproc(itsri(1))) = 0.d0  ! TS implicit due to emission
-  propce(iel,ipproc(itsre(1))) = 0.d0  ! TS explicit due to emission and absorption
-  propce(iel,ipproc(iabso(1)))  = 0.d0  ! Absortion: Sum,i((kg,i+kp) * Integral(Ii)dOmega)
-  propce(iel,ipproc(iemi(1)))  = 0.d0  ! Emission:  Sum,i((kg,i+kp) * stephn * T^4 *agi)
+  cpro_cak1(iel)  = 0.d0  ! Radiation coefficient k of the gas phase
+  cpro_tsri1(iel) = 0.d0  ! TS implicit due to emission
+  cpro_tsre1(iel) = 0.d0  ! TS explicit due to emission and absorption
+  cpro_abso1(iel) = 0.d0  ! Absortion: Sum,i((kg,i+kp) * Integral(Ii)dOmega)
+  cpro_emi1(iel)  = 0.d0  ! Emission:  Sum,i((kg,i+kp) * stephn * T^4 *agi)
 !
-  propce(iel,ipproc(iqx)) = 0.d0 ! X-component of the radiative flux vector
-  propce(iel,ipproc(iqy)) = 0.d0 ! Y-compnent of the radiative flux vector
-  propce(iel,ipproc(iqz)) = 0.d0 ! Z-Component of the radiative flux vector
+  cpro_qx(iel) = 0.d0 ! X-component of the radiative flux vector
+  cpro_qy(iel) = 0.d0 ! Y-compnent of the radiative flux vector
+  cpro_qz(iel) = 0.d0 ! Z-Component of the radiative flux vector
 
   iabgaz(iel) = 0.d0 ! Absorption of the gas phase: kg,i * Integral(Ii) * dOmega
   iabpar(iel) = 0.d0 ! Absortion of particles: kp * Integral(Ii) * dOmega
@@ -313,9 +318,10 @@ else if (itherm.eq.2) then
 
     ! Particules' temperature
     do icla = 1, nclacp
+      call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
       ipcla = 1+icla
       do iel = 1, ncel
-        tempk(iel,ipcla) = propce(iel,ipproc(itemp2(icla)))
+        tempk(iel,ipcla) = cpro_temp2(iel)
       enddo
     enddo
 
@@ -323,9 +329,10 @@ else if (itherm.eq.2) then
   else if (ippmod(icfuel).ge.0) then
 
     do icla = 1, nclafu
+      call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
       ipcla = 1+icla
       do iel = 1, ncel
-        tempk(iel,ipcla) = propce(iel,ipproc(itemp2(icla)))
+        tempk(iel,ipcla) = cpro_temp2(iel)
       enddo
     enddo
 
@@ -342,7 +349,7 @@ endif
 
 !--> Initialization to a non-admissible value for testing after usray3
 do iel = 1, ncel
-  propce(iel,ipproc(icak(1))) = -grand
+  cpro_cak1(iel) = -grand
 enddo
 
 !--> Absorption coefficient for different modules
@@ -352,7 +359,7 @@ enddo
 
 if (ippmod(iphpar).ge.2) then
 
-  call ppcabs(propce, tempk, kgi, agi, agbi)
+  call ppcabs(tempk, kgi, agi, agbi)
 
 else
 
@@ -363,7 +370,7 @@ else
 
   if (iihmpr.eq.1) then
 
-    call uiray3(propce(1,ipproc(icak(1))), ncel, imodak) !FIXME for ADF
+    call uiray3(cpro_cak1, ncel, imodak) !FIXME for ADF
 
     if (iirayo.eq.2 .and. ippmod(iphpar).le.1 .and. ipadom.le.3) then
       sf = 0.d0
@@ -393,7 +400,7 @@ else
 
       iok = 0
       do iel = 1, ncel
-        if (propce(iel,ipproc(icak(1))).lt.xkmin) then
+        if (cpro_cak1(iel).lt.xkmin) then
           iok = iok +1
         endif
       enddo
@@ -417,7 +424,7 @@ else
     itypfb ,                                                       &
     izfrad ,                                                       &
     dt     ,                                                       &
-    propce(1,ipproc(icak(1))))
+    cpro_cak1)
   endif
 
 endif
@@ -427,9 +434,9 @@ endif
 !--> Test if the radiation coeffcient has been assigned
 if (iirayo.ge.1) then
   if (imoadf.eq.0.and.imfsck.eq.0) then
-    ckmin = propce(1,ipproc(icak(1)))
+    ckmin = cpro_cak1(1)
     do iel = 1, ncel
-      ckmin = min(ckmin,propce(iel,ipproc(icak(1))))
+      ckmin = min(ckmin,cpro_cak1(iel))
     enddo
 
     if (irangp.ge.0) then
@@ -479,13 +486,13 @@ do ngg = 1, nwsgg
 
   if (imoadf.ge.1.or.imfsck.eq.1) then
     do iel = 1, ncel
-      propce(iel, ipproc(icak(1))) = kgi(iel, ngg) ! TODO merge the two arrays
+      cpro_cak1(iel) = kgi(iel, ngg) ! TODO merge the two arrays
     enddo
 
   else
     aa = 0.d0
     do iel = 1, ncel
-      aa = max(aa, propce(iel,ipproc(icak(1))))
+      aa = max(aa, cpro_cak1(iel))
     enddo
     if (irangp.ge.0) then
       call parmax(aa)
@@ -505,7 +512,7 @@ do ngg = 1, nwsgg
     !--> Gas phase: Explicit source term in the transport eqn. of theta4
 
     do iel = 1, ncel
-      smbrs(iel) = 3.d0*propce(iel,ipproc(icak(1)))*(tempk(iel,1)**4)          &
+      smbrs(iel) = 3.d0*cpro_cak1(iel)*(tempk(iel,1)**4)          &
                  * agi(iel, ngg)*volume(iel)
     enddo
 
@@ -515,10 +522,12 @@ do ngg = 1, nwsgg
     if (ippmod(iccoal).ge.0) then
       do icla = 1, nclacp
         ipcla = 1+icla
+        call field_get_val_s(iprpfl(ix2(icla)),cpro_x2)
+        call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
         do iel = 1,ncel
           smbrs(iel) = smbrs(iel)                               &
-                     + (3.d0*propce(iel,ipproc(ix2(icla)))      &
-                       *  propce(iel,ipproc(icak(ipcla)))       &
+                     + (3.d0*cpro_x2(iel)                       &
+                       *  cpro_cak(iel)                         &
                        * (tempk(iel,ipcla)**4)*agi(iel,ngg)     &
                        *  volume(iel))
         enddo
@@ -529,10 +538,11 @@ do ngg = 1, nwsgg
       do icla = 1, nclafu
         ipcla = 1+icla
         call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
+        call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
         do iel = 1,ncel
           smbrs(iel) =  smbrs(iel)                              &
                      + (3.d0*cvara_yfol(iel)                    &
-                       *  propce(iel,ipproc(icak(ipcla)))       &
+                       *  cpro_cak(iel)                         &
                        * (tempk(iel,ipcla)**4)*agi(iel,ngg)     &
                        *  volume(iel) )
         enddo
@@ -542,7 +552,7 @@ do ngg = 1, nwsgg
     !--> Gas phase: Implicit source term in the transport eqn. of theta4
 
     do iel = 1, ncel
-      rovsdt(iel) =  3.d0*propce(iel,ipproc(icak(1)))*volume(iel)
+      rovsdt(iel) =  3.d0*cpro_cak1(iel)*volume(iel)
     enddo
 
     !--> Solid phase:
@@ -551,10 +561,12 @@ do ngg = 1, nwsgg
     if (ippmod(iccoal).ge.0) then
       do icla = 1, nclacp
         ipcla = 1+icla
+        call field_get_val_s(iprpfl(ix2(icla)),cpro_x2)
+        call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
         do iel = 1,ncel
           rovsdt(iel) = rovsdt(iel)                                      &
-                      + (3.d0*propce(iel,ipproc(ix2(icla)))              &
-                        * propce(iel,ipproc(icak(ipcla))) * volume(iel) )
+                      + (3.d0*cpro_x2(iel)                               &
+                        * cpro_cak(iel) * volume(iel) )
         enddo
       enddo
 
@@ -563,10 +575,11 @@ do ngg = 1, nwsgg
       do icla = 1, nclafu
         ipcla = 1+icla
         call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
+        call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
         do iel = 1,ncel
           rovsdt(iel) = rovsdt(iel)                                      &
                       + (3.d0*cvara_yfol(iel)                            &
-                        * propce(iel,ipproc(icak(ipcla))) * volume(iel) )
+                        * cpro_cak(iel) * volume(iel) )
         enddo
       enddo
 
@@ -575,7 +588,7 @@ do ngg = 1, nwsgg
     ! Radiation coeffcient of the bulk phase
     ! Gas phase:
     do iel = 1, ncel
-      ckmel(iel) = propce(iel,ipproc(icak(1)))
+      ckmel(iel) = cpro_cak1(iel)
     enddo
 
     if (ippmod(iccoal).ge.0) then
@@ -583,10 +596,12 @@ do ngg = 1, nwsgg
       ! Coal particles
       do icla = 1, nclacp
         ipcla = 1+icla
+        call field_get_val_s(iprpfl(ix2(icla)),cpro_x2)
+        call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
         do iel = 1, ncel
           ckmel(iel) = ckmel(iel)                                  &
-                     + ( propce(iel,ipproc(ix2(icla)))             &
-                       * propce(iel,ipproc(icak(ipcla))) )
+                     + ( cpro_x2(iel)                              &
+                       * cpro_cak(iel) )
         enddo
       enddo
     ! Fuel droplets
@@ -594,10 +609,11 @@ do ngg = 1, nwsgg
       do icla = 1, nclafu
         ipcla = 1+icla
         call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
+        call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
         do iel = 1, ncel
           ckmel(iel) = ckmel(iel)                                  &
                      + ( cvara_yfol(iel)                           &
-                       * propce(iel,ipproc(icak(ipcla))) )
+                       * cpro_cak(iel) )
         enddo
       enddo
     endif
@@ -629,8 +645,8 @@ do ngg = 1, nwsgg
       flurds , flurdb ,                                              &
       viscf  , viscb  ,                                              &
       smbrs  , rovsdt ,                                              &
-      propce(1,ipproc(iabso(1))),propce(1,ipproc(iemi(1))),          &
-      propce(1,ipproc(itsre(1))) ,                                   &
+      cpro_abso1 , cpro_emi1 ,                                       &
+      cpro_tsre1 ,                                                   &
       iqxpar , iqypar , iqzpar ,                                     &
       bqinci , beps   , tparo  ,                                     &
       ckmel  , agbi   , ngg    )
@@ -643,7 +659,7 @@ do ngg = 1, nwsgg
 
     !--> Gas phase: Explicit source term of the ETR
     do iel = 1, ncel
-      smbrs(iel) = stephn*propce(iel,ipproc(icak(1)))              &
+      smbrs(iel) = stephn*cpro_cak1(iel)              &
                  *(tempk(iel,1)**4)*agi(iel,ngg)*volume(iel)*unspi
     enddo
 
@@ -652,11 +668,13 @@ do ngg = 1, nwsgg
     if (ippmod(iccoal).ge.0) then
       do icla = 1, nclacp
         ipcla = 1+icla
+        call field_get_val_s(iprpfl(ix2(icla)),cpro_x2)
+        call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
         do iel = 1, ncel
           smbrs(iel) = smbrs(iel)                                 &
-                     + propce(iel,ipproc(ix2(icla)))              &
+                     + cpro_x2(iel)                               &
                        * agi(iel,ngg)*stephn                      &
-                       *propce(iel,ipproc(icak(ipcla)))           &
+                       *cpro_cak(iel)                             &
                        *(tempk(iel,ipcla)**4)                     &
                        * volume(iel)*unspi
         enddo
@@ -666,11 +684,12 @@ do ngg = 1, nwsgg
       do icla = 1,nclafu
         ipcla = 1+icla
         call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
+        call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
         do iel = 1,ncel
           smbrs(iel) = smbrs(iel)                         &
                      + cvara_yfol(iel)                    &
                        *agi(iel,ngg)*stephn               &
-                       *propce(iel,ipproc(icak(ipcla)))   &
+                       *cpro_cak(iel)                     &
                        *(tempk(iel,ipcla)**4)             &
                        *volume(iel)* unspi
         enddo
@@ -679,7 +698,7 @@ do ngg = 1, nwsgg
 
     !--> Gas phase: Implicit source term of the ETR
     do iel = 1, ncel
-      rovsdt(iel) = propce(iel,ipproc(icak(1))) * volume(iel)
+      rovsdt(iel) = cpro_cak1(iel) * volume(iel)
     enddo
 
     !--> Solid phase
@@ -687,10 +706,12 @@ do ngg = 1, nwsgg
     if (ippmod(iccoal).ge.0) then
       do icla = 1, nclacp
         ipcla = 1+icla
+        call field_get_val_s(iprpfl(ix2(icla)),cpro_x2)
+        call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
         do iel = 1, ncel
           rovsdt(iel) = rovsdt(iel)                                      &
-                      + propce(iel,ipproc(ix2(icla)))                    &
-                        * propce(iel,ipproc(icak(ipcla))) * volume(iel)
+                      + cpro_x2(iel)                                     &
+                        * cpro_cak(iel) * volume(iel)
         enddo
       enddo
     ! Fuel droplets: Implicit source term of the ETR
@@ -698,10 +719,11 @@ do ngg = 1, nwsgg
       do icla = 1, nclafu
         ipcla = 1+icla
         call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
+        call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
         do iel = 1, ncel
           rovsdt(iel) = rovsdt(iel)                                      &
                       + cvara_yfol(iel)                                  &
-                        * propce(iel,ipproc(icak(ipcla))) * volume(iel)
+                        * cpro_cak(iel) * volume(iel)
         enddo
       enddo
     endif
@@ -724,7 +746,7 @@ do ngg = 1, nwsgg
       flurds , flurdb ,                                              &
       viscf  , viscb  ,                                              &
       smbrs  , rovsdt ,                                              &
-      propce(1,ipproc(itsre(1))),                                    &
+      cpro_tsre1 ,                                                 &
       iqxpar , iqypar , iqzpar  ,                                    &
       bqinci , bfnet  , ngg)
 
@@ -734,22 +756,24 @@ do ngg = 1, nwsgg
   do iel = 1, ncel
 
     ! Absorption
-    iabgaz(iel) = iabgaz(iel)+(propce(iel,ipproc(icak(1))) *          &
-                               propce(iel,ipproc(itsre(1)))*          &
+    iabgaz(iel) = iabgaz(iel)+(cpro_cak1(iel) *          &
+                               cpro_tsre1(iel) *         &
                                wq(ngg))
   enddo
 
   if (ippmod(iccoal).ge.0) then
     do icla = 1, nclacp
       ipcla = 1+icla
+      call field_get_val_s(iprpfl(ix2(icla)),cpro_x2)
+      call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
       do iel = 1, ncel
-        iabpar(iel) = iabpar(iel) + (propce(iel,ipproc(ix2(icla)))  &
-                                  * propce(iel,ipproc(icak(ipcla))) &
-                                  * propce(iel,ipproc(itsre(1)))    &
+        iabpar(iel) = iabpar(iel) + (cpro_x2(iel)                   &
+                                  * cpro_cak(iel)                   &
+                                  * cpro_tsre1(iel)                  &
                                   * wq(ngg))
         iabparh2(iel,icla)        = iabparh2(iel,icla)              &
-                                  + (propce(iel,ipproc(icak(ipcla)))&
-                                  * propce(iel,ipproc(itsre(1)))    &
+                                  + (cpro_cak(iel)                  &
+                                  * cpro_tsre1(iel)                  &
                                   * wq(ngg))
       enddo
     enddo
@@ -757,14 +781,15 @@ do ngg = 1, nwsgg
     do icla = 1, nclafu
       ipcla = 1+icla
       call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
+      call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
       do iel = 1, ncel
         iabpar(iel) = iabpar(iel) + (cvara_yfol(iel)                &
-                                  * propce(iel,ipproc(icak(ipcla))) &
-                                  * propce(iel,ipproc(itsre(1)))    &
+                                  * cpro_cak(iel)                   &
+                                  * cpro_tsre1(iel)                  &
                                   * wq(ngg))
         iabparh2(iel,icla)        = iabparh2(iel,icla)              &
-                                  + (propce(iel,ipproc(icak(ipcla)))&
-                                  * propce(iel,ipproc(itsre(1)))    &
+                                  + (cpro_cak(iel)                  &
+                                  * cpro_tsre1(iel)                  &
                                   * wq(ngg))
       enddo
     enddo
@@ -772,29 +797,31 @@ do ngg = 1, nwsgg
 
   ! Emission
   do iel = 1, ncel
-    iemgex(iel)=iemgex(iel)-(propce(iel,ipproc(icak(1)))            &
+    iemgex(iel)=iemgex(iel)-(cpro_cak1(iel)                          &
                            *agi(iel,ngg)*4.d0*stephn                &
                            *(tempk(iel,1)**4)*wq(ngg))
-    iemgim(iel)=iemgim(iel)-(16.d0*dcp(iel)*propce(iel,ipproc(icak(1)))      &
+    iemgim(iel)=iemgim(iel)-(16.d0*dcp(iel)*cpro_cak1(iel)           &
                            * agi(iel,ngg)*stephn*(tempk(iel,1)**3)*wq(ngg))
 
   enddo
   if (ippmod(iccoal).ge.0) then
     do icla = 1, nclacp
       ipcla = 1+icla
+      call field_get_val_s(iprpfl(ix2(icla)),cpro_x2)
+      call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
       do iel = 1, ncel
-        iempex(iel) = iempex(iel) -(4.0d0*propce(iel,ipproc(ix2(icla)))      &
-                                  *stephn * propce(iel,ipproc(icak(ipcla)))  &
+        iempex(iel) = iempex(iel) -(4.0d0*cpro_x2(iel)                       &
+                                  *stephn * cpro_cak(iel)                    &
                                   *(tempk(iel,ipcla)**4)*agi(iel,ngg)*wq(ngg))
         iempexh2(iel,icla) = iempexh2(iel,icla)                              &
-                             -(4.0d0*stephn * propce(iel,ipproc(icak(ipcla)))&
+                             -(4.0d0*stephn * cpro_cak(iel)                  &
                              *(tempk(iel,ipcla)**4)*agi(iel,ngg)*wq(ngg))
-        iempim(iel) = iempim(iel) -(16.d0*propce(iel,ipproc(icak(ipcla)))    &
-                                  *propce(iel,ipproc(ix2(icla)))             &
+        iempim(iel) = iempim(iel) -(16.d0*cpro_cak(iel)                      &
+                                  *cpro_x2(iel)                              &
                                   *stephn*(tempk(iel,ipcla)**3)*agi(iel,ngg) &
                                   /cp2ch(ichcor(icla))*wq(ngg))
         iempimh2(iel,icla) = iempimh2(iel,icla)                              &
-                             -(16.d0*propce(iel,ipproc(icak(ipcla)))         &
+                             -(16.d0*cpro_cak(iel)                           &
                              *stephn*(tempk(iel,ipcla)**3)*agi(iel,ngg)      &
                              /cp2ch(ichcor(icla))*wq(ngg))
 
@@ -804,19 +831,20 @@ do ngg = 1, nwsgg
     do icla = 1, nclafu
       ipcla = 1+icla
       call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
+      call field_get_val_s(iprpfl(icak(ipcla)),cpro_cak)
       do iel = 1, ncel
         iempex(iel) = iempex(iel)  -(4.0d0*cvara_yfol(iel)                    &
-                                   *stephn * propce(iel,ipproc(icak(ipcla)))  &
+                                   *stephn * cpro_cak(iel)                    &
                                    *(tempk(iel,ipcla)**4)*agi(iel,ngg)*wq(ngg))
         iempexh2(iel,icla) = iempexh2(iel,icla)                               &
-                             -(4.0d0*stephn * propce(iel,ipproc(icak(ipcla))) &
+                             -(4.0d0*stephn * cpro_cak(iel)                   &
                              *(tempk(iel,ipcla)**4)*agi(iel,ngg)*wq(ngg))
-        iempim(iel) = iempim(iel) -(16.d0*propce(iel,ipproc(icak(ipcla)))     &
+        iempim(iel) = iempim(iel) -(16.d0*cpro_cak(iel)                       &
                                   *cvara_yfol(iel)*stephn                     &
                                   *(tempk(iel,ipcla)**3)*agi(iel,ngg)/cp2fol  &
                                   *wq(ngg))
         iempimh2(iel,icla) = iempimh2(iel,icla)                               &
-                             -(16.d0*propce(iel,ipproc(icak(ipcla)))          &
+                             -(16.d0*cpro_cak(iel)                            &
                              *stephn*(tempk(iel,ipcla)**3)*agi(iel,ngg)/cp2fol&
                              *wq(ngg))
       enddo
@@ -825,12 +853,12 @@ do ngg = 1, nwsgg
 
   do iel = 1, ncel
     ! Emitted intensity
-    ilutot(iel)=ilutot(iel)+(propce(iel,ipproc(itsre(1)))*wq(ngg))
+    ilutot(iel)=ilutot(iel)+(cpro_tsre1(iel)*wq(ngg))
 
     ! Flux vector components
-    propce(iel,ipproc(iqx))=propce(iel,ipproc(iqx))+(iqxpar(iel)*wq(ngg))
-    propce(iel,ipproc(iqy))=propce(iel,ipproc(iqy))+(iqypar(iel)*wq(ngg))
-    propce(iel,ipproc(iqz))=propce(iel,ipproc(iqz))+(iqzpar(iel)*wq(ngg))
+    cpro_qx(iel) = cpro_qx(iel)+(iqxpar(iel)*wq(ngg))
+    cpro_qy(iel) = cpro_qy(iel)+(iqypar(iel)*wq(ngg))
+    cpro_qz(iel) = cpro_qz(iel)+(iqzpar(iel)*wq(ngg))
   enddo
 
   ! If the ADF model is activated we have to sum up the spectral flux densities
@@ -858,7 +886,7 @@ endif
 !                           /4.PI
 
 do iel=1,ncel
-  propce(iel,ipproc(ilumin))  = ilutot(iel)
+  cpro_lumin(iel) = ilutot(iel)
 enddo
 
 !===============================================================================
@@ -871,7 +899,7 @@ do ifac = 1,nfabor
 enddo
 
 !---> Reading of User datas
-!CAREFUL: The user has acces to the radiation coeffcient propce(1,ipproc(icak(1)))
+!CAREFUL: The user has access to the radiation coeffcient (array cpro_cak1)
 !in usray5. However, only when the standard radiation models of code_saturne are
 !applied, this table contains the true value given by the user. Thus, the usage
 !of the radiation coeffcient in usray5 must be done carefully. In its present
@@ -887,7 +915,7 @@ call usray5 &
   cofafp , cofbfp ,                                              &
   tparo  , bqinci ,                                              &
   bfnet  , bxlam  , bepa   , beps   ,                            &
-  propce(1,ipproc(icak(1)))  )
+  cpro_cak1 )
 
 !---> Check flunet
 iok = 0
@@ -961,33 +989,32 @@ write(nfecra,5030) aa
 if (idverl.ge.0) then
 
   do iel = 1, ncel
-    ! Absoprtion of the gas is copied into iabso(1)
-    propce(iel,ipproc(iabso(1))) = iabgaz(iel)
-    ! Emission of the gas phase is copied into iemi(1)
-    propce(iel,ipproc(iemi(1))) = iemgex(iel)
+    ! Absorption of the gas is copied into abso1
+    cpro_abso1(iel) = iabgaz(iel)
+    ! Emission of the gas phase is copied into emi1
+    cpro_emi1(iel) = iemgex(iel)
   enddo
   if (ippmod(iccoal).ge.0.or.ippmod(icfuel).ge.0) then
     do iel = 1, ncel
-      ! Absoprtion of particles is added to iabso(1)
-      propce(iel,ipproc(iabso(1))) = propce(iel,ipproc(iabso(1))) + iabpar(iel)
-      ! Emission of particles is added to iemi(1)
-      propce(iel,ipproc(iemi(1))) = propce(iel,ipproc(iemi(1))) + iempex(iel)
+      ! Absoprtion of particles is added to abso1
+      cpro_abso1(iel) = cpro_abso1(iel) + iabpar(iel)
+      ! Emission of particles is added to emi1
+      cpro_emi1(iel) = cpro_emi1(iel) + iempex(iel)
     enddo
   endif
   do iel = 1, ncel
     ! Emission + Absorption of gas and particles --> TSexplicit
-    propce(iel,ipproc(itsre(1))) = propce(iel,ipproc(iabso(1)))                &
-                                 + propce(iel,ipproc(iemi(1)))
+    cpro_tsre1(iel) = cpro_abso1(iel) + cpro_emi1(iel)
   enddo
 
   do iel = 1, ncel
     ! TSimplicit of the gas phase
-    propce(iel,ipproc(itsri(1))) = iemgim(iel)
+    cpro_tsri1(iel) = iemgim(iel)
   enddo
   if (ippmod(iccoal).ge.0.or.ippmod(icfuel).ge.0) then
     do iel = 1, ncel
-      ! TSimplicit of the solid phase is added to istri(1)
-      propce(iel,ipproc(itsri(1))) = propce(iel,ipproc(itsri(1))) + iempim(iel)
+      ! TSimplicit of the solid phase is added to stri1
+      cpro_tsri1(iel) = cpro_tsri1(iel) + iempim(iel)
     enddo
   endif
 
@@ -996,20 +1023,24 @@ if (idverl.ge.0) then
   if (ippmod(iccoal).ge.0.or.ippmod(icfuel).ge.0) then
     do icla = 1,nclacp
       ipcla = 1+icla
-        do iel = 1, ncel
-          propce(iel,ipproc(iabso(ipcla))) = iabparh2(iel,icla)
-          propce(iel,ipproc(iemi(ipcla))) = iempexh2(iel,icla)
-          propce(iel,ipproc(itsre(ipcla)))= iabparh2(iel,icla)+iempexh2(iel,icla)
-          propce(iel,ipproc(itsri(ipcla)))= iempimh2(iel,icla)
-        enddo
+      call field_get_val_s(iprpfl(itsri(ipcla)),cpro_tsri)
+      call field_get_val_s(iprpfl(itsre(ipcla)),cpro_tsre)
+      call field_get_val_s(iprpfl(iabso(ipcla)),cpro_abso)
+      call field_get_val_s(iprpfl(iemi(ipcla)),cpro_emi)
+      do iel = 1, ncel
+        cpro_abso(iel) = iabparh2(iel,icla)
+        cpro_emi(iel)  = iempexh2(iel,icla)
+        cpro_tsre(iel) = iabparh2(iel,icla)+iempexh2(iel,icla)
+        cpro_tsri(iel) = iempimh2(iel,icla)
+      enddo
     enddo
   endif
 else
   do iel = 1, ncel
-    propce(iel,ipproc(iabso(1)))  = 0.d0
-    propce(iel,ipproc(iemi(1)))  = 0.d0
-    propce(iel,ipproc(itsre(1))) = 0.d0
-    propce(iel,ipproc(itsri(1))) = 0.d0
+    cpro_abso1(iel)  = 0.d0
+    cpro_emi1(iel)  = 0.d0
+    cpro_tsre1(iel) = 0.d0
+    cpro_tsri1(iel) = 0.d0
   enddo
 endif
 
@@ -1026,9 +1057,9 @@ if (idverl.eq.1 .or. idverl.eq.2) then
   allocate(q(3,ncelet))
 
   do iel = 1, ncel
-    q(1,iel) = propce(iel,ipproc(iqx))
-    q(2,iel) = propce(iel,ipproc(iqy))
-    q(3,iel) = propce(iel,ipproc(iqz))
+    q(1,iel) = cpro_qx(iel)
+    q(2,iel) = cpro_qy(iel)
+    q(3,iel) = cpro_qz(iel)
   enddo
 
   allocate(coefaq(3,nfabor))
@@ -1068,9 +1099,9 @@ if (idverl.eq.1 .or. idverl.eq.2) then
     epsrgp , climgp , coefaq , coefbq , q      , grad   )
 
   do iel = 1,ncel
-    propce(iel,ipproc(itsre(1))) = - grad(1,1,iel)                &
-                                   - grad(2,2,iel)                &
-                                   - grad(3,3,iel)
+    cpro_tsre1(iel) = - grad(1,1,iel)                              &
+                      - grad(2,2,iel)                              &
+                      - grad(3,3,iel)
   enddo
 
   ! Free memory
@@ -1083,7 +1114,7 @@ if (idverl.eq.1 .or. idverl.eq.2) then
 endif
 
 !===============================================================================
-! 7.3 Explicite radiative semi-analytical corrected source term
+! 7.3 Explicit radiative semi-analytical corrected source term
 !===============================================================================
 
 if (idverl.eq.2) then
@@ -1091,13 +1122,12 @@ if (idverl.eq.2) then
   !---> Comparison of the semi-analytical and conservative source terms
   aa = 0.d0
   do iel = 1, ncel
-    aa = aa + propce(iel,ipproc(itsre(1))) * volume(iel)
+    aa = aa + cpro_tsre1(iel) * volume(iel)
   enddo
 
   bb = 0.d0
   do iel = 1,ncel
-    bb = bb                                                                    &
-       + (propce(iel,ipproc(iabso(1)))+propce(iel,ipproc(iemi(1))))*volume(iel)
+    bb = bb + (cpro_abso1(iel)+cpro_emi1(iel))*volume(iel)
   enddo
 
   if(irangp.ge.0) then
@@ -1110,9 +1140,9 @@ if (idverl.eq.2) then
   !---> Correction of the semi-analytical source term by the conservative source
   ! term
   do iel = 1,ncel
-    propce(iel,ipproc(itsre(1))) = ( propce(iel,ipproc(iabso(1)))              &
-                                   + propce(iel,ipproc(iemi(1))))             &
-                                 * aa
+    cpro_tsre1(iel) = ( cpro_abso1(iel)       &
+                      + cpro_emi1(iel))       &
+                       *aa
   enddo
 
 endif
@@ -1130,7 +1160,7 @@ if (idverl.ge.0) then
 
   aa = 0.d0
   do iel = 1, ncel
-    aa = aa + propce(iel,ipproc(itsre(1))) * volume(iel)
+    aa = aa + cpro_tsre1(iel) * volume(iel)
   enddo
 
   if (irangp.ge.0) then
@@ -1308,4 +1338,3 @@ if (ntcabs.eq.ntmabs) deallocate(wq)
 !----
 
 end subroutine
-

@@ -59,7 +59,6 @@
 !> \param[in]     izfrad        zone index for boundary faces
 !>                               and reference face index
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -81,7 +80,7 @@ subroutine raycli &
  ( nvar   , nscal  ,                                              &
    icodcl , itypfb ,                                              &
    izfrad ,                                                       &
-   dt     , propce , rcodcl )
+   dt     , rcodcl )
 
 !===============================================================================
 ! Module files
@@ -118,7 +117,6 @@ integer          itypfb(ndimfb)
 integer          izfrad(ndimfb)
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 double precision rcodcl(ndimfb,nvarcl,3)
 
 ! Local variables
@@ -139,7 +137,7 @@ double precision, allocatable, dimension(:) :: text, tint
 double precision, dimension(:), pointer :: bhconv, bfconv
 double precision, dimension(:), pointer :: b_temp, bqinci
 double precision, dimension(:), pointer :: bxlam, bepa, beps, bfnet
-
+double precision, dimension(:), pointer :: cpro_tsri, cpro_tsre
 double precision, dimension(:), pointer :: cvara_scalt
 
 integer    ipacli
@@ -264,9 +262,12 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
   ! Indicateur : si non suite et premier pas de temps.
   ideb = 1
 
+  call field_get_val_s(iprpfl(itsri(1)),cpro_tsri)
+  call field_get_val_s(iprpfl(itsre(1)),cpro_tsre)
+
   do iel = 1,ncelet
-    propce(iel,ipproc(itsri(1))) = zero
-    propce(iel,ipproc(itsre(1))) = zero
+    cpro_tsri(iel) = zero
+    cpro_tsre(iel) = zero
   enddo
 
   do ifac = 1,nfabor

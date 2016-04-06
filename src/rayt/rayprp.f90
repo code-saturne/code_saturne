@@ -115,8 +115,7 @@ call field_get_key_id('log', keylog)
 call field_get_key_id('post_vis', keyvis)
 
 !===============================================================================
-! 1. RESERVATION D'UNE PLACE DANS PROPCE SI RAYONNEMENT
-!    ET LAGRANGIEN AVEC THERMIQUE DES PARTICULES
+! 1. RAYONNEMENT ET LAGRANGIEN AVEC THERMIQUE DES PARTICULES
 !===============================================================================
 
 if (iirayo.gt.0) then

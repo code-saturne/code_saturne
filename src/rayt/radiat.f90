@@ -82,7 +82,7 @@ module radiat
   !> - 1 FSCK model activated
   integer, save :: imfsck
 
-  !--> pointeur dans le macrotableau propce :
+  !--> pointer to physical properties
 
   !                       ITSRE --> Terme source explicite
   !                       ITSRI --> Terme source implicite
@@ -90,8 +90,7 @@ module radiat
   !                       IABSO --> part d'absorption dans le terme source explicite
   !                       IEMI --> part d'emission dans le terme source explicite
   !                       ICAK --> coefficient d'absorption
-  !                       ILUMIN --> POINTEUR QUI PERMET DE REPERER L INTEGRALE DE LA
-  !                                  LUMINANCE DANS LA TABLEAU propce
+  !                       ILUMIN --> integrale de la luminance
 
   integer, save ::  itsre(1+nclcpm) , itsri(1+nclcpm) ,                      &
                     iqx   ,   iqy   , iqz   ,                                &
