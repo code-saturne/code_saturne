@@ -451,7 +451,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
           call field_get_val_v(ivstes, vistes)
 
           do iel = 1, ncel
-            trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+            trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
             rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
 
             do isou = 1, 6
