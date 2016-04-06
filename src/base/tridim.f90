@@ -1121,7 +1121,7 @@ do while (iterns.le.nterup)
   ( nvar   , nscal  ,                                              &
     icodcl , itypfb ,                                              &
     izfrad ,                                                       &
-    dt     , propce , rcodcl )
+    dt     , rcodcl )
 
   endif
 
@@ -1755,7 +1755,7 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    izfrad ,                                                       &
-   dt     , propce )
+   dt     )
 
 endif
 
