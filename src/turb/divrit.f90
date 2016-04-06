@@ -105,7 +105,7 @@ double precision, allocatable, dimension(:,:) :: w1
 double precision, dimension(:,:), pointer :: cofarut
 double precision, dimension(:,:,:), pointer :: cofbrut
 double precision, dimension(:,:), pointer :: xut
-double precision, dimension(:,:), pointer :: xuta
+double precision, dimension(:,:), pointer :: xuta, cvara_rij
 double precision, dimension(:), pointer :: brom, crom, cpro_beta
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
@@ -197,12 +197,16 @@ if (ityturt(iscal).ne.3) then
 
   call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
-  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
-  call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
-  call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
-  call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
+  if (irijco.eq.1) then
+    call field_get_val_prev_v(ivarfl(irij), cvara_rij)
+  else
+    call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+    call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+    call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+    call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
+    call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
+    call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
+  endif
 
   allocate(w1(3,ncelet))
 
@@ -215,70 +219,139 @@ if (ityturt(iscal).ne.3) then
 
   if (itt.gt.0) call field_get_val_prev_s(ivarfl(isca(itt)), cvara_tt)
 
-  do iel = 1, ncel
-    !Rij
-    xrij(1,1) = cvara_r11(iel)
-    xrij(2,2) = cvara_r22(iel)
-    xrij(3,3) = cvara_r33(iel)
-    xrij(1,2) = cvara_r12(iel)
-    xrij(1,3) = cvara_r13(iel)
-    xrij(2,3) = cvara_r23(iel)
-    xrij(2,1) = xrij(1,2)
-    xrij(3,1) = xrij(1,3)
-    xrij(3,2) = xrij(2,3)
-    ! Epsilon
-    xe = cvara_ep(iel)
-    ! Kinetic turbulent energy
-    xk = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
+  if (irijco.eq.1) then
+    do iel = 1, ncel
+      !Rij
+      xrij(1,1) = cvara_rij(1,iel)
+      xrij(2,2) = cvara_rij(2,iel)
+      xrij(3,3) = cvara_rij(3,iel)
+      xrij(1,2) = cvara_rij(4,iel)
+      xrij(1,3) = cvara_rij(6,iel)
+      xrij(2,3) = cvara_rij(5,iel)
+      xrij(2,1) = xrij(1,2)
+      xrij(3,1) = xrij(1,3)
+      xrij(3,2) = xrij(2,3)
+      ! Epsilon
+      xe = cvara_ep(iel)
+      ! Kinetic turbulent energy
+      xk = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
 
-    !  Turbulent time-scale (constant in AFM)
-    if (iturt(iscal).eq.20) then
-      xtt = xk/xe
-    else
-      xtt = xk/xe
-    endif
+      !  Turbulent time-scale (constant in AFM)
+      if (iturt(iscal).eq.20) then
+        xtt = xk/xe
+      else
+        xtt = xk/xe
+      endif
 
-    ! Compute thermal flux u'T'
+      ! Compute thermal flux u'T'
 
-    do ii = 1, 3
+      do ii = 1, 3
 
-      temp(ii) = 0.d0
+        temp(ii) = 0.d0
 
-      ! AFM and EB-AFM models
-      !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
-      if (ityturt(iscal).eq.2.and.ibeta.gt.0) then
-        if (itt.gt.0) then
-          temp(ii) = temp(ii) - ctheta(iscal)*xtt*                            &
+        ! AFM and EB-AFM models
+        !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
+        if (ityturt(iscal).eq.2.and.ibeta.gt.0) then
+          if (itt.gt.0) then
+            temp(ii) = temp(ii) - ctheta(iscal)*xtt*                           &
                        etaafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
+          endif
+
+          do jj = 1, 3
+            if (ii.ne.jj) then
+              temp(ii) = temp(ii)                                              &
+                       - ctheta(iscal)*xtt*xiafm*gradv(jj,ii,iel)*xut(jj,iel)
+            endif
+          enddo
         endif
 
-        do jj = 1, 3
-          if (ii.ne.jj) then
-            temp(ii) = temp(ii)                                               &
-                     - ctheta(iscal)*xtt*xiafm*gradv(jj,ii,iel)*xut(jj,iel)
-          endif
-        enddo
-      endif
+        ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )"
+        if (iturt(iscal).eq.20) then
+          temp(ii) = temp(ii)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel))
+        endif
 
-      ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )"
+      enddo
+
+      ! Add the term in "grad T" which is implicited by the GGDH part in covofi.
+      !  "-C_theta*k/eps* R.grad T"
+      do ii = 1, 3
+        xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradt(1,iel)  &
+                                                   + xrij(ii,2)*gradt(2,iel)  &
+                                                   + xrij(ii,3)*gradt(3,iel))
+        ! In the next step, we compute the divergence of:
+        !  "-Cp*C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
+        !  The part "-C_theta*k/eps* R.Grad T" is computed by the GGDH part
+        w1(ii,iel) = xcpp(iel)*temp(ii)
+      enddo
+    enddo
+
+  ! Uncoupled version
+  else
+    do iel = 1, ncel
+      !Rij
+      xrij(1,1) = cvara_r11(iel)
+      xrij(2,2) = cvara_r22(iel)
+      xrij(3,3) = cvara_r33(iel)
+      xrij(1,2) = cvara_r12(iel)
+      xrij(1,3) = cvara_r13(iel)
+      xrij(2,3) = cvara_r23(iel)
+      xrij(2,1) = xrij(1,2)
+      xrij(3,1) = xrij(1,3)
+      xrij(3,2) = xrij(2,3)
+      ! Epsilon
+      xe = cvara_ep(iel)
+      ! Kinetic turbulent energy
+      xk = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
+
+      !  Turbulent time-scale (constant in AFM)
       if (iturt(iscal).eq.20) then
-        temp(ii) = temp(ii)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel))
+        xtt = xk/xe
+      else
+        xtt = xk/xe
       endif
 
-    enddo
+      ! Compute thermal flux u'T'
 
-    ! Add the term in "grad T" which is implicited by the GGDH part in covofi.
-    !  "-C_theta*k/eps* R.grad T"
-    do ii = 1, 3
-      xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradt(1,iel)  &
-                                                 + xrij(ii,2)*gradt(2,iel)  &
-                                                 + xrij(ii,3)*gradt(3,iel))
-      ! In the next step, we compute the divergence of:
-      !  "-Cp*C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
-      !  The part "-C_theta*k/eps* R.Grad T" is computed by the GGDH part
-      w1(ii,iel) = xcpp(iel)*temp(ii)
+      do ii = 1, 3
+
+        temp(ii) = 0.d0
+
+        ! AFM and EB-AFM models
+        !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
+        if (ityturt(iscal).eq.2.and.ibeta.gt.0) then
+          if (itt.gt.0) then
+            temp(ii) = temp(ii) - ctheta(iscal)*xtt*                            &
+                       etaafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
+          endif
+
+          do jj = 1, 3
+            if (ii.ne.jj) then
+              temp(ii) = temp(ii)                                               &
+                       - ctheta(iscal)*xtt*xiafm*gradv(jj,ii,iel)*xut(jj,iel)
+            endif
+          enddo
+        endif
+
+        ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )"
+        if (iturt(iscal).eq.20) then
+          temp(ii) = temp(ii)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel))
+        endif
+
+      enddo
+
+      ! Add the term in "grad T" which is implicited by the GGDH part in covofi.
+      !  "-C_theta*k/eps* R.grad T"
+      do ii = 1, 3
+        xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradt(1,iel)  &
+                                                   + xrij(ii,2)*gradt(2,iel)  &
+                                                   + xrij(ii,3)*gradt(3,iel))
+        ! In the next step, we compute the divergence of:
+        !  "-Cp*C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
+        !  The part "-C_theta*k/eps* R.Grad T" is computed by the GGDH part
+        w1(ii,iel) = xcpp(iel)*temp(ii)
+      enddo
     enddo
-  enddo
+  endif
 
   itypfl = 1
   iflmb0 = 1
