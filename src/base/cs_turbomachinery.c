@@ -233,7 +233,7 @@ static inline void
 _apply_vector_rotation(double     m[3][4],
                        cs_real_t  v[3])
 {
-  double  t[3] = {v[0], v[1], v[0]};
+  double  t[3] = {v[0], v[1], v[2]};
 
   for (int i = 0; i < 3; i++)
     v[i] = m[i][0]*t[0] + m[i][1]*t[1] + m[i][2]*t[2];
