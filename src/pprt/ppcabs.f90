@@ -101,6 +101,7 @@ double precision, dimension(:), pointer :: cvar_rad
 double precision, dimension(:), pointer :: cpro_rom2, cpro_diam2, cpro_temp2
 double precision, dimension(:), pointer :: cpro_ym1, cpro_ym2, cpro_ym3
 double precision, dimension(:), pointer :: cpro_mmel, cpro_cak, cpro_ckabs
+double precision, dimension(:), pointer :: cpro_cak1
 double precision, dimension(:), pointer :: cpro_temp, cpro_yco2, cpro_yh2o
 double precision, dimension(:), pointer :: cpro_temp1, cpro_x2, cpro_yfol
 
@@ -113,13 +114,8 @@ if (imodak.eq.1.or.imoadf.ge.1.or.imfsck.eq.1) then
 endif
 
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(itemp),cpro_temp)
 call field_get_val_s(iprpfl(itemp1),cpro_temp1)
-call field_get_val_s(iprpfl(iym(1)),cpro_ym1)
-call field_get_val_s(iprpfl(iym(2)),cpro_ym2)
-call field_get_val_s(iprpfl(iym(3)),cpro_ym3)
-call field_get_val_s(iprpfl(icak(1)),cpro_cak)
-call field_get_val_s(iprpfl(ickabs),cpro_cak)
+call field_get_val_s(iprpfl(icak(1)),cpro_cak1)
 call field_get_val_s(iprpfl(immel),cpro_mmel)
 call field_get_val_s(iprpfl(iym1(ico2)),cpro_yco2)
 call field_get_val_s(iprpfl(iym1(ih2o)),cpro_yh2o)
@@ -136,6 +132,10 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
   if (imodak.eq.1) then
 
     if (isoot.ge.1) call field_get_val_s(ivarfl(isca(ifsm)), cvar_fsm)
+    call field_get_val_s(iprpfl(itemp),cpro_temp)
+    call field_get_val_s(iprpfl(iym(1)),cpro_ym1)
+    call field_get_val_s(iprpfl(iym(2)),cpro_ym2)
+    call field_get_val_s(iprpfl(iym(3)),cpro_ym3)
 
     do iel = 1, ncel
       xm = 1.d0/ (  cpro_ym1(iel)/wmolg(1)                 &
@@ -156,7 +156,7 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
       endif
       w3(iel) = ys * crom(iel) / rosoot
     enddo
-    call raydak(ncel,ncelet,cpro_cak,w1,w2,w3,cpro_temp)
+    call raydak(ncel,ncelet,cpro_cak1,w1,w2,w3,cpro_temp)
 
     ! the code seems to be good (BS)
     if (ntcabs.eq.ntpabs+1) then
@@ -168,8 +168,11 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
     endif
 
   else
+
+    call field_get_val_s(iprpfl(ickabs),cpro_ckabs)
+
     do iel = 1, ncel
-      cpro_cak(iel) = cpro_ckabs(iel)
+      cpro_cak1(iel) = cpro_ckabs(iel)
     enddo
   endif
 
@@ -190,7 +193,7 @@ else if ( ippmod(iccoal) .ge. 0 ) then
       w3(iel) = 0.d0
     enddo
 
-    call raydak(ncel,ncelet,cpro_cak,w1,w2,w3,cpro_temp1)
+    call raydak(ncel,ncelet,cpro_cak1,w1,w2,w3,cpro_temp1)
 
   else if (imoadf.ge.1) then
 
@@ -228,7 +231,7 @@ else if ( ippmod(iccoal) .ge. 0 ) then
   else
 
     do iel = 1, ncel
-      cpro_cak(iel) = ckabs1
+      cpro_cak1(iel) = ckabs1
     enddo
 
   endif
@@ -251,7 +254,7 @@ else if ( ippmod(icfuel).ge.0 ) then
 
     enddo
 
-    call raydak(ncel,ncelet,cpro_cak,w1,w2,w3,cpro_temp1)
+    call raydak(ncel,ncelet,cpro_cak1,w1,w2,w3,cpro_temp1)
 
   else if (imoadf.ge.1) then
 
@@ -275,7 +278,7 @@ else if ( ippmod(icfuel).ge.0 ) then
   else
 
     do iel = 1, ncel
-      cpro_cak(iel) = ckabs1
+      cpro_cak1(iel) = ckabs1
     enddo
 
   endif
@@ -298,7 +301,7 @@ if ( ippmod(iccoal) .ge. 0 ) then
     icha = ichcor(icla)
 
     call field_get_val_s(iprpfl(idiam2(icla)),cpro_diam2)
-    call field_get_val_s(iprpfl(idiam2(icla)),cpro_rom2)
+    call field_get_val_s(iprpfl(irom2(icla)),cpro_rom2)
     call field_get_val_s(iprpfl(icak(ipck)),cpro_cak)
 
     do iel = 1, ncel
@@ -329,7 +332,7 @@ if ( ippmod(icfuel).ge.0 ) then
 
     ipck = 1 + icla
     call field_get_val_s(iprpfl(idiam2(icla)),cpro_diam2)
-    call field_get_val_s(iprpfl(idiam2(icla)),cpro_rom2)
+    call field_get_val_s(iprpfl(irom2(icla)),cpro_rom2)
     call field_get_val_s(iprpfl(icak(ipck)),cpro_cak)
 
     do iel = 1, ncel
@@ -363,12 +366,9 @@ if ( ippmod(ielarc).ge.1 ) then
     endif
   endif
 
-  call field_get_val_s(iprpfl(icak(1)),cpro_cak)
-
   do iel = 1, ncel
-
 ! ---> Directement donne par le fichier dp_elec
-    cpro_cak(iel) = cvar_rad(iel)
+    cpro_cak1(iel) = cvar_rad(iel)
   enddo
 
 endif
@@ -390,17 +390,15 @@ endif
 
 !         Coefficient d'absorption du melange gaz-particules de charbon
 
-     call field_get_val_s(iprpfl(icak(1)),cpro_cak)
-
      do iel = 1, ncel
-       w3(iel) =  cpro_cak(iel)
+       w3(iel) =  cpro_cak1(iel)
      enddo
 
      if ( ippmod(iccoal).ge.0 ) then
        do icla = 1,nclacp
          ipck = 1+icla
          call field_get_val_s(iprpfl(icak(ipck)),cpro_cak)
-         call field_get_val_s(iprpfl(icak(icla)),cpro_x2)
+         call field_get_val_s(iprpfl(ix2(icla)),cpro_x2)
          do iel = 1,ncel
            w3(iel) = w3(iel)                                      &
                     + ( cpro_x2(iel)                              &
