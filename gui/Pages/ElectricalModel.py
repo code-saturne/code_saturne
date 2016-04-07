@@ -165,16 +165,13 @@ class ElectricalModel(Variables, Model):
                     name = '%s%2.2i' % ('esl_fraction_', gas + 1)
                     listV.append(name)
 
-            listP = ['temperature', 'joule_power', 'elec_sigma']
-            for dim in range(0, 3):
-                name = '%s%i' % ('current_re_', dim+1)
-                listP.append(name)
+            listP = ['temperature', 'joule_power', 'elec_sigma', 'current_re']
 
             if model == 'arc':
                 listV.append('vec_potential_01')
                 listV.append('vec_potential_02')
                 listV.append('vec_potential_03')
-                listP.append('laplace_force_')
+                listP.append('laplace_force')
                 if self.getRadiativeModel() == 'Coef_Abso':
                     listP.append('absorption_coeff')
                 elif self.getRadiativeModel() == 'TS_radia':
@@ -185,7 +182,7 @@ class ElectricalModel(Variables, Model):
                 if model == 'PotComplexe' or model == 'PotComplexe+CDLTransfo':
                     listV.append('elec_pot_i')
                 if model == 'PotComplexe+CDLTransfo':
-                    listP.append('current_im_')
+                    listP.append('current_im')
 
             for v in listV:
                 self.setNewVariable(self.node_joule, v, tpe="model", label=v)
