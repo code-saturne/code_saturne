@@ -120,8 +120,7 @@ double precision, dimension(:), pointer :: bxlam, bepa, beps, bfnet
 double precision, dimension(:), pointer :: cvara_scalt
 double precision, dimension(:), pointer :: cvara_yfol
 double precision, dimension(:), pointer :: cpro_cp
-double precision, dimension(:,:), pointer :: bqinsp
-double precision, dimension(:), pointer :: cpro_qx, cpro_qy, cpro_qz
+double precision, dimension(:,:), pointer :: bqinsp, cpro_q
 double precision, dimension(:), pointer :: cpro_cak1, cpro_tsri1, cpro_tsre1
 double precision, dimension(:), pointer :: cpro_abso1, cpro_emi1, cpro_temp2
 double precision, dimension(:), pointer :: cpro_cak, cpro_tsri, cpro_tsre
@@ -226,9 +225,7 @@ call field_get_val_s(iprpfl(itsri(1)),cpro_tsri1)
 call field_get_val_s(iprpfl(itsre(1)),cpro_tsre1)
 call field_get_val_s(iprpfl(iabso(1)),cpro_abso1)
 call field_get_val_s(iprpfl(iemi(1)),cpro_emi1)
-call field_get_val_s(iprpfl(iqx),cpro_qx)
-call field_get_val_s(iprpfl(iqy),cpro_qy)
-call field_get_val_s(iprpfl(iqz),cpro_qz)
+call field_get_val_v(iprpfl(iqx),cpro_q)
 call field_get_val_s(iprpfl(ilumin),cpro_lumin)
 
 !--> Working arrays
@@ -239,9 +236,9 @@ do iel = 1, ncel
   cpro_abso1(iel) = 0.d0  ! Absortion: Sum,i((kg,i+kp) * Integral(Ii)dOmega)
   cpro_emi1(iel)  = 0.d0  ! Emission:  Sum,i((kg,i+kp) * stephn * T^4 *agi)
 !
-  cpro_qx(iel) = 0.d0 ! X-component of the radiative flux vector
-  cpro_qy(iel) = 0.d0 ! Y-compnent of the radiative flux vector
-  cpro_qz(iel) = 0.d0 ! Z-Component of the radiative flux vector
+  cpro_q(iel,1) = 0.d0 ! X-component of the radiative flux vector
+  cpro_q(iel,2) = 0.d0 ! Y-compnent of the radiative flux vector
+  cpro_q(iel,3) = 0.d0 ! Z-Component of the radiative flux vector
 
   iabgaz(iel) = 0.d0 ! Absorption of the gas phase: kg,i * Integral(Ii) * dOmega
   iabpar(iel) = 0.d0 ! Absortion of particles: kp * Integral(Ii) * dOmega
@@ -856,9 +853,9 @@ do ngg = 1, nwsgg
     ilutot(iel)=ilutot(iel)+(cpro_tsre1(iel)*wq(ngg))
 
     ! Flux vector components
-    cpro_qx(iel) = cpro_qx(iel)+(iqxpar(iel)*wq(ngg))
-    cpro_qy(iel) = cpro_qy(iel)+(iqypar(iel)*wq(ngg))
-    cpro_qz(iel) = cpro_qz(iel)+(iqzpar(iel)*wq(ngg))
+    cpro_q(iel,1) = cpro_q(iel,1)+(iqxpar(iel)*wq(ngg))
+    cpro_q(iel,2) = cpro_q(iel,2)+(iqypar(iel)*wq(ngg))
+    cpro_q(iel,3) = cpro_q(iel,3)+(iqzpar(iel)*wq(ngg))
   enddo
 
   ! If the ADF model is activated we have to sum up the spectral flux densities
@@ -1057,9 +1054,9 @@ if (idverl.eq.1 .or. idverl.eq.2) then
   allocate(q(3,ncelet))
 
   do iel = 1, ncel
-    q(1,iel) = cpro_qx(iel)
-    q(2,iel) = cpro_qy(iel)
-    q(3,iel) = cpro_qz(iel)
+    q(1,iel) = cpro_q(iel,1)
+    q(2,iel) = cpro_q(iel,2)
+    q(3,iel) = cpro_q(iel,3)
   enddo
 
   allocate(coefaq(3,nfabor))
