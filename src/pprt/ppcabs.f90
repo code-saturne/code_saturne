@@ -98,7 +98,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_fsm
 double precision, dimension(:), pointer :: cvar_rad
-double precision, dimension(:), pointer :: cpro_rom2, cpro_diam2, cpro_temp2
+double precision, dimension(:), pointer :: cpro_rom2, cpro_diam2
 double precision, dimension(:), pointer :: cpro_ym1, cpro_ym2, cpro_ym3
 double precision, dimension(:), pointer :: cpro_mmel, cpro_cak, cpro_ckabs
 double precision, dimension(:), pointer :: cpro_cak1
@@ -114,11 +114,6 @@ if (imodak.eq.1.or.imoadf.ge.1.or.imfsck.eq.1) then
 endif
 
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(itemp1),cpro_temp1)
-call field_get_val_s(iprpfl(icak(1)),cpro_cak1)
-call field_get_val_s(iprpfl(immel),cpro_mmel)
-call field_get_val_s(iprpfl(iym1(ico2)),cpro_yco2)
-call field_get_val_s(iprpfl(iym1(ih2o)),cpro_yh2o)
 
 !===============================================================================
 !  1 - COEFFICIENT D'ABSORPTION DU MELANGE GAZEUX (m-1)
@@ -128,6 +123,8 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
 
 ! ----> Combustion gaz : Flamme de diffusion
 !                        Flamme de premelange (Modele EBU)
+
+  call field_get_val_s(iprpfl(icak(1)),cpro_cak1)
 
   if (imodak.eq.1) then
 
@@ -179,6 +176,12 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
 else if ( ippmod(iccoal) .ge. 0 ) then
 
   ! ---->  Coal
+
+  call field_get_val_s(iprpfl(itemp1),cpro_temp1)
+  call field_get_val_s(iprpfl(iym1(ico2)),cpro_yco2)
+  call field_get_val_s(iprpfl(iym1(ih2o)),cpro_yh2o)
+  call field_get_val_s(iprpfl(immel),cpro_mmel)
+  call field_get_val_s(iprpfl(icak(1)),cpro_cak1)
 
   if (imodak.eq.1) then
 
@@ -239,6 +242,12 @@ else if ( ippmod(iccoal) .ge. 0 ) then
 else if ( ippmod(icfuel).ge.0 ) then
 
 ! ---->  Fuel
+
+  call field_get_val_s(iprpfl(itemp1),cpro_temp1)
+  call field_get_val_s(iprpfl(iym1(ico2)),cpro_yco2)
+  call field_get_val_s(iprpfl(iym1(ih2o)),cpro_yh2o)
+  call field_get_val_s(iprpfl(immel),cpro_mmel)
+  call field_get_val_s(iprpfl(icak(1)),cpro_cak1)
 
   if (imodak.eq.1) then
 
@@ -366,6 +375,8 @@ if ( ippmod(ielarc).ge.1 ) then
     endif
   endif
 
+  call field_get_val_s(iprpfl(icak(1)),cpro_cak1)
+
   do iel = 1, ncel
 ! ---> Directement donne par le fichier dp_elec
     cpro_cak1(iel) = cvar_rad(iel)
@@ -389,6 +400,8 @@ endif
      allocate(w3(ncelet))
 
 !         Coefficient d'absorption du melange gaz-particules de charbon
+
+     call field_get_val_s(iprpfl(icak(1)),cpro_cak1)
 
      do iel = 1, ncel
        w3(iel) =  cpro_cak1(iel)
