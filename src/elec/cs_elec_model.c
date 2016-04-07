@@ -1185,7 +1185,6 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
         }
       }
       else if (it == npt - 1) {
-        bft_printf("constant value = last value of array\n");
         for (int ii = 0; ii < ngaz; ii++) {
           roesp[ii]  = e_props->rhoel[ii * (npt - 1) + npt - 1];
           visesp[ii] = e_props->visel[ii * (npt - 1) + npt - 1];
