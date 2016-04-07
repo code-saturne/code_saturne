@@ -50,18 +50,18 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 typedef struct {
-  int     ngaz;
-  int     npoint;
-  double *th;
-  double *ehgaz;
-  double *rhoel;
-  double *cpel;
-  double *sigel;
-  double *visel;
-  double *xlabel;
-  double *xkabel;
-//  double *qespel;      /* Charge massique des especes  C/kg                 */
-//  double *suscep;      /* Susceptibilite (relation champ - mobilite) m2/s/V */
+  int         ngaz;
+  int         npoint;
+  cs_real_t  *th;
+  cs_real_t  *ehgaz;
+  cs_real_t  *rhoel;
+  cs_real_t  *cpel;
+  cs_real_t  *sigel;
+  cs_real_t  *visel;
+  cs_real_t  *xlabel;
+  cs_real_t  *xkabel;
+  // cs_real_t *qespel;  /* Charge massique des especes  C/kg                 */
+  // cs_real_t *suscep;  /* Susceptibilite (relation champ - mobilite) m2/s/V */
 } cs_data_elec_t;
 
 /*----------------------------------------------------------------------------
@@ -69,20 +69,20 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 typedef struct {
-  int     nbelec;
-  int    *ielecc;
-  int    *ielect;
-  int    *ielecb;
-  int     nbtrf;
-  int     ntfref;
-  int    *ibrpr;
-  int    *ibrsec;
-  double *tenspr;
-  double *rnbs;
-  double *zr;
-  double *zi;
-  double *uroff;
-  double *uioff;
+  int         nbelec;
+  int        *ielecc;
+  int        *ielect;
+  int        *ielecb;
+  int         nbtrf;
+  int         ntfref;
+  int        *ibrpr;
+  int        *ibrsec;
+  cs_real_t  *tenspr;
+  cs_real_t  *rnbs;
+  cs_real_t  *zr;
+  cs_real_t  *zi;
+  cs_real_t  *uroff;
+  cs_real_t  *uioff;
 } cs_data_joule_effect_t;
 
 /*----------------------------------------------------------------------------
@@ -90,25 +90,25 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 typedef struct {
-  int     ieljou;
-  int     ielarc;
-  int     ielion;
-  int     ixkabe;
-  int     ntdcla;
-  int     irestrike;
-  double  restrike_point[3];
-  double  crit_reca[5];
-  int     ielcor;
-  int     modrec;
-  int     idreca;
-  int    *izreca;
-  double  couimp;
-  double  pot_diff;
-  double  puisim;
-  double  coejou;
-  double  elcou;
-  double  srrom;
-  char   *ficfpp;
+  int         ieljou;
+  int         ielarc;
+  int         ielion;
+  int         ixkabe;
+  int         ntdcla;
+  int         irestrike;
+  cs_real_t   restrike_point[3];
+  cs_real_t   crit_reca[5];
+  int         ielcor;
+  int         modrec;
+  int         idreca;
+  int        *izreca;
+  cs_real_t   couimp;
+  cs_real_t   pot_diff;
+  cs_real_t   puisim;
+  cs_real_t   coejou;
+  cs_real_t   elcou;
+  cs_real_t   srrom;
+  char       *ficfpp;
 } cs_elec_option_t;
 
 /*============================================================================
@@ -123,156 +123,25 @@ extern const cs_data_joule_effect_t  *cs_glob_transformer;
 
 /* Constant for electrical models */
 
-extern const double cs_elec_permvi;
-extern const double cs_elec_epszer;
+extern const cs_real_t cs_elec_permvi;
+extern const cs_real_t cs_elec_epszer;
 
 /*=============================================================================
- * Public function prototypes
+ * Public function prototypes for Fortran API
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Provide acces to cs_elec_option
- *----------------------------------------------------------------------------*/
-
-cs_elec_option_t *
-cs_get_glob_elec_option(void);
-
-/*----------------------------------------------------------------------------
- * Provide acces to cs_glob_transformer
- *----------------------------------------------------------------------------*/
-
-cs_data_joule_effect_t *
-cs_get_glob_transformer(void);
-
-/*----------------------------------------------------------------------------
- * Initialize structures for electrical model
- *----------------------------------------------------------------------------*/
-
 void
-cs_electrical_model_initialize(cs_int_t ielarc,
-                               cs_int_t ieljou,
-                               cs_int_t ielion);
-
-/*----------------------------------------------------------------------------
- * Destroy structures for electrical model
- *----------------------------------------------------------------------------*/
-
-void
-cs_electrical_model_finalize(cs_int_t ielarc,
-                             cs_int_t ieljou);
-
-/*----------------------------------------------------------------------------
- * Specific initialization for electric arc
- *----------------------------------------------------------------------------*/
-
-void
-cs_electrical_model_specific_initialization(      cs_real_t *visls0,
-                                                  cs_real_t *diftl0,
-                                                  cs_int_t  *iconv,
-                                                  cs_int_t  *istat,
-                                                  cs_int_t  *idiff,
-                                                  cs_int_t  *idifft,
-                                                  cs_int_t  *idircl,
-                                                  cs_int_t  *isca,
-                                                  cs_real_t *blencv,
-                                                  cs_real_t *sigmas,
-                                                  cs_int_t  *iwarni,
-                                            const cs_int_t   iihmpr);
-
-/*----------------------------------------------------------------------------
- * Read properties file
- *----------------------------------------------------------------------------*/
-
-void
-cs_electrical_properties_read(cs_int_t ielarc,
-                              cs_int_t ieljou);
-
-/*----------------------------------------------------------------------------
- * compute specific electric arc fields
- *----------------------------------------------------------------------------*/
-
-void
-cs_compute_electric_field(const cs_mesh_t  *mesh,
-                          int               call_id);
-
-/*----------------------------------------------------------------------------
- * convert enthalpy-temperature
- *----------------------------------------------------------------------------*/
-
-void
-cs_elec_convert_h_t(cs_int_t   mode,
-                    cs_real_t *ym,
-                    cs_real_t *enthal,
-                    cs_real_t *temp);
-
-/*----------------------------------------------------------------------------
- * compute physical properties
- *----------------------------------------------------------------------------*/
-
-void
-cs_elec_physical_properties(const cs_mesh_t *mesh,
-                            const cs_mesh_quantities_t *mesh_quantities);
-
-/*----------------------------------------------------------------------------
- * compute source terms for energie and vector potential
- *----------------------------------------------------------------------------*/
-
-void
-cs_elec_source_terms(const cs_mesh_t *mesh,
-                     const cs_mesh_quantities_t *mesh_quantities,
-                     const cs_int_t   f_id,
-                           cs_real_t *smbrs);
-
-/*----------------------------------------------------------------------------
- * add variables fields
- *----------------------------------------------------------------------------*/
-
-void
-cs_elec_add_variable_fields(const cs_int_t *ielarc,
-                            const cs_int_t *ieljou,
-                            const cs_int_t *ielion,
-                            const cs_int_t *iihmpr);
-
-/*----------------------------------------------------------------------------
- * add properties fields
- *----------------------------------------------------------------------------*/
-
-void
-cs_elec_add_property_fields(const cs_int_t *ielarc,
-                            const cs_int_t *ieljou,
-                            const cs_int_t *ielion);
-
-/*----------------------------------------------------------------------------
- * initialize electric fields
- *----------------------------------------------------------------------------*/
-
-void
-cs_elec_fields_initialize(const cs_mesh_t  *mesh,
-                          cs_int_t          isuite);
-
-/*----------------------------------------------------------------------------
- * scaling electric quantities
- *----------------------------------------------------------------------------*/
-
-void
-cs_elec_scaling_function(const cs_mesh_t *mesh,
-                         const cs_mesh_quantities_t *mesh_quantities,
-                                cs_real_t *dt);
-
-/*----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (elini1, ELINI1) (      cs_real_t *visls0,
-                                 cs_real_t *diftl0,
-                                 cs_int_t  *iconv,
-                                 cs_int_t  *istat,
-                                 cs_int_t  *idiff,
-                                 cs_int_t  *idifft,
-                                 cs_int_t  *idircl,
-                                 cs_int_t  *isca,
-                                 cs_real_t *blencv,
-                                 cs_real_t *sigmas,
-                                 cs_int_t  *iwarni,
+CS_PROCF (elini1, ELINI1) (cs_real_t       *visls0,
+                           cs_real_t       *diftl0,
+                           cs_int_t        *iconv,
+                           cs_int_t        *istat,
+                           cs_int_t        *idiff,
+                           cs_int_t        *idifft,
+                           cs_int_t        *idircl,
+                           cs_int_t        *isca,
+                           cs_real_t       *blencv,
+                           cs_real_t       *sigmas,
+                           cs_int_t        *iwarni,
                            const cs_int_t  *iihmpr);
 
 void
@@ -320,6 +189,141 @@ CS_PROCF (usclim_trans, UICLIM_TRANS)(cs_int_t   *icodcl,
                                       cs_int_t   *izfppp,
                                       cs_int_t   *iparoi,
                                       cs_int_t   *nvarcl);
+
+/*=============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Provide acces to cs_elec_option
+ *----------------------------------------------------------------------------*/
+
+cs_elec_option_t *
+cs_get_glob_elec_option(void);
+
+/*----------------------------------------------------------------------------
+ * Provide acces to cs_glob_transformer
+ *----------------------------------------------------------------------------*/
+
+cs_data_joule_effect_t *
+cs_get_glob_transformer(void);
+
+/*----------------------------------------------------------------------------
+ * Initialize structures for electrical model
+ *----------------------------------------------------------------------------*/
+
+void
+cs_electrical_model_initialize(int  ielarc,
+                               int  ieljou,
+                               int  ielion);
+
+/*----------------------------------------------------------------------------
+ * Destroy structures for electrical model
+ *----------------------------------------------------------------------------*/
+
+void
+cs_electrical_model_finalize(int  ielarc,
+                             int  ieljou);
+
+/*----------------------------------------------------------------------------
+ * Specific initialization for electric arc
+ *----------------------------------------------------------------------------*/
+
+void
+cs_electrical_model_specific_initialization(cs_real_t    *visls0,
+                                            cs_real_t    *diftl0,
+                                            int          *iconv,
+                                            int          *istat,
+                                            int          *idiff,
+                                            int          *idifft,
+                                            int          *idircl,
+                                            int          *isca,
+                                            cs_real_t    *blencv,
+                                            cs_real_t    *sigmas,
+                                            int          *iwarni,
+                                            int           iihmpr);
+
+/*----------------------------------------------------------------------------
+ * Read properties file
+ *----------------------------------------------------------------------------*/
+
+void
+cs_electrical_properties_read(int   ielarc,
+                              int   ieljou);
+
+/*----------------------------------------------------------------------------
+ * compute specific electric arc fields
+ *----------------------------------------------------------------------------*/
+
+void
+cs_compute_electric_field(const cs_mesh_t  *mesh,
+                          int               call_id);
+
+/*----------------------------------------------------------------------------
+ * convert enthalpy-temperature
+ *----------------------------------------------------------------------------*/
+
+void
+cs_elec_convert_h_t(int         mode,
+                    cs_real_t  *ym,
+                    cs_real_t  *enthal,
+                    cs_real_t  *temp);
+
+/*----------------------------------------------------------------------------
+ * compute physical properties
+ *----------------------------------------------------------------------------*/
+
+void
+cs_elec_physical_properties(const cs_mesh_t             *mesh,
+                            const cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------
+ * compute source terms for energie and vector potential
+ *----------------------------------------------------------------------------*/
+
+void
+cs_elec_source_terms(const cs_mesh_t             *mesh,
+                     const cs_mesh_quantities_t  *mesh_quantities,
+                     int                          f_id,
+                     cs_real_t                   *smbrs);
+
+/*----------------------------------------------------------------------------
+ * add variables fields
+ *----------------------------------------------------------------------------*/
+
+void
+cs_elec_add_variable_fields(const int  *ielarc,
+                            const int  *ieljou,
+                            const int  *ielion,
+                            const int  *iihmpr);
+
+/*----------------------------------------------------------------------------
+ * add properties fields
+ *----------------------------------------------------------------------------*/
+
+void
+cs_elec_add_property_fields(const int  *ielarc,
+                            const int  *ieljou,
+                            const int  *ielion);
+
+/*----------------------------------------------------------------------------
+ * initialize electric fields
+ *----------------------------------------------------------------------------*/
+
+void
+cs_elec_fields_initialize(const cs_mesh_t  *mesh,
+                          int               isuite);
+
+/*----------------------------------------------------------------------------
+ * scaling electric quantities
+ *----------------------------------------------------------------------------*/
+
+void
+cs_elec_scaling_function(const cs_mesh_t             *mesh,
+                         const cs_mesh_quantities_t  *mesh_quantities,
+                         cs_real_t                   *dt);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

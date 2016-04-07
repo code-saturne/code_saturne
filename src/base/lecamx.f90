@@ -1478,17 +1478,7 @@ if ( ippmod(ielarc).ge.1 ) then
 
   nbval  = 1
 
-  call field_get_id('laplace_force_1', f_id)
-  call restart_read_field_vals(rp, f_id, 0, ierror)
-  nberro=nberro+ierror
-  ilu = ilu + 1
-
-  call field_get_id('laplace_force_2', f_id)
-  call restart_read_field_vals(rp, f_id, 0, ierror)
-  nberro=nberro+ierror
-  ilu = ilu + 1
-
-  call field_get_id('laplace_force_3', f_id)
+  call field_get_id('laplace_force', f_id)
   call restart_read_field_vals(rp, f_id, 0, ierror)
   nberro=nberro+ierror
   ilu = ilu + 1

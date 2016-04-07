@@ -494,13 +494,8 @@ _read_field_vals_legacy(cs_restart_t  *r,
 
     else if (strcmp(f->name, "joule_power") == 0)
       strncpy(sec_name, "tsource_sc_ce_joule", 127);
-    else if (strcmp(f->name, "laplace_force_1") == 0)
-      strncpy(sec_name, "tsource_ns_ce_x_laplace", 127);
-    else if (strcmp(f->name, "laplace_force_2") == 0)
-      strncpy(sec_name, "tsource_ns_ce_y_laplace", 127);
-    else if (strcmp(f->name, "laplace_force_3") == 0)
-      strncpy(sec_name, "tsource_ns_ce_z_laplace", 127);
-
+    else if (strcmp(f->name, "laplace_force") == 0)
+      strncpy(old_name, "laplace_force", 127);
   }
 
   if (sec_name[0] == '\0') {
@@ -534,6 +529,11 @@ _read_field_vals_legacy(cs_restart_t  *r,
       snprintf(old_name_x, 127, "%s_u_ce", old_name);
       snprintf(old_name_y, 127, "%s_v_ce", old_name);
       snprintf(old_name_z, 127, "%s_w_ce", old_name);
+    }
+    else if (strcmp(old_name, "laplace_force") == 0) {
+      snprintf(old_name_x, 127, "%s_1", old_name);
+      snprintf(old_name_y, 127, "%s_2", old_name);
+      snprintf(old_name_z, 127, "%s_2", old_name);
     }
     else {
       snprintf(old_name_x, 127, "%s_u_ce_phase01", old_name);

@@ -134,19 +134,26 @@ CS_PROCF (usclim_trans, UICLIM_TRANS)(cs_int_t   *icodcl,
     }
 
   for (int i = 0; i < nbelec; i++) {
+
     sprintf(name, "%07d", transfo->ielecc[i]);
     cs_selector_get_b_face_num_list(name, &nelts, lstelt);
 
-    for (cs_lnum_t ilelt = 0; ilelt < nelts; ilelt++) {
-      int ifac = lstelt[ilelt];
-      int iel = ifabor[iel];
+    cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
+    cs_real_3_t *cpro_curim = NULL;
+      if (cs_glob_elec_option->ieljou == 4)
+        cpro_curim = (cs_real_3_t *)(CS_F_(curim)->val);
 
-      for (int id = 0; id < 3; id++)
-        sir[i] += CS_FI_(curre, id)->val[iel] * surfbo[id][ifac];
+    for (cs_lnum_t ilelt = 0; ilelt < nelts; ilelt++) {
+
+      cs_lnum_t ifac = lstelt[ilelt];
+      cs_lnum_t iel = ifabor[iel];
+
+      for (cs_lnum_t id = 0; id < 3; id++)
+        sir[i] += cpro_curre[iel][id] * surfbo[id][ifac];
 
       if (cs_glob_elec_option->ieljou == 4)
-        for (int id = 0; id < 3; id++)
-          sii[i] += CS_FI_(curim, id)->val[iel] * surfbo[id][ifac];
+        for (cs_lnum_t id = 0; id < 3; id++)
+          sii[i] += cpro_curim[iel][id] * surfbo[id][ifac];
     }
 
     BFT_FREE(lstelt);

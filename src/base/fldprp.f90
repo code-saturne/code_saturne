@@ -390,87 +390,7 @@ character(len=*), intent(in) :: name, label
 integer, intent(in)          :: dim
 integer, intent(out)         :: iprop
 
-! Local variables
-
-integer  type_flag, location_id, ii, f_id
-logical  has_previous, interleaved
-
 !===============================================================================
-
-type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
-location_id = 1 ! variables defined on cells
-has_previous = .false.
-interleaved = .false. ! TODO set to .true. once PROPCE mapping is removed
-
-! Test if the field has already been defined
-call field_get_id_try(trim(name), f_id)
-if (f_id .ge. 0) then
-  write(nfecra,1000) trim(name)
-  call csexit (1)
-endif
-
-! Create field
-
-call field_create(name, type_flag, location_id, dim, interleaved, has_previous, &
-                  f_id)
-
-call field_set_key_int(f_id, keyvis, 1)
-call field_set_key_int(f_id, keylog, 1)
-
-if (len(trim(label)).gt.0) then
-  call field_set_key_str(f_id, keylbl, trim(label))
-endif
-
-! Property number and mapping to field
-
-iprop = nproce + 1
-nproce = nproce + dim
-
-call fldprp_check_nproce
-
-do ii = 1, dim
-  iprpfl(iprop + ii -1) = f_id
-  ipproc(iprop + ii - 1) = iprop + ii - 1
-enddo
-
-! Postprocessing slots
-
-ipppro(iprop) = field_post_id(f_id)
-do ii = 2, dim
-  ipppro(iprop+ii-1) = ipppro(iprop) -1 + ii
-enddo
-
-call field_set_key_int(f_id, keyipp, ipppro(iprop))
-
-return
-
-!---
-! Formats
-!---
-
-#if defined(_CS_LANG_FR)
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERREUR :    ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    ========                                                ',/,&
-'@     LE CHAMP : ', a, 'EST DEJA DEFINI.                     ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-#else
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP              ',/,&
-'@    ======                                                  ',/,&
-'@     FIELD: ', a, 'HAS ALREADY BEEN DEFINED.                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-#endif
 
 end subroutine add_property_field_nd
 
@@ -614,6 +534,10 @@ subroutine add_property_field &
 ! Module files
 !===============================================================================
 
+use paramx
+use dimens
+use entsor
+use numvar
 use field
 
 !===============================================================================
@@ -625,9 +549,83 @@ implicit none
 character(len=*), intent(in) :: name, label
 integer, intent(out)         :: iprop
 
+! Local variables
+
+integer  type_flag, location_id, ii, f_id, dim
+logical  has_previous, interleaved
+
 !===============================================================================
 
-call add_property_field_nd(name, label, 1, iprop)
+type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
+location_id = 1 ! variables defined on cells
+has_previous = .false.
+dim = 1
+interleaved = .false. ! TODO set to .true. once PROPCE mapping is removed
+
+! Test if the field has already been defined
+call field_get_id_try(trim(name), f_id)
+if (f_id .ge. 0) then
+  write(nfecra,1000) trim(name)
+  call csexit (1)
+endif
+
+! Create field
+
+call field_create(name, type_flag, location_id, dim, interleaved, has_previous, &
+                  f_id)
+
+call field_set_key_int(f_id, keyvis, 1)
+call field_set_key_int(f_id, keylog, 1)
+
+if (len(trim(label)).gt.0) then
+  call field_set_key_str(f_id, keylbl, trim(label))
+endif
+
+! Property number and mapping to field
+
+iprop = nproce + 1
+nproce = nproce + 1
+
+call fldprp_check_nproce
+
+iprpfl(iprop) = f_id
+ipproc(iprop) = iprop
+
+! Postprocessing slots
+
+ipppro(iprop) = field_post_id(f_id)
+
+call field_set_key_int(f_id, keyipp, ipppro(iprop))
+
+return
+
+!---
+! Formats
+!---
+
+#if defined(_CS_LANG_FR)
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ERREUR :    ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    ========                                                ',/,&
+'@     LE CHAMP : ', a, 'EST DEJA DEFINI.                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+#else
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP              ',/,&
+'@    ======                                                  ',/,&
+'@     FIELD: ', a, 'HAS ALREADY BEEN DEFINED.                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+#endif
 
 return
 

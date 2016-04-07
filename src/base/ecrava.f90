@@ -97,7 +97,7 @@ integer          f_id, t_id, ivar, iscal
 integer          idecal, iclapc, icha  , icla
 integer          ii    , ivers
 integer          itysup, nbval
-integer          ipcefj, ipcla1, ipcla2, ipcla3
+integer          ipcefj, ipcla
 integer          nfmtsc, nfmtfl, nfmtch, nfmtcl
 integer          nfmtst
 integer          ilecec, iecr
@@ -1068,13 +1068,9 @@ if (iecaux.eq.1) then
   if (ippmod(ielarc).ge.1) then
 
     iecr   = 1
-    call field_get_id('laplace_force_1', ipcla1)
-    call field_get_id('laplace_force_2', ipcla2)
-    call field_get_id('laplace_force_3', ipcla3)
+    call field_get_id('laplace_force', ipcla)
 
-    call restart_write_field_vals(rp, ipcla1, 0)
-    call restart_write_field_vals(rp, ipcla2, 0)
-    call restart_write_field_vals(rp, ipcla3, 0)
+    call restart_write_field_vals(rp, ipcla, 0)
 
   endif
 

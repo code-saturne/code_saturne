@@ -530,25 +530,24 @@ cs_field_pointer_map_electric_arcs(int  n_gasses)
 void
 cs_field_pointer_properties_map_electric_arcs(void)
 {
-  char s[64];
-
-  /* properties */
   cs_field_pointer_map(CS_ENUMF_(t),
                        cs_field_by_name_try("temperature"));
 
-  cs_field_pointer_map(CS_ENUMF_(joulp), cs_field_by_name_try("joule_power"));
-  cs_field_pointer_map(CS_ENUMF_(absco), cs_field_by_name_try("absorption_coeff"));
-  cs_field_pointer_map(CS_ENUMF_(radsc), cs_field_by_name_try("radiation_source"));
-  cs_field_pointer_map(CS_ENUMF_(elech), cs_field_by_name_try("elec_charge"));
+  cs_field_pointer_map(CS_ENUMF_(joulp),
+                       cs_field_by_name_try("joule_power"));
+  cs_field_pointer_map(CS_ENUMF_(absco),
+                       cs_field_by_name_try("absorption_coeff"));
+  cs_field_pointer_map(CS_ENUMF_(radsc),
+                       cs_field_by_name_try("radiation_source"));
+  cs_field_pointer_map(CS_ENUMF_(elech),
+                       cs_field_by_name_try("elec_charge"));
 
-  for (int i = 0; i < 3; i++) {
-    snprintf(s, 63, "current_re_%01d", i+1); s[63] = '\0';
-    cs_field_pointer_map_indexed(CS_ENUMF_(curre), i, cs_field_by_name_try(s));
-    snprintf(s, 63, "current_im_%01d", i+1); s[63] = '\0';
-    cs_field_pointer_map_indexed(CS_ENUMF_(curim), i, cs_field_by_name_try(s));
-    snprintf(s, 63, "laplace_force_%01d", i+1); s[63] = '\0';
-    cs_field_pointer_map_indexed(CS_ENUMF_(laplf), i, cs_field_by_name_try(s));
-  }
+  cs_field_pointer_map(CS_ENUMF_(curre),
+                       cs_field_by_name_try("current_re"));
+  cs_field_pointer_map(CS_ENUMF_(curim),
+                       cs_field_by_name_try("current_im"));
+  cs_field_pointer_map(CS_ENUMF_(laplf),
+                       cs_field_by_name_try("laplace_force"));
 }
 
 /*----------------------------------------------------------------------------*/
