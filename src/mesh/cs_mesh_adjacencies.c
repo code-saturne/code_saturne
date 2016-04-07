@@ -327,5 +327,23 @@ cs_mesh_adjacencies_update_mesh(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update extended cell -> cell connectivites in
+ *         mesh adjacencies helper API relative to mesh.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_adjacencies_update_cell_cells_e(void)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  cs_mesh_adjacencies_t *ma = &_cs_glob_mesh_adjacencies;
+
+  ma->cell_cells_e_idx = m->cell_cells_idx;
+  ma->cell_cells_e = m->cell_cells_lst;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

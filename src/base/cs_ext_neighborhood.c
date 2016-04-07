@@ -55,6 +55,7 @@
 #include "cs_halo_perio.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
@@ -1205,6 +1206,7 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
   } /* If _first_call == 0 */
 
   cs_mesh_quantities_reduce_extended(mesh, mesh_quantities);
+  cs_mesh_adjacencies_update_cell_cells_e();
 }
 
 /*----------------------------------------------------------------------------

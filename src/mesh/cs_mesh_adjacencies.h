@@ -110,6 +110,16 @@ void
 cs_mesh_adjacencies_update_mesh(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update extended cell -> cell connectivites in
+ *         mesh adjacencies helper API relative to mesh.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_adjacencies_update_cell_cells_e(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
