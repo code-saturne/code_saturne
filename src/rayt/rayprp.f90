@@ -71,7 +71,7 @@ implicit none
 
 character(len=80) :: f_label, f_name
 character(len=16) :: e_label, e_name
-integer       irphas
+integer       irphas, ipp
 integer       ippok
 integer       nprayc, nprprv
 integer       itycat, ityloc
@@ -128,15 +128,12 @@ if (iirayo.gt.0) then
   call hide_property(ilumin)
   ihisvr(ipppro(ilumin),1) = -1
 
-  call add_property_field_nd('radiative_flux', 'Qrad', 3, iqx)
-  iqy = iqx + 1
-  iqz = iqy + 1
-  call hide_property(iqx)
-  call hide_property(iqy)
-  call hide_property(iqz)
-  ihisvr(ipppro(iqx),1) = -1
-  ihisvr(ipppro(iqy),1) = -1
-  ihisvr(ipppro(iqz),1) = -1
+  call add_property_field_owner('radiative_flux', 'Qrad', 3, .false., iqxyz)
+  call hide_property_field(iqxyz)
+  ipp = field_post_id(iqxyz)
+  ihisvr(ipp,1) = -1
+  ihisvr(ipp+1,1) = -1
+  ihisvr(ipp+2,1) = -1
 
   do irphas = 1, nrphas
 

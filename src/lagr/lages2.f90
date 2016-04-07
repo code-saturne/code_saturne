@@ -23,8 +23,7 @@
 subroutine lages2 &
 !================
 
- ( propce ,                                                       &
-   taup   , tlag   , piil   ,                                     &
+ ( taup   , tlag   , piil   ,                                     &
    bx     , tsfext ,                                              &
    vagaus , gradpr ,                                              &
    romp   , brgaus , terbru , fextla )
@@ -49,7 +48,6 @@ subroutine lages2 &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! statis           ! tr ! <-- !  cumul des statistiques volumiques             !
 !(ncelet,nvlsta    !    !     !                                                !
 ! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
@@ -95,7 +93,6 @@ implicit none
 
 ! Arguments
 
-double precision propce(ncelet,*)
 double precision taup(nbpart) , tlag(nbpart,3)
 double precision piil(nbpart,3) , bx(nbpart,3,2)
 double precision tsfext(nbpart)
@@ -287,8 +284,7 @@ if (nor.eq.1) then
 
   call lages1                                                     &
   !==========
- ( propce ,                                                       &
-   taup   , tlag   , piil   ,                                     &
+ ( taup   , tlag   , piil   ,                                     &
    bx     , vagaus , gradpr , romp   ,                            &
    brgaus , terbru , fextla )
 

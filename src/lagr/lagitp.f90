@@ -23,7 +23,7 @@
 subroutine lagitp &
 !================
 
- ( propce , tempct )
+ ( tempct )
 
 !===============================================================================
 ! FONCTION :
@@ -39,7 +39,6 @@ subroutine lagitp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
 !  (nbpart,2)      !    !     !                                                !
 !__________________!____!_____!________________________________________________!
@@ -65,6 +64,7 @@ use lagran
 use ppppar
 use radiat
 use mesh
+use field
 
 !===============================================================================
 
@@ -72,7 +72,6 @@ implicit none
 
 ! Arguments
 
-double precision propce(ncelet,*)
 double precision tempct(nbpart,2)
 
 ! Local variables
@@ -80,6 +79,11 @@ double precision tempct(nbpart,2)
 integer          npt , iel
 double precision srad
 double precision, dimension(:), allocatable :: tcarac, pip
+double precision, dimension(:), pointer :: cpro_lumin
+
+if (iirayo.gt.0) then
+  call field_get_val_s(iprpfl(ilumin),cpro_lumin)
+endif
 
 !===============================================================================
 
@@ -120,14 +124,14 @@ if (iirayo.gt.0) then
       if (nor.eq.1) then
 
         srad = pi *eptpa(jdp,npt) *eptpa(jdp,npt)                 &
-                  *pepa(jreps,npt) *(propce(iel,ipproc(ilumin))   &
+                  *pepa(jreps,npt) *(cpro_lumin(iel)              &
                         -4.d0 *stephn *eptpa(jtp,npt)**4 )
         pip(npt) = eptpa(jtf,npt)                                 &
                +tcarac(npt) *srad /eptpa(jcp,npt) /eptpa(jmp,npt)
       else
 
         srad = pi *eptp(jdp,npt) *eptp(jdp,npt) *pepa(jreps,npt)  &
-                *(propce(iel,ipproc(ilumin))                      &
+                *(cpro_lumin(iel)                                 &
                 -4.d0 *stephn *eptp(jtp,npt)**4 )
         pip(npt) = eptp(jtf,npt)                                  &
                 +tcarac(npt) *srad /eptp(jcp,npt) /eptp(jmp,npt)

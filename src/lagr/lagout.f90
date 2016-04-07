@@ -23,8 +23,7 @@
 subroutine lagout &
 !================
 
- ( ntersl , nvlsta , nvisbr ,                                     &
-   propce )
+ ( ntersl , nvlsta , nvisbr )
 
 !===============================================================================
 ! FONCTION :
@@ -53,7 +52,6 @@ subroutine lagout &
 ! ntersl           ! i  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! i  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! i  ! <-- ! nombre de statistiques aux frontieres          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -83,6 +81,7 @@ use ppincl
 use cpincl
 use radiat
 use mesh
+use field
 use cs_c_bindings
 
 !===============================================================================
@@ -92,8 +91,6 @@ implicit none
 ! Arguments
 
 integer          ntersl , nvlsta , nvisbr
-
-double precision propce(ncelet,*)
 
 ! Local variables
 
@@ -106,6 +103,7 @@ integer          icha   , ii
 integer          ipas   , jj
 integer          ival(1)
 double precision rval(1)
+double precision, dimension(:), pointer ::  cpro_s
 
 type(c_ptr) :: rp
 
@@ -410,8 +408,8 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
         nbval  = 1
         write(car4,'(i4.4)') II
         rubriq = 'scalaires_physiques_pariculieres_charbon'//car4
-        call restart_write_section_real_t(rp,rubriq,itysup,nbval,  &
-                                          propce(:,ipproc(icha)))
+        call field_get_val_s(iprpfl(icha),cpro_s)
+        call restart_write_section_real_t(rp,rubriq,itysup,nbval,cpro_s)
       enddo
 
     endif

@@ -909,7 +909,7 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
   call lagune                                                     &
  ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
-   dt     , propce )
+   dt     )
 
   call timer_stats_stop(lagr_stats_id)
 
@@ -1021,8 +1021,7 @@ if (iisuit.eq.1) then
   if (iilagr.gt.0) then
 
     call lagout                                                      &
-    ( ntersl , nvlsta , nvisbr ,                                     &
-      propce )
+    ( ntersl , nvlsta , nvisbr )
 
   endif
 

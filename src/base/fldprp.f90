@@ -635,6 +635,64 @@ end subroutine add_property_field
 
 !===============================================================================
 
+!> \brief disable logging and postprocessing for a property field
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     f_id          field id
+!_______________________________________________________________________________
+
+subroutine hide_property_field &
+ ( f_id )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer, intent(in) :: f_id
+
+! Local variables
+
+integer  ipp, j
+
+logical :: interleaved
+integer :: f_dim
+
+!===============================================================================
+
+call field_set_key_int(f_id, keyvis, 0)
+call field_set_key_int(f_id, keylog, 0)
+
+ipp = field_post_id(f_id)
+
+if (ipp .gt. 1) then
+  call field_get_dim(f_id, f_dim, interleaved)
+  do j = 1, f_dim
+    ihisvr(ipp+j-1,1) = 0
+  enddo
+endif
+
+return
+
+end subroutine hide_property_field
+
+!===============================================================================
+
 !> \brief disable logging and postprocessing for a property
 !
 !-------------------------------------------------------------------------------
@@ -668,20 +726,12 @@ integer, intent(in) :: iprop
 
 ! Local variables
 
-integer  id, ipp
+integer  f_id
 
 !===============================================================================
 
-id = iprpfl(iprop)
-call field_set_key_int(id, keyvis, 0)
-call field_set_key_int(id, keylog, 0)
-
-ipp = ipppro(ipproc(iprop))
-if (ipp .gt. 1) then
-  ihisvr(ipp,1) = 0
-endif
-
-return
+f_id = iprpfl(iprop)
+call hide_property_field(f_id)
 
 end subroutine hide_property
 

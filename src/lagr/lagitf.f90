@@ -23,7 +23,7 @@
 subroutine lagitf &
 !================
 
- ( iprev, propce )
+ ( iprev )
 
 !===============================================================================
 ! FONCTION :
@@ -43,7 +43,6 @@ subroutine lagitf &
 ! iprev            ! e  ! <-- ! time step indicator for fields                 !
 !                  !    !     !   0: use fields at current time step           !
 !                  !    !     !   1: use fields at previous time step          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -78,8 +77,6 @@ implicit none
 
 integer          iprev
 
-double precision propce(ncelet,*)
-
 ! Local variables
 
 logical          ltsvar
@@ -92,7 +89,7 @@ double precision, allocatable, dimension(:) :: tempf
 
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_omg
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cvar_scalt
+double precision, dimension(:), pointer :: cvar_scalt, cpro_temp1, cpro_temp
 double precision, dimension(:), allocatable :: auxl1
 
 !===============================================================================
@@ -164,8 +161,9 @@ if ( ippmod(iccoal).ge.0 .or.                                     &
      ippmod(icpl3c).ge.0 .or.                                     &
      ippmod(icfuel).ge.0      ) then
 
+  call field_get_val_s(iprpfl(itemp1),cpro_temp1)
   do iel = 1,ncel
-    tempf(iel) = propce(iel,ipproc(itemp1)) - tkelvi
+    tempf(iel) = cpro_temp1(iel) - tkelvi
   enddo
 
 else if ( ippmod(icod3p).ge.0 .or.                                &
@@ -173,8 +171,10 @@ else if ( ippmod(icod3p).ge.0 .or.                                &
           ippmod(ielarc).ge.0 .or.                                &
           ippmod(ieljou).ge.0      ) then
 
+  call field_get_val_s(iprpfl(itemp),cpro_temp)
+
   do iel = 1,ncel
-    tempf(iel) = propce(iel,ipproc(itemp)) - tkelvi
+    tempf(iel) = cpro_temp(iel) - tkelvi
   enddo
 
 else if (itherm.eq.1 .and. itpscl.eq.2) then

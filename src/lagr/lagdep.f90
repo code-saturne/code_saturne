@@ -23,8 +23,7 @@
 subroutine lagdep &
 !================
 
- ( propce ,                                                       &
-   taup   , tlag   , piil   ,                                     &
+ ( taup   , tlag   , piil   ,                                     &
    bx     , vagaus , gradpr , romp   ,                            &
    fextla , vislen)
 
@@ -50,7 +49,6 @@ subroutine lagdep &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tlag(nbpart)     ! tr ! <-- ! temps caracteristique fluide                   !
 ! piil(nbpart,3)   ! tr ! <-- ! terme dans l'integration des eds up            !
@@ -94,7 +92,6 @@ implicit none
 
 ! Arguments
 
-double precision propce(ncelet,*)
 double precision taup(nbpart) , tlag(nbpart,3)
 double precision piil(nbpart,3) , bx(nbpart,3,2)
 double precision vagaus(nbpart,*)
@@ -127,6 +124,7 @@ double precision, dimension(:,:), pointer :: vela
 double precision, dimension(:), pointer :: viscl
 
 double precision, dimension(:), pointer :: cvara_scalt
+double precision, dimension(:), pointer :: cpro_temp1, cpro_temp
 
 !===============================================================================
 
@@ -160,6 +158,9 @@ endif
 
 if (iscalt.gt.0) call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
 
+if (itemp1.gt.0) call field_get_val_s(iprpfl(itemp1),cpro_temp1)
+if (itemp.gt.0) call field_get_val_s(iprpfl(itemp),cpro_temp)
+
 call field_get_val_s(iprpfl(iviscl), viscl)
 
 !===============================================================================
@@ -180,14 +181,14 @@ call field_get_val_s(iprpfl(iviscl), viscl)
           ippmod(icpl3c).ge.0 .or.                             &
           ippmod(icfuel).ge.0) then
 
-         tempf = propce(iel,ipproc(itemp1))
+         tempf = cpro_temp1(iel)
 
       else if (ippmod(icod3p).ge.0 .or.                        &
                ippmod(icoebu).ge.0 .or.                        &
                ippmod(ielarc).ge.0 .or.                        &
            ippmod(ieljou).ge.0      ) then
 
-         tempf = propce(iel,ipproc(itemp))
+         tempf = cpro_temp(iel)
 
       else if (iscalt.gt.0) then
         if (itherm.eq.1) then

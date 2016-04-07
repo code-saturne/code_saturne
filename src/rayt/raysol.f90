@@ -26,8 +26,7 @@ subroutine raysol &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
-   sa     ,                                                       &
-   qx     , qy     , qz     ,                                     &
+   sa     , q      ,                                              &
    qincid , snplus, iband )
 
 !===============================================================================
@@ -83,8 +82,7 @@ subroutine raysol &
 ! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
 ! sa (ncelet)      ! tr ! --> ! part d'absorption du terme source rad          !
-! qxqyqz(ncelet    ! tr ! --> ! composante du vecteur densite de flux          !
-!                  !    !     ! radiatif explicite                             !
+! q(3,ncelet)      ! tr ! --> ! vecteur densite de flux radiatif explicite     !
 ! qincid(nfabor    ! tr ! --> ! densite de flux radiatif aux bords             !
 ! snplus(nfabor    ! tr ! --- ! integration du demi-espace egale a pi          !
 ! iband            ! i  ! <-- ! Number of the i-th grey gas                    !
@@ -129,7 +127,7 @@ double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
 
 double precision sa(ncelet)
-double precision qx(ncelet), qy(ncelet), qz(ncelet)
+double precision q(3,ncelet)
 double precision qincid(nfabor), snplus(nfabor)
 
 ! Local variables
@@ -263,9 +261,9 @@ enddo
 
 do iel = 1, ncelet
   sa(iel) = 0.d0
-  qx(iel) = 0.d0
-  qy(iel) = 0.d0
-  qz(iel) = 0.d0
+  q(1,iel) = 0.d0
+  q(2,iel) = 0.d0
+  q(3,iel) = 0.d0
 enddo
 
 !--> Stockage du SMBRS dans tableau tampon, il sont recharges
@@ -388,9 +386,9 @@ do ii = -1,1,2
         do iel = 1, ncel
           aa = ru(iel) * domegat
           sa(iel) = sa(iel) + aa
-          qx(iel) = qx(iel) + aa * sxt
-          qy(iel) = qy(iel) + aa * syt
-          qz(iel) = qz(iel) + aa * szt
+          q(1,iel) = q(1,iel) + aa * sxt
+          q(2,iel) = q(2,iel) + aa * syt
+          q(3,iel) = q(3,iel) + aa * szt
         enddo
 
 !===============================================================================

@@ -28,7 +28,7 @@ subroutine raypun &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
    theta4 , thetaa , sa     ,                                     &
-   qx     , qy     , qz     ,                                     &
+   q   ,                                                          &
    qincid , eps    , tparoi ,                                     &
    ckmel  , abo    , iband )
 
@@ -59,8 +59,7 @@ subroutine raypun &
 ! theta4(ncelet    ! tr ! --- ! pseudo temperature radiative                   !
 ! thetaa(ncelet    ! tr ! --- ! pseudo temp rar pdt precedent (nulle)          !
 ! sa (ncelet)      ! tr ! --> ! part d'absorption du terme source rad          !
-! qxqyqz(ncelet    ! tr ! --> ! composante du vecteur densite de flux          !
-!                  !    !     ! radiatif explicite                             !
+! q(3,ncelet)      ! tr ! --> ! vecteur densite de flux radiatif explicite     !
 ! qincid(nfabor    ! tr ! --> ! densite de flux radiatif aux bords             !
 ! eps (nfabor)     ! tr ! <-- ! emissivite des facettes de bord                !
 ! tparoi(nfabor    ! tr ! <-- ! temperature de paroi en kelvin                 !
@@ -116,7 +115,7 @@ double precision rovsdt(ncelet)
 
 double precision theta4(ncelet), thetaa(ncelet)
 double precision sa(ncelet)
-double precision qx(ncelet), qy(ncelet), qz(ncelet)
+double precision q(3,ncelet)
 double precision qincid(nfabor), tparoi(nfabor), eps(nfabor)
 
 double precision ckmel(ncelet)
@@ -139,7 +138,6 @@ double precision aa, aaa, relaxp, thetap
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:,:), pointer     :: qinspe
 
@@ -254,10 +252,7 @@ call codits &
 ! 4. Vecteur densite de flux radiatif
 !===============================================================================
 
-! Allocate a temporary array for gradient computation
-allocate(grad(3,ncelet))
-
-!     Calcul de la densite du flux radiatif QX, QY, QZ
+!     Calcul de la densite du flux radiatif Q
 
 inc     = 1
 iccocg  = 1
@@ -273,19 +268,16 @@ call gradient_s                                                   &
    ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp,         &
      iwarnp , epsrgp , climgp , extrap ,                          &
      theta4 , coefap , coefbp ,                                   &
-     grad   )
+     q )
 
 aa = - stephn * 4.d0 / 3.d0
 
 do iel = 1, ncel
   aaa = aa * ckmel(iel)
-  qx(iel) = grad(1,iel) * aaa
-  qy(iel) = grad(2,iel) * aaa
-  qz(iel) = grad(3,iel) * aaa
+  q(1,iel) = q(1,iel) * aaa
+  q(2,iel) = q(2,iel) * aaa
+  q(3,iel) = q(3,iel) * aaa
 enddo
-
-! Free memory
-deallocate(grad)
 
 !===============================================================================
 ! 5. Terme Source Radiatif d'absorption et densite de flux incident
@@ -322,8 +314,9 @@ do ifac = 1, nfabor
 !    This expression can be found in the documentation of the P1 model
 !    written by S. DAL-SECCO, A. DOUCE, N. MECHITOUA.
     if (imoadf.ge.1) then
-      qinspe(iband,ifac) = stephn                                              &
-                         * ((2.d0*theta4(iel))+(abo(ifac,iband)*eps(ifac)*(tparoi(ifac)**4)))  &
+      qinspe(iband,ifac) = stephn                                          &
+                         * ((2.d0*theta4(iel))+(abo(ifac,iband)*eps(ifac)  &
+                            *(tparoi(ifac)**4)))                           &
                          / (2.d0-eps(ifac))
     else
       qincid(ifac) = stephn                                              &
@@ -334,16 +327,16 @@ do ifac = 1, nfabor
   else
 
     if (imoadf.ge.1) then
-      qinspe(iband,ifac) = stephn * theta4(iel)                           &
-                         + ( qx(iel) * surfbo(1,ifac) +                   &
-                             qy(iel) * surfbo(2,ifac) +                   &
-                             qz(iel) * surfbo(3,ifac) ) /                 &
+      qinspe(iband,ifac) = stephn * theta4(iel)                         &
+                         + ( q(1,iel) * surfbo(1,ifac) +                &
+                             q(2,iel) * surfbo(2,ifac) +                &
+                             q(3,iel) * surfbo(3,ifac) ) /              &
                              (0.5d0 * surfbn(ifac))
     else
-      qincid(ifac) = stephn * theta4(iel)                           &
-                 + ( qx(iel) * surfbo(1,ifac) +                     &
-                     qy(iel) * surfbo(2,ifac) +                     &
-                     qz(iel) * surfbo(3,ifac) ) /                   &
+      qincid(ifac) = stephn * theta4(iel)                               &
+                 + ( q(1,iel) * surfbo(1,ifac) +                        &
+                     q(2,iel) * surfbo(2,ifac) +                        &
+                     q(3,iel) * surfbo(3,ifac) ) /                      &
                      (0.5d0 * surfbn(ifac) )
     endif
   endif

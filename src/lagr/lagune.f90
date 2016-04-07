@@ -25,7 +25,7 @@ subroutine lagune &
 
  ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
-   dt     , propce )
+   dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -49,7 +49,6 @@ subroutine lagune &
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -90,7 +89,6 @@ integer          lndnod
 integer          nvar   , nscal
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 
 ! Local variables
 
@@ -570,7 +568,7 @@ call lagesp                                                       &
 !==========
    ( nvar   , nscal  ,                                            &
      ntersl , nvlsta , nvisbr ,                                   &
-     dt     , propce ,                                            &
+     dt     ,                                                     &
      statis , stativ , taup   , tlag   , piil   ,                 &
      bx     , tsfext ,                                            &
      gradpr , gradvf , terbru , vislen)
@@ -601,7 +599,7 @@ if (iphyla.eq.1 .or. iphyla.eq.2) then
   call lagphy                                                   &
   !==========
   ( ntersl , nvlsta , nvisbr ,                                  &
-    iprev  , dt     , propce ,                                  &
+    iprev  , dt     ,                                           &
     taup   , tlag   , tempct ,                                  &
     cpgd1  , cpgd2  , cpght  )
 
@@ -616,7 +614,6 @@ if (iilagr.eq.2 .and. nor.eq.nordre) then
   call lagcou                                                     &
   !==========
    ( ntersl ,                                                     &
-     propce ,                                                     &
      taup   , tempct , tsfext ,                                   &
      cpgd1  , cpgd2  , cpght  ,                                   &
      w1     , w2   )

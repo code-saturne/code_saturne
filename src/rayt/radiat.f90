@@ -86,16 +86,14 @@ module radiat
 
   !                       ITSRE --> Terme source explicite
   !                       ITSRI --> Terme source implicite
-  !                       IQX,IQY,IQZ --> Composantes du vecteur densite de flux radiatif
+  !                       IQXYZ --> Vecteur densite de flux radiatif
   !                       IABSO --> part d'absorption dans le terme source explicite
   !                       IEMI --> part d'emission dans le terme source explicite
   !                       ICAK --> coefficient d'absorption
   !                       ILUMIN --> integrale de la luminance
 
-  integer, save ::  itsre(1+nclcpm) , itsri(1+nclcpm) ,                      &
-                    iqx   ,   iqy   , iqz   ,                                &
-                    iabso(1+nclcpm) , iemi(1+nclcpm)  , icak(1+nclcpm)  ,    &
-                    ilumin
+  integer, save ::  itsre(1+nclcpm) , itsri(1+nclcpm)
+  integer, save ::  iabso(1+nclcpm) , iemi(1+nclcpm)  , icak(1+nclcpm)
 
   !--> field ids for specific  boundary fields
   !                       IQINCI --> densite de flux incident radiatif
@@ -107,8 +105,10 @@ module radiat
   !                       IHCONV --> Coef d'echange fluide
   !                       IQINSP --> densite de flux incident radiatif spectral
 
+  integer, save ::  iqxyz = -1
   integer, save ::  iqinci = -1
   integer, save ::  ixlam  = -1
+  integer, save ::  ilumin= -1
   integer, save ::  iepa   = -1
   integer, save ::  ieps   = -1
   integer, save ::  ifnet  = -1

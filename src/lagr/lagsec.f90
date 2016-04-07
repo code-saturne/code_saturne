@@ -24,7 +24,7 @@ subroutine lagsec                                                              &
 !================
 
  ( npt   ,                                                                     &
-   propce , tempct ,                                                           &
+   cpro_ym1o2 , cpro_mmel , cpro_lumin , tempct ,                              &
    rayon , mlayer , mwater , mwat_max , volume_couche  , sherw , fwat   )
 
 
@@ -50,7 +50,9 @@ subroutine lagsec                                                              &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! npt              ! e  ! <-- ! numero de la particule a traiter               !
-! propce(ncelet, *)! tr ! <-- ! physical properties at cell centers            !
+! cpro_ym1o2(ncelet! tr ! <-- ! mixture fraction for o2                        !
+! cpro_mmel(ncelet)! tr ! <-- ! mixture fraction                               !
+! cpro_lumin(ncelet! tr ! <-- ! cell luminance                                 !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
 !  (nbpart,2)      !    !     !                                                !
 ! rayon            ! tr ! <-- ! rayons frontieres des differentes couches      !
@@ -94,7 +96,7 @@ implicit none
 ! Arguments
 integer          npt
 
-double precision propce(ncelet,*)
+double precision cpro_ym1o2(ncelet), cpro_mmel(ncelet), cpro_lumin(ncelet)
 double precision tempct(nbpart,2)
 double precision rayon(nlayer), mlayer(nlayer), mwater(nlayer)
 double precision mwat_max, volume_couche, sherw, fwat(nlayer)
@@ -144,13 +146,13 @@ tpk = eptp(jhp(ilayer_wat),npt)
 ! --- Calcul de la fraction massique d'eau saturante
 if (tpk.ge.tmini) then
   if (tpk.ge.tlimit) then
-    aux1 = wmole(ih2o) / propce(iel,ipproc(immel))
+    aux1 = wmole(ih2o) / cpro_mmel(iel)
     aux2 = aux1 * exp(  lv * wmole(ih2o) * (1.0d0/tebl - 1.0d0/tpk) &
                       / cs_physical_constants_r )
   else
     ! On linearise la fraction massique d'eau saturante entre tmini et Tlimit
     ! En Tlimit, la fraction massique d'eau saturante est nulle
-    aux1 = wmole(ih2o) / propce(iel,ipproc(immel))
+    aux1 = wmole(ih2o) / cpro_mmel(iel)
     aux2 =  aux1 * exp(  lv * wmole(ih2o) * (1.0d0/tebl - 1.0d0/tlimit) &
                        / cs_physical_constants_r )                      &
           * (lv*wmole(ih2o) / (cs_physical_constants_r*tlimit**2))      &
@@ -158,8 +160,8 @@ if (tpk.ge.tmini) then
   endif
   ! --- Calcul du terme source d eau diffusee
   aux3 = max(1.0d0 - aux2, precis)
-  fwattot = pi*eptpa(jdp,npt)*diftl0*sherw*                                    &
-               log((1.0d0-propce(iel,ipproc(iym1(ih2o))))/aux3)
+  fwattot = pi*eptpa(jdp,npt)*diftl0*sherw*                             &
+               log((1.0d0-cpro_ym1o2(iel))/aux3)
 else
   ! Le flux est nul
   fwattot = 0.0d0
@@ -207,14 +209,14 @@ endif
 ! qui l'entoure
 
 ! Calcul de tsat, temperature saturante à la fraction partielle de l'air
-if (propce(iel,ipproc(iym1(ih2o))) .gt. precis) then
-  aux1 = wmole(ih2o) / propce(iel,ipproc(immel))
+if (cpro_ym1o2(iel) .gt. precis) then
+  aux1 = wmole(ih2o) / cpro_mmel(iel)
   tsat = 1 / (  1/tebl                                    &
               - cs_physical_constants_r                   &
-               *log(propce(iel,ipproc(iym1(ih2o)))/aux1)  &
+               *log(cpro_ym1o2(iel)/aux1)                 &
                /(lv * wmole(ih2o)) )
   if (tsat .lt. tlimit) then
-    tsat = tmini + propce(iel,ipproc(iym1(ih2o))) / (aux1                  &
+    tsat = tmini + cpro_ym1o2(iel) / (aux1                                 &
                    *exp( lv*wmole(ih2o)*(1.0d0/tebl-1.0d0/tlimit)          &
                         /cs_physical_constants_r)                          &
                    *(lv*wmole(ih2o)/(cs_physical_constants_r*tlimit**2)) )
@@ -239,7 +241,7 @@ endif
 call lagtmp                                                                    &
 !==========
 ( npt    ,                                                                     &
-  propce , tempct ,                                                            &
+  cpro_lumin, tempct ,                                                         &
   rayon  , mlayer , phith , temp  , volume_couche )
 
 ! On remet le tableau de correction pour le 2e ordre

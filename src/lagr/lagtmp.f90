@@ -24,7 +24,7 @@ subroutine lagtmp                                                              &
 !================
 
  ( npt    ,                                                                    &
-   propce , tempct ,                                                           &
+   cpro_lumin , tempct ,                                                       &
    rayon  , mlayer , phith , temp  , volume_couche )
 
 !===============================================================================
@@ -50,7 +50,7 @@ subroutine lagtmp                                                              &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! npt              ! e  ! <-- ! numero de la particule a traiter               !
-! propce(ncelet, *)! tr ! <-- ! physical properties at cell centers            !
+! cpro_lumin       ! tr ! <-- ! cell luminance                                 !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
 !  (nbpart,2)      !    !     !                                                !
 ! rayon            ! tr ! <-- ! rayons frontieres des differentes couches      !
@@ -91,7 +91,7 @@ implicit none
 
 ! Arguments
 integer          npt
-double precision propce(ncelet,*)
+double precision cpro_lumin(ncelet)
 double precision tempct(nbpart,2)
 double precision rayon(nlayer), mlayer(nlayer)
 double precision phith(nlayer), temp(nlayer)
@@ -168,7 +168,7 @@ if (nlayer.gt.1) then
   coefh = eptpa(jmp,npt)*eptpa(jcp,npt)/(tpscara*pi*diamp2)
 
   ! Temperature equivalente de rayonnement
-  temprayo = (propce(iel,ipproc(ilumin))/(4.0d0*stephn))**0.25
+  temprayo = (cpro_lumin(iel)/(4.0d0*stephn))**0.25
 
 
   !=============================================================================
@@ -267,7 +267,7 @@ else if (nlayer.eq.1) then
   tpscara = tempct(npt,1)*diamp2/dd2
 
   !     Rayonnement
-  phirayo = ( propce(iel,ipproc(ilumin))/4.d0                                  &
+  phirayo = ( cpro_lumin(iel)/4.d0                                             &
               - stephn*((eptp(jhp(nlayer),npt))**4) )
 
   aux1 = eptp(jtf,npt)+tkelvi + tpscara*(phirayo*pi*diamp2+phith(nlayer))      &

@@ -23,7 +23,7 @@
 subroutine lagich &
 !================
 
- ( propce , tempct , cpgd1  , cpgd2  , cpght )
+ ( tempct , cpgd1  , cpgd2  , cpght )
 
 !===============================================================================
 ! FONCTION :
@@ -46,7 +46,6 @@ subroutine lagich &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
 !  (nbpart,2)      !    !     !                                                !
 ! cpgd1,cpgd2,     ! tr ! --> ! termes de devolatilisation 1 et 2 et           !
@@ -86,7 +85,6 @@ implicit none
 
 ! Arguments
 
-double precision propce(ncelet,*)
 double precision tempct(nbpart,2)
 double precision cpgd1(nbpart), cpgd2(nbpart), cpght(nbpart)
 
@@ -109,6 +107,8 @@ double precision precis, lv, tebl, tlimit, tmini
 
 double precision, dimension(:), pointer :: cromf
 double precision, dimension(:), pointer :: viscl, cpro_viscls
+double precision, dimension(:), pointer :: cpro_temp1, cpro_ym1o2, cpro_mmel
+double precision, dimension(:), pointer :: cpro_lumin
 
 precis = 1.d-15                   ! Petit nombre (pour la precision numerique)
 lv = 2.263d+6                     ! Chaleur Latente en J/kg
@@ -169,6 +169,11 @@ if (iscalt.gt.0) then
     call field_get_val_s(ifcvsl, cpro_viscls)
   endif
 endif
+
+call field_get_val_s(iprpfl(itemp1),cpro_temp1)
+call field_get_val_s(iprpfl(iym1(io2)),cpro_ym1o2)
+call field_get_val_s(iprpfl(immel),cpro_mmel)
+call field_get_val_s(iprpfl(ilumin),cpro_lumin)
 
 !===============================================================================
 ! 3. Boucle principale sur l'ensemble des particules
@@ -240,7 +245,7 @@ do npt = 1,nbpart
     call lagsec                                                                &
     !==========
     ( npt   ,                                                                  &
-      propce , tempct ,                                                        &
+      cpro_ym1o2 , cpro_mmel , cpro_lumin , tempct ,                           &
       rayon , mlayer , mwater , mwat_max , volume_couche  , sherw , fwat   )
 
 
@@ -300,7 +305,7 @@ do npt = 1,nbpart
     if ( pepa(jrdck,npt).gt.precis ) then
       ! La constante 2.53d-7 est expliquée dans le tome 5 du rapport sur les
       ! physiques particulières de Code_Saturne (HI-81/04/003/A) équation 80
-      aux3 = sherw * 2.53d-7 * (propce(iel,ipproc(itemp1))**0.75d0)           &
+      aux3 = sherw * 2.53d-7 * (cpro_temp1(iel)**0.75d0)           &
                              / pepa(jrdck,npt)
       skglob = (aux2*aux3) / (aux2+aux3)
     else
@@ -315,8 +320,8 @@ do npt = 1,nbpart
     ! --- Calcul de la pression partielle en oxygene (atm)
     !                                                 ---
     !       PO2 = RHO1*CS_PHYSICAL_CONSTANTS_R*T*YO2/MO2
-    aux1 = cromf(iel) * cs_physical_constants_r * propce(iel,ipproc(itemp1))  &
-         * propce(iel,ipproc(iym1(io2))) / wmole(io2) / prefth
+    aux1 = cromf(iel) * cs_physical_constants_r * cpro_temp1(iel)  &
+         * cpro_ym1o2(iel) / wmole(io2) / prefth
 
     ! --- Calcul de surface efficace : SE
     aux2 =  pi * (1.0d0-xashch(icha)) * pepa(jrdck,npt)**2
@@ -515,7 +520,7 @@ do npt = 1,nbpart
     call lagtmp                                                                &
     !==========
     ( npt    ,                                                                 &
-      propce , tempct ,                                                        &
+      cpro_lumin , tempct ,                                                    &
       rayon  , mlayer , phith , temp  , volume_couche )
 
     do ilayer = 1, nlayer

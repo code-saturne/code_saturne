@@ -23,8 +23,7 @@
 subroutine lages1 &
 !================
 
- ( propce ,                                                       &
-   taup   , tlag   , piil   ,                                     &
+ ( taup   , tlag   , piil   ,                                     &
    bx     , vagaus , gradpr , romp   ,                            &
    brgaus , terbru , fextla )
 
@@ -42,7 +41,6 @@ subroutine lages1 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tlag(nbpart)     ! tr ! <-- ! temps caracteristique fluide                   !
 ! piil(nbpart,3)   ! tr ! <-- ! terme dans l'integration des eds up            !
@@ -84,7 +82,6 @@ implicit none
 
 ! Arguments
 
-double precision propce(ncelet,*)
 double precision taup(nbpart) , tlag(nbpart,3)
 double precision piil(nbpart,3) , bx(nbpart,3,2)
 double precision vagaus(nbpart,*), brgaus(nbpart,*)
@@ -115,13 +112,9 @@ double precision tbrix1, tbrix2, tbriu
 double precision, dimension(:), pointer :: cromf
 double precision, dimension(:,:), pointer :: vela
 double precision, dimension(:), pointer :: cvara_scalt
+double precision, dimension(:), pointer :: cpro_temp1, cpro_temp
 
 !===============================================================================
-
-! Map field arrays
-call field_get_val_prev_v(ivarfl(iu), vela)
-
-if (iscalt.gt.0) call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
 
 !===============================================================================
 ! 1. INITIALISATIONS
@@ -135,13 +128,20 @@ grav(1) = gx
 grav(2) = gy
 grav(3) = gz
 
-! Pointeur sur la masse volumique en fonction de l'ecoulement
+! Map field arrays
+
+call field_get_val_prev_v(ivarfl(iu), vela)
+
+if (iscalt.gt.0) call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
 
 if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
   call field_get_val_s(iprpfl(ipproc(irom1)), cromf)
 else
   call field_get_val_s(icrom, cromf)
 endif
+
+if (itemp1.gt.0) call field_get_val_s(iprpfl(itemp1),cpro_temp1)
+if (itemp.gt.0) call field_get_val_s(iprpfl(itemp),cpro_temp)
 
 !===============================================================================
 ! 2. INTEGRATION DES EDS SUR LES PARTICULES
@@ -316,14 +316,14 @@ do id = 1,3
         if ( ippmod(iccoal).ge.0 .or.                             &
              ippmod(icpl3c).ge.0      ) then
 
-          tempf = propce(iel,ipproc(itemp1))
+          tempf = cpro_temp1(iel)
 
         else if ( ippmod(icod3p).ge.0 .or.                        &
           ippmod(icoebu).ge.0 .or.                                &
           ippmod(ielarc).ge.0 .or.                                &
           ippmod(ieljou).ge.0      ) then
 
-          tempf = propce(iel,ipproc(itemp))
+          tempf = cpro_temp(iel)
 
         else if (itherm.eq.1 .and. itpscl.eq.2) then
           tempf = cvara_scalt(iel)

@@ -24,7 +24,7 @@ subroutine lagphy &
 !================
 
  ( ntersl , nvlsta , nvisbr ,                                     &
-   iprev  , dt     , propce ,                                     &
+   iprev  , dt     ,                                              &
    taup   , tlag   , tempct ,                                     &
    cpgd1  , cpgd2  , cpght  )
 
@@ -57,7 +57,6 @@ subroutine lagphy &
 !                  !    !     !   0: use fields at current time step           !
 !                  !    !     !   1: use fields at previous time step          !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tlag(nbpart)     ! tr ! <-- ! temps caracteristique fluide                   !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
@@ -97,7 +96,6 @@ integer          ntersl , nvlsta , nvisbr
 integer          iprev
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 double precision taup(nbpart) , tlag(nbpart,3) , tempct(nbpart,2)
 double precision cpgd1(nbpart) , cpgd2(nbpart) , cpght(nbpart)
 
@@ -116,9 +114,7 @@ double precision cpgd1(nbpart) , cpgd2(nbpart) , cpght(nbpart)
 
 if ( iphyla.eq.2 .or. (iphyla.eq.1 .and. itpvar.eq.1) ) then
 
-  call lagitf                                                     &
-  !==========
-  ( iprev, propce )
+  call lagitf(iprev)
 
 endif
 
@@ -128,9 +124,7 @@ endif
 
 if ( iphyla.eq.1 .and. itpvar.eq.1 ) then
 
-  call lagitp                                                     &
-  !==========
-  ( propce , tempct )
+  call lagitp(tempct)
 
 endif
 
@@ -164,7 +158,7 @@ if (iphyla.eq.2) then
 
   call lagich                                                     &
   !==========
-  ( propce , tempct , cpgd1  , cpgd2  , cpght  )
+  ( tempct , cpgd1  , cpgd2  , cpght  )
 
 endif
 

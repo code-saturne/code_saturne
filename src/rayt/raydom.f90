@@ -105,13 +105,13 @@ double precision, allocatable, dimension(:) :: dcp
 double precision, allocatable, dimension(:) :: ckmel
 double precision, allocatable, dimension(:,:,:) :: grad
 double precision, allocatable, dimension(:,:) :: tempk
-double precision, allocatable, dimension(:,:) :: q, coefaq
+double precision, allocatable, dimension(:,:) :: coefaq
 double precision, allocatable, dimension(:,:,:) :: coefbq
 double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:) :: cofafp, cofbfp
 double precision, allocatable, dimension(:) :: flurds, flurdb
 double precision, allocatable, dimension(:,:) :: kgi,agi,agbi,iabparh2,iempexh2,iempimh2
-double precision, allocatable, dimension(:)   :: iqxpar,iqypar,iqzpar
+double precision, allocatable, dimension(:,:) :: iqpar
 double precision, allocatable, dimension(:)   :: iabgaz,iabpar,iemgex,iempex,ilutot
 double precision, allocatable, dimension(:)   :: iqpato,iemgim,iempim,tparo
 
@@ -170,7 +170,7 @@ endif
 
 allocate(kgi(ncelet,nwsgg),agi(ncelet,nwsgg))    ! Radiation coeffcient kgi and
 ! the corresponding weight agi of the i-th grey gas
-allocate(iqxpar(ncelet),iqypar(ncelet),iqzpar(ncelet)) ! Flux density components
+allocate(iqpar(3,ncelet))               ! Flux density components
 allocate(iabgaz(ncelet),iabpar(ncelet)) ! Radiation absorbed by
 ! the gasphase and the solid phase (all particles classes)
 allocate(iemgex(ncelet),iempex(ncelet)) ! Emmitted radtion of the gasphase and
@@ -225,8 +225,8 @@ call field_get_val_s(iprpfl(itsri(1)),cpro_tsri1)
 call field_get_val_s(iprpfl(itsre(1)),cpro_tsre1)
 call field_get_val_s(iprpfl(iabso(1)),cpro_abso1)
 call field_get_val_s(iprpfl(iemi(1)),cpro_emi1)
-call field_get_val_v(iprpfl(iqx),cpro_q)
 call field_get_val_s(iprpfl(ilumin),cpro_lumin)
+call field_get_val_v(iqxyz,cpro_q)
 
 !--> Working arrays
 do iel = 1, ncel
@@ -236,9 +236,9 @@ do iel = 1, ncel
   cpro_abso1(iel) = 0.d0  ! Absortion: Sum,i((kg,i+kp) * Integral(Ii)dOmega)
   cpro_emi1(iel)  = 0.d0  ! Emission:  Sum,i((kg,i+kp) * stephn * T^4 *agi)
 !
-  cpro_q(iel,1) = 0.d0 ! X-component of the radiative flux vector
-  cpro_q(iel,2) = 0.d0 ! Y-compnent of the radiative flux vector
-  cpro_q(iel,3) = 0.d0 ! Z-Component of the radiative flux vector
+  cpro_q(1,iel) = 0.d0 ! radiative flux vector
+  cpro_q(2,iel) = 0.d0
+  cpro_q(3,iel) = 0.d0
 
   iabgaz(iel) = 0.d0 ! Absorption of the gas phase: kg,i * Integral(Ii) * dOmega
   iabpar(iel) = 0.d0 ! Absortion of particles: kp * Integral(Ii) * dOmega
@@ -643,8 +643,7 @@ do ngg = 1, nwsgg
       viscf  , viscb  ,                                              &
       smbrs  , rovsdt ,                                              &
       cpro_abso1 , cpro_emi1 ,                                       &
-      cpro_tsre1 ,                                                   &
-      iqxpar , iqypar , iqzpar ,                                     &
+      cpro_tsre1 , iqpar ,                                           &
       bqinci , beps   , tparo  ,                                     &
       ckmel  , agbi   , ngg    )
 
@@ -743,8 +742,7 @@ do ngg = 1, nwsgg
       flurds , flurdb ,                                              &
       viscf  , viscb  ,                                              &
       smbrs  , rovsdt ,                                              &
-      cpro_tsre1 ,                                                 &
-      iqxpar , iqypar , iqzpar  ,                                    &
+      cpro_tsre1 , iqpar ,                                           &
       bqinci , bfnet  , ngg)
 
   endif
@@ -853,9 +851,9 @@ do ngg = 1, nwsgg
     ilutot(iel)=ilutot(iel)+(cpro_tsre1(iel)*wq(ngg))
 
     ! Flux vector components
-    cpro_q(iel,1) = cpro_q(iel,1)+(iqxpar(iel)*wq(ngg))
-    cpro_q(iel,2) = cpro_q(iel,2)+(iqypar(iel)*wq(ngg))
-    cpro_q(iel,3) = cpro_q(iel,3)+(iqzpar(iel)*wq(ngg))
+    cpro_q(1,iel) = cpro_q(1,iel)+(iqpar(1,iel)*wq(ngg))
+    cpro_q(2,iel) = cpro_q(2,iel)+(iqpar(2,iel)*wq(ngg))
+    cpro_q(3,iel) = cpro_q(3,iel)+(iqpar(3,iel)*wq(ngg))
   enddo
 
   ! If the ADF model is activated we have to sum up the spectral flux densities
@@ -1051,14 +1049,6 @@ if (idverl.eq.1 .or. idverl.eq.2) then
 
   ! Allocate  temporary arrays for gradient computation
 
-  allocate(q(3,ncelet))
-
-  do iel = 1, ncel
-    q(1,iel) = cpro_q(iel,1)
-    q(2,iel) = cpro_q(iel,2)
-    q(3,iel) = cpro_q(iel,3)
-  enddo
-
   allocate(coefaq(3,nfabor))
   allocate(coefbq(3,3,nfabor))
 
@@ -1093,7 +1083,7 @@ if (idverl.eq.1 .or. idverl.eq.2) then
 
   call cgdvec                                                     &
   ( f_id0  , imrgra , inc    , nswrgp , iwarnp , imligp ,         &
-    epsrgp , climgp , coefaq , coefbq , q      , grad   )
+    epsrgp , climgp , coefaq , coefbq , cpro_q , grad   )
 
   do iel = 1,ncel
     cpro_tsre1(iel) = - grad(1,1,iel)                              &
@@ -1105,7 +1095,6 @@ if (idverl.eq.1 .or. idverl.eq.2) then
   deallocate(grad)
   deallocate(coefbq)
   deallocate(coefaq)
-  deallocate(q)
 
 ! Fin du calcul de la divergence
 endif
@@ -1185,7 +1174,7 @@ deallocate(cofafp, cofbfp)
 deallocate(flurds, flurdb)
 deallocate(ckmel, dcp, tparo)
 deallocate(kgi,agi,agbi)
-deallocate(iqxpar,iqypar,iqzpar)
+deallocate(iqpar)
 deallocate(iabgaz,iabpar,iemgex,iempex,ilutot)
 deallocate(iemgim,iempim)
 deallocate(iabparh2,iempexh2,iempimh2)

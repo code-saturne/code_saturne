@@ -999,7 +999,7 @@ call rotation_define(0.d0, 0.d0, 0.d0,  &    ! rotation vector
 !         ro0, viscl0 and cp0
 !             are useful but simply represent mean initial values;
 !             the density, molecular dynamic viscosity, and specific
-!             heat are necessarily given in propce (whether they are
+!             heat are necessarily defined as fields (whether they are
 !             physically variable or not): see cs_user_physical_properties
 !             for the Joule effect
 !             module and the electric arcs dp_ELE data file.

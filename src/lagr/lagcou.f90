@@ -24,7 +24,6 @@ subroutine lagcou &
 !================
 
  ( ntersl ,                                                       &
-   propce ,                                                       &
    taup   , tempct , tsfext ,                                     &
    cpgd1  , cpgd2  , cpght  ,                                     &
    volp   , volm   )
@@ -58,7 +57,6 @@ subroutine lagcou &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tsfext(nbpart)   ! tr ! <-- ! forces externes                                !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
@@ -106,7 +104,6 @@ implicit none
 
 integer          ntersl
 
-double precision propce(ncelet,*)
 double precision taup(nbpart) , tempct(nbpart,2)
 double precision tsfext(nbpart)
 double precision cpgd1(nbpart) , cpgd2(nbpart) , cpght(nbpart)
@@ -120,6 +117,7 @@ double precision uuf , vvf , wwf , mf
 
 double precision, dimension(:), pointer ::  crom
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cpro_lumin
 double precision, allocatable, dimension(:,:) :: tslag
 double precision, allocatable, dimension(:) :: auxl1, auxl2, auxl3
 
@@ -359,12 +357,14 @@ if (ltsthe.eq.1) then
 
     if (iirayo.gt.0) then
 
+      call field_get_val_s(iprpfl(ilumin),cpro_lumin)
+
       do npt = 1,nbpart
 
         iel = ipepa(jisora,npt)
 
         aux1 = pi *eptp(jdp,npt) *eptp(jdp,npt) *pepa(jreps,npt)  &
-                *(propce(iel,ipproc(ilumin))                      &
+                * (cpro_lumin(iel)                                &
                 -4.d0 *stephn *eptp(jtp,npt)**4 )
 
         tslag(iel,itste) =tslag(iel,itste)+aux1*pepa(jrpoi,npt)
