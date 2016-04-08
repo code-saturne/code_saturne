@@ -327,7 +327,6 @@ _find_clip(int  f_id,
  *   prefix       <-- string inserted before name
  *   name         <-- array name or label
  *   name_width   <-- width of "name" column
- *   interleaved  <-- is array interleaved ?
  *   dim          <-- array dimension
  *   n_g_elts     <-- global number of associated elements,
  *   total_weight <-- if > 0, weight (volume or surface) of array location
@@ -341,7 +340,6 @@ static void
 _log_array_info(const char        *prefix,
                 const char        *name,
                 size_t             name_width,
-                bool               interleaved,
                 int                dim,
                 int                n_g_elts,
                 double             total_weight,
@@ -351,7 +349,7 @@ _log_array_info(const char        *prefix,
                 const double      *wsum)
 {
   int c_id;
-  const int _dim = (interleaved && dim == 3) ? 4 : dim;
+  const int _dim = (dim == 3) ? 4 : dim;
 
   char tmp_s[2][64] =  {"", ""};
 
@@ -625,7 +623,7 @@ _log_fields(void)
 
       log_id[f_id] = log_count;
 
-      _dim = (f->interleaved && f->dim == 3) ? 4 : f->dim;
+      _dim = (f->dim == 3) ? 4 : f->dim;
 
       while (log_count + _dim > log_count_max) {
         log_count_max *= 2;
@@ -636,52 +634,27 @@ _log_fields(void)
       }
 
       if (have_weight && (f->type | CS_FIELD_INTENSIVE)) {
-        if (f->interleaved)
-          cs_array_reduce_simple_stats_l_w(_n_elts,
-                                           f->dim,
-                                           NULL,
-                                           NULL,
-                                           f->val,
-                                           weight,
-                                           vmin + log_count,
-                                           vmax + log_count,
-                                           vsum + log_count,
-                                           wsum + log_count);
-
-        else {
-          for (c_id = 0; c_id < f->dim; c_id++)
-            cs_array_reduce_simple_stats_l_w(_n_elts,
-                                             1,
-                                             NULL,
-                                             NULL,
-                                             f->val + n_elts[2]*c_id,
-                                             weight,
-                                             vmin + log_count + c_id,
-                                             vmax + log_count + c_id,
-                                             vsum + log_count + c_id,
-                                             wsum + log_count + c_id);
-        }
-      }
-      else {
-        if (f->interleaved)
-          cs_array_reduce_simple_stats_l(_n_elts,
+        cs_array_reduce_simple_stats_l_w(_n_elts,
                                          f->dim,
                                          NULL,
+                                         NULL,
                                          f->val,
+                                         weight,
                                          vmin + log_count,
                                          vmax + log_count,
-                                         vsum + log_count);
+                                         vsum + log_count,
+                                         wsum + log_count);
 
-        else {
-          for (c_id = 0; c_id < f->dim; c_id++)
-            cs_array_reduce_simple_stats_l(_n_elts,
-                                           1,
-                                           NULL,
-                                           f->val + n_elts[2]*c_id,
-                                           vmin + log_count + c_id,
-                                           vmax + log_count + c_id,
-                                           vsum + log_count + c_id);
-        }
+      }
+      else {
+        cs_array_reduce_simple_stats_l(_n_elts,
+                                       f->dim,
+                                       NULL,
+                                       f->val,
+                                       vmin + log_count,
+                                       vmax + log_count,
+                                       vsum + log_count);
+
         if (have_weight) {
           for (c_id = 0; c_id < _dim; c_id++)
             wsum[log_count + c_id] = 0.;
@@ -782,7 +755,7 @@ _log_fields(void)
 
       /* Position in log */
 
-      _dim = (f->interleaved && f->dim == 3) ? 4 : f->dim;
+      _dim = (f->dim == 3) ? 4 : f->dim;
 
       const char *name = cs_field_get_key_str(f, label_key_id);
       if (name == NULL)
@@ -801,7 +774,6 @@ _log_fields(void)
       _log_array_info(prefix,
                       name,
                       max_name_width,
-                      f->interleaved,
                       f->dim,
                       n_g_elts,
                       t_weight,
@@ -1026,7 +998,6 @@ _log_sstats(void)
         _log_array_info("   ",
                         name,
                         max_name_width,
-                        true,
                         _sstats[stat_id].dim,
                         n_g_elts,
                         t_weight,

@@ -2890,8 +2890,6 @@ _local_propagation(void                           *particle,
 
         cs_real_t flow_velo_x, flow_velo_y, flow_velo_z;
 
-        assert(u->interleaved);
-
         flow_velo_x = u->val[cur_cell_id*3];
         flow_velo_y = u->val[cur_cell_id*3 + 1];
         flow_velo_z = u->val[cur_cell_id*3 + 2];
@@ -3131,8 +3129,6 @@ _local_propagation(void                           *particle,
                           particle_yplus, neighbor_face_id);
 
           if (*particle_yplus < 100.e0) {
-
-            assert(u->interleaved);
 
             cs_real_t flow_velo_x = u->val[cur_cell_id*3];
             cs_real_t flow_velo_y = u->val[cur_cell_id*3 + 1];

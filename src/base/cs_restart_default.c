@@ -2219,11 +2219,6 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
         }
         else { /* uncoupled */
           n_loc_vals = f->dim;
-          if (f->dim > 1 && !f->interleaved) { /* Interleave values if not done yet */
-            const cs_lnum_t *n_elts
-              = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES);
-            BFT_MALLOC(c, f->dim*n_elts[0], cs_real_t);
-          }
         }
 
         BFT_MALLOC(sec_name,
@@ -2282,22 +2277,6 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
           errcount += 1;
 
         BFT_FREE(sec_name);
-
-        if (f->dim > 1 && !f->interleaved && coupled == 0) {
-
-          /* De-interleave values (obsolete case) */
-
-          const cs_lnum_t *n_elts
-            = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES);
-          cs_lnum_t _n_elts = n_elts[0];
-          BFT_MALLOC(c, f->dim*_n_elts, cs_real_t);
-          for (cs_lnum_t j = 0; j < _n_elts; j++) {
-            for (int k = 0; k < f->dim; k++)
-              p[c_id][j + k*n_elts[2]] = c[j*f->dim + k];
-          }
-          BFT_FREE(c);
-
-        }
 
       } /* End of loop in i (coeff type) */
 
@@ -2388,17 +2367,6 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
         }
         else { /* uncoupled */
           n_loc_vals = f->dim;
-          if (f->dim > 1 && !f->interleaved) { /* Interleave values if not done yet */
-            const cs_lnum_t *n_elts
-              = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES);
-            cs_lnum_t _n_elts = n_elts[0];
-            BFT_MALLOC(c, f->dim*_n_elts, cs_real_t);
-            for (cs_lnum_t j = 0; j < _n_elts; j++) {
-              for (int k = 0; k < f->dim; k++)
-                c[j*f->dim + k] = p[c_id][j + k*n_elts[2]];
-            }
-          }
-
         }
 
         BFT_MALLOC(sec_name,

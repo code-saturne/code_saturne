@@ -164,8 +164,6 @@ _field_interpolate_by_mean(cs_field_t         *f,
 
     cs_lnum_t cell_id = point_location[i];
 
-    assert(f->dim == 1 || f->interleaved == true);
-
     for (cs_lnum_t j = 0; j < f->dim; j++)
       val[i*f->dim + j] =  f->val[cell_id*f->dim + j];
 
@@ -257,8 +255,6 @@ _field_interpolate_by_gradient(cs_field_t         *f,
     cs_real_3_t d = {point_coords[i][0] - cell_cen[cell_id][0],
                      point_coords[i][1] - cell_cen[cell_id][1],
                      point_coords[i][2] - cell_cen[cell_id][2]};
-
-    assert(f->dim == 1 || f->interleaved == true);
 
     for (cs_lnum_t j = 0; j < f->dim; j++) {
       cs_lnum_t k = (cell_id*dim + j)*3;
@@ -618,29 +614,14 @@ cs_field_gradient_vector(const cs_field_t          *f,
                          int                        inc,
                          cs_real_33_t     *restrict grad)
 {
-  cs_real_3_t *var;
-
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_var_cal_opt_t var_cal_opt;
 
-  // Get the calculation option from the field
+  /* Get the calculation option from the field */
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
-  if (f->interleaved)
-    var = (use_previous_t) ? (cs_real_3_t *)(f->val_pre)
-                           : (cs_real_3_t *)(f->val);
-  else {
-    const int dim = f->dim;
-    const cs_real_t *s =  (use_previous_t) ? f->val_pre : f->val;
-    const cs_lnum_t *n_loc_elts
-      = cs_mesh_location_get_n_elts(f->location_id);
-    const cs_lnum_t _n_loc_elts = n_loc_elts[2];
-    BFT_MALLOC(var, _n_loc_elts, cs_real_3_t);
-    for (cs_lnum_t i = 0; i < _n_loc_elts; i++) {
-      for (int j = 0; j < dim; j++)
-        var[i][j] = s[j*_n_loc_elts + i];
-    }
-  }
+  cs_real_3_t *var = (use_previous_t) ? (cs_real_3_t *)(f->val_pre)
+                                      : (cs_real_3_t *)(f->val);
 
   cs_gradient_vector(f->name,
                      gradient_type,
@@ -655,9 +636,6 @@ cs_field_gradient_vector(const cs_field_t          *f,
                      (const cs_real_33_t *)(f->bc_coeffs->b),
                      var,
                      grad);
-
-  if (! f->interleaved)
-    BFT_FREE(var);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -682,29 +660,14 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                          int                        inc,
                          cs_real_63_t     *restrict grad)
 {
-  cs_real_6_t *var;
-
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_var_cal_opt_t var_cal_opt;
 
   /* Get the calculation option from the field */
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
-  if (f->interleaved)
-    var = (use_previous_t) ? (cs_real_6_t *)(f->val_pre)
-                           : (cs_real_6_t *)(f->val);
-  else {
-    const int dim = f->dim;
-    const cs_real_t *s =  (use_previous_t) ? f->val_pre : f->val;
-    const cs_lnum_t *n_loc_elts
-      = cs_mesh_location_get_n_elts(f->location_id);
-    const cs_lnum_t _n_loc_elts = n_loc_elts[2];
-    BFT_MALLOC(var, _n_loc_elts, cs_real_6_t);
-    for (cs_lnum_t i = 0; i < _n_loc_elts; i++) {
-      for (int j = 0; j < dim; j++)
-        var[i][j] = s[j*_n_loc_elts + i];
-    }
-  }
+  cs_real_6_t *var = (use_previous_t) ? (cs_real_6_t *)(f->val_pre)
+                                      : (cs_real_6_t *)(f->val);
 
   cs_gradient_tensor(f->name,
                      gradient_type,
@@ -719,9 +682,6 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                      (const cs_real_66_t *)(f->bc_coeffs->b),
                      var,
                      grad);
-
-  if (! f->interleaved)
-    BFT_FREE(var);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -126,7 +126,6 @@ typedef struct {
   int                     type;         /* Field type flag */
 
   int                     dim;          /* Field dimension */
-  bool                    interleaved;  /* is field interleaved ? */
 
   int                     location_id;  /* Id of matching location */
 
@@ -196,8 +195,6 @@ cs_field_n_fields(void);
  *   type_flag    <-- mask of field property and category values
  *   location_id  <-- id of associated location
  *   dim          <-- field dimension (number of components)
- *   interleaved  <-- indicate if values are interleaved
- *                    (ignored if number of components < 2)
  *   has_previous <-- maintain values at the previous time step ?
  *
  * returns:
@@ -209,7 +206,6 @@ cs_field_create(const char   *name,
                 int           type_flag,
                 int           location_id,
                 int           dim,
-                bool          interleaved,
                 bool          has_previous);
 
 /*----------------------------------------------------------------------------
@@ -227,8 +223,6 @@ cs_field_create(const char   *name,
  *   type_flag   <-- mask of field property and category values
  *   location_id <-- id of associated location
  *   dim         <-- field dimension (number of components)
- *   interleaved <-- indicate if values ar interleaved
- *                   (ignored if number of components < 2)
  *
  * returns:
  *   pointer to field
@@ -238,8 +232,7 @@ cs_field_t *
 cs_field_find_or_create(const char   *name,
                         int           type_flag,
                         int           location_id,
-                        int           dim,
-                        bool          interleaved);
+                        int           dim);
 
 /*----------------------------------------------------------------------------
  * Change the number of time values managed by a field.
@@ -289,13 +282,9 @@ cs_field_map_values(cs_field_t   *f,
  * locations (though support could be added by mapping a boundary->location
  * indirection array in the cs_mesh_location_t structure).
  *
- * For multidimensional fields, arrays are assumed to have the same
- * interleaving behavior as the field, unless components are coupled.
- *
- * For multidimensional fields with coupled components, interleaving
- * is the norm, and implicit b and bf coefficient arrays are arrays of
- * block matrices, not vectors, so the number of entries for each boundary
- * face is dim*dim instead of dim.
+ * For multidimensional fields with coupled components, implicit b and bf
+ * coefficient arrays are arrays of block matrices, not vectors, so the
+ * number of entries for each boundary face is dim*dim instead of dim.
  *
  * parameters:
  *   f            <-- pointer to field structure
@@ -320,13 +309,9 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
  * locations (though support could be added by mapping a boundary->location
  * indirection array in the cs_mesh_location_t structure).
  *
- * For multidimensional fields, arrays are assumed to have the same
- * interleaving behavior as the field, unless components are coupled.
- *
- * For multidimensional fields with coupled components, interleaving
- * is the norm, and implicit b and bf coefficient arrays are arrays of
- * block matrices, not vectors, so the number of entries for each boundary
- * face is dim*dim instead of dim.
+ * For multidimensional fields with coupled components, implicit b and bf
+ * coefficient arrays are arrays of block matrices, not vectors, so the
+ * number of entries for each boundary face is dim*dim instead of dim.
  *
  * parameters:
  *   f <-> pointer to field structure

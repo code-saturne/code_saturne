@@ -72,8 +72,6 @@ double precision smbr(6,ncelet)
 
 integer          iel, dimrij, isou
 
-logical          interleaved
-
 double precision uns3, const, kseps, csttmp
 double precision prdtur, r1t, r2t, r3t
 double precision g11, g22, g33, g12, g13, g23, gkks3
@@ -108,7 +106,8 @@ call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
 call field_get_val_prev_v(ivarfl(irij), cvara_rij)
 
-call field_get_dim(ivarfl(irij),dimrij,interleaved)
+call field_get_dim(ivarfl(irij), dimrij)
+
 !===============================================================================
 ! 2. Terms for Rij:
 !      rom*volume*dRij/dt =

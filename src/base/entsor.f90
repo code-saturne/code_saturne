@@ -399,7 +399,6 @@ contains
 
     ! Local variables
 
-    logical :: interleaved
     integer :: f_dim
     integer, save :: keypp = -1
     integer, save :: nvpp = 1
@@ -414,7 +413,7 @@ contains
 
     if (ipp.le.1) then
 
-      call field_get_dim(f_id, f_dim, interleaved)
+      call field_get_dim(f_id, f_dim)
 
       ipp = nvpp + 1
 

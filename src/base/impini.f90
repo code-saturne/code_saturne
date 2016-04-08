@@ -78,7 +78,6 @@ implicit none
 ! Local variables
 
 character        name*300, chaine*80
-logical          interleaved
 integer          iokss , iokcaz
 integer          ii    , iiesca, iest
 integer          ipp   , iwar  , kval
@@ -2436,7 +2435,7 @@ write(nfecra,7530) nthist,frhist,ncapt
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keypp, ipp)
   if (ipp.le.1) cycle
-  call field_get_dim (f_id, f_dim, interleaved)
+  call field_get_dim (f_id, f_dim)
   do c_id = 1, min(f_dim, 3)
     ii = ipp + c_id - 1
     if (ihisvr(ii,1).ne.0) then

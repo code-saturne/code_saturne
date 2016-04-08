@@ -122,7 +122,7 @@ module field
 
     ! Interface to C function creating a field descriptor
 
-    function cs_field_create(name, type_flag, location_id, dim, interleaved, &
+    function cs_field_create(name, type_flag, location_id, dim, &
                              has_previous) result(f) &
       bind(C, name='cs_field_create')
       use, intrinsic :: iso_c_binding
@@ -131,7 +131,6 @@ module field
       integer(c_int), value                                    :: type_flag
       integer(c_int), value                                    :: location_id
       integer(c_int), value                                    :: dim
-      logical(c_bool), value                                   :: interleaved
       logical(c_bool), value                                   :: has_previous
       type(c_ptr)                                              :: f
     end function cs_field_create
@@ -140,8 +139,8 @@ module field
 
     ! Interface to C function returning or creating a field descriptor
 
-    function cs_field_find_or_create(name, type_flag, location_id, dim,      &
-                                     interleaved) result(f) &
+    function cs_field_find_or_create(name, type_flag, location_id, &
+                                     dim) result(f) &
       bind(C, name='cs_field_find_or_create')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -149,7 +148,6 @@ module field
       integer(c_int), value                                    :: type_flag
       integer(c_int), value                                    :: location_id
       integer(c_int), value                                    :: dim
-      logical(c_bool), value                                   :: interleaved
       type(c_ptr)                                              :: f
     end function cs_field_find_or_create
 
@@ -235,7 +233,7 @@ module field
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: f_id
-      integer(c_int), dimension(2), intent(out) :: f_dim
+      integer(c_int), dimension(1), intent(out) :: f_dim
     end subroutine cs_f_field_get_dimension
 
     !---------------------------------------------------------------------------
@@ -559,14 +557,11 @@ contains
   !>                              3: interior faces
   !>                              4: vertices
   !> \param[in]  dim            field dimension
-  !> \param[in]  interleaved    .true. if values interleaved
-  !>                            (ignored if < 2 components)
   !> \param[in]  has_previous   .true. if values at previous
   !>                            time step are maintained
   !> \param[out] id             id of defined field
 
-  subroutine field_create(name, type_flag, location_id, dim,   &
-                          interleaved, has_previous,           &
+  subroutine field_create(name, type_flag, location_id, dim, has_previous, &
                           id)
 
     use, intrinsic :: iso_c_binding
@@ -578,7 +573,6 @@ contains
     integer, intent(in)          :: type_flag
     integer, intent(in)          :: location_id
     integer, intent(in)          :: dim
-    logical, intent(in)          :: interleaved
     logical, intent(in)          :: has_previous
     integer, intent(out)         :: id
 
@@ -588,7 +582,6 @@ contains
     integer(c_int) :: c_type_flag
     integer(c_int) :: c_location_id
     integer(c_int) :: c_dim
-    logical(c_bool) :: c_interleaved
     logical(c_bool) :: c_has_previous
     type(c_ptr)     :: f
 
@@ -596,11 +589,10 @@ contains
     c_type_flag = type_flag
     c_location_id = location_id
     c_dim = dim
-    c_interleaved = interleaved
     c_has_previous = has_previous
 
     f = cs_field_create(c_name, c_type_flag, c_location_id, c_dim, &
-                        c_interleaved, c_has_previous)
+                        c_has_previous)
     id = cs_f_field_id_by_name(c_name)
 
     return
@@ -627,13 +619,9 @@ contains
   !>                              3: interior faces
   !>                              4: vertices
   !> \param[in]  dim            field dimension
-  !> \param[in]  interleaved    .true. if values interleaved
-  !>                            (ignored if < 2 components)
   !> \param[out] id             id of defined field
 
-  subroutine field_find_or_create(name, type_flag, location_id, dim,   &
-                                  interleaved,                         &
-                                  id)
+  subroutine field_find_or_create(name, type_flag, location_id, dim, id)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -644,7 +632,6 @@ contains
     integer, intent(in)          :: type_flag
     integer, intent(in)          :: location_id
     integer, intent(in)          :: dim
-    logical, intent(in)          :: interleaved
     integer, intent(out)         :: id
 
     ! Local variables
@@ -653,17 +640,14 @@ contains
     integer(c_int) :: c_type_flag
     integer(c_int) :: c_location_id
     integer(c_int) :: c_dim
-    logical(c_bool) :: c_interleaved
     type(c_ptr)     :: f
 
     c_name = trim(name)//c_null_char
     c_type_flag = type_flag
     c_location_id = location_id
     c_dim = dim
-    c_interleaved = interleaved
 
-    f = cs_field_find_or_create(c_name, c_type_flag, c_location_id, c_dim, &
-                                c_interleaved)
+    f = cs_field_find_or_create(c_name, c_type_flag, c_location_id, c_dim)
     id = cs_f_field_id_by_name(c_name)
 
     return
@@ -827,11 +811,10 @@ contains
 
   !> \brief Return a given field's dimension.
 
-  !> \param[in]   f_id         field id
-  !> \param[out]  f_dim        number of field components (dimension)
-  !> \param[out]  interleaved  true if field is interleaved, false otherwise
+  !> \param[in]   f_id   field id
+  !> \param[out]  f_dim  number of field components (dimension)
 
-  subroutine field_get_dim(f_id, f_dim, interleaved)
+  subroutine field_get_dim(f_id, f_dim)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -840,23 +823,17 @@ contains
 
     integer, intent(in)  :: f_id
     integer, intent(out) :: f_dim
-    logical, intent(out) :: interleaved
 
     ! Local variables
 
     integer(c_int) :: c_f_id
-    integer(c_int), dimension(2) :: c_dim
+    integer(c_int), dimension(1) :: c_dim
 
     c_f_id = f_id
 
     call cs_f_field_get_dimension(c_f_id, c_dim)
 
     f_dim = c_dim(1)
-    if (c_dim(2) .eq. 0) then
-      interleaved = .false.
-    else
-      interleaved = .true.
-    endif
 
     return
 

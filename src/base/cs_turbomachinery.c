@@ -241,7 +241,7 @@ _apply_vector_rotation(double     m[3][4],
 
 /*----------------------------------------------------------------------------
  * Compute a matrix * tensor * Tmatrix product to apply a rotation to a
- * given symmetric interleaved tensor
+ * given symmetric tensor
  *
  * parameters:
  *   matrix[3][4]        --> transformation matrix in homogeneous coords.
@@ -1243,12 +1243,6 @@ cs_turbomachinery_resize_cell_fields(void)
     if (   f->location_id == CS_MESH_LOCATION_CELLS
         && f->is_owner) {
 
-      if (f->dim > 1 && f->interleaved == false)
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: fields owning their values (i.e. not mapped)\n"
-                  "should be interleaved, but \"%s\" is not.",
-                  __func__, f->name);
-
       /* Ghost cell sizes may change, but the number of main cells
          is unchanged, so a simple reallocation will do */
 
@@ -1372,28 +1366,13 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[])
     cs_lnum_t _n_elts = n_elts[2];
 
     if (f->dim == 3) {
-      if (f->interleaved == false) {
-        double v[3];
-        for (i = 0; i < _n_elts; i++) {
-          v[0] = f->val[i];
-          v[1] = f->val[i + _n_elts];
-          v[2] = f->val[i + _n_elts*2];
-          _apply_vector_rotation(m[tbm->cell_rotor_num[i]], v);
-          f->val[i]             = v[0];
-          f->val[i + _n_elts]   = v[1];
-          f->val[i + _n_elts*2] = v[2];
-        }
-      }
-      else {
-        for (i = 0; i < _n_elts; i++)
-          _apply_vector_rotation(m[tbm->cell_rotor_num[i]], f->val + i*3);
-      }
+      for (i = 0; i < _n_elts; i++)
+        _apply_vector_rotation(m[tbm->cell_rotor_num[i]], f->val + i*3);
     }
 
     else if (f->dim == 6) {
-      assert(f->interleaved);
-        for (i = 0; i < _n_elts; i++)
-          _apply_sym_tensor_rotation(m[tbm->cell_rotor_num[i]], f->val + i*6);
+      for (i = 0; i < _n_elts; i++)
+        _apply_sym_tensor_rotation(m[tbm->cell_rotor_num[i]], f->val + i*6);
     }
 
     assert(f->dim == 3 || f->dim == 6);

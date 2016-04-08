@@ -76,7 +76,7 @@ integer           :: ii
 integer           :: ippok
 integer           :: ipropp, idim1, idim3, idim6, iflid
 integer           :: type_flag, location_id, ipp
-logical           :: has_previous, interleaved
+logical           :: has_previous
 
 !===============================================================================
 ! Interfaces
@@ -239,7 +239,6 @@ endif
 if (iale.eq.1) then
 
   has_previous = .true.
-  interleaved = .true.
   idim3 = 3
   f_name = 'disale'
   f_label = 'Mesh displacement'
@@ -247,7 +246,7 @@ if (iale.eq.1) then
   location_id = 4 ! variables defined on vertices
 
   call field_create(f_name, type_flag, location_id, idim3, &
-                    interleaved, has_previous, fdiale)
+                    has_previous, fdiale)
   call field_set_key_int(fdiale, keyvis, 1)
   call field_set_key_int(fdiale, keylog, 1)
 
@@ -349,53 +348,6 @@ end subroutine fldprp
 
 !===============================================================================
 
-!> \brief add field defining a property field defined on cells,
-!>        with default options
-!
-!> It is recommended not to define property names of more than 16
-!> characters, to get a clear execution listing (some advanced writing
-!> levels take into account only the first 16 characters).
-!
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     name          field name
-!> \param[in]     label         field default label, or empty
-!> \param[in]     dim           field dimension
-!> \param[out]    iprop         matching field property id
-!_______________________________________________________________________________
-
-subroutine add_property_field_nd &
- ( name, label, dim, iprop )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use entsor
-use numvar
-use field
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-character(len=*), intent(in) :: name, label
-integer, intent(in)          :: dim
-integer, intent(out)         :: iprop
-
-!===============================================================================
-
-end subroutine add_property_field_nd
-
-!===============================================================================
-
 !> \brief add field defining a hidden property field defined on cells
 !
 !-------------------------------------------------------------------------------
@@ -434,14 +386,13 @@ integer, intent(out)         :: iprop
 ! Local variables
 
 integer  id, type_flag, location_id, ii
-logical  has_previous, interleaved
+logical  has_previous
 
 !===============================================================================
 
 type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
 location_id = 1 ! variables defined on cells
 has_previous = .false.
-interleaved = .true.
 
 ! Test if the field has already been defined
 call field_get_id_try(trim(name), id)
@@ -452,8 +403,7 @@ endif
 
 ! Create field
 
-call field_create(name, type_flag, location_id, dim, interleaved, has_previous, &
-                  id)
+call field_create(name, type_flag, location_id, dim, has_previous, id)
 
 call field_set_key_int(id, keyvis, 0)
 call field_set_key_int(id, keylog, 0)
@@ -551,8 +501,8 @@ integer, intent(out)         :: iprop
 
 ! Local variables
 
-integer  type_flag, location_id, ii, f_id, dim
-logical  has_previous, interleaved
+integer  type_flag, location_id, f_id, dim
+logical  has_previous
 
 !===============================================================================
 
@@ -560,7 +510,6 @@ type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
 location_id = 1 ! variables defined on cells
 has_previous = .false.
 dim = 1
-interleaved = .false. ! TODO set to .true. once PROPCE mapping is removed
 
 ! Test if the field has already been defined
 call field_get_id_try(trim(name), f_id)
@@ -571,8 +520,7 @@ endif
 
 ! Create field
 
-call field_create(name, type_flag, location_id, dim, interleaved, has_previous, &
-                  f_id)
+call field_create(name, type_flag, location_id, dim, has_previous, f_id)
 
 call field_set_key_int(f_id, keyvis, 1)
 call field_set_key_int(f_id, keylog, 1)
@@ -668,7 +616,6 @@ integer, intent(in) :: f_id
 
 integer  ipp, j
 
-logical :: interleaved
 integer :: f_dim
 
 !===============================================================================
@@ -679,7 +626,7 @@ call field_set_key_int(f_id, keylog, 0)
 ipp = field_post_id(f_id)
 
 if (ipp .gt. 1) then
-  call field_get_dim(f_id, f_dim, interleaved)
+  call field_get_dim(f_id, f_dim)
   do j = 1, f_dim
     ihisvr(ipp+j-1,1) = 0
   enddo
@@ -875,13 +822,11 @@ integer, intent(out)         :: f_id
 ! Local variables
 
 integer  type_flag, location_id, ipp
-logical  interleaved
 
 !===============================================================================
 
 type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
 location_id = 1 ! variables defined on cells
-interleaved = .true.
 
 ! Test if the field has already been defined
 call field_get_id_try(trim(name), f_id)
@@ -892,8 +837,7 @@ endif
 
 ! Create field
 
-call field_create(name, type_flag, location_id, dim, interleaved, has_previous, &
-                  f_id)
+call field_create(name, type_flag, location_id, dim, has_previous, f_id)
 
 call field_set_key_int(f_id, keyvis, 1)
 call field_set_key_int(f_id, keylog, 1)
@@ -981,13 +925,12 @@ integer, intent(out)         :: f_id
 ! Local variables
 
 integer  type_flag, location_id, dim1
-logical  interleaved, has_previous
+logical  has_previous
 
 !===============================================================================
 
 type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
 location_id = 3 ! variables defined on boundary faces
-interleaved = .true.
 dim1 = 1
 has_previous = .false.
 
@@ -1000,8 +943,7 @@ endif
 
 ! Create field
 
-call field_create(name, type_flag, location_id, dim1, interleaved, &
-                  has_previous, f_id)
+call field_create(name, type_flag, location_id, dim1, has_previous, f_id)
 
 call field_set_key_int(f_id, keyvis, 0)
 call field_set_key_int(f_id, keylog, 1)

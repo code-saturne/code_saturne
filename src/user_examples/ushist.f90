@@ -92,7 +92,6 @@ double precision dt(ncelet)
 ! Local variables
 
 integer          ii, kk, node, ndrang, nvarpp, numcel, lng
-logical          interleaved
 double precision xx, yy, zz, xyztmp(3)
 
 double precision, dimension(:), pointer :: cvar_var
@@ -301,7 +300,7 @@ endif
 f_id0 = -1
 c_id  = -1
 do ii = 1 , nvarpp
-  call field_get_dim(ivarfl(ii), f_dim, interleaved)
+  call field_get_dim(ivarfl(ii), f_dim)
   if (f_dim.eq.1) then
     call field_get_val_s(ivarfl(ii), cvar_var)
   else

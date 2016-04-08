@@ -144,8 +144,6 @@ double precision d1s3  , d2s3
 double precision ccorio, matrot(3,3)
 double precision rctse
 
-logical interleaved
-
 character(len=80) :: label
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w8
@@ -197,7 +195,7 @@ call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
 call field_get_val_v(ivarfl(ivar), cvar_var)
 call field_get_val_prev_v(ivarfl(ivar), cvara_var)
-call field_get_dim(ivarfl(ivar),dimrij ,interleaved)! dimension of Rij
+call field_get_dim(ivarfl(ivar),dimrij)! dimension of Rij
 
 call field_get_coefa_v(ivarfl(ivar), coefap)
 call field_get_coefb_v(ivarfl(ivar), coefbp)

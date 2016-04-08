@@ -112,7 +112,7 @@ integer nmodpp
 
 ! Local variables
 
-logical       ilved, inoprv
+logical       inoprv
 integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ivar, kislts
 
 !===============================================================================
@@ -141,17 +141,16 @@ integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ivar, kislts
 !< [usipsu_ex_1]
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 ityloc = 3 ! boundary faces
-ilved = .true. ! interleaved
 inoprv = .false. ! no previous time step values needed
 
 call field_get_id('tplus', f_id)
 if (f_id.lt.0) then
-  call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_create('tplus', itycat, ityloc, idim1, inoprv, f_id)
 endif
 
 call field_get_id('tstar', f_id)
 if (f_id.lt.0) then
-  call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_create('tstar', itycat, ityloc, idim1, inoprv, f_id)
 endif
 !< [usipsu_ex_1]
 

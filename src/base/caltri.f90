@@ -281,12 +281,12 @@ if (ncpdct.gt.0) then
   write(nfecra,3000)
   ! Add matching field if not already done
   if (idtten.lt.0) then
-    call field_create('dttens', FIELD_INTENSIVE, 1, 6, .true., .false., idtten)
+    call field_create('dttens', FIELD_INTENSIVE, 1, 6, .false., idtten)
   endif
 else if (iporos.eq.2) then
   ! Add matching field if not already done
   if (idtten.lt.0) then
-    call field_create('dttens', FIELD_INTENSIVE, 1, 6, .true., .false., idtten)
+    call field_create('dttens', FIELD_INTENSIVE, 1, 6, .false., idtten)
   endif
 endif
 

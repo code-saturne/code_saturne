@@ -2759,7 +2759,6 @@ cs_equation_create_field(cs_equation_t     *eq)
                                      field_mask,
                                      location_id,
                                      dim,
-                                     true,          // interleave
                                      has_previous);
 
   /* Set default value for default keys */

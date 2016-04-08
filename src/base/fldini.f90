@@ -86,7 +86,7 @@ integer          ii, ivar
 integer          keycpl, iflid, kcvlim, ifctsl
 integer          kdiftn, kturt, kfturt, kislts, keyvar
 integer          itycat, ityloc, idim1, idim3, idim6
-logical          ilved, iprev, inoprv
+logical          iprev, inoprv
 integer          f_id, kscavr, f_vis, f_log, f_dften, f_type
 integer          iopchr
 integer          iscdri, icla, iclap
@@ -115,7 +115,6 @@ ityloc = 1 ! variables defined on cells
 idim1  = 1
 idim3  = 3
 idim6  = 6
-ilved  = .true.    ! interleaved by default
 iprev = .true.     ! variables have previous value
 inoprv = .false.   ! variables have no previous value
 
@@ -228,7 +227,7 @@ do ii = 1, nscal
       ! and if DFM, GGDH on the scalar variance
       iggafm = 1
 
-      call field_create(f_name, itycat, ityloc, idim3, .true., iprev, iflid)
+      call field_create(f_name, itycat, ityloc, idim3, iprev, iflid)
       if (ityturt(ii).eq.3) then
         call field_set_key_int(iflid, keycpl, 1)
         ! Tensorial diffusivity
@@ -268,9 +267,9 @@ ityloc = 2 ! inner faces
 f_name = 'inner_mass_flux'
 
 if (istmpf.ne.1) then
-  call field_create(f_name, itycat, ityloc, idim1, ilved, iprev, f_id)
+  call field_create(f_name, itycat, ityloc, idim1, iprev, f_id)
 else
-  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
 endif
 
 ! The same mass flux for every variable, an other mass flux
@@ -288,9 +287,9 @@ ityloc = 3 ! boundary faces
 ! Mass flux for the class on interior faces
 f_name = 'boundary_mass_flux'
 if (istmpf.ne.1) then
-  call field_create(f_name, itycat, ityloc, idim1, ilved, iprev, f_id)
+  call field_create(f_name, itycat, ityloc, idim1, iprev, f_id)
 else
-  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
 endif
 
 ! The same mass flux for every variable, an other mass flux
@@ -318,7 +317,7 @@ do iflid = 0, nfld-1
 
     ! Mass flux for the class on interior faces
     f_name = 'inner_mass_flux_'//trim(name)
-    call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+    call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
 
     ! Set the inner mass flux index
@@ -339,7 +338,7 @@ do iflid = 0, nfld-1
 
     ! Mass flux for the class on boundary faces
     f_name = 'boundary_mass_flux_'//trim(name)
-    call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+    call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
 
     ! Set the boundary mass flux index
@@ -360,7 +359,7 @@ do iflid = 0, nfld-1
 
     ! Relaxation time
     f_name = 'drift_tau_'//trim(name)
-    call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+    call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
 
     ! Set the same visualization options as the scalar
@@ -371,7 +370,7 @@ do iflid = 0, nfld-1
 
     ! Store the drift velocity
     f_name = 'drift_vel_'//trim(name)
-    call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+    call field_create(f_name, itycat, ityloc, idim3, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
 
     ! Set the same visualization options as the scalar
@@ -383,7 +382,7 @@ do iflid = 0, nfld-1
     ! Interaction time particle--eddies
     if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS)) then
       f_name = 'drift_turb_tau_'//trim(name)
-      call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+      call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
       call field_set_key_str(f_id, keylbl, f_name)
     endif
 
@@ -416,7 +415,7 @@ do ivar = 1, nvar
     elseif (idften(ivar).eq.6) then
       idimf = 6
     endif
-    call field_create(f_name, itycat, ityloc, idimf, ilved, inoprv, f_id)
+    call field_create(f_name, itycat, ityloc, idimf, inoprv, f_id)
     call field_set_key_int(iflid, kwgrec, f_id)
 
   endif
@@ -428,7 +427,6 @@ call field_get_key_id("slope_test_upwind_id", kislts)
 
 itycat = FIELD_POSTPROCESS
 ityloc = 1 ! cells
-ilved = .true.
 
 do ii = 1, nvar
   f_id = ivarfl(ii)
@@ -441,7 +439,7 @@ do ii = 1, nvar
       ! Build name and label
       call field_get_name(f_id, f_name)
       name  = trim(f_name) // '_slope_upwind'
-      call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ifctsl)
+      call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
       call field_set_key_int(ifctsl, keyvis, 1)
     else
       ifctsl = -1
@@ -453,7 +451,6 @@ enddo
 ! Fans output
 
 itycat = FIELD_PROPERTY
-ilved = .true.
 
 n_fans = cs_fan_n_fans()
 if (n_fans .gt. 0) then
@@ -461,7 +458,7 @@ if (n_fans .gt. 0) then
   name = 'fan_id'
   ityloc = 1 ! cells
 
-  call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ifctsl)
+  call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
   call field_set_key_int(ifctsl, keyvis, 1)
   call field_set_key_int(ifctsl, keylog, 1)
 
@@ -472,7 +469,6 @@ endif
 call field_get_key_id("convection_limiter_id", kcvlim)
 
 itycat = FIELD_PROPERTY
-ilved = .true.
 
 do ii = 1, nvar
   f_id = ivarfl(ii)
@@ -488,7 +484,7 @@ do ii = 1, nvar
 
     ityloc = 1 ! cells
 
-    call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ifctsl)
+    call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
     call field_set_key_int(ifctsl, keyvis, 1)
     call field_set_key_int(ifctsl, keylog, 1)
 
@@ -502,7 +498,7 @@ do ii = 1, nvar
 
     ityloc = 2 ! Interior faces
 
-    call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ifctsl)
+    call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
     call field_set_key_int(ifctsl, keyvis, 1)
     call field_set_key_int(ifctsl, keylog, 1)
 
@@ -521,12 +517,12 @@ if (icavit.ge.0) then
 
   ityloc = 2  ! inner faces
   f_name = 'inner_void_fraction_flux'
-  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
   call field_set_key_int(ivarfl(ivoidf), kimasf, f_id)
 
   ityloc = 3 ! boundary faces
   f_name = 'boundary_void_fraction_flux'
-  call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
   call field_set_key_int(ivarfl(ivoidf), kbmasf, f_id)
 
 endif
@@ -545,11 +541,11 @@ if (     ippmod(icod3p).ne.-1         &
   ityloc = 3 ! boundary faces
 
   call field_create('boundary_ym_fuel',  &
-                    itycat, ityloc, idim1, ilved, inoprv, ibym(1))
+                    itycat, ityloc, idim1, inoprv, ibym(1))
   call field_create('boundary_ym_oxydizer',  &
-                    itycat, ityloc, idim1, ilved, inoprv, ibym(2))
+                    itycat, ityloc, idim1, inoprv, ibym(2))
   call field_create('boundary_ym_product',  &
-                    itycat, ityloc, idim1, ilved, inoprv, ibym(3))
+                    itycat, ityloc, idim1, inoprv, ibym(3))
 endif
 
 !===============================================================================
@@ -560,15 +556,14 @@ endif
 
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 ityloc = 1 ! cells
-ilved = .true.
 
 if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1 &
     .or.darcy_anisotropic_dispersion.eq.1) then
   call field_create('anisotropic_turbulent_viscosity', itycat, ityloc, idim6, &
-                    ilved, inoprv, ivsten)
+                    inoprv, ivsten)
   if (iturb.eq.32.and.iggafm.eq.1) then
     call field_create('anisotropic_turbulent_viscosity_scalar', itycat, &
-                      ityloc, idim6, ilved, inoprv, ivstes)
+                      ityloc, idim6, inoprv, ivstes)
  endif
 endif
 

@@ -191,8 +191,6 @@ integer          iflid, iflwgr, f_dim, imasac
 integer          icvflb, f_id0
 integer          ivoid(1)
 
-logical          interleaved
-
 double precision residu, phydr0
 double precision ardtsr, arsr  , unsara, thetap
 double precision dtsrom, unsvom, romro0
@@ -275,7 +273,7 @@ call field_get_key_struct_solving_info(iflid, sinfo)
 if (iwgrec(ipr).eq.1) then
   ! Id weighting field for gradient
   call field_get_key_int(iflid, kwgrec, iflwgr)
-  call field_get_dim(iflwgr, f_dim, interleaved)
+  call field_get_dim(iflwgr, f_dim)
   if (f_dim.gt.1) then
     call field_get_val_v(iflwgr, cpro_wgrec_v)
   else

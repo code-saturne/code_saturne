@@ -112,7 +112,7 @@ double precision, pointer, dimension(:) :: prhyd
 
 ! Local variables
 
-logical          interleaved, must_return
+logical          must_return
 
 integer          iel   , ifac  , inod  , ivar  , iscal , iappel, n_fans
 integer          iok   , ifld  , nfld  , f_id  , f_dim  , f_type
@@ -355,7 +355,7 @@ if (irangp.ge.0 .or. iperio.eq.1) then
 
   do f_id = 0, nfld-1
 
-    call field_get_dim(f_id, f_dim, interleaved)
+    call field_get_dim(f_id, f_dim)
     call field_get_type(f_id, f_type)
 
     ! Is the field of type FIELD_VARIABLE?

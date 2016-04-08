@@ -1830,7 +1830,6 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
                                          field_mask,
                                          location_id,
                                          1,        // dimension
-                                         true,     // interleave
                                          has_previous);
 
   /* Allocate and initialize values */
@@ -1842,7 +1841,6 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
                                         field_mask,
                                         hydraulic_head->location_id,
                                         1,
-                                        true,
                                         has_previous);
 
     /* Allocate and initialize values */

@@ -161,8 +161,6 @@ integer          delay_id, icla
 
 integer          ivoid(1)
 
-logical          interleaved
-
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
@@ -233,7 +231,7 @@ call field_get_val_s(iflmab, bmasfl)
 if (iwgrec(ivar).eq.1) then
   ! Id weighting field for gradient
   call field_get_key_int(iflid, kwgrec, iflwgr)
-  call field_get_dim(iflwgr, f_dim, interleaved)
+  call field_get_dim(iflwgr, f_dim)
   if (f_dim.gt.1) then
     call field_get_val_v(iflwgr, cpro_wgrec_v)
   else

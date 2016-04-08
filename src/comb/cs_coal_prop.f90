@@ -70,7 +70,7 @@ integer          f_id, itycat, ityloc, idim1, idim3, nprini
 integer          keyccl
 integer          iopchr
 
-logical          ilved, iprev, inoprv
+logical          iprev, inoprv
 
 character(len=80) :: f_name, f_label
 
@@ -80,7 +80,6 @@ itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 ityloc = 1 ! variables defined on cells
 idim1  = 1
 idim3  = 3
-ilved  = .true.    ! interleaved by default
 iprev  = .true.    ! variables have previous value
 inoprv = .false.   ! variables have no previous value
 iopchr = 1         ! postprocessing level for variables
@@ -205,7 +204,7 @@ if (i_comb_drift.ge.1) then
     ! Age of the particle class
     write(f_name,'(a,i2.2)') 'age_p_', icla
     write(f_label,'(a,i2.2)') 'Agep_', icla
-    call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+    call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
     ! Set the index of the scalar class in the field structure
     call field_set_key_int(f_id, keyccl, icla)
@@ -214,7 +213,7 @@ if (i_comb_drift.ge.1) then
 
     ! Limit velocity
     write(f_name,'(a,i2.2)')'vg_lim_p_' ,icla
-    call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+    call field_create(f_name, itycat, ityloc, idim3, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
     ! Set the index of the scalar class in the field structure
     call field_set_key_int(f_id, keyccl, icla)
@@ -224,7 +223,7 @@ if (i_comb_drift.ge.1) then
     call field_set_key_int(f_id, keylog, 1)
 
     write(f_name,'(a,i2.2)')'vg_p_' ,icla
-    call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+    call field_create(f_name, itycat, ityloc, idim3, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
     ! Set the index of the scalar class in the field structure
     call field_set_key_int(f_id, keyccl, icla)
@@ -235,7 +234,7 @@ if (i_comb_drift.ge.1) then
 
     ! Additional drift velocity for the particle class
     write(f_name,'(a,i2.2)')'vd_p_' ,icla
-    call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+    call field_create(f_name, itycat, ityloc, idim3, inoprv, f_id)
     call field_set_key_str(f_id, keylbl, f_name)
     ! Set the index of the scalar class in the field structure
     call field_set_key_int(f_id, keyccl, icla)
@@ -281,7 +280,7 @@ if (i_comb_drift.ge.1) then
   ! Additional fields for drift velocity for the gas
 
   f_name= 'vd_c'
-  call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+  call field_create(f_name, itycat, ityloc, idim3, inoprv, f_id)
   call field_set_key_str(f_id, keylbl, f_name)
   ! For post-processing
   call field_set_key_int(f_id, keyvis, iopchr)
@@ -292,21 +291,21 @@ endif
 
 ! Mass fraction of the continuous phase (X1)
 f_name= 'x_c'
-call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
 call field_set_key_str(f_id, keylbl, f_name)
 
 ! Mass fraction of the continuous phase (X1) BOUNDARY VALUE
 f_name= 'b_x_c'
-call field_create(f_name, itycat, 3, idim1, ilved, inoprv, f_id)
+call field_create(f_name, itycat, 3, idim1, inoprv, f_id)
 call field_set_key_str(f_id, keylbl, f_name)
 
 ! Explicit interfacial source termes for x1 h1 (deduced from thoses of x2 h2)
 f_name= 'x_h_c_exp_st'
-call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
 
 ! Implicit interfacial source termes for x1 h1 (deduced from thoses of x2 h2)
 f_name= 'x_h_c_imp_st'
-call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
 
 ! Bulk
 !-----

@@ -139,8 +139,6 @@ integer          icvflb
 integer          ivoid(1)
 integer          dimrij
 
-logical interleaved
-
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision trprod, trrij
@@ -206,7 +204,7 @@ if (iturb.ne.31) call field_get_val_s(ivarfl(ial), cvar_al)
 
 call field_get_val_v(ivarfl(ivar), cvar_var)
 call field_get_val_prev_v(ivarfl(ivar), cvara_var)
-call field_get_dim(ivarfl(ivar),dimrij ,interleaved)! dimension of Rij
+call field_get_dim(ivarfl(ivar),dimrij)! dimension of Rij
 !dimrij = 6 if irijco = 1
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)

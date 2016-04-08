@@ -667,7 +667,6 @@ cs_parameters_create_added_variables(void)
                           field_type,
                           CS_MESH_LOCATION_CELLS,
                           f_ref->dim,
-                          true,
                           true);
       int k_var = cs_field_key_id("first_moment_id");
       cs_field_set_key_int(f, k_var, f_ref->id);
@@ -684,7 +683,6 @@ cs_parameters_create_added_variables(void)
                           field_type,
                           CS_MESH_LOCATION_CELLS,
                           (_user_variable_defs + i)->dim,
-                          true,
                           true);
 
     }
@@ -730,7 +728,6 @@ cs_parameters_create_added_properties(void)
                            CS_FIELD_PROPERTY | CS_FIELD_USER,
                            (_user_property_defs + i)->location_id,
                            (_user_property_defs + i)->dim,
-                           true,
                            false);
 
     BFT_FREE((_user_property_defs + i)->name);
@@ -801,7 +798,6 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
                          type_flag,
                          CS_MESH_LOCATION_BOUNDARY_FACES,
                          f->dim,
-                         true,
                          false);
 
     /* Set same label as parent */
@@ -898,7 +894,6 @@ cs_parameters_add_boundary_temperature(void)
                              type_flag,
                              CS_MESH_LOCATION_BOUNDARY_FACES,
                              f->dim,
-                             true,
                              false);
 
         /* Set same postprocessing and logging defaults as enthalpy */

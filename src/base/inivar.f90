@@ -86,8 +86,6 @@ integer          iflid, iflidp
 integer          idimf
 integer          ivoid
 
-logical          interleaved
-
 double precision valmax, valmin, vfmin , vfmax
 double precision vdtmax, vdtmin
 double precision xekmin, xepmin, xomgmn, xphmin, xphmax
@@ -650,7 +648,7 @@ do ivar = 1, nvar
     c_id = 1
   endif
 
-  call field_get_dim(f_id, f_dim, interleaved)
+  call field_get_dim(f_id, f_dim)
 
   if (f_dim.gt.1) then
     call field_get_val_v(f_id, field_v_v)

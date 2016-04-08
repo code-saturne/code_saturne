@@ -68,7 +68,7 @@ implicit none
 
 ! Local variables
 
-integer         ipp, icla, icha, iesp, igg, it, ir, ih, if, izone
+integer         ipp, icla, icha, igg, it, ir, ih, if, izone
 integer         isol, ige, iat , iii
 integer         idirac
 

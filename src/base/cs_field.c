@@ -110,9 +110,6 @@ BEGIN_C_DECLS
   \var  cs_field_t::dim
         Field dimension (usually 1 for scalar, 3 for vector, or 6 for
         symmetric tensor)
-  \var  cs_field_t::interleaved
-        are field value arrays interleaved ? (recommended for new developments,
-        but mapped legacy fields may be non-interleaved)
   \var  cs_field_t::location_id
         Id of matching mesh location
   \var  cs_field_t::n_time_vals
@@ -275,7 +272,7 @@ cs_f_field_get_name(int           id,
 
 void
 cs_f_field_get_dimension(int           id,
-                         int           dim[2]);
+                         int           dim[1]);
 
 void
 cs_f_field_get_ownership(int           id,
@@ -356,7 +353,6 @@ cs_f_field_get_label(int           f_id,
  *   type_flag   <-- mask of field property and category values
  *   location_id <-- id of associated location
  *   dim         <-- field dimension (number of components)
- *   interleaved <-- if dim > 1, indicate if field is interleaved
  *
  * returns:
  *   pointer to new field.
@@ -366,8 +362,7 @@ static cs_field_t *
 _field_create(const char   *name,
               int           type_flag,
               int           location_id,
-              int           dim,
-              bool          interleaved)
+              int           dim)
 {
   int key_id;
   int field_id = -1;
@@ -473,9 +468,6 @@ _field_create(const char   *name,
   f->id = field_id;
   f->type = type_flag;
   f->dim = dim;
-  f->interleaved = true;
-  if (f->dim > 1 && interleaved == false)
-    f->interleaved = false;
   f->location_id = location_id;
   f->n_time_vals = 1;
 
@@ -846,17 +838,16 @@ cs_f_field_get_name(int           id,
  *
  * parameters:
  *   id  <-- field id
- *   dim <-- field dimension and interleave flag
+ *   dim <-- field dimension
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_field_get_dimension(int  id,
-                         int  dim[2])
+                         int  dim[1])
 {
   const cs_field_t *f = cs_field_by_id(id);
 
   dim[0] = f->dim;
-  dim[1] = (f->interleaved) ? 1 : 0;
 }
 
 /*----------------------------------------------------------------------------
@@ -903,7 +894,9 @@ cs_f_field_get_type(int           id,
  *
  * parameters:
  *   id  <-- field id
- *   dim <-- field dimension and interleave flag
+ *
+ * returns:
+ *   1 if previous values are available, 0 otherwise
  *----------------------------------------------------------------------------*/
 
 int
@@ -983,14 +976,9 @@ cs_f_field_var_ptr_by_id(int          id,
 
     if (f->dim == 1)
       dim[0] = _n_elts;
-    else if (f->interleaved) {
+    else {
       dim[0] = f->dim;
       dim[1] = _n_elts;
-      cur_p_rank = 2;
-    }
-    else {
-      dim[0] = _n_elts;
-      dim[1] = f->dim;
       cur_p_rank = 2;
     }
 
@@ -1103,14 +1091,8 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
       }
       else { /* uncoupled */
 
-        if (f->interleaved) {
-          dim[0] = f->dim;
-          dim[1] = _n_elts;
-        }
-        else {
-          dim[0] = _n_elts;
-          dim[1] = f->dim;
-        }
+        dim[0] = f->dim;
+        dim[1] = _n_elts;
         cur_p_rank = 2;
 
       }
@@ -1387,8 +1369,6 @@ cs_field_n_fields(void)
  * \param[in]  type_flag     mask of field property and category values
  * \param[in]  location_id   id of associated location
  * \param[in]  dim           field dimension (number of components)
- * \param[in]  interleaved   indicate if values are interleaved
- *                           (ignored if number of components < 2)
  * \param[in]  has_previous  maintain values at the previous time step ?
  *
  * \return  pointer to new field.
@@ -1400,16 +1380,12 @@ cs_field_create(const char   *name,
                 int           type_flag,
                 int           location_id,
                 int           dim,
-                bool          interleaved,
                 bool          has_previous)
 {
-  cs_base_check_bool(&interleaved);
-
   cs_field_t  *f =  _field_create(name,
                                   type_flag,
                                   location_id,
-                                  dim,
-                                  interleaved);
+                                  dim);
 
   cs_base_check_bool(&has_previous);
 
@@ -1440,8 +1416,6 @@ cs_field_create(const char   *name,
  * \param[in]  type_flag     mask of field property and category values
  * \param[in]  location_id   id of associated location
  * \param[in]  dim           field dimension (number of components)
- * \param[in]  interleaved   indicate if values ar interleaved
- *                           (ignored if number of components < 2)
  *
  * \return  pointer to field
  */
@@ -1451,35 +1425,27 @@ cs_field_t *
 cs_field_find_or_create(const char   *name,
                         int           type_flag,
                         int           location_id,
-                        int           dim,
-                        bool          interleaved)
+                        int           dim)
 {
-  cs_base_check_bool(&interleaved);
-
   cs_field_t *f = cs_field_by_name_try(name);
 
   if (f != NULL) {
 
     if (   type_flag != f->type || location_id != f->location_id
-        || dim != f->dim || interleaved != f->interleaved) {
-      char ci[] = {'t', 't'};
-      if (! interleaved)    ci[0] = 'f';
-      if (! f->interleaved) ci[1] = 'f';
+        || dim != f->dim) {
       bft_error(__FILE__, __LINE__, 0,
                 _("Mismatch in field definitions:\n"
                   "  name:        \"%s\"\n"
                   "  type_flag:   %d\n"
                   "  location_id: %d\n"
                   "  dimension:   %d\n\n"
-                  "  interleaved  %c\n\n"
                   "A previous definition for that has attributes:\n"
                   "  id:          %d\n"
                   "  type_flag:   %d\n"
                   "  location_id: %d\n"
-                  "  dimension:   %d\n\n"
-                  "  interleaved: %c"),
-                name, type_flag, location_id, dim, ci[0],
-                f->id, f->type, f->location_id, f->dim, ci[1]);
+                  "  dimension:   %d\n\n"),
+                name, type_flag, location_id, dim,
+                f->id, f->type, f->location_id, f->dim);
     }
 
   }
@@ -1488,8 +1454,7 @@ cs_field_find_or_create(const char   *name,
     f =  _field_create(name,
                        type_flag,
                        location_id,
-                       dim,
-                       interleaved);
+                       dim);
 
     BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
     for (int i = 0; i < f->n_time_vals; i++)
@@ -1636,13 +1601,9 @@ cs_field_map_values(cs_field_t   *f,
  * locations (though support could be added by mapping a boundary->location
  * indirection array in the cs_mesh_location_t structure).
  *
- * For multidimensional fields, arrays are assumed to have the same
- * interleaving behavior as the field, unless components are coupled.
- *
- * For multidimensional fields with coupled components, interleaving
- * is the norm, and implicit b and bf coefficient arrays are arrays of
- * block matrices, not vectors, so the number of entries for each boundary
- * face is dim*dim instead of dim.
+ * For multidimensional fields with coupled components, implicit b and bf
+ * coefficient arrays are arrays of block matrices, not vectors, so the
+ * number of entries for each boundary face is dim*dim instead of dim.
  *
  * \param[in, out]  f             pointer to field structure
  * \param[in]       have_flux_bc  if true, flux bc coefficients (af and bf)
@@ -1775,13 +1736,9 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
  * locations (though support could be added by mapping a boundary->location
  * indirection array in the cs_mesh_location_t structure).
  *
- * For multidimensional fields, arrays are assumed to have the same
- * interleaving behavior as the field, unless components are coupled.
- *
- * For multidimensional fields with coupled components, interleaving
- * is the norm, and implicit b and bf coefficient arrays are arrays of
- * block matrices, not vectors, so the number of entries for each boundary
- * face is dim*dim instead of dim.
+ * For multidimensional fields with coupled components, implicit b and bf
+ * coefficient arrays are arrays of block matrices, not vectors, so the
+ * number of entries for each boundary face is dim*dim instead of dim.
  *
  * \param[in, out]  f  pointer to field structure
  */
@@ -3282,9 +3239,6 @@ cs_field_log_defs(void)
 
         /* Print field info */
 
-        if (f->interleaved == false)
-          ilv_c = 'n';
-
         cs_log_strpad(tmp_s[0], f->name, name_width, 64);
 
         cs_log_strpad(tmp_s[1],
@@ -3371,13 +3325,9 @@ cs_field_log_info(const cs_field_t  *f,
 
   if (f->dim == 1)
     cs_log_printf(CS_LOG_SETUP, _("    Dimension:                  1\n"));
-  else if (f->interleaved == false)
-    cs_log_printf(CS_LOG_SETUP,
-                  _("    Dimension:                  %d (non-interleaved)\n"),
-                  f->dim);
   else
     cs_log_printf(CS_LOG_SETUP,
-                  _("    Dimension:                  %d (interleaved)\n"),
+                  _("    Dimension:                  %d\n"),
                   f->dim);
 
   if (f->is_owner == false)

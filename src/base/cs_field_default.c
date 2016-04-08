@@ -139,7 +139,6 @@ cs_variable_field_create(const char  *name,
                                   field_type,
                                   location_id,
                                   dim,
-                                  true,   /* interleaved */
                                   true);  /* has_previous */
 
   cs_field_set_key_int(f, cs_field_key_id("log"), 1);

@@ -63,7 +63,7 @@ integer          icompt, ipp, nbccou, keyvar
 integer          nscacp, iscal
 integer          imrgrp
 
-logical          interleaved, is_set
+logical          is_set
 
 double precision relxsp, omgnrm
 
@@ -121,7 +121,7 @@ do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ivar)
   if (ivar.ge.1) then
     call field_get_key_int(f_id, keyipp, ipp)
-    call field_get_dim(f_id, f_dim, interleaved)
+    call field_get_dim(f_id, f_dim)
     do ii = 1, f_dim
       if (ihisvr(ipp + ii-1,1).eq.-999) ihisvr(ipp + ii-1,1) = -1
     enddo
@@ -153,7 +153,7 @@ do imom = 1, n_moments
   call field_is_key_set(f_id, keylog, is_set)
   if (.not. is_set) call field_set_key_int(f_id, keylog, 1)
   ipp = field_post_id(f_id)
-  call field_get_dim(f_id, f_dim, interleaved)
+  call field_get_dim(f_id, f_dim)
   do ii = 1, f_dim
     if (ihisvr(ipp + ii-1,1).eq.-999) ihisvr(ipp + ii-1,1) = -1
   enddo

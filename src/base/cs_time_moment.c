@@ -1159,14 +1159,8 @@ _sd_moment_data(const void  *input,
     /* Field access strides for consistent access method */
 
     if (f->location_id != 0) {
-      if (f->interleaved) {
-        f_dim[i*2]     = f->dim;
-        f_dim[i*2 + 1] = 1;
-      }
-      else {
-        f_dim[i*2]     = 1;
-        f_dim[i*2 + 1] = cs_mesh_location_get_n_elts(location_id)[2];
-      }
+      f_dim[i*2]     = f->dim;
+      f_dim[i*2 + 1] = 1;
     }
     else {
       f_dim[i*2]     = 0;
@@ -1813,8 +1807,6 @@ cs_time_moment_define_by_field_ids(const char                *name,
  * \brief Define a moment whose data values will be computed using a
  * specified function.
  *
- * If of dimension > 1, the moment array is always interleaved.
- *
  * \param[in]  name           name of associated moment
  * \param[in]  location_id    id of associated mesh location
  * \param[in]  dim            dimension associated with element data
@@ -1931,7 +1923,6 @@ cs_time_moment_define_by_func(const char                *name,
                       CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR,
                       location_id,
                       moment_dim,
-                      true,    /* interleaved */
                       false);  /* no previous values */
 
   moment_id = _find_or_add_moment(location_id,

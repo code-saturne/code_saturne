@@ -86,7 +86,7 @@ integer          ii
 integer          ifcvsl, kbfid
 integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
-logical          ilved, iprev, inoprv, is_set
+logical          iprev, inoprv, is_set
 integer          f_id, potr, poti
 
 character(len=80) :: f_name, f_label, s_label, s_name
@@ -105,7 +105,6 @@ itycat = FIELD_INTENSIVE + FIELD_VARIABLE  ! for most variables
 ityloc = 1 ! variables defined on cells
 idim1  = 1
 idim3  = 3
-ilved  = .true.   ! interleaved by default
 iprev  = .true.    ! variables have previous value
 inoprv = .false.   ! variables have no previous value
 iopchr = 1         ! Postprocessing level for variables
@@ -210,17 +209,15 @@ if (iscalt.le.0) then
 endif
 
 if (ipstdv(ipstnu).gt.0) then
-  call field_find_or_create('tplus', itycat, ityloc, idim1, ilved, iflid)
-  call field_find_or_create('tstar', itycat, ityloc, idim1, ilved, iflid)
+  call field_find_or_create('tplus', itycat, ityloc, idim1, iflid)
+  call field_find_or_create('tstar', itycat, ityloc, idim1, iflid)
 endif
-
-ilved = .true.
 
 ! In case of ALE or boundary efforts postprocessing, create appropriate field
 
 if (iale.eq.1 .or. ipstdv(ipstfo).ne.0) then
   itycat = FIELD_EXTENSIVE + FIELD_POSTPROCESS
-  call field_create('boundary_forces', itycat, ityloc, idim3, ilved, inoprv, &
+  call field_create('boundary_forces', itycat, ityloc, idim3, inoprv, &
                     iforbr)
 endif
 
@@ -230,7 +227,7 @@ itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 
 if (icond.ge.0 .or. ipstdv(ipstyp).ne.0) then
   call field_get_id_try('yplus', f_id) ! Test if pre-existing
-  call field_find_or_create('yplus', itycat, ityloc, idim1, ilved, iyplbr)
+  call field_find_or_create('yplus', itycat, ityloc, idim1, iyplbr)
   if (f_id .lt. 0) then                ! Set some properties if new)
     call field_set_key_str(iyplbr, keylbl, 'Yplus')
     call field_set_key_int(iyplbr, keylog, 1)

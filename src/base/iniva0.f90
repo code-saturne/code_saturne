@@ -92,7 +92,7 @@ integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          f_id,  f_dim
 integer          kscmin, kscmax
 
-logical          interleaved, have_previous
+logical          have_previous
 
 double precision xxk, xcmu, trii
 
@@ -144,7 +144,7 @@ do iprop = 1, nproce
 
   if (f_id.lt.0) cycle
 
-  call field_get_dim(f_id, f_dim, interleaved)
+  call field_get_dim(f_id, f_dim)
 
   if (f_dim.gt.1) then
     call field_get_val_v(f_id, field_v_v)
@@ -153,21 +153,12 @@ do iprop = 1, nproce
   endif
 
   if (f_dim.gt.1) then
-    if (interleaved) then
-      !$omp parallel do private(isou)
-      do iel = 1, ncelet
-        do isou = 1, f_dim
-          field_v_v(isou,iel) = 0.d0
-        enddo
+    !$omp parallel do private(isou)
+    do iel = 1, ncelet
+      do isou = 1, f_dim
+        field_v_v(isou,iel) = 0.d0
       enddo
-    else
-      !$omp parallel do private(isou)
-      do iel = 1, ncelet
-        do isou = 1, f_dim
-          field_v_v(iel,isou) = 0.d0
-        enddo
-      enddo
-    endif
+    enddo
   else
     !$omp parallel do
     do iel = 1, ncelet

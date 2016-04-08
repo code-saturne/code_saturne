@@ -1980,7 +1980,6 @@ cs_elec_add_property_fields(const int  *ielarc,
   cs_field_t *f;
   int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
   bool has_previous = false;
-  bool interleaved = true;
   const int klbl   = cs_field_key_id("label");
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
@@ -1990,7 +1989,6 @@ cs_elec_add_property_fields(const int  *ielarc,
                         field_type,
                         CS_MESH_LOCATION_CELLS,
                         1, /* dim */
-                        interleaved,
                         has_previous);
     cs_field_set_key_int(f, keyvis, 1);
     cs_field_set_key_int(f, keylog, 1);
@@ -2005,7 +2003,6 @@ cs_elec_add_property_fields(const int  *ielarc,
                         field_type,
                         CS_MESH_LOCATION_CELLS,
                         1, /* dim */
-                        interleaved,
                         has_previous);
     cs_field_set_key_int(f, keyvis, 1);
     cs_field_set_key_int(f, keylog, 1);
@@ -2020,7 +2017,6 @@ cs_elec_add_property_fields(const int  *ielarc,
                         field_type,
                         CS_MESH_LOCATION_CELLS,
                         3, /* dim */
-                        interleaved,
                         has_previous);
     cs_field_set_key_int(f, keyvis, 1);
     cs_field_set_key_int(f, keylog, 1);
@@ -2037,7 +2033,6 @@ cs_elec_add_property_fields(const int  *ielarc,
                           field_type,
                           CS_MESH_LOCATION_CELLS,
                           3, /* dim */
-                          interleaved,
                           has_previous);
       cs_field_set_key_int(f, keyvis, 1);
       cs_field_set_key_int(f, keylog, 1);
@@ -2055,7 +2050,6 @@ cs_elec_add_property_fields(const int  *ielarc,
                           field_type,
                           CS_MESH_LOCATION_CELLS,
                           3,    /* dim */
-                          true, /* interleaved */
                           has_previous);
       cs_field_set_key_int(f, keyvis, 1);
       cs_field_set_key_int(f, keylog, 1);
@@ -2070,7 +2064,6 @@ cs_elec_add_property_fields(const int  *ielarc,
                           field_type,
                           CS_MESH_LOCATION_CELLS,
                           1, /* dim */
-                          interleaved,
                           has_previous);
       cs_field_set_key_int(f, keyvis, 1);
       cs_field_set_key_int(f, keylog, 1);
@@ -2084,7 +2077,6 @@ cs_elec_add_property_fields(const int  *ielarc,
                           field_type,
                           CS_MESH_LOCATION_CELLS,
                           1, /* dim */
-                          interleaved,
                           has_previous);
       cs_field_set_key_int(f, keyvis, 1);
       cs_field_set_key_int(f, keylog, 1);
@@ -2101,7 +2093,6 @@ cs_elec_add_property_fields(const int  *ielarc,
                         field_type,
                         CS_MESH_LOCATION_CELLS,
                         1, /* dim */
-                        interleaved,
                         has_previous);
     cs_field_set_key_int(f, keyvis, 1);
     cs_field_set_key_int(f, keylog, 1);

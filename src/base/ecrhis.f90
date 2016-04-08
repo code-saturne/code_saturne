@@ -60,7 +60,6 @@ integer          modhis
 ! Local variables
 
 character        nompre*300, nomhis*300
-logical          interleaved
 integer          tplnum, ii, lpre, lnom, lng
 integer          icap, ncap, ipp, ippf
 integer          c_id, f_id, f_dim, f_type, n_fields
@@ -147,7 +146,7 @@ if (ipass.eq.1) then
     call field_get_key_int(f_id, keypp, ippf)
     if (ippf.le.1) cycle
 
-    call field_get_dim (f_id, f_dim, interleaved)
+    call field_get_dim (f_id, f_dim)
 
     do c_id = 1, min(f_dim, 9)
 
@@ -232,7 +231,7 @@ if (modhis.eq.0 .or. modhis.eq.1) then
     call field_get_key_int(f_id, keypp, ippf)
     if (ippf.lt.2) cycle
 
-    call field_get_dim (f_id, f_dim, interleaved)
+    call field_get_dim (f_id, f_dim)
     call field_get_type(f_id, f_type)
 
     do c_id = 1, min(f_dim, 9)
@@ -281,11 +280,7 @@ if (modhis.eq.0 .or. modhis.eq.1) then
           if (ihisvr(ipp,1).lt.0) then
             do icap = 1, ncapt
               if (irangp.lt.0 .or. ndrcap(icap).eq.irangp) then
-                if (interleaved) then
-                  varcap(icap) = val_v(c_id, nodcap(icap))
-                else
-                  varcap(icap) = val_v(nodcap(icap), c_id)
-                endif
+                varcap(icap) = val_v(c_id, nodcap(icap))
               endif
               if (irangp.ge.0) then
                 lng = 1
@@ -296,11 +291,7 @@ if (modhis.eq.0 .or. modhis.eq.1) then
           else if (ihisvr(ipp,1).gt.0) then
             do icap = 1, ihisvr(ipp,1)
               if (irangp.lt.0 .or. ndrcap(icap).eq.irangp) then
-                if (interleaved) then
-                  varcap(icap) = val_v(c_id, nodcap(ihisvr(ipp,icap+1)))
-                else
-                  varcap(icap) = val_v(nodcap(ihisvr(ipp,icap+1)), c_id)
-                endif
+                varcap(icap) = val_v(c_id, nodcap(ihisvr(ipp,icap+1)))
               endif
               if (irangp.ge.0) then
                 lng = 1
@@ -340,7 +331,7 @@ if (modhis.eq.2) then
     call field_get_key_int(f_id, keypp, ippf)
     if (ippf.le.1) cycle
 
-    call field_get_dim (f_id, f_dim, interleaved)
+    call field_get_dim (f_id, f_dim)
 
     do c_id = 1, min(f_dim, 3)
 

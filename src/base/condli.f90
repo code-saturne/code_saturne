@@ -183,7 +183,6 @@ integer          itplus, itstar
 integer          f_id, iut, ivt, iwt, iflmab
 integer          kbfid, b_f_id
 integer          dimrij
-logical          interleaved
 
 double precision sigma , cpp   , rkl
 double precision hint  , hext  , pimp  , qimp, cfl
@@ -267,7 +266,7 @@ endif
 ! allocate temporary arrays
 allocate(velipb(nfabor,3))
 if (irijco.eq.1) then
-  call field_get_dim(ivarfl(irij),dimrij , interleaved) ! dimension of Rij
+  call field_get_dim(ivarfl(irij), dimrij) ! dimension of Rij
   allocate(pimpts(dimrij))
   allocate(hextts(dimrij))
   allocate(qimpts(dimrij))

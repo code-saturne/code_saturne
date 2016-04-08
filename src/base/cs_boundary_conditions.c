@@ -913,7 +913,7 @@ cs_boundary_conditions_mapped_set(cs_field_t                *f,
                            + bc_coeffs->b[f_id]*f->val[c_id];
         }
       }
-      else if (f->interleaved) {
+      else {
         for (cs_lnum_t i = 0; i < n_dist; i++) {
           cs_lnum_t f_id = dist_loc[i];
           cs_lnum_t c_id = b_face_cells[f_id];

@@ -725,7 +725,6 @@ implicit none
 
 integer  iscal, nfld1, nfld2
 integer  dim, id, ipp
-logical  interleaved
 
 integer :: keyvar, keysca
 
@@ -764,7 +763,7 @@ call field_get_key_id("variable_id", keyvar)
 
 do id = nfld1, nfld2 - 1
 
-  call field_get_dim(id, dim, interleaved)
+  call field_get_dim(id, dim)
 
   if (dim.ne.1) cycle ! fields of dimension > 1 may not be handled as scalars
 
@@ -946,14 +945,13 @@ integer, intent(out) :: iscal
 ! Local variables
 
 integer  dim, ivar, ii, ipp
-logical  interleaved
 
 integer, save :: keyvar = -1
 integer, save :: keysca = -1
 
 ! Get field dimension
 
-call field_get_dim(f_id, dim, interleaved)
+call field_get_dim(f_id, dim)
 
 if (keysca.lt.0) then
   call field_get_key_id("scalar_id", keysca)

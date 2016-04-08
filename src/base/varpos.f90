@@ -530,10 +530,10 @@ itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 
 if (iporos.ge.1) then
   f_name = 'porosity'
-  call field_create(f_name, itycat, ityloc, 1, .true., .false., ipori)
+  call field_create(f_name, itycat, ityloc, 1, .false., ipori)
   if (iporos.eq.2) then
     f_name = 'tensorial_porosity'
-    call field_create(f_name, itycat, ityloc, 6, .true., .false., iporf)
+    call field_create(f_name, itycat, ityloc, 6, .false., iporf)
   endif
 endif
 
@@ -546,7 +546,7 @@ endif
 ityloc = 1 ! cells
 itycat = FIELD_INTENSIVE
 
-call field_create('dt', itycat, ityloc, 1, .true., .false., id)
+call field_create('dt', itycat, ityloc, 1, .false., id)
 call field_set_key_str(id, keylbl, 'Local Time Step')
 if (idtvar.gt.0) then
   if (idtvar.eq.2) then
@@ -562,7 +562,7 @@ itycat = FIELD_INTENSIVE
 ! (variant used for computation is a tensorial field, not this one)
 
 if (ipucou.ne.0 .or. ncpdct.gt.0) then
-  call field_create('dttens', itycat, ityloc, 6, .true., .false., idtten)
+  call field_create('dttens', itycat, ityloc, 6, .false., idtten)
   call field_set_key_int(idtten, keyvis, 1)
   call field_set_key_int(idtten, keylog, 1)
   ipptx = field_post_id(id)
@@ -1093,23 +1093,21 @@ integer, intent(in) :: f_id
 character(len=64) :: f_name
 
 integer :: type_flag, location_id, st_id, f_dim
-logical :: has_previous, interleaved
+logical :: has_previous
 
 !===============================================================================
 
 type_flag = FIELD_EXTENSIVE + FIELD_PROPERTY
 location_id = 1 ! variables defined on cells
 has_previous = .false.
-interleaved = .true.
 
 ! Define asscociated field
 
-call field_get_dim(f_id, f_dim, interleaved)
+call field_get_dim(f_id, f_dim)
 call field_get_name (f_id, f_name)
 
 call field_create(trim(f_name)//'_prev_st', type_flag,               &
-                  location_id, f_dim, interleaved, has_previous,     &
-                  st_id)
+                  location_id, f_dim, has_previous, st_id)
 
 call field_set_key_int(f_id, kstprv, st_id)
 
@@ -1156,23 +1154,21 @@ integer, intent(in) :: f_id
 character(len=64) :: f_name
 
 integer :: type_flag, location_id, st_id, f_dim
-logical :: has_previous, interleaved
+logical :: has_previous
 
 !===============================================================================
 
 type_flag = FIELD_EXTENSIVE + FIELD_PROPERTY
 location_id = 1 ! variables defined on cells
 has_previous = .false.
-interleaved = .true.
 
 ! Define asscociated field
 
-call field_get_dim(f_id, f_dim, interleaved)
+call field_get_dim(f_id, f_dim)
 call field_get_name (f_id, f_name)
 
 call field_create(trim(f_name)//'_st', type_flag,               &
-                  location_id, f_dim, interleaved, has_previous,     &
-                  st_id)
+                  location_id, f_dim, has_previous, st_id)
 
 call field_set_key_int(f_id, kst, st_id)
 

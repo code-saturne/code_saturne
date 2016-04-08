@@ -102,7 +102,7 @@ double precision trafbr(nfbrps*3)
 
 character(len=80) :: name80
 
-logical          ilved , ientla, ivarpr
+logical          ientla, ivarpr
 integer          inc   , iccocg
 integer          ifac  , iloc  , ivar
 integer          ipp   , idimt , kk   , ll, iel
@@ -286,7 +286,7 @@ else if (numtyp .eq. -2) then
 
     if (iand(iflpst, 2) .eq. 0) cycle ! nothing to do for this field
 
-    call field_get_dim (fldid, idimt, ilved)
+    call field_get_dim (fldid, idimt)
     call field_get_name(fldid, name80(4:80))
     name80(1:3) = 'bc_'
 
@@ -320,41 +320,20 @@ else if (numtyp .eq. -2) then
       call field_get_coefa_v(fldid, cofavp)
       call field_get_coefb_uv(fldid, cofbvp)
 
-      if (.not.ilved) then
+      do kk = 0, idimt-1
 
-        do kk = 0, idimt-1
+        do iloc = 1, nfbrps
 
-          do iloc = 1, nfbrps
+          ifac = lstfbr(iloc)
+          iel = ifabor(ifac)
 
-            ifac = lstfbr(iloc)
-            iel = ifabor(ifac)
-
-            trafbr(kk + (iloc-1)*idimt + 1)                      &
-                 =   cofavp(ifac,kk+1)                           &
-                   + cofbvp(ifac,kk+1)*valvp(iel,kk+1)
-
-          enddo
+          trafbr(kk + (iloc-1)*idimt + 1)                      &
+               =   cofavp(kk+1,ifac)                           &
+                 + cofbvp(kk+1,ifac)*valvp(kk+1,iel)
 
         enddo
 
-      else ! if interleaved
-
-        do kk = 0, idimt-1
-
-          do iloc = 1, nfbrps
-
-            ifac = lstfbr(iloc)
-            iel = ifabor(ifac)
-
-            trafbr(kk + (iloc-1)*idimt + 1)                      &
-                 =   cofavp(kk+1,ifac)                           &
-                   + cofbvp(kk+1,ifac)*valvp(kk+1,iel)
-
-          enddo
-
-        enddo
-
-      endif
+      enddo
 
     else ! Coupled vector or tensor
 
@@ -362,49 +341,24 @@ else if (numtyp .eq. -2) then
       call field_get_coefa_v(fldid, cofavp)
       call field_get_coefb_v(fldid, cofbtp)
 
-      if (.not.ilved) then ! in coupled case coefa/coefb interleaved
+      do kk = 0, idimt-1
 
-        do kk = 0, idimt-1
+        do iloc = 1, nfbrps
 
-          do iloc = 1, nfbrps
+          ifac = lstfbr(iloc)
+          iel = ifabor(ifac)
 
-            ifac = lstfbr(iloc)
-            iel = ifabor(ifac)
+          trafbr(kk + (iloc-1)*idimt + 1) = cofavp(kk+1,ifac)
 
-            trafbr(kk + (iloc-1)*idimt + 1) = cofavp(kk+1,ifac)
-
-            do ll = 1, idimt
-              trafbr(kk + (iloc-1)*idimt + 1)                    &
-                 =   trafbr(kk + (iloc-1)*idimt + 1)             &
-                   + cofbtp(kk+1,ll,ifac)*valvp(iel,ll)
-            enddo
-
+          do ll = 1, idimt
+            trafbr(kk + (iloc-1)*idimt + 1)                    &
+               =   trafbr(kk + (iloc-1)*idimt + 1)             &
+                 + cofbtp(kk+1,ll,ifac)*valvp(ll,iel)
           enddo
 
         enddo
 
-      else ! coupled + interleaved case
-
-        do kk = 0, idimt-1
-
-          do iloc = 1, nfbrps
-
-            ifac = lstfbr(iloc)
-            iel = ifabor(ifac)
-
-            trafbr(kk + (iloc-1)*idimt + 1) = cofavp(kk+1,ifac)
-
-            do ll = 1, idimt
-              trafbr(kk + (iloc-1)*idimt + 1)                    &
-                 =   trafbr(kk + (iloc-1)*idimt + 1)             &
-                   + cofbtp(kk+1,ll,ifac)*valvp(ll,iel)
-            enddo
-
-          enddo
-
-        enddo
-
-      endif
+      enddo
 
     endif ! test on field dimension and interleaving
 

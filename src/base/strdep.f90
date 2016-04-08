@@ -99,8 +99,6 @@ integer          indast
 integer          icvext, icvint, icved
 integer          f_dim
 
-logical          interleaved
-
 double precision delta
 
 double precision, allocatable, dimension(:,:) :: forast
@@ -301,7 +299,7 @@ call astcv2(ntcast, icved)
 ! We must then go back to a previous value
 if (itrfin.ne.-1) then
   do ii = 1, nvar
-    call field_get_dim (ivarfl(ii), f_dim, interleaved)
+    call field_get_dim (ivarfl(ii), f_dim)
 
     ! Fields of dimension one
     if (f_dim.eq.1) then

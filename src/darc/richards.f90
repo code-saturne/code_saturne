@@ -117,8 +117,6 @@ integer iinvpe, iflmas, iflmab, iesize, idiffp, iconvp, ibsize
 integer fid
 integer iflid , iflwgr, f_dim, f_id0, iprev, iitsm
 
-logical          interleaved
-
 double precision epsrgp, climgp, extrap
 double precision thetap, xdu, xdv, xdw, xnrmul
 double precision relaxp, residu, ressol, epsilp
@@ -212,7 +210,7 @@ iflid = ivarfl(ipr)
 if (iwgrec(ipr).eq.1) then
   ! Id weighting field for gradient
   call field_get_key_int(iflid, kwgrec, iflwgr)
-  call field_get_dim(iflwgr, f_dim, interleaved)
+  call field_get_dim(iflwgr, f_dim)
   if (f_dim.gt.1) then
     call field_get_val_v(iflwgr, cpro_wgrec_v)
   else

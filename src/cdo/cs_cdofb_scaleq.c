@@ -827,7 +827,7 @@ cs_cdofb_scaleq_extra_op(const char            *eqname,
   cs_post_write_var(-2,                    // id du maillage de post
                     postlabel,
                     field->dim,
-                    field->interleaved,
+                    true,
                     true,                  // true = original mesh
                     CS_POST_TYPE_cs_real_t,
                     NULL,                  // values on cells

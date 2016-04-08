@@ -3803,28 +3803,17 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             mei_tree_insert(ev_formula_uvw, "y", cell_cen[iel][1]);
             mei_tree_insert(ev_formula_uvw, "z", cell_cen[iel][2]);
             mei_evaluate(ev_formula_uvw);
-            if (c_vel->interleaved) {
-              c_vel->val[3 * iel    ] = mei_tree_lookup(ev_formula_uvw, "velocity[0]");
-              c_vel->val[3 * iel + 1] = mei_tree_lookup(ev_formula_uvw, "velocity[1]");
-              c_vel->val[3 * iel + 2] = mei_tree_lookup(ev_formula_uvw, "velocity[2]");
-            }
-            else {
-              c_vel->val[                  iel] = mei_tree_lookup(ev_formula_uvw, "velocity[0]");
-              c_vel->val[    n_cells_ext + iel] = mei_tree_lookup(ev_formula_uvw, "velocity[1]");
-              c_vel->val[2 * n_cells_ext + iel] = mei_tree_lookup(ev_formula_uvw, "velocity[2]");
-            }
+            c_vel->val[3 * iel    ] = mei_tree_lookup(ev_formula_uvw, "velocity[0]");
+            c_vel->val[3 * iel + 1] = mei_tree_lookup(ev_formula_uvw, "velocity[1]");
+            c_vel->val[3 * iel + 2] = mei_tree_lookup(ev_formula_uvw, "velocity[2]");
           }
           mei_tree_destroy(ev_formula_uvw);
         }
         else {
-          for (int j=0; j < 3; j++) {
-            for (icel = 0; icel < cells; icel++) {
-              iel = cells_list[icel];
-              if (c_vel->interleaved)
-                c_vel->val[3 * iel + j] = 0.0;
-              else
-                c_vel->val[j * n_cells_ext + iel] = 0.0;
-            }
+          for (icel = 0; icel < cells; icel++) {
+            iel = cells_list[icel];
+            for (cs_lnum_t j = 0; j < 3; j++)
+              c_vel->val[3 * iel + j] = 0.0;
           }
         }
         BFT_FREE(formula_uvw);
@@ -4478,16 +4467,9 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
 
         for (j = 0; j < cells; j++) {
           iel = cells_list[j];
-          if (c_vel->interleaved) {
-            vit =   c_vel->val_pre[3 * iel    ] * c_vel->val_pre[3 * iel    ]
-                  + c_vel->val_pre[3 * iel + 1] * c_vel->val_pre[3 * iel + 1]
-                  + c_vel->val_pre[3 * iel + 2] * c_vel->val_pre[3 * iel + 2];
-          }
-          else {
-            vit = c_vel->val_pre[                  iel] * c_vel->val_pre[                  iel] +
-                  c_vel->val_pre[    n_cells_ext + iel] * c_vel->val_pre[    n_cells_ext + iel] +
-                  c_vel->val_pre[2 * n_cells_ext + iel] * c_vel->val_pre[2 * n_cells_ext + iel];
-          }
+          vit =   c_vel->val_pre[3 * iel    ] * c_vel->val_pre[3 * iel    ]
+                + c_vel->val_pre[3 * iel + 1] * c_vel->val_pre[3 * iel + 1]
+                + c_vel->val_pre[3 * iel + 2] * c_vel->val_pre[3 * iel + 2];
           vit = sqrt(vit);
           ckupdc[0 * (*ncepdp) + ielpdc] = 0.5 * c11 * vit;
           ckupdc[1 * (*ncepdp) + ielpdc] = 0.5 * c22 * vit;
@@ -5008,7 +4990,7 @@ void CS_PROCF (uiprof, UIPROF) (void)
 
               if (f != NULL) {
                 if (f->type & CS_FIELD_VARIABLE) {
-                  if (f->interleaved && f->dim > 1)
+                  if (f->dim > 1)
                     array[iii+4] = f->val[f->dim * iel + idim];
                   else
                     array[iii+4] = f->val[iel + idim * n_cells_ext];

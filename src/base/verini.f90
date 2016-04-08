@@ -77,7 +77,6 @@ integer          iok
 ! Local variables
 
 character        chaine*80, chain2*80
-logical          interleaved
 integer          ii    , iis   , jj    , iisct, kval
 integer          iscal , iest  , iiesca, ivar
 integer          nbsccp
@@ -128,7 +127,7 @@ endif
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyipp, ippf)
   if (ippf.le.1) cycle
-  call field_get_dim (f_id, f_dim, interleaved)
+  call field_get_dim (f_id, f_dim)
   do c_id = 1, min(f_dim, 3)
     ipp = ippf + c_id - 1
     if (ihisvr(ipp,1).gt.ncapt.or.                                  &
@@ -148,7 +147,7 @@ enddo
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyipp, ippf)
   if (ippf.le.1) cycle
-  call field_get_dim (f_id, f_dim, interleaved)
+  call field_get_dim (f_id, f_dim)
   do c_id = 1, min(f_dim, 3)
     ipp = ippf + c_id - 1
     if ((ihisvr(ipp,1).gt.0.and.ihisvr(ipp,1).lt.ncapt)) then

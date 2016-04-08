@@ -75,7 +75,7 @@ integer       irphas, ipp
 integer       ippok
 integer       nprayc, nprprv
 integer       itycat, ityloc
-logical       ilved, inoprv, kset
+logical       inoprv, kset
 
 integer(c_int) :: n_r_phases
 
@@ -108,7 +108,6 @@ end interface
 ! Initialize variables to avoid compiler warnings
 ippok = 0
 
-ilved  = .true.   ! not interleaved by default
 inoprv = .false.  ! variables have no previous value
 
 call field_get_key_id('log', keylog)
@@ -181,7 +180,6 @@ if (iirayo.gt.0) then
 
   ! Boundary face fields
 
-  ilved  = .true.   ! not interleaved by default
   inoprv = .false.  ! variables have no previous value
 
   itycat = FIELD_INTENSIVE + FIELD_PROPERTY
@@ -190,7 +188,7 @@ if (iirayo.gt.0) then
   call field_get_id_try('boundary_temperature', itempb)
   if (itempb.lt.0) then
     call field_create('boundary_temperature',  &
-                      itycat, ityloc, 1, ilved, inoprv, itempb)
+                      itycat, ityloc, 1, inoprv, itempb)
   endif
   call field_is_key_set(itempb, keylog, kset)
   if (kset .eqv. .false.) call field_set_key_int(itempb, keylog, 1)
@@ -198,37 +196,37 @@ if (iirayo.gt.0) then
   if (kset .eqv. .false.) call field_set_key_int(itempb, keyvis, 1)
 
   call field_create('rad_incident_flux',  &
-                    itycat, ityloc, 1, ilved, inoprv, iqinci)
+                    itycat, ityloc, 1, inoprv, iqinci)
   call field_set_key_str(iqinci, keylbl, 'Incident_flux')
 
   if (imoadf.ge.1.or.imfsck.eq.1) then
     call field_create('spectral_rad_incident_flux',  &
-                      itycat, ityloc, nwsgg, ilved, inoprv, iqinsp)
+                      itycat, ityloc, nwsgg, inoprv, iqinsp)
     call field_set_key_str(iqinsp, keylbl, 'Spectral_incident_flux')
   endif
 
   call field_create('wall_thermal_conductivity',  &
-                    itycat, ityloc, 1, ilved, inoprv, ixlam)
+                    itycat, ityloc, 1, inoprv, ixlam)
   call field_set_key_str(ixlam, keylbl, 'Th_conductivity')
 
   call field_create('wall_thickness',  &
-                    itycat, ityloc, 1, ilved, inoprv, iepa)
+                    itycat, ityloc, 1, inoprv, iepa)
   call field_set_key_str(iepa, keylbl, 'Thickness')
 
   call field_create('emissivity',  &
-                    itycat, ityloc, 1, ilved, inoprv, ieps)
+                    itycat, ityloc, 1, inoprv, ieps)
   call field_set_key_str(ieps, keylbl, 'Emissivity')
 
   call field_create('rad_net_flux',  &
-                    itycat, ityloc, 1, ilved, inoprv, ifnet)
+                    itycat, ityloc, 1, inoprv, ifnet)
   call field_set_key_str(ifnet, keylbl, 'Net_flux')
 
   call field_create('rad_convective_flux',  &
-                    itycat, ityloc, 1, ilved, inoprv, ifconv)
+                    itycat, ityloc, 1, inoprv, ifconv)
   call field_set_key_str(ifconv, keylbl, 'Convective_flux')
 
   call field_create('rad_exchange_coefficient',  &
-                    itycat, ityloc, 1, ilved, inoprv, ihconv)
+                    itycat, ityloc, 1, inoprv, ihconv)
   call field_set_key_str(ihconv, keylbl, 'Convective_exch_coef')
 
 ! Map to field pointers

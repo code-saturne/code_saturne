@@ -591,7 +591,6 @@ cs_advection_field_create_field(cs_adv_field_t   *adv)
                                        field_mask,
                                        CS_MESH_LOCATION_VERTICES,
                                        3,    // always a vector-valued field
-                                       true, // interleave
                                        has_previous);
 
     adv->vtx_field_id = cs_field_id_by_name(field_name);
@@ -614,7 +613,6 @@ cs_advection_field_create_field(cs_adv_field_t   *adv)
                                        field_mask,
                                        CS_MESH_LOCATION_CELLS,
                                        3,    // always a vector-valued field
-                                       true, // interleave
                                        has_previous);
 
     adv->cell_field_id = cs_field_id_by_name(field_name);

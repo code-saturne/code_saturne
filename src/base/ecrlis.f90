@@ -80,7 +80,6 @@ double precision dt(ncelet), volume(ncelet)
 
 integer          ic, icel, f_id, c_id, f_dim
 integer          kval, nfld, f_type
-logical          interleaved
 character(len=200) :: chain, chainc, flabel,fname
 
 double precision dervar(9)
@@ -120,7 +119,7 @@ do f_id = 0, nfld - 1
     chainc = 'c'
     chain = ' '
     ic = 4
-    call field_get_dim (f_id, f_dim, interleaved)
+    call field_get_dim (f_id, f_dim)
     call field_get_label(f_id, flabel)
     call field_get_name(f_id, fname)
 
