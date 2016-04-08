@@ -1641,8 +1641,9 @@ cs_mesh_extrude(cs_mesh_t          *m,
     assert(m == cs_glob_mesh);
     cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : NULL;
     cs_mesh_init_halo(m, mb, halo_type);
-    cs_mesh_update_auxiliary(cs_glob_mesh);
   }
+
+  cs_mesh_update_auxiliary(cs_glob_mesh);
 }
 
 /*----------------------------------------------------------------------------*/
