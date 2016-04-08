@@ -5,6 +5,8 @@ Release 4.2.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix xml reader for mobile mesh (replace all unsigned ints by ints).
+
 - Fix MPI C++ wrapper use and HDF5 URL in automatic installer.
 
 - Fix bug in Scotch detection on some systems with
