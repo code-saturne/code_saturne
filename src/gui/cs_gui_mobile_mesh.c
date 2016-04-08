@@ -180,15 +180,15 @@ _get_ale_status(int  *const keyword)
 static mei_tree_t *
 cs_gui_init_mei_tree(char         *formula,
                      const char   **symbols,
-                     unsigned int symbol_nbr,
+                           int    symbol_nbr,
                      const char   **variables,
                      const double *variables_value,
-                     unsigned int variable_nbr,
+                           int    variable_nbr,
                      const double dtref,
                      const double ttcabs,
                      const int    ntcabs)
 {
-  unsigned int i = 0;
+  int i = 0;
 
   /* return an empty interpreter */
   mei_tree_t *tree = mei_tree_new(formula);
@@ -324,7 +324,7 @@ _uialcl_fixed_displacement(const char       *label,
   double X_mesh, Y_mesh, Z_mesh;
 
   const char*  variables[3] = {"mesh_x", "mesh_y", "mesh_z"};
-  unsigned int variable_nbr = 3;
+  int variable_nbr = 3;
 
   /* Get formula */
   char* formula =_get_ale_boundary_formula(label, "fixed_displacement");
@@ -464,8 +464,8 @@ _get_ale_boundary_nature(const char *const label)
  *----------------------------------------------------------------------------*/
 
 static char*
-get_boundary_attribute(unsigned int ith_zone,
-                       const char   *nodeName)
+get_boundary_attribute(      int  ith_zone,
+                       const char *nodeName)
 {
   char *result;
   char *path = cs_xpath_init_path();
@@ -646,11 +646,11 @@ static void
 get_internal_coupling_matrix(const char    *label,
                              const char    *node_name,
                              const char    *symbols[],
-                             unsigned int  symbol_nbr,
+                                   int     symbol_nbr,
                              const char    **variables,
                              const double  *variables_value,
-                             unsigned int  variable_nbr,
-                             double        *output_matrix,
+                                   int     variable_nbr,
+                                   double  *output_matrix,
                              const double  dtref,
                              const double  ttcabs,
                              const int     ntcabs)
@@ -658,7 +658,7 @@ get_internal_coupling_matrix(const char    *label,
   /* Get the formula */
   mei_tree_t *tree;
 
-  unsigned int i = 0;
+  int i = 0;
   char *matrix = get_internal_coupling_string(label, node_name, "formula");
 
   if (!matrix)
@@ -701,7 +701,7 @@ get_uistr2_data(const char    *label,
                 double *const xcstru,
                 double *const xkstru,
                 double *const forstr,
-                unsigned int  istruc,
+                      int     istruc,
                 const double  dtref,
                 const double  ttcabs,
                 const int     ntcabs)
@@ -716,12 +716,12 @@ get_uistr2_data(const char    *label,
                               "k21", "k22", "k23",
                               "k31", "k32", "k33"};
 
-  unsigned int symbol_nbr = sizeof(m_symbols) / sizeof(m_symbols[0]);
+  int symbol_nbr = sizeof(m_symbols) / sizeof(m_symbols[0]);
 
   const char   *force_symbols[] = {"fx", "fy", "fz"};
-  unsigned int force_symbol_nbr = sizeof(force_symbols) / sizeof(force_symbols[0]);
+  int force_symbol_nbr = sizeof(force_symbols) / sizeof(force_symbols[0]);
 
-  const unsigned int  variable_nbr = 3;
+  const int  variable_nbr = 3;
   const char *variables[3] = {"fluid_fx", "fluid_fy", "fluid_fz"};
   double variable_values[3];
 
@@ -788,13 +788,13 @@ void CS_PROCF (uivima, UIVIMA) (const cs_int_t *const ncel,
   const char*  variables[3]   = { "mesh_viscosity_1",
                                   "mesh_viscosity_2",
                                   "mesh_viscosity_3" };
-  unsigned int variable_nbr   = 1;
+  int variable_nbr   = 1;
 
   /* Get formula */
   mei_tree_t *ev;
   char *aleFormula    =_get_ale_formula();
   char *viscosityType =_get_ale_mesh_viscosity();
-  unsigned int isOrthotrop = cs_gui_strcmp(viscosityType, "orthotrop");
+  int isOrthotrop = cs_gui_strcmp(viscosityType, "orthotrop");
 
   if (isOrthotrop)
     variable_nbr = 3;
@@ -1032,7 +1032,7 @@ void CS_PROCF (uistr1, UISTR1) (const cs_lnum_t  *nfabor,
   cs_lnum_t  faces        = 0;
   cs_lnum_t  ifbr         = 0;
   cs_lnum_t  *faces_list  = NULL;
-  unsigned int    istruct = 0;
+  int        istruct = 0;
 
   /* Get advanced data */
   get_uistr1_advanced_double("displacement_prediction_alpha", aexxst);
@@ -1096,8 +1096,8 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
                                 double *const  ttcabs,
                                 int    *const  ntcabs)
 {
-  int          izone   = 0;
-  unsigned int istru   = 0;
+  int izone   = 0;
+  int istru   = 0;
 
   int zones   = cs_gui_boundary_zones_number();
 

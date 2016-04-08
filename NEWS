@@ -5,6 +5,8 @@ Release 4.0.5 (6 Apr 2016)
 Bug fixes:
 ----------
 
+- Fix xml reader for mobile mesh (replace all unsigned ints by ints).
+
 - Fix MPI C++ wrapper use in automatic installer.
 
 - Fix bug in Scotch detection on some systems with
