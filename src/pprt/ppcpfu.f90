@@ -102,7 +102,7 @@ module ppcpfu
   integer, save ::         iynh3
   !
   !
-  !   Propce supplementaires :
+  !   Propriétés supplementaires :
 
   !         Conversion HCN en NO       : EXP(-E1/RT)
   !         Conversion HCN en NO       : EXP(-E2/RT)
@@ -110,7 +110,7 @@ module ppcpfu
 
   integer, save ::         ighcn1 , ighcn2 , ignoth
   !
-  !   Propce supplementaires :
+  !   Propriétés supplementaires :
 
   !         Conversion NH3 en NO       : EXP(-E4/RT)
   !         Conversion NH3 en NO       : EXP(-E5/RT)

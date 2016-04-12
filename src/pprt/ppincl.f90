@@ -353,7 +353,7 @@ module ppincl
   !> state variable:  \f$T^4\f$ term, when the radiation modelling is activated
   integer, save :: it4m
 
-  ! --- Pointeurs proprietes (PROPCE)
+  ! pointer for source term in combustion
   ! TODO
   integer, save :: itsc
 

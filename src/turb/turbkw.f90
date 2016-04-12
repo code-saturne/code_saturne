@@ -266,7 +266,7 @@ do iel = 1, ncel
 enddo
 
 ! En cas d'ordre 2 on utilise les valeurs en n car le terme en (1-f1)*gdkgdw
-! sera dans PROPCE. Du coup, on aura quand meme certaines "constantes"
+! sera une propriété. Du coup, on aura quand meme certaines "constantes"
 ! intervenant dans des termes en n+1/2 (ex sigma_k pour la diffusion) calcules
 ! a partir de f1 en n -> mais l'effet sur les "constantes" est faible
 ! -> a garder en tete si on fait vraiment de l'ordre 2 en temps en k-omega
@@ -595,7 +595,7 @@ if (ncesmp.gt.0) then
    volume , cvara_omg    , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbrw  , tinstw , gamw )
 
-  ! Si on extrapole les TS on met Gamma Pinj dans PROPCE
+  ! Si on extrapole les TS on met Gamma Pinj dans c_st_k_p, c_st_omg_p
   if (istprv.ge.0) then
     do iel = 1, ncel
       c_st_k_p(iel) = c_st_k_p(iel) + gamk(iel)
