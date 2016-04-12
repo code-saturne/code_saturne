@@ -105,9 +105,9 @@ double precision dtsmdd1, dtsmdd2, dtsmdf1, dtsmdf2, dtsmdhrec, dtsmdhs
 double precision dadhs, dbdhs, yprod
 double precision, dimension(:), pointer :: cpro_rho, cpro_tsrho
 double precision, dimension(:), pointer :: cproaa_rho
-double precision, dimension(:), pointer :: cvar_scalt, cpro_scalt
+double precision, dimension(:), pointer :: cvar_scalt, cpro_tsscalt
 double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
-double precision, dimension(:), pointer :: cpro_fm, cpro_fp2m, cpro_ym3
+double precision, dimension(:), pointer :: cpro_tsfm, cpro_tsfp2m, cpro_ym3
 double precision, dimension(:), pointer :: cpro_temp
 double precision, dimension(:), pointer :: cpro_ckabs, cpro_t4m, cpro_t3m
 type(pmapper_double_r1), dimension(:), pointer :: cpro_csca
@@ -272,9 +272,9 @@ call field_get_val_s(icrom, cpro_rho)
 if (idilat.ge.4) then
   call field_get_val_s(icroaa, cproaa_rho)
   call field_get_val_s(iprpfl(iustdy(itsrho)), cpro_tsrho)
-  call field_get_val_s(iprpfl(iustdy(ifm  )), cpro_fm)
-  call field_get_val_s(iprpfl(iustdy(ifp2m  )), cpro_fp2m)
-  call field_get_val_s(iprpfl(iustdy(iscalt)), cpro_scalt)
+  call field_get_val_s(iprpfl(iustdy(ifm  )), cpro_tsfm)
+  call field_get_val_s(iprpfl(iustdy(ifp2m  )), cpro_tsfp2m)
+  call field_get_val_s(iprpfl(iustdy(iscalt)), cpro_tsscalt)
   call field_get_val_s(iprpfl(iym(3)), cpro_ym3)
 endif
 
@@ -641,9 +641,9 @@ do iel = 1, ncel
 
     ! Scalar contribution is computed and add to the total source term
     cpro_tsrho(iel) =  (-cs_physical_constants_r/pther * dtsmdf)        &
-                       *cpro_fm(iel)                                    &
+                       *cpro_tsfm(iel)                                    &
                      + (-cs_physical_constants_r/pther * dtsmdfp2)      &
-                       *cpro_fp2m(iel)
+                       *cpro_tsfp2m(iel)
 
     yprod = cpro_ym3(iel)
 
@@ -652,7 +652,7 @@ do iel = 1, ncel
 
       cpro_tsrho(iel) =  cpro_tsrho(iel)                                 &
                        + (-cs_physical_constants_r/pther * dtsmdhs)      &
-                         /yprod*cpro_scalt(iel)
+                         /yprod*cpro_tsscalt(iel)
 
     endif
 
@@ -662,9 +662,9 @@ do iel = 1, ncel
                                             / cproaa_rho(iel)
 
     ! arrays are re-initialize for source terms of next time step
-    cpro_fm(iel) = 0.d0
-    cpro_fp2m(iel) = 0.d0
-    if (ippmod(icod3p).ge.1) cpro_scalt(iel) = 0.d0
+    cpro_tsfm(iel) = 0.d0
+    cpro_tsfp2m(iel) = 0.d0
+    if (ippmod(icod3p).ge.1) cpro_tsscalt(iel) = 0.d0
 
   endif
 

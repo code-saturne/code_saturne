@@ -66,7 +66,6 @@
 !>                               of the reference outlet face
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     vel           velocity
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     coefav        boundary condition array for the variable
 !>                               (explicit part)
 !> \param[in]     coefbv        boundary condition array for the variable
@@ -100,7 +99,6 @@ subroutine resopv &
  ( nvar   , ncesmp , nfbpcd , ncmast ,                            &
    icetsm , ifbpcd , ltmast , isostd ,                            &
    dt     , vel    ,                                              &
-   propce ,                                                       &
    coefav , coefbv , coefa_dp        , coefb_dp ,                 &
    smacel , spcond , svcond ,                                     &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
@@ -151,7 +149,6 @@ integer          ltmast(ncelet)
 integer          isostd(nfabor+1)
 
 double precision, dimension (1:ncelet), target :: dt
-double precision propce(ncelet,*)
 double precision smacel(ncesmp,nvar), spcond(nfbpcd,nvar)
 double precision svcond(ncelet,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
@@ -236,6 +233,7 @@ double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: cpro_wgrec_s
 double precision, dimension(:), pointer :: c_estim_der
+double precision, dimension(:), pointer :: cpro_tsrho
 double precision, allocatable, dimension(:) :: surfbm
 
 !===============================================================================
@@ -1337,6 +1335,8 @@ call divmas(init, imasfl , bmasfl , divu)
 
 if (idilat.ge.4) then
 
+  call field_get_val_s(iprpfl(iustdy(itsrho)), cpro_tsrho)
+
   allocate(velflx(nfac), velflb(ndimfb))
 
   ! 1. The RHS contains rho div(u*) and not div(rho u*)
@@ -1379,11 +1379,11 @@ if (idilat.ge.4) then
   if (idilat.eq.4) then
     do iel = 1, ncel
       divu(iel) = divu(iel) &
-                + propce(iel,ipproc(iustdy(itsrho)))/crom(iel)
+                + cpro_tsrho(iel)/crom(iel)
     enddo
   else
     do iel = 1, ncel
-      divu(iel) = divu(iel) + propce(iel,ipproc(iustdy(itsrho)))
+      divu(iel) = divu(iel) + cpro_tsrho(iel)
     enddo
   endif
 

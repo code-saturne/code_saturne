@@ -23,8 +23,7 @@
 subroutine diffst &
 !================
 
- ( nscal  ,                                              &
-   propce )
+ ( nscal  )
 
 !===============================================================================
 ! Function :
@@ -38,7 +37,6 @@ subroutine diffst &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -75,8 +73,6 @@ implicit none
 
 integer          nscal
 
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          ivar  , iel   , ifac  , iscal, ivar0
@@ -100,6 +96,7 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: visct, cpro_cp, cpro_viscls
 double precision, dimension(:), pointer :: cvar_scal
+double precision, dimension(:), pointer :: cpro_tsscal
 
 !===============================================================================
 
@@ -224,6 +221,9 @@ do iscal = 1, nscal
 
   endif
 
+  ! Source term
+  call field_get_val_s(iprpfl(iustdy(iscal)), cpro_tsscal)
+
   ! Diffusion term calculation
   call field_get_coefa_s(ivarfl(ivar), coefap)
   call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -242,7 +242,7 @@ do iscal = 1, nscal
     viscf  , viscb  , rvoid  , xcpp   ,                            &
     rvoid  , rvoid  ,                                              &
     icvflb , ivoid  ,                                              &
-    propce(1,ipproc(iustdy(iscal))) )
+    cpro_tsscal     )
 
 enddo
 

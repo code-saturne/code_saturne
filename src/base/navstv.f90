@@ -181,7 +181,6 @@ interface
    ( nvar   , ncesmp , nfbpcd , ncmast ,                          &
      icetsm , ifbpcd , ltmast , isostd ,                          &
      dt     , vel    ,                                            &
-     propce ,                                                     &
      coefav , coefbv , coefa_dp        , coefb_dp ,               &
      smacel , spcond , svcond ,                                   &
      frcxt  , dfrcxt , tpucou , trav   ,                          &
@@ -204,7 +203,6 @@ interface
     integer          isostd(nfabor+1)
 
     double precision, dimension (1:ncelet), target :: dt
-    double precision propce(ncelet,*)
     double precision smacel(ncesmp,nvar), spcond(nfbpcd,nvar)
     double precision svcond(ncelet,nvar)
     double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
@@ -450,7 +448,6 @@ call predvv &
   icepdc , icetsm , ifbpcd , ltmast ,                            &
   itypsm ,                                                       &
   dt     , vel    , vela   ,                                     &
-  propce ,                                                       &
   imasfl , bmasfl ,                                              &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
   ckupdc , smacel , spcond , svcond , frcxt  , grdphd ,          &
@@ -808,7 +805,6 @@ if (ippmod(icompf).lt.0) then
 ( nvar   , ncetsm , nfbpcd , ncmast ,                            &
   icetsm , ifbpcd , ltmast , isostd ,                            &
   dt     , vel    ,                                              &
-  propce ,                                                       &
   coefau , coefbu , coefa_dp        , coefb_dp ,                 &
   smacel , spcond , svcond ,                                     &
   frcxt  , dfrcxt , dttens , trav   ,                            &
@@ -1314,7 +1310,6 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
    icepdc , icetsm , ifbpcd , ltmast ,                            &
    itypsm ,                                                       &
    dt     , vel    , vel    ,                                     &
-   propce ,                                                       &
    esflum , esflub ,                                              &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
    ckupdc , smacel , spcond , svcond , frcxt  , grdphd ,          &

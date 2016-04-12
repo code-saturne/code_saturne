@@ -59,7 +59,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     vel           velocity
 !> \param[in]     vela          velocity at the previous time step
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     flumas        internal mass flux (depending on iappel)
 !> \param[in]     flumab        boundary mass flux (depending on iappel)
 !> \param[in]     tslagr        coupling term for the Lagrangian module
@@ -113,7 +112,6 @@ subroutine predvv &
    icepdc , icetsm , ifbpcd , ltmast ,                            &
    itypsm ,                                                       &
    dt     , vel    , vela   ,                                     &
-   propce ,                                                       &
    flumas , flumab ,                                              &
    tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
    ckupdc , smacel , spcond , svcond , frcxt  , grdphd ,          &
@@ -171,7 +169,6 @@ integer          ifbpcd(nfbpcd)
 integer          ltmast(ncelet)
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 double precision flumas(nfac), flumab(nfabor)
 double precision tslagr(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -252,6 +249,7 @@ double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: viscl, visct, c_estim
 double precision, allocatable, dimension(:) :: surfbm
 double precision, dimension(:,:), pointer :: lapla
+double precision, dimension(:), pointer :: cpro_tsrho
 
 !===============================================================================
 
@@ -528,6 +526,10 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
     deallocate(surfbm)
   endif
 
+  if (idilat.ge.4) then
+    call field_get_val_s(iprpfl(iustdy(itsrho)), cpro_tsrho)
+  endif
+
   ! Dilatable mass conservative algorithm
   if (idilat.eq.2) then
     do iel = 1, ncel
@@ -537,13 +539,12 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   ! Semi-analytic weakly compressible algorithm add + 1/rho Drho/Dt
   else if (idilat.eq.4)then
     do iel = 1, ncel
-      xnormp(iel) = xnormp(iel) + propce(iel,ipproc(iustdy(itsrho)))/crom(iel)
+      xnormp(iel) = xnormp(iel) + cpro_tsrho(iel)/crom(iel)
     enddo
   else if (idilat.eq.5) then
     do iel = 1, ncel
-      xnormp(iel) = xnormp(iel) + propce(iel,ipproc(iustdy(itsrho)))
+      xnormp(iel) = xnormp(iel) + cpro_tsrho(iel)
     enddo
-
   endif
 
   ! Cavitation source term
@@ -642,14 +643,14 @@ deallocate(grad)
 
 
 !-------------------------------------------------------------------------------
-! ---> INITIALISATION DU TABLEAU TRAVA et propce AU PREMIER PASSAGE
+! ---> INITIALISATION DU TABLEAU TRAVA et terme source AU PREMIER PASSAGE
 !     (A LA PREMIERE ITER SUR NAVSTO)
 
 !     TRAVA rassemble les termes sources qu'il suffit de calculer
 !       a la premiere iteration sur navsto quand il y a plusieurs iter.
 !     Quand il n'y a qu'une iter, on cumule directement dans TRAV
 !       ce qui serait autrement alle dans TRAVA
-!     PROPCE rassemble les termes sources explicites qui serviront
+!     Les termes sources explicites serviront
 !       pour le pas de temps suivant en cas d'extrapolation (plusieurs
 !       iter sur navsto ou pas)
 
@@ -680,7 +681,7 @@ if (iterns.eq.1) then
       enddo
     enddo
 
-  ! Si on n'extrapole pas les T.S. : pas de PROPCE
+  ! Si on n'extrapole pas les T.S.
   else
     ! S'il   y a plusieurs iter : TRAVA initialise
     !  sinon TRAVA n'existe pas
@@ -743,7 +744,7 @@ endif
 !       quelquechose
 
 !     Ce terme explicite est calcule une seule fois,
-!       a la premiere iter sur navsto : il va dans PROPCE si on
+!       a la premiere iter sur navsto : il est stocke dans un champ si on
 !       doit l'extrapoler en temps ; il va dans TRAVA si on n'extrapole
 !       pas mais qu'on itere sur navsto. Il va dans TRAV si on
 !       n'extrapole pas et qu'on n'itere pas sur navsto.
@@ -763,7 +764,7 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
 
   d2s3 = 2.d0/3.d0
 
-  ! Si on extrapole les termes source en temps : PROPCE
+  ! Si on extrapole les termes source en temps
   if (isno2t.gt.0) then
     ! Calcul de rho^n grad k^n      si rho non extrapole
     !           rho^n grad k^n      si rho     extrapole
@@ -1421,7 +1422,7 @@ endif
 
 ! At the first PISO iteration, explicit source terms are added
 if (iterns.eq.1.and.(iphydr.ne.1.or.igpust.ne.1)) then
-  ! If source terms are time-extrapolated, they are stored in propce
+  ! If source terms are time-extrapolated, they are stored in fields
   if (isno2t.gt.0) then
     do iel = 1, ncel
       do isou = 1, 3
@@ -1522,7 +1523,7 @@ if (ncesmp.gt.0) then
 
   ! At the first PISO iteration, the explicit part "Gamma u^{in}" is added
   if (iterns.eq.1) then
-    ! If source terms are extrapolated, stored in propce
+    ! If source terms are extrapolated, stored in fields
     if(isno2t.gt.0) then
       do iel = 1, ncel
         do isou = 1, 3

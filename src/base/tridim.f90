@@ -1771,9 +1771,7 @@ if (nscal.ge.1) then
 
   ! Diffusion terms for weakly compressible algorithm
   if (idilat.ge.4) then
-
-    call diffst(nscal, propce)
-
+    call diffst(nscal)
   endif
 
 endif

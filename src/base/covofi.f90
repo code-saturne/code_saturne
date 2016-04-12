@@ -194,6 +194,7 @@ double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: visct, cpro_cp, cproa_scal_st
 double precision, dimension(:), pointer :: cpro_scal_st
 double precision, dimension(:), pointer :: cpro_viscls
+double precision, dimension(:), pointer :: cpro_tsscal
 ! Darcy arrays
 double precision, allocatable, dimension(:) :: diverg
 double precision, dimension(:), pointer :: cpro_delay, cpro_sat
@@ -275,7 +276,11 @@ if (ifcvsl.ge.0) then
   call field_get_val_s(ifcvsl, cpro_viscls)
 endif
 
-! --- Numero du terme source dans PROPCE si extrapolation
+if (idilat.ge.4) then
+  call field_get_val_s(iprpfl(iustdy(iscal)), cpro_tsscal)
+endif
+
+! --- Numero de propriété du terme source si extrapolation
 call field_get_key_int(iflid, kstprv, st_prv_id)
 if (st_prv_id .ge.0) then
   call field_get_val_s(st_prv_id, cproa_scal_st)
@@ -403,7 +408,7 @@ if (ipreci .eq. 1) then
 endif
 
 ! Si on extrapole les TS :
-!   SMBRS recoit -theta PROPCE du pas de temps precedent
+!   SMBRS recoit -theta TS du pas de temps precedent
 !     (on aurait pu le faire avant ustssc, mais avec le risque que
 !      l'utilisateur l'ecrase)
 !   SMBRS recoit la partie du terme source qui depend de la variable
@@ -475,8 +480,7 @@ if (iirayo.ge.1) then
     ! Store the explicit radiative source term
     if (idilat.ge.4) then
       do iel = 1, ncel
-        propce(iel,ipproc(iustdy(iscalt))) = &
-        propce(iel,ipproc(iustdy(iscalt)))   &
+        cpro_tsscal(iel) = cpro_tsscal(iel)   &
         + propce(iel,ipproc(itsre(1)))*cell_f_vol(iel)
       enddo
     endif
@@ -784,10 +788,9 @@ if (itspdv.eq.1) then
       ! Production term for a variance  TODO compute ustdy when isso2t >0
       if (idilat.ge.4) then
         do iel = 1, ncel
-          propce(iel,ipproc(iustdy(iscal))) =                     &
-          propce(iel,ipproc(iustdy(iscal))) +                     &
+          cpro_tsscal(iel) = cpro_tsscal(iel) +                   &
                2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)        &
-             *cell_f_vol(iel)/sigmas(iscal)                           &
+             *cell_f_vol(iel)/sigmas(iscal)                       &
              *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
       endif
@@ -1140,8 +1143,7 @@ if (idilat.ge.4.and.itspdv.eq.1) then
     rhovst = xcpp(iel)*crom(iel)*xe/(xk * rvarfl(iscal))       &
            *cell_f_vol(iel)
 
-    propce(iel,ipproc(iustdy(iscal))) =                               &
-      propce(iel,ipproc(iustdy(iscal))) - rhovst*cvar_var(iel)
+    cpro_tsscal(iel) = cpro_tsscal(iel) - rhovst*cvar_var(iel)
 
   enddo
 
@@ -1152,9 +1154,8 @@ if (idilat.ge.4.and.iirayo.ge.1.and.iscal.eq.iscalt) then
   do iel = 1, ncel
     ivar = isca(iscalt)
     dvar = cvar_var(iel)-cvara_var(iel)
-    propce(iel,ipproc(iustdy(iscalt))) = &
-    propce(iel,ipproc(iustdy(iscalt)))   &
-    - propce(iel,ipproc(itsri(1)))*dvar*cell_f_vol(iel)
+    cpro_tsscal(iel) = cpro_tsscal(iel) &
+                     - propce(iel,ipproc(itsri(1)))*dvar*cell_f_vol(iel)
   enddo
 endif
 
