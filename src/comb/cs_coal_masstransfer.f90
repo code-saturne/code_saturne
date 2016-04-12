@@ -317,8 +317,8 @@ do icla = 1, nclacp
             (rho20(icla)/(rhock(icha)*xuash))**(2.d0/3.d0)
     endif
 
-    ! --- Calculation of propce(iel,ipcght) = - coxck*Xdftoto*PPARO2*Xnp < 0
-    ! --- or  propce(iel,ipcght) = - coxck*XDFTOT1*PPARO2*Xnp < 0
+    ! --- Calculation of cpro_cght(iel) = - coxck*Xdftoto*PPARO2*Xnp < 0
+    ! --- or  cpro_cght(iel) = - coxck*XDFTOT1*PPARO2*Xnp < 0
 
     if (iochet(icha).eq.1) then
       cpro_cght(iel) = - xdftot1*coxck*xnp
@@ -394,8 +394,8 @@ if ( ihtco2 .eq. 1) then
               (rho20(icla)/(rhock(icha)*xuash))**(2.d0/3.d0)
       endif
 
-      ! --- Calculation of propce(iel,ipcght) = - coxck*XDFTOT0*PPRCO2*Xnp < 0
-      ! --- or  propce(iel,ipcght) = - coxck*XDFTOT1*PPRCO2*Xnp < 0
+      ! --- Calculation of cpro_cght(iel) = - coxck*XDFTOT0*PPRCO2*Xnp < 0
+      ! --- or  cpro_cght(iel) = - coxck*XDFTOT1*PPRCO2*Xnp < 0
 
       if (ioetc2(icha).eq.1) then
         cpro_cght(iel) = - xdftot1*coxck*xnp
@@ -473,8 +473,8 @@ if ( ihth2o .eq. 1) then
               (rho20(icla)/(rhock(icha)*xuash))**(2.d0/3.d0)
       endif
 
-      ! --- Calculation of propce(iel,ipcght) = - coxck*XDFTOT0*PPRH2O*Xnp < 0
-      ! --- or propce(iel,ipcght) = - coxck*XDFTOT1*PPRH2O*Xnp < 0
+      ! --- Calculation of cpro_cght(iel) = - coxck*XDFTOT0*PPRH2O*Xnp < 0
+      ! --- or cpro_cght(iel) = - coxck*XDFTOT1*PPRH2O*Xnp < 0
 
       if (ioetwt(icha).eq.1) then
         cpro_cght(iel) = - xdftot1*coxck*xnp

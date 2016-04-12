@@ -422,7 +422,7 @@ do iel = 1, ncel
       w5(iel) = cell_f_vol(iel)
     endif
 enddo
-!     If we extrapolate the source term: propce
+!     If we extrapolate the source term:
 if (istprv.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel

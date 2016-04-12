@@ -392,7 +392,7 @@ if (st_prv_id.ge.0) then
     do isou = 1, 6
       !     Calculation of Prod+Phi1+Phi2-Eps
       !       = rhoPij-C1rho eps/k(Rij-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
-      !       In propce:
+      !       In c_st_prv:
       !       = rhoPij-C1rho eps/k(   -2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
       !       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij           }
       c_st_prv(isou,iel) = c_st_prv(isou,iel) + cromo(iel) * cell_f_vol(iel) &
@@ -561,7 +561,7 @@ if (irijec.eq.1) then !todo
 
   call rijech2(produc, w7)
 
-  ! If we extrapolate the source terms: propce
+  ! If we extrapolate the source terms: c_st_prv
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
       do isou = 1, 6

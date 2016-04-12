@@ -239,7 +239,7 @@ call pppdfr &
 !                    LES FRACTIONS MASSIQUES
 !                    LA MASSE VOLUMIQUE
 !                    qsp RAYONNEMENT
-!    Ces variables d'etat sont dans PROPCE
+!    Ces variables d'etat sont des champs de type CS_FIELD_PROPERTY
 !===============================================================================
 
 call d3pint &

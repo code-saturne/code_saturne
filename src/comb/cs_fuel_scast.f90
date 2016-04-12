@@ -221,14 +221,14 @@ if ( ivar .ge. isca(ih2(1)) .and. ivar .le. isca(ih2(nclafu)) ) then
   !       The interfacial flux contribute to the variation of the liquid
   !       enthalpy
   !       The vapor takes away its enthalpy
-  !       flux = propce(iel,ipproc(igmeva))
+  !       flux = cpro_cgev(iel)
   !       massic enthalpy reconstructed from ehgaze(ifov )
   !       at the drop temperature
   !       The heterogeneous oxidation contains an input flux of O2
   !       an output flux of CO
   !       The net flux is the carbon flux
-  !       fluxIN  = 16/12 * propce(iel,ipproc(igmhtf))
-  !       fluxOUT = 28/12 * propce(iel,ipproc(igmhtf))
+  !       fluxIN  = 16/12 * cpro_cght(iel)
+  !       fluxOUT = 28/12 * cpro_cght(iel)
   !       Input enthalpy reconstructed from ehgaze(IO2 )
   !       at the surrounding gas temperature
   !       Output enthalpy reconstructed from ehgaze(ico )

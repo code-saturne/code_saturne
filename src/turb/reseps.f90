@@ -310,7 +310,7 @@ if (ncesmp.gt.0) then
    volume , cvara_ep        , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   , rovsdt , w1 )
 
-  ! If we extrapolate the source terms, we put Gamma Pinj in propce
+  ! If we extrapolate the source terms, we put Gamma Pinj in c_st_prv
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
       c_st_prv(iel) = c_st_prv(iel) + w1(iel)

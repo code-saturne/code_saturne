@@ -148,7 +148,7 @@ if (ippmod(iphpar).ge.1) then
   call cs_physical_properties1 &
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &
-   dt     , propce )
+   dt     )
 
 endif
 

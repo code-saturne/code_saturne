@@ -458,7 +458,6 @@ if (ippmod(iphpar).ge.1) then
   call pptssc &
   !==========
  ( iscal  ,                                                       &
-   propce ,                                                       &
    smbrs  , rovsdt , tslagr )
 endif
 

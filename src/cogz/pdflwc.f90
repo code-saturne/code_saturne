@@ -728,11 +728,11 @@ do iel = 1, ncel
 
 ! ---> radiative transfer quantities
 
-!            IF ( IIRAYO .GT. 0  ) THEN
-!              PROPCE(IEL,IPCKAB) = YGFM*KABSGF + YGBM*KABSGB
-!              PROPCE(IEL,IPT4)    = YGFM*TGF**4+YGBM*TGB**4
-!              PROPCE(IEL,IPT3)    = YGFM*TGF**3+YGBM*TGB**3
-!            ENDIF
+!           if ( iirayo.gt.0 ) then
+!             cpro_ckab(iel) = ygfm*kabsgf + ygbm*kabsgb
+!             cpro_t4m(iel)  = ygfm*tgf**4+ygbm*tgb**4
+!             cpro_t3m(iel)  = ygfm*tgf**3+ygbm*tgb**3
+!           endif
 
     enddo
 

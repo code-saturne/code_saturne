@@ -342,8 +342,8 @@ ngazg = 2 + 10
 
 ! ---- Definition des pointeurs pour les tableaux WMOLE et EHGAZE
 !      REMARQUE : Cette position de pointeurs va egalement servir
-!                 pour le tableau de pointeurs IYM1 relatif aux
-!                 tableaux PROPCE et PROPFB
+!                 pour le tableau de pointeurs IYM1
+!                 (indices de propriétés)
 !                 ON BALAYE JUSTE DE 1 A (NGAZE-2*NCHARB=ngazg)
 
 is    = 0

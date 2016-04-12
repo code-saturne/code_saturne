@@ -438,7 +438,7 @@ ngazg = 12
 ! ---- Definition des pointeurs pour les tableaux WMOLE et EHGAZE
 !      REMARQUE : Cette position de pointeurs va egalement servir
 !                 pour le tableau de pointeurs IYM1 relatif aux
-!                 tableaux PROPCE et PROPFB
+!                 (indices de propriétés)
 !                 ON BALAYE JUSTE DE 1 A NGAZE
 
 !     ATTENTION : ordre des especes dans EHCOEL, WMOLCE
@@ -854,5 +854,3 @@ call csexit (1)
 
 return
 end subroutine
-
-

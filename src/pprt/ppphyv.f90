@@ -63,14 +63,13 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     mbrom         indicator of prescribed density at the boundary
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 
 subroutine cs_physical_properties1 &
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &
-   dt     , propce )
+   dt     )
 
 !===============================================================================
 ! Module files
@@ -100,7 +99,6 @@ integer          nvar   , nscal
 integer          mbrom
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 
 ! Local variables
 

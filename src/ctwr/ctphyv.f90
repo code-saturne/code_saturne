@@ -144,9 +144,6 @@ ipass = ipass + 1
 
 ivart = isca(itemp4)
 
-! --- Rang de la masse volumique
-!     dans PROPCE, prop. physiques au centre des elements       : IPCROM
-
 call field_get_val_s(icrom, crom)
 
 call field_get_val_s(ivarfl(isca(itemp4)), cvar_temp4)

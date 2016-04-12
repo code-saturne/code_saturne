@@ -24,7 +24,6 @@ subroutine pptssc &
 !================
 
  ( iscal  ,                                                       &
-   propce ,                                                       &
    smbrs  , rovsdt , tslagr )
 
 !===============================================================================
@@ -66,7 +65,6 @@ subroutine pptssc &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iscal            ! i  ! <-- ! scalar number                                  !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
@@ -107,7 +105,6 @@ implicit none
 
 integer          iscal
 
-double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)
 

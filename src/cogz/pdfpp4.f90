@@ -209,11 +209,11 @@ do idirac = 1, ndirac
   call field_get_val_s(iprpfl(itscl(idirac)), cpro_tscl(idirac)%p)
 enddo
 
-!      IF ( IIRAYO.GT.0 ) THEN
-!        IPCKAB = IPPROC(ICKABS)
-!        IPT4   = IPPROC(IT4M)
-!        IPT3   = IPPROC(IT3M)
-!      ENDIF
+!if ( iirayo.gt.0 ) then
+!  call field_get_val_s(iprpfl(ickabs), cpro_ckabs)
+!  call field_get_val_s(iprpfl(it4m), cpro_t4m)
+!  call field_get_val_s(iprpfl(it3m), cpro_t3m)
+!endif
 
 ! ---> Initialisation des variables et compteurs
 
@@ -807,11 +807,11 @@ coyfpp=coyfp(iel)
 
 ! ---> Grandeurs relatives au rayonnement
 
-!           IF ( IIRAYO.GT.0 ) THEN
-!             PROPCE(IEL,IPCKAB) = YGFM*KABSGF + YGBM*KABSGB
-!             PROPCE(IEL,IPT4)   = YGFM*TGF**3+YGBM*TGB**3
-!             PROPCE(IEL,IPT3)   = YGFM*TGF**3+YGBM*TGB**3
-!           ENDIF
+!           if ( iirayo.gt.0 ) then
+!             cpro_ckab(iel) = ygfm*kabsgf + ygbm*kabsgb
+!             cpro_t4m(iel)  = ygfm*tgf**4+ygbm*tgb**4
+!             cpro_t3m(iel)  = ygfm*tgf**3+ygbm*tgb**3
+!           endif
 
 ! fin de boucle sur chaque DIRAC
   enddo

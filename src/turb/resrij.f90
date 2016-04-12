@@ -306,7 +306,7 @@ if (ncesmp.gt.0) then
    cell_f_vol , cvara_var   , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   ,  rovsdt , w1 )
 
-!       If we extrapolate the source terms we put Gamma Pinj in propce
+!       If we extrapolate the source terms we put Gamma Pinj in c_st_prv
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
       c_st_prv(iel) = c_st_prv(iel) + w1(iel)
@@ -373,7 +373,7 @@ if (st_prv_id.ge.0) then
 
     !     Calculation of Prod+Phi1+Phi2-Eps
     !       = rhoPij-C1rho eps/k(Rij-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
-    !       In propce:
+    !       In c_st_prv:
     !       = rhoPij-C1rho eps/k(   -2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
     !       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij           }
     c_st_prv(iel) = c_st_prv(iel) + cromo(iel) * cell_f_vol(iel)  &
@@ -532,7 +532,7 @@ if (irijec.eq.1) then
 
   call rijech(isou, produc, w7)
 
-  ! If we extrapolate the source terms: propce
+  ! If we extrapolate the source terms: c_st_prv
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
        c_st_prv(iel) = c_st_prv(iel) + w7(iel)

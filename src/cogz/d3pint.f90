@@ -300,10 +300,8 @@ do iel = 1, ncel
     enddo
     if (w1(iel) .ge. hh(1)) ih = 1
     if (w1(iel) .le. hh(nmaxh)) ih = nmaxh-1
-    cpro_temp(iel) = dirmin(iel)*tinoxy +                     &
-                     dirmax(iel)*tinfue
-    temsmm = dirmin(iel)/wmolg(2)*tinoxy                      &
-           + dirmax(iel)/wmolg(1)*tinfue
+    cpro_temp(iel) = dirmin(iel)*tinoxy + dirmax(iel)*tinfue
+    temsmm = dirmin(iel)/wmolg(2)*tinoxy + dirmax(iel)/wmolg(1)*tinfue
 
     ! Weakly compressible algorithm: d T/M /d D1, d T/M /d D2
     if (idilat.ge.4) then
@@ -348,8 +346,7 @@ do iel = 1, ncel
 
 ! ----- Calcul de la temperature par integration
 
-      cpro_temp(iel) = cpro_temp(iel)                           &
-                     + hrec(iel)*(f2-f1)*(a+b*(f1+f2)/2.d0)
+      cpro_temp(iel) = cpro_temp(iel) + hrec(iel)*(f2-f1)*(a+b*(f1+f2)/2.d0)
 
 ! ----- Preparation aux calculs du coefficient d'absorption
 !                               de T^4 et de T^3
