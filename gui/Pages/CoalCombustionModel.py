@@ -221,6 +221,7 @@ class CoalCombustionModel(Variables, Model):
                 lst.append(name)
 
         lst.append("fr_het_o2")
+        lst.append("x_c_h")
 
         if self.getCO2KineticsStatus() == "on":
             lst.append("fr_het_co2")
