@@ -1606,7 +1606,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the listing output
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditNTLIST.validator().state == QValidator.Acceptable:
             n = from_qvariant(text, int)
             log.debug("slotListingFrequency-> NTLIST = %s" % n)
             self.mdl.setListingFrequency(n)
@@ -1617,7 +1617,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the listing output for lagrangian variables
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditNTLAL.validator().state == QValidator.Acceptable:
             n = from_qvariant(text, int)
             log.debug("slotNTLAL-> NTLIST = %s" % n)
             self.mdl.setListingFrequencyLagrangian(n)
@@ -1881,7 +1881,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             writer_id = self.modelWriter.getItem(row)['id']
             self.lineEditFrequency.setEnabled(True)
             n = from_qvariant(self.lineEditFrequency.text(), int)
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.lineEditFrequency.validator().state == QValidator.Acceptable:
                 log.debug("slotPostproFrequency-> NTCHR = %s" % n)
                 self.mdl.setWriterFrequency(writer_id, str(n))
 
@@ -1895,7 +1895,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if cindex != (-1,-1):
             row = cindex.row()
             writer_id = self.modelWriter.getItem(row)['id']
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.lineEditFrequencyTime.validator().state == QValidator.Acceptable:
                 n = from_qvariant(text, float)
                 log.debug("slotPostproFrequencyTime-> FRCHR = %s" % n)
                 self.mdl.setWriterFrequency(writer_id, str(n))
@@ -2420,7 +2420,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the monitoring point output
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditFRHisto.validator().state == QValidator.Acceptable:
             n = from_qvariant(text, float)
             log.debug("slotMonitoringPointFrequencyTime-> FRHIST = %s" % n)
             self.mdl.setMonitoringPointFrequencyTime(n)
@@ -2431,7 +2431,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Input the frequency of the monitoring point output
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditHisto.validator().state == QValidator.Acceptable:
             n = from_qvariant(text, int)
             log.debug("slotMonitoringPointFrequency-> NTHIST = %s" % n)
             self.mdl.setMonitoringPointFrequency(n)
@@ -2597,7 +2597,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         @type text: C{QString}
         @param text: radius for display probes
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditProbesRadius.validator().state == QValidator.Acceptable:
             r = from_qvariant(text, float)
             self.case['probes'].setRadius(r)
 

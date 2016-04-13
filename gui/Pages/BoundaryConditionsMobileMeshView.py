@@ -101,13 +101,13 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         self.__comboModel.addItem(self.tr("Fixed displacement"), "fixed_displacement")
 
         self.comboMobilBoundary.activated[str].connect(self.__slotCombo)
-        self.pushButtonMobilBoundary.clicked[bool].connect(self.__slotFormula)
+        self.pushButtonMobilBoundary.clicked.connect(self.__slotFormula)
 
         self.__case.undoStartGlobal()
 
 
-    @pyqtSlot(str)
-    def __slotFormula(self, text):
+    @pyqtSlot()
+    def __slotFormula(self):
         """
         Run formula editor.
         """

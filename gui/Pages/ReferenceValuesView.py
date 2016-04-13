@@ -206,7 +206,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input PRESS.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditP0.validator().state == QValidator.Acceptable:
             p = from_qvariant(text, float)
             self.mdl.setPressure(p)
 
@@ -216,7 +216,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input Velocity.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditV0.validator().state == QValidator.Acceptable:
             v = from_qvariant(text, float)
             self.mdl.setVelocity(v)
 
@@ -243,7 +243,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input reference length.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditL0.validator().state == QValidator.Acceptable:
             l = from_qvariant(text, float)
             self.mdl.setLength(l)
 
@@ -253,7 +253,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input TEMPERATURE.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditT0.validator().state == QValidator.Acceptable:
             t = from_qvariant(text, float)
             self.mdl.setTemperature(t)
 
@@ -263,7 +263,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input oxydant TEMPERATURE.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditOxydant.validator().state == QValidator.Acceptable:
             t = from_qvariant(text, float)
             self.mdl.setTempOxydant(t)
 
@@ -273,7 +273,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input fuel TEMPERATURE.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditFuel.validator().state == QValidator.Acceptable:
             t = from_qvariant(text, float)
             self.mdl.setTempFuel(t)
 
@@ -283,7 +283,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Input Mass molar.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditMassMolar.validator().state == QValidator.Acceptable:
             m = from_qvariant(text, float)
             self.mdl.setMassemol(m)
 

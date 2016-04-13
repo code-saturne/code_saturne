@@ -242,7 +242,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input Relaxation coefficient for mass density
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditSRROM.validator().state == QValidator.Acceptable:
             srrom = from_qvariant(text, float)
             self.model.setSRROM(srrom)
 
@@ -252,7 +252,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input Imposed Power
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditPower.validator().state == QValidator.Acceptable:
             power = from_qvariant(text, float)
             self.model.setPower(power)
 
@@ -262,7 +262,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input Imposed current intensity
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditCurrent.validator().state == QValidator.Acceptable:
             current = from_qvariant(text, float)
             self.model.setCurrent(current)
 
@@ -313,7 +313,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditPlaneDefinitionA.validator().state == QValidator.Acceptable:
             current = from_qvariant(text, float)
             self.model.setPlaneDefinition("A", current)
 
@@ -323,7 +323,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditPlaneDefinitionB.validator().state == QValidator.Acceptable:
             current = from_qvariant(text, float)
             self.model.setPlaneDefinition("B", current)
 
@@ -333,7 +333,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditPlaneDefinitionC.validator().state == QValidator.Acceptable:
             current = from_qvariant(text, float)
             self.model.setPlaneDefinition("C", current)
 
@@ -343,7 +343,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditPlaneDefinitionD.validator().state == QValidator.Acceptable:
             current = from_qvariant(text, float)
             self.model.setPlaneDefinition("D", current)
 
@@ -353,7 +353,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Input define plane
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditEpsilon.validator().state == QValidator.Acceptable:
             current = from_qvariant(text, float)
             self.model.setPlaneDefinition("epsilon", current)
 

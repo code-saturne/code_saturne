@@ -115,7 +115,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input GX
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditX.validator().state == QValidator.Acceptable:
             gravity_x = from_qvariant(text, float)
             self.mdl.setGravity('gravity_x', gravity_x)
 
@@ -125,7 +125,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input GY
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditY.validator().state == QValidator.Acceptable:
             gravity_y = from_qvariant(text, float)
             self.mdl.setGravity('gravity_y', gravity_y)
 
@@ -135,7 +135,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Input GZ
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditZ.validator().state == QValidator.Acceptable:
             gravity_z = from_qvariant(text, float)
             self.mdl.setGravity('gravity_z', gravity_z)
 

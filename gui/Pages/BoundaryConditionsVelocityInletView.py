@@ -399,7 +399,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         @type text: C{QString}
         @param text: value
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditVelocity.validator().state == QValidator.Acceptable:
             v = from_qvariant(text, float)
             self.__boundary.setVelocity(v)
 

@@ -185,7 +185,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         """
         Input MODCPL.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditMODCPL.validator().state == QValidator.Acceptable:
             self.result['complete_model_iteration'] = from_qvariant(text, int)
 
 
@@ -690,7 +690,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         """
         Input NSTITS.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditNSTITS.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, int)
             self.model.set2WayCouplingStartIteration(value)
 

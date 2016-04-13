@@ -273,7 +273,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         """
         Return an integer for ntdmom, value of start of calculation.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditStart.validator().state == QValidator.Acceptable:
             start = from_qvariant(text, int)
         else:
             start = self.mdl.defaultValues()['start']
@@ -286,7 +286,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         """
         Return an float for ttdmom, value of start of calculation.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditStartTime.validator().state == QValidator.Acceptable:
             start = from_qvariant(text, float)
             timestart = start
         else:
@@ -346,7 +346,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         """
         Return an integer for imoold, value of restart of calculation.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditRestart.validator().state == QValidator.Acceptable:
             restart = from_qvariant(text, int)
         else:
             restart = self.mdl.defaultValues()['restart']
@@ -485,7 +485,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
     def slotBaseName(self, text):
         """
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditAverage.validator().state == QValidator.Acceptable:
             self.mdl.setLabel(self.label_select, str(text))
             self.label_select = str(text)
 

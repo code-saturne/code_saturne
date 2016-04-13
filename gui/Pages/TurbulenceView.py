@@ -245,7 +245,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         Private slot.
         Input XLOMLG.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditLength.validator().state == QValidator.Acceptable:
             l_scale = from_qvariant(text, float)
             self.model.setLengthScale(l_scale)
 

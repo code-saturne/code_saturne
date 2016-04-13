@@ -135,10 +135,10 @@ if (xray2 < xr2) {
         self.modelVISCOSITY.addItem(self.tr("orthotropic"), 'orthotrop')
 
         # Connections
-        self.groupBoxALE.clicked[bool].connect(self.slotMethod)
+        self.groupBoxALE.clicked.connect(self.slotMethod)
         self.lineEditNALINF.textChanged[str].connect(self.slotNalinf)
         self.comboBoxVISCOSITY.activated[str].connect(self.slotViscosityType)
-        self.pushButtonFormula.clicked[bool].connect(self.slotFormula)
+        self.pushButtonFormula.clicked.connect(self.slotFormula)
 
         # Validators
         validatorNALINF = IntValidator(self.lineEditNALINF, min=0)
@@ -193,7 +193,7 @@ if (xray2 < xr2) {
         """
         Input viscosity type of mesh : isotrop or orthotrop.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditNALINF.validator().state == QValidator.Acceptable:
             nalinf = from_qvariant(text, int)
             self.mdl.setSubIterations(nalinf)
 
@@ -215,8 +215,8 @@ if (xray2 < xr2) {
         return visco
 
 
-    @pyqtSlot(str)
-    def slotFormula(self, text):
+    @pyqtSlot()
+    def slotFormula(self):
         """
         Run formula editor.
         """

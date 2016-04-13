@@ -209,14 +209,14 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditAlpha.textChanged[str].connect(self.slotAlpha)
         self.lineEditLongitudinal.textChanged[str].connect(self.slotLongitudinal)
         self.lineEditTransverse.textChanged[str].connect(self.slotTransverse)
-        self.lineEditKsSaturated.textChanged[str].connect(self.slotKs)
-        self.lineEditKsSaturatedXX.textChanged[str].connect(self.slotKsXX)
-        self.lineEditKsSaturatedYY.textChanged[str].connect(self.slotKsYY)
-        self.lineEditKsSaturatedZZ.textChanged[str].connect(self.slotKsZZ)
-        self.lineEditKsSaturatedXY.textChanged[str].connect(self.slotKsXY)
-        self.lineEditKsSaturatedXZ.textChanged[str].connect(self.slotKsXZ)
-        self.lineEditKsSaturatedYZ.textChanged[str].connect(self.slotKsYZ)
-        self.lineEditThetasSaturated.textChanged[str].connect(self.slotThetas)
+        self.lineEditKsSaturated.textChanged[str].connect(self.slotKsSat)
+        self.lineEditKsSaturatedXX.textChanged[str].connect(self.slotKsXXSat)
+        self.lineEditKsSaturatedYY.textChanged[str].connect(self.slotKsYYSat)
+        self.lineEditKsSaturatedZZ.textChanged[str].connect(self.slotKsZZSat)
+        self.lineEditKsSaturatedXY.textChanged[str].connect(self.slotKsXYSat)
+        self.lineEditKsSaturatedXZ.textChanged[str].connect(self.slotKsXZSat)
+        self.lineEditKsSaturatedYZ.textChanged[str].connect(self.slotKsYZSat)
+        self.lineEditThetasSaturated.textChanged[str].connect(self.slotThetasSat)
         self.lineEditDispersion.textChanged[str].connect(self.slotDispersion)
         self.pushButtonUserLaw.clicked.connect(self.slotFormula)
         self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
@@ -432,7 +432,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditKs.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setValue(name, "ks", val)
 
@@ -442,7 +442,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditKsXX.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setValue(name, "ks_xx", val)
 
@@ -452,7 +452,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditKsYY.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setValue(name, "ks_yy", val)
 
@@ -462,7 +462,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditKsZZ.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setValue(name, "ks_zz", val)
 
@@ -472,7 +472,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditKsXY.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setValue(name, "ks_xy", val)
 
@@ -482,7 +482,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditKsXZ.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setValue(name, "ks_xz", val)
 
@@ -492,7 +492,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditKsYZ.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setValue(name, "ks_yz", val)
 
@@ -502,7 +502,87 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditThetas.validator().state == QValidator.Acceptable:
+            val = float(text)
+            self.mdl.setValue(name, "thetas", val)
+
+
+    @pyqtSlot(str)
+    def slotKsSat(self, text):
+        """
+        """
+        label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
+        if self.lineEditKsSaturated.validator().state == QValidator.Acceptable:
+            val = float(text)
+            self.mdl.setValue(name, "ks", val)
+
+
+    @pyqtSlot(str)
+    def slotKsXXSat(self, text):
+        """
+        """
+        label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
+        if self.lineEditKsSaturatedXX.validator().state == QValidator.Acceptable:
+            val = float(text)
+            self.mdl.setValue(name, "ks_xx", val)
+
+
+    @pyqtSlot(str)
+    def slotKsYYSat(self, text):
+        """
+        """
+        label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
+        if self.lineEditKsSaturatedYY.validator().state == QValidator.Acceptable:
+            val = float(text)
+            self.mdl.setValue(name, "ks_yy", val)
+
+
+    @pyqtSlot(str)
+    def slotKsZZSat(self, text):
+        """
+        """
+        label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
+        if self.lineEditKsSaturatedZZ.validator().state == QValidator.Acceptable:
+            val = float(text)
+            self.mdl.setValue(name, "ks_zz", val)
+
+
+    @pyqtSlot(str)
+    def slotKsXYSat(self, text):
+        """
+        """
+        label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
+        if self.lineEditKsSaturatedXY.validator().state == QValidator.Acceptable:
+            val = float(text)
+            self.mdl.setValue(name, "ks_xy", val)
+
+
+    @pyqtSlot(str)
+    def slotKsXZSat(self, text):
+        """
+        """
+        label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
+        if self.lineEditKsSaturatedXZ.validator().state == QValidator.Acceptable:
+            val = float(text)
+            self.mdl.setValue(name, "ks_xz", val)
+
+
+    @pyqtSlot(str)
+    def slotKsYZSat(self, text):
+        """
+        """
+        label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
+        if self.lineEditKsSaturatedYZ.validator().state == QValidator.Acceptable:
+            val = float(text)
+            self.mdl.setValue(name, "ks_yz", val)
+
+
+    @pyqtSlot(str)
+    def slotThetasSat(self, text):
+        """
+        """
+        label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
+        if self.lineEditThetasSaturated.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setValue(name, "thetas", val)
 
@@ -512,7 +592,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditThetar.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setValue(name, "thetar", val)
 
@@ -522,7 +602,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditN.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setValue(name, "n", val)
 
@@ -532,7 +612,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditL.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setValue(name, "l", val)
 
@@ -542,7 +622,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditAlpha.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setValue(name, "alpha", val)
 
@@ -552,7 +632,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditLongitudinal.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setDispersionCoefficient(name, "longitudinal", val)
 
@@ -562,7 +642,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditTransverse.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setDispersionCoefficient(name, "transverse", val)
 
@@ -572,7 +652,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditDispersion.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setDispersionCoefficient(name, "isotropic", val)
 

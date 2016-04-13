@@ -412,7 +412,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         Input NBCLST.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditNBCLST.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, int)
             self.model.setGroupOfParticlesValue(value)
 
@@ -448,7 +448,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         Input IDSTNT.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIDSTNT.validator().state == QValidator.Acceptable:
             text = self.lineEditIDSTNT.text()
             value = from_qvariant(text, int)
             valnds =  self.model.getIterSteadyStartVolume()
@@ -468,7 +468,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         Input NSTIST.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditNSTIST.validator().state == QValidator.Acceptable:
             text = self.lineEditNSTIST.text()
             value = from_qvariant(text, int)
             valids =  self.model.getIterationStartVolume()
@@ -488,7 +488,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         Input SEUIL.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditSEUIL.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setThresholdValueVolume(value)
 
@@ -521,7 +521,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         Input NSTBOR.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditNSTBOR.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, int)
             self.model.setIterationStartBoundary(value)
 
@@ -531,7 +531,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         Input SEUILF.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditSEUIL.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setThresholdValueBoundary(value)
 

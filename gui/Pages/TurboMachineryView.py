@@ -411,7 +411,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Periodicity rotation for X
         """
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditDX.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setRotationVector(rotor_id, "axis_x", val)
 
@@ -422,7 +422,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Periodicity rotation for Y
         """
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditDY.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setRotationVector(rotor_id, "axis_y", val)
 
@@ -433,7 +433,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Periodicity rotation for Z
         """
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditDZ.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setRotationVector(rotor_id, "axis_z", val)
 
@@ -444,7 +444,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Periodicity : center of rotation
         """
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditX1.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setRotationCenter(rotor_id, "invariant_x", val)
 
@@ -455,7 +455,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Periodicity : center of rotation
         """
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditY1.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setRotationCenter(rotor_id, "invariant_y", val)
 
@@ -466,7 +466,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Periodicity : center of rotation
         """
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditZ1.validator().state == QValidator.Acceptable:
             val = float(text)
             self.mdl.setRotationCenter(rotor_id, "invariant_z", val)
 

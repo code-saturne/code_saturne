@@ -266,7 +266,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonSpecies.setStyleSheet("background-color: red")
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotVelocityFormula(self):
         """
         """
@@ -356,7 +356,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonTurbulence.setToolTip(result)
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotThermalFormula(self):
         """
         Input the initial formula of thermal scalar
@@ -388,7 +388,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonThermal.setToolTip(result)
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotSpeciesFormula(self):
         """
         Input the initial formula of species
@@ -416,7 +416,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonSpecies.setToolTip(result)
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotMeteoFormula(self):
         """
         """
@@ -591,7 +591,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotPressureFormula(self):
         """
         Input the initial Pressure formula
@@ -622,7 +622,7 @@ pressure = p0 + g * ro * z;\n"""
 
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotHydraulicHeadFormula(self):
         """
         Input the initial Hydraulic Head formula
@@ -650,7 +650,7 @@ pressure = p0 + g * ro * z;\n"""
 
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotDensityFormula(self):
         """
         Input the initial Density formula
@@ -678,7 +678,7 @@ pressure = p0 + g * ro * z;\n"""
 
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotTemperatureFormula(self):
         """
         Input the initial Temperature formula
@@ -706,7 +706,7 @@ pressure = p0 + g * ro * z;\n"""
 
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotEnergyFormula(self):
         """
         Input the initial Energy formula

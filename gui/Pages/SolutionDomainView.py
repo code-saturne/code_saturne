@@ -1540,7 +1540,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         @type text: C{QString}
         @param text: max angle of warped faces
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditWarp.validator().state == QValidator.Acceptable:
             var = float(text)
             self.mdl.setCutAngle(var)
 
@@ -1572,7 +1572,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         @type text: C{QString}
         @param text: angle for mesh smoothing
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditMeshSmooth.validator().state == QValidator.Acceptable:
             var = float(text)
             self.mdl.setSmoothAngle(var)
 
@@ -1760,7 +1760,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity translation for X
         """
         if self.perio_mode != "rotation" or self.perio_mode != "mixed":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.lineEditTX.validator().state == QValidator.Acceptable:
                 val = float(text)
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_x', val)
 
@@ -1771,7 +1771,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity translation for Y
         """
         if self.perio_mode != "rotation" or self.perio_mode != "mixed":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.lineEditTY.validator().state == QValidator.Acceptable:
                 val = float(text)
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_y', val)
 
@@ -1782,7 +1782,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity translation for Z
         """
         if self.perio_mode != "rotation" or self.perio_mode != "mixed":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.lineEditTZ.validator().state == QValidator.Acceptable:
                 val = float(text)
                 self.mdl.setTranslationDirection(self.perio_id, 'translation_z', val)
 
@@ -1793,7 +1793,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity rotation angle
         """
         if self.perio_mode == "rotation":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.lineEditAngle.validator().state == QValidator.Acceptable:
                 angle = float(text)
                 self.mdl.setRotationAngle(self.perio_id, angle)
 
@@ -1804,7 +1804,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity rotation for X
         """
         if self.perio_mode == "rotation":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.lineEditDX.validator().state == QValidator.Acceptable:
                 val = float(text)
                 self.mdl.setRotationVector(self.perio_id, "axis_x", val)
 
@@ -1815,7 +1815,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity rotation for Y
         """
         if self.perio_mode == "rotation":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.lineEditDY.validator().state == QValidator.Acceptable:
                 val = float(text)
                 self.mdl.setRotationVector(self.perio_id, "axis_y", val)
 
@@ -1826,7 +1826,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity rotation for Z
         """
         if self.perio_mode == "rotation":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.lineEditDZ.validator().state == QValidator.Acceptable:
                 val = float(text)
                 self.mdl.setRotationVector(self.perio_id, "axis_z", val)
 
@@ -1837,7 +1837,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.lineEditX1.validator().state == QValidator.Acceptable:
                 val = float(text)
                 self.mdl.setRotationCenter(self.perio_id, "invariant_x", val)
 
@@ -1848,7 +1848,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.lineEditY1.validator().state == QValidator.Acceptable:
                 val = float(text)
                 self.mdl.setRotationCenter(self.perio_id, "invariant_y", val)
 
@@ -1859,7 +1859,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
-            if self.sender().validator().state == QValidator.Acceptable:
+            if self.lineEditZ1.validator().state == QValidator.Acceptable:
                 val = float(text)
                 self.mdl.setRotationCenter(self.perio_id, "invariant_z", val)
 

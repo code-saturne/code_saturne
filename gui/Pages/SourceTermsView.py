@@ -262,7 +262,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
             self.pushButtonSpecies.setStyleSheet("background-color: red")
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotMomentumFormula(self):
         """
         Set momentumFormula of the source term
@@ -308,7 +308,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
             self.pushButtonMomentum.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotSpeciesFormula(self):
         """
         """
@@ -339,7 +339,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
             self.pushButtonSpecies.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotSpeciesGroundWaterFormula(self):
         """
         """
@@ -371,7 +371,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
             self.pushButtonSpecies2.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotRichardsFormula(self):
         """
         """
@@ -422,7 +422,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         return th_sca_name, unit
 
 
-    @pyqtSlot(str)
+    @pyqtSlot()
     def slotThermalFormula(self):
         """
         Input the initial formula of thermal scalar

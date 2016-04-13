@@ -275,7 +275,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         """
         Set value for parameter RELAXP
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditRELAXP.validator().state == QValidator.Acceptable:
             relaxp = from_qvariant(text, float)
             self.model.setPressureRelaxation(relaxp)
             log.debug("slotRELAXP-> %s" % relaxp)
@@ -286,7 +286,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         """
         Set value for parameter SRROM
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditSRROM.validator().state == QValidator.Acceptable:
             srrom = from_qvariant(text, float)
             self.model.setDensityRelaxation(srrom)
             log.debug("slotSRROM-> %s" % srrom)
@@ -319,7 +319,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         log.debug("slotNTERUP-> %s" % NTERUP)
 
 
-    @pyqtSlot(str)
+    @pyqtSlot(int)
     def slotNTERUP2(self, var):
         """
         Set value for parameter piso sweep number

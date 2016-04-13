@@ -251,7 +251,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
 
     @pyqtSlot(str)
     def slotZone(self, text):
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditZone.validator().state == QValidator.Acceptable:
             nb_zone = from_qvariant(text, int)
             self.__boundary.setOutputRadiativeZone(nb_zone)
             return nb_zone

@@ -115,7 +115,7 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         """
         Input OMEGAX
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditOMEGAX.validator().state == QValidator.Acceptable:
             omega_x = from_qvariant(text, float)
             self.mdl.setOmega('omega_x', omega_x)
 
@@ -125,7 +125,7 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         """
         Input OMEGAY
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditOMEGAY.validator().state == QValidator.Acceptable:
             omega_y = from_qvariant(text, float)
             self.mdl.setOmega('omega_y', omega_y)
 
@@ -135,7 +135,7 @@ class CoriolisSourceTermsView(QWidget, Ui_CoriolisSourceTermsForm):
         """
         Input OmegaZ
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditOMEGAZ.validator().state == QValidator.Acceptable:
             omega_z = from_qvariant(text, float)
             self.mdl.setOmega('omega_z', omega_z)
 
