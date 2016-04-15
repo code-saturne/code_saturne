@@ -1,18 +1,60 @@
-!***********************************************************************
+!-------------------------------------------------------------------------------
+
+! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
+! Copyright (C) 1998-2016 EDF S.A.
+!
+! This program is free software; you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the Free Software
+! Foundation; either version 2 of the License, or (at your option) any later
+! version.
+!
+! This program is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+! FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+! details.
+!
+! You should have received a copy of the GNU General Public License along with
+! this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+! Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+!-------------------------------------------------------------------------------
+
+!===============================================================================
+! Function:
+! ---------
+
+!> \file predvv.f90
+!>
+!> \brief This subroutine solves a linear system with the gauss method.
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nn            matrix columns number
+!> \param[in]     mm            matrix rows number
+!> \param[in]     aa            linear system matrix
+!> \param[out]    xx            linear system solution
+!> \param[in]     bb            linear system right hand side
+!_______________________________________________________________________________
+
 subroutine gauss(nn,mm,aa,xx,bb)
-!***************
 
-! solves a linear system with the gauss method
+!===============================================================================
 
-! **********************************************************************
+!===============================================================================
+! Module files
+!===============================================================================
 
-! **********************************************************************
+use entsor, only:nfecra
+
+!===============================================================================
 
 implicit none
-
-integer          ilisti
-parameter       (ilisti = 6)
 
 integer          nn, mm
 double precision aa(nn,mm), xx(nn), bb(nn)
@@ -20,24 +62,21 @@ double precision, allocatable, dimension (:,:) :: ap
 double precision, allocatable, dimension (:)   :: bp
 
 integer          ii, jj, kk, ll
-integer          ipass, ipivot, ipermu, izero, ipivok
+integer          ipass, ipivot, ipermu, ipivok
 double precision akk, aik, aij, bi, sum, rr, residu
 
-double precision time1, time2
-
-! **********************************************************************
+!===============================================================================
 
 if (nn.ne.mm) then
-  print*,'the matrix is not triangular -> stop'
+  write(nfecra,*) &
+       "Gaussian elimination (gauss.f90): the matrix is not triangular, ", &
+       "stop the calculation."
   call csexit(1)
 endif
-
 
 ! --- save the matrix which will be modified by the triangularisation
 
 allocate (ap(nn,mm), bp(nn))
-
-print*,"n x m",nn,mm
 
 do jj = 1, nn
   do ii = 1, mm
@@ -45,8 +84,6 @@ do jj = 1, nn
   enddo
   bp(jj) = bb(jj)
 enddo
-
-call cpu_time(time1)
 
 ! --- triangulise the matrix
 
@@ -57,15 +94,15 @@ ipermu = 0
 kk = 1
 do while (kk.lt.nn)
 
-
   ipass = ipass + 1
   if( ipass .gt. (nn) )then
-    print*,'ipass > n',ipass,'>',nn,'-> stop'
-    print*,'verify the Gauss pivot'
-    print*,"gauss diagnostic:"
-    print*,"pivoting on ",ipivot,"cells"
-    print*,"permuting on ",ipermu,"cells"
-    stop
+    write(nfecra,*) "Gaussian elimnitation (gauss.f90):"
+    write(nfecra,*) "ipass > n',ipass,'>',nn,'-> stop"
+    write(nfecra,*) "verify the Gauss pivot"
+    write(nfecra,*) "gauss diagnostic:"
+    write(nfecra,*) "pivoting on ",ipivot,"cells"
+    write(nfecra,*) "permuting on ",ipermu,"cells"
+    call csexit(1)
   endif
 
   ! looking for the greatest coefficient
@@ -81,10 +118,9 @@ do while (kk.lt.nn)
   enddo
 
   if (ll.eq.0) then
-    print*,"pas de pivot non nul => arret"
-    stop
-  else
-    print*,"pivoting",kk,ll,akk
+    write(nfecra,*) &
+         "Gaussian elimination (gauss.f90): no non zero pivot => stop"
+    call csexit(1)
   endif
 
   ! pivoting line kk with line ll except if kk = ll
@@ -115,23 +151,11 @@ do while (kk.lt.nn)
     bp(ii) = bp(ii) - aik*bp(kk)
   enddo
 
-  ! call prtmat(nn,mm,ap,bp)
-
   kk = kk + 1
 
 enddo
 
 ! --- solves the triangular linear system
-
-izero = 0
-do ii = 1, nn
-  if (ap(ii,ii).eq.0.d0) izero = ii
-enddo
-if (izero.ne.0) then
-  write(ilisti,*) "Found zeros on diagonal of triangulised matrix"
-  write(ilisti,*) "izero = ","ap(izero,izero) = "
-  write(ilisti,*)  izero    , ap(izero,izero)
-endif
 
 xx(nn) = bp(nn)/ap(nn,nn)
 do ii = nn-1, 1, -1
@@ -152,25 +176,8 @@ do ii = 1, nn
   residu = residu + rr**2
 enddo
 
-call cpu_time(time2)
-
-write(*     ,1000) '*** Gauss algorithm ***'
-write(*     ,1002) 'Iterations: ',1
-write(*     ,1003) 'Residu    : ',residu
-write(*     ,1003) 'CPU time  : ',time2-time1
-write(ilisti,1000) '*** Gauss algorithm ***'
-write(ilisti,1002) 'Iterations: ',1
-write(ilisti,1003) 'Residu    : ',residu
-write(ilisti,1003) 'CPU time  : ',time2-time1
-
-
 deallocate (ap, bp)
 
 return
-
-1000 format(/,a)
-1001 format(4x,a12)
-1002 format(4x,a12,i14)
-1003 format(4x,a12,e14.5)
 
 end subroutine gauss

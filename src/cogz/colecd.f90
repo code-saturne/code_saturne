@@ -320,7 +320,7 @@ if (indjon.eq.1) then
 
     ! Oxydant
     igoxy(1) = 2
-    iereac(igoxy(2)) = 2
+    iereac(igoxy(1)) = 2
     read (impfpp,*,err=999,end=999) (compog(ige,igoxy(1)),ige=1,ngaze)
     if (compog(iereac(igoxy(1)),igoxy(1)).eq.0.d0) then
       write(nfecra,9989) iereac(igoxy(1)), igoxy(1), compog(iereac(igoxy(1)),igoxy(1))
