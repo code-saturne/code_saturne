@@ -565,12 +565,12 @@ if (ncesmp.gt.0) then
     endif
   enddo
 
-  ! On incremente SMBRS par -Gamma RTPA et ROVSDT par Gamma (*theta)
+  ! On incremente SMBRS par -Gamma RTPA et ROVSDT par Gamma
   call catsma &
   !==========
- ( ncelet , ncel   , ncesmp , iiun   , isso2t(iscal) , thetv  ,   &
+ ( ncelet , ncel   , ncesmp , iiun   , isso2t(iscal) ,            &
    icetsm , itypsm(1,ivar) ,                                      &
-   cell_f_vol , cvara_var    , smacel(1,ivar) , srcmas   ,            &
+   cell_f_vol , cvara_var    , smacel(1,ivar) , srcmas   ,        &
    smbrs  , rovsdt , w1)
 
   deallocate(srcmas)

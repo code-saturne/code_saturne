@@ -803,12 +803,12 @@ if (ncesmp.gt.0) then
   ! Integer equal to 1 (for navsto: nb of sur-iter)
   iiun = 1
 
-  ! We incremente smbrs with -Gamma.var_prev and rovsdt with Gamma (*theta)
+  ! We incremente smbrs with -Gamma.var_prev and rovsdt with Gamma
   ivar = ik
 
   call catsma &
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   isto2t , thetav(ivar)    ,                                     &
+   isto2t ,                                                       &
    icetsm , itypsm(:,ivar)  ,                                     &
    volume , cvara_k         , smacel(:,ivar) , smacel(1,ipr) ,    &
    smbrk  , w2     , w4 )
@@ -817,7 +817,7 @@ if (ncesmp.gt.0) then
 
   call catsma &
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   isto2t , thetav(ivar)    ,                                     &
+   isto2t ,                                                       &
    icetsm , itypsm(:,ivar)  ,                                     &
    volume , cvara_ep        , smacel(:,ivar) , smacel(1,ipr) ,    &
    smbre  , w3     , w5 )
@@ -836,7 +836,7 @@ if (ncesmp.gt.0) then
     enddo
   endif
 
-  ! Implicit part (theta is already taken into account in catsma)
+  ! Implicit part
   do iel = 1, ncel
     tinstk(iel) = tinstk(iel) + w2(iel)
     tinste(iel) = tinste(iel) + w3(iel)

@@ -311,10 +311,10 @@ do isou = 1, dimrij
     !       Integer equal to 1 (for navsto: nb of sur-iter)
     iiun = 1
 
-    ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma (*theta)
+    ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma
     call catsmt &
     !==========
-   ( ncelet , ncel   , ncesmp , iiun     , isto2t , thetv  ,          &
+   ( ncelet , ncel   , ncesmp , iiun     , isto2t ,                   &
      icetsm , itypsm(:,ivar + isou - 1)  ,                            &
      cell_f_vol , cvara_var  , smacel(:,ivar+isou-1)  , smacel(:,ipr) ,   &
      smbr   ,  rovsdt    , w1 )

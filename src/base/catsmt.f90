@@ -36,9 +36,6 @@
 !> \param[in]     iterns        iteration number on Navier-Stoke
 !> \param[in]     isnexp        sources terms of treated phasis extrapolation
 !>                              indicator
-!> \param[in]     thetv         theta scheme for the variable
-!>                              \f$ \varia^\theta = \theta \varia^{n+1}
-!>                                                + (1-\theta)\varia^n \f$
 !> \param[in]     icetsm        source mass cells pointer
 !> \param[in]     itpsmp        mass source type for the working variable
 !>                              (see \ref cs_user_mass_source_terms)
@@ -55,7 +52,6 @@
 
 subroutine catsmt &
  ( ncelet , ncel   , ncesmp , iterns , isnexp ,                   &
-   thetv  ,                                                       &
    icetsm , itpsmp ,                                              &
    volume , pvara  , smcelp , gamma  ,                            &
    tsexp  , tsimp  , gapinj )
@@ -71,7 +67,6 @@ implicit none
 
 integer          ncelet, ncel  , ncesmp, iterns, isnexp
 integer          icetsm(ncesmp), itpsmp(ncesmp)
-double precision thetv
 double precision volume(ncelet)
 double precision pvara(6,ncelet)
 double precision smcelp(ncesmp,6), gamma (ncesmp)
@@ -89,7 +84,7 @@ integer ii, iel, isou
 !     Sinon, on ajoute le terme source GAMMA*(f_i-f^(n+1))
 
 !     Dans TSIMP, on ajoute le terme qui ira sur la diagonale,
-!       soit Gamma (*theta en cas d'ordre 2)
+!       soit Gamma
 !     Dans TSEXP on ajoute le terme correspondant du second membre
 !       cad Gamma * Pvar (avec Pvar)
 !     Dans GAPINJ on place le terme Gamma Pinj qui ira au second membre
@@ -120,7 +115,7 @@ if(isnexp.gt.0) then
     iel = icetsm(ii)
     if (gamma(ii).gt.0.d0 .and. itpsmp(ii).eq.1) then
       do isou = 1, 6
-        tsimp(isou,isou,iel) = tsimp(isou,isou,iel)+volume(iel)*gamma(ii)*thetv
+        tsimp(isou,isou,iel) = tsimp(isou,isou,iel)+volume(iel)*gamma(ii)
       enddo
     endif
   enddo

@@ -580,9 +580,9 @@ if (ncesmp.gt.0) then
   !       Integer equal to 1 (for navsto: nb of over-iter)
   iiun = 1
 
-  !       We increment smbr by -Gamma.var_prev and rovsdt by Gamma (*theta)
+  !       We increment smbr by -Gamma.var_prev and rovsdt by Gamma
   call catsma                                                     &
- ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,           &
+ ( ncelet , ncel   , ncesmp , iiun   , isto2t ,                   &
    icetsm , itypsm(1,ivar) ,                                      &
    cell_f_vol , cvara_var  , smacel(1,ivar) , smacel(1,ipr) ,     &
    smbr   ,  rovsdt , w2 )

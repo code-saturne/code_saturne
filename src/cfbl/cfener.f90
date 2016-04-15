@@ -254,7 +254,7 @@ if (ncesmp.gt.0) then
   iterns = 1
   allocate(gapinj(ncelet))
   call catsma ( ncelet , ncel , ncesmp , iterns ,                              &
-                isno2t, thetav(ivar),                                          &
+                isno2t,                                                        &
                 icetsm , itypsm(1,ivar),                                       &
                 cell_f_vol    , cvara_energ   , smacel(1,ivar),                &
                 smacel(1,ipr) , smbrs , rovsdt , gapinj)

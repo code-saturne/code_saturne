@@ -303,9 +303,9 @@ if (ncesmp.gt.0) then
   ! Integer equal to 1 (forr navsto: nb of sur-iter)
   iiun = 1
 
-  ! We increment smbr with -Gamma.var_prev. and rovsdt with Gamma (*theta)
+  ! We increment smbr with -Gamma.var_prev. and rovsdt with Gamma
   call catsma &
- ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,           &
+ ( ncelet , ncel   , ncesmp , iiun   , isto2t ,                   &
    icetsm , itypsm(:,ivar)  ,                                     &
    volume , cvara_ep        , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   , rovsdt , w1 )

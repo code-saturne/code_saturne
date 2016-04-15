@@ -465,12 +465,12 @@ if (ncesmp.gt.0) then
   iiun = 1
 
   ! --- Explicit and Implicit part
-  !     -Gamma.var_prev is added to the RHS and Gamma*theta to tinssa
+  !     -Gamma.var_prev is added to the RHS and Gamma to tinssa
   ivar = inusa
 
   call catsma &
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   isto2t , thetv  ,                                              &
+   isto2t ,                                                       &
    icetsm , itypsm(1,ivar) ,                                      &
    volume , cvara_nusa     , smacel(1,ivar) , smacel(1,ipr) ,     &
    rhssa  , tinssa , w1 )

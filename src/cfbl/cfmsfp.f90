@@ -377,7 +377,7 @@ if (ncesmp.gt.0) then
 
   call catsmv &
        !==========
-     ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
+     ( ncelet , ncel , ncesmp , iterns , isno2t,                   &
        icetsm , itypsm(1,iu),                                      &
        cell_f_vol   , vel0 , smacel(1,iu) ,smacel(1,ipr) ,         &
        tsexp  , tsimp , gavinj )

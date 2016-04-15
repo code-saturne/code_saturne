@@ -576,12 +576,12 @@ if (ncesmp.gt.0) then
   ! Entier egal a 1 (pour navsto : nb de sur-iter)
   iiun = 1
 
-  ! On incremente SMBRS par -Gamma.var_prev et ROVSDT par Gamma (*theta)
+  ! On incremente SMBRS par -Gamma.var_prev et ROVSDT par Gamma
   ivar = ik
 
   call catsma &
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   isto2t , thetav(ivar) ,                                        &
+   isto2t ,                                                       &
    icetsm , itypsm(1,ivar) ,                                      &
    volume , cvara_k      , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbrk  , tinstk , gamk )
@@ -590,7 +590,7 @@ if (ncesmp.gt.0) then
 
   call catsma &
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   isto2t , thetav(ivar) ,                                        &
+   isto2t ,                                                       &
    icetsm , itypsm(1,ivar) ,                                      &
    volume , cvara_omg    , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbrw  , tinstw , gamw )
