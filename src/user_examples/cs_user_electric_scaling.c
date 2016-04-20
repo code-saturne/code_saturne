@@ -39,6 +39,7 @@
 
 #include "cs_base.h"
 #include "cs_mesh.h"
+#include "cs_math.h"
 #include "cs_mesh_quantities.h"
 #include "cs_elec_model.h"
 #include "bft_mem.h"
@@ -65,8 +66,6 @@ BEGIN_C_DECLS
  *
  */
 /*----------------------------------------------------------------------------*/
-
-const double epzerol = 1.e-12;
 
 /*============================================================================
  * User function definitions
@@ -222,7 +221,7 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
 
     if (fabs(somje) > 1.-20)
       coepot = cs_glob_elec_option->couimp * cs_glob_elec_option->pot_diff
-              / CS_MAX(somje, epzerol);
+              / CS_MAX(somje, cs_math_epzero);
 
     bft_printf("imposed current %14.5E, Dpot %14.5E, Somje %14.5E\n",
                cs_glob_elec_option->couimp,

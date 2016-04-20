@@ -48,6 +48,7 @@
 
 #include "cs_log.h"
 #include "cs_parall.h"
+#include "cs_math.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_location.h"
 #include "cs_time_step.h"
@@ -248,8 +249,6 @@ const cs_real_t cs_elec_permvi = 1.2566e-6;
  *
  */
 const cs_real_t cs_elec_epszer = 8.854e-12;
-
-const cs_real_t epzero = 1.e-12;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -1251,7 +1250,7 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
       for (int ii = 0; ii < ngaz; ii++) {
         yvol[ii] = ym[ii] * roesp[ii] / CS_F_(rho)->val[iel];
         if (yvol[ii] <= 0.)
-          yvol[ii] = epzero * epzero;
+          yvol[ii] = cs_math_epzero * cs_math_epzero;
       }
 
       /* compute molecular viscosity : kg/(m s) */
@@ -2226,7 +2225,7 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
       cs_parall_sum(1, CS_DOUBLE, &somje);
 
       coepot = cs_glob_elec_option->couimp * cs_glob_elec_option->pot_diff
-              / CS_MAX(somje, epzero);
+              / CS_MAX(somje, cs_math_epzero);
       coepoa = coepot;
 
       if (coepot > 1.5)
@@ -2337,7 +2336,7 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
 
     cs_parall_sum(1, CS_DOUBLE, &somje);
 
-    coepot = cs_glob_elec_option->puisim / CS_MAX(somje, epzero);
+    coepot = cs_glob_elec_option->puisim / CS_MAX(somje, cs_math_epzero);
     double coefav = coepot;
 
     if (coepot > 1.5)

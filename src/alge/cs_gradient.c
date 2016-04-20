@@ -54,6 +54,7 @@
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -1751,8 +1752,6 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
   int n_sweeps = 0;
   cs_real_t residue = 0.;
 
-  const double epzero = 1.e-12;
-
   if (nswrgp <  1) return;
 
   /* Reconstruct gradients for non-orthogonal meshes */
@@ -1848,7 +1847,7 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
   if (fvq->max_vol > 1)
     rnorm /= fvq->max_vol;
 
-  if (rnorm <= epzero)
+  if (rnorm <= cs_math_epzero)
     return;
 
   /* Vector OijFij is computed in CLDijP */
@@ -3418,8 +3417,6 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
   BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
 
-  const cs_real_t epzero = 1.e-12;
-
   /* Gradient reconstruction to handle non-orthogonal meshes */
   /*---------------------------------------------------------*/
 
@@ -3428,7 +3425,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
   l2_norm = _l2_norm_1(9*n_cells, (cs_real_t *)gradv);
   l2_residual = l2_norm;
 
-  if (l2_norm > epzero) {
+  if (l2_norm > cs_math_epzero) {
 
     /* Iterative process */
     /*-------------------*/
@@ -4361,8 +4358,6 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
 
   BFT_MALLOC(rhs, n_cells_ext, cs_real_63_t);
 
-  const cs_real_t epzero = 1.e-12;
-
   /* Gradient reconstruction to handle non-orthogonal meshes */
   /*---------------------------------------------------------*/
 
@@ -4371,7 +4366,7 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
   l2_norm = _l2_norm_1(18*n_cells, (cs_real_t *)grad);
   l2_residual = l2_norm ;
 
-  if (l2_norm > epzero) {
+  if (l2_norm > cs_math_epzero) {
 
     /* Iterative process */
     /*-------------------*/
@@ -4950,8 +4945,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
   int n_sweeps = 0;
   cs_real_t l2_residual = 0.;
 
-  const double epzero = 1.e-12;
-
   if (nswrgp < 1) return;
 
   /* Reconstruct gradients for non-orthogonal meshes */
@@ -4963,7 +4956,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
   rnorm = _l2_norm_1(3*n_cells, (cs_real_t *)grad);
 
-  if (rnorm <= epzero)
+  if (rnorm <= cs_math_epzero)
     return;
 
   BFT_MALLOC(rhs, n_cells_ext, cs_real_3_t);
