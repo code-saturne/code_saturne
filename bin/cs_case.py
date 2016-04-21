@@ -811,7 +811,8 @@ export SALOME_INSTANCE=$3
             s_args = d.solver_command()
             if len(cmd) > 0:
                 cmd += ' : '
-            cmd += '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
+            cmd += '-n ' + str(d.n_procs) \
+                + ' -wdir ' + os.path.basename(s_args[0]) \
                 + ' ' + s_args[1] + s_args[2]
             app_id += 1
 
@@ -819,7 +820,8 @@ export SALOME_INSTANCE=$3
             s_args = d.solver_command(app_id=app_id)
             if len(cmd) > 0:
                 cmd += ' : '
-            cmd += '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
+            cmd += '-n ' + str(d.n_procs) \
+                + ' -wdir ' + os.path.basename(s_args[0]) \
                 + ' ' + s_args[1] + s_args[2]
             app_id += 1
 
@@ -839,14 +841,16 @@ export SALOME_INSTANCE=$3
 
         for d in self.syr_domains:
             s_args = d.solver_command()
-            cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
+            cmd = '-n ' + str(d.n_procs) \
+                + ' -wdir ' + os.path.basename(s_args[0]) \
                 + ' ' + s_args[1] + s_args[2] + '\n'
             e.write(cmd)
             app_id += 1
 
         for d in self.domains:
             s_args = d.solver_command()
-            cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
+            cmd = '-n ' + str(d.n_procs) \
+                + ' -wdir ' + os.path.basename(s_args[0]) \
                 + ' ' + s_args[1] + s_args[2] + '\n'
             e.write(cmd)
             app_id += 1
