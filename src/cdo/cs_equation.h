@@ -592,6 +592,20 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
                                       cs_real_t             *conv_flux);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Cellwise computation of the diffusive flux across all faces.
+ *         Primal or dual faces are considered according to the space scheme.
+ *
+ * \param[in]      eq          pointer to a cs_equation_t structure
+ * \param[in, out] diff_flux   value of the diffusive flux
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_diff_flux(const cs_equation_t   *eq,
+                              cs_real_t             *diff_flux);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

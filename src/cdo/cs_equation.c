@@ -200,6 +200,22 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Cellwise computation of the diffusive flux across all faces.
+ *         Primal or dual faces are considered according to the space scheme
+ *
+ * \param[in]       builder    pointer to a builder structure
+ * \param[in]       f_vals     pointer to an array of field values
+ * \param[in, out]  diff_flux  pointer to the value of the diffusive flux
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_get_cw_dflux_t)(const cs_real_t    *f_vals,
+                             void               *builder,
+                             cs_real_t          *d_flux);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve a pointer to a buffer of size at least the number of unknows
  *
  * \param[in, out]  builder    pointer to a builder structure
@@ -340,6 +356,7 @@ struct _cs_equation_t {
   cs_equation_update_field_t    *update_field;
   cs_equation_extra_op_t        *postprocess;
   cs_equation_get_fap_t         *compute_flux_across_plane;
+  cs_equation_get_cw_dflux_t    *compute_cellwise_diff_flux;
   cs_equation_get_f_values_t    *get_f_values;
   cs_equation_get_tmpbuf_t      *get_tmpbuf;
 
@@ -1605,6 +1622,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
     eq->get_tmpbuf = cs_cdovb_scaleq_get_tmpbuf;
     eq->get_f_values = NULL;
     eq->compute_flux_across_plane = cs_cdovb_scaleq_compute_flux_across_plane;
+    eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_compute_cw_diff_flux;
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
@@ -1617,6 +1635,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
     eq->get_tmpbuf = cs_cdofb_scaleq_get_tmpbuf;
     eq->get_f_values = cs_cdofb_scaleq_get_face_values;
     eq->compute_flux_across_plane = NULL;
+    eq->compute_cellwise_diff_flux = NULL;
     break;
 
   default:
@@ -3443,12 +3462,42 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
   /* Get the mesh location id from its name */
   _check_ml_name(ml_name, &ml_id);
 
-  /* Do the computation */
+  /* Perform the computation */
   eq->compute_flux_across_plane(eq->builder,
                                 fld->val,
                                 ml_id,
                                 direction,
                                 diff_flux, conv_flux);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Cellwise computation of the diffusive flux across all faces.
+ *         Primal or dual faces are considered according to the space scheme.
+ *
+ * \param[in]      eq          pointer to a cs_equation_t structure
+ * \param[in, out] diff_flux   value of the diffusive flux
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_diff_flux(const cs_equation_t   *eq,
+                              cs_real_t             *diff_flux)
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+  if (eq->compute_cellwise_diff_flux == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Cellwise computation of the diffusive flux is not\n"
+                " available for equation %s\n"), eq->name);
+
+  cs_field_t  *fld = cs_field_by_id(eq->field_id);
+
+  /* Perform the computation */
+  eq->compute_cellwise_diff_flux(fld->val,
+                                 eq->builder,
+                                 diff_flux);
+
 }
 
 /*----------------------------------------------------------------------------*/

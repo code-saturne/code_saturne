@@ -44,7 +44,6 @@
 #include <bft_printf.h>
 
 #include "cs_math.h"
-#include "cs_hodge.h"
 #include "cs_property.h"
 
 /*----------------------------------------------------------------------------
@@ -138,11 +137,11 @@ static const cs_real_t  cs_weak_nitsche_pena_coef = 500;
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_grad_lagrange_cell_pfc(short int             ifc,
-                        const cs_quant_t      pfq,
-                        const cs_nvec3_t      deq,
-                        cs_real_3_t           grd_func)
+inline static void
+_grd_c_lagrange_pfc(short int             ifc,
+                    const cs_quant_t      pfq,
+                    const cs_nvec3_t      deq,
+                    cs_real_3_t           grd_func)
 {
   cs_real_t  ohf = -ifc/(deq.meas * fabs(_dp3(pfq.unitv, deq.unitv)));
 
@@ -164,12 +163,12 @@ _grad_lagrange_cell_pfc(short int             ifc,
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_grad_lagrange_vtx_pefc(const cs_real_3_t     ubase,
-                        const cs_real_3_t     udir,
-                        cs_real_t             len_vc,
-                        const cs_nvec3_t      deq,
-                        cs_real_3_t           grd_func)
+inline static void
+_grd_v_lagrange_pefc(const cs_real_3_t     ubase,
+                     const cs_real_3_t     udir,
+                     cs_real_t             len_vc,
+                     const cs_nvec3_t      deq,
+                     cs_real_3_t           grd_func)
 {
   cs_real_3_t  unormal;
 
@@ -276,41 +275,39 @@ _compute_wbs_stiffness(const cs_cdo_quantities_t   *quant,
   const cs_real_t  *xc = quant->cell_centers + 3*lm->c_id;
 
   /* Define the length and unit vector of the segment x_c --> x_v */
-  for (cs_lnum_t i = 0; i < lm->n_vc; i++) {
+  for (short int v = 0; v < lm->n_vc; v++) {
 
-    const cs_real_t  *xv = quant->vtx_coord + 3*lm->v_ids[i];
+    const cs_real_t  *xv = quant->vtx_coord + 3*lm->v_ids[v];
 
-    cs_math_3_length_unitv(xc, xv, len_vc + i, unit_vc[i]);
+    cs_math_3_length_unitv(xc, xv, len_vc + v, unit_vc[v]);
 
   } // Loop on cell vertices
 
   /* Loop on cell faces */
-  for (int ii = 0; ii < lm->n_fc; ii++) {
+  for (short int f = 0; f < lm->n_fc; f++) {
 
-    cs_quant_t  pfq = lm->face[ii];
-    cs_nvec3_t  deq = lm->dedge[ii];
+    cs_quant_t  pfq = lm->face[f];
+    cs_nvec3_t  deq = lm->dedge[f];
 
     /* Gradient of the lagrange function related to a cell in each p_{f,c} */
-    _grad_lagrange_cell_pfc(lm->f_sgn[ii], pfq, deq, grd_c);
+    _grd_c_lagrange_pfc(lm->f_sgn[f], pfq, deq, grd_c);
 
     /* Weights related to each vertex attached to this face */
-    _compute_wvf_pefcvol(ii, pfq, deq, lm, wvf, pefc_vol);
+    _compute_wvf_pefcvol(f, pfq, deq, lm, wvf, pefc_vol);
 
     /* Loop on face edges to scan p_{e,f,c} subvolumes */
-    for (int i = lm->f2e_idx[ii], jj = 0; i < lm->f2e_idx[ii+1]; i++, jj++) {
+    for (int i = lm->f2e_idx[f], jj = 0; i < lm->f2e_idx[f+1]; i++, jj++) {
 
-      const short int  _e = lm->f2e_ids[i];
       const double  subvol = pefc_vol[jj];
-      const short int  _v1 = lm->e2v_ids[2*_e];
-      const short int  _v2 = lm->e2v_ids[2*_e+1];
+      const short int  e = lm->f2e_ids[i];
+      const short int  v1 = lm->e2v_ids[2*e];
+      const short int  v2 = lm->e2v_ids[2*e+1];
 
       /* Gradient of the lagrange function related to v1 */
-      _grad_lagrange_vtx_pefc(unit_vc[_v2], unit_vc[_v1], len_vc[_v1], deq,
-                              grd_v1);
+      _grd_v_lagrange_pefc(unit_vc[v2], unit_vc[v1], len_vc[v1], deq, grd_v1);
 
       /* Gradient of the lagrange function related to a v2 */
-      _grad_lagrange_vtx_pefc(unit_vc[_v1], unit_vc[_v2], len_vc[_v2], deq,
-                              grd_v2);
+      _grd_v_lagrange_pefc(unit_vc[v1], unit_vc[v2], len_vc[v2], deq, grd_v2);
 
       /* Gradient of the lagrange function related to a face.
          This formula is a consequence of the Partition of the Unity */
@@ -328,11 +325,11 @@ _compute_wbs_stiffness(const cs_cdo_quantities_t   *quant,
           for (int k = 0; k < 3; k++)
             glv[si][k] += wvf[si]*grd_f[k];
 
-        if (si == _v1) // Vertex 1 contrib
+        if (si == v1) // Vertex 1 contrib
           for (int k = 0; k < 3; k++)
             glv[si][k] += grd_v1[k];
 
-        if (si == _v2) // Vertex 2 contrib
+        if (si == v2) // Vertex 2 contrib
           for (int k = 0; k < 3; k++)
             glv[si][k] += grd_v2[k];
 
@@ -487,6 +484,25 @@ cs_cdovb_diffusion_builder_free(cs_cdovb_diff_t   *diff)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Get the related Hodge builder structure
+ *
+ * \param[in]  diff   pointer to a cs_cdovb_diff_t structure
+ *
+ * \return  a pointer to a cs_hodge_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_hodge_builder_t *
+cs_cdovb_diffusion_get_hodge_builder(cs_cdovb_diff_t   *diff)
+{
+  if (diff == NULL)
+    return NULL;
+
+  return diff->hb;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Define the local (cellwise) stiffness matrix
  *
  * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
@@ -539,6 +555,99 @@ cs_cdovb_diffusion_build_local(const cs_cdo_quantities_t   *quant,
   } // End of switch
 
   return sloc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the gradient of the conforming reconstruction in each
+ *          p_{ef,c} tetrahedron
+ *
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
+ * \param[in]      lm          cell-wise connectivity and quantitites
+ * \param[in]      pdi         cellwise values of the discrete potential
+ * \param[in, out] diff        auxiliary structure used to build the diff. term
+ * \param[in, out] grd_lv_conf gradient of the conforming reconstruction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_diffusion_get_grd_lvconf(const cs_cdo_quantities_t   *quant,
+                                  const cs_cdo_locmesh_t      *lm,
+                                  const double                *pdi,
+                                  cs_cdovb_diff_t             *diff,
+                                  double                      *grd_lv_conf)
+{
+  const cs_param_hodge_algo_t  h_algo = diff->h_info.algo;
+
+  /* Sanity check */
+  assert(h_algo == CS_PARAM_HODGE_ALGO_WBS);
+
+  cs_real_3_t  grd_c, grd_v1, grd_v2;
+
+  double  p_c = 0;
+  cs_real_3_t  *unit_vc = diff->tmp_vect;
+  cs_real_t  *len_vc  = diff->tmp_real;
+  cs_real_t  *wvf     = diff->tmp_real + lm->n_max_vbyc;
+  cs_real_t  *pefc_vol = diff->tmp_real + 2*lm->n_max_vbyc;
+
+  const cs_real_t  *xc = quant->cell_centers + 3*lm->c_id;
+
+  /* Define the length and unit vector of the segment x_c --> x_v
+     Compute the reconstruction at the cell center
+   */
+  for (short int v = 0; v < lm->n_vc; v++) {
+
+    const cs_real_t  *xv = quant->vtx_coord + 3*lm->v_ids[v];
+
+    cs_math_3_length_unitv(xc, xv, len_vc + v, unit_vc[v]);
+    p_c += lm->wvc[v]*pdi[v];
+
+  } // Loop on cell vertices
+
+  /* Loop on cell faces */
+  for (short int f = 0; f < lm->n_fc; f++) {
+
+    cs_quant_t  pfq = lm->face[f];
+    cs_nvec3_t  deq = lm->dedge[f];
+
+    /* Gradient of the lagrange function related to a cell in each p_{f,c} */
+    _grd_c_lagrange_pfc(lm->f_sgn[f], pfq, deq, grd_c);
+
+    /* Weights related to each vertex attached to this face */
+    _compute_wvf_pefcvol(f, pfq, deq, lm, wvf, pefc_vol);
+
+    double  p_f = 0.;
+    for (short int v = 0; v < lm->n_vc; v++)
+      p_f += wvf[v]*pdi[v];
+
+    const double delta_cf = p_c - p_f;
+
+    /* Loop on face edges to scan p_{e,f,c} subvolumes */
+    for (int i = lm->f2e_idx[f], jj = 0; i < lm->f2e_idx[f+1]; i++, jj++) {
+
+      const short int  e = lm->f2e_ids[i];
+      const short int  v1 = lm->e2v_ids[2*e];
+      const short int  v2 = lm->e2v_ids[2*e+1];
+
+      /* Gradient of the lagrange function related to v1 */
+      _grd_v_lagrange_pefc(unit_vc[v2], unit_vc[v1], len_vc[v1], deq, grd_v1);
+
+      /* Gradient of the lagrange function related to a v2 */
+      _grd_v_lagrange_pefc(unit_vc[v1], unit_vc[v2], len_vc[v2], deq, grd_v2);
+
+      /* Gradient of the lagrange function related to a face.
+         grd_f = -(grd_c + grd_v1 + grd_v2)
+         This formula is a consequence of the Partition of the Unity.
+         This yields the following formula for grd(Lv^conf)|_p_{ef,c}
+      */
+      for (int k = 0; k < 3; k++)
+        grd_lv_conf[3*i+k] = delta_cf * grd_c[k] +
+          (pdi[v1] - p_f) * grd_v1[k] + (pdi[v2] - p_f) * grd_v2[k];
+
+    } // Loop on face edges
+
+  } // Loop on cell face
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -748,7 +748,7 @@ cs_cdovb_scaleq_initialize(void)
   BFT_MALLOC(tmp_idx, n_vertices + 1, cs_lnum_t);
   memcpy(tmp_idx, cs_cdovb_v2v->idx, sizeof(cs_lnum_t)*(n_vertices+1));
 
-  for (cs_lnum_t  i = 0; i < n_vertices; i++) {
+  for (cs_lnum_t i = 0; i < n_vertices; i++) {
 
     cs_lnum_t  start = tmp_idx[i], end = tmp_idx[i+1];
 
@@ -1681,6 +1681,143 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
     } // Loop on selected interior faces
 
   } // Set of interior or border faces
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Cellwise computation of the diffusive flux across all dual faces.
+ *
+ * \param[in]       pdi        discrete values for the potential
+ * \param[in, out]  builder    pointer to builder structure
+ * \param[in, out]  diff_flux   value of the diffusive flux
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_compute_cw_diff_flux(const cs_real_t   *pdi,
+                                     void              *builder,
+                                     cs_real_t         *diff_flux)
+{
+  cs_cdovb_scaleq_t  *b = (cs_cdovb_scaleq_t  *)builder;
+  cs_cdo_locmesh_t  *lm = cs_cell_mesh;
+  double  *vec = cs_cdovb_scal_work; // used as a temporary buffer
+
+  const cs_equation_param_t  *eqp = b->eqp;
+  const cs_cdo_quantities_t  *quant = cs_cdovb_quant;
+  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
+  const cs_connect_index_t  *c2e = connect->c2e;
+
+  /* Default flag value for vertex-based scalar equations */
+  cs_flag_t  lm_flag = cs_cdovb_locflag;
+
+  /* Diffusion tensor */
+  bool  diff_pty_uniform = cs_property_is_uniform(eqp->diffusion_property);
+  cs_real_33_t  diff_tensor = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+
+  cs_property_get_cell_tensor(0,  // cell_id
+                              eqp->diffusion_property,
+                              eqp->diffusion_hodge.inv_pty,
+                              diff_tensor);
+
+  if (eqp->diffusion_hodge.algo != CS_PARAM_HODGE_ALGO_WBS) {
+
+    cs_hodge_builder_t  *hb = cs_cdovb_diffusion_get_hodge_builder(b->diff);
+
+    /* Define the flux by cellwise contributions
+       loc_flux = - loc_hodge * loc_gradient(h) */
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      /* Set the local mesh structure for the current cell */
+      cs_cdo_locmesh_build(c_id, lm_flag, connect, quant, lm);
+
+      if (diff_pty_uniform == false) {
+        cs_property_get_cell_tensor(c_id,
+                                    eqp->diffusion_property,
+                                    eqp->diffusion_hodge.inv_pty,
+                                    diff_tensor);
+        cs_hodge_builder_set_tensor(hb, (const cs_real_t (*)[3])diff_tensor);
+      }
+
+      /* Build the local dense matrix related to this operator */
+      const cs_locmat_t  *hloc = cs_hodge_build_cellwise(quant, lm, hb);
+
+      for (short int e = 0; e < lm->n_ec; e++) {
+
+        const short int  sgn_v1 = lm->e2v_sgn[2*e]; // sgn_v2 = -sgn_v1
+
+        /* Used this buffer to store (temporary) the values of the local
+           discrete gradient. Then, flux = - Hloc * grd_c(pdi_c) */
+        vec[e] = sgn_v1* (pdi[lm->e2v_ids[2*e+1]] - pdi[lm->e2v_ids[2*e]]);
+
+      } // Loop on cell edges
+
+      /* Store the local fluxes into diff_flux */
+      cs_locmat_matvec(hloc, vec, diff_flux + c2e->idx[c_id]);
+
+    } // Loop on cells
+
+  }
+  else { // Hodge algo is WBS
+
+    assert(eqp->diffusion_hodge.algo == CS_PARAM_HODGE_ALGO_WBS);
+    lm_flag |= CS_CDO_LOCAL_F | CS_CDO_LOCAL_FE;
+
+    cs_real_3_t  mgrd;
+    double  *grd_lv_pef = NULL;
+
+    BFT_MALLOC(grd_lv_pef, 6*lm->n_max_ebyc, double);
+
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      /* Set the local mesh structure for the current cell */
+      cs_cdo_locmesh_build(c_id, lm_flag, connect, quant, lm);
+
+      const cs_lnum_t  e_shft = c2e->idx[c_id];
+      double  *_flx = diff_flux + e_shft;
+
+      for (short int e = 0; e < lm->n_ec; e++)
+        _flx[e] = 0.;
+      for (short int v = 0; v < lm->n_vc; v++)
+        vec[v] = pdi[lm->v_ids[v]];
+
+      if (diff_pty_uniform == false)
+        cs_property_get_cell_tensor(c_id,
+                                    eqp->diffusion_property,
+                                    eqp->diffusion_hodge.inv_pty,
+                                    diff_tensor);
+
+      /* Compute grd(Lv^conf) in each p_{ef,c}. This quantity is stored
+         following the f2e_idx connectivity */
+      cs_cdovb_diffusion_get_grd_lvconf(quant, lm, vec, b->diff, grd_lv_pef);
+
+      /* Loop on cell faces */
+      for (short int f = 0; f < lm->n_fc; f++) {
+        for (int i = lm->f2e_idx[f]; i < lm->f2e_idx[f+1]; i++) {
+
+          const short int  e = lm->f2e_ids[i];
+          const cs_dface_t  dfq = quant->dface[e_shft+e];
+
+          cs_math_33_3_product((const cs_real_t (*)[3])diff_tensor,
+                               grd_lv_pef + 3*i,
+                               mgrd);
+
+          if (lm->f_ids[f] == dfq.parent_id[0]) {
+            _flx[e] += -dfq.sface[0].meas * _dp3(dfq.sface[0].unitv, mgrd);
+          }
+          else {
+            assert(lm->f_ids[f] == dfq.parent_id[1]);
+            _flx[e] += -dfq.sface[1].meas * _dp3(dfq.sface[1].unitv, mgrd);
+          }
+
+        }
+      } // Loop on cell faces
+
+    } // Loop on cells
+
+    BFT_FREE(grd_lv_pef);
+
+  } // WBS algo.
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -31,10 +31,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_cdo.h"
-#include "cs_param.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
+#include "cs_hodge.h"
+#include "cs_param.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -88,6 +89,19 @@ cs_cdovb_diffusion_builder_free(cs_cdovb_diff_t   *diff);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Get the related Hodge builder structure
+ *
+ * \param[in]  diff   pointer to a cs_cdovb_diff_t structure
+ *
+ * \return  a pointer to a cs_hodge_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_hodge_builder_t *
+cs_cdovb_diffusion_get_hodge_builder(cs_cdovb_diff_t   *diff);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Define the local (cellwise) stiffness matrix
  *
  * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
@@ -104,6 +118,26 @@ cs_cdovb_diffusion_build_local(const cs_cdo_quantities_t   *quant,
                                const cs_cdo_locmesh_t      *lm,
                                const cs_real_3_t           *tensor,
                                cs_cdovb_diff_t             *diff);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the gradient of the conforming reconstruction in each
+ *          p_{ef,c} tetrahedron
+ *
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
+ * \param[in]      lm          cell-wise connectivity and quantitites
+ * \param[in]      pdi         cellwise values of the discrete potential
+ * \param[in, out] diff        auxiliary structure used to build the diff. term
+ * \param[in, out] grd_lv_conf gradient of the conforming reconstruction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_diffusion_get_grd_lvconf(const cs_cdo_quantities_t   *quant,
+                                  const cs_cdo_locmesh_t      *lm,
+                                  const double                *pdi,
+                                  cs_cdovb_diff_t             *diff,
+                                  double                      *grd_lv_conf);
 
 /*----------------------------------------------------------------------------*/
 /*!

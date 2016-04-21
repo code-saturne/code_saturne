@@ -754,76 +754,6 @@ _update_pressure_head(const cs_cdo_quantities_t   *cdoq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the darcian flux playing the role of advection field in
- *         groundwater flows
- *
- * \param[in]      connect     pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
- * \param[in]      richards    pointer to the Richards equation structure
- * \param[in, out] gw          pointer to a cs_groundwater_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_update_darcian_flux(const cs_cdo_connect_t      *connect,
-                     const cs_cdo_quantities_t   *cdoq,
-                     const cs_equation_t         *richards,
-                     cs_groundwater_t            *gw)
-{
-  /* Sanity checks */
-  if (richards == NULL || gw == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              " Groundwater module or Richards eq. is not allocated.");
-
-  const cs_field_t  *h = cs_equation_get_field(richards);
-  const cs_equation_param_t  *eqp = cs_equation_get_param(richards);
-  const cs_connect_index_t  *c2e = connect->c2e;
-  const cs_sla_matrix_t  *e2v = connect->e2v;
-
-  bool  diff_tensor_uniform = cs_property_is_uniform(eqp->diffusion_property);
-  cs_real_33_t  diff_tensor = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
-  cs_real_t  *loc_grdh = gw->work;
-  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect,
-                                                  eqp->diffusion_hodge);
-
-  /* Define the flux by cellwise contributions
-     loc_flux = - loc_hodge * loc_gradient(h) */
-  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
-
-    if (c_id == 0 || diff_tensor_uniform == false) {
-      cs_property_get_cell_tensor(c_id,
-                                  eqp->diffusion_property,
-                                  eqp->diffusion_hodge.inv_pty,
-                                  diff_tensor);
-      cs_hodge_builder_set_tensor(hb, (const cs_real_t (*)[3])diff_tensor);
-    }
-
-    /* Build a local discrete Hodge op. and return a local dense matrix */
-    const cs_locmat_t  *hloc = cs_hodge_build_local(c_id, connect, cdoq, hb);
-
-    for (cs_lnum_t i = c2e->idx[c_id], k = 0; i < c2e->idx[c_id+1]; i++, k++) {
-
-      const cs_lnum_t  e_shft = 2*c2e->ids[i];
-      const cs_lnum_t  v1_id = e2v->col_id[e_shft];
-      const cs_lnum_t  v2_id = e2v->col_id[e_shft+1];
-      const short int  sgn_v1 = e2v->sgn[e_shft];
-      const short int  sgn_v2 = e2v->sgn[e_shft+1];
-
-      loc_grdh[k] = -(sgn_v1*h->val[v1_id] + sgn_v2*h->val[v2_id]);
-
-    } // Loop on cell edges
-
-    cs_locmat_matvec(hloc, loc_grdh,
-                     gw->darcian_flux + c2e->idx[c_id]); // local flux
-
-  } // Loop on cells
-
-  /* Free builder */
-  hb = cs_hodge_builder_free(hb);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Update the moisture content from the value of the hydraulic head
  *
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
@@ -2211,7 +2141,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
         _update_pressure_head(cdoq, richards, gw);
 
       /* Compute the darcian flux */
-      _update_darcian_flux(connect, cdoq, richards, gw);
+      cs_equation_compute_diff_flux(richards, gw->darcian_flux);
 
       /* Update the moisture content */
       _update_moisture_content(connect, cdoq, richards, gw);
@@ -2254,7 +2184,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
         _update_pressure_head(cdoq, richards, gw);
 
       /* Compute the darcian flux */
-      _update_darcian_flux(connect, cdoq, richards, gw);
+      cs_equation_compute_diff_flux(richards, gw->darcian_flux);
 
       /* Update the moisture content */
       _update_moisture_content(connect, cdoq, richards, gw);
