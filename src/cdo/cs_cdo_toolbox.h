@@ -56,17 +56,6 @@ typedef struct {
 
 } cs_tmpbuf_t;
 
-/* Structure enabling the repeated usage of local dense matrix associated
-   with a local set of entities */
-typedef struct {
-
-  int         n_max_ent;  // max number of entities by primal cells
-  int         n_ent;      // current number of entities */
-  cs_lnum_t  *ids;        // list of entity ids (size = n_max_ent)
-  double     *mat;        // local matrix (size: n_max_ent*n_max_ent)
-
-} cs_locmat_t;
-
 /* Index to scan a mesh connectivity */
 typedef struct {
 
@@ -76,6 +65,33 @@ typedef struct {
   int     *ids;   /* ids from 0 to n-1 (there is no multifold entry) */
 
 } cs_connect_index_t;
+
+/* Structure enabling the repeated usage of local dense matrix associated
+   with a local set of entities */
+typedef struct {
+
+  int         n_max_ent;  // max number of entities by primal cells
+  int         n_ent;      // current number of entities
+  cs_lnum_t  *ids;        // list of entity ids (size = n_max_ent)
+  double     *mat;        // local matrix (size: n_max_ent*n_max_ent)
+
+} cs_locmat_t;
+
+/* Structure enabling the repeated usage of local dense DEC matrix associated
+   with a local set of entities */
+typedef struct {
+
+  int         n_max_rows; // max number of entries in a row
+  int         n_rows;     // current number of rows
+  cs_lnum_t  *row_ids;    // list of entity ids in a row (size = n_max_rows)
+  
+  int         n_max_cols; // max number of entries in a column
+  int         n_cols;     // current number of columns
+  cs_lnum_t  *col_ids;    // list of entity ids in a col (size = n_max_rows)
+
+  short int  *mat;        // local matrix (size: n_max_rows*n_max_cols)
+
+} cs_locdec_t;
 
 /* ============= *
  * DATA ANALYSIS *
@@ -397,6 +413,34 @@ cs_locmat_add_transpose(cs_locmat_t  *loc,
 void
 cs_locmat_dump(int                 parent_id,
                const cs_locmat_t  *lm);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Allocate and initialize a cs_locdec_t structure
+ *
+ * \param[in]  n_max_rows   max number of rows
+ * \param[in]  n_max_cols   max number of columns
+ *
+ * \return  a new allocated cs_locdec_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_locdec_t *
+cs_locdec_create(int   n_max_rows,
+                 int   n_max_cols);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Free a cs_locdec_t structure
+ *
+ * \param[in, out]  m    pointer to a cs_locdec_t structure to free
+ *
+ * \return  a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_locdec_t *
+cs_locdec_free(cs_locdec_t  *m);
 
 /*----------------------------------------------------------------------------*/
 

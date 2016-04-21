@@ -776,6 +776,7 @@ cs_index_dump(const char           *name,
     fclose(f);
 }
 
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Allocate and initialize a cs_locmat_t structure
@@ -1001,6 +1002,80 @@ cs_locmat_dump(int                 parent_id,
     bft_printf("\n");
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Allocate and initialize a cs_locdec_t structure
+ *
+ * \param[in]  n_max_rows   max number of rows
+ * \param[in]  n_max_cols   max number of columns
+ *
+ * \return  a new allocated cs_locdec_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_locdec_t *
+cs_locdec_create(int   n_max_rows,
+                 int   n_max_cols)
+{
+  int  i;
+
+  cs_locdec_t  *m = NULL;
+
+  BFT_MALLOC(m, 1, cs_locdec_t);
+
+  m->n_max_rows = n_max_rows;
+  m->n_max_cols = n_max_cols;
+  m->n_rows = 0;
+  m->n_cols = 0;
+  m->row_ids = m->col_ids = m->mat = NULL;
+
+  int msize = n_max_rows * n_max_cols;
+  
+  if (msize > 0) {
+
+    BFT_MALLOC(m->row_ids, n_max_rows, cs_lnum_t);
+    for (i = 0; i < n_max_rows; i++)
+      m->row_ids[i] = 0;
+    BFT_MALLOC(m->col_ids, n_max_cols, cs_lnum_t);
+    for (i = 0; i < n_max_cols; i++)
+      m->col_ids[i] = 0;
+    
+    BFT_MALLOC(m->mat, msize, short int);
+    for (i = 0; i < msize; i++)
+      m->mat[i] = 0;
+
+  }
+
+  return m;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Free a cs_locdec_t structure
+ *
+ * \param[in, out]  m    pointer to a cs_locdec_t structure to free
+ *
+ * \return  a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_locdec_t *
+cs_locdec_free(cs_locdec_t  *m)
+{
+  if (m == NULL)
+    return m;
+
+  if (m->n_max_rows > 0 && m->n_max_cols > 0) {
+    BFT_FREE(m->col_ids);
+    BFT_FREE(m->row_ids);
+    BFT_FREE(m->mat);
+  }
+
+  BFT_FREE(m);
+
+  return NULL;
 }
 
 /*----------------------------------------------------------------------------*/
