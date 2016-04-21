@@ -59,15 +59,28 @@ typedef struct _cs_cdovb_scaleq_t cs_cdovb_scaleq_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate work buffer and general structures related to CDO
- *         vertex-based schemes
+ * \brief  Set shared pointers from the main domain members
  *
- * \param[in] connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       additional mesh quantities struct.
+ * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in]  time_step   pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_initialize(const cs_cdo_connect_t      *connect);
+cs_cdovb_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
+                                    const cs_cdo_connect_t       *connect,
+                                    const cs_time_step_t         *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate work buffer and general structures related to CDO
+ *         vertex-based schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_initialize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -97,9 +110,6 @@ cs_cdovb_scaleq_get_tmpbuf(void);
  *
  * \param[in] eqp       pointer to a cs_equation_param_t structure
  * \param[in] mesh      pointer to a cs_mesh_t structure
- * \param[in] connect   pointer to a cs_cdo_connect_t structure
- * \param[in] quant      pointer to a cs_cdo_quantities_t structure
- * \param[in] time_step  time_step structure
  *
  * \return a pointer to a new allocated cs_cdovb_scaleq_t structure
  */
@@ -107,10 +117,7 @@ cs_cdovb_scaleq_get_tmpbuf(void);
 
 void  *
 cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
-                     const cs_mesh_t             *mesh,
-                     const cs_cdo_connect_t      *connect,
-                     const cs_cdo_quantities_t   *quant,
-                     const cs_time_step_t        *time_step);
+                     const cs_mesh_t             *mesh);
 
 /*----------------------------------------------------------------------------*/
 /*!

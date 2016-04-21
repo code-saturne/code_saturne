@@ -557,6 +557,7 @@ _set_shared_pointers(const cs_cdo_quantities_t    *quant,
 
   cs_advection_field_set_shared_pointers(quant, connect, time_step);
 
+  cs_cdovb_scaleq_set_shared_pointers(quant, connect, time_step);
 }
 
 /*============================================================================
@@ -1027,9 +1028,9 @@ cs_domain_last_setup(cs_domain_t    *domain)
   } // Loop on equations
 
   if (do_vbscal_scheme)
-    cs_cdovb_scaleq_initialize(domain->connect);
+    cs_cdovb_scaleq_initialize();
   if (do_fbscal_scheme)
-    cs_cdofb_scaleq_initialize(domain->connect);
+    cs_cdofb_scaleq_initialize();
 
 }
 

@@ -81,18 +81,10 @@ BEGIN_C_DECLS
 
 struct _cs_cdovb_scaleq_t {
 
-  /* Pointer to shared structures (i.e. not owned by this structure):
-     - Pointer to a cs_equation_param_t structure shared with a cs_equation_t
-       structure.
-     - Pointer to a cs_cdo_quantities_t  structure
-     - Pointer to a cs_cdo_connect_t  structure
-     - Pointer to a cs_time_step_t struture
-  */
+  /* Pointer to a cs_equation_param_t structure shared with a cs_equation_t
+     structure.  */
 
   const cs_equation_param_t  *eqp;
-  const cs_cdo_quantities_t  *quant;
-  const cs_cdo_connect_t     *connect;
-  const cs_time_step_t       *time_step;
 
   /* System size (known boundary entities may be removed if BCs are strongly
      enforced) */
@@ -158,6 +150,11 @@ static cs_real_t  *_vbscal_work = NULL;
    for each equation).
    v2v connectivity through cell neighboorhood */
 static cs_connect_index_t  *cs_cdovb_v2v = NULL;
+
+/* Pointer to shared structures (owned by a cs_domain_t structure) */
+static const cs_cdo_quantities_t  *cs_cdovb_quant;
+static const cs_cdo_connect_t  *cs_cdovb_connect;
+static const cs_time_step_t  *cs_time_step;
 
 /*============================================================================
  * Private function prototypes
@@ -238,8 +235,8 @@ _add_source_terms(cs_cdovb_scaleq_t          *builder,
 static void
 _build_hvpcd_conf(cs_cdovb_scaleq_t    *builder)
 {
-  const cs_cdo_connect_t  *connect = builder->connect;
-  const cs_cdo_quantities_t  *quant = builder->quant;
+  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
+  const cs_cdo_quantities_t  *quant = cs_cdovb_quant;
 
   cs_param_hodge_t  h_info = {.inv_pty = false,
                               .type = CS_PARAM_HODGE_TYPE_VPCD,
@@ -459,7 +456,6 @@ _compute_dir_values(const cs_mesh_t            *mesh,
 
   const cs_cdo_bc_list_t  *vtx_dir = builder->vtx_dir;
   const cs_equation_param_t  *eqp = builder->eqp;
-  const cs_time_step_t  *time_step = builder->time_step;
 
   if (vtx_dir->n_nhmg_elts == 0)
     return; // Nothing to do
@@ -468,7 +464,7 @@ _compute_dir_values(const cs_mesh_t            *mesh,
 
   /* Get the value of the Dirichlet for the current time */
   cs_cdo_bc_dirichlet_set(dof_flag,
-                          time_step,
+                          cs_time_step,
                           mesh,
                           eqp->bc,
                           vtx_dir,
@@ -528,8 +524,8 @@ _add_advection_bc(cs_cdovb_scaleq_t           *builder,
   cs_real_t  *diag_contrib = _vbscal_work + 2*builder->n_vertices;
 
   const cs_cdo_bc_list_t  *vtx_dir = builder->vtx_dir;
-  const cs_cdo_connect_t  *connect = builder->connect;
-  const cs_cdo_quantities_t  *quant = builder->quant;
+  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
+  const cs_cdo_quantities_t  *quant = cs_cdovb_quant;
 
   /* Initialize arrays */
   for (i = 0; i < builder->n_vertices; i++)
@@ -582,8 +578,8 @@ _weak_bc_enforcement(cs_cdovb_scaleq_t     *builder,
   /* Sanity check */
   assert(full_matrix->type == CS_SLA_MAT_MSR);
 
-  const cs_cdo_connect_t  *connect = builder->connect;
-  const cs_cdo_quantities_t  *quant = builder->quant;
+  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
+  const cs_cdo_quantities_t  *quant = cs_cdovb_quant;
   const cs_equation_param_t  *eqp = builder->eqp;
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
   const cs_cdo_bc_list_t  *vtx_dir = builder->vtx_dir;
@@ -853,6 +849,27 @@ _enforce_bc(cs_cdovb_scaleq_t          *builder,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set shared pointers from the main domain members
+ *
+ * \param[in]  quant       additional mesh quantities struct.
+ * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in]  time_step   pointer to a time step structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
+                                    const cs_cdo_connect_t       *connect,
+                                    const cs_time_step_t         *time_step)
+{
+  /* Assign static const pointers */
+  cs_cdovb_quant = quant;
+  cs_cdovb_connect = connect;
+  cs_time_step = time_step;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate work buffer and general structures related to CDO
  *         vertex-based schemes
  *
@@ -861,13 +878,14 @@ _enforce_bc(cs_cdovb_scaleq_t          *builder,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_initialize(const cs_cdo_connect_t      *connect)
+cs_cdovb_scaleq_initialize(void)
 {
   /* Sanity check */
   assert(_vbscal_work == NULL && _vbscal_work_size == 0);
 
-  const cs_lnum_t  n_vertices = connect->v_info->n_elts;
-  const cs_lnum_t  n_cells = connect->c_info->n_elts;
+  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
+  const cs_lnum_t  n_vertices = cs_cdovb_quant->n_vertices;
+  const cs_lnum_t  n_cells = cs_cdovb_quant->n_cells;
 
   /* Work buffers */
   _vbscal_work_size = CS_MAX(3*n_vertices, n_cells);
@@ -949,9 +967,6 @@ cs_cdovb_scaleq_get_tmpbuf(void)
  *
  * \param[in] eqp       pointer to a cs_equation_param_t structure
  * \param[in] mesh      pointer to a cs_mesh_t structure
- * \param[in] connect   pointer to a cs_cdo_connect_t structure
- * \param[in] quant      pointer to a cs_cdo_quantities_t structure
- * \param[in] time_step  time_step structure
  *
  * \return a pointer to a new allocated cs_cdovb_scaleq_t structure
  */
@@ -959,10 +974,7 @@ cs_cdovb_scaleq_get_tmpbuf(void)
 
 void  *
 cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
-                     const cs_mesh_t             *mesh,
-                     const cs_cdo_connect_t      *connect,
-                     const cs_cdo_quantities_t   *quant,
-                     const cs_time_step_t        *time_step)
+                     const cs_mesh_t             *mesh)
 {
   cs_lnum_t  i;
 
@@ -971,6 +983,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);
   assert(eqp->var_type == CS_PARAM_VAR_SCAL);
 
+  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
   const cs_lnum_t  n_vertices = connect->v_info->n_elts;
   const cs_lnum_t  n_b_faces = connect->f_info->n_b_elts;
 
@@ -980,9 +993,6 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 
   /* Shared pointers */
   builder->eqp = eqp;
-  builder->connect = connect;
-  builder->quant = quant;
-  builder->time_step = time_step;
 
   /* Dimensions:
      By default, we set number of DoFs as if there is a weak enforcement of
@@ -1205,9 +1215,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
   cs_cdovb_scaleq_t  *sys_builder = (cs_cdovb_scaleq_t *)builder;
 
   const cs_equation_param_t  *eqp = sys_builder->eqp;
-  const cs_cdo_connect_t  *connect = sys_builder->connect;
-  const cs_cdo_quantities_t  *quant = sys_builder->quant;
-  const cs_connect_index_t  *c2v = connect->c2v;
+  const cs_cdo_quantities_t  *quant = cs_cdovb_quant;
+  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
   const bool  do_diffusion = (eqp->flag & CS_EQUATION_DIFFUSION) ? true:false;
   const bool  do_advection = (eqp->flag & CS_EQUATION_CONVECTION) ? true:false;
   const bool  do_unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true:false;
@@ -1575,9 +1584,9 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
     return;
   }
 
-  const cs_cdo_connect_t  *connect = b->connect;
+  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
   const cs_sla_matrix_t  *f2c = connect->f2c;
-  const cs_cdo_quantities_t  *quant = b->quant;
+  const cs_cdo_quantities_t  *quant = cs_cdovb_quant;
   const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
   const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
 
@@ -1728,7 +1737,7 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
         base_vect[2] = 1, base_vect[1] = base_vect[0] = 0;
       }
 
-      cs_cdovb_advection_get_peclet_cell(b->quant,
+      cs_cdovb_advection_get_peclet_cell(cs_cdovb_quant,
                                          eqp->advection_field,
                                          eqp->diffusion_property,
                                          base_vect,
@@ -1744,7 +1753,7 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
                           work_c,         // values on cells
                           NULL,           // values at internal faces
                           NULL,           // values at border faces
-                          b->time_step);  // time step management structure
+                          cs_time_step);  // time step management structure
 
       if (eqp->process_flag & CS_EQUATION_POST_UPWIND_COEF) {
 
@@ -1756,7 +1765,7 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
           sprintf(postlabel, "%s.UpwCoefZ", eqname);
 
         /* Compute in each cell an evaluation of upwind weight value */
-        cs_cdovb_advection_get_upwind_coef_cell(b->quant,
+        cs_cdovb_advection_get_upwind_coef_cell(cs_cdovb_quant,
                                                 eqp->advection_info,
                                                 work_c);
 
@@ -1769,7 +1778,7 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
                           work_c,         // values on cells
                           NULL,           // values at internal faces
                           NULL,           // values at border faces
-                          b->time_step);  // time step management structure
+                          cs_time_step);  // time step management structure
 
       } /* Post upwinding coefficient */
 

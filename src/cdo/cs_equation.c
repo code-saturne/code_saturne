@@ -90,9 +90,6 @@ BEGIN_C_DECLS
  *
  * \param[in] eq         pointer to a cs_equation_param_t structure
  * \param[in] mesh       pointer to a cs_mesh_t structure
- * \param[in] connect    pointer to a cs_cdo_connect_t structure
- * \param[in] quant      pointer to a cs_cdo_quantities_t structure
- * \param[in] time_step  time_step structure
  *
  * \return a pointer to a new allocated builder structure
  */
@@ -100,10 +97,7 @@ BEGIN_C_DECLS
 
 typedef void *
 (cs_equation_init_builder_t)(const cs_equation_param_t  *eqp,
-                             const cs_mesh_t            *mesh,
-                             const cs_cdo_connect_t     *connect,
-                             const cs_cdo_quantities_t  *cdoq,
-                             const cs_time_step_t       *time_step);
+                             const cs_mesh_t            *mesh);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2808,7 +2802,7 @@ cs_equation_init_system(const cs_mesh_t            *mesh,
   const cs_equation_param_t  *eqp = eq->param;
 
   /* Allocate and initialize a system builder */
-  eq->builder = eq->init_builder(eqp, mesh, connect, cdoq, time_step);
+  eq->builder = eq->init_builder(eqp, mesh);
 
   /* Compute the (initial) source term */
   eq->compute_source(eq->builder);
