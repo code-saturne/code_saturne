@@ -133,8 +133,8 @@ struct _cost_quant_t {
 struct _wbs_quant_t {
 
   /* Buffers of size n_max_vbyc */
-  double       *wf;   /* weights related to each vertex of a given face */
-  cs_real_3_t  *xv;   /* local coordinates for vertices */
+  double   *w_vol;  /* 1/20 * |p_{e,f}| for each face */
+  double   *wvf;    /* weights related to each vertex for a face */
 
 };
 
@@ -153,6 +153,8 @@ static int  hodge_wbs_ts_id = -1;
 static int  hodge_vor_ts_id = -1;
 
 /*! \endcond (end ignore by Doxygen) */
+
+static const double  cs_hodge_wbs_const = 1/60.; // 1/20 * 1/3
 
 /*============================================================================
  * Private function prototypes
@@ -1059,9 +1061,7 @@ _build_stiffness_using_cost(const cs_cdo_locmesh_t     *lm,
  * \brief   Build a structure used to compute a discrete Hodge op. when using
  *          WBS algo.
  *
- * \param[in]   n_ent_max     max number of local entities
- * \param[in]   aux_bufsize   size of the auxiliary buffers
- * \param[in]   n_vertices    number of vertices in this mesh
+ * \param[in]   n_max_vbyc    max number of vertices in a cell
  *
  * \return a pointer to a _wbs_quant_t structure
  */
@@ -1075,12 +1075,8 @@ _init_wbs_quant(int    n_max_vbyc)
   /* Allocate structure */
   BFT_MALLOC(hq, 1, struct _wbs_quant_t);
 
-  /* Weights */
-  BFT_MALLOC(hq->wf, n_max_vbyc, double);
-  for (short int i = 0; i < n_max_vbyc; i++)
-    hq->wf[i] = 0;
-
-  BFT_MALLOC(hq->xv, n_max_vbyc, cs_real_3_t);
+  BFT_MALLOC(hq->w_vol, n_max_vbyc, double);
+  BFT_MALLOC(hq->wvf, n_max_vbyc, double);
 
   return  hq;
 }
@@ -1102,8 +1098,8 @@ _free_wbs_quant(struct _wbs_quant_t  *hq)
   if (hq == NULL)
     return hq;
 
-  BFT_FREE(hq->wf);
-  BFT_FREE(hq->xv);
+  BFT_FREE(hq->w_vol);
+  BFT_FREE(hq->wvf);
 
   BFT_FREE(hq);
 
@@ -1115,30 +1111,39 @@ _free_wbs_quant(struct _wbs_quant_t  *hq)
  * \brief  Compute for each face a weight related to each vertex w_{v,f}
  *         This weight is equal to |dc(v) cap f|/|f| so that the sum of the
  *         weights is equal to 1.
+ *         Set also the vertices coordinates
  *
- * \param[in]      f         local id of the face
- * \param[in]      pfq       primal face quantity
+ * \param[in]      f         face id in the cellwise numbering
+ * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
  * \param[in]      lm        pointer to a cs_cdo_locmesh_t structure
  * \param[in, out] hq        pointer to a _wbs_quant_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_wbs_face_weight(short int                   f,
-                         const cs_quant_t            pfq,
-                         const cs_cdo_locmesh_t     *lm,
-                         struct _wbs_quant_t        *hq)
+_set_wbs_quant(short int                   f,
+               const cs_cdo_quantities_t  *quant,
+               const cs_cdo_locmesh_t     *lm,
+               struct _wbs_quant_t        *hq)
 {
   double  len;
   cs_real_3_t  un, cp;
 
-  const double  f_coef = 0.25/pfq.meas;
+  const cs_real_t  *xc = quant->cell_centers + 3*lm->c_id;
+  const cs_quant_t  pfq = lm->face[f];
+  const double  ovf = 0.5/pfq.meas;
 
   /* Reset weights */
-  for (short int v = 0; v < lm->n_vc; v++) hq->wf[v] = 0;
+  for (short int v = 0; v < lm->n_vc; v++) hq->wvf[v] = 0;
+
+  /* Compute the height of the pyramid of base f */
+  cs_math_3_length_unitv(pfq.center, xc, &len, un);
+
+  /* One wants to compute 1/20 * |p_{e,f}| */
+  const double  hf = cs_hodge_wbs_const * fabs(len * _dp3(un, pfq.unitv));
 
   /* Compute a weight for each vertex of the current face */
-  for (short int i = lm->f2e_idx[f]; i < lm->f2e_idx[f+1]; i++) {
+  for (int i = lm->f2e_idx[f], ii = 0; i < lm->f2e_idx[f+1]; i++, ii++) {
 
     const short int  e = lm->f2e_ids[i];
     const cs_quant_t  peq = lm->edge[e];
@@ -1148,15 +1153,18 @@ _compute_wbs_face_weight(short int                   f,
     cs_math_3_length_unitv(peq.center, pfq.center, &len, un);
     cs_math_3_cross_product(un, peq.unitv, cp);
 
-    const double  contrib = peq.meas * len * cs_math_3_norm(cp) * f_coef;
+    const double  tef = 0.5*peq.meas*len * cs_math_3_norm(cp);
 
-    hq->wf[v1] += contrib;
-    hq->wf[v2] += contrib;
+    hq->wvf[v1] += tef;
+    hq->wvf[v2] += tef;
+    hq->w_vol[ii] = hf * tef;
 
   } /* End of loop on face edges */
 
-}
+  /* wvf = |dual_cell(v) cap f| / |f| */
+  for (short int v = 0; v < lm->n_vc; v++) hq->wvf[v] *= ovf;
 
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1187,20 +1195,14 @@ _cellwise_build_with_wbs(const cs_cdo_quantities_t   *quant,
   cs_locmat_t  *m = hb->hloc;
 
   const double  c_coef = 0.1*lm->vol_c;
-  const cs_real_t  *xc = quant->cell_centers + 3*lm->c_id;
-  const cs_real_t  *xyz = quant->vtx_coord;
 
   /* Initialize the upper part of the local Hodge matrix */
   for (short int vi = 0; vi < lm->n_vc; vi++) {
 
-    cs_lnum_t  vi_id = lm->v_ids[vi];
-    for (int k = 0; k < 3; k++)
-      hq->xv[vi][k] = xyz[3*vi_id+k];
-    m->ids[vi] = vi_id;
-
     double  *mi = m->val + vi*lm->n_vc;
     const double  vi_coef = c_coef * lm->wvc[vi];
 
+    m->ids[vi] = lm->v_ids[vi];
     mi[vi] = vi_coef * lm->wvc[vi];   // Diagonal entry
     for (short int vj = vi+1; vj < lm->n_vc; vj++)
       mi[vj] = vi_coef * lm->wvc[vj]; // Extra-diagonal entries
@@ -1210,12 +1212,10 @@ _cellwise_build_with_wbs(const cs_cdo_quantities_t   *quant,
   /* Loop on each pef and add the contribution */
   for (short int f = 0; f < lm->n_fc; f++) {
 
-    const cs_quant_t  pfq = lm->face[f];
+    /* Define useful quantities for WBS algo. */
+    _set_wbs_quant(f, quant, lm, hq);
 
-    /* Compute a weight for each vertex of the current face */
-    _compute_wbs_face_weight(f, pfq, lm, hq);
-
-    for (short int i = lm->f2e_idx[f]; i < lm->f2e_idx[f+1]; i++) {
+    for (int i = lm->f2e_idx[f], ii = 0; i < lm->f2e_idx[f+1]; i++, ii++) {
 
       const short int  e = lm->f2e_ids[i];
       const short int  v1 = lm->e2v_ids[2*e];
@@ -1223,11 +1223,6 @@ _cellwise_build_with_wbs(const cs_cdo_quantities_t   *quant,
 
       /* Sanity check */
       assert(v1 > -1 && v2 > -1);
-
-      const cs_real_t  w_vol = 0.05*cs_math_voltet(hq->xv[v1],
-                                                   hq->xv[v2],
-                                                   pfq.center,
-                                                   xc);
 
       /* Add local contribution */
       for (short int vi = 0; vi < lm->n_vc; vi++) {
@@ -1237,13 +1232,13 @@ _cellwise_build_with_wbs(const cs_cdo_quantities_t   *quant,
         const bool  is_vi = (vi == v1 || vi == v2) ? true : false;
 
         const double  wic = lm->wvc[vi];
-        const double  wif = hq->wf[vi];
+        const double  wif = hq->wvf[vi];
 
         double  dval = 2*wif*(wif + wic);
         if (is_vi)
           dval += 2*(1 + wic + wif);
-        dval *= w_vol;   /* 1/20 * |tet| (cf. Rapport HI-A7/7561 in 1991) */
-
+        /* 1/20 * |tet| (cf. Rapport HI-A7/7561 in 1991) */
+        dval *= hq->w_vol[ii];
         mi[vi] += dval;  /* Add diagonal entry */
 
         /* Extra-diagonal entries */
@@ -1252,7 +1247,7 @@ _cellwise_build_with_wbs(const cs_cdo_quantities_t   *quant,
           const bool  is_vj = (vj == v1 || vj == v2) ? true : false;
 
           const double  wjc = lm->wvc[vj];
-          const double  wjf = hq->wf[vj];
+          const double  wjf = hq->wvf[vj];
 
           double xval = 2*wif*wjf + wif*wjc + wic*wjf;
           if (is_vi)
@@ -1261,7 +1256,7 @@ _cellwise_build_with_wbs(const cs_cdo_quantities_t   *quant,
             xval += wif + wic;
           if (is_vi && is_vj)
             xval += 1;
-          xval *= w_vol;
+          xval *= hq->w_vol[ii];
 
           mi[vj] += xval; /* Add extra-diag. entry */
 
