@@ -1258,12 +1258,9 @@ cs_sla_matrix_create(cs_lnum_t             n_rows,
                      cs_sla_matrix_type_t  type,
                      bool                  sym)
 {
-  int  i;
-
   cs_sla_matrix_t  *m = NULL;
 
-  assert(n_rows > -1);
-  assert(n_cols > -1);
+  assert(n_rows > -1 && n_cols > -1);
 
   BFT_MALLOC(m, 1, cs_sla_matrix_t);
 
@@ -1291,19 +1288,22 @@ cs_sla_matrix_create(cs_lnum_t             n_rows,
   if (m->type != CS_SLA_MAT_NONE) {
 
     BFT_MALLOC(m->idx, n_rows + 1, int);
-    for (i = 0; i < n_rows + 1; i++)
+# pragma omp parallel for if (m->n_rows > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_rows + 1; i++)
       m->idx[i] = 0;
 
     if (m->type == CS_SLA_MAT_CSR && n_rows == n_cols) {
       BFT_MALLOC(m->didx, n_rows, int);
-      for (i = 0; i < n_rows; i++)
+# pragma omp parallel for if (m->n_rows > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_rows; i++)
         m->didx[i] = -1; /* Not set */
     }
 
     if (m->type == CS_SLA_MAT_MSR) {
       assert(n_rows == n_cols);
       BFT_MALLOC(m->diag, stride*n_rows, double);
-      for (i = 0; i < stride*n_cols; i++)
+# pragma omp parallel for if (m->n_rows > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < stride*n_cols; i++)
         m->diag[i] = 0.0;
     }
 
@@ -1331,7 +1331,6 @@ cs_sla_matrix_create_from_ref(const cs_sla_matrix_t   *ref,
                               cs_sla_matrix_type_t     type,
                               int                      stride)
 {
-  cs_lnum_t  i;
   cs_lnum_t  nnz = 0;
 
   cs_sla_matrix_t  *m = NULL;
@@ -1379,23 +1378,27 @@ cs_sla_matrix_create_from_ref(const cs_sla_matrix_t   *ref,
   case CS_SLA_MAT_DEC:
     assert(stride == 1);
     BFT_MALLOC(m->sgn, nnz, short int);
-    for (i = 0; i < nnz; i++)
+# pragma omp parallel for if (nnz > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < nnz; i++)
       m->sgn[i] = 0;
     break;
 
   case CS_SLA_MAT_CSR:
     BFT_MALLOC(m->val, nnz*stride, double);
-    for (i = 0; i < stride*nnz; i++)
+# pragma omp parallel for if (stride*nnz > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < stride*nnz; i++)
       m->val[i] = 0.0;
     break;
 
   case CS_SLA_MAT_MSR:
     assert(m->n_rows == m->n_cols);
     BFT_MALLOC(m->diag, stride*m->n_rows, double);
-    for (i = 0; i < stride*m->n_rows; i++)
+# pragma omp parallel for if (m->n_rows > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < stride*m->n_rows; i++)
       m->diag[i] = 0.0;
     BFT_MALLOC(m->val, nnz*stride, double);
-    for (i = 0; i < stride*nnz; i++)
+# pragma omp parallel for if (nnz > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < stride*nnz; i++)
       m->val[i] = 0.0;
     break;
 
@@ -1429,7 +1432,6 @@ cs_sla_matrix_create_msr_from_index(const cs_connect_index_t   *connect_idx,
                                     bool                        sorted_idx,
                                     int                         stride)
 {
-  cs_lnum_t  i;
   cs_sla_matrix_t  *m = NULL;
 
   /* Sanity check */
@@ -1457,13 +1459,16 @@ cs_sla_matrix_create_msr_from_index(const cs_connect_index_t   *connect_idx,
   /* Initialize diagonal */
   m->diag = NULL;
   BFT_MALLOC(m->diag, stride*m->n_rows, cs_real_t);
-  for (i = 0; i < stride*m->n_rows; i++)
+# pragma omp parallel for if (m->n_rows*stride > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < stride*m->n_rows; i++)
     m->diag[i] = 0.0;
 
   /* Initialize values */
   m->val = NULL;
-  BFT_MALLOC(m->val, m->idx[m->n_rows]*stride, cs_real_t);
-  for (i = 0; i < m->idx[m->n_rows]*stride; i++)
+  size_t  nnz = m->idx[m->n_rows]*stride;
+  BFT_MALLOC(m->val, nnz, cs_real_t);
+# pragma omp parallel for if (nnz > CS_THR_MIN)
+  for (size_t i = 0; i < nnz; i++)
     m->val[i] = 0.0;
 
   return m;
@@ -2321,7 +2326,7 @@ cs_sla_assemble_msr_sym(const cs_locmat_t   *loc,
     const cs_lnum_t  i_id = loc->ids[i];
 
     /* Add diagonal term : loc(i,i) */
-    ass->diag[i_id] += loc->mat[pos_i+i];
+    ass->diag[i_id] += loc->val[pos_i+i];
 
     if (!only_diag) {
 
@@ -2330,7 +2335,7 @@ cs_sla_assemble_msr_sym(const cs_locmat_t   *loc,
 
       for (j = i + 1; j < n_ent; j++) {
 
-        double  val_ij = loc->mat[pos_i+j];
+        double  val_ij = loc->val[pos_i+j];
 
         if (fabs(val_ij) > cs_math_zero_threshold) { /* Not zero */
 
@@ -2402,13 +2407,13 @@ cs_sla_assemble_msr(const cs_locmat_t   *loc,
     size_t  n_i_ents = ass->idx[i_id+1] - start_i; // arg. binary search
 
     /* Add diagonal term : loc(i,i) */
-    ass->diag[i_id] += loc->mat[pos_i+i];
+    ass->diag[i_id] += loc->val[pos_i+i];
 
     /* Add extra-diagonal terms */
     for (j = i+1; j < n_ent; j++) {
 
       int  j_id = loc->ids[j];
-      double  val_ij = loc->mat[pos_i+j];
+      double  val_ij = loc->val[pos_i+j];
 
       if (fabs(val_ij) > cs_math_zero_threshold) { /* Not zero */
 
@@ -2425,7 +2430,7 @@ cs_sla_assemble_msr(const cs_locmat_t   *loc,
 
       } /* loc[ij] != 0.0 */
 
-      double  val_ji = loc->mat[j*n_ent+i];
+      double  val_ji = loc->val[j*n_ent+i];
 
       if (fabs(val_ji) > cs_math_zero_threshold) { /* Not zero */
 
@@ -2755,9 +2760,6 @@ cs_sla_matvec(const cs_sla_matrix_t  *m,
               double                 *inout[],
               bool                    reset)
 {
-  cs_lnum_t  i, j;
-  double  sum;
-
   double  *out = *inout;
 
   if (m == NULL)
@@ -2772,23 +2774,26 @@ cs_sla_matvec(const cs_sla_matrix_t  *m,
   }
 
   if (reset == true)
-    for (i = 0; i < m->n_rows; i++)
+# pragma omp parallel for if (m->n_rows > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < m->n_rows; i++)
       out[i] = 0.0;
 
   switch (m->type) {
   case CS_SLA_MAT_DEC:
-    for (i = 0; i < m->n_rows; i++) {
-      sum = 0.0;
-      for (j = m->idx[i]; j < m->idx[i+1]; j++)
-        sum += m->sgn[j]*v[m->col_id[j]];
+# pragma omp parallel for if (m->n_rows > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < m->n_rows; i++) {
+      double sum = 0.0;
+      for (cs_lnum_t j = m->idx[i]; j < m->idx[i+1]; j++)
+        sum += m->sgn[j] * v[m->col_id[j]];
       out[i] += sum;
     }
     break;
 
   case CS_SLA_MAT_CSR:
-    for (i = 0; i < m->n_rows; i++) {
-      sum = 0.0;
-      for (j = m->idx[i]; j < m->idx[i+1]; j++)
+# pragma omp parallel for if (m->n_rows > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < m->n_rows; i++) {
+      double sum = 0.0;
+      for (cs_lnum_t j = m->idx[i]; j < m->idx[i+1]; j++)
         sum += m->val[j] * v[m->col_id[j]];
       out[i] += sum;
     }
@@ -2796,9 +2801,10 @@ cs_sla_matvec(const cs_sla_matrix_t  *m,
 
   case CS_SLA_MAT_MSR:
     assert(m->n_rows == m->n_cols); /* Should be a squared matrix */
-    for (i = 0; i < m->n_rows; i++) {
-      sum = m->diag[i] * v[i];
-      for (j = m->idx[i]; j < m->idx[i+1]; j++)
+# pragma omp parallel for if (m->n_rows > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < m->n_rows; i++) {
+      double sum = m->diag[i] * v[i];
+      for (cs_lnum_t j = m->idx[i]; j < m->idx[i+1]; j++)
         sum += m->val[j] * v[m->col_id[j]];
       out[i] += sum;
     }

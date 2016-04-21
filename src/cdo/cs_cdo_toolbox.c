@@ -799,7 +799,7 @@ cs_locmat_create(int   n_max_ent)
   lm->n_max_ent = n_max_ent;
   lm->n_ent = 0;
   lm->ids = NULL;
-  lm->mat = NULL;
+  lm->val = NULL;
 
   if (n_max_ent > 0) {
 
@@ -809,9 +809,9 @@ cs_locmat_create(int   n_max_ent)
     for (i = 0; i < n_max_ent; i++)
       lm->ids[i] = 0;
 
-    BFT_MALLOC(lm->mat, msize, double);
+    BFT_MALLOC(lm->val, msize, double);
     for (i = 0; i < msize; i++)
-      lm->mat[i] = 0;
+      lm->val[i] = 0;
 
   }
 
@@ -836,7 +836,7 @@ cs_locmat_free(cs_locmat_t  *lm)
 
   if (lm->n_max_ent > 0) {
     BFT_FREE(lm->ids);
-    BFT_FREE(lm->mat);
+    BFT_FREE(lm->val);
   }
 
   BFT_FREE(lm);
@@ -868,7 +868,7 @@ cs_locmat_copy(cs_locmat_t        *recv,
     recv->ids[i] = send->ids[i];
 
   /* Copy values */
-  memcpy(recv->mat, send->mat, sizeof(double)*send->n_ent*send->n_ent);
+  memcpy(recv->val, send->val, sizeof(double)*send->n_ent*send->n_ent);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -895,13 +895,13 @@ cs_locmat_matvec(const cs_locmat_t   *loc,
   /* Init. matvec */
   cs_real_t  v = vec[0];
   for (int i = 0; i < n; i++)
-    matvec[i] = v*loc->mat[i*n];
+    matvec[i] = v*loc->val[i*n];
 
   /* Increment matvec */
   for (int i = 0; i < n; i++) {
     int shift =  i*n;
     for (int j = 1; j < n; j++)
-      matvec[i] += vec[j]*loc->mat[shift + j];
+      matvec[i] += vec[j]*loc->val[shift + j];
   }
 
 }
@@ -924,7 +924,7 @@ cs_locmat_add(cs_locmat_t        *loc,
   assert(loc->n_max_ent <= add->n_max_ent);
 
   for (int i = 0; i < loc->n_ent*loc->n_ent; i++)
-    loc->mat[i] += add->mat[i];
+    loc->val[i] += add->val[i];
 
 }
 
@@ -955,18 +955,18 @@ cs_locmat_add_transpose(cs_locmat_t  *loc,
     int  ii = i*loc->n_ent + i;
 
     tr->ids[i] = loc->ids[i];
-    tr->mat[ii] = loc->mat[ii];
-    loc->mat[ii] *= 2;
+    tr->val[ii] = loc->val[ii];
+    loc->val[ii] *= 2;
 
     for (int j = i+1; j < loc->n_ent; j++) {
 
       int  ij = i*loc->n_ent + j;
       int  ji = j*loc->n_ent + i;
 
-      tr->mat[ji] = loc->mat[ij];
-      tr->mat[ij] = loc->mat[ji];
-      loc->mat[ij] += tr->mat[ij];
-      loc->mat[ji] += tr->mat[ji];
+      tr->val[ji] = loc->val[ij];
+      tr->val[ij] = loc->val[ji];
+      loc->val[ij] += tr->val[ij];
+      loc->val[ji] += tr->val[ji];
 
     }
   }
@@ -998,7 +998,7 @@ cs_locmat_dump(int                 parent_id,
   for (i = 0; i < lm->n_ent; i++) {
     bft_printf(" %5d", lm->ids[i]);
     for (j = 0; j < lm->n_ent; j++)
-      bft_printf(" % .4e", lm->mat[i*lm->n_ent+j]);
+      bft_printf(" % .4e", lm->val[i*lm->n_ent+j]);
     bft_printf("\n");
   }
 
@@ -1029,7 +1029,7 @@ cs_locdec_create(int   n_max_rows,
   m->n_max_cols = n_max_cols;
   m->n_rows = 0;
   m->n_cols = 0;
-  m->row_ids = m->col_ids = m->mat = NULL;
+  m->row_ids = m->col_ids = m->sgn = NULL;
 
   int msize = n_max_rows * n_max_cols;
 
@@ -1042,9 +1042,9 @@ cs_locdec_create(int   n_max_rows,
     for (i = 0; i < n_max_cols; i++)
       m->col_ids[i] = 0;
 
-    BFT_MALLOC(m->mat, msize, short int);
+    BFT_MALLOC(m->sgn, msize, short int);
     for (i = 0; i < msize; i++)
-      m->mat[i] = 0;
+      m->sgn[i] = 0;
 
   }
 
@@ -1070,7 +1070,7 @@ cs_locdec_free(cs_locdec_t  *m)
   if (m->n_max_rows > 0 && m->n_max_cols > 0) {
     BFT_FREE(m->col_ids);
     BFT_FREE(m->row_ids);
-    BFT_FREE(m->mat);
+    BFT_FREE(m->sgn);
   }
 
   BFT_FREE(m);

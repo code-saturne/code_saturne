@@ -37,6 +37,7 @@
 #include "cs_time_step.h"
 #include "cs_sla.h"
 #include "cs_cdo_connect.h"
+#include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
 #include "cs_param.h"
 #include "cs_property.h"
@@ -123,6 +124,40 @@ cs_hodge_builder_set_tensor(cs_hodge_builder_t     *hb,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Build a local stiffness matrix from a local discrete Hodge H and
+ *          the local discrete gradient and divergence
+ *          S = Gloc^t * H * Gloc
+ *
+ * \param[in]      lm         pointer to a cs_cdo_locmesh_t struct.
+ * \param[in, out] hb         pointer to a cs_hodge_builder_t struct.
+ * \param[in, out] sloc       pointer to a local stiffness matrix struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_build_local_stiffness(const cs_cdo_locmesh_t     *lm,
+                               cs_hodge_builder_t         *hb,
+                               cs_locmat_t                *sloc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local discrete Hodge using a cell-wise view of the mesh
+ *
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      lm         pointer to a cs_cdo_locmesh_t structure
+ * \param[in, out] hb         pointer to a cs_hodge_builder_t structure
+ *
+ * \return a pointer to a cs_locmat_t struct. (local dense matrix)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_locmat_t *
+cs_hodge_build_cellwise(const cs_cdo_quantities_t   *quant,
+                        const cs_cdo_locmesh_t      *lm,
+                        cs_hodge_builder_t          *hb);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build a local discrete Hodge
  *
  * \param[in]      c_id       cell id
@@ -142,7 +177,7 @@ cs_hodge_build_local(int                         c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a discrete Hodge operator
+ * \brief   Build the full matrix related to a discrete Hodge operator
  *
  * \param[in]  connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]  quant      pointer to a cs_cdo_quantities_t struct.

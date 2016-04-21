@@ -31,13 +31,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_time_step.h"
-#include "cs_cdo.h"
-#include "cs_param.h"
-#include "cs_cdo_connect.h"
-#include "cs_cdo_quantities.h"
-#include "cs_property.h"
 #include "cs_advection_field.h"
+#include "cs_cdo.h"
+#include "cs_cdo_connect.h"
+#include "cs_cdo_local.h"
+#include "cs_cdo_quantities.h"
+#include "cs_param.h"
+#include "cs_property.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -95,47 +96,37 @@ cs_cdovb_advection_builder_free(cs_cdovb_adv_t  *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the convection operator for pure convection
+ * \brief   Compute the convection operator attached to a cell
  *
- * \param[in]      c_id       cell id
- * \param[in]      connect    pointer to the connectivity structure
- * \param[in]      quant      pointer to the cdo quantities structure
- * \param[in]      loc_ids    store the local entity ids for this cell
- * \param[in]      diffmat    tensor related to the diffusion property
- * \param[in, out] builder    pointer to a convection builder structure
+ * \param[in]      lm        pointer to a cs_cdo_locmesh_t structure
+ * \param[in]      diffmat   tensor related to the diffusion property
+ * \param[in, out] b         pointer to a convection builder structure
  *
  * \return a pointer to a local dense matrix structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_cdovb_advection_build_local(cs_lnum_t                    c_id,
-                               const cs_cdo_connect_t      *connect,
-                               const cs_cdo_quantities_t   *quant,
-                               const cs_lnum_t             *loc_ids,
+cs_cdovb_advection_build_local(const cs_cdo_locmesh_t      *lm,
                                const cs_real_33_t           diffmat,
-                               cs_cdovb_adv_t              *builder);
+                               cs_cdovb_adv_t              *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the convection operator for pure convection
+ * \brief   Compute the BC contribution for the convection operator
  *
- * \param[in]      connect       pointer to the connectivity structure
  * \param[in]      quant         pointer to the cdo quantities structure
- * \param[in]      dir_vals      values of the Dirichlet boundary condition
- * \param[in, out] builder       pointer to a convection builder structure
- * \param[in, out] rhs_contrib   array storing the rhs contribution
- * \param[in, out] diag_contrib  array storing the diagonal contribution
+ * \param[in]      lm            pointer to a cs_cdo_locmesh_t struct.
+ * \param[in, out] advb          pointer to a convection builder structure
+ * \param[in, out] ls            cell-wise structure sotring the local system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_advection_add_bc(const cs_cdo_connect_t      *connect,
-                          const cs_cdo_quantities_t   *quant,
-                          const cs_real_t             *dir_vals,
-                          cs_cdovb_adv_t              *builder,
-                          cs_real_t                    rhs_contrib[],
-                          cs_real_t                    diag_contrib[]);
+cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
+                          cs_cdo_locmesh_t            *lm,
+                          cs_cdovb_adv_t              *advb,
+                          cs_cdo_locsys_t             *ls);
 
 /*----------------------------------------------------------------------------*/
 /*!

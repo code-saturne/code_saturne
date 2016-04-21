@@ -33,6 +33,7 @@
 #include "cs_cdo.h"
 #include "cs_param.h"
 #include "cs_cdo_connect.h"
+#include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
 
 /*----------------------------------------------------------------------------*/
@@ -89,10 +90,8 @@ cs_cdovb_diffusion_builder_free(cs_cdovb_diff_t   *diff);
 /*!
  * \brief   Define the local (cellwise) stiffness matrix
  *
- * \param[in]      c_id        current cell id
- * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
- * \param[in]      vtag        pointer to a cs_cdovb_scaleq_t struct.
+ * \param[in]      lm          cell-wise connectivity and quantitites
  * \param[in]      tensor      3x3 matrix attached to the diffusion property
  * \param[in, out] diff        auxiliary structure used to build the diff. term
  *
@@ -101,45 +100,33 @@ cs_cdovb_diffusion_builder_free(cs_cdovb_diff_t   *diff);
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_cdovb_diffusion_build_local(cs_lnum_t                    c_id,
-                               const cs_cdo_connect_t      *connect,
-                               const cs_cdo_quantities_t   *quant,
-                               const cs_lnum_t             *vtag,
+cs_cdovb_diffusion_build_local(const cs_cdo_quantities_t   *quant,
+                               const cs_cdo_locmesh_t      *lm,
                                const cs_real_3_t           *tensor,
                                cs_cdovb_diff_t             *diff);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Define the local (cellwise) "normal trace gradient" matrix
- *          This local matrix is used in Nitsche method to weakly penalized
- *          Dirichlet boundary conditions.
+ * \brief   Define the local (cellwise) "normal trace gradient" matrix taking
+ *          into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique (symmetrized or not)
  *
- * \param[in]      c_id        cell id
- * \param[in]      f_id        face id (a border face attached to a Dir. BC)
- * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
- * \param[in]      matpty      3x3 matrix related to the diffusion property
- * \param[in]      eig_ratio   eigenvalue_max/eigenvalue_min
- * \param[in]      eig_max     eigenvalue with maximal value
- * \param[in, out] loc_v_ids   store local vertex ids
- * \param[in, out] v_coef      store local contribution on each border vertex
- * \param[in, out] diff        auxiliary structure used to build the diff. term
- *
- * \return a pointer to a local "normal trace gradient" matrix
+ * \param[in]       f_id      face id (a border face attached to a Dir. BC)
+ * \param[in]       quant     pointer to a cs_cdo_quantities_t struct.
+ * \param[in]       lm        pointer to a cs_cdo_locmesh_t struct.
+ * \param[in]       matpty    3x3 matrix related to the diffusion property
+ * \param[in, out]  diff      auxiliary structure used to build the diff. term
+ * \param[in, out]  ls        cell-wise structure sotring the local system
  */
 /*----------------------------------------------------------------------------*/
 
-cs_locmat_t *
-cs_cdovb_diffusion_ntrgrd_build(cs_lnum_t                    c_id,
-                                cs_lnum_t                    f_id,
-                                const cs_cdo_connect_t      *connect,
-                                const cs_cdo_quantities_t   *quant,
-                                const cs_real_t              matpty[3][3],
-                                cs_real_t                    eig_ratio,
-                                cs_real_t                    eig_max,
-                                cs_lnum_t                   *loc_v_ids,
-                                cs_real_t                   *v_coef,
-                                cs_cdovb_diff_t             *diff);
+void
+cs_cdovb_diffusion_weak_bc(cs_lnum_t                    f_id,
+                           const cs_cdo_quantities_t   *quant,
+                           cs_cdo_locmesh_t            *lm,
+                           const cs_real_t              matpty[3][3],
+                           cs_cdovb_diff_t             *diff,
+                           cs_cdo_locsys_t             *ls);
 
 /*----------------------------------------------------------------------------*/
 

@@ -258,8 +258,8 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
     for (i = 0; i < _h->n_ent; i++) {
       for (j = 0; j < _h->n_ent; j++) {
         const int  ij = i*_h->n_ent+j;
-        _nenc += dgc[i] * _h->mat[ij]*dgc[j];
-        _denc += gexc[i] * _h->mat[ij]*gexc[j];
+        _nenc += dgc[i] * _h->val[ij]*dgc[j];
+        _denc += gexc[i] * _h->val[ij]*gexc[j];
       }
     }
 

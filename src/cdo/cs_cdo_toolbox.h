@@ -73,7 +73,7 @@ typedef struct {
   int         n_max_ent;  // max number of entities by primal cells
   int         n_ent;      // current number of entities
   cs_lnum_t  *ids;        // list of entity ids (size = n_max_ent)
-  double     *mat;        // local matrix (size: n_max_ent*n_max_ent)
+  double     *val;        // local matrix (size: n_max_ent*n_max_ent)
 
 } cs_locmat_t;
 
@@ -89,7 +89,7 @@ typedef struct {
   int         n_cols;     // current number of columns
   cs_lnum_t  *col_ids;    // list of entity ids in a col (size = n_max_rows)
 
-  short int  *mat;        // local matrix (size: n_max_rows*n_max_cols)
+  short int  *sgn;        // local matrix (size: n_max_rows*n_max_cols)
 
 } cs_locdec_t;
 

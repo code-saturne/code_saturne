@@ -171,10 +171,10 @@ _compute_cdovb(const cs_cdo_connect_t     *connect,
                const cs_field_t           *field,
                cs_real_t                   dist[])
 {
-  cs_lnum_t  i, k;
   cs_real_t  *gdi = NULL, *dualcell_vol = NULL, *cell_gradient = NULL;
   cs_real_3_t  *vtx_gradient = NULL;
 
+  const cs_connect_index_t  *c2v = connect->c2v;
   const cs_real_t  *var = field->val;
 
   /* Compute a discrete gradient of var along each edge */
@@ -186,7 +186,8 @@ _compute_cdovb(const cs_cdo_connect_t     *connect,
   /* Reconstruct gradient at vertices from gradient at cells */
   BFT_MALLOC(vtx_gradient, cdoq->n_vertices, cs_real_3_t);
   BFT_MALLOC(dualcell_vol, cdoq->n_vertices, cs_real_t);
-  for (i = 0; i < cdoq->n_vertices; i++) {
+# pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
     vtx_gradient[i][0] = vtx_gradient[i][1] = vtx_gradient[i][2] = 0.;
     dualcell_vol[i] = 0.;
   }
@@ -195,26 +196,28 @@ _compute_cdovb(const cs_cdo_connect_t     *connect,
 
     cs_lnum_t  cshift = 3*c_id;
 
-    for (i = connect->c2v->idx[c_id]; i < connect->c2v->idx[c_id+1]; i++) {
+    for (cs_lnum_t i = c2v->idx[c_id]; i < c2v->idx[c_id+1]; i++) {
 
-      cs_lnum_t  v_id = connect->c2v->ids[i];
+      cs_lnum_t  v_id = c2v->ids[i];
 
       dualcell_vol[v_id] += cdoq->dcell_vol[i];
-      for (k = 0; k < 3; k++)
+      for (int k = 0; k < 3; k++)
         vtx_gradient[v_id][k] += cdoq->dcell_vol[i]*cell_gradient[cshift+k];
 
     } // Loop on cell vertices
 
   } // Loop on cells
 
-  for (i = 0; i < cdoq->n_vertices; i++) {
+# pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
     cs_real_t  inv_dualcell_vol = 1/dualcell_vol[i];
-    for (k = 0; k < 3; k++)
+    for (int k = 0; k < 3; k++)
       vtx_gradient[i][k] *= inv_dualcell_vol;
   }
 
   /* Compute now wall distance at each vertex */
-  for (i = 0; i < cdoq->n_vertices; i++) {
+# pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
     cs_real_t  tmp = _dp3(vtx_gradient[i], vtx_gradient[i]) + 2*var[i];
     assert(tmp >= 0); // Sanity check
     dist[i] = sqrt(tmp) - cs_math_3_norm(vtx_gradient[i]);
@@ -355,7 +358,8 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
   /* Initialize dist array */
   cs_real_t  *dist = NULL;
   BFT_MALLOC(dist, n_elts[0], cs_real_t);
-  for (int i = 0; i < n_elts[0]; i++)
+# pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_elts[0]; i++)
     dist[i] = 0;
 
   cs_space_scheme_t  space_scheme = cs_equation_get_space_scheme(eq);
@@ -377,7 +381,8 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
   }
 
   /* Replace field values by dist */
-  for (int i = 0; i < n_elts[0]; i++)
+# pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_elts[0]; i++)
     field->val[i] = dist[i];
 
   /* Free memory */

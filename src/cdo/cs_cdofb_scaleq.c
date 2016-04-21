@@ -289,7 +289,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
       _a->ids[i] = _h->ids[i];
 
       for (j = 0; j < _h->n_ent; j++)
-        rowsum += _h->mat[i*_h->n_ent+j];
+        rowsum += _h->val[i*_h->n_ent+j];
 
       dsum += rowsum;
       BHCtc[i] = -rowsum;
@@ -301,8 +301,8 @@ _build_diffusion_system(const cs_mesh_t             *m,
     for (i = 0; i < _a->n_ent; i++) {
       for (j = 0; j < _a->n_ent; j++) {
         ij = i*_a->n_ent+j;
-        _a->mat[ij] = -BHCtc[j]*invdsum*BHCtc[i];
-        _a->mat[ij] += _h->mat[ij];
+        _a->val[ij] = -BHCtc[j]*invdsum*BHCtc[i];
+        _a->val[ij] += _h->val[ij];
       }
     }
 
@@ -790,7 +790,7 @@ cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
       rowsum = 0;
       f_id = connect->c2f->col_id[l];
       for (j = 0; j < _h->n_ent; j++)
-        rowsum += _h->mat[i*_h->n_ent+j];
+        rowsum += _h->val[i*_h->n_ent+j];
       dsum += rowsum;
       _wf_val += b->face_values[f_id] * rowsum;
     }
