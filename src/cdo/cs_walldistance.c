@@ -336,7 +336,7 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
      - create system builder
      - initialize field according to initial conditions
      - initialize source term */
-  cs_equation_init_system(mesh, connect, cdoq, time_step, eq);
+  cs_equation_init_system(mesh, eq);
 
   /* Define the algebraic system */
   cs_equation_build_system(mesh, time_step, dt_cur, eq);

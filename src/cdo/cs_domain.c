@@ -435,11 +435,7 @@ _compute_steady_user_equations(cs_domain_t   *domain,
            - create system builder
            - initialize field according to initial conditions
            - initialize source term */
-        cs_equation_init_system(domain->mesh,
-                                domain->connect,
-                                domain->cdo_quantities,
-                                domain->time_step,
-                                eq);
+        cs_equation_init_system(domain->mesh, eq);
 
         /* Define the algebraic system */
         cs_equation_build_system(domain->mesh,
@@ -489,11 +485,7 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
              - create system builder
              - initialize field according to initial conditions
              - initialize source term */
-          cs_equation_init_system(domain->mesh,
-                                  domain->connect,
-                                  domain->cdo_quantities,
-                                  domain->time_step,
-                                  eq);
+          cs_equation_init_system(domain->mesh, eq);
 
         } /* User-defined equation */
 
@@ -550,13 +542,9 @@ _set_shared_pointers(const cs_cdo_quantities_t    *quant,
                      const cs_time_step_t         *time_step)
 {
   cs_source_term_set_shared_pointers(quant, connect, time_step);
-
   cs_evaluate_set_shared_pointers(quant, connect, time_step);
-
   cs_property_set_shared_pointers(quant, connect, time_step);
-
   cs_advection_field_set_shared_pointers(quant, connect, time_step);
-
   cs_cdovb_scaleq_set_shared_pointers(quant, connect, time_step);
 }
 

@@ -1109,7 +1109,7 @@ cs_cdovb_scaleq_compute_source(void            *builder)
 
   cs_desc_t  desc;
 
-  if (eqp->flag & CS_EQUATION_HCONF_ST) {
+  if (eqp->flag & CS_EQUATION_SOURCE_LVCONF) {
     desc.location = CS_FLAG_SCAL | cs_cdo_primal_vtx;
     desc.state = CS_FLAG_STATE_POTENTIAL;
 
@@ -1129,7 +1129,7 @@ cs_cdovb_scaleq_compute_source(void            *builder)
     cs_source_term_compute(desc, st, &st_eval); // updated inside this function
 
     /* Update source term array */
-    if (eqp->flag & CS_EQUATION_HCONF_ST) {
+    if (eqp->flag & CS_EQUATION_SOURCE_LVCONF) {
 
       double  *mv = cs_cdovb_scal_work + bld->n_vertices;
 
@@ -1537,7 +1537,7 @@ void
 cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
                                           const cs_real_t     *pdi,
                                           int                  ml_id,
-                                          cs_real_3_t          direction,
+                                          const cs_real_t      direction[],
                                           double              *diff_flux,
                                           double              *conv_flux)
 {

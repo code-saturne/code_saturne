@@ -2192,7 +2192,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
        - create system builder
        - initialize field according to initial conditions
        - initialize source term */
-    cs_equation_init_system(mesh, connect, cdoq, time_step, richards);
+    cs_equation_init_system(mesh, richards);
 
     if (gw->with_gravitation) /* Initialize pressure head */
       _update_pressure_head(cdoq, richards, gw);
@@ -2222,7 +2222,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
 
       cs_equation_t  *eq = eqs[gw->tracer_eq_ids[i]];
 
-      cs_equation_init_system(mesh, connect, cdoq, time_step, eq);
+      cs_equation_init_system(mesh, eq);
 
       if (cs_equation_is_steady(eq)) {
 

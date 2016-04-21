@@ -1018,15 +1018,11 @@ _create_equation_param(cs_equation_type_t     type,
  * \brief  Set the initial values for the variable related to an equation
  *
  * \param[in, out]  eq         pointer to a cs_equation_t structure
- * \param[in]       connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]       cdoq       pointer to a cs_cdo_quantities_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_initialize_field_from_ic(cs_equation_t              *eq,
-                          const cs_cdo_connect_t     *connect,
-                          const cs_cdo_quantities_t  *cdoq)
+_initialize_field_from_ic(cs_equation_t     *eq)
 {
   cs_flag_t  dof_flag = 0;
   cs_equation_param_t  *eqp = eq->param;
@@ -1641,7 +1637,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
         const cs_param_reaction_t  r_info = eqp->reaction_terms[r_id];
 
         if (r_info.hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
-          eqp->flag |= CS_EQUATION_HCONF_ST;
+          eqp->flag |= CS_EQUATION_SOURCE_LVCONF;
           break;
         }
 
@@ -2775,18 +2771,12 @@ cs_equation_create_field(cs_equation_t     *eq)
  *         related to its equation
  *
  * \param[in]       mesh       pointer to the mesh structure
- * \param[in]       connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]       cdoq       pointer to a cs_cdo_quantities_t struct.
- * \param[in]       time_step  pointer to a time step structure
  * \param[in, out]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_init_system(const cs_mesh_t            *mesh,
-                        const cs_cdo_connect_t     *connect,
-                        const cs_cdo_quantities_t  *cdoq,
-                        const cs_time_step_t       *time_step,
                         cs_equation_t              *eq)
 {
   if (eq == NULL)
@@ -2827,7 +2817,7 @@ cs_equation_init_system(const cs_mesh_t            *mesh,
     return; // By default, 0 is set
   }
 
-  _initialize_field_from_ic(eq, connect, cdoq);
+  _initialize_field_from_ic(eq);
 
   if (eq->main_ts_id > -1) {
     cs_timer_stats_stop(eq->main_ts_id);

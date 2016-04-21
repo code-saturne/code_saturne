@@ -43,17 +43,17 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Term flag */
-#define  CS_EQUATION_LOCKED     (1 <<  0)  /*  1: modification not allowed */
-#define  CS_EQUATION_UNSTEADY   (1 <<  1)  /*  2: unsteady term */
-#define  CS_EQUATION_CONVECTION (1 <<  2)  /*  4: convection term */
-#define  CS_EQUATION_DIFFUSION  (1 <<  3)  /*  8: diffusion term */
-#define  CS_EQUATION_REACTION   (1 <<  4)  /* 16: reaction term */
-#define  CS_EQUATION_HCONF_ST   (1 <<  5)  /* 32: treatment of the source */
+#define CS_EQUATION_LOCKED        (1 <<  0)  //  1: modification not allowed
+#define CS_EQUATION_UNSTEADY      (1 <<  1)  //  2: unsteady term
+#define CS_EQUATION_CONVECTION    (1 <<  2)  //  4: convection term
+#define CS_EQUATION_DIFFUSION     (1 <<  3)  //  8: diffusion term
+#define CS_EQUATION_REACTION      (1 <<  4)  // 16: reaction term
+#define CS_EQUATION_SOURCE_LVCONF (1 <<  5)  // 32: treatment of the source
 
 /* Extra operations flag */
-#define  CS_EQUATION_POST_NONE        (1 << 0)
-#define  CS_EQUATION_POST_PECLET      (2 << 0)
-#define  CS_EQUATION_POST_UPWIND_COEF (3 << 0)
+#define CS_EQUATION_POST_NONE        (1 << 0)
+#define CS_EQUATION_POST_PECLET      (2 << 0)
+#define CS_EQUATION_POST_UPWIND_COEF (3 << 0)
 
 /*============================================================================
  * Type definitions

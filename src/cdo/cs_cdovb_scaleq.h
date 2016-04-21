@@ -199,7 +199,7 @@ void
 cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
                                           const cs_real_t     *pdi,
                                           int                  ml_id,
-                                          cs_real_3_t          direction,
+                                          const cs_real_t      direction[],
                                           double              *diff_flux,
                                           double              *conv_flux);
 

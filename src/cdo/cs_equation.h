@@ -327,18 +327,12 @@ cs_equation_create_field(cs_equation_t      *eq);
  *         related to its equation
  *
  * \param[in]       mesh       pointer to the mesh structure
- * \param[in]       connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]       cdoq       pointer to a cs_cdo_quantities_t struct.
- * \param[in]       time_step  pointer to a time step structure
  * \param[in, out]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_init_system(const cs_mesh_t            *mesh,
-                        const cs_cdo_connect_t     *connect,
-                        const cs_cdo_quantities_t  *cdoq,
-                        const cs_time_step_t       *time_step,
                         cs_equation_t              *eq);
 
 /*----------------------------------------------------------------------------*/
