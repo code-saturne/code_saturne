@@ -2907,7 +2907,8 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
 
   bool  do_transfer = true;
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB)
-    do_transfer = false;
+    if (eqp->bc->enforcement != CS_PARAM_BC_ENFORCE_STRONG)
+      do_transfer = false;
 
   /* First step: create a matrix structure */
   if (eq->ms == NULL)
