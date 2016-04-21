@@ -814,6 +814,7 @@ cs_cdovb_diffusion_ntrgrd_build(cs_lnum_t                    c_id,
   switch (h_algo) {
 
   case CS_PARAM_HODGE_ALGO_COST:
+  case CS_PARAM_HODGE_ALGO_VORONOI:
     {
       short int _ek;
       cs_real_3_t  lek;

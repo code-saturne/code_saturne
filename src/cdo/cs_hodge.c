@@ -1133,6 +1133,8 @@ _build_using_voronoi(cs_lnum_t                    c_id,
       } /* End of loop on cell edges */
 
     } /* EpFd */
+    break;
+    
   case CS_PARAM_HODGE_TYPE_FPED:
     {
       const cs_sla_matrix_t *c2f = connect->c2f;
@@ -1151,6 +1153,7 @@ _build_using_voronoi(cs_lnum_t                    c_id,
       } /* End of loop on cell faces */
 
     } /* FpEd */
+    break;
 
   case CS_PARAM_HODGE_TYPE_VPCD:
     {
@@ -1165,6 +1168,8 @@ _build_using_voronoi(cs_lnum_t                    c_id,
       } // Loop on cell vertices
 
     } /* VpCd */
+    break;
+    
   default:
     break;
 
