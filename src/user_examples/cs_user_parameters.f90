@@ -1493,7 +1493,7 @@ frhist = -1.d0
 
 
 ! --- Number of monitoring points (probes) and their positions
-!     (limited to ncaptm=100)
+!     (limited to ncaptm=200)
 
 ncapt  = 4
 tplfmt = 1 ! time plot format (1: .dat, 2: .csv, 3: both)

@@ -311,7 +311,7 @@ frhist = -1.d0
 !< [usipes_ex_05]
 
 ! --- Number of monitoring points (probes) and their positions
-!     (limited to ncaptm=100)
+!     (limited to ncaptm=200)
 
 !< [usipes_ex_06]
 ncapt  = 4

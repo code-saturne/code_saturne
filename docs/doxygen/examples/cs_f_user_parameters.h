@@ -122,7 +122,7 @@
   \snippet cs_user_parameters-output.f90 usipes_ex_05
 
   Number of monitoring points (probes) and their positions.
-  Limited to ncaptm=100.
+  Limited to ncaptm=200.
 
   \snippet cs_user_parameters-output.f90 usipes_ex_06
 

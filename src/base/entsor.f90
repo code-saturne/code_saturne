@@ -162,12 +162,12 @@ module entsor
   !> maximum number of probes
   !> see associated format in \ref ecrhis
   integer    ncaptm
-  parameter(ncaptm=100)
+  parameter(ncaptm=200)
 
   !> time plot format (1: .dat, 2: .csv, 3: both)
   integer, save :: tplfmt
 
-  !> total number of probes (limited to \ref ncaptm=100)
+  !> total number of probes (limited to \ref ncaptm=200)
   integer, save :: ncapt
 
   !> output period of the chronological record files:
