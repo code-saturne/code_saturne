@@ -676,13 +676,13 @@ _sles_initialization(const cs_equation_t  *eq)
                              NULL,
                              MATSEQAIJ, // Warning SEQ not MPI
                              _petsc_setup_hook,
-                             (void *)eqp);
+                             (const void *)eqp);
       else
         cs_sles_petsc_define(eq->field_id,
                              NULL,
                              MATMPIAIJ,
                              _petsc_setup_hook,
-                             (void *)eqp);
+                             (const void *)eqp);
 #else
       bft_error(__FILE__, __LINE__, 0,
                 _(" PETSC algorithms used to solve %s are not linked.\n"
@@ -2798,7 +2798,6 @@ cs_equation_init_system(const cs_mesh_t            *mesh,
       cs_timer_stats_start(eq->pre_ts_id);
   }
 
-  const double  t_ini = 0;
   const cs_equation_param_t  *eqp = eq->param;
 
   /* Allocate and initialize a system builder */

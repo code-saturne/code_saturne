@@ -94,8 +94,8 @@ struct _cs_cdovb_scaleq_t {
   /* Indirection between zipped numbering (without BC) and initial numbering
      Allocated only if the boundary conditions are strongly enforced.
   */
-  cs_lnum_t          *v_z2i_ids;  // Mapping n_dof_vertices -> n_vertices
-  cs_lnum_t          *v_i2z_ids;  // Mapping n_vertices     -> n_dof_vertices
+  cs_lnum_t     *v_z2i_ids;  // Mapping n_dof_vertices -> n_vertices
+  cs_lnum_t     *v_i2z_ids;  // Mapping n_vertices     -> n_dof_vertices
 
   /* Boundary conditions:
 
@@ -119,10 +119,10 @@ struct _cs_cdovb_scaleq_t {
   cs_param_bc_enforce_t  enforce; // type of enforcement of BCs
   cs_cdo_bc_t           *face_bc; // list of faces sorted by type of BCs
   cs_cdo_bc_list_t      *vtx_dir; // list of vertices attached to a Dirichlet BC
-  double                *dir_val; /* size = vtx_dir->n_nhmg_elts */
+  double                *dir_val; // size = vtx_dir->n_nhmg_elts
 
   /* Source terms */
-  cs_real_t          *source_terms;
+  cs_real_t             *source_terms;
 
   /* Hodge^{VpCd,Conf} : only if reaction with the same algo for the discrete
      Hodge is used (in all cases, the matrix index is shared) */
@@ -940,7 +940,7 @@ cs_cdovb_scaleq_finalize(void)
     BFT_FREE(_vbscal_work );
   }
 
-  cs_index_free(&(cs_cdovb_v2v));
+  cs_index_free(&cs_cdovb_v2v);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1028,7 +1028,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
       builder->vtx_dir->n_elts > 0) {
 
     const bool  advection = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
-    const bool  unsteady  = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
+    const bool  unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
 
     if (advection || unsteady)
       bft_error(__FILE__, __LINE__, 0,
@@ -1207,16 +1207,16 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
                              cs_real_t                  **rhs,
                              cs_sla_matrix_t            **sla_mat)
 {
-  cs_lnum_t  i, j;
+  cs_lnum_t  i;
   cs_real_t  ptyval;
 
   bool  diff_pty_uniform = true, time_pty_uniform = true;
   cs_real_33_t  diff_tensor = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
-  cs_cdovb_scaleq_t  *sys_builder = (cs_cdovb_scaleq_t *)builder;
+  cs_cdovb_scaleq_t  *b = (cs_cdovb_scaleq_t *)builder;
 
-  const cs_equation_param_t  *eqp = sys_builder->eqp;
   const cs_cdo_quantities_t  *quant = cs_cdovb_quant;
   const cs_cdo_connect_t  *connect = cs_cdovb_connect;
+  const cs_equation_param_t  *eqp = b->eqp;
   const bool  do_diffusion = (eqp->flag & CS_EQUATION_DIFFUSION) ? true:false;
   const bool  do_advection = (eqp->flag & CS_EQUATION_CONVECTION) ? true:false;
   const bool  do_unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true:false;
@@ -1233,7 +1233,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
 
   /* Allocate and initialize a matrix with the larger stencil (that related
      to diffusion => all vertices of a cell are potentially in interaction)
-     adr = advection/diffusion/reaction
+     "adr" means Advection/Diffusion/Reaction
   */
   cs_sla_matrix_t  *sys_mat =
     cs_sla_matrix_create_msr_from_index(cs_cdovb_v2v,
@@ -1241,7 +1241,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
                                         true,   // sorted
                                         1);     // stride
 
-  if (!do_advection && sys_builder->enforce != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
+  if (!do_advection && b->enforce != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
     sys_mat->flag |= CS_SLA_MATRIX_SYM;
 
   /* Preparatory step for diffusion term */
@@ -1251,7 +1251,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
     diff = cs_cdovb_diffusion_builder_init(connect,
                                            diff_pty_uniform,
                                            eqp->diffusion_hodge,
-                                           sys_builder->enforce);
+                                           b->enforce);
     if (diff_pty_uniform)
       cs_property_get_cell_tensor(0,
                                   eqp->diffusion_property,
@@ -1292,7 +1292,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
   /* Preparatory step for unsteady term */
   if (do_unsteady) {
 
-    time_mat = _init_time_matrix(sys_builder);
+    time_mat = _init_time_matrix(b);
     time_builder = cs_hodge_builder_init(connect, eqp->time_hodge);
     time_pty_uniform = cs_property_is_uniform(eqp->time_property);
 
@@ -1440,22 +1440,23 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
   /* Initialize full rhs */
   cs_real_t  *full_rhs = *rhs;
   if (full_rhs == NULL)
-    BFT_MALLOC(full_rhs, sys_builder->n_vertices, cs_real_t);
-  for (i = 0; i < sys_builder->n_vertices; i++)
+    BFT_MALLOC(full_rhs, b->n_vertices, cs_real_t);
+# pragma omp parallel for if (b->n_vertices > CS_THR_MIN)  
+  for (i = 0; i < b->n_vertices; i++)
     full_rhs[i] = 0.0;
 
   /* Compute the contribution of source terms to the full rhs for this
      time step */
-  _add_source_terms(sys_builder, full_rhs);
+  _add_source_terms(b, full_rhs);
 
   /* Compute the values of the Dirichlet BC.
      TODO: do the analogy for Neumann BC */
-  _compute_dir_values(mesh, field_val, sys_builder);
+  _compute_dir_values(mesh, field_val, b);
 
   if (do_diffusion) { /* Last treatment for the diffusion term */
 
     /* Weakly enforce Dirichlet boundary conditions */
-    _weak_bc_enforcement(sys_builder, diff, full_rhs, sys_mat);
+    _weak_bc_enforcement(b, diff, full_rhs, sys_mat);
 
     /* Free associated builder structure */
     diff = cs_cdovb_diffusion_builder_free(diff);
@@ -1465,7 +1466,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
   if (do_advection) { /* Last treatment for the advection term */
 
     /* Apply boundary conditions */
-    _add_advection_bc(sys_builder, adv, full_rhs, sys_mat);
+    _add_advection_bc(b, adv, full_rhs, sys_mat);
 
     /* Free associated builder structure */
     adv = cs_cdovb_advection_builder_free(adv);
@@ -1478,7 +1479,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
   if (do_unsteady) {
 
     _apply_time_scheme(field_val, time_mat, dt_cur,
-                       sys_builder, full_rhs, sys_mat);
+                       b, full_rhs, sys_mat);
 
     /* sys_mat becomes the system matrix since it now includes the time
        contribution */
@@ -1489,7 +1490,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
      Apply the strong or penalized enforcement. In case of Nitsche enforcement,
      there is nothing to do (already done).
      Must be call after the application of the time scheme */
-  _enforce_bc(sys_builder, &full_rhs, &sys_mat);
+  _enforce_bc(b, &full_rhs, &sys_mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
   cs_sla_system_dump("system.log", NULL, sys_mat, full_rhs);
@@ -1563,7 +1564,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
                                           double              *diff_flux,
                                           double              *conv_flux)
 {
-  const cs_cdovb_scaleq_t  *b = (cs_cdovb_scaleq_t  *)builder;
+  const cs_cdovb_scaleq_t  *b = (const cs_cdovb_scaleq_t  *)builder;
   const cs_equation_param_t  *eqp = b->eqp;
   const bool  do_adv = eqp->flag & CS_EQUATION_CONVECTION;
   const bool  do_diff = eqp->flag & CS_EQUATION_DIFFUSION;
@@ -1595,8 +1596,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
               _(" Computing the flux across all interior or border faces is not"
                 " managed yet."));
 
-  short int  sgn;
-  double  pf, df, af;
+  double  pf;
   cs_real_3_t  gc, pty_gc;
   cs_real_33_t  pty_tens;
   cs_nvec3_t  adv_c;

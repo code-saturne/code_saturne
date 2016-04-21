@@ -104,7 +104,7 @@ struct _cs_cdovb_diff_t {
 
   /* Temporary buffers */
   cs_real_3_t  *tmp_vect;  // set of local vectors
-  cs_real_t    *tmp_real;   // set of local arrays of double
+  cs_real_t    *tmp_real;  // set of local arrays of double
   short int    *tmp_ids;   // set of local ids related to a cell
 
   /* Local matrix (stiffness or normal trace gradient) */
@@ -353,7 +353,7 @@ _compute_wvf_pefcvol(cs_lnum_t                   f_id,
  * \param[in]      c_id        current cell id
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
- * \param[in]      loc_ids     local vertex numbering on a cell
+ * \param[in]      loc_ids     local vertex numbering in a cell
  * \param[in]      tensor      3x3 matrix attached to the diffusion property
  * \param[in, out] diff        auxiliary structure used to build the diff. term
  *
@@ -416,11 +416,11 @@ _compute_wbs_stiffness(cs_lnum_t                    c_id,
 
       /* Gradient of the lagrange function related to v1 */
       _grad_lagrange_vtx_pefc(unit_vc[_v2], unit_vc[_v1], len_vc[_v1], deq,
-                             grd_v1);
+                              grd_v1);
 
       /* Gradient of the lagrange function related to a v2 */
       _grad_lagrange_vtx_pefc(unit_vc[_v1], unit_vc[_v2], len_vc[_v2], deq,
-                             grd_v2);
+                              grd_v2);
 
       /* Gradient of the lagrange function related to a face.
          This formula is a consequence of the Partition of the Unity */
@@ -691,8 +691,8 @@ cs_cdovb_diffusion_build_local(cs_lnum_t                    c_id,
             if (connect->e2v->col_id[ek_shft] == sloc->ids[vi])
               sgn_ik = connect->e2v->sgn[ek_shft];
             else {
-            assert(connect->e2v->col_id[ek_shft+1] == sloc->ids[vi]);
-            sgn_ik = connect->e2v->sgn[ek_shft+1];
+              assert(connect->e2v->col_id[ek_shft+1] == sloc->ids[vi]);
+              sgn_ik = connect->e2v->sgn[ek_shft+1];
             }
 
             for (el = 0; el < hloc->n_ent; el++) { /* Loop on cell edges */

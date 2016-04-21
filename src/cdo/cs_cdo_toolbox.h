@@ -84,7 +84,7 @@ typedef struct {
   int         n_max_rows; // max number of entries in a row
   int         n_rows;     // current number of rows
   cs_lnum_t  *row_ids;    // list of entity ids in a row (size = n_max_rows)
-  
+
   int         n_max_cols; // max number of entries in a column
   int         n_cols;     // current number of columns
   cs_lnum_t  *col_ids;    // list of entity ids in a col (size = n_max_rows)

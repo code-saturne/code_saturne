@@ -76,7 +76,7 @@ struct  _cs_cdofb_scaleq_t {
 
   /* Pointer to a cs_equation_param_t structure shared with a cs_equation_t
      structure.  */
-  
+
   const cs_equation_param_t  *eqp;
 
   /* Reduced system (known boundary entities may be removed --> Dirichlet) */

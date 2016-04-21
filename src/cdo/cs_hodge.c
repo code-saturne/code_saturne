@@ -523,15 +523,12 @@ _compute_cost_quant(const int               n_loc_ent,
                     struct _cost_quant_t   *hq,
                     cs_locmat_t            *hloc)
 {
-  /* Sanity check */
-  assert(n_loc_ent == hloc->n_ent);
-
   /* Compute several useful quantities
      alpha_ij = delta_ij - pq_j.Consist_i where Consist_i = 1/|c| dq_i
      qmq_ii = dq_i.mat.dq_i
      kappa_i = qmq_ii / |subvol_i|
   */
-  
+
   cs_real_3_t  mdq_i;
 
   for (int i = 0; i < n_loc_ent; i++) {
@@ -542,13 +539,13 @@ _compute_cost_quant(const int               n_loc_ent,
     double  *alpha_i = hq->alpha + shift_i;
 
     alpha_i[i] = 1 - invcvol * dsvol_i;
-    
+
     double  *mi = hloc->mat + shift_i;
-    
+
     cs_math_33_3_product(ptymat, dq[i], mdq_i);
 
     const double  qmq_ii = _dp3(dq[i], mdq_i);
-    
+
     mi[i] = invcvol * qmq_ii;
     hq->kappa[i] = 3. * qmq_ii / dsvol_i;
 
@@ -587,7 +584,6 @@ _build_using_cost(int                         cid,
                   struct _cost_quant_t       *hq)
 {
   int  i, j, k;
-  double  invsurf;
 
   if (hodge_cost_ts_id > -1)
     cs_timer_stats_start(hodge_cost_ts_id);
@@ -611,9 +607,6 @@ _build_using_cost(int                         cid,
         const cs_quant_t  ep = quant->edge[e_id]; /* Edge quantities */
 
         hloc->ids[n_ent] = e_id;
-
-        /* Primal and dual vector quantities are split into
-           a measure and a unit vector in order to achieve a better accuracy */
         for (k = 0; k < 3; k++) {
           hq->dq[n_ent][k] = fd.vect[k];
           hq->pq[n_ent][k] = ep.meas * ep.unitv[k];
@@ -636,9 +629,6 @@ _build_using_cost(int                         cid,
         const cs_quant_t  fp = quant->face[f_id];  /* Face quantities */
 
         hloc->ids[n_ent] = f_id;
-
-        /* Primal and dual vector quantities are split into
-           a measure and a unit vector in order to achieve a better accuracy */
         for (k = 0; k < 3; k++) {
           hq->pq[n_ent][k] = fp.meas * fp.unitv[k];
           hq->dq[n_ent][k] = ed.meas * ed.unitv[k];
@@ -662,9 +652,6 @@ _build_using_cost(int                         cid,
         const cs_quant_t  fp = quant->face[f_id];  /* Face quantities */
 
         hloc->ids[n_ent] = f_id;
-
-        /* Primal and dual vector quantities are split into
-           a measure and a unit vector in order to achieve a better accuracy */
         for (k = 0; k < 3; k++) {
           hq->pq[n_ent][k] = sgn * fp.meas * fp.unitv[k];
           hq->dq[n_ent][k] = sgn * ed.meas * ed.unitv[k];
@@ -698,15 +685,21 @@ _build_using_cost(int                         cid,
   /* PRIMAL --> DUAL */
   if (h_info.type == CS_PARAM_HODGE_TYPE_FPED ||
       h_info.type == CS_PARAM_HODGE_TYPE_EPFD)
-    _compute_cost_quant(n_ent, invcvol, (const cs_real_3_t *)hb->ptymat,
-                        hq->pq, hq->dq, hq, hloc);
+    _compute_cost_quant(n_ent, invcvol,
+                        (const cs_real_3_t *)hb->ptymat,
+                        (const cs_real_t (*)[3])hq->pq,
+                        (const cs_real_t (*)[3])hq->dq,
+                        hq, hloc);
 
   /* DUAL --> PRIMAL */
   else if (h_info.type == CS_PARAM_HODGE_TYPE_EDFP)
-    _compute_cost_quant(n_ent, invcvol, (const cs_real_3_t *)hb->ptymat,
-                        hq->dq, hq->pq, hq, hloc);
+    _compute_cost_quant(n_ent, invcvol,
+                        (const cs_real_3_t *)hb->ptymat,
+                        (const cs_real_t (*)[3])hq->dq,
+                        (const cs_real_t (*)[3])hq->pq,
+                        hq, hloc);
 
-  double  stab_part, coef;
+  double  stab_part;
 
   for (i = 0; i < n_ent; i++) { /* Loop on cell entities I */
 
@@ -1106,7 +1099,7 @@ _build_using_voronoi(cs_lnum_t                    c_id,
 
     } /* EpFd */
     break;
-    
+
   case CS_PARAM_HODGE_TYPE_FPED:
     {
       const cs_sla_matrix_t *c2f = connect->c2f;
@@ -1141,7 +1134,7 @@ _build_using_voronoi(cs_lnum_t                    c_id,
 
     } /* VpCd */
     break;
-    
+
   default:
     break;
 
@@ -1420,6 +1413,9 @@ cs_hodge_build_local(int                         c_id,
     break;
 
   default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid type of algorithm to build a discrete Hodge"
+                " operator\n"));
     break;
 
   }

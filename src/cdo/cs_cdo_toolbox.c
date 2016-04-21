@@ -1032,7 +1032,7 @@ cs_locdec_create(int   n_max_rows,
   m->row_ids = m->col_ids = m->mat = NULL;
 
   int msize = n_max_rows * n_max_cols;
-  
+
   if (msize > 0) {
 
     BFT_MALLOC(m->row_ids, n_max_rows, cs_lnum_t);
@@ -1041,7 +1041,7 @@ cs_locdec_create(int   n_max_rows,
     BFT_MALLOC(m->col_ids, n_max_cols, cs_lnum_t);
     for (i = 0; i < n_max_cols; i++)
       m->col_ids[i] = 0;
-    
+
     BFT_MALLOC(m->mat, msize, short int);
     for (i = 0; i < msize; i++)
       m->mat[i] = 0;
