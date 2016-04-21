@@ -473,35 +473,24 @@ _get_tracer_diffusion_tensor(double          theta,
 {
   const cs_gw_tracer_t  *tp = (const cs_gw_tracer_t *)tracer_struc;
 
-  const double  vxy = v[0]*v[1], vxz = v[0]*v[2], vyz = v[1]*v[2];
-  const cs_real_33_t  vv = {{v[0]*v[0], vxy, vxz},
-                            {vxy, v[1]*v[1], vyz},
-                            {vxz, vyz, v[2]*v[2]}};
-  const double  vnorm = sqrt(vv[0][0] + vv[1][1] + vv[2][2]);
-  const double  theta_wmd = tp->wmd * theta;
+  const double v2[3] = {v[0]*v[0], v[1]*v[1], v[2]*v[2]};
+  const double  vnorm = sqrt(v2[0] + v2[1] + v2[2]);
+  const double  coef1 = tp->wmd * theta + tp->alpha_t*vnorm;
 
-  /* Initialization */
+  double  delta_coef = 0.;
+  if (vnorm > cs_math_zero_threshold)
+    delta_coef = (tp->alpha_l - tp->alpha_t)/vnorm;
+
+  const double  dcv[3] = {delta_coef*v[0], delta_coef*v[1], delta_coef*v[2]};
+
   for (int ki = 0; ki < 3; ki++) {
-    result->tens[ki][ki] = theta_wmd;
+
+    /* Diagonal terms */
+    result->tens[ki][ki] = coef1 + delta_coef*v2[ki];
+
+    /* Extra-diagonal terms */
     for (int kj = ki + 1; kj < 3; kj++)
-      result->tens[ki][kj] = 0.;
-  }
-
-  if (vnorm > cs_math_zero_threshold) {
-
-    const double  onv = 1/vnorm;
-    const double  delta_coef = (tp->alpha_l - tp->alpha_t)*onv;
-
-    for (int ki = 0; ki < 3; ki++) {
-
-      /* Diagonal terms */
-      result->tens[ki][ki] += tp->alpha_t*vnorm + delta_coef*vv[ki][ki];
-
-      /* Extra-diagonal terms */
-      for (int kj = ki + 1; kj < 3; kj++)
-        result->tens[ki][kj] = delta_coef*vv[ki][kj];
-    }
-
+      result->tens[ki][kj] = dcv[ki]*v[kj];
   }
 
   /* Diffusion tensor is symmetric by construction */

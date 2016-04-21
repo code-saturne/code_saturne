@@ -119,11 +119,11 @@ struct _hodge_builder_t {
 
 struct _cost_quant_t {
 
-  double     *qmq;        /* symmetric dense matrix of size n_ent */
-  double     *T;          /* dense matrix of size n_ent (not symmetric) */
+  double    *kappa;     /* symmetric dense matrix of size n_ent */
+  double    *alpha;     /* dense matrix of size n_ent (not symmetric) */
 
-  cs_nvec3_t   *pq;       /* primal geometric quantity (size: n_ent) */
-  cs_nvec3_t   *dq;       /* dual geometric quantity (size: n_ent) */
+  cs_real_3_t  *pq;     /* primal geometric quantity (size: n_ent) */
+  cs_real_3_t  *dq;     /* dual geometric quantity (size: n_ent) */
 
 };
 
@@ -450,8 +450,8 @@ _init_cost_quant(int    n_max_ent)
 
   BFT_MALLOC(hq, 1, struct _cost_quant_t);
 
-  hq->qmq = NULL;
-  hq->T = NULL;
+  hq->kappa = NULL;
+  hq->alpha = NULL;
   hq->pq = NULL;
   hq->dq = NULL;
 
@@ -459,14 +459,14 @@ _init_cost_quant(int    n_max_ent)
 
     const int  tot_size = n_max_ent*(1 + n_max_ent);
 
-    BFT_MALLOC(hq->qmq, tot_size, double);
+    BFT_MALLOC(hq->kappa, tot_size, double);
     for (int i = 0; i < tot_size; i++)
-      hq->qmq[i] = 0;
+      hq->kappa[i] = 0;
 
-    hq->T = hq->qmq + n_max_ent;
+    hq->alpha = hq->kappa + n_max_ent;
 
-    BFT_MALLOC(hq->pq, n_max_ent, cs_nvec3_t);
-    BFT_MALLOC(hq->dq, n_max_ent, cs_nvec3_t);
+    BFT_MALLOC(hq->pq, n_max_ent, cs_real_3_t);
+    BFT_MALLOC(hq->dq, n_max_ent, cs_real_3_t);
 
   }
 
@@ -489,7 +489,7 @@ _free_cost_quant(struct _cost_quant_t  *hq)
   if (hq == NULL)
     return hq;
 
-  BFT_FREE(hq->qmq); /* Free in the same time T */
+  BFT_FREE(hq->kappa); /* Free in the same time T */
   BFT_FREE(hq->pq);
   BFT_FREE(hq->dq);
 
@@ -502,7 +502,7 @@ _free_cost_quant(struct _cost_quant_t  *hq)
 /*!
  * \brief   Compute quantities used for defining the entries of the discrete
  *          Hodge for COST algo.
- *          Initialize the local discrete Hodge op. with the consistancy part
+ *          Initialize the local discrete Hodge op. with the consistency part
  *
  * \param[in]      n_loc_ent  number of local entities
  * \param[in]      invcvol    1/|c|
@@ -515,11 +515,11 @@ _free_cost_quant(struct _cost_quant_t  *hq)
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_cost_quant(int                     n_loc_ent,
-                    double                  invcvol,
+_compute_cost_quant(const int               n_loc_ent,
+                    const double            invcvol,
                     const cs_real_33_t      ptymat,
-                    const cs_nvec3_t       *pq,
-                    const cs_nvec3_t       *dq,
+                    const cs_real_3_t      *pq,
+                    const cs_real_3_t      *dq,
                     struct _cost_quant_t   *hq,
                     cs_locmat_t            *hloc)
 {
@@ -527,40 +527,39 @@ _compute_cost_quant(int                     n_loc_ent,
   assert(n_loc_ent == hloc->n_ent);
 
   /* Compute several useful quantities
-     T_ij = pq_i.Consist_j where Consist_j = 1/|c| dq_j
-     T_ji = pq_j.Consist_i
-     qmq_i = 1/|subvol_i| dq_i.mat.dq_i
+     alpha_ij = delta_ij - pq_j.Consist_i where Consist_i = 1/|c| dq_i
+     qmq_ii = dq_i.mat.dq_i
+     kappa_i = qmq_ii / |subvol_i|
   */
+  
+  cs_real_3_t  mdq_i;
 
   for (int i = 0; i < n_loc_ent; i++) {
 
-    cs_real_3_t  mdq_i;
+    const double  dsvol_i = _dp3(dq[i], pq[i]);
 
-    const int  shift_i = i*n_loc_ent;
-    const double svol3 = pq[i].meas*dq[i].meas * _dp3(dq[i].unitv, pq[i].unitv);
+    int  shift_i = i*n_loc_ent;
+    double  *alpha_i = hq->alpha + shift_i;
 
-    /* Compute T_ii */
-    hq->T[shift_i+i] = invcvol * svol3;
+    alpha_i[i] = 1 - invcvol * dsvol_i;
+    
+    double  *mi = hloc->mat + shift_i;
+    
+    cs_math_33_3_product(ptymat, dq[i], mdq_i);
 
-    /* Compute qmq_i and initialize hloc with the consistency part */
-    cs_math_33_3_product(ptymat, dq[i].unitv, mdq_i);
-    const double cmc_i = dq[i].meas * dq[i].meas * _dp3(dq[i].unitv, mdq_i);
+    const double  qmq_ii = _dp3(dq[i], mdq_i);
+    
+    mi[i] = invcvol * qmq_ii;
+    hq->kappa[i] = 3. * qmq_ii / dsvol_i;
 
-    hloc->mat[shift_i+i] = invcvol * cmc_i;
-    hq->qmq[i] = cmc_i * 3/svol3;
-
-    for (int j = 0; j < i; j++) {
-
-      const int  ij = shift_i+j, ji = j*n_loc_ent+i;
+    for (int j = i+1; j < n_loc_ent; j++) {
 
       /* Initialize the lower left part of hloc with the consistency part */
-      const double  cmc_ij = dq[j].meas * dq[i].meas * _dp3(dq[j].unitv, mdq_i);
-
-      hloc->mat[ij] = invcvol * cmc_ij;
+      mi[j] = invcvol * _dp3(dq[j], mdq_i);
 
       /* Compute T (not symmetric) */
-      hq->T[ij] = invcvol*pq[j].meas*dq[i].meas * _dp3(pq[j].unitv, dq[i].unitv);
-      hq->T[ji] = invcvol*pq[i].meas*dq[j].meas * _dp3(pq[i].unitv, dq[j].unitv);
+      alpha_i[j] = -invcvol * _dp3(pq[j], dq[i]);
+      hq->alpha[j*n_loc_ent+i] = -invcvol * _dp3(pq[i], dq[j]);
 
     } /* Loop on entities (J) */
 
@@ -610,19 +609,14 @@ _build_using_cost(int                         cid,
         const cs_lnum_t  e_id = c2e->ids[i];
         const cs_dface_t  fd = quant->dface[i];   /* Dual face quantities */
         const cs_quant_t  ep = quant->edge[e_id]; /* Edge quantities */
-        const cs_nvec3_t  df0q = fd.sface[0];
-        const cs_nvec3_t  df1q = fd.sface[1];
 
         hloc->ids[n_ent] = e_id;
 
         /* Primal and dual vector quantities are split into
            a measure and a unit vector in order to achieve a better accuracy */
-        hq->pq[n_ent].meas = ep.meas;
-        hq->dq[n_ent].meas = df0q.meas + df1q.meas;
-        invsurf = 1/hq->dq[n_ent].meas;
         for (k = 0; k < 3; k++) {
-          hq->dq[n_ent].unitv[k] = invsurf * fd.vect[k];
-          hq->pq[n_ent].unitv[k] = ep.unitv[k];
+          hq->dq[n_ent][k] = fd.vect[k];
+          hq->pq[n_ent][k] = ep.meas * ep.unitv[k];
         }
         n_ent++;
 
@@ -645,11 +639,9 @@ _build_using_cost(int                         cid,
 
         /* Primal and dual vector quantities are split into
            a measure and a unit vector in order to achieve a better accuracy */
-        hq->dq[n_ent].meas = ed.meas;
-        hq->pq[n_ent].meas = fp.meas;
         for (k = 0; k < 3; k++) {
-          hq->pq[n_ent].unitv[k] = fp.unitv[k];
-          hq->dq[n_ent].unitv[k] = ed.unitv[k];
+          hq->pq[n_ent][k] = fp.meas * fp.unitv[k];
+          hq->dq[n_ent][k] = ed.meas * ed.unitv[k];
         }
         n_ent++;
 
@@ -673,11 +665,9 @@ _build_using_cost(int                         cid,
 
         /* Primal and dual vector quantities are split into
            a measure and a unit vector in order to achieve a better accuracy */
-        hq->dq[n_ent].meas = ed.meas;
-        hq->pq[n_ent].meas = fp.meas;
         for (k = 0; k < 3; k++) {
-          hq->pq[n_ent].unitv[k] = sgn*fp.unitv[k];
-          hq->dq[n_ent].unitv[k] = sgn*ed.unitv[k];
+          hq->pq[n_ent][k] = sgn * fp.meas * fp.unitv[k];
+          hq->dq[n_ent][k] = sgn * ed.meas * ed.unitv[k];
         }
         n_ent++;
 
@@ -716,55 +706,37 @@ _build_using_cost(int                         cid,
     _compute_cost_quant(n_ent, invcvol, (const cs_real_3_t *)hb->ptymat,
                         hq->dq, hq->pq, hq, hloc);
 
-  double  stab_part;
+  double  stab_part, coef;
 
   for (i = 0; i < n_ent; i++) { /* Loop on cell entities I */
 
     const int  shift_i = i*n_ent;
+    const double  *alpha_i = hq->alpha + shift_i;
+    double  *mi = hloc->mat + shift_i;
 
     /* Add contribution from the stabilization part for
        each sub-volume related to a primal entity */
     stab_part = 0;
-    for (k = 0; k < n_ent; k++) { /* Loop over sub-volumes */
+    for (k = 0; k < n_ent; k++) /* Loop over sub-volumes */
+      stab_part += hq->kappa[k] * alpha_i[k] * alpha_i[k];
 
-      const int  ik = shift_i+k;
-      const double  ekci = hq->T[ik];
-
-      double coef = ekci*ekci;
-      if (k == i)
-        coef += 1 - 2*ekci;
-      stab_part += hq->qmq[k] * coef;
-
-    } /* Loop over subvolumes (K) */
-
-    hloc->mat[shift_i+i] += beta2*stab_part;
+    mi[i] += beta2 * stab_part; // Consistency part has already been computed
 
     /* Compute extra-diag entries */
-    for (j = 0; j < i; j++) { /* Loop on cell entities J */
+    for (j = i + 1; j < n_ent; j++) { /* Loop on cell entities J */
 
       const int  shift_j = j*n_ent;
+      const double  *alpha_j = hq->alpha + shift_j;
+      double  *mj = hloc->mat + shift_j;
 
       /* Add contribution from the stabilization part for
          each sub-volume related to a primal entity */
       stab_part = 0;
-      for (k = 0; k < n_ent; k++) { /* Loop over sub-volumes */
+      for (k = 0; k < n_ent; k++) /* Loop over sub-volumes */
+        stab_part += hq->kappa[k] * alpha_i[k] * alpha_j[k];
 
-        const int  ik = shift_i+k;
-        const int  jk = shift_j+k;
-        const double  ekci = hq->T[ik];
-        const double  ekcj = hq->T[jk];
-
-        double coef = ekci*ekcj;
-        if (k == i)
-          coef -= ekcj;
-        if (k == j)
-          coef -= ekci;
-        stab_part += hq->qmq[k] * coef;
-
-      } /* Loop over subvolumes (K) */
-
-      hloc->mat[shift_i+j] += beta2*stab_part;
-      hloc->mat[shift_j+i] = hloc->mat[shift_i+j]; // Symmetric by construction
+      mi[j] += beta2 * stab_part;
+      mj[i] = mi[j]; // Symmetric by construction
 
     } /* End of loop on J entities */
 
