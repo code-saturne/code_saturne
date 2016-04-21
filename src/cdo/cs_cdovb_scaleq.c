@@ -136,11 +136,6 @@ struct _cs_cdovb_scaleq_t {
   /* Source terms */
   cs_real_t             *source_terms;
 
-  /* Hodge^{VpCd,Conf} : only if reaction with the same algo for the discrete
-     Hodge is used (in all cases, the matrix index is shared) */
-  bool                   build_hvpcd_conf;
-  cs_sla_matrix_t       *hvpcd_conf;
-
   /* Builder sub-structures */
   double                *loc_rhs; // local contribution to the RHS
   cs_locmat_t           *adr_mat; // local dense matrix
@@ -168,12 +163,21 @@ static cs_cdo_locsys_t  *cs_tmp_sys = NULL;
    v2v connectivity through cell neighboorhood */
 static cs_connect_index_t  *cs_cdovb_v2v = NULL;
 
+/* Hodge^{VpCd,Conf} : only used if a source term is reduced on primal vertices
+   In all cases, this matrix along with its index are shared */
+static cs_sla_matrix_t  *cs_cdovb_hvpcd_conf = NULL;
+
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_cdovb_quant;
 static const cs_cdo_connect_t  *cs_cdovb_connect;
 static const cs_time_step_t  *cs_time_step;
 
-/*============================================================================
+/* Flag to indicate which members have to be built in a cs_cdo_locmesh_t
+   structure */
+static const cs_flag_t  cs_cdovb_locflag =
+  CS_CDO_LOCAL_V | CS_CDO_LOCAL_E | CS_CDO_LOCAL_EV;
+
+  /*============================================================================
  * Private function prototypes
  *============================================================================*/
 
@@ -246,13 +250,11 @@ _add_source_terms(cs_cdovb_scaleq_t     *b,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute a discrete Hodge op. Vp-->Cd using conforming reco. op.
- *
- * \param[in, out] b     pointer to a cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_build_hvpcd_conf(cs_cdovb_scaleq_t    *b)
+_build_hvpcd_conf(void)
 {
   const cs_cdo_connect_t  *connect = cs_cdovb_connect;
   const cs_cdo_quantities_t  *quant = cs_cdovb_quant;
@@ -263,17 +265,24 @@ _build_hvpcd_conf(cs_cdovb_scaleq_t    *b)
                               .coef = 1}; // not useful in this context
   cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, h_info);
 
-  b->build_hvpcd_conf = true;
+  /* Default flag value for vertex-based scalar equations */
+  cs_flag_t  lm_flag = cs_cdovb_locflag | CS_CDO_LOCAL_F | CS_CDO_LOCAL_FE;
 
-  /* Initialize matrix structure */
-  b->hvpcd_conf =
-    cs_sla_matrix_create_msr_from_index(cs_cdovb_v2v, true, true, 1);
+  /* Initialize a matrix structure */
+  cs_cdovb_hvpcd_conf = cs_sla_matrix_create_msr_from_index(cs_cdovb_v2v,
+                                                            true, true, 1);
 
+  /* Cellwise construction ==> Loop on cells */
   for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
 
-    cs_locmat_t  *hloc = cs_hodge_build_local(c_id, connect, quant, hb);
+    /* Set the local mesh structure for the current cell */
+    cs_cdo_locmesh_build(c_id, lm_flag, connect, quant, cs_cell_mesh);
 
-    cs_sla_assemble_msr_sym(hloc, b->hvpcd_conf, false);
+    /* Build the local dense matrix related to this operator */
+    cs_locmat_t  *hloc = cs_hodge_build_cellwise(quant, cs_cell_mesh, hb);
+
+    /* Assemble the cellwise matrix into the "global" matrix */
+    cs_sla_assemble_msr_sym(hloc, cs_cdovb_hvpcd_conf, false);
 
   }
 
@@ -775,6 +784,9 @@ cs_cdovb_scaleq_finalize(void)
 
   cs_index_free(&cs_cdovb_v2v);
 
+  /* Free Hodge operator defined from conforming reconstruction op. */
+  cs_cdovb_hvpcd_conf = cs_sla_matrix_free(cs_cdovb_hvpcd_conf);
+
   /* Free local structures */
   cs_cdo_locsys_free(&cs_cell_sys);
   cs_cdo_locsys_free(&cs_tmp_sys);
@@ -1010,8 +1022,12 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 
   /* Source term part */
   BFT_MALLOC(bld->source_terms, bld->n_vertices, cs_real_t);
-  bld->build_hvpcd_conf = false;
-  bld->hvpcd_conf = NULL;
+
+  for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
+    const cs_source_term_t  *st = eqp->source_terms[st_id];
+    if (cs_source_term_get_reduction(st) == CS_SOURCE_TERM_REDUC_PRIM)
+      if (cs_cdovb_hvpcd_conf == NULL) _build_hvpcd_conf();
+  }
 
   return bld;
 }
@@ -1043,9 +1059,6 @@ cs_cdovb_scaleq_free(void   *builder)
 
   bld->face_bc = cs_cdo_bc_free(bld->face_bc);
   bld->vtx_dir = cs_cdo_bc_list_free(bld->vtx_dir);
-
-  /* Free Hodge operator defined from conforming reconstruction op. */
-  bld->hvpcd_conf = cs_sla_matrix_free(bld->hvpcd_conf);
 
   /* Renumbering (if strong enforcement of BCs for instance) */
   if (bld->n_vertices > bld->n_dof_vertices) {
@@ -1088,13 +1101,15 @@ cs_cdovb_scaleq_free(void   *builder)
 /*!
  * \brief   Compute the contributions of source terms (store inside builder)
  *
- * \param[in, out] builder     pointer to a cs_cdovb_scaleq_t structure
+ * \param[in, out]  builder     pointer to a cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_compute_source(void            *builder)
+cs_cdovb_scaleq_compute_source(void   *builder)
 {
+  cs_desc_t  desc;
+
   cs_cdovb_scaleq_t  *bld = (cs_cdovb_scaleq_t *)builder;
   double  *st_eval = cs_cdovb_scal_work;
 
@@ -1107,40 +1122,44 @@ cs_cdovb_scaleq_compute_source(void            *builder)
   if (eqp->n_source_terms == 0)
     return;
 
-  cs_desc_t  desc;
-
-  if (eqp->flag & CS_EQUATION_SOURCE_LVCONF) {
-    desc.location = CS_FLAG_SCAL | cs_cdo_primal_vtx;
-    desc.state = CS_FLAG_STATE_POTENTIAL;
-
-    if (!bld->build_hvpcd_conf)
-      _build_hvpcd_conf(bld);
-
-  }
-  else {
-    desc.location = CS_FLAG_SCAL | cs_cdo_dual_cell;
-    desc.state = CS_FLAG_STATE_DENSITY;
-  }
-
   for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
 
     const cs_source_term_t  *st = eqp->source_terms[st_id];
 
-    cs_source_term_compute(desc, st, &st_eval); // updated inside this function
+    if (cs_source_term_get_reduction(st) == CS_SOURCE_TERM_REDUC_DUAL) {
 
-    /* Update source term array */
-    if (eqp->flag & CS_EQUATION_SOURCE_LVCONF) {
+      desc.location = CS_FLAG_SCAL | cs_cdo_dual_cell;
+      desc.state = CS_FLAG_STATE_DENSITY;
+
+      /* st_eval is updated inside this function */
+      cs_source_term_compute(desc, st, &st_eval);
+
+      /* Update source term array */
+# pragma omp parallel for if (bld->n_vertices > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < bld->n_vertices; i++)
+        bld->source_terms[i] += st_eval[i];
+
+    }
+    else {
+
+      assert(cs_source_term_get_reduction(st) == CS_SOURCE_TERM_REDUC_PRIM);
+      assert(cs_cdovb_hvpcd_conf != NULL);
 
       double  *mv = cs_cdovb_scal_work + bld->n_vertices;
 
-      cs_sla_matvec(bld->hvpcd_conf, st_eval, &mv, true);
+      desc.location = CS_FLAG_SCAL | cs_cdo_primal_vtx;
+      desc.state = CS_FLAG_STATE_POTENTIAL;
+
+      /* st_eval is updated inside this function */
+      cs_source_term_compute(desc, st, &st_eval);
+      cs_sla_matvec(cs_cdovb_hvpcd_conf, st_eval, &mv, true);
+
+      /* Update source term array */
+# pragma omp parallel for if (bld->n_vertices > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < bld->n_vertices; i++)
         bld->source_terms[i] += mv[i];
 
     }
-    else
-      for (cs_lnum_t i = 0; i < bld->n_vertices; i++)
-        bld->source_terms[i] += st_eval[i];
 
   } // Loop on source terms
 
@@ -1178,7 +1197,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
   const cs_equation_param_t  *eqp = b->eqp;
 
   /* Default flag value for vertex-based scalar equations */
-  cs_flag_t  lm_flag = CS_CDO_LOCAL_V | CS_CDO_LOCAL_E | CS_CDO_LOCAL_EV;
+  cs_flag_t  lm_flag = cs_cdovb_locflag;
 
   /* Allocate and initialize a matrix with the larger stencil (that related
      to diffusion => all vertices of a cell are potentially in interaction)

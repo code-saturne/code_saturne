@@ -32,12 +32,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_time_step.h"
-
 #include "cs_cdo.h"
 #include "cs_cdo_quantities.h"
-#include "cs_quadrature.h"
 #include "cs_param.h"
+#include "cs_quadrature.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -61,6 +60,15 @@ typedef enum {
   CS_N_SOURCE_TERM_TYPES
 
 } cs_source_term_type_t;
+
+/* Indicate where the reduction of source terms has to be done */
+typedef enum {
+
+  CS_SOURCE_TERM_REDUC_DUAL,   // reduction on dual entities
+  CS_SOURCE_TERM_REDUC_PRIM,   // reduction on primal entities
+  CS_N_SOURCE_TERM_REDUCTIONS
+
+} cs_source_term_reduction_t;
 
 typedef struct _cs_source_term_t cs_source_term_t;
 
@@ -90,6 +98,7 @@ cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
  * \param[in] st_name     name of the related source term
  * \param[in] ml_id       id of the related mesh location
  * \param[in] st_type     type of source term to create
+ * \param[in] red_type    type of reduction to apply
  * \param[in] var_type    type of variables (scalar, vector, tensor...)
  *
  * \return a pointer to a new allocated source term structure
@@ -97,10 +106,11 @@ cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 cs_source_term_t *
-cs_source_term_create(const char              *name,
-                      int                      ml_id,
-                      cs_source_term_type_t    st_type,
-                      cs_param_var_type_t      var_type);
+cs_source_term_create(const char                  *name,
+                      int                          ml_id,
+                      cs_source_term_type_t        st_type,
+                      cs_source_term_reduction_t   red_type,
+                      cs_param_var_type_t          var_type);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -117,6 +127,32 @@ cs_source_term_free(cs_source_term_t   *st);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the type of quadrature to use for computing the source term
+ *
+ * \param[in, out]  st          pointer to a cs_source_term_t structure
+ * \param[in]       quad_type   type of quadrature to use
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_set_quadrature(cs_source_term_t  *st,
+                              cs_quadra_type_t   quad_type);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set where the reduction has to be applied forn defining source term
+ *
+ * \param[in, out]  st        pointer to a cs_source_term_t structure
+ * \param[in]       red_type  type of reduction to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_set_reduction(cs_source_term_t             *st,
+                             cs_source_term_reduction_t    red_type);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Get the name related to a cs_source_term_t structure
  *
  * \param[in] st      pointer to a cs_source_term_t structure
@@ -126,7 +162,20 @@ cs_source_term_free(cs_source_term_t   *st);
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_source_term_get_name(cs_source_term_t   *st);
+cs_source_term_get_name(const cs_source_term_t   *st);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the type of reduction applied to a cs_source_term_t structure
+ *
+ * \param[in] st      pointer to a cs_source_term_t structure
+ *
+ * \return the type of reduction
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_source_term_reduction_t
+cs_source_term_get_reduction(const cs_source_term_t   *st);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -181,22 +230,6 @@ void
 cs_source_term_def_by_array(cs_source_term_t    *st,
                             cs_desc_t            desc,
                             cs_real_t           *array);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set advanced parameters which are defined by default in a
- *         source term structure.
- *
- * \param[in, out]  st        pointer to a cs_source_term_t structure
- * \param[in]       keyname   name of the key
- * \param[in]       keyval    pointer to the value to set to the key
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_source_term_set_option(cs_source_term_t  *st,
-                          const char        *keyname,
-                          const char        *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!

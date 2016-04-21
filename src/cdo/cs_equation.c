@@ -1044,7 +1044,6 @@ _initialize_field_from_ic(cs_equation_t     *eq)
   }
 
   /* Retrieve the associated field */
-  cs_get_t  get;
   cs_field_t  *field = cs_field_by_id(eq->field_id);
   cs_param_time_t  t_info = eqp->time_info;
 
@@ -1626,26 +1625,6 @@ cs_equation_last_setup(cs_equation_t  *eq)
                 " Please check your settings."));
     break;
   }
-
-  /* Advanced setup according to the type of discretization */
-  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB) {
-
-    if (eqp->flag & CS_EQUATION_REACTION) {
-
-      for (int r_id = 0; r_id < eqp->n_reaction_terms; r_id++) {
-
-        const cs_param_reaction_t  r_info = eqp->reaction_terms[r_id];
-
-        if (r_info.hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
-          eqp->flag |= CS_EQUATION_SOURCE_LVCONF;
-          break;
-        }
-
-      } // Loop on reaction terms
-
-    } // There is at least one reaction term
-
-  } // spatial scheme is vertex-based
 
   /* Initialize cs_sles_t structure */
   _sles_initialization(eq);
@@ -2493,10 +2472,28 @@ cs_equation_add_gravity_source_term(cs_equation_t   *eq,
   BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_source_term_t *);
 
   /* Create and set new source term structure */
-  eqp->source_terms[st_id] = cs_source_term_create("gravity_source",
-                                                   ml_id,
-                                                   st_type,
-                                                   eqp->var_type);
+  switch (eqp->space_scheme) {
+  case CS_SPACE_SCHEME_CDOVB:
+    eqp->source_terms[st_id] = cs_source_term_create("gravity_source",
+                                                     ml_id,
+                                                     st_type,
+                                                     CS_SOURCE_TERM_REDUC_DUAL,
+                                                     eqp->var_type);
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+    eqp->source_terms[st_id] = cs_source_term_create("gravity_source",
+                                                     ml_id,
+                                                     st_type,
+                                                     CS_SOURCE_TERM_REDUC_PRIM,
+                                                     eqp->var_type);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid numerical scheme to set a source term."));
+
+  }
 
   cs_source_term_def_by_array(eqp->source_terms[st_id],
                               array_desc,
@@ -2552,10 +2549,28 @@ cs_equation_add_source_term_by_val(cs_equation_t   *eq,
   _check_ml_name(ml_name, &ml_id);
 
   /* Create and set new source term structure */
-  eqp->source_terms[st_id] = cs_source_term_create(name,
-                                                   ml_id,
-                                                   st_type,
-                                                   eqp->var_type);
+  switch (eqp->space_scheme) {
+  case CS_SPACE_SCHEME_CDOVB:
+    eqp->source_terms[st_id] = cs_source_term_create(name,
+                                                     ml_id,
+                                                     st_type,
+                                                     CS_SOURCE_TERM_REDUC_DUAL,
+                                                     eqp->var_type);
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+    eqp->source_terms[st_id] = cs_source_term_create(name,
+                                                     ml_id,
+                                                     st_type,
+                                                     CS_SOURCE_TERM_REDUC_PRIM,
+                                                     eqp->var_type);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid numerical scheme to set a source term."));
+
+  }
 
   cs_source_term_def_by_value(eqp->source_terms[st_id], val);
 
@@ -2611,10 +2626,28 @@ cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
   _check_ml_name(ml_name, &ml_id);
 
   /* Create and set new source term structure */
-  eqp->source_terms[st_id] = cs_source_term_create(name,
-                                                  ml_id,
-                                                  st_type,
-                                                  eqp->var_type);
+  switch (eqp->space_scheme) {
+  case CS_SPACE_SCHEME_CDOVB:
+    eqp->source_terms[st_id] = cs_source_term_create(name,
+                                                     ml_id,
+                                                     st_type,
+                                                     CS_SOURCE_TERM_REDUC_DUAL,
+                                                     eqp->var_type);
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+    eqp->source_terms[st_id] = cs_source_term_create(name,
+                                                     ml_id,
+                                                     st_type,
+                                                     CS_SOURCE_TERM_REDUC_PRIM,
+                                                     eqp->var_type);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid numerical scheme to set a source term."));
+
+  }
 
   cs_source_term_def_by_analytic(eqp->source_terms[st_id], ana);
 
@@ -2624,27 +2657,20 @@ cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set advanced parameters which are members defined by default in a
- *         source term structure.
- *         keyname among "quadrature", "post"...
+ * \brief  Set the type of quadrature to use for computing a source term
  *         If st_name is NULL, all source terms of the given equation are set
- *         according to keyname/keyval
  *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       st_name   name of the source term
- * \param[in]       keyname   name of the key
- * \param[in]       keyval    pointer to the value to set to the key
+ * \param[in, out]  eq         pointer to a cs_equation_t structure
+ * \param[in]       st_name    name of the source term
+ * \param[in]       quad_type  type of quadrature to use
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_source_term_option(cs_equation_t    *eq,
-                                   const char       *st_name,
-                                   const char       *keyname,
-                                   const char       *keyval)
+cs_equation_set_source_term_quadrature(cs_equation_t      *eq,
+                                       const char         *st_name,
+                                       cs_quadra_type_t    quad_type)
 {
-  int  i;
-
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
@@ -2657,7 +2683,7 @@ cs_equation_set_source_term_option(cs_equation_t    *eq,
   int  st_id = -1;
   if (st_name != NULL) { // Look for the related source term structure
 
-    for (i = 0; i < eqp->n_source_terms; i++) {
+    for (int i = 0; i < eqp->n_source_terms; i++) {
       if (strcmp(cs_source_term_get_name(eqp->source_terms[i]), st_name) == 0) {
         st_id = i;
         break;
@@ -2673,10 +2699,63 @@ cs_equation_set_source_term_option(cs_equation_t    *eq,
   } // st_name != NULL
 
   if (st_id != -1)
-    cs_source_term_set_option(eqp->source_terms[st_id], keyname, keyval);
+    cs_source_term_set_quadrature(eqp->source_terms[st_id], quad_type);
   else
-    for (i = 0; i < eqp->n_source_terms; i++)
-      cs_source_term_set_option(eqp->source_terms[i], keyname, keyval);
+    for (int i = 0; i < eqp->n_source_terms; i++)
+      cs_source_term_set_quadrature(eqp->source_terms[i], quad_type);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the type of quadrature to use for computing a source term
+ *         If st_name is NULL, all source terms of the given equation are set
+ *
+ * \param[in, out]  eq         pointer to a cs_equation_t structure
+ * \param[in]       st_name    name of the source term
+ * \param[in]       type       type of reduction to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_source_term_reduction(cs_equation_t               *eq,
+                                      const char                  *st_name,
+                                      cs_source_term_reduction_t   type)
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  cs_equation_param_t  *eqp = eq->param;
+
+  /* Look for the requested source term */
+  int  st_id = -1;
+  if (st_name != NULL) { // Look for the related source term structure
+
+    for (int i = 0; i < eqp->n_source_terms; i++) {
+      if (strcmp(cs_source_term_get_name(eqp->source_terms[i]), st_name) == 0) {
+        st_id = i;
+        break;
+      }
+    }
+
+    if (st_id == -1)
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Cannot find source term %s among defined source terms.\n"
+                  " Please check your settings for equation %s.\n"),
+                st_name, eq->name);
+
+  } // st_name != NULL
+
+  if (st_id != -1)
+    cs_source_term_set_reduction(eqp->source_terms[st_id], type);
+  else
+    for (int i = 0; i < eqp->n_source_terms; i++)
+      cs_source_term_set_reduction(eqp->source_terms[i], type);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);

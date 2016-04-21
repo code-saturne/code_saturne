@@ -48,7 +48,6 @@ BEGIN_C_DECLS
 #define CS_EQUATION_CONVECTION    (1 <<  2)  //  4: convection term
 #define CS_EQUATION_DIFFUSION     (1 <<  3)  //  8: diffusion term
 #define CS_EQUATION_REACTION      (1 <<  4)  // 16: reaction term
-#define CS_EQUATION_SOURCE_LVCONF (1 <<  5)  // 32: treatment of the source
 
 /* Extra operations flag */
 #define CS_EQUATION_POST_NONE        (1 << 0)

@@ -29,13 +29,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_mesh.h"
-#include "cs_time_step.h"
-
-#include "cs_param.h"
-#include "cs_field.h"
 #include "cs_cdo_quantities.h"
 #include "cs_equation_priv.h"
+#include "cs_field.h"
+#include "cs_param.h"
+#include "cs_mesh.h"
+#include "cs_source_term.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -293,21 +293,35 @@ cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set members defined by default in a source term structure
- *         keyname among "quadrature", "post"...
+ * \brief  Set the type of quadrature to use for computing a source term
+ *         If st_name is NULL, all source terms of the given equation are set
  *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       st_name   name of the source term
- * \param[in]       keyname   name of the key
- * \param[in]       keyval    pointer to the value to set to the key
+ * \param[in, out]  eq         pointer to a cs_equation_t structure
+ * \param[in]       st_name    name of the source term
+ * \param[in]       quad_type  type of quadrature to use
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_source_term_option(cs_equation_t    *eq,
-                                   const char       *st_name,
-                                   const char       *keyname,
-                                   const char       *keyval);
+cs_equation_set_source_term_quadrature(cs_equation_t      *eq,
+                                       const char         *st_name,
+                                       cs_quadra_type_t    quad_type);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the type of quadrature to use for computing a source term
+ *         If st_name is NULL, all source terms of the given equation are set
+ *
+ * \param[in, out]  eq         pointer to a cs_equation_t structure
+ * \param[in]       st_name    name of the source term
+ * \param[in]       type       type of reduction to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_source_term_reduction(cs_equation_t               *eq,
+                                      const char                  *st_name,
+                                      cs_source_term_reduction_t   type);
 
 /*----------------------------------------------------------------------------*/
 /*!

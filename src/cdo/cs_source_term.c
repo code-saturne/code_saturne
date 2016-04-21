@@ -60,6 +60,30 @@ BEGIN_C_DECLS
 
 #define CS_SOURCE_TERM_DBG 0
 
+struct _cs_source_term_t {
+
+  char *restrict name;      // short description of the source term
+  int            ml_id;     // id of the related mesh location structure
+
+  /* Specification related to the way of computing the source term */
+  cs_source_term_reduction_t  reduc;      // where reduction is done
+  cs_source_term_type_t       type;       // mass, head loss...
+  cs_quadra_type_t            quad_type;  // barycentric, higher, highest
+  cs_param_var_type_t         var_type;   // scalar, vector...
+  cs_param_def_type_t         def_type;   // by value, by function...
+  cs_def_t                    def;
+
+  /* Useful buffers to deal with more complex definitions */
+  cs_desc_t    array_desc;  // short description of the related array
+  cs_real_t   *array;       // if the source term hinges on an array
+  const void  *struc;       // if one needs a structure. Only shared
+
+};
+
+/*============================================================================
+ * Private variables
+ *============================================================================*/
+
 static const char _err_empty_st[] =
   " Stop setting an empty cs_source_term_t structure.\n"
   " Please check your settings.\n";
@@ -69,91 +93,9 @@ static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
 static const cs_time_step_t  *cs_time_step;
 
-/* List of keys for setting a source term */
-typedef enum {
-
-  STKEY_POST,
-  STKEY_QUADRATURE,
-  STKEY_ERROR
-
-} stkey_t;
-
-struct _cs_source_term_t {
-
-  char  *restrict name;      /* short description of the source term */
-
-  int             ml_id;     /* id of the related mesh location structure */
-  int             post_freq; /* -1: no post, 0: at the beginning,
-                                n: at each 'n' iterations */
-
-  /* Specification related to the way of computing the source term */
-  cs_source_term_type_t   type;       // mass, head loss...
-  cs_quadra_type_t        quad_type;  // barycentric, higher, highest
-  cs_param_var_type_t     var_type;   // scalar, vector...
-  cs_param_def_type_t     def_type;   // by value, by function...
-  cs_def_t                def;
-
-  /* Useful buffers to deal with more complex definitions */
-  cs_desc_t    array_desc;  // short description of the related array
-  cs_real_t   *array;       // if the source term hinges on an array
-
-  const void  *struc;       // if one needs a structure. Only shared
-
-};
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Print the name of the corresponding source term key
- *
- * \param[in] key        name of the key
- *
- * \return a string
- */
-/*----------------------------------------------------------------------------*/
-
-static const char *
-_print_stkey(stkey_t  key)
-{
-  switch (key) {
-  case STKEY_POST:
-    return "post";
-  case STKEY_QUADRATURE:
-    return "quadrature";
-  default:
-    assert(0);
-  }
-
-  return NULL; // avoid a warning
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the corresponding enum from the name of a source term key.
- *         If not found, print an error message
- *
- * \param[in] keyname    name of the key
- *
- * \return a stkey_t
- */
-/*----------------------------------------------------------------------------*/
-
-static stkey_t
-_get_stkey(const char *keyname)
-{
-  stkey_t  key = STKEY_ERROR;
-
-  if (strcmp(keyname, "post") == 0)
-    key = STKEY_POST;
-  else if (strcmp(keyname, "quadrature") == 0)
-    key = STKEY_QUADRATURE;
-
-  return key;
-}
-
 
 /*============================================================================
  * Public function prototypes
@@ -187,6 +129,7 @@ cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
  * \param[in] st_name     name of the related source term
  * \param[in] ml_id       id of the related mesh location
  * \param[in] st_type     type of source term to create
+ * \param[in] red_type    type of reduction to apply
  * \param[in] var_type    type of variables (scalar, vector, tensor...)
  *
  * \return a pointer to a new allocated source term structure
@@ -194,10 +137,11 @@ cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 cs_source_term_t *
-cs_source_term_create(const char              *name,
-                      int                      ml_id,
-                      cs_source_term_type_t    st_type,
-                      cs_param_var_type_t      var_type)
+cs_source_term_create(const char                  *name,
+                      int                          ml_id,
+                      cs_source_term_type_t        st_type,
+                      cs_source_term_reduction_t   red_type,
+                      cs_param_var_type_t          var_type)
 {
   cs_source_term_t  *st = NULL;
 
@@ -213,7 +157,7 @@ cs_source_term_create(const char              *name,
   st->ml_id = ml_id;
 
   /* Default initialization */
-  st->post_freq = -1;
+  st->reduc = red_type;
   st->def_type = CS_PARAM_N_DEF_TYPES;
   st->quad_type = CS_QUADRATURE_BARY;
   st->def.get.val = 0.;
@@ -255,6 +199,47 @@ cs_source_term_free(cs_source_term_t   *st)
   return NULL;
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set advanced parameters which are defined by default in a
+ *         source term structure.
+ *
+ * \param[in, out]  st          pointer to a cs_source_term_t structure
+ * \param[in]       quad_type   type of quadrature to use
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_set_quadrature(cs_source_term_t  *st,
+                              cs_quadra_type_t   quad_type)
+{
+  if (st == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
+
+  st->quad_type = quad_type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set advanced parameters which are defined by default in a
+ *         source term structure.
+ *
+ * \param[in, out]  st        pointer to a cs_source_term_t structure
+ * \param[in]       red_type  type of reduction to apply
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_set_reduction(cs_source_term_t             *st,
+                             cs_source_term_reduction_t    red_type)
+{
+  if (st == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
+
+  st->reduc = red_type;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Get the name related to a cs_source_term_t structure
@@ -266,12 +251,31 @@ cs_source_term_free(cs_source_term_t   *st)
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_source_term_get_name(cs_source_term_t   *st)
+cs_source_term_get_name(const cs_source_term_t   *st)
 {
   if (st == NULL)
     return NULL;
 
   return st->name;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the type of reduction applied to a cs_source_term_t structure
+ *
+ * \param[in] st      pointer to a cs_source_term_t structure
+ *
+ * \return the type of reduction
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_source_term_reduction_t
+cs_source_term_get_reduction(const cs_source_term_t   *st)
+{
+  if (st == NULL)
+    return CS_N_SOURCE_TERM_REDUCTIONS;
+
+  return st->reduc;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -407,70 +411,6 @@ cs_source_term_def_by_array(cs_source_term_t    *st,
   st->array_desc.location = desc.location;
   st->array_desc.state = desc.state;
   st->array = array;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set advanced parameters which are defined by default in a
- *         source term structure.
- *
- * \param[in, out]  st        pointer to a cs_source_term_t structure
- * \param[in]       keyname   name of the key
- * \param[in]       keyval    pointer to the value to set to the key
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_source_term_set_option(cs_source_term_t  *st,
-                          const char        *keyname,
-                          const char        *keyval)
-{
-  if (st == NULL)
-    bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
-
-  stkey_t  key = _get_stkey(keyname);
-
-  if (key == STKEY_ERROR) {
-    bft_printf("\n\n Current key: \"%s\"\n", keyname);
-    bft_printf(" Valid keys: ");
-    for (int i = 0; i < STKEY_ERROR; i++) {
-      bft_printf("\"%s\" ", _print_stkey(i));
-      if (i > 0 && i % 3 == 0)
-        bft_printf("\n\t");
-    }
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key \"%s\" for setting the source term \"%s\".\n"
-                " Please read listing for more details and"
-                " modify your settings."), keyname, st->name);
-
-  } /* Error message */
-
-  switch(key) {
-
-  case STKEY_POST:
-    st->post_freq = atoi(keyval);
-    break;
-
-  case STKEY_QUADRATURE:
-    if (strcmp(keyval, "bary") == 0)
-      st->quad_type = CS_QUADRATURE_BARY;
-    else if (strcmp(keyval, "higher") == 0)
-      st->quad_type = CS_QUADRATURE_HIGHER;
-    else if (strcmp(keyval, "highest") == 0)
-      st->quad_type = CS_QUADRATURE_HIGHEST;
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value for setting the quadrature behaviour"
-                  " of a source term.\n"
-                  " Choices are among subdiv, bary, higher, highest."));
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Key %s is not implemented yet."), keyname);
-
-  } /* Switch on keys */
-
 }
 
 /*----------------------------------------------------------------------------*/
