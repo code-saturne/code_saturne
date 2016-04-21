@@ -1735,7 +1735,7 @@ _intersect_face(cs_lnum_t                       face_num,
 
     const double inv_det = 1./det;
 
-    const double u = cs_math_3_dot_product(s01, pvec) * inv_det;
+    const double u = cs_math_3_dot_product(scf, pvec) * inv_det;
 
     const cs_real_3_t qvec = {scf[1]*e0[2] - scf[2]*e0[1],
                               scf[2]*e0[0] - scf[0]*e0[2],
