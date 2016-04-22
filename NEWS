@@ -5,7 +5,9 @@ Release 4.2.2 (unreleased)
 Bug fixes:
 ----------
 
-- Fix xml reader for mobile mesh (replace all unsigned ints by ints).
+- Fix corrupt mesh_output in serial case after mesh extrusion.
+
+- Fix XML reader for mobile mesh (replace all unsigned ints by ints).
 
 - Fix MPI C++ wrapper use and HDF5 URL in automatic installer.
 

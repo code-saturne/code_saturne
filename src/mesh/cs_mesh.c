@@ -2584,6 +2584,13 @@ cs_mesh_update_auxiliary(cs_mesh_t  *mesh)
 
 #endif
 
+  if (cs_glob_n_ranks == 1) {
+    mesh->n_g_cells = mesh->n_cells;
+    mesh->n_g_i_faces = mesh->n_i_faces;
+    mesh->n_g_b_faces = mesh->n_b_faces;
+    mesh->n_g_vertices = mesh->n_vertices;
+  }
+
   /* Sync cell family array (also in case of periodicity) */
 
   _sync_cell_fam(mesh);
