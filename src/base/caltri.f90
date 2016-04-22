@@ -178,10 +178,6 @@ else
   call zufalli(1)
 endif
 
-!---> Stop test set to 1 if P-1 radiative module "sees" too many cells
-!     with an optical thickness greater than 1 (see ppcabs).
-istpp1 = 0
-
 !--> Probes output tracking
 ttchis = -1.d0
 
@@ -964,12 +960,6 @@ endif
 ! Test for lack of remaining time
 
 call armtps(ntcabs,ntmabs)
-
-! Stop test from P-1 radiative model
-
-if (istpp1.eq.1) then
-  ntmabs = ntcabs
-endif
 
 ! Stop test for couplings
 

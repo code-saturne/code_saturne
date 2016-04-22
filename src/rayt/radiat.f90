@@ -82,6 +82,9 @@ module radiat
   !> - 1 FSCK model activated
   integer, save :: imfsck
 
+  !> P1 model transparency warnings counter
+  integer, save :: iwrp1t = 0
+
   !--> pointer to physical properties
 
   !                       ITSRE --> Terme source explicite
@@ -126,12 +129,6 @@ module radiat
   !> characteristic length of the domain), although it is not to be desired
   !> Useful if and only if the radiation module is activated with the P-1 method
   double precision, save ::  xnp1mx
-
-  !--> ISTPP1 : pour le modele P-1,
-  !     indicateur d'arret mis a 1 dans ppcabs si le pourcentage de cellules
-  !     pour lesquelles l'epaisseur optique depasse l'unite est superieur a
-  !     XNP1MX  (on s'arrete a la fin du pas de temps)
-  integer, save ::           istpp1
 
   !> Indicates the method used to calculate the radiative source term:
   !>  - 0: semi-analytic calculation (compulsory with transparent media)

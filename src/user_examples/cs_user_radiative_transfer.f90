@@ -197,14 +197,11 @@ if (ippmod(iphpar).le.1) then
       endif
     enddo
 
-    ! Stop at the end of the time step if the optical thickness is too big
-    ! (istpp1 = 1 allows stopping cleanly at the end of the current time step).
+    ! Stop at the end of the time step if the optical thickness is too big.
     pp = xnp1mx/100.0d0
     if (dble(iok).gt.pp*dble(ncel)) then
       write(nfecra,3000) xkmin, dble(iok)/dble(ncel)*100.d0, xnp1mx
-      istpp1 = 1
-      ! call csexit(1)
-      !==========
+      ntmabs = ntcabs
     endif
   endif
 

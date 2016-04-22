@@ -471,8 +471,10 @@ endif
 !     Arret en fin de pas de temps si epaisseur optique trop grande
     pp = xnp1mx/100.0d0
     if (dble(iok).gt.pp*dble(ncelgb)) then
-       write(nfecra,1000) xkmin, dble(iok)/dble(ncelgb)*100.d0, xnp1mx
-       istpp1 = 1
+      if (iwrp1t .lt.2 .or. ntcabs.gt.ntmabs-2) then
+        write(nfecra,1000) xkmin, dble(iok)/dble(ncelgb)*100.d0, xnp1mx
+      endif
+      iwrp1t = iwrp1t + 1
     endif
 
     ! Free memory
@@ -504,7 +506,10 @@ endif
 '@      condition to be violated is fixed by defaul or in     ',/,&
 '@      cs_user_parameters.f90 to xnp1mx = ', e11.4,'%        ',/,&
 '@                                                            ',/,&
-'@    The computation will not be run.                        ',/,&
+'@    This warning is only printed at the first two           ',/,&
+'@      occurences of the problem and at the last time step   ',/,&
+'@      of the calculation. The vanishing of the message does ',/,&
+'@      not necessarily mean the vanishing of the problem.    ',/,&
 '@                                                            ',/,&
 '@    Check the values of the absorption coefficent Ck        ',/,&
 '@      in ppcabs, usray3, or the thermochemistry file.       ',/,&
