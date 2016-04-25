@@ -398,6 +398,8 @@ cs_wall_functions_2scales_scalable(cs_real_t   l_visc,
                                    cs_real_t  *ypup,
                                    cs_real_t  *cofimp)
 {
+  CS_UNUSED(iuntur);
+
   const double ypluli = cs_glob_wall_functions->ypluli;
 
   double rcprod, ml_visc, Re, g;
@@ -548,7 +550,7 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
                                   cs_real_t   kr,
                                   bool        wf)
 {
-  double urplus, dup, lmk15;
+  double urplus, d_up, lmk15;
 
   if (wf)
     *uk = sqrt(sqrt((1.-cs_turb_crij2)/cs_turb_crij1 * rnnb * kinetic_en));
@@ -565,11 +567,11 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
   cs_real_t yrplus = *yplus + dyrp;
 
   if (dyrp <= 1.e-1)
-    dup = dyrp;
+    d_up = dyrp;
   else if (dyrp <= 200.)
-    dup = _vdriest_dupdyp_integral(dyrp);
+    d_up = _vdriest_dupdyp_integral(dyrp);
   else
-    dup = 16.088739022054590 + log(dyrp/200.) / cs_turb_xkappa;
+    d_up = 16.088739022054590 + log(dyrp/200.) / cs_turb_xkappa;
 
   if (yrplus <= 1.e-1) {
 
@@ -593,7 +595,7 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
     if (wf) {
       *nlogla += 1;
 
-      *ypup = *yplus / (urplus-dup);
+      *ypup = *yplus / (urplus-d_up);
 
       /* Mixing length in y+ */
       *lmk = cs_turb_xkappa * (*yplus) *(1-exp(- (*yplus) / cs_turb_vdriest));
@@ -612,7 +614,7 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
     if (wf) {
       *nlogla += 1;
 
-      *ypup = *yplus / (urplus-dup);
+      *ypup = *yplus / (urplus-d_up);
 
       /* Mixing length in y+ */
       *lmk = cs_turb_xkappa * (*yplus) *(1-exp(- (*yplus) / cs_turb_vdriest));
@@ -626,7 +628,7 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
 
   }
 
-  *ustar = vel / (urplus-dup);
+  *ustar = vel / (urplus-d_up);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -677,6 +679,8 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
                                        cs_real_t  *ypup,
                                        cs_real_t  *cofimp)
 {
+  CS_UNUSED(iuntur);
+
   const double ypluli = cs_glob_wall_functions->ypluli;
 
   double rcprod, ml_visc, Re, g;
@@ -773,6 +777,10 @@ cs_wall_functions_disabled(cs_real_t   l_visc,
                            cs_real_t  *ypup,
                            cs_real_t  *cofimp)
 {
+  CS_UNUSED(t_visc);
+  CS_UNUSED(nlogla);
+  CS_UNUSED(dplus);
+
   const double ypluli = cs_glob_wall_functions->ypluli;
 
   /* Compute the friction velocity ustar */

@@ -3592,6 +3592,9 @@ const char *
 fvm_to_ccm_version_string(int string_index,
                           int compile_time_version)
 {
+  CS_UNUSED(string_index);
+  CS_UNUSED(compile_time_version);
+
 #if    defined(kCCMIOMajorVersion) && defined(kCCMIOMinorVersion) \
     && defined(kCCMIORevision)
   snprintf(_ccm_version_string, 31, "%s %d.%d.%d", "CCMIO",
@@ -3631,6 +3634,8 @@ fvm_to_ccm_init_writer(const char             *name,
                        fvm_writer_time_dep_t   time_dependency)
 #endif
 {
+  CS_UNUSED(options);
+
   int  i;
   int  mesh_filename_length, mesh_basename_length, name_length, path_length;
 

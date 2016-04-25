@@ -215,6 +215,7 @@ static cs_timer_t  _cs_timer_start;
 void
 _cs_timer_wall_null(cs_timer_t  *timer)
 {
+  CS_UNUSED(timer);
 }
 
 #if defined (HAVE_CLOCK_GETTIME)
@@ -285,6 +286,7 @@ _cs_timer_wall_stdc_time(cs_timer_t  *timer)
 void
 _cs_timer_cpu_null(cs_timer_t  *timer)
 {
+  CS_UNUSED(timer);
 }
 
 #if defined (HAVE_CLOCK_GETTIME)

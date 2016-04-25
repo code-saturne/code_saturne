@@ -3467,6 +3467,10 @@ _field_output(void           *context,
               cs_gnum_t       block_end,
               void           *buffer)
 {
+  CS_UNUSED(datatype);
+  CS_UNUSED(dimension);
+  CS_UNUSED(component_id);
+
   _med_context_t *c = context;
 
   fvm_to_med_writer_t  *w = c->writer;

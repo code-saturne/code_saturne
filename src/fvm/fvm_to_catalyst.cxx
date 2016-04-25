@@ -408,6 +408,9 @@ _get_catalyst_field_id(fvm_to_catalyst_t         *writer,
                        cs_datatype_t              datatype,
                        fvm_writer_var_loc_t       location)
 {
+  CS_UNUSED(dim);
+  CS_UNUSED(datatype);
+
   int i;
 
   for (i = 0; i < writer->n_fields; ++i){
@@ -455,6 +458,8 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
                     cs_datatype_t              datatype,
                     fvm_writer_var_loc_t       location)
 {
+  CS_UNUSED(datatype);
+
   int f_id = writer->n_fields;
 
   BFT_REALLOC(writer->fields,
@@ -963,6 +968,8 @@ fvm_to_catalyst_init_writer(const char             *name,
                             fvm_writer_time_dep_t   time_dependency)
 #endif
 {
+  CS_UNUSED(path);
+
   fvm_to_catalyst_t  *w = NULL;
 
   /* Initialize writer */

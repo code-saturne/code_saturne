@@ -355,6 +355,10 @@ bft_backtrace_demangle(bft_backtrace_t  *bt)
 
   }
 
+#else
+
+  CS_UNUSED(bt);
+
 #endif /* defined(HAVE_GLIBC_BACKTRACE) && defined(HAVE_CPLUS_DEMANGLE) */
 }
 

@@ -177,6 +177,9 @@ static int
 _cs_base_bft_printf_null(const char  *format,
                          va_list      arg_ptr)
 {
+  CS_UNUSED(format);
+  CS_UNUSED(arg_ptr);
+
   return 0;
 }
 
@@ -653,6 +656,11 @@ _get_path(const char   *dir_path,
 
     return *env_path;
   }
+#else
+
+  CS_UNUSED(dir_path);
+  CS_UNUSED(env_path);
+
 #endif /* defined(HAVE_RELOCATABLE) */
 
   /* Standard install */

@@ -741,6 +741,8 @@ bft_mem_usage_n_calls(size_t count[3])
   count[0] = _bft_mem_usage_n_allocs;
   count[1] = _bft_mem_usage_n_reallocs;
   count[2] = _bft_mem_usage_n_frees;
+#else
+  CS_UNUSED(count);
 #endif /* (HAVE_MALLOC_HOOKS) */
 }
 

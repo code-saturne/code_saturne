@@ -893,6 +893,8 @@ _field_output(void           *context,
               cs_gnum_t       block_end,
               void           *buffer)
 {
+  CS_UNUSED(dimension);
+
   _cgns_context_t *c = context;
 
   int field_index = -1; /* local return value */
@@ -1945,6 +1947,9 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
                          cs_lnum_t                    block_size,
                          cgsize_t                     block_connect[])
 {
+  CS_UNUSED(num_start);
+  CS_UNUSED(num_end);
+
   char section_name[FVM_CGNS_NAME_SIZE + 1];
   CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
 
@@ -2594,6 +2599,8 @@ const char *
 fvm_to_cgns_version_string(int string_index,
                            int compile_time_version)
 {
+  CS_UNUSED(compile_time_version);
+
   const char * retval = NULL;
 
   if (string_index == 0) {

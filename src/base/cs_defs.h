@@ -426,6 +426,15 @@ typedef enum {
 } cs_interlace_t;
 
 /*----------------------------------------------------------------------------
+ * Macro used to silence "unused argument" warnings.
+ *
+ * This is useful when a function must match a given function pointer
+ * type, but does not use all possible arguments.
+ *----------------------------------------------------------------------------*/
+
+#define CS_UNUSED(x) (void)(x)
+
+/*----------------------------------------------------------------------------
  * Macros for compilation with a C++ compiler
  *----------------------------------------------------------------------------*/
 
