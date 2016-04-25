@@ -5,6 +5,9 @@ Release 3.0.9 (unreleased)
 Bug fixes:
 ----------
 
+- Fix incorrect z-component of boundary stresses (efforts) with coupled
+  velocity components (ivelco = 1).
+
 - Fix bug in Scotch detection on some systems with
   /usr/include/scotch/ptscotch.h present.
 
