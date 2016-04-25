@@ -2754,7 +2754,7 @@ if (iforbr.ge.0 .and. iterns.eq.1) then
                     + cofbfu(2,1,ifac) * velipb(ifac,1)           &
                     + cofbfu(2,2,ifac) * velipb(ifac,2)           &
                     + cofbfu(2,3,ifac) * velipb(ifac,3) )*srfbnf
-    forbr(3,ifac) = ( coefau(3,ifac)                              &
+    forbr(3,ifac) = ( cofafu(3,ifac)                              &
                     + cofbfu(3,1,ifac) * velipb(ifac,1)           &
                     + cofbfu(3,2,ifac) * velipb(ifac,2)           &
                     + cofbfu(3,3,ifac) * velipb(ifac,3) )*srfbnf

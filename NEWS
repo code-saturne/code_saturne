@@ -5,6 +5,8 @@ Release 4.2.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix incorrect z-component of boundary stresses.
+
 - Fix corrupt mesh_output in serial case after mesh extrusion.
 
 - Fix XML reader for mobile mesh (replace all unsigned ints by ints).
