@@ -66,6 +66,7 @@ use period
 use field
 use mesh
 use cs_f_interfaces
+use cs_c_bindings
 
 !===============================================================================
 

@@ -111,6 +111,8 @@ use ppincl
 use radiat
 use mesh
 use field
+use cs_c_bindings
+
 !===============================================================================
 
 implicit none
@@ -365,19 +367,19 @@ do ii = -1,1,2
         icvflb = 0
 
         call codits &
- ( idtva0 , ivar0  , iconv1 , idiff1 , ndirc1 ,                   &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
-   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
-   relaxp , thetap ,                                              &
-   rua    , ru     ,                                              &
-   coefap , coefbp , cofafp , cofbfp , flurds , flurdb ,          &
-   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
-   rvoid  , rvoid  ,                                              &
-   icvflb , ivoid  ,                                              &
-   rovsdt , smbrs  , ru     , dpvar  ,                            &
-   rvoid  , rvoid  )
+       ( idtva0 , ivar0  , iconv1 , idiff1 , ndirc1 ,                   &
+         imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+         ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
+         iwarnp ,                                                       &
+         blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+         relaxp , thetap ,                                              &
+         rua    , ru     ,                                              &
+         coefap , coefbp , cofafp , cofbfp , flurds , flurdb ,          &
+         viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
+         rvoid  , rvoid  ,                                              &
+         icvflb , ivoid  ,                                              &
+         rovsdt , smbrs  , ru     , dpvar  ,                            &
+         rvoid  , rvoid  )
 
 !===============================================================================
 ! 5.2 INTEGRATION DES FLUX ET TERME SOURCE

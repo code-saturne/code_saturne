@@ -113,7 +113,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iflmas, iflmab
 integer          idiffp, iconvp, ndircp
 integer          ibsize
-integer          iescap, ircflp, ischcp, isstpp, ivar
+integer          iescap, ircflp, ischcp, isstpp, ivar, ivar0
 integer          nswrsp
 integer          imucpp, idftnp, iswdyp
 integer          iharmo
@@ -134,6 +134,7 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom
+
 !===============================================================================
 
 !===============================================================================
@@ -219,12 +220,8 @@ enddo
 ! We do not yet use the multigrid to resolve the hydrostatic pressure
 !--------------------------------------------------------------------------
 
-!TODO later: define argument additionnal to pass to codits for work variable
-! like prhyd to obtain the warning with namewv(ipwv) = 'Prhydo'
-
-call sles_push(ivarfl(ipr), "Prhydro")
-
 ivar   = ipr
+ivar0  = 0
 iconvp = 0
 idiffp = 1
 ndircp = 0
@@ -250,11 +247,13 @@ thetap = thetav(ivar)
 ! all boundary convective flux with upwind
 icvflb = 0
 
+nomva0 = "Prhydro"
+
 ! --- Solve the diffusion equation
 
 call codits &
 !==========
-( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
+( idtvar , ivar0  , iconvp , idiffp , ndircp ,                   &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
   iwarnp ,                                                       &
@@ -264,13 +263,11 @@ call codits &
   coefap , coefbp ,                                              &
   cofafp , cofbfp ,                                              &
   imasfl , bmasfl ,                                              &
-  viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+  viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
   rvoid  , rvoid  ,                                              &
   icvflb , ivoid  ,                                              &
   rovsdt , smbr   , prhyd  , dpvar  ,                            &
   rvoid  , rvoid  )
-
-call sles_pop(ivarfl(ipr))
 
 ! Free memory
 deallocate(dpvar)
@@ -279,12 +276,7 @@ inc    = 1
 iccocg = 1
 nswrgp = 1
 extrap = 0.d0
-
-if (ivar.le.0) then
-  f_id = -1
-else
-  f_id = ivarfl(ivar)
-endif
+f_id = -1
 
 call gradient_weighted_s &
  ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,         &

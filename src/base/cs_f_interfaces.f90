@@ -88,7 +88,7 @@ module cs_f_interfaces
     !---------------------------------------------------------------------------
 
     subroutine itrgrv &
-      (f_id, init, inc, imrgra, iccocg, nswrgp, imligp, ircflp,                      &
+      (f_id, init, inc, imrgra, iccocg, nswrgp, imligp, ircflp,                &
       iphydp, iwarnp,                                                          &
       epsrgp, climgp, extrap, frcxt,                                           &
       pvar, coefap, coefbp, cofafp, cofbfp, viscf, viscb, viscel,              &
@@ -107,6 +107,32 @@ module cs_f_interfaces
       double precision, dimension(ncelet) :: diverg
       double precision, dimension(3,ncelet) :: frcxt
     end subroutine itrgrv
+
+    !---------------------------------------------------------------------------
+
+    subroutine matrix &
+      (iconvp, idiffp, ndircp, isym, thetap, imucpp, coefbp, cofbfp,           &
+      rovsdt, i_massflux, b_massflux, i_visc, b_visc, xcpp, da, xa)
+      use mesh
+      integer :: iconvp, idiffp, ndircp, isym, imucpp
+      double precision :: thetap
+      double precision, dimension(ncelet) :: rovsdt, xcpp, da
+      double precision, dimension(nfabor) :: coefbp, cofbfp, b_massflux, b_visc
+      double precision, dimension(nfac) :: i_massflux, i_visc
+      double precision, dimension(2,nfac) :: xa
+    end subroutine matrix
+
+    !---------------------------------------------------------------------------
+
+    subroutine matrdt &
+      (iconvp, idiffp, isym, coefbp, cofbfp,                                   &
+      i_massflux, b_massflux, i_visc, b_visc, da)
+      use mesh
+      integer :: iconvp, idiffp, isym
+      double precision, dimension(ncelet) :: da
+      double precision, dimension(nfabor) :: coefbp, cofbfp, b_massflux, b_visc
+      double precision, dimension(nfac) :: i_massflux, i_visc
+    end subroutine matrdt
 
     !---------------------------------------------------------------------------
 

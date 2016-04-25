@@ -103,268 +103,50 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_scalar (or its counterpart for
+ * Fortran wrapper to cs_matrix_scalar (or its counterpart for
  * symmetric matrices)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (matrix, MATRIX)
 (
- const cs_int_t  *const   iconvp,
- const cs_int_t  *const   idiffp,
- const cs_int_t  *const   ndircp,
- const cs_int_t  *const   isym,
- const cs_real_t *const   thetap,
- const cs_int_t  *const   imucpp,
- const cs_real_t          coefbp[],
- const cs_real_t          cofbfp[],
- const cs_real_t          rovsdt[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- const cs_real_t          xcpp[],
- cs_real_t                da[],
- cs_real_t                xa[]
+ const int        *iconvp,
+ const int        *idiffp,
+ const int        *ndircp,
+ const int        *isym,
+ const cs_real_t  *thetap,
+ const int        *imucpp,
+ const cs_real_t   coefbp[],
+ const cs_real_t   cofbfp[],
+ const cs_real_t   rovsdt[],
+ const cs_real_t   i_massflux[],
+ const cs_real_t   b_massflux[],
+ const cs_real_t   i_visc[],
+ const cs_real_t   b_visc[],
+ const cs_real_t   xcpp[],
+ cs_real_t         da[],
+ cs_real_t         xa[]
 )
 {
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_lnum_t n_cells = m->n_cells;
-
-  if (*isym != 1 && *isym != 2) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of isym"));
-  }
-
-  /* Symmetric matrix */
-  if (*isym == 1) {
-    cs_sym_matrix_scalar(m,
-                         *idiffp,
-                         *thetap,
-                         cofbfp,
-                         rovsdt,
-                         i_visc,
-                         b_visc,
-                         da,
-                         xa);
-
-  /* Non-symmetric matrix */
-  } else {
-    cs_matrix_scalar(m,
-                     *iconvp,
-                     *idiffp,
-                     *thetap,
-                     *imucpp,
-                     coefbp,
-                     cofbfp,
-                     rovsdt,
-                     i_massflux,
-                     b_massflux,
-                     i_visc,
-                     b_visc,
-                     xcpp,
-                     da,
-                     (cs_real_2_t*) xa);
-  }
-
-  /* Penalization if non invertible matrix */
-
-  /* If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
-     least 1 in order not to shift the diagonal). */
-
-  if (*ndircp <= 0) {
-    const double epsi = 1.e-7;
-
-#   pragma omp parallel for
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      da[cell_id] = (1.+epsi)*da[cell_id];
-    }
-  }
-
-  /* If a whole line of the matrix is 0, the diagonal is set to 1 */
-# pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    da[cell_id] += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
-  }
-
+  cs_matrix_wrapper_scalar(*iconvp,
+                           *idiffp,
+                           *ndircp,
+                           *isym,
+                           *thetap,
+                           *imucpp,
+                           coefbp,
+                           cofbfp,
+                           rovsdt,
+                           i_massflux,
+                           b_massflux,
+                           i_visc,
+                           b_visc,
+                           xcpp,
+                           da,
+                           xa);
 }
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_tensor (or its counterpart for
- * symmetric matrices)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (matrxts, MATRXTS)
-(
- const cs_int_t  *const   iconvp,
- const cs_int_t  *const   idiffp,
- const cs_int_t  *const   ndircp,
- const cs_int_t  *const   isym,
- const cs_real_t *const   thetap,
- const cs_real_66_t       coefbts[],
- const cs_real_66_t       cofbfts[],
- const cs_real_66_t       fimp[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- cs_real_66_t             da[],
- cs_real_t                xa[]
-)
-{
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_lnum_t n_cells = m->n_cells;
-
-  if (*isym != 1 && *isym != 2) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of isym"));
-  }
-
-  /* Symmetric matrix */
-  if (*isym == 1) {
-    cs_sym_matrix_tensor(m,
-                         *idiffp,
-                         *thetap,
-                         cofbfts,
-                         fimp,
-                         i_visc,
-                         b_visc,
-                         da,
-                         xa);
-
-  /* Non-symmetric matrix */
-  } else {
-    cs_matrix_tensor(m,
-                     *iconvp,
-                     *idiffp,
-                     *thetap,
-                     coefbts,
-                     cofbfts,
-                     fimp,
-                     i_massflux,
-                     b_massflux,
-                     i_visc,
-                     b_visc,
-                     da,
-                     (cs_real_2_t*) xa);
-  }
-
-  /* Penalization if non invertible matrix */
-
-  /* If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
-     least 1 in order not to shift the diagonal). */
-
-  if (*ndircp <= 0) {
-    const double epsi = 1.e-7;
-
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      for (int isou = 0; isou < 6; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
-      }
-    }
-  }
-
-  /* If a whole line of the matrix is 0, the diagonal is set to 1 */
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    cs_lnum_t corr_cell_id = CS_MIN(cs_glob_porous_model, 1)*cell_id;
-    for (int isou = 0; isou < 6; isou++) {
-      da[cell_id][isou][isou] += mq->c_solid_flag[corr_cell_id];
-    }
-  }
-
-}
-
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_vector (or its counterpart for
- * symmetric matrices)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (matrxv, MATRXV)
-(
- const cs_int_t  *const   iconvp,
- const cs_int_t  *const   idiffp,
- const cs_int_t  *const   ndircp,
- const cs_int_t  *const   isym,
- const cs_real_t *const   thetap,
- const cs_real_33_t       coefbu[],
- const cs_real_33_t       cofbfu[],
- const cs_real_33_t       fimp[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- cs_real_33_t             da[],
- cs_real_t                xa[]
-)
-{
-  const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_lnum_t n_cells = m->n_cells;
-
-  if (*isym != 1 && *isym != 2) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of isym"));
-  }
-
-  /* Symmetric matrix */
-  if (*isym == 1) {
-    cs_sym_matrix_vector(m,
-                         *idiffp,
-                         *thetap,
-                         cofbfu,
-                         fimp,
-                         i_visc,
-                         b_visc,
-                         da,
-                         xa);
-
-  /* Non-symmetric matrix */
-  } else {
-    cs_matrix_vector(m,
-                     *iconvp,
-                     *idiffp,
-                     *thetap,
-                     coefbu,
-                     cofbfu,
-                     fimp,
-                     i_massflux,
-                     b_massflux,
-                     i_visc,
-                     b_visc,
-                     da,
-                     (cs_real_2_t*) xa);
-  }
-
-  /* Penalization if non invertible matrix */
-
-  /* If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum. */
-
-  if (*ndircp <= 0) {
-    const double epsi = 1.e-7;
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      for (int isou = 0; isou < 3; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
-      }
-    }
-  }
-
-  /* If a whole line of the matrix is 0, the diagonal is set to 1 */
-# pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    for (int isou = 0; isou < 3; isou++)
-      da[cell_id][isou][isou]
-        += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_time_step
+ * Fortran wrapper to cs_matrix_time_step
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (matrdt, MATRDT)
@@ -396,66 +178,153 @@ void CS_PROCF (matrdt, MATRDT)
                       da);
 }
 
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_anisotropic_diffusion (or its counterpart for
+ * Wrapper to cs_matrix_scalar (or its counterpart for
  * symmetric matrices)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (matrvv, MATRVV)
-(
- const cs_int_t  *const   iconvp,
- const cs_int_t  *const   idiffp,
- const cs_int_t  *const   ndircp,
- const cs_int_t  *const   isym,
- const cs_real_t *const   thetap,
- const cs_real_33_t       coefbu[],
- const cs_real_33_t       cofbfu[],
- const cs_real_33_t       fimp[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_33_t       i_visc[],
- const cs_real_t          b_visc[],
- cs_real_33_t             da[],
- cs_real_332_t            xa[]
-)
+void
+cs_matrix_wrapper_scalar(int               iconvp,
+                         int               idiffp,
+                         int               ndircp,
+                         int               isym,
+                         double            thetap,
+                         int               imucpp,
+                         const cs_real_t   coefbp[],
+                         const cs_real_t   cofbfp[],
+                         const cs_real_t   rovsdt[],
+                         const cs_real_t   i_massflux[],
+                         const cs_real_t   b_massflux[],
+                         const cs_real_t   i_visc[],
+                         const cs_real_t   b_visc[],
+                         const cs_real_t   xcpp[],
+                         cs_real_t         da[],
+                         cs_real_t         xa[])
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells = m->n_cells;
 
-
-  if (*isym != 1 && *isym != 2) {
+  if (isym != 1 && isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of isym"));
   }
 
   /* Symmetric matrix */
-  if (*isym == 1) {
-    cs_sym_matrix_anisotropic_diffusion(m,
-                                        *idiffp,
-                                        *thetap,
-                                        cofbfu,
-                                        fimp,
-                                        i_visc,
-                                        b_visc,
-                                        da,
-                                        (cs_real_33_t*) xa);
+  if (isym == 1) {
+    cs_sym_matrix_scalar(m,
+                         idiffp,
+                         thetap,
+                         cofbfp,
+                         rovsdt,
+                         i_visc,
+                         b_visc,
+                         da,
+                         xa);
 
   /* Non-symmetric matrix */
   } else {
-    cs_matrix_anisotropic_diffusion(m,
-                                    *iconvp,
-                                    *idiffp,
-                                    *thetap,
-                                    coefbu,
-                                    cofbfu,
-                                    fimp,
-                                    i_massflux,
-                                    b_massflux,
-                                    i_visc,
-                                    b_visc,
-                                    da,
-                                    (cs_real_332_t*) xa);
+    cs_matrix_scalar(m,
+                     iconvp,
+                     idiffp,
+                     thetap,
+                     imucpp,
+                     coefbp,
+                     cofbfp,
+                     rovsdt,
+                     i_massflux,
+                     b_massflux,
+                     i_visc,
+                     b_visc,
+                     xcpp,
+                     da,
+                     (cs_real_2_t*) xa);
+  }
+
+  /* Penalization if non invertible matrix */
+
+  /* If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
+     least 1 in order not to shift the diagonal). */
+
+  if (ndircp <= 0) {
+    const double epsi = 1.e-7;
+
+#   pragma omp parallel for
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      da[cell_id] = (1.+epsi)*da[cell_id];
+    }
+  }
+
+  /* If a whole line of the matrix is 0, the diagonal is set to 1 */
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    da[cell_id] += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_matrix_vector (or its counterpart for
+ * symmetric matrices)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_wrapper_vector(int                  iconvp,
+                         int                  idiffp,
+                         int                  ndircp,
+                         int                  isym,
+                         double               thetap,
+                         const cs_real_33_t   coefbu[],
+                         const cs_real_33_t   cofbfu[],
+                         const cs_real_33_t   fimp[],
+                         const cs_real_t      i_massflux[],
+                         const cs_real_t      b_massflux[],
+                         const cs_real_t      i_visc[],
+                         const cs_real_t      b_visc[],
+                         cs_real_33_t         da[],
+                         cs_real_t            xa[])
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells = m->n_cells;
+
+  if (isym != 1 && isym != 2) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("invalid value of isym"));
+  }
+
+  /* Symmetric matrix */
+  if (isym == 1) {
+    cs_sym_matrix_vector(m,
+                         idiffp,
+                         thetap,
+                         cofbfu,
+                         fimp,
+                         i_visc,
+                         b_visc,
+                         da,
+                         xa);
+
+  /* Non-symmetric matrix */
+  } else {
+    cs_matrix_vector(m,
+                     iconvp,
+                     idiffp,
+                     thetap,
+                     coefbu,
+                     cofbfu,
+                     fimp,
+                     i_massflux,
+                     b_massflux,
+                     i_visc,
+                     b_visc,
+                     da,
+                     (cs_real_2_t*) xa);
   }
 
   /* Penalization if non invertible matrix */
@@ -463,7 +332,7 @@ void CS_PROCF (matrvv, MATRVV)
   /* If no Dirichlet condition, the diagonal is slightly increased in order
      to shift the eigenvalues spectrum. */
 
-  if (*ndircp <= 0) {
+  if (ndircp <= 0) {
     const double epsi = 1.e-7;
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
@@ -476,70 +345,69 @@ void CS_PROCF (matrvv, MATRVV)
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     for (int isou = 0; isou < 3; isou++)
-      da[cell_id][isou][isou] += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
+      da[cell_id][isou][isou]
+        += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
   }
 
 }
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_anisotropic_diffusion_tenssor (or its counterpart for
+ * Wrapper to cs_matrix_tensor (or its counterpart for
  * symmetric matrices)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (matrvts, MATRVTS)
-(
- const cs_int_t      *const iconvp,
- const cs_int_t      *const idiffp,
- const cs_int_t      *const ndircp,
- const cs_int_t      *const isym,
- const cs_real_t     *const thetap,
- const cs_real_66_t         coefbts[],
- const cs_real_66_t         cofbfts[],
- const cs_real_66_t         fimp[],
- const cs_real_t            i_massflux[],
- const cs_real_t            b_massflux[],
- const cs_real_t            i_visc[],
- const cs_real_t            b_visc[],
- cs_real_66_t               da[],
- cs_real_662_t              xa[]
-)
+void
+cs_matrix_wrapper_tensor(int                  iconvp,
+                         int                  idiffp,
+                         int                  ndircp,
+                         int                  isym,
+                         double               thetap,
+                         const cs_real_66_t   coefbts[],
+                         const cs_real_66_t   cofbfts[],
+                         const cs_real_66_t   fimp[],
+                         const cs_real_t      i_massflux[],
+                         const cs_real_t      b_massflux[],
+                         const cs_real_t      i_visc[],
+                         const cs_real_t      b_visc[],
+                         cs_real_66_t         da[],
+                         cs_real_t            xa[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells = m->n_cells;
 
-  if (*isym != 1 && *isym != 2) {
+  if (isym != 1 && isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of isym"));
   }
 
   /* Symmetric matrix */
-  if (*isym == 1) {
-    cs_sym_matrix_anisotropic_diffusion_tensor(m,
-                                               *idiffp,
-                                               *thetap,
-                                               cofbfts,
-                                               fimp,
-                                               (const cs_real_66_t *)i_visc,
-                                               b_visc,
-                                               da,
-                                               (cs_real_66_t *) xa);
+  if (isym == 1) {
+    cs_sym_matrix_tensor(m,
+                         idiffp,
+                         thetap,
+                         cofbfts,
+                         fimp,
+                         i_visc,
+                         b_visc,
+                         da,
+                         xa);
 
   /* Non-symmetric matrix */
   } else {
-    cs_matrix_anisotropic_diffusion_tensor(m,
-                                           *iconvp,
-                                           *idiffp,
-                                           *thetap,
-                                           coefbts,
-                                           cofbfts,
-                                           fimp,
-                                           i_massflux,
-                                           b_massflux,
-                                           (const cs_real_66_t *)i_visc,
-                                           b_visc,
-                                           da,
-                                           (cs_real_662_t *) xa);
+    cs_matrix_tensor(m,
+                     iconvp,
+                     idiffp,
+                     thetap,
+                     coefbts,
+                     cofbfts,
+                     fimp,
+                     i_massflux,
+                     b_massflux,
+                     i_visc,
+                     b_visc,
+                     da,
+                     (cs_real_2_t*) xa);
   }
 
   /* Penalization if non invertible matrix */
@@ -548,7 +416,7 @@ void CS_PROCF (matrvts, MATRVTS)
      to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
      least 1 in order not to shift the diagonal). */
 
-  if (*ndircp <= 0) {
+  if (ndircp <= 0) {
     const double epsi = 1.e-7;
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -568,9 +436,173 @@ void CS_PROCF (matrvts, MATRVTS)
 
 }
 
-/*============================================================================
- * Public function definitions
- *============================================================================*/
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_matrix_anisotropic_diffusion (or its counterpart for
+ * symmetric matrices)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_anisotropic_diffusion_wrapper(int                  iconvp,
+                                        int                  idiffp,
+                                        int                  ndircp,
+                                        int                  isym,
+                                        double               thetap,
+                                        const cs_real_33_t   coefbu[],
+                                        const cs_real_33_t   cofbfu[],
+                                        const cs_real_33_t   fimp[],
+                                        const cs_real_t      i_massflux[],
+                                        const cs_real_t      b_massflux[],
+                                        const cs_real_33_t   i_visc[],
+                                        const cs_real_t      b_visc[],
+                                        cs_real_33_t         da[],
+                                        cs_real_t            xa[])
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells = m->n_cells;
+
+
+  if (isym != 1 && isym != 2) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("invalid value of isym"));
+  }
+
+  /* Symmetric matrix */
+  if (isym == 1) {
+    cs_sym_matrix_anisotropic_diffusion(m,
+                                        idiffp,
+                                        thetap,
+                                        cofbfu,
+                                        fimp,
+                                        i_visc,
+                                        b_visc,
+                                        da,
+                                        (cs_real_33_t *) xa);
+
+  /* Non-symmetric matrix */
+  } else {
+    cs_matrix_anisotropic_diffusion(m,
+                                    iconvp,
+                                    idiffp,
+                                    thetap,
+                                    coefbu,
+                                    cofbfu,
+                                    fimp,
+                                    i_massflux,
+                                    b_massflux,
+                                    i_visc,
+                                    b_visc,
+                                    da,
+                                    (cs_real_332_t *) xa);
+  }
+
+  /* Penalization if non invertible matrix */
+
+  /* If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum. */
+
+  if (ndircp <= 0) {
+    const double epsi = 1.e-7;
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (int isou = 0; isou < 3; isou++) {
+        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
+      }
+    }
+  }
+
+  /* If a whole line of the matrix is 0, the diagonal is set to 1 */
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    for (int isou = 0; isou < 3; isou++)
+      da[cell_id][isou][isou] += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_matrix_anisotropic_diffusion_tensor (or its counterpart for
+ * symmetric matrices)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_anisotropic_diffusion_wrapper_tensor(int                  iconvp,
+                                               int                  idiffp,
+                                               int                  ndircp,
+                                               int                  isym,
+                                               double               thetap,
+                                               const cs_real_66_t   coefbts[],
+                                               const cs_real_66_t   cofbfts[],
+                                               const cs_real_66_t   fimp[],
+                                               const cs_real_t      i_massflux[],
+                                               const cs_real_t      b_massflux[],
+                                               cs_real_t            i_visc[],
+                                               const cs_real_t      b_visc[],
+                                               cs_real_66_t         da[],
+                                               cs_real_662_t        xa[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells = m->n_cells;
+
+  if (isym != 1 && isym != 2) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("invalid value of isym"));
+  }
+
+  /* Symmetric matrix */
+  if (isym == 1) {
+    cs_sym_matrix_anisotropic_diffusion_tensor(m,
+                                               idiffp,
+                                               thetap,
+                                               cofbfts,
+                                               fimp,
+                                               (cs_real_66_t *)i_visc,
+                                               b_visc,
+                                               da,
+                                               (cs_real_66_t *) xa);
+
+  /* Non-symmetric matrix */
+  } else {
+    cs_matrix_anisotropic_diffusion_tensor(m,
+                                           iconvp,
+                                           idiffp,
+                                           thetap,
+                                           coefbts,
+                                           cofbfts,
+                                           fimp,
+                                           i_massflux,
+                                           b_massflux,
+                                           (cs_real_66_t *)i_visc,
+                                           b_visc,
+                                           da,
+                                           (cs_real_662_t *) xa);
+  }
+
+  /* Penalization if non invertible matrix */
+
+  /* If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
+     least 1 in order not to shift the diagonal). */
+
+  if (ndircp <= 0) {
+    const double epsi = 1.e-7;
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (int isou = 0; isou < 6; isou++) {
+        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
+      }
+    }
+  }
+
+  /* If a whole line of the matrix is 0, the diagonal is set to 1 */
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    cs_lnum_t corr_cell_id = CS_MIN(cs_glob_porous_model, 1)*cell_id;
+    for (int isou = 0; isou < 6; isou++) {
+      da[cell_id][isou][isou] += mq->c_solid_flag[corr_cell_id];
+    }
+  }
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

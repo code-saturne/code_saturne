@@ -54,6 +54,7 @@ use period
 use parall
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -261,7 +262,7 @@ call codits &
    cvara_al        , cvara_al        ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
-   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
    rovsdt , smbr   , cvar_al         , dpvar  ,                   &

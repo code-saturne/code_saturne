@@ -98,6 +98,7 @@ use field
 use cs_f_interfaces
 use rotation
 use turbomachinery
+use cs_c_bindings
 
 !===============================================================================
 

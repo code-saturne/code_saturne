@@ -304,7 +304,7 @@ call codits &
    cvara_voidf     , cvara_voidf     ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
-   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
    rovsdt , smbrs  , cvar_voidf      , dpvar  ,                   &

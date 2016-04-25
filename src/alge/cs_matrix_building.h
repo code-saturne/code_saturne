@@ -55,76 +55,32 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_scalar (or its counterpart for
+ * Fortran wrapper to cs_matrix_scalar (or its counterpart for
  * symmetric matrices)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (matrix, MATRIX)
 (
- const cs_int_t  *const   iconvp,
- const cs_int_t  *const   idiffp,
- const cs_int_t  *const   ndircp,
- const cs_int_t  *const   isym,
- const cs_real_t *const   thetap,
- const cs_int_t  *const   imucpp,
- const cs_real_t          coefbp[],
- const cs_real_t          cofbfp[],
- const cs_real_t          rovsdt[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- const cs_real_t          xcpp[],
- cs_real_t                da[],
- cs_real_t                xa[]
+ const int        *iconvp,
+ const int        *idiffp,
+ const int        *ndircp,
+ const int        *isym,
+ const cs_real_t  *thetap,
+ const int        *imucpp,
+ const cs_real_t   coefbp[],
+ const cs_real_t   cofbfp[],
+ const cs_real_t   rovsdt[],
+ const cs_real_t   i_massflux[],
+ const cs_real_t   b_massflux[],
+ const cs_real_t   i_visc[],
+ const cs_real_t   b_visc[],
+ const cs_real_t   xcpp[],
+ cs_real_t         da[],
+ cs_real_t         xa[]
 );
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_vector (or its counterpart for
- * symmetric matrices)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (matrxv, MATRXV)
-(
- const cs_int_t  *const   iconvp,
- const cs_int_t  *const   idiffp,
- const cs_int_t  *const   ndircp,
- const cs_int_t  *const   isym,
- const cs_real_t *const   thetap,
- const cs_real_33_t       coefbu[],
- const cs_real_33_t       cofbfu[],
- const cs_real_33_t       fimp[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- cs_real_33_t             da[],
- cs_real_t                xa[]
-);
-/*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_tensor (or its counterpart for
- * symmetric matrices)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (matrxts, MATRXTS)
-(
- const cs_int_t  *const   iconvp,
- const cs_int_t  *const   idiffp,
- const cs_int_t  *const   ndircp,
- const cs_int_t  *const   isym,
- const cs_real_t *const   thetap,
- const cs_real_66_t       coefbts[],
- const cs_real_66_t       cofbfts[],
- const cs_real_66_t       fimp[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- cs_real_66_t             da[],
- cs_real_t                xa[]
-);
-/*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_time_step
+ * Fortran wrapper to cs_matrix_time_step
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (matrdt, MATRDT)
@@ -141,55 +97,116 @@ void CS_PROCF (matrdt, MATRDT)
  cs_real_t                da[]
 );
 
+/*=============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_matrix_scalar (or its counterpart for
+ * symmetric matrices)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_wrapper_scalar(int               iconvp,
+                         int               idiffp,
+                         int               ndircp,
+                         int               isym,
+                         double            thetap,
+                         int               imucpp,
+                         const cs_real_t   coefbp[],
+                         const cs_real_t   cofbfp[],
+                         const cs_real_t   rovsdt[],
+                         const cs_real_t   i_massflux[],
+                         const cs_real_t   b_massflux[],
+                         const cs_real_t   i_visc[],
+                         const cs_real_t   b_visc[],
+                         const cs_real_t   xcpp[],
+                         cs_real_t         da[],
+                         cs_real_t         xa[]);
+
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_matrix_vector (or its counterpart for
+ * symmetric matrices)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_wrapper_vector(int                  iconvp,
+                         int                  idiffp,
+                         int                  ndircp,
+                         int                  isym,
+                         double               thetap,
+                         const cs_real_33_t   coefbu[],
+                         const cs_real_33_t   cofbfu[],
+                         const cs_real_33_t   fimp[],
+                         const cs_real_t      i_massflux[],
+                         const cs_real_t      b_massflux[],
+                         const cs_real_t      i_visc[],
+                         const cs_real_t      b_visc[],
+                         cs_real_33_t         da[],
+                         cs_real_t            xa[]);
+
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_matrix_tensor (or its counterpart for
+ * symmetric matrices)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_wrapper_tensor(int                  iconvp,
+                         int                  idiffp,
+                         int                  ndircp,
+                         int                  isym,
+                         double               thetap,
+                         const cs_real_66_t   coefbts[],
+                         const cs_real_66_t   cofbfts[],
+                         const cs_real_66_t   fimp[],
+                         const cs_real_t      i_massflux[],
+                         const cs_real_t      b_massflux[],
+                         const cs_real_t      i_visc[],
+                         const cs_real_t      b_visc[],
+                         cs_real_66_t         da[],
+                         cs_real_t            xa[]);
+
 /*----------------------------------------------------------------------------
  * Wrapper to cs_matrix_anisotropic_diffusion (or its counterpart for
  * symmetric matrices)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (matrvv, MATRVV)
-(
- const cs_int_t  *const   iconvp,
- const cs_int_t  *const   idiffp,
- const cs_int_t  *const   ndircp,
- const cs_int_t  *const   isym,
- const cs_real_t *const   thetap,
- const cs_real_33_t       coefbu[],
- const cs_real_33_t       cofbfu[],
- const cs_real_33_t       fimp[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_33_t       i_visc[],
- const cs_real_t          b_visc[],
- cs_real_33_t             da[],
- cs_real_332_t            xa[]
-);
+void
+cs_matrix_anisotropic_diffusion_wrapper(int                  iconvp,
+                                        int                  idiffp,
+                                        int                  ndircp,
+                                        int                  isym,
+                                        double               thetap,
+                                        const cs_real_33_t   coefbu[],
+                                        const cs_real_33_t   cofbfu[],
+                                        const cs_real_33_t   fimp[],
+                                        const cs_real_t      i_massflux[],
+                                        const cs_real_t      b_massflux[],
+                                        const cs_real_33_t   i_visc[],
+                                        const cs_real_t      b_visc[],
+                                        cs_real_33_t         da[],
+                                        cs_real_t            xa[]);
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_anisotropic_diffusion_tenssor (or its counterpart for
+ * Wrapper to cs_matrix_anisotropic_diffusion_tensor (or its counterpart for
  * symmetric matrices)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (matrvts, MATRVTS)
-(
- const cs_int_t      *const iconvp,
- const cs_int_t      *const idiffp,
- const cs_int_t      *const ndircp,
- const cs_int_t      *const isym,
- const cs_real_t     *const thetap,
- const cs_real_66_t         coefbts[],
- const cs_real_66_t         cofbfts[],
- const cs_real_66_t         fimp[],
- const cs_real_t            i_massflux[],
- const cs_real_t            b_massflux[],
- const cs_real_t            i_visc[],
- const cs_real_t            b_visc[],
- cs_real_66_t               da[],
- cs_real_662_t              xa[]
-);
-
-/*=============================================================================
- * Public function prototypes
- *============================================================================*/
+void
+cs_matrix_anisotropic_diffusion_wrapper_tensor(int                  iconvp,
+                                               int                  idiffp,
+                                               int                  ndircp,
+                                               int                  isym,
+                                               double               thetap,
+                                               const cs_real_66_t   coefbts[],
+                                               const cs_real_66_t   cofbfts[],
+                                               const cs_real_66_t   fimp[],
+                                               const cs_real_t      i_massflux[],
+                                               const cs_real_t      b_massflux[],
+                                               cs_real_t            i_visc[],
+                                               const cs_real_t      b_visc[],
+                                               cs_real_66_t         da[],
+                                               cs_real_662_t        xa[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

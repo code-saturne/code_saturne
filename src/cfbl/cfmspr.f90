@@ -342,7 +342,7 @@ call codits                                                                    &
   wbfa   , wbfb   ,                                                            &
   coefaf_p        , coefbf_p        ,                                          &
   wflmas          , wflmab          ,                                          &
-  viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,                        &
+  viscf  , viscb  , viscf  , viscb  , rvoid  ,                                 &
   rvoid  , rvoid  ,                                                            &
   icvflb , ivoid  ,                                                            &
   rovsdt , smbrs  , cvar_pr         , dpvar  ,                                 &

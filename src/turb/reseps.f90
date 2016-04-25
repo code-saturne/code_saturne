@@ -90,6 +90,7 @@ use mesh
 use field
 use field_operator
 use cs_f_interfaces
+use cs_c_bindings
 
 !===============================================================================
 
@@ -567,7 +568,7 @@ call codits &
    cvara_ep        , cvara_ep        ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
-   viscf  , viscb  , viscce  , viscf , viscb  , viscce  ,         &
+   viscf  , viscb  , viscf , viscb  , viscce  ,                   &
    weighf , weighb ,                                              &
    icvflb , ivoid  ,                                              &
    rovsdt , smbr   , cvar_ep         , dpvar  ,                   &

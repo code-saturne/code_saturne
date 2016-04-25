@@ -70,6 +70,8 @@ use period
 use cpincl
 use cs_coal_incl
 use ppincl
+use cs_c_bindings
+
 !===============================================================================
 
 implicit none

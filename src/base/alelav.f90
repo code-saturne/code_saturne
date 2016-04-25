@@ -61,6 +61,7 @@ use parall
 use period
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -81,7 +82,6 @@ integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          ivisep
 integer          iswdyp, idftnp, icvflb
-
 integer          ivoid(1)
 
 double precision blencp, epsilp, epsrgp, climgp, thetv

@@ -1791,7 +1791,7 @@ cs_sles_post_error_output_var(const char   *name,
  * \param[in]  f_id  associated field id, or < 0
  * \param[in]  name  associated name if f_id < 0, or NULL
  *
- * \return  pointer to associated linear system object, or NULL
+ * \return  pointer to base name associated to the field id, name couple
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1807,6 +1807,29 @@ cs_sles_base_name(int          f_id,
   }
 
   return sles_name;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return name associated to a field id, name couple.
+ *
+ * \param[in]  f_id  associated field id, or < 0
+ * \param[in]  name  associated name if f_id < 0, or NULL
+ *
+ * \return  pointer to name associated to the field id, name couple
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_sles_name(int          f_id,
+             const char  *name)
+{
+  const cs_sles_t *sles = cs_sles_find_or_add(f_id, name);
+
+  if (sles->name != NULL)
+    return sles->name;
+  else
+    return cs_sles_base_name(f_id, name);
 }
 
 /*----------------------------------------------------------------------------*/

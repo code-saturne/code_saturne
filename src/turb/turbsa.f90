@@ -73,6 +73,7 @@ use field
 use field_operator
 use parall
 use pointe, only: dispar
+use cs_c_bindings
 
 !===============================================================================
 
@@ -573,7 +574,7 @@ call codits &
    cvara_nusa      , cvara_nusa      ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
-   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
    tinssa , rhssa  , cvar_nusa       , dpvar ,                    &

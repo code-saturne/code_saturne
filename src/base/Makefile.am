@@ -87,6 +87,7 @@ cs_control.h \
 cs_coupling.h \
 cs_crystal_router.h \
 cs_defs.h \
+cs_equation_iterative_solve.h \
 cs_ext_neighborhood.h \
 cs_fan.h \
 cs_file.h \
@@ -210,9 +211,6 @@ cou1di.f90 \
 cou1do.f90 \
 coupbi.f90 \
 coupbo.f90 \
-codits.f90 \
-coditv.f90 \
-coditts.f90 \
 covofi.f90 \
 cptssy.f90 \
 cpvosy.f90 \
@@ -235,6 +233,7 @@ cscpfb.f90 \
 cs_control.c \
 cs_coupling.c \
 cs_ext_neighborhood.c \
+cs_equation_iterative_solve.c \
 cs_fan.c \
 cs_field.c \
 cs_field_default.c \

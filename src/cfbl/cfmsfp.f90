@@ -84,6 +84,7 @@ use ppincl
 use mesh
 use field
 use cs_f_interfaces
+use cs_c_bindings
 
 !===============================================================================
 

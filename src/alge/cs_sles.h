@@ -766,6 +766,21 @@ cs_sles_base_name(int          f_id,
                   const char  *name);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return name associated to a field id, name couple.
+ *
+ * \param[in]  f_id  associated field id, or < 0
+ * \param[in]  name  associated name if f_id < 0, or NULL
+ *
+ * \return  pointer to name associated to the field id, name couple
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_sles_name(int          f_id,
+             const char  *name);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

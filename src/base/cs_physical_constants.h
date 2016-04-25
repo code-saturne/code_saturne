@@ -118,7 +118,7 @@ extern const cs_fluid_properties_t  *cs_glob_fluid_properties;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Provide acces to cs_glob_physical_constants
+ * Provide access to cs_glob_physical_constants
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/
@@ -127,7 +127,7 @@ cs_physical_constants_t *
 cs_get_glob_physical_constants(void);
 
 /*----------------------------------------------------------------------------
- * Provide acces to cs_glob_fluid_properties
+ * Provide access to cs_glob_fluid_properties
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/

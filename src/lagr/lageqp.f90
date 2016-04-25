@@ -66,6 +66,7 @@ use pointe
 use lagpar
 use lagran
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -300,7 +301,7 @@ call codits &
    phia   , phia   , coefap , coefbp ,                            &
    cofafp , cofbfp ,                                              &
    fmala  , fmalb  ,                                              &
-   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
    rovsdt , smbrs  , phi    , dpvar  ,                            &

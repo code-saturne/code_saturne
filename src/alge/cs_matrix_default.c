@@ -205,50 +205,62 @@ _build_block_row_num(cs_lnum_t         n_rows,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- *  Public function definitions for Fortran API
+ * Public function definitions
  *============================================================================*/
 
-void CS_PROCF(promav, PROMAV)
-(
- const cs_int_t   *isym,      /* <-- Symmetry indicator:
-                                     1: symmetric; 2: not symmetric */
- const cs_int_t   *ibsize,    /* <-- Block size of element ii */
- const cs_int_t   *iesize,    /* <-- Block size of element ij */
- const cs_int_t   *iinvpe,    /* <-- Indicator to cancel increments
-                                     in rotational periodicty (2) or
-                                     to exchange them as scalars (1) */
- const cs_real_t  *dam,       /* <-- Matrix diagonal */
- const cs_real_t  *xam,       /* <-- Matrix extra-diagonal terms */
- cs_real_t        *vx,        /* <-- A*vx */
- cs_real_t        *vy         /* <-> vy = A*vx */
-)
+/*----------------------------------------------------------------------------
+ * Matrix (native format) vector product
+ *
+ * parameters:
+ *   isym       <-- Symmetry indicator:
+ *                  1: symmetric; 2: not symmetric
+ *   ibsize     <-- Block size of element ii
+ *   iesize     <-- Block size of element ij
+ *   iinvpe     <-- Indicator to cancel increments
+ *                  in rotational periodicty (2) or
+ *                  to exchange them as scalars (1)
+ *   dam        <-- Matrix diagonal
+ *   xam        <-- Matrix extra-diagonal terms
+ *   vx         <-- A*vx
+ *   vy         <-> vy = A*vx
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vector_native_multiply(int               isym,
+                                 int               ibsize,
+                                 int               iesize,
+                                 int               iinvpe,
+                                 const cs_real_t  *dam,
+                                 const cs_real_t  *xam,
+                                 cs_real_t        *vx,
+                                 cs_real_t        *vy)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   cs_matrix_t *a;
 
-  bool symmetric = (*isym == 1) ? true : false;
+  bool symmetric = (isym == 1) ? true : false;
   cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
-  if (*iinvpe == 2)
+  if (iinvpe == 2)
     rotation_mode = CS_HALO_ROTATION_ZERO;
-  else if (*iinvpe == 3)
+  else if (iinvpe == 3)
     rotation_mode = CS_HALO_ROTATION_IGNORE;
 
-  if (*ibsize > 1 || symmetric) {
+  if (ibsize > 1 || symmetric) {
 
     int _diag_block_size[4] = {1, 1, 1, 1};
     int _extra_diag_block_size[4] = {1, 1, 1, 1};
 
-    _diag_block_size[0] = *ibsize;
-    _diag_block_size[1] = *ibsize;
-    _diag_block_size[2] = *ibsize;
-    _diag_block_size[3] = (*ibsize)*(*ibsize);
+    _diag_block_size[0] = ibsize;
+    _diag_block_size[1] = ibsize;
+    _diag_block_size[2] = ibsize;
+    _diag_block_size[3] = ibsize*ibsize;
 
-    if (*iesize > 1) {
-      _extra_diag_block_size[0] = *iesize;
-      _extra_diag_block_size[1] = *iesize;
-      _extra_diag_block_size[2] = *iesize;
-      _extra_diag_block_size[3] = (*iesize)*(*iesize);
+    if (iesize > 1) {
+      _extra_diag_block_size[0] = iesize;
+      _extra_diag_block_size[1] = iesize;
+      _extra_diag_block_size[2] = iesize;
+      _extra_diag_block_size[3] = iesize*iesize;
     }
 
     a = cs_matrix_native(symmetric,
@@ -280,10 +292,6 @@ void CS_PROCF(promav, PROMAV)
                             vx,
                             vy);
 }
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * Initialize sparse matrix API.

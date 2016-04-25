@@ -2172,6 +2172,8 @@ if (idilat.eq.5) then
   thetap = thetav(ivar)
   ! all boundary convective flux with upwind
   icvflb = 0
+  ! ivar = 0
+  nomva0 = "Pr compress"
 
   ! --- Solve the convection diffusion equation
 
@@ -2188,7 +2190,7 @@ if (idilat.eq.5) then
      dpvar  , dpvar  ,                                              &
      coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,          &
      velflx , velflb ,                                              &
-     viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+     viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
      weighf , weighb ,                                              &
      icvflb , ivoid  ,                                              &
      rovsdt , rhs    , dpvar  , ddpvar ,                            &

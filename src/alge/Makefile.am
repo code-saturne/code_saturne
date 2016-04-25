@@ -49,6 +49,7 @@ $(PETSC_CPPFLAGS) $(MPI_CPPFLAGS)
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_balance.h \
 cs_benchmark.h \
 cs_blas.h \
 cs_balance_by_zone.h \
@@ -83,6 +84,7 @@ libcsalge_la_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCFLAGS_DBG) $(FCFLAGS_HOT)
 libcsalge_la_SOURCES = \
+cs_balance.c \
 cs_benchmark.c \
 cs_blas.c \
 cs_bw_time_diff.c \
@@ -103,9 +105,6 @@ cs_sles.c \
 cs_sles_default.c \
 cs_sles_it.c \
 cs_sles_pc.c \
-bilsca.f90 \
-bilscv.f90 \
-bilscts.f90 \
 visort.f90
 libcsalge_la_LDFLAGS = -no-undefined
 

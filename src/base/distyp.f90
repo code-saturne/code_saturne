@@ -513,7 +513,6 @@ do isweep = 1, ntcmxy
   relaxp = 1.d0
   ! all boundary convective flux with upwind
   icvflb = 0
-
   ! Warning: no diffusion so no need of other diffusive Boundary coeeficient
 
   call codits &
@@ -528,7 +527,7 @@ do isweep = 1, ntcmxy
    coefap , coefbp ,                                              &
    coefap , coefbp ,                                              &
    flumas , flumab ,                                              &
-   flumas , flumab , rvoid  , flumas , flumab , rvoid  ,          &
+   flumas , flumab , flumas , flumab , rvoid  ,                   &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
    rovsdp , smbdp  , dvarp  , dpvar  ,                            &

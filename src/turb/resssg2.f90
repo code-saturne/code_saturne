@@ -101,6 +101,7 @@ use field_operator
 use cs_f_interfaces
 use rotation
 use turbomachinery
+use cs_c_bindings
 
 !===============================================================================
 

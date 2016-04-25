@@ -828,7 +828,7 @@ call codits                                                      &
   cvara_energ     , cvara_energ     ,                            &
   coefap , coefbp , cofafp , cofbfp ,                            &
   imasfl, bmasfl,                                                &
-  viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+  viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
   rvoid  , rvoid  ,                                              &
   icvflb , icvfli ,                                              &
   rovsdt , smbrs  , cvar_energ      , dpvar  ,                   &

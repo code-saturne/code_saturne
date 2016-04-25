@@ -55,27 +55,35 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*=============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
-void CS_PROCF(promav, PROMAV)
-(
- const cs_int_t   *isym,      /* <-- Symmetry indicator:
-                                     1: symmetric; 2: not symmetric */
- const cs_int_t   *ibsize,    /* <-- Block size of diagonal element */
- const cs_int_t   *iesize,    /* <-- Block size of element ij */
- const cs_int_t   *iinvpe,    /* <-- Indicator to cancel increments
-                                     in rotational periodicty (2) or
-                                     to exchange them as scalars (1) */
- const cs_real_t  *dam,       /* <-- Matrix diagonal */
- const cs_real_t  *xam,       /* <-- Matrix extra-diagonal terms */
- cs_real_t        *vx,        /* <-- A*vx */
- cs_real_t        *vy         /* <-> vy = A*vx */
- );
-
-/*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Matrix (native format) vector product
+ *
+ * parameters:
+ *   isym       <-- Symmetry indicator:
+ *                  1: symmetric; 2: not symmetric
+ *   ibsize     <-- Block size of element ii
+ *   iesize     <-- Block size of element ij
+ *   iinvpe     <-- Indicator to cancel increments
+ *                  in rotational periodicty (2) or
+ *                  to exchange them as scalars (1)
+ *   dam        <-- Matrix diagonal
+ *   xam        <-- Matrix extra-diagonal terms
+ *   vx         <-- A*vx
+ *   vy         <-> vy = A*vx
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vector_native_multiply(int               isym,
+                                 int               ibsize,
+                                 int               iesize,
+                                 int               iinvpe,
+                                 const cs_real_t  *dam,
+                                 const cs_real_t  *xam,
+                                 cs_real_t        *vx,
+                                 cs_real_t        *vy);
 
 /*----------------------------------------------------------------------------
  * Initialize sparse matrix API.

@@ -1198,7 +1198,7 @@ if (idiff(iu).ge. 1) then
     endif
   endif
 
-! --- If no dissusion, viscosity is set to 0.
+! --- If no diffusion, viscosity is set to 0.
 else
 
   do ifac = 1, nfac

@@ -188,10 +188,13 @@ module entsor
   !> frhist : output frequency in seconds
   double precision, save :: frhist
 
-  !> number \ref ihisvr "ihisvr(n, 1)" and index-numbers \ref ihisvr "ihisvr"(n, j>1)
-  !> of the record probes to be used for each variable, em i.e. calculation variable
+  !> number \ref ihisvr "ihisvr(n, 1)" and index-numbers \ref ihisvr
+  !> "ihisvr"(n, j>1)
+  !> of the record probes to be used for each variable, em i.e. calculation
+  !> variable
   !> or physical property defined at the cell centers.
-  !> With \ref ihisvr "ihisvr"(n, 1)=-999 or -1, \ref ihisvr "ihisvr"(n, j>1) is useless.
+  !> With \ref ihisvr "ihisvr"(n, 1)=-999 or -1, \ref ihisvr "ihisvr"(n, j>1)
+  !> is useless.
   !>  - \ref ihisvr "ihisvr"(n, 1): number of record probes to use
   !> for the variable N.
   !>     * = -999: by default: chronogical records are generated on
@@ -213,7 +216,8 @@ module entsor
   !> Useful if and only if \ref ihisvr "ihisvr"(n, 1) > 0 .
   !>
   !> The condition \ref ihisvr "ihisvr"(n, j) <= \ref ncapt must be respected.
-  !> For an easier use, it is recommended to simply specify \ref ihisvr "ihisvr"(n,1)=-1 for
+  !> For an easier use, it is recommended to simply specify
+  !> \ref ihisvr "ihisvr"(n,1)=-1 for
   !> all the interesting variables.
   integer, save :: ihisvr(nvppmx,ncaptm+1)
 
@@ -304,7 +308,6 @@ module entsor
   !> \{
 
   !> temporary variable name for some algebraic operations
-
   character(len=80), save :: nomva0
 
   !> locator pointer for variables output
@@ -334,10 +337,11 @@ module entsor
   !> \addtogroup other_output
   !> \{
 
-  !> indicates the data to post-process on the boundary mesh (the boundary mesh must
-  !> be associated with an active writer). \ref ipstdv "ipstdv"(key) indicates which
-  !> fields should be created and output on the boundary, with \c key in
-  !> \ref ipstfo, \ref ipstyp, \ref ipsttp, \ref ipstft, \ref ipstnu.
+  !> indicates the data to post-process on the boundary mesh (the boundary mesh
+  !> must be associated with an active writer). \ref ipstdv "ipstdv"(key)
+  !> indicates which fields should be created and output on the boundary,
+  !> with \c key in \ref ipstfo, \ref ipstyp, \ref ipsttp, \ref ipstft,
+  !> \ref ipstnu.
   integer, save :: ipstdv(5)
 
   !> post-processed property: Efforts (0: none 1: all; 2: tangent; 4: normal)
@@ -346,7 +350,8 @@ module entsor
   integer    ipstyp
   !> post-processed property :\f$ T^+ \f$ at the boundary
   integer    ipsttp
-  !> post-processed property: thermal flux at the boundary (in  \f$ W\,m^{-2} \f$),
+  !> post-processed property: thermal flux at the boundary
+  !>(in  \f$ W\,m^{-2} \f$),
   integer    ipstft
   !> post-processed property: Nusselt
   integer    ipstnu
@@ -361,9 +366,6 @@ module entsor
   double precision, save :: tmarus
   !> \}
   !> \}
-
-  !=============================================================================
-
 
 contains
 

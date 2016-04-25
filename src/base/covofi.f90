@@ -1110,7 +1110,7 @@ call codits &
    cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
-   viscf  , viscb  , viscce , viscf  , viscb  , viscce ,          &
+   viscf  , viscb  , viscf  , viscb  , viscce ,                   &
    weighf , weighb ,                                              &
    icvflb , ivoid  ,                                              &
    rovsdt , smbrs  , cvar_var        , dpvar  ,                   &

@@ -242,7 +242,7 @@ call codits &
    relaxp , thetap ,                                              &
    thetaa , thetaa , coefap , coefbp , cofafp , cofbfp ,          &
    flurds , flurdb ,                                              &
-   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
    rovsdt , smbrs  , theta4 , dpvar  ,                            &

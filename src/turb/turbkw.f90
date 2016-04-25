@@ -961,7 +961,7 @@ call codits &
    cvara_k         , cvara_k         ,                            &
    coefa_k , coefb_k , coefaf_k , coefbf_k ,                      &
    imasfl , bmasfl ,                                              &
-   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
    tinstk , smbrk  , cvar_k          , dpvar  ,                   &
@@ -1030,7 +1030,7 @@ call codits &
    cvara_omg       , cvara_omg       ,                            &
    coefa_o , coefb_o , coefaf_o , coefbf_o ,                      &
    imasfl , bmasfl ,                                              &
-   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
+   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
    tinstw , smbrw  , cvar_omg        , dpvar  ,                   &

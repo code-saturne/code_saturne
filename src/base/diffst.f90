@@ -64,6 +64,7 @@ use ppthch
 use ppincl
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 

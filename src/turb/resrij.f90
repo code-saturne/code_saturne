@@ -99,6 +99,7 @@ use field
 use cs_f_interfaces
 use rotation
 use turbomachinery
+use cs_c_bindings
 
 !===============================================================================
 
@@ -658,7 +659,7 @@ call codits &
    cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
-   viscf  , viscb  , viscce , viscf  , viscb  , viscce ,          &
+   viscf  , viscb  , viscf  , viscb  , viscce ,                   &
    weighf , weighb ,                                              &
    icvflb , ivoid  ,                                              &
    rovsdt , smbr   , cvar_var        , dpvar  ,                   &
