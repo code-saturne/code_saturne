@@ -1,11 +1,19 @@
 
-Release 4.0.5 (6 Apr 2016)
+Release 4.0.6 (unreleased)
 ==========================
 
 Bug fixes:
 ----------
 
+- Fix incorrect z-component of boundary stresses (efforts).
+
 - Fix xml reader for mobile mesh (replace all unsigned ints by ints).
+
+Release 4.0.5 (6 Apr 2016)
+==========================
+
+Bug fixes:
+----------
 
 - Fix MPI C++ wrapper use in automatic installer.
 
