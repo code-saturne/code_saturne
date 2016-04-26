@@ -280,8 +280,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* solving info */
   key_sinfo_id = cs_field_key_id("solving_info");
-  if (f_id > -1)
+  if (f_id > -1) {
+    f = cs_field_by_id(f_id);
     cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
+  }
 
   /* Name */
   const char *var_name = cs_sles_name(f_id, name);
@@ -1108,8 +1110,10 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   /* solving info */
   key_sinfo_id = cs_field_key_id("solving_info");
-  if (f_id > -1)
+  if (f_id > -1) {
+    f = cs_field_by_id(f_id);
     cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
+  }
 
   /* Name */
   const char *var_name = cs_sles_name(f_id, name);
@@ -1908,8 +1912,10 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
   /* solving info */
   key_sinfo_id = cs_field_key_id("solving_info");
-  if (f_id > -1)
+  if (f_id > -1) {
+    f = cs_field_by_id(f_id);
     cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
+  }
 
   /* Name */
   const char *var_name = cs_sles_name(f_id, name);
