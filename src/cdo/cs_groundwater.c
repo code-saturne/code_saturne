@@ -2249,6 +2249,15 @@ cs_groundwater_extra_post(void                      *input,
                           const cs_lnum_t            b_face_list[],
                           const cs_time_step_t      *time_step)
 {
+  CS_UNUSED(cat_id);
+  CS_UNUSED(ent_flag);
+  CS_UNUSED(n_cells);
+  CS_UNUSED(n_i_faces);
+  CS_UNUSED(n_b_faces);
+  CS_UNUSED(cell_list);
+  CS_UNUSED(i_face_list);
+  CS_UNUSED(b_face_list);
+
   if (input == NULL)
     return;
 

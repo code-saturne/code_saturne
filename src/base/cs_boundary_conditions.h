@@ -60,7 +60,9 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
-extern const int *cs_glob_bc_type;
+/*! Boundary condition type (code) associated with each boundary face */
+
+extern const int  *cs_glob_bc_type;
 
 /*============================================================================
  * Public function prototypes
@@ -84,8 +86,8 @@ extern const int *cs_glob_bc_type;
  *----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_error(const int       *bc_type,
-                             const char      *type_name);
+cs_boundary_conditions_error(const int   *bc_type,
+                             const char  *type_name);
 
 /*----------------------------------------------------------------------------
  * Locate shifted boundary face coordinates on possibly filtered
@@ -179,13 +181,6 @@ cs_boundary_conditions_type_create(void);
 
 void
 cs_boundary_conditions_type_free(void);
-
-/*----------------------------------------------------------------------------
- * Get pointer to bc_type
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_boundary_conditions_type_get_pointer(int **itypfb);
 
 /*----------------------------------------------------------------------------*/
 

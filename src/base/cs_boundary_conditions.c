@@ -145,6 +145,9 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
                                     int                        nvarcl,
                                     cs_real_t                 *rcodcl);
 
+void
+cs_f_boundary_conditions_type_get_pointer(int  **itypfb);
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -429,6 +432,16 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
                                     rcodcl);
 
   BFT_FREE(_faces);
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointer to cs_glob_bc_type
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_boundary_conditions_type_get_pointer(int **itypfb)
+{
+  *itypfb = _bc_type;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1005,8 +1018,9 @@ cs_boundary_conditions_mapped_set(cs_field_t                *f,
 }
 
 /*----------------------------------------------------------------------------
- * Create the boundary conditions type array _bc_type
+ * Create the boundary conditions type array bc_type
  *----------------------------------------------------------------------------*/
+
 void
 cs_boundary_conditions_type_create(void)
 {
@@ -1023,19 +1037,11 @@ cs_boundary_conditions_type_create(void)
 /*----------------------------------------------------------------------------
  * Free the boundary conditions type array _bc_type
  *----------------------------------------------------------------------------*/
+
 void
 cs_boundary_conditions_type_free(void)
 {
   BFT_FREE(_bc_type);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointer to cs_glob_bc_type
- *----------------------------------------------------------------------------*/
-void
-cs_f_boundary_conditions_type_get_pointer(int **itypfb)
-{
-  *itypfb = cs_glob_bc_type;
 }
 
 /*----------------------------------------------------------------------------*/

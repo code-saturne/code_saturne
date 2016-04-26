@@ -1922,6 +1922,8 @@ static const char *
 _multigrid_pc_get_type(const void  *context,
                        bool         logging)
 {
+  CS_UNUSED(context);
+
   if (logging == false) {
     static const char t[] = "multigrid";
     return t;

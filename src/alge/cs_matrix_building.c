@@ -556,10 +556,10 @@ cs_matrix_anisotropic_diffusion_wrapper_tensor(int                  iconvp,
                                                thetap,
                                                cofbfts,
                                                fimp,
-                                               (cs_real_66_t *)i_visc,
+                                               (const cs_real_66_t *)i_visc,
                                                b_visc,
                                                da,
-                                               (cs_real_66_t *) xa);
+                                               (const cs_real_66_t *)xa);
 
   /* Non-symmetric matrix */
   } else {
@@ -572,10 +572,10 @@ cs_matrix_anisotropic_diffusion_wrapper_tensor(int                  iconvp,
                                            fimp,
                                            i_massflux,
                                            b_massflux,
-                                           (cs_real_66_t *)i_visc,
+                                           (const cs_real_66_t *)i_visc,
                                            b_visc,
                                            da,
-                                           (cs_real_662_t *) xa);
+                                           (const cs_real_662_t *)xa);
   }
 
   /* Penalization if non invertible matrix */

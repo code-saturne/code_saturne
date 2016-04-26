@@ -1302,6 +1302,15 @@ cs_advection_field_extra_post(void                      *input,
                               const cs_lnum_t            b_face_list[],
                               const cs_time_step_t      *time_step)
 {
+  CS_UNUSED(cat_id);
+  CS_UNUSED(ent_flag);
+  CS_UNUSED(n_cells);
+  CS_UNUSED(n_i_faces);
+  CS_UNUSED(n_b_faces);
+  CS_UNUSED(cell_list);
+  CS_UNUSED(i_face_list);
+  CS_UNUSED(b_face_list);
+
   cs_nvec3_t  advect;
 
   if (input == NULL)
@@ -1346,7 +1355,7 @@ cs_advection_field_extra_post(void                      *input,
     fld = cs_field_by_id(adv->vtx_field_id);
 
   if (fld != NULL && post)
-    cs_post_write_vertex_var(-1,              // id du maillage de post
+    cs_post_write_vertex_var(mesh_id,
                              fld->name,
                              3,               // dim
                              true,            // interlace
@@ -1371,7 +1380,7 @@ cs_advection_field_extra_post(void                      *input,
     BFT_MALLOC(label, strlen(fld->name) + 1 + 5, char);
     sprintf(label, "%s.Unit", fld->name);
 
-    cs_post_write_vertex_var(-1,              // id du maillage de post
+    cs_post_write_vertex_var(mesh_id,
                              label,
                              3,               // dim
                              true,            // interlace
@@ -1389,7 +1398,7 @@ cs_advection_field_extra_post(void                      *input,
     fld = cs_field_by_id(adv->cell_field_id);
 
   if (fld != NULL && post)
-    cs_post_write_var(-1,              // id du maillage de post
+    cs_post_write_var(mesh_id,
                       fld->name,
                       3,               // dim
                       true,            // interlace
@@ -1415,7 +1424,7 @@ cs_advection_field_extra_post(void                      *input,
     BFT_MALLOC(label, strlen(fld->name) + 1 + 5, char);
     sprintf(label, "%s.Unit", fld->name);
 
-    cs_post_write_var(-1,            // id du maillage de post
+    cs_post_write_var(mesh_id,
                       label,
                       3,             // dim
                       true,          // interlace

@@ -45,31 +45,6 @@ BEGIN_C_DECLS
  * Type definition
  *============================================================================*/
 
-/*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Compute filters for dynamic models. This function deals with the standard
- * or extended neighborhood.
- *
- * Fortran Interface :
- *
- * subroutine cfiltr (var, f_var, wbuf1, wbuf2)
- * *****************
- *
- * double precision(*) var[]   <-- array of variables to filter
- * double precision(*) f_var[] --> filtered variable array
- * double precision(*) wbuf1[] --- working buffer
- * double precision(*) wbuf2[] --- working buffer
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (cfiltr, CFILTR)(cs_real_t  var[],
-                          cs_real_t  f_var[],
-                          cs_real_t  wbuf1[],
-                          cs_real_t  wbuf2[]);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

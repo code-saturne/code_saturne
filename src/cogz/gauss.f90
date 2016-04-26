@@ -62,7 +62,7 @@ double precision, allocatable, dimension (:,:) :: ap
 double precision, allocatable, dimension (:)   :: bp
 
 integer          ii, jj, kk, ll
-integer          ipass, ipivot, ipermu, ipivok
+integer          ipass, ipivot, ipermu
 double precision akk, aik, aij, bi, sum, rr, residu
 
 !===============================================================================

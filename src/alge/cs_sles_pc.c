@@ -380,6 +380,9 @@ _sles_pc_poly_setup(void               *context,
                     const cs_matrix_t  *a,
                     int                 verbosity)
 {
+  CS_UNUSED(name);
+  CS_UNUSED(verbosity);
+
   cs_sles_pc_poly_t  *c = context;
 
   const int *db_size = cs_matrix_get_diag_block_size(a);
@@ -424,6 +427,8 @@ _sles_pc_poly_apply_none(void                *context,
                          const cs_real_t     *x_in,
                          cs_real_t           *x_out)
 {
+  CS_UNUSED(rotation_mode);
+
   if (x_in != NULL) {
 
     cs_sles_pc_poly_t  *c = context;
@@ -460,6 +465,8 @@ _sles_pc_poly_apply_jacobi(void                *context,
                            const cs_real_t     *x_in,
                            cs_real_t           *x_out)
 {
+  CS_UNUSED(rotation_mode);
+
   cs_sles_pc_poly_t  *c = context;
 
   const cs_lnum_t n_rows = c->n_rows;

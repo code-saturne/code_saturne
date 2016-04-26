@@ -1446,6 +1446,8 @@ cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
                             int                *len,
                             MPI_Datatype       *datatype)
 {
+  CS_UNUSED(datatype);
+
   int  i, j;
 
   assert(in != NULL && inout != NULL);
@@ -1497,6 +1499,8 @@ cs_join_mesh_mpi_vertex_max(cs_join_vertex_t   *in,
                             int                *len,
                             MPI_Datatype       *datatype)
 {
+  CS_UNUSED(datatype);
+
   int  i, j;
 
   assert(in != NULL && inout != NULL);

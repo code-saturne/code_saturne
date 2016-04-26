@@ -278,6 +278,10 @@ _ple_mem_free_default(void        *ptr,
                       const char  *file_name,
                       int          line_num)
 {
+  PLE_UNUSED(var_name);
+  PLE_UNUSED(file_name);
+  PLE_UNUSED(line_num);
+
   if (ptr != NULL)
     free(ptr);
 

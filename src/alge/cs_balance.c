@@ -566,7 +566,7 @@ cs_balance_vector(int                  idtvar,
                                       coefbv,
                                       cofafv,
                                       cofbfv,
-                                      (cs_real_33_t *)i_visc,
+                                      (const cs_real_33_t *)i_visc,
                                       b_visc,
                                       secvif,
                                       smbr);

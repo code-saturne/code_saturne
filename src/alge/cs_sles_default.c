@@ -340,6 +340,8 @@ int
 cs_sles_default_get_verbosity(int          f_id,
                               const char  *name)
 {
+  CS_UNUSED(name);
+
   int retval = 0;
 
   static int k_log = -1;
@@ -601,6 +603,9 @@ cs_sles_default_error(cs_sles_t                    *sles,
                       const cs_real_t               rhs[],
                       cs_real_t                     vx[])
 {
+  CS_UNUSED(rotation_mode);
+  CS_UNUSED(rhs);
+
   bool alternative = false;
 
   if (state == CS_SLES_BREAKDOWN)

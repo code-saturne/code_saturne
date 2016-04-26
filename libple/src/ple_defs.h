@@ -189,6 +189,15 @@ typedef double   ple_coord_t;    /* Real number (coordinate value) */
 #endif
 
 /*----------------------------------------------------------------------------
+ * Macro used to silence "unused argument" warnings.
+ *
+ * This is useful when a function must match a given function pointer
+ * type, but does not use all possible arguments.
+ *----------------------------------------------------------------------------*/
+
+#define PLE_UNUSED(x) (void)(x)
+
+/*----------------------------------------------------------------------------
  * Macros for compilation with a C++ compiler
  *----------------------------------------------------------------------------*/
 
@@ -257,7 +266,6 @@ typedef void *
 
 extern const size_t  ple_datatype_size[];
 extern const char   *ple_datatype_name[];
-
 
 /*============================================================================
  * Public function prototypes

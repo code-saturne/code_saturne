@@ -2018,13 +2018,13 @@ void
 cs_matrix_log_info(const cs_matrix_t  *matrix,
                    int                 verbosity)
 {
-  cs_log_t log = CS_LOG_DEFAULT;
+  cs_log_t l = CS_LOG_DEFAULT;
 
   if (matrix == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("The matrix is not defined."));
 
-  cs_log_printf(log,
+  cs_log_printf(l,
                 _("\n"
                   " Matrix info:\n"
                   "   type: %s\n"),
@@ -2033,18 +2033,18 @@ cs_matrix_log_info(const cs_matrix_t  *matrix,
   if (matrix->fill_type == CS_MATRIX_N_FILL_TYPES)
     return;
 
-  cs_log_printf(log,
+  cs_log_printf(l,
                 _("   fill type: %s\n"),
                 cs_matrix_fill_type_name[matrix->fill_type]);
 
   if (verbosity > 1) {
     double fnorm = _frobenius_norm(matrix);
     if (fnorm > -1)
-      cs_log_printf(log,
+      cs_log_printf(l,
                     _("   Frobenius norm: %11.4e\n"), fnorm);
   }
 
-  cs_log_printf(log, "\n");
+  cs_log_printf(l, "\n");
 }
 
 /*----------------------------------------------------------------------------

@@ -785,6 +785,9 @@ _set_coeffs_native(cs_matrix_t        *matrix,
                    const cs_real_t    *restrict da,
                    const cs_real_t    *restrict xa)
 {
+  CS_UNUSED(n_edges);
+  CS_UNUSED(edges);
+
   cs_matrix_coeff_native_t  *mc = matrix->coeffs;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   mc->symmetric = symmetric;
@@ -2272,6 +2275,8 @@ _set_coeffs_csr(cs_matrix_t        *matrix,
                 const cs_real_t    *restrict da,
                 const cs_real_t    *restrict xa)
 {
+  CS_UNUSED(copy);
+
   cs_lnum_t  ii, jj;
   cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
 
@@ -3024,6 +3029,8 @@ _set_coeffs_csr_sym(cs_matrix_t        *matrix,
                     const cs_real_t    *restrict da,
                     const cs_real_t    *restrict xa)
 {
+  CS_UNUSED(copy);
+
   cs_matrix_coeff_csr_sym_t  *mc = matrix->coeffs;
 
   const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
@@ -3693,6 +3700,9 @@ _set_coeffs_msr_from_msr(cs_matrix_t       *matrix,
                          const cs_real_t   *x_vals,
                          cs_real_t        **x_vals_transfer)
 {
+  CS_UNUSED(row_index);
+  CS_UNUSED(col_id);
+
   cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
 
   bool d_transferred = false, x_transferred = false;

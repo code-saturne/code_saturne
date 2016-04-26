@@ -127,13 +127,8 @@ ipass = ipass + 1
 !===============================================================================
 
 if (iperot.gt.0 .and. itytur.eq.3) then
-
-  call perinr &
-  !==========
- ( imrgra , iwarni(ir11) , epsrgr(ir11) , extrag(ir11) )
-
+  call perinr(imrgra, iwarni(ir11), epsrgr(ir11), extrag(ir11))
 endif
-
 
 !===============================================================================
 ! 3. User settings
@@ -145,25 +140,18 @@ mbrom = 0
 ! BEFORE the user
 if (ippmod(iphpar).ge.1) then
 
-  call cs_physical_properties1 &
- ( nvar   , nscal  ,                                              &
-   mbrom  ,                                                       &
-   dt     )
+  call cs_physical_properties1(mbrom)
 
 endif
-
 
 ! - Interface Code_Saturne
 !   ======================
 
 if (iihmpr.eq.1) then
-  call uiphyv &
-  !===========
-( iviscv , itempk , visls0 , viscv0 )
+  call uiphyv(iviscv, itempk, visls0, viscv0)
 
   if (ippmod(idarcy).ge.0) then
     call uidapp                                                           &
-    !==========
     ( darcy_anisotropic_permeability,                                     &
       darcy_anisotropic_dispersion,                                        &
       darcy_gravity)
@@ -172,7 +160,6 @@ endif
 
 
 call usphyv &
-!==========
 ( nvar   , nscal  ,                                              &
   mbrom  ,                                                       &
   dt     )
@@ -319,7 +306,6 @@ elseif (iturb.eq.40) then
 ! ===================
 
   call vissma
-  !==========
 
 elseif (iturb.eq.41) then
 
@@ -327,7 +313,6 @@ elseif (iturb.eq.41) then
 ! ===============
 
   call visdyn &
-  !==========
  ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -341,7 +326,6 @@ elseif (iturb.eq.42) then
 ! ============
 
   call viswal
-  !==========
 
 elseif (itytur.eq.5) then
 
@@ -371,7 +355,6 @@ elseif (itytur.eq.5) then
   else if (iturb.eq.51) then
 
     call visv2f
-    !==========
 
   endif
 
@@ -381,7 +364,6 @@ elseif (iturb.eq.60) then
 ! ===============
 
   call vissst
-  !==========
 
 elseif (iturb.eq.70) then
 
@@ -562,7 +544,6 @@ if (icavit.ge.0 .and. icvevm.eq.1) then
     call field_get_val_s(ivarfl(ivoidf), cvar_voidf)
 
     call cavitation_correct_visc_turb (crom, cvar_voidf, propce(:,ipcvst))
-    !================================
 
   endif
 endif
@@ -573,7 +554,6 @@ endif
 !===============================================================================
 
 call usvist &
-!==========
 ( nvar   , nscal  ,                                              &
   ncepdc , ncetsm ,                                              &
   icepdc , icetsm , itypsm ,                                     &
@@ -620,7 +600,6 @@ if (iale.eq.1.and.ntcabs.eq.0) then
   if (iihmpr.eq.1) then
 
     call uivima &
-    !==========
   ( propce(1,ipproc(ivisma(1))),      &
     propce(1,ipproc(ivisma(2))),      &
     propce(1,ipproc(ivisma(3))) )
@@ -628,7 +607,6 @@ if (iale.eq.1.and.ntcabs.eq.0) then
   endif
 
   call usvima &
-  !==========
  ( nvar   , nscal  ,                                              &
    dt     ,                                                       &
    propce(1,ipproc(ivisma(1))) ,                                  &
