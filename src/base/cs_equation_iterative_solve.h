@@ -124,7 +124,6 @@ BEGIN_C_DECLS
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in]     bc_type       boundary condition type
  * \param[in]     rovsdt        \f$ f_s^{imp} \f$
  * \param[in]     smbrp         Right hand side \f$ Rhs^k \f$
  * \param[in,out] pvar          current variable
@@ -161,7 +160,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                    const cs_real_t       weighb[],
                                    int                   icvflb,
                                    const int             icvfli[],
-                                   const int             bc_type[],
                                    const cs_real_t       rovsdt[],
                                    cs_real_t             smbrp[],
                                    cs_real_t             pvar[],
@@ -261,7 +259,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in]     bc_type       boundary condition type
  * \param[in]     fimp          \f$ \tens{f_s}^{imp} \f$
  * \param[in]     smbrp         Right hand side \f$ \vect{Rhs}^k \f$
  * \param[in,out] pvar          current variable
@@ -295,7 +292,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    const cs_real_t       secvib[],
                                    int                   icvflb,
                                    const int             icvfli[],
-                                   const int             bc_type[],
                                    const cs_real_33_t    fimp[],
                                    cs_real_3_t           smbrp[],
                                    cs_real_3_t           pvar[],
@@ -390,7 +386,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in]     bc_type       boundary condition type
  * \param[in]     fimp          \f$ \tens{f_s}^{imp} \f$
  * \param[in]     smbrp         Right hand side \f$ \vect{Rhs}^k \f$
  * \param[in,out] pvar          current variable
@@ -421,7 +416,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
                                    const cs_real_t       weighb[],
                                    int                   icvflb,
                                    const int             icvfli[],
-                                   const int             bc_type[],
                                    const cs_real_66_t    fimp[],
                                    cs_real_6_t           smbrp[],
                                    cs_real_6_t           pvar[]);

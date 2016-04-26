@@ -116,16 +116,14 @@ double precision dt(ncelet)
 
 !< [example_1]
 
-call balance_by_zone(itypfb,         &
-                     "all[]",        &
+call balance_by_zone("all[]",        &
                      "temperature")
 
 !< [example_1]
 
 !< [example_2]
 
-call balance_by_zone(itypfb,                                        &
-                     "box[-0.5d0, 1.3d0, 0.d0, 1.d0, 1.9d0, 1.d0]", &
+call balance_by_zone("box[-0.5d0, 1.3d0, 0.d0, 1.d0, 1.9d0, 1.d0]", &
                      "scalar1")
 
 !< [example_2]

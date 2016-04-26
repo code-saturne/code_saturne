@@ -174,7 +174,6 @@ BEGIN_C_DECLS
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in]     bc_type       boundary condition type
  * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -204,7 +203,6 @@ cs_balance_scalar(int                idtvar,
                   const cs_real_t    weighb[],
                   int                icvflb,
                   const int          icvfli[],
-                  const int          bc_type[],
                   cs_real_t          smbrp[])
 {
   /* Local variables */
@@ -257,7 +255,6 @@ cs_balance_scalar(int                idtvar,
                                      imasac,
                                      pvar,
                                      pvara,
-                                     bc_type,
                                      icvfli,
                                      coefap,
                                      coefbp,
@@ -279,7 +276,6 @@ cs_balance_scalar(int                idtvar,
                                       imasac,
                                       pvar,
                                       pvara,
-                                      bc_type,
                                       coefap,
                                       coefbp,
                                       cofafp,
@@ -307,7 +303,6 @@ cs_balance_scalar(int                idtvar,
                                      imasac,
                                      pvar,
                                      pvara,
-                                     bc_type,
                                      icvfli,
                                      coefap,
                                      coefbp,
@@ -330,7 +325,6 @@ cs_balance_scalar(int                idtvar,
                                       imasac,
                                       pvar,
                                       pvara,
-                                      bc_type,
                                       coefap,
                                       coefbp,
                                       cofafp,
@@ -439,7 +433,6 @@ cs_balance_scalar(int                idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in]     bc_type       boundary condition type
  * \param[in,out] smbr          right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -466,7 +459,6 @@ cs_balance_vector(int                  idtvar,
                   const cs_real_t      secvib[],
                   int                  icvflb,
                   const int            icvfli[],
-                  const int            bc_type[],
                   cs_real_3_t          smbr[])
 {
   /* Local variables */
@@ -518,7 +510,6 @@ cs_balance_vector(int                  idtvar,
                                    imasac,
                                    pvar,
                                    pvara,
-                                   bc_type,
                                    icvfli,
                                    coefav,
                                    coefbv,
@@ -547,7 +538,6 @@ cs_balance_vector(int                  idtvar,
                                      imasac,
                                      pvar,
                                      pvara,
-                                     bc_type,
                                      icvfli,
                                      coefav,
                                      coefbv,
@@ -572,7 +562,6 @@ cs_balance_vector(int                  idtvar,
                                       ivisep,
                                       pvar,
                                       pvara,
-                                      bc_type,
                                       coefav,
                                       coefbv,
                                       cofafv,
@@ -649,7 +638,6 @@ cs_balance_vector(int                  idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in]     bc_type       boundary condition type
  * \param[in,out] smbr          right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -676,7 +664,6 @@ cs_balance_tensor(int                 idtvar,
                   const cs_real_t     weighb[],
                   int                 icvflb,
                   const int           icvfli[],
-                  const int           bc_type[],
                   cs_real_6_t         smbrp[])
 
 {
@@ -728,7 +715,6 @@ cs_balance_tensor(int                 idtvar,
                                    imasac,
                                    pvar,
                                    pvara,
-                                   bc_type,
                                    coefa,
                                    coefb,
                                    cofaf,
@@ -754,7 +740,6 @@ cs_balance_tensor(int                 idtvar,
                                      imasac,
                                      pvar,
                                      pvara,
-                                     bc_type,
                                      coefa,
                                      coefb,
                                      cofaf,

@@ -50,15 +50,13 @@ BEGIN_C_DECLS
  * argument. The different contributions to the balance are printed in the
  * listing.
  *
- * \param[in]     bc_type             boundary condition type
  * \param[in]     selection_crit      zone selection criterium
  * \param[in]     scalar_name         scalar name
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_balance_by_zone(const int  bc_type[],
-                   const char *selection_crit,
+cs_balance_by_zone(const char *selection_crit,
                    const char *scalar_name);
 
 /*----------------------------------------------------------------------------*/
@@ -67,14 +65,12 @@ cs_balance_by_zone(const int  bc_type[],
  * volumic zone defined by the criterium also given as argument.
  * The different contributions are printed in the listing.
  *
- * \param[in]     bc_type             boundary condition type
  * \param[in]     selection_crit      zone selection criterium
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_pressure_drop_by_zone(const int  bc_type[],
-                         const char *selection_crit);
+cs_pressure_drop_by_zone(const char *selection_crit);
 
 /*----------------------------------------------------------------------------*/
 

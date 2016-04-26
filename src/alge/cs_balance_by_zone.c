@@ -71,6 +71,7 @@
 #include "cs_physical_constants.h"
 #include "cs_thermal_model.h"
 #include "cs_convection_diffusion.h"
+#include "cs_boundary_conditions.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -117,15 +118,13 @@ BEGIN_C_DECLS
  * argument. The different contributions to the balance are printed in the
  * listing.
  *
- * \param[in]     bc_type             boundary condition type
  * \param[in]     selection_crit      zone selection criterium
  * \param[in]     scalar_name         scalar name
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_balance_by_zone(const int  bc_type[],
-                   const char *selection_crit,
+cs_balance_by_zone(const char *selection_crit,
                    const char *scalar_name)
 {
   int nt_cur = cs_glob_time_step->nt_cur;
@@ -159,6 +158,8 @@ cs_balance_by_zone(const int  bc_type[],
     = (const cs_real_3_t *restrict)fvq->dijpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
+
+  const int *bc_type = cs_glob_bc_type;
 
   /* all boundary convective fluxes are upwind */
   int icvflb = 0;
@@ -1518,14 +1519,12 @@ cs_balance_by_zone(const int  bc_type[],
  * volumic zone defined by the criterium also given as argument.
  * The different contributions are printed in the listing.
  *
- * \param[in]     bc_type             boundary condition type
  * \param[in]     selection_crit      zone selection criterium
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_pressure_drop_by_zone(const int  bc_type[],
-                         const char *selection_crit)
+cs_pressure_drop_by_zone(const char *selection_crit)
 {
   int nt_cur = cs_glob_time_step->nt_cur;
 
@@ -1554,6 +1553,8 @@ cs_pressure_drop_by_zone(const int  bc_type[],
     = (const cs_real_3_t *restrict)fvq->dijpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
+
+  const int *bc_type = cs_glob_bc_type;
 
   /* coupling is disabled */
   int ifaccp = 0;

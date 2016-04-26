@@ -60,6 +60,8 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
+extern const int *cs_glob_bc_type;
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -77,12 +79,12 @@ BEGIN_C_DECLS
  * attribute than the boundary type, for appropriate error reporting.
  *
  * parameters:
- *   bc_type   <-- array of BC type ids
+ * \param[in]  bc_type     array of BC type ids
  *   type_name <-- name of attribute in error, or NULL
  *----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_error(const cs_int_t   bc_type[],
+cs_boundary_conditions_error(const int       *bc_type,
                              const char      *type_name);
 
 /*----------------------------------------------------------------------------
@@ -163,6 +165,27 @@ cs_boundary_conditions_mapped_set(cs_field_t                *f,
                                   cs_real_t                 *balance_w,
                                   int                        nvarcl,
                                   cs_real_t                  rcodcl[]);
+
+/*----------------------------------------------------------------------------
+ * Create the boundary conditions type array bc_type
+ *----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_type_create(void);
+
+/*----------------------------------------------------------------------------
+ * Free the boundary conditions type array bc_type
+ *----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_type_free(void);
+
+/*----------------------------------------------------------------------------
+ * Get pointer to bc_type
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_boundary_conditions_type_get_pointer(int **itypfb);
 
 /*----------------------------------------------------------------------------*/
 

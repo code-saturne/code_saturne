@@ -123,7 +123,7 @@ module pointe
   !> \anchor itypfb
   !> boundary condition type at the boundary face \c ifac
   !> (see user subroutine \ref cs\_user\_boundary\_conditions)
-  integer, allocatable, dimension(:) :: itypfb
+  integer, dimension(:), pointer :: itypfb(:)
 
   !> indirection array allowing to sort the boundary faces
   !> according to their boundary condition type \c itypfb
@@ -428,7 +428,7 @@ contains
 
     ! Boundary-face related arrays
 
-    allocate(itrifb(nfabor), itypfb(nfabor))
+    allocate(itrifb(nfabor))
     if (ippmod(iphpar).ge.1 .or. iihmpr.eq.1) then
       allocate(izfppp(nfabor))
       do ifac = 1, nfabor
@@ -634,7 +634,7 @@ contains
 
   subroutine finalize_aux_arrays
 
-    deallocate(itrifb, itypfb)
+    deallocate(itrifb)
     if (allocated(izfppp)) deallocate(izfppp)
     if (allocated(izfrad)) deallocate(izfrad)
     if (allocated(idfstr)) deallocate(idfstr)
@@ -797,5 +797,39 @@ contains
     deallocate(xlmbt1, rcpt1d, dtpt1d)
 
   end subroutine finalize_pt1d
+
+  !=============================================================================
+
+  subroutine boundary_conditions_init
+
+    use, intrinsic :: iso_c_binding
+    use mesh
+    use cs_c_bindings
+
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_itypfb
+
+    call cs_f_boundary_conditions_type_create
+
+    call cs_f_boundary_conditions_type_get_pointer(c_itypfb)
+
+    call c_f_pointer(c_itypfb, itypfb, [nfabor])
+
+  end subroutine boundary_conditions_init
+
+  !=============================================================================
+
+  subroutine boundary_conditions_finalize
+
+    use cs_c_bindings
+
+    implicit none
+
+    call cs_f_boundary_conditions_type_free
+
+  end subroutine boundary_conditions_finalize
 
 end module pointe

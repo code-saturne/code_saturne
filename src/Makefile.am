@@ -102,7 +102,7 @@ $(top_srcdir)/src/base/alstru.f90: paramx.lo
 $(top_srcdir)/src/base/cavitation.f90: cstphy.lo field.lo numvar.lo optcal.lo pointe.lo mesh.lo paramx.lo entsor.lo parall.lo rotation.lo turbomachinery.lo
 $(top_srcdir)/src/base/cplsat.f90: paramx.lo
 $(top_srcdir)/src/base/cstphy.f90: paramx.lo
-$(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo mesh.lo period.lo field.lo field_operator.lo pointe.lo
+$(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo mesh.lo period.lo field.lo field_operator.lo
 $(top_srcdir)/src/base/cs_f_interfaces.f90: cs_c_bindings.lo paramx.lo dimens.lo mesh.lo optcal.lo field.lo lagdim.lo
 $(top_srcdir)/src/base/cs_nz_condensation.f90: pointe.lo
 $(top_srcdir)/src/base/cs_nz_tagmr.f90: optcal.lo pointe.lo parall.lo cs_nz_condensation.lo cs_tagmr.lo
@@ -112,7 +112,7 @@ $(top_srcdir)/src/base/entsor.f90: paramx.lo field.lo
 $(top_srcdir)/src/base/field_operator.f90: paramx.lo dimens.lo mesh.lo optcal.lo field.lo
 $(top_srcdir)/src/base/numvar.f90: paramx.lo
 $(top_srcdir)/src/base/optcal.f90: paramx.lo field.lo numvar.lo cstphy.lo
-$(top_srcdir)/src/base/pointe.f90: paramx.lo numvar.lo mesh.lo parall.lo period.lo optcal.lo entsor.lo lagran.lo radiat.lo ppincl.lo ihmpre.lo albase.lo cstnum.lo
+$(top_srcdir)/src/base/pointe.f90: paramx.lo numvar.lo mesh.lo parall.lo period.lo optcal.lo entsor.lo lagran.lo radiat.lo ppincl.lo ihmpre.lo albase.lo cstnum.lo cs_c_bindings.lo
 $(top_srcdir)/src/base/ptrglo.f90: paramx.lo dimens.lo mesh.lo numvar.lo optcal.lo parall.lo period.lo mesh.lo field.lo
 $(top_srcdir)/src/base/rotation.f90:  paramx.lo
 $(top_srcdir)/src/base/turbomachinery.f90:  mesh.lo cstphy.lo cplsat.lo

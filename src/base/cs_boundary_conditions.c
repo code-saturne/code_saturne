@@ -124,6 +124,10 @@ typedef struct {
  *  Global variables
  *============================================================================*/
 
+static int *_bc_type;
+
+const int *cs_glob_bc_type = NULL;
+
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
@@ -453,7 +457,7 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_error(const cs_int_t   bc_type[],
+cs_boundary_conditions_error(const int       *bc_flag,
                              const char      *type_name)
 {
   /* local variables */
@@ -489,13 +493,13 @@ cs_boundary_conditions_error(const cs_int_t   bc_type[],
     cs_real_t  err_face_coo[3];
     cs_gnum_t  err_face_gnum = 0;
 
-    const cs_int_t  *_bc_type = bc_type;
+    const cs_int_t  *_bc_flag = bc_flag;
 
     for (face_id = 0; face_id < n_b_faces; face_id++) {
 
-      /* _bc_type[] used to determine if we have an error */
+      /* _bc_flag[] used to determine if we have an error */
 
-      if (_bc_type[face_id] < 1) {
+      if (_bc_flag[face_id] < 1) {
 
         cs_gnum_t face_gnum;
 
@@ -508,7 +512,7 @@ cs_boundary_conditions_error(const cs_int_t   bc_type[],
 
         if (err_face_gnum == 0 || face_gnum < err_face_gnum) {
           int coo_id;
-          err_face_type = _bc_type[face_id];
+          err_face_type = _bc_flag[face_id];
           for (coo_id = 0; coo_id < 3; coo_id++)
             err_face_coo[coo_id] = mesh_q->b_face_cog[face_id*3 + coo_id];
         }
@@ -606,7 +610,7 @@ cs_boundary_conditions_error(const cs_int_t   bc_type[],
       size_t name_size = 0;
       char var_name[32];
 
-      const cs_int_t  *_bc_type = bc_type;
+      const cs_int_t  *_bc_flag = bc_flag;
 
       var_name[0] = '\0';
       strncpy(var_name + name_size, _("BC type"), 31 - name_size);
@@ -622,7 +626,7 @@ cs_boundary_conditions_error(const cs_int_t   bc_type[],
                             CS_POST_TYPE_cs_int_t,
                             NULL,
                             NULL,
-                            _bc_type,
+                            _bc_flag,
                             NULL);
 
       }
@@ -998,6 +1002,40 @@ cs_boundary_conditions_mapped_set(cs_field_t                *f,
     }
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Create the boundary conditions type array _bc_type
+ *----------------------------------------------------------------------------*/
+void
+cs_boundary_conditions_type_create(void)
+{
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+
+  BFT_MALLOC(_bc_type, n_b_faces, int);
+
+  for (cs_lnum_t ii = 0 ; ii < n_b_faces ; ii++)
+    _bc_type[ii] = 0;
+
+  cs_glob_bc_type = _bc_type;
+}
+
+/*----------------------------------------------------------------------------
+ * Free the boundary conditions type array _bc_type
+ *----------------------------------------------------------------------------*/
+void
+cs_boundary_conditions_type_free(void)
+{
+  BFT_FREE(_bc_type);
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointer to cs_glob_bc_type
+ *----------------------------------------------------------------------------*/
+void
+cs_f_boundary_conditions_type_get_pointer(int **itypfb)
+{
+  *itypfb = cs_glob_bc_type;
 }
 
 /*----------------------------------------------------------------------------*/

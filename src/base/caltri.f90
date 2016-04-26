@@ -419,6 +419,8 @@ else
   prhyd => rvoid1
 endif
 
+call boundary_conditions_init
+
 call init_aux_arrays(ncelet, nfabor)
 
 call turbomachinery_init
@@ -1209,6 +1211,8 @@ endif
 call turbomachinery_finalize
 
 call finalize_quadrature
+
+call boundary_conditions_finalize
 
 call finalize_aux_arrays
 

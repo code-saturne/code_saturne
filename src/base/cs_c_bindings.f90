@@ -661,11 +661,11 @@ module cs_c_bindings
 
     ! Interface to C function handling boundary condition errors and output
 
-    subroutine cs_boundary_conditions_error(bc_type, type_name) &
+    subroutine cs_boundary_conditions_error(bc_flag, type_name) &
       bind(C, name='cs_boundary_conditions_error')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), dimension(*), intent(in) :: bc_type
+      integer(c_int), dimension(*), intent(in) :: bc_flag
       type(c_ptr), value :: type_name
     end subroutine cs_boundary_conditions_error
 
@@ -688,6 +688,37 @@ module cs_c_bindings
       real(kind=c_double), value :: tolerance
       type(c_ptr) :: l
     end function cs_boundary_conditions_map
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function creating the bc type array
+
+    subroutine cs_f_boundary_conditions_type_create() &
+      bind(C, name='cs_boundary_conditions_type_create')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_f_boundary_conditions_type_create
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function freeing the bc type array
+
+    subroutine cs_f_boundary_conditions_type_free() &
+      bind(C, name='cs_boundary_conditions_type_free')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_f_boundary_conditions_type_free
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function to get the bc type array pointer
+
+    subroutine cs_f_boundary_conditions_type_get_pointer(bc_type) &
+      bind(C, name='cs_f_boundary_conditions_type_get_pointer')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: bc_type
+    end subroutine cs_f_boundary_conditions_type_get_pointer
 
     !---------------------------------------------------------------------------
 
@@ -1208,11 +1239,10 @@ module cs_c_bindings
     !---------------------------------------------------------------------------
     ! Interface to C function for balance computation
 
-    subroutine cs_balance_by_zone(itypfb, selection_crit, scalar_name)  &
+    subroutine cs_balance_by_zone(selection_crit, scalar_name)  &
       bind(C, name='cs_balance_by_zone')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(kind=c_int), dimension(*), intent(in) :: itypfb
       character(kind=c_char, len=1), dimension(*), intent(in) :: selection_crit
       character(kind=c_char, len=1), dimension(*), intent(in) :: scalar_name
     end subroutine cs_balance_by_zone
@@ -1220,11 +1250,10 @@ module cs_c_bindings
     !---------------------------------------------------------------------------
     ! Interface to C function for balance computation
 
-    subroutine cs_pressure_drop_by_zone(itypfb, selection_crit)  &
+    subroutine cs_pressure_drop_by_zone(selection_crit)  &
       bind(C, name='cs_pressure_drop_by_zone')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(kind=c_int), dimension(*), intent(in) :: itypfb
       character(kind=c_char, len=1), dimension(*), intent(in) :: selection_crit
     end subroutine cs_pressure_drop_by_zone
 
@@ -1285,7 +1314,7 @@ module cs_c_bindings
                                                   b_massflux, i_viscm,        &
                                                   b_viscm, i_visc, b_visc,    &
                                                   viscel, weighf, weighb,     &
-                                                  icvflb, icvfli, itypfb,     &
+                                                  icvflb, icvfli,             &
                                                   rovsdt, smbrp, pvar, dpvar, &
                                                   xcpp, eswork)               &
       bind(C, name='cs_equation_iterative_solve_scalar')
@@ -1301,7 +1330,7 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(in) :: i_visc, b_visc, viscel
       real(kind=c_double), dimension(*), intent(in) :: weighf, weighb
       integer(c_int), value :: icvflb
-      integer(c_int), dimension(*), intent(in) :: icvfli, itypfb
+      integer(c_int), dimension(*), intent(in) :: icvfli
       real(kind=c_double), dimension(*), intent(in) :: rovsdt, xcpp
       real(kind=c_double), dimension(*), intent(inout) :: smbrp, pvar, dpvar
       real(kind=c_double), dimension(*), intent(inout) :: eswork
@@ -1319,7 +1348,7 @@ module cs_c_bindings
                                                   b_massflux, i_viscm,        &
                                                   b_viscm, i_visc, b_visc,    &
                                                   secvif, secvib, icvflb,     &
-                                                  icvfli, itypfb, fimp,       &
+                                                  icvfli, fimp,               &
                                                   smbrp, pvar, eswork)        &
       bind(C, name='cs_equation_iterative_solve_vector')
       use, intrinsic :: iso_c_binding
@@ -1334,7 +1363,7 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(in) :: i_viscm, b_viscm
       real(kind=c_double), dimension(*), intent(in) :: secvif, secvib
       integer(c_int), value :: icvflb
-      integer(c_int), dimension(*), intent(in) :: icvfli, itypfb
+      integer(c_int), dimension(*), intent(in) :: icvfli
       real(kind=c_double), dimension(*), intent(in) :: fimp
       real(kind=c_double), dimension(*), intent(inout) :: smbrp, pvar, eswork
     end subroutine cs_equation_iterative_solve_vector
@@ -1350,7 +1379,7 @@ module cs_c_bindings
                                                   b_massflux, i_viscm,        &
                                                   b_viscm, i_visc, b_visc,    &
                                                   viscce, weighf, weighb,     &
-                                                  icvflb, icvfli, itypfb,     &
+                                                  icvflb, icvfli,             &
                                                   fimp, smbrp, pvar)          &
       bind(C, name='cs_equation_iterative_solve_tensor')
       use, intrinsic :: iso_c_binding
@@ -1366,7 +1395,7 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(in) :: viscce
       real(kind=c_double), dimension(*), intent(in) :: weighf, weighb
       integer(c_int), value :: icvflb
-      integer(c_int), dimension(*), intent(in) :: icvfli, itypfb
+      integer(c_int), dimension(*), intent(in) :: icvfli
       real(kind=c_double), dimension(*), intent(in) :: fimp
       real(kind=c_double), dimension(*), intent(inout) :: smbrp, pvar
     end subroutine cs_equation_iterative_solve_tensor
@@ -1379,7 +1408,7 @@ module cs_c_bindings
                                  iccocg, ifaccp, vcopt , pvar , pvara,        &
                                  coefap, coefbp, cofafp, cofbfp, i_massflux,  &
                                  b_massflux, i_visc, b_visc, viscel, xcpp,    &
-                                 weighf, weighb, icvflb, icvfli, bc_type,     &
+                                 weighf, weighb, icvflb, icvfli,              &
                                  smbrp)                                       &
       bind(C, name='cs_balance_scalar')
       use, intrinsic :: iso_c_binding
@@ -1393,7 +1422,7 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(in) :: i_visc, b_visc, viscel
       real(kind=c_double), dimension(*), intent(in) :: weighf, weighb, xcpp
       integer(c_int), value :: icvflb
-      integer(c_int), dimension(*), intent(in) :: icvfli, bc_type
+      integer(c_int), dimension(*), intent(in) :: icvfli
       real(kind=c_double), dimension(*), intent(inout) :: smbrp
     end subroutine cs_balance_scalar
 
@@ -1405,7 +1434,7 @@ module cs_c_bindings
                                  vcopt, pvar, pvara, coefav, coefbv, cofafv, &
                                  cofbfv, i_massflux, b_massflux, i_visc,     &
                                  b_visc, secvif, secvib, icvflb, icvfli,     &
-                                 bc_type, smbrp)                             &
+                                 smbrp)                                      &
       bind(C, name='cs_balance_vector')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -1418,7 +1447,7 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(in) :: i_visc, b_visc
       real(kind=c_double), dimension(*), intent(in) :: secvif, secvib
       integer(c_int), value :: icvflb
-      integer(c_int), dimension(*), intent(in) :: icvfli, bc_type
+      integer(c_int), dimension(*), intent(in) :: icvfli
       real(kind=c_double), dimension(*), intent(inout) :: smbrp
     end subroutine cs_balance_vector
 
@@ -1438,17 +1467,15 @@ contains
 
   !> \brief Compute balance on a given zone for a given scalar
 
-  !> param[in]       itypfb     array of boundary faces type
   !> param[in]       sel_crit   selection criterium of a volumic zone
   !> param[in]       name       scalar name
 
-  subroutine balance_by_zone(itypfb, sel_crit, name)
+  subroutine balance_by_zone(sel_crit, name)
     use, intrinsic :: iso_c_binding
     implicit none
 
     ! Arguments
 
-    integer(kind=c_int), dimension(*), intent(in) :: itypfb
     character(len=*), intent(in)             :: sel_crit, name
 
     ! Local variables
@@ -1459,7 +1486,7 @@ contains
     c_sel_crit = trim(sel_crit)//c_null_char
     c_name = trim(name)//c_null_char
 
-    call cs_balance_by_zone(itypfb, c_sel_crit, c_name)
+    call cs_balance_by_zone(c_sel_crit, c_name)
 
     return
 
@@ -1469,16 +1496,14 @@ contains
 
   !> \brief Compute pressure drop for a given zone
 
-  !> param[in]       itypfb     array of boundary faces type
   !> param[in]       sel_crit   selection criterium of a volumic zone
 
-  subroutine pressure_drop_by_zone(itypfb, sel_crit)
+  subroutine pressure_drop_by_zone(sel_crit)
     use, intrinsic :: iso_c_binding
     implicit none
 
     ! Arguments
 
-    integer(kind=c_int), dimension(*), intent(in) :: itypfb
     character(len=*), intent(in)             :: sel_crit
 
     ! Local variables
@@ -1487,7 +1512,7 @@ contains
 
     c_sel_crit = trim(sel_crit)//c_null_char
 
-    call cs_pressure_drop_by_zone(itypfb, c_sel_crit)
+    call cs_pressure_drop_by_zone(c_sel_crit)
 
     return
 
@@ -3192,7 +3217,6 @@ contains
 
     use, intrinsic :: iso_c_binding
     use entsor, only:nomva0
-    use pointe
     use numvar
     use cplsat
 
@@ -3267,7 +3291,7 @@ contains
                                             i_viscm, b_viscm, i_visc, b_visc,  &
                                             viscel, weighf, weighb,            &
                                             icvflb, icvfli,                    &
-                                            itypfb, rovsdt, smbrp, pvar, dpvar,&
+                                            rovsdt, smbrp, pvar, dpvar,        &
                                             xcpp, eswork)
 
     return
@@ -3426,7 +3450,6 @@ contains
 
     use, intrinsic :: iso_c_binding
     use entsor, only:nomva0
-    use pointe
     use numvar
     use cplsat
 
@@ -3498,7 +3521,7 @@ contains
                                             coefav, coefbv, cofafv, cofbfv,    &
                                             i_massflux, b_massflux, i_viscm,   &
                                             b_viscm, i_visc, b_visc, secvif,   &
-                                            secvib, icvflb, icvfli, itypfb,    &
+                                            secvib, icvflb, icvfli,            &
                                             fimp, smbrp, pvar, eswork)
     return
 
@@ -3652,7 +3675,6 @@ contains
 
     use, intrinsic :: iso_c_binding
     use entsor, only:nomva0
-    use pointe
     use numvar
     use cplsat
 
@@ -3726,7 +3748,7 @@ contains
                                             i_massflux, b_massflux, i_viscm,   &
                                             b_viscm, i_visc, b_visc, viscce,   &
                                             weighf, weighb , icvflb, icvfli,   &
-                                            itypfb, fimp, smbrp, pvar)
+                                            fimp, smbrp, pvar)
     return
 
   end subroutine coditts
@@ -3851,7 +3873,6 @@ contains
                      weighb, icvflb, icvfli, smbrp)
 
     use, intrinsic :: iso_c_binding
-    use pointe
     use numvar
     use cplsat
 
@@ -3917,7 +3938,7 @@ contains
                            ifaccp, c_k_value, pvar , pvara , coefap, coefbp,  &
                            cofafp, cofbfp, flumas, flumab, viscf, viscb,      &
                            viscce, xcpp , weighf, weighb, icvflb, icvfli,     &
-                           itypfb, smbrp)
+                           smbrp)
 
     return
 
@@ -4038,7 +4059,6 @@ contains
                      viscf, viscb, secvif, secvib, icvflb, icvfli, smbrp)
 
     use, intrinsic :: iso_c_binding
-    use pointe
     use numvar
     use cplsat
 
@@ -4102,7 +4122,7 @@ contains
     call cs_balance_vector(idtvar, f_id, imasac, inc, ivisep, ifaccp,        &
                            c_k_value, pvar, pvara , coefav, coefbv, cofafv,  &
                            cofbfv, flumas, flumab, viscf, viscb, secvif,     &
-                           secvib, icvflb, icvfli, itypfb, smbrp)
+                           secvib, icvflb, icvfli, smbrp)
 
     return
 

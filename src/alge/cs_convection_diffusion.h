@@ -4970,7 +4970,6 @@ cs_max_limiter_building(int              f_id,
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     bc_type       boundary condition type
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
@@ -5003,7 +5002,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                int                       imasac,
                                cs_real_t       *restrict pvar,
                                const cs_real_t *restrict pvara,
-                               const cs_int_t            bc_type[],
                                const cs_int_t            icvfli[],
                                const cs_real_t           coefap[],
                                const cs_real_t           coefbp[],
@@ -5057,7 +5055,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
- * \param[in]     bc_type       boundary condition type
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
@@ -5091,7 +5088,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                int                         imasac,
                                cs_real_3_t       *restrict pvar,
                                const cs_real_3_t *restrict pvara,
-                               const cs_int_t              bc_type[],
                                const cs_int_t              icvfli[],
                                const cs_real_3_t           coefav[],
                                const cs_real_33_t          coefbv[],
@@ -5135,7 +5131,6 @@ cs_convection_diffusion_vector(int                         idtvar,
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
- * \param[in]     bc_type       boundary condition type
  * \param[in]     coefa         boundary condition array for the variable
  *                               (Explicit part)
  * \param[in]     coefb         boundary condition array for the variable
@@ -5164,7 +5159,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                int                         imasac,
                                cs_real_6_t       *restrict pvar,
                                const cs_real_6_t *restrict pvara,
-                               const cs_int_t              bc_type[],
                                const cs_real_6_t           coefa[],
                                const cs_real_66_t          coefb[],
                                const cs_real_6_t           cofaf[],
@@ -5207,7 +5201,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     bc_type       boundary condition type
  * \param[in]     coefap        boundary condition array for the variable
  *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
@@ -5237,7 +5230,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                 int                       imasac,
                                 cs_real_t       *restrict pvar,
                                 const cs_real_t *restrict pvara,
-                                const cs_int_t            bc_type[],
                                 const cs_real_t           coefap[],
                                 const cs_real_t           coefbp[],
                                 const cs_real_t           cofafp[],
@@ -5349,7 +5341,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
  *                               - 1 take into account,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     bc_type       boundary condition type
  * \param[in]     coefav        boundary condition array for the variable
  *                               (explicit part)
  * \param[in]     coefbv        boundary condition array for the variable
@@ -5376,7 +5367,6 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
                                 int                         ivisep,
                                 cs_real_3_t       *restrict pvar,
                                 const cs_real_3_t *restrict pvara,
-                                const cs_int_t              bc_type[],
                                 const cs_real_3_t           coefav[],
                                 const cs_real_33_t          coefbv[],
                                 const cs_real_3_t           cofafv[],
