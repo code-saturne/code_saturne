@@ -1640,9 +1640,6 @@ cs_max_limiter_building(int              f_id,
  *                               - 1 re-compute cocg matrix
  *                                   (for iterative gradients)
  *                               - 0 otherwise
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
@@ -1674,7 +1671,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                int                       icvflb,
                                int                       inc,
                                int                       iccocg,
-                               int                       ifaccp,
                                int                       imasac,
                                cs_real_t       *restrict pvar,
                                const cs_real_t *restrict pvara,
@@ -2585,7 +2581,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
                              1.,
                              1,
                              inc,
-                             ifaccp,
                              bc_type[face_id],
                              pvar[ii],
                              pir,
@@ -2636,7 +2631,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
                              thetap,
                              imasac,
                              inc,
-                             ifaccp,
                              bc_type[face_id],
                              pvar[ii],
                              pvar[ii], /* no relaxation */
@@ -2705,7 +2699,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                    1.,
                                    1,
                                    inc,
-                                   ifaccp,
                                    bc_type[face_id],
                                    icvfli[face_id],
                                    pvar[ii],
@@ -2759,7 +2752,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                    thetap,
                                    imasac,
                                    inc,
-                                   ifaccp,
                                    bc_type[face_id],
                                    icvfli[face_id],
                                    pvar[ii],
@@ -2835,9 +2827,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     ivisep        indicator to take \f$ \divv
  *                               \left(\mu \gradt \transpose{\vect{a}} \right)
  *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
@@ -2874,7 +2863,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                const cs_var_cal_opt_t      var_cal_opt,
                                int                         icvflb,
                                int                         inc,
-                               int                         ifaccp,
                                int                         ivisep,
                                int                         imasac,
                                cs_real_3_t       *restrict pvar,
@@ -3644,7 +3632,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     1., /* thetap */
                                     1, /* imasac */
                                     inc,
-                                    ifaccp,
                                     bc_type[face_id],
                                     pvar[ii],
                                     pir,
@@ -3699,7 +3686,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     thetap,
                                     imasac,
                                     inc,
-                                    ifaccp,
                                     bc_type[face_id],
                                     pvar[ii],
                                     pvar[ii], /* no relaxation */
@@ -3771,7 +3757,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                           1., /* thetap */
                                           1., /* imasac */
                                           inc,
-                                          ifaccp,
                                           bc_type[face_id],
                                           icvfli[face_id],
                                           pvar[ii],
@@ -3829,7 +3814,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                           thetap,
                                           imasac,
                                           inc,
-                                          ifaccp,
                                           bc_type[face_id],
                                           icvfli[face_id],
                                           pvar[ii],
@@ -3884,7 +3868,7 @@ cs_convection_diffusion_vector(int                         idtvar,
       if (   ityp == CS_OUTLET
           || ityp == CS_INLET
           || ityp == CS_CONVECTIVE_INLET
-          || (ifaccp == 1 && ityp == CS_COUPLED))
+          || ityp == CS_COUPLED_FD)
         bndcel[b_face_cells[face_id]] = 0.;
     }
 
@@ -3975,9 +3959,6 @@ cs_convection_diffusion_vector(int                         idtvar,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
@@ -4005,7 +3986,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                const cs_var_cal_opt_t      var_cal_opt,
                                int                         icvflb,
                                int                         inc,
-                               int                         ifaccp,
                                int                         imasac,
                                cs_real_6_t       *restrict pvar,
                                const cs_real_6_t *restrict pvara,
@@ -4759,7 +4739,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                     1., /* thetap */
                                     1, /* imasac */
                                     inc,
-                                    ifaccp,
                                     bc_type[face_id],
                                     pvar[ii],
                                     pir,
@@ -4813,7 +4792,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                     thetap,
                                     imasac,
                                     inc,
-                                    ifaccp,
                                     bc_type[face_id],
                                     pvar[ii],
                                     pvar[ii], /* no relaxation */
@@ -4874,9 +4852,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
  *                               - 1 re-compute cocg matrix
  *                                 (for iterative gradients)
  *                               - 0 otherwise
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
@@ -4905,7 +4880,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                 const cs_var_cal_opt_t    var_cal_opt,
                                 int                       inc,
                                 int                       iccocg,
-                                int                       ifaccp,
                                 int                       imasac,
                                 cs_real_t       *restrict pvar,
                                 const cs_real_t *restrict pvara,
@@ -5816,7 +5790,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
                            1.,
                            1,
                            inc,
-                           ifaccp,
                            bc_type[face_id],
                            pvar[ii],
                            pir,
@@ -5867,7 +5840,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
                            thetap,
                            imasac,
                            inc,
-                           ifaccp,
                            bc_type[face_id],
                            pvar[ii],
                            pvar[ii], /* no relaxation */
@@ -6503,9 +6475,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     ivisep        indicator to take \f$ \divv
  *                               \left(\mu \gradt \transpose{\vect{a}} \right)
  *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
@@ -6534,7 +6503,6 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
                                 int                         f_id,
                                 const cs_var_cal_opt_t      var_cal_opt,
                                 int                         inc,
-                                int                         ifaccp,
                                 int                         ivisep,
                                 cs_real_3_t       *restrict pvar,
                                 const cs_real_3_t *restrict pvara,
@@ -6943,7 +6911,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
       if (   ityp == CS_OUTLET
           || ityp == CS_INLET
           || ityp == CS_CONVECTIVE_INLET
-          || (ifaccp == 1 && ityp == CS_COUPLED)) {
+          || ityp == CS_COUPLED_FD) {
         bndcel[b_face_cells[face_id]] = 0.;
       }
     }

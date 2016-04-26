@@ -1307,7 +1307,7 @@ module cs_c_bindings
     ! Interface to C function cs_equation_iterative_solve_scalar
 
     subroutine cs_equation_iterative_solve_scalar(idtvar, f_id, name, ndircp, &
-                                                  iescap, imucpp, ifaccp,     &
+                                                  iescap, imucpp,             &
                                                   vcopt, pvara, pvark,        &
                                                   coefap, coefbp, cofafp,     &
                                                   cofbfp, i_massflux,         &
@@ -1320,7 +1320,7 @@ module cs_c_bindings
       bind(C, name='cs_equation_iterative_solve_scalar')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: idtvar, f_id, ndircp, iescap, imucpp, ifaccp
+      integer(c_int), value :: idtvar, f_id, ndircp, iescap, imucpp
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefap
@@ -1341,7 +1341,7 @@ module cs_c_bindings
     ! Interface to C function cs_equation_iterative_solve_vector
 
     subroutine cs_equation_iterative_solve_vector(idtvar, f_id, name, ndircp, &
-                                                  ivisep, iescap, ifaccp,     &
+                                                  ivisep, iescap,             &
                                                   vcopt, pvara, pvark,        &
                                                   coefav, coefbv, cofafv,     &
                                                   cofbfv, i_massflux,         &
@@ -1353,7 +1353,7 @@ module cs_c_bindings
       bind(C, name='cs_equation_iterative_solve_vector')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: idtvar, f_id, ndircp, iescap, ivisep, ifaccp
+      integer(c_int), value :: idtvar, f_id, ndircp, iescap, ivisep
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefav
@@ -1373,7 +1373,7 @@ module cs_c_bindings
     ! Interface to C function cs_equation_iterative_solve_tensor
 
     subroutine cs_equation_iterative_solve_tensor(idtvar, f_id, name, ndircp, &
-                                                  ifaccp, vcopt, pvara, pvark,&
+                                                  vcopt, pvara, pvark,        &
                                                   coefats, coefbts, cofafts,  &
                                                   cofbfts, i_massflux,        &
                                                   b_massflux, i_viscm,        &
@@ -1384,7 +1384,7 @@ module cs_c_bindings
       bind(C, name='cs_equation_iterative_solve_tensor')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: idtvar, f_id, ndircp, ifaccp
+      integer(c_int), value :: idtvar, f_id, ndircp
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefats
@@ -1405,7 +1405,7 @@ module cs_c_bindings
     ! Interface to C function cs_balance_scalar
 
     subroutine cs_balance_scalar(idtvar, f_id , imucpp, imasac, inc,          &
-                                 iccocg, ifaccp, vcopt , pvar , pvara,        &
+                                 iccocg, vcopt , pvar , pvara,                &
                                  coefap, coefbp, cofafp, cofbfp, i_massflux,  &
                                  b_massflux, i_visc, b_visc, viscel, xcpp,    &
                                  weighf, weighb, icvflb, icvfli,              &
@@ -1414,7 +1414,7 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: idtvar, f_id, imasac, imucpp, inc
-      integer(c_int), value :: iccocg, ifaccp
+      integer(c_int), value :: iccocg
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvar, pvara, coefap
       real(kind=c_double), dimension(*), intent(in) :: coefbp, cofafp, cofbfp
@@ -1430,7 +1430,7 @@ module cs_c_bindings
 
     ! Interface to C function cs_balance_vector
 
-    subroutine cs_balance_vector(idtvar, f_id, imasac, inc, ivisep, ifaccp,  &
+    subroutine cs_balance_vector(idtvar, f_id, imasac, inc, ivisep,          &
                                  vcopt, pvar, pvara, coefav, coefbv, cofafv, &
                                  cofbfv, i_massflux, b_massflux, i_visc,     &
                                  b_visc, secvif, secvib, icvflb, icvfli,     &
@@ -1439,7 +1439,7 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: idtvar, f_id, imasac, inc
-      integer(c_int), value :: ivisep, ifaccp
+      integer(c_int), value :: ivisep
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvar, pvara, coefav
       real(kind=c_double), dimension(*), intent(in) :: coefbv, cofafv, cofbfv
@@ -3284,7 +3284,7 @@ contains
     vcopt%relaxv = relaxp
 
     call cs_equation_iterative_solve_scalar(idtvar, f_id, c_name, ndircp,      &
-                                            iescap, imucpp, ifaccp, c_k_value, &
+                                            iescap, imucpp, c_k_value,         &
                                             pvara, pvark,                      &
                                             coefap, coefbp, cofafp, cofbfp,    &
                                             i_massflux, b_massflux,            &
@@ -3516,7 +3516,7 @@ contains
     vcopt%relaxv = relaxp
 
     call cs_equation_iterative_solve_vector(idtvar, f_id, c_name, ndircp,      &
-                                            ivisep, iescap, ifaccp, c_k_value, &
+                                            ivisep, iescap, c_k_value,         &
                                             pvara, pvark,                      &
                                             coefav, coefbv, cofafv, cofbfv,    &
                                             i_massflux, b_massflux, i_viscm,   &
@@ -3742,7 +3742,7 @@ contains
     vcopt%relaxv = relaxp
 
     call cs_equation_iterative_solve_tensor(idtvar, f_id, c_name, ndircp,      &
-                                            ifaccp, c_k_value,                 &
+                                            c_k_value,                         &
                                             pvara, pvark,                      &
                                             coefats, coefbts, cofafts, cofbfts,&
                                             i_massflux, b_massflux, i_viscm,   &
@@ -3935,7 +3935,7 @@ contains
     vcopt%relaxv = relaxp
 
     call cs_balance_scalar(idtvar, f_id , imucpp, imasac, inc, iccocg,        &
-                           ifaccp, c_k_value, pvar , pvara , coefap, coefbp,  &
+                           c_k_value, pvar , pvara , coefap, coefbp,          &
                            cofafp, cofbfp, flumas, flumab, viscf, viscb,      &
                            viscce, xcpp , weighf, weighb, icvflb, icvfli,     &
                            smbrp)
@@ -4119,7 +4119,7 @@ contains
     vcopt%extrag = -1
     vcopt%relaxv = relaxp
 
-    call cs_balance_vector(idtvar, f_id, imasac, inc, ivisep, ifaccp,        &
+    call cs_balance_vector(idtvar, f_id, imasac, inc, ivisep,                &
                            c_k_value, pvar, pvara , coefav, coefbv, cofafv,  &
                            cofbfv, flumas, flumab, viscf, viscb, secvif,     &
                            secvib, icvflb, icvfli, smbrp)

@@ -333,7 +333,11 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #endif
 
     if (nbrcpl.ge.1) then
-      ii = icscpl
+      if (ifaccp.eq.0) then
+        ii = icscpl
+      else
+        ii = icscpd
+      endif
       inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
@@ -371,6 +375,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
           ii.ne.ifrent  .and. &
           ii.ne.ifresf  .and. &
           ii.ne.icscpl  .and. &
+          ii.ne.icscpd  .and. &
           ii.ne.iindef ) then
         inb = ifinty(ii)-idebty(ii)+1
         if (irangp.ge.0) call parcpt (inb)
@@ -1592,7 +1597,11 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
 #endif
 
     if (nbrcpl.ge.1) then
-      ii = icscpl
+      if (ifaccp.eq.0) then
+        ii = icscpl
+      else
+        ii = icscpd
+      endif
       inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
@@ -1627,6 +1636,7 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
            ii.ne.ifrent  .and.                                    &
            ii.ne.ifresf  .and.                                    &
            ii.ne.icscpl  .and.                                    &
+           ii.ne.icscpd  .and.                                    &
            ii.ne.iindef ) then
         inb = ifinty(ii)-idebty(ii)+1
         if (irangp.ge.0) then

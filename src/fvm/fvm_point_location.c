@@ -3422,8 +3422,6 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
                                   cs_lnum_t           located_ent_num[],
                                   float               distance[])
 {
-  cs_lnum_t  elt_num;
-
   if (this_nodal == NULL)
     return;
 

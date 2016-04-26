@@ -127,10 +127,11 @@ enum {
   CS_SOPCF = 9,
   CS_EPHCF = 10,
   CS_EQHCF = 11,
-  CS_COUPLED = 12,
-  CS_FREE_INLET = 13,
-  CS_FREE_SURFACE = 14,
-  CS_CONVECTIVE_INLET = 15
+  CS_COUPLED = 12,           /* coupled face */
+  CS_COUPLED_FD = 13,        /* coupled face with decentered flux */
+  CS_FREE_INLET = 14,
+  CS_FREE_SURFACE = 15,
+  CS_CONVECTIVE_INLET = 16
 };
 
 /*----------------------------------------------------------------------------

@@ -69,9 +69,6 @@ BEGIN_C_DECLS
  * \param[in]     iccocg        indicator
  *                               - 1 re-compute cocg matrix (for iterative gradients)
  *                               - 0 otherwise
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options
  * \param[in]     pvar          solved variable (current time step)
@@ -113,7 +110,6 @@ cs_balance_scalar(int                idtvar,
                   int                imasac,
                   int                inc,
                   int                iccocg,
-                  int                ifaccp,
                   cs_var_cal_opt_t  *var_cal_opt,
                   cs_real_t          pvar[],
                   const cs_real_t    pvara[],
@@ -177,9 +173,6 @@ cs_balance_scalar(int                idtvar,
  *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
  *                               - 1 take into account,
  *                               - 0 otherwise
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options
  * \param[in]     pvar          solved velocity (current time step)
@@ -216,7 +209,6 @@ cs_balance_vector(int                  idtvar,
                   int                  imasac,
                   int                  inc,
                   int                  ivisep,
-                  int                  ifaccp,
                   cs_var_cal_opt_t    *var_cal_opt,
                   cs_real_3_t          pvar[],
                   const cs_real_3_t    pvara[],
@@ -266,9 +258,6 @@ cs_balance_vector(int                  idtvar,
  * \param[in]     f_id          field id (or -1)
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     inc           indicator
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options
  * \param[in]     pvar          solved velocity (current time step)
@@ -307,7 +296,6 @@ cs_balance_tensor(int                 idtvar,
                   int                 f_id,
                   int                 imasac,
                   int                 inc,
-                  int                 ifaccp,
                   cs_var_cal_opt_t   *var_cal_opt,
                   cs_real_6_t         pvar[],
                   const cs_real_6_t   pvara[],

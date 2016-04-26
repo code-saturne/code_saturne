@@ -4030,9 +4030,6 @@ cs_b_relax_c_val_tensor(const double       relaxp,
  * \param[in]     thetap       weighting coefficient for the theta-schema,
  * \param[in]     imasac       take mass accumulation into account?
  * \param[in]     inc          Not an increment flag
- * \param[in]     ifaccp       indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     bc_type      type of boundary face
  * \param[in]     icvfli       imposed convective flux flag
  * \param[in]     pi           value at cell i
@@ -4054,7 +4051,6 @@ cs_b_imposed_conv_flux(int         iconvp,
                        cs_real_t   thetap,
                        int         imasac,
                        int         inc,
-                       int         ifaccp,
                        cs_int_t    bc_type,
                        int         icvfli,
                        cs_real_t   pi,
@@ -4075,7 +4071,7 @@ cs_b_imposed_conv_flux(int         iconvp,
   if (icvfli == 0) {
 
     /* Remove decentering for coupled faces */
-    if (ifaccp==1 && bc_type==CS_COUPLED) {
+    if (bc_type == CS_COUPLED_FD) {
       flui = 0.0;
       fluj = b_massflux;
     } else {
@@ -4106,9 +4102,6 @@ cs_b_imposed_conv_flux(int         iconvp,
  * \param[in]     thetap       weighting coefficient for the theta-schema,
  * \param[in]     imasac       take mass accumulation into account?
  * \param[in]     inc          Not an increment flag
- * \param[in]     ifaccp       indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     bc_type      type of boundary face
  * \param[in]     icvfli       imposed convective flux flag
  * \param[in]     pi           value at cell i
@@ -4128,7 +4121,6 @@ cs_b_imposed_conv_flux_vector(int              iconvp,
                               cs_real_t        thetap,
                               int              imasac,
                               int              inc,
-                              int              ifaccp,
                               cs_int_t         bc_type,
                               int              icvfli,
                               const cs_real_t  pi[restrict 3],
@@ -4148,7 +4140,7 @@ cs_b_imposed_conv_flux_vector(int              iconvp,
   if (icvfli == 0) {
 
     /* Remove decentering for coupled faces */
-    if (ifaccp==1 && bc_type==CS_COUPLED) {
+    if (bc_type == CS_COUPLED_FD) {
       flui = 0.0;
       fluj = b_massflux;
     } else {
@@ -4189,9 +4181,6 @@ cs_b_imposed_conv_flux_vector(int              iconvp,
  * \param[in]     thetap       weighting coefficient for the theta-schema,
  * \param[in]     imasac       take mass accumulation into account?
  * \param[in]     inc          Not an increment flag
- * \param[in]     ifaccp       indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     bc_type      type of boundary face
  * \param[in]     pi           value at cell i
  * \param[in]     pir          relaxed value at cell i
@@ -4210,7 +4199,6 @@ cs_b_upwind_flux(const int        iconvp,
                  const cs_real_t  thetap,
                  const int        imasac,
                  const int        inc,
-                 const int        ifaccp,
                  const int        bc_type,
                  const cs_real_t  pi,
                  const cs_real_t  pir,
@@ -4224,7 +4212,7 @@ cs_b_upwind_flux(const int        iconvp,
   cs_real_t flui, fluj, pfac;
 
   /* Remove decentering for coupled faces */
-  if (ifaccp==1 && bc_type==CS_COUPLED) {
+  if (bc_type == CS_COUPLED_FD) {
     flui = 0.0;
     fluj = b_massflux;
   } else {
@@ -4245,9 +4233,6 @@ cs_b_upwind_flux(const int        iconvp,
  * \param[in]     thetap       weighting coefficient for the theta-schema,
  * \param[in]     imasac       take mass accumulation into account?
  * \param[in]     inc          Not an increment flag
- * \param[in]     ifaccp       indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     bc_type      type of boundary face
  * \param[in]     pi           value at cell i
  * \param[in]     pir          relaxed value at cell i
@@ -4264,7 +4249,6 @@ cs_b_upwind_flux_vector(const int          iconvp,
                         const cs_real_t    thetap,
                         const int          imasac,
                         const int          inc,
-                        const int          ifaccp,
                         const int          bc_type,
                         const cs_real_3_t  pi,
                         const cs_real_3_t  pir,
@@ -4277,7 +4261,7 @@ cs_b_upwind_flux_vector(const int          iconvp,
   cs_real_t flui, fluj, pfac;
 
   /* Remove decentering for coupled faces */
-  if (ifaccp == 1 && bc_type == CS_COUPLED) {
+  if (bc_type == CS_COUPLED_FD) {
     flui = 0.0;
     fluj = b_massflux;
   } else {
@@ -4303,9 +4287,6 @@ cs_b_upwind_flux_vector(const int          iconvp,
  * \param[in]     thetap       weighting coefficient for the theta-schema,
  * \param[in]     imasac       take mass accumulation into account?
  * \param[in]     inc          Not an increment flag
- * \param[in]     ifaccp       indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     bc_type      type of boundary face
  * \param[in]     pi           value at cell i
  * \param[in]     pir          relaxed value at cell i
@@ -4322,7 +4303,6 @@ cs_b_upwind_flux_tensor(const int          iconvp,
                         const cs_real_t    thetap,
                         const int          imasac,
                         const int          inc,
-                        const int          ifaccp,
                         const int          bc_type,
                         const cs_real_6_t  pi,
                         const cs_real_6_t  pir,
@@ -4335,7 +4315,7 @@ cs_b_upwind_flux_tensor(const int          iconvp,
   cs_real_t flui, fluj, pfac;
 
   /* Remove decentering for coupled faces */
-  if (ifaccp == 1 && bc_type == CS_COUPLED) {
+  if (bc_type == CS_COUPLED_FD) {
     flui = 0.0;
     fluj = b_massflux;
   } else {
@@ -4964,9 +4944,6 @@ cs_max_limiter_building(int              f_id,
  *                               - 1 re-compute cocg matrix
  *                                   (for iterative gradients)
  *                               - 0 otherwise
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
@@ -4998,7 +4975,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                int                       icvflb,
                                int                       inc,
                                int                       iccocg,
-                               int                       ifaccp,
                                int                       imasac,
                                cs_real_t       *restrict pvar,
                                const cs_real_t *restrict pvara,
@@ -5044,9 +5020,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     ivisep        indicator to take \f$ \divv
  *                               \left(\mu \gradt \transpose{\vect{a}} \right)
  *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
@@ -5083,7 +5056,6 @@ cs_convection_diffusion_vector(int                         idtvar,
                                const cs_var_cal_opt_t      var_cal_opt,
                                int                         icvflb,
                                int                         inc,
-                               int                         ifaccp,
                                int                         ivisep,
                                int                         imasac,
                                cs_real_3_t       *restrict pvar,
@@ -5125,9 +5097,6 @@ cs_convection_diffusion_vector(int                         idtvar,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
@@ -5155,7 +5124,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                const cs_var_cal_opt_t      var_cal_opt,
                                int                         icvflb,
                                int                         inc,
-                               int                         ifaccp,
                                int                         imasac,
                                cs_real_6_t       *restrict pvar,
                                const cs_real_6_t *restrict pvara,
@@ -5195,9 +5163,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
  *                               - 1 re-compute cocg matrix
  *                                 (for iterative gradients)
  *                               - 0 otherwise
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
@@ -5226,7 +5191,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                 const cs_var_cal_opt_t    var_cal_opt,
                                 int                       inc,
                                 int                       iccocg,
-                                int                       ifaccp,
                                 int                       imasac,
                                 cs_real_t       *restrict pvar,
                                 const cs_real_t *restrict pvara,
@@ -5332,9 +5296,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     ivisep        indicator to take \f$ \divv
  *                               \left(\mu \gradt \transpose{\vect{a}} \right)
  *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
@@ -5363,7 +5324,6 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
                                 int                         f_id,
                                 const cs_var_cal_opt_t      var_cal_opt,
                                 int                         inc,
-                                int                         ifaccp,
                                 int                         ivisep,
                                 cs_real_3_t       *restrict pvar,
                                 const cs_real_3_t *restrict pvara,

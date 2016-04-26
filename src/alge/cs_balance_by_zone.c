@@ -165,9 +165,6 @@ cs_balance_by_zone(const char *selection_crit,
   int icvflb = 0;
   int *icvfli = NULL;
 
-  /* coupling is disabled */
-  int ifaccp = 0;
-
   /* Get physical fields */
   const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t *rho = CS_F_(rho)->val;
@@ -637,7 +634,6 @@ cs_balance_by_zone(const char *selection_crit,
                          1., /* thetap */
                          0, /* Conservative formulation, no mass accumulation */
                          inc,
-                         ifaccp,
                          bc_type[f_id_sel],
                          f->val[c_id],
                          pir,
@@ -672,7 +668,8 @@ cs_balance_by_zone(const char *selection_crit,
           s_wall_balance -= term_balance*dt[c_id];
         else if (bc_type[f_id_sel] == CS_ROUGHWALL)
           r_wall_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_COUPLED)
+        else if (   bc_type[f_id_sel] == CS_COUPLED
+                 || bc_type[f_id_sel] == CS_COUPLED_FD)
           cpl_balance -= term_balance*dt[c_id];
         else
           ndef_balance -= term_balance*dt[c_id];
@@ -700,7 +697,6 @@ cs_balance_by_zone(const char *selection_crit,
                          1., /* thetap */
                          0, /* Conservative formulation, no mass accumulation */
                          inc,
-                         ifaccp,
                          bc_type[f_id_sel],
                          f->val[c_id],
                          f->val[c_id], /* no relaxation */
@@ -735,7 +731,8 @@ cs_balance_by_zone(const char *selection_crit,
           s_wall_balance -= term_balance*dt[c_id];
         else if (bc_type[f_id_sel] == CS_ROUGHWALL)
           r_wall_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_COUPLED)
+        else if (   bc_type[f_id_sel] == CS_COUPLED
+                 || bc_type[f_id_sel] == CS_COUPLED_FD)
           cpl_balance -= term_balance*dt[c_id];
         else
           ndef_balance -= term_balance*dt[c_id];
@@ -778,7 +775,6 @@ cs_balance_by_zone(const char *selection_crit,
                                1.,
                                0, /* Conservative formulation, no mass accumulation */
                                inc,
-                               ifaccp,
                                bc_type[f_id_sel],
                                icvfli[f_id_sel],
                                f->val[c_id],
@@ -816,7 +812,8 @@ cs_balance_by_zone(const char *selection_crit,
           s_wall_balance -= term_balance*dt[c_id];
         else if (bc_type[f_id_sel] == CS_ROUGHWALL)
           r_wall_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_COUPLED)
+        else if (   bc_type[f_id_sel] == CS_COUPLED
+                 || bc_type[f_id_sel] == CS_COUPLED_FD)
           cpl_balance -= term_balance*dt[c_id];
         else
           ndef_balance -= term_balance*dt[c_id];
@@ -844,7 +841,6 @@ cs_balance_by_zone(const char *selection_crit,
                                1.,
                                0, /* Conservative formulation, no mass accumulation */
                                inc,
-                               ifaccp,
                                bc_type[f_id_sel],
                                icvfli[f_id_sel],
                                f->val[c_id],
@@ -882,7 +878,8 @@ cs_balance_by_zone(const char *selection_crit,
           s_wall_balance -= term_balance*dt[c_id];
         else if (bc_type[f_id_sel] == CS_ROUGHWALL)
           r_wall_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_COUPLED)
+        else if (   bc_type[f_id_sel] == CS_COUPLED
+                 || bc_type[f_id_sel] == CS_COUPLED_FD)
           cpl_balance -= term_balance*dt[c_id];
         else
           ndef_balance -= term_balance*dt[c_id];
@@ -1556,9 +1553,6 @@ cs_pressure_drop_by_zone(const char *selection_crit)
 
   const int *bc_type = cs_glob_bc_type;
 
-  /* coupling is disabled */
-  int ifaccp = 0;
-
   /* Get physical fields */
   const cs_real_t *rho = CS_F_(rho)->val;
   const cs_field_t *f_pres = CS_F_(p);
@@ -1774,7 +1768,6 @@ cs_pressure_drop_by_zone(const char *selection_crit)
                      1., /* thetap */
                      0, /* Conservative formulation, no mass accumulation */
                      inc,
-                     ifaccp,
                      bc_type[f_id_sel],
                      p_rho,
                      p_rho, /* no relaxation */
@@ -1813,7 +1806,6 @@ cs_pressure_drop_by_zone(const char *selection_crit)
                      1., /* thetap */
                      0, /* Conservative formulation, no mass accumulation */
                      inc,
-                     ifaccp,
                      bc_type[f_id_sel],
                      u2,
                      u2, /* no relaxation */
@@ -1848,7 +1840,6 @@ cs_pressure_drop_by_zone(const char *selection_crit)
                      1., /* thetap */
                      0, /* Conservative formulation, no mass accumulation */
                      inc,
-                     ifaccp,
                      bc_type[f_id_sel],
                      rhogx,
                      rhogx, /* no relaxation */

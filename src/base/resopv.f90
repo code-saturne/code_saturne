@@ -1104,7 +1104,7 @@ if (arak.gt.0.d0) then
   ! de pression et le filtre sont annules.
   if (nbrcpl.gt.0) then
     do ifac = 1, nfabor
-      if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+      if (itypfb(ifac).eq.icscpd) then
         viscb(ifac) = 0.d0
       endif
     enddo
@@ -1841,7 +1841,7 @@ endif
 ! de pression et le filtre sont annules.
 if (nbrcpl.ge.0) then
   do ifac = 1, nfabor
-    if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
+    if (itypfb(ifac).eq.icscpd) then
       viscb(ifac) = 0.d0
     endif
   enddo

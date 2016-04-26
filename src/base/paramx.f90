@@ -197,8 +197,13 @@ module paramx
   ! TODO : not available yet.
   integer   ieqhcf
 
-  ! TODO : mot absent de la doc
+  !> \anchor icscpl
+  !> code/code coupling condition
   integer   icscpl
+
+  !> \anchor icscpl
+  !> code/code coupling condition with decentered flux
+  integer   icscpd
 
   !> \anchor ifrent
   !> if \ref itypfb=ifrent: free entrance based on Bernoulli equation when
@@ -229,8 +234,8 @@ module paramx
 
   parameter(iindef=1, ientre=2, isolib=3, isymet=4, iparoi=5,       &
             iparug=6, iesicf=7, isspcf=8, isopcf=9, iephcf=10,      &
-            ieqhcf=11, icscpl=12, ifrent=13, ifresf=14       ,      &
-            i_convective_inlet=15)
+            ieqhcf=11, icscpl=12, icscpd=13, ifrent=14, ifresf=15,  &
+            i_convective_inlet=16)
 
   !> maximal number of valuators for Navier-Stokes
   integer    nestmx

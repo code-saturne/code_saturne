@@ -116,7 +116,7 @@ double precision dofcpl(3,nfbcpl)
 
 ! Local variables
 
-integer          ifac, iel, isou
+integer          ifac, iel, isou, icscp
 integer          inc, iccocg, iprev
 integer          ivar, iflmab
 integer          ipt
@@ -143,6 +143,12 @@ call field_get_val_v(ivarfl(iu), vel)
 ! Pointer to the boundary mass flux
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
+
+if (ifaccp.eq.0) then
+  icscp = icscpl
+else
+  icscp = icscpd
+endif
 
 !===============================================================================
 ! 1.  Translation of the coupling to boundary conditions
@@ -273,8 +279,7 @@ do ivar = 1, nvcp
       ! Information received from distant instance at J'/O'
       xjp = rvcpfb(ipt,ivar)
 
-
-      itypfb(ifac)  = icscpl
+      itypfb(ifac) = icscp
 
       if (ivar.eq.ipr) then
 
@@ -378,8 +383,7 @@ do ivar = 1, nvcp
       ! Information received from distant instance at J'/O'
       xjp = rvcpfb(ipt,ivar)
 
-
-      itypfb(ifac)  = icscpl
+      itypfb(ifac) = icscp
 
       if (ivar.ne.ipr) then
         icodcl(ifac,ivar  ) = 1
@@ -401,7 +405,7 @@ do ivar = 1, nvcp
 
     ifac = lfbncp(ipt)
 
-    itypfb(ifac)  = icscpl
+    itypfb(ifac) = icscp
 
     icodcl(ifac,ivar  ) = 3
     rcodcl(ifac,ivar,3) = 0.d0

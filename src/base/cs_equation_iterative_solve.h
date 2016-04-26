@@ -83,9 +83,6 @@ BEGIN_C_DECLS
  * \param[in]     imucpp        indicator
  *                               - 0 do not multiply the convectiv term by Cp
  *                               - 1 do multiply the convectiv term by Cp
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options
  * \param[in]     pvara         variable at the previous time step
@@ -141,7 +138,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                    int                   ndircp,
                                    int                   iescap,
                                    int                   imucpp,
-                                   int                   ifaccp,
                                    cs_var_cal_opt_t     *var_cal_opt,
                                    const cs_real_t       pvara[],
                                    const cs_real_t       pvark[],
@@ -221,9 +217,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               - 1 take into account,
  *                               - 0 otherwise
  * \param[in]     iescap        compute the predictor indicator if 1
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options
  * \param[in]     pvara         variable at the previous time step
@@ -274,7 +267,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    int                   ndircp,
                                    int                   ivisep,
                                    int                   iescap,
-                                   int                   ifaccp,
                                    cs_var_cal_opt_t     *var_cal_opt,
                                    const cs_real_3_t     pvara[],
                                    const cs_real_3_t     pvark[],
@@ -345,9 +337,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
  * \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
- * \param[in]     ifaccp        indicator
- *                               - 1 coupling activated
- *                               - 0 coupling not activated
  * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options
  * \param[in]     pvara         variable at the previous time step
@@ -397,7 +386,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
                                    int                   f_id,
                                    const char           *name,
                                    int                   ndircp,
-                                   int                   ifaccp,
                                    cs_var_cal_opt_t     *var_cal_opt,
                                    const cs_real_6_t     pvara[],
                                    const cs_real_6_t     pvark[],
