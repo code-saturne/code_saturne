@@ -2,12 +2,7 @@
  * Definition of the calculation mesh.
  *
  * Mesh-related user functions (called in this order):
- *   1) Manage the exchange of data between Code_Saturne and the pre-processor
- *   2) Define (conforming or non-conforming) mesh joinings.
- *   3) Define (conforming or non-conforming) periodicity.
- *   4) Define thin walls.
- *   5) Modify the geometry and mesh.
- *   6) Smoothe the mesh.
+ *   Manage the exchange of data between Code_Saturne and the pre-processor
  *============================================================================*/
 
 /* VERS */
