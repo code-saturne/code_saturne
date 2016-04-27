@@ -3723,22 +3723,22 @@ contains
     vcopt%idiff  = idiffp
     vcopt%idifft = -1
     vcopt%idften = idftnp
-    vcopt%iswdyn = -1
+    vcopt%iswdyn = iswdyp
     vcopt%ischcv = ischcp
     vcopt%isstpc = isstpp
     vcopt%nswrgr = nswrgp
-    vcopt%nswrsm = -1
+    vcopt%nswrsm = nswrsp
     vcopt%imrgra = imrgra
     vcopt%imligr = imligp
     vcopt%ircflu = ircflp
     vcopt%iwgrec = 0
     vcopt%thetav = thetap
     vcopt%blencv = blencp
-    vcopt%epsilo = -1
-    vcopt%epsrsm = -1
+    vcopt%epsilo = epsilp
+    vcopt%epsrsm = epsrsp
     vcopt%epsrgr = epsrgp
     vcopt%climgr = climgp
-    vcopt%extrag = -1
+    vcopt%extrag = 0
     vcopt%relaxv = relaxp
 
     call cs_equation_iterative_solve_tensor(idtvar, f_id, c_name, ndircp,      &
