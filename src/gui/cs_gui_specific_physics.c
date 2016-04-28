@@ -2383,11 +2383,11 @@ void CS_PROCF (uidai1, UIDAI1) (int    *const permeability,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Electrical model : read parameters
+ * Electrical model: read parameters
  *----------------------------------------------------------------------------*/
 
 void
-uieli1(void)
+cs_gui_elec_model(void)
 {
   char *path   = NULL;
   int   status = 0;
@@ -2541,16 +2541,13 @@ uieli1(void)
 }
 
 /*----------------------------------------------------------------------------
- * Electrical model : define plane for elreca
+ * Electrical model: define plane for elreca
  *
  * Fortran Interface:
- *
- * subroutine uielrc
- * *****************
  *----------------------------------------------------------------------------*/
 
 void
-uielrc(void)
+cs_gui_elec_model_rec(void)
 {
   /* build list of cells */
   char *crit = NULL;

@@ -772,7 +772,7 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
 
   if (iihmpr == 1) {
     CS_PROCF(uicpi1,UICPI1) (&(_elec_option.srrom), diftl0);
-    uieli1();
+    cs_gui_elec_model();
     _elec_option.pot_diff = 1000.;
   }
 
@@ -2238,7 +2238,7 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
     }
     else if (cs_glob_elec_option->modrec == 2) {
       /* restrike model */
-      uielrc();
+      cs_gui_elec_model_rec();
       double elcou = 0.;
       cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
       for (cs_lnum_t ifac = 0; ifac < nfac; ifac++) {

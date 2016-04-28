@@ -244,24 +244,18 @@ void CS_PROCF (uidai1, UIDAI1) (int    *const permeability,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Electrical model : read parameters
- *
- * subroutine uieli1
- * *****************
+ * Electrical model: read parameters
  *----------------------------------------------------------------------------*/
 
 void
-uieli1(void);
+cs_gui_elec_model(void);
 
 /*----------------------------------------------------------------------------
- * Electrical model : define plane for elreca
- *
- * subroutine uielrc
- * *****************
+ * Electrical model: define plane for elreca
  *----------------------------------------------------------------------------*/
 
 void
-uielrc(void);
+cs_gui_elec_model_rec(void);
 
 /*-----------------------------------------------------------------------------
  * Return the name of a thermophysical model.

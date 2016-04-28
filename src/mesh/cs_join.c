@@ -1847,7 +1847,7 @@ cs_join_all(bool  preprocess)
 
     /* Free temporary structures */
 
-    join_select_destroy(this_join->param, &(this_join->selection));
+    cs_join_select_destroy(this_join->param, &(this_join->selection));
 
    /* Optional synchronization (to be safe) */
 

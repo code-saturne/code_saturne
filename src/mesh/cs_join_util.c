@@ -2533,8 +2533,8 @@ cs_join_select_create(const char  *selection_criteria,
  *---------------------------------------------------------------------------*/
 
 void
-join_select_destroy(cs_join_param_t     param,
-                    cs_join_select_t  **join_select)
+cs_join_select_destroy(cs_join_param_t     param,
+                       cs_join_select_t  **join_select)
 {
   if (*join_select != NULL) {
 
