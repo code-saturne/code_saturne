@@ -24,68 +24,63 @@
 !=======================================================================
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Function:
+! ---------
 
-
-! Ce package de sous-programmes a ete telechargee sur
-! http://www.netlib.org/random/zufall.f
-
-
-! README for zufall random number package
-! ------ --- ------ ------ ------ -------
-! This package contains a portable random number generator set
-! for: uniform (u in [0,1)), normal (<g> = 0, <g^2> = 1), and
-! Poisson distributions. The basic module, the uniform generator,
-! uses a lagged Fibonacci series generator:
-
-!              t    = u(n-273) + u(n-607)
-!              u(n) = t - float(int(t))
-
-! where each number generated, u(k), is floating point. Since
-! the numbers are floating point, the left end boundary of the
-! range contains zero. This package is nearly portable except
-! for the following. (1) It is written in lower case, (2) the
-! test package contains a timer (second) which is not portable,
-! and (3) there are cycle times (in seconds) in data statements
-! for NEC SX-3, Fujitsu VP2200, and Cray Y-MP. Select your
-! favorite and comment out the others. Replacement functions
-! for 'second' are included - comment out the others. Otherwise
-! the package is portable and returns the same set of floating
-! point numbers up to word precision on any machine. There are
-! compiler directives ($cdir for Cray, *vdir for SX-3, and VOCL
-! for Fujitsu VP2200) which should be otherwise ignored.
-
-! To compile this beast, note that all floating point numbers
-! are declared 'double precision'. On Cray X-MP, Y-MP, and C-90
-! machines, use the cft77 (cf77) option -dp to run this in 64
-! bit mode (not 128 bit double).
-
-! External documentation, "Lagged Fibonacci Random Number Generators
-! for the NEC SX-3," is to be published in the International
-! Journal of High Speed Computing (1994). Otherwise, ask the
-! author:
-
-!         W. P. Petersen
-!         IPS, RZ F-5
-!         ETHZ
-!         CH 8092, Zurich
-!         Switzerland
-
-! e-mail:  wpp@ips.ethz.ch.
-
+!> \file zufall.f90
+!>
+!> \brief This package downloaded at  http://www.netlib.org/random/zufall.f.
+!> It generates random numbers.
+!>
+!> This package contains a portable random number generator set
+!> for: uniform (u in [0,1)), normal (<g> = 0, <g^2> = 1), and
+!> Poisson distributions. The basic module, the uniform generator,
+!> uses a lagged Fibonacci series generator:
+!> \f{eqnarray*}{
+!>              t   & = & u(n-273) + u(n-607) \\
+!>              u(n)& = & t - float(int(t))
+!>
+!> \f}
+!> where each number generated, u(k), is floating point. Since
+!> the numbers are floating point, the left end boundary of the
+!> range contains zero. This package is nearly portable except
+!> for the following. (1) It is written in lower case, (2) the
+!> test package contains a timer (second) which is not portable,
+!> and (3) there are cycle times (in seconds) in data statements
+!> for NEC SX-3, Fujitsu VP2200, and Cray Y-MP. Select your
+!> favorite and comment out the others. Replacement functions
+!> for 'second' are included - comment out the others. Otherwise
+!> the package is portable and returns the same set of floating
+!> point numbers up to word precision on any machine. There are
+!> compiler directives ($cdir for Cray, *vdir for SX-3, and VOCL
+!> for Fujitsu VP2200) which should be otherwise ignored.
+!>
+!> To compile this beast, note that all floating point numbers
+!> are declared 'double precision'. On Cray X-MP, Y-MP, and C-90
+!> machines, use the cft77 (cf77) option -dp to run this in 64
+!> bit mode (not 128 bit double).
+!>
+!> External documentation, "Lagged Fibonacci Random Number Generators
+!> for the NEC SX-3," is to be published in the International
+!> Journal of High Speed Computing (1994). Otherwise, ask the
+!> author:
+!>
+!>         W. P. Petersen
+!>         IPS, RZ F-5
+!>         ETHZ
+!>         CH 8092, Zurich
+!>         Switzerland
+!>
+!> e-mail:  wpp@ips.ethz.ch.
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     n             seed
+!> \param[in]     a             random number
+!_______________________________________________________________________________
 
 !===============================================================================
 
@@ -244,12 +239,20 @@ end subroutine
 
 !===============================================================================
 
+!> \brief Generates initial seed buffer by linear congruential
+!>  method. Taken from Marsaglia, FSU report FSU-SCRI-87-50
+!>  variable seed should be 0 < seed <31328
+!>
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     seed          seed
+!_______________________________________________________________________________
+
 subroutine zufalli(seed)
 implicit none
-
-!  generates initial seed buffer by linear congruential
-!  method. Taken from Marsaglia, FSU report FSU-SCRI-87-50
-!  variable seed should be 0 < seed <31328
 
 integer seed
 integer ptr
@@ -284,10 +287,19 @@ end subroutine
 
 !===============================================================================
 
+!> \brief Box-Muller method for Gaussian random numbers
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     n             seed
+!> \param[out]    x             random number
+!_______________________________________________________________________________
+
 subroutine normalen(n,x)
 implicit none
-
-! Box-Muller method for Gaussian random numbers
 
 double precision x(*)
 double precision xbuff(1024)
@@ -349,6 +361,19 @@ end subroutine
 
 !===============================================================================
 
+!> \brief Poisson generator for distribution function of p's:
+!>  \f$ q(mu,p) = exp(-mu) mu**p/p \f$
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     n             seed
+!> \param[in]     mu            parameter
+!> \param[out]    p             random number
+!_______________________________________________________________________________
+
 subroutine fische(n,mu,p)
 implicit none
 integer p(*)
@@ -356,10 +381,6 @@ integer indx(1024)
 integer n,i,ii,jj,k,left,nl0,nsegs,p0
 double precision u(1024),q(1024)
 double precision q0,pmu,mu
-
-! Poisson generator for distribution function of p's:
-
-!    q(mu,p) = exp(-mu) mu**p/p          !
 
 ! initialize arrays, pointers
 
@@ -436,6 +457,6 @@ end block data
 !===============================================================================
 
 !----------------------------
-! FIN DE LA LIBRAIRIE
+! End of the library
 !----------------------------
 
