@@ -258,6 +258,7 @@ cs_physical_constants.c \
 cs_physical_properties.c \
 cs_post.c \
 cs_post_default.c \
+cs_post_util.c \
 cs_preprocess.c \
 cs_preprocessor_data.c \
 cs_probe.c \

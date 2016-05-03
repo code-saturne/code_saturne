@@ -60,6 +60,7 @@
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
+#include "cs_parameters.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_renumber.h"
@@ -67,12 +68,13 @@
 #include "cs_time_step.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
+#include "cs_turbomachinery.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_turbomachinery.h"
+#include "cs_post_util.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -188,16 +190,15 @@ cs_post_turbomachinery_head(const char               *criteria_in,
         cs_lnum_t face_id = elt_list[i];
         cs_lnum_t c_i = mesh->i_face_cells[face_id][0];
         cs_lnum_t c_j = mesh->i_face_cells[face_id][1];
-        cs_real_t surf = mesh_quantities->i_face_surf[face_id];
-        cs_real_t w = mesh_quantities->surf[face_id];
+        cs_real_t w = mesh_quantities->i_face_surf[face_id];
 
         cs_real_t pt = w*total_pressure[c_i] + (1.-w)*total_pressure[c_j];
         cs_real_t r = w*density[c_i] + (1.-w)*density[c_j];
         cs_real_3_t v = {w*vel[c_i][0] + (1.-w)*vel[c_j][0],
                          w*vel[c_i][1] + (1.-w)*vel[c_j][1],
                          w*vel[c_i][2] + (1.-w)*vel[c_j][2]};
-        pabs += surf*(pt + 0.5*r*cs_math_3_square_norm(v));
-        sum += surf;
+        pabs += w*(pt + 0.5*r*cs_math_3_square_norm(v));
+        sum += w;
       }
       BFT_FREE(elt_list);
       break;
@@ -209,8 +210,8 @@ cs_post_turbomachinery_head(const char               *criteria_in,
         (_("Warning: while post-processing the turbomachinery head.\n"
            "         Mesh location %d is not supported, so the computed head\n"
            "         is erroneous.\n"
-           "         The %s parameters should be checked.\n",
-           location, __func__));
+           "         The %s parameters should be checked.\n"),
+           location, __func__);
       break;
     }
 
@@ -225,7 +226,7 @@ cs_post_turbomachinery_head(const char               *criteria_in,
   }
 
   double _s[4] = {pabs_in, pabs_out, sum_in, sum_out};
-  cs_parall_sum(4, _s);
+  cs_parall_sum(4, CS_DOUBLE, _s);
 
   pabs_in  = _s[0] / _s[2];
   pabs_out = _s[1] / _s[3];
