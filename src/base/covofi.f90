@@ -299,7 +299,7 @@ if(iwarni(ivar).ge.1) then
 endif
 
 ! When solving the Temperature, we solve:
-!  cp*Vol*dT/dt + ...
+!  rho*cp*Vol*dT/dt + ...
 
 imucpp = 0
 if (iscavr(iscal).gt.0) then
