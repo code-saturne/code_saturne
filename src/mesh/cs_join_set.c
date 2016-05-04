@@ -331,6 +331,9 @@ cs_join_rset_resize(cs_join_rset_t  **set,
 
       cs_join_rset_t  *_set = *set;
 
+      if (test_size < _set->n_max_elts)
+        return;
+
       if (_set->n_max_elts == 0)
         _set->n_max_elts = test_size;
       else if (test_size >= _set->n_max_elts) {
