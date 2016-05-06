@@ -289,16 +289,16 @@ cs_walldistance_setup(cs_equation_t   *eq,
                                      "1.0");          // value to set
 
   /* Enforcement of the Dirichlet boundary conditions */
-  cs_equation_set_option(eq, "bc_enforcement", "penalization");
+  cs_equation_set_param(eq, CS_EQKEY_BC_ENFORCEMENT, "penalization");
 
   /* System to solve is SPD by construction */
-  cs_equation_set_option(eq, "itsol", "cg");
+  cs_equation_set_param(eq, CS_EQKEY_ITSOL, "cg");
 
 #if defined(HAVE_PETSC)  /* Modify the default settings */
-  cs_equation_set_option(eq, "solver_family", "petsc");
-  cs_equation_set_option(eq, "precond", "amg");
+  cs_equation_set_param(eq, CS_EQKEY_SOLVER_FAMILY, "petsc");
+  cs_equation_set_param(eq, CS_EQKEY_PRECOND, "amg");
 #else
-  cs_equation_set_option(eq, "precond", "jacobi");
+  cs_equation_set_param(eq, CS_EQKEY_PRECOND, "jacobi");
 #endif
 
 }

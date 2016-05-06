@@ -126,6 +126,20 @@ typedef struct {
 
 } cs_domain_t;
 
+/* List of available keys for setting a property */
+typedef enum {
+
+  CS_DOMAIN_DEFAULT_BOUNDARY, // set the default boundary
+  CS_DOMAIN_OUTPUT_NT,        // set the output frequency (number of iterations)
+  CS_DOMAIN_OUTPUT_DT,        // set the output frequency (simulation time)
+  CS_DOMAIN_PROFILING,        // activate the profiling
+  CS_DOMAIN_NTMAX,            // set the max number of iterations to perform
+  CS_DOMAIN_TMAX,             // set the maximum simulated time
+  CS_DOMAIN_VERBOSITY,        // set the verbosity
+  CS_DOMAIN_N_KEYS
+
+} cs_domain_key_t;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -167,15 +181,15 @@ cs_domain_free(cs_domain_t   *domain);
  * \brief  Set auxiliary parameters related to a cs_domain_t structure
  *
  * \param[in, out]  domain    pointer to a cs_domain_t structure
- * \param[in]       keyname   name of key related to the parameter to set
+ * \param[in]       key       key related to the parameter to set
  * \param[in]       keyval    value related to the parameter to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_param(cs_domain_t    *domain,
-                    const char     *keyname,
-                    const char     *keyval);
+cs_domain_set_param(cs_domain_t       *domain,
+                    cs_domain_key_t    key,
+                    const char        *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -131,9 +131,9 @@ _upwind_weight(double                      criterion,
 {
   double  weight = -1;
 
-  switch (adv_info.weight_algo) {
+  switch (adv_info.scheme) {
 
-  case CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND:
+  case CS_PARAM_ADVECTION_SCHEME_UPWIND:
     if (criterion > 0)
       weight = 1;
     else if (criterion < 0)
@@ -142,21 +142,21 @@ _upwind_weight(double                      criterion,
       weight = 0.5;
     break;
 
-  case CS_PARAM_ADVECTION_WEIGHT_ALGO_SAMARSKII:
+  case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
     if (criterion < 0)
       weight = 1./(2 - criterion);
     else
       weight = (1 + criterion)/(2 + criterion);
     break;
 
-  case CS_PARAM_ADVECTION_WEIGHT_ALGO_SG: // Sharfetter-Gummel
+  case CS_PARAM_ADVECTION_SCHEME_SG: // Sharfetter-Gummel
     if (criterion < 0)
       weight = 0.5*exp(criterion);
     else
       weight = 1 - 0.5*exp(-criterion);
     break;
 
-  case CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED:
+  case CS_PARAM_ADVECTION_SCHEME_CENTERED:
     weight = 0.5;
     break;
 
@@ -225,7 +225,7 @@ _build_local_epcd(const cs_cdo_locmesh_t    *lm,
 
   const cs_param_advection_t  a_info = b->a_info;
 
-  if (a_info.weight_algo == CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED) {
+  if (a_info.scheme == CS_PARAM_ADVECTION_SCHEME_CENTERED) {
 
     /* Weight is always equal to 0.5
        Loop on cell edges */
@@ -309,7 +309,7 @@ _build_local_vpfd(const cs_cdo_locmesh_t    *lm,
 
   const cs_param_advection_t  a_info = b->a_info;
 
-  if (a_info.weight_algo == CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED) {
+  if (a_info.scheme == CS_PARAM_ADVECTION_SCHEME_CENTERED) {
 
     /* Weight is always equal to 0.5
        Loop on cell edges */
@@ -407,7 +407,7 @@ cs_cdovb_advection_builder_init(const cs_cdo_connect_t      *connect,
 
   /* Copy a cs_param_convection_t structure */
   b->a_info.formulation = a_info.formulation;
-  b->a_info.weight_algo = a_info.weight_algo;
+  b->a_info.scheme = a_info.scheme;
   b->a_info.weight_criterion = a_info.weight_criterion;
   b->a_info.quad_type = a_info.quad_type;
 
@@ -426,7 +426,7 @@ cs_cdovb_advection_builder_init(const cs_cdo_connect_t      *connect,
     b->tmp_rhs[i] = 0;
 
   b->loc = cs_locmat_create(connect->n_max_vbyc);
-  
+
   return b;
 }
 
@@ -486,7 +486,7 @@ cs_cdovb_advection_build_local(const cs_cdo_locmesh_t      *lm,
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
-  if (b->a_info.weight_algo != CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED) {
+  if (b->a_info.scheme != CS_PARAM_ADVECTION_SCHEME_CENTERED) {
     if (b->with_diffusion)
       _init_with_diffusion(lm, diffmat, b);
     else

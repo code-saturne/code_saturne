@@ -193,14 +193,13 @@ typedef enum {
 /* Type of weight functions considered */
 typedef enum {
 
-  CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED,
-  CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND,
-  CS_PARAM_ADVECTION_WEIGHT_ALGO_SAMARSKII,
-  CS_PARAM_ADVECTION_WEIGHT_ALGO_SG,
-  CS_PARAM_ADVECTION_WEIGHT_ALGO_D10G5,
-  CS_PARAM_N_ADVECTION_WEIGHT_ALGOS
+  CS_PARAM_ADVECTION_SCHEME_CENTERED,
+  CS_PARAM_ADVECTION_SCHEME_UPWIND,
+  CS_PARAM_ADVECTION_SCHEME_SAMARSKII,
+  CS_PARAM_ADVECTION_SCHEME_SG,
+  CS_PARAM_N_ADVECTION_SCHEMES
 
-} cs_param_advection_weight_algo_t;
+} cs_param_advection_scheme_t;
 
 /* Choice on the type of algo. used to set the argument used in
    the weight function */
@@ -216,10 +215,10 @@ typedef enum {
    product) which is closely related to the advection operator */
 typedef struct {
 
-  cs_param_advection_form_t         formulation; // conservative or not
-  cs_param_advection_weight_algo_t  weight_algo;
-  cs_param_advection_weight_t       weight_criterion;
-  cs_quadra_type_t                  quad_type; // barycentric, higher, highest
+  cs_param_advection_form_t     formulation; // conservative or not
+  cs_param_advection_scheme_t   scheme;
+  cs_param_advection_weight_t   weight_criterion;
+  cs_quadra_type_t              quad_type; // barycentric, higher, highest
 
 } cs_param_advection_t;
 
@@ -236,7 +235,7 @@ typedef enum {
 typedef struct {
 
   char                      *name;
-  cs_param_reaction_type_t   type; 
+  cs_param_reaction_type_t   type;
 
 } cs_param_reaction_t;
 

@@ -71,8 +71,8 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_cdo-groundwater.c
  *
- * \brief  Set main parameters for the current simulation when the CDO kernel
- *         is used
+ * \brief Main user subroutine for setting of a calculation with CDO for the
+ *        groundwater flow module
  */
 /*----------------------------------------------------------------------------*/
 
@@ -196,14 +196,11 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      ====================== */
 
   /* Choose a boundary by default.
-     >> cs_domain_set_param(domain, "default_boundary", keyval);
+     keyval is one of the following keyword: "wall" or "symmetry"  */
 
-     keyval is one of the following keyword: wall or symmetry
-  */
+  cs_domain_set_param(domain, CS_DOMAIN_DEFAULT_BOUNDARY, "symmetry");
 
-  cs_domain_set_param(domain, "default_boundary", "symmetry");
-
-  /* Add a boundary
+  /* Add a boundary:
      >> cs_domain_add_boundary(domain,
                                mesh location name,
                                boundary keyword)
@@ -222,37 +219,36 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      Generic output management
      ========================= */
 
-  /* Set the output frequency for log
-     >> cs_domain_set_param(domain, "output_freq", keyval);
-
+  /* Set the output frequency for log either in terms of number of iteration
+     >> cs_domain_set_param(domain, CS_DOMAIN_OUTPUT_NT, keyval);
      keyval is for instance "10"
 
-     Set the level of verbosity (a fine-grained setting is also available if
-     one uses the function cs_user_cdo_numerics_settings()
-     >> cs_domain_set_param(domain, "verbosity", keyval);
+     either in terms of simulated time
+     >>  cs_domain_set_param(domain, CS_DOMAIN_OUTPUT_DT, keyval);
+     keyval is for instance "0.1"  */
 
+  cs_domain_set_param(domain, CS_DOMAIN_OUTPUT_NT, "10");
+
+  /* Set the level of verbosity (a fine-grained setting is also available if
+     one uses the function cs_user_cdo_numerics_settings())
+     >> cs_domain_set_param(domain, CS_DOMAIN_VERBOSITY, keyval);
      keyval is for instance "-1" --> the lowest-level of information
                              "0" --> reduced level of information
                              "1" --> standard level of information
-                             "2" --> higher level of information
+                             "2" --> higher level of information  */
 
-  */
-
-  cs_domain_set_param(domain, "output_freq", "10");
-  cs_domain_set_param(domain, "verbosity", "2");
+  cs_domain_set_param(domain, CS_DOMAIN_VERBOSITY, "2");
 
   /* ====================
      Time step management
      ==================== */
 
-  /* Set the final time
-     >> cs_domain_set_param(domain, "time_max", keyval);
-
-     keyval is for instance "10."
+  /* Set the final time of the simulation
+     >> cs_domain_set_param(domain, CS_DOMAIN_TMAX, keyval);
+     keyval is for instance "1.5"
 
      Set the max. number of time steps
-     >> cs_domain_set_param(domain, "nt_max", keyval);
-
+     >> cs_domain_set_param(domain, CS_DOMAIN_NTMAX, keyval);
      keyval is for instance "100"
 
      If there is an inconsistency between the max. number of iteration in
@@ -260,8 +256,8 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      the calculation.
   */
 
-  cs_domain_set_param(domain, "time_max", "864000.");
-  cs_domain_set_param(domain, "nt_max", "200");
+  cs_domain_set_param(domain, CS_DOMAIN_TMAX, "864000.");
+  cs_domain_set_param(domain, CS_DOMAIN_NTMAX, "200");
 
   /* Define the value of the time step
      >> cs_domain_def_time_step_by_value(domain, dt_val);
@@ -313,14 +309,13 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
   cs_groundwater_t  *gw = cs_domain_get_groundwater(domain);
 
   /* Set additional parameters related to the groundwater flow module
-     >> cs_groundwater_set_param(gw, keyword, keyval);
+     >> cs_groundwater_set_param(gw, key, keyval);
 
-     If keyword = "output_moisture"
-       Ex: keyval = "true" means that the moisture field is postprocessed.
-
+     CS_GWKEY_GRAVITATION with "x", "-x", "z", "-z"...
+     CS_GWKEY_OUTPUT_MOISTURE with "true" or "false" (default)
    */
 
-  cs_groundwater_set_param(gw, "output_moisture", "true");
+  cs_groundwater_set_param(gw, CS_GWKEY_OUTPUT_MOISTURE, "true");
 
   /* =========
      Add soils
@@ -350,21 +345,23 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
   /* Set additional parameters defining this soil
      >> cs_groundwater_set_soil_param(gw,
                                       mesh_location_name,
-                                      keyword,
+                                      key,
                                       keyval);
 
      If mesh_location_name is set to NULL, all soils are set.
 
-     Available keywords are:
-     - "saturated_moisture",
-     - "residual_moisture",
-     - "tracy_hr"  (only useful is Tracy model is used)
-
+     Available keys are:
+     CS_SOILKEY_SAT_MOISTURE,  // Set the saturated moisture content
+     CS_SOILKEY_RES_MOISTURE,  // Set the residual moisture content
+     
+     Keys specific to the Tracy model
+     CS_SOILKEY_TRACY_SAT_H,   // Head related to the saturated moisture content
+     CS_SOILKEY_TRACY_RES_H,   // Head related to the residual moisture content
   */
 
-  cs_groundwater_set_soil_param(gw, "cells", "tracy_hr", "-100");
-  cs_groundwater_set_soil_param(gw, NULL, "saturated_moisture", "0.45");
-  cs_groundwater_set_soil_param(gw, NULL, "residual_moisture", "0.15");
+  cs_groundwater_set_soil_param(gw, "cells", CS_SOILKEY_TRACY_RES_H, "-100");
+  cs_groundwater_set_soil_param(gw, NULL, CS_SOILKEY_SAT_MOISTURE, "0.45");
+  cs_groundwater_set_soil_param(gw, NULL, CS_SOILKEY_RES_MOISTURE, "0.15");
 
   /* ====================
      Add tracer equations

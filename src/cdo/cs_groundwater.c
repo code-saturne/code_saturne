@@ -32,11 +32,13 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <ctype.h>
+#include <float.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <math.h>
-#include <float.h>
+
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -63,6 +65,14 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*============================================================================
+ * Local macro definitions
+ *============================================================================*/
+
+/* Tag dedicated to build a flag for the groundwater module */
+/*   1: post the moisture content */
+#define CS_GROUNDWATER_POST_MOISTURE  (1 <<  0) 
 
 /*============================================================================
  * Structure definitions
@@ -155,26 +165,6 @@ struct _groundwater_t {
 
 };
 
-/* List of available keys for setting the groundwater module */
-typedef enum {
-
-  GWKEY_GRAVITATION,
-  GWKEY_OUTPUT_MOISTURE,
-  GWKEY_ERROR
-
-} gwkey_t;
-
-typedef enum {
-
-  SOILKEY_SATURATED_MOISTURE,
-  SOILKEY_RESIDUAL_MOISTURE,
-  SOILKEY_TRACY_HS,
-  SOILKEY_TRACY_HR,
-  SOILKEY_ERROR
-
-} soilkey_t;
-
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -186,116 +176,6 @@ static const char _err_empty_gw[] =
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Print the name of the corresponding groundwater key
- *
- * \param[in] key        name of the key
- *
- * \return a string
- */
-/*----------------------------------------------------------------------------*/
-
-static const char *
-_print_gwkey(gwkey_t  key)
-{
-  switch (key) {
-
-  case GWKEY_GRAVITATION:
-    return "gravity";
-  case GWKEY_OUTPUT_MOISTURE:
-    return "output_moisture";
-
-  default:
-    assert(0);
-  }
-
-  return NULL; // avoid a warning
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the corresponding enum from the name of an groundwater key.
- *         If not found, return a key error.
- *
- * \param[in] keyname    name of the key
- *
- * \return a gwkey_t
- */
-/*----------------------------------------------------------------------------*/
-
-static inline gwkey_t
-_get_gwkey(const char  *keyname)
-{
-  gwkey_t  key = GWKEY_ERROR;
-
-  if (strcmp(keyname, "gravity") == 0)
-    key = GWKEY_GRAVITATION;
-  else if (strcmp(keyname, "output_moisture") == 0)
-    key = GWKEY_OUTPUT_MOISTURE;
-
-  return key;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Print the name of the corresponding soil key
- *
- * \param[in] key        name of the key
- *
- * \return a string
- */
-/*----------------------------------------------------------------------------*/
-
-static const char *
-_print_soilkey(soilkey_t  key)
-{
-  switch (key) {
-
-  case SOILKEY_SATURATED_MOISTURE:
-    return "saturated_moisture";
-  case SOILKEY_RESIDUAL_MOISTURE:
-    return "residual_moisture";
-  case SOILKEY_TRACY_HS:
-    return "tracy_hs";
-  case SOILKEY_TRACY_HR:
-    return "tracy_hr";
-
-  default:
-    assert(0);
-  }
-
-  return NULL; // avoid a warning
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the corresponding enum from the name of a soil key.
- *         If not found, return a key error.
- *
- * \param[in] keyname    name of the key
- *
- * \return a soilkey_t
- */
-/*----------------------------------------------------------------------------*/
-
-static inline soilkey_t
-_get_soilkey(const char  *keyname)
-{
-  soilkey_t  key = SOILKEY_ERROR;
-
-  if (strcmp(keyname, "saturated_moisture") == 0)
-    key = SOILKEY_SATURATED_MOISTURE;
-  else if (strcmp(keyname, "residual_moisture") == 0)
-    key = SOILKEY_RESIDUAL_MOISTURE;
-  else if (strcmp(keyname, "tracy_hs") == 0)
-    key = SOILKEY_TRACY_HS;
-  else if (strcmp(keyname, "tracy_hr") == 0)
-    key = SOILKEY_TRACY_HR;
-
-  return key;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1067,62 +947,49 @@ cs_groundwater_get_n_soils(const cs_groundwater_t    *gw)
  * \brief  Set parameters related to a cs_groundwater_t structure
  *
  * \param[in, out]  gw        pointer to a cs_groundwater_t structure
- * \param[in]       keyname   name of key related to the member of adv to set
+ * \param[in]       key       key related to the member of gw to set
  * \param[in]       keyval    accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_set_param(cs_groundwater_t    *gw,
-                         const char          *keyname,
-                         const char          *keyval)
+cs_groundwater_set_param(cs_groundwater_t      *gw,
+                         cs_groundwater_key_t   key,
+                         const char            *keyval)
 {
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
-  gwkey_t  key = _get_gwkey(keyname);
-
-  if (key == GWKEY_ERROR) {
-
-    bft_printf("\n\n Current key: \"%s\"\n", keyname);
-    bft_printf(" Valid keys: ");
-    for (int i = 0; i < GWKEY_ERROR; i++) {
-      bft_printf("\"%s\" ", _print_gwkey(i));
-      if (i > 0 && i % 3 == 0)
-        bft_printf("\n\t");
-    }
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key \"%s\" for setting the groundwater module.\n"
-                " Please read listing for more details and modify your"
-                " settings."), keyname);
-
-  } /* Error message */
+  /* Conversion of the string to lower case */
+  char val[CS_BASE_STRING_LEN];
+  for (size_t i = 0; i < strlen(keyval); i++)
+    val[i] = tolower(keyval[i]);
+  val[strlen(keyval)] = '\0';
 
   switch(key) {
 
-  case GWKEY_GRAVITATION:
+  case CS_GWKEY_GRAVITATION:
     gw->with_gravitation = true;
     gw->gravity[0] = gw->gravity[1] = gw->gravity[2] = 0.;
-    if (strcmp(keyval, "x") == 0)       gw->gravity[0] =  1.;
-    else if (strcmp(keyval, "-x") == 0) gw->gravity[0] = -1.;
-    else if (strcmp(keyval, "y") == 0)  gw->gravity[1] =  1.;
-    else if (strcmp(keyval, "-y") == 0) gw->gravity[1] = -1.;
-    else if (strcmp(keyval, "z") == 0)  gw->gravity[2] =  1.;
-    else if (strcmp(keyval, "-z") == 0) gw->gravity[2] = -1.;
+    if (strcmp(val, "x") == 0)       gw->gravity[0] =  1.;
+    else if (strcmp(val, "-x") == 0) gw->gravity[0] = -1.;
+    else if (strcmp(val, "y") == 0)  gw->gravity[1] =  1.;
+    else if (strcmp(val, "-y") == 0) gw->gravity[1] = -1.;
+    else if (strcmp(val, "z") == 0)  gw->gravity[2] =  1.;
+    else if (strcmp(val, "-z") == 0) gw->gravity[2] = -1.;
     else
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid choice of gravitation axis: %s.\n"
                   " Available choices are 'x', 'y' and 'z'\n"
-                  " Please check your settings."), keyval);
+                  " Please check your settings."), val);
     break;
 
-  case GWKEY_OUTPUT_MOISTURE:
-    if (strcmp(keyval, "false")) // not "false"
+  case CS_GWKEY_OUTPUT_MOISTURE:
+    if (strcmp(val, "false")) // not "false"
       gw->flag |= CS_GROUNDWATER_POST_MOISTURE;
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Key %s is not implemented yet."), keyname);
+    bft_error(__FILE__, __LINE__, 0, _(" Key not implemented yet."));
 
   } /* Switch on keys */
 
@@ -1406,62 +1273,44 @@ cs_groundwater_add_soil_by_value(cs_groundwater_t   *gw,
  *
  * \param[in, out]  gw        pointer to a cs_groundwater_t structure
  * \param[in]       ml_name   name of the mesh location associated to this soil
- * \param[in]       keyname   name of key related to the member of adv to set
+ * \param[in]       key       key related to a member of the soil to set
  * \param[in]       keyval    accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
-                              const char          *ml_name,
-                              const char          *keyname,
-                              const char          *keyval)
+cs_groundwater_set_soil_param(cs_groundwater_t          *gw,
+                              const char                *ml_name,
+                              cs_groundwater_soilkey_t   key,
+                              const char                *keyval)
 {
-  int  i;
-
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
   int  ml_id = -1;
-
   if (ml_name != NULL) {
-
     ml_id = cs_mesh_location_get_id_by_name(ml_name);
     if (ml_id == -1)
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid mesh location name %s.\n"
                   " This mesh location is not already defined.\n"), ml_name);
-
   }
 
-  soilkey_t  key = _get_soilkey(keyname);
-
-  if (key == SOILKEY_ERROR) {
-
-    bft_printf("\n\n Current key: %s\n", keyname);
-    bft_printf(" Possible keys: ");
-    for (i = 0; i < SOILKEY_ERROR; i++) {
-      bft_printf("%s ", _print_soilkey(i));
-      if (i > 0 && i % 3 == 0)
-        bft_printf("\n\t");
-    }
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key \"%s\" for setting the soil parameters"
-                " associated to location \"%s\".\n"
-                " Please read the listing for more details and modify your"
-                " settings."), keyname, ml_name);
-
-  } /* Error message */
+  /* Conversion of the string to lower case */
+  char val[CS_BASE_STRING_LEN];
+  for (size_t i = 0; i < strlen(keyval); i++)
+    val[i] = tolower(keyval[i]);
+  val[strlen(keyval)] = '\0';
 
   /* Set different available keys */
   switch(key) {
 
-  case SOILKEY_SATURATED_MOISTURE:
+  case CS_SOILKEY_SAT_MOISTURE:
     {
-      double  theta_s = atof(keyval);
+      double  theta_s = atof(val);
 
       if (ml_id == -1) {
 
-        for (i = 0; i < gw->n_soils; i++) {
+        for (int i = 0; i < gw->n_soils; i++) {
           gw->soil_param[i].saturated_moisture = theta_s;
           /* Update delta_moisture */
           gw->soil_param[i].delta_moisture =
@@ -1471,7 +1320,7 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
       } // All soils are updated
       else {
 
-        for (i = 0; i < gw->n_soils; i++) {
+        for (int i = 0; i < gw->n_soils; i++) {
           if (ml_id == gw->soil_param[i].ml_id) {
             gw->soil_param[i].saturated_moisture = theta_s;
             /* Update delta_moisture */
@@ -1484,13 +1333,13 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
     }
     break;
 
-  case SOILKEY_RESIDUAL_MOISTURE:
+  case CS_SOILKEY_RES_MOISTURE:
     {
-      double  theta_r = atof(keyval);
+      double  theta_r = atof(val);
 
       if (ml_id == -1) {
 
-        for (i = 0; i < gw->n_soils; i++) {
+        for (int i = 0; i < gw->n_soils; i++) {
           gw->soil_param[i].residual_moisture = theta_r;
           /* Update delta_moisture */
           gw->soil_param[i].delta_moisture =
@@ -1500,7 +1349,7 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
       }
       else {
 
-        for (i = 0; i < gw->n_soils; i++) {
+        for (int i = 0; i < gw->n_soils; i++) {
           if (ml_id == gw->soil_param[i].ml_id) {
             gw->soil_param[i].residual_moisture = theta_r;
             /* Update delta_moisture */
@@ -1513,41 +1362,38 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
     }
     break;
 
-  case SOILKEY_TRACY_HS:
+  case CS_SOILKEY_TRACY_SAT_H:
     {
-      double  h_s = atof(keyval);
+      double  h_s = atof(val);
 
       if (ml_id == -1) {
-
-        for (i = 0; i < gw->n_soils; i++)
+        for (int i = 0; i < gw->n_soils; i++)
           if (gw->soil_param[i].model == CS_GROUNDWATER_MODEL_TRACY)
             gw->soil_param[i].tracy_param.h_s = h_s;
-
       }
       else {
-
-        for (i = 0; i < gw->n_soils; i++)
+        for (int i = 0; i < gw->n_soils; i++)
           if (ml_id == gw->soil_param[i].ml_id)
             gw->soil_param[i].tracy_param.h_s = h_s;
-
       }
+
     }
     break;
 
-  case SOILKEY_TRACY_HR:
+  case CS_SOILKEY_TRACY_RES_H:
     {
-      double  h_r = atof(keyval);
+      double  h_r = atof(val);
 
       if (ml_id == -1) {
 
-        for (i = 0; i < gw->n_soils; i++)
+        for (int i = 0; i < gw->n_soils; i++)
           if (gw->soil_param[i].model == CS_GROUNDWATER_MODEL_TRACY)
             gw->soil_param[i].tracy_param.h_r = h_r;
 
       }
       else {
 
-        for (i = 0; i < gw->n_soils; i++)
+        for (int i = 0; i < gw->n_soils; i++)
           if (ml_id == gw->soil_param[i].ml_id)
             gw->soil_param[i].tracy_param.h_r = h_r;
 
@@ -1556,8 +1402,7 @@ cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Key %s is not implemented yet."), keyname);
+    bft_error(__FILE__, __LINE__, 0, _(" Key not implemented"));
 
   } /* Switch on keys */
 
@@ -1620,9 +1465,9 @@ cs_groundwater_add_tracer(cs_groundwater_t    *gw,
   cs_equation_link(eq, "advection", gw->adv_field);
 
   /* Set default option */
-  cs_equation_set_option(eq, "space_scheme", "cdo_vb");
-  cs_equation_set_option(eq, "itsol", "bicgstab2");
-  cs_equation_set_option(eq, "bc_enforcement", "weak");
+  cs_equation_set_param(eq, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+  cs_equation_set_param(eq, CS_EQKEY_ITSOL, "bicg");
+  cs_equation_set_param(eq, CS_EQKEY_BC_ENFORCEMENT, "weak");
 
   return eq;
 }
@@ -2076,7 +1921,7 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
   } /* Reaction term has to be set */
 
   if (eq_flag & CS_EQUATION_DIFFUSION)
-    cs_equation_set_option(eq, "adv_weight", "sg");
+    cs_equation_set_param(eq, CS_EQKEY_ADV_SCHEME, "sg");
 
   /* TODO: add predefined source term */
 

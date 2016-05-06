@@ -31,10 +31,11 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <string.h>
+#include <ctype.h>
 #include <float.h>
-#include <stdlib.h>
 #include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -271,37 +272,6 @@ static cs_param_itsol_t _itsol_info_by_default = {
   150,                    // output frequency
   false                   // normalization of the residual (true or false)
 };
-
-/* List of available keys for setting an equation */
-typedef enum {
-
-  EQKEY_HODGE_DIFF_ALGO,
-  EQKEY_HODGE_DIFF_COEF,
-  EQKEY_HODGE_TIME_ALGO,
-  EQKEY_HODGE_TIME_COEF,
-  EQKEY_HODGE_REAC_ALGO,
-  EQKEY_HODGE_REAC_COEF,  
-  EQKEY_ITSOL,
-  EQKEY_ITSOL_EPS,
-  EQKEY_ITSOL_MAX_ITER,
-  EQKEY_ITSOL_RESNORM,
-  EQKEY_PRECOND,
-  EQKEY_SOLVER_FAMILY,
-  EQKEY_SPACE_SCHEME,
-  EQKEY_VERBOSITY,
-  EQKEY_SLES_VERBOSITY,
-  EQKEY_BC_ENFORCEMENT,
-  EQKEY_BC_QUADRATURE,
-  EQKEY_EXTRA_OP,
-  EQKEY_ADV_OP_TYPE,
-  EQKEY_ADV_WEIGHT_ALGO,
-  EQKEY_ADV_WEIGHT_CRIT,
-  EQKEY_ADV_FLUX_QUADRA,
-  EQKEY_TIME_SCHEME,
-  EQKEY_TIME_THETA,
-  EQKEY_ERROR
-
-} eqkey_t;
 
 /*=============================================================================
  * Local Macro definitions and structure definitions
@@ -547,9 +517,9 @@ _petsc_setup_hook(void   *context,
 #endif /* defined(HAVE_PETSC) */
 
 /*----------------------------------------------------------------------------
- * \brief Initialize SLES strcuture for the resolution of the linear system
+ * \brief Initialize SLES structure for the resolution of the linear system
  *
- * \param[in] eq  pointer to an cs_equation_t structure
+ * \param[in]      eq       pointer to an cs_equation_t structure
  *----------------------------------------------------------------------------*/
 
 static void
@@ -684,13 +654,13 @@ _sles_initialization(const cs_equation_t  *eq)
                              NULL,
                              MATSEQAIJ, // Warning SEQ not MPI
                              _petsc_setup_hook,
-                             (const void *)eqp);
+                             (void *)eqp);
       else
         cs_sles_petsc_define(eq->field_id,
                              NULL,
                              MATMPIAIJ,
                              _petsc_setup_hook,
-                             (const void *)eqp);
+                             (void *)eqp);
 #else
       bft_error(__FILE__, __LINE__, 0,
                 _(" PETSC algorithms used to solve %s are not linked.\n"
@@ -732,163 +702,6 @@ _check_ml_name(const char   *ml_name,
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid mesh location name %s.\n"
                 " This mesh location is not already defined.\n"), ml_name);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Print the name of the corresponding equation key
- *
- * \param[in] key        name of the key
- *
- * \return a string
- */
-/*----------------------------------------------------------------------------*/
-
-static const char *
-_print_eqkey(eqkey_t  key)
-{
-  switch (key) {
-  case EQKEY_HODGE_DIFF_ALGO:
-    return "hodge_diff_algo";
-  case EQKEY_HODGE_DIFF_COEF:
-    return "hodge_diff_coef";
-  case EQKEY_HODGE_TIME_ALGO:
-    return "hodge_time_algo";
-  case EQKEY_HODGE_TIME_COEF:
-    return "hodge_time_coef";
-  case EQKEY_HODGE_REAC_ALGO:
-    return "hodge_reac_algo";
-  case EQKEY_HODGE_REAC_COEF:
-    return "hodge_reac_coef";
-  case EQKEY_ITSOL:
-    return "itsol";
-  case EQKEY_ITSOL_EPS:
-    return "itsol_eps";
-  case EQKEY_ITSOL_MAX_ITER:
-    return "itsol_max_iter";
-  case EQKEY_ITSOL_RESNORM:
-    return "itsol_resnorm";
-  case EQKEY_PRECOND:
-    return "precond";
-  case EQKEY_SOLVER_FAMILY:
-    return "solver_family";
-  case EQKEY_SPACE_SCHEME:
-    return "space_scheme";
-  case EQKEY_VERBOSITY:
-    return "verbosity";
-  case EQKEY_SLES_VERBOSITY:
-    return "itsol_verbosity";
-  case EQKEY_BC_ENFORCEMENT:
-    return "bc_enforcement";
-  case EQKEY_BC_QUADRATURE:
-    return "bc_quadrature";
-  case EQKEY_EXTRA_OP:
-    return "extra_op";
-  case EQKEY_ADV_OP_TYPE:
-    return "adv_formulation";
-  case EQKEY_ADV_WEIGHT_ALGO:
-    return "adv_weight";
-  case EQKEY_ADV_WEIGHT_CRIT:
-    return "adv_weight_criterion";
-  case EQKEY_ADV_FLUX_QUADRA:
-    return "adv_flux_quad";
-  case EQKEY_TIME_SCHEME:
-    return "time_scheme";
-  case EQKEY_TIME_THETA:
-    return "time_theta";
-
-  default:
-    assert(0);
-  }
-
-  return NULL; // avoid a warning
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the corresponding enum from the name of an equation key.
- *         If not found, print an error message
- *
- * \param[in] keyname    name of the key
- *
- * \return a eqkey_t
- */
-/*----------------------------------------------------------------------------*/
-
-static eqkey_t
-_get_eqkey(const char *keyname)
-{
-  eqkey_t  key = EQKEY_ERROR;
-
-  if (strncmp(keyname, "hodge", 5) == 0) { /* key begins with hodge */
-    if (strcmp(keyname, "hodge_diff_coef") == 0)
-      key = EQKEY_HODGE_DIFF_COEF;
-    else if (strcmp(keyname, "hodge_diff_algo") == 0)
-      key = EQKEY_HODGE_DIFF_ALGO;
-    else if (strcmp(keyname, "hodge_time_coef") == 0)
-      key = EQKEY_HODGE_TIME_COEF;
-    else if (strcmp(keyname, "hodge_time_algo") == 0)
-      key = EQKEY_HODGE_TIME_ALGO;
-    else if (strcmp(keyname, "hodge_reac_coef") == 0)
-      key = EQKEY_HODGE_REAC_COEF;
-    else if (strcmp(keyname, "hodge_reac_algo") == 0)
-      key = EQKEY_HODGE_REAC_ALGO;
-  }
-
-  else if (strncmp(keyname, "itsol", 5) == 0) { /* key begins with itsol */
-    if (strcmp(keyname, "itsol") == 0)
-      key = EQKEY_ITSOL;
-    else if (strcmp(keyname, "itsol_eps") == 0)
-      key = EQKEY_ITSOL_EPS;
-    else if (strcmp(keyname, "itsol_max_iter") == 0)
-      key = EQKEY_ITSOL_MAX_ITER;
-    else if (strcmp(keyname, "itsol_resnorm") == 0)
-      key = EQKEY_ITSOL_RESNORM;
-    else if (strcmp(keyname, "itsol_verbosity") == 0)
-      key = EQKEY_SLES_VERBOSITY;
-  }
-
-  else if (strcmp(keyname, "precond") == 0)
-    key = EQKEY_PRECOND;
-
-  else if (strcmp(keyname, "solver_family") == 0)
-    key = EQKEY_SOLVER_FAMILY;
-
-  else if (strcmp(keyname, "space_scheme") == 0)
-    key = EQKEY_SPACE_SCHEME;
-
-  else if (strcmp(keyname, "verbosity") == 0)
-    key = EQKEY_VERBOSITY;
-
-  else if (strncmp(keyname, "bc", 2) == 0) { /* key begins with bc */
-    if (strcmp(keyname, "bc_enforcement") == 0)
-      key = EQKEY_BC_ENFORCEMENT;
-    else if (strcmp(keyname, "bc_quadrature") == 0)
-      key = EQKEY_BC_QUADRATURE;
-  }
-
-  else if (strcmp(keyname, "extra_op") == 0)
-    key = EQKEY_EXTRA_OP;
-
-  else if (strncmp(keyname, "adv_", 4) == 0) {
-    if (strcmp(keyname, "adv_formulation") == 0)
-      key = EQKEY_ADV_OP_TYPE;
-    else if (strcmp(keyname, "adv_weight_criterion") == 0)
-      key = EQKEY_ADV_WEIGHT_CRIT;
-    else if (strcmp(keyname, "adv_weight") == 0)
-      key = EQKEY_ADV_WEIGHT_ALGO;
-    else if (strcmp(keyname, "adv_flux_quad") == 0)
-      key = EQKEY_ADV_FLUX_QUADRA;
-  }
-
-  else if (strncmp(keyname, "time_", 5) == 0) {
-    if (strcmp(keyname, "time_scheme") == 0)
-      key = EQKEY_TIME_SCHEME;
-    else if (strcmp(keyname, "time_theta") == 0)
-      key = EQKEY_TIME_THETA;
-  }
-
-  return key;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -947,7 +760,7 @@ _create_equation_param(cs_equation_type_t     type,
 
   /* Advection term */
   eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
-  eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND;
+  eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
   eqp->advection_info.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
   eqp->advection_info.quad_type = CS_QUADRATURE_BARY;
   eqp->advection_field = NULL;
@@ -1402,22 +1215,19 @@ cs_equation_summary(const cs_equation_t  *eq)
                   " Invalid operator type for advection.");
       }
 
-      bft_printf("  <Advection/Operator> Weight_scheme");
-      switch(a_info.weight_algo) {
-      case CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED:
+      bft_printf("  <Advection/Scheme> ");
+      switch(a_info.scheme) {
+      case CS_PARAM_ADVECTION_SCHEME_CENTERED:
         bft_printf(" centered\n");
         break;
-      case CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND:
+      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
         bft_printf(" upwind\n");
         break;
-      case CS_PARAM_ADVECTION_WEIGHT_ALGO_SAMARSKII:
-        bft_printf(" Samarskii\n");
+      case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
+        bft_printf(" upwind weighted with Samarskii function\n");
         break;
-      case CS_PARAM_ADVECTION_WEIGHT_ALGO_SG:
-        bft_printf(" Scharfetter-Gummel\n");
-        break;
-      case CS_PARAM_ADVECTION_WEIGHT_ALGO_D10G5:
-        bft_printf(" Specific with delta=10 and gamma=5\n");
+      case CS_PARAM_ADVECTION_SCHEME_SG:
+        bft_printf(" upwind weighted with Scharfetter-Gummel function\n");
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,
@@ -1455,7 +1265,7 @@ cs_equation_summary(const cs_equation_t  *eq)
     }
 
   } // Reaction terms
-  
+
   if (source_term) {
 
     bft_printf("\n  <%s/Source terms>\n", eq->name);
@@ -1602,16 +1412,16 @@ cs_equation_last_setup(cs_equation_t  *eq)
 /*!
  * \brief  Set a parameter in a cs_equation_t structure attached to keyname
  *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       keyname   name of key related to the member of eq to set
- * \param[in]       val       accessor to the value to set
+ * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \param[in]       key      key related to the member of eq to set
+ * \param[in]       keyval   accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_option(cs_equation_t       *eq,
-                       const char          *keyname,
-                       const void          *val)
+cs_equation_set_param(cs_equation_t       *eq,
+                      cs_equation_key_t    key,
+                      const char          *keyval)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
@@ -1620,31 +1430,21 @@ cs_equation_set_option(cs_equation_t       *eq,
     cs_timer_stats_start(eq->main_ts_id);
 
   cs_equation_param_t  *eqp = eq->param;
-  eqkey_t  key = _get_eqkey(keyname);
-
-  if (key == EQKEY_ERROR) {
-    bft_printf("\n\n Current key: \"%s\"\n", keyname);
-    bft_printf(" Valid keys: ");
-    for (int i = 0; i < EQKEY_ERROR; i++) {
-      bft_printf("\"%s\" ", _print_eqkey(i));
-      if (i > 0 && i % 3 == 0)
-        bft_printf("\n\t");
-    }
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key \"%s\" for setting equation \"%s\".\n"
-                " Please read listing for more details and"
-                " modify your settings."), keyname, eq->name);
-
-  } /* Error message */
 
   if (eqp->flag & CS_EQUATION_LOCKED)
     bft_error(__FILE__, __LINE__, 0,
               _(" Equation %s is not modifiable anymore.\n"
                 " Please check your settings."), eq->name);
 
+  /* Conversion of the string to lower case */
+  char val[CS_BASE_STRING_LEN];
+  for (size_t i = 0; i < strlen(keyval); i++)
+    val[i] = tolower(keyval[i]);
+  val[strlen(keyval)] = '\0';
+
   switch(key) {
 
-  case EQKEY_SPACE_SCHEME:
+  case CS_EQKEY_SPACE_SCHEME:
     if (strcmp(val, "cdo_vb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
@@ -1658,12 +1458,12 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key %s\n"
-                  " Choice between cdo_vb or cdo_fb"), _val, keyname);
+                _(" Invalid val %s related to key CS_EQKEY_SPACE_SCHEME\n"
+                  " Choice between cdo_vb or cdo_fb"), _val);
     }
     break;
 
-  case EQKEY_HODGE_DIFF_ALGO:
+  case CS_EQKEY_HODGE_DIFF_ALGO:
     if (strcmp(val,"cost") == 0)
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
     else if (strcmp(val, "voronoi") == 0)
@@ -1673,12 +1473,12 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key %s\n"
-                  " Choice between cost, wbs or voronoi"), _val, keyname);
+                _(" Invalid val %s related to key CS_EQKEY_HODGE_DIFF_ALGO\n"
+                  " Choice between cost, wbs or voronoi"), _val);
     }
     break;
 
-  case EQKEY_HODGE_TIME_ALGO:
+  case CS_EQKEY_HODGE_TIME_ALGO:
     if (strcmp(val,"cost") == 0)
       eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
     else if (strcmp(val, "voronoi") == 0)
@@ -1688,12 +1488,12 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key %s\n"
-                  " Choice between cost, wbs or voronoi"), _val, keyname);
+                _(" Invalid val %s related to key CS_EQKEY_HODGE_TIME_ALGO\n"
+                  " Choice between cost, wbs or voronoi"), _val);
     }
     break;
 
-  case EQKEY_HODGE_DIFF_COEF:
+  case CS_EQKEY_HODGE_DIFF_COEF:
     if (strcmp(val, "dga") == 0)
       eqp->diffusion_hodge.coef = 1./3.;
     else if (strcmp(val, "sushi") == 0)
@@ -1704,7 +1504,7 @@ cs_equation_set_option(cs_equation_t       *eq,
       eqp->diffusion_hodge.coef = atof(val);
     break;
 
-  case EQKEY_HODGE_TIME_COEF:
+  case CS_EQKEY_HODGE_TIME_COEF:
     if (strcmp(val, "dga") == 0)
       eqp->time_hodge.coef = 1./3.;
     else if (strcmp(val, "sushi") == 0)
@@ -1715,7 +1515,7 @@ cs_equation_set_option(cs_equation_t       *eq,
       eqp->time_hodge.coef = atof(val);
     break;
 
-  case EQKEY_SOLVER_FAMILY:
+  case CS_EQKEY_SOLVER_FAMILY:
     if (strcmp(val, "cs") == 0)
       eqp->algo_info.type = CS_EQUATION_ALGO_CS_ITSOL;
     else if (strcmp(val, "petsc") == 0)
@@ -1723,33 +1523,12 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key %s\n"
-                  " Choice between cs or petsc"), _val, keyname);
+                _(" Invalid val %s related to key CS_EQKEY_SOLVER_FAMILY\n"
+                  " Choice between cs or petsc"), _val);
     }
     break;
 
-  case EQKEY_ITSOL:
-    if (strcmp(val, "cg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_CG;
-    else if (strcmp(val, "bicg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_BICG;
-    else if (strcmp(val, "bicgstab2") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_BICGSTAB2;
-    else if (strcmp(val, "cr3") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_CR3;
-    else if (strcmp(val, "gmres") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_GMRES;
-    else if (strcmp(val, "amg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_AMG;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key %s\n"
-                  " Choice between cg, bicg, gmres or amg"), _val, keyname);
-    }
-    break;
-
-  case EQKEY_PRECOND:
+  case CS_EQKEY_PRECOND:
     if (strcmp(val, "jacobi") == 0)
       eqp->itsol_info.precond = CS_PARAM_PRECOND_DIAG;
     else if (strcmp(val, "block_jacobi") == 0)
@@ -1769,36 +1548,58 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid val %s related to key %s\n"
-                  " Choice between jacobi, poly1, ssor, ilu0,\n"
-                  " icc0, amg or as"), _val, keyname);
+                _(" Invalid val %s related to key CS_EQKEY_PRECOND\n"
+                  " Choice between jacobi, block_jacobi, poly1, ssor, ilu0,\n"
+                  " icc0, amg or as"), _val);
     }
     break;
 
-  case EQKEY_ITSOL_MAX_ITER:
+  case CS_EQKEY_ITSOL:
+    if (strcmp(val, "cg") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_CG;
+    else if (strcmp(val, "bicg") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_BICG;
+    else if (strcmp(val, "bicgstab2") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_BICGSTAB2;
+    else if (strcmp(val, "cr3") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_CR3;
+    else if (strcmp(val, "gmres") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_GMRES;
+    else if (strcmp(val, "amg") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_AMG;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid val %s related to key CS_EQKEY_ITSOL\n"
+                  " Choice between cg, bicg, bicgstab2, cr3, gmres or amg"),
+                _val);
+    }
+    break;
+
+  case CS_EQKEY_ITSOL_MAX_ITER:
     eqp->itsol_info.n_max_iter = atoi(val);
     break;
 
-  case EQKEY_ITSOL_EPS:
+  case CS_EQKEY_ITSOL_EPS:
     eqp->itsol_info.eps = atof(val);
     break;
 
-  case EQKEY_ITSOL_RESNORM:
+  case CS_EQKEY_ITSOL_RESNORM:
     if (strcmp(val, "true") == 0)
       eqp->itsol_info.resid_normalized = true;
-    else if (strcmp(val, "false") == 0)
+    else
       eqp->itsol_info.resid_normalized = false;
     break;
 
-  case EQKEY_VERBOSITY: // "verbosity"
+  case CS_EQKEY_VERBOSITY: // "verbosity"
     eqp->verbosity = atoi(val);
     break;
 
-  case EQKEY_SLES_VERBOSITY: // "verbosity" for SLES structures
+  case CS_EQKEY_ITSOL_VERBOSITY: // "verbosity" for SLES structures
     eqp->sles_verbosity = atoi(val);
     break;
 
-  case EQKEY_BC_ENFORCEMENT:
+  case CS_EQKEY_BC_ENFORCEMENT:
     if (strcmp(val, "strong") == 0)
       eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
     else if (strcmp(val, "penalization") == 0)
@@ -1810,13 +1611,13 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid value %s related to key %s\n"
-                  " Choice between strong, penalization, weak or\n"
-                  " weak_sym."), _val, keyname);
+                _(" Invalid value %s related to key CS_EQKEY_BC_ENFORCEMENT\n"
+                  " Choice between strong, penalization, weak or weak_sym."),
+                _val);
     }
     break;
 
-  case EQKEY_BC_QUADRATURE:
+  case CS_EQKEY_BC_QUADRATURE:
     if (strcmp(val, "subdiv") == 0)
       eqp->bc->use_subdiv = true;
     else if (strcmp(val, "bary") == 0)
@@ -1828,23 +1629,22 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value \"%s\" for setting the quadrature"
-                  " behaviour of the boundary conditions.\n"
+                _(" Invalid value \"%s\" for key CS_EQKEY_BC_QUADRATURE\n"
                   " Valid choices are \"subdiv\", \"bary\", \"higher\" and"
                   " \"highest\"."), _val);
     }
     break;
 
-  case EQKEY_EXTRA_OP:
+  case CS_EQKEY_EXTRA_OP:
     if (strcmp(val, "peclet") == 0)
       eqp->process_flag |= CS_EQUATION_POST_PECLET;
-    else if (strcmp(val, "none") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_NONE;
     else if (strcmp(val, "upwind_coef") == 0)
       eqp->process_flag |= CS_EQUATION_POST_UPWIND_COEF;
+    else
+      eqp->process_flag |= CS_EQUATION_POST_NONE;
     break;
 
-  case EQKEY_ADV_OP_TYPE:
+  case CS_EQKEY_ADV_FORMULATION:
     if (strcmp(val, "conservative") == 0)
       eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
     else if (strcmp(val, "non_conservative") == 0)
@@ -1852,49 +1652,31 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value \"%s\" for setting the formulation of the"
-                  " convection term.\n"
+                _(" Invalid value \"%s\" for CS_EQKEY_ADV_FORMULATION\n"
                   " Valid keys are \"conservative\" or \"non_conservative\"."),
                 _val);
     }
     break;
 
-  case EQKEY_ADV_WEIGHT_ALGO:
+  case CS_EQKEY_ADV_SCHEME:
     if (strcmp(val, "upwind") == 0)
-      eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND;
+      eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
     else if (strcmp(val, "samarskii") == 0)
-      eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_SAMARSKII;
+      eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_SAMARSKII;
     else if (strcmp(val, "sg") == 0)
-      eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_SG;
-    else if (strcmp(val, "d10g5") == 0)
-      eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_D10G5;
+      eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_SG;
     else if (strcmp(val, "centered") == 0)
-      eqp->advection_info.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED;
+      eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value \"%s\" for setting the algorithm for"
-                  " defining the proportion of upwinding.\n"
-                  " Valid choices are \"upwind\", \"samarskii\", \"sg\","
-                  " \"centered\" or \"d10g5\"."), _val);
+                _(" Invalid value \"%s\" for CS_EQKEY_ADV_SCHEME\n"
+                  " Valid choices are \"upwind\", \"samarskii\", \"sg\" or"
+                  " \"centered\"."), _val);
     }
     break;
 
-  case EQKEY_ADV_WEIGHT_CRIT:
-    if (strcmp(val, "xexc") == 0)
-      eqp->advection_info.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
-    else if (strcmp(val, "flux") == 0)
-      eqp->advection_info.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_FLUX;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value \"%s\" for setting the algorithm for"
-                  " computing the upwinding weight.\n"
-                  " Valid choices are \"flux\" and \"xexc\"."), _val);
-    }
-    break;
-
-  case EQKEY_ADV_FLUX_QUADRA:
+  case CS_EQKEY_ADV_FLUX_QUADRA:
     if (strcmp(val, "bary") == 0)
       eqp->advection_info.quad_type = CS_QUADRATURE_BARY;
     else if (strcmp(val, "higher") == 0)
@@ -1904,14 +1686,13 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value \"%s\" for setting the quadrature\n"
-                  " rules used for computing the advection flux.\n"
+                _(" Invalid value \"%s\" for CS_EQKEY_ADV_FLUX_QUADRA\n"
                   " Valid choices are \"bary\", \"higher\" and \"highest\"."),
                 _val);
     }
     break;
 
-  case EQKEY_TIME_SCHEME:
+  case CS_EQKEY_TIME_SCHEME:
     if (strcmp(val, "implicit") == 0) {
       eqp->time_info.scheme = CS_TIME_SCHEME_IMPLICIT;
       eqp->time_info.theta = 1.;
@@ -1929,19 +1710,19 @@ cs_equation_set_option(cs_equation_t       *eq,
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid key value \"%s\" for setting the time scheme.\n"
+                _(" Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
                   " Valid choices are \"implicit\", \"explicit\","
                   " \"crank_nicolson\", and \"theta_scheme\"."), _val);
     }
     break;
 
-  case EQKEY_TIME_THETA:
+  case CS_EQKEY_TIME_THETA:
     eqp->time_info.theta = atof(val);
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" The key \"%s\" is not implemented yet."), keyname);
+              _(" Invalid key for setting an equation."));
 
   } /* Switch on keys */
 
@@ -2163,7 +1944,7 @@ cs_equation_add_bc(cs_equation_t    *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-int
+void
 cs_equation_add_linear_reaction(cs_equation_t   *eq,
                                 cs_property_t   *property,
                                 const char      *r_name)

@@ -71,8 +71,8 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_cdo-condif.c
  *
- * \brief  Set main parameters for the current simulation when the CDO kernel
- *         is used
+ * \brief Main user subroutine for setting of a calculation with CDO.
+ *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -228,12 +228,9 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      ====================== */
 
   /* Choose a boundary by default.
-     >> cs_domain_set_param(domain, "default_boundary", keyval);
+     keyval is one of the following keyword: "wall" or "symmetry"  */
 
-     keyval is one of the following keyword: wall or symmetry
-  */
-
-  cs_domain_set_param(domain, "default_boundary", "wall");
+  cs_domain_set_param(domain, CS_DOMAIN_DEFAULT_BOUNDARY, "wall");
 
   /* Add a boundary
      >> cs_domain_add_boundary(domain,
@@ -250,18 +247,40 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
   cs_domain_add_boundary(domain, "in", "inlet");
   cs_domain_add_boundary(domain, "out", "outlet");
 
+  /* =========================
+     Generic output management
+     ========================= */
+
+  /* Set the output frequency for log either in terms of number of iteration
+     >> cs_domain_set_param(domain, CS_DOMAIN_OUTPUT_NT, keyval);
+     keyval is for instance "10"
+
+     either in terms of simulated time
+     >>  cs_domain_set_param(domain, CS_DOMAIN_OUTPUT_DT, keyval);
+     keyval is for instance "0.1"  */
+
+  cs_domain_set_param(domain, CS_DOMAIN_OUTPUT_NT, "10");
+
+  /* Set the level of verbosity (a fine-grained setting is also available if
+     one uses the function cs_user_cdo_numerics_settings())
+     >> cs_domain_set_param(domain, CS_DOMAIN_VERBOSITY, keyval);
+     keyval is for instance "-1" --> the lowest-level of information
+                             "0" --> reduced level of information
+                             "1" --> standard level of information
+                             "2" --> higher level of information  */
+
+  cs_domain_set_param(domain, CS_DOMAIN_VERBOSITY, "2");
+
   /* ====================
      Time step management
      ==================== */
 
-  /* Set the final time
-     >> cs_domain_set_param(domain, "time_max", keyval);
-
-     keyval is for instance "10."
+  /* Set the final time of the simulation
+     >> cs_domain_set_param(domain, CS_DOMAIN_TMAX, keyval);
+     keyval is for instance "1.5"
 
      Set the max. number of time steps
-     >> cs_domain_set_param(domain, "nt_max", keyval);
-
+     >> cs_domain_set_param(domain, CS_DOMAIN_NTMAX, keyval);
      keyval is for instance "100"
 
      If there is an inconsistency between the max. number of iteration in
@@ -269,7 +288,7 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      the calculation.
   */
 
-  cs_domain_set_param(domain, "nt_max", "100");
+  cs_domain_set_param(domain, CS_DOMAIN_NTMAX, "100");
 
   /* Define the value of the time step
      >> cs_domain_def_time_step_by_value(domain, dt_val);
@@ -538,34 +557,6 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
   */
 
   cs_equation_set_source_term_option(eq, "SourceTerm", "quadrature", "bary");
-
-  /* Optional: specify additional settings for a reaction term
-     >> cs_equation_reaction_term_set(eq,       // equation
-                                      r_name,   // label of the reaction term
-                                      key,      // name of the key
-                                      val)      // value of the key to set
-
-     If r_name is set to NULL, all reaction terms of the equation are set
-     to the given parameters.
-
-     key = "hodge_algo"
-     >> val: "voronoi", "cost" or "whitney_bary"
-     - "voronoi" leads to diagonal discrete Hodge operator but is not
-     consistent for all meshes
-     - "cost" is more robust (i.e. it handles more general meshes but is is
-     less efficient)
-     - "wbs" is robust and accurate but is limited to the reconstruction of
-     potential-like degrees of freedom
-
-     key = "hodge_coef" (only useful if "hodge_algo" is set to "cost")
-     >> val: "dga", "sushi", "gcr" or any strictly positive value
-
-     key = "lumping"
-     >> val: "true" or "false"
-
-     key = "inv_pty" (inverse the value of the related property ?)
-     >> val: "true" or "false"
-  */
 
 }
 

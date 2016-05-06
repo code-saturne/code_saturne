@@ -302,7 +302,7 @@ _build_hvpcd_conf(cs_cdovb_scaleq_t        *b)
  * \param[in, out] tpty_val   current value of the time property
  * \param[in]      loc_fval   pointer to the current value of the field
  * \param[in]      lm         pointer to a cs_locmesh_t structure
- * \param[in]      loc_hconf  pointer to a conforming discrete Hodge op. 
+ * \param[in]      loc_hconf  pointer to a conforming discrete Hodge op.
  * \param[in, out] b          pointer to a cs_cdovb_scaleq_t structure
  * \param[in, out] loc_sys    pointer to a cs_locmat_t structure
  */
@@ -325,7 +325,7 @@ _apply_time_scheme(double                    tpty_val,
   /* Temporary buffers of size equal to the number of cell vertices */
   double  *fval = b->loc_vals;
   double  *adr_pn = b->loc_vals + lm->n_vc;
-  
+
   /* Set the values of the fields attached to this cell */
   for (short int v = 0; v < lm->n_vc; v++)
     fval[v] = field_val[lm->v_ids[v]];
@@ -375,7 +375,7 @@ _apply_time_scheme(double                    tpty_val,
     case CS_TIME_SCHEME_THETA:
       {
         const double  tcoef = t_info.theta - 1;
-            
+
         /* Compute (Adv + Dif + Rea)*p^(n) */
         cs_locmat_matvec(loc_mat, fval, adr_pn);
 
@@ -424,7 +424,7 @@ _apply_time_scheme(double                    tpty_val,
       cs_locmat_matvec(loc_mat, fval, adr_pn);
       for (short int v = 0; v <  lm->n_vc; v++)
         loc_rhs[v] -= adr_pn[v];
-      
+
       /* Replace the local system matrix by that of time */
       for (short int vi = 0; vi < lm->n_vc; vi++) {
 
@@ -466,7 +466,7 @@ _apply_time_scheme(double                    tpty_val,
     case CS_TIME_SCHEME_THETA:
       {
         const double  tcoef = t_info.theta - 1;
-            
+
         /* Compute (Adv + Dif + Rea)*p^(n) */
         cs_locmat_matvec(loc_mat, fval, adr_pn);
         for (short int v = 0; v <  lm->n_vc; v++)
@@ -977,7 +977,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
       if (cs_source_term_get_reduction(st) == CS_SOURCE_TERM_REDUC_PRIM)
         b->flag |= CS_CDOVB_PRIMAL_SOURCE | CS_CDOVB_BUILD_HCONF;
       else
-	b->flag |= CS_CDOVB_DUAL_SOURCE;
+        b->flag |= CS_CDOVB_DUAL_SOURCE;
     }
 
   } /* There is at least one source term */
@@ -986,9 +986,9 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
       b->flag & CS_CDOVB_BUILD_LOC_HCONF) {
 
     cs_param_hodge_t  hwbs_info = {.inv_pty = false,
-				   .type = CS_PARAM_HODGE_TYPE_VPCD,
-				   .algo = CS_PARAM_HODGE_ALGO_WBS,
-				   .coef = 1.0}; // not useful in this case
+                                   .type = CS_PARAM_HODGE_TYPE_VPCD,
+                                   .algo = CS_PARAM_HODGE_ALGO_WBS,
+                                   .coef = 1.0}; // not useful in this case
 
     b->hb = cs_hodge_builder_init(connect, hwbs_info);
 
@@ -1272,7 +1272,7 @@ cs_cdovb_scaleq_compute_source(void   *builder)
 
     /* Update source term array */
     cs_sla_matvec(cs_cdovb_hconf, primal_cumul, &(b->source_terms), false);
-    
+
   }
 
 }

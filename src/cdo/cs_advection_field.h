@@ -51,6 +51,17 @@ BEGIN_C_DECLS
 
 typedef struct _cs_adv_field_t cs_adv_field_t;
 
+/* List of available keys for setting an advection field */
+typedef enum {
+
+  CS_ADVKEY_POST,
+  CS_ADVKEY_POST_UNITV,
+  CS_ADVKEY_CELL_FIELD,
+  CS_ADVKEY_VERTEX_FIELD,
+  CS_ADVKEY_N_KEYS
+
+} cs_advection_field_key_t;
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -171,15 +182,15 @@ cs_advection_field_summary(const cs_adv_field_t   *adv);
  * \brief  Set optional parameters related to a cs_adv_field_t structure
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
- * \param[in]       keyname   name of key related to the member of adv to set
+ * \param[in]       key       key related to the member of adv to set
  * \param[in]       keyval    accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_set_option(cs_adv_field_t   *adv,
-                              const char       *keyname,
-                              const char       *keyval);
+cs_advection_field_set_option(cs_adv_field_t            *adv,
+                              cs_advection_field_key_t   key,
+                              const char                *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!

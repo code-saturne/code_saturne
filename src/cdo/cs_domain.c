@@ -35,14 +35,15 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <ctype.h>
 #include <errno.h>
+#include <float.h>
 #include <locale.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <math.h>
-#include <float.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -112,20 +113,6 @@ struct _cs_domain_boundary_t {
 
 };
 
-/* List of available keys for setting a property */
-typedef enum {
-
-  DOMKEY_DEFAULT_BOUNDARY,
-  DOMKEY_OUTPUT_NT,
-  DOMKEY_OUTPUT_DT,
-  DOMKEY_PROFILING,
-  DOMKEY_NTMAX,
-  DOMKEY_TMAX,
-  DOMKEY_VERBOSITY,
-  DOMKEY_ERROR
-
-} domkey_t;
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -150,76 +137,6 @@ static double  cs_domain_kahan_time_compensation = 0.0;
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Print the name of the corresponding property key
- *
- * \param[in] key        name of the key
- *
- * \return a string
- */
-/*----------------------------------------------------------------------------*/
-
-static const char *
-_print_domkey(domkey_t  key)
-{
-  switch (key) {
-  case DOMKEY_DEFAULT_BOUNDARY:
-    return "default_boundary";
-  case DOMKEY_NTMAX:
-    return "nt_max";
-  case DOMKEY_OUTPUT_NT:
-    return "output_nt";
-  case DOMKEY_OUTPUT_DT:
-    return "output_dt";
-  case DOMKEY_PROFILING:
-    return "profiling";
-  case DOMKEY_TMAX:
-    return "time_max";
-  case DOMKEY_VERBOSITY:
-    return "verbosity";
-
-  default:
-    assert(0);
-  }
-
-  return NULL; // avoid a warning
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the corresponding enum from the name of a property key.
- *         If not found, return a key error.
- *
- * \param[in] keyname    name of the key
- *
- * \return a domkey_t
- */
-/*----------------------------------------------------------------------------*/
-
-static domkey_t
-_get_domkey(const char  *keyname)
-{
-  domkey_t  key = DOMKEY_ERROR;
-
-  if (strcmp(keyname, "default_boundary") == 0)
-    key = DOMKEY_DEFAULT_BOUNDARY;
-  else if (strcmp(keyname, "nt_max") == 0)
-    key = DOMKEY_NTMAX;
-  else if (strcmp(keyname, "output_nt") == 0)
-    key = DOMKEY_OUTPUT_NT;
-  else if (strcmp(keyname, "output_dt") == 0)
-    key = DOMKEY_OUTPUT_DT;
-  else if (strcmp(keyname, "profiling") == 0)
-    key = DOMKEY_PROFILING;
-  else if (strcmp(keyname, "time_max") == 0)
-    key = DOMKEY_TMAX;
-  else if (strcmp(keyname, "verbosity") == 0)
-    key = DOMKEY_VERBOSITY;
-
-  return key;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -654,19 +571,18 @@ cs_domain_init(const cs_mesh_t             *mesh,
 
   /* User-defined settings for this domain
       - time step
-      - boundary of the domain
-  */
+      - boundary of the domain  */
   cs_user_cdo_init_domain(domain);
 
   /* Update mesh locations */
   _add_mesh_locations(domain);
   _check_boundary_setup(domain);
 
-  /* Set the default verbosity for equation already defined */
-  char  verbstr[10];
-  sprintf(verbstr, "%d", domain->verbosity);
+  /* Set the default verbosity for the equations which are already defined */
+  char  verb[10];
+  sprintf(verb, "%d", domain->verbosity);
   for (int eq_id = 0; eq_id < domain->n_equations; eq_id++)
-    cs_equation_set_option(domain->equations[eq_id], "verbosity", verbstr);
+    cs_equation_set_param(domain->equations[eq_id], CS_EQKEY_VERBOSITY, verb);
 
   return domain;
 }
@@ -729,75 +645,63 @@ cs_domain_free(cs_domain_t   *domain)
  * \brief  Set auxiliary parameters related to a cs_domain_t structure
  *
  * \param[in, out]  domain    pointer to a cs_domain_t structure
- * \param[in]       keyname   name of key related to the parameter to set
+ * \param[in]       key       key related to the parameter to set
  * \param[in]       keyval    value related to the parameter to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_param(cs_domain_t    *domain,
-                    const char     *keyname,
-                    const char     *keyval)
+cs_domain_set_param(cs_domain_t       *domain,
+                    cs_domain_key_t    key,
+                    const char        *keyval)
 {
   if (domain == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
-  domkey_t  key = _get_domkey(keyname);
-
-  if (key == DOMKEY_ERROR) {
-
-    bft_printf("\n\n Current key: \"%s\"\n", keyname);
-    bft_printf(" Valid keys: ");
-    for (int i = 0; i < DOMKEY_ERROR; i++) {
-      bft_printf("\"%s\" ", _print_domkey(i));
-      if (i > 0 && i % 3 == 0)
-        bft_printf("\n\t");
-    }
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key \"%s\" setting a parameter for this domain.\n"
-                " Please read listing for more details and"
-                " modify your settings."), keyname);
-
-  } /* Error message */
+  /* Conversion of the string to lower case */
+  char val[CS_BASE_STRING_LEN];
+  for (size_t i = 0; i < strlen(keyval); i++)
+    val[i] = tolower(keyval[i]);
+  val[strlen(keyval)] = '\0';
 
   switch(key) {
 
-  case DOMKEY_DEFAULT_BOUNDARY:
-    _set_default_boundary(domain, keyval);
+  case CS_DOMAIN_DEFAULT_BOUNDARY:
+    _set_default_boundary(domain, val);
     break;
 
-  case DOMKEY_NTMAX:
-    domain->time_step->nt_max = atoi(keyval);
-    break;
-
-  case DOMKEY_OUTPUT_NT:
+  case CS_DOMAIN_OUTPUT_NT:
     {
-      int  freq = atoi(keyval);
+      int  freq = atoi(val);
 
       if (freq == 0) freq = -1;
       domain->output_nt = freq;
     }
     break;
 
-  case DOMKEY_OUTPUT_DT:
-    domain->output_dt = atof(keyval);
+  case CS_DOMAIN_OUTPUT_DT:
+    domain->output_dt = atof(val);
     break;
 
-  case DOMKEY_PROFILING:
+  case CS_DOMAIN_PROFILING:
     domain->profiling = true;
     break;
 
-  case DOMKEY_TMAX:
-    domain->time_step->t_max = atof(keyval);
+  case CS_DOMAIN_NTMAX:
+    domain->time_step->nt_max = atoi(val);
     break;
 
-  case DOMKEY_VERBOSITY:
-    domain->verbosity = atoi(keyval);
+  case CS_DOMAIN_TMAX:
+    domain->time_step->t_max = atof(val);
+    break;
+
+  case CS_DOMAIN_VERBOSITY:
+    domain->verbosity = atoi(val);
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Key %s is not implemented yet."), keyname);
+              _(" Invalid key for setting a cs_domain_t structure."));
 
   } /* Switch on keys */
 
@@ -911,6 +815,9 @@ cs_domain_summary(const cs_domain_t   *domain)
       bft_printf(" => %5.3e\n", domain->dt_cur);
     else
       bft_printf("\n");
+
+    bft_printf("  >> Final simulation time: %5.3e (nt_max: %d)\n",
+               domain->time_step->t_max, domain->time_step->nt_max);
   }
   bft_printf("\n");
 
@@ -1489,8 +1396,8 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
   cs_adv_field_t  *adv_field = cs_domain_get_advection_field(domain,
                                                              "darcian_flux");
 
-  cs_advection_field_set_option(adv_field, "cell_field", "true");
-  cs_advection_field_set_option(adv_field, "post", "true");
+  cs_advection_field_set_option(adv_field, CS_ADVKEY_CELL_FIELD, "true");
+  cs_advection_field_set_option(adv_field, CS_ADVKEY_POST, "true");
 
   /* Create a new equation */
   cs_equation_t  *richards_eq = cs_groundwater_initialize(domain->connect,

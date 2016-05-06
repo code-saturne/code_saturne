@@ -51,6 +51,36 @@ BEGIN_C_DECLS
 
 typedef struct _cs_equation_t cs_equation_t;
 
+/* List of available keys for setting an equation */
+typedef enum {
+
+  CS_EQKEY_ADV_FORMULATION,
+  CS_EQKEY_ADV_SCHEME,
+  CS_EQKEY_ADV_FLUX_QUADRA,
+  CS_EQKEY_BC_ENFORCEMENT,
+  CS_EQKEY_BC_QUADRATURE,
+  CS_EQKEY_EXTRA_OP,
+  CS_EQKEY_HODGE_DIFF_ALGO,
+  CS_EQKEY_HODGE_DIFF_COEF,
+  CS_EQKEY_HODGE_TIME_ALGO,
+  CS_EQKEY_HODGE_TIME_COEF,
+  CS_EQKEY_HODGE_REAC_ALGO,
+  CS_EQKEY_HODGE_REAC_COEF,
+  CS_EQKEY_ITSOL,
+  CS_EQKEY_ITSOL_EPS,
+  CS_EQKEY_ITSOL_MAX_ITER,
+  CS_EQKEY_ITSOL_RESNORM,
+  CS_EQKEY_ITSOL_VERBOSITY,
+  CS_EQKEY_PRECOND,
+  CS_EQKEY_SOLVER_FAMILY,
+  CS_EQKEY_SPACE_SCHEME,
+  CS_EQKEY_TIME_SCHEME,
+  CS_EQKEY_TIME_THETA,
+  CS_EQKEY_VERBOSITY,
+  CS_EQKEY_N_KEYS
+
+} cs_equation_key_t;
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -128,16 +158,16 @@ cs_equation_last_setup(cs_equation_t  *eq);
 /*!
  * \brief  Set a parameter in a cs_equation_t structure attached to keyname
  *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       keyname   name of key related to the member of eq to set
- * \param[in]       val       accessor to the value to set
+ * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \param[in]       key      key related to the member of eq to set
+ * \param[in]       keyval   accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_option(cs_equation_t       *eq,
-                       const char          *keyname,
-                       const void          *val);
+cs_equation_set_param(cs_equation_t       *eq,
+                      cs_equation_key_t    key,
+                      const char          *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -208,7 +238,7 @@ cs_equation_add_bc(cs_equation_t    *eq,
  */
 /*----------------------------------------------------------------------------*/
 
-int
+void
 cs_equation_add_linear_reaction(cs_equation_t   *eq,
                                 cs_property_t   *property,
                                 const char      *r_name);

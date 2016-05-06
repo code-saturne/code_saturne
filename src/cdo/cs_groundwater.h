@@ -42,12 +42,32 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/* Tag to build a flag dedicated to the groundwater module */
-#define CS_GROUNDWATER_POST_MOISTURE  (1 <<  0) //    1: post the moisture content
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/* List of available keys for setting the groundwater flow module */
+typedef enum {
+
+  CS_GWKEY_GRAVITATION,       // Take into acount gravitation effect
+  CS_GWKEY_OUTPUT_MOISTURE,   // Activate post-processing for the moisture
+  CS_GWKEY_N_KEYS
+
+} cs_groundwater_key_t;
+
+typedef enum {
+
+  CS_SOILKEY_SAT_MOISTURE,  // Set the saturated moisture content
+  CS_SOILKEY_RES_MOISTURE,  // Set the residual moisture content
+
+  /* Keys specific to the Tracy model */
+  CS_SOILKEY_TRACY_SAT_H,   // Head related to the saturated moisture content
+  CS_SOILKEY_TRACY_RES_H,   // Head related to the residual moisture content
+
+  CS_SOILKEY_N_KEYS
+
+} cs_groundwater_soilkey_t;
+
 
 /* Type of predefined modelling for the groundwater flows */
 typedef enum {
@@ -128,15 +148,15 @@ cs_groundwater_get_n_soils(const cs_groundwater_t    *gw);
  * \brief  Set parameters related to a cs_groundwater_t structure
  *
  * \param[in, out]  gw        pointer to a cs_groundwater_t structure
- * \param[in]       keyname   name of key related to the member of adv to set
+ * \param[in]       key       key related to the member of gw to set
  * \param[in]       keyval    accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_set_param(cs_groundwater_t    *gw,
-                         const char          *keyname,
-                         const char          *keyval);
+cs_groundwater_set_param(cs_groundwater_t      *gw,
+                         cs_groundwater_key_t   key,
+                         const char            *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -199,16 +219,16 @@ cs_groundwater_add_soil_by_value(cs_groundwater_t   *gw,
  *
  * \param[in, out]  gw        pointer to a cs_groundwater_t structure
  * \param[in]       ml_name   name of the mesh location associated to this soil
- * \param[in]       keyname   name of key related to the member of adv to set
+ * \param[in]       key       key related to a member of the soil to set
  * \param[in]       keyval    accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_set_soil_param(cs_groundwater_t    *gw,
-                              const char          *ml_name,
-                              const char          *keyname,
-                              const char          *keyval);
+cs_groundwater_set_soil_param(cs_groundwater_t          *gw,
+                              const char                *ml_name,
+                              cs_groundwater_soilkey_t   key,
+                              const char                *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -30,9 +30,10 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -91,17 +92,6 @@ struct _cs_adv_field_t {
 
 };
 
-/* List of available keys for setting an advection field */
-typedef enum {
-
-  ADVKEY_POST,
-  ADVKEY_POST_UNITV,
-  ADVKEY_CELL_FIELD,
-  ADVKEY_VERTEX_FIELD,
-  ADVKEY_ERROR
-
-} advkey_t;
-
 /*============================================================================
  * Private variables
  *============================================================================*/
@@ -109,10 +99,6 @@ typedef enum {
 static const char _err_empty_adv[] =
   " Stop setting an empty cs_adv_field_t structure.\n"
   " Please check your settings.\n";
-static const char _err_truefalse_key[] =
-  N_(" Invalid value %s for setting key %s\n"
-     " Valid choices are true or false.\n"
-     " Please modify your setting.\n");
 
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_cdo_quant;
@@ -122,65 +108,6 @@ static const cs_time_step_t  *cs_time_step;
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Print the name of the corresponding advection key
- *
- * \param[in] key        name of the key
- *
- * \return a string
- */
-/*----------------------------------------------------------------------------*/
-
-static const char *
-_print_advkey(advkey_t  key)
-{
-  switch (key) {
-
-  case ADVKEY_POST:
-    return "post";
-  case ADVKEY_POST_UNITV:
-    return "post_unitv";
-  case ADVKEY_CELL_FIELD:
-    return "cell_field";
-  case ADVKEY_VERTEX_FIELD:
-    return "vertex_field";
-  default:
-    assert(0);
-
-  }
-
-  return NULL; // avoid a warning
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the corresponding enum from the name of an advection key.
- *         If not found, return a key error.
- *
- * \param[in] keyname    name of the key
- *
- * \return a advkey_t
- */
-/*----------------------------------------------------------------------------*/
-
-static advkey_t
-_get_advkey(const char  *keyname)
-{
-  advkey_t  key = ADVKEY_ERROR;
-
-  if (strcmp(keyname, "post") == 0)
-    key = ADVKEY_POST;
-  else if (strcmp(keyname, "post_unitv") == 0)
-    key = ADVKEY_POST_UNITV;
-  else if (strcmp(keyname, "cell_field") == 0)
-    key = ADVKEY_CELL_FIELD;
-  else if (strcmp(keyname, "vertex_field") == 0)
-    key = ADVKEY_VERTEX_FIELD;
-
-  return key;
-}
 
 /*============================================================================
  * Public function prototypes
@@ -419,72 +346,66 @@ cs_advection_field_summary(const cs_adv_field_t   *adv)
  * \brief  Set optional parameters related to a cs_adv_field_t structure
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
- * \param[in]       keyname   name of key related to the member of adv to set
+ * \param[in]       key       key related to the member of adv to set
  * \param[in]       keyval    accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_set_option(cs_adv_field_t   *adv,
-                              const char       *keyname,
-                              const char       *keyval)
+cs_advection_field_set_option(cs_adv_field_t            *adv,
+                              cs_advection_field_key_t   key,
+                              const char                *keyval)
 {
   if (adv == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
 
-  advkey_t  key = _get_advkey(keyname);
-
-  if (key == ADVKEY_ERROR) {
-
-    bft_printf("\n\n Current key: \"%s\"\n", keyname);
-    bft_printf(" Valid keys: ");
-    for (int i = 0; i < ADVKEY_ERROR; i++) {
-      bft_printf("\"%s\" ", _print_advkey(i));
-      if (i > 0 && i % 3 == 0)
-        bft_printf("\n\t");
-    }
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key \"%s\" for setting the advection field \"%s\".\n"
-                " Please read listing for more details and modify"
-                " your settings."), keyname, adv->name);
-
-  } /* Error message */
+  /* Conversion of the string to lower case */
+  char val[CS_BASE_STRING_LEN];
+  for (size_t i = 0; i < strlen(keyval); i++)
+    val[i] = tolower(keyval[i]);
+  val[strlen(keyval)] = '\0';
 
   switch(key) {
 
-  case ADVKEY_POST:
-    if (strcmp(keyval, "true") == 0)
+  case CS_ADVKEY_POST:
+    if (strcmp(val, "true") == 0)
       adv->post_flag |= CS_ADVECTION_FIELD_POST_ACTIV;
-    else if (strcmp(keyval, "false") == 0) { // remove the flag if it is set
+    else if (strcmp(val, "false") == 0) { // remove the flag if it is set
       if (adv->post_flag & CS_ADVECTION_FIELD_POST_ACTIV)
         adv->post_flag ^= CS_ADVECTION_FIELD_POST_ACTIV;
     }
     else
-      bft_error(__FILE__, __LINE__, 0, _err_truefalse_key, keyval, keyname);
+      bft_error(__FILE__, __LINE__, 0,
+                N_(" Invalid value %s for setting key CS_ADVKEY_POST\n"
+                   " Valid choices are \"true\" or \"false\".\n"
+                   " Please modify your setting.\n"), val);
     break;
 
-  case ADVKEY_POST_UNITV:
-    if (strcmp(keyval, "true") == 0)
+  case CS_ADVKEY_POST_UNITV:
+    if (strcmp(val, "true") == 0)
       adv->post_flag |= CS_ADVECTION_FIELD_POST_UNITV;
-    else if (strcmp(keyval, "false") == 0) { // remove the flag if it is set
+    else if (strcmp(val, "false") == 0) { // remove the flag if it is set
       if (adv->post_flag & CS_ADVECTION_FIELD_POST_UNITV)
         adv->post_flag ^= CS_ADVECTION_FIELD_POST_UNITV;
     }
     else
-      bft_error(__FILE__, __LINE__, 0, _err_truefalse_key, keyval, keyname);
+      bft_error(__FILE__, __LINE__, 0,
+                N_(" Invalid value %s for setting key CS_ADVKEY_POST_UNITV\n"
+                   " Valid choices are \"true\" or \"false\".\n"
+                   " Please modify your setting.\n"), val);
     break;
 
-  case ADVKEY_CELL_FIELD:
+  case CS_ADVKEY_CELL_FIELD:
     adv->desc.location |= CS_FLAG_CELL;
     break;
 
-  case ADVKEY_VERTEX_FIELD:
+  case CS_ADVKEY_VERTEX_FIELD:
     adv->desc.location |= CS_FLAG_VERTEX;
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Key %s is not implemented yet."), keyname);
+              _(" Key not implemented for setting an advection field."));
 
   } /* Switch on keys */
 
@@ -495,7 +416,7 @@ cs_advection_field_set_option(cs_adv_field_t   *adv,
  * \brief  Define the value of a cs_adv_field_t structure
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
- * \param[in]       keyval    accessor to the value to set
+ * \param[in]       val       accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
