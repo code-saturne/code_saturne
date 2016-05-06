@@ -2660,14 +2660,12 @@ cs_equation_solve(cs_equation_t   *eq,
 /*!
  * \brief  Predefined extra-operations related to this equation
  *
- * \param[in]  time_step  pointer to a time step structure
  * \param[in]  eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_extra_op(const cs_time_step_t       *time_step,
-                     const cs_equation_t        *eq)
+cs_equation_extra_op(const cs_equation_t        *eq)
 {
   if (eq == NULL)
     return;

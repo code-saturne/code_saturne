@@ -1144,7 +1144,6 @@ cs_cdovb_scaleq_free(void   *builder)
     return b;
 
   /* eqp is only shared. Thies structure is freed later. */
-  const cs_equation_param_t  *eqp = b->eqp;
 
   BFT_FREE(b->loc_vals);
   if (b->hb != NULL)
@@ -1920,8 +1919,9 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
                          const cs_field_t      *field,
                          void                  *builder)
 {
-  int  len;
+  CS_UNUSED(field);
 
+  int  len;
   char *postlabel = NULL;
   cs_cdovb_scaleq_t  *b = (cs_cdovb_scaleq_t  *)builder;
 

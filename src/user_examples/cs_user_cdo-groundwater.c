@@ -353,7 +353,7 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      Available keys are:
      CS_SOILKEY_SAT_MOISTURE,  // Set the saturated moisture content
      CS_SOILKEY_RES_MOISTURE,  // Set the residual moisture content
-     
+
      Keys specific to the Tracy model
      CS_SOILKEY_TRACY_SAT_H,   // Head related to the saturated moisture content
      CS_SOILKEY_TRACY_RES_H,   // Head related to the residual moisture content

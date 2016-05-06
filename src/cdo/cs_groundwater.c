@@ -72,7 +72,7 @@ BEGIN_C_DECLS
 
 /* Tag dedicated to build a flag for the groundwater module */
 /*   1: post the moisture content */
-#define CS_GROUNDWATER_POST_MOISTURE  (1 <<  0) 
+#define CS_GROUNDWATER_POST_MOISTURE  (1 <<  0)
 
 /*============================================================================
  * Structure definitions

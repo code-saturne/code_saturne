@@ -1876,7 +1876,7 @@ cs_domain_postprocess(cs_domain_t  *domain)
 
   /* Predefined extra-operations related to equations */
   for (int eq_id = 0; eq_id < domain->n_equations; eq_id++)
-    cs_equation_extra_op(domain->time_step, domain->equations[eq_id]);
+    cs_equation_extra_op(domain->equations[eq_id]);
 
   /* User-defined extra operations */
   cs_user_cdo_extra_op(domain);
