@@ -86,17 +86,17 @@ struct _cs_cdovb_adv_t {
 
   /* Settings for the advection operator */
   cs_param_advection_t    a_info;
+
   const cs_adv_field_t   *adv;   // shared pointer
 
-  bool                    with_diffusion;
+  bool           with_diffusion;
 
-  cs_real_t  *fluxes;  /* flux of the advection field across each dual
-                          face (size: number of edges in a cell) */
-  cs_real_t  *criter;  /* criterion used to evaluate how to upwind
-                          (size: number of edges in a cell) */
-
-  cs_locmat_t   *loc;  /* Local matrix for the convection operator */
-
+  cs_real_t     *fluxes;    /* flux of the advection field across each dual
+                               face (size: number of edges in a cell) */
+  cs_real_t     *criter;    /* criterion used to evaluate how to upwind
+                               (size: number of edges in a cell) */
+  cs_locmat_t   *loc;       /* Local matrix for the convection operator */
+  cs_real_t     *tmp_rhs;   /* local buffer (size: n_max_vbyc) */
 };
 
 /*============================================================================
@@ -399,7 +399,7 @@ cs_cdovb_advection_builder_init(const cs_cdo_connect_t      *connect,
                                 bool                         do_diffusion)
 {
   cs_cdovb_adv_t  *b = NULL;
-  cs_lnum_t  n_max_ec = connect->n_max_ebyc;
+  cs_lnum_t  n_max_ec = connect->n_max_ebyc, n_max_vc = connect->n_max_vbyc;
 
   BFT_MALLOC(b, 1, cs_cdovb_adv_t);
 
@@ -421,8 +421,12 @@ cs_cdovb_advection_builder_init(const cs_cdo_connect_t      *connect,
     b->criter[i] = 0;
   }
 
-  b->loc = cs_locmat_create(connect->n_max_vbyc);
+  BFT_MALLOC(b->tmp_rhs, n_max_vc, cs_real_t);
+  for (int i = 0; i < n_max_vc; i++)
+    b->tmp_rhs[i] = 0;
 
+  b->loc = cs_locmat_create(connect->n_max_vbyc);
+  
   return b;
 }
 
@@ -444,6 +448,7 @@ cs_cdovb_advection_builder_free(cs_cdovb_adv_t  *b)
 
   BFT_FREE(b->fluxes);
   BFT_FREE(b->criter);
+  BFT_FREE(b->tmp_rhs);
 
   b->loc = cs_locmat_free(b->loc);
 
@@ -536,10 +541,10 @@ cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
   const cs_param_advection_t  a_info = advb->a_info;
   const cs_real_t  *xyz = quant->vtx_coord;
 
-  /* Reset local RHS and diagonal contributions */
+  /* Reset local temporay RHS and diagonal contributions */
   for (short int v = 0; v < lm->n_vc; v++) {
-    ls->rhs[v] = 0;
     m->val[v] = 0;
+    advb->tmp_rhs[v] = 0;
   }
 
   /* Loop on border faces.
@@ -573,8 +578,8 @@ cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
 
             if (dp < 0) { // advection field is inward w.r.t. the face normal
 
-              ls->rhs[v1] -= flx * ls->dir_bc[v1];
-              ls->rhs[v2] -= flx * ls->dir_bc[v2];
+              advb->tmp_rhs[v1] -= flx * ls->dir_bc[v1];
+              advb->tmp_rhs[v2] -= flx * ls->dir_bc[v2];
 
               if (a_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS) {
                 m->val[v1] -= flx;
@@ -620,7 +625,7 @@ cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
 
           if (flx1 < 0) { // advection field is inward w.r.t. the face normal
 
-            ls->rhs[v1] -= flx1 * ls->dir_bc[v1];
+            advb->tmp_rhs[v1] -= flx1 * ls->dir_bc[v1];
             if (a_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS)
               m->val[v1] -= flx1;
 
@@ -636,7 +641,7 @@ cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
 
           if (flx2 < 0) { // advection field is inward w.r.t. the face normal
 
-            ls->rhs[v2] -= flx2 * ls->dir_bc[v2];
+            advb->tmp_rhs[v2] -= flx2 * ls->dir_bc[v2];
             if (a_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS)
               m->val[v2] -= flx2;
 
@@ -653,11 +658,12 @@ cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
 
   } // Advection field uniform or not
 
-  /* Update the diagonal of the local system matrix */
-  for (short int v = 0; v < lm->n_vc; v++)
+  /* Update the diagonal and the RHS of the local system matrix */
+  for (short int v = 0; v < lm->n_vc; v++)  {
     ls->mat->val[v*lm->n_vc + v] += m->val[v];
+    ls->rhs[v] += advb->tmp_rhs[v];
+  }
 
-  /* Remark: RHS is updated in cs_cdovb_scaleq.c */
 }
 
 /*----------------------------------------------------------------------------*/

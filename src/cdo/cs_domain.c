@@ -1750,9 +1750,9 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
 
             cs_domain_add_property(domain, pty_name, "isotropic", n_soils);
 
-            cs_property_t *reac_pty = cs_domain_get_property(domain, pty_name);
+            cs_property_t *r_pty = cs_domain_get_property(domain, pty_name);
 
-            cs_equation_add_reaction(eq, "decay", "linear", reac_pty);
+            cs_equation_add_linear_reaction(eq, r_pty, "decay");
 
           } /* Add a reaction property for this equation ? */
 

@@ -930,6 +930,30 @@ cs_locmat_add(cs_locmat_t        *loc,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Give the result of the following operation: loc = loc + alpha*add
+ *
+ * \param[in, out] loc    local matrix storing the result
+ * \param[in]      alpha  multiplicative coefficient
+ * \param[in]      add    values to add to loc
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_locmat_mult_add(cs_locmat_t        *loc,
+                   double              alpha,
+                   const cs_locmat_t  *add)
+{
+  /* Sanity checks */
+  assert(loc != NULL && add != NULL);
+  assert(loc->n_max_ent <= add->n_max_ent);
+
+  for (int i = 0; i < loc->n_ent*loc->n_ent; i++)
+    loc->val[i] += alpha*add->val[i];
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Define a new matrix by adding a local matrix with its transpose.
  *          Keep the transposed matrix for future use.
  *

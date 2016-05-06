@@ -203,37 +203,15 @@ cs_equation_add_bc(cs_equation_t    *eq,
  *         to a reaction term
  *
  * \param[in, out] eq         pointer to a cs_equation_t structure
- * \param[in]      r_name     name of the reaction term or NULL
- * \param[in]      type_name  type of reaction term to add
  * \param[in]      property   pointer to a cs_property_t struct.
+ * \param[in]      r_name     name of the reaction term (optional, i.e. NULL)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_add_reaction(cs_equation_t   *eq,
-                         const char      *r_name,
-                         const char      *type_name,
-                         cs_property_t   *property);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set advanced parameters related to a reaction term
- *         keyname among "lumping", "hodge_algo", "hodge_coef"...
- *         If r_name is NULL, all reaction terms of the given equation are set
- *         according to the couple (keyname, keyval)
- *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       r_name    name of the reaction term
- * \param[in]       keyname   name of the key
- * \param[in]       keyval    pointer to the value to set to the key
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_reaction_option(cs_equation_t    *eq,
-                                const char       *r_name,
-                                const char       *keyname,
-                                const char       *keyval);
+int
+cs_equation_add_linear_reaction(cs_equation_t   *eq,
+                                cs_property_t   *property,
+                                const char      *r_name);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -112,36 +112,37 @@ typedef struct {
   cs_flag_t              process_flag;  /* Type of post-treatment to do */
 
   /* Numerical settings */
-  cs_space_scheme_t      space_scheme;
+  cs_space_scheme_t           space_scheme;
 
   /* Boundary conditions */
-  cs_param_bc_t         *bc;
+  cs_param_bc_t              *bc;
 
   /* High-level structure to manage/monitor the resolution of this equation */
-  cs_equation_algo_t     algo_info;
-  cs_param_itsol_t       itsol_info;
+  cs_equation_algo_t          algo_info;
+  cs_param_itsol_t            itsol_info;
 
-  /* Unsteady term discretization and description of the time discretization */
-  cs_param_time_t        time_info;
-  cs_param_hodge_t       time_hodge;
-  cs_property_t         *time_property;
+  /* Unsteady term parametrization */
+  cs_param_time_t             time_info;
+  cs_param_hodge_t            time_hodge;
+  cs_property_t              *time_property;
 
-  /* Diffusion term */
-  cs_param_hodge_t       diffusion_hodge;
-  cs_property_t         *diffusion_property;
+  /* Diffusion term parametrization */
+  cs_param_hodge_t            diffusion_hodge;
+  cs_property_t              *diffusion_property;
 
-  /* Advection term */
-  cs_param_advection_t   advection_info;
-  cs_adv_field_t        *advection_field;
+  /* Advection term parametrization */
+  cs_param_advection_t        advection_info;
+  cs_adv_field_t             *advection_field;
 
-  /* Reaction term (always depend on the unkonws) */
-  int                    n_reaction_terms;
-  cs_param_reaction_t   *reaction_terms;
-  cs_property_t        **reaction_properties;
+  /* Reaction term parametrization (Belong to the left-hand side) */
+  cs_param_hodge_t            reaction_hodge;
+  int                         n_reaction_terms;
+  cs_property_t             **reaction_properties;
+  cs_param_reaction_t        *reaction_info;
 
-  /* Source terms */
-  int                    n_source_terms;
-  cs_source_term_t     **source_terms;
+  /* Parametrization of source terms (Belong to the right-hand side) */
+  int                         n_source_terms;
+  cs_source_term_t          **source_terms;
 
 } cs_equation_param_t;
 

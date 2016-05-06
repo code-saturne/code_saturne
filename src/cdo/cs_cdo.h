@@ -42,6 +42,13 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+#define CDO_DIFFUSION   0
+#define CDO_ADVECTION   1
+#define CDO_REACTION    2
+#define CDO_TIME        3
+#define CDO_SOURCETERM  4
+#define N_CDO_TERMS     5
+
 /* Flags to identify the nature/status of an object (variable, property...) */
 #define CS_FLAG_STATE_UNIFORM     (1 << 0) //    1: uniform (in space)
 #define CS_FLAG_STATE_CELLWISE    (1 << 1) //    2: cellwise uniform

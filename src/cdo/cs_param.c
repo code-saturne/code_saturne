@@ -455,75 +455,20 @@ cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a new reaction term. The structure related to this reaction
- *         term has already been allocated among the list of reaction terms
- *         associated to an equation
- *
- * \param[in, out] rp         pointer to cs_param_reaction_t structure
- * \param[in]      r_name     name of the reaction term
- * \param[in]      h_type     type of discrete Hodge op. associated to this term
- * \param[in]      h_algo     algorithm used to build the discrete Hodge op.
- * \param[in]      r_type     type of reaction term
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_reaction_add(cs_param_reaction_t       *rp,
-                      const char                *r_name,
-                      cs_param_hodge_type_t      h_type,
-                      cs_param_hodge_algo_t      h_algo,
-                      cs_param_reaction_type_t   r_type)
-{
-  if (rp == NULL)
-    return;
-
-  rp->type = r_type;
-  rp->do_lumping = false;   // No lumping by default
-
-  /* Name of the reaction term */
-  int len = strlen(r_name)+1;
-  BFT_MALLOC(rp->name, len, char);
-  strncpy(rp->name, r_name, len);
-
-  /* Initialiaze the related discrete Hodge operator */
-  rp->hodge.inv_pty = false;     // inverse property ?
-  rp->hodge.type = h_type;
-  rp->hodge.algo = h_algo;
-  rp->hodge.coef = 1/3.;         // Not used by default but set to DGA method
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name related to a reaction term
- *
- * \param[in] r_info     cs_param_reaction_t structure
- *
- * \return the name of the reaction term
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_reaction_get_name(const cs_param_reaction_t   r_info)
-{
-  return r_info.name;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Get the name of the type of reaction term
  *
- * \param[in] r_info     set of parameters related to a reaction term
+ * \param[in] r_type     type of reaction term
  *
  * \return the name associated with this type of reaction term
  */
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_param_reaction_get_type_name(cs_param_reaction_t  r_info)
+cs_param_reaction_get_type_name(cs_param_reaction_type_t  r_type)
 {
-  switch (r_info.type) {
+  switch (r_type) {
   case CS_PARAM_REACTION_TYPE_LINEAR:
-    return  "Linear";
+    return "Linear";
     break;
   case CS_PARAM_N_REACTION_TYPES:
     return "Not set";
@@ -533,7 +478,7 @@ cs_param_reaction_get_type_name(cs_param_reaction_t  r_info)
               _(" Invalid type of reaction term. Stop execution."));
   }
 
-  return "NULL";
+  return "NULL"; // avoid a warning
 }
 
 /*----------------------------------------------------------------------------*/

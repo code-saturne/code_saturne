@@ -279,6 +279,8 @@ typedef enum {
   EQKEY_HODGE_DIFF_COEF,
   EQKEY_HODGE_TIME_ALGO,
   EQKEY_HODGE_TIME_COEF,
+  EQKEY_HODGE_REAC_ALGO,
+  EQKEY_HODGE_REAC_COEF,  
   EQKEY_ITSOL,
   EQKEY_ITSOL_EPS,
   EQKEY_ITSOL_MAX_ITER,
@@ -300,17 +302,6 @@ typedef enum {
   EQKEY_ERROR
 
 } eqkey_t;
-
-/* List of keys for setting a reaction term */
-typedef enum {
-
-  REAKEY_LUMPING,
-  REAKEY_HODGE_ALGO,
-  REAKEY_HODGE_COEF,
-  REAKEY_INV_PTY,
-  REAKEY_ERROR
-
-} reakey_t;
 
 /*=============================================================================
  * Local Macro definitions and structure definitions
@@ -765,6 +756,10 @@ _print_eqkey(eqkey_t  key)
     return "hodge_time_algo";
   case EQKEY_HODGE_TIME_COEF:
     return "hodge_time_coef";
+  case EQKEY_HODGE_REAC_ALGO:
+    return "hodge_reac_algo";
+  case EQKEY_HODGE_REAC_COEF:
+    return "hodge_reac_coef";
   case EQKEY_ITSOL:
     return "itsol";
   case EQKEY_ITSOL_EPS:
@@ -811,35 +806,6 @@ _print_eqkey(eqkey_t  key)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Print the name of the corresponding reaction term key
- *
- * \param[in] key        name of the key
- *
- * \return a string
- */
-/*----------------------------------------------------------------------------*/
-
-static const char *
-_print_reakey(reakey_t  key)
-{
-  switch (key) {
-  case REAKEY_LUMPING:
-    return "lumping";
-  case REAKEY_HODGE_ALGO:
-    return "hodge_algo";
-  case REAKEY_HODGE_COEF:
-    return "hodge_coef";
-  case REAKEY_INV_PTY:
-    return "inv_pty";
-  default:
-    assert(0);
-  }
-
-  return NULL; // avoid a warning
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Get the corresponding enum from the name of an equation key.
  *         If not found, print an error message
  *
@@ -863,6 +829,10 @@ _get_eqkey(const char *keyname)
       key = EQKEY_HODGE_TIME_COEF;
     else if (strcmp(keyname, "hodge_time_algo") == 0)
       key = EQKEY_HODGE_TIME_ALGO;
+    else if (strcmp(keyname, "hodge_reac_coef") == 0)
+      key = EQKEY_HODGE_REAC_COEF;
+    else if (strcmp(keyname, "hodge_reac_algo") == 0)
+      key = EQKEY_HODGE_REAC_ALGO;
   }
 
   else if (strncmp(keyname, "itsol", 5) == 0) { /* key begins with itsol */
@@ -917,34 +887,6 @@ _get_eqkey(const char *keyname)
     else if (strcmp(keyname, "time_theta") == 0)
       key = EQKEY_TIME_THETA;
   }
-
-  return key;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the corresponding enum from the name of a reaction term key.
- *         If not found, print an error message
- *
- * \param[in] keyname    name of the key
- *
- * \return a reakey_t
- */
-/*----------------------------------------------------------------------------*/
-
-static reakey_t
-_get_reakey(const char *keyname)
-{
-  reakey_t  key = REAKEY_ERROR;
-
-  if (strcmp(keyname, "lumping") == 0)
-    key = REAKEY_LUMPING;
-  else if (strcmp(keyname, "hodge_algo") == 0)
-    key = REAKEY_HODGE_ALGO;
-  else if (strcmp(keyname, "hodge_coef") == 0)
-    key = REAKEY_HODGE_COEF;
-  else if (strcmp(keyname, "inv_pty") == 0)
-    key = REAKEY_INV_PTY;
 
   return key;
 }
@@ -1011,8 +953,11 @@ _create_equation_param(cs_equation_type_t     type,
   eqp->advection_field = NULL;
 
   /* No reaction term by default */
+  eqp->reaction_hodge.inv_pty = false;
+  eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+  eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
   eqp->n_reaction_terms = 0;
-  eqp->reaction_terms = NULL;
+  eqp->reaction_info = NULL;
   eqp->reaction_properties = NULL;
 
   /* No source term by default (always in the right-hand side) */
@@ -1252,13 +1197,12 @@ cs_equation_free(cs_equation_t  *eq)
   if (eqp->n_reaction_terms > 0) { // reaction terms
 
     for (int i = 0; i< eqp->n_reaction_terms; i++)
-      BFT_FREE(eqp->reaction_terms[i].name);
-    BFT_FREE(eqp->reaction_terms);
-
-    /* Free only the array of pointers and not the pointers themselves
-       since they are stored in a cs_domain_t structure */
+      BFT_FREE(eqp->reaction_info[i].name);
+    BFT_FREE(eqp->reaction_info);
     BFT_FREE(eqp->reaction_properties);
 
+    /* Remark: properties are freed when the global cs_domain_t structure is
+       freed thanks to a call to cs_property_free() */
   }
 
   if (eqp->n_source_terms > 0) { // Source terms
@@ -1486,34 +1430,32 @@ cs_equation_summary(const cs_equation_t  *eq)
 
   if (reaction) {
 
+    bft_printf("\n  <%s/Number of reaction terms> %d\n",
+               eq->name, eqp->n_reaction_terms);
+
+    if (eqp->verbosity > 0) {
+
+      const cs_param_hodge_t  h_info = eqp->reaction_hodge;
+
+      bft_printf("  <Reaction/Hodge> %s - %s\n",
+                 cs_param_hodge_get_type_name(h_info),
+                 cs_param_hodge_get_algo_name(h_info));
+      if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
+        bft_printf("\t<Reaction/Hodge> Value of the coercivity coef.: %.3e\n",
+                   h_info.coef);
+
+    }
+
     for (int r_id = 0; r_id < eqp->n_reaction_terms; r_id++) {
+      cs_param_reaction_t  r_info = eqp->reaction_info[r_id];
+      bft_printf("  <Reaction tem %02d> Property: %s; Operator type: %s\n",
+                 r_id, cs_property_get_name(eqp->reaction_properties[r_id]),
+                 cs_param_reaction_get_type_name(r_info.type));
 
-      const cs_param_reaction_t  r_info = eqp->reaction_terms[r_id];
-      const cs_param_hodge_t  h_info = r_info.hodge;
-
-      bft_printf("\n  <%s/Reaction term> %s\n",
-                 eq->name, cs_param_reaction_get_name(r_info));
-      bft_printf("  <Reaction> Property: %s\n",
-                 cs_property_get_name(eqp->reaction_properties[r_id]));
-      bft_printf("\t<Reaction/Operator> Type %s; Mass_lumping %s\n",
-                 cs_param_reaction_get_type_name(r_info),
-                 cs_base_strtf(r_info.do_lumping));
-
-      if (eqp->verbosity > 0) {
-        bft_printf("  <Reaction/Hodge> %s - %s\n",
-                   cs_param_hodge_get_type_name(h_info),
-                   cs_param_hodge_get_algo_name(h_info));
-        bft_printf("\t<Reaction/Hodge> Inversion of property: %s\n",
-                   cs_base_strtf(h_info.inv_pty));
-        if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
-          bft_printf("\t<Reaction/Hodge> Value of the coercivity coef.: %.3e\n",
-                     h_info.coef);
-      }
-
-    } // Loop on reaction terms
+    }
 
   } // Reaction terms
-
+  
   if (source_term) {
 
     bft_printf("\n  <%s/Source terms>\n", eq->name);
@@ -2216,247 +2158,54 @@ cs_equation_add_bc(cs_equation_t    *eq,
  *         to a reaction term
  *
  * \param[in, out] eq         pointer to a cs_equation_t structure
- * \param[in]      r_name     name of the reaction term or NULL
- * \param[in]      type_name  type of reaction term to add
  * \param[in]      property   pointer to a cs_property_t struct.
+ * \param[in]      r_name     name of the reaction term (optional, i.e. NULL)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_add_reaction(cs_equation_t   *eq,
-                         const char      *r_name,
-                         const char      *type_name,
-                         cs_property_t   *property)
+int
+cs_equation_add_linear_reaction(cs_equation_t   *eq,
+                                cs_property_t   *property,
+                                const char      *r_name)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
   /* Only this kind of reaction term is available up to now */
-  cs_param_reaction_type_t  r_type = CS_PARAM_N_REACTION_TYPES;
-  cs_param_hodge_type_t  h_type = CS_PARAM_N_HODGE_TYPES;
-  cs_param_hodge_algo_t  h_algo = CS_PARAM_N_HODGE_ALGOS;
   cs_equation_param_t  *eqp = eq->param;
 
-  /* Add a new source term */
   int  r_id = eqp->n_reaction_terms;
-  eqp->n_reaction_terms += 1;
-  BFT_REALLOC(eqp->reaction_terms, eqp->n_reaction_terms, cs_param_reaction_t);
 
-  /* Associate a property to this reaction term */
-  BFT_REALLOC(eqp->reaction_properties, eqp->n_reaction_terms,
-              cs_property_t *);
-  eqp->reaction_properties[r_id] = property;
+  /* Add a new source term */
+  eqp->n_reaction_terms += 1;
+  BFT_REALLOC(eqp->reaction_info, eqp->n_reaction_terms, cs_param_reaction_t);
+
+  /* Set the type of reaction term to consider */
+  eqp->reaction_info[r_id].type = CS_PARAM_REACTION_TYPE_LINEAR;
 
   /* Associate a name to this reaction term */
-  const char  *name;
-  char *_r_name = NULL;
-
   if (r_name == NULL) { /* Define a name by default */
+
     assert(r_id < 100);
-    int len = strlen("reaction_00") + 1;
-    BFT_MALLOC(_r_name, len, char);
-    sprintf(_r_name, "reaction_%02d", r_id);
-    name = _r_name;
+    int  len = strlen("reaction_00") + 1;
+    BFT_MALLOC(eqp->reaction_info[r_id].name, len, char);
+    sprintf(eqp->reaction_info[r_id].name, "reaction_%02d", r_id);
+
   }
-  else
-    name = r_name;
+  else { /* Copy the given name */
 
-  /* Set the type of reaction term */
-  if (strcmp(type_name, "linear") == 0)
-    r_type = CS_PARAM_REACTION_TYPE_LINEAR;
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of reaction term for equation %s."), eq->name);
+    int  len = strlen(r_name) + 1;
+    BFT_MALLOC(eqp->reaction_info[r_id].name, len, char);
+    strncpy(eqp->reaction_info[r_id].name, r_name, len);
 
-  /* Set options associated to the related discrete Hodge operator */
-  switch (eqp->space_scheme) {
-
-  case CS_SPACE_SCHEME_CDOVB:
-    h_algo = CS_PARAM_HODGE_ALGO_WBS;
-    h_type = CS_PARAM_HODGE_TYPE_VPCD;
-    break;
-
-  case CS_SPACE_SCHEME_CDOFB:
-    bft_error(__FILE__, __LINE__, 0, "This case is not implemented yet.");
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of discretization scheme.\n"
-                " Only CDO vertex-based and face-based scheme are handled.\n"
-                " Please modify your settings for equation %s."), eq->name);
   }
 
-  /* Get the type of source term */
-  cs_param_reaction_add(eqp->reaction_terms + r_id,
-                        name,
-                        h_type,
-                        h_algo,
-                        r_type);
+  /* Associate a property to this reaction term */
+  BFT_REALLOC(eqp->reaction_properties, eqp->n_reaction_terms, cs_property_t *);
+  eqp->reaction_properties[r_id] = property;
 
   /* Flag the equation with "reaction" */
   eqp->flag |= CS_EQUATION_REACTION;
-
-  if (r_name == NULL)
-    BFT_FREE(_r_name);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set advanced parameters related to a reaction term
- *         keyname among "lumping", "hodge_algo", "hodge_coef"...
- *         If r_name is NULL, all reaction terms of the given equation are set
- *         according to the couple (keyname, keyval)
- *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       r_name    name of the reaction term
- * \param[in]       keyname   name of the key
- * \param[in]       keyval    pointer to the value to set to the key
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_reaction_option(cs_equation_t    *eq,
-                                const char       *r_name,
-                                const char       *keyname,
-                                const char       *keyval)
-{
-  int  i;
-
-  if (eq == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
-
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_start(eq->main_ts_id);
-
-  cs_equation_param_t  *eqp = eq->param;
-
-  /* Look for the requested reaction term */
-  int  r_id = -1;
-  if (r_name != NULL) { // Look for the related source term structure
-
-    for (i = 0; i < eqp->n_reaction_terms; i++) {
-      if (strcmp(eqp->reaction_terms[i].name, r_name) == 0) {
-        r_id = i;
-        break;
-      }
-    }
-
-    if (r_id == -1) // Error
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Cannot find the reaction term %s.\n"
-                  " Please check your settings.\n"), r_name);
-
-  } // r_name != NULL
-
-  reakey_t  key = _get_reakey(keyname);
-
-  if (key == REAKEY_ERROR) {
-    bft_printf("\n\n Current key: %s\n", keyname);
-    bft_printf(" Possible keys: ");
-    for (i = 0; i < REAKEY_ERROR; i++) {
-      bft_printf("%s ", _print_reakey(i));
-      if (i > 0 && i % 3 == 0)
-        bft_printf("\n\t");
-    }
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key \"%s\" for setting the reaction term \"%s\".\n"
-                " Please read listing for more details and"
-                " modify your settings."), keyname, r_name);
-
-  } /* Error message */
-
-  switch(key) {
-
-  case REAKEY_HODGE_ALGO:
-    {
-      cs_param_hodge_algo_t  h_algo = CS_PARAM_N_HODGE_ALGOS;
-
-      if (strcmp(keyval,"cost") == 0)
-        h_algo = CS_PARAM_HODGE_ALGO_COST;
-      else if (strcmp(keyval, "voronoi") == 0)
-        h_algo = CS_PARAM_HODGE_ALGO_VORONOI;
-      else if (strcmp(keyval, "wbs") == 0)
-        h_algo = CS_PARAM_HODGE_ALGO_WBS;
-      else {
-        const char *_val = keyval;
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" Invalid key value \"%s\" for key \"%s\"\n"
-                    " Valid choices: \"cost\", \"wbs\" or \"voronoi\"."),
-                  _val, keyname);
-      }
-
-      if (r_id != -1)
-        eqp->reaction_terms[r_id].hodge.algo = h_algo;
-      else
-        for (i = 0; i < eqp->n_reaction_terms; i++)
-          eqp->reaction_terms[i].hodge.algo = h_algo;
-
-    }
-    break;
-
-  case REAKEY_HODGE_COEF:
-    {
-      double  coef;
-
-      if (strcmp(keyval, "dga") == 0)
-        coef = 1./3.;
-      else if (strcmp(keyval, "sushi") == 0)
-        coef = 1./sqrt(3.);
-      else if (strcmp(keyval, "gcr") == 0)
-        coef = 1.0;
-      else
-        coef = atof(keyval);
-
-      if (r_id != -1)
-        eqp->reaction_terms[r_id].hodge.coef = coef;
-      else
-        for (i = 0; i < eqp->n_reaction_terms; i++)
-          eqp->reaction_terms[i].hodge.coef = coef;
-
-    }
-    break;
-
-  case REAKEY_INV_PTY:
-    {
-      bool  inv_pty = false;
-
-      if (strcmp(keyval, "true") == 0)
-        inv_pty = true;
-
-      if (r_id != -1)
-        eqp->reaction_terms[r_id].hodge.inv_pty = inv_pty;
-      else
-        for (i = 0; i < eqp->n_reaction_terms; i++)
-          eqp->reaction_terms[i].hodge.inv_pty = inv_pty;
-
-    }
-    break;
-
-  case REAKEY_LUMPING:
-    {
-      bool  do_lumping = false;
-
-      if (strcmp(keyval, "true") == 0)
-        do_lumping = true;
-
-      if (r_id != -1)
-        eqp->reaction_terms[r_id].do_lumping = do_lumping;
-      else
-        for (i = 0; i < eqp->n_reaction_terms; i++)
-          eqp->reaction_terms[i].do_lumping = do_lumping;
-
-    }
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" The key \"%s\" is not implemented yet."), keyname);
-
-  } /* Switch on keys */
-
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_stop(eq->main_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3335,7 +3084,7 @@ cs_equation_get_reaction_property(const cs_equation_t    *eq,
   /* Look for the requested reaction term */
   int  r_id = -1;
   for (int i = 0; i < eqp->n_reaction_terms; i++) {
-    if (strcmp(eqp->reaction_terms[i].name, r_name) == 0) {
+    if (strcmp(eqp->reaction_info[i].name, r_name) == 0) {
       r_id = i;
       break;
     }

@@ -236,10 +236,7 @@ typedef enum {
 typedef struct {
 
   char                      *name;
-  cs_param_reaction_type_t   type;
-
-  cs_param_hodge_t           hodge;
-  bool                       do_lumping;
+  cs_param_reaction_type_t   type; 
 
 } cs_param_reaction_t;
 
@@ -466,50 +463,16 @@ cs_param_bc_def_set(cs_param_bc_def_t      *bcpd,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a new reaction term. The structure related to this reaction
- *         term has already been allocated among the list of reaction terms
- *         associated to an equation
- *
- * \param[in, out] rp         pointer to cs_param_reaction_t structure
- * \param[in]      r_name     name of the reaction term
- * \param[in]      h_type     type of discrete Hodge op. associated to this term
- * \param[in]      h_algo     algorithm used to build the discrete Hodge op.
- * \param[in]      r_type     type of reaction term
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_reaction_add(cs_param_reaction_t          *rp,
-                      const char                   *r_name,
-                      cs_param_hodge_type_t         h_type,
-                      cs_param_hodge_algo_t         h_algo,
-                      cs_param_reaction_type_t      r_type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name related to a reaction term
- *
- * \param[in] r_info     cs_param_reaction_t structure
- *
- * \return the name of the reaction term
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_reaction_get_name(const cs_param_reaction_t   r_info);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Get the name of the type of reaction term
  *
- * \param[in] r_info     set of parameters related to a reaction term
+ * \param[in] r_type     type of reaction term
  *
  * \return the name associated with this type of reaction term
  */
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_param_reaction_get_type_name(cs_param_reaction_t  r_info);
+cs_param_reaction_get_type_name(cs_param_reaction_type_t  r_info);
 
 /*----------------------------------------------------------------------------*/
 /*!

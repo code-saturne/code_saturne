@@ -964,10 +964,8 @@ cs_cdovb_diffusion_weak_bc(cs_lnum_t                    f_id,
   cs_locmat_t  *ntrgrd = diff->loc;
 
   ntrgrd->n_ent = lm->n_vc;
-  for (short int v = 0; v < lm->n_vc; v++) {
+  for (short int v = 0; v < lm->n_vc; v++)
     ntrgrd->ids[v] = lm->v_ids[v];
-    ls->rhs[v] = 0;
-  }
 
   for (int i = 0; i < lm->n_vc*lm->n_vc; i++)
     ntrgrd->val[i] = 0;
@@ -1014,7 +1012,7 @@ cs_cdovb_diffusion_weak_bc(cs_lnum_t                    f_id,
     /* ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) */
     cs_locmat_add_transpose(ntrgrd, diff->transp);
 
-    /* Modify RHS according to the add of transp */
+    /* Update RHS according to the add of transp */
     cs_locmat_matvec(diff->transp, ls->dir_bc, mv);
     for (short int v = 0; v < ntrgrd->n_ent; v++)
       ls->rhs[v] += mv[v];
