@@ -113,7 +113,8 @@ struct _cs_cdovb_diff_t {
  *============================================================================*/
 
 // Advanced developper parameters (weakly enforced the boundary conditions)
-static const cs_real_t  cs_weak_nitsche_pena_coef = 500;
+static const double  cs_weak_nitsche_pena_coef = 500;
+static const double  cs_wbs_tef_weight = 1/24.;
 
 /*============================================================================
  * Private constant variables
@@ -192,7 +193,7 @@ _grd_v_lagrange_pefc(const cs_real_3_t     ubase,
  *         weights is equal to 1.
  *         Set also the local and local numbering of the vertices of this face
  *
- * \param[in]      _f         id of the face in the cell-wise numbering
+ * \param[in]      f          id of the face in the cell-wise numbering
  * \param[in]      pfq        geometric quantities related to the current face
  * \param[in]      deq        geometric quantities related to its dual edge
  * \param[in]      lm         pointer to a cs_cdo_locmesh_t structure
@@ -202,7 +203,7 @@ _grd_v_lagrange_pefc(const cs_real_3_t     ubase,
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_wvf_pefcvol(short int                   _f,
+_compute_wvf_pefcvol(short int                   f,
                      const cs_quant_t            pfq,
                      const cs_nvec3_t            deq,
                      const cs_cdo_locmesh_t     *lm,
@@ -221,12 +222,12 @@ _compute_wvf_pefcvol(short int                   _f,
   for (int ii = 0; ii < lm->n_vc; ii++) wvf[ii] = 0;
 
   /* Compute a weight for each vertex of the current face */
-  for (int ii = 0, i = lm->f2e_idx[_f]; i < lm->f2e_idx[_f+1]; i++, ii++) {
+  for (int ii = 0, i = lm->f2e_idx[f]; i < lm->f2e_idx[f+1]; i++, ii++) {
 
-    const short int  _e = lm->f2e_ids[i];
-    const cs_quant_t  peq = lm->edge[_e];
-    const short int  _v1 = lm->e2v_ids[2*_e];
-    const short int  _v2 = lm->e2v_ids[2*_e+1];
+    const short int  e = lm->f2e_ids[i];
+    const cs_quant_t  peq = lm->edge[e];
+    const short int  v1 = lm->e2v_ids[2*e];
+    const short int  v2 = lm->e2v_ids[2*e+1];
 
     cs_math_3_length_unitv(peq.center, pfq.center, &len, un);
     cs_math_3_cross_product(un, peq.unitv, cp);
@@ -235,8 +236,8 @@ _compute_wvf_pefcvol(short int                   _f,
     double  contrib = area * f_coef;
 
     pefc_vol[ii] = area * h_coef;
-    wvf[_v1] += contrib;
-    wvf[_v2] += contrib;
+    wvf[v1] += contrib;
+    wvf[v2] += contrib;
 
   } /* End of loop on face edges */
 
@@ -272,16 +273,12 @@ _compute_wbs_stiffness(const cs_cdo_quantities_t   *quant,
 
   cs_locmat_t  *sloc = diff->loc; // Local stiffness matrix to build
 
+  const cs_real_t  *xyz = quant->vtx_coord;
   const cs_real_t  *xc = quant->cell_centers + 3*lm->c_id;
 
   /* Define the length and unit vector of the segment x_c --> x_v */
-  for (short int v = 0; v < lm->n_vc; v++) {
-
-    const cs_real_t  *xv = quant->vtx_coord + 3*lm->v_ids[v];
-
-    cs_math_3_length_unitv(xc, xv, len_vc + v, unit_vc[v]);
-
-  } // Loop on cell vertices
+  for (short int v = 0; v < lm->n_vc; v++)
+    cs_math_3_length_unitv(xc, xyz + 3*lm->v_ids[v], len_vc + v, unit_vc[v]);
 
   /* Loop on cell faces */
   for (short int f = 0; f < lm->n_fc; f++) {
@@ -364,6 +361,268 @@ _compute_wbs_stiffness(const cs_cdo_quantities_t   *quant,
   return sloc;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the normal trace operator for a given border face when a
+ *          COST algo. is used for reconstructing the degrees of freedom
+ *
+ * \param[in]      f       face id in the cellwise numbering
+ * \param[in]      mn      property tensor times the face normal
+ * \param[in]      xf      face center
+ * \param[in]      xyz     vertex coordinates
+ * \param[in]      lm      pointer to a cs_cdo_locmesh_t structure
+ * \param[in]      beta    value of the stabilizarion coef. related to reco.
+ * \param[in, out] diff    pointer to a builder structure
+ * \param[in, out] ntrgrd  local matrix related to the normal trace op.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_ntrgrd_cost_algo(short int                 f,
+                  const cs_real_3_t         mn,
+                  const cs_real_t          *xf,
+                  const cs_real_t          *xyz,
+                  const cs_cdo_locmesh_t   *lm,
+                  double                    beta,
+                  cs_cdovb_diff_t          *diff,
+                  cs_locmat_t              *ntrgrd)
+{
+  cs_real_3_t  lek;
+  cs_real_3_t  *leg = diff->tmp_vect;
+  cs_real_t  *v_coef = diff->tmp_real;
+
+  const cs_real_t  over_vol_c = 1/lm->vol_c;
+
+  for (short int v = 0; v < lm->n_vc; v++)
+    v_coef[v] = 0;
+
+  /* Loop on border face edges */
+  for (int jf = lm->f2e_idx[f]; jf < lm->f2e_idx[f+1]; jf++) {
+
+    short int  ei = lm->f2e_ids[jf];
+    short int  vi1 = lm->e2v_ids[2*ei];
+    short int  vi2 = lm->e2v_ids[2*ei+1];
+    cs_quant_t  peq_i = lm->edge[ei];
+    cs_nvec3_t  dfq_i = lm->dface[ei];
+
+    const double  dp = _dp3(peq_i.unitv, dfq_i.unitv);
+    const double  tmp_val = peq_i.meas * dfq_i.meas * dp; // 3*pec_vol
+    const double  beta_pec_vol = 3. * beta/tmp_val;
+    const double  coef_ei =  3. * beta/dp;
+
+    /* Area of the triangle t_{e,f} defined by x_vi1, x_vi2 and x_f */
+    const double  surf = cs_math_surftri(xyz + 3*lm->v_ids[vi1],
+                                         xyz + 3*lm->v_ids[vi2],
+                                         xf);
+
+    /* Penalization term */
+    v_coef[vi1] += 0.5*surf;
+    v_coef[vi2] += 0.5*surf;
+
+    /* Reset L_Ec(GRAD(p_j)) for each vertex of the cell */
+    for (short int v = 0; v < lm->n_vc; v++)
+      leg[v][0] = leg[v][1] = leg[v][2] = 0;
+
+    /* Term related to the flux reconstruction:
+       Compute L_Ec(GRAD(p_j)) on t_{e,f} for each vertex j of the cell */
+    for (short int ek = 0; ek < lm->n_ec; ek++) {
+
+      const short int  shft = 2*ek;
+      const short int  vj1 = lm->e2v_ids[shft];
+      const short int  vj2 = lm->e2v_ids[shft+1];
+      const short int  sgn_vj1 = lm->e2v_sgn[shft];
+      const cs_nvec3_t  dfq_k = lm->dface[ek];
+
+      /* Compute l_(ek,c)|p(_ei,f,c) */
+      const double  eik_part = coef_ei * _dp3(dfq_k.unitv, peq_i.unitv);
+      const double  coef_mult = dfq_k.meas * over_vol_c;
+
+      for (int k = 0; k < 3; k++)
+        lek[k] = coef_mult * (dfq_k.unitv[k] - eik_part * dfq_i.unitv[k]);
+
+      if (ek == ei)
+        for (int k = 0; k < 3; k++)
+          lek[k] += dfq_k.meas * dfq_k.unitv[k] * beta_pec_vol;
+
+      for (int k = 0; k < 3; k++) {
+        leg[vj1][k] += sgn_vj1 * lek[k];
+        leg[vj2][k] -= sgn_vj1 * lek[k];
+      }
+
+    } // Loop on cell edges
+
+    for (short int v = 0; v < lm->n_vc; v++) {
+
+      const double  contrib = _dp3(mn, leg[v]) * surf;
+      ntrgrd->val[vi1*lm->n_vc + v] += contrib;
+      ntrgrd->val[vi2*lm->n_vc + v] += contrib;
+
+    }
+
+  } // border face edges
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute useful quantities for building operators when WBS algo.
+ *          is requested
+ *          wvf, mng, tef/12
+ *
+ * \param[in]      f       face id in the cellwise numbering
+ * \param[in]      lm      pointer to a cs_cdo_locmesh_t structure
+ * \param[in]      xyz     vertex coordinates
+ * \param[in]      xc      cell center
+ * \param[in]      mn      property tensor times the face normal
+ * \param[in]      grd_c   gradient for the Lagrange function related to x_c
+ * \param[in, out] diff    pointer to a builder structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_get_quant_wbs_algo(short int                 f,
+                    const cs_cdo_locmesh_t   *lm,
+                    const cs_real_t          *xyz,
+                    const cs_real_t          *xc,
+                    const cs_real_3_t         mn,
+                    const cs_real_3_t         grd_c,
+                    cs_cdovb_diff_t          *diff)
+{
+  double  len;
+  cs_real_3_t  un, cp, grd_f, grd_v1, grd_v2;
+
+  /* Useful quantities are stored in diff->tmp_real and diff->tmp-vect */
+  cs_real_3_t  *mng = diff->tmp_vect;
+  cs_real_3_t  *unit_vc = diff->tmp_vect + lm->n_vc;
+  cs_real_t  *wvf = diff->tmp_real;
+  cs_real_t  *len_vc = diff->tmp_real + lm->n_vc;
+  cs_real_t  *wtef = diff->tmp_real + 2*lm->n_vc;
+
+  const cs_nvec3_t  deq = lm->dedge[f];
+  const cs_quant_t  pfq = lm->face[f];
+  const double  f_coef = 0.25/pfq.meas;
+
+  for (short int v = 0; v < lm->n_vc; v++) {
+    cs_math_3_length_unitv(xc, xyz + 3*lm->v_ids[v], len_vc + v, unit_vc[v]);
+    wvf[v] = 0;
+  }
+
+  /* Compute a weight for each vertex of the current face */
+  for (int ii = 0, i = lm->f2e_idx[f]; i < lm->f2e_idx[f+1]; i++, ii++) {
+
+    const short int  e = lm->f2e_ids[i];
+    const cs_quant_t  peq = lm->edge[e];
+    const short int  v1 = lm->e2v_ids[2*e];
+    const short int  v2 = lm->e2v_ids[2*e+1];
+
+    cs_math_3_length_unitv(peq.center, pfq.center, &len, un);
+    cs_math_3_cross_product(un, peq.unitv, cp);
+
+    const double  tef2 = len * peq.meas * cs_math_3_norm(cp); // 2*|t_{e,f}|
+    const double  wvf_contrib = tef2 * f_coef;
+    const double  tef_coef = tef2 * cs_wbs_tef_weight;  // |t_{e,f}| / 12
+
+    wvf[v1] += wvf_contrib;
+    wvf[v2] += wvf_contrib;
+    wtef[ii] = tef_coef;
+
+    /* Gradient of the lagrange function related to v1 */
+    _grd_v_lagrange_pefc(unit_vc[v2], unit_vc[v1], len_vc[v1], deq, grd_v1);
+
+    /* Gradient of the lagrange function related to a v2 */
+    _grd_v_lagrange_pefc(unit_vc[v1], unit_vc[v2], len_vc[v2], deq, grd_v2);
+
+    /* Gradient of the lagrange function related to a face.
+       This formula is a consequence of the Partition of the Unity */
+    for (int k = 0; k < 3; k++)
+      grd_f[k] = -(grd_c[k] + grd_v1[k] + grd_v2[k]);
+
+    mng[ii][0] = _dp3(mn, grd_v1) * tef_coef;
+    mng[ii][1] = _dp3(mn, grd_v2) * tef_coef;
+    mng[ii][2] = _dp3(mn, grd_f) * tef_coef;
+
+  } /* End of loop on face edges */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the normal trace operator for a given border face when a
+ *          COST algo. is used for reconstructing the degrees of freedom
+ *
+ * \param[in]      f       face id in the cellwise numbering
+ * \param[in]      mngc      property tensor times the face normal
+ * \param[in]      xf      face center
+ * \param[in]      xyz     vertex coordinates
+ * \param[in]      lm      pointer to a cs_cdo_locmesh_t structure
+ * \param[in]      beta    value of the stabilizarion coef. related to reco.
+ * \param[in, out] diff    pointer to a builder structure
+ * \param[in, out] ntrgrd  local matrix related to the normal trace op.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_ntrgrd_wbs_algo(short int                 f,
+                 double                    f_meas,
+                 double                    mngc,
+                 const cs_cdo_locmesh_t   *lm,
+                 cs_cdovb_diff_t          *diff,
+                 cs_locmat_t              *ntrgrd)
+{
+  /* Useful quantities are stored in diff->tmp_real and diff->tmp-vect */
+  cs_real_3_t  *mng = diff->tmp_vect;
+  cs_real_t  *wvf = diff->tmp_real;
+
+  double  sum_ef = 0.;
+  for (int jf = lm->f2e_idx[f], ii = 0; jf < lm->f2e_idx[f+1]; jf++, ii++)
+    sum_ef += mng[ii][2];
+
+  for (short int vi = 0; vi < lm->n_vc; vi++) {
+    if (wvf[vi] > 0) {
+
+      double  *ntrgrd_i = ntrgrd->val + vi*lm->n_vc;
+
+      for (short int vj = 0; vj < lm->n_vc; vj++) {
+
+        /* Default contribution */
+        double contrib = 0.25 * f_meas * wvf[vi] * lm->wvc[vj] * mngc; // 1ab
+
+        if (wvf[vj] > 0) {
+
+          contrib += wvf[vj] * wvf[vi] * sum_ef; // 2b
+
+          for (int jf = lm->f2e_idx[f], ii = 0; jf < lm->f2e_idx[f+1];
+               jf++, ii++) {
+
+            const short int  e = lm->f2e_ids[jf];
+            const short int  v1 = lm->e2v_ids[2*e];
+            const short int  v2 = lm->e2v_ids[2*e+1];
+
+            if (vi == v1 || vi == v2) {
+              contrib += wvf[vj] * mng[ii][2]; // 2a
+              if (vj == v1)
+                contrib += mng[ii][0]; // 3a
+              if (vj == v2)
+                contrib += mng[ii][1]; // 3a
+            }
+            if (vj == v1)
+              contrib += wvf[vi] * mng[ii][0]; // 3b
+            if (vj == v2)
+              contrib += wvf[vi] * mng[ii][1]; // 3b
+
+          } // Loop on face edges
+
+        } // vj belongs to f
+
+        ntrgrd_i[vj] = contrib;
+
+      } // Loop on cell vertices (vj)
+
+    } // vi belongs to f
+  } // Loop on cell vertices (vi)
+
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -433,7 +692,7 @@ cs_cdovb_diffusion_builder_init(const cs_cdo_connect_t       *connect,
   /* Specific members for weakly enforced BCs */
   diff->eig_ratio = -1;
   diff->eig_max = -1;
-  if (wsym)
+  if (wsym || (wnit && hwbs))
     diff->transp = cs_locmat_create(connect->n_max_vbyc);
 
   /* Allocate the local stiffness matrix */
@@ -471,7 +730,7 @@ cs_cdovb_diffusion_builder_free(cs_cdovb_diff_t   *diff)
   if (!hwbs)
     diff->hb = cs_hodge_builder_free(diff->hb);
 
-  if (wsym)
+  if (wsym || (wnit && hwbs))
     diff->transp = cs_locmat_free(diff->transp);
 
   /* Local stiffness matrix */
@@ -583,26 +842,22 @@ cs_cdovb_diffusion_get_grd_lvconf(const cs_cdo_quantities_t   *quant,
   assert(h_algo == CS_PARAM_HODGE_ALGO_WBS);
 
   cs_real_3_t  grd_c, grd_v1, grd_v2;
-
-  double  p_c = 0;
   cs_real_3_t  *unit_vc = diff->tmp_vect;
   cs_real_t  *len_vc  = diff->tmp_real;
   cs_real_t  *wvf     = diff->tmp_real + lm->n_max_vbyc;
   cs_real_t  *pefc_vol = diff->tmp_real + 2*lm->n_max_vbyc;
 
+  const cs_real_t  *xyz = quant->vtx_coord;
   const cs_real_t  *xc = quant->cell_centers + 3*lm->c_id;
 
   /* Define the length and unit vector of the segment x_c --> x_v
      Compute the reconstruction at the cell center
    */
+  double  p_c = 0;
   for (short int v = 0; v < lm->n_vc; v++) {
-
-    const cs_real_t  *xv = quant->vtx_coord + 3*lm->v_ids[v];
-
-    cs_math_3_length_unitv(xc, xv, len_vc + v, unit_vc[v]);
+    cs_math_3_length_unitv(xc, xyz + 3*lm->v_ids[v], len_vc + v, unit_vc[v]);
     p_c += lm->wvc[v]*pdi[v];
-
-  } // Loop on cell vertices
+  }
 
   /* Loop on cell faces */
   for (short int f = 0; f < lm->n_fc; f++) {
@@ -668,14 +923,16 @@ cs_cdovb_diffusion_get_grd_lvconf(const cs_cdo_quantities_t   *quant,
 void
 cs_cdovb_diffusion_weak_bc(cs_lnum_t                    f_id,
                            const cs_cdo_quantities_t   *quant,
-                           cs_cdo_locmesh_t            *lm,
+                           const cs_cdo_locmesh_t      *lm,
                            const cs_real_t              matpty[3][3],
                            cs_cdovb_diff_t             *diff,
                            cs_cdo_locsys_t             *ls)
 {
-  cs_real_3_t  mn;
+  /* Sanity check */
+  assert(diff != NULL);
+  assert(diff->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM ||
+         diff->enforce == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE);
 
-  const double  *xyz = quant->vtx_coord;
   const cs_param_hodge_t  h_info = diff->h_info;
   const cs_param_hodge_algo_t  h_algo = h_info.algo;
 
@@ -686,36 +943,37 @@ cs_cdovb_diffusion_weak_bc(cs_lnum_t                    f_id,
                      &(diff->eig_max));
 
   /* Set the local face id */
-  short int _f = -1; // not set
-  for (int ii = 0; ii < lm->n_fc; ii++) {
+  short int f = -1; // not set
+  for (short int ii = 0; ii < lm->n_fc; ii++) {
     if (lm->f_ids[ii] == f_id) {
-      _f = ii;
+      f = ii;
       break;
     }
   }
-  assert(_f != -1);
+  assert(f != -1);
 
-  const cs_quant_t  pfq = lm->face[_f];
-  const double  f_coef = pow(pfq.meas, -0.5) * diff->eig_ratio * diff->eig_max;
+  const cs_real_t  *xyz = quant->vtx_coord;
+  const cs_real_t  *xc = quant->cell_centers + 3*lm->c_id;
+  const cs_quant_t  pfq = lm->face[f];
+  const double  f_coef = cs_weak_nitsche_pena_coef * pow(pfq.meas, -0.5) *
+    diff->eig_ratio * diff->eig_max;
 
   assert(f_coef > 0); // Sanity check
 
-  cs_real_3_t  *leg = diff->tmp_vect;
-  cs_real_t  *vcoef = diff->tmp_real;
+  /* Initialize the local quantities */
   cs_locmat_t  *ntrgrd = diff->loc;
 
   ntrgrd->n_ent = lm->n_vc;
-  for (int _v = 0; _v < lm->n_vc; _v++) {
-    ntrgrd->ids[_v] = lm->v_ids[_v];
-    vcoef[_v] = 0;
-    ls->rhs[_v] = 0;
+  for (short int v = 0; v < lm->n_vc; v++) {
+    ntrgrd->ids[v] = lm->v_ids[v];
+    ls->rhs[v] = 0;
   }
 
-  /* Initialize the local matrix */
   for (int i = 0; i < lm->n_vc*lm->n_vc; i++)
     ntrgrd->val[i] = 0;
 
   /* Compute the product: matpty*face unit normal */
+  cs_real_3_t  mn;
   cs_math_33_3_product((const cs_real_t (*)[3])matpty, pfq.unitv, mn);
 
   /* Build the local "normal trace gradient" according to the choice of
@@ -724,83 +982,23 @@ cs_cdovb_diffusion_weak_bc(cs_lnum_t                    f_id,
 
   case CS_PARAM_HODGE_ALGO_COST:
   case CS_PARAM_HODGE_ALGO_VORONOI:
-    {
-      cs_real_3_t  lek;
-
-      const double  beta = h_info.coef;
-      const cs_real_t  over_vol_c = 1/lm->vol_c;
-
-      /* Loop on border face edges */
-      for (int jf = lm->f2e_idx[_f]; jf < lm->f2e_idx[_f+1]; jf++) {
-
-        short int  _ei = lm->f2e_ids[jf];
-        short int  _vi1 = lm->e2v_ids[2*_ei];
-        short int  _vi2 = lm->e2v_ids[2*_ei+1];
-        cs_quant_t  peq_i = lm->edge[_ei];
-        cs_nvec3_t  dfq_i = lm->dface[_ei];
-
-        const double  dp = _dp3(peq_i.unitv, dfq_i.unitv);
-        const double  tmp_val = peq_i.meas * dfq_i.meas * dp; // 3*pec_vol
-        const double  beta_pec_vol = 3.*beta/tmp_val;
-        const double  coef_ei =  3 * beta/dp;
-        const double  surf = cs_math_surftri(xyz + 3*lm->v_ids[_vi1],
-                                             peq_i.center,
-                                             pfq.center);
-
-        /* Penalization term */
-        vcoef[_vi1] += surf*f_coef;
-        vcoef[_vi2] += surf*f_coef;
-
-        /* Reset L_Ec(GRAD(p_j)) for each vertex of the cell */
-        for (int _v = 0; _v < lm->n_vc; _v++)
-          leg[_v][0] = leg[_v][1] = leg[_v][2] = 0;
-
-        /* Term related to the flux reconstruction:
-           Compute L_Ec(GRAD(p_j)) on t_{_e,f} for each vertex j of the cell */
-        for (short int _ek = 0; _ek < lm->n_ec; _ek++) {
-
-          short int  shft = 2*_ek;
-          short int  _vj1 = lm->e2v_ids[shft];
-          short int  _vj2 = lm->e2v_ids[shft+1];
-          short int  sgn_vj1 = lm->e2v_sgn[shft];
-          short int  sgn_vj2 = lm->e2v_sgn[shft+1];
-          cs_nvec3_t  dfq_k = lm->dface[_ek];
-
-          /* Compute l_(ek,c)|p(_ei,f,c) */
-          const double  eik_part = coef_ei * _dp3(dfq_k.unitv, peq_i.unitv);
-          const double  coef_mult = dfq_k.meas * over_vol_c;
-
-          for (int k = 0; k < 3; k++)
-            lek[k] = coef_mult * (dfq_k.unitv[k] - eik_part * dfq_i.unitv[k]);
-
-          if (_ek == _ei)
-            for (int k = 0; k < 3; k++)
-              lek[k] += dfq_k.meas * dfq_k.unitv[k] * beta_pec_vol;
-
-          for (int k = 0; k < 3; k++) {
-            leg[_vj1][k] += sgn_vj1 * lek[k];
-            leg[_vj2][k] += sgn_vj2 * lek[k];
-          }
-
-        } // Loop on cell edges
-
-        for (short int v = 0; v < lm->n_vc; v++) {
-
-          const double  contrib = _dp3(mn, leg[v]) * surf;
-          ntrgrd->val[_vi1*lm->n_vc + v] += contrib;
-          ntrgrd->val[_vi2*lm->n_vc + v] += contrib;
-
-        }
-
-      } // border face edges
-
-    }
+    _ntrgrd_cost_algo(f, mn, pfq.center, xyz, lm, h_info.coef, diff, ntrgrd);
     break;
 
   case CS_PARAM_HODGE_ALGO_WBS:
-    bft_error(__FILE__, __LINE__, 0,
-              " Nitsche enforcement of boundary conditions is not yet"
-              " compatible with WBS algorithm.");
+    {
+      cs_real_3_t  grd_c;
+
+      /* Compute useful quantities for the WBS algo. (stored in diff->tmp_*)
+         1) Gradient of the lagrange function related to a cell in p_{f,c} */
+      _grd_c_lagrange_pfc(lm->f_sgn[f], pfq, lm->dedge[f], grd_c);
+
+      cs_real_t  mng_c = _dp3(mn, grd_c); // (pty_tensor * nu_f) . grd_c
+
+      _get_quant_wbs_algo(f, lm, xyz, xc, mn, grd_c, diff);
+
+      _ntrgrd_wbs_algo(f, pfq.meas, mng_c, lm, diff, ntrgrd);
+    }
     break;
 
   default:
@@ -809,41 +1007,127 @@ cs_cdovb_diffusion_weak_bc(cs_lnum_t                    f_id,
 
   } // End of switch
 
-  switch (diff->enforce) {
-  case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    {
-      cs_real_t  *_mvec = diff->tmp_real + lm->n_vc;
+  if (diff->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
 
-      /* ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) */
-      cs_locmat_add_transpose(ntrgrd, diff->transp);
+    cs_real_t  *mv = diff->tmp_real + lm->n_vc;
 
-      /* Modify RHS according to the add of transp */
-      cs_locmat_matvec(diff->transp, ls->dir_bc, _mvec);
-      for (int j = 0; j < ntrgrd->n_ent; j++)
-        ls->rhs[j] += _mvec[j];
+    /* ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) */
+    cs_locmat_add_transpose(ntrgrd, diff->transp);
 
-      // No break to continue with Nitsche treatment
-    }
+    /* Modify RHS according to the add of transp */
+    cs_locmat_matvec(diff->transp, ls->dir_bc, mv);
+    for (short int v = 0; v < ntrgrd->n_ent; v++)
+      ls->rhs[v] += mv[v];
 
-  case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+  }
 
-    for (int j = 0; j < ntrgrd->n_ent; j++) {
-      if (vcoef[j] > 0) {
+  switch (h_algo) {
 
-        const double pena_coef = cs_weak_nitsche_pena_coef * vcoef[j];
+  case CS_PARAM_HODGE_ALGO_COST:
+  case CS_PARAM_HODGE_ALGO_VORONOI:
+    { // v_coef is computed inside _ntrgrd_cost_algo
+      const cs_real_t  *v_coef = diff->tmp_real;
 
-        ntrgrd->val[j*ntrgrd->n_ent + j] += pena_coef; // pena. diag. entry
-        ls->rhs[j] += pena_coef * ls->dir_bc[j];
+      for (short int v = 0; v < ntrgrd->n_ent; v++) {
+        if (v_coef[v] > 0) {
+
+          const double p_coef = f_coef * v_coef[v];
+
+          // Set the penalty diagonal coefficient
+          ntrgrd->val[v + v*ntrgrd->n_ent] += p_coef;
+          ls->rhs[v] += p_coef * ls->dir_bc[v];
+
+        }
       }
     }
     break;
 
+  case CS_PARAM_HODGE_ALGO_WBS:
+    {
+      double  *wvf = diff->tmp_real;
+      double  *wtef = diff->tmp_real + 2*lm->n_vc;
+      cs_locmat_t  *hloc = diff->transp;
+
+      /* Build the border Hodge operator */
+      for (int i = 0; i < lm->n_vc*lm->n_vc; i++)
+        hloc->val[i] = 0;
+
+      for (short int vi = 0; vi < lm->n_vc; vi++) {
+        if (wvf[vi] > 0) {
+
+          /* Diagonal contribution */
+          double  *hi = hloc->val + vi*lm->n_vc;
+
+          hi[vi] = pfq.meas * wvf[vi] * (wvf[vi]*0.5 + cs_math_onethird);
+
+          /* Extra-diagonal contribution */
+          for (short int vj = vi + 1; vj < lm->n_vc; vj++) {
+            if (wvf[vj] > 0) {
+
+              hi[vj] = 0.5 * wvf[vi] * wvf[vj] * pfq.meas;
+
+              for (int jf = lm->f2e_idx[f], ii = 0; jf < lm->f2e_idx[f+1];
+                   jf++, ii++) {
+
+                const short int  e = lm->f2e_ids[jf];
+                const short int  v1 = lm->e2v_ids[2*e];
+                const short int  v2 = lm->e2v_ids[2*e+1];
+
+                if (v1 == vi && v2 == vj)
+                  hi[vj] += wtef[ii];
+                else if (v1 == vj && v2 == vi)
+                  hi[vj] += wtef[ii];
+
+              } /* Loop on face edges */
+
+              /* Matrix is symmetric (used only the upper part) */
+              // hloc->val[vj*lm->n_vc + vi] = hi[vj];
+
+            } // vj belongs to f
+          } // Loop on cell vertices vj
+
+        } // vi belongs to f
+      } // Loop on cell vertices vi
+
+      /* Add the border Hodge op. to the normal trace op.
+         Update RHS whith H*p^{dir} */
+      for (short int vi = 0; vi < lm->n_vc; vi++) {
+        if (wvf[vi] > 0) {
+
+          double  *ntrg_i = ntrgrd->val + vi*lm->n_vc;
+          const double  *hi = hloc->val + vi*lm->n_vc;
+          const double pii_coef = f_coef * hi[vi];
+
+          // Set the penalty diagonal coefficient
+          ntrg_i[vi] += pii_coef;
+          ls->rhs[vi] += pii_coef * ls->dir_bc[vi];
+
+          for (short int vj = vi+1; vj < lm->n_vc; vj++) {
+            if (wvf[vj] > 0) {
+
+              const double  pij_coef = f_coef * hi[vj];
+
+              ntrg_i[vj] += pij_coef;
+              ntrgrd->val[vi + vj*lm->n_vc] += pij_coef;
+              ls->rhs[vi] += pij_coef * ls->dir_bc[vj];
+              ls->rhs[vj] += pij_coef * ls->dir_bc[vi];
+
+            } // vj belongs to f
+          } // Loop on cell vertices vj
+
+        } // vi belongs to f
+      } // Loop on cell vertices vi
+
+    }
+    break;
+
   default:
-    bft_error(__FILE__, __LINE__, 0, " Invalid type of BC enforcement");
+    bft_error(__FILE__, __LINE__, 0,
+              "Invalid type of algorithm to weakly enforce Dirichlet BCs.");
 
   }
 
-#if CS_CDOVB_DIFFUSION_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_DIFFUSION_DBG > 1
   bft_printf(">> Local weak bc matrix (f_id: %d)", f_id);
   cs_locmat_dump(lm->c_id, ntrgrd);
 #endif

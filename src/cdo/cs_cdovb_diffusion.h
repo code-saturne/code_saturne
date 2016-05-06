@@ -157,7 +157,7 @@ cs_cdovb_diffusion_get_grd_lvconf(const cs_cdo_quantities_t   *quant,
 void
 cs_cdovb_diffusion_weak_bc(cs_lnum_t                    f_id,
                            const cs_cdo_quantities_t   *quant,
-                           cs_cdo_locmesh_t            *lm,
+                           const cs_cdo_locmesh_t      *lm,
                            const cs_real_t              matpty[3][3],
                            cs_cdovb_diff_t             *diff,
                            cs_cdo_locsys_t             *ls);

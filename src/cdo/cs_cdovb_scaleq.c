@@ -1687,25 +1687,32 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
 /*!
  * \brief  Cellwise computation of the diffusive flux across all dual faces.
  *
- * \param[in]       pdi        discrete values for the potential
- * \param[in, out]  builder    pointer to builder structure
+ * \param[in]       values      discrete values for the potential
+ * \param[in, out]  builder     pointer to builder structure
  * \param[in, out]  diff_flux   value of the diffusive flux
   */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_compute_cw_diff_flux(const cs_real_t   *pdi,
+cs_cdovb_scaleq_compute_cw_diff_flux(const cs_real_t   *values,
                                      void              *builder,
                                      cs_real_t         *diff_flux)
 {
   cs_cdovb_scaleq_t  *b = (cs_cdovb_scaleq_t  *)builder;
   cs_cdo_locmesh_t  *lm = cs_cell_mesh;
-  double  *vec = cs_cdovb_scal_work; // used as a temporary buffer
 
   const cs_equation_param_t  *eqp = b->eqp;
   const cs_cdo_quantities_t  *quant = cs_cdovb_quant;
   const cs_cdo_connect_t  *connect = cs_cdovb_connect;
   const cs_connect_index_t  *c2e = connect->c2e;
+
+  /* Sanity check */
+  assert((size_t)connect->n_max_ebyc + (size_t)connect->n_max_vbyc
+         <= cs_cdovb_scal_work_size);
+  assert(lm->n_max_ebyc == connect->n_max_ebyc);
+
+  double  *vec = cs_cdovb_scal_work; // used as a temporary buffer
+  double  *pdi = cs_cdovb_scal_work + connect->n_max_ebyc;
 
   /* Default flag value for vertex-based scalar equations */
   cs_flag_t  lm_flag = cs_cdovb_locflag;
@@ -1730,6 +1737,11 @@ cs_cdovb_scaleq_compute_cw_diff_flux(const cs_real_t   *pdi,
       /* Set the local mesh structure for the current cell */
       cs_cdo_locmesh_build(c_id, lm_flag, connect, quant, lm);
 
+      /* Define a local buffer keeping the value of the discrete potential
+         for the current cell */
+      for (short int v = 0; v < lm->n_vc; v++)
+        pdi[v] = values[lm->v_ids[v]];
+
       if (diff_pty_uniform == false) {
         cs_property_get_cell_tensor(c_id,
                                     eqp->diffusion_property,
@@ -1747,7 +1759,7 @@ cs_cdovb_scaleq_compute_cw_diff_flux(const cs_real_t   *pdi,
 
         /* Used this buffer to store (temporary) the values of the local
            discrete gradient. Then, flux = - Hloc * grd_c(pdi_c) */
-        vec[e] = sgn_v1* (pdi[lm->e2v_ids[2*e+1]] - pdi[lm->e2v_ids[2*e]]);
+        vec[e] = sgn_v1 * (pdi[lm->e2v_ids[2*e+1]] - pdi[lm->e2v_ids[2*e]]);
 
       } // Loop on cell edges
 
@@ -1778,7 +1790,7 @@ cs_cdovb_scaleq_compute_cw_diff_flux(const cs_real_t   *pdi,
       for (short int e = 0; e < lm->n_ec; e++)
         _flx[e] = 0.;
       for (short int v = 0; v < lm->n_vc; v++)
-        vec[v] = pdi[lm->v_ids[v]];
+        pdi[v] = values[lm->v_ids[v]];
 
       if (diff_pty_uniform == false)
         cs_property_get_cell_tensor(c_id,
@@ -1788,7 +1800,7 @@ cs_cdovb_scaleq_compute_cw_diff_flux(const cs_real_t   *pdi,
 
       /* Compute grd(Lv^conf) in each p_{ef,c}. This quantity is stored
          following the f2e_idx connectivity */
-      cs_cdovb_diffusion_get_grd_lvconf(quant, lm, vec, b->diff, grd_lv_pef);
+      cs_cdovb_diffusion_get_grd_lvconf(quant, lm, pdi, b->diff, grd_lv_pef);
 
       /* Loop on cell faces */
       for (short int f = 0; f < lm->n_fc; f++) {
