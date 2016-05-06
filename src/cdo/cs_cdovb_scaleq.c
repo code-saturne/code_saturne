@@ -153,6 +153,7 @@ struct _cs_cdovb_scaleq_t {
  *============================================================================*/
 
 static size_t  cs_cdovb_scal_work_size = 0;
+static double  cs_cdovb_threshold = 1e-12; // Set during initialization
 static cs_real_t  *cs_cdovb_scal_work = NULL;
 static cs_cdo_locmesh_t  *cs_cell_mesh = NULL;
 static cs_cdo_locsys_t  *cs_cell_sys = NULL;
@@ -720,6 +721,8 @@ cs_cdovb_scaleq_initialize(void)
   const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
   const cs_lnum_t  n_cells = cs_shared_quant->n_cells;
 
+  cs_cdovb_threshold = 0.01*cs_math_get_machine_epsilon();
+
   /* Work buffers */
   cs_cdovb_scal_work_size = CS_MAX(3*n_vertices, n_cells);
   BFT_MALLOC(cs_cdovb_scal_work, cs_cdovb_scal_work_size, cs_real_t);
@@ -853,6 +856,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 
   /* Dimensions: By default, we set number of DoFs as if there is a weak
      enforcement of the boundary conditions */
+  b->n_vertices = n_vertices;
   b->n_dof_vertices = n_vertices;
 
   /* Set members and structures related to the management of the BCs */
@@ -1485,7 +1489,15 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
   _enforce_bc(b, &full_rhs, &sys_mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-  cs_sla_system_dump("system.log", NULL, sys_mat, full_rhs);
+  cs_sla_system_dump("system-BeforeClean.log", NULL, sys_mat, full_rhs);
+#endif
+
+  /* Clean matrix (set entries to zero if there are too small).
+     Improve the conditionning */
+  cs_sla_matrix_clean(eqp->verbosity, cs_cdovb_threshold, sys_mat);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
+  cs_sla_system_dump("system-AfterClean.log", NULL, sys_mat, full_rhs);
 #endif
 
   if (b->todo[CDO_REACTION])

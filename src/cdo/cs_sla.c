@@ -1718,20 +1718,20 @@ cs_sla_matrix_free(cs_sla_matrix_t  *m)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Remove entries with zero values
+ * \brief   Reset to 0 all entries below a given threshold
  *          Only available for CSR and MSR matrices with stride = 1
  *
- * \param[in, out] m       matrix to clean
+ * \param[in, out] m             matrix to clean
+ * \param[in]      threshold     threshold below one sets the value to zero
+ * \param[in]      verbosity     indicate if one prints or not a message
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sla_matrix_rmzeros(cs_sla_matrix_t   *m)
+cs_sla_matrix_clean_zeros(cs_sla_matrix_t   *m,
+                          double             threshold,
+                          int                verbosity)
 {
-  cs_lnum_t  i, j;
-
-  const double  threshold = 100*DBL_MIN;
-
   if (m == NULL)
     return;
   if (m->type != CS_SLA_MAT_MSR && m->type != CS_SLA_MAT_CSR)
@@ -1740,123 +1740,70 @@ cs_sla_matrix_rmzeros(cs_sla_matrix_t   *m)
   if (m->stride > 1)
     bft_error(__FILE__, __LINE__, 0, _sla_err_stride);
 
-  cs_lnum_t  init_nnz = m->idx[m->n_rows];
+  int  counter = 0;
 
-  /* Find and delete null entries */
-  cs_lnum_t  shift = m->idx[0];
-  cs_lnum_t  start = m->idx[0];
-
-  for (i = 0; i < m->n_rows; i++) {
-
-    /* Delete too small entries */
-    for (j = start; j < m->idx[i+1]; j++) {
-
-      if (fabs(m->val[j]) > threshold) { /* Keep this value */
-        if (j != shift) { /* Need to copy */
-          m->val[shift] = m->val[j];
-          m->col_id[shift] = m->col_id[j];
-        }
-        shift++;
-      }
-
+  for (cs_lnum_t i = 0; i < m->idx[m->n_rows]; i++) {
+    if (fabs(m->val[i]) < threshold) { /* Set this value to 0 */
+      m->val[i] = 0.;
+      counter++;
     } /* End of loop on row entries */
-
-    start = m->idx[i+1];
-    m->idx[i+1] = shift;
-
   } /* End of loop on rows */
 
-  if (init_nnz != shift) {
-    BFT_REALLOC(m->val, shift, double);
-    BFT_REALLOC(m->col_id, shift, cs_lnum_t);
-  }
-
-#if CS_SLA_DBG > 0 /* Output message */
-  bft_printf(" -dbg- cs_sla_matrix_clean >>"
-             " type: %s; n_rows: %6d; threshold: %6.3e; nnz: %d -> %d\n",
-             _sla_matrix_type[m->type], m->n_rows, threshold, init_nnz, shift);
-#endif
-
-  /* Update information about the structure of the matrix */
-  cs_sla_matrix_set_info(m);
+  if (counter > 0 && verbosity > 2) // temporary
+    bft_printf(" -msg- cs_sla_matrix_clean_zeros >>"
+               " type: %s; n_rows: %6d; threshold: %6.3e; cleaning done: %d\n",
+               _sla_matrix_type[m->type], m->n_rows, threshold, counter);
 
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Remove entries in a cs_sla_matrix_t structure below a given
- *          threshold. |a(i,j)| < eps * max|a(i,j)|
- *                                       i
+ * \brief   Set to zero entries in a cs_sla_matrix_t structure if the ratio
+ *          |a(i,j)| < eps * max|a(i,j)| is below a given threshold.
  *          Be careful when using this function since one can loose the symmetry
  *          Only available for matrices with stride = 1
  *
- * \param[in, out] m       matrix to clean
- * \param[in]      eps     value of the threshold
+ * \param[in, out] m           matrix to clean
+ * \param[in]      verbosity   indicate if one prints or not a message
+ * \param[in]      threshold   value of the threshold
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sla_matrix_clean(cs_sla_matrix_t   *m,
-                    double             eps)
+cs_sla_matrix_clean(int                verbosity,
+                    double             threshold,
+                    cs_sla_matrix_t   *m)
 {
-  int  i, j, shift, start, init_nnz;
-  double  max_val, limit;
-
-  /* Sanity checks */
-  assert(m != NULL);
+  if (m == NULL)
+    return;
+  if (m->type != CS_SLA_MAT_MSR && m->type != CS_SLA_MAT_CSR)
+    return;
 
   if (m->stride > 1)
     bft_error(__FILE__, __LINE__, 0, _sla_err_stride);
 
-  init_nnz = m->idx[m->n_rows];
+  int  counter = 0;
+# pragma omp parallel for reduction(+:counter) if (m->n_rows > CS_THR_MIN)
+  for (cs_lnum_t row_id = 0; row_id < m->n_rows; row_id++) {
 
-  /* Find and delete null entries */
-  if (m->type == CS_SLA_MAT_MSR || m->type == CS_SLA_MAT_CSR) {
+    /* Get the max absolute value and compute the row threshold */
+    double max_val = -DBL_MAX;
+    for (cs_lnum_t i = m->idx[row_id]; i < m->idx[row_id+1]; i++)
+      max_val = fmax(fabs(m->val[i]), max_val);
+    const double _thd = max_val*threshold;
 
-    shift = m->idx[0];
-    start = m->idx[0];
-
-    for (i = 0; i < m->n_rows; i++) {
-
-      /* Get max absolute value and compute threshold */
-      max_val = -DBL_MAX;
-      for (j = start; j < m->idx[i+1]; j++)
-        max_val = fmax(fabs(m->val[j]), max_val);
-      limit = max_val*eps;
-
-      /* Delete too small entries */
-      for (j = start; j < m->idx[i+1]; j++) {
-
-        if (fabs(m->val[j]) > limit) { /* Keep value */
-          if (j != shift) { /* Need to copy */
-            m->val[shift] = m->val[j];
-            m->col_id[shift] = m->col_id[j];
-          }
-          shift++;
-        }
-
-      } /* End of loop on row entries */
-
-      start = m->idx[i+1];
-      m->idx[i+1] = shift;
-
-    } /* End of loop on rows */
-
-    if (init_nnz != shift) {
-      BFT_REALLOC(m->val, shift, double);
-      BFT_REALLOC(m->col_id, shift, int);
+    /* Set to zero too small entries */
+    for (cs_lnum_t i = m->idx[row_id]; i < m->idx[row_id+1]; i++) {
+      if (fabs(m->val[i]) < _thd)
+        m->val[i] = 0., counter++;
     }
 
-#if CS_SLA_DBG > 0 /* Output message */
-    bft_printf(" -dbg- cs_sla_matrix_clean >>"
-               " type: %s; n_rows: %6d; threshold: %6.3e; nnz: %d -> %d\n",
-               _sla_matrix_type[m->type], m->n_rows, eps, init_nnz, shift);
-#endif
+  } // Loop on matrix rows
 
-  } /* MSR or CSR */
-
-  /* Update information about the structure of the matrix */
-  cs_sla_matrix_set_info(m);
+  if (counter > 0 && verbosity > 2)
+    bft_printf(" -msg- Matrix cleaning >>"
+               " n_rows: %6d; threshold: %6.3e; %d entries set to zero\n",
+               m->n_rows, threshold, counter);
 
 }
 

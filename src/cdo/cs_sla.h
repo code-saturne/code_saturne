@@ -215,31 +215,37 @@ cs_sla_matrix_free(cs_sla_matrix_t  *m);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Remove entries with zero values
+ * \brief   Reset to 0 all entries below a given threshold
  *          Only available for CSR and MSR matrices with stride = 1
  *
- * \param[in, out] m       matrix to clean
+ * \param[in, out] m             matrix to clean
+ * \param[in]      threshold     threshold below one sets the value to zero
+ * \param[in]      verbosity     indicate if one prints or not a message
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sla_matrix_rmzeros(cs_sla_matrix_t   *m);
+cs_sla_matrix_clean_zeros(cs_sla_matrix_t   *m,
+                          double             threshold,
+                          int                verbosity);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Remove entries in a cs_sla_matrix_t structure below a given
- *          threshold. |a(i,j)| < eps * max|a(i,j)|
+ * \brief   Set to zero entries in a cs_sla_matrix_t structure if the ratio
+ *          |a(i,j)| < eps * max|a(i,j)| is below a given threshold.
  *          Be careful when using this function since one can loose the symmetry
  *          Only available for matrices with stride = 1
  *
- * \param[in, out] m       matrix to clean
- * \param[in]      eps     value of the threshold
+ * \param[in, out] m           matrix to clean
+ * \param[in]      verbosity   indicate if one prints or not a message
+ * \param[in]      threshold   value of the threshold
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sla_matrix_clean(cs_sla_matrix_t   *m,
-                    double             eps);
+cs_sla_matrix_clean(int                verbosity,
+                    double             threshold,
+                    cs_sla_matrix_t   *m);
 
 /*----------------------------------------------------------------------------*/
 /*!
