@@ -1730,14 +1730,16 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
                               cs_equation_t       *richards)
 {
   /* Sanity checks */
+  assert(richards != NULL);
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
   if (gw->n_soils == 0)
     bft_error(__FILE__, __LINE__, 0,
               _(" Groundwater module is activated but no soil is defined."));
 
-  assert(richards != NULL);
-  assert(cs_equation_get_space_scheme(richards) == CS_SPACE_SCHEME_CDOVB);
+  if (cs_equation_get_space_scheme(richards) != CS_SPACE_SCHEME_CDOVB)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Richards equation is only available for CDO-VB schemes."));
 
   cs_property_t  *permeability = gw->permeability;
   cs_field_t  *hydraulic_head = cs_equation_get_field(richards);

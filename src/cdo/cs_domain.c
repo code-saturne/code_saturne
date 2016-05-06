@@ -541,6 +541,7 @@ _set_shared_pointers(const cs_cdo_quantities_t    *quant,
                      const cs_cdo_connect_t       *connect,
                      const cs_time_step_t         *time_step)
 {
+  /* Avoid the declaration of global variables by sharing pointers */
   cs_source_term_set_shared_pointers(quant, connect, time_step);
   cs_evaluate_set_shared_pointers(quant, connect, time_step);
   cs_property_set_shared_pointers(quant, connect, time_step);

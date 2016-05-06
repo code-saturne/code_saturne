@@ -165,12 +165,12 @@ static cs_connect_index_t  *cs_cdovb_v2v = NULL;
 
 /* Hodge^{VpCd,Conf} : only used if a source term is reduced on primal vertices
    In all cases, this matrix along with its index are shared */
-static cs_sla_matrix_t  *cs_cdovb_hvpcd_conf = NULL;
+static cs_sla_matrix_t  *cs_cdovb_hconf = NULL;
 
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
-static const cs_cdo_quantities_t  *cs_cdovb_quant;
-static const cs_cdo_connect_t  *cs_cdovb_connect;
-static const cs_time_step_t  *cs_time_step;
+static const cs_cdo_quantities_t  *cs_shared_quant;
+static const cs_cdo_connect_t  *cs_shared_connect;
+static const cs_time_step_t  *cs_shared_time_step;
 
 /* Flag to indicate which members have to be built in a cs_cdo_locmesh_t
    structure */
@@ -256,8 +256,8 @@ _add_source_terms(cs_cdovb_scaleq_t     *b,
 static void
 _build_hvpcd_conf(void)
 {
-  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
-  const cs_cdo_quantities_t  *quant = cs_cdovb_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
   cs_param_hodge_t  h_info = {.inv_pty = false,
                               .type = CS_PARAM_HODGE_TYPE_VPCD,
@@ -269,8 +269,8 @@ _build_hvpcd_conf(void)
   cs_flag_t  lm_flag = cs_cdovb_locflag | CS_CDO_LOCAL_F | CS_CDO_LOCAL_FE;
 
   /* Initialize a matrix structure */
-  cs_cdovb_hvpcd_conf = cs_sla_matrix_create_msr_from_index(cs_cdovb_v2v,
-                                                            true, true, 1);
+  cs_cdovb_hconf = cs_sla_matrix_create_msr_from_index(cs_cdovb_v2v,
+                                                       true, true, 1);
 
   /* Cellwise construction ==> Loop on cells */
   for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -282,7 +282,7 @@ _build_hvpcd_conf(void)
     cs_locmat_t  *hloc = cs_hodge_build_cellwise(quant, cs_cell_mesh, hb);
 
     /* Assemble the cellwise matrix into the "global" matrix */
-    cs_sla_assemble_msr_sym(hloc, cs_cdovb_hvpcd_conf, false);
+    cs_sla_assemble_msr_sym(hloc, cs_cdovb_hconf, false);
 
   }
 
@@ -365,7 +365,7 @@ _apply_time_scheme(const cs_real_t          *field_val,
   const cs_param_time_t  t_info = eqp->time_info;
 
   /* Sanity checks */
-  assert(eqp->flag & CS_EQUATION_UNSTEADY);
+  assert(builder->todo[CDO_TIME]);
   assert(sys_mat->type == CS_SLA_MAT_MSR && time_mat->type == CS_SLA_MAT_MSR);
   assert(sys_mat->n_rows == builder->n_vertices);
   assert(sys_mat->n_rows == time_mat->n_rows);
@@ -499,7 +499,7 @@ _compute_dir_values(const cs_mesh_t            *mesh,
 
   /* Get the value of the Dirichlet for the current time */
   cs_cdo_bc_dirichlet_set(dof_flag,
-                          cs_time_step,
+                          cs_shared_time_step,
                           mesh,
                           eqp->bc,
                           vtx_dir,
@@ -507,7 +507,7 @@ _compute_dir_values(const cs_mesh_t            *mesh,
 
   if (builder->enforce == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
       builder->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
-    if (eqp->flag & CS_EQUATION_UNSTEADY) {
+    if (builder->todo[CDO_TIME]) {
 
       const cs_param_time_t  t_info = eqp->time_info;
 
@@ -698,17 +698,15 @@ cs_cdovb_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
                                     const cs_time_step_t         *time_step)
 {
   /* Assign static const pointers */
-  cs_cdovb_quant = quant;
-  cs_cdovb_connect = connect;
-  cs_time_step = time_step;
+  cs_shared_quant = quant;
+  cs_shared_connect = connect;
+  cs_shared_time_step = time_step;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Allocate work buffer and general structures related to CDO
  *         vertex-based schemes
- *
- * \param[in] connect   pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -718,9 +716,9 @@ cs_cdovb_scaleq_initialize(void)
   /* Sanity check */
   assert(cs_cdovb_scal_work == NULL && cs_cdovb_scal_work_size == 0);
 
-  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
-  const cs_lnum_t  n_vertices = cs_cdovb_quant->n_vertices;
-  const cs_lnum_t  n_cells = cs_cdovb_quant->n_cells;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
+  const cs_lnum_t  n_cells = cs_shared_quant->n_cells;
 
   /* Work buffers */
   cs_cdovb_scal_work_size = CS_MAX(3*n_vertices, n_cells);
@@ -785,7 +783,7 @@ cs_cdovb_scaleq_finalize(void)
   cs_index_free(&cs_cdovb_v2v);
 
   /* Free Hodge operator defined from conforming reconstruction op. */
-  cs_cdovb_hvpcd_conf = cs_sla_matrix_free(cs_cdovb_hvpcd_conf);
+  cs_cdovb_hconf = cs_sla_matrix_free(cs_cdovb_hconf);
 
   /* Free local structures */
   cs_cdo_locsys_free(&cs_cell_sys);
@@ -834,33 +832,34 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
     bft_error(__FILE__, __LINE__, 0, " Invalid type of equation.\n"
               " Expected: scalar-valued CDO vertex-based equation.");
 
-  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_lnum_t  n_vertices = connect->v_info->n_elts;
   const cs_lnum_t  n_b_faces = connect->f_info->n_b_elts;
   const cs_lnum_t  n_i_faces = connect->f_info->n_i_elts;
   const cs_lnum_t  n_cells = connect->c_info->n_elts;
 
-  cs_cdovb_scaleq_t  *bld = NULL;
+  cs_cdovb_scaleq_t  *b = NULL;
 
-  BFT_MALLOC(bld, 1, cs_cdovb_scaleq_t);
+  BFT_MALLOC(b, 1, cs_cdovb_scaleq_t);
 
   /* Shared pointers */
-  bld->eqp = eqp;
+  b->eqp = eqp;
 
   /* Store a direct access to which term one has to compute */
-  bld->todo[CDO_DIFFUSION] = (eqp->flag & CS_EQUATION_DIFFUSION) ? true:false;
-  bld->todo[CDO_ADVECTION] = (eqp->flag & CS_EQUATION_CONVECTION) ? true:false;
-  bld->todo[CDO_REACTION] = (eqp->flag & CS_EQUATION_REACTION) ? true:false;
-  bld->todo[CDO_TIME] = (eqp->flag & CS_EQUATION_UNSTEADY) ? true:false;
+  b->todo[CDO_DIFFUSION] = (eqp->flag & CS_EQUATION_DIFFUSION) ? true:false;
+  b->todo[CDO_ADVECTION] = (eqp->flag & CS_EQUATION_CONVECTION) ? true:false;
+  b->todo[CDO_REACTION] = (eqp->flag & CS_EQUATION_REACTION) ? true:false;
+  b->todo[CDO_TIME] = (eqp->flag & CS_EQUATION_UNSTEADY) ? true:false;
 
   /* Dimensions: By default, we set number of DoFs as if there is a weak
      enforcement of the boundary conditions */
-  bld->n_vertices = n_vertices;
-  bld->n_dof_vertices = n_vertices;
+  b->n_dof_vertices = n_vertices;
 
   /* Set members and structures related to the management of the BCs */
 
   const cs_param_bc_t  *bc_param = eqp->bc;
+
+  b->enforce = bc_param->enforcement;
 
   /* Translate user-defined information about BC into a structure well-suited
      for computation. We make the distinction between homogeneous and
@@ -868,29 +867,29 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
      We also compute also the list of Dirichlet vertices along with their
      related definition.
   */
-  bld->face_bc = cs_cdo_bc_init(bc_param, n_b_faces);
-  bld->vtx_dir = cs_cdo_bc_vtx_dir_create(mesh, bld->face_bc);
+  b->face_bc = cs_cdo_bc_init(bc_param, n_b_faces);
+  b->vtx_dir = cs_cdo_bc_vtx_dir_create(mesh, b->face_bc);
 
   /* Allocate and initialize dir_val */
-  BFT_MALLOC(bld->dir_val, bld->vtx_dir->n_nhmg_elts, double);
-# pragma omp parallel for if (bld->vtx_dir->n_nhmg_elts > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < bld->vtx_dir->n_nhmg_elts; i++)
-    bld->dir_val[i] = 0.0;
+  BFT_MALLOC(b->dir_val, b->vtx_dir->n_nhmg_elts, double);
+# pragma omp parallel for if (b->vtx_dir->n_nhmg_elts > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < b->vtx_dir->n_nhmg_elts; i++)
+    b->dir_val[i] = 0.0;
+
+  b->c2bf_bc_idx = NULL;
+  b->c2bf_bc_ids = NULL;
 
   /* Strong enforcement means that we need an indirection list between the
      compress (or zip) and initial numbering of vertices */
-  bld->enforce = bc_param->enforcement;
 
-  bld->v_z2i_ids = NULL; // zipped --> initial ids
-  bld->v_i2z_ids = NULL; // initial --> zipped ids
-  bld->c2bf_bc_idx = NULL;
-  bld->c2bf_bc_ids = NULL;
+  b->v_z2i_ids = NULL; // zipped --> initial ids
+  b->v_i2z_ids = NULL; // initial --> zipped ids
 
-  switch (bld->enforce) {
+  switch (b->enforce) {
   case CS_PARAM_BC_ENFORCE_STRONG:
-    if (bld->vtx_dir->n_elts > 0) {
+    if (b->vtx_dir->n_elts > 0) {
 
-      if (bld->todo[CDO_ADVECTION] || bld->todo[CDO_TIME])
+      if (b->todo[CDO_ADVECTION] || b->todo[CDO_TIME])
         bft_error(__FILE__, __LINE__, 0,
                   " Invalid choice of enforcement of the boundary conditions.\n"
                   " Strong enforcement is not implemented when convection or"
@@ -899,29 +898,29 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 
       bool  *is_kept = NULL;
 
-      bld->n_dof_vertices = n_vertices - bld->vtx_dir->n_elts;
+      b->n_dof_vertices = n_vertices - b->vtx_dir->n_elts;
 
-      /* Build bld->v_z2i_ids and bld->i2i_ids */
-      BFT_MALLOC(bld->v_z2i_ids, bld->n_dof_vertices, cs_lnum_t);
-      BFT_MALLOC(bld->v_i2z_ids, bld->n_vertices, cs_lnum_t);
+      /* Build b->v_z2i_ids and b->i2i_ids */
+      BFT_MALLOC(b->v_z2i_ids, b->n_dof_vertices, cs_lnum_t);
+      BFT_MALLOC(b->v_i2z_ids, b->n_vertices, cs_lnum_t);
       BFT_MALLOC(is_kept, n_vertices, bool);
 
 # pragma omp parallel for if (n_vertices > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < n_vertices; i++)
-        is_kept[i] = true, bld->v_i2z_ids[i] = -1; // by default, set to remove
+        is_kept[i] = true, b->v_i2z_ids[i] = -1; // by default, set to remove
 
-# pragma omp parallel for if (bld->vtx_dir->n_elts > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < bld->vtx_dir->n_elts; i++)
-        is_kept[bld->vtx_dir->elt_ids[i]] = false;
+# pragma omp parallel for if (b->vtx_dir->n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < b->vtx_dir->n_elts; i++)
+        is_kept[b->vtx_dir->elt_ids[i]] = false;
 
       cs_lnum_t  cur_id = 0;
-      for (cs_lnum_t i = 0; i < bld->n_vertices; i++) {
+      for (cs_lnum_t i = 0; i < b->n_vertices; i++) {
         if (is_kept[i]) {
-          bld->v_i2z_ids[i] = cur_id;
-          bld->v_z2i_ids[cur_id++] = i;
+          b->v_i2z_ids[i] = cur_id;
+          b->v_z2i_ids[cur_id++] = i;
         }
       }
-      assert(cur_id == bld->n_dof_vertices);
+      assert(cur_id == b->n_dof_vertices);
 
       BFT_FREE(is_kept);
 
@@ -930,20 +929,20 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    if (bld->todo[CDO_DIFFUSION]) {
+    if (b->todo[CDO_DIFFUSION]) {
 
       short int  *count = NULL;
 
       const cs_sla_matrix_t  *f2c = connect->f2c;
-      const cs_cdo_bc_list_t  *face_dir = bld->face_bc->dir;
+      const cs_cdo_bc_list_t  *face_dir = b->face_bc->dir;
 
       /* Allocation and initialization */
       BFT_MALLOC(count, n_cells, short int);
-      BFT_MALLOC(bld->c2bf_bc_idx, n_cells + 1, cs_lnum_t);
-      bld->c2bf_bc_idx[n_cells] = 0;
+      BFT_MALLOC(b->c2bf_bc_idx, n_cells + 1, cs_lnum_t);
+      b->c2bf_bc_idx[n_cells] = 0;
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < n_cells; i++)
-        bld->c2bf_bc_idx[i] = 0, count[i] = 0;
+        b->c2bf_bc_idx[i] = 0, count[i] = 0;
 
       /* First pass: Loop on Dirichlet faces to build index */
       for (cs_lnum_t i = 0; i < face_dir->n_elts; i++) {
@@ -958,19 +957,19 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < n_cells; i++) {
-        bld->c2bf_bc_idx[i+1] = bld->c2bf_bc_idx[i] + count[i];
+        b->c2bf_bc_idx[i+1] = b->c2bf_bc_idx[i] + count[i];
         count[i] = 0;
       }
 
       /* Second pass: Loop on Dirichlet faces to build list of ids */
-      BFT_MALLOC(bld->c2bf_bc_ids, bld->c2bf_bc_idx[n_cells], cs_lnum_t);
+      BFT_MALLOC(b->c2bf_bc_ids, b->c2bf_bc_idx[n_cells], cs_lnum_t);
       for (cs_lnum_t i = 0; i < face_dir->n_elts; i++) {
 
         cs_lnum_t  f_id = face_dir->elt_ids[i] + n_i_faces;
         cs_lnum_t  c_id = connect->f2c->col_id[connect->f2c->idx[f_id]];
-        cs_lnum_t  shft = bld->c2bf_bc_idx[c_id] + count[c_id];
+        cs_lnum_t  shft = b->c2bf_bc_idx[c_id] + count[c_id];
 
-        bld->c2bf_bc_ids[shft] = f_id;
+        b->c2bf_bc_ids[shft] = f_id;
         count[c_id] += 1;
 
       }
@@ -986,50 +985,50 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   } /* Strong enforcement of BCs */
 
   /* Diffusion part */
-  bld->diff = NULL;
-  if (bld->todo[CDO_DIFFUSION]) {
+  b->diff = NULL;
+  if (b->todo[CDO_DIFFUSION]) {
     bool is_uniform = cs_property_is_uniform(eqp->diffusion_property);
-    bld->diff = cs_cdovb_diffusion_builder_init(connect,
-                                                is_uniform,
-                                                eqp->diffusion_hodge,
-                                                bld->enforce);
+    b->diff = cs_cdovb_diffusion_builder_init(connect,
+                                              is_uniform,
+                                              eqp->diffusion_hodge,
+                                              b->enforce);
   }
 
   /* Advection part */
-  bld->adv = NULL;
-  if (bld->todo[CDO_ADVECTION])
-    bld->adv = cs_cdovb_advection_builder_init(connect,
-                                               eqp->advection_field,
-                                               eqp->advection_info,
-                                               bld->todo[CDO_DIFFUSION]);
+  b->adv = NULL;
+  if (b->todo[CDO_ADVECTION])
+    b->adv = cs_cdovb_advection_builder_init(connect,
+                                             eqp->advection_field,
+                                             eqp->advection_info,
+                                             b->todo[CDO_DIFFUSION]);
 
   /* Reaction part */
-  bld->hb_reac = NULL;
-  if (bld->todo[CDO_REACTION]) {
+  b->hb_reac = NULL;
+  if (b->todo[CDO_REACTION]) {
 
-    BFT_MALLOC(bld->hb_reac, eqp->n_reaction_terms, cs_hodge_builder_t *);
+    BFT_MALLOC(b->hb_reac, eqp->n_reaction_terms, cs_hodge_builder_t *);
 
     for (int r = 0; r < eqp->n_reaction_terms; r++)
-      bld->hb_reac[r] = cs_hodge_builder_init(connect,
+      b->hb_reac[r] = cs_hodge_builder_init(connect,
                                               eqp->reaction_terms[r].hodge);
 
   }
 
   /* Time-dependent part */
-  bld->hb_time = NULL;
-  if (bld->todo[CDO_TIME])
-    bld->hb_time = cs_hodge_builder_init(connect, eqp->time_hodge);
+  b->hb_time = NULL;
+  if (b->todo[CDO_TIME])
+    b->hb_time = cs_hodge_builder_init(connect, eqp->time_hodge);
 
   /* Source term part */
-  BFT_MALLOC(bld->source_terms, bld->n_vertices, cs_real_t);
+  BFT_MALLOC(b->source_terms, b->n_vertices, cs_real_t);
 
   for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
     const cs_source_term_t  *st = eqp->source_terms[st_id];
     if (cs_source_term_get_reduction(st) == CS_SOURCE_TERM_REDUC_PRIM)
-      if (cs_cdovb_hvpcd_conf == NULL) _build_hvpcd_conf();
+      if (cs_cdovb_hconf == NULL) _build_hvpcd_conf();
   }
 
-  return bld;
+  return b;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1045,55 +1044,55 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 void *
 cs_cdovb_scaleq_free(void   *builder)
 {
-  cs_cdovb_scaleq_t  *bld = (cs_cdovb_scaleq_t *)builder;
+  cs_cdovb_scaleq_t  *b = (cs_cdovb_scaleq_t *)builder;
 
-  if (bld == NULL)
-    return bld;
+  if (b == NULL)
+    return b;
 
   /* eqp is only shared. Thies structure is freed later. */
-  const cs_equation_param_t  *eqp = bld->eqp;
+  const cs_equation_param_t  *eqp = b->eqp;
 
   /* Free BC structure */
-  if (bld->vtx_dir->n_nhmg_elts > 0)
-    BFT_FREE(bld->dir_val);
+  if (b->vtx_dir->n_nhmg_elts > 0)
+    BFT_FREE(b->dir_val);
 
-  bld->face_bc = cs_cdo_bc_free(bld->face_bc);
-  bld->vtx_dir = cs_cdo_bc_list_free(bld->vtx_dir);
+  b->face_bc = cs_cdo_bc_free(b->face_bc);
+  b->vtx_dir = cs_cdo_bc_list_free(b->vtx_dir);
 
   /* Renumbering (if strong enforcement of BCs for instance) */
-  if (bld->n_vertices > bld->n_dof_vertices) {
-    BFT_FREE(bld->v_z2i_ids);
-    BFT_FREE(bld->v_i2z_ids);
+  if (b->n_vertices > b->n_dof_vertices) {
+    BFT_FREE(b->v_z2i_ids);
+    BFT_FREE(b->v_i2z_ids);
   }
 
-  BFT_FREE(bld->source_terms);
+  BFT_FREE(b->source_terms);
 
   /* Free builder sub-structures */
-  if (bld->todo[CDO_DIFFUSION]) {
-    bld->diff = cs_cdovb_diffusion_builder_free(bld->diff);
+  if (b->todo[CDO_DIFFUSION]) {
+    b->diff = cs_cdovb_diffusion_builder_free(b->diff);
 
-    if (bld->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM ||
-        bld->enforce ==  CS_PARAM_BC_ENFORCE_WEAK_NITSCHE) {
-      BFT_FREE(bld->c2bf_bc_idx);
-      BFT_FREE(bld->c2bf_bc_ids);
+    if (b->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM ||
+        b->enforce ==  CS_PARAM_BC_ENFORCE_WEAK_NITSCHE) {
+      BFT_FREE(b->c2bf_bc_idx);
+      BFT_FREE(b->c2bf_bc_ids);
     }
 
   }
 
-  if (bld->todo[CDO_ADVECTION])
-    bld->adv = cs_cdovb_advection_builder_free(bld->adv);
+  if (b->todo[CDO_ADVECTION])
+    b->adv = cs_cdovb_advection_builder_free(b->adv);
 
-  if (bld->todo[CDO_REACTION]) {
+  if (b->todo[CDO_REACTION]) {
     for (int r = 0; r < eqp->n_reaction_terms; r++)
-      bld->hb_reac[r] = cs_hodge_builder_free(bld->hb_reac[r]);
-    BFT_FREE(bld->hb_reac);
+      b->hb_reac[r] = cs_hodge_builder_free(b->hb_reac[r]);
+    BFT_FREE(b->hb_reac);
   }
 
-  if (bld->todo[CDO_TIME])
-    bld->hb_time = cs_hodge_builder_free(bld->hb_time);
+  if (b->todo[CDO_TIME])
+    b->hb_time = cs_hodge_builder_free(b->hb_time);
 
   /* Last free */
-  BFT_FREE(bld);
+  BFT_FREE(b);
   return NULL;
 }
 
@@ -1143,7 +1142,7 @@ cs_cdovb_scaleq_compute_source(void   *builder)
     else {
 
       assert(cs_source_term_get_reduction(st) == CS_SOURCE_TERM_REDUC_PRIM);
-      assert(cs_cdovb_hvpcd_conf != NULL);
+      assert(cs_cdovb_hconf != NULL);
 
       double  *mv = cs_cdovb_scal_work + bld->n_vertices;
 
@@ -1152,7 +1151,7 @@ cs_cdovb_scaleq_compute_source(void   *builder)
 
       /* st_eval is updated inside this function */
       cs_source_term_compute(desc, st, &st_eval);
-      cs_sla_matvec(cs_cdovb_hvpcd_conf, st_eval, &mv, true);
+      cs_sla_matvec(cs_cdovb_hconf, st_eval, &mv, true);
 
       /* Update source term array */
 # pragma omp parallel for if (bld->n_vertices > CS_THR_MIN)
@@ -1192,8 +1191,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
 
   cs_cdovb_scaleq_t  *b = (cs_cdovb_scaleq_t *)builder;
 
-  const cs_cdo_quantities_t  *quant = cs_cdovb_quant;
-  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_equation_param_t  *eqp = b->eqp;
 
   /* Default flag value for vertex-based scalar equations */
@@ -1562,8 +1561,6 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
 {
   const cs_cdovb_scaleq_t  *b = (const cs_cdovb_scaleq_t  *)builder;
   const cs_equation_param_t  *eqp = b->eqp;
-  const bool  do_adv = eqp->flag & CS_EQUATION_CONVECTION;
-  const bool  do_diff = eqp->flag & CS_EQUATION_DIFFUSION;
 
   cs_mesh_location_type_t  ml_t = cs_mesh_location_get_type(ml_id);
 
@@ -1581,9 +1578,9 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
     return;
   }
 
-  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_sla_matrix_t  *f2c = connect->f2c;
-  const cs_cdo_quantities_t  *quant = cs_cdovb_quant;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
   const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
 
@@ -1611,7 +1608,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
       const short int  sgn = (_dp3(f.unitv, direction) < 0) ? -1 : 1;
       const double  coef = sgn * f.meas;
 
-      if (do_diff) { /* Compute the local diffusive flux */
+      if (b->todo[CDO_DIFFUSION]) { /* Compute the local diffusive flux */
 
         cs_reco_grd_cell_from_pv(c_id, connect, quant, pdi, gc);
         cs_property_get_cell_tensor(c_id,
@@ -1623,7 +1620,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
 
       }
 
-      if (do_adv) { /* Compute the local advective flux */
+      if (b->todo[CDO_ADVECTION]) { /* Compute the local advective flux */
 
         cs_advection_field_get_cell_vector(c_id, eqp->advection_field, &adv_c);
         cs_reco_pv_at_face_center(f_id, connect, quant, pdi, &pf);
@@ -1646,7 +1643,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
       const short int  sgn = (_dp3(f.unitv, direction) < 0) ? -1 : 1;
       const double  coef = 0.5 * sgn * f.meas;
 
-      if (do_diff) { /* Compute the local diffusive flux */
+      if (b->todo[CDO_DIFFUSION]) { /* Compute the local diffusive flux */
 
         cs_reco_grd_cell_from_pv(c1_id, connect, quant, pdi, gc);
         cs_property_get_cell_tensor(c1_id,
@@ -1666,7 +1663,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
 
       }
 
-      if (do_adv) { /* Compute the local advective flux */
+      if (b->todo[CDO_ADVECTION]) { /* Compute the local advective flux */
 
         cs_reco_pv_at_face_center(f_id, connect, quant, pdi, &pf);
 
@@ -1702,8 +1699,8 @@ cs_cdovb_scaleq_compute_cw_diff_flux(const cs_real_t   *values,
   cs_cdo_locmesh_t  *lm = cs_cell_mesh;
 
   const cs_equation_param_t  *eqp = b->eqp;
-  const cs_cdo_quantities_t  *quant = cs_cdovb_quant;
-  const cs_cdo_connect_t  *connect = cs_cdovb_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_connect_index_t  *c2e = connect->c2e;
 
   /* Sanity check */
@@ -1854,12 +1851,10 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
 
   const cs_equation_param_t  *eqp = b->eqp;
 
-  bool  do_adv = eqp->flag & CS_EQUATION_CONVECTION;
-  bool  do_diff = eqp->flag & CS_EQUATION_DIFFUSION;
   bool  do_peclet_post = (eqp->process_flag & CS_EQUATION_POST_PECLET ||
                           eqp->process_flag & CS_EQUATION_POST_UPWIND_COEF);
 
-  if (do_adv && do_diff && do_peclet_post) {
+  if (b->todo[CDO_ADVECTION] && b->todo[CDO_DIFFUSION] && do_peclet_post) {
 
     cs_real_t  *work_c = cs_cdovb_scal_work;
     cs_real_3_t  base_vect;
@@ -1882,23 +1877,23 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
         base_vect[2] = 1, base_vect[1] = base_vect[0] = 0;
       }
 
-      cs_cdovb_advection_get_peclet_cell(cs_cdovb_quant,
+      cs_cdovb_advection_get_peclet_cell(cs_shared_quant,
                                          eqp->advection_field,
                                          eqp->diffusion_property,
                                          base_vect,
                                          &work_c);
 
       if (eqp->process_flag & CS_EQUATION_POST_PECLET)
-        cs_post_write_var(-1,             // id du maillage de post
+        cs_post_write_var(-1,                   // id du maillage de post
                           postlabel,
                           1,
-                          true,           // interlace
-                          true,           // true = original mesh
+                          true,                 // interlace
+                          true,                 // true = original mesh
                           CS_POST_TYPE_cs_real_t,
-                          work_c,         // values on cells
-                          NULL,           // values at internal faces
-                          NULL,           // values at border faces
-                          cs_time_step);  // time step management structure
+                          work_c,               // values on cells
+                          NULL,                 // values at internal faces
+                          NULL,                 // values at border faces
+                          cs_shared_time_step); // time step management struct.
 
       if (eqp->process_flag & CS_EQUATION_POST_UPWIND_COEF) {
 
@@ -1910,20 +1905,20 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
           sprintf(postlabel, "%s.UpwCoefZ", eqname);
 
         /* Compute in each cell an evaluation of upwind weight value */
-        cs_cdovb_advection_get_upwind_coef_cell(cs_cdovb_quant,
+        cs_cdovb_advection_get_upwind_coef_cell(cs_shared_quant,
                                                 eqp->advection_info,
                                                 work_c);
 
-        cs_post_write_var(-1,             // id du maillage de post
+        cs_post_write_var(-1,                   // id du maillage de post
                           postlabel,
                           1,
-                          true,           // interlace
-                          true,           // true = original mesh
+                          true,                 // interlace
+                          true,                 // true = original mesh
                           CS_POST_TYPE_cs_real_t,
-                          work_c,         // values on cells
-                          NULL,           // values at internal faces
-                          NULL,           // values at border faces
-                          cs_time_step);  // time step management structure
+                          work_c,               // values on cells
+                          NULL,                 // values at internal faces
+                          NULL,                 // values at border faces
+                          cs_shared_time_step); // time step management struct.
 
       } /* Post upwinding coefficient */
 

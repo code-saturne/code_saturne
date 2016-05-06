@@ -605,7 +605,7 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
 /*!
  * \brief  Destroy a cs_cdofb_scaleq_t structure
  *
- * \param[in, out]  builder   pointer to a cs_cdovb_scaleq_t structure
+ * \param[in, out]  builder   pointer to a cs_cdofb_scaleq_t structure
  *
  * \return a NULL pointer
  */

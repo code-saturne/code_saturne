@@ -1001,7 +1001,7 @@ _create_equation_param(cs_equation_type_t     type,
   eqp->diffusion_hodge.inv_pty = false; // inverse property ?
   eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
   eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
-  eqp->diffusion_hodge.coef = 1./3.;
+  eqp->diffusion_hodge.coef = 1./3.; // DGA algo.
 
   /* Advection term */
   eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
@@ -2993,10 +2993,10 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
   /* Map a cs_sla_matrix_t structure into a cs_matrix_t structure */
   assert(sla_mat->type == CS_SLA_MAT_MSR);
 
-  bool  do_transfer = true;
+  bool  do_transfer = false;
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB)
-    if (eqp->bc->enforcement != CS_PARAM_BC_ENFORCE_STRONG)
-      do_transfer = false;
+    if (eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_STRONG)
+      do_transfer = true;
 
   /* First step: create a matrix structure */
   if (eq->ms == NULL)

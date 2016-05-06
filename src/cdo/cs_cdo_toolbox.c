@@ -1029,7 +1029,8 @@ cs_locdec_create(int   n_max_rows,
   m->n_max_cols = n_max_cols;
   m->n_rows = 0;
   m->n_cols = 0;
-  m->row_ids = m->col_ids = m->sgn = NULL;
+  m->row_ids = m->col_ids = NULL;
+  m->sgn = NULL;
 
   int msize = n_max_rows * n_max_cols;
 
