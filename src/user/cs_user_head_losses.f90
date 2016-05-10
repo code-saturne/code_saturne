@@ -53,7 +53,7 @@
 !>
 !> It appears on the momentum as follows:
 !>    rho du/dt = - grad p + head_loss        (+ other terms)
-!>                      with head_loss = - rho ckupdc u ( en kg/(m2 s))
+!>                      with head_loss = - rho ckupdc u (in kg/(m2 s2))
 !>
 !> For a distributed head loss,
 !>
