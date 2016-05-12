@@ -95,8 +95,13 @@ darcy_unsteady = 0
 ! Convergence criteron of the Newton scheme over pressure
 darcy_convergence_criterion = 0
 
-! No gravitational effects
+! By default, gravity is not needed
 darcy_gravity = 0
+
+! Default gravity direction is z
+darcy_gravity_x = 0.d0
+darcy_gravity_y = 0.d0
+darcy_gravity_z = 1.d0
 
 if (iihmpr.eq.1) then
   call uidai1(darcy_anisotropic_permeability,     &

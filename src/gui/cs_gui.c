@@ -5066,11 +5066,17 @@ void CS_PROCF (uiprof, UIPROF) (void)
  * integer         permeability    <--  permeability type
  * integer         diffusion       <--  diffusion type
  * integer         gravity         <--  check if gravity is taken into account
+ * double          gravity_x       <--  gravity direction
+ * double          gravity_y       <--  gravity direction
+ * double          gravity_z       <--  gravity direction
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
-                                const cs_int_t  *diffusion,
-                                const cs_int_t  *gravity)
+void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
+                                const cs_int_t   *diffusion,
+                                const cs_int_t   *gravity,
+                                const cs_real_t  *gravity_x,
+                                const cs_real_t  *gravity_y,
+                                const cs_real_t  *gravity_z)
 {
   char *path = NULL;
   char *status = NULL;
@@ -5159,7 +5165,9 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
           double pres = pressure_field[iel];
 
           if (*gravity == 1)
-            pres -= (cell_cen[iel][2]);
+            pres -= (cell_cen[iel][0] * *gravity_x +
+                     cell_cen[iel][1] * *gravity_y +
+                     cell_cen[iel][2] * *gravity_z );
 
           if (pres >= 0) {
             capacity_field[iel] = 0.;

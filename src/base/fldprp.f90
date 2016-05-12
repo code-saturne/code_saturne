@@ -163,10 +163,15 @@ endif
 call add_property_field('courant_number', 'CFL', icour)
 call add_property_field('fourier_number', 'Fourier Number', ifour)
 
-! Pression totale stockee dans IPRTOT, si on n'est pas en compressible
-! (sinon Ptot=P* !)
-if (ippmod(icompf).lt.0) then
+! Total pressure is stored in property field of index iprtot
+! if the compressible module is not enabled (otherwise Ptot=P*).
+! For groundwater flows, this field is the pressure head (h = H - z),
+! only used if the gravity is set.
+
+if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
   call add_property_field('total_pressure', 'Total Pressure', iprtot)
+else if (ippmod(idarcy).ge.0.and.darcy_gravity.ge.1) then
+  call add_property_field('total_pressure', 'Pressure head', iprtot)
 endif
 
 ! Cs^2 si on est en LES dynamique

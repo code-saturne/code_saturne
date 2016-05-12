@@ -68,6 +68,7 @@ use field
 use mesh
 use cavitation
 use cs_cf_bindings
+use darcy_module
 
 !===============================================================================
 
@@ -245,7 +246,11 @@ endif
 ! La pression totale sera initialisee a P0 + rho.g.r dans INIVAR
 !  si l'utilisateur n'a pas fait d'initialisation personnelle
 ! Non valable en compressible
-if (ippmod(icompf).lt.0) then
+! For groundwater flows, the field of index iprtot is the
+! pressure head (h = H - z). h is only used when gravity is taken
+! into account
+if ((ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0).or.                          &
+    (ippmod(idarcy).ge.0.and.darcy_gravity.ge.1)) then
   call field_get_val_s(iprpfl(iprtot), cpro_prtot)
   do iel = 1, ncel
     cpro_prtot(iel) = - rinfin

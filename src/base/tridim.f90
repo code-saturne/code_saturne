@@ -1421,7 +1421,8 @@ do while (iterns.le.nterup)
         call uidapp                                                    &
          ( darcy_anisotropic_permeability,                             &
            darcy_anisotropic_dispersion,                               &
-           darcy_gravity)
+           darcy_gravity,                                              &
+           darcy_gravity_x, darcy_gravity_y, darcy_gravity_z)
       endif
 
       ! Darcy : update data specific to underground flow

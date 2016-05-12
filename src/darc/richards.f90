@@ -140,6 +140,7 @@ double precision, dimension(:), pointer :: cproa_sat, cpro_sat
 double precision, dimension(:,:), pointer :: cpro_permeability_6
 double precision, dimension(:,:), pointer :: cvar_vel
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
+double precision, dimension(:), pointer :: cpro_prtot
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: cpro_wgrec_s
 
@@ -639,7 +640,7 @@ else if (darcy_anisotropic_permeability.eq.1) then
 endif
 
 !===============================================================================
-! 4.  Updating of the velocity field
+! 4.  Updating of the velocity field and the pressure head
 !===============================================================================
 
 ! We compute the gradient of hydraulique head and multiply it by the
@@ -691,6 +692,19 @@ else
 
 endif
 
+! update pressure head (h = H - z) for post-processing
+! Only used when gravity is taken into account
+if (darcy_gravity.ge.1) then
+  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
+  !$omp parallel do
+  do iel = 1, ncel
+    cpro_prtot(iel) = cvar_pr(iel) - xyzcen(1,iel)*darcy_gravity_x             &
+                                   - xyzcen(2,iel)*darcy_gravity_y             &
+                                   - xyzcen(3,iel)*darcy_gravity_z
+  enddo
+
+endif
+
 !===============================================================================
 ! 5.  Checking of convergence criterion for the Newton scheme
 !===============================================================================
@@ -721,7 +735,7 @@ if (nterup.gt.1) then
 endif
 
 !===============================================================================
-! 5.  Finalization
+! 6.  Finalization
 !===============================================================================
 
 ! Save convergence info

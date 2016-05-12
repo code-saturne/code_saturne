@@ -63,6 +63,7 @@ use field
 use cfpoin, only:ithvar
 use cs_c_bindings
 use cs_cf_bindings
+use darcy_module
 
 !===============================================================================
 
@@ -230,8 +231,10 @@ endif
 ! A priori l'utilisateur remplira les NCEL valeurs ou rien du
 !  tout, mais on ne sait jamais ...
 ! En compressible, Ptot n'est pas defini (correspond directement a RTP(.,IPR)
+! For groundwater flows, cpro_prtot is the pressure head (h = H - z)
+! h is only used when gravity is taken into account
 
-if  (ippmod(icompf).lt.0) then
+if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
   call field_get_val_s(ivarfl(ipr), cvar_pr)
   call field_get_val_s(iprpfl(iprtot), cpro_prtot)
   xxp0   = xyzp0(1)
@@ -252,6 +255,15 @@ if  (ippmod(icompf).lt.0) then
            + p0 - pred0
     endif
   enddo
+else if ((ippmod(idarcy).ge.0).and.(darcy_gravity.ge.1)) then
+  call field_get_val_s(ivarfl(ipr), cvar_pr)
+  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
+  do iel = 1, ncel
+    cpro_prtot(iel) = cvar_pr(iel) - xyzcen(1,iel)*darcy_gravity_x &
+                                   - xyzcen(2,iel)*darcy_gravity_y &
+                                   - xyzcen(3,iel)*darcy_gravity_z
+  enddo
+
 endif
 
 !===============================================================================

@@ -850,7 +850,7 @@ if (ixyzp0.eq.2) then
   xyzp0(1) = xyzref(1)
   xyzp0(2) = xyzref(2)
   xyzp0(3) = xyzref(3)
-  if (ippmod(icompf).lt.0) then
+  if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
     call field_get_val_s(iprpfl(iprtot), cpro_prtot)
     do iel = 1, ncelet
       cpro_prtot(iel) = cpro_prtot(iel) - ro0*( gx*xxp0 + gy*xyp0 + gz*xzp0 )

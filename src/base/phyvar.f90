@@ -153,8 +153,9 @@ if (iihmpr.eq.1) then
   if (ippmod(idarcy).ge.0) then
     call uidapp                                                           &
     ( darcy_anisotropic_permeability,                                     &
-      darcy_anisotropic_dispersion,                                        &
-      darcy_gravity)
+      darcy_anisotropic_dispersion,                                       &
+      darcy_gravity,                                                      &
+      darcy_gravity_x, darcy_gravity_y, darcy_gravity_z)
   endif
 endif
 

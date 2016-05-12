@@ -413,9 +413,12 @@ void CS_PROCF (uiprof, UIPROF)(void);
  * integer         gravity         <--  check if gravity is taken into account
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
-                                const cs_int_t  *diffusion,
-                                const cs_int_t  *gravity);
+void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
+                                const cs_int_t   *diffusion,
+                                const cs_int_t   *gravity,
+                                const cs_real_t  *gravity_x,
+                                const cs_real_t  *gravity_y,
+                                const cs_real_t  *gravity_z);
 
 /*----------------------------------------------------------------------------
  * Free memory: clean global private variables and libxml2 variables.
