@@ -10741,6 +10741,8 @@ msgid ""
 "\n"
 "  Joining %2d completed (%.3g s).\n"
 msgstr ""
+"\n"
+"  Recollement %2d terminé (%.3g s).\n"
 
 #, c-format
 msgid ""
