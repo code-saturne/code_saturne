@@ -1389,9 +1389,6 @@ cs_field_create(const char   *name,
 
   cs_base_check_bool(&has_previous);
 
-  if (!has_previous)
-    f->type |= CS_FIELD_STEADY;
-
   f->n_time_vals = has_previous ? 2 : 1;
 
   BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
