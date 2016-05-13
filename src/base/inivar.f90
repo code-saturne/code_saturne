@@ -131,7 +131,7 @@ iok = 0
 !===============================================================================
 
 ! Initialized thermodynamic variables indicator
-ithvar = 0
+ithvar = 10000
 
 ! Indicateur d'initialisation des scalaires par l'utilisateur
 ! (mis a 1 si passage dans USINIV ou PPINIV ou dans l'IHM ; a 0 sinon)
