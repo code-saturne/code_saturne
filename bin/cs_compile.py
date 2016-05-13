@@ -498,6 +498,12 @@ def link_build(pkg, install=False, destdir=None):
     cmd = [get_compiler(pkg, 'ld', link_build = True)]
     cmd = cmd + ["-o", exec_name]
     cmd = cmd + get_build_flags(pkg, 'ldflags', install, destdir)
+
+    # If present, address sanitizer needs to come first
+    if '-lasan' in p_libs:
+        p_libs.remove('-lasan')
+        cmd += ['-lasan']
+
     cmd = cmd + p_libs
     if pkg.config.rpath != "":
         cmd += so_dirs_path(cmd, pkg)
