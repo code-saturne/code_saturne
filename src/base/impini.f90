@@ -2418,18 +2418,6 @@ write(nfecra,7500)
 
 write(nfecra,7510) ntsuit
 
-!   - Fichiers Ensight
-
-write(nfecra,7520)
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keylog, kval)
-  if (kval.eq.1) then
-    call field_get_label(f_id, name)
-    write(nfecra,7521) trim(name)
-  endif
-enddo
-write(nfecra,7522)
-
 !   - Fichiers historiques
 write(nfecra,7530) nthist,frhist,ncapt
 do f_id = 0, n_fields-1
@@ -2474,6 +2462,8 @@ write(nfecra,7532)
 !   - Post-traitement automatique (bord)
 
 write(nfecra,7550)   'ipstfo', ipstdv(ipstfo),                     &
+                     'ipstyp', ipstdv(ipstyp),                     &
+                     'ipsttp', ipstdv(ipsttp),                     &
                      'ipstft', ipstdv(ipstft),                     &
                      'ipstnu', ipstdv(ipstnu)
 
@@ -2489,12 +2479,6 @@ write(nfecra,9900)
  7510 format(                                                     &
 ' --- Fichier suite',                                           /,&
 '       NTSUIT = ',4x,i10,    ' (Periode de sauvegarde)',       /)
- 7520 format(                                                     &
-' --- Variables post-traitees',                                 /,&
-                                                                /)
- 7521 format(A                                                   )
- 7522 format(                                                     &
-'         --           --',                                     /)
  7530 format(                                                     &
 ' --- Fichiers historiques',                                    /,&
 '       NTHIST = ',4x,i10,    ' (Periode de sortie    )',       /,&
@@ -2515,6 +2499,8 @@ write(nfecra,9900)
 ' --- Variables supplementaires en post-traitement (ipstdv)',   /,&
 '       ',a6,' = ',4x,i10,    ' (Force exercee par',            /,&
 '       ',6x,'   ',4x,10x,    '   le fluide sur le bord)',      /,&
+'       ',a6,' = ',4x,i10,    ' (y+ au bord)',                  /,&
+'       ',a6,' = ',4x,i10,    ' (T+ au bord)',                  /,&
 '       ',a6,' = ',4x,i10,    ' (Flux thermique au bord)',      /,&
 '       ',a6,' = ',4x,i10,    ' (Flux thermique',               /,&
 '       ',6x,'   ',4x,10x,    '  sans dimension au bord)',      /)
@@ -2528,12 +2514,6 @@ write(nfecra,9900)
  7510 format(                                                     &
 ' --- Restart file',                                            /,&
 '       NTSUIT = ',4x,i10,    ' (Checkpoint frequency )',       /)
- 7520 format(                                                     &
-' --- Post-processed variables',                                /,&
-                                                                /)
- 7521 format(A                                                   )
- 7522 format(                                                     &
-'         --           --',                                     /)
  7530 format(                                                     &
 ' --- Probe history files',                                     /,&
 '       NTHIST = ',4x,i10,    ' (Output frequency     )',       /,&
@@ -2554,6 +2534,8 @@ write(nfecra,9900)
 ' --- Additional post-processing variables (ipstdv)',           /,&
 '       ',a6,' = ',4x,i10,    ' (Force exerted by the',         /,&
 '       ',6x,'   ',4x,10x,    '       fluid on the boundary)',  /,&
+'       ',a6,' = ',4x,i10,    ' (y+ at boundary)',              /,&
+'       ',a6,' = ',4x,i10,    ' (T+ at boundary)',              /,&
 '       ',a6,' = ',4x,i10,    ' (Thermal flux   at boundary)',  /,&
 '       ',a6,' = ',4x,i10,    ' (Dimensionless thermal',        /,&
 '       ',6x,'   ',4x,10x,    '            flux at boundary)',  /)
