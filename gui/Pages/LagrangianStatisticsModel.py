@@ -78,16 +78,14 @@ class LagrangianStatisticsModel(Model):
         default['restart'] = "off"
         default['statistics_groups_of_particles'] = 0
         default['volume_statistics'] = "off"
-        default['iteration_start_volume'] = 1
-        default['iteration_steady_start_volume'] = default['iteration_start_volume']
-        default['threshold_volume'] = 0.
+        default['iteration_start'] = 1
+        default['iteration_steady_start'] = default['iteration_start']
+        default['threshold'] = 0.
 
         for v in self._defaultVariablesNamesVolume():
             default[v] = v
 
         default['boundary_statistics'] = "off"
-        default['iteration_start_boundary'] = 1
-        default['threshold_boundary'] = 0.
 
         for v in self.getVariablesNamesBoundary():
             default[v] = v
@@ -113,8 +111,7 @@ class LagrangianStatisticsModel(Model):
     @Variables.noUndo
     def getVariablesNamesVolume(self):
 
-        names = ["Part_vol_frac",
-                 "Part_velocity_X", "Part_velocity_Y", "Part_velocity_Z",
+        names = ["Part_vol_frac", "Part_velocity",
                  "Part_resid_time", "Part_statis_weight"]
         return names
 
@@ -199,68 +196,68 @@ class LagrangianStatisticsModel(Model):
 
 
     @Variables.undoLocal
-    def setIterationStartVolume(self, value):
+    def setIterationStart(self, value):
         """
-        Update the iteration value for start of volume statistics calculation.
+        Update the iteration value for start of statistics calculation.
         """
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_volume.xmlSetData('iteration_start_volume', value)
+        self.node_stat.xmlSetData('iteration_start', value)
 
 
     @Variables.noUndo
-    def getIterationStartVolume(self):
+    def getIterationStart(self):
         """
         Return the iteration value for start of volume statistics calculation.
         """
-        value = self.node_volume.xmlGetInt('iteration_start_volume')
+        value = self.node_stat.xmlGetInt('iteration_start')
         if value == None:
-            value = self._defaultLagrangianStatisticsValues()['iteration_start_volume']
-            self.setIterationStartVolume(value)
+            value = self._defaultLagrangianStatisticsValues()['iteration_start']
+            self.setIterationStart(value)
         return value
 
 
     @Variables.undoLocal
-    def setIterSteadyStartVolume(self, value):
+    def setIterSteadyStart(self, value):
         """
-        Update the iteration value for start of steady volume statistics calculation.
+        Update the iteration value for start of steady statistics calculation.
         """
         self.isInt(value)
         self.isGreaterOrEqual(value,0)
-        self.node_volume.xmlSetData('iteration_steady_start_volume', value)
+        self.node_stat.xmlSetData('iteration_steady_start', value)
 
 
     @Variables.noUndo
-    def getIterSteadyStartVolume(self):
+    def getIterSteadyStart(self):
         """
-        Return the iteration value for start of steady volume statistics calculation.
+        Return the iteration value for start of steady statistics calculation.
         """
-        value = self.node_volume.xmlGetInt('iteration_steady_start_volume')
+        value = self.node_stat.xmlGetInt('iteration_steady_start')
         if value == None:
-            value = self._defaultLagrangianStatisticsValues()['iteration_steady_start_volume']
-            self.setIterSteadyStartVolume(value)
+            value = self._defaultLagrangianStatisticsValues()['iteration_steady_start']
+            self.setIterSteadyStart(value)
         return value
 
 
     @Variables.undoLocal
-    def setThresholdValueVolume(self, value):
+    def setThresholdValue(self, value):
         """
         Update the limit statistical weight value.
         """
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_volume.xmlSetData('threshold_volume', value)
+        self.node_stat.xmlSetData('threshold', value)
 
 
     @Variables.noUndo
-    def getThresholdValueVolume(self):
+    def getThresholdValue(self):
         """
         Return the limit statistical weight value.
         """
-        value = self.node_volume.xmlGetDouble('threshold_volume')
+        value = self.node_stat.xmlGetDouble('threshold')
         if not value:
-            value = self._defaultLagrangianStatisticsValues()['threshold_volume']
-            self.setThresholdValueVolume(value)
+            value = self._defaultLagrangianStatisticsValues()['threshold']
+            self.setThresholdValue(value)
         return value
 
 
@@ -305,50 +302,6 @@ class LagrangianStatisticsModel(Model):
             status = self._defaultLagrangianStatisticsValues()['boundary_statistics']
             self.setBoundaryStatisticsStatus(status)
         return status
-
-
-    @Variables.undoLocal
-    def setIterationStartBoundary(self, value):
-        """
-        Update iteration value for start of boundary statistics calculation.
-        """
-        self.isInt(value)
-        self.isGreaterOrEqual(value, 0)
-        self.node_boundary.xmlSetData('iteration_start_boundary', value)
-
-
-    @Variables.noUndo
-    def getIterationStartBoundary(self):
-        """
-        Return the iteration value for start of boundary statistics calculation.
-        """
-        value = self.node_boundary.xmlGetInt('iteration_start_boundary')
-        if value == None:
-            value = self._defaultLagrangianStatisticsValues()['iteration_start_boundary']
-            self.setIterationStartBoundary(value)
-        return value
-
-
-    @Variables.undoLocal
-    def setThresholdValueBoundary(self, value):
-        """
-        Update the limit statistical weight value.
-        """
-        self.isFloat(value)
-        self.isGreaterOrEqual(value, 0)
-        self.node_boundary.xmlSetData('threshold_boundary', value)
-
-
-    @Variables.noUndo
-    def getThresholdValueBoundary(self):
-        """
-        Return the limit statistical weight value.
-        """
-        value = self.node_boundary.xmlGetDouble('threshold_boundary')
-        if not value:
-            value = self._defaultLagrangianStatisticsValues()['threshold_boundary']
-            self.setThresholdValueBoundary(value)
-        return value
 
 
     @Variables.noUndo

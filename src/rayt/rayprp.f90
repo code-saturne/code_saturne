@@ -46,8 +46,6 @@ use cstphy
 use cstnum
 use entsor
 use albase
-use lagpar
-use lagdim
 use lagran
 use parall
 use ppppar

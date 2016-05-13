@@ -1,0 +1,590 @@
+/*
+  This file is part of Code_Saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2016 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*============================================================================
+ * Functions dealing with particle tracking
+ *============================================================================*/
+
+#include "cs_defs.h"
+
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
+#include <limits.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <ctype.h>
+#include <float.h>
+#include <assert.h>
+
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "bft_printf.h"
+#include "bft_error.h"
+#include "bft_mem.h"
+
+#include "fvm_periodicity.h"
+
+#include "cs_base.h"
+#include "cs_halo.h"
+#include "cs_interface.h"
+#include "cs_math.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
+#include "cs_order.h"
+#include "cs_parall.h"
+#include "cs_prototypes.h"
+#include "cs_search.h"
+#include "cs_time_step.h"
+#include "cs_timer_stats.h"
+#include "cs_thermal_model.h"
+
+#include "cs_field.h"
+#include "cs_field_pointer.h"
+
+#include "cs_prototypes.h"
+
+#include "cs_lagr.h"
+#include "cs_lagr_particle.h"
+#include "cs_lagr_stat.h"
+#include "cs_lagr_geom.h"
+
+/*----------------------------------------------------------------------------
+ *  Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "cs_lagr_prototypes.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
+static cs_real_t _debm[4];
+
+/*============================================================================
+ * Local (user defined) function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Define inlet conditions based on experimental data for a given particle
+ *
+ * parameters:
+ *   p_set  <-> particle
+ *   ip     <-- particle id
+ *----------------------------------------------------------------------------*/
+
+static void
+_inlet2(cs_lagr_particle_set_t  *p_set,
+        cs_lnum_t                ip)
+{
+  const int itmx = 8;
+
+  /* Data initializations with experimental measurements
+     --------------------------------------------------- */
+
+  unsigned char *particle = p_set->p_buffer + p_set->p_am->extents * ip;
+  const cs_real_t *part_coords = cs_lagr_particle_attr_const(particle,
+                                                             p_set->p_am,
+                                                             CS_LAGR_COORDS);
+  cs_real_t z = part_coords[2];
+
+  /* transverse coordinate */
+  cs_real_t  zi[] = {0.e-3 , 1.e-3 , 1.5e-3, 2.0e-3, 2.5e-3,
+                     3.0e-3, 3.5e-3, 4.0e-3, 4.5e-3, 5.0e-3};
+
+  /* vertical mean velocity of the particles */
+  cs_real_t  ui[] = {5.544e0, 8.827e0, 9.068e0, 9.169e0, 8.923e0,
+                     8.295e0, 7.151e0, 6.048e0, 4.785e0, 5.544e0};
+
+  /* transverse mean velocity of the particles */
+  cs_real_t  wi[] = { 0.e0   , 0.179e0, 0.206e0, 0.221e0, 0.220e0,
+                      0.223e0, 0.206e0, 0.190e0, 0.195e0, 0.504e0};
+
+  /* fluctuation of the vertical velocity of the particles */
+  cs_real_t  uf[] = { 0.352e0, 0.352e0, 0.275e0, 0.252e0, 0.367e0,
+                      0.516e0, 0.657e0, 0.872e0, 1.080e0, 0.792e0};
+
+  /* fluctuation of the transverse velocity of the particles */
+  cs_real_t  wf[] = { 0.058e0, 0.058e0, 0.056e0, 0.056e0, 0.060e0,
+                      0.063e0, 0.058e0, 0.072e0, 0.091e0, 0.232e0};
+
+#if 0
+  /* shear-stress (currently not used) of the particle velocity */
+  cs_real_t  uvi[] = {0.0017e0, 0.0017e0,  0.0016e0,  0.0027e0,  0.0077e0,
+                      0.0146e0, 0.0206e0,  0.0447e0,  0.0752e0,  0.1145e0};
+#endif
+
+  /* Interpolation
+     ------------- */
+
+  int it = 0;
+
+  if (z > zi[0]) {
+    for (it = 0; it < itmx; it++) {
+      if (z >= zi[it] && z < zi[it+1])
+        break;
+    }
+  }
+
+  /* Calculation of particles velocity
+     --------------------------------- */
+
+  cs_real_t up  =   ui[it] +(z - zi[it]) * (ui[it+1] - ui[it])
+                  / (zi[it+1] - zi[it]);
+
+  /* The value of the mean transverse velocity is currently set to zero
+   * due to uncertainties on this variable */
+
+  cs_real_t wp;
+  if (false)
+    wp  = wi[it] + (z - zi[it]) * (wi[it+1] - wi[it]) / (zi[it+1] - zi[it]);
+  else
+    wp = 0.0;
+
+  cs_real_t upp = uf[it] +   (z - zi[it]) * (uf[it+1] - uf[it])
+                           / (zi[it+1] - zi[it]);
+  cs_real_t wpp = wf[it] +   (z - zi[it]) * (wf[it+1] - wf[it])
+                           / (zi[it+1] - zi[it]);
+
+  /* Calculations of the instantaneous particle velocity */
+
+  cs_lnum_t two = 2;
+  cs_real_t vgauss[2];
+
+  CS_PROCF(normalen,NORMALEN) (&two,vgauss);
+
+  cs_real_t *part_vel
+    = cs_lagr_particle_attr(particle, p_set->p_am, CS_LAGR_VELOCITY);
+  part_vel[0] = up  + vgauss[0] * upp;
+  part_vel[1] = 0.0;
+  part_vel[2] = wp + vgauss[1] * wpp;
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * User function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User definition of an external force field acting on the particles.
+ *
+ * It must be prescribed in every cell and be homogeneous to gravity (m/s^2)
+ * By default gravity and drag force are the only forces acting on the particles
+ * (the gravity components gx gy gz are assigned in the GUI or in usipsu)
+ *
+ * \param[in]    dt_p       time step (for the cell)
+ * \param[in]    taup       particle relaxation time
+ * \param[in]    tlag       relaxation time for the flow
+ * \param[in]    piil       term in the integration of the sde
+ * \param[in]    bx         characteristics of the turbulence
+ * \param[in]    tsfext     infos for the return coupling
+ * \param[in]    vagaus     Gaussian random variables
+ * \param[in]    gradpr     pressure gradient
+ * \param[in]    gradvf   gradient of the flow velocity
+ * \param[inout] romp     particle density
+ * \param[out]   fextla   user external force field (m/s^2)$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_ef(cs_real_t            dt_p,
+                const cs_real_t      taup[],
+                const cs_real_3_t    tlag[],
+                const cs_real_3_t    piil[],
+                const cs_real_t      bx[],
+                const cs_real_t      tsfext[],
+                const cs_real_33_t   vagaus[],
+                const cs_real_3_t    gradpr[],
+                const cs_real_33_t   gradvf[],
+                cs_real_t            romp[],
+                cs_real_3_t          fextla[])
+{
+  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+
+  for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++){
+    fextla[ip][0] = 0;
+    fextla[ip][1] = 0;
+    fextla[ip][2] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User setting of particle inlet conditions for the particles (inlet
+ *        and treatment for the other boundaries)
+ *
+ *  This function is called after the initialization of the new particles in
+ *  order to modify them according to new particle profiles (injection
+ *  profiles, position of the injection point, statistical weights,
+ *  correction of the diameter if the standard-deviation option is activated).
+ *
+ * \param[in] time_id         time step indicator for fields
+ *                            0: use fields at current time step
+ *                            1: use fields at previous time step
+ * \param[in] injfac          array of injection face id for every particles
+ * \param[in] local_userdata  local_userdata pointer to zone/cluster specific
+ *                            boundary conditions (number of injected
+ *                            particles, velocity profile...)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_in(int                         time_id,
+                int                        *injfac,
+                cs_lagr_zone_class_data_t  *local_userdata)
+{
+  const int ntcabs = cs_glob_time_step->nt_cur;
+
+  cs_lagr_bdy_condition_t  *lagr_bdy_conditions = cs_lagr_get_bdy_conditions();
+
+  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+  const cs_lagr_attribute_map_t *p_am = p_set->p_am;
+
+  if (p_set->n_part_new == 0)
+    return;
+
+  /* Modifications occur after all the initializations related to
+     the particle injection, but before the treatment of the continuous
+     injection: it is thus possible to impose an injection profile with
+     the continous-injection option. */
+
+  /* reinitialization of the counter of the new particles */
+  cs_lnum_t npt  = p_set->n_particles;
+
+  /* for each boundary zone */
+  for (cs_lnum_t ii = 0; ii < lagr_bdy_conditions->n_b_zones; ii++) {
+
+    cs_lnum_t izone = lagr_bdy_conditions->b_zone_id[ii];
+
+    /* for each class */
+    for (cs_lnum_t iclas = 0;
+         iclas < lagr_bdy_conditions->b_zone_classes[izone];
+         iclas++) {
+
+      cs_lagr_zone_class_data_t *userdata
+        = &(local_userdata[iclas * cs_glob_lagr_nzone_max + izone]);
+
+      /* if new particles must enter the domain:  */
+      if (ntcabs % userdata->injection_frequency == 0) {
+
+        for (cs_lnum_t ip = npt; ip < npt + userdata->nb_part; ip++) {
+
+          cs_lnum_t face_id = injfac[ip]; /* id of injection face */
+
+          _inlet2(p_set, ip);
+
+        }
+
+        npt += userdata->nb_part;
+
+      }
+
+    }
+
+  }
+
+  /*
+   * Trick to average the statistics at iteration nstist
+   * starting from an unsteady two-coupling calculation
+   *                                                      */
+  if (cs_glob_time_step->nt_cur > cs_glob_lagr_stat_options->nstist) {
+
+    cs_glob_lagr_source_terms->nstits = cs_glob_lagr_stat_options->nstist;
+    cs_glob_lagr_time_scheme->isttio = 1;
+
+  }
+
+  /* Simulation of the instantaneous turbulent fluid flow velocities seen
+     by the solid particles along their trajectories
+     -------------------------------------------------------------------- */
+
+  /* In the previous operations, the particle data has been set with the
+   * components of the instantaneous velocity (fluctuation + mean value) seen
+   * by the particles.
+   *
+   * When the velocity of the flow is modified as above, most of the time
+   * the user knows only the mean value. In some flow configurations and some
+   * injection conditions, it may be necessary to reconstruct the fluctuating part.
+   * That is why the following function may be called.
+   * Caution:
+   *   - this turbulent component must be reconstructed only on the modified
+   *     velocities of the flow seen.
+   *   - the reconstruction is must be adapted to the case. */
+
+  if (false) {
+    cs_lnum_t npar1 = p_set->n_particles;
+    cs_lnum_t npar2 = p_set->n_particles + p_set->n_part_new;
+    cs_lagr_new_particle_init(npar1, npar2, time_id);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prescribe some attributes for newly injected particles.
+ *
+ * This function is called at different points, at which different attributes
+ * may be modified.
+ *
+ * \param[inout]  particle  particle structure
+ * \param[in]     p_am      particle attributes map
+ * \param[in]     face_id   id of particle injection face
+ * \param[in]     attr_id   id of variable modifiable by this call. called for
+                            CS_LAGR_VELOCITY, CS_LAGR_DIAMETER,
+                            CS_LAGR_TEMPERATURE, CS_LAGR_STAT_WEIGHT
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_new_p_attr(unsigned char                  *particle,
+                        const cs_lagr_attribute_map_t  *p_am,
+                        cs_lnum_t                       face_id,
+                        cs_lagr_attribute_t             attr_id)
+{
+  const cs_real_t pis6   = cs_math_pi / 6.0;
+
+  /* Velocity profile */
+
+  if (attr_id == CS_LAGR_VELOCITY) {
+
+    cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
+    part_vel[0] = 1.0;
+    part_vel[1] = 0.0;
+    part_vel[2] = 0.0;
+
+  }
+
+  /* Diameter profile */
+
+  if (attr_id == CS_LAGR_DIAMETER)
+    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, 5e-05);
+
+  /* Temperature profile */
+
+  if (attr_id == CS_LAGR_TEMPERATURE)
+    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE, 20.0);
+
+  /* Statistical weight profile */
+
+  if (attr_id == CS_LAGR_STAT_WEIGHT)
+    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_STAT_WEIGHT, 0.01);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User function (non-mandatory intervention)
+ *
+ * User-defined modifications on the variables at the end of the
+ * Lagrangian time step and calculation of user-defined
+ * additional statistics on the particles.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_extra_operations(const cs_real_t  dt[])
+{
+  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+  const cs_lagr_attribute_map_t *p_am = p_set->p_am;
+
+  cs_lnum_t nxlist = 100;
+
+  const cs_lnum_t nfac        = cs_glob_mesh->n_i_faces;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_real_3_t *ifacel   = cs_glob_mesh->i_face_cells;
+
+  const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_vertices  = cs_glob_mesh->n_vertices;
+
+  const cs_real_t *cdgfac   = cs_glob_mesh_quantities->i_face_cog;
+  const cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
+  const cs_real_t *pond     = cs_glob_mesh_quantities->weight;
+
+  /* Example: computation of the particle mass flow rate on 4 planes
+     --------------------------------------------------------------- */
+
+  if (false) {
+
+    cs_real_t zz[4] = {0.1e0, 0.15e0, 0.20e0, 0.25e0};
+
+    /* If we are in an unsteady case, or if the beginning of the steady stats
+     * is not reached yet, all statistics are reset to zero at each time
+     step before entering this function.*/
+
+    if(   cs_glob_lagr_time_scheme->isttio == 0
+       || cs_glob_time_step->nt_cur <= cs_glob_lagr_stat_options->nstist) {
+      for (cs_lnum_t iplan = 0; iplan < 4; iplan++)
+        _debm[iplan] = 0.0;
+
+    }
+
+    for (cs_lnum_t iplan = 0; iplan < 4; iplan++) {
+
+      for (cs_lnum_t npt = 0; p_set->n_particles; npt++) {
+
+        unsigned char *part = p_set->p_buffer + p_am->extents * npt;
+
+        cs_lnum_t iel = cs_lagr_particle_get_cell_id(part, p_am);
+
+        if( iel >= 0 ) {
+
+          const cs_real_t *part_coords
+            = cs_lagr_particle_attr_const(part, p_am, CS_LAGR_COORDS);
+          const cs_real_t *prev_part_coords
+            = cs_lagr_particle_attr_n_const(part, p_am, 1, CS_LAGR_COORDS);
+
+          if(    part_coords[0] > zz[iplan]
+              && prev_part_coords[0] <= zz[iplan])
+            _debm[iplan] +=  cs_lagr_particle_get_real(part, p_am,
+                                                       CS_LAGR_STAT_WEIGHT)
+              * cs_lagr_particle_get_real(part, p_am, CS_LAGR_MASS);
+
+        }
+
+      }
+
+    }
+
+    cs_real_t stat_age = cs_lagr_stat_get_age();
+
+    for (cs_lnum_t iplan = 0; iplan < 4; iplan++)
+      bft_printf(" Debit massique particulaire en Z(%d) : %E14.5)",
+                 iplan,
+                 _debm[iplan]/stat_age);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User integration of the SDE for the user-defined variables.
+ *
+ * The variables are constant by default. The SDE must be of the form:
+ *
+ * \f[
+ *    \frac{dT}{dt}=\frac{T - PIP}{Tca}
+ * \f]
+ *
+ * T:   particle attribute representing the variable
+ * Tca: characteristic time for the sde
+ *      to be prescribed in the array auxl1
+ * PIP: coefficient of the SDE (pseudo RHS)
+ *      to be prescribed in the array auxl2.
+ *      If the chosen scheme is first order (nordre=1) then, at the first
+ *      and only call pip is expressed as a function of the quantities of
+ *      the previous time step (contained in the particle data).
+ *      If the chosen scheme is second order (nordre=2)
+ *      then, at the first call (nor=1) pip is expressed as a function of
+ *      the quantities of the previous time step, and at the second passage
+ *      (nor=2) pip is expressed as a function of the quantities of the
+ *      current time step.
+ *
+ * \param[in]  dt      time step (per cell)
+ * \param[in]  taup    particle relaxation time
+ * \param[in]  tlag    relaxation time for the flow
+ * \param[in]  tempct  characteristic thermal time and implicit source
+ *                     term of return coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_sde(const cs_real_t  dt[],
+                 cs_real_t        taup[],
+                 cs_real_3_t      tlag[],
+                 cs_real_t        tempct[])
+{
+  /* Initializations
+     --------------- */
+
+  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+  const cs_lagr_attribute_map_t *p_am = p_set->p_am;
+
+  cs_real_t *tcarac, *pip;
+
+  BFT_MALLOC(tcarac, p_set->n_particles, cs_real_t);
+  BFT_MALLOC(pip   , p_set->n_particles, cs_real_t);
+
+  /* Characteristic time of the current SDE
+     -------------------------------------- */
+
+  /* Loop on the additional variables */
+
+  for (int iiii = 0;
+       iiii < cs_glob_lagr_model->n_user_variables;
+       iiii++) {
+
+    for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+
+      unsigned char *part = p_set->p_buffer + p_am->extents * npt;
+      cs_lnum_t iel = cs_lagr_particle_get_cell_id(part, p_am);
+
+      cs_real_t *usr_var
+        = cs_lagr_particle_attr_n(part, p_am, 0, CS_LAGR_USER);
+      cs_real_t *prev_usr_var
+        = cs_lagr_particle_attr_n(part, p_am, 1, CS_LAGR_USER);
+
+      if (iel >= 0) {
+
+        /* Characteristic time tca of the differential equation,
+           This example must be adapted to the case */
+        tcarac[npt] = 1.0;
+
+        /* Prediction at the first substep;
+           This example must be adapted to the case */
+        if (cs_glob_lagr_time_step->nor == 1)
+          pip[npt] = prev_usr_var[iiii];
+
+        /* Correction at the second substep;
+           This example must be adapted to the case */
+        else
+          pip[npt] = usr_var[iiii];
+
+      }
+
+    }
+
+    /* Integration of the variable ipl
+       ------------------------------- */
+
+    cs_lagr_sde_attr(CS_LAGR_USER, tcarac, pip);
+
+  }
+
+  BFT_FREE(tcarac);
+  BFT_FREE(pip);
+}
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS

@@ -64,7 +64,7 @@ subroutine turrij &
 !===============================================================================
 
 use paramx
-use lagdim, only: ntersl
+use lagran, only: ntersl
 use numvar
 use entsor
 use cstphy

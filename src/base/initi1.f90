@@ -39,6 +39,7 @@ use ppincl, only: ippmod, nmodmx
 use post
 use cs_c_bindings
 use field
+use lagran
 
 !===============================================================================
 
@@ -150,7 +151,9 @@ call dflsui(ntsuit, ttsuit, wtsuit);
 
 ! Lagrangian model options
 
-call lagopt
+call lagran_init_map
+
+call lagopt(isuite, iccvfg, iscalt, dtref)
 
 !===============================================================================
 ! 3. DEFINITION DES COUPLAGES AVEC SYRTHES

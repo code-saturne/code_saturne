@@ -102,9 +102,8 @@ use cpincl
 use cs_fuel_incl
 use ppincl
 use ppcpfu
-use lagpar
 use lagran
-use radiat
+use radiat, only: iirayo, itsre, itsri
 use field
 use field_operator
 use ihmpre, only: iihmpr
@@ -187,6 +186,7 @@ double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: cpro_wgrec_s
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, croma, pcrom
+double precision, dimension(:), pointer :: cvar_scal, cvar_scalt
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
@@ -401,10 +401,11 @@ if ((ichemistry.ge.1).and.(isepchemistry.eq.2)                    &
 endif
 
 
-!Precipitation/dissolution
+! Precipitation/dissolution
 ! Calculation of source terms du to precipitation and dissolution phenomena
-if (ipreci .eq. 1) then
-  call precst(nvar, nscal, iscal, dt, smbrs)
+if (ipreci .eq. 1 .and. iscal .eq. 1) then
+   call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
+   call precst(dtref, crom, cvar_scal, smbrs)
 endif
 
 ! Si on extrapole les TS :

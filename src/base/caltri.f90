@@ -60,8 +60,6 @@ use ppthch
 use ppincl
 use coincl
 use cpincl
-use lagpar
-use lagdim
 use lagran
 use vorinc
 use ihmpre
@@ -215,14 +213,6 @@ call cregeo
 !===============================================================================
 
 call initi2
-
-if (iilagr.gt.0) then
-
-  !--> Compute "lndnod" (lagran.f90)
-
-  call lagini(lndnod)
-
-endif
 
 !===============================================================================
 ! Zone definition for head-loss, mass sources term,
@@ -472,23 +462,9 @@ if (nfpt1t.gt.0) then
   call init_pt1d
 endif
 
-! Memory reservation for Lagrangian module
+! Map arrays from Lagrangian module
 if (iilagr.gt.0) then
-
-  call init_lagr_arrays
-
-  allocate(icocel(lndnod), itycel(ncelet+1))
-  allocate(ifrlag(nfabor))
-
-  allocate(statis(ncelet,nvlsta*(1+nbclst)))
-  if (nvlsta.gt.1) allocate(stativ(ncelet,(nvlsta-1)*(1+nbclst)))
-  allocate(tslagr(ncelet,ntersl))
-  allocate(parbor(nfabor,nvisbr))
-
-  if (idepst.eq.1) then
-    allocate(dlgeo(nfabor,ngeol))
-  endif
-
+  call init_lagr_arrays(tslagr)
 endif
 
 !===============================================================================
@@ -611,12 +587,7 @@ endif
 !===============================================================================
 
 if (iilagr.gt.0) then
-
-  call laglec_m                                                   &
- ( ncelet , ncel   , nfabor ,                                     &
-   ntersl , nvlsta , nvisbr ,                                     &
-   statis , stativ , parbor , tslagr )
-
+  call laglec(nsalto, nsalpp , iprpfl)
 endif
 
 !===============================================================================
@@ -888,28 +859,27 @@ call tridim                                                       &
    propce ,                                                       &
    frcxt  , prhyd  )
 
-!===============================================================================
-! Compute temporal means (accumulation)
-!===============================================================================
 
 if (inpdt0.eq.0 .and. itrale.gt.0) then
+
+  !===============================================================================
+  ! Lagrangian module
+  !===============================================================================
+
+  if (iilagr.gt.0) then
+
+    call timer_stats_start(lagr_stats_id)
+
+    call cs_lagr_solve_time_step(itypfb, dt)
+
+    call timer_stats_stop(lagr_stats_id)
+
+  endif
+
+  !===============================================================================
+  ! Compute temporal means (accumulation)
+  !===============================================================================
   call time_moment_update_all
-endif
-
-!===============================================================================
-! Lagrangian module
-!===============================================================================
-
-if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
-
-  call timer_stats_start(lagr_stats_id)
-
-  call lagune                                                     &
- ( lndnod ,                                                       &
-   nvar   , nscal  ,                                              &
-   dt     )
-
-  call timer_stats_stop(lagr_stats_id)
 
 endif
 
@@ -1011,10 +981,7 @@ if (iisuit.eq.1) then
   endif
 
   if (iilagr.gt.0) then
-
-    call lagout                                                      &
-    ( ntersl , nvlsta , nvisbr )
-
+    call lagout(nsalto, nsalpp, iprpfl)
   endif
 
   if (iirayo.gt.0) then
@@ -1051,9 +1018,7 @@ endif
 
 call timer_stats_start(post_stats_id)
 
-call pstvar                                                       &
- ( ntcabs ,                                                       &
-   nvar   , nscal  , nvlsta , nvisbr )
+call pstvar(ntcabs, nvar, nscal)
 
 !===============================================================================
 ! Probes
@@ -1076,10 +1041,9 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
 
     call ecrhis(modhis)
 
-    if (iilagr.gt.0) then
-      call laghis(ndim, ncelet, ncel, modhis, nvlsta,             &
-                  xyzcen, volume, statis, stativ)
-    endif
+    ! if (iilagr.gt.0) then
+    !   call laghis
+    ! endif
 
     if (ihistr.eq.1) then
       call strhis(modhis)
@@ -1109,12 +1073,6 @@ if (modntl.eq.0) then
     dt     , volume )
 
   call log_iteration
-
-  if (iilagr.gt.0) then
-    call laglis                                                   &
-    ( nvlsta , nvisbr ,                                           &
-      statis , parbor )
-  endif
 
 endif
 
@@ -1157,10 +1115,10 @@ call timer_stats_start(post_stats_id)
 modhis = 2
 call ecrhis(modhis)
 
-if (iilagr.gt.0) then
-  call laghis(ndim, ncelet, ncel, modhis , nvlsta,                &
-              xyzcen, volume, statis, stativ)
-endif
+! if (iilagr.gt.0) then
+!   call laghis
+! endif
+
 if (ihistr.eq.1) then
   call strhis(modhis)
 endif
@@ -1191,21 +1149,7 @@ if (ivrtex.eq.1) then
 endif
 
 if (iilagr.gt.0) then
-
-  close(implal)
-
-  deallocate(icocel, itycel)
-  deallocate(ifrlag)
-
-  deallocate(statis)
-  if (associated(stativ)) deallocate(stativ)
-  deallocate(tslagr)
-  deallocate(parbor)
-
-  if (associated(dlgeo)) deallocate(dlgeo)
-
   call finalize_lagr_arrays
-
 endif
 
 call turbomachinery_finalize

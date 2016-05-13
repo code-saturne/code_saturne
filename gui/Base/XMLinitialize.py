@@ -1145,6 +1145,35 @@ class XMLinit(Variables):
         for node in self.case.xmlGetNodeList('profile'):
             node.xmlDelAttribute('title')
 
+        # Lagrangian Model
+        # darcy_model -> groundwater
+
+        stats_node = None
+        XMLLagrangianNode = self.case.xmlGetNode('lagrangian')
+        if XMLLagrangianNode:
+            stats_node = XMLLagrangianNode.xmlGetNode('statistics')
+        if stats_node:
+            v_node = stats_node.xmlGetNode('volume')
+            b_node = stats_node.xmlGetNode('boundary')
+            if v_node:
+                it_start = v_node.xmlGetInt('iteration_start_volume')
+                if it_start != None:
+                    stats_node.xmlSetData('iteration_start', it_start)
+                    v_node.xmlRemoveChild('iteration_start_volume')
+                it_start_st = v_node.xmlGetInt('iteration_steady_start_volume')
+                if it_start_st != None:
+                    stats_node.xmlSetData('iteration_steady_start', it_start_st)
+                    v_node.xmlRemoveChild('iteration_steady_start_volume')
+                threshold = v_node.xmlGetDouble('threshold_volume')
+                if threshold != None:
+                    stats_node.xmlSetData('threshold', threshold)
+                    v_node.xmlRemoveChild('threshold_volume')
+            if b_node:
+                for t in ['iteration_start_boundary', 'threshold_boundary']:
+                    n = b_node.xmlGetNode(t)
+                    if n:
+                        n.xmlRemoveNode()
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

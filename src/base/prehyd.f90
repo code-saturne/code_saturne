@@ -90,7 +90,6 @@ use optcal
 use albase
 use parall
 use period
-use lagpar
 use lagran
 use cplsat
 use mesh

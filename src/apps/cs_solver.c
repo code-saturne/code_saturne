@@ -425,10 +425,6 @@ cs_run(void)
   cs_post_finalize();
   cs_log_iteration_destroy_all();
 
-  /* Free GUI-related data */
-
-  cs_gui_particles_free();
-
   /* Switch logging back to C (may be moved depending on Fortran dependencies) */
 
   cs_base_fortran_bft_printf_to_c();
@@ -445,7 +441,7 @@ cs_run(void)
 
   /* Free Lagrangian related structures */
 
-  cs_lagr_destroy();
+  cs_lagr_tracking_finalize();
 
   /* Free main mesh after printing some statistics */
 

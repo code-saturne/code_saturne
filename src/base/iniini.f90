@@ -53,7 +53,7 @@ use mesh
 use field
 use cavitation
 use darcy_module
-use radiat
+use radiat, only: iirayo
 use cs_nz_condensation, only: nzones
 
 !===============================================================================
@@ -182,12 +182,6 @@ ntsuit = 0
 !                  (pas de detection automatique, fichiers de taille faible)
 impvvo = 20
 
-!    Fichier listing Lagrangien
-
-implal = 80
-ficlal = 'listla'
-ntlal  = 1
-
 ! ---> Fichier thermochinie
 !        FPP : utilisateur
 !        JNF : Janaf
@@ -265,35 +259,6 @@ do ii = 1, ncaptm
   xyzcap(2,ii) = 0.d0
   xyzcap(3,ii) = 0.d0
 enddo
-
-! ---> Fichiers Lagrangiens
-
-!     IMPLA1 : Unite fichier specifique Lagrangien
-!     IMPLA2 : Unite fichier specifique Lagrangien
-!     IMPLA3 : Unite fichier SCRATCH pour stockage temporaire
-!     IMPLA4 : Unite fichier SCRATCH pour stockage temporaire
-!     IMPLA5 : Unite d'ecriture des variables associees
-
-impla1 = 50
-impla2 = 51
-impla3 = 52
-impla4 = 53
-
-impla5(1)  = 54
-impla5(2)  = 55
-impla5(3)  = 56
-impla5(4)  = 57
-impla5(5)  = 58
-impla5(6)  = 59
-impla5(7)  = 60
-impla5(8)  = 61
-impla5(9)  = 62
-impla5(10) = 63
-impla5(11) = 64
-impla5(12) = 65
-impla5(13) = 66
-impla5(14) = 67
-impla5(15) = 68
 
 ! ---> Fichiers utilisateurs
 
@@ -1302,11 +1267,7 @@ ifaccp = 0
 ! 12. Lagrangian arrays
 !===============================================================================
 
-statis => rvoid2
-nullify(stativ)
-parbor => rvoid2
 tslagr => rvoid2
-nullify(dlgeo)
 
 !===============================================================================
 ! 13. Cavitation module

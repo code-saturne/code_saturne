@@ -64,8 +64,6 @@ use ppppar
 use ppthch
 use ppincl
 use cfpoin
-use lagpar
-use lagdim
 use lagran
 use ihmpre
 use cplsat
@@ -200,6 +198,13 @@ endif
 ityloc = 3 ! boundary faces
 
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+
+!> friction velocity at the wall, in the case of a LES calculation
+!> with van Driest-wall damping
+
+if (itytur.eq.4 .and. idries.eq.1) then
+  call field_find_or_create('ustar', itycat, ityloc, idim1, iflid)
+endif
 
 ! If postprocessing of boundary layer Nusselt required,
 ! create appropriate fields; check that a thermal variable is present first

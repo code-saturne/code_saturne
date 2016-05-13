@@ -494,6 +494,10 @@ if (iecaux.eq.1) then
 
   call time_moment_restart_write(rp)
 
+  ! if (iilagr .gt. 0 .and. istala .gt. 0) then
+  !    call lagr_moment_restart_write(rp)
+  ! endif
+
 ! ---> Distance a la paroi
 !      On pourra ecrire ici la distance a la paroi
 

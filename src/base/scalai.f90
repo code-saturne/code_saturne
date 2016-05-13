@@ -51,7 +51,6 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use lagdim
 use pointe
 use parall
 use ppppar

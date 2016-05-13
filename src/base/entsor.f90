@@ -239,42 +239,6 @@ module entsor
 
   !> \}
 
-  !> \defgroup lagrange Lagrange files
-
-  !> \addtogroup lagrange
-  !> \{
-
-  !> name of Lagrange listing
-  character(len=6), save :: ficlal
-
-  !> logical unit of Lagrange listing
-  integer, save :: implal
-  !> output period of Lagrange listing
-  integer, save :: ntlal
-
-
-  !> unit of a file specific to Lagrangian modelling.
-  !> Useful in case of Lagrangian modelling.
-  integer, save :: impla1
-
-  !> unit of a file specific to Lagrangian modelling.
-  !> Useful in case of Lagrangian modelling.
-  integer, save :: impla2
-
-  !> unit of a file specific to Lagrangian modelling.
-  !> Useful in case of Lagrangian modelling.
-  integer, save :: impla3
-
-  !> unit of a file specific to Lagrangian modelling.
-  !> Useful in case of Lagrangian modelling.
-  integer, save :: impla4
-
-  !> units of files specific to Lagrangian modelling. 15-dimension array.
-  !> Useful in case of Lagrangian modelling.
-  integer, save :: impla5(15)
-
-  !> \}
-
   !> \addtogroup userfile
   !> \{
 

@@ -147,8 +147,8 @@ cs_math_3_length(const cs_real_t  xa[3],
 /*----------------------------------------------------------------------------*/
 
 static inline cs_real_t
-cs_math_3_dot_product(const cs_real_t u[3],
-                      const cs_real_t v[3])
+cs_math_3_dot_product(const cs_real_t  u[3],
+                      const cs_real_t  v[3])
 {
   cs_real_t uv = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
 
@@ -166,7 +166,7 @@ cs_math_3_dot_product(const cs_real_t u[3],
 /*----------------------------------------------------------------------------*/
 
 static inline cs_real_t
-cs_math_3_norm(const cs_real_3_t  v)
+cs_math_3_norm(const cs_real_t  v[3])
 {
   return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
@@ -197,7 +197,6 @@ cs_math_3_square_norm(const cs_real_t v[3])
  * \param[in]     m             matrix of 3x3 real values
  * \param[in]     v             vector of 3 real values
  * \param[out]    mv            vector of 3 real values
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -213,6 +212,27 @@ cs_math_33_3_product(const cs_real_t  m[3][3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the product of the transpose of a matrix of 3x3 real
+ * values by a vector of 3 real values.
+ *
+ * \param[in]     m             matrix of 3x3 real values
+ * \param[in]     v             vector of 3 real values
+ * \param[out]    mv            vector of 3 real values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_33t_3_product(const cs_real_t  m[3][3],
+                      const cs_real_t  v[3],
+                      cs_real_3_t      mv)
+{
+  mv[0] = m[0][0]*v[0] + m[1][0]*v[1] + m[2][0]*v[2];
+  mv[1] = m[0][1]*v[0] + m[1][1]*v[1] + m[2][1]*v[2];
+  mv[2] = m[0][2]*v[0] + m[1][2]*v[1] + m[2][2]*v[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the product of a symmetric matrix of 3x3 real values by
  * a vector of 3 real values.
  * NB: Symmetric matrix are stored as follows (s11, s22, s33, s12, s23, s13)
@@ -220,7 +240,6 @@ cs_math_33_3_product(const cs_real_t  m[3][3],
  * \param[in]     m             matrix of 3x3 real values
  * \param[in]     v             vector of 3 real values
  * \param[out]    mv            vector of 3 real values
- *
  */
 /*----------------------------------------------------------------------------*/
 

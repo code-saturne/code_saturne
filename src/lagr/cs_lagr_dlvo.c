@@ -57,8 +57,10 @@
 #include "cs_parall.h"
 #include "cs_prototypes.h"
 #include "cs_search.h"
-#include "cs_lagr_utils.h"
 #include "cs_halo.h"
+
+#include "cs_lagr.h"
+#include "cs_lagr_roughness.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -90,6 +92,21 @@ static cs_lagr_dlvo_param_t cs_lagr_dlvo_param;
 
 static const double _pi = 3.14159265358979323846;
 
+/* Cut-off distance for adhesion forces (assumed to be the Born distance) */
+static const cs_real_t  _d_cut_off = 1.65e-10;
+
+/* Characteristic retardation wavelength (m) for Hamaker constant */
+static const cs_real_t _lambda_wl = 1000.0e-9;
+
+/* Boltzmann constant */
+static const double _k_boltzmann = 1.38e-23;
+
+/* Free space permittivity */
+static const cs_real_t _free_space_permit = 8.854e-12;
+
+/* Faraday constant */
+static const cs_real_t _faraday_cst = 9.648e4;
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -103,37 +120,27 @@ static const double _pi = 3.14159265358979323846;
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (dlvo_init, DLVO_INIT)(const cs_real_t   *faraday_cst,
-                                const cs_real_t   *free_space_permit,
-                                const cs_real_t   *water_permit,
-                                const cs_real_t   *ionic_strength,
-                                const cs_real_t    temperature[],
-                                const cs_real_t   *valen,
-                                const cs_real_t   *phi_p,
-                                const cs_real_t   *phi_s,
-                                const cs_real_t   *cstham,
-                                const cs_real_t   *dcutof,
-                                const cs_real_t   *lambwl,
-                                const cs_real_t   *kboltz)
+cs_lagr_dlvo_init(const cs_real_t   water_permit,
+                  const cs_real_t   ionic_strength,
+                  const cs_real_t   temperature[],
+                  const cs_real_t   valen,
+                  const cs_real_t   phi_p,
+                  const cs_real_t   phi_s,
+                  const cs_real_t   cstham)
 {
-  int ifac;
+  cs_lnum_t face_id;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
   /* Retrieve physical parameters related to clogging modeling */
   /* and fill the global structure cs_lagr_clog_param          */
 
-  cs_lagr_dlvo_param.faraday_cst = *faraday_cst;
-  cs_lagr_dlvo_param.free_space_permit = *free_space_permit;
-  cs_lagr_dlvo_param.water_permit = *water_permit;
-  cs_lagr_dlvo_param.ionic_strength = *ionic_strength;
-  cs_lagr_dlvo_param.valen = *valen;
-  cs_lagr_dlvo_param.phi_p = *phi_p;
-  cs_lagr_dlvo_param.phi_s = *phi_s;
-  cs_lagr_dlvo_param.cstham = *cstham;
-  cs_lagr_dlvo_param.dcutof = *dcutof;
-  cs_lagr_dlvo_param.lambwl = *lambwl;
-  cs_lagr_dlvo_param.kboltz = *kboltz;
+  cs_lagr_dlvo_param.water_permit = water_permit;
+  cs_lagr_dlvo_param.ionic_strength = ionic_strength;
+  cs_lagr_dlvo_param.valen = valen;
+  cs_lagr_dlvo_param.phi_p = phi_p;
+  cs_lagr_dlvo_param.phi_s = phi_s;
+  cs_lagr_dlvo_param.cstham = cstham;
 
   /* Allocate memory for the temperature and Debye length arrays */
 
@@ -145,23 +152,21 @@ CS_PROCF (dlvo_init, DLVO_INIT)(const cs_real_t   *faraday_cst,
 
   /* Store the temperature */
 
-  for (ifac = 0; ifac < mesh->n_b_faces; ifac++)
-    cs_lagr_dlvo_param.temperature[ifac] = temperature[ifac];
+  for (face_id = 0; face_id < mesh->n_b_faces; face_id++)
+    cs_lagr_dlvo_param.temperature[face_id] = temperature[face_id];
 
   /* Computation and storage of the Debye length */
 
-  for (ifac = 0; ifac < mesh->n_b_faces ; ifac++)
+  for (face_id = 0; face_id < mesh->n_b_faces ; face_id++)
 
-    cs_lagr_dlvo_param.debye_length[ifac]
-      =   pow(2e3 * pow(cs_lagr_dlvo_param.faraday_cst,2)
+    cs_lagr_dlvo_param.debye_length[face_id]
+      =   pow(2e3 * pow(_faraday_cst,2)
         * cs_lagr_dlvo_param.ionic_strength /
         (cs_lagr_dlvo_param.water_permit
-         * cs_lagr_dlvo_param.free_space_permit * PG_CST
-         * cs_lagr_dlvo_param.temperature[ifac]), -0.5);
+         * _free_space_permit * PG_CST
+         * cs_lagr_dlvo_param.temperature[face_id]), -0.5);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(" cstfar = %g\n", cs_lagr_dlvo_param.faraday_cst);
-  bft_printf(" epsvid = %g\n", cs_lagr_dlvo_param.free_space_permit);
   bft_printf(" epseau = %g\n", cs_lagr_dlvo_param.water_permit);
   bft_printf(" fion   = %g\n", cs_lagr_dlvo_param.ionic_strength);
   bft_printf(" temp[1]   = %g\n", cs_lagr_dlvo_param.temperature[0]);
@@ -215,12 +220,11 @@ cs_lagr_barrier(const void                     *particle,
 
     /* Interaction between the sphere and the plate */
 
-    distp = cs_lagr_dlvo_param.dcutof + i * step;
+    distp = _d_cut_off + i * step;
 
     cs_real_t var1
       = cs_lagr_van_der_waals_sphere_plane(distp,
                                            rpart,
-                                           cs_lagr_dlvo_param.lambwl,
                                            cs_lagr_dlvo_param.cstham);
 
     cs_real_t var2
@@ -229,10 +233,8 @@ cs_lagr_barrier(const void                     *particle,
                                  cs_lagr_dlvo_param.valen,
                                  cs_lagr_dlvo_param.phi_p,
                                  cs_lagr_dlvo_param.phi_s,
-                                 cs_lagr_dlvo_param.kboltz,
                                  cs_lagr_dlvo_param.temperature[face_id],
                                  cs_lagr_dlvo_param.debye_length[face_id],
-                                 cs_lagr_dlvo_param.free_space_permit,
                                  cs_lagr_dlvo_param.water_permit);
 
     barr = (var1 + var2);
@@ -255,24 +257,23 @@ cs_lagr_barrier(const void                     *particle,
 cs_real_t
 cs_lagr_van_der_waals_sphere_plane (cs_real_t distp,
                                     cs_real_t rpart,
-                                    cs_real_t lambwl,
                                     cs_real_t cstham)
 {
   cs_real_t var;
 
-  if (distp < (lambwl / 2 / _pi)) {
+  if (distp < (_lambda_wl / 2 / _pi)) {
     var = -cstham * rpart / (6 * distp)
-          * (1 / (1 + 14 * distp / lambwl + 5 * _pi/4.9
-          *  pow(distp,3) / lambwl / pow(rpart,2)));
+          * (1 / (1 + 14 * distp / _lambda_wl + 5 * _pi/4.9
+          *  pow(distp,3) / _lambda_wl / pow(rpart,2)));
   }
   else {
     var = cstham
-      * ((2.45 * lambwl ) /(60. * _pi)
+      * ((2.45 * _lambda_wl ) /(60. * _pi)
          * (  (distp - rpart) / pow(distp,2)
             - (distp + 3. * rpart) / pow(distp + 2. * rpart,2))
-            - 2.17 / 720. / pow(_pi,2) * pow(lambwl,2) * ((distp - 2. * rpart)
+            - 2.17 / 720. / pow(_pi,2) * pow(_lambda_wl,2) * ((distp - 2. * rpart)
             / pow(distp,3) - (distp + 4. * rpart) / pow(distp + 2. * rpart,3))
-            + 0.59 / 5040. / pow(_pi,3) * pow(lambwl,3)
+            + 0.59 / 5040. / pow(_pi,3) * pow(_lambda_wl,3)
             * ((distp - 3. * rpart) /  pow(distp,4) - (distp + 5. * rpart)
             / pow(distp + 2. * rpart,4)));
   }
@@ -289,12 +290,11 @@ cs_real_t
 cs_lagr_van_der_waals_sphere_sphere(cs_real_t  distcc,
                                     cs_real_t  rpart1,
                                     cs_real_t  rpart2,
-                                    cs_real_t  lambwl,
                                     cs_real_t  cstham)
 {
   cs_real_t var = - cstham * rpart1 * rpart2 / (6 * (distcc - rpart1 - rpart2)
                * (rpart1 + rpart2)) * (1 - 5.32 * (distcc - rpart1 - rpart2)
-              / lambwl * log(1 + lambwl / (distcc - rpart1 - rpart2) / 5.32));
+              / _lambda_wl * log(1 + _lambda_wl / (distcc - rpart1 - rpart2) / 5.32));
 
   return var;
 }
@@ -311,17 +311,15 @@ cs_lagr_edl_sphere_plane(cs_real_t  distp,
                          cs_real_t  valen,
                          cs_real_t  phi1,
                          cs_real_t  phi2,
-                         cs_real_t  kboltz,
                          cs_real_t  temp,
                          cs_real_t  debye_length,
-                         cs_real_t  free_space_permit,
                          cs_real_t  water_permit)
 {
 
   cs_real_t charge = 1.6e-19;
   /* Reduced zeta potential */
-  cs_real_t lphi1 =  valen * charge * phi1 /  kboltz / temp;
-  cs_real_t lphi2 =  valen * charge * phi2 /  kboltz / temp;
+  cs_real_t lphi1 =  valen * charge * phi1 /  _k_boltzmann / temp;
+  cs_real_t lphi2 =  valen * charge * phi2 /  _k_boltzmann / temp;
 
   cs_real_t tau = rpart / debye_length;
 
@@ -340,8 +338,8 @@ cs_lagr_edl_sphere_plane(cs_real_t  distp,
   cs_real_t omega2 = pow(lphi1,2) + pow(lphi2,2) - alpha * lphi1 * lphi2;
   cs_real_t gamma = sqrt(rpart / (distp + rpart)) * exp(-1./debye_length * distp);
 
-  cs_real_t var = 2 * _pi * free_space_permit * water_permit
-    * pow((kboltz * temp / (1. * valen) / charge),2)
+  cs_real_t var = 2 * _pi * _free_space_permit * water_permit
+    * pow((_k_boltzmann * temp / (1. * valen) / charge),2)
                   * rpart * (distp + rpart) / (distp + 2 * rpart)
                   * (omega1 * log(1 + gamma) + omega2 * log(1 - gamma));
 
@@ -361,17 +359,15 @@ cs_lagr_edl_sphere_sphere(cs_real_t  distcc,
                           cs_real_t  valen,
                           cs_real_t  phi1,
                           cs_real_t  phi2,
-                          cs_real_t  kboltz,
                           cs_real_t  temp,
                           cs_real_t  debye_length,
-                          cs_real_t  free_space_permit,
                           cs_real_t  water_permit)
 {
   cs_real_t charge = 1.6e-19;
 
   /* Reduced zeta potential */
-  cs_real_t lphi1 =  valen * charge * phi1 /  kboltz / temp;
-  cs_real_t lphi2 =  valen * charge * phi2 /  kboltz / temp;
+  cs_real_t lphi1 =  valen * charge * phi1 /  _k_boltzmann / temp;
+  cs_real_t lphi2 =  valen * charge * phi2 /  _k_boltzmann / temp;
 
 
   /* Extended reduced zeta potential */
@@ -399,8 +395,8 @@ cs_lagr_edl_sphere_sphere(cs_real_t  distcc,
   cs_real_t gamma = sqrt(rpart1 * rpart2 / (distcc-rpart1) / (distcc-rpart2))
                     *exp(1. / debye_length * (rpart1 + rpart2 - distcc));
 
-  cs_real_t var = 2 * _pi * free_space_permit * water_permit
-                  * pow((kboltz * temp / charge),2)
+  cs_real_t var = 2 * _pi * _free_space_permit * water_permit
+                  * pow((_k_boltzmann * temp / charge),2)
                   * rpart1 * rpart2 * (distcc - rpart1) * (distcc - rpart2)
                   / (distcc * (  distcc * (rpart1  + rpart2)
                                - pow(rpart1,2) - pow(rpart2,2)))

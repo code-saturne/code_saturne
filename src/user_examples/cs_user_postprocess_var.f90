@@ -54,7 +54,8 @@
 !> \param[in]     ipart         number of the post-processing mesh (< 0 or > 0)
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     nvlsta        number of Lagrangian statistical variables
+!> \param[in]     nignor        ignored (set to 0, kept for argument list
+!                               compatibility)
 !> \param[in]     ncelps        number of cells in post-processing mesh
 !> \param[in]     nfacps        number of interior faces in post-process. mesh
 !> \param[in]     nfbrps        number of boundary faces in post-process. mesh
@@ -68,7 +69,7 @@
 
 subroutine usvpst &
  ( ipart  ,                                                       &
-   nvar   , nscal  , nvlsta ,                                     &
+   nvar   , nscal  , nignor ,                                     &
    ncelps , nfacps , nfbrps ,                                     &
    itypps ,                                                       &
    lstcel , lstfac , lstfbr )
@@ -101,7 +102,7 @@ implicit none
 ! Arguments
 
 integer          ipart
-integer          nvar,   nscal , nvlsta
+integer          nvar,   nscal , nignor
 integer          ncelps, nfacps, nfbrps
 
 integer          itypps(3)

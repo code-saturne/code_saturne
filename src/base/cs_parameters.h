@@ -28,6 +28,12 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
+#include <stdarg.h>
+
+/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
@@ -45,6 +51,16 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/* Parameter check behavior when an error is detected */
+
+typedef enum {
+
+  CS_WARNING,
+  CS_ABORT_DELAYED,
+  CS_ABORT_IMMEDIATE
+
+} cs_parameter_error_behavior_t;
 
 /*----------------------------------------------------------------------------
  * Structure of variable calculation options
@@ -196,142 +212,161 @@ typedef struct {
 
 extern const cs_space_disc_t  *cs_glob_space_disc;
 
-/* Pointer to PISO structure */
+/* Pointer to PISO options structure */
 
-extern const cs_piso_t  *cs_glob_piso;
+extern const cs_piso_t        *cs_glob_piso;
 
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Provide acces to cs_glob_piso
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide acces to cs_glob_piso
  *
  * needed to initialize structure with GUI
- *----------------------------------------------------------------------------*/
+ *
+ * \return   piso information structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_piso_t *
 cs_get_glob_piso(void);
 
-/*----------------------------------------------------------------------------
- * Define general field keys.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define general field keys.
  *
  * A recommended practice for different submodules would be to use
  * "cs_<module>_key_init() functions to define keys specific to those modules.
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parameters_define_field_keys(void);
 
-/*----------------------------------------------------------------------------
- * Define field key for condensation.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define field key for condensation.
  *
  * Note: this should be moved in the future to a condensation-specific file.
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parameters_define_field_key_gas_mix(void);
 
-/*----------------------------------------------------------------------------
- * Read general restart info.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read general restart info.
  *
  * This updates the previous time step info.
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parameters_read_restart_info(void);
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
  * Define a user variable.
  *
- * Solved variables are always defined on cells.
+ * \brief Solved variables are always defined on cells.
  *
- * parameters:
- *   name <-- name of variable and associated field
- *   dim  <-- variable dimension
- *----------------------------------------------------------------------------*/
+ * \param[in]  name  name of variable and associated field
+ * \param[in]  dim   variable dimension
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parameters_add_variable(const char  *name,
                            int          dim);
 
-/*----------------------------------------------------------------------------
- * Define a user variable which is a variance of another variable.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a user variable which is a variance of another variable.
  *
  * Only variances of thermal or user-defined variables are currently handled.
  *
- * parameters:
- *   name          <-- name of variance and associated field
- *   variable_name <-- name of associated variable
- *----------------------------------------------------------------------------*/
+ * \param[in]  name           name of variance and associated field
+ * \param[in]  variable_name  name of associated variable
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parameters_add_variable_variance(const char  *name,
                                     const char  *variable_name);
 
-/*----------------------------------------------------------------------------
- * Define a user property.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a user property.
  *
- * parameters:
- *   name        <-- name of property and associated field
- *   dim         <-- property dimension
- *   location_id <-- id of associated mesh location
- *----------------------------------------------------------------------------*/
+ * \param[in]  name         name of property and associated field
+ * \param[in]  dim          property dimension
+ * \param[in]  location_id  id of associated mesh location
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parameters_add_property(const char  *name,
                            int          dim,
                            int          location_id);
 
-/*----------------------------------------------------------------------------
- * Return the number of defined user variables not added yet.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the number of defined user variables not added yet.
  *
  * This number is reset to 0 when cs_parameters_create_added_variables()
  * is called.
  *
- * returns:
- *   number of defined user variables
- *----------------------------------------------------------------------------*/
+ * \return  number of defined user variables
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_parameters_n_added_variables(void);
 
-/*----------------------------------------------------------------------------
- * Return the number of defined user properties not added yet.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the number of defined user properties not added yet.
  *
  * This number is reset to 0 when cs_parameters_create_added_properties()
  * is called.
  *
- * returns:
- *   number of defined user properties
- *----------------------------------------------------------------------------*/
+ * \return   number of defined user properties
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_parameters_n_added_properties(void);
 
-/*----------------------------------------------------------------------------
- * Create previously added user variables.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create previously added user variables.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parameters_create_added_variables(void);
 
-/*----------------------------------------------------------------------------
- * Create previously added user properties.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create previously added user properties.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parameters_create_added_properties(void);
 
-/*----------------------------------------------------------------------------
- * Define a boundary values field for a variable field.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a boundary values field for a variable field.
  *
- * parameters:
- *   f <-- pointer to field structure
+ * \param[in]  f  pointer to field structure
  *
- * returns:
- *   pointer to boundary values field, or NULL if not applicable
- *----------------------------------------------------------------------------*/
+ * \return  pointer to boundary values field, or NULL if not applicable
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_field_t *
 cs_parameters_add_boundary_values(cs_field_t  *f);
@@ -351,6 +386,148 @@ cs_parameters_add_boundary_values(cs_field_t  *f);
 
 cs_field_t *
 cs_parameters_add_boundary_temperature(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a local variable calculation options structure,
+ *        with default options.
+ *
+ * \return  variable calculations options structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_var_cal_opt_t
+cs_parameters_var_cal_opt_default(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print general parameters error or warning info.
+ *
+ * \param[in]  err_behavior  warn or abort ?
+ * \param[in]  section_desc  optional description of code section
+ *                           containing this parameter, or NULL
+ * \param [in] format        format string, as printf() and family.
+ * \param [in] ...           variable arguments based on format string.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(__GNUC__)
+
+void
+cs_parameters_error(cs_parameter_error_behavior_t   err_behavior,
+                    const char                     *section_desc,
+                    const char                     *format,
+                    ...)
+  __attribute__((format(printf, 3, 4)));
+
+#else
+
+void
+cs_parameters_error(cs_parameter_error_behavior_t   err_behavior,
+                    const char                     *section_desc,
+                    const char                     *format,
+                    ...);
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print general parameters error or warning info.
+ *
+ * \param[in]  err_behavior  warn or abort ?
+ * \param[in]  section_desc  optional description of code section
+ *                           containing this parameter, or NULL
+ * \param [in] format        format string, as printf() and family.
+ * \param [in] ...           variable arguments based on format string.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_error(cs_parameter_error_behavior_t   err_behavior,
+                    const char                     *section_desc,
+                    const char                     *format,
+                    ...);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print header for a given parameters error message type.
+ *
+ * \param[in]  err_behavior  warn or abort ?
+ * \param[in]  section_desc  optional description of code section
+ *                           containing this parameter, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_error_header(cs_parameter_error_behavior_t   err_behavior,
+                           const char                     *section_desc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print footer for a given parameters error message type.
+ *
+ * \param[in]  err_behavior  warn or abort ?
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_error_footer(cs_parameter_error_behavior_t   err_behavior);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check that a given integer keyword has values in a specified range.
+ *
+ * \param[in]  err_behavior  warn or abort ?
+ * \param[in]  section_desc  optional description of code section
+ *                           containing this parameter, or NULL
+ * \param[in]  param_name    name of parameter whose value we are checking
+ * \param[in]  param_value   parameter's current_value
+ * \param[in]  range_l       range lower bound (included)
+ * \param[in]  range_u       range upper bound (excluded)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_is_in_range_int(cs_parameter_error_behavior_t   err_behavior,
+                              const char                     *section_desc,
+                              const char                     *param_name,
+                              int                             param_value,
+                              int                             range_l,
+                              int                             range_u);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check that a given integer keyword has values in a specified range.
+ *
+ * \param[in]  err_behavior  warn or abort ?
+ * \param[in]  section_desc  optional description of code section
+ *                           containing this parameter, or NULL
+ * \param[in]  param_name    name of parameter whose value we are checking
+ * \param[in]  param_value   parameter's current_value
+ * \param[in]  enum_size     size of possible enumeration
+ * \param[in]  enum_values   optional list of enumerated values, or NULL
+ *                           (in which case {0, ... enum_sizes-1} assumed
+ * \param[in]  enum_names    optional list of value names, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_is_in_list_int(cs_parameter_error_behavior_t   err_behavior,
+                             const char                     *section_desc,
+                             const char                     *param_name,
+                             int                             param_value,
+                             int                             enum_size,
+                             const int                      *enum_values,
+                             const char                     *enum_names[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Abort if the the parameter errors count is nonzero.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_error_barrier(void);
 
 /*----------------------------------------------------------------------------*/
 

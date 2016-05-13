@@ -22,6 +22,14 @@
 
 #-------------------------------------------------------------------------------
 
+# PLE dependency
+
+if HAVE_INTERNAL_PLE
+  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
+else
+  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
+endif
+
 # Main part
 
 AM_CPPFLAGS = \
@@ -30,40 +38,50 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/user \
+-I$(top_srcdir)/src/gui \
+-I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/turb \
+$(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-
-AM_FCFLAGS = \
-$(FCMODINCLUDE)$(top_builddir)/src \
-$(FCMODINCLUDE)$(top_builddir)/src/alge \
-$(FCMODINCLUDE)$(top_builddir)/src/base \
-$(FCMODINCLUDE)$(top_builddir)/src/atmo \
-$(FCMODINCLUDE)$(top_builddir)/src/cfbl \
-$(FCMODINCLUDE)$(top_builddir)/src/cogz \
-$(FCMODINCLUDE)$(top_builddir)/src/comb \
-$(FCMODINCLUDE)$(top_builddir)/src/ctwr \
-$(FCMODINCLUDE)$(top_builddir)/src/elec \
-$(FCMODINCLUDE)$(top_builddir)/src/lagr \
-$(FCMODINCLUDE)$(top_builddir)/src/pprt \
-$(FCMODINCLUDE)$(top_builddir)/src/rayt \
-$(FCMODINCLUDE)$(top_builddir)/src/turb \
-$(FCMODINCLUDE)$(top_builddir)/src/user \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_lagr.h \
 cs_lagr_clogging.h \
+cs_lagr_head_losses.h \
 cs_lagr_roughness.h \
 cs_lagr_dlvo.h \
 cs_lagr_extract.h \
-cs_lagr_perio.h \
+cs_lagr_injection.h \
+cs_lagr_geom.h \
+cs_lagr_post.h \
 cs_lagr_restart.h \
+cs_lagr_query.h \
 cs_lagr_tracking.h \
-cs_lagr_utils.h
+cs_lagr_stat.h \
+cs_lagr_new.h \
+cs_lagr_precipitation_model.h \
+cs_lagr_deposition_model.h \
+cs_lagr_car.h \
+cs_lagr_coupling.h \
+cs_lagr_adh.h \
+cs_lagr_resuspension.h \
+cs_lagr_poisson.h \
+cs_lagr_options.h \
+cs_lagr_gradients.h \
+cs_lagr_particle.h \
+cs_lagr_print.h \
+cs_lagr_sde.h \
+cs_lagr_sde_model.h \
+cs_lagr_lec.h \
+cs_lagr_log.h \
+cs_lagr_prototypes.h
 
 # Library source files
 
@@ -71,59 +89,33 @@ noinst_LTLIBRARIES = libcslagr.la
 libcslagr_la_SOURCES = \
 cs_lagr_clogging.c \
 cs_lagr_roughness.c \
+cs_lagr.c \
 cs_lagr_dlvo.c \
 cs_lagr_extract.c \
-cs_lagr_perio.c \
+cs_lagr_injection.c \
+cs_lagr_post.c \
 cs_lagr_restart.c \
+cs_lagr_query.c \
 cs_lagr_tracking.c \
-cs_lagr_utils.c \
-diverv.f90 \
-lagadh.f90 \
-lagaff.f90 \
-lagcar.f90 \
-lagcli.f90 \
-lagcou.f90 \
-lagdcl.f90 \
-lagdep.f90 \
-lagdif.f90 \
-lageje.f90 \
-lagent.f90 \
-lageqp.f90 \
-lages1.f90 \
-lages2.f90 \
-lagesd.f90 \
-lagesp.f90 \
-laggeo.f90 \
-laggra.f90 \
-laghis.f90 \
-laghlo.f90 \
-lagich.f90 \
-lagidp.f90 \
-lagimp.f90 \
-lagini.f90 \
-lagipn.f90 \
-lagitf.f90 \
-lagitg.f90 \
-lagitp.f90 \
-laglec.f90 \
-laglis.f90 \
-lagnew.f90 \
-lagopt.f90 \
-lagout.f90 \
-lagphy.f90 \
-lagpoi.f90 \
-lagprj.f90 \
-lagres.f90 \
-lagrus.f90 \
-lagsec.f90 \
-lagsta.f90 \
-lagstf.f90 \
-lagswe.f90 \
-lagtmp.f90 \
-lagune.f90 \
-precdi.f90 \
-precst.f90 \
-porcel.f90
+cs_lagr_stat.c \
+cs_lagr_adh.c \
+cs_lagr_print.c \
+cs_lagr_car.c \
+cs_lagr_coupling.c \
+cs_lagr_deposition_model.c \
+cs_lagr_geom.c \
+cs_lagr_poisson.c \
+cs_lagr_gradients.c \
+cs_lagr_head_losses.c \
+cs_lagr_new.c \
+cs_lagr_options.c \
+cs_lagr_particle.c \
+cs_lagr_resuspension.c \
+cs_lagr_precipitation_model.c \
+cs_lagr_sde.c \
+cs_lagr_sde_model.c \
+cs_lagr_lec.c \
+cs_lagr_log.c
 
 libcslagr_la_LDFLAGS = -no-undefined
 

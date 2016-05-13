@@ -56,6 +56,8 @@
 #include "cs_prototypes.h"
 #include "cs_time_moment.h"
 #include "cs_time_step.h"
+#include "cs_lagr_stat.h"
+#include "cs_lagr_log.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -762,7 +764,7 @@ _log_fields(void)
         name = f->name;
 
       double t_weight = -1;
-      if (total_weight > 0 && (f->type | CS_FIELD_INTENSIVE))
+      if (total_weight > 0 && (f->type & CS_FIELD_INTENSIVE))
         t_weight = total_weight;
 
       char prefix[] = "v  ";
@@ -770,6 +772,8 @@ _log_fields(void)
         if (moment_id[f_id] > -1)
           prefix[0] = 'm';
       }
+      if (f->type & CS_FIELD_ACCUMULATOR)
+        prefix[0] = 'm';
 
       _log_array_info(prefix,
                       name,
@@ -1362,6 +1366,8 @@ cs_log_iteration(void)
     _log_sstats();
 
   cs_time_moment_log_iteration();
+  cs_lagr_stat_log_iteration();
+  cs_lagr_log_iteration();
 
   cs_fan_log_iteration();
 }

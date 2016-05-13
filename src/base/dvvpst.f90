@@ -38,8 +38,6 @@
 !>                               - default: nummai
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     nvlsta        number of volumetric statistical variables
-!> \param[in]     nvisbr        number of boundary statistical variables
 !> \param[in]     ncelps        post-processing mesh cells number
 !> \param[in]     nfbrps        number of boundary faces
 !> \param[in]     lstcel        post-processing mesh cell numbers
@@ -50,7 +48,7 @@
 
 subroutine dvvpst &
  ( nummai , numtyp ,                                              &
-   nvar   , nscal  , nvlsta , nvisbr ,                            &
+   nvar   , nscal  ,                                              &
    ncelps , nfbrps ,                                              &
    lstcel , lstfbr ,                                              &
    tracel , trafbr )
@@ -68,12 +66,11 @@ use optcal
 use numvar
 use parall
 use period
-use lagpar
 use lagran
 use ppppar
 use ppthch
 use ppincl
-use radiat
+use radiat, only: iirayo
 use cplsat
 use mesh
 use field
@@ -90,7 +87,7 @@ implicit none
 ! Arguments
 
 integer          nummai , numtyp
-integer          nvar   , nscal  , nvlsta , nvisbr
+integer          nvar   , nscal
 integer          ncelps , nfbrps
 
 integer          lstcel(ncelps), lstfbr(nfbrps)
@@ -106,8 +103,6 @@ logical          ientla, ivarpr
 integer          inc   , iccocg
 integer          ifac  , iloc  , ivar
 integer          ipp   , idimt , kk   , ll, iel
-integer          ivarl
-integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          fldid, fldprv, keycpl, iflcpl
 integer          ifcsii, iflpst, itplus, iprev, f_id
 
@@ -115,7 +110,6 @@ double precision rbid(1)
 double precision vr(3)
 
 double precision, allocatable, dimension(:,:) :: grad
-double precision, allocatable, dimension(:) :: wcell
 double precision, dimension(:), pointer :: tplusp
 double precision, dimension(:), pointer :: valsp, coefap, coefbp
 double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
@@ -490,184 +484,6 @@ else if (numtyp .eq. -2) then
   endif ! end of test on output of Nusselt
 
 endif ! end of test on postprocessing mesh number
-
-!===============================================================================
-! 2.1. Lagrangian variables
-!===============================================================================
-
-if (numtyp .eq. -1) then
-
-  if (iilagr.gt.0 .and. istala.ge.1) then
-
-    ! All standard statistics have dimension 1, and are defined or computed
-    ! on the global mesh cells.
-
-    idimt  = 1
-    ientla = .true.
-    ivarpr = .true.
-
-    allocate(wcell(ncelet))
-
-    iii = nvlsta-nvlsts
-
-    do icla  = 0, nbclst
-
-      ! -> if ICLA = 0: global statistics
-      !    if 0 < ICLA =< NBCLST: per group statistics
-
-      do ivarl = 1, nvlsta
-
-        ivarl1 = icla*nvlsta +ivarl
-        ivarlm = ivarl1
-        ilpd1  = icla*nvlsta +ilpd
-        iflu   = 0
-
-        if (ivarl.le.iii) then
-          if (ivarl.eq.ivarl1) then
-            name80 = nomlag(ivarl)
-          else
-            write(name80,'(a8,a4,i3)') nomlag(ivarl),'_grp',icla
-          endif
-        else if (nvlsts.gt.0) then
-          if (ivarl.eq.ivarl1) then
-            name80 = nomlag(ilvu(ivarl-iii))
-          else
-            write(name80,'(a8,a4,i3)')                            &
-                  nomlag(ilvu(ivarl-iii)),'_grp',icla
-          endif
-        endif
-
-        call uslaen                                               &
-        !==========
-          (nvlsta,                                                &
-           ivarl, ivarl1, ivarlm, iflu, ilpd1, icla,              &
-           wcell)
-
-        call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &
-                            ntcabs, ttcabs, wcell, rbid, rbid)
-
-      enddo
-
-      do ivarl = 1, nvlsta-1
-
-        ivarl1 = icla*(nvlsta-1)+ivarl
-        ivarlm = icla*nvlsta+ivarl
-        ilpd1  = icla*nvlsta +ilpd
-        iflu   = 1
-
-        if (ivarl.le.iii) then
-          if (ivarl.eq.ivarl1) then
-            name80 = nomlav(ivarl)
-          else
-            write(name80,'(a8,a4,i3)') nomlav(ivarl),'_grp',icla
-          endif
-        else if (nvlsts.gt.0) then
-          if (ivarl.eq.ivarl1) then
-            name80 = nomlav(ilvu(ivarl-iii))
-          else
-            write(name80,'(a8,a4,i3)')                            &
-                 nomlav(ilvu(ivarl-iii)),'_grp',icla
-          endif
-        endif
-
-        call uslaen                                               &
-        !==========
-          (nvlsta,                                                &
-           ivarl, ivarl1, ivarlm, iflu, ilpd1, icla,              &
-           wcell)
-
-        call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &
-                            ntcabs, ttcabs, wcell, rbid, rbid)
-      enddo
-
-    enddo
-
-    deallocate(wcell)
-
-  endif
-
-endif
-
-if (numtyp.eq.-2) then
-
-  if (iilagr.gt.0 .and. iensi3.eq.1) then
-
-    iii = nvisbr-nusbor
-
-    do ivarl = 1,nvisbr
-
-      if (ivarl.le.iii) then
-        name80 = nombrd(ivarl)
-      else if (nusbor.gt.0) then
-        name80 = nombrd(iusb(ivarl-iii))
-      endif
-
-      if (imoybr(ivarl).eq.3) then
-
-        do iloc = 1, nfbrps
-          ifac = lstfbr(iloc)
-          if (parbor(ifac,iencnb).gt.seuilf) then
-            trafbr(iloc) = parbor(ifac,ivarl)/parbor(ifac,iencnb)
-          else
-            trafbr(iloc) = 0.d0
-          endif
-        enddo
-
-      else if (imoybr(ivarl).eq.2) then
-
-        do iloc = 1, nfbrps
-          ifac = lstfbr(iloc)
-          if (parbor(ifac,inbr).gt.seuilf) then
-            trafbr(iloc) = parbor(ifac,ivarl)/parbor(ifac,inbr)
-          else
-            trafbr(iloc) = 0.d0
-          endif
-        enddo
-
-      else if (imoybr(ivarl).eq.1) then
-
-        do iloc = 1, nfbrps
-          ifac = lstfbr(iloc)
-          trafbr(iloc) = parbor(ifac,ivarl) / tstatp
-       enddo
-
-      else
-
-        do iloc = 1, nfbrps
-          ifac = lstfbr(iloc)
-          if (parbor(ifac,inbr).gt.seuilf) then
-            trafbr(iloc) = parbor(ifac,ivarl)
-          else
-            trafbr(iloc) = 0.d0
-          endif
-        enddo
-
-      endif
-
-      idimt  = 1
-      ientla = .true.
-      ivarpr = .false.
-
-      call post_write_var(nummai, trim(name80), idimt, ientla, ivarpr,  &
-                          ntcabs, ttcabs, rbid, rbid, trafbr)
-
-    enddo
-
-    do iloc = 1, nfbrps
-      ifac = lstfbr(iloc)
-      trafbr(iloc) = ifrlag(ifac)
-    enddo
-
-    idimt  = 1
-    ientla = .true.
-    ivarpr = .false.
-
-    call post_write_var(nummai, 'lagrangian_boundary_zones', idimt,          &
-                        ientla, ivarpr, -1, 0.d0, rbid, rbid,trafbr)
-
-  endif
-endif
-!     Fin du test sur le numero de maillage post.
 
 !===============================================================================
 !     2.2. VARIABLES RADIATIVES AUX FRONTIERES

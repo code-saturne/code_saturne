@@ -416,7 +416,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.comboBoxIILAGR.activated[str].connect(self.slotIILAGR)
         self.checkBoxISUILA.clicked.connect(self.slotISUILA)
         self.checkBoxISTTIO.clicked.connect(self.slotISTTIO)
-        self.checkBoxINJCON.clicked.connect(self.slotINJCON)
         self.checkBoxIDEPST.clicked.connect(self.slotIDEPST)
         self.comboBoxIPHYLA.activated[str].connect(self.slotIPHYLA)
         self.checkBoxITPVAR.clicked.connect(self.slotITPVAR)
@@ -464,12 +463,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         else:
             self.checkBoxISTTIO.setChecked(False)
 
-        status = self.model.getContinuousInjection()
-        if status == "on":
-            self.checkBoxINJCON.setChecked(True)
-        else:
-            self.checkBoxINJCON.setChecked(False)
-
         status = self.model.getDepositionSubmodel()
         if status == "on":
             self.checkBoxIDEPST.setChecked(True)
@@ -480,12 +473,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.labelISTTIO.setDisabled(True)
             self.checkBoxISTTIO.setChecked(True)
             self.checkBoxISTTIO.setDisabled(True)
-
-        status = self.model.getContinuousInjection()
-        if status == "on":
-            self.checkBoxINJCON.setChecked(True)
-        else:
-            self.checkBoxINJCON.setChecked(False)
 
         part_model = self.model.getParticlesModel()
         self.modelIPHYLA.setItem(str_model=part_model)
@@ -559,17 +546,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setCarrierFlowStationary("on")
         else:
             self.model.setCarrierFlowStationary("off")
-
-
-    @pyqtSlot()
-    def slotINJCON(self):
-        """
-        Input INJCON.
-        """
-        if self.checkBoxINJCON.isChecked():
-            self.model.setContinuousInjection("on")
-        else:
-            self.model.setContinuousInjection("off")
 
 
     @pyqtSlot()

@@ -83,7 +83,6 @@ class LagrangianModel(Model):
         default['coupling_mode']                       = "one_way"
         default['restart']                             = "off"
         default['carrier_field_stationary']            = "off"
-        default['continuous_injection']                = "off"
         default['deposition_submodel']                 = "off"
         default['particles_models']                    = "off"
         default['thermal']                             = "off"
@@ -256,29 +255,6 @@ class LagrangianModel(Model):
         if not status:
             status = self.defaultParticlesValues()['carrier_field_stationary']
             self.setCarrierFlowStationary(status)
-        return status
-
-
-    @Variables.undoLocal
-    def setContinuousInjection(self, status):
-        """
-        Update the status for continuous injection of particles.
-        """
-        self.isOnOff(status)
-        node_injection = self.node_lagr.xmlInitChildNode('continuous_injection', 'status')
-        node_injection['status'] = status
-
-
-    @Variables.noUndo
-    def getContinuousInjection(self):
-        """
-        Return status for continuous injection of particles.
-        """
-        node_injection = self.node_lagr.xmlInitChildNode('continuous_injection', 'status')
-        status = node_injection['status']
-        if not status:
-            status = self.defaultParticlesValues()['continuous_injection']
-            self.setContinuousInjection(status)
         return status
 
 
@@ -858,22 +834,6 @@ class LagrangianTestCase(ModelTest):
             'Could not set default values for stationary \
             behavior of the carrier flow status'
 
-
-    def checkContinuousInjection(self):
-        """Check whether the continuous injection could be set and get."""
-        mdl = LagrangianModel(self.case)
-        status = mdl.getContinuousInjection()
-
-        assert status == mdl.defaultParticlesValues()['continuous_injection'], \
-            'Could not get default values for continuous injection status'
-
-        mdl.setContinuousInjection('on')
-        doc = """<lagrangian model="off">
-                      <continuous_injection status="on"/>
-                 </lagrangian>"""
-
-        assert mdl.node_lagr == self.xmlNodeFromString(doc), \
-            'Could not set values for continuous injection status'
 
     def checkDepositionSubmodel(self):
         """Check whether the particle deposition model could be set and get."""

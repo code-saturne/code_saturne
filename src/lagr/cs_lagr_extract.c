@@ -107,7 +107,7 @@ cs_lagr_get_n_particles(void)
 {
   cs_lnum_t retval = 0;
 
-  const cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+  const cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   if (p_set != NULL)
     retval = p_set->n_particles;
 
@@ -148,7 +148,7 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
 
   const cs_mesh_t *mesh = cs_glob_mesh;
 
-  const cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+  const cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
 
   assert(p_set != NULL);
 

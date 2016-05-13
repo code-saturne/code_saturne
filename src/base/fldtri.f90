@@ -69,8 +69,6 @@ use ppppar
 use ppthch
 use ppincl
 use cfpoin
-use lagpar
-use lagdim
 use lagran
 use ihmpre
 use cplsat

@@ -122,26 +122,6 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="labelINJCON">
-            <property name="toolTip">
-             <string>Code_Saturne key word: INJCON</string>
-            </property>
-            <property name="text">
-             <string>Pseudo-continuous particle injection</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QCheckBox" name="checkBoxINJCON">
-            <property name="toolTip">
-             <string>Code_Saturne key word: INJCON</string>
-            </property>
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
          </layout>
         </item>
         <item>

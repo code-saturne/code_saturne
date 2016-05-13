@@ -123,6 +123,29 @@ cs_log_strpadl(char        *dest,
                size_t       width,
                size_t       destsize);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print log info to a given log type.
+ *
+ * The format and variable arguments are similar to those of the vprintf()
+ * type functions.
+ *
+ * In parallel, output is only handled by rank 0.
+ *
+ * \param[in]  log      log file type
+ * \param[in]  format   format string, as printf() and family.
+ * \param[in]  arg_ptr  variable arguments list pointer
+ *
+ * \return number of characters printed, not counting the trailing '\0' used
+ *         to end output strings
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_log_vprintf(cs_log_t     log,
+               const char  *format,
+               va_list      arg_ptr);
+
 /*----------------------------------------------------------------------------
  * Print log info to a given log type.
  *

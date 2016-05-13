@@ -39,7 +39,7 @@
 #include "fvm_writer.h"
 
 #include "cs_base.h"
-#include "cs_lagr_tracking.h"
+#include "cs_lagr_particle.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
@@ -160,6 +160,8 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
                               cs_lnum_t                      n_particles,
                               const cs_lnum_t                particle_list[],
                               void                          *segment_values);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -153,7 +153,7 @@ double precision hbord(nfabor),theipb(nfabor)
 integer          ifac, iel, isou, ii, jj, kk
 integer          iscal
 integer          modntl
-integer          iuntur, iuiptn
+integer          iuntur, iuiptn, f_id
 integer          ifccp
 
 double precision rnx, rny, rnz, rxnn
@@ -180,7 +180,7 @@ double precision rinfiv(3)
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, uetbor
 double precision, dimension(:), allocatable :: byplus, buk, buet, bcfnns
 
 double precision, dimension(:), pointer :: cvar_k
@@ -258,6 +258,16 @@ yplbr => null()
 
 if (iyplbr.ge.0) then
   call field_get_val_s(iyplbr, yplbr)
+endif
+
+uetbor => null()
+
+if (     (itytur.eq.4 .and. idries.eq.1) &
+    .or. (iilagr.ge.1 .and. idepst.gt.0) ) then
+  call field_get_id_try('ustar', f_id)
+  if (f_id.ge.0) then
+    call field_get_val_s(f_id, uetbor)
+  endif
 endif
 
 ! --- Gradient and flux Boundary Conditions

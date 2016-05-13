@@ -93,7 +93,6 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
-use lagpar
 use lagran
 use mesh
 

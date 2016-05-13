@@ -44,13 +44,14 @@
 #include "cs_base.h"
 #include "cs_fan.h"
 #include "cs_field.h"
+#include "cs_log.h"
 #include "cs_physical_constants.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
 #include "cs_time_moment.h"
 #include "cs_turbomachinery.h"
 #include "cs_rotation.h"
-#include "cs_log.h"
+#include "cs_lagr_log.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -140,13 +141,15 @@ cs_log_setup(void)
 {
   cs_field_log_defs();
   cs_field_log_key_defs();
-  cs_field_log_all_key_vals(true);
+  cs_field_log_all_key_vals(false);
 
   cs_time_moment_log_setup();
 
   cs_sles_default_setup();
 
   _log_global_model_options();
+
+  cs_lagr_log_setup();
 
   cs_fan_log_setup();
 

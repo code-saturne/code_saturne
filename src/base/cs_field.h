@@ -71,7 +71,7 @@ BEGIN_C_DECLS
 /*! intended for postprocessing */
 #define CS_FIELD_POSTPROCESS         (1 << 5)
 
-/*! accumulator for ssom statisicial values */
+/*! accumulator for some statisicial values */
 #define CS_FIELD_ACCUMULATOR         (1 << 6)
 
 /*! user-defined */
@@ -319,6 +319,18 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
 void
 cs_field_init_bc_coeffs(cs_field_t  *f);
+
+/*----------------------------------------------------------------------------
+ * Set current field values to the given constant.
+ *
+ * parameters:
+ *   f <-> pointer to field structure
+ *   c <-- assigned value
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_set_values(cs_field_t  *f,
+                    cs_real_t    c);
 
 /*----------------------------------------------------------------------------
  * Copy current field values to previous values if applicable.

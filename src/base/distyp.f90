@@ -82,7 +82,6 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use pointe, only: uetbor
 use ppppar
 use coincl
 use parall
@@ -129,7 +128,7 @@ double precision, allocatable, dimension(:,:) :: coefav
 double precision, allocatable, dimension(:,:,:) :: coefbv
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: dpvar
-double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: crom, uetbor
 double precision, dimension(:), pointer :: viscl
 
 integer          ipass
@@ -156,11 +155,17 @@ allocate(dpvar(ncelet))
 allocate(w1(ncelet))
 allocate(w2(ncelet))
 
-
 ipass  = ipass + 1
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(iprpfl(iviscl), viscl)
+
+uetbor => null()
+
+call field_get_id_try('ustar', f_id)
+if (f_id.ge.0) then
+  call field_get_val_s(f_id, uetbor)
+endif
 
 !===============================================================================
 ! 2. At the first time step
@@ -289,7 +294,6 @@ f_id   = -1
 itypfl = 1
 
 call inimav                                                       &
-!==========
  ( f_id   , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgy , imligy ,          &
    iwarny ,                                                       &
@@ -306,7 +310,7 @@ call inimav                                                       &
 ! Dirichlet en u*/nu aux parois, et flux nul ailleurs
 
 do ifac = 1, nfabor
-  if(itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
+  if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
     iel = ifabor(ifac)
     coefap(ifac) = uetbor(ifac)*crom(iel)/viscl(iel)
     coefbp(ifac) = 0.0d0
@@ -370,7 +374,7 @@ if(iwarny.ge.2) then
 endif
 
 !===============================================================================
-! 7. Diagonale part of the matrix
+! 7. Diagonal part of the matrix
 !===============================================================================
 
 do iel = 1, ncel

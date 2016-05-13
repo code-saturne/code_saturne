@@ -174,7 +174,7 @@ module cs_f_interfaces
       dt, tslagr,                                                              &
       ckupdc, smacel)
       use dimens, only: ndimfb
-      use lagdim, only: ntersl
+      use lagran, only: ntersl
       use mesh
       integer :: nvar, nscal, ncepdp, ncesmp
       integer, dimension(ncepdp) :: icepdc

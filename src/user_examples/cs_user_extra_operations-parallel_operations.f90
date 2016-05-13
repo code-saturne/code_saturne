@@ -68,9 +68,7 @@ use optcal
 use cstphy
 use cstnum
 use entsor
-use lagpar
 use lagran
-use lagdim
 use parall
 use period
 use ppppar

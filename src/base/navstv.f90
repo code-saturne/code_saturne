@@ -84,8 +84,7 @@ use ppthch
 use ppincl
 use cplsat
 use mesh
-use lagran, only: iilagr
-use lagdim, only: ntersl
+use lagran, only: iilagr, ntersl
 use rotation
 use turbomachinery
 use ptrglo

@@ -84,53 +84,13 @@ void CS_PROCF (pstgeo, PSTGEO)
  * integer          ntcabs      : --> : current time step number
  * integer          nvar        : <-- : number of variables
  * integer          nscal       : <-- : number of scalars
- * integer          nvlsta      : <-- : number of statistical variables (lagr)
- * integer          nvisbr      : <-- : number of boundary stat. variables (lagr)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstvar, PSTVAR)
 (
  const cs_int_t   *ntcabs,
  const cs_int_t   *nvar,
- const cs_int_t   *nscal,
- const cs_int_t   *nvlsta,
- const cs_int_t   *nvisbr
-);
-
-/*----------------------------------------------------------------------------
- * Define which Lagrangian variables should be postprocessed
- *
- * Fortran interface:
- *
- * subroutine lagpvr
- * *****************
- *                  ( ivisv1, ivisv2,  ivistp, ivisdm, iviste,
- *                    ivismp, ivisdk, iviswat, ivisch, ivisck )
- *
- * integer          ivisv1      : <-- : display of variable 'fluid velocity'
- * integer          ivisv2      : <-- : display of variable 'particles velocity'
- * integer          ivistp      : <-- : display of variable 'resident time'
- * integer          ivisdm      : <-- : display of variable 'particle diameter'
- * integer          iviste      : <-- : display of variable 'particle temperature'
- * integer          ivismp      : <-- : display of variable 'particle mass'
- * integer          ivisdk      : <-- : display of variable 'core diameter of part.'
- * integer          iviswat     : <-- : display of variable 'mass of water in coal'
- * integer          ivisch      : <-- : display of variable 'mass of reactive coal'
- * integer          ivisck      : <-- : display of variable 'mass of char'
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (lagpvr, LAGPVR)
-(
- const cs_int_t  *ivisv1,
- const cs_int_t  *ivisv2,
- const cs_int_t  *ivistp,
- const cs_int_t  *ivisdm,
- const cs_int_t  *iviste,
- const cs_int_t  *ivismp,
- const cs_int_t  *ivisdk,
- const cs_int_t  *iviswat,
- const cs_int_t  *ivisch,
- const cs_int_t  *ivisck
+ const cs_int_t   *nscal
 );
 
 /*============================================================================

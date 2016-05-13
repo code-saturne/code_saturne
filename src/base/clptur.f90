@@ -156,7 +156,7 @@ integer          modntl
 integer          iuntur
 integer          nlogla, nsubla, iuiptn
 integer          ifccp
-integer          f_id_rough
+integer          f_id_rough, f_id
 
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -182,7 +182,7 @@ double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
 double precision roughness
 
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, uetbor
 double precision, dimension(:), pointer :: bfpro_roughness
 double precision, dimension(:), allocatable :: byplus, bdplus, buk
 double precision, dimension(:), pointer :: cvar_k, cvar_ep
@@ -257,6 +257,16 @@ if (f_id_rough.ge.0) call field_get_val_s(f_id_rough, bfpro_roughness)
 
 if (iyplbr.ge.0) call field_get_val_s(iyplbr, yplbr)
 if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
+
+uetbor => null()
+
+if (     (itytur.eq.4 .and. idries.eq.1) &
+    .or. (iilagr.ge.1 .and. idepst.gt.0) ) then
+  call field_get_id_try('ustar', f_id)
+  if (f_id.ge.0) then
+    call field_get_val_s(f_id, uetbor)
+  endif
+endif
 
 ! --- Gradient and flux boundary conditions
 

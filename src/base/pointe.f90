@@ -108,10 +108,6 @@ module pointe
   !> and the closest wall is therefore \c yplpar(iel1)
   double precision, allocatable, dimension(:)   :: yplpar
 
-  !> friction velocity at the wall, in the case of a LES calculation
-  !> with van Driest-wall damping
-  double precision, allocatable, dimension(:)   :: uetbor
-
   !> \}
   !=============================================================================
 
@@ -374,15 +370,8 @@ module pointe
   !> \addtogroup lag_arrays
   !> \{
 
-  integer, allocatable, dimension(:) :: icocel, itycel
-  integer, allocatable, dimension(:) :: ifrlag
-
-  double precision, pointer, dimension(:,:) :: statis => null()
-  !> \anchor parbor
-  double precision, pointer, dimension(:,:) :: parbor => null()
   !> \anchor tslagr
-  double precision, pointer, dimension(:,:) :: tslagr => null()
-  double precision, pointer, dimension(:,:) :: stativ, dlgeo
+  double precision, pointer, dimension(:,:), save :: tslagr
 
   !> \}
 
@@ -408,7 +397,7 @@ contains
     use entsor
     use ppincl
     use lagran
-    use radiat
+    use radiat, only: iirayo
     use albase
     use ihmpre
     use field
@@ -464,17 +453,9 @@ contains
 
     if (ineedy.eq.1) then
       allocate(dispar(ncelet))
-      if (     (itytur.eq.4 .and. idries.eq.1) &
-          .or. (iilagr.ge.1 .and. iroule.eq.2) ) then
+      if (itytur.eq.4 .and. idries.eq.1) then
         allocate(yplpar(ncelet))
       endif
-    endif
-
-    ! Friction velocity on boundary faces
-
-    if (     (itytur.eq.4 .and. idries.eq.1) &
-        .or. (iilagr.ge.1 .and. idepst.gt.0) ) then
-      allocate(uetbor(nfabor))
     endif
 
     ! Temporary storage arrays for k-omega model
@@ -643,7 +624,6 @@ contains
     if (allocated(izft1d)) deallocate(izft1d)
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)
-    if (allocated(uetbor)) deallocate(uetbor)
     if (allocated(s2kw)) deallocate(s2kw, divukw)
     if (allocated(straio))  deallocate(straio)
     if (allocated(b_head_loss)) deallocate(b_head_loss)

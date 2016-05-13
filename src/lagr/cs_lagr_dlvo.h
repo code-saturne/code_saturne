@@ -33,7 +33,7 @@
 
 #include "cs_defs.h"
 
-#include "cs_lagr_tracking.h"
+#include "cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -45,8 +45,6 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_real_t   faraday_cst;
-  cs_real_t   free_space_permit;
   cs_real_t   water_permit;
   cs_real_t   ionic_strength;
   cs_real_t   phi_p;
@@ -55,12 +53,8 @@ typedef struct {
   cs_real_t  valen;
   cs_real_t  *debye_length;
   cs_real_t   cstham;
-  cs_real_t   dcutof;
-  cs_real_t   lambwl;
-  cs_real_t   kboltz;
 
 } cs_lagr_dlvo_param_t;
-
 
 /*=============================================================================
  * Function definitions
@@ -69,21 +63,15 @@ typedef struct {
 /*----------------------------------------------------------------------------
  * DLVO initialization
  *----------------------------------------------------------------------------*/
-void
-CS_PROCF (dlvo_init, DLVO_INIT)(const cs_real_t   *faraday_cst,
-                                const cs_real_t   *free_space_permit,
-                                const cs_real_t   *water_permit,
-                                const cs_real_t   *ionic_strength,
-                                const cs_real_t    temperature[],
-                                const cs_real_t   *valen,
-                                const cs_real_t   *phi_p,
-                                const cs_real_t   *phi_s,
-                                const cs_real_t   *cstham,
-                                const cs_real_t   *dcutof,
-                                const cs_real_t   *lambwl,
-                                const cs_real_t   *kboltz
-  );
 
+void
+cs_lagr_dlvo_init(const cs_real_t   water_permit,
+                  const cs_real_t   ionic_strength,
+                  const cs_real_t   temperature[],
+                  const cs_real_t   valen,
+                  const cs_real_t   phi_p,
+                  const cs_real_t   phi_s,
+                  const cs_real_t   cstham);
 
 /*----------------------------------------------------------------------------
  * Deallocate the arrays storing temperature and Debye length.
@@ -111,7 +99,6 @@ cs_lagr_barrier(const void                     *particle,
 cs_real_t
 cs_lagr_van_der_waals_sphere_plane(cs_real_t  distp,
                                    cs_real_t  rpart,
-                                   cs_real_t  lambwl,
                                    cs_real_t  cstham);
 
 /*----------------------------------------------------------------------------
@@ -123,7 +110,6 @@ cs_real_t
 cs_lagr_van_der_waals_sphere_sphere(cs_real_t    distcc,
                                     cs_real_t    rpart1,
                                     cs_real_t    rpart2,
-                                    cs_real_t    lambwl,
                                     cs_real_t    cstham);
 
 /*----------------------------------------------------------------------------
@@ -138,10 +124,8 @@ cs_lagr_edl_sphere_plane (cs_real_t  distp,
                           cs_real_t  valen,
                           cs_real_t  phi1,
                           cs_real_t  phi2,
-                          cs_real_t  kboltz,
                           cs_real_t  temp,
                           cs_real_t  debye_length,
-                          cs_real_t  free_space_permit,
                           cs_real_t  water_permit);
 
 /*----------------------------------------------------------------------------
@@ -157,10 +141,8 @@ cs_lagr_edl_sphere_sphere(cs_real_t  distcc,
                           cs_real_t  valen,
                           cs_real_t  phi1,
                           cs_real_t  phi2,
-                          cs_real_t  kboltz,
                           cs_real_t  temp,
                           cs_real_t  debye_length,
-                          cs_real_t  free_space_permit,
                           cs_real_t  water_permit);
 
 /*----------------------------------------------------------------------------*/

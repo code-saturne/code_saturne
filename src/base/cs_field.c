@@ -1916,6 +1916,29 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set current field values to the given constant.
+ *
+ * \param[in, out]  f  pointer to field structure
+ * \param[in]       c  assigned value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_set_values(cs_field_t  *f,
+                    cs_real_t    c)
+{
+  assert(f != NULL);
+
+  const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
+  const cs_lnum_t _n_vals = n_elts[2]*f->dim;
+
+# pragma omp parallel for
+  for (cs_lnum_t ii = 0; ii < _n_vals; ii++)
+    f->val[ii] = c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Copy current field values to previous values if applicable.
  *
  * For fields with only one time value, or values not allocated yet,
@@ -3513,7 +3536,7 @@ cs_field_log_key_defs(void)
   cs_log_printf(CS_LOG_SETUP, _("  %s %s %s %s ---------\n"),
                 tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3]);
 
-  /* First loop on keys execpt structures */
+  /* First loop on keys except structures */
 
   for (i = 0; i < _n_keys; i++) {
 

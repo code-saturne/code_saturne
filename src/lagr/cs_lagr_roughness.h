@@ -2,7 +2,7 @@
 #define __CS_LAGR_ROUGHNESS_H__
 
 /*============================================================================
- * Functions and types for the roughness modeling
+ * Surface roughness
  *============================================================================*/
 
 /*
@@ -30,7 +30,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
-#include "cs_lagr_tracking.h"
+#include "cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -42,8 +42,6 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_real_t   faraday_cst;
-  cs_real_t   free_space_permit;
   cs_real_t   water_permit;
   cs_real_t   ionic_strength;
   cs_real_t   phi_p;
@@ -52,15 +50,14 @@ typedef struct {
   cs_real_t  valen;
   cs_real_t  *debye_length;
   cs_real_t   cstham;
-  cs_real_t   dcutof;
-  cs_real_t   lambwl;
-  cs_real_t   kboltz;
   cs_real_t   espasg;
   cs_real_t   denasp;
   cs_real_t   rayasp;
   cs_real_t   rayasg;
 
 } cs_lagr_roughness_param_t;
+
+extern cs_lagr_roughness_param_t  *cs_lagr_roughness_param;
 
 /*============================================================================
  * Public function definitions for Fortran API
@@ -73,23 +70,18 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (roughness_init, ROUGHNESS_INIT)(const cs_real_t   *faraday_cst,
-                                          const cs_real_t   *free_space_permit,
-                                          const cs_real_t   *water_permit,
-                                          const cs_real_t   *ionic_strength,
-                                          const cs_real_t    temperature[],
-                                          const cs_real_t   *valen,
-                                          const cs_real_t   *phi_p,
-                                          const cs_real_t   *phi_s,
-                                          const cs_real_t   *cstham,
-                                          const cs_real_t   *dcutof,
-                                          const cs_real_t   *lambwl,
-                                          const cs_real_t   *kboltz,
-                                          const cs_real_t   *espasg,
-                                          const cs_real_t   *denasp,
-                                          const cs_real_t   *rayasp,
-                                          const cs_real_t   *rayasg
-);
+roughness_init (const cs_real_t   *water_permit,
+                const cs_real_t   *ionic_strength,
+                const cs_real_t    temperature[],
+                const cs_real_t   *valen,
+                const cs_real_t   *phi_p,
+                const cs_real_t   *phi_s,
+                const cs_real_t   *cstham,
+                const cs_real_t   *espasg,
+                const cs_real_t   *denasp,
+                const cs_real_t   *rayasp,
+                const cs_real_t   *rayasg
+                );
 
 /*=============================================================================
  * Function definitions

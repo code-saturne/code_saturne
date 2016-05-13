@@ -200,6 +200,7 @@ module cs_c_bindings
     end subroutine log_iteration
 
     !---------------------------------------------------------------------------
+
     !> \brief Compute filters for dynamic models.
 
 
@@ -1450,6 +1451,17 @@ module cs_c_bindings
       integer(c_int), dimension(*), intent(in) :: icvfli
       real(kind=c_double), dimension(*), intent(inout) :: smbrp
     end subroutine cs_balance_vector
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Read lagrangian moments checkpoint information.
+
+    subroutine lagr_moment_restart_read(r)  &
+      bind(C, name='cs_lagr_moment_restart_read')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+    end subroutine lagr_moment_restart_read
 
     !---------------------------------------------------------------------------
 

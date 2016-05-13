@@ -58,7 +58,6 @@ use period
 use ppthch
 use ppppar
 use ppincl
-use lagpar
 use lagran
 use radiat
 use cplsat

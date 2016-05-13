@@ -90,7 +90,6 @@ cs_user_mass_source_terms.f90 \
 cs_user_mesh.c \
 cs_user_metal_structures_source_terms.f90 \
 cs_user_parameters.c \
-cs_user_particle_tracking.f90 \
 cs_user_performance_tuning.c \
 cs_user_physical_properties.c \
 cs_user_postprocess.c \
@@ -105,9 +104,9 @@ cs_user_boundary_conditions_ale.f90 \
 usatch.f90 \
 usctdz.f90 \
 ushist.f90 \
-uslaen.f90 \
-uslag1.f90 \
-uslag2.f90 \
+cs_user_lagr_model.c \
+cs_user_lagr_bcs.c \
+cs_user_lagr_particle.c \
 uspt1d.f90 \
 usthht.f90 \
 usvort.f90 \

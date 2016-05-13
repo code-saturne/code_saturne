@@ -81,13 +81,6 @@ typedef struct {
 
   const cs_int_t   *nvar;
   const cs_int_t   *nscal;
-  const cs_int_t   *nvlsta;
-  const cs_int_t   *nvisbr;
-
-  /* Lagrangian variables */
-
-  bool      particle_attr[CS_LAGR_N_ATTRIBUTES];
-  cs_int_t  particle_multicomponent_export[CS_LAGR_N_ATTRIBUTES];
 
 } cs_post_default_input_t;
 
@@ -103,82 +96,6 @@ static bool                     _default_input_is_set = false;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Default additional particle output of mesh and time-dependent variables
- * for the call to pstvar / cs_post_write_vars.
- *
- * Note: if the input pointer is non-NULL, it must point to valid data
- * when the output function is called, so either:
- * - that value or structure should not be temporary (i.e. local);
- * - post-processing output must be ensured using cs_post_write_var()
- *   or similar before the data pointed to goes out of scope.
- *
- * parameters:
- *   input       <-> pointer to optional (untyped) value or structure;
- *                   here, we should point to _default_input.
- *   mesh_id     <-- id of the output mesh for the current call
- *   cat_id      <-- category id of the output mesh for the current call
- *   ts          <-- time step status structure
- *----------------------------------------------------------------------------*/
-
-static void
-_write_particle_vars(cs_post_default_input_t  *input,
-                     int                       mesh_id,
-                     const cs_time_step_t     *ts)
-{
-  cs_lagr_attribute_t attr_id;
-
-  char var_name[64];
-  int  component_id;
-  char var_name_component[64];
-
-  for (attr_id = 0; attr_id < CS_LAGR_N_ATTRIBUTES; attr_id++) {
-
-    if (input->particle_attr[attr_id]) {
-
-      /* build name */
-
-      int i;
-      int l = snprintf(var_name,
-                       63,
-                       "particle_%s",
-                       cs_lagr_attribute_name[attr_id] + strlen("cs_lagr_"));
-      var_name[63] = '\0';
-      for (i = 0; i < l; i++)
-        var_name[i] = tolower(var_name[i]);
-
-      /* Output values */
-
-      if (input->particle_multicomponent_export[attr_id] == -1)
-        cs_post_write_particle_values(mesh_id,
-                                      attr_id,
-                                      var_name,
-                                      input->particle_multicomponent_export[attr_id],
-                                      ts);
-      else {
-        /* Create one output per component */
-        for (component_id = 0;
-             component_id < input->particle_multicomponent_export[attr_id];
-             component_id++) {
-          snprintf(var_name_component,
-                   63,
-                   "%s_layer_%2.2i",
-                   var_name,
-                   component_id+1);
-          var_name_component[63] = '\0';
-          cs_post_write_particle_values(mesh_id,
-                                        attr_id,
-                                        var_name_component,
-                                        component_id,
-                                        ts);
-        }
-      }
-    }
-
-  }
-
-}
 
 /*----------------------------------------------------------------------------
  * Default additional output of mesh and time-dependent variables for the
@@ -233,13 +150,6 @@ _write_additional_vars(void                  *input,
   cs_real_t  *cel_vals = NULL;
   cs_real_t  *b_face_vals = NULL;
 
-  /* Specific handling for particle meshes */
-
-  if (cat_id == -3) {
-    _write_particle_vars(_input, mesh_id, ts);
-    return;
-  }
-
   /* Basic initialization */
 
   for (i = 0; i < 4; i++)
@@ -267,7 +177,6 @@ _write_additional_vars(void                  *input,
   if (cat_id < 0)
     CS_PROCF(dvvpst, DVVPST) (&nummai, &numtyp,
                               _input->nvar, _input->nscal,
-                              _input->nvlsta, _input->nvisbr,
                               &n_cells, &n_b_faces,
                               cell_list, b_face_list,
                               cel_vals, b_face_vals);
@@ -279,7 +188,7 @@ _write_additional_vars(void                  *input,
   /* Call to user subroutine for additional post-processing */
 
   CS_PROCF(usvpst, USVPST) (&nummai,
-                            _input->nvar, _input->nscal, _input->nvlsta,
+                            _input->nvar, _input->nscal, 0,
                             &n_cells, &n_i_faces, &n_b_faces,
                             itypps,
                             cell_list, i_face_list, b_face_list);
@@ -327,26 +236,19 @@ void CS_PROCF (pstgeo, PSTGEO)
  * integer          ntcabs      : --> : current time step number
  * integer          nvar        : <-- : number of variables
  * integer          nscal       : <-- : number of scalars
- * integer          nvlsta      : <-- : number of statistical variables (lagr)
- * integer          nvisbr      : <-- : number of boundary stat. variables (lagr)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstvar, PSTVAR)
 (
  const cs_int_t   *ntcabs,
  const cs_int_t   *nvar,
- const cs_int_t   *nscal,
- const cs_int_t   *nvlsta,
- const cs_int_t   *nvisbr
+ const cs_int_t   *nscal
 )
 {
   /* Define or update map of variables */
 
   _default_input.nvar = nvar;
   _default_input.nscal = nscal;
-
-  _default_input.nvlsta = nvlsta;
-  _default_input.nvisbr = nvisbr;
 
   /* Register function for first pass */
 
@@ -364,93 +266,6 @@ void CS_PROCF (pstvar, PSTVAR)
     cs_post_write_vars(cs_glob_time_step);
   else
     cs_post_write_vars(NULL);
-}
-
-/*----------------------------------------------------------------------------
- * Define which Lagragian variables should be postprocessed
- *
- * Fortran interface:
- *
- * subroutine lagpvr
- * *****************
- *                  ( ivisv1, ivisv2, ivistp,  ivisdm, iviste,
- *                    ivismp, ivisdk, iviswat, ivisch, ivisck )
- *
- * integer          ivisv1      : <-- : display of variable 'fluid velocity'
- * integer          ivisv2      : <-- : display of variable 'particles velocity'
- * integer          ivistp      : <-- : display of variable 'resident time'
- * integer          ivisdm      : <-- : display of variable 'particle diameter'
- * integer          iviste      : <-- : display of variable 'particle temperature'
- * integer          ivismp      : <-- : display of variable 'particle mass'
- * integer          ivisdk      : <-- : display of variable 'core diameter of part.'
- * integer          iviswat     : <-- : display of variable 'mass of water in coal'
- * integer          ivisch      : <-- : display of variable 'mass of reactive coal'
- * integer          ivisck      : <-- : display of variable 'mass of char'
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (lagpvr, LAGPVR)
-(
- const cs_int_t  *ivisv1,
- const cs_int_t  *ivisv2,
- const cs_int_t  *ivistp,
- const cs_int_t  *ivisdm,
- const cs_int_t  *iviste,
- const cs_int_t  *ivismp,
- const cs_int_t  *ivisdk,
- const cs_int_t  *iviswat,
- const cs_int_t  *ivisch,
- const cs_int_t  *ivisck
-)
-{
-  cs_lagr_attribute_t attr_id;
-
-  for (attr_id = 0; attr_id < CS_LAGR_N_ATTRIBUTES; attr_id++) {
-    _default_input.particle_attr[attr_id] = false;
-    _default_input.particle_multicomponent_export[attr_id] = -1;
-  }
-
-  if (*ivisv1)
-    _default_input.particle_attr[CS_LAGR_VELOCITY] = true;
-
-  if (*ivisv2)
-    _default_input.particle_attr[CS_LAGR_VELOCITY_SEEN] = true;
-
-  if (*ivistp)
-    _default_input.particle_attr[CS_LAGR_RESIDENCE_TIME] = true;
-
-  if (*ivisdm)
-    _default_input.particle_attr[CS_LAGR_DIAMETER] = true;
-
-  if (*iviste) {
-    _default_input.particle_attr[CS_LAGR_TEMPERATURE] = true;
-    if (cs_glob_lagr_params->n_temperature_layers > 1)
-      _default_input.particle_multicomponent_export[CS_LAGR_TEMPERATURE]
-        = cs_glob_lagr_params->n_temperature_layers;
-  }
-
-  if (*ivismp)
-    _default_input.particle_attr[CS_LAGR_MASS] = true;
-
-  if (*ivisdk)
-    _default_input.particle_attr[CS_LAGR_SHRINKING_DIAMETER] = true;
-
-  if (*iviswat)
-    _default_input.particle_attr[CS_LAGR_WATER_MASS] = true;
-
-  if (*ivisch) {
-    _default_input.particle_attr[CS_LAGR_COAL_MASS] = true;
-    if (cs_glob_lagr_params->n_temperature_layers > 1)
-      _default_input.particle_multicomponent_export[CS_LAGR_COAL_MASS]
-        = cs_glob_lagr_params->n_temperature_layers;
-  }
-
-  if (*ivisck) {
-    _default_input.particle_attr[CS_LAGR_COKE_MASS] = true;
-    if (cs_glob_lagr_params->n_temperature_layers > 1)
-      _default_input.particle_multicomponent_export[CS_LAGR_COKE_MASS]
-        = cs_glob_lagr_params->n_temperature_layers;
-  }
-
 }
 
 /*============================================================================

@@ -752,8 +752,8 @@ _check_restart(const char                     *name,
         matching_restart = false;
       if (   restart_mode == CS_TIME_MOMENT_RESTART_EXACT
            && (   ri->wa_nt_start[prev_wa_id] != *nt_start
-                  || (   !ts->is_local
-                      && fabs(ri->wa_t_start[prev_wa_id] - *t_start) > 1.e-18)))
+               || (   !ts->is_local
+                   && fabs(ri->wa_t_start[prev_wa_id] - *t_start) > 1.e-18)))
         matching_restart = false;
       if (matching_restart == false) {
         bft_printf(_("\nRestart data for time moment \"%s\"\n"

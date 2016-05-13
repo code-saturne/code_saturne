@@ -124,7 +124,6 @@ use albase
 use parall
 use period
 use ppincl, only: icond
-use lagpar
 use lagran
 use cplsat
 use mesh

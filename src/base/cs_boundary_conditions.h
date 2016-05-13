@@ -183,6 +183,85 @@ void
 cs_boundary_conditions_type_free(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set Neumann BC for a scalar for a given face.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   qimp   flux value to impose
+ * \param[in]   hint   internal exchange coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_boundary_conditions_set_neumann_scalar(cs_real_t  *a,
+                                          cs_real_t  *af,
+                                          cs_real_t  *b,
+                                          cs_real_t  *bf,
+                                          cs_real_t   qimp,
+                                          cs_real_t   hint)
+{
+  /* Gradient BCs */
+  *a = -qimp/hint;
+  *b = 1.;
+
+  /* Flux BCs */
+  *af = qimp;
+  *bf = 0.;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set Dirichlet BC for a scalar for a given face.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   pimp   dirichlet value to impose
+ * \param[in]   hint   internal exchange coefficient
+ * \param[in]   hext   external exchange coefficient
+ *                     (assumed infinite/ignored if < 0)
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_boundary_conditions_set_dirichlet_scalar(cs_real_t  *a,
+                                            cs_real_t  *af,
+                                            cs_real_t  *b,
+                                            cs_real_t  *bf,
+                                            cs_real_t   pimp,
+                                            cs_real_t   hint,
+                                            cs_real_t   hext)
+{
+  if (hext < 0.) {
+
+    /* Gradient BCs */
+    *a = pimp;
+    *b = 0.;
+
+    /* Flux BCs */
+    *af = -hint*pimp;
+    *bf =  hint;
+
+  }
+  else {
+
+    /* Gradient BCs */
+    *a = hext*pimp/(hint + hext);
+    *b = hint     /(hint + hext);
+
+    /* Flux BCs */
+    cs_real_t heq = hint*hext/(hint + hext);
+    *af = -heq*pimp;
+    *bf =  heq;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

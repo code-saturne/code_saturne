@@ -60,6 +60,20 @@ extern void CS_PROCF (caltri, CALTRI)
 );
 
 /*----------------------------------------------------------------------------
+ * Convert gas temperature to and from enthalpy based on concentrations
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (cpthp1, CPTHP1)
+(
+ const cs_int_t   *mode,    /* <-- 1: h to t, 2: t to h */
+ cs_real_t        *eh,      /* <-> enthalpy of gas mix */
+ cs_real_t        *xesp,    /* <-- mas fraction of species */
+ cs_real_t        *f1mc,    /* <-- mean f1 */
+ cs_real_t        *f2mc,    /* <-- mean f2 */
+ cs_real_t        *tp       /* <-- gas temperature (K) */
+);
+
+/*----------------------------------------------------------------------------
  * Initialize Fortran base common block values
  *----------------------------------------------------------------------------*/
 
@@ -67,6 +81,16 @@ extern void CS_PROCF (csinit, CSINIT)
 (
  const cs_int_t  *irgpar,  /* <-- MPI Rank in parallel, -1 otherwise */
  const cs_int_t  *nrgpar   /* <-- Number of MPI processes, or 1 */
+);
+
+/*----------------------------------------------------------------------------
+ * Compute distance to wall by solving a 3d diffusion equation.
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (distpr, DISTPR)
+(
+ const cs_int_t  *itypfb,    /* <-- boudnary face types */
+ cs_real_t       *distpa     /* <-- wall distance */
 );
 
 /*----------------------------------------------------------------------------
@@ -80,8 +104,6 @@ extern void CS_PROCF (dvvpst, DVVPST)
                               *     (-1 as volume, -2 as boundary, or nummai) */
  const cs_int_t  *nvar,      /* <-- number of variables */
  const cs_int_t  *nscal,     /* <-- number of scalars */
- const cs_int_t  *nvlsta,    /* <-- number of statistical variables (lagr) */
- const cs_int_t  *nvisbr,    /* <-- number of boundary stat. variables (lagr) */
  const cs_int_t  *ncelps,    /* <-- number of post-processed cells */
  const cs_int_t  *nfbrps,    /* <-- number of post processed boundary faces */
  const cs_int_t   lstcel[],  /* <-- list of post-processed cells */
@@ -225,34 +247,6 @@ cs_add_model_field_indexes(int f_id);
 
 int
 cs_field_post_id(int f_id);
-
-/*----------------------------------------------------------------------------
- * Initialize Lagrangian module parameters for a given zone and class
- *
- * parameters:
- *   i_cz_params <-- integer parameters for this class and zone
- *   r_cz_params <-- real parameters for this class and zone
- *----------------------------------------------------------------------------*/
-
-void
-cs_lagr_init_zone_class_param(const cs_int_t   i_cs_params[],
-                              const cs_real_t  r_cs_params[]);
-
-/*----------------------------------------------------------------------------
- * Define Lagrangian module parameters for a given zone and class
- *
- * parameters:
- *   class_id    <-- id of given particle class
- *   zone_id     <-- id of given boundary zone
- *   i_cz_params <-- integer parameters for this class and zone
- *   r_cz_params <-- real parameters for this class and zone
- *----------------------------------------------------------------------------*/
-
-void
-cs_lagr_define_zone_class_param(cs_int_t         class_id,
-                                cs_int_t         zone_id,
-                                const cs_int_t   i_cs_params[],
-                                const cs_real_t  r_cs_params[]);
 
 /*----------------------------------------------------------------------------
  * Return Lagrangian model status.

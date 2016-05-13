@@ -57,9 +57,11 @@
 #include "cs_parall.h"
 #include "cs_prototypes.h"
 #include "cs_search.h"
-#include "cs_lagr_utils.h"
 #include "cs_halo.h"
+
+#include "cs_lagr.h"
 #include "cs_lagr_dlvo.h"
+#include "cs_lagr_roughness.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -85,6 +87,15 @@ static cs_lagr_clogging_param_t cs_lagr_clogging_param;
 
 static const double _pi = 3.14159265358979323846;
 
+/* Cut-off distance for adhesion forces (assumed to be the Born distance) */
+static const cs_real_t  _d_cut_off = 1.65e-10;
+
+/* Free space permittivity */
+static const cs_real_t _free_space_permit = 8.854e-12;
+
+/* Faraday constant */
+static const cs_real_t _faraday_cst = 9.648e4;
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -99,22 +110,17 @@ static const double _pi = 3.14159265358979323846;
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
-                              const cs_real_t   *free_space_permit,
-                              const cs_real_t   *water_permit,
-                              const cs_real_t   *ionic_strength,
-                              const cs_real_t   *jamming_limit,
-                              const cs_real_t   *min_porosity,
-                              const cs_real_t    temperature[],
-                              const cs_real_t   *valen,
-                              const cs_real_t   *phi_p,
-                              const cs_real_t   *phi_s,
-                              const cs_real_t   *cstham,
-                              const cs_real_t   *csthpp,
-                              const cs_real_t   *dcutof,
-                              const cs_real_t   *lambwl,
-                              const cs_real_t   *kboltz
- )
+cloginit (const cs_real_t   *water_permit,
+          const cs_real_t   *ionic_strength,
+          const cs_real_t   *jamming_limit,
+          const cs_real_t   *min_porosity,
+          const cs_real_t    temperature[],
+          const cs_real_t   *valen,
+          const cs_real_t   *phi_p,
+          const cs_real_t   *phi_s,
+          const cs_real_t   *cstham,
+          const cs_real_t   *csthpp
+          )
 {
 #define PG_CST 8.314  /* Ideal gas constant */
 
@@ -125,8 +131,6 @@ CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
   /* Retrieve physical parameters related to clogging modeling */
   /* and fill the global structure cs_lagr_clogging_param          */
 
-  cs_lagr_clogging_param.faraday_cst = *faraday_cst;
-  cs_lagr_clogging_param.free_space_permit = *free_space_permit;
   cs_lagr_clogging_param.water_permit = *water_permit;
   cs_lagr_clogging_param.ionic_strength = *ionic_strength;
   cs_lagr_clogging_param.jamming_limit = *jamming_limit;
@@ -136,9 +140,6 @@ CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
   cs_lagr_clogging_param.phi_s = *phi_s;
   cs_lagr_clogging_param.cstham = *cstham;
   cs_lagr_clogging_param.csthpp = *csthpp;
-  cs_lagr_clogging_param.dcutof = *dcutof;
-  cs_lagr_clogging_param.lambwl = *lambwl;
-  cs_lagr_clogging_param.kboltz = *kboltz;
 
   /* Allocate memory for the temperature and Debye length arrays */
 
@@ -158,15 +159,13 @@ CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
   for (ifac = 0; ifac < mesh->n_b_faces; ifac++)
 
     cs_lagr_clogging_param.debye_length[ifac]
-      = pow(2e3 * pow(cs_lagr_clogging_param.faraday_cst,2)
+      = pow(2e3 * pow(_faraday_cst,2)
             * cs_lagr_clogging_param.ionic_strength
             /  (  cs_lagr_clogging_param.water_permit
-                * cs_lagr_clogging_param.free_space_permit * PG_CST
+                * _free_space_permit * PG_CST
                 * cs_lagr_clogging_param.temperature[ifac]), -0.5);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(" cstfar = %g\n", cs_lagr_clogging_param.faraday_cst);
-  bft_printf(" epsvid = %g\n", cs_lagr_clogging_param.free_space_permit);
   bft_printf(" epseau = %g\n", cs_lagr_clogging_param.water_permit);
   bft_printf(" valen   = %g\n", cs_lagr_clogging_param.valen);
   bft_printf(" fion   = %g\n", cs_lagr_clogging_param.ionic_strength);
@@ -287,12 +286,11 @@ cs_lagr_clogging_barrier(const void                     *particle,
 
       cs_real_t  step = 1e-10;
 
-      cs_real_t distp = cs_lagr_clogging_param.dcutof + i*step;
+      cs_real_t distp = _d_cut_off + i*step;
 
       cs_real_t var1
         = cs_lagr_van_der_waals_sphere_plane(distp,
                                              depositing_radius,
-                                             cs_lagr_clogging_param.lambwl,
                                              cs_lagr_clogging_param.cstham);
 
       cs_real_t var2
@@ -301,10 +299,8 @@ cs_lagr_clogging_barrier(const void                     *particle,
                                    cs_lagr_clogging_param.valen,
                                    cs_lagr_clogging_param.phi_p,
                                    cs_lagr_clogging_param.phi_s,
-                                   cs_lagr_clogging_param.kboltz,
                                    cs_lagr_clogging_param.temperature[face_id],
                                    cs_lagr_clogging_param.debye_length[face_id],
-                                   cs_lagr_clogging_param.free_space_permit,
                                    cs_lagr_clogging_param.water_permit);
 
       cs_real_t var = var1 + var2;
@@ -328,14 +324,13 @@ cs_lagr_clogging_barrier(const void                     *particle,
 
       cs_real_t  step = 1e-10;
 
-      cs_real_t distcc =   cs_lagr_clogging_param.dcutof + i*step
+      cs_real_t distcc =   _d_cut_off + i*step
                          + depositing_radius + deposited_radius;
 
       cs_real_t var1
         = cs_lagr_van_der_waals_sphere_sphere(distcc,
                                               deposited_radius,
                                               depositing_radius,
-                                              cs_lagr_clogging_param.lambwl,
                                               cs_lagr_clogging_param.csthpp);
 
       cs_real_t var2
@@ -345,10 +340,8 @@ cs_lagr_clogging_barrier(const void                     *particle,
                                     cs_lagr_clogging_param.valen,
                                     cs_lagr_clogging_param.phi_p,
                                     cs_lagr_clogging_param.phi_p,
-                                    cs_lagr_clogging_param.kboltz,
                                     cs_lagr_clogging_param.temperature[face_id],
                                     cs_lagr_clogging_param.debye_length[face_id],
-                                    cs_lagr_clogging_param.free_space_permit,
                                     cs_lagr_clogging_param.water_permit);
 
       cs_real_t var = contact_count[0] * (var1 + var2);

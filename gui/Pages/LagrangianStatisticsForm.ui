@@ -61,7 +61,7 @@
            <string>Code_Saturne key word: NBCLST</string>
           </property>
           <property name="text">
-           <string>Number of particles cluster </string>
+           <string>Number of particle clusters </string>
           </property>
          </widget>
         </item>
@@ -69,12 +69,83 @@
          <widget class="QLineEdit" name="lineEditNBCLST">
           <property name="maximumSize">
            <size>
-            <width>80</width>
+            <width>50</width>
             <height>16777215</height>
            </size>
           </property>
           <property name="toolTip">
            <string>Code_Saturne key word: NBCLST</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="labelIDSTNT">
+          <property name="toolTip">
+           <string>Code_Saturne key word: IDSTNT</string>
+          </property>
+          <property name="text">
+           <string>Statistics start from iteration n°
+(restart(s) included)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QLineEdit" name="lineEditIDSTNT">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Code_Saturne key word: IDSTNT</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="labelNSTIST">
+          <property name="toolTip">
+           <string>Code_Saturne key word: NSTIST</string>
+          </property>
+          <property name="text">
+           <string>Start of steady-state statistics from iteration n°
+(restart(s) included)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QLineEdit" name="lineEditNSTIST">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Code_Saturne key word: NSTIST</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="labelSEUIL">
+          <property name="toolTip">
+           <string>Code_Saturne key word: SEUIL</string>
+          </property>
+          <property name="text">
+           <string>Threshold for statistical weight</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QLineEdit" name="lineEditSEUIL">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Code_Saturne key word: THRESHOLD</string>
           </property>
          </widget>
         </item>
@@ -124,7 +195,7 @@
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBoxISTALA">
          <property name="toolTip">
-          <string>Code_Saturne key word: ISTALA</string>
+          <string>Volume statistics field definitions</string>
          </property>
          <property name="title">
           <string>Calculation of volume statistics</string>
@@ -133,7 +204,7 @@
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
-          <item row="1" column="0">
+          <item row="0" column="0">
            <widget class="QGroupBox" name="groupBoxVolumeNames">
             <property name="title">
              <string>Variable names</string>
@@ -141,118 +212,6 @@
             <layout class="QGridLayout">
              <item row="0" column="0">
               <widget class="QTableView" name="tableViewVolumicNames"/>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QGroupBox" name="groupBoxMainVolume">
-            <property name="title">
-             <string/>
-            </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <item>
-              <spacer>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <layout class="QGridLayout" name="gridLayout_4">
-               <item row="0" column="0">
-                <widget class="QLabel" name="labelIDSTNT">
-                 <property name="toolTip">
-                  <string>Code_Saturne key word: IDSTNT</string>
-                 </property>
-                 <property name="text">
-                  <string>Calculation start from 
-Lagrangian iteration n° (restart(s) included)
-</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="1">
-                <widget class="QLineEdit" name="lineEditIDSTNT">
-                 <property name="maximumSize">
-                  <size>
-                   <width>100</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="toolTip">
-                  <string>Code_Saturne key word: IDSTNT</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="labelNSTIST">
-                 <property name="toolTip">
-                  <string>Code_Saturne key word: NSTIST</string>
-                 </property>
-                 <property name="text">
-                  <string>Start of steady-state statistics from 
-Lagrangian iteration n° (restart(s) included)
-</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="1">
-                <widget class="QLineEdit" name="lineEditNSTIST">
-                 <property name="maximumSize">
-                  <size>
-                   <width>100</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="toolTip">
-                  <string>Code_Saturne key word: NSTIST</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="0">
-                <widget class="QLabel" name="labelSEUIL">
-                 <property name="toolTip">
-                  <string>Code_Saturne key word: SEUIL</string>
-                 </property>
-                 <property name="text">
-                  <string>Threshold for statistical weight</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="1">
-                <widget class="QLineEdit" name="lineEditSEUIL">
-                 <property name="maximumSize">
-                  <size>
-                   <width>60</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="toolTip">
-                  <string>Code_Saturne key word: SEUIL</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <spacer>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
              </item>
             </layout>
            </widget>
@@ -280,91 +239,6 @@ Lagrangian iteration n° (restart(s) included)
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
           <item row="0" column="0">
-           <widget class="QGroupBox" name="groupBoxMainBoundaries">
-            <property name="title">
-             <string/>
-            </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_2">
-             <item>
-              <spacer>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <layout class="QGridLayout" name="gridLayout_2">
-               <item row="0" column="0">
-                <widget class="QLabel" name="labelNSTBOR">
-                 <property name="toolTip">
-                  <string>Code_Saturne key word: NSTBOR</string>
-                 </property>
-                 <property name="text">
-                  <string>Iteration starting</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="1">
-                <widget class="QLineEdit" name="lineEditNSTBOR">
-                 <property name="maximumSize">
-                  <size>
-                   <width>60</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="toolTip">
-                  <string>Code_Saturne key word: NSTBOR</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="labelSEUILF">
-                 <property name="toolTip">
-                  <string>Code_Saturne key word: SEUILF</string>
-                 </property>
-                 <property name="text">
-                  <string>Threshold for statistical weight</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="1">
-                <widget class="QLineEdit" name="lineEditSEUILF">
-                 <property name="maximumSize">
-                  <size>
-                   <width>60</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="toolTip">
-                  <string>Code_Saturne key word: SEUILF</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <spacer>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item row="1" column="0">
            <widget class="QGroupBox" name="groupBoxBoundariesNames">
             <property name="title">
              <string>Variable names</string>

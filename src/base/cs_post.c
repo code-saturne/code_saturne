@@ -50,6 +50,7 @@
 #include "cs_file.h"
 #include "cs_lagr_extract.h"
 #include "cs_log.h"
+#include "cs_lagr_query.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
 #include "cs_mesh_location.h"
@@ -942,18 +943,18 @@ _cs_post_mesh_id_try(int  mesh_id)
  *----------------------------------------------------------------------------*/
 
 static int
-_lagragian_needed(const cs_time_step_t  *ts)
+_lagrangian_needed(const cs_time_step_t  *ts)
 {
-  int _model, _restart, _frozen;
   int retval = 0;
 
-  cs_lagr_status(&_model, &_restart, &_frozen);
+  int _model = cs_lagr_model_type();
 
   if (_model != 0) {
 
     retval = 1;
 
     if (ts != NULL) {
+      int _restart = cs_lagr_particle_restart();
       int _nt_start = (_restart) ? ts->nt_prev : ts->nt_prev + 1;
       if (ts->nt_cur == _nt_start)
         retval = 2;
@@ -2871,6 +2872,8 @@ cs_f_post_write_var(int               mesh_id,
                     const cs_real_t  *i_face_vals,
                     const cs_real_t  *b_face_vals)
 {
+  CS_UNUSED(t_cur_abs);
+
   cs_post_type_t var_type
     = (sizeof(cs_real_t) == 8) ? CS_POST_TYPE_double : CS_POST_TYPE_float;
 
@@ -5181,7 +5184,7 @@ cs_post_init_writers(void)
 
   /* Additional writers for Lagrangian output */
 
-  if (_lagragian_needed(NULL)) {
+  if (_lagrangian_needed(NULL)) {
 
     /* Particles */
 
@@ -5270,7 +5273,7 @@ cs_post_init_meshes(int check_mask)
 
   /* Additional writers for Lagrangian output */
 
-  if (_lagragian_needed(NULL)) {
+  if (_lagrangian_needed(NULL)) {
     if (!cs_post_mesh_exists(-3)) {
       const int writer_ids[] = {-3};
       cs_post_define_particles_mesh(-3,

@@ -72,12 +72,10 @@ use cpincl
 use coincl
 use atincl
 use atsoil
-use lagpar
-use lagdim
 use lagran
 use vorinc
 use ihmpre
-use radiat
+use radiat, only: iirayo, nfreqr
 use cplsat
 use ppcpfu
 use mesh
@@ -587,7 +585,8 @@ if (ncpdct.gt.0) then
   ckupdc )
 
  if (iflow .eq.1) then
-   call laghlo(ncepdc, icepdc, ckupdc)
+   call laghlo(iperio, ncepdc, icepdc, itypfb, ckupdc, nswrgy,  &
+               iwarny, imligy, epsrgy, extray, climgy)
  endif
 
 endif
@@ -1282,8 +1281,6 @@ do while (iterns.le.nterup)
         imajdy = 1
         ! If we have walls, we must compute
       else
-        ! On doit conserver la memoire de memcli a cause de 'uetbor'
-        ! dans distyp (uniquement en LES avec van Driest mais tant pis)
         if (abs(icdpar).eq.1) then
           call distpr(itypfb, dispar)
         else if (abs(icdpar).eq.2) then
@@ -1301,13 +1298,10 @@ do while (iterns.le.nterup)
   !     OU CALCUL DE Y+ POUR LE LAGRANGIEN
 
 
-  !     On calcule y+ si on en a besoin
+  ! Compute y+ if needed
 
   if (     (itytur.eq.4 .and. idries.eq.1)                 &
-      .or. (iilagr.ge.1 .and. iroule.eq.2)) then
-
-    !       On calcule si on a demande ce mode de calcul
-    !               et s'il y a des parois (si pas de paroi, pas de y+)
+      .or. (iilagr.ge.1 .and. idepst.gt.0)) then
 
     if (abs(infpar).gt.0) then
       call distyp(itypfb, dispar, yplpar)
