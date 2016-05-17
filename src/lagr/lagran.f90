@@ -23,14 +23,6 @@
 !> \file lagran.f90
 !> \brief Module for Lagrangian model.
 
-! Empty modules (for compatibility) */
-
-module lagdim
-end module lagdim
-
-module lagpar
-end module lagpar
-
 module lagran
 
   !===========================================================================
