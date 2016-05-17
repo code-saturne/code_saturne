@@ -1359,8 +1359,8 @@ CS_PROCF(laglec, LAGLEC)(cs_lnum_t *nsalto,
 
           cs_real_t *st_val = cs_glob_lagr_source_terms->st_val + ivar*n_cells_ext;
 
-          char *rubriq = nomtsl[ivar];
-          cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
+          cs_restart_read_section(cs_lag_stat_restart,
+                                  nomtsl[ivar+1], itysup, nbval,
                                   CS_TYPE_cs_real_t, st_val);
         }
 
@@ -2626,7 +2626,7 @@ CS_PROCF (lagout, LAGOUT)(cs_lnum_t *nsalpp,
 
         cs_real_t *st_val = cs_glob_lagr_source_terms->st_val + ii*n_cells_ext;
 
-        cs_restart_write_section(cs_lag_stat_restart, nomtsl[ii],
+        cs_restart_write_section(cs_lag_stat_restart, nomtsl[ii+1],
                                  itysup, nbval, CS_TYPE_cs_real_t,
                                  st_val);
 
