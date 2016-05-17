@@ -601,8 +601,6 @@ cs_gui_particles_model(void)
 
   if (vol_stats == 1) {
 
-    cs_lagr_stat_activate(CS_LAGR_STAT_CUMULATIVE_WEIGHT);
-
     /* labels */
 
     i = -1;
@@ -622,7 +620,7 @@ cs_gui_particles_model(void)
 
     _get_char_post("volume", "Part_stat_weight", &flag);
     if (flag)
-      cs_lagr_stat_activate_attr(CS_LAGR_STAT_CUMULATIVE_WEIGHT);
+      cs_lagr_stat_activate(CS_LAGR_STAT_CUMULATIVE_WEIGHT);
 
   }
 

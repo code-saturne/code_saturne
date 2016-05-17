@@ -2522,135 +2522,135 @@ CS_PROCF (lagout, LAGOUT)(cs_lnum_t *nsalpp,
 
       }
 
+    }
 
-      /* --> Enfin, en cas de couplage retour, on ecrit les termes sources */
 
-      if (cs_glob_lagr_time_scheme->iilagr == 2) {
+    /* --> Enfin, en cas de couplage retour, on ecrit les termes sources */
 
-        itysup = 0;
-        nbval = 1;
+    if (cs_glob_lagr_time_scheme->iilagr == 2) {
 
-        {
-          cs_int_t   *tabvar;
-          BFT_MALLOC(tabvar, nbval, cs_int_t);
+      itysup = 0;
+      nbval = 1;
 
-          char rubriq[] = "iteration_debut_termes_sources_stationnaires";
-          tabvar[0] = cs_glob_lagr_source_terms->nstits;
+      {
+        cs_int_t   *tabvar;
+        BFT_MALLOC(tabvar, nbval, cs_int_t);
+
+        char rubriq[] = "iteration_debut_termes_sources_stationnaires";
+        tabvar[0] = cs_glob_lagr_source_terms->nstits;
+
+        cs_restart_write_section(cs_lag_stat_restart, rubriq,
+                                 itysup, nbval, CS_TYPE_cs_int_t, tabvar);
+        BFT_FREE(tabvar);
+      }
+
+      {
+        cs_int_t *tabvar;
+        BFT_MALLOC(tabvar, nbval, cs_int_t);
+
+        char rubriq[] = "nombre_iterations_termes_sources_stationnaires";
+        tabvar[0] = cs_glob_lagr_source_terms->npts;
+
+        cs_restart_write_section(cs_lag_stat_restart, rubriq,
+                                 itysup, nbval, CS_TYPE_cs_int_t, tabvar);
+        BFT_FREE(tabvar);
+      }
+
+      {
+        cs_int_t *tabvar;
+        BFT_MALLOC(tabvar, nbval, cs_int_t);
+
+        char rubriq[] = "modele_turbulence_termes_sources";
+        tabvar[0] = extra->iturb;
+
+        cs_restart_write_section(cs_lag_stat_restart, rubriq,
+                                 itysup, nbval, CS_TYPE_cs_int_t, tabvar);
+        BFT_FREE(tabvar);
+      }
+
+      /* On donne des labels au different TS pour les noms de rubriques    */
+      /* On donne le meme label au keps, au v2f et au k-omega (meme variable k) */
+      if (cs_glob_lagr_source_terms->ltsdyn == 1) {
+        sprintf(nomtsl[cs_glob_lagr_source_terms->itsvx], "terme_source_vitesseX");
+        sprintf(nomtsl[cs_glob_lagr_source_terms->itsvy], "terme_source_vitesseY");
+        sprintf(nomtsl[cs_glob_lagr_source_terms->itsvz], "terme_source_vitesseZ");
+        sprintf(nomtsl[cs_glob_lagr_source_terms->itsli], "terme_source_vitesse_implicite");
+        if (extra->itytur == 2 || extra->iturb == 50 || extra->iturb == 60) {
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itske], "terme_source_turbulence_keps");
+        }
+        else if (extra->itytur == 3) {
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itsr11], "terme_source_turbulence_R11");
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itsr12], "terme_source_turbulence_R12");
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itsr13], "terme_source_turbulence_R13");
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itsr22], "terme_source_turbulence_R22");
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itsr23], "terme_source_turbulence_R23");
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itsr33], "terme_source_turbulence_R33");
+        }
+      }
+      if (cs_glob_lagr_source_terms->ltsmas == 1) {
+        sprintf(nomtsl[cs_glob_lagr_source_terms->itsmas], "terme_source_masse");
+      }
+      if (cs_glob_lagr_source_terms->ltsthe == 1) {
+        if (   cs_glob_lagr_model->physical_model == 1
+            && cs_glob_lagr_specific_physics->itpvar == 1) {
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
+                  "terme_source_thermique_explicite");
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
+                  "terme_source_thermique_implicite");
+        }
+        else if (cs_glob_lagr_model->physical_model == 2) {
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
+                  "terme_source_thermique_explicite");
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
+                  "terme_source_thermique_implicite");
+          for (int icha = 0; icha < extra->ncharb; icha++) {
+            sprintf(nomtsl[cs_glob_lagr_source_terms->itsmv1[icha]],
+                    "terme_source_legeres_F1_%04d", icha);
+            sprintf(nomtsl[cs_glob_lagr_source_terms->itsmv2[icha]],
+                    "terme_source_lourdes_F2_%04d", icha);
+          }
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itsco],
+                  "terme_source_F3");
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itsfp4],
+                  "terme_source_variance_traceur_air");
+        }
+      }
+
+      /* Termes source de couplage retour    */
+      itysup = 1;
+      nbval = 1;
+
+      const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+      for (int ii = 0; ii < cs_glob_lagr_dim->ntersl; ii++) {
+
+        cs_real_t *st_val = cs_glob_lagr_source_terms->st_val + ii*n_cells_ext;
+
+        cs_restart_write_section(cs_lag_stat_restart, nomtsl[ii],
+                                 itysup, nbval, CS_TYPE_cs_real_t,
+                                 st_val);
+
+      }
+
+      /* Dans le cas specifique de la combustion de grains de charbon */
+      /* avec un couplage retour sur une combustion gaz en phase porteuse  */
+      /* --> A verifier l'utilite de cette sauvegarde pour une suite...    */
+
+      if (extra->icpl3c >= 0) {
+
+        for (cs_lnum_t ii = 0; ii < *nsalpp; ii++) {
+
+          cs_lnum_t icha = *nsalto - *nsalpp + ii;
+          itysup = 1;
+          nbval = 1;
+
+          char rubriq[32];
+          sprintf(rubriq, "scalaires_physiques_pariculieres_charbon%04d", ii);
+
+          cs_field_t *f = cs_field_by_id(iprpfl[icha]);
 
           cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                   itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-          BFT_FREE(tabvar);
-        }
-
-        {
-          cs_int_t *tabvar;
-          BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-          char rubriq[] = "nombre_iterations_termes_sources_stationnaires";
-          tabvar[0] = cs_glob_lagr_source_terms->npts;
-
-          cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                   itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-          BFT_FREE(tabvar);
-        }
-
-        {
-          cs_int_t *tabvar;
-          BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-          char rubriq[] = "modele_turbulence_termes_sources";
-          tabvar[0] = extra->iturb;
-
-          cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                   itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-          BFT_FREE(tabvar);
-        }
-
-        /* On donne des labels au different TS pour les noms de rubriques    */
-        /* On donne le meme label au keps, au v2f et au k-omega (meme variable k) */
-        if (cs_glob_lagr_source_terms->ltsdyn == 1) {
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsvx], "terme_source_vitesseX");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsvy], "terme_source_vitesseY");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsvz], "terme_source_vitesseZ");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsli], "terme_source_vitesse_implicite");
-          if (extra->itytur == 2 || extra->iturb == 50 || extra->iturb == 60) {
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itske], "terme_source_turbulence_keps");
-          }
-          else if (extra->itytur == 3) {
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsr11], "terme_source_turbulence_R11");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsr12], "terme_source_turbulence_R12");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsr13], "terme_source_turbulence_R13");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsr22], "terme_source_turbulence_R22");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsr23], "terme_source_turbulence_R23");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsr33], "terme_source_turbulence_R33");
-          }
-        }
-        if (cs_glob_lagr_source_terms->ltsmas == 1) {
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsmas], "terme_source_masse");
-        }
-        if (cs_glob_lagr_source_terms->ltsthe == 1) {
-          if (   cs_glob_lagr_model->physical_model == 1
-              && cs_glob_lagr_specific_physics->itpvar == 1) {
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
-                    "terme_source_thermique_explicite");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
-                    "terme_source_thermique_implicite");
-          }
-          else if (cs_glob_lagr_model->physical_model == 2) {
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
-                    "terme_source_thermique_explicite");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
-                    "terme_source_thermique_implicite");
-            for (cs_lnum_t icha = 0; icha < extra->ncharb; icha++) {
-              sprintf(nomtsl[cs_glob_lagr_source_terms->itsmv1[icha]],
-                      "terme_source_legeres_F1_%04d", icha);
-              sprintf(nomtsl[cs_glob_lagr_source_terms->itsmv2[icha]],
-                      "terme_source_lourdes_F2_%04d", icha);
-            }
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsco],
-                    "terme_source_F3");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsfp4],
-                    "terme_source_variance_traceur_air");
-          }
-        }
-
-        /* Termes source de couplage retour    */
-        itysup = 1;
-        nbval = 1;
-
-        const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-
-        for (int ii = 0; ii < cs_glob_lagr_dim->ntersl; ii++) {
-
-          cs_real_t *st_val = cs_glob_lagr_source_terms->st_val + ii*n_cells_ext;
-
-          cs_restart_write_section(cs_lag_stat_restart, nomtsl[ii],
-                                   itysup, nbval, CS_TYPE_cs_real_t,
-                                   st_val);
-
-        }
-
-        /* Dans le cas specifique de la combustion de grains de charbon */
-        /* avec un couplage retour sur une combustion gaz en phase porteuse  */
-        /* --> A verifier l'utilite de cette sauvegarde pour une suite...    */
-
-        if (extra->icpl3c >= 0) {
-
-          for (cs_lnum_t ii = 0; ii < *nsalpp; ii++) {
-
-            cs_lnum_t icha = *nsalto - *nsalpp + ii;
-            itysup = 1;
-            nbval = 1;
-
-            char rubriq[32];
-            sprintf(rubriq, "scalaires_physiques_pariculieres_charbon%04d", ii);
-
-            cs_field_t *f = cs_field_by_id(iprpfl[icha]);
-
-            cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                     itysup, nbval, CS_TYPE_cs_real_t, f->val);
-
-          }
+                                   itysup, nbval, CS_TYPE_cs_real_t, f->val);
 
         }
 
