@@ -199,7 +199,7 @@ endif
 ! and give the correct pic of k
 
 !TODO FIXME Are the BC uncompatible?
-if (ntcabs.eq.1.and.reinit_turb.eq.1) then
+if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
 
   allocate(grad(3,ncelet))
 
