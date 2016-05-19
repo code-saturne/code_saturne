@@ -660,7 +660,7 @@ iprev  = 0
 
 allocate(gradp(3,ncelet))
 
-! We use gradient_scalar istead of potential because iphydr is
+! We use gradient_scalar instead of potential because iphydr is
 ! not taken into account in case of Darcy calculation.
 call field_gradient_scalar(ivarfl(ipr), iprev, imrgra, inc,    &
                            iccocg, gradp)
