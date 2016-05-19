@@ -5,6 +5,8 @@ Release 4.2.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bug in irijco=1 and DFM models.
+
 - Fix in compressible: ensure ithvar is correctly initialized for runs
   without GUI.
 

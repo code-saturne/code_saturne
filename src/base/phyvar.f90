@@ -458,7 +458,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
             rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
 
             do isou = 1, 6
-              visten(isou, iel) = rottke*cvar_rij(isou, iel)
+              vistes(isou, iel) = rottke*cvar_rij(isou, iel)
             enddo
           enddo
         endif
@@ -507,6 +507,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
           visten(6,iel) = rottke*cvar_r13(iel)
         enddo
 
+        ! No damping with Durbing scale for the scalar
         if (iggafm.eq.1) then
           call field_get_val_v(ivstes, vistes)
 
