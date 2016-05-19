@@ -101,7 +101,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
-integer          ifac, ivar, iscal, iut, ivt, iwt
+integer          ifac, ivar, iscal
 
 !===============================================================================
 !===============================================================================
@@ -124,37 +124,15 @@ enddo
 
 ! Pour toutes les variables, on initialise RCODCL(1)a RINFIN
 ! Cette valeur sera reinitialisee a zero dans typecl.F
+! (Take also turbulent fluxes into account)
 
-do ivar = 1, nvar
+do ivar = 1, nvarcl
   do ifac = 1, nfabor
     icodcl(ifac,ivar)   = 0
     rcodcl(ifac,ivar,1) = rinfin
     rcodcl(ifac,ivar,2) = rinfin
     rcodcl(ifac,ivar,3) = 0.d0
   enddo
-enddo
-
-! Default value for turbulent fluxes
-do iscal = 1, nscal
-  if (ityturt(iscal).eq.3) then
-    iut = nvar + 3*(ifltur(iscal) - 1) + 1
-    ivt = nvar + 3*(ifltur(iscal) - 1) + 2
-    iwt = nvar + 3*(ifltur(iscal) - 1) + 3
-    do ifac = 1, nfabor
-      icodcl(ifac,iut)   = 0
-      rcodcl(ifac,iut,1) = rinfin
-      rcodcl(ifac,iut,2) = rinfin
-      rcodcl(ifac,iut,3) = 0.d0
-      icodcl(ifac,ivt)   = 0
-      rcodcl(ifac,ivt,1) = rinfin
-      rcodcl(ifac,ivt,2) = rinfin
-      rcodcl(ifac,ivt,3) = 0.d0
-      icodcl(ifac,iwt)   = 0
-      rcodcl(ifac,iwt,1) = rinfin
-      rcodcl(ifac,iwt,2) = rinfin
-      rcodcl(ifac,iwt,3) = 0.d0
-    enddo
-  endif
 enddo
 
 ! En ALE, on initialise aussi le tableau IALTYB

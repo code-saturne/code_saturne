@@ -506,7 +506,7 @@ endif
 !     isolib, ifrent and ientre are handled later.
 !================================================================================
 
-do ivar = 1, nvar
+do ivar = 1, nvarcl
   do ifac = 1, nfabor
     if ((itypfb(ifac) .ne. isolib)            .and. &
         (itypfb(ifac) .ne. ifrent)            .and. &
@@ -517,42 +517,6 @@ do ivar = 1, nvar
       rcodcl(ifac,ivar,1) = 0.d0
     endif
   enddo
-enddo
-
-do iscal = 1, nscal
-  if (ityturt(iscal).eq.3) then
-    ! Set pointer values of turbulent fluxes in icodcl
-    iut = nvar + 3*(ifltur(iscal) - 1) + 1
-    ivt = nvar + 3*(ifltur(iscal) - 1) + 2
-    iwt = nvar + 3*(ifltur(iscal) - 1) + 3
-
-    do ifac = 1, nfabor
-      if ((itypfb(ifac) .ne. isolib)             .and. &
-          (itypfb(ifac) .ne. ifrent)             .and. &
-          (itypfb(ifac) .ne. ifresf)             .and. &
-          (itypfb(ifac) .ne. i_convective_inlet) .and. &
-          (itypfb(ifac) .ne. ientre)             .and. &
-          (rcodcl(ifac,iut,1) .gt. rinfin*0.5d0)) then
-        rcodcl(ifac,iut,1) = 0.d0
-      endif
-      if ((itypfb(ifac) .ne. isolib)             .and. &
-          (itypfb(ifac) .ne. ifrent)             .and. &
-          (itypfb(ifac) .ne. ifresf)             .and. &
-          (itypfb(ifac) .ne. i_convective_inlet) .and. &
-          (itypfb(ifac) .ne. ientre)             .and. &
-          (rcodcl(ifac,ivt,1) .gt. rinfin*0.5d0)) then
-        rcodcl(ifac,ivt,1) = 0.d0
-      endif
-      if ((itypfb(ifac) .ne. isolib)             .and. &
-          (itypfb(ifac) .ne. ifrent)             .and. &
-          (itypfb(ifac) .ne. ifresf)             .and. &
-          (itypfb(ifac) .ne. i_convective_inlet) .and. &
-          (itypfb(ifac) .ne. ientre)             .and. &
-          (rcodcl(ifac,iwt,1) .gt. rinfin*0.5d0)) then
-        rcodcl(ifac,iwt,1) = 0.d0
-      endif
-    enddo
-  endif
 enddo
 
 !===============================================================================
@@ -687,17 +651,14 @@ endif
 ideb = idebty(ientre)
 ifin = ifinty(ientre)
 
-do ivar = 1, nvar
-  if (ivar.eq.ipr) then
-    do ii = ideb, ifin
-      ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
-        icodcl(ifac,ivar)   = 3
-        rcodcl(ifac,ivar,1) = 0.d0
-        rcodcl(ifac,ivar,2) = rinfin
-        rcodcl(ifac,ivar,3) = 0.d0
-      endif
-    enddo
+ivar = ipr
+do ii = ideb, ifin
+  ifac = itrifb(ii)
+  if(icodcl(ifac,ivar).eq.0) then
+    icodcl(ifac,ivar)   = 3
+    rcodcl(ifac,ivar,1) = 0.d0
+    rcodcl(ifac,ivar,2) = rinfin
+    rcodcl(ifac,ivar,3) = 0.d0
   endif
 enddo
 
@@ -710,17 +671,14 @@ enddo
 ideb = idebty(i_convective_inlet)
 ifin = ifinty(i_convective_inlet)
 
-do ivar = 1, nvar
-  if (ivar.eq.ipr) then
-    do ii = ideb, ifin
-      ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
-        icodcl(ifac,ivar)   = 3
-        rcodcl(ifac,ivar,1) = 0.d0
-        rcodcl(ifac,ivar,2) = rinfin
-        rcodcl(ifac,ivar,3) = 0.d0
-      endif
-    enddo
+ivar = ipr
+do ii = ideb, ifin
+  ifac = itrifb(ii)
+  if(icodcl(ifac,ivar).eq.0) then
+    icodcl(ifac,ivar)   = 3
+    rcodcl(ifac,ivar,1) = 0.d0
+    rcodcl(ifac,ivar,2) = rinfin
+    rcodcl(ifac,ivar,3) = 0.d0
   endif
 enddo
 
@@ -1029,11 +987,13 @@ do ivar = 1, nvar
   endif
 enddo
 
-! 6.4 PAROI LISSE
+! 6.4 Smooth wall
 ! ===============
 
-! ---> La vitesse et les grandeurs turbulentes ont le code 5
-!        le reste Neumann sera traite plus tard
+! ---> Velocity and turbulent quantities have icodcl = 5
+!      Turbulent fluxes of scalars has 0 Dirichlet if scalars
+!      have a Dirichlet, otherwise treated in clptur.
+!      Other quantities are treated afterwards (Homogeneous Neumann)
 
 ideb = idebty(iparoi)
 ifin = ifinty(iparoi)
@@ -1088,6 +1048,29 @@ do ivar = 1, nvar
     enddo
   endif
 enddo
+
+! Turbulent fluxes: 0 Dirichlet if Dirichlet on the scalar
+do iscal = 1, nscal
+  if (ityturt(iscal).eq.3) then
+    ! Set pointer values of turbulent fluxes in icodcl
+    iut = nvar + 3*(ifltur(iscal) - 1) + 1
+    ivt = nvar + 3*(ifltur(iscal) - 1) + 2
+    iwt = nvar + 3*(ifltur(iscal) - 1) + 3
+
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if (icodcl(ifac, isca(iscal)).eq.1.and.icodcl(ifac, iut).eq.0) then
+        icodcl(ifac,iut) = 1
+        icodcl(ifac,ivt) = 1
+        icodcl(ifac,iwt) = 1
+        rcodcl(ifac,iut,1) = 0.d0
+        rcodcl(ifac,ivt,1) = 0.d0
+        rcodcl(ifac,iwt,1) = 0.d0
+      endif
+    enddo
+  endif
+enddo
+
 
 ! 6.5 PAROI RUGUEUSE
 ! ==================
@@ -1348,7 +1331,7 @@ enddo
 ideb = idebty(ifresf)
 ifin = ifinty(ifresf)
 
-do ivar = 1, nvar
+do ivar = 1, nvarcl
   do ii = ideb, ifin
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then
@@ -1378,7 +1361,7 @@ enddo
 ideb = idebty(isymet)
 ifin = ifinty(isymet)
 
-do ivar = 1, nvar
+do ivar = 1, nvarcl
   do ii = ideb, ifin
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then
@@ -1400,7 +1383,7 @@ enddo
 ideb = idebty(iparoi)
 ifin = ifinty(iparoi)
 
-do ivar = 1, nvar
+do ivar = 1, nvarcl
   do ii = ideb, ifin
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then
@@ -1422,7 +1405,7 @@ enddo
 ideb = idebty(iparug)
 ifin = ifinty(iparug)
 
-do ivar = 1, nvar
+do ivar = 1, nvarcl
   do ii = ideb, ifin
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then
