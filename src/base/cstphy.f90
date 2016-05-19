@@ -61,8 +61,13 @@ module cstphy
   double precision :: rair
   parameter(rair = 287.d0)
 
-  !> Perfect gas constant in \f$J/mol/K\f$
-  real(c_double), pointer, save :: cs_physical_constants_r
+  !> Boltzmann constant (\f$J.K^{-1}\f$)
+  double precision kboltz
+  parameter(kboltz = 1.38d-23)
+
+  !> Ideal gas constant (\f$J.mol^{-1}.K^{-1}\f$)
+  double precision cs_physical_constants_r
+  parameter(cs_physical_constants_r = 8.31446d0)
 
   !> Gravity
   real(c_double), pointer, save :: gx, gy, gz
@@ -723,13 +728,12 @@ module cstphy
     ! Interface to C function retrieving pointers to members of the
     ! global physical constants structure
 
-    subroutine cs_f_physical_constants_get_pointers(cs_physical_constants_r, &
-                                                    gx, gy, gz,              &
+    subroutine cs_f_physical_constants_get_pointers(gx, gy, gz,              &
                                                     icorio)                  &
       bind(C, name='cs_f_physical_constants_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: cs_physical_constants_r, gx, gy, gz, icorio
+      type(c_ptr), intent(out) :: gx, gy, gz, icorio
     end subroutine cs_f_physical_constants_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -807,12 +811,10 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_cs_physical_constants_r, c_gx, c_gy, c_gz, c_icorio
+    type(c_ptr) :: c_gx, c_gy, c_gz, c_icorio
 
-    call cs_f_physical_constants_get_pointers(c_cs_physical_constants_r, c_gx, &
-                                              c_gy, c_gz, c_icorio)
+    call cs_f_physical_constants_get_pointers(c_gx, c_gy, c_gz, c_icorio)
 
-    call c_f_pointer(c_cs_physical_constants_r, cs_physical_constants_r)
     call c_f_pointer(c_gx, gx)
     call c_f_pointer(c_gy, gy)
     call c_f_pointer(c_gz, gz)

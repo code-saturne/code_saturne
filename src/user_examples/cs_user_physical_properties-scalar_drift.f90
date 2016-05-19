@@ -101,10 +101,6 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cpro_viscl, cpro_vscal
 double precision, dimension(:), pointer :: cvar_scalt
 
-! Boltzmann constant (J/K)
-double precision kboltz
-parameter(kboltz = 1.38d-23)
-
 !< [loc_var_dec]
 
 !===============================================================================

@@ -74,11 +74,9 @@ BEGIN_C_DECLS
 
   \brief Physical constants descriptor.
 
-  Members of these physical constants are publicly accessible, to allow for
+  Members of this structure are publicly accessible, to allow for
   concise syntax, as they are expected to be used in many places.
 
-  \var  cs_physical_constants_t::r
-        perfect gas constant in \f$J/mol/K\f$
   \var  cs_physical_constants_t::gx
         x component of the gravity vector
   \var  cs_physical_constants_t::gy
@@ -281,7 +279,6 @@ BEGIN_C_DECLS
 /* main physical constants structure and associated pointer */
 
 static cs_physical_constants_t _physical_constants = {
-  .r = 8.31446,
   .gx = 0.,
   .gy = 0.,
   .gz = 0.,
@@ -322,6 +319,14 @@ static cs_fluid_properties_t  _fluid_properties = {
  * Global variables
  *============================================================================*/
 
+/*! Ideal gas constant (\f$J.mol^{-1}.K^{-1}\f$) */
+
+const double cs_physical_constants_r = 8.31446;
+
+/*! Boltzmann constant (\f$J.K^{-1}\f$) */
+
+const double cs_physical_constants_kb = 1.38e-23;
+
 const cs_physical_constants_t  *cs_glob_physical_constants = &_physical_constants;
 
 const cs_fluid_properties_t  *cs_glob_fluid_properties = &_fluid_properties;
@@ -334,8 +339,7 @@ const cs_fluid_properties_t  *cs_glob_fluid_properties = &_fluid_properties;
  *============================================================================*/
 
 void
-cs_f_physical_constants_get_pointers(double  **r,
-                                     double  **gx,
+cs_f_physical_constants_get_pointers(double  **gx,
                                      double  **gy,
                                      double  **gz,
                                      int     **icorio);
@@ -382,7 +386,6 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   r      --> pointer to cs_glob_physical_constants->r
  *   gx     --> pointer to cs_glob_physical_constants->gx
  *   gy     --> pointer to cs_glob_physical_constants->gy
  *   gz     --> pointer to cs_glob_physical_constants->gz
@@ -390,13 +393,11 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_physical_constants_get_pointers(double  **r,
-                                     double  **gx,
+cs_f_physical_constants_get_pointers(double  **gx,
                                      double  **gy,
                                      double  **gz,
                                      int     **icorio)
 {
-  *r      = &(_physical_constants.r);
   *gx     = &(_physical_constants.gx);
   *gy     = &(_physical_constants.gy);
   *gz     = &(_physical_constants.gz);

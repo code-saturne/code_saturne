@@ -125,7 +125,7 @@ cs_cf_thermo_default_init(void)
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
-  cs_real_t  r_pg  = cs_glob_physical_constants->r;
+  cs_real_t  r_pg  = cs_physical_constants_r;
   cs_real_t  psginf= cs_glob_fluid_properties->psginf;
   cs_real_t  p0    = cs_glob_fluid_properties->p0;
   cs_real_t  t0    = cs_glob_fluid_properties->t0;
@@ -832,7 +832,7 @@ cs_cf_thermo_cv(cs_real_t *cp,
 
   /* Cv for a single ideal gas  or a mixture of ideal gas */
   if (ieos == 1 || ieos == 3) {
-    cs_real_t r_pg = cs_glob_physical_constants->r;
+    cs_real_t r_pg = cs_physical_constants_r;
     for (cs_lnum_t ii = 0; ii < l_size; ii++)
       cv[ii] = cp[ii]-r_pg/xmasml[ii];
   }

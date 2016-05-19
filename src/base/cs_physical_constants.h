@@ -50,7 +50,6 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  double        r;                 /* perfect gas constant in J/mol/K */
   double        gx, gy, gz;        /* gravity components */
   int           icorio;            /* Coriolis source terms indicator */
 
@@ -104,6 +103,11 @@ typedef struct {
 /*============================================================================
  * Static global variables
  *============================================================================*/
+
+/* Physical constants */
+
+extern const double cs_physical_constants_r; /* Ideal gas constant (J/mol/K) */
+extern const double cs_physical_constants_kb; /* Boltzmann constant (J/K) */
 
 /* Pointer to main physical constants structure */
 

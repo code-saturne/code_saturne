@@ -434,7 +434,7 @@ _lagsec(cs_lnum_t   npt,
   cs_real_t lv     = 2263000.0;
   cs_real_t tebl   = 100.0 + _tkelvi;
   cs_real_t tlimit = 302.24;
-  cs_real_t tmini  = tlimit * (   1. - tlimit * cs_glob_physical_constants->r
+  cs_real_t tmini  = tlimit * (   1. - tlimit * cs_physical_constants_r
                                / (lv * lag_cc->wmole[lag_cc->ih2o]));
 
   /* Compute water flux for layer l_id
@@ -471,7 +471,7 @@ _lagsec(cs_lnum_t   npt,
       aux1 = lag_cc->wmole[lag_cc->ih2o] / extra->x_m->val[cell_id];
       aux2 = aux1 * exp(  lv * lag_cc->wmole[lag_cc->ih2o]
                         * (1.0 / tebl - 1.0 / tpk)
-                        / cs_glob_physical_constants->r);
+                        / cs_physical_constants_r);
 
     }
     else {
@@ -482,9 +482,9 @@ _lagsec(cs_lnum_t   npt,
       aux1 = lag_cc->wmole[lag_cc->ih2o] / extra->x_m->val[cell_id];
       aux2 =  aux1
             * exp(  lv * lag_cc->wmole[lag_cc->ih2o] * (1.0 / tebl - 1.0 / tlimit)
-                  / cs_glob_physical_constants->r)
+                  / cs_physical_constants_r)
             * lv * lag_cc->wmole[lag_cc->ih2o]
-            / (cs_glob_physical_constants->r * cs_math_sq(tlimit))
+            / (cs_physical_constants_r * cs_math_sq(tlimit))
             * (tpk - tmini);
 
     }
@@ -553,7 +553,7 @@ _lagsec(cs_lnum_t   npt,
 
     aux1 = lag_cc->wmole[lag_cc->ih2o] / extra->x_m->val[cell_id];
     tsat = 1 / (  1 / tebl
-                - cs_glob_physical_constants->r
+                - cs_physical_constants_r
                   * log (extra->x_eau->val[cell_id] / aux1)
                   / (lv * lag_cc->wmole[lag_cc->ih2o]));
 
@@ -562,9 +562,9 @@ _lagsec(cs_lnum_t   npt,
             + extra->x_eau->val[cell_id]
               / (aux1 * exp (  lv * lag_cc->wmole[lag_cc->ih2o]
                              * (1.0 / tebl - 1.0 / tlimit)
-                             / cs_glob_physical_constants->r)
+                             / cs_physical_constants_r)
               * (lv * lag_cc->wmole[lag_cc->ih2o])
-              / (cs_glob_physical_constants->r * pow (tlimit, 2)));
+              / (cs_physical_constants_r * pow (tlimit, 2)));
 
   }
   else
@@ -1239,13 +1239,13 @@ _lagich(cs_real_t  *tempct,
        * de masse par devolatilisation avec des lois d'Arrhenius
        * ============================================================================== */
 
-      /* CS_GLOB_PHYSICAL_CONSTANTS->R --> Constante des gaz parfaits en J/mol/K */
+      /* cs_physical_constants_r --> Constante des gaz parfaits en J/mol/K */
 
       cs_real_t skp1[nlayer], skp2[nlayer];
 
       for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++) {
 
-        aux1  = 1.0 / (  cs_glob_physical_constants->r * part_temp[l_id]);
+        aux1  = 1.0 / (  cs_physical_constants_r * part_temp[l_id]);
 
         skp1[l_id]      = lag_cc->a1ch[co_id] * exp (-lag_cc->e1ch[co_id] * aux1);
         skp2[l_id]      = lag_cc->a2ch[co_id] * exp (-lag_cc->e2ch[co_id] * aux1);
@@ -1294,14 +1294,14 @@ _lagich(cs_real_t  *tempct,
       /*     Conversion (kcal/mol -> J/mol) */
 
       aux1 = lag_cc->ehetch[co_id] * 1000.0 * xcal2j;
-      aux2 = lag_cc->ahetch[co_id] * exp ( -aux1 / (  cs_glob_physical_constants->r
+      aux2 = lag_cc->ahetch[co_id] * exp ( -aux1 / (  cs_physical_constants_r
                                                     * part_temp[l_id_het]));
 
       /* --- Coefficient de diffusion en (Kg/m2/s/atm) et constante   */
       /*     globale de reaction  */
 
       cs_real_t skglob;
-      if (cs_glob_physical_constants->r * shrink_diam > precis) {
+      if (cs_physical_constants_r * shrink_diam > precis) {
 
         /* La constante 2.53e-7 est expliquée dans le tome 5 du rapport sur les  */
         /* physiques particulières de Code_Saturne (HI-81/04/003/A) équation 80 */
@@ -1318,9 +1318,9 @@ _lagich(cs_real_t  *tempct,
 
       /* --- Calcul de la pression partielle en oxygene (atm)
        * ---
-       *     PO2 = RHO1*CS_GLOB_PHYSICAL_CONSTANTS->R*T*YO2/MO2
+       *     PO2 = RHO1*cs_physical_constants_r*T*YO2/MO2
        *                                                      */
-      aux1 =   extra->cromf->val[cell_id] * cs_glob_physical_constants->r
+      aux1 =   extra->cromf->val[cell_id] * cs_physical_constants_r
              * extra->t_gaz->val[cell_id]
              * extra->x_oxyd->val[cell_id] / lag_cc->wmole[lag_cc->io2] / lag_cc->prefth;
 

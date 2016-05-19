@@ -163,7 +163,7 @@ _edlsp(cs_real_t *distp,
   cs_real_t charge  = 1.6e-19;
 
   cs_real_t ldebye = pow(   2000.0 * pow (_faraday_cst,2) * lag_pc->fion
-                / (lag_pc->epseau * _free_space_permit * cs_glob_physical_constants->r * tempf), -0.5);
+                / (lag_pc->epseau * _free_space_permit * cs_physical_constants_r * tempf), -0.5);
 
   /* Reduced zeta potential    */
   cs_real_t lphi1  = lag_pc->valen * charge * lag_pc->phi_p / _k_boltz / tempf;
@@ -212,7 +212,7 @@ _edlsa(cs_real_t *distcc,
   cs_real_t charge = 1.6e-19;
 
   cs_real_t ldebye = pow(   2000.0 * pow (_faraday_cst,2) * lag_pc->fion
-                / (lag_pc->epseau * _free_space_permit * cs_glob_physical_constants->r * tempf), -0.5);
+                / (lag_pc->epseau * _free_space_permit * cs_physical_constants_r * tempf), -0.5);
 
   /* Reduced zeta potential    */
 
