@@ -75,6 +75,7 @@
 #include "cs_gui_specific_physics.h"
 #include "cs_gui_mobile_mesh.h"
 #include "cs_mesh.h"
+#include "cs_mesh_location.h"
 #include "cs_multigrid.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
@@ -4104,7 +4105,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
       int n_fields = cs_field_n_fields();
       for (int f_id = 0; f_id < n_fields; f_id++) {
         const cs_field_t  *f = cs_field_by_id(f_id);
-        if (f->type & CS_FIELD_USER) {
+        if (f->type & CS_FIELD_USER && f->location_id == CS_MESH_LOCATION_CELLS) {
           char *path_sca       = NULL;
           char *formula_sca    = NULL;
           mei_tree_t *ev_formula_sca   = NULL;
@@ -4147,13 +4148,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
               }
             }
             mei_tree_destroy(ev_formula_sca);
-          } else {
-            if (*isuite == 0) {
-              for (icel = 0; icel < cells; icel++) {
-                iel = cells_list[icel];
-                f->val[iel] = 0.0;
-              }
-            }
           }
           BFT_FREE(formula_sca);
         }
