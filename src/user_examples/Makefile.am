@@ -136,8 +136,9 @@ cs_user_mesh-quality.c \
 cs_user_mesh-thinwall.c \
 cs_user_metal_structures_source_terms-condensation.f90 \
 cs_user_modules-user-arrays.f90 \
-cs_user_parameters-cavitation.f90 \
+cs_user_parameters.f90 \
 cs_user_parameters-base.c \
+cs_user_parameters-cavitation.f90 \
 cs_user_parameters-fans.c \
 cs_user_parameters-linear_solvers.c \
 cs_user_parameters-output.f90 \

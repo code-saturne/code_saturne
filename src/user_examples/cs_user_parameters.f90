@@ -645,7 +645,7 @@ integer nmodpp
 
 ! Local variables
 
-logical       ilved, inoprv
+logical       inoprv
 integer       ii, jj, ivar, kscmin, kscmax, keydri, kbfid, kccmin, kccmax
 integer       klimiter
 integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ifcvsl, b_f_id
@@ -1319,12 +1319,11 @@ endif
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 ityloc = 3 ! boundary faces
 idim1 = 1 ! dimension
-ilved = .true. ! interleaved
 inoprv = .false. ! no previous time step values needed
 
 call field_get_id_try('yplus', f_id)
 if (f_id.lt.0) then
-  call field_create('yplus', itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_create('yplus', itycat, ityloc, idim1, inoprv, f_id)
   ! yplus postreated and in the log
   call field_set_key_int(f_id, keyvis, 1)
   call field_set_key_int(f_id, keylog, 1)
@@ -1332,7 +1331,7 @@ endif
 
 call field_get_id_try('tplus', f_id)
 if (f_id.lt.0) then
-  call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_create('tplus', itycat, ityloc, idim1, inoprv, f_id)
   ! tplus postreated and in the log
   call field_set_key_int(f_id, keyvis, 1)
   call field_set_key_int(f_id, keylog, 1)
@@ -1340,7 +1339,7 @@ endif
 
 call field_get_id_try('tstar', f_id)
 if (f_id.lt.0) then
-  call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, f_id)
+  call field_create('tstar', itycat, ityloc, idim1, inoprv, f_id)
   ! tstar postreated and in the log
   call field_set_key_int(f_id, keyvis, 1)
   call field_set_key_int(f_id, keylog, 1)
