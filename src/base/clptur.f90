@@ -2260,19 +2260,19 @@ do ifac = 1, nfabor
 
     if (isvhbl.gt.0) hbord(ifac) = hflui
 
+    hext = rcodcl(ifac,ivar,2)
+    pimp = rcodcl(ifac,ivar,1)
+
+    if (abs(hext).gt.rinfin*0.5d0) then
+      heq = hflui
+    else
+      heq = hflui*hext/(hflui+hext)
+    endif
+
     ! ---> Dirichlet Boundary condition with a wall function correction
     !      with or without an additional exchange coefficient hext
 
     if (icodcl(ifac,ivar).eq.5) then
-      hext = rcodcl(ifac,ivar,2)
-      pimp = rcodcl(ifac,ivar,1)
-
-      if (abs(hext).gt.rinfin*0.5d0) then
-        heq = hflui
-      else
-        heq = hflui*hext/(hflui+hext)
-      endif
-
       ! DFM: the gradient BCs are so that the production term
       !      of u'T' is correcty computed
       if (ityturt(iscal).ge.1) then
@@ -2434,6 +2434,8 @@ do ifac = 1, nfabor
         ! Imposed flux with wall function for post-processing
       elseif (icodcl(ifac,ivar).eq.3) then
         phit = rcodcl(ifac,ivar,3)
+      elseif (icodcl(ifac,ivar).eq.1) then
+        phit = heq *(theipb(ifac) - pimp)
       else
         phit = 0.d0
       endif
