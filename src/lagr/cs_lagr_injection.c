@@ -98,13 +98,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Manage particle injection in computational domain.
- *
- * 1. Particle initialization (classes and boundary interactions) through
- * user subroutine USLAG2
- * 2. Injection and particle initialization (containing cell, statistical weight)
- * 3. Injection condition modifications: alteration of particle's caracteristics,
- * weight, containing cell
+/*!
+ * \brief Inject particles in the computational domain.
  *
  * \param[in] time_id     time step indicator for fields
  *                         0: use fields at current time step
@@ -140,6 +135,9 @@ cs_lagr_injection(int        time_id,
   cs_real_t *vela = extra->vel->vals[time_id];
   cs_real_t *cscalt, *temp, *temp1;
 
+  cs_lagr_particle_counter_t *pc = cs_lagr_get_particle_counter();
+  const cs_time_step_t *ts = cs_glob_time_step;
+
   if (   cs_glob_thermal_model->itherm == 1
       || cs_glob_thermal_model->itherm == 2) {
 
@@ -159,26 +157,18 @@ cs_lagr_injection(int        time_id,
 
   }
 
-  /* ==============================================================================
-   * 0. Memory management
-   * ============================================================================== */
+  /* Memory management */
 
   int *ilftot;
   BFT_MALLOC(ilftot, cs_glob_lagr_const_dim->nflagm, int);
 
-  /* ==============================================================================
-   * 1. Initialization
-   * ============================================================================== */
-
-  /* Init aberrante pour forcer l'utilisateur a mettre sa valeur  */
+  /* Initialization */
 
   cs_real_t pis6 = cs_math_pi / 6.0;
 
   cs_lagr_bdy_condition_t  *bdy_cond = cs_lagr_get_bdy_conditions();
 
-  /* ==============================================================================
-   * 2. User initialization by class and boundary
-   * ============================================================================== */
+  /* User initialization by class and boundary */
 
   if (cs_gui_file_is_loaded())
     cs_gui_particles_bcs(&(mesh->n_b_faces), &(extra->nozppm));
@@ -186,25 +176,6 @@ cs_lagr_injection(int        time_id,
   cs_user_lagr_boundary_conditions(itypfb);
 
   /* setup BCs */
-
-  /* local copy of parameters */
-  cs_lagr_zone_class_data_t *local_zone_class_data = NULL;
-  BFT_MALLOC(local_zone_class_data,
-             cs_glob_lagr_nzone_max * cs_glob_lagr_nclass_max,
-             cs_lagr_zone_class_data_t);
-
-  for (int izone = 0; izone < cs_glob_lagr_nzone_max; izone++) {
-
-    for (int iclas = 0; iclas < cs_glob_lagr_nclass_max; iclas++) {
-
-      cs_lagr_zone_class_data_t *userdata
-        = cs_lagr_get_zone_class_data(iclas, izone);
-
-      local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone] = *userdata;
-
-    }
-
-  }
 
   /* ==============================================================================
    * 3. Checks
@@ -503,6 +474,26 @@ cs_lagr_injection(int        time_id,
 
   }
 
+  /* local copy of parameters */
+
+  cs_lagr_zone_class_data_t *local_zone_class_data = NULL;
+  BFT_MALLOC(local_zone_class_data,
+             cs_glob_lagr_nzone_max * cs_glob_lagr_nclass_max,
+             cs_lagr_zone_class_data_t);
+
+  for (int izone = 0; izone < cs_glob_lagr_nzone_max; izone++) {
+
+    for (int iclas = 0; iclas < cs_glob_lagr_nclass_max; iclas++) {
+
+      cs_lagr_zone_class_data_t *userdata
+        = cs_lagr_get_zone_class_data(iclas, izone);
+
+      local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone] = *userdata;
+
+    }
+
+  }
+
   for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
 
     int izone = bdy_cond->b_zone_id[ii];
@@ -520,18 +511,6 @@ cs_lagr_injection(int        time_id,
                    (int)izone + 1,
                    (int)iclas,
                    (int)bdy_cond->b_zone_classes[izone]);
-        iok = iok + 1;
-
-      }
-
-      /* --> Frequence d'injection.     */
-      if (userdata->injection_frequency < 0) {
-
-          bft_printf(_("\n Lagrangian module: \n"));
-          bft_printf(_("   Injection frequency is not defined for zone %d and class %d (=%e10.3)\n"),
-                     (int)izone + 1,
-                     (int)iclas,
-                     (double)userdata->injection_frequency);
         iok = iok + 1;
 
       }
@@ -936,42 +915,14 @@ cs_lagr_injection(int        time_id,
 
   /* --> Stop si erreur.  */
   if (iok > 0)
-    cs_exit (1);
+    cs_exit(1);
 
   /* ==============================================================================
    * 4. Transformation des donnees utilisateur
-   * ==============================================================================
-   * --> Injection des part 1ere iter seulement si freq d'injection nulle   */
+   * ============================================================================== */
 
-  for (int ii = 0; ii < nfrtot; ii++) {
+  /* Compute number of particles to inject for this iteration */
 
-    int izone = ilftot[ii];
-
-    for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
-
-      cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
-      cs_lagr_zone_class_data_t *local_userdata
-        = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
-
-      if (userdata->injection_frequency == 0 && cs_glob_time_step->nt_cur == 1) {
-
-        userdata->injection_frequency       = cs_glob_time_step->nt_cur;
-        local_userdata->injection_frequency = cs_glob_time_step->nt_cur;
-
-      }
-
-      if (userdata->injection_frequency == 0 && cs_glob_time_step->nt_cur > 1) {
-
-        userdata->injection_frequency       = cs_glob_time_step->nt_cur;
-        local_userdata->injection_frequency = cs_glob_time_step->nt_cur;
-
-      }
-
-    }
-
-  }
-
-  /* --> Calcul du nombre de particules a injecter pour cette iteration     */
   p_set->n_part_new = 0;
   p_set->weight_new = 0.0;
 
@@ -981,13 +932,23 @@ cs_lagr_injection(int        time_id,
 
     for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
 
-      cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
+      cs_lagr_zone_class_data_t *userdata
+        = cs_lagr_get_zone_class_data(iclas, izone);
+      cs_lagr_zone_class_data_t *local_userdata
+        = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
 
-      if (cs_glob_time_step->nt_cur % userdata->injection_frequency == 0) {
+      /* Inject only at first time step if injection frequency is zero */
 
+      if (local_userdata->injection_frequency <= 0) {
+        if (ts->nt_cur == ts->nt_prev+1 && pc->n_g_cumulative_total == 0)
+          local_userdata->injection_frequency = ts->nt_cur;
+        else
+          local_userdata->injection_frequency = ts->nt_cur+1;
+      }
+
+      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
         p_set->n_part_new += userdata->nb_part;
         p_set->weight_new += userdata->nb_part * userdata->stat_weight;
-
       }
 
     }
@@ -1053,7 +1014,7 @@ cs_lagr_injection(int        time_id,
         = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
 
       /* if new particles must be added */
-      if (cs_glob_time_step->nt_cur % userdata->injection_frequency == 0) {
+      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
 
         /* Calcul sur le rang 0 du nombre de particules à injecter pour chaque rang
          * base sur la surface relative de chaque zone d'injection presente sur
@@ -1148,12 +1109,11 @@ cs_lagr_injection(int        time_id,
     /* for each class  */
     for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
 
-      cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
       cs_lagr_zone_class_data_t *local_userdata
         = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
 
       /* if new particles must be added */
-      if (cs_glob_time_step->nt_cur % userdata->injection_frequency == 0) {
+      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
 
         if (local_userdata->nb_part > 0) {
 
@@ -1202,7 +1162,7 @@ cs_lagr_injection(int        time_id,
       cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
 
       /* si de nouvelles particules doivent entrer :   */
-      if (cs_glob_time_step->nt_cur % userdata->injection_frequency == 0) {
+      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
 
         for (cs_lnum_t ip = npt; ip < npt + local_userdata->nb_part; ip++) {
 
@@ -1585,7 +1545,7 @@ cs_lagr_injection(int        time_id,
 
       /* si de nouvelles particules sont entrees, */
       /* et si on a un debit non nul :  */
-      if (   cs_glob_time_step->nt_cur % userdata->injection_frequency == 0
+      if (   ts->nt_cur % local_userdata->injection_frequency == 0
           && userdata->flow_rate > 0.0
           && local_userdata->nb_part > 0) {
 
@@ -1702,7 +1662,7 @@ cs_lagr_injection(int        time_id,
         = cs_lagr_get_zone_class_data(iclas, izone);
 
       /* if new particles have been added */
-      if (cs_glob_time_step->nt_cur % userdata->injection_frequency == 0) {
+      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
 
         for (cs_lnum_t ip = npt; ip < npt + local_userdata->nb_part; ip++) {
 
@@ -1779,12 +1739,9 @@ cs_lagr_injection(int        time_id,
 
       cs_lagr_zone_class_data_t *local_userdata
         = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
-      cs_lagr_zone_class_data_t *userdata
-        = cs_lagr_get_zone_class_data(iclas, izone);
 
       /* si de nouvelles particules sont entrees, */
-      if (   cs_glob_time_step->nt_cur % userdata->injection_frequency == 0
-          && local_userdata->injection_frequency > 0) {
+      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
 
         for (cs_lnum_t ip = npt; ip < npt + local_userdata->nb_part; ip++) {
 

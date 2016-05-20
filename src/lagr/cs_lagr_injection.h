@@ -42,13 +42,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Manage particle injection in computational domain.
- *
- * 1. Particle initialization (classes and boundary interactions) through
- * user subroutine USLAG2
- * 2. Injection and particle initialization (containing cell, statistical weight)
- * 3. Injection condition modifications: alteration of particle's caracteristics,
- * weight, containing cell
+/*!
+ * \brief Inject particles in the computational domain.
  *
  * \param[in] time_id     time step indicator for fields
  *                         0: use fields at current time step
