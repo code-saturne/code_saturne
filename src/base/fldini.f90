@@ -255,6 +255,17 @@ enddo
 ! Reserved fields whose ids are not saved (may be queried by name)
 !-----------------------------------------------------------------
 
+! friction velocity at the wall, in the case of a LES calculation
+! with van Driest-wall damping (delayed here rather than placed in
+! addfld, as idries may be set in modini).
+
+itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+ityloc = 3 ! boundary faces
+
+if (itytur.eq.4 .and. idries.eq.1) then
+  call field_find_or_create('ustar', itycat, ityloc, idim1, f_id)
+endif
+
 ! Interior mass flux field
 !-------------------------
 
