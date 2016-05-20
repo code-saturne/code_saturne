@@ -269,7 +269,7 @@ extern const double cs_turb_ccazd;
 extern const double cs_turb_xlesfl;
 extern const double cs_turb_ales;
 extern const double cs_turb_bles;
-extern const double cs_turb_csmago;
+extern double cs_turb_csmago;
 extern const double cs_turb_xlesfd;
 extern double cs_turb_smagmx;
 extern const double cs_turb_cdries;

@@ -735,7 +735,7 @@ const double cs_turb_bles = 1.0/3.0;
  * \note In theory Smagorinsky constant is 0.18.
  * For a channel, 0.065 value is rather taken.
  */
-const double cs_turb_csmago = 0.065;
+double cs_turb_csmago = 0.065;
 
 /*!
  * Ratio between explicit and explicit filter width for a dynamic model.
