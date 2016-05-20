@@ -277,9 +277,9 @@ cs_lagr_injection(int        time_id,
 
   /* --> Calculation of the surfaces of the Lagrangian boundary zones  */
 
-  cs_real_t *surflag;
-  cs_real_t *surlgrg;
-  cs_lnum_t *ninjrg;
+  cs_real_t *surflag = NULL;
+  cs_real_t *surlgrg = NULL;
+  cs_lnum_t *ninjrg = NULL;
   cs_lnum_t  nfrtot;
 
   if (cs_glob_rank_id >= 0) {
@@ -1012,14 +1012,24 @@ cs_lagr_injection(int        time_id,
          "  the total number of particle in the domain would exceed the total\n"
          "  number admissible set by cs_lagr_set_n_g_particles_max.\n"
          "  No particle are injected at iteration %d."),
-       cs_glob_time_step->nt_cur);
+       ts->nt_cur);
     p_set->n_part_new = 0;
 
   }
 
-  /* --> Si pas de new particules alors RETURN     */
-  if (p_set->n_part_new == 0)
+  /* In no new particles are injected, return */
+
+  if (p_set->n_part_new == 0) {
+
+    BFT_FREE(surflag);
+    BFT_FREE(surlgrg);
+    BFT_FREE(ninjrg);
+
+    BFT_FREE(ilftot);
+    BFT_FREE(local_zone_class_data);
+
     return;
+  }
 
   /* ----------------------------------------------------------------------
    * --> Tirage aleatoire des positions des P_SET->N_PART_NEW nouvelles particules
@@ -1103,15 +1113,23 @@ cs_lagr_injection(int        time_id,
   tmp = cs_lagr_particle_set_resize(p_set->n_particles + nlocnew);
 
   if (tmp < 0) {
+
     bft_printf(_("\n Lagrangian module: \n"));
     bft_printf
       (_("If particles are injected according to boundary conditions,\n"
          " the total number of particle in the domain would exceed the\n"
          " total number admissible set by cs_lagr_set_n_g_particles_max.\n"
          " No particle are injected at iteration %d.\n"),
-       (int)cs_glob_time_step->nt_cur);
-    return;
+       (int)ts->nt_cur);
 
+    BFT_FREE(surflag);
+    BFT_FREE(surlgrg);
+    BFT_FREE(ninjrg);
+
+    BFT_FREE(ilftot);
+    BFT_FREE(local_zone_class_data);
+
+    return;
   }
 
   /* Allocate a work array     */
@@ -1795,24 +1813,19 @@ cs_lagr_injection(int        time_id,
   p_set->n_particles += nlocnew;
   p_set->n_part_new = nlocnew;
 
-  cs_lagr_particle_counter_t *pc = cs_lagr_update_particle_counter();
+  pc = cs_lagr_update_particle_counter();
   pc->n_g_total += pc->n_g_new;
 
   /**************
    * Free memory
    **************/
 
+  BFT_FREE(surflag);
+  BFT_FREE(surlgrg);
+  BFT_FREE(ninjrg);
+
   BFT_FREE(ilftot);
   BFT_FREE(local_zone_class_data);
-
-  if (cs_glob_rank_id >= 0) {
-    BFT_FREE(surflag);
-    BFT_FREE(surlgrg);
-    BFT_FREE(ninjrg);
-  }
-
-  return;
-
 }
 
 /*----------------------------------------------------------------------------*/

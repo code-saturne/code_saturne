@@ -1150,6 +1150,8 @@ _add_perio_to_face_cells_g(cs_block_dist_info_t  bi,
 
   }
 
+  BFT_FREE(r_data);
+
   b_data = cs_all_to_all_copy_array(d,
                                     CS_GNUM_TYPE,
                                     2,
