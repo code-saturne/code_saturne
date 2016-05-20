@@ -26,7 +26,7 @@
 module entsor
 
   !=============================================================================
-
+  use, intrinsic :: iso_c_binding
   use paramx
 
   implicit none
@@ -294,7 +294,7 @@ module entsor
   !> is too large the execution report file might become too big and unusable
   !> (problems with disk space, memory problems while opening the file with a
   !> text editor, problems finding the desired information in the file, ...).
-  integer, save :: ntlist
+  integer(c_int), pointer, save :: ntlist
 
   !> \defgroup other_output Boundary post-processing
 
@@ -331,6 +331,35 @@ module entsor
   !> \}
   !> \}
 
+  !=============================================================================
+
+  interface
+
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers of ntlist
+
+    subroutine cs_f_log_frequency_get_pointer(ntlist)             &
+      bind(C, name='cs_f_log_frequency_get_pointer')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: ntlist
+    end subroutine cs_f_log_frequency_get_pointer
+
+    !---------------------------------------------------------------------------
+
+    !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
+
+    !---------------------------------------------------------------------------
+
+  end interface
+
+  !=============================================================================
+
 contains
 
   !=============================================================================
@@ -340,6 +369,25 @@ contains
   subroutine flush_nfecra() bind(C, name='cs_f_flush_logs')
     flush(nfecra)
   end subroutine flush_nfecra
+
+  !=============================================================================
+
+  !> \brief Map ntlist from C to Fortran
+
+  subroutine listing_writing_period_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_ntlist
+
+    call cs_f_log_frequency_get_pointer(c_ntlist)
+
+    call c_f_pointer(c_ntlist, ntlist)
+
+  end subroutine listing_writing_period_init
 
   !=============================================================================
 

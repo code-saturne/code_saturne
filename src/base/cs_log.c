@@ -75,6 +75,15 @@ static FILE* _cs_log[] = {NULL, NULL, NULL};
 static const char* _cs_log_name[] = {"",
                                      "setup.log",
                                      "performance.log"};
+int cs_glob_log_frequency = 1;
+
+/*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_log_frequency_get_pointer(int     **ntlist);
 
 /*============================================================================
  * Private function definitions
@@ -204,6 +213,26 @@ _log_strpad(char        *dest,
     dest[j++] = ' ';
 
   dest[j] = '\0';
+}
+
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Get pointer to log frequency (ntlist in Fortran).
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   ntlist  --> pointer to ntlist
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_log_frequency_get_pointer(int     **ntlist)
+{
+  *ntlist = &cs_glob_log_frequency;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -609,5 +638,7 @@ cs_log_timer_array(cs_log_t                   log,
 }
 
 /*-----------------------------------------------------------------------------*/
+
+
 
 END_C_DECLS

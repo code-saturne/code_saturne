@@ -66,6 +66,7 @@
 #include "cs_base.h"
 #include "cs_gui_util.h"
 #include "cs_gui_variables.h"
+#include "cs_log.h"
 #include "cs_mesh_location.h"
 #include "cs_selector.h"
 #include "cs_post.h"
@@ -1150,7 +1151,6 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
                                 cs_int_t        *ncapt,
                                 cs_int_t        *nthist,
                                 cs_real_t       *frhist,
-                                cs_int_t        *ntlist,
                                 cs_int_t        *iecaux,
                                 cs_int_t        *ihisvr,
                                 cs_int_t        *tplfmt,
@@ -1186,7 +1186,7 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   }
 
   _output_value("auxiliary_restart_file_writing", iecaux);
-  _output_value("listing_printing_frequency", ntlist);
+  _output_value("listing_printing_frequency", &cs_glob_log_frequency);
   _output_value("probe_recording_frequency", nthist);
   _output_time_value("probe_recording_frequency_time", frhist);
 
@@ -1239,7 +1239,7 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
 #if _XML_DEBUG_
   bft_printf("==>CSENSO\n");
   bft_printf("--iecaux = %i\n", *iecaux);
-  bft_printf("--ntlist = %i\n", *ntlist);
+  bft_printf("--ntlist = %i\n", cs_glob_log_frequency);
   bft_printf("--nthist = %i\n", *nthist);
   bft_printf("--frhist = %f\n", *frhist);
   bft_printf("--ncapt  = %i\n", *ncapt);
