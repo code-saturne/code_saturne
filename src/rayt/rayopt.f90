@@ -349,7 +349,7 @@ if (iihmpr.eq.1) then
   call uiray4(iirayo)
 
   call csenso                                                     &
-     ( nvppmx, ncapt,  nthist, frhist, ntlist, iecaux,            &
+     ( nvppmx, ncapt,  nthist, frhist, iecaux,                    &
        ihisvr, tplfmt, xyzcap )
 
   ! take into acount user modifications
