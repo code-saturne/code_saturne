@@ -356,7 +356,7 @@ permeability=1.;"""
 
         name = self.sca_mo.getScalarDiffusivityName(scalar_label)
 
-        formula = str(name) + " = 0.;\n" + str(scalar_label) + "_delay = 0.;"
+        formula = str(name) + " = 0.;\n" + str(scalar_label) + "_delay = 1.;"
 
         return formula
 

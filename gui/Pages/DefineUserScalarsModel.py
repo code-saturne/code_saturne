@@ -65,6 +65,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.scalar_node = self.case.xmlGetNode('additional_scalars')
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_therm  = self.node_models.xmlGetNode('thermal_scalar')
+        self.node_source = self.node_models.xmlGetNode('source_terms')
         self.node_bc     = self.case.xmlGetNode('boundary_conditions')
 
 
@@ -677,9 +678,21 @@ class DefineUserScalarsModel(Variables, Model):
             if node.xmlGetString('variance') == sname:
                 lst.append(node['name'])
 
+        # update scalar source term status
+        if self.node_source != None:
+            for node in self.node_source.xmlGetNodeList('scalar_formula'):
+                if node.xmlGetString('name') == sname:
+                   node.xmlRemoveNode()
+
         # Delete all scalars
         for scalar in lst:
             self.__deleteScalar(scalar)
+
+        if len(self.scalar_node.xmlGetNodeList('variable')) == 0:
+            node_domain = self.case.xmlGetNode('solution_domain')
+            node_vol = node_domain.xmlGetNode('volumic_conditions')
+            for node in node_vol.xmlGetChildNodeList('zone'):
+                node['scalar_source_term'] = 'off'
 
         return lst
 

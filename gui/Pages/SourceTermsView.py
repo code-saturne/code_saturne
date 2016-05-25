@@ -123,10 +123,12 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
 
             if GroundwaterModel(self.case).getGroundwaterModel() != "off":
                 self.groupBoxStandard.hide()
-                self.groupBoxRichards.show()
                 self.groupBoxTransport.show()
-                if (zone.getNature()['groundwater_law'] == "on"):
+                if (zone.getNature()['momentum_source_term'] == "on"):
+                    self.groupBoxRichards.show()
                     active = 1
+                else:
+                    self.groupBoxRichards.hide()
             else:
                 self.groupBoxStandard.show()
                 self.groupBoxRichards.hide()
@@ -175,6 +177,14 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
                 self.pushButtonMomentum.setStyleSheet("background-color: green")
             else:
                 self.pushButtonMomentum.setStyleSheet("background-color: red")
+
+            if GroundwaterModel(self.case).getGroundwaterModel() != "off":
+                exp = self.mdl.getRichardsFormula(self.zone)
+                if exp:
+                    self.pushButtonRichards.setToolTip(exp)
+                    self.pushButtonRichards.setStyleSheet("background-color: green")
+                else:
+                    self.pushButtonRichards.setStyleSheet("background-color: red")
         else:
             self.labelMomentum.hide()
             self.pushButtonMomentum.hide()

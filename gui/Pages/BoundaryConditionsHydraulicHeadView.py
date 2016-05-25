@@ -127,6 +127,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         self.pushButtonHydraulicHead.setStyleSheet("background-color: None")
 
         HydraulicChoice = self.__boundary.getHydraulicHeadChoice()
+        self.modelTypeHydraulic.setItem(str_model = HydraulicChoice)
         if HydraulicChoice == 'dirichlet':
             self.labelValueHydraulicHead.show()
             self.lineEditValueHydraulicHead.show()

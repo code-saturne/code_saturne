@@ -169,7 +169,6 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.modelTypeMeteo.addItem(  self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
         elif self.nature == 'groundwater':
             self.modelTypeSpecies.addItem(self.tr("Prescribed flux"), 'neumann')
-            self.modelTypeSpecies.addItem(self.tr("Exchange coefficient"), 'exchange_coefficient')
 
         self.species = ""
         self.species_list = self.sca_mo.getUserScalarNameList()

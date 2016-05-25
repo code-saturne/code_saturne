@@ -163,7 +163,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
 
     elif page_name == tr("Species transport"):
         import code_saturne.Pages.DefineUserScalarsView as Page
-        thisPage = Page.DefineUserScalarsView(root, case, stbar)
+        thisPage = Page.DefineUserScalarsView(root, case, stbar, tree)
 
     elif page_name == tr("Turbomachinery"):
         import code_saturne.Pages.TurboMachineryView as Page

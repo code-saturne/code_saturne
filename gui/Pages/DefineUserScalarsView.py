@@ -527,7 +527,7 @@ class StandardItemModelVariance(QStandardItemModel):
 class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
     """
     """
-    def __init__(self, parent, case, stbar):
+    def __init__(self, parent, case, stbar, tree):
         """
         Constructor
         """
@@ -541,6 +541,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.case.undoStopGlobal()
 
         self.mdl = DefineUserScalarsModel(self.case)
+        self.browser = tree
 
         # tableView
         self.modelScalars = StandardItemModelScalars(self, self.mdl)
@@ -638,6 +639,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
                             self.modelVariance.deleteItem(rr)
 
         self.tableScalars.clearSelection()
+        self.browser.configureTree(self.case)
 
 
     @pyqtSlot()

@@ -111,6 +111,9 @@ class GroundwaterModel(Variables, Model):
             nn =  node.xmlGetNode('property', name='total_pressure')
             if nn:
                 nn.xmlRemoveNode()
+            nn = node.xmlGetNode('property', name='yplus')
+            if nn:
+                nn.xmlRemoveNode()
             nn =  node.xmlGetNode('property', name='stress')
             if nn:
                 nn.xmlRemoveNode()
@@ -133,6 +136,7 @@ class GroundwaterModel(Variables, Model):
             TurbulenceModel(self.case).setTurbulenceModel("k-epsilon-PL")
             node = self.node_models.xmlInitNode('velocity_pressure')
             self.setNewProperty(node, 'total_pressure')
+            self.setNewProperty(node, 'yplus')
             n = self.setNewProperty(node, 'stress')
             n['support'] = 'boundary'
             n['label'] = 'Stresss'
