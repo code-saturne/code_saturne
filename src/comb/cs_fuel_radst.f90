@@ -112,7 +112,7 @@ do iel = 1,ncel
 enddo
 
 do iel = 1,ncel
-  if ( propce(iel,ipproc(iyfol(numcla))) .gt. epzero ) then
+  if ( cvara_yfolcl(iel) .gt. epzero ) then
 
 !--> PARTIE EXPLICITE
 
