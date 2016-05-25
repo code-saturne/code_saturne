@@ -1829,6 +1829,15 @@ do ifac = 1, nfabor
 
     if (isvhbl.gt.0) hbord(ifac) = hflui
 
+    hext = rcodcl(ifac,ivar,2)
+    pimp = rcodcl(ifac,ivar,1)
+
+    if (abs(hext).gt.rinfin*0.5d0) then
+      heq = hflui
+    else
+      heq = hflui*hext/(hflui+hext)
+    endif
+
     ! --->  C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
 
     ! Si on a deux types de conditions aux limites (ICLVAR, ICLVAF)
@@ -1840,14 +1849,6 @@ do ifac = 1, nfabor
     !   s'applique a l'energie totale qui inclut l'energie cinetique :
 
     if (icodcl(ifac,ivar).eq.6) then
-      hext = rcodcl(ifac,ivar,2)
-      pimp = rcodcl(ifac,ivar,1)
-
-      if (abs(hext).gt.rinfin*0.5d0) then
-        heq = hflui
-      else
-        heq = hflui*hext/(hflui+hext)
-      endif
 
       cofimp = 1.d0 - heq/hint
 
