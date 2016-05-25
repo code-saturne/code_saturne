@@ -27,6 +27,8 @@ module ppincl
 
   !===========================================================================
 
+  use, intrinsic :: iso_c_binding
+
   use ppppar
   use ppthch
 
@@ -49,9 +51,9 @@ module ppincl
   !----------------------------------------------------------------------------
   !--> TABLEAU INDICATEURS DU CHOIX DE LA PHYSIQUE PARTICULIERE CHOISIE
 
-  !> maximal number of specific physics
+  !> number of specific physics
   integer   nmodmx
-  parameter(nmodmx = 50)
+  parameter(nmodmx = 14)
 
   !> global indicator for speciphic physics
   !> By default, all the indicators ippmod(i.....) are initialized to -1,
@@ -115,7 +117,7 @@ module ppincl
   !>      - ippmod(iatmos) = 1 dry atmosphere
   !>      - ippmod(iatmos) = 2 humid atmosphere
 
-  integer, save ::           ippmod(nmodmx)
+  integer(c_int), pointer, save :: ippmod(:)
 
   !> ippmod(iphpar) is a global indicator for the specific physics:
   !>  - 0: no specific physics
@@ -129,8 +131,6 @@ module ppincl
   !> - ippmod(icod3p) = 1 permeatic conditions (enthalpy transport)
   !> - ippmod(icod3p) =-1 module not activated
   integer ::  icod3p
-  ! TODO Modeles propres a la combustion gaz ICO...
-  integer ::  icodeq
 
   !> pointer to specify Eddy Break Up pre-mixed flame with indicator ippmod(icoebu)
   !> - ippmod(icoebu) = 0 adiabatic conditions at constant richness
@@ -139,9 +139,6 @@ module ppincl
   !> - ippmod(icoebu) = 3 permeatic conditions at variable richness
   !> - ippmod(icoebu) =-1 module not activated
   integer ::  icoebu
-
-  ! TODO Modeles propres a la combustion gaz ICO...
-  integer ::  icobml
 
   !> pointer to specify Libby-Williams pre-mixed flame withy indicator ippmod(icolwc)
   !> - ippmod(icolwc)=0 two peak model with adiabiatic conditions.
@@ -154,7 +151,7 @@ module ppincl
   integer ::  icolwc
 
   ! TODO Modeles propres a la combustion gaz ICO...
-  integer ::  isoot
+  integer(c_int), pointer, save ::  isoot
 
   !> pointer to specify Joule effect module (Laplace forces not taken into account)
   !> with indicator ippmod(ieljou):
@@ -174,9 +171,6 @@ module ppincl
   !> - ippmod(ielarc) = 2 determination of the magnetic field by means of the vector potential
   !> - ippmod(ielarc) =-1 module not activated
   integer ::  ielarc
-
-  ! TODO Modeles propres aux versions effet Joule et conduction ionique
-  integer ::  ielion
 
   !> pointer to specify Lagrangian modelling of multi-coals and multi-classes pulverised coal
   !> combustion with indicator ippmod(icpl3c).
@@ -242,12 +236,12 @@ module ppincl
   !> - ippmod(iricha) = 1 module activated
   integer ::  idarcy
 
-  parameter       (iphpar = 1 , icod3p = 2 , icodeq = 3 ,           &
-                   icoebu = 4 , icobml = 5 , icolwc = 6 ,           &
-                   icpl3c = 7 , icfuel = 8 , ieljou = 9 ,           &
-                   ielarc = 10, ielion = 11, icompf = 12,           &
-                   iatmos = 13, iaeros = 14, iccoal = 15,           &
-                   igmix  = 16, idarcy = 17)
+  parameter       (iphpar = 1 , icod3p = 2 ,                        &
+                   icoebu = 3 , icolwc = 4 ,                        &
+                   icpl3c = 5 , iccoal = 6 , icfuel = 7 ,           &
+                   ieljou = 8 , ielarc = 9 , icompf = 10,           &
+                   iatmos = 11, iaeros = 12,                        &
+                   igmix  = 13, idarcy = 14)
 
   !> \}
 
@@ -749,8 +743,76 @@ module ppincl
 
   !> \}
 
-  !===========================================================================
+  !=============================================================================
 
   !> \}
+
+  !=============================================================================
+
+  interface
+
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global physical model flags
+
+    subroutine cs_f_physical_model_get_pointers(p_ippmod)    &
+      bind(C, name='cs_f_physical_model_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_ippmod
+    end subroutine cs_f_physical_model_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global physical model flags
+
+    subroutine cs_f_combustion_model_get_pointers(p_isoot)    &
+      bind(C, name='cs_f_combustion_model_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_isoot
+    end subroutine cs_f_combustion_model_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
+
+    !---------------------------------------------------------------------------
+
+  end interface
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  !> \brief Initialize Fortran physical models properties API.
+  !> This maps Fortran pointers to global C variables.
+
+  subroutine pp_models_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: p_ippmod, p_isoot
+
+    call cs_f_physical_model_get_pointers(p_ippmod)
+    call cs_f_combustion_model_get_pointers(p_isoot)
+
+    call c_f_pointer(p_ippmod, ippmod, [nmodmx])
+    call c_f_pointer(p_isoot, isoot)
+
+  end subroutine pp_models_init
+
+  !=============================================================================
 
 end module ppincl

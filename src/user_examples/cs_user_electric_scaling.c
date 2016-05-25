@@ -259,51 +259,54 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
         delhsh = CS_F_(joulp)->val[iel] * dt[iel]
                / CS_F_(rho)->val[iel];
 
-        if (fabs(delhsh) > 1.e-20)
-          dtjm = CS_F_(h)->val[iel] / delhsh;
-        else
-          dtjm = dtj;
-        dtjm = fabs(dtjm);
-        dtj = CS_MIN(dtj, dtjm);
-      }
-      cs_parall_min(1, CS_DOUBLE, &dtj);
+      if (fabs(delhsh) > 1.e-20)
+        dtjm = CS_F_(h)->val[iel] / delhsh;
+      else
+        dtjm = dtj;
+      dtjm = fabs(dtjm);
+      dtj = CS_MIN(dtj, dtjm);
+    }
+    cs_parall_min(1, CS_DOUBLE, &dtj);
 
-      double cpmx = pow(cdtj * dtj, 0.5);
-      coepot = cpmx;
+    double cpmx = pow(cdtj * dtj, 0.5);
+    coepot = cpmx;
 
-      if (cs_glob_time_step->nt_cur > 3) {
-        if (coepoa > 1.05)
-          coepot = cpmx;
-        else
-          coepot = coepoa;
-      }
+    if (cs_glob_time_step->nt_cur > 3) {
+      if (coepoa > 1.05)
+        coepot = cpmx;
+      else
+        coepot = coepoa;
+    }
 
-      bft_printf(" Cpmx   = %14.5E\n", cpmx);
-      bft_printf(" COEPOA   = %14.5E\n", coepoa);
-      bft_printf(" COEPOT   = %14.5E\n", coepot);
-      bft_printf(" Dpot recale   = %14.5E\n", cs_glob_elec_option->pot_diff * coepot);
+    bft_printf(" Cpmx          = %14.5E\n", cpmx);
+    bft_printf(" COEPOA        = %14.5E\n", coepoa);
+    bft_printf(" COEPOT        = %14.5E\n", coepot);
+    bft_printf(" Dpot rescaled = %14.5E\n",
+               cs_glob_elec_option->pot_diff * coepot);
 
-      /* scaling electric fields */
-      elec_opt->pot_diff *= coepot;
+    /* scaling electric fields */
+    elec_opt->pot_diff *= coepot;
 
-      /* electric potential (for post treatment) */
-      for (int iel = 0; iel < ncel; iel++)
-        CS_F_(potr)->val[iel] *= coepot;
+    /* electric potential (for post treatment) */
+    for (int iel = 0; iel < ncel; iel++)
+      CS_F_(potr)->val[iel] *= coepot;
 
-      /* current density */
-      if (cs_glob_elec_option->ielarc > 0)
-        for (int i = 0; i < 3 ; i++)
-          for (int iel = 0; iel < 3 ; iel++)
-            CS_FI_(curre, i)->val[iel] *= coepot;
+    /* current density */
+    if (cs_glob_elec_option->ielarc > 0)
+      for (int i = 0; i < 3 ; i++)
+        for (int iel = 0; iel < 3 ; iel++)
+          CS_FI_(curre, i)->val[iel] *= coepot;
 
-      /* joule effect */
-      for (int iel = 0; iel < 3 ; iel++)
-        CS_F_(joulp)->val[iel] *= coepot * coepot;
+    /* joule effect */
+    for (int iel = 0; iel < 3 ; iel++)
+      CS_F_(joulp)->val[iel] *= coepot * coepot;
   }
 
   /*! [electric_scaling] */
 
   END_EXAMPLE_SCOPE
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

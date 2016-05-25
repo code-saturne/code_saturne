@@ -92,7 +92,6 @@ typedef struct {
 typedef struct {
   int         ieljou;
   int         ielarc;
-  int         ielion;
   int         ixkabe;
   int         ntdcla;
   int         irestrike;
@@ -141,8 +140,7 @@ CS_PROCF (elini1, ELINI1) (cs_real_t       *visls0,
                            cs_int_t        *isca,
                            cs_real_t       *blencv,
                            cs_real_t       *sigmas,
-                           cs_int_t        *iwarni,
-                           const cs_int_t  *iihmpr);
+                           cs_int_t        *iwarni);
 
 void
 CS_PROCF (elflux, ELFLUX) (cs_int_t *iappel);
@@ -155,8 +153,7 @@ CS_PROCF (elthht, ELTHHT) (cs_int_t  *mode,
 
 void
 CS_PROCF (ellecd, ELLECD) (cs_int_t *ieljou,
-                           cs_int_t *ielarc,
-                           cs_int_t *ielion);
+                           cs_int_t *ielarc);
 
 void
 CS_PROCF (elphyv, ELPHYV) (void);
@@ -167,14 +164,11 @@ CS_PROCF (eltssc, ELTSSC) (const cs_int_t  *isca,
 
 void
 CS_PROCF (elvarp, ELVARP) (cs_int_t *ieljou,
-                           cs_int_t *ielarc,
-                           cs_int_t *ielion,
-                           cs_int_t *iihmpr);
+                           cs_int_t *ielarc);
 
 void
 CS_PROCF (elprop, ELPROP) (cs_int_t *ieljou,
-                           cs_int_t *ielarc,
-                           cs_int_t *ielion);
+                           cs_int_t *ielarc);
 
 void
 CS_PROCF (eliniv, ELINIV) (cs_int_t *isuite);
@@ -214,8 +208,7 @@ cs_get_glob_transformer(void);
 
 void
 cs_electrical_model_initialize(int  ielarc,
-                               int  ieljou,
-                               int  ielion);
+                               int  ieljou);
 
 /*----------------------------------------------------------------------------
  * Destroy structures for electrical model
@@ -240,8 +233,7 @@ cs_electrical_model_specific_initialization(cs_real_t    *visls0,
                                             int          *isca,
                                             cs_real_t    *blencv,
                                             cs_real_t    *sigmas,
-                                            int          *iwarni,
-                                            int           iihmpr);
+                                            int          *iwarni);
 
 /*----------------------------------------------------------------------------
  * Read properties file
@@ -293,9 +285,7 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
 
 void
 cs_elec_add_variable_fields(const int  *ielarc,
-                            const int  *ieljou,
-                            const int  *ielion,
-                            const int  *iihmpr);
+                            const int  *ieljou);
 
 /*----------------------------------------------------------------------------
  * add properties fields
@@ -303,8 +293,7 @@ cs_elec_add_variable_fields(const int  *ielarc,
 
 void
 cs_elec_add_property_fields(const int  *ielarc,
-                            const int  *ieljou,
-                            const int  *ielion);
+                            const int  *ieljou);
 
 /*----------------------------------------------------------------------------
  * initialize electric fields

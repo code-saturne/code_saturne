@@ -127,7 +127,7 @@ $(top_srcdir)/src/lagr/lagran.f90: cstnum.lo optcal.lo ppincl.lo ihmpre.lo radia
 $(top_srcdir)/src/pprt/ppcpfu.f90: ppthch.lo ppppar.lo
 $(top_srcdir)/src/pprt/ppincl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/pprt/ppthch.f90: cstphy.lo
-$(top_srcdir)/src/rayt/radiat.f90: ppppar.lo
+$(top_srcdir)/src/rayt/radiat.f90: ppppar.lo ppincl.lo optcal.lo ppcpfu.lo numvar.lo
 $(top_srcdir)/src/darc/darcy_module.f90: paramx.lo
 
 # Additional local targets

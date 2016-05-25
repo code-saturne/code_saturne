@@ -1,8 +1,8 @@
-#ifndef __CS_RADIATION_SOLVER_H__
-#define __CS_RADIATION_SOLVER_H__
+#ifndef __CS_PHYSICAL_MODEL_H__
+#define __CS_PHYSICAL_MODEL_H__
 
 /*============================================================================
- * Radiation solver operations.
+ * General parameters management.
  *============================================================================*/
 
 /*
@@ -28,43 +28,63 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
+#include <stdarg.h>
+
+/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_halo.h"
+#include "cs_defs.h"
+#include "cs_field.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Local Macro definitions
+ * Macro definitions
  *============================================================================*/
 
 /*============================================================================
- * Type definition
+ * Type definitions
  *============================================================================*/
+
+/*! Specific physical model types */
+/*--------------------------------*/
+
+typedef enum {
+
+  CS_PHYSICAL_MODEL_FLAG,          /*!< global specific physics flag */
+
+  CS_COMBUSTION_3PT,               /*!< 3-point combustion model */
+  CS_COMBUSTION_EBU,               /*!< EBU combustion model */
+  CS_COMBUSTION_LW,                /*!< Libby-Williams combustion model */
+  CS_COMBUSTION_PCLC,              /*!< pulverized coal combustion with
+                                        Lagrangian coupling */
+  CS_COMBUSTION_COAL,              /*!< coal combustion model */
+  CS_COMBUSTION_FUEL,              /*!< fuel combustion */
+  CS_JOULE_EFFECT,                 /*!< Joule effect */
+  CS_ELECTRIC_ARCS,                /*!< electric arcs */
+  CS_COMPRESSIBLE,                 /*!< compressible model */
+  CS_ATMOSPHERIC,                  /*!< atmospheric model */
+  CS_COOLING_TOWERS,               /*!< cooling towers */
+  CS_GAS_MIX,                      /*!< gas mix model */
+  CS_GROUNDWATER,                  /*!< Richards model */
+
+  CS_N_PHYSICAL_MODEL_TYPES        /*!< Number of physical model types */
+
+} cs_physical_model_type_t;
 
 /*============================================================================
- *  Global variables
+ * Global variables
  *============================================================================*/
 
-/*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
+/*! Names of specific physical models */
 
-/*----------------------------------------------------------------------------
- * Order linear solvers for DOM radiative model.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (rayord, RAYORD)
-(
- const cs_int_t          *ndirs,
- const cs_real_t          sx[],
- const cs_real_t          sy[],
- const cs_real_t          sz[]
-);
+extern int cs_glob_physical_model_flag[];
 
 /*=============================================================================
  * Public function prototypes
@@ -74,4 +94,4 @@ void CS_PROCF (rayord, RAYORD)
 
 END_C_DECLS
 
-#endif /* __CS_RADIATION_SOLVER_H__ */
+#endif /* __CS_PHYSICAL_MODEL_H__ */

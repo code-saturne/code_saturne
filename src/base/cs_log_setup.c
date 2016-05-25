@@ -50,6 +50,7 @@
 #include "cs_sles_default.h"
 #include "cs_time_moment.h"
 #include "cs_turbomachinery.h"
+#include "cs_rad_transfer_options.h"
 #include "cs_rotation.h"
 #include "cs_lagr_log.h"
 
@@ -148,6 +149,8 @@ cs_log_setup(void)
   cs_sles_default_setup();
 
   _log_global_model_options();
+
+  cs_rad_transfer_log_setup();
 
   cs_lagr_log_setup();
 

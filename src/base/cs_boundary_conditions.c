@@ -57,6 +57,7 @@
 #include "cs_field.h"
 #include "cs_field_operator.h"
 #include "cs_halo.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
 #include "cs_mesh_quantities.h"
@@ -455,6 +456,10 @@ cs_f_boundary_conditions_type_get_pointer(int **itypfb)
  * \brief Handling of boundary condition definition errors and
  *        associated output.
  *
+ * This function checks for errors, and simply returns if no errors are
+ * encountered. In case of error, it outputs helpful information so as to
+ * make it easier to locate the matching faces.
+ *
  * For each boundary face, bc_type defines the boundary condition type.
  * As a convention here, zero values correspond to undefined types,
  * positive values to defined types (with no error), and negative values
@@ -491,6 +496,21 @@ cs_boundary_conditions_error(const int       *bc_flag,
   if (type_name != NULL)
     _type_name = type_name;
 
+  /* First, simply check for faces with problems;
+     _bc_flag[] used to determine if we have an error */
+
+  const cs_int_t  *_bc_flag = bc_flag;
+
+  for (face_id = 0; face_id < n_b_faces; face_id++) {
+    if (_bc_flag[face_id] < 1)
+      n_errors += 1;
+  }
+
+  cs_parall_counter(&n_errors, 1);
+
+  if (n_errors < 1)
+    return;
+
   /* Prepare face marker */
 
   marker.n_faces = n_b_faces;
@@ -505,8 +525,6 @@ cs_boundary_conditions_error(const int       *bc_flag,
     int        err_face_type;
     cs_real_t  err_face_coo[3];
     cs_gnum_t  err_face_gnum = 0;
-
-    const cs_int_t  *_bc_flag = bc_flag;
 
     for (face_id = 0; face_id < n_b_faces; face_id++) {
 
@@ -530,11 +548,8 @@ cs_boundary_conditions_error(const int       *bc_flag,
             err_face_coo[coo_id] = mesh_q->b_face_cog[face_id*3 + coo_id];
         }
 
-        n_errors += 1;
       }
     }
-
-    cs_parall_counter(&n_errors, 1);
 
     /* Obtain the lowest global face number with an error,
        and print associated info */
@@ -565,8 +580,6 @@ cs_boundary_conditions_error(const int       *bc_flag,
 
     const int writer_id = -2;
     const int writer_ids[] = {writer_id};
-
-    n_errors = 0;
 
     cs_post_init_error_writer();
 
@@ -622,8 +635,6 @@ cs_boundary_conditions_error(const int       *bc_flag,
     {
       size_t name_size = 0;
       char var_name[32];
-
-      const cs_int_t  *_bc_flag = bc_flag;
 
       var_name[0] = '\0';
       strncpy(var_name + name_size, _("BC type"), 31 - name_size);
@@ -1042,6 +1053,39 @@ void
 cs_boundary_conditions_type_free(void)
 {
   BFT_FREE(_bc_type);
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Set convective oulet boundary condition for a scalar
+ *
+ * Parameters:
+ * \param[out]    coefa         explicit BC coefficient for gradients
+ * \param[out]    cofaf         explicit BC coefficient for diffusive flux
+ * \param[out]    coefb         implicit BC coefficient for gradients
+ * \param[out]    cofbf         implicit BC coefficient for diffusive flux
+ * \param[in]     pimp          Flux value to impose
+ * \param[in]     cfl           Local Courant number used to convect
+ * \param[in]     hint          Internal exchange coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
+                                                         cs_real_t *cofaf,
+                                                         cs_real_t *coefb,
+                                                         cs_real_t *cofbf,
+                                                         cs_real_t  pimp,
+                                                         cs_real_t  cfl,
+                                                         cs_real_t  hint)
+{
+  /* Gradient BCs */
+  *coefb = cfl / (1.0 + cfl);
+  *coefa = (1.0 - *coefb) * pimp;
+
+  /* Flux BCs */
+  *cofaf = - hint * *coefa;
+  *cofbf =   hint * (1.0 - *coefb);
+
+  return;
 }
 
 /*----------------------------------------------------------------------------*/

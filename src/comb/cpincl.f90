@@ -27,6 +27,8 @@ module cpincl
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
+
   use ppppar
   use ppthch
 
@@ -104,11 +106,13 @@ double precision, save :: cch   (ncharm), hch   (ncharm), och   (ncharm),  &
                           gamma (ncharm), delta (ncharm), kappa(ncharm),   &
                           zeta(ncharm),                                    &
                           rhock (ncharm), pcick (ncharm),                  &
-                          xashch(ncharm), cpashc(ncharm),                  &
+                          cpashc(ncharm),                                  &
                           h0ashc(ncharm),                                  &
                           h02ch (ncharm), cp2ch (ncharm),                  &
                           xwatch(ncharm), cp2wat(ncharm),                  &
                           crepn1(2,ncharm),crepn2(2,ncharm)
+
+real(c_double), pointer, save :: xashch(:)
 
   !      - Parametres cinetiques pour la devolatilisation
   !         (Modele de Kobayashi)
@@ -176,7 +180,7 @@ double precision, save :: cch   (ncharm), hch   (ncharm), och   (ncharm),  &
   ! By class (deduced quantities)
 
   ! Number of classes
-  integer, save ::          nclacp
+  integer(c_int), pointer, save :: nclacp
 
   !      - Proprietes
   !        ichcor(cl)  --> = ich si la classe consideree appartient
@@ -188,10 +192,10 @@ double precision, save :: cch   (ncharm), hch   (ncharm), och   (ncharm),  &
   !        xmp0(cl)    --> Masse initiale de la particule (m)
   !        xmash(cl)   --> Masse de cendres de la particule (m)
 
-  integer, save ::          ichcor(nclcpm)
-  double precision, save :: diam20(nclcpm), dia2mn(nclcpm),                  &
-                            rho20 (nclcpm), rho2mn(nclcpm),                  &
-                            xmp0  (nclcpm), xmash (nclcpm)
+  integer(c_int), pointer, save :: ichcor(:)
+  real(c_double), pointer, save :: diam20(:), dia2mn(:),                  &
+                                   rho20 (:), rho2mn(:),                  &
+                                   xmp0(:),   xmash (:)
 
   !--> Donnees relatives a la combustion des especes gazeuses
 
@@ -222,7 +226,10 @@ double precision, save :: cch   (ncharm), hch   (ncharm), och   (ncharm),  &
   !        f2(ch)
 
   integer, save ::          ichx1c(ncharm), ichx2c(ncharm),                  &
-                            ichx1, ichx2, ico, io2, ico2, ih2o, in2
+                            ichx1, ichx2, ico, io2, in2
+
+  integer(c_int), pointer, save :: ico2, ih2o
+
   double precision, save :: chx1(ncharm), chx2(ncharm),                      &
                             a1(ncharm), b1(ncharm),c1(ncharm),d1(ncharm),    &
                             e1(ncharm), f1(ncharm),                          &
@@ -270,6 +277,82 @@ double precision, save :: cch   (ncharm), hch   (ncharm), och   (ncharm),  &
 
   double precision, save :: thc(npot)
   integer, save ::          npoc
+
+  !=============================================================================
+
+  interface
+
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global physical model flags
+
+    subroutine cs_f_cpincl_get_pointers(p_ico2, p_ih2o, p_nclacp, p_ichcor,    &
+                                        p_xashch, p_diam20, p_dia2mn,          &
+                                        p_rho20, p_rho2mn,                     &
+                                        p_xmp0, p_xmash)                       &
+      bind(C, name='cs_f_cpincl_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_ico2, p_ih2o, p_nclacp, p_ichcor,          &
+                                  p_xashch, p_diam20, p_dia2mn,                &
+                                  p_rho20, p_rho2mn,                           &
+                                  p_xmp0, p_xmash
+    end subroutine cs_f_cpincl_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
+
+    !---------------------------------------------------------------------------
+
+  end interface
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  !> \brief Initialize Fortran combustion models properties API.
+  !> This maps Fortran pointers to global C variables.
+
+  subroutine cp_models_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: p_ico2, p_ih2o, p_nclacp, p_ichcor, p_xashch,             &
+                   p_diam20, p_dia2mn, p_rho20, p_rho2mn, p_xmp0, p_xmash
+
+    call cs_f_cpincl_get_pointers(p_ico2, p_ih2o, p_nclacp, p_ichcor,        &
+                                  p_xashch, p_diam20, p_dia2mn,              &
+                                  p_rho20, p_rho2mn,     &
+                                  p_xmp0, p_xmash)
+
+    call c_f_pointer(p_ico2, ico2)
+    call c_f_pointer(p_ih2o, ih2o)
+
+    call c_f_pointer(p_nclacp, nclacp)
+
+    call c_f_pointer(p_ichcor, ichcor, [nclcpm])
+
+    call c_f_pointer(p_xashch, xashch, [ncharm])
+
+    call c_f_pointer(p_diam20, diam20, [nclcpm])
+    call c_f_pointer(p_dia2mn, dia2mn, [nclcpm])
+    call c_f_pointer(p_rho20,  rho20,  [nclcpm])
+    call c_f_pointer(p_rho2mn, rho2mn, [nclcpm])
+    call c_f_pointer(p_xmp0,   xmp0,   [nclcpm])
+    call c_f_pointer(p_xmash,  xmash,  [nclcpm])
+
+  end subroutine cp_models_init
 
   !=============================================================================
 

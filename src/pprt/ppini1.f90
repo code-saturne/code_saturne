@@ -101,14 +101,12 @@ endif
 if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                 &
                          .or. ippmod(icolwc).ge.0 ) then
   call coini1
-  !==========
 endif
 
 ! ---> Physique particuliere : Combustion Charbon Pulverise
 
 if ( ippmod(iccoal).ge.0 ) then
   call cs_coal_param
-  !=================
 endif
 
 ! ---> Physique particuliere : Combustion Eulerienne Charbon Pulverise
@@ -116,46 +114,39 @@ endif
 
 if ( ippmod(icpl3c).ge.0 ) then
   call cplin1
-  !==========
 endif
 
 ! ---> Physique particuliere : Combustion fuel
 
 if ( ippmod(icfuel).ge.0 ) then
   call cs_fuel_param
-  !=================
 endif
 
 ! ---> Physique particuliere : Compressible
 
 if ( ippmod(icompf).ge.0) then
   call cfini1
-  !==========
 endif
 
 ! ---> Physique particuliere : Versions electriques
 
 if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1       ) then
+     ippmod(ielarc).ge.1       ) then
   call elini1 (visls0, diftl0, iconv, istat,                      &
                idiff, idifft, idircl, isca, blencv,               &
-               sigmas, iwarni, iihmpr)
-  !==========
+               sigmas, iwarni)
 endif
 
 ! ---> Physique particuliere : Ecoulements atmospheriques
 
 if ( ippmod(iatmos).ge.0 ) then
   call atini1
-  !==========
 endif
 
 ! ---> Physique particuliere : Aerorefrigerants
 
 if ( ippmod(iaeros).ge.0) then
   call ctini1
-  !==========
 endif
 
 !--------

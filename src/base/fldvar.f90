@@ -29,7 +29,7 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[out]    nmodpp        number of activated paricle physic models
+!> \param[out]    nmodpp        number of activated particle physic models
 !______________________________________________________________________________
 
 subroutine fldvar &

@@ -32,8 +32,9 @@
 
   The module can be activated in the \ref usppmo routine in
   \ref cs_user_parameters.f90. The corresponding keyword is \c iirayo in the
-  \ref radiat module.
-  This keyword can take the values:
+  \ref cs_glob_rad_transfer_options structure.
+
+  This member can take the values:
    - \ref radiat::iirayo "iirayo" = 0: module desactivated.
    - \ref radiat::iirayo "iirayo" = 1: the module is activated and the Discrete
                                        Ordinates Method is used.
@@ -43,8 +44,15 @@
   \section radiat_param Radiation module specific parameters.
 
   When the module is activated, its specific input parameters should be set in
-  the \ref cs_user_radiative_transfer_para routine of \ref cs_user_parameters.f90
-  file.
+  the \ref cs_user_radiative_transfer_parameters function of the
+  \ref cs_user_radiative_transfer.c file.
+
+  \section cs_user_radiative_transfer_h_cs_user_radiative_transfer_parameters Calculation options for the radiative transfer module.
+
+  Radiative transfer parameters may be defined using the
+  \ref cs_user_radiative_transfer_parameters function.
+
+  \snippet cs_user_radiative_transfer.c cs_user_radiative_transfer_parameters
 
   \section cs_user_radiative_transfer_h_boundary_conditions Radiative transfer boundary conditions
 

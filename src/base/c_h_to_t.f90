@@ -119,9 +119,8 @@ else if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
 
 ! Electric arcs
 
-else if ( ippmod(ieljou).ge.1 .or.                              &
-          ippmod(ielarc).ge.1 .or.                              &
-          ippmod(ielion).ge.1       ) then
+else if (ippmod(ieljou).ge.1 .or.                              &
+         ippmod(ielarc).ge.1) then
 
   call field_get_val_s(iprpfl(itemp), cpro_t)
 

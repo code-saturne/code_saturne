@@ -37,7 +37,6 @@
 !>                               - -2: edge
 !>                               - default: nummai
 !> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     ncelps        post-processing mesh cells number
 !> \param[in]     nfbrps        number of boundary faces
 !> \param[in]     lstcel        post-processing mesh cell numbers
@@ -48,7 +47,7 @@
 
 subroutine dvvpst &
  ( nummai , numtyp ,                                              &
-   nvar   , nscal  ,                                              &
+   nvar   ,                                                       &
    ncelps , nfbrps ,                                              &
    lstcel , lstfbr ,                                              &
    tracel , trafbr )
@@ -450,7 +449,7 @@ else if (numtyp .eq. -2) then
 
   if (ipstdv(ipstft).ne.0) then
 
-    if (iscalt.gt.0 .and. nscal.gt.0 .and. iscalt.le.nscal) then
+    if (iscalt.gt.0) then
 
       call post_boundary_thermal_flux(nfbrps, lstfbr, trafbr)
 
@@ -515,8 +514,7 @@ endif
 if (numtyp.eq.-1) then
 
   if (     ippmod(ieljou).ge.1                                      &
-      .or. ippmod(ielarc).ge.1                                      &
-      .or. ippmod(ielion).ge.1) then
+      .or. ippmod(ielarc).ge.1) then
 
     allocate(grad(3,ncelet))
 

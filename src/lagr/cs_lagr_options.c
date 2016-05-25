@@ -50,6 +50,7 @@
 #include "cs_gui_util.h"
 #include "cs_mesh_location.h"
 #include "cs_parameters.h"
+#include "cs_physical_model.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_particle.h"
@@ -304,7 +305,8 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
   if (lagr_time_scheme->iilagr == 3)
     *iccvfg = 1;
 
-  if (lagr_time_scheme->iilagr != 2 && extra->icpl3c >= 1)
+  if (   lagr_time_scheme->iilagr != 2
+      && cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 1)
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _("in Lagrangian module"),
@@ -799,7 +801,7 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
     lagr_model->fouling = 0;
 
   if (lagr_model->physical_model != 2 &&
-      extra->icpl3c >= 0) {
+      cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0) {
 
     bft_printf("@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
@@ -828,13 +830,13 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
                lagr_model->physical_model,
-               extra->icpl3c);
+               cs_glob_physical_model_flag[CS_COMBUSTION_PCLC]);
     iok++;
 
   }
   if (lagr_model->physical_model == 2 &&
-      (extra->icpl3c < 0 &&
-       extra->iccoal < 0)) {
+      (cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] < 0 &&
+       cs_glob_physical_model_flag[CS_COMBUSTION_COAL] < 0)) {
 
     bft_printf("@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
@@ -862,7 +864,7 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
                lagr_time_scheme->iilagr,
-               extra->icpl3c);
+               cs_glob_physical_model_flag[CS_COMBUSTION_PCLC]);
     iok++;
 
   }
@@ -1324,7 +1326,7 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
 
 
   if (lagr_model->physical_model != 2 &&
-      extra->icpl3c >= 0) {
+      cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0) {
 
     bft_printf("@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
@@ -1353,13 +1355,14 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
                lagr_model->physical_model,
-               extra->icpl3c);
+               cs_glob_physical_model_flag[CS_COMBUSTION_PCLC]);
     iok++;
 
   }
 
-  if (lagr_model->physical_model == 2 &&
-      (extra->icpl3c < 0 && extra->iccoal < 0)) {
+  if (   lagr_model->physical_model == 2
+      && (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] < 0
+          && cs_glob_physical_model_flag[CS_COMBUSTION_COAL] < 0)) {
 
     bft_printf("@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
@@ -1387,8 +1390,8 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
                lagr_model->physical_model,
-               extra->icpl3c,
-               extra->iccoal);
+               cs_glob_physical_model_flag[CS_COMBUSTION_PCLC],
+               cs_glob_physical_model_flag[CS_COMBUSTION_COAL]);
     iok++;
 
   }

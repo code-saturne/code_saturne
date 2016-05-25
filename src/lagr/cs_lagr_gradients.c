@@ -55,6 +55,8 @@
 #include "cs_stokes_model.h"
 #include "cs_field_operator.h"
 
+#include "cs_physical_model.h"
+
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
 #include "cs_lagr_stat.h"
@@ -142,7 +144,8 @@ cs_lagr_gradients(int            time_id,
    * Warning, in standard calculation, the computed pressure is
    * the hydrostatic pressure and not the real one */
 
-  if (cs_glob_stokes_model->iphydr == 0 && extra->icompf < 0) {
+  if (   cs_glob_stokes_model->iphydr == 0
+      && cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
 
     for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
 

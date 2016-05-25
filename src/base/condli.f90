@@ -334,8 +334,11 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
 
 ! pointers to specific fields
-if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
-if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
+
+if (iirayo.ge.1) then
+  call field_get_val_s_by_name("rad_convective_flux", bfconv)
+  call field_get_val_s_by_name("rad_exchange_coefficient", bhconv)
+endif
 
 if (idtten.ge.0) call field_get_val_v(idtten, dttens)
 

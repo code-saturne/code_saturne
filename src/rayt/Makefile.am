@@ -22,6 +22,14 @@
 
 #-------------------------------------------------------------------------------
 
+# PLE dependency
+
+if HAVE_INTERNAL_PLE
+  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
+else
+  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
+endif
+
 # Main part
 
 AM_CPPFLAGS = \
@@ -30,6 +38,10 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/gui \
+-I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/pprt \
+$(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS) $(BLAS_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
@@ -56,30 +68,39 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
-cs_radiation_solver.h
+cs_rad_transfer_absorption.h \
+cs_rad_transfer_dir.h \
+cs_rad_transfer_property_fields.h \
+cs_rad_transfer_options.h \
+cs_rad_transfer_wall_flux.h \
+cs_rad_transfer_bcs.h \
+cs_rad_transfer_fsck.h \
+cs_rad_transfer_adf_models.h \
+cs_rad_transfer_pun.h \
+cs_rad_transfer_solve.h \
+cs_rad_transfer_modak.h \
+cs_rad_transfer_source_terms.h \
+cs_rad_transfer_restart.h \
+cs_rad_transfer.h
 
 # Library source files
 
 noinst_LTLIBRARIES = libcsrayt.la
 libcsrayt_la_SOURCES = \
-cs_radiation_solver.c \
-radf08.f90 \
-radf50.f90 \
-rafsck.f90 \
-raycli.f90 \
-raycll.f90 \
-raydak.f90 \
-raydir.f90 \
-raydom.f90 \
-raylec.f90 \
-rayopt.f90 \
-rayout.f90 \
-raypar.f90 \
-rayprp.f90 \
-raypun.f90 \
-raysca.f90 \
-raysol.f90 \
-rmodak.f90
+cs_rad_transfer_absorption.c \
+cs_rad_transfer.c \
+cs_rad_transfer_dir.c \
+cs_rad_transfer_property_fields.c \
+cs_rad_transfer_options.c \
+cs_rad_transfer_bcs.c \
+cs_rad_transfer_wall_flux.c \
+cs_rad_transfer_fsck.c \
+cs_rad_transfer_adf_models.c \
+cs_rad_transfer_pun.c \
+cs_rad_transfer_solve.c \
+cs_rad_transfer_modak.c \
+cs_rad_transfer_source_terms.c \
+cs_rad_transfer_restart.c
 
 libcsrayt_la_LDFLAGS = -no-undefined
 

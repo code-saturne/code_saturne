@@ -100,7 +100,6 @@ double precision, dimension(:), allocatable :: bb, xx
 
 ! Initialize variables to avoid compiler warnings
 
-iic   = 0
 iico  = 0
 iico2 = 0
 iih2o = 0

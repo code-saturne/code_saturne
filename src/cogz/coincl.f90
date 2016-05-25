@@ -27,6 +27,8 @@ module coincl
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
+
   use ppppar
   use ppincl
 
@@ -45,7 +47,7 @@ module coincl
   double precision, save :: pcigas
 
   ! conversion coefficients from global species to elementary species
-  double precision coefeg(ngazem,ngazgm)
+  double precision, pointer, save :: coefeg(:,:)
 
   !--> MODELE FLAMME DE DIFFUSION (CHIMIE 3 POINTS)
 
@@ -131,7 +133,64 @@ module coincl
   !     XSOOT : soot fraction production (isoot = 0)
   !     ROSOOT: soot density
 
-  double precision, save :: xsoot, rosoot
+  double precision, pointer, save :: xsoot, rosoot
+
+  !=============================================================================
+
+  !=============================================================================
+
+  interface
+
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global combustion model flags
+
+    subroutine cs_f_coincl_get_pointers(p_coefeg,           &
+                                        p_xsoot, p_rosoot)  &
+      bind(C, name='cs_f_coincl_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_coefeg, p_xsoot, p_rosoot
+    end subroutine cs_f_coincl_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
+
+    !---------------------------------------------------------------------------
+
+  end interface
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  !> \brief Initialize Fortran combustion models properties API.
+  !> This maps Fortran pointers to global C variables.
+
+  subroutine co_models_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_coefeg, c_xsoot, c_rosoot
+
+    call cs_f_coincl_get_pointers(c_coefeg, c_xsoot, c_rosoot)
+
+    call c_f_pointer(c_coefeg, coefeg, [ngazem, ngazgm])
+    call c_f_pointer(c_xsoot, xsoot)
+    call c_f_pointer(c_rosoot, rosoot)
+
+  end subroutine co_models_init
 
   !=============================================================================
 

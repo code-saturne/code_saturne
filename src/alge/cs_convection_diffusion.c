@@ -8935,10 +8935,11 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+    snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array"); var_name[31] = '\0';
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");

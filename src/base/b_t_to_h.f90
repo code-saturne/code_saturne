@@ -325,9 +325,6 @@ do ilst = 1, nlst
       call elthht(mode, ym, h_b(ifac), tbl)
     endif
 
-  !   else if (ippmod(ielion).ge.1) then
-  !   ... to be implemented ...
-
   endif
 
 enddo

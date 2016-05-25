@@ -114,20 +114,11 @@ if (ippmod(icod3p).ge.0) then
   call d3pphy()
 endif
 
-! ---> Flamme de diffusion chimie equilibre
-
-!        if ( ippmod(icodeq).ge.0 )
-
 ! ---> Flamme de premelange : Modele EBU
 
 if (ippmod(icoebu).ge.0) then
   call ebuphy(mbrom, izfppp)
 endif
-
-! ---> Flamme de premelange : Modele BML
-
-!        if ( ippmod(icobml).ge.0 )
-!     &     call bmlphy
 
 ! ---> Flamme de premelange : Modele LWC
 
@@ -162,8 +153,7 @@ endif
 !          Conduction ionique
 
 if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1       ) then
+     ippmod(ielarc).ge.1       ) then
 
 !     En Joule, on impose a l'utilisateur de programmer ses lois
 !        sur les proprietes (masse volumique , ...)

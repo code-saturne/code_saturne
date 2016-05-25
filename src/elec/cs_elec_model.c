@@ -62,6 +62,7 @@
 #include "cs_thermal_model.h"
 #include "cs_turbulence_model.h"
 #include "cs_gui_specific_physics.h"
+#include "cs_gui_util.h"
 #include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
@@ -101,13 +102,11 @@ BEGIN_C_DECLS
         - -1: module not activated
         -  1: determination of the magnetic field by means of the Ampere’ theorem
         -  2: determination of the magnetic field by means of the vector potential
-  \var  cs_elec_option_t::ielion
-        ionic conduction model
   \var  cs_elec_option_t::ixkabe
         model for radiative properties
         - 0: last column read but not use
         - 1: last column : absorption coefficient
-        - 2: last column : radiative TS
+        - 2: last column : radiative ST
   \var  cs_elec_option_t::ntdcla
         first iteration to take into account restrike model
   \var  cs_elec_option_t::irestrike
@@ -201,7 +200,6 @@ BEGIN_C_DECLS
 
 static cs_elec_option_t  _elec_option = {.ieljou = -1,
                                          .ielarc = -1,
-                                         .ielion = -1,
                                          .ixkabe = -1,
                                          .ntdcla = -1,
                                          .irestrike = -1,
@@ -333,13 +331,6 @@ _cs_electrical_model_verify(void)
                 "model selected : \"%i\";\n"),
               cs_glob_elec_option->ieljou);
 
-  if (cs_glob_elec_option->ielion != -1)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error for ionic conduction model\n"
-                "only choice -1 is permitted yet\n"
-                "model selected : \"%i\";\n"),
-              cs_glob_elec_option->ielion);
-
   /* options */
   if (cs_glob_elec_option->ielcor != 0 && cs_glob_elec_option->ielcor != 1)
     bft_error(__FILE__, __LINE__, 0,
@@ -380,7 +371,60 @@ _cs_electrical_model_verify(void)
               _("Invalid or incomplete calculation parameter\n"
                 "Verify parameters\n"));
   }
-  return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map base fields to enumerated pointers for electric arcs
+ *
+ * \param[in]  n_gasses    number of gasses
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_field_pointer_map_electric_arcs(int  n_gasses)
+{
+  char s[64];
+
+  cs_field_pointer_map(CS_ENUMF_(h),
+                       cs_field_by_name_try("enthalpy"));
+
+  cs_field_pointer_map(CS_ENUMF_(potr), cs_field_by_name_try("elec_pot_r"));
+  cs_field_pointer_map(CS_ENUMF_(poti), cs_field_by_name_try("elec_pot_i"));
+
+  cs_field_pointer_map(CS_ENUMF_(potva), cs_field_by_name_try("vec_potential"));
+
+  for (int i = 0; i < n_gasses - 1; i++) {
+    snprintf(s, 63, "esl_fraction_%02d", i+1); s[63] = '\0';
+    cs_field_pointer_map_indexed(CS_ENUMF_(ycoel), i, cs_field_by_name_try(s));
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map base fields to enumerated pointers properties for electric arcs
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_field_pointer_properties_map_electric_arcs(void)
+{
+  cs_field_pointer_map(CS_ENUMF_(t),
+                       cs_field_by_name_try("temperature"));
+
+  cs_field_pointer_map(CS_ENUMF_(joulp),
+                       cs_field_by_name_try("joule_power"));
+  cs_field_pointer_map(CS_ENUMF_(radsc),
+                       cs_field_by_name_try("radiation_source"));
+  cs_field_pointer_map(CS_ENUMF_(elech),
+                       cs_field_by_name_try("elec_charge"));
+
+  cs_field_pointer_map(CS_ENUMF_(curre),
+                       cs_field_by_name_try("current_re"));
+  cs_field_pointer_map(CS_ENUMF_(curim),
+                       cs_field_by_name_try("current_im"));
+  cs_field_pointer_map(CS_ENUMF_(laplf),
+                       cs_field_by_name_try("laplace_force"));
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -402,13 +446,12 @@ CS_PROCF (elini1, ELINI1) (      cs_real_t *visls0,
                                  cs_int_t  *isca,
                                  cs_real_t *blencv,
                                  cs_real_t *sigmas,
-                                 cs_int_t  *iwarni,
-                           const cs_int_t  *iihmpr)
+                                 cs_int_t  *iwarni)
 {
   /* initialization */
   cs_electrical_model_specific_initialization(visls0, diftl0, iconv, istat,
                                               idiff, idifft, idircl, isca, blencv,
-                                              sigmas, iwarni, *iihmpr);
+                                              sigmas, iwarni);
 }
 
 void
@@ -429,10 +472,9 @@ CS_PROCF (elthht, ELTHHT) (cs_int_t  *mode,
 
 void
 CS_PROCF (ellecd, ELLECD) (cs_int_t *ieljou,
-                           cs_int_t *ielarc,
-                           cs_int_t *ielion)
+                           cs_int_t *ielarc)
 {
-  cs_electrical_model_initialize(*ielarc, *ieljou, *ielion);
+  cs_electrical_model_initialize(*ielarc, *ieljou);
   cs_electrical_properties_read(*ielarc, *ieljou);
 }
 
@@ -460,19 +502,16 @@ CS_PROCF (eltssc, ELTSSC) (const cs_int_t  *isca,
 
 void
 CS_PROCF (elvarp, ELVARP) (cs_int_t *ieljou,
-                           cs_int_t *ielarc,
-                           cs_int_t *ielion,
-                           cs_int_t *iihmpr)
+                           cs_int_t *ielarc)
 {
-  cs_elec_add_variable_fields(ielarc, ieljou, ielion, iihmpr);
+  cs_elec_add_variable_fields(ielarc, ieljou);
 }
 
 void
 CS_PROCF (elprop, ELPROP) (cs_int_t *ieljou,
-                           cs_int_t *ielarc,
-                           cs_int_t *ielion)
+                           cs_int_t *ielarc)
 {
-  cs_elec_add_property_fields(ielarc, ieljou, ielion);
+  cs_elec_add_property_fields(ielarc, ieljou);
 }
 
 void
@@ -517,15 +556,13 @@ cs_get_glob_transformer(void)
 
 void
 cs_electrical_model_initialize(int  ielarc,
-                               int  ieljou,
-                               int  ielion)
+                               int  ieljou)
 {
   if (ieljou >= 3)
     BFT_MALLOC(_transformer, 1, cs_data_joule_effect_t);
 
   _elec_option.ielarc    = ielarc;
   _elec_option.ieljou    = ieljou;
-  _elec_option.ielion    = ielion;
   _elec_option.ixkabe    = 0;
   _elec_option.ntdcla    = 1;
   _elec_option.irestrike = 0;
@@ -612,8 +649,7 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
                                             int        *isca,
                                             cs_real_t  *blencv,
                                             cs_real_t  *sigmas,
-                                            int        *iwarni,
-                                            int         iihmpr)
+                                            int        *iwarni)
 {
   cs_field_t *f = NULL;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -770,7 +806,7 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     }
   }
 
-  if (iihmpr == 1) {
+  if (cs_gui_file_is_loaded()) {
     CS_PROCF(uicpi1,UICPI1) (&(_elec_option.srrom), diftl0);
     cs_gui_elec_model();
     _elec_option.pot_diff = 1000.;
@@ -1061,8 +1097,8 @@ cs_elec_convert_h_t(int        mode,
  *----------------------------------------------------------------------------*/
 
 void
-cs_elec_physical_properties(const cs_mesh_t *mesh,
-                            const cs_mesh_quantities_t *mesh_quantities)
+cs_elec_physical_properties(const cs_mesh_t             *mesh,
+                            const cs_mesh_quantities_t  *mesh_quantities)
 {
   static long ipass = 0;
   int nt_cur = cs_glob_time_step->nt_cur;
@@ -1134,6 +1170,15 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
                           &(CS_F_(h)->val[iel]),
                           &(CS_F_(t)->val[iel]));
       }
+    }
+
+    /* Map some fields */
+
+    cs_real_t *cpro_absco = NULL;
+
+    if (cs_glob_elec_option->ixkabe == 1) {
+      if (cs_glob_field_pointers[CS_ENUMF_(rad_cak)].a != NULL)
+        cpro_absco = CS_FI_(rad_cak, 0)->val;
     }
 
     /* interpolate properties */
@@ -1327,13 +1372,12 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
 
       /* compute radiative transfer : W/m3 */
       if (cs_glob_elec_option->ixkabe == 1) {
-        CS_F_(absco)->val[iel] = 0.;
-        double val = 0.;
-
-        for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
-          val += yvol[iesp1] * xkabes[iesp1];
-
-        CS_F_(absco)->val[iel] = val;
+        if (cpro_absco != NULL) { /* May be NULL if no active radiation model */
+          double val = 0.;
+          for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
+            val += yvol[iesp1] * xkabes[iesp1];
+          cpro_absco[iel] = val;
+        }
       }
       else if (cs_glob_elec_option->ixkabe == 2) {
         CS_F_(radsc)->val[iel] = 0.;
@@ -1359,35 +1403,6 @@ cs_elec_physical_properties(const cs_mesh_t *mesh,
     BFT_FREE(xlabes);
     BFT_FREE(xkabes);
     BFT_FREE(coef);
-  }
-
-  /* not used yet */
-  if (cs_glob_elec_option->ielion > 0) {
-    /* compute density */
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      CS_F_(rho)->val[iel] = 1.;
-
-    /* compute molecular viscosity : kg/(m s) */
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      CS_F_(mu)->val[iel] = 1.e-2;
-
-    /* compute specific heat : J/(kg degres) */
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-      CS_F_(cp)->val[iel] = 1000.;
-
-    /* compute Lambda/Cp : kg/(m s) */
-    if (ifcvsl >= 0) {
-      if (cs_glob_fluid_properties->icp <= 0)
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          CS_F_(mu_t)->val[iel] = 1. / cs_glob_fluid_properties->cp0;
-      else
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-          CS_F_(mu_t)->val[iel] = 1 / CS_F_(cp)->val[iel];
-    }
-
-    /* diffusivity for other properties
-     * nothing to do
-     * no other properties in this case */
   }
 
   /* now user properties (for joule effect particulary) */
@@ -1838,7 +1853,6 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
   }
 
   BFT_FREE(w1);
-  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -1847,9 +1861,7 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
 
 void
 cs_elec_add_variable_fields(const int  *ielarc,
-                            const int  *ieljou,
-                            const int  *ielion,
-                            const int  *iihmpr)
+                            const int  *ieljou)
 {
   cs_field_t *f;
   int dim = 1;
@@ -1957,14 +1969,11 @@ cs_elec_add_variable_fields(const int  *ielarc,
     }
   }
 
-  int n_gasses = e_props->ngaz;
-  cs_field_pointer_map_electric_arcs(n_gasses);
+  _field_pointer_map_electric_arcs(e_props->ngaz);
 
   /* Map labels for GUI */
-  if (*iihmpr == 1)
-    cs_gui_labels_electric_arcs(n_gasses);
-
-  return;
+  if (cs_gui_file_is_loaded())
+    cs_gui_labels_electric_arcs(e_props->ngaz);
 }
 
 /*----------------------------------------------------------------------------
@@ -1973,8 +1982,7 @@ cs_elec_add_variable_fields(const int  *ielarc,
 
 void
 cs_elec_add_property_fields(const int  *ielarc,
-                            const int  *ieljou,
-                            const int  *ielion)
+                            const int  *ieljou)
 {
   cs_field_t *f;
   int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
@@ -2086,24 +2094,7 @@ cs_elec_add_property_fields(const int  *ielarc,
     }
   }
 
-  /* specific for inic conduction */
-  if (*ielion > 0) {
-    f = cs_field_create("elec_charge",
-                        field_type,
-                        CS_MESH_LOCATION_CELLS,
-                        1, /* dim */
-                        has_previous);
-    cs_field_set_key_int(f, keyvis, 1);
-    cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Charge");
-
-    /* Property number and mapping to field and postprocessing */
-    cs_field_post_id(f->id);
-  }
-
-  cs_field_pointer_properties_map_electric_arcs();
-
-  return;
+  _field_pointer_properties_map_electric_arcs();
 }
 
 /*----------------------------------------------------------------------------
@@ -2368,7 +2359,6 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
   }
 
   cs_user_scaling_elec(mesh, mesh_quantities, dt);
-  return;
 }
 
 /*----------------------------------------------------------------------------*/

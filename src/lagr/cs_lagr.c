@@ -65,9 +65,9 @@
 #include "cs_physical_constants.h"
 #include "cs_thermal_model.h"
 #include "cs_turbulence_model.h"
+#include "cs_physical_model.h"
 #include "cs_parall.h"
 #include "cs_post.h"
-
 #include "cs_post_default.h"
 
 #include "cs_lagr.h"
@@ -313,14 +313,6 @@ static cs_lagr_extra_module_t _lagr_extra_module
   = {.iturb = 0,
      .itytur = 0,
      .ncharb = 0,
-     .iccoal = 0,
-     .icfuel = 0,
-     .icpl3c = 0,
-     .icoebu = 0,
-     .icod3p = 0,
-     .icompf = 0,
-     .ielarc = 0,
-     .ieljou = 0,
      .ncharm = 0,
      .nozppm = 0,
      .iirayo = 0,
@@ -467,17 +459,9 @@ cs_f_lagr_source_terms_pointers(cs_int_t **p_ltsdyn,
                                 cs_int_t  *dim_itsmv2);
 
 void
-cs_f_lagr_specific_physics(int        *iccoal,
-                           int        *icfuel,
-                           int        *icpl3c,
-                           int        *icoebu,
-                           int        *ielarc,
-                           int        *ieljou,
-                           int        *icod3p,
-                           int        *icompf,
-                           int        *nozppm,
+cs_f_lagr_specific_physics(int        *nozppm,
                            int        *iirayo,
-                            int        *ncharb,
+                           int        *ncharb,
                            int        *ncharm,
                            cs_real_t  *diftl0);
 
@@ -655,15 +639,7 @@ cs_f_lagr_source_terms_pointers(cs_int_t **p_ltsdyn,
 }
 
 void
-cs_f_lagr_specific_physics(int        *iccoal,
-                           int        *icfuel,
-                           int        *icpl3c,
-                           int        *icoebu,
-                           int        *ielarc,
-                           int        *ieljou,
-                           int        *icod3p,
-                           int        *icompf,
-                           int        *nozppm,
+cs_f_lagr_specific_physics(int        *nozppm,
                            int        *iirayo,
                            int        *ncharb,
                            int        *ncharm,
@@ -672,14 +648,6 @@ cs_f_lagr_specific_physics(int        *iccoal,
   _lagr_extra_module.iturb  = cs_glob_turb_model->iturb;
   _lagr_extra_module.itytur = cs_glob_turb_model->itytur;
   _lagr_extra_module.ncharb = *ncharb;
-  _lagr_extra_module.iccoal = *iccoal;
-  _lagr_extra_module.icfuel = *icfuel;
-  _lagr_extra_module.icpl3c = *icpl3c;
-  _lagr_extra_module.icoebu = *icoebu;
-  _lagr_extra_module.icod3p = *icod3p;
-  _lagr_extra_module.icompf = *icompf;
-  _lagr_extra_module.ielarc = *ielarc;
-  _lagr_extra_module.ieljou = *ieljou;
   _lagr_extra_module.ncharm = *ncharm;
   _lagr_extra_module.icp    = cs_glob_fluid_properties->icp;
 
@@ -756,7 +724,8 @@ cs_f_lagr_coal_comb(cs_int_t   *ih2o,
 static void
 _lagr_map_fields_default(void)
 {
-  if (_lagr_extra_module.iccoal >= 0 || _lagr_extra_module.icfuel >= 0) {
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
+      || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0) {
     _lagr_extra_module.cromf       = cs_field_by_name_try("rho_gas");
   }
   else {
@@ -1256,7 +1225,6 @@ cs_lagr_set_zone_class_injection (int        iclass,
  * \param[in]   izone      boundary zone number
  * \param[in]   profile    pointer to velocity profile
  * \param[in]   velocity   pointer to velocity values array
- *
  */
 /*----------------------------------------------------------------------------*/
 

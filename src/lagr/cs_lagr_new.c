@@ -64,6 +64,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_order.h"
 #include "cs_parall.h"
+#include "cs_physical_model.h"
 #include "cs_prototypes.h"
 #include "cs_search.h"
 #include "cs_timer_stats.h"
@@ -584,7 +585,8 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
           /* Calculation of the wall units  */
 
-          if (extra->iccoal >= 0 || extra->icfuel >= 0) {
+          if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
+              || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0) {
 
             cs_field_t * rho_gas = cs_field_by_name("rho_gas");
             romf = rho_gas->val[iel];

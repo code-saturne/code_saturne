@@ -223,8 +223,8 @@ call vert1d &
 ! coupling with radiative module
 if (iirayo.ge.1) then
 
-  call field_get_val_s(iqinci, bqinci)
-  call field_get_val_s(ieps, beps)
+  call field_get_val_s_by_name('rad_incident_flux', bqinci)
+  call field_get_val_s_by_name('emissivity', beps)
 
   do ii = 1, nfpt1d
 

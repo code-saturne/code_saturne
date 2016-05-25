@@ -578,8 +578,8 @@ call inivar(nvar, nscal, dt)
 ! Radiative transfer: possible restart
 !===============================================================================
 
-if (iirayo.gt.0 .and. isuird.eq.1) then
-  call raylec
+if (iirayo.gt.0) then
+   call cs_rad_transfer_read
 endif
 
 !===============================================================================
@@ -985,7 +985,7 @@ if (iisuit.eq.1) then
   endif
 
   if (iirayo.gt.0) then
-    call rayout
+    call cs_rad_transfer_write
   endif
 
   call stusui
@@ -1154,7 +1154,7 @@ endif
 
 call turbomachinery_finalize
 
-call finalize_quadrature
+call radiat_finalize
 
 call boundary_conditions_finalize
 

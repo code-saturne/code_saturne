@@ -63,6 +63,7 @@
 #include "cs_parall.h"
 #include "cs_thermal_model.h"
 #include "cs_parameters.h"
+#include "cs_physical_model.h"
 #include "cs_time_step.h"
 
 #include "cs_field.h"
@@ -1190,7 +1191,7 @@ cs_lagr_injection(int        time_id,
             for (cs_lnum_t i = 0; i < 3; i++)
               part_vel[i] = -   fvq->b_face_normal[ifac * 3 + i]
                               / fvq->b_face_surf[ifac]
-                              * userdata->velocity[0];
+                              * userdata->velocity_magnitude;
 
           }
 
@@ -1305,17 +1306,17 @@ cs_lagr_injection(int        time_id,
                                         CS_LAGR_TEMPERATURE);
               }
 
-              if (   extra->iccoal >= 0
-                  || extra->icpl3c >= 0
-                  || extra->icfuel >= 0)
+              if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
+                  || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
+                  || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0)
                 cs_lagr_particle_set_real(particle, p_am,
                                           CS_LAGR_FLUID_TEMPERATURE,
                                           temp1[cell_id] - tkelvi);
 
-              else if (   extra->icod3p >= 0
-                       || extra->icoebu >= 0
-                       || extra->ielarc >= 0
-                       || extra->ieljou >= 0)
+              else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
+                       || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
+                       || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
+                       || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0)
                 cs_lagr_particle_set_real(particle, p_am,
                                           CS_LAGR_FLUID_TEMPERATURE,
                                           temp[cell_id] - tkelvi);

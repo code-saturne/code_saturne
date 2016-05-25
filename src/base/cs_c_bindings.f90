@@ -860,6 +860,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function selecting specific physical models.
+
+    subroutine cs_gui_physical_model_select(ieos, ieqco2)  &
+      bind(C, name='cs_gui_physical_model_select')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer, intent(out) :: ieos, ieqco2
+    end subroutine cs_gui_physical_model_select
+
+    !---------------------------------------------------------------------------
+
     !> Interface to C function defining time moments through the GUI.
 
     subroutine cs_gui_time_moments()  &

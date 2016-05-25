@@ -44,6 +44,8 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/gui \
+-I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/rayt \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -95,8 +97,8 @@ cs_user_physical_properties.c \
 cs_user_postprocess.c \
 cs_user_postprocess_var.f90 \
 cs_user_porosity.f90 \
-cs_user_radiative_transfer.f90 \
-cs_user_radiative_transfer_bcs.f90 \
+cs_user_radiative_transfer.c \
+cs_user_radiative_transfer_bcs.c \
 cs_user_solver.c \
 cs_user_source_terms.f90 \
 cs_user_turbomachinery.c \

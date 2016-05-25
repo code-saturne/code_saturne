@@ -422,8 +422,6 @@ _read_field_vals_legacy(cs_restart_t  *r,
       strncpy(old_name, "Rij", 127);
     else if (f == CS_F_(eps))
       strncpy(old_name, "eps", 127);
-    else if (f == CS_F_(alpha))
-      strncpy(old_name, "alp", 127);
     else if (f == CS_F_(f_bar))
       strncpy(old_name, "fb", 127);
     else if (f == CS_F_(alpha)) {
@@ -730,7 +728,7 @@ _read_linked_fields_legacy(cs_restart_t  *r,
           else
             snprintf(sec_name, 127, "flux_masse_a_fi_%04d", mf_num);
         }
-        else if (category == 1) {
+        else if (category == 2) {
           int mf_num = _legacy_mass_flux_num(r, f, s_num, t_id);
           if (t_id == 0)
             snprintf(sec_name, 127, "flux_masse_fb_%04d", mf_num);

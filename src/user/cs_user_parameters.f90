@@ -451,7 +451,7 @@ end subroutine cs_user_combustion
 !>        and to initialize variables used for radiative transfer module
 !
 !-------------------------------------------------------------------------------
-subroutine cs_user_radiative_transfer_param
+subroutine cs_f_user_radiative_transfer_param
 
 !===============================================================================
 ! Module files
@@ -474,7 +474,7 @@ implicit none
 
 return
 
-end subroutine cs_user_radiative_transfer_param
+end subroutine cs_f_user_radiative_transfer_param
 
 
 !===============================================================================

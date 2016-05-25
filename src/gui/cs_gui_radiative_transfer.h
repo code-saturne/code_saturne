@@ -41,58 +41,6 @@ BEGIN_C_DECLS
  * Public function prototypes for Fortran API
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiray1, UIRAY1) (int  *iirayo,
-                                int  *isuird,
-                                int  *i_quad,
-                                int  *ndirec,
-                                int  *nfreqr,
-                                int  *idiver,
-                                int  *iimpar,
-                                int  *iimlum);
-
-/*----------------------------------------------------------------------------
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiray2, UIRAY2) (const    int  *itypfb,
-                                const    int  *iparoi,
-                                const    int  *iparug,
-                                const    int  *ivart,
-                                         int  *izfrdp,
-                                         int  *isothp,
-                                const    int  *itpimp,
-                                const    int  *ipgrno,
-                                const    int  *iprefl,
-                                const    int  *ifgrno,
-                                const    int  *ifrefl,
-                                const    int  *nzoppm,
-                                const    int  *nfabor,
-                                const    int  *nvar,
-                                      double  *epsp,
-                                      double  *epap,
-                                      double  *tintp,
-                                      double  *textp,
-                                      double  *xlamp,
-                                      double  *rcodcl);
-
-/*----------------------------------------------------------------------------
- *
- *----------------------------------------------------------------------------*/
-
-
-void CS_PROCF (uiray3, UIRAY3) (      double  *ck,
-                                const    int  *ncel,
-                                         int  *imodak);
-/*----------------------------------------------------------------------------
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiray4, UIRAY4) (int  *iirayo);
-
 /*-----------------------------------------------------------------------------
  * Free memory: clean global private variables.
  *
@@ -103,6 +51,52 @@ void CS_PROCF (uiray4, UIRAY4) (int  *iirayo);
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (memui2, MEMUI2) (void);
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Read GUI-defined radiative transfer parameters
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_radiative_transfer_parameters(void);
+
+/*----------------------------------------------------------------------------
+ * Set the radiative transfer absorption coefficient
+ *
+ * parameters:
+ *   ck --> absorption coefficient at cells
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_rad_transfer_absorption(cs_real_t  ck[]);
+
+/*----------------------------------------------------------------------------
+ * Postprocessing settings for radiative transfer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_radiative_transfer_postprocess(void);
+
+/*----------------------------------------------------------------------------
+ * Radiative transfer boundary conditions
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_radiative_transfer_bcs(const    int   itypfb[],
+                              cs_lnum_t      nvarcl,
+                              cs_lnum_t      ivart,
+                              int           *izfrdp,
+                              int           *isothp,
+                              const    int  *nozppm,
+                              double        *epsp,
+                              double        *epap,
+                              double        *tintp,
+                              double        *textp,
+                              double        *xlamp,
+                              double        *rcodcl);
 
 /*----------------------------------------------------------------------------*/
 

@@ -1657,8 +1657,11 @@ if (iscal.eq.iscalt) then
 endif
 
 ! Pointers to specific fields
-if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
-if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
+
+if (iirayo.ge.1 .and. iscal.eq.iscalt) then
+  call field_get_val_s_by_name("rad_convective_flux", bfconv)
+  call field_get_val_s_by_name("rad_exchange_coefficient", bhconv)
+endif
 
 if (kbfid.lt.0) call field_get_key_id("boundary_value_id", kbfid)
 

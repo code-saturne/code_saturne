@@ -299,8 +299,7 @@ if (nscapp.gt.0) then
 !     On calcule ici j, E, j.E reels et imagimaires
 
       if ( ippmod(ieljou).ge.1 .or.                               &
-           ippmod(ielarc).ge.1 .or.                               &
-           ippmod(ielion).ge.1       ) then
+           ippmod(ielarc).ge.1       ) then
 
 
 !     On utilise le  fait que les scalaires sont dans l'ordre

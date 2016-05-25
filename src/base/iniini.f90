@@ -53,7 +53,7 @@ use mesh
 use field
 use cavitation
 use darcy_module
-use radiat, only: iirayo
+use radiat
 use cs_nz_condensation, only: nzones
 
 !===============================================================================
@@ -147,6 +147,7 @@ call space_disc_options_init
 call piso_options_init
 call turb_reference_values_init
 call listing_writing_period_init
+call radiat_init
 
 !===============================================================================
 ! 2. ENTREES SORTIES entsor.f90

@@ -176,9 +176,6 @@ else if (ippmod(ielarc).ge.1) then
     deallocate(cvar_ycoel)
   endif
 
-!   else if (ippmod(ielion).ge.1) then
-!   ... to be implemented ...
-
 endif
 
 return

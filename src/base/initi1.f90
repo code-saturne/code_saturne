@@ -40,6 +40,12 @@ use post
 use cs_c_bindings
 use field
 use lagran
+use ppincl
+use cpincl
+use dimens
+use numvar, only: itempb
+use radiat
+use cs_fuel_incl
 
 !===============================================================================
 
@@ -115,8 +121,7 @@ call ppini1
 
 call elec_option_init
 
-! Radiative model options
-call rayopt
+call cs_rad_transfer_options
 
 ! Additional fields
 

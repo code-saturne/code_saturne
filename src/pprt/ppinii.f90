@@ -75,20 +75,21 @@ integer         idirac
 
 !===============================================================================
 
+! Mappings to C
+
+call pp_models_init
+call thch_models_init
+call co_models_init
+call cp_models_init
+call fuel_models_init
+
 !===============================================================================
 ! 1. REMPLISSAGE INCLUDE ppincl.h
 !                INCLUDE GENERAL PROPRE A LA PHYSIQUE PARTICULIERE
 !===============================================================================
 
-! ---> Initialisation tableau IPPMOD
-
-do ipp = 1, nmodmx
-  ippmod(ipp) = -1
-enddo
-
 ihm = 0 ! enthalpy, common to many models
 
-isoot = -1
 i_comb_drift = 0
 
 !> --- Specific condensation modelling
@@ -355,10 +356,6 @@ hmax = zero
 coeff1 = zero
 coeff2 = zero
 coeff3 = zero
-
-! ---> Initialisation for soot model
-xsoot = 0.d0
-rosoot = 0.d0
 
 !===============================================================================
 ! 4. REMPLISSAGE INCLUDE cpincl.h

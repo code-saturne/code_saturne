@@ -1464,8 +1464,7 @@ endif
 ! ---> Termes sources des versions electriques
 
 if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1       ) then
+     ippmod(ielarc).ge.1       ) then
 
   call field_get_id('joule_power', f_id)
   call restart_read_field_vals(rp, f_id, 0, ierror)

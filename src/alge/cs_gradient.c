@@ -4874,7 +4874,6 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
  *   verbosity      <-- verbosity level
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   epsrgp         <-- relative precision for gradient reconstruction
- *   extrap         <-- gradient extrapolation coefficient
  *   f_ext          <-- exterior force generating pressure
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
@@ -4893,7 +4892,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                            int                          verbosity,
                            double                       inc,
                            double                       epsrgp,
-                           double                       extrap,
                            const cs_real_3_t            f_ext[],
                            const cs_real_t              coefap[],
                            const cs_real_t              coefbp[],
@@ -5575,8 +5573,8 @@ cs_gradient_scalar(const char                *var_name,
       cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, var);
     else
       cs_halo_sync_var(halo, halo_type, var);
-      if (c_weight != NULL)
-        cs_halo_sync_var(halo, halo_type, c_weight);
+    if (c_weight != NULL)
+      cs_halo_sync_var(halo, halo_type, c_weight);
 
     /* TODO: check if f_ext components are all up to date, in which
      *       case we need no special treatment for tr_dim > 0 */
@@ -5621,7 +5619,6 @@ cs_gradient_scalar(const char                *var_name,
                                verbosity,
                                inc,
                                epsilon,
-                               extrap,
                                (const cs_real_3_t *)f_ext,
                                bc_coeff_a,
                                bc_coeff_b,

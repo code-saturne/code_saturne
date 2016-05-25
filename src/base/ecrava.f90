@@ -1059,8 +1059,7 @@ if (iecaux.eq.1) then
 !     Termes sources des versions electriques
 
   if ( ippmod(ieljou).ge.1 .or.                                   &
-       ippmod(ielarc).ge.1 .or.                                   &
-       ippmod(ielion).ge.1       ) then
+       ippmod(ielarc).ge.1       ) then
 
     call field_get_id('joule_power', ipcefj)
     iecr   = 1

@@ -27,6 +27,8 @@ module ppthch
 
   !===========================================================================
 
+  use, intrinsic :: iso_c_binding
+
   use cstphy
 
   implicit none
@@ -98,7 +100,7 @@ module ppthch
   !> rank of CO in gas composition
   integer, save ::           iico
   !> rank of C in gas composition
-  integer, save ::           iic
+  integer, pointer, save ::  iic
 
   !> rank of fuel in the r-th reaction
   integer, save ::           igfuel(nrgazm)
@@ -126,10 +128,10 @@ module ppthch
   double precision, save ::  cpgazg(ngazgm,npot)
 
   !> molar mass of an elementary gas component
-  double precision, save ::  wmole(ngazem)
+  real(c_double), pointer, save ::  wmole(:)
 
   !> molar mass of a global species
-  double precision, save ::  wmolg(ngazgm)
+  real(c_double), pointer, save ::  wmolg(:)
 
   !> molar mass of atoms
   double precision, save ::  wmolat(natom)
@@ -145,7 +147,7 @@ module ppthch
   double precision, save ::  ckabsg(ngazgm)
 
   !> Absorption coefficient of gas mixture
-  double precision, save ::  ckabs1
+  real(c_double), pointer, save ::  ckabs1
 
   !> molecular diffusivity for the enthalpy (\f$kg.m^{-1}.s^{-1}\f$)
   !> for gas or coal combustion (the code then automatically sets
@@ -156,12 +158,76 @@ module ppthch
   double precision, save ::  diftl0
 
   !> Molar coefficient of CO2
-  double precision, save ::  xco2
+  real(c_double), pointer, save ::  xco2
   !> Molar coefficient of H2O
-  double precision, save ::  xh2o
+  real(c_double), pointer, save ::  xh2o
 
   !=============================================================================
 
   !> \}
+
+  !=============================================================================
+
+  interface
+
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global physical model flags
+
+    subroutine cs_f_ppthch_get_pointers(p_iic,                            &
+                                        p_wmole, p_wmolg,                 &
+                                        p_xco2, p_xh2o, p_ckabs1)         &
+      bind(C, name='cs_f_ppthch_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_iic,                                  &
+                                  p_wmolg, p_wmole, p_xco2, p_xh2o, p_ckabs1
+    end subroutine cs_f_ppthch_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
+
+    !---------------------------------------------------------------------------
+
+  end interface
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  !> \brief Initialize Fortran combustion models properties API.
+  !> This maps Fortran pointers to global C variables.
+
+  subroutine thch_models_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: p_iic, p_wmole, p_wmolg, p_xco2, p_xh2o, p_ckabs1
+
+    call cs_f_ppthch_get_pointers(p_iic,                        &
+                                  p_wmole, p_wmolg,             &
+                                  p_xco2, p_xh2o, p_ckabs1)
+
+    call c_f_pointer(p_iic, iic)
+    call c_f_pointer(p_wmole, wmole, [ngazem])
+    call c_f_pointer(p_wmolg, wmolg, [ngazgm])
+    call c_f_pointer(p_xco2, xco2)
+    call c_f_pointer(p_xh2o, xh2o)
+    call c_f_pointer(p_ckabs1, ckabs1)
+
+  end subroutine thch_models_init
+
+  !=============================================================================
 
 end module ppthch

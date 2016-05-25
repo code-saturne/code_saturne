@@ -109,25 +109,19 @@ double precision tslagr(ncelet,*)
 
 ! Local variables
 
-
 !===============================================================================
 
 ! Soot model
 
 if (isoot.eq.1) then
-  call sootsc                                                     &
-  !==========
- ( iscal  ,                                                       &
-   smbrs  , rovsdt )
+  call sootsc(iscal, smbrs, rovsdt)
 endif
 
 ! ---> Flamme de premelange : Modele EBU
 
 if (ippmod(icoebu).ge.0) then
   call ebutss(iscal, smbrs, rovsdt)
-  !==========
 endif
-
 
 ! ---> Flamme de premelange : Modele BML
 
@@ -137,39 +131,26 @@ endif
 ! ---> Flamme de premelange : Modele LWC
 
 if (ippmod(icolwc).ge.0) then
-  call lwctss                                                     &
-  !==========
- ( iscal  ,                                                       &
-   smbrs  , rovsdt )
+  call lwctss(iscal, smbrs, rovsdt)
 endif
 
 ! ---> Flamme charbon pulverise
 
 if ( ippmod(iccoal).ge.0 ) then
-  call cs_coal_scast                                              &
-   !================
- ( iscal  ,                                                       &
-   smbrs  , rovsdt )
+  call cs_coal_scast(iscal, smbrs, rovsdt)
 endif
 
 ! ---> Flamme charbon pulverise couplee Transport Lagrangien
 !      des particules de charbon
 
 if ( ippmod(icpl3c).ge.0 .and. iilagr.eq.2 ) then
-  call cpltss                                                     &
-   !==========
- ( iscal  ,                                                       &
-   itypfb ,                                                       &
-   smbrs  , rovsdt , tslagr )
+  call cpltss(iscal, itypfb, smbrs, rovsdt, tslagr)
 endif
 
 ! ---> Flamme fuel
 
 if ( ippmod(icfuel).ge.0 ) then
-  call cs_fuel_scast                                              &
-  !=================
- ( iscal  ,                                                       &
-   smbrs  , rovsdt )
+  call cs_fuel_scast(iscal, smbrs, rovsdt)
 endif
 
 ! ---> Versions electriques :
@@ -178,31 +159,21 @@ endif
 !             Conduction ionique
 
 if (ippmod(ieljou).ge.1 .or.                                      &
-    ippmod(ielarc).ge.1 .or.                                      &
-    ippmod(ielion).ge.1       ) then
-   call eltssc                                                    &
-   !==========
- ( iscal  ,                                                       &
-   smbrs  )
+    ippmod(ielarc).ge.1       ) then
+  call eltssc(iscal, smbrs)
 endif
 
 ! ---> Version atmospherique :
 
 if (ippmod(iatmos).ge.0) then
-   call attssc                                                    &
-   !==========
- ( iscal  ,                                                       &
-   smbrs  )
+  call attssc(iscal,smbrs)
 endif
 
 
 ! ---> Version aerorefrigerant :
 
 if (ippmod(iaeros).ge.0) then
-   call cttssc                                                    &
-   !==========
- ( iscal  ,                                                       &
-   smbrs  , rovsdt )
+  call cttssc(iscal, smbrs, rovsdt)
 endif
 
 !----

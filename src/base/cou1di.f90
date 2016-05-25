@@ -144,7 +144,7 @@ endif
 ! Sans specification, une face couplee est une face de type paroi FIXME, ca pose
 ! probleme si on a une couleur pour plusieurs types de face, paroi + autre
 ! Ces conditions peuvent etre ecrasees sur la face est couplee au flux radiatif dans
-! cs_user_radiative_transfer_bcs.f90
+! cs_user_radiative_transfer_bcs.
 
 icldef = 5
 

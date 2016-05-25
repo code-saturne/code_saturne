@@ -89,6 +89,8 @@ integer          iel , numcla , ipcl
 
 double precision, dimension(:), pointer :: cvara_yfolcl
 double precision, dimension(:), pointer :: cpro_tsri, cpro_yfol, cpro_tsre
+character(len=80) :: f_name
+integer              f_id
 
 !===============================================================================
 
@@ -105,8 +107,12 @@ call field_get_val_prev_s(ivarfl(isca(iyfol(numcla))), cvara_yfolcl)
 ! 2. PRISE EN COMPTE DES TERMES SOURCES RADIATIFS
 !===============================================================================
 
-call field_get_val_s(iprpfl(itsri(ipcl)),cpro_tsri)
-call field_get_val_s(iprpfl(itsre(ipcl)),cpro_tsre)
+write(f_name,  '("rad_st_implicit_", i2.2)') ipcl
+call field_get_id(f_name, f_id)
+call field_get_val_s(f_id,cpro_tsri)
+write(f_name,  '("rad_st_", i2.2)') ipcl
+call field_get_id(f_name, f_id)
+call field_get_val_s(f_id,cpro_tsre)
 call field_get_val_s(iprpfl(iyfol(numcla)),cpro_yfol)
 
 

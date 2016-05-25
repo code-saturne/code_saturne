@@ -103,7 +103,6 @@ extern void CS_PROCF (dvvpst, DVVPST)
  const cs_int_t  *numtyp,    /* <-- number or post-processing type
                               *     (-1 as volume, -2 as boundary, or nummai) */
  const cs_int_t  *nvar,      /* <-- number of variables */
- const cs_int_t  *nscal,     /* <-- number of scalars */
  const cs_int_t  *ncelps,    /* <-- number of post-processed cells */
  const cs_int_t  *nfbrps,    /* <-- number of post processed boundary faces */
  const cs_int_t   lstcel[],  /* <-- list of post-processed cells */
@@ -198,6 +197,41 @@ void CS_PROCF (usvpst, USVPST)
  const cs_int_t   lstfbr[]   /* <-- list of post-processed boundary faces */
 );
 
+extern void CS_PROCF (usipes, USIPES)
+(
+ cs_int_t *nmodpp
+);
+
+/*-------------------------------------------------------------------------------
+ * Absorption coefficient for radiative module
+ *-------------------------------------------------------------------------------*/
+
+void
+cs_user_rad_transfer_absorption(const int         bc_type[],
+                                const int         izfrdp[],
+                                const cs_real_t   dt[],
+                                cs_real_t         ck[]);
+
+/*-------------------------------------------------------------------------------
+ * Compute the net radiation flux
+ *-------------------------------------------------------------------------------*/
+
+void
+cs_user_rad_transfer_net_flux(const int        itypfb[],
+                              const int        izfrdp[],
+                              const cs_real_t  dt[],
+                              const cs_real_t  coefap[],
+                              const cs_real_t  coefbp[],
+                              const cs_real_t  cofafp[],
+                              const cs_real_t  cofbfp[],
+                              const cs_real_t  twall[],
+                              const cs_real_t  qincid[],
+                              const cs_real_t  xlam[],
+                              const cs_real_t  epa[],
+                              const cs_real_t  eps[],
+                              const cs_real_t  ck[],
+                              cs_real_t        net_flux[]);
+
 /*----------------------------------------------------------------------------
  * Uniform random number generator
  *----------------------------------------------------------------------------*/
@@ -217,6 +251,29 @@ void CS_PROCF (normalen, normalen)
  const cs_int_t   *n,             /* --> size of the vector */
  const cs_real_t  *x              /* <-- generated random number vector */
 );
+
+/*----------------------------------------------------------------------------
+ * Convert temperature to enthalpy at boundary
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (b_t_to_h, b_t_to_h)
+(
+ const cs_lnum_t *nlst,          /* --> number of faces in list */
+ const cs_lnum_t *lstfac,        /* --> list of boundary faces at which
+                                    conversion is requested */
+ const cs_real_t *t_b,           /* --> temperature at boundary */
+ cs_real_t       *h_b            /* --> enthalpy at boundary */
+ );
+
+/*----------------------------------------------------------------------------
+ * Convert enthalpy to temperature at cells
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (c_h_to_t, c_h_to_t)
+(
+ const cs_real_t *h,           /* --> enthalpy */
+ cs_real_t       *t            /* --> temperature */
+ );
 
 /*----------------------------------------------------------------------------
  * Add field indexes associated with a new non-user solved variable,
@@ -419,6 +476,38 @@ cs_user_matrix_tuning(void);
 
 void
 cs_user_parameters(void);
+
+/*----------------------------------------------------------------------------
+ * User function for input of radiative transfer module options.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_radiative_transfer_parameters(void);
+
+/*-------------------------------------------------------------------------------*
+ * User subroutine for input of radiative transfer boundary conditions
+ *-------------------------------------------------------------------------------*/
+
+void
+cs_user_radiative_transfer_bcs(int               nvarcl,
+                               const int         bc_type[],
+                               int               icodcl[],
+                               int               izfrdp[],
+                               int               isothp[],
+                               cs_real_t        *tmin,
+                               cs_real_t        *tmax,
+                               cs_real_t        *tx,
+                               const cs_real_t   dt[],
+                               cs_real_t         rcodcl[],
+                               const cs_real_t   thwall[],
+                               const cs_real_t   qincid[],
+                               cs_real_t         hfcnvp[],
+                               cs_real_t         flcnvp[],
+                               cs_real_t         xlamp[],
+                               cs_real_t         epap[],
+                               cs_real_t         epsp[],
+                               cs_real_t         textp[],
+                               cs_real_t         tintp[]);
 
 /*----------------------------------------------------------------------------
  * Define periodic faces.

@@ -41,6 +41,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/user \
 -I$(top_srcdir)/src/gui \
 -I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/pprt \
 -I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)

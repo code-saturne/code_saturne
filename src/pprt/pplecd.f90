@@ -84,7 +84,6 @@ implicit none
 if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                 &
                          .or. ippmod(icolwc).ge.0  ) then
   call colecd
-  !==========
 endif
 
 
@@ -105,24 +104,20 @@ if ( ippmod(iccoal).ge.0 .or. ippmod(icpl3c).ge.0 ) then
               ckabs1, noxyd, oxyo2, oxyn2, oxyh2o, oxyco2,            &
               repnck, repnle, repnlo)
   call cs_coal_readata
-  !==================
 endif
 
 ! ---> Flamme fuel
 
 if ( ippmod(icfuel).ge.0 ) then
   call cs_fuel_readata
-  !==================
 endif
 
 ! ---> Version Electrique : Effet Joule, Arc Electrique,
 !                           Conduction Ionique
 
 if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1      ) then
-  call ellecd (ippmod(ieljou), ippmod(ielarc), ippmod(ielion))
-  !==========
+     ippmod(ielarc).ge.1      ) then
+  call ellecd (ippmod(ieljou), ippmod(ielarc))
 endif
 
 !----

@@ -442,8 +442,8 @@ _get_char_post(const char *const type,
 void
 cs_gui_particles_model(void)
 {
-  int i, icoal, ilayer, ncoals = 0;
-  int record_ind = 1, flag = 0;
+  int i, icoal, ncoals = 0;
+  int flag = 0;
   char *attr = NULL;
   char *path1 = NULL;
 

@@ -22,7 +22,34 @@
 
 #-------------------------------------------------------------------------------
 
+# PLE dependency
+
+if HAVE_INTERNAL_PLE
+  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
+else
+  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
+endif
+
 # Main part
+
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/ctwr \
+-I$(top_srcdir)/src/lagr \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mei \
+-I$(top_srcdir)/src/gui \
+-I$(top_srcdir)/src/turb \
+$(CPPFLAGS_PLE) \
+$(FREESTEAM_CPPFLAGS) \
+$(MPI_CPPFLAGS)
+
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_CXXFLAGS = $(CXXFLAGS_DBG) $(CXXFLAGS_OPT)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
@@ -45,13 +72,16 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS =
+pkginclude_HEADERS = \
+cs_combustion_model.h \
+cs_physical_model.h
 
 # Library source files
 
 noinst_LTLIBRARIES = libcspprt.la
 libcspprt_la_SOURCES = \
-ppcabs.f90 \
+cs_combustion_model.c \
+cs_physical_model.c \
 ppini1.f90 \
 ppinii.f90 \
 ppiniv.f90 \

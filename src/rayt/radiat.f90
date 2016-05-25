@@ -27,7 +27,7 @@ module radiat
 
   !===========================================================================
 
-  use ppppar
+  use, intrinsic :: iso_c_binding
 
   implicit none
 
@@ -42,132 +42,7 @@ module radiat
   !>  - 0: not activated
   !>  - 1: DOM
   !>  - 2: P1
-  integer, save :: iirayo
-
-  !> Phase which radiats (Bulk by default, but may be coal class or fuel
-  !> drolplets phase)
-
-  integer, save :: nrphas
-
-  !> Verbosity level in the listing concerning the calculation of
-  !> the wall temperatures:
-  !>  - 0: no display
-  !>  - 1: standard
-  !>  - 2: complete
-  !> useful if and only if the radiation module is activated
-  integer, save :: iimpar
-
-  !> Verbosity level in the listing concerning the solution of
-  !> the radiative transfer equation:
-  !>  - 0: no display
-  !>  - 1: standard
-  !>  - 2: complete
-  !> Useful if and only if the radiation module is activated
-  integer, save :: iimlum
-
-  !> When gas or coal combustion is activated, \ref imodak indicates whether the
-  !> absorption coefficient shall be calculated ``automatically'' (=1) or read from
-  !> the data file (=0)
-  !> Useful if the radiation module is activated
-  integer, save :: imodak
-
-  !>ADF model:
-  !> - 0 no ADF model
-  !> - 1 ADF model with 8 intervals of wave length
-  !> - 2 ADF model with 50 intervals of wave length
-  integer, save :: imoadf
-
-  !>FSCK model:
-  !> - 0 no FSCK model
-  !> - 1 FSCK model activated
-  integer, save :: imfsck
-
-  !> P1 model transparency warnings counter
-  integer, save :: iwrp1t = 0
-
-  !--> pointer to physical properties
-
-  !                       ITSRE --> Terme source explicite
-  !                       ITSRI --> Terme source implicite
-  !                       IQXYZ --> Vecteur densite de flux radiatif
-  !                       IABSO --> part d'absorption dans le terme source explicite
-  !                       IEMI --> part d'emission dans le terme source explicite
-  !                       ICAK --> coefficient d'absorption
-  !                       ILUMIN --> integrale de la luminance
-
-  integer, save ::  itsre(1+nclcpm) , itsri(1+nclcpm)
-  integer, save ::  iabso(1+nclcpm) , iemi(1+nclcpm)  , icak(1+nclcpm)
-
-  !--> field ids for specific  boundary fields
-  !                       IQINCI --> densite de flux incident radiatif
-  !                       IXLAM  --> conductivite thermique de la paroi
-  !                       IEPA   --> epaisseur de la paroi
-  !                       IEPS   --> emissivite de la paroi
-  !                       IFNET  --> Flux Net radiatif
-  !                       IFCONV --> Flux Convectif
-  !                       IHCONV --> Coef d'echange fluide
-  !                       IQINSP --> densite de flux incident radiatif spectral
-
-  integer, save ::  iqxyz = -1
-  integer, save ::  iqinci = -1
-  integer, save ::  ixlam  = -1
-  integer, save ::  ilumin= -1
-  integer, save ::  iepa   = -1
-  integer, save ::  ieps   = -1
-  integer, save ::  ifnet  = -1
-  integer, save ::  ifconv = -1
-  integer, save ::  ihconv = -1
-  integer, save ::  iqinsp = -1
-
-  !--> XNP1MX : pour le modele P-1,
-  !     pourcentage de cellules pour lesquelles on admet que l'epaisseur
-  !     optique depasse l'unite bien que ce ne soit pas souhaitable
-  !> With the P-1 model (\ref iirayo =2), \ref xnp1mx is the percentage of cells of
-  !> the calculation domain for which it is acceptable that the optical
-  !> thickness is lower than unity (more precisely, where \f$ KL \f$ is lower than
-  !> 1, where \f$ K \f$ is the absorption coefficient of the medium and \f$ L \f$ is a
-  !> characteristic length of the domain), although it is not to be desired
-  !> Useful if and only if the radiation module is activated with the P-1 method
-  double precision, save ::  xnp1mx
-
-  !> Indicates the method used to calculate the radiative source term:
-  !>  - 0: semi-analytic calculation (compulsory with transparent media)
-  !>  - 1: conservative calculation
-  !>  - 2: semi-analytic calculation corrected in order to be globally conservative
-  !> Useful if and only if the radiation module is activated
-  !> \remark If the medium is transparent, the choice has no effect on the calculation
-  integer, save ::           idiver
-
-  !> Index of the quadrature and number of directions for a single octant
-  !> - Quadrature Sn (n(n+2) directions)
-  !>
-  !>   - 1: S4 (24 directions)
-  !>   - 2: S6 (48 directions)
-  !>   - 3: S8 (80 directions)
-  !>
-  !> - Quadrature Tn (8n^2 directions)
-  !>
-  !>   - 4: T2 (32 directions)
-  !>   - 5: T4 (128 directions)
-  !>   - 6: Tn (8*ndirec^2 directions)
-  integer, save :: i_quadrature
-
-  !> Parameter assiociated to the Tn
-  integer, save :: ndirec
-
-  !> For the Tn quadrature, \ref ndirec squared
-  integer, save :: ndirs
-
-  !--> directions of angular values of the quadrature sx, sy, sz
-  !    and weight of the solid angle associated
-
-  double precision, dimension(:), allocatable :: sx, sy, sz, angsol
-
-  !> Indicates whether the radiation variables should be initialized (=0) or read
-  !> from a restart file (=1)
-  !> Useful if and only if the radiation module is activated (in this case, a
-  !> restart file rayamo must be available)
-  integer, save :: isuird
+  integer(c_int), pointer, save :: iirayo
 
   !> Period of the radiation module.
   !> The radiation module is called every \ref nfreqr time steps (more precisely,
@@ -176,112 +51,142 @@ module radiat
   !> the value of \ref nfreqr, the radiation module is called at
   !> the first time step of a calculation (restart or not).
   !> Useful if and only if the radiation module is activated}
-  integer, save ::           nfreqr
-
-  !> Spectral radiation models (ADF and FSCK)
-  !> Number of ETRs to solve
-  integer, save ::           nwsgg
-  !> Weights of the Gaussian quadrature
-  double precision, dimension(:), allocatable :: wq
-
-  !--> Informations sur les zones frontieres
-
-  ! NBZRDM Nombre max. de  zones frontieres
-  ! NOZRDM Numero max. des zones frontieres
-
-  integer    nbzrdm
-  parameter (nbzrdm=2000)
-  integer    nozrdm
-  parameter (nozrdm=2000)
-
-  ! NZFRAD Nombre de zones de bord (sur le proc courant)
-  ! ILZRAY Liste des numeros de zone de bord (du proc courant)
-  ! NOZARM Numero de zone de bord atteint max
-  !   exemple zones 1 4 2 : NZFRAD=3,NOZARM=4
-
-  integer, save ::           nozarm, nzfrad, ilzrad(nbzrdm)
-
-  !--> Types de condition pour les temperatures de paroi :
-  !       ITPIMP Profil de temperature imposee
-  !       IPGRNO Parois grises ou noires
-  !       IPREFL Parois reflechissante
-  !       IFGRNO Flux de conduction impose dans la paroi
-  !                   ET paroi non reflechissante (EPS non nul)
-  !       IFREFL Flux de conduction impose dans la paroi
-  !                   ET paroi reflechissante     (EPS = 0)
-  !       ITPT1D Resolution de l'equation de la chaleur (module tp1d)
-
-  integer   itpimp   , ipgrno   , iprefl   , ifgrno   , ifrefl   , itpt1d
-  parameter(itpimp=1 , ipgrno=21, iprefl=22, ifgrno=31, ifrefl=32, itpt1d=4)
+  integer(c_int), pointer, save ::           nfreqr
 
   !> \}
 
   !=============================================================================
 
+  interface
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function finalizing quadrature
+    subroutine cs_rad_transfer_finalize() &
+      bind(C, name='cs_rad_transfer_finalize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_rad_transfer_finalize
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function to retrieve pointers
+    subroutine cs_rad_transfer_get_pointers(p_iirayo, p_nfreqr)  &
+      bind(C, name='cs_rad_transfer_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+
+      type(c_ptr), intent(out) :: p_iirayo, p_nfreqr
+
+    end subroutine cs_rad_transfer_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for restart
+
+    subroutine cs_rad_transfer_read() &
+      bind(C, name='cs_rad_transfer_read')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_rad_transfer_read
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for checkpoint
+
+    subroutine cs_rad_transfer_write() &
+      bind(C, name='cs_rad_transfer_write')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_rad_transfer_write
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function defining options
+
+    subroutine cs_rad_transfer_options()                               &
+      bind(C, name='cs_rad_transfer_options')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_rad_transfer_options
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function handling source terms
+
+    subroutine cs_rad_transfer_bcs(nvarcl, bc_type, icodcl, izfrad,   &
+                                   nozppm, dt, rcodcl)                &
+      bind(C, name='cs_rad_transfer_bcs')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int), value :: nvarcl
+      integer(kind=c_int), dimension(*) :: bc_type, icodcl, izfrad
+      integer(kind=c_int) :: nozppm
+      real(kind=c_double), dimension(*) :: dt, rcodcl
+    end subroutine cs_rad_transfer_bcs
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function handling resolution
+
+    subroutine cs_rad_transfer_solve(bc_type, izfrad, nclacp, nclafu, &
+                                     dt, cp2fol, cp2ch, ichcor)       &
+      bind(C, name='cs_rad_transfer_solve')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int), value :: nclacp, nclafu
+      integer(kind=c_int), dimension(*) :: bc_type, izfrad, ichcor
+      real(kind=c_double), value :: cp2fol
+      real(kind=c_double), dimension(*) :: dt, cp2ch
+    end subroutine cs_rad_transfer_solve
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function handling source terms
+
+    subroutine cs_rad_transfer_source_terms(smbrs, rovsdt)   &
+      bind(C, name='cs_rad_transfer_source_terms')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: smbrs, rovsdt
+    end subroutine cs_rad_transfer_source_terms
+
+    !---------------------------------------------------------------------------
+
+  end interface
+
 contains
 
   !=============================================================================
 
-  ! Allocate arrays
+  ! get C pointers
 
-  subroutine init_quadrature(ndirs)
+  subroutine radiat_init
 
-    ! Arguments
+    use ppppar
+    use ppincl
+    use optcal
+    use ppcpfu
+    use numvar
 
-    integer, intent(in) :: ndirs
+    type(c_ptr) :: p_iirayo, p_nfreqr
 
-    ! Local variables
+    call cs_rad_transfer_get_pointers(p_iirayo, p_nfreqr)
 
-    integer :: err = 0
+    call c_f_pointer(p_iirayo, iirayo)
+    call c_f_pointer(p_nfreqr, nfreqr)
 
-    if (.not.allocated(sx)) then
-      allocate(sx(ndirs), stat=err)
-    endif
-
-    if (.not.allocated(sy)) then
-      allocate(sy(ndirs), stat=err)
-    endif
-
-    if (.not.allocated(sz)) then
-      allocate(sz(ndirs), stat=err)
-    endif
-
-    if (.not.allocated(angsol)) then
-      allocate(angsol(ndirs), stat=err)
-    endif
-
-    if (err /= 0) then
-      write (*, *) "Error allocating array."
-      call csexit(err)
-    endif
-
-    return
-
-  end subroutine init_quadrature
+  end subroutine radiat_init
 
   !=============================================================================
 
   ! Free related arrays
 
-  subroutine finalize_quadrature
+  subroutine radiat_finalize
 
-    if (allocated(sx)) then
-      deallocate(sx)
-    endif
+    call cs_rad_transfer_finalize
 
-    if (allocated(sy)) then
-      deallocate(sy)
-    endif
-
-    if (allocated(sz)) then
-      deallocate(sz)
-    endif
-
-    if (allocated(angsol)) then
-      deallocate(angsol)
-    endif
-
-  end subroutine finalize_quadrature
+  end subroutine radiat_finalize
 
   !=============================================================================
 

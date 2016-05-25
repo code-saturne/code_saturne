@@ -235,15 +235,12 @@ module lagran
 
     ! Interface to C function passing specific physics options
 
-    subroutine  cs_f_lagr_specific_physics(iccoal, icfuel, icpl3c, icoebu,     &
-                                           ielarc, ieljou, icod3p, icompf,     &
-                                           nozppm, iirayo, ncharb, ncharm,     &
+    subroutine  cs_f_lagr_specific_physics(nozppm, iirayo, ncharb, ncharm,     &
                                            diftl0)                             &
       bind(C, name='cs_f_lagr_specific_physics')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int) :: iccoal, icfuel, icpl3c, icoebu, ielarc, ieljou,        &
-                        icod3p, icompf, nozppm, iirayo, ncharb, ncharm
+      integer(c_int) :: nozppm, iirayo, ncharb, ncharm
       real(c_double) :: diftl0
     end subroutine cs_f_lagr_specific_physics
 
@@ -453,15 +450,7 @@ contains
 
     call lagran_pointers
 
-    call cs_f_lagr_specific_physics(ippmod(iccoal), &
-                                    ippmod(icfuel), &
-                                    ippmod(icpl3c), &
-                                    ippmod(icoebu), &
-                                    ippmod(ielarc), &
-                                    ippmod(ieljou), &
-                                    ippmod(icod3p), &
-                                    ippmod(icompf), &
-                                    nozppm,         &
+    call cs_f_lagr_specific_physics(nozppm,         &
                                     iirayo,         &
                                     ncharb,         &
                                     ncharm,         &

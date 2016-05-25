@@ -92,6 +92,18 @@ double precision relaxp, extrap, l_cp(1), l_xmasm(1), l_cv(1)
 
 !===============================================================================
 
+interface
+
+  subroutine cs_gui_radiative_transfer_parameters()  &
+      bind(C, name='cs_gui_radiative_transfer_parameters')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_radiative_transfer_parameters
+
+end interface
+
+!===============================================================================
+
 ! Check for restart and read matching time steps
 
 call parameters_read_restart_info
@@ -168,16 +180,10 @@ call cs_user_model
 
 ! GUI
 
+call cs_gui_physical_model_select(ieos, ieqco2)
+
 if (iihmpr.eq.1) then
-
-  call uippmo                                                     &
- ( ippmod, icod3p, icodeq, icoebu, icobml,                        &
-   icolwc, iccoal, icpl3c, icfuel,                                &
-   ieljou, ielarc, ielion, icompf, iatmos,                        &
-   iaeros, ieos  , ieqco2, idarcy)
-
   call cfnmtd(ficfpp, len(ficfpp))
-
 endif
 
 ! --- Activation du module transferts radiatifs
@@ -189,19 +195,11 @@ endif
 !   - Interface Code_Saturne
 !     ======================
 
-if (iihmpr.eq.1) then
-
-  call uiray1(iirayo, isuird, i_quadrature, ndirec, nfreqr, idiver, iimpar, iimlum)
-
-endif
+call cs_gui_radiative_transfer_parameters
 
 ! User subroutine
 
 ! Initialize specific physics modules not available at the moment
-
-ippmod(icobml) = -1  ! premix model of Bray - Moss - Libby
-ippmod(icodeq) = -1  ! diffusion flame with fast equilibrium chemistry
-ippmod(ielion) = -1  ! ionic mobility
 
 ! User initialization
 

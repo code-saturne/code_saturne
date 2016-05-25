@@ -243,8 +243,7 @@ elseif ( ippmod(icompf).ge.0 ) then
 !      Conduction ionique
 
 elseif ( ippmod(ieljou).ge.1 .or.                                 &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1       ) then
+         ippmod(ielarc).ge.1       ) then
 
   do ifac = 1, nfabor
     izfppp(ifac) = 0

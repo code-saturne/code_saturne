@@ -75,9 +75,10 @@ use atsoil
 use lagran
 use vorinc
 use ihmpre
-use radiat, only: iirayo, nfreqr
+use radiat
 use cplsat
 use ppcpfu
+use cs_fuel_incl
 use mesh
 use field
 use rotation
@@ -1116,11 +1117,8 @@ do while (iterns.le.nterup)
 
   if (iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
 
-    call raycli &
-  ( nvar   , nscal  ,                                              &
-    icodcl , itypfb ,                                              &
-    izfrad ,                                                       &
-    dt     , rcodcl )
+     call cs_rad_transfer_bcs(nvarcl, itypfb, icodcl,             &
+                              izfrad, nozppm, dt, rcodcl)
 
   endif
 
@@ -1746,12 +1744,8 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
     write(nfecra,1070)
   endif
 
-  call raydom &
- ( nvar   , nscal  ,                                              &
-   itypfb ,                                                       &
-   izfrad ,                                                       &
-   dt     )
-
+  call cs_rad_transfer_solve(itypfb, izfrad, nclacp, nclafu, &
+                             dt, cp2fol, cp2ch, ichcor)
 endif
 
 if (nscal.ge.1) then

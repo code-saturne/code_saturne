@@ -28,7 +28,6 @@
 !______________________________________________________________________________
 
 subroutine ppvarp
-!================
 
 !===============================================================================
 !  FONCTION  :
@@ -105,7 +104,6 @@ if (     ippmod(icod3p).ge.0   &
     .or. ippmod(icoebu).ge.0   &
     .or. ippmod(icolwc).ge.0) then
   call covarp
-  !==========
 endif
 
 ! Number of Diracs for LWC model
@@ -128,14 +126,12 @@ endif
 
 if (ippmod(iccoal).ge.0) then
   call cs_coal_varpos
-  !==================
 endif
 
 ! Pulverized coal combustion coupled with Lagrangian model
 
 if (ippmod(icpl3c).ge.0) then
   call cplvar
-  !==========
 endif
 
 ! 3. Compressible model
@@ -143,17 +139,14 @@ endif
 
 if (ippmod(icompf).ge.0) then
   call cfvarp
-  !==========
 endif
 
 ! 4. Electric arcs model
 !-----------------------
 
 if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1 .or.                                     &
-     ippmod(ielion).ge.1       ) then
-  call elvarp(ippmod(ieljou), ippmod(ielarc), ippmod(ielion), iihmpr)
-  !==========
+     ippmod(ielarc).ge.1       ) then
+  call elvarp(ippmod(ieljou), ippmod(ielarc))
 endif
 
 ! 5. Fuel combustion model
@@ -161,7 +154,6 @@ endif
 
 if (ippmod(icfuel).ge.0) then
   call cs_fuel_varpos
-  !==================
 endif
 
 ! 6. Atmospheric model
@@ -169,7 +161,6 @@ endif
 
 if (ippmod(iatmos).ge.0) then
   call atvarp
-  !==========
 endif
 
 ! 7. Cooling towers model
@@ -177,7 +168,6 @@ endif
 
 if (ippmod(iaeros).ge.0) then
   call ctvarp
-  !==========
 endif
 
 ! 8. Gas mixtures modelling

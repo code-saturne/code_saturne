@@ -88,6 +88,8 @@ integer          iel , numcla , ipcl
 integer          keyccl
 
 double precision, dimension(:), pointer :: cpro_tsri, cpro_x2, cpro_tsre
+character(len=80) :: f_name
+integer              f_id
 
 !===============================================================================
 ! 1. Initialization
@@ -104,8 +106,12 @@ ipcl   = 1+numcla
 ! 2. PRISE EN COMPTE DES TERMES SOURCES RADIATIFS
 !===============================================================================
 
-call field_get_val_s(iprpfl(itsri(ipcl)),cpro_tsri)
-call field_get_val_s(iprpfl(itsre(ipcl)),cpro_tsre)
+write(f_name,  '("rad_st_implicit_", i2.2)') ipcl
+call field_get_id(f_name, f_id)
+call field_get_val_s(f_id,cpro_tsri)
+write(f_name,  '("rad_st_", i2.2)') ipcl
+call field_get_id(f_name, f_id)
+call field_get_val_s(f_id,cpro_tsre)
 call field_get_val_s(iprpfl(ix2(numcla)),cpro_x2)
 
 do iel = 1, ncel

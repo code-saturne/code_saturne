@@ -43,13 +43,12 @@
 
 #include "bft_mem.h"
 
-#include "cs_thermal_model.h"
-#include "cs_physical_constants.h"
-
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
-
+#include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 #include "cs_prototypes.h"
+#include "cs_thermal_model.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_deposition_model.h"
@@ -285,13 +284,14 @@ _lages1(cs_real_t     dtp,
           /* Calcul de la temperature du fluide en fonction du type  */
           /* d'ecoulement    */
           cs_real_t tempf;
-          if (extra->iccoal >= 0 || extra->icpl3c >= 0)
+          if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
+              || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0)
             tempf = extra->t_gaz->val[cell_id];
 
-          else if (   extra->icod3p >= 0
-                   || extra->icoebu >= 0
-                   || extra->ielarc >= 0
-                   || extra->ieljou >= 0)
+          else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
+                   || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
+                   || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
+                   || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0)
             tempf = extra->temperature->val[cell_id];
 
           else if (   cs_glob_thermal_model->itherm == 1
@@ -1417,13 +1417,15 @@ _lagdep(cs_real_t     dtp,
       /* Fluid temperature computation depending on the type of flow  */
       cs_real_t tempf;
 
-      if (extra->iccoal >= 0 || extra->icpl3c >= 0 || extra->icfuel >= 0)
+      if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
+          || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
+          || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0)
         tempf = extra->t_gaz->val[cell_id];
 
-      else if (   extra->icod3p >= 0
-               || extra->icoebu >= 0
-               || extra->ielarc >= 0
-               || extra->ieljou >= 0)
+      else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
+               || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
+               || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
+               || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0)
         tempf = extra->temperature->val[cell_id];
 
       else if (   cs_glob_thermal_model->itherm == 1

@@ -54,6 +54,7 @@
 #include "cs_base.h"
 #include "cs_math.h"
 #include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 #include "cs_prototypes.h"
 
 #include "cs_mesh.h"
@@ -875,14 +876,18 @@ _lagitf(cs_lagr_attribute_t  *iattr)
    * 2. Temperature moyenne Fluide en degres Celsius
    * =========================================================================*/
 
-  if (extra->iccoal >= 0 || extra->icpl3c >= 0 || extra->icfuel >= 0) {
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
+      || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
+      || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0) {
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
       tempf[cell_id]  = extra->t_gaz->val[cell_id] - _tkelvi;
 
   }
-  else if (   extra->icod3p >= 0 || extra->icoebu >= 0
-           || extra->ielarc >= 0 || extra->ieljou >= 0) {
+  else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
+           || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
+           || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
+           || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0) {
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
       tempf[cell_id]  = extra->temperature->val[cell_id] - _tkelvi;
@@ -1054,7 +1059,8 @@ _lagich(cs_real_t  *tempct,
   cs_real_t lv = 2263000.0;
 
   /* Verification de la presence d'une physique    */
-  if (extra->iccoal < 0 && extra->icpl3c < 0)
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] < 0
+      && cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] < 0)
     bft_error(__FILE__, __LINE__, 0,
               _("@\n"
                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
@@ -1082,8 +1088,8 @@ _lagich(cs_real_t  *tempct,
                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                 "@"),
               cs_glob_lagr_model->physical_model,
-              extra->icpl3c,
-              extra->iccoal);
+              cs_glob_physical_model_flag[CS_COMBUSTION_PCLC],
+              cs_glob_physical_model_flag[CS_COMBUSTION_COAL]);
 
   /* Numerical variables */
   cs_real_t d6spi  = 6.0 / cs_math_pi;
@@ -1178,7 +1184,8 @@ _lagich(cs_real_t  *tempct,
 
       /* Calcul du Prandtl et du Sherwood    */
       cs_real_t xrkl;
-      if (extra->icoebu == 0 || extra->icoebu == 2)
+      if (   cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 0
+          || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 2)
         xrkl = extra->diftl0 / rom;
       else if (extra->cpro_viscls != NULL )
         xrkl = extra->cpro_viscls->val[cell_id] / rom;

@@ -45,56 +45,6 @@ BEGIN_C_DECLS
  * Public Fortran function prototypes
  *============================================================================*/
 
-/*-----------------------------------------------------------------------------
- * Predefined physics indicator.
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIPPMO
- * *****************
- *
- * INTEGER          IPPMOD <--  specific physics indicator array
- * INTEGER          ICOD3P  --> diffusion flame in fast complete chemistry
- * INTEGER          ICODEQ  --> diffusion flame in fast chemistry to equilibrium
- * INTEGER          ICOEBU  --> Eddy Break Up premixing flame
- * INTEGER          ICOBML  --> Bray - Moss - Libby premixing flame
- * INTEGER          ICOLWC  --> Libby Williams premixing flame
- * INTEGER          ICP3PL  --> Coal combustion. Combustible moyen local
- * INTEGER          ICPL3C  --> Coal combustion coupled with lagrangien approach
- * INTEGER          ICFUEL  --> Fuel combustion
- * INTEGER          IELJOU  --> Joule effect
- * INTEGER          IELARC  --> electrical arc
- * INTEGER          IELION  --> ionique mobility
- * INTEGER          ICOMPF  --> compressible without shock
- * INTEGER          IATMOS  --> atmospheric flows
- * INTEGER          IAEROS  --> cooling tower
- * INTEGER          INDJON  --> INDJON=1: a JANAF enthalpy-temperature
- *                              tabulation is used. INDJON=1: users tabulation
- * INTEGER          IEOS    --> compressible
- * INTEGER          IEQCO2  --> CO2 massic fraction transport
- * INTEGER          IDARCY  --> groundwater model
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uippmo, UIPPMO) (int *const ippmod,
-                                int *const icod3p,
-                                int *const icodeq,
-                                int *const icoebu,
-                                int *const icobml,
-                                int *const icolwc,
-                                int *const iccoal,
-                                int *const icpl3c,
-                                int *const icfuel,
-                                int *const ieljou,
-                                int *const ielarc,
-                                int *const ielion,
-                                int *const icompf,
-                                int *const iatmos,
-                                int *const iaeros,
-                                int *const ieos,
-                                int *const ieqco2,
-                                int *const idarcy);
-
 /*----------------------------------------------------------------------------
  * Density under relaxation
  *
@@ -242,6 +192,18 @@ void CS_PROCF (uidai1, UIDAI1) (int    *const permeability,
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*-----------------------------------------------------------------------------
+ * Activate specific physical models based on XML settings.
+ *
+ * parameters:
+ *   ieos    --> compressible
+ *   ieqco2  --> CO2 massic fraction transport (for combustion only)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_physical_model_select(cs_int_t  *ieos,
+                             cs_int_t  *ieqco2);
 
 /*----------------------------------------------------------------------------
  * Electrical model: read parameters

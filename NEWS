@@ -67,6 +67,9 @@ schemes (Original SOLU, CENTER, Standard SOLU)
 Architectural changes
 ---------------------
 
+- Convert Lagrangian and radiative module implementations to C.
+  This affects the associated user subroutines.
+
 - Add basic (non-GUI) support for OAR resource manager.
 
 - Add mesh adjacencies structure to allow direct access to a cell's

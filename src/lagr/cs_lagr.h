@@ -939,16 +939,6 @@ typedef struct {
   /* cpincl */
   int ncharb;
 
-  /* ppincl */
-  int iccoal;
-  int icfuel;
-  int icpl3c;
-  int icoebu;
-  int icod3p;
-  int icompf;
-  int ielarc;
-  int ieljou;
-
   /* ppppar */
   int ncharm;
   int nozppm;

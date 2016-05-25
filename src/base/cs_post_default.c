@@ -176,7 +176,7 @@ _write_additional_vars(void                  *input,
 
   if (cat_id < 0)
     CS_PROCF(dvvpst, DVVPST) (&nummai, &numtyp,
-                              _input->nvar, _input->nscal,
+                              _input->nvar,
                               &n_cells, &n_b_faces,
                               cell_list, b_face_list,
                               cel_vals, b_face_vals);

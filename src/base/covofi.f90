@@ -103,7 +103,7 @@ use cs_fuel_incl
 use ppincl
 use ppcpfu
 use lagran
-use radiat, only: iirayo, itsre, itsri
+use radiat
 use field
 use field_operator
 use ihmpre, only: iihmpr
@@ -186,7 +186,7 @@ double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: cpro_wgrec_s
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, croma, pcrom
-double precision, dimension(:), pointer :: cvar_scal, cvar_scalt
+double precision, dimension(:), pointer :: cvar_scal
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
@@ -200,6 +200,9 @@ double precision, allocatable, dimension(:) :: diverg
 double precision, dimension(:), pointer :: cpro_delay, cpro_sat
 double precision, dimension(:), pointer :: cproa_delay, cproa_sat
 double precision, dimension(:), pointer :: cvar_var, cvara_var, cvara_varsca
+! Radiat arrays
+double precision, dimension(:), pointer :: cpro_tsre1, cpro_tsre, cpro_tsri1
+character(len=80) :: f_name
 
 !===============================================================================
 
@@ -473,16 +476,15 @@ endif
 if (iirayo.ge.1) then
 
   if (iscal.eq.iscalt) then
-    call raysca &
-    !==========
-  ( iscalt,ncelet,ncel,     &
-    smbrs, rovsdt,cell_f_vol)
+    call cs_rad_transfer_source_terms(smbrs, rovsdt)
 
     ! Store the explicit radiative source term
     if (idilat.ge.4) then
+      call field_get_id("rad_st", f_id)
+      call field_get_val_s(f_id,cpro_tsre1)
       do iel = 1, ncel
         cpro_tsscal(iel) = cpro_tsscal(iel)   &
-        + propce(iel,ipproc(itsre(1)))*cell_f_vol(iel)
+        + cpro_tsre1(iel)*cell_f_vol(iel)
       enddo
     endif
   endif
@@ -503,11 +505,17 @@ if (iirayo.ge.1) then
 
     if (iscal .eq.ihgas) then
 
+      call field_get_id("rad_st", f_id)
+      call field_get_val_s(f_id, cpro_tsre1)
+
       do iel = 1, ncel
 
-        smbrs(iel) = smbrs(iel)+volume(iel)*propce(iel,ipproc(itsre(1)))
+        smbrs(iel) = smbrs(iel)+volume(iel)*cpro_tsre1(iel)
         do icla = 1, nclacp
-          smbrs(iel) = smbrs(iel)-volume(iel)*propce(iel,ipproc(itsre(icla+1))) &
+          write(f_name,  '("rad_st_", i2.2)') icla+1
+          call field_get_id(f_name, f_id)
+          call field_get_val_s(f_id, cpro_tsre)
+          smbrs(iel) = smbrs(iel)-volume(iel)*cpro_tsre(iel) &
                                              *propce(iel,ipproc(ix2(icla)))
         enddo
       enddo
@@ -1152,11 +1160,13 @@ endif
 
 ! Store the implicit part of the radiative source term
 if (idilat.ge.4.and.iirayo.ge.1.and.iscal.eq.iscalt) then
+  call field_get_id("rad_st_implicit", f_id)
+  call field_get_val_s(f_id,cpro_tsri1)
   do iel = 1, ncel
     ivar = isca(iscalt)
     dvar = cvar_var(iel)-cvara_var(iel)
     cpro_tsscal(iel) = cpro_tsscal(iel) &
-                     - propce(iel,ipproc(itsri(1)))*dvar*cell_f_vol(iel)
+                     - cpro_tsri1(iel)*dvar*cell_f_vol(iel)
   enddo
 endif
 

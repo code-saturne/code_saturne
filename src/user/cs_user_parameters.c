@@ -80,6 +80,7 @@
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
 #include "cs_selector.h"
+#include "cs_rad_transfer.h"
 
 #include "cs_post.h"
 

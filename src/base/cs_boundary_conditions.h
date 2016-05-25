@@ -71,6 +71,10 @@ extern const int  *cs_glob_bc_type;
 /*----------------------------------------------------------------------------
  * Handling of boundary condition definition errors and associated output.
  *
+ * This function checks for errors, and simply returns if no errors are
+ * encountered. In case of error, it outputs helpful information so as to
+ * make it easier to locate the matching faces.
+ *
  * For each boundary face, bc_type defines the boundary condition type.
  * As a convention here, zero values correspond to undefined types,
  * positive values to defined types (with no error), and negative values
@@ -260,6 +264,27 @@ cs_boundary_conditions_set_dirichlet_scalar(cs_real_t  *a,
 
   }
 }
+
+/*! \brief Set convective oulet boundary condition for a scalar
+ *
+ * Parameters:
+ * \param[out]    coefa         explicit BC coefficient for gradients
+ * \param[out]    cofaf         explicit BC coefficient for diffusive flux
+ * \param[out]    coefb         implicit BC coefficient for gradients
+ * \param[out]    cofbf         implicit BC coefficient for diffusive flux
+ * \param[in]     pimp          Flux value to impose
+ * \param[in]     cfl           Local Courant number used to convect
+ * \param[in]     hint          Internal exchange coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
+                                                         cs_real_t *cofaf,
+                                                         cs_real_t *coefb,
+                                                         cs_real_t *cofbf,
+                                                         cs_real_t  pimp,
+                                                         cs_real_t  cfl,
+                                                         cs_real_t  hint);
 
 /*----------------------------------------------------------------------------*/
 

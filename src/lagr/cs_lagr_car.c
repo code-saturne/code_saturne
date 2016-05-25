@@ -73,6 +73,7 @@
 #include "cs_gui_particles.h"
 
 #include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_geom.h"
@@ -231,7 +232,8 @@ cs_lagr_car(int              iprev,
         /* a priori in gas or pulverized coal combustion,
            diffusivity is always constant */
         cs_real_t xrkl;
-        if (extra->icoebu == 0 || extra->icoebu == 2)
+        if (   cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 0
+            || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 2)
           xrkl = extra->diftl0 / rom;
         else if (extra->cpro_viscls != NULL)
           xrkl = extra->cpro_viscls->val[cell_id] / rom;

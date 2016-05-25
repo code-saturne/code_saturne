@@ -496,62 +496,6 @@ cs_field_pointer_map_gas_mix(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Map base fields to enumerated pointers for electric arcs
- *
- * \param[in]  n_gasses    number of gasses
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_field_pointer_map_electric_arcs(int  n_gasses)
-{
-  char s[64];
-
-  cs_field_pointer_map(CS_ENUMF_(h),
-                       cs_field_by_name_try("enthalpy"));
-
-  cs_field_pointer_map(CS_ENUMF_(potr), cs_field_by_name_try("elec_pot_r"));
-  cs_field_pointer_map(CS_ENUMF_(poti), cs_field_by_name_try("elec_pot_i"));
-
-  cs_field_pointer_map(CS_ENUMF_(potva), cs_field_by_name_try("vec_potential"));
-
-  for (int i = 0; i < n_gasses - 1; i++) {
-    snprintf(s, 63, "esl_fraction_%02d", i+1); s[63] = '\0';
-    cs_field_pointer_map_indexed(CS_ENUMF_(ycoel), i, cs_field_by_name_try(s));
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Map base fields to enumerated pointers properties for electric arcs
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_field_pointer_properties_map_electric_arcs(void)
-{
-  cs_field_pointer_map(CS_ENUMF_(t),
-                       cs_field_by_name_try("temperature"));
-
-  cs_field_pointer_map(CS_ENUMF_(joulp),
-                       cs_field_by_name_try("joule_power"));
-  cs_field_pointer_map(CS_ENUMF_(absco),
-                       cs_field_by_name_try("absorption_coeff"));
-  cs_field_pointer_map(CS_ENUMF_(radsc),
-                       cs_field_by_name_try("radiation_source"));
-  cs_field_pointer_map(CS_ENUMF_(elech),
-                       cs_field_by_name_try("elec_charge"));
-
-  cs_field_pointer_map(CS_ENUMF_(curre),
-                       cs_field_by_name_try("current_re"));
-  cs_field_pointer_map(CS_ENUMF_(curim),
-                       cs_field_by_name_try("current_im"));
-  cs_field_pointer_map(CS_ENUMF_(laplf),
-                       cs_field_by_name_try("laplace_force"));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Map base fields to enumerated pointers for gas combustion.
  */
 /*----------------------------------------------------------------------------*/
@@ -582,73 +526,6 @@ cs_field_pointer_map_gas_combustion(void)
                        cs_field_by_name_try("mass_fraction_variance"));
   cs_field_pointer_map(CS_ENUMF_(coyfp),
                        cs_field_by_name_try("mass_fraction_covariance"));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Map base fields to enumerated pointers for radiation module
- *
- * \param[in]  n_r_phases  number of radiating phases: 1 + possibly
- *                         number of combustible classes (coal, fuel)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_field_pointer_map_radiation(int  n_r_phases)
-{
-  char s[64], suffix[16];
-
-  cs_field_pointer_map(CS_ENUMF_(rad_lumin),
-                       cs_field_by_name_try("luminance"));
-  cs_field_pointer_map(CS_ENUMF_(rad_q),
-                       cs_field_by_name_try("radiative_flux"));
-
-  for (int i = 0; i < n_r_phases; i++) {
-
-    if (i > 0) {
-      snprintf(suffix, 15, "_%02d", i+1);
-      suffix[15] = '\0';
-    }
-    else
-      suffix[0] = '\0';
-
-    snprintf(s, 63, "rad_st%s", suffix); s[63] = '\0';
-    cs_field_pointer_map_indexed(CS_ENUMF_(rad_ets), i, cs_field_by_name_try(s));
-
-    snprintf(s, 63, "rad_st_implicit%s", suffix); s[63] = '\0';
-    cs_field_pointer_map_indexed(CS_ENUMF_(rad_its), i, cs_field_by_name_try(s));
-
-    snprintf(s, 63, "rad_absorption%s", suffix); s[63] = '\0';
-    cs_field_pointer_map_indexed(CS_ENUMF_(rad_abs), i, cs_field_by_name_try(s));
-
-    snprintf(s, 63, "rad_emission%s", suffix); s[63] = '\0';
-    cs_field_pointer_map_indexed(CS_ENUMF_(rad_emi), i, cs_field_by_name_try(s));
-
-    snprintf(s, 63, "rad_absorption_coeff%s", suffix); s[63] = '\0';
-    cs_field_pointer_map_indexed(CS_ENUMF_(rad_cak), i, cs_field_by_name_try(s));
-
-  }
-
-  cs_field_pointer_map(CS_ENUMF_(qinci),
-                       cs_field_by_name_try("rad_incident_flux"));
-
-  cs_field_pointer_map(CS_ENUMF_(xlam),
-                       cs_field_by_name_try("wall_thermal_conductivity"));
-
-  cs_field_pointer_map(CS_ENUMF_(epa),
-                       cs_field_by_name_try("wall_thickness"));
-
-  cs_field_pointer_map(CS_ENUMF_(emissivity),
-                       cs_field_by_name_try("emissivity"));
-
-  cs_field_pointer_map(CS_ENUMF_(fnet),
-                       cs_field_by_name_try("rad_net_flux"));
-
-  cs_field_pointer_map(CS_ENUMF_(fconv),
-                       cs_field_by_name_try("rad_convective_flux"));
-
-  cs_field_pointer_map(CS_ENUMF_(hconv),
-                       cs_field_by_name_try("rad_exchange_coefficient"));
 }
 
 /*----------------------------------------------------------------------------*/

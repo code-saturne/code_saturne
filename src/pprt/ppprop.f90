@@ -78,14 +78,12 @@ logical       :: has_previous
 if (ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                 &
                         .or. ippmod(icolwc).ge.0) then
   call coprop
-  !==========
 endif
 
 ! ---> Physique particuliere :  Combustion Charbon Pulverise
 
 if (ippmod(iccoal).ge.0) then
   call cs_coal_prop
-  !================
 endif
 
 ! ---> Physique particuliere :  Combustion Charbon Pulverise
@@ -93,30 +91,25 @@ endif
 
 if (ippmod(icpl3c).ge.0) then
   call cplpro
-  !==========
 endif
 
 ! ---> Physique particuliere : Combustion Fuel
 
 if (ippmod(icfuel).ge.0) then
   call cs_fuel_prop
-  !================
 endif
 
 ! ---> Physique particuliere : Compressible
 
 if (ippmod(icompf).ge.0) then
   call cfprop
-  !==========
 endif
 
 ! ---> Physique particuliere : Versions electriques
 
 if (ippmod(ieljou).ge.1 .or.                                     &
-    ippmod(ielarc).ge.1 .or.                                     &
-    ippmod(ielion).ge.1) then
-  call elprop(ippmod(ieljou), ippmod(ielarc), ippmod(ielion))
-  !==========
+    ippmod(ielarc).ge.1) then
+  call elprop(ippmod(ieljou), ippmod(ielarc))
 endif
 
 ! ---> Physique particuliere : Atmospherique
@@ -125,7 +118,6 @@ endif
 !      dry and humid atmosphere (ippmod(iatmos) = 1,2)
 if (ippmod(iatmos).ge.1) then
   call atprop
-  !==========
 endif
 
 ! Add the mixture molar mass fraction field

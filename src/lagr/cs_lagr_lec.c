@@ -54,10 +54,10 @@
 
 #include "cs_log.h"
 
-#include "cs_restart.h"
-
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
+#include "cs_physical_model.h"
+#include "cs_restart.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
@@ -161,7 +161,6 @@ CS_PROCF(laglec, LAGLEC)(cs_lnum_t *nsalto,
   /* ====================================================================   */
 
   static cs_restart_t  *cs_lag_stat_restart = NULL;
-  static cs_restart_t  *cs_lag_restart = NULL;
 
   if (cs_glob_lagr_stat_options->isuist == 1) {
 
@@ -1368,7 +1367,7 @@ CS_PROCF(laglec, LAGLEC)(cs_lnum_t *nsalto,
         /*  avec un couplage retour sur une combustion gaz en phase porteuse */
         /*      --> A verifier l'utilite de cette lecture pour une suite...  */
 
-        if (extra->icpl3c >= 0) {
+        if (cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0) {
 
           for (cs_lnum_t ivar = 0; ivar < *nsalpp; ivar++) {
 
@@ -2636,7 +2635,7 @@ CS_PROCF (lagout, LAGOUT)(cs_lnum_t *nsalpp,
       /* avec un couplage retour sur une combustion gaz en phase porteuse  */
       /* --> A verifier l'utilite de cette sauvegarde pour une suite...    */
 
-      if (extra->icpl3c >= 0) {
+      if (cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0) {
 
         for (cs_lnum_t ii = 0; ii < *nsalpp; ii++) {
 

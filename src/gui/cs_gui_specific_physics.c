@@ -58,6 +58,7 @@
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_physical_model.h"
 #include "cs_prototypes.h"
 #include "cs_selector.h"
 #include "cs_elec_model.h"
@@ -1526,206 +1527,6 @@ _get_joule_model(void)
  * Public Fortran function definitions
  *============================================================================*/
 
-/*-----------------------------------------------------------------------------
- * Predefined physics indicator.
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIPPMO
- * *****************
- *
- * INTEGER          IPPMOD <--  specific physics indicator array
- * INTEGER          ICOD3P  --> diffusion flame in fast complete chemistry
- * INTEGER          ICODEQ  --> diffusion flame in fast chemistry towards balance
- * INTEGER          ICOEBU  --> Eddy Break Up premixing flame
- * INTEGER          ICOBML  --> Bray - Moss - Libby premixing flame
- * INTEGER          ICOLWC  --> Libby Williams premixing flame
- * INTEGER          ICP3PL  --> Coal combustion. Combustible moyen local
- * INTEGER          ICPL3C  --> Coal combustion coupled with lagrangien approach
- * INTEGER          ICFUEL  --> Fuel combustion
- * INTEGER          IELJOU  --> Joule effect
- * INTEGER          IELARC  --> electrical arc
- * INTEGER          IELION  --> ionique mobility
- * INTEGER          ICOMPF  --> compressible without shock
- * INTEGER          IATMOS  --> atmospheric flows
- * INTEGER          IAEROS  --> cooling tower
- * INTEGER          INDJON  --> INDJON=1: a JANAF enthalpy-temperature
- *                              tabulation is used. INDJON=1: users tabulation
- * INTEGER          IEOS    --> compressible
- * INTEGER          IEQCO2  --> CO2 massic fraction transport
- * INTEGER          IDARCY  --> groundwater model
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
-                               int *const icod3p,
-                               int *const icodeq,
-                               int *const icoebu,
-                               int *const icobml,
-                               int *const icolwc,
-                               int *const iccoal,
-                               int *const icpl3c,
-                               int *const icfuel,
-                               int *const ieljou,
-                               int *const ielarc,
-                               int *const ielion,
-                               int *const icompf,
-                               int *const iatmos,
-                               int *const iaeros,
-                               int *const ieos,
-                               int *const ieqco2,
-                               int *const idarcy)
-{
-  int isactiv = 0;
-
-  cs_var_t  *vars = cs_glob_var;
-
-  ippmod[*icod3p - 1] = -1;
-  ippmod[*icodeq - 1] = -1;
-  ippmod[*icoebu - 1] = -1;
-  ippmod[*icobml - 1] = -1;
-  ippmod[*icolwc - 1] = -1;
-  ippmod[*iccoal - 1] = -1;
-  ippmod[*icpl3c - 1] = -1;
-  ippmod[*icfuel - 1] = -1;
-  ippmod[*ieljou - 1] = -1;
-  ippmod[*ielarc - 1] = -1;
-  ippmod[*ielion - 1] = -1;
-  ippmod[*icompf - 1] = -1;
-  ippmod[*iatmos - 1] = -1;
-  ippmod[*iaeros - 1] = -1;
-  ippmod[*idarcy - 1] = -1;
-
-  *ieqco2 = 0;
-
-  /* Look for the active specific physics and give the value of the associated
-     model attribute */
-  isactiv = cs_gui_get_activ_thermophysical_model();
-
-  if (isactiv)
-  {
-    if (cs_gui_strcmp(vars->model, "solid_fuels"))
-    {
-      if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel"))
-        ippmod[*iccoal - 1] = 0;
-      else if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture") || cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture_lagr"))
-        ippmod[*iccoal - 1] = 1;
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Invalid coal model: %s.\n"), vars->model_value);
-      // ieqco2 fix to transport of CO2 mass fraction
-      *ieqco2 = 1;
-    }
-    else if  (cs_gui_strcmp(vars->model, "gas_combustion"))
-    {
-      char *path = NULL;
-      path = cs_xpath_init_path();
-      cs_xpath_add_elements(&path, 2, "thermophysical_models", "gas_combustion");
-      cs_xpath_add_attribute(&path, "model");
-
-      char *model = cs_gui_get_attribute_value(path);
-
-      BFT_FREE(path);
-
-      if (!cs_gui_strcmp(model, "off")) {
-
-        if (cs_gui_strcmp(vars->model_value, "adiabatic"))
-          ippmod[*icod3p - 1] = 0;
-        else if (cs_gui_strcmp(vars->model_value, "extended"))
-          ippmod[*icod3p - 1] = 1;
-        else if (cs_gui_strcmp(vars->model_value, "spalding"))
-          ippmod[*icoebu - 1] = 0;
-        else if (cs_gui_strcmp(vars->model_value, "enthalpy_st"))
-          ippmod[*icoebu - 1] = 1;
-        else if (cs_gui_strcmp(vars->model_value, "mixture_st"))
-          ippmod[*icoebu - 1] = 2;
-        else if (cs_gui_strcmp(vars->model_value, "enthalpy_mixture_st"))
-          ippmod[*icoebu - 1] = 3;
-        else if (cs_gui_strcmp(vars->model_value, "2-peak_adiabatic"))
-          ippmod[*icolwc - 1] = 0;
-        else if (cs_gui_strcmp(vars->model_value, "2-peak_enthalpy"))
-          ippmod[*icolwc - 1] = 1;
-        else if (cs_gui_strcmp(vars->model_value, "3-peak_adiabatic"))
-          ippmod[*icolwc - 1] = 2;
-        else if (cs_gui_strcmp(vars->model_value, "3-peak_enthalpy"))
-          ippmod[*icolwc - 1] = 3;
-        else if (cs_gui_strcmp(vars->model_value, "4-peak_adiabatic"))
-          ippmod[*icolwc - 1] = 4;
-        else if (cs_gui_strcmp(vars->model_value, "4-peak_enthalpy"))
-          ippmod[*icolwc - 1] = 5;
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Invalid gas combustion flow model: %s.\n"),
-                    vars->model_value);
-      }
-    }
-    else if  (cs_gui_strcmp(vars->model, "atmospheric_flows"))
-    {
-      if (cs_gui_strcmp(vars->model_value, "constant"))
-        ippmod[*iatmos - 1] = 0;
-      else if (cs_gui_strcmp(vars->model_value, "dry"))
-        ippmod[*iatmos - 1] = 1;
-      else if (cs_gui_strcmp(vars->model_value, "humid"))
-        ippmod[*iatmos - 1] = 2;
-      else
-        bft_error(__FILE__, __LINE__, 0,
-            _("Invalid atmospheric flow model: %s.\n"),
-            vars->model_value);
-    }
-    else if  (cs_gui_strcmp(vars->model, "joule_effect"))
-    {
-      if (cs_gui_strcmp(vars->model_value, "joule"))
-      {
-        char *value = _get_joule_model();
-        if (cs_gui_strcmp(value, "AC/DC"))
-          ippmod[*ieljou - 1] = 1;
-        else if (cs_gui_strcmp(value, "three-phase"))
-          ippmod[*ieljou - 1] = 2;
-        else if (cs_gui_strcmp(value, "AC/DC+Transformer"))
-          ippmod[*ieljou - 1] = 3;
-        else if (cs_gui_strcmp(value, "three-phase+Transformer"))
-          ippmod[*ieljou - 1] = 4;
-        else
-          bft_error(__FILE__, __LINE__, 0,
-              _("Invalid joule model: %s.\n"),
-              vars->model_value);
-        BFT_FREE(value);
-      }
-      else if (cs_gui_strcmp(vars->model_value, "arc"))
-        ippmod[*ielarc - 1] = 2;
-      else
-        bft_error(__FILE__, __LINE__, 0,
-            _("Invalid electrical model: %s.\n"),
-            vars->model_value);
-    }
-    else if  (cs_gui_strcmp(vars->model, "compressible_model"))
-    {
-      if (cs_gui_strcmp(vars->model_value, "constant_gamma")){
-        ippmod[*icompf - 1] = 0;
-        *ieos = 1;
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-            _("Invalid compressible model: %s.\n"),
-            vars->model_value);
-    }
-    else if  (cs_gui_strcmp(vars->model, "groundwater_model"))
-    {
-      if (cs_gui_strcmp(vars->model_value, "groundwater"))
-        ippmod[*idarcy - 1] = 1;
-    }
-  }
-
-#if _XML_DEBUG_
-  bft_printf("==>UIPPMO\n");
-  if (isactiv)
-  {
-    bft_printf("--thermophysical model: %s\n", vars->model);
-    bft_printf("--thermophysical value: %s\n", vars->model_value);
-  }
-#endif
-}
-
 /*----------------------------------------------------------------------------
  * Density under relaxation
  *
@@ -2377,10 +2178,153 @@ void CS_PROCF (uidai1, UIDAI1) (int    *const permeability,
 #endif
 }
 
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*-----------------------------------------------------------------------------
+ * Activate specific physical models based on XML settings.
+ *
+ * parameters:
+ *   ieos    --> compressible
+ *   ieqco2  --> CO2 massic fraction transport (for combustion only)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_physical_model_select(cs_int_t  *ieos,
+                             cs_int_t  *ieqco2)
+{
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  int isactiv = 0;
+
+  cs_var_t  *vars = cs_glob_var;
+
+  *ieqco2 = 0;
+
+  /* Look for the active specific physics and give the value of the associated
+     model attribute */
+  isactiv = cs_gui_get_activ_thermophysical_model();
+
+  if (isactiv)  {
+
+    if (cs_gui_strcmp(vars->model, "solid_fuels")) {
+      if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel"))
+        cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = 0;
+      else if (   cs_gui_strcmp(vars->model_value,
+                                "homogeneous_fuel_moisture")
+               || cs_gui_strcmp(vars->model_value,
+                                "homogeneous_fuel_moisture_lagr"))
+        cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = 1;
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Invalid coal model: %s.\n"), vars->model_value);
+      /* ieqco2 fix to transport of CO2 mass fraction */
+      *ieqco2 = 1;
+    }
+    else if  (cs_gui_strcmp(vars->model, "gas_combustion")) {
+      char *path = NULL;
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 2, "thermophysical_models", "gas_combustion");
+      cs_xpath_add_attribute(&path, "model");
+
+      char *model = cs_gui_get_attribute_value(path);
+
+      BFT_FREE(path);
+
+      if (!cs_gui_strcmp(model, "off")) {
+
+        if (cs_gui_strcmp(vars->model_value, "adiabatic"))
+          cs_glob_physical_model_flag[CS_COMBUSTION_3PT] = 0;
+        else if (cs_gui_strcmp(vars->model_value, "extended"))
+          cs_glob_physical_model_flag[CS_COMBUSTION_3PT] = 1;
+        else if (cs_gui_strcmp(vars->model_value, "spalding"))
+          cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = 0;
+        else if (cs_gui_strcmp(vars->model_value, "enthalpy_st"))
+          cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = 1;
+        else if (cs_gui_strcmp(vars->model_value, "mixture_st"))
+          cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = 2;
+        else if (cs_gui_strcmp(vars->model_value, "enthalpy_mixture_st"))
+          cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = 3;
+        else if (cs_gui_strcmp(vars->model_value, "2-peak_adiabatic"))
+          cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 0;
+        else if (cs_gui_strcmp(vars->model_value, "2-peak_enthalpy"))
+          cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 1;
+        else if (cs_gui_strcmp(vars->model_value, "3-peak_adiabatic"))
+          cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 2;
+        else if (cs_gui_strcmp(vars->model_value, "3-peak_enthalpy"))
+          cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 3;
+        else if (cs_gui_strcmp(vars->model_value, "4-peak_adiabatic"))
+          cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 4;
+        else if (cs_gui_strcmp(vars->model_value, "4-peak_enthalpy"))
+          cs_glob_physical_model_flag[CS_COMBUSTION_LW] = 5;
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Invalid gas combustion flow model: %s.\n"),
+                    vars->model_value);
+      }
+    }
+    else if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
+      if (cs_gui_strcmp(vars->model_value, "constant"))
+        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = 0;
+      else if (cs_gui_strcmp(vars->model_value, "dry"))
+        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = 1;
+      else if (cs_gui_strcmp(vars->model_value, "humid"))
+        cs_glob_physical_model_flag[CS_ATMOSPHERIC] = 2;
+      else
+        bft_error(__FILE__, __LINE__, 0,
+            _("Invalid atmospheric flow model: %s.\n"),
+            vars->model_value);
+    }
+    else if (cs_gui_strcmp(vars->model, "joule_effect")) {
+      if (cs_gui_strcmp(vars->model_value, "joule")) {
+        char *value = _get_joule_model();
+        if (cs_gui_strcmp(value, "AC/DC"))
+          cs_glob_physical_model_flag[CS_JOULE_EFFECT] = 1;
+        else if (cs_gui_strcmp(value, "three-phase"))
+          cs_glob_physical_model_flag[CS_JOULE_EFFECT] = 2;
+        else if (cs_gui_strcmp(value, "AC/DC+Transformer"))
+          cs_glob_physical_model_flag[CS_JOULE_EFFECT] = 3;
+        else if (cs_gui_strcmp(value, "three-phase+Transformer"))
+          cs_glob_physical_model_flag[CS_JOULE_EFFECT] = 4;
+        else
+          bft_error(__FILE__, __LINE__, 0,
+              _("Invalid joule model: %s.\n"),
+              vars->model_value);
+        BFT_FREE(value);
+      }
+      else if (cs_gui_strcmp(vars->model_value, "arc"))
+        cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] = 2;
+      else
+        bft_error(__FILE__, __LINE__, 0,
+            _("Invalid electrical model: %s.\n"),
+            vars->model_value);
+    }
+    else if (cs_gui_strcmp(vars->model, "compressible_model")) {
+      if (cs_gui_strcmp(vars->model_value, "constant_gamma")) {
+        cs_glob_physical_model_flag[CS_COMPRESSIBLE] = 0;
+        *ieos = 1;
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+            _("Invalid compressible model: %s.\n"),
+            vars->model_value);
+    }
+    else if (cs_gui_strcmp(vars->model, "groundwater_model")) {
+      if (cs_gui_strcmp(vars->model_value, "groundwater"))
+        cs_glob_physical_model_flag[CS_GROUNDWATER] = 1;
+    }
+  }
+
+#if _XML_DEBUG_
+  bft_printf("%s\n", __func__);
+  if (isactiv) {
+    bft_printf("--thermophysical model: %s\n", vars->model);
+    bft_printf("--thermophysical value: %s\n", vars->model_value);
+  }
+#endif
+}
 
 /*----------------------------------------------------------------------------
  * Electrical model: read parameters

@@ -107,7 +107,7 @@ module cs_fuel_incl
 
   !        NCLAFU     --> Nb de classes
 
-  integer, save :: nclafu
+  integer(c_int), pointer, save :: nclafu
 
   !      - Proprietes : on garde le meme max que pour le charbon qui
   !        est definis dans ppppar.h
@@ -168,6 +168,59 @@ module cs_fuel_incl
   !--> POINTEURS DANS LE TABLEAU TBMCR
 
   double precision, save :: afovf1,acof1,ah2sf1,ah2sf3
+
+  !=============================================================================
+
+  interface
+
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global physical model flags
+
+    subroutine cs_f_fuel_get_pointers(p_nclafu)                                &
+      bind(C, name='cs_f_fuel_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_nclafu
+    end subroutine cs_f_fuel_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
+
+    !---------------------------------------------------------------------------
+
+  end interface
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  !> \brief Initialize Fortran combustion models properties API.
+  !> This maps Fortran pointers to global C variables.
+
+  subroutine fuel_models_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: p_nclafu
+
+    call cs_f_fuel_get_pointers(p_nclafu)
+
+    call c_f_pointer(p_nclafu, nclafu)
+
+
+  end subroutine fuel_models_init
 
   !=============================================================================
 
