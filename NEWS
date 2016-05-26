@@ -67,6 +67,10 @@ schemes (Original SOLU, CENTER, Standard SOLU)
 Architectural changes
 ---------------------
 
+- Simplify MEDCoupling output writer so as to generate MEDCoupling meshes
+  on the current partition rather than aggregating them to the root rank,
+  as this should soon be directly usable by a VTK adaptor.
+
 - Convert Lagrangian and radiative module implementations to C.
   This affects the associated user subroutines.
 

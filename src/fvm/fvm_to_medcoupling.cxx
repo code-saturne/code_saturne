@@ -560,114 +560,6 @@ _add_medcoupling_field(fvm_to_medcoupling_t      *writer,
   return f_id;
 }
 
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Write vertex coordinates to a MEDCoupling object in parallel mode
- *
- * parameters:
- *   this_writer <-- pointer to associated writer
- *   mesh        <-- pointer to nodal mesh structure
- *   med_mesh    <-- pointer to MEDCouuplingUMesh object (NULL on ranks > 0)
- *----------------------------------------------------------------------------*/
-
-static void
-_export_vertex_coords_g(const fvm_to_medcoupling_t  *this_writer,
-                        const fvm_nodal_t           *mesh,
-                        MEDCouplingUMesh            *med_mesh)
-{
-  cs_lnum_t   i, j;
-  size_t stride;
-
-  DataArrayDouble  *Coords = NULL;
-  double  *block_coords = NULL;
-
-  const double  *vertex_coords = mesh->vertex_coords;
-  const cs_lnum_t  n_vertices
-      = fvm_io_num_get_local_count(mesh->global_vertex_num);
-  const cs_gnum_t  n_g_vertices
-    = fvm_io_num_get_global_count(mesh->global_vertex_num);
-  const cs_gnum_t  *g_num
-    = fvm_io_num_get_global_num(mesh->global_vertex_num);
-
-  /* Initialize distribution info */
-
-  cs_block_dist_info_t bi
-    = cs_block_dist_compute_sizes(this_writer->rank,
-                                  this_writer->n_ranks,
-                                  0,
-                                  n_g_vertices,
-                                  n_g_vertices);
-
-  cs_part_to_block_t *d = cs_part_to_block_create_by_gnum(this_writer->comm,
-                                                          bi,
-                                                          n_vertices,
-                                                          g_num);
-
-  /* Vertex coordinates */
-  /*--------------------*/
-
-  stride = (size_t)(mesh->dim);
-
-  if (this_writer->rank < 1) {
-    Coords = DataArrayDouble::New();
-    Coords->alloc(n_g_vertices, 3);
-    block_coords = Coords->getPointer();
-  }
-
-  if (mesh->parent_vertex_num != NULL || mesh->dim < 3) {
-
-    double  *part_coords = NULL;
-
-    BFT_MALLOC(part_coords, n_vertices, double);
-
-    if (mesh->parent_vertex_num != NULL) {
-      const cs_lnum_t  *parent_vertex_num = mesh->parent_vertex_num;
-      for (i = 0; i < n_vertices; i++) {
-        for (j = 0; j < mesh->dim; j++)
-          part_coords[i*3 + j]
-            = vertex_coords[(parent_vertex_num[i]-1)*stride + j];
-        for (; j < 3; j++)
-          part_coords[i*3 + j] = 0.;
-      }
-    }
-    else {
-      for (i = 0; i < n_vertices; i++) {
-        for (j = 0; j < mesh->dim; j++)
-          part_coords[i*3 + j] = vertex_coords[i*stride + j];
-        for (; j < 3; j++)
-          part_coords[i*3 + j] = 0.;
-      }
-    }
-
-    cs_part_to_block_copy_array(d,
-                                CS_DOUBLE,
-                                3,
-                                part_coords,
-                                block_coords);
-
-    BFT_FREE(part_coords);
-
-  }
-  else
-
-    cs_part_to_block_copy_array(d,
-                                CS_DOUBLE,
-                                3,
-                                vertex_coords,
-                                block_coords);
-
-  if (med_mesh != NULL) {
-    assert(this_writer->rank < 1);
-    med_mesh->setCoords(Coords);
-    Coords->decrRef();
-  }
-
-  cs_part_to_block_destroy(&d);
-}
-
-#endif /* defined(HAVE_MPI) */
-
 /*----------------------------------------------------------------------------
  * Write vertex coordinates to a MEDCoupling object in serial mode
  *
@@ -765,326 +657,6 @@ _write_connect_block(fvm_element_t      type,
   }
 }
 
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Write strided global connectivity block to a MEDCoupling object
- *
- * parameters:
- *   type          <-- FVM element type
- *   num_start     <-- global number of first element for this block
- *   num_end       <-- global number of past last element for this block
- *   block_connect <-> global connectivity block array
- *   comm          <-- associated MPI communicator
- *   med_mesh      <-> pointer to MEDCouuplingUMesh object (NULL on ranks > 0)
- *----------------------------------------------------------------------------*/
-
-static void
-_write_block_connect_g(fvm_element_t     type,
-                       cs_gnum_t         num_start,
-                       cs_gnum_t         num_end,
-                       cs_lnum_t         block_connect[],
-                       MPI_Comm          comm,
-                       MEDCouplingUMesh  *med_mesh)
-{
-  cs_lnum_t *_block_connect = NULL;
-
-  const int  stride = fvm_nodal_n_vertices_element[type];
-
-  cs_file_serializer_t *s = cs_file_serializer_create(sizeof(cs_lnum_t),
-                                                      stride,
-                                                      num_start,
-                                                      num_end,
-                                                      0,
-                                                      block_connect,
-                                                      comm);
-
-  do {
-    cs_gnum_t range[2] = {num_start, num_end};
-
-    _block_connect = (cs_lnum_t *)cs_file_serializer_advance(s, range);
-
-    if (_block_connect != NULL) /* only possible on rank 0 */
-      _write_connect_block(type,
-                           (range[1] - range[0]),
-                           _block_connect,
-                           med_mesh);
-
-  } while (_block_connect != NULL);
-
-  cs_file_serializer_destroy(&s);
-}
-
-/*----------------------------------------------------------------------------
- * Write block-distributed indexed element (polygons or polyhedra)
- * cell -> vertex connectivity to a MEDCoupling object in parallel mode.
- *
- * Values equal to -2 are used for element (polyhedra of polygon)  bounds,
- * -1 for face separators within polyhedra.
- *
- * parameters:
- *   med_type      <-- associated MED element type
- *   num_start     <-- global number of first element for this block
- *   num_end       <-- global number of past last element for this block
- *   block_index   <-- global connectivity block array
- *   block_connect <-> global connectivity block array
- *   comm          <-- associated MPI communicator
- *   med_mesh      <-> MEDCouuplingUMesh object (NULL on ranks > 0)
- *----------------------------------------------------------------------------*/
-
-static void
-_write_block_indexed(INTERP_KERNEL::NormalizedCellType  med_type,
-                     cs_gnum_t                          num_start,
-                     cs_gnum_t                          num_end,
-                     const cs_lnum_t                    block_index[],
-                     cs_lnum_t                          block_connect[],
-                     MPI_Comm                           comm,
-                     MEDCouplingUMesh                  *med_mesh)
-{
-  cs_gnum_t block_size = 0, block_start = 0, block_end = 0;
-  int elt_buf_size = 8;
-  int *elt_buf = NULL;
-
-  BFT_MALLOC(elt_buf, elt_buf_size, int);
-
-  /* Prepare write to object */
-
-  block_size = block_index[num_end - num_start];
-
-  MPI_Scan(&block_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, comm);
-  block_end += 1;
-  block_start = block_end - block_size;
-
-  cs_lnum_t   i;
-  cs_lnum_t *_block_vtx_num = NULL;
-  cs_file_serializer_t *s = cs_file_serializer_create(sizeof(cs_lnum_t),
-                                                      1,
-                                                      block_start,
-                                                      block_end,
-                                                      0,
-                                                      block_connect,
-                                                      comm);
-
-  do {
-    cs_gnum_t j;
-    int k = 0;
-    cs_gnum_t range[2] = {block_start, block_end};
-    _block_vtx_num = (cs_lnum_t *)cs_file_serializer_advance(s, range);
-    if (_block_vtx_num != NULL) { /* only possible on rank 0 */
-      assert(med_mesh != NULL);
-      for (i = 0, j = range[0]; j < range[1]; i++, j++) {
-        if (_block_vtx_num[i] > -2) {
-          if (k +1 >= elt_buf_size) {
-            elt_buf_size *= 2;
-            BFT_REALLOC(elt_buf, elt_buf_size, int);
-          }
-          elt_buf[k++] = _block_vtx_num[i];
-        }
-        else {
-          med_mesh->insertNextCell(med_type, k, elt_buf);
-          k = 0;
-        }
-      }
-    }
-  } while (_block_vtx_num != NULL);
-
-  cs_file_serializer_destroy(&s);
-
-  BFT_FREE(elt_buf);
-}
-
-/*----------------------------------------------------------------------------
- * Write indexed element (polygons or polyhedra) cell -> vertex connectivity
- * to a MEDCoupling object in parallel mode.
- *
- * parameters:
- *   med_type           <-- associated MED element type
- *   global_vertex_num  <-- vertex global numbering
- *   global_element_num <-- global element numbering
- *   vertex_index       <-- element -> vertex index
- *   vertex_num         <-- element -> vertex number
- *   comm               <-- associated MPI communicator
- *   med_mesh           <-> MEDCouuplingUMesh object (NULL on ranks > 0)
- *----------------------------------------------------------------------------*/
-
-static void
-_write_indexed_connect_g(INTERP_KERNEL::NormalizedCellType   med_type,
-                         const fvm_io_num_t                 *global_element_num,
-                         const cs_lnum_t                     vertex_index[],
-                         const cs_lnum_t                     vertex_num[],
-                         MPI_Comm                            comm,
-                         MEDCouplingUMesh                   *med_mesh)
-{
-  int rank, n_ranks;
-  cs_block_dist_info_t bi;
-
-  cs_datatype_t lnum_type = (sizeof(cs_lnum_t) == 8) ? CS_INT64 : CS_INT32;
-  cs_gnum_t loc_size = 0, tot_size = 0, block_size = 0;
-  cs_part_to_block_t  *d = NULL;
-  cs_lnum_t   *block_index = NULL;
-  cs_lnum_t  *block_vtx_num = NULL;
-  size_t  min_block_size
-    = cs_parall_get_min_coll_buf_size() / sizeof(cs_lnum_t);
-
-  const cs_gnum_t   n_g_elements
-    = fvm_io_num_get_global_count(global_element_num);
-  const cs_lnum_t   n_elements
-    = fvm_io_num_get_local_count(global_element_num);
-  const cs_gnum_t   *g_elt_num
-    = fvm_io_num_get_global_num(global_element_num);
-
-  /* Get info on the current MPI communicator */
-
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &n_ranks);
-
-  /* Adjust min block size based on minimum element size */
-
-  loc_size = vertex_index[n_elements];
-  MPI_Allreduce(&loc_size, &tot_size, 1, CS_MPI_GNUM, MPI_SUM, comm);
-
-  min_block_size /= (tot_size / n_g_elements);
-
-  /* Allocate memory for additionnal indexes */
-
-  bi = cs_block_dist_compute_sizes(rank,
-                                   n_ranks,
-                                   0,
-                                   min_block_size,
-                                   n_g_elements);
-
-  BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
-
-  d = cs_part_to_block_create_by_gnum(comm, bi, n_elements, g_elt_num);
-
-  cs_part_to_block_copy_index(d,
-                              vertex_index,
-                              block_index);
-
-  block_size = block_index[bi.gnum_range[1] - bi.gnum_range[0]];
-
-  BFT_MALLOC(block_vtx_num, block_size, cs_lnum_t);
-
-  cs_part_to_block_copy_indexed(d,
-                                lnum_type,
-                                vertex_index,
-                                vertex_num,
-                                block_index,
-                                block_vtx_num);
-
-  /* Write to object */
-
-  _write_block_indexed(med_type,
-                       bi.gnum_range[0],
-                       bi.gnum_range[1],
-                       block_index,
-                       block_vtx_num,
-                       comm,
-                       med_mesh);
-
-  /* Free memory */
-
-  BFT_FREE(block_vtx_num);
-  cs_part_to_block_destroy(&d);
-  BFT_FREE(block_index);
-}
-
-/*----------------------------------------------------------------------------
- * Write polyhedra from a nodal mesh to a MEDCoupling object in parallel mode
- *
- * parameters:
- *   export_section    <-- pointer to MEDCoupling section helper structure
- *   global_vertex_num <-- pointer to vertex global numbering
- *   comm              <-- associated MPI communicator
- *   med_mesh          <-> MEDCouuplingUMesh object (NULL on ranks > 0)
- *----------------------------------------------------------------------------*/
-
-static void
-_export_nodal_polyhedra_g(const fvm_nodal_section_t  *section,
-                          const fvm_io_num_t         *global_vertex_num,
-                          MPI_Comm                    comm,
-                          MEDCouplingUMesh           *med_mesh)
-{
-  int rank, n_ranks;
-  cs_lnum_t  i, j, k, l, face_id;
-
-  cs_lnum_t  cell_length;
-
-  cs_lnum_t  *part_vtx_idx = NULL;
-  cs_lnum_t  *part_vtx_num = NULL;
-
-  const cs_gnum_t  *g_vtx_num
-    = fvm_io_num_get_global_num(global_vertex_num);
-
-  /* Get info on the current MPI communicator */
-
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &n_ranks);
-
-  /* Export cell->vertex connectivity by blocks */
-  /*--------------------------------------------*/
-
-  BFT_MALLOC(part_vtx_idx, section->n_elements + 1, cs_lnum_t);
-
-  l = 0;
-
-  /* Add -1 to cell vertex connectivity to mark face
-     bounds, -2 for cell bounds */
-
-  part_vtx_idx[0] = 0;
-  for (i = 0; i < section->n_elements; i++) {
-    cell_length = 0;
-    for (j = section->face_index[i]; j < section->face_index[i+1]; j++) {
-      face_id = CS_ABS(section->face_num[j]) - 1;
-      cell_length += (  section->vertex_index[face_id+1]
-                      - section->vertex_index[face_id]);
-    }
-    cell_length += (section->face_index[i+1] - section->face_index[i]);
-    part_vtx_idx[i+1] = part_vtx_idx[i] + cell_length;
-  }
-
-  BFT_MALLOC(part_vtx_num, part_vtx_idx[section->n_elements], cs_lnum_t);
-
-  l = 0;
-
-  for (i = 0; i < section->n_elements; i++) {
-    for (j = section->face_index[i]; j < section->face_index[i+1]; j++) {
-      if (section->face_num[j] > 0) {
-        face_id = section->face_num[j] - 1;
-        for (k = section->vertex_index[face_id];
-             k < section->vertex_index[face_id+1];
-             k++)
-          part_vtx_num[l++] = g_vtx_num[section->vertex_num[k] - 1] - 1;
-      }
-      else {
-        face_id = -section->face_num[j] - 1;
-        k = section->vertex_index[face_id];
-        part_vtx_num[l++] = g_vtx_num[section->vertex_num[k] - 1];
-        for (k = section->vertex_index[face_id+1] - 1;
-             k > section->vertex_index[face_id];
-             k--)
-          part_vtx_num[l++] = g_vtx_num[section->vertex_num[k] - 1] - 1;
-      }
-      part_vtx_num[l++] = -1; /* mark face limits */
-    }
-    part_vtx_num[l-1] = -2; /* replace face limits by element end */
-  }
-
-  /* Now distribute and write cells -> vertices connectivity */
-
-  _write_indexed_connect_g(INTERP_KERNEL::NORM_POLYHED,
-                           section->global_element_num,
-                           part_vtx_idx,
-                           part_vtx_num,
-                           comm,
-                           med_mesh);
-
-  BFT_FREE(part_vtx_num);
-  BFT_FREE(part_vtx_idx);
-}
-
-#endif /* defined(HAVE_MPI) */
-
 /*----------------------------------------------------------------------------
  * Write polyhedra from a nodal mesh to a MEDCoupling object in serial mode
  *
@@ -1157,74 +729,6 @@ _export_nodal_polyhedra_l(const fvm_nodal_section_t  *section,
   BFT_FREE(elt_buf);
 }
 
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Write polygons from a nodal mesh to a MEDCoupling object in parallel mode
- *
- * parameters:
- *   export_section    <-- pointer to MEDCoupling section helper structure
- *   global_vertex_num <-- pointer to vertex global numbering
- *   comm              <-- associated MPI communicator
- *   med_mesh          <-> MEDCouplingUMesh object (NULL on ranks > 0)
- *----------------------------------------------------------------------------*/
-
-static void
-_export_nodal_polygons_g(const fvm_nodal_section_t  *section,
-                         const fvm_io_num_t         *global_vertex_num,
-                         MPI_Comm                    comm,
-                         MEDCouplingUMesh           *med_mesh)
-{
-  /* Export face->vertex connectivity by blocks */
-  /*--------------------------------------------*/
-
-  cs_lnum_t   i, j, k;
-  cs_lnum_t   *_part_vtx_idx = NULL;
-  const cs_lnum_t   *part_vtx_idx = NULL;
-  cs_lnum_t  *part_vtx_num = NULL;
-
-  const cs_gnum_t   *g_vtx_num
-    = fvm_io_num_get_global_num(global_vertex_num);
-
-  /* Add -1 markers to cell vertex connectivity for element bounds */
-
-  BFT_MALLOC(_part_vtx_idx, section->n_elements + 1, cs_lnum_t);
-
-  _part_vtx_idx[0] = 0;
-  for (i = 0; i < section->n_elements; i++)
-    _part_vtx_idx[i+1] = _part_vtx_idx[i] + (  section->vertex_index[i+1]
-                                             - section->vertex_index[i]) + 1;
-
-  part_vtx_idx = _part_vtx_idx;
-
-  /* Build connectivity array */
-
-  BFT_MALLOC(part_vtx_num, part_vtx_idx[section->n_elements], cs_lnum_t);
-
-  for (i = 0, k = 0; i < section->n_elements; i++) {
-    for (j = section->vertex_index[i+1] - 1;
-         j > section->vertex_index[i];
-         j++)
-      part_vtx_num[k++] = g_vtx_num[section->vertex_num[j] - 1] - 1;
-    part_vtx_num[k++] = -2; /* mark element bounds */
-  }
-
-  /* Now distribute and write cell -> vertices connectivity */
-
-  _write_indexed_connect_g(INTERP_KERNEL::NORM_POLYGON,
-                           section->global_element_num,
-                           part_vtx_idx,
-                           part_vtx_num,
-                           comm,
-                           med_mesh);
-
-  BFT_FREE(part_vtx_num);
-  if (_part_vtx_idx != NULL)
-    BFT_FREE(_part_vtx_idx);
-}
-
-#endif /* defined(HAVE_MPI) */
-
 /*----------------------------------------------------------------------------
  * Write polygons from a nodal mesh to a text object in serial mode
  *
@@ -1271,204 +775,6 @@ _export_nodal_polygons_l(const fvm_nodal_section_t  *section,
   BFT_FREE(elt_buf);
 }
 
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Write strided elements from a nodal mesh to a MEDCoupling object in
- * parallel mode
- *
- * parameters:
- *   export_section    <-- pointer to nodal mesh section
- *   global_vertex_num <-- pointer to vertex global numbering
- *   comm              <-- associated MPI communicator
- *   med_mesh          <-> MEDCouuplingUMesh object (NULL on ranks > 0)
- *----------------------------------------------------------------------------*/
-
-static void
-_export_nodal_strided_g(const fvm_nodal_section_t  *section,
-                        const fvm_io_num_t         *global_vertex_num,
-                        MPI_Comm                    comm,
-                        MEDCouplingUMesh           *med_mesh)
-{
-  int  rank, n_ranks;
-  cs_lnum_t   i, j;
-
-  cs_datatype_t lnum_type = (sizeof(cs_lnum_t) == 8) ? CS_INT64 : CS_INT32;
-
-  cs_block_dist_info_t bi;
-
-  cs_lnum_t   block_size = 0;
-  cs_part_to_block_t  *d = NULL;
-  cs_lnum_t  *part_vtx_num = NULL, *block_vtx_num = NULL;
-
-  const int  stride = fvm_nodal_n_vertices_element[section->type];
-
-  const size_t  min_block_size
-    = cs_parall_get_min_coll_buf_size() / (sizeof(cs_lnum_t) * stride);
-
-  const cs_lnum_t   n_elements
-    = fvm_io_num_get_local_count(section->global_element_num);
-  const cs_gnum_t   n_g_elements
-    = fvm_io_num_get_global_count(section->global_element_num);
-  const cs_gnum_t   *g_elt_num
-    = fvm_io_num_get_global_num(section->global_element_num);
-  const cs_gnum_t   *g_vtx_num
-    = fvm_io_num_get_global_num(global_vertex_num);
-
-  /* Get info on the current MPI communicator */
-
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &n_ranks);
-
-  /* Prepare distribution structures */
-
-  bi = cs_block_dist_compute_sizes(rank,
-                                   n_ranks,
-                                   0,
-                                   min_block_size,
-                                   n_g_elements);
-
-  d = cs_part_to_block_create_by_gnum(comm,
-                                      bi,
-                                      n_elements,
-                                      g_elt_num);
-
-  /* Build connectivity */
-
-  block_size = bi.gnum_range[1] - bi.gnum_range[0];
-
-  BFT_MALLOC(block_vtx_num, block_size*stride, cs_lnum_t);
-  BFT_MALLOC(part_vtx_num, n_elements*stride, cs_lnum_t);
-
-  for (i = 0; i < n_elements; i++) {
-    for (j = 0; j < stride; j++) {
-      part_vtx_num[i*stride + j]
-        = g_vtx_num[section->vertex_num[i*stride + j] - 1];
-    }
-  }
-
-  cs_part_to_block_copy_array(d,
-                              lnum_type,
-                              stride,
-                              part_vtx_num,
-                              block_vtx_num);
-
-  BFT_FREE(part_vtx_num);
-
-  _write_block_connect_g(section->type,
-                         bi.gnum_range[0],
-                         bi.gnum_range[1],
-                         block_vtx_num,
-                         comm,
-                         med_mesh);
-
-  BFT_FREE(block_vtx_num);
-
-  cs_part_to_block_destroy(&d);
-}
-
-/*----------------------------------------------------------------------------
- * Write field values associated with nodal values of a nodal mesh to
- * a MEDCoupling object in serial mode.
- *
- * Output fields ar either scalar or 3d vectors or scalars, and are
- * non interlaced. Input arrays may be less than 2d, in which case the z
- * values are set to 0, and may be interlaced or not.
- *
- * parameters:
- *   mesh             <-- pointer to nodal mesh structure
- *   dim              <-- field dimension
- *   interlace        <-- indicates if field in memory is interlaced
- *   n_parent_lists   <-- indicates if field values are to be obtained
- *                        directly through the local entity index (when 0) or
- *                        through the parent entity numbers (when 1 or more)
- *   parent_num_shift <-- parent list to common number index shifts;
- *                        size: n_parent_lists
- *   datatype         <-- input data type (output is real)
- *   field_values     <-- array of associated field value arrays
- *   comm             <-- associated MPI communicator
- *   f                <-- associated MEDCouplingFieldDouble object
- *                        (NULL on ranks > 0)
- *----------------------------------------------------------------------------*/
-
-static void
-_export_field_values_ng(const fvm_nodal_t       *mesh,
-                        int                      dim,
-                        cs_interlace_t           interlace,
-                        int                      n_parent_lists,
-                        const cs_lnum_t          parent_num_shift[],
-                        cs_datatype_t            datatype,
-                        const void              *const field_values[],
-                        MEDCouplingFieldDouble  *f,
-                        MPI_Comm                 comm)
-{
-  int  rank, n_ranks;
-
-  cs_lnum_t  part_size = 0;
-  double  *part_values = NULL, *block_values = NULL;
-
-  const cs_lnum_t  n_vertices
-    = fvm_io_num_get_local_count(mesh->global_vertex_num);
-  const cs_gnum_t  n_g_vertices
-    = fvm_io_num_get_global_count(mesh->global_vertex_num);
-  const cs_gnum_t  *g_num
-    = fvm_io_num_get_global_num(mesh->global_vertex_num);
-
-  /* Initialize distribution info */
-
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &n_ranks);
-
-  cs_block_dist_info_t bi = cs_block_dist_compute_sizes(rank,
-                                                        n_ranks,
-                                                        0,
-                                                        n_g_vertices,
-                                                        n_g_vertices);
-
-  cs_part_to_block_t *d = cs_part_to_block_create_by_gnum(comm,
-                                                          bi,
-                                                          n_vertices,
-                                                          g_num);
-
-  part_size = cs_part_to_block_get_n_part_ents(d);
-
-  BFT_MALLOC(part_values, part_size*dim, double);
-
-  if (f != NULL)
-    block_values = f->getArray()->getPointer();
-
-  /* Distribute partition to block values */
-
-  fvm_convert_array(dim,
-                    0,
-                    dim, /* stride */
-                    0, /* start_id */
-                    mesh->n_vertices, /* end_id */
-                    interlace,
-                    datatype,
-                    CS_DOUBLE,
-                    n_parent_lists,
-                    parent_num_shift,
-                    mesh->parent_vertex_num,
-                    field_values,
-                    part_values);
-
-  cs_part_to_block_copy_array(d,
-                              CS_DOUBLE,
-                              dim,
-                              part_values,
-                              block_values);
-
-  assert(   f == NULL
-         || (bi.gnum_range[0] == 1 && bi.gnum_range[1] == n_g_vertices));
-
-  BFT_FREE(part_values);
-
-  cs_part_to_block_destroy(&d);
-}
-
-#endif /* defined(HAVE_MPI) */
-
 /*----------------------------------------------------------------------------
  * Write field values associated with nodal values of a nodal mesh to
  * a MEDCoupling object in serial mode.
@@ -1492,14 +798,14 @@ _export_field_values_ng(const fvm_nodal_t       *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_export_field_values_nl(const fvm_nodal_t           *mesh,
-                        int                          dim,
-                        cs_interlace_t               interlace,
-                        int                          n_parent_lists,
-                        const cs_lnum_t              parent_num_shift[],
-                        cs_datatype_t                datatype,
-                        const void            *const field_values[],
-                        MEDCouplingFieldDouble      *f)
+_export_field_values_n(const fvm_nodal_t           *mesh,
+                       int                          dim,
+                       cs_interlace_t               interlace,
+                       int                          n_parent_lists,
+                       const cs_lnum_t              parent_num_shift[],
+                       cs_datatype_t                datatype,
+                       const void            *const field_values[],
+                       MEDCouplingFieldDouble      *f)
 {
   assert(f != NULL);
 
@@ -1519,180 +825,6 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
                     field_values,
                     values);
 }
-
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Write field values associated with element values of a nodal mesh to
- * a MEDCoupling object.
- *
- * Output fields are non interlaced. Input arrays may be interlaced or not.
- *
- * parameters:
- *   mesh             <-- pointer to nodal mesh structure
- *   dim              <-- field dimension
- *   interlace        <-- indicates if field in memory is interlaced
- *   n_parent_lists   <-- indicates if field values are to be obtained
- *                        directly through the local entity index (when 0) or
- *                        through the parent entity numbers (when 1 or more)
- *   parent_num_shift <-- parent list to common number index shifts;
- *                        size: n_parent_lists
- *   datatype         <-- indicates the data type of (source) field values
- *   field_values     <-- array of associated field value arrays
- *   comm             <-- associated MPI communicator
- *   f                <-- associated MEDCouplingFieldDouble object
- *                        (NULL on ranks > 0)
- *----------------------------------------------------------------------------*/
-
-static void
-_export_field_values_eg(const fvm_nodal_t               *mesh,
-                        int                              dim,
-                        cs_interlace_t                   interlace,
-                        int                              n_parent_lists,
-                        const cs_lnum_t                  parent_num_shift[],
-                        cs_datatype_t                    datatype,
-                        const void                *const field_values[],
-                        MPI_Comm                         comm,
-                        MEDCouplingFieldDouble          *f)
-{
-  int section_id;
-  int  rank, n_ranks;
-
-  cs_block_dist_info_t  bi;
-  cs_part_to_block_t  *d = NULL;
-
-  int         n_sections = 0;
-  cs_lnum_t   part_size = 0;
-  cs_gnum_t   n_g_elements = 0;
-
-  double  *part_values = NULL, *block_values = NULL;
-
-  cs_gnum_t        *_g_elt_num = NULL;
-  const cs_gnum_t  *g_elt_num = NULL;
-
-  const int  elt_dim = fvm_nodal_get_max_entity_dim(mesh);
-
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &n_ranks);
-
-  /* Loop on sections to count output size */
-
-  for (section_id = 0; section_id < mesh->n_sections; section_id++) {
-
-    const fvm_nodal_section_t  *section = mesh->sections[section_id];
-
-    if (section->entity_dim < elt_dim)
-      continue;
-
-    n_sections += 1;
-    n_g_elements += fvm_io_num_get_global_count(section->global_element_num);
-    part_size += fvm_io_num_get_local_count(section->global_element_num);
-
-  }
-
-  /* Build global numbering if necessary */
-
-  if (n_sections > 1) {
-
-    cs_lnum_t start_id = 0;
-
-    BFT_MALLOC(_g_elt_num, part_size, cs_gnum_t);
-    g_elt_num = _g_elt_num;
-
-    /* loop on sections which should be appended */
-
-    for (section_id = 0; section_id < mesh->n_sections; section_id++) {
-
-      const fvm_nodal_section_t  *section = mesh->sections[section_id];
-
-      const cs_lnum_t section_size
-        = fvm_io_num_get_local_count(section->global_element_num);
-
-      if (section->entity_dim < elt_dim)
-        continue;
-
-      memcpy(_g_elt_num + start_id,
-             fvm_io_num_get_global_num(section->global_element_num),
-             sizeof(cs_gnum_t)*section_size);
-      start_id += section_size;
-
-    };
-  }
-
-  else if (n_sections == 1)
-    g_elt_num
-      = fvm_io_num_get_global_num(mesh->sections[0]->global_element_num);
-
-
-  /* Build distribution structures */
-
-  bi = cs_block_dist_compute_sizes(rank,
-                                   n_ranks,
-                                   0,
-                                   n_g_elements,
-                                   n_g_elements);
-
-  d = cs_part_to_block_create_by_gnum(comm, bi, part_size, g_elt_num);
-
-  if (_g_elt_num != NULL)
-    cs_part_to_block_transfer_gnum(d, _g_elt_num);
-
-  g_elt_num = NULL;
-  _g_elt_num = NULL;
-
-  BFT_MALLOC(part_values, part_size, double);
-
-  if (f != NULL)
-    block_values = f->getArray()->getPointer();
-
-  /* Distribute partition to block values */
-
-  cs_lnum_t start_id = 0;
-  cs_lnum_t src_shift = 0;
-
-  /* loop on sections which should be appended */
-
-  for (section_id = 0; section_id < mesh->n_sections; section_id++) {
-
-    const fvm_nodal_section_t  *section = mesh->sections[section_id];
-
-    if (section->entity_dim < elt_dim)
-      continue;
-
-    fvm_convert_array(dim,
-                      0,
-                      dim,
-                      src_shift,
-                      section->n_elements + src_shift,
-                      interlace,
-                      datatype,
-                      CS_DOUBLE,
-                      n_parent_lists,
-                      parent_num_shift,
-                      section->parent_element_num,
-                      field_values,
-                      part_values + start_id);
-
-    start_id += fvm_io_num_get_local_count(section->global_element_num)*dim;
-    if (n_parent_lists == 0)
-      src_shift += fvm_io_num_get_local_count(section->global_element_num);
-
-  }
-
-  /* Distribute part values */
-
-  cs_part_to_block_copy_array(d,
-                              CS_DOUBLE,
-                              1,
-                              part_values,
-                              block_values);
-
-  BFT_FREE(part_values);
-
-  cs_part_to_block_destroy(&d);
-}
-
-#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Write field values associated with element values of a nodal mesh to
@@ -1715,14 +847,14 @@ _export_field_values_eg(const fvm_nodal_t               *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_export_field_values_el(const fvm_nodal_t               *mesh,
-                        int                              dim,
-                        cs_interlace_t                   interlace,
-                        int                              n_parent_lists,
-                        const cs_lnum_t                  parent_num_shift[],
-                        cs_datatype_t                    datatype,
-                        const void                *const field_values[],
-                        MEDCouplingFieldDouble          *f)
+_export_field_values_e(const fvm_nodal_t               *mesh,
+                       int                              dim,
+                       cs_interlace_t                   interlace,
+                       int                              n_parent_lists,
+                       const cs_lnum_t                  parent_num_shift[],
+                       cs_datatype_t                    datatype,
+                       const void                *const field_values[],
+                       MEDCouplingFieldDouble          *f)
 {
   int  section_id;
 
@@ -1965,13 +1097,7 @@ fvm_to_medcoupling_export_nodal(void               *this_writer_p,
   /* Vertex coordinates */
   /*--------------------*/
 
-#if defined(HAVE_MPI)
-  if (n_ranks > 1)
-    _export_vertex_coords_g(this_writer, mesh, med_mesh);
-#endif
-
-  if (n_ranks == 1)
-    _export_vertex_coords_l(mesh, med_mesh);
+  _export_vertex_coords_l(mesh, med_mesh);
 
   /* Element connectivity size */
   /*---------------------------*/
@@ -2006,67 +1132,23 @@ fvm_to_medcoupling_export_nodal(void               *this_writer_p,
     /* Output for strided (regular) element types */
     /*--------------------------------------------*/
 
-    if (section->stride > 0) {
-
-#if defined(HAVE_MPI)
-
-      if (n_ranks > 1)
-        _export_nodal_strided_g(section,
-                                mesh->global_vertex_num,
-                                this_writer->comm,
-                                med_mesh);
-
-#endif /* defined(HAVE_MPI) */
-
-      if (n_ranks == 1)
-        _write_connect_block(section->type,
-                             section->n_elements,
-                             section->vertex_num,
-                             med_mesh);
-
-    } /* end of output for strided element types */
+    if (section->stride > 0)
+      _write_connect_block(section->type,
+                           section->n_elements,
+                           section->vertex_num,
+                           med_mesh);
 
     /* Output for polygons */
     /*---------------------*/
 
-    else if (section->type == FVM_FACE_POLY) {
-#if defined(HAVE_MPI)
-
-      /* output in parallel mode */
-
-      if (n_ranks > 1)
-        _export_nodal_polygons_g(section,
-                                 mesh->global_vertex_num,
-                                 this_writer->comm,
-                                 med_mesh);
-#endif /* defined(HAVE_MPI) */
-
-      if (n_ranks == 1)
-        _export_nodal_polygons_l(section, med_mesh);
-
-    }
+    else if (section->type == FVM_FACE_POLY)
+      _export_nodal_polygons_l(section, med_mesh);
 
     /* Output for polyhedra */
     /*----------------------*/
 
-    else if (section->type == FVM_CELL_POLY) {
-
-#if defined(HAVE_MPI)
-
-      /* output in parallel mode */
-
-      if (n_ranks > 1)
-        _export_nodal_polyhedra_g(section,
-                                  mesh->global_vertex_num,
-                                  this_writer->comm,
-                                  med_mesh);
-
-#endif /* defined(HAVE_MPI) */
-
-      if (n_ranks == 1)
-        _export_nodal_polyhedra_l(section, med_mesh);
-
-    }
+    else if (section->type == FVM_CELL_POLY)
+      _export_nodal_polyhedra_l(section, med_mesh);
 
   } /* End of loop on sections */
 
@@ -2157,30 +1239,14 @@ fvm_to_medcoupling_export_field(void                  *this_writer_p,
 
   if (location == FVM_WRITER_PER_NODE) {
 
-#if defined(HAVE_MPI)
-
-    if (n_ranks > 1)
-      _export_field_values_ng(mesh,
-                              dimension,
-                              interlace,
-                              n_parent_lists,
-                              parent_num_shift,
-                              datatype,
-                              field_values,
-                              f,
-                              this_writer->comm);
-
-#endif /* defined(HAVE_MPI) */
-
-    if (n_ranks == 1)
-      _export_field_values_nl(mesh,
-                              dimension,
-                              interlace,
-                              n_parent_lists,
-                              parent_num_shift,
-                              datatype,
-                              field_values,
-                              f);
+    _export_field_values_n(mesh,
+                           dimension,
+                           interlace,
+                           n_parent_lists,
+                           parent_num_shift,
+                           datatype,
+                           field_values,
+                           f);
   }
 
   /* Per element variable */
@@ -2188,30 +1254,14 @@ fvm_to_medcoupling_export_field(void                  *this_writer_p,
 
   else if (location == FVM_WRITER_PER_ELEMENT) {
 
-#if defined(HAVE_MPI)
-
-    if (n_ranks > 1)
-      _export_field_values_eg(mesh,
-                              dimension,
-                              interlace,
-                              n_parent_lists,
-                              parent_num_shift,
-                              datatype,
-                              field_values,
-                              this_writer->comm,
-                              f);
-
-#endif /* defined(HAVE_MPI) */
-
-    if (n_ranks == 1)
-      _export_field_values_el(mesh,
-                              dimension,
-                              interlace,
-                              n_parent_lists,
-                              parent_num_shift,
-                              datatype,
-                              field_values,
-                              f);
+    _export_field_values_e(mesh,
+                           dimension,
+                           interlace,
+                           n_parent_lists,
+                           parent_num_shift,
+                           datatype,
+                           field_values,
+                           f);
 
   } /* End for per element variable */
 
