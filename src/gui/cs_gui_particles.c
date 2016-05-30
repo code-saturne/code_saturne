@@ -470,8 +470,6 @@ cs_gui_particles_model(void)
   _get_status(&(cs_glob_lagr_model->deposition), 2,
               "lagrangian", "deposition_submodel");
 
-  bft_printf("idepst = %d", cs_glob_lagr_model->deposition);
-
   /* Particles model */
 
   _get_particles_model("particles_models", &(cs_glob_lagr_model->physical_model));
@@ -690,8 +688,8 @@ cs_gui_particles_model(void)
 #if _XML_DEBUG_
   bft_printf("==>UILAG1\n");
   bft_printf("--iilagr = %i\n", cs_glob_lagr_time_scheme->iilagr);
-  bft_printf("--isuila = %i\n", cs_glob_lagr_base->isuila);
-  bft_printf("--isttio = %i\n", cs_glob_lagr_base->isttio);
+  bft_printf("--isuila = %i\n", cs_glob_lagr_time_scheme->isuila);
+  bft_printf("--isttio = %i\n", cs_glob_lagr_time_scheme->isttio);
   bft_printf("--idepst = %i\n", cs_glob_lagr_model->deposition);
   bft_printf("--iphyla = %i\n", cs_glob_lagr_model->physical_model);
   switch(cs_glob_lagr_model->physical_model) {
@@ -725,7 +723,7 @@ cs_gui_particles_model(void)
     bft_printf("--ltsthe = %i\n", cs_glob_lagr_source_terms->ltsthe);
   }
 
-  bft_printf("--nordre = %i\n", cs_glob_lagr_model->t_order);
+  bft_printf("--nordre = %i\n", cs_glob_lagr_time_scheme->t_order);
   bft_printf("--idistu = %i\n", cs_glob_lagr_time_scheme->idistu);
   bft_printf("--idiffl = %i\n", cs_glob_lagr_time_scheme->idiffl);
   bft_printf("--modcpl = %i\n", cs_glob_lagr_time_scheme->modcpl);
@@ -750,11 +748,10 @@ cs_gui_particles_model(void)
 
   bft_printf("--idstnt = %i\n", cs_glob_lagr_stat_options->idstnt);
   bft_printf("--nstist = %i\n", cs_glob_lagr_stat_options->nstist);
-  bft_printf("--seuil  = %f\n", cs_glob_lagr_stat_options->seuil);
   bft_printf("--vol_stats = %i\n", vol_stats);
 
   bft_printf("--iensi3 = %i\n", lagr_post_options->iensi3);
-  if (*iensi3 == 1) {
+  if (lagr_post_options->iensi3 == 1) {
     bft_printf("--inbrbd   = %i\n", cs_glob_lagr_boundary_interactions->inbrbd);
     bft_printf("--iflmbd   = %i\n", cs_glob_lagr_boundary_interactions->iflmbd);
     bft_printf("--iangbd   = %i\n", cs_glob_lagr_boundary_interactions->iangbd);
@@ -762,7 +759,7 @@ cs_gui_particles_model(void)
     bft_printf("--iencnbbd = %i\n", cs_glob_lagr_boundary_interactions->iencnbbd);
     bft_printf("--iencmabd = %i\n", cs_glob_lagr_boundary_interactions->iencmabd);
     bft_printf("--iencdibd = %i\n", cs_glob_lagr_boundary_interactions->iencdibd);
-    bft_printf("--iencckbd = %i\n", cs_glob_lagr_boundary_interactions->encckbd);
+    bft_printf("--iencckbd = %i\n", cs_glob_lagr_boundary_interactions->iencckbd);
   }
 
 #endif
@@ -906,7 +903,11 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
                                            itmp0,
                                            itmp1,
                                            itmp2);
-
+#if _XML_DEBUG_
+          bft_printf("---number = %i \n", itmp0);
+          bft_printf("---frequency = %i \n", itmp1);
+          bft_printf("---statistical_groups = %i \n", itmp2);
+#endif
           /* velocity */
 
           choice = _get_attr("choice", 2, path2, "velocity");
@@ -933,7 +934,23 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
                                           itmp0,
                                           vel);
 
-          BFT_FREE(choice);
+#if _XML_DEBUG_
+          bft_printf("---velocity choice: %i "
+                     " (-1: fluid, 0: norm, 1: components, 2: subroutine)\n",
+                     itmp0);
+
+          if (itmp0 == 0)
+
+            bft_printf("----norm = %f \n", vel[0]);
+
+          else if (itmp0 == 1) {
+
+            bft_printf("----u = %f \n", vel[0]);
+            bft_printf("----v = %f \n", vel[1]);
+            bft_printf("----w = %f \n", vel[2]);
+          }
+#endif
+         BFT_FREE(choice);
 
           /* statistical_weight, mass_flow_rate*/
 
@@ -960,6 +977,15 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
                                       rtmp0,
                                       rtmp1);
 
+#if _XML_DEBUG_
+          bft_printf("---statistical weight choice: %i "
+                     " (1: prescribed, 2: rate, 3: subroutine)\n", choice);
+
+          if (itmp0 == 1 || itmp0 == 2) {
+            bft_printf("----statistical weight = %f \n", rtmp0);
+            bft_printf("----mass flow rate = %f \n", rtmp1);
+          }
+#endif
           BFT_FREE(choice);
 
           /* diameter */
@@ -980,6 +1006,17 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
                                       itmp0,
                                       rtmp0,
                                       rtmp1);
+
+#if _XML_DEBUG_
+          bft_printf("---diameter choice = %i "
+                     "(1: prescribed, 2: subroutine)\n",
+                     choice);
+
+          if (itmp0 == 1) {
+            bft_printf("----diameter = %f \n", rtmp0);
+            bft_printf("----standard deviation = %f \n", rtmp1);
+          }
+#endif
           BFT_FREE(choice);
 
           /* density */
@@ -991,6 +1028,11 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
           cs_lagr_set_zone_class_density(iclas,
                                          izone,
                                          rtmp0);
+
+#if _XML_DEBUG_
+          if (iphyla != 2)
+            bft_printf("---density = %f \n", rtmp0);
+#endif
 
           if (iphyla == 1) {
 
@@ -1020,6 +1062,17 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
                                       izone,
                                       rtmp1);
 
+#if _XML_DEBUG_
+            bft_printf("---temperature choice = %i "
+                       "(1: prescribed, 2: subroutine)\n",
+                       choice);
+
+            if (itmp0 == 1)
+              bft_printf("----temperature = %f \n", rtmp0);
+
+            bft_printf("---specific heat = %f \n", rtmp1);
+            bft_printf("---emissivity = %f \n", rtmp2);
+#endif
             BFT_FREE(choice);
 
           }
@@ -1053,6 +1106,12 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
               itmp1 = 0;
             }
 
+#if _XML_DEBUG_
+            bft_printf("---coal number = %i \n", itmp0);
+            bft_printf("---coal composition = %i "
+                       "(1: raw coal, 2: user defined)\n", itmp1);
+#endif /* _XML_DEBUG_ */
+
             cs_lagr_set_zone_class_coal(iclas,
                                         izone,
                                         itmp1, // coal profile
@@ -1068,71 +1127,6 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
             BFT_FREE(choice);
 
           }
-
-#if _XML_DEBUG_
-
-          bft_printf("---number = %i \n", zonedata->nb_part);
-          bft_printf("---frequency = %i \n", zonedata->injection_frequency);
-          bft_printf("---statistical_groups = %i \n", zonedata->cluster);
-
-          bft_printf("---velocity choice: %i "
-                     " (-1: fluid, 0: norm, 1: components, 2: subroutine)\n",
-                     zonedata->velocity_profile);
-
-          if (zonedata->velocity_profile == 0)
-
-            bft_printf("----norm = %f \n", zonedata->velocity_magnitude);
-
-          else if (zonedata->velocity_profile == 1) {
-
-            bft_printf("----u = %f \n", zonedata->velocity[0]);
-            bft_printf("----v = %f \n", zonedata->velocity[1]);
-            bft_printf("----w = %f \n", zonedata->velocity[2]);
-
-          }
-
-          bft_printf("---statistical weight choice: %i "
-                     " (1: prescribed, 2: subroutine)\n", zonedata->stat_weight);
-
-          if (zonedata->distribution_profile == 1) {
-            bft_printf("----statistical weight = %f \n", zonedata->stat_weight);
-            bft_printf("----mass flow rate = %f \n", zonedata->flow_rate);
-          }
-
-          bft_printf("---diameter choice = %i "
-                     "(1: prescribed, 2: subroutine)\n",
-                     zonedata->distribution_profile);
-
-          if (zonedata->distribution_profile == 1) {
-            bft_printf("----diameter = %f \n", zonedata->diameter);
-            bft_printf("----standard deviation = %f \n",
-                       zonedata->diameter_variance);
-          }
-
-          if (iphyla != 2)
-            bft_printf("---density = %f \n", zonedata->density);
-
-          if (iphyla == 1) {
-
-            bft_printf("---temperature choice = %i "
-                       "(1: prescribed, 2: subroutine)\n",
-                       zonedata->temperature_profile);
-
-            if (zonedata->temperature_profile == 1)
-              bft_printf("----temperature = %f \n", zonedata->temperature);
-
-            bft_printf("---specific heat = %f \n", zonedata->cp);
-            bft_printf("---emissivity = %f \n", zonedata->emissivity);
-          }
-
-          if (iphyla == 2) {
-            bft_printf("---coal number = %i \n", zonedata->coal_number);
-            bft_printf("---coal composition = %i "
-                       "(1: raw coal, 2: user defined)\n",
-                       zonedata->coal_profile);
-          }
-
-#endif /* _XML_DEBUG_ */
 
         } /* End of loop on class */
 
