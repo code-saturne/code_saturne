@@ -78,6 +78,7 @@ BEGIN_C_DECLS
   \var  cs_stokes_model_t::ivisse
         take \f$ \divs \left( \mu \transpose{\gradt \, \vect{u}} - 2/3 \mu
         \trace{\gradt \, \vect{u}} \right) \f$
+        into account in the momentum equation
   \var  cs_stokes_model_t::irevmc
         reconstruction of the velocity field with the updated pressure option
         - 0: default
