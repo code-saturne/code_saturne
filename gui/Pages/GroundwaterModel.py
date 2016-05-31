@@ -139,15 +139,15 @@ class GroundwaterModel(Variables, Model):
             self.setNewProperty(node, 'yplus')
             n = self.setNewProperty(node, 'stress')
             n['support'] = 'boundary'
-            n['label'] = 'Stresss'
+            n['label'] = 'Stress'
             if not node.xmlGetChildNode('property', name='stress_tangential'):
                 n = self.setNewProperty(node, 'stress_tangential')
-                n['label'] = 'Stresss, tangential'
+                n['label'] = 'Stress, tangential'
                 n['support'] = 'boundary'
                 n.xmlInitNode('postprocessing_recording')['status']= "off"
             if not node.xmlGetChildNode('property', name='stress_normal'):
                 n = self.setNewProperty(node, 'stress_normal')
-                n['label'] = 'Stresss, normal'
+                n['label'] = 'Stress, normal'
                 n['support'] = 'boundary'
                 n.xmlInitNode('postprocessing_recording')['status']= "off"
 
@@ -287,4 +287,3 @@ class GroundwaterModel(Variables, Model):
         self.isOnOff(v)
         node = self.node_darcy.xmlInitChildNode('gravity', 'status')
         node['status'] = v
-
