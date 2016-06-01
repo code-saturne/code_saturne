@@ -69,6 +69,7 @@
 #include "cs_log.h"
 #include "cs_mesh_location.h"
 #include "cs_selector.h"
+#include "cs_physical_model.h"
 #include "cs_post.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -1118,29 +1119,31 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
   for (int i = 0; i < 5; i++)
     ipstdv[i] = 0;
 
-  if (_surfacic_variable_post("stress", true))
-    ipstdv[0] += 1;
-  if (_surfacic_variable_post("stress_tangential", false))
-    ipstdv[0] += 2;
-  if (_surfacic_variable_post("stress_normal", false))
-    ipstdv[0] += 4;
+  if (!cs_glob_physical_model_flag[CS_GROUNDWATER]) {
+    if (_surfacic_variable_post("stress", true))
+      ipstdv[0] += 1;
+    if (_surfacic_variable_post("stress_tangential", false))
+      ipstdv[0] += 2;
+    if (_surfacic_variable_post("stress_normal", false))
+      ipstdv[0] += 4;
 
-  if (_surfacic_variable_post("yplus", true))
-    ipstdv[1] = 1;
-  if (_surfacic_variable_post("tplus", true))
-    ipstdv[2] = 1;
-  if (_surfacic_variable_post("thermal_flux", true))
-    ipstdv[3] = 1;
-  if (_surfacic_variable_post("boundary_temperature", true)) {
-    cs_field_t *bf = cs_parameters_add_boundary_temperature();
-    if (bf != NULL) {
-      int k_vis = cs_field_key_id("post_vis");
-      cs_field_set_key_int(bf, k_vis, 1);
+    if (_surfacic_variable_post("yplus", true))
+      ipstdv[1] = 1;
+    if (_surfacic_variable_post("tplus", true))
+      ipstdv[2] = 1;
+    if (_surfacic_variable_post("thermal_flux", true))
+      ipstdv[3] = 1;
+    if (_surfacic_variable_post("boundary_temperature", true)) {
+      cs_field_t *bf = cs_parameters_add_boundary_temperature();
+      if (bf != NULL) {
+        int k_vis = cs_field_key_id("post_vis");
+        cs_field_set_key_int(bf, k_vis, 1);
+      }
     }
-  }
 
-  if (_surfacic_variable_post("boundary_layer_nusselt", true))
-    ipstdv[4] = 1;
+    if (_surfacic_variable_post("boundary_layer_nusselt", true))
+      ipstdv[4] = 1;
+  }
 }
 
 /*----------------------------------------------------------------------------

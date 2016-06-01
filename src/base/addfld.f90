@@ -226,7 +226,7 @@ itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 if (icond.ge.0 .or. ipstdv(ipstyp).ne.0) then
   call field_get_id_try('yplus', f_id) ! Test if pre-existing
   call field_find_or_create('yplus', itycat, ityloc, idim1, iyplbr)
-  if (f_id .lt. 0) then                ! Set some properties if new)
+  if (f_id .lt. 0) then                ! Set some properties if new
     call field_set_key_str(iyplbr, keylbl, 'Yplus')
     call field_set_key_int(iyplbr, keylog, 1)
   endif
