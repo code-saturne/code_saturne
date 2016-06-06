@@ -79,6 +79,7 @@ class SchemeOrderDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
+        editor.addItem("Automatic")
         editor.addItem("Upwind")
         editor.addItem("Centered")
         editor.addItem("SOLU")
@@ -87,7 +88,7 @@ class SchemeOrderDelegate(QItemDelegate):
 
 
     def setEditorData(self, comboBox, index):
-        dico = {"upwind": 0, "centered": 1, "solu": 2}
+        dico = {"automatic": 0, "upwind": 1, "centered": 2, "solu": 3}
         row = index.row()
         string = index.model().dataScheme[row]['ischcv']
         idx = dico[string]
@@ -330,8 +331,8 @@ class StandardItemModelScheme(QStandardItemModel):
 
 
     def populateModel(self):
-        self.dicoV2M= {"Upwind" : 'upwind', "Centered": 'centered', "SOLU": 'solu'}
-        self.dicoM2V= {"upwind" : 'Upwind', "centered": 'Centered', "solu": 'SOLU'}
+        self.dicoV2M= {"Automatic" : 'automatic', "Upwind" : 'upwind', "Centered": 'centered', "SOLU": 'solu'}
+        self.dicoM2V= {'automatic' : "Automatic", "upwind" : 'Upwind', "centered": 'Centered', "solu": 'SOLU'}
 
         for name in self.NPE.getSchemeList():
             dico           = {}

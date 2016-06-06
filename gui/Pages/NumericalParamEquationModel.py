@@ -113,12 +113,13 @@ class NumericalParamEquatModel(Model):
         self.default['solver_choice'] = 'automatic'
         self.default['preconditioning_choice'] = 'automatic'
 
+        self.default['order_scheme'] = 'automatic'
+
         if name not in self.var:
-            self.default['order_scheme'] = 'upwind'
             self.default['blending_factor'] = 0.
         else:
-            self.default['order_scheme'] = 'centered'
             self.default['blending_factor'] = 1.
+
         from code_saturne.Pages.CompressibleModel import CompressibleModel
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
             self.default['order_scheme'] = 'upwind'
@@ -502,7 +503,7 @@ class NumericalParamEquatModel(Model):
         Put value of order scheme for variable or scalar labelled name
         only if it 's different of default value
         """
-        self.isInList(value, ('upwind', 'centered', 'solu'))
+        self.isInList(value, ('automatic', 'upwind', 'centered', 'solu'))
         node = self._getSchemeNameNode(name)
         if value == self._defaultValues(name)['order_scheme']:
             node.xmlRemoveChild('order_scheme')
