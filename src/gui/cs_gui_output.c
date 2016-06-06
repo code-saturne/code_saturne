@@ -1119,7 +1119,7 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
   for (int i = 0; i < 5; i++)
     ipstdv[i] = 0;
 
-  if (!cs_glob_physical_model_flag[CS_GROUNDWATER]) {
+  if (cs_glob_physical_model_flag[CS_GROUNDWATER] == -1) {
     if (_surfacic_variable_post("stress", true))
       ipstdv[0] += 1;
     if (_surfacic_variable_post("stress_tangential", false))
