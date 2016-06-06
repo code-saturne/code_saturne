@@ -5,6 +5,8 @@ Release 4.2.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bug in AFM and DFM models with buoyancy and variance.
+
 - Fix access to a variable value in radiation term for fuel combustion.
 
 - Fix in the computation of Tstar with Dirichlet BCs.
