@@ -186,7 +186,6 @@ double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: cpro_wgrec_s
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, croma, pcrom
-double precision, dimension(:), pointer :: cvar_scal
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
@@ -407,8 +406,7 @@ endif
 ! Precipitation/dissolution
 ! Calculation of source terms du to precipitation and dissolution phenomena
 if (ipreci .eq. 1 .and. iscal .eq. 1) then
-   call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
-   call precst(dtref, crom, cvar_scal, smbrs)
+   call precst(dtref, crom, cvar_var, smbrs)
 endif
 
 ! Si on extrapole les TS :
@@ -720,16 +718,15 @@ if (itspdv.eq.1) then
 
     deallocate (coefa_p, coefb_p)
 
-    ! Traitement de la production
-    ! On utilise MAX(PROPCE,ZERO) car en LES dynamique on fait un clipping
-    ! tel que (mu + mu_t)>0, donc mu_t peut etre negatif et donc
-    ! potentiellement (lambda/Cp + mu_t/sigma) aussi
-    ! Ceci ne pose probleme que quand on resout une equation de variance
-    ! de scalaire avec un modele LES ... ce qui serait curieux mais n'est
-    ! pas interdit par le code.
-    !   Si extrapolation : dans PROPCE
+    ! Production Term
+
+    ! NB: diffusivity is clipped to 0 because in LES, it might be negative. Problematic
+    ! for the variance even if it is strange to use variance and LES ...
+
+    ! Time extrapolation (2nd order)
     if (st_prv_id .ge. 0) then
-      ! On prend la viscosite a l'instant n, meme si elle est extrapolee
+
+      ! Not extapolated value of the viscosity
       ipcvso = ipproc(ivisct)
       if (iviext.gt.0) ipcvso = ipproc(ivista)
 
@@ -761,7 +758,8 @@ if (itspdv.eq.1) then
                *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
       endif
-    ! Sinon : dans SMBRS
+
+    ! If not time extrapolation...
     else
       ipcvso = ipproc(ivisct)
 
@@ -820,7 +818,7 @@ if (itspdv.eq.1) then
     ! Free memory
     deallocate(grad)
 
-    ! Traitement de la dissipation
+    ! Dissipation term
     if (st_prv_id .ge. 0) then
       thetap = thetv
     else
