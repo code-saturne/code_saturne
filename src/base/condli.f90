@@ -191,7 +191,6 @@ double precision hintt(6)
 double precision flumbf, visclc, visctc, distbf, srfbn2
 double precision xxp0, xyp0, xzp0
 double precision srfbnf, normal(3)
-double precision vistot
 double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
 double precision visci(3,3), fikis, viscis, distfi
 double precision temp
@@ -2736,15 +2735,6 @@ if (iforbr.ge.0 .and. iterns.eq.1) then
 
   ! Coupled solving of the velocity components
   do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    visclc = viscl(iel)
-    visctc = visct(iel)
-    if (itytur.eq.3) then
-      vistot = visclc
-    else
-      vistot = visclc + visctc
-    endif
-    distbf = distb(ifac)
     srfbnf = surfbn(ifac)
 
     ! The implicit term is added after having updated the velocity
