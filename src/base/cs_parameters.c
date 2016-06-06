@@ -758,11 +758,15 @@ cs_parameters_create_added_properties(void)
                   "this name is already reserved for field with id %d."),
                 name, cmp_id);
 
-    (void) cs_field_create(name,
-                           CS_FIELD_PROPERTY | CS_FIELD_USER,
-                           (_user_property_defs + i)->location_id,
-                           (_user_property_defs + i)->dim,
-                           false);
+    cs_field_t *fld =
+      cs_field_create(name,
+                      CS_FIELD_PROPERTY | CS_FIELD_USER,
+                      (_user_property_defs + i)->location_id,
+                      (_user_property_defs + i)->dim,
+                      false);
+
+    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
 
     BFT_FREE((_user_property_defs + i)->name);
 
