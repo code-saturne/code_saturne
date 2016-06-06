@@ -251,7 +251,7 @@ if (xray2 < xr2) {
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMobileMeshView -> %s" % str(result))
-            self.mdl.setFormula(result)
+            self.mdl.setFormula(str(result))
             self.pushButtonFormula.setStyleSheet("background-color: green")
             self.pushButtonFormula.setToolTip(result)
 

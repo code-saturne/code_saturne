@@ -142,7 +142,7 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMobileMeshBoundary -> %s" % str(result))
-            self.__boundary.setFormula(result)
+            self.__boundary.setFormula(str(result))
             self.pushButtonMobilBoundary.setStyleSheet("background-color: green")
             self.pushButtonMobilBoundary.setToolTip(result)
 

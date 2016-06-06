@@ -202,7 +202,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotHydraulicHeadFormula -> %s" % str(result))
-            self.__boundary.setHydraulicHeadFormula(result)
+            self.__boundary.setHydraulicHeadFormula(str(result))
             self.pushButtonHydraulicHead.setStyleSheet("background-color: green")
             self.pushButtonHydraulicHead.setToolTip(result)
 

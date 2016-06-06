@@ -544,7 +544,7 @@ class CoalCombustionModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getCoalCombustionModel(self):
+    def getCoalCombustionModel(self, status="full"):
         """
         Return the current coal combustion model.
         """
@@ -552,7 +552,10 @@ class CoalCombustionModel(Variables, Model):
 
         if model not in self.__coalCombustionModelsList():
             model = self.defaultValues()['model']
-            self.setCoalCombustionModel(model)
+            if status == "only":
+                self.node_fuel.xmlRemoveNode()
+            else:
+                self.setCoalCombustionModel(model)
         else:
             self.__updateSolidFuelCombustionDensity(model)
 

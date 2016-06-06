@@ -351,7 +351,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotPotVectorFormula -> %s" % str(result))
-            self.__b.setElecScalarFormula(self.potVect, self.potVec_type, result)
+            self.__b.setElecScalarFormula(self.potVect, self.potVec_type, str(result))
             self.pushButtonPotVectorFormula.setToolTip(result)
             self.pushButtonPotVectorFormula.setStyleSheet("background-color: green")
 

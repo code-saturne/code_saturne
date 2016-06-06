@@ -103,10 +103,8 @@ class LagrangianModel(Model):
         default['complete_model_iteration']            = 0
         default['complete_model_direction']            = 1
 
-        from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
-        if CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
-            default['coupling_mode']                       = "frozen"
-        del CoalCombustionModel
+        if CoalCombustionModel(self.case).getCoalCombustionModel("only") != 'off':
+            default['coupling_mode']                   = "frozen"
 
         return default
 

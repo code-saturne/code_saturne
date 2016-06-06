@@ -102,7 +102,6 @@ class Zone(object):
         self._natureDict = {}
         self.case = case
 
-
     def setLabel(self, text):
         if Model().isStr(text):
             self._label = text
@@ -191,6 +190,10 @@ class BoundaryZone(Zone):
                     self._natureDict['groundwater'] = self.tr("Groundwater flow")
                     self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', 'groundwater']
                 del GroundwaterModel
+                from code_saturne.Pages.LagrangianModel import LagrangianModel
+                if LagrangianModel(self.case).getLagrangianStatus() != "off":
+                    self._natureList = ['wall', 'inlet', 'outlet', 'symmetry']
+                del LagrangianModel
             else:
                 self._natureList = ['wall', 'inlet', 'outlet', 'symmetry']
         else:
@@ -246,18 +249,18 @@ class VolumicZone(Zone):
                 self._natureDict['momentum_source_term'] = self.tr("Volumetric source\n term")
             del GroundwaterModel
 
-        from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
-        if ThermalScalarModel(self.case).getThermalScalarModel() != 'off':
-            self._natureList.append('thermal_source_term')
-            self._natureDict['thermal_source_term']  = self.tr("Thermal source term")
-        del ThermalScalarModel
+            from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+            if ThermalScalarModel(self.case).getThermalScalarModel() != 'off':
+                self._natureList.append('thermal_source_term')
+                self._natureDict['thermal_source_term']  = self.tr("Thermal source term")
+            del ThermalScalarModel
 
-        self.node_models = self.case.xmlGetNode('thermophysical_models')
-        node_darcy = self.node_models.xmlGetNode('groundwater_model')
-        if node_darcy:
-            if node_darcy['model'] != 'off':
-                self._natureList.append('groundwater_law')
-                self._natureDict['groundwater_law']  = self.tr("Groundwater\n volumic law")
+            self.node_models = self.case.xmlGetNode('thermophysical_models')
+            node_darcy = self.node_models.xmlGetNode('groundwater_model')
+            if node_darcy:
+                if node_darcy['model'] != 'off':
+                    self._natureList.append('groundwater_law')
+                    self._natureDict['groundwater_law']  = self.tr("Groundwater\n volumic law")
 
         node = self.case.xmlGetNode('additional_scalars')
         number = len(node.xmlGetNodeList('variable', type='user'))

@@ -971,7 +971,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormula('density', result)
+            self.mdl.setFormula('density', str(result))
             self.pushButtonRho.setToolTip(result)
             self.pushButtonRho.setStyleSheet("background-color: green")
 
@@ -1018,7 +1018,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMu -> %s" % str(result))
-            self.mdl.setFormula('molecular_viscosity', result)
+            self.mdl.setFormula('molecular_viscosity', str(result))
             self.pushButtonMu.setToolTip(result)
             self.pushButtonMu.setStyleSheet("background-color: green")
 
@@ -1049,7 +1049,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormula('specific_heat', result)
+            self.mdl.setFormula('specific_heat', str(result))
             self.pushButtonCp.setToolTip(result)
             self.pushButtonCp.setStyleSheet("background-color: green")
 
@@ -1081,7 +1081,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaViscv0 -> %s" % str(result))
-            self.mdl.setFormula('volume_viscosity', result)
+            self.mdl.setFormula('volume_viscosity', str(result))
             self.pushButtonViscv0.setToolTip(result)
             self.pushButtonViscv0.setStyleSheet("background-color: green")
 
@@ -1121,7 +1121,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaAl -> %s" % str(result))
-            self.mdl.setFormula('thermal_conductivity', result)
+            self.mdl.setFormula('thermal_conductivity', str(result))
             self.pushButtonAl.setToolTip(result)
             self.pushButtonAl.setStyleSheet("background-color: green")
 
@@ -1150,7 +1150,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaDiff -> %s" % str(result))
-            self.m_sca.setDiffFormula(self.scalar, result)
+            self.m_sca.setDiffFormula(self.scalar, str(result))
             self.pushButtonDiff.setToolTip(result)
             self.pushButtonDiff.setStyleSheet("background-color: green")
 

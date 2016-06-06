@@ -46,7 +46,7 @@ from code_saturne.Base.XMLvariables import Variables, Model
 from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
 from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
 from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
-from code_saturne.Pages.NumericalParamEquationModel import NumericalParamEquatModel
+from code_saturne.Pages.NumericalParamEquationModel import NumericalParamEquationModel
 from code_saturne.Pages.LocalizationModel import LocalizationModel
 from code_saturne.Pages.Boundary import Boundary
 
@@ -319,7 +319,7 @@ class GasCombustionModel(Variables, Model):
                 if name not in previous_list:
                     self.setNewVariable(self.node_gas, name, tpe="model", label=name)
 
-            NPE = NumericalParamEquatModel(self.case)
+            NPE = NumericalParamEquationModel(self.case)
             for node in self.node_gas.xmlGetChildNodeList('variable'):
                 NPE.setBlendingFactor(node['label'], 0.)
                 NPE.setScheme(node['label'], 'upwind')

@@ -371,6 +371,7 @@ class MainView(object):
         self.fileNewAction.triggered.connect(self.fileNew)
         self.menuRecent.aboutToShow.connect(self.updateRecentFileMenu)
         self.fileSaveAction.triggered.connect(self.fileSave)
+        self.filePythonAction.triggered.connect(self.filePythonSave)
         self.fileSaveAsAction.triggered.connect(self.fileSaveAs)
         self.fileCloseAction.triggered.connect(self.close)
         self.fileQuitAction.triggered.connect(self.fileQuit)
@@ -1010,6 +1011,65 @@ class MainView(object):
                 self.statusbar.showMessage(msg, 2000)
 
 
+    def filePythonSave(self):
+        """
+        public slot
+
+        dump python for the current case
+        """
+        log.debug("filePythonSave()")
+
+        if not hasattr(self, 'case'):
+            return
+
+        file_name = self.case['pythonfile']
+        log.debug("filePythonSave(): %s" % file_name)
+        if not file_name:
+            self.filePythonSaveAs()
+            return
+
+        log.debug("fileSave(): %s" % os.path.dirname(file_name))
+        log.debug("fileSave(): %s" % os.access(os.path.dirname(file_name), os.W_OK))
+        if not os.access(os.path.dirname(file_name), os.W_OK):
+            title = self.tr("Save error")
+            msg   = self.tr("Failed to write %s " % file_name)
+            QMessageBox.critical(self, title, msg)
+            msg = self.tr("Saving aborted")
+            self.statusbar.showMessage(msg, 2000)
+            return
+
+        self.case.pythonSaveDocument()
+
+        log.debug("filePythonSave(): ok")
+
+        msg = self.tr("%s saved" % file_name)
+        self.statusbar.showMessage(msg, 2000)
+
+
+    def filePythonSaveAs(self):
+        """
+        public slot
+
+        save the current case with a new name
+        """
+        log.debug("filePythonSaveAs()")
+
+        if hasattr(self,'case'):
+            filetypes = self.tr(self.package.code_name) + self.tr(" python files (*.py);;""All Files (*)")
+            fname, _selfilter = getsavefilename(self,
+                                                self.tr("Save Python File As"),
+                                                self.case['data_path'],
+                                                filetypes)
+
+            if fname:
+                f = str(fname)
+                self.case['pythonfile'] = f
+                self.case.pythonSaveDocument()
+            else:
+                msg = self.tr("Saving aborted")
+                self.statusbar.showMessage(msg, 2000)
+
+
     def displayManual(self, pkg, manual, reader = None):
         """
         private method
@@ -1392,6 +1452,11 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         public slot
         """
         if self.case['undo'] != []:
+            python_record = self.case['dump_python'].pop()
+            self.case['python_redo'].append([python_record[0],
+                                             python_record[1],
+                                             python_record[2]])
+
             last_record = self.case['undo'].pop()
             self.case.record_func_prev = None
             self.case.xml_prev = ""
@@ -1399,7 +1464,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                       self.case.toString(),
                                       last_record[2],
                                       last_record[3]])
-            print(last_record)
 
             self.case.parseString(last_record[1])
             self.Browser.activeSelectedPage(last_record[2])
@@ -1423,6 +1487,11 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         public slot
         """
         if self.case['redo'] != []:
+            python_record = self.case['python_redo'].pop()
+            self.case['dump_python'].append([python_record[0],
+                                             python_record[1],
+                                             python_record[2]])
+
             last_record = self.case['redo'].pop()
             self.case.record_func_prev = None
             self.case.xml_prev = ""

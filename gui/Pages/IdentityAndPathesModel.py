@@ -82,7 +82,7 @@ class IdentityAndPathesModel(Model):
         self.case.root().xmlSetAttribute(case=ncase, study=nstudy)
 
 
-    @Variables.undoLocal
+    @Variables.noUndo
     def setCasePath(self, dircase):
         """
         Put path of case into xml file
@@ -90,7 +90,7 @@ class IdentityAndPathesModel(Model):
         self.case['case_path'] = dircase
 
 
-    @Variables.undoLocal
+    @Variables.noUndo
     def setRelevantSubdir(self, val, directory):
         """
         Put relevant_subdir value into xml file
@@ -105,7 +105,7 @@ class IdentityAndPathesModel(Model):
         self.case['relevant_subdir'] = val
 
 
-    @Variables.undoLocal
+    @Variables.noUndo
     def setPath(self, pathi, tag):
         """
         Put relevant_subdir value into xml file

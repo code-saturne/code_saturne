@@ -66,7 +66,6 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
 
         self.node_models   = self.case.xmlGetNode('thermophysical_models')
         self.node_therm    = self.node_models.xmlInitChildNode('thermal_scalar', 'model')
-        self.node_prop     = self.case.xmlGetNode('physical_properties').xmlGetNode('fluid_properties')
 
         self.node_coal  = self.node_models.xmlGetChildNode('solid_fuels',        'model')
         self.node_joule = self.node_models.xmlGetChildNode('joule_effect',       'model')
@@ -115,7 +114,8 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         else:
             lab_def = node['label']
 
-        self.setNewFluidProperty(self.node_prop, 'thermal_conductivity')
+        node_prop = self.case.xmlGetNode('physical_properties').xmlGetNode('fluid_properties')
+        self.setNewFluidProperty(node_prop, 'thermal_conductivity')
 
         self.setScalarBoundaries()
 

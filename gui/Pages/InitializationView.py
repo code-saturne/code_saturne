@@ -289,7 +289,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
-            self.init.setVelocityFormula(self.zone, result)
+            self.init.setVelocityFormula(self.zone, str(result))
             self.pushButtonVelocity.setStyleSheet("background-color: green")
             self.pushButtonVelocity.setToolTip(result)
 
@@ -351,7 +351,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaTurb -> %s" % str(result))
-            self.init.setTurbFormula(self.zone, result)
+            self.init.setTurbFormula(self.zone, str(result))
             self.pushButtonTurbulence.setStyleSheet("background-color: green")
             self.pushButtonTurbulence.setToolTip(result)
 
@@ -383,7 +383,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
-            self.init.setThermalFormula(self.zone, result)
+            self.init.setThermalFormula(self.zone, str(result))
             self.pushButtonThermal.setStyleSheet("background-color: green")
             self.pushButtonThermal.setToolTip(result)
 
@@ -411,7 +411,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
-            self.init.setSpeciesFormula(self.zone, self.scalar, result)
+            self.init.setSpeciesFormula(self.zone, self.scalar, str(result))
             self.pushButtonSpecies.setStyleSheet("background-color: green")
             self.pushButtonSpecies.setToolTip(result)
 
@@ -438,7 +438,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMeteo -> %s" % str(result))
-            self.init.setMeteoFormula(self.zone, self.scalar_meteo, result)
+            self.init.setMeteoFormula(self.zone, self.scalar_meteo, str(result))
             self.pushButtonMeteo.setStyleSheet("background-color: green")
             self.pushButtonMeteo.setToolTip(result)
 
@@ -616,7 +616,7 @@ pressure = p0 + g * ro * z;\n"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotPressureFormula -> %s" % str(result))
-            self.init.setPressureFormula(self.zone, result)
+            self.init.setPressureFormula(self.zone, str(result))
             self.pushButtonPressure.setStyleSheet("background-color: green")
             self.pushButtonPressure.setToolTip(result)
 
@@ -644,7 +644,7 @@ pressure = p0 + g * ro * z;\n"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotHydraulicHeadFormula -> %s" % str(result))
-            self.init.setHydraulicHeadFormula(self.zone, result)
+            self.init.setHydraulicHeadFormula(self.zone, str(result))
             self.pushButtonHydraulicHead.setStyleSheet("background-color: green")
             self.pushButtonHydraulicHead.setToolTip(result)
 
@@ -672,7 +672,7 @@ pressure = p0 + g * ro * z;\n"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotDensityFormula -> %s" % str(result))
-            self.init.setDensityFormula(self.zone, result)
+            self.init.setDensityFormula(self.zone, str(result))
             self.pushButtonDensity.setStyleSheet("background-color: green")
             self.pushButtonDensity.setToolTip(result)
 
@@ -700,7 +700,7 @@ pressure = p0 + g * ro * z;\n"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotTemperatureFormula -> %s" % str(result))
-            self.init.setTemperatureFormula(self.zone, result)
+            self.init.setTemperatureFormula(self.zone, str(result))
             self.pushButtonTemperature.setStyleSheet("background-color: green")
             self.pushButtonTemperature.setToolTip(result)
 
@@ -728,7 +728,7 @@ pressure = p0 + g * ro * z;\n"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotEnergyFormula -> %s" % str(result))
-            self.init.setEnergyFormula(self.zone, result)
+            self.init.setEnergyFormula(self.zone, str(result))
             self.pushButtonEnergy.setStyleSheet("background-color: green")
             self.pushButtonEnergy.setToolTip(result)
 

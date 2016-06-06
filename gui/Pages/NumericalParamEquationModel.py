@@ -27,8 +27,8 @@ This module defines the differents possible outputs : listings, for ensights
 chronologic and historic files .... captors .... used variables ...
 
 This module defines the following classes:
-- NumericalParamEquatModel
-- NumericalParamEquatModelTestCase
+- NumericalParamEquationModel
+- NumericalParamEquationModelTestCase
 """
 
 #-------------------------------------------------------------------------------
@@ -56,7 +56,7 @@ from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 # NumericalParamEquat model class
 #-------------------------------------------------------------------------------
 
-class NumericalParamEquatModel(Model):
+class NumericalParamEquationModel(Model):
     """
     """
     def __init__(self, case):
@@ -729,17 +729,17 @@ class NumericalParamEquatTestCase(ModelTest):
     """
     def checkNumericalParamEquatInstantiation(self):
         """
-        Check whether the NumericalParamEquatModel class could be instantiated
+        Check whether the NumericalParamEquationModel class could be instantiated
         """
         model = None
-        model = NumericalParamEquatModel(self.case)
-        assert model != None, 'Could not instantiate NumericalParamEquatModel'
+        model = NumericalParamEquationModel(self.case)
+        assert model != None, 'Could not instantiate NumericalParamEquationModel'
 
     def checkSetAndGetScheme(self):
         """
-        Check whether the NumericalParamEquatModel class could set and get scheme
+        Check whether the NumericalParamEquationModel class could set and get scheme
         """
-        model = NumericalParamEquatModel(self.case)
+        model = NumericalParamEquationModel(self.case)
         model.setScheme('Velocity', 'upwind')
         doc = """<velocity_pressure>
                         <variable label="Pressure" name="pressure"/>
@@ -757,9 +757,9 @@ class NumericalParamEquatTestCase(ModelTest):
 
     def checkSetAndGetBlendingFactor(self):
         """
-        Check whether the NumericalParamEquatModel class could set and get blending factor
+        Check whether the NumericalParamEquationModel class could set and get blending factor
         """
-        model = NumericalParamEquatModel(self.case)
+        model = NumericalParamEquationModel(self.case)
         model.setScheme('Velocity', 'centered')
         model.setBlendingFactor('Velocity', 0.5)
         doc = """<velocity_pressure>
@@ -778,9 +778,9 @@ class NumericalParamEquatTestCase(ModelTest):
 
     def checkSetAndGetSlopeTest(self):
         """
-        Check whether the NumericalParamEquatModel class could set and get slope test
+        Check whether the NumericalParamEquationModel class could set and get slope test
         """
-        model = NumericalParamEquatModel(self.case)
+        model = NumericalParamEquationModel(self.case)
         model.setSlopeTest('Velocity', 'off')
         doc = """<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>
@@ -799,9 +799,9 @@ class NumericalParamEquatTestCase(ModelTest):
 
     def checkSetAndGetFluxReconstruction(self):
         """
-        Check whether the NumericalParamEquatModel class could set and get flux reconstruction
+        Check whether the NumericalParamEquationModel class could set and get flux reconstruction
         """
-        model = NumericalParamEquatModel(self.case)
+        model = NumericalParamEquationModel(self.case)
         model.setFluxReconstruction('Velocity', 'on')
         doc = """<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>
@@ -834,9 +834,9 @@ class NumericalParamEquatTestCase(ModelTest):
 
     def checkSetAndGetSolverPrecision(self):
         """
-        Check whether the NumericalParamEquatModel class could set and get solver precision
+        Check whether the NumericalParamEquationModel class could set and get solver precision
         """
-        model = NumericalParamEquatModel(self.case)
+        model = NumericalParamEquationModel(self.case)
 
         assert model.getSolverPrecision('Pressure') == 1e-8,\
                 'Could not get solver precision for pressure in NumericalParamEquationModel'
@@ -862,9 +862,9 @@ class NumericalParamEquatTestCase(ModelTest):
 
     def checkSetAndGetScalarTimeStepFactor(self):
         """
-        Check whether the NumericalParamEquatModel class could set and get time step factor
+        Check whether the NumericalParamEquationModel class could set and get time step factor
         """
-        model = NumericalParamEquatModel(self.case)
+        model = NumericalParamEquationModel(self.case)
         from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel

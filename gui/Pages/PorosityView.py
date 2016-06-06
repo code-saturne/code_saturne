@@ -245,7 +245,7 @@ class PorosityView(QWidget, Ui_PorosityForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaPorosity -> %s" % str(result))
-            self.mdl.setPorosityFormula(name, result)
+            self.mdl.setPorosityFormula(name, str(result))
             self.pushButtonPorosity.setToolTip(result)
             self.pushButtonPorosity.setStyleSheet("background-color: green")
 

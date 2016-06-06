@@ -112,6 +112,7 @@
     <addaction name="menuRecent"/>
     <addaction name="separator"/>
     <addaction name="fileSaveAction"/>
+    <addaction name="filePythonAction"/>
     <addaction name="fileSaveAsAction"/>
     <addaction name="separator"/>
     <addaction name="fileCloseAction"/>
@@ -251,6 +252,18 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="filePythonAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/document-save.png</normaloff>:/icons/22x22/document-save.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Dump python</string>
+   </property>
+   <property name="statusTip">
+    <string>Dump python file.</string>
    </property>
   </action>
   <action name="fileSaveAsAction">

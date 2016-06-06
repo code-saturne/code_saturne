@@ -503,7 +503,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             self.lineEditIEPSI.setText(str(eps))
 
         # Coals
-        if CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
+        if CoalCombustionModel(self.case).getCoalCombustionModel("only") != 'off':
             self.groupBoxCoal.show()
             icoal = self.model.getCoalNumberValue(self.label, self.iclass)
             self.lineEditINUCHL.setText(str(icoal))
@@ -533,7 +533,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             self.frameDiameter.hide()
 
         #Coal
-        if CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
+        if CoalCombustionModel(self.case).getCoalCombustionModel("only") != 'off':
             self.labelIROPT.hide()
             self.labelUnitIROPT.hide()
             self.lineEditIROPT.hide()

@@ -51,7 +51,7 @@ from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, IntValidator, to_qvariant
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.NumericalParamEquationForm import Ui_NumericalParamEquationForm
-from code_saturne.Pages.NumericalParamEquationModel import NumericalParamEquatModel
+from code_saturne.Pages.NumericalParamEquationModel import NumericalParamEquationModel
 from code_saturne.Pages.TurbulenceModel import TurbulenceModel
 from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
 
@@ -836,7 +836,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
 
         self.case = case
         self.case.undoStopGlobal()
-        self.NPE = NumericalParamEquatModel(self.case)
+        self.NPE = NumericalParamEquationModel(self.case)
         self.SM  = SteadyManagementModel(self.case)
         self.turb = TurbulenceModel(self.case)
 

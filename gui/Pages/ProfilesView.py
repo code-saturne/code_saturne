@@ -482,7 +482,7 @@ z = z1*s + z0*(1.-s);"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotLineFormula -> %s" % str(result))
-            self.mdl.setFormula(self.label_select, result)
+            self.mdl.setFormula(self.label_select, str(result))
             self.pushButtonFormula.setToolTip(result)
             self.pushButtonFormula.setStyleSheet("background-color: green")
 

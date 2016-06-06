@@ -109,6 +109,7 @@ class Dico:
         self.data['saved']            = "yes"
         self.data['prepro']           = True
         self.data['xmlfile']          = ""
+        self.data['pythonfile']       = ""
         self.data['mesh_path']        = ""
         self.data['user_src_path']    = ""
         self.data['data_path']        = ""
@@ -127,6 +128,8 @@ class Dico:
         self.data['undo']             =  []
         self.data['redo']             =  []
         self.data['probes']           = None
+        self.data['dump_python']      = []
+        self.data['python_redo']      = []
 
     def _errorExit(self, msg):
         """
@@ -1291,6 +1294,165 @@ class Case(Dico, XMLDocument, QObject):
             print(msg)
 
 
+    def pythonSaveDocument(self):
+        """
+        This method writes the associated python command file.
+        See saveCase and saveCaseAs methods in the Main module.
+        """
+        # construct file content
+        from code_saturne.Pages.LocalizationModel import VolumicZone
+        from code_saturne.Pages.LocalizationModel import BoundaryZone
+
+        modulelst = []
+        cmd = []
+        for item in self['dump_python']:
+            if item[0] not in modulelst:
+                modulelst.append(item[0])
+
+            lst = item[0].split('.')
+            page = lst[len(lst)-1]
+            func = item[1]
+            args = item[2]
+            if page != 'LocalizationModel':
+                line = page + '(case)' + '.' + func + '('
+                if len(args) > 0:
+                    for i in range(len(args)-1):
+                        if type(args[i]) == str:
+                            line = line + '"""' + args[i] + '""",'
+                        else:
+                            line = line + str(args[i]) + ','
+                    if type(args[len(args) - 1]) == str:
+                        line = line +  '"""' + args[len(args) - 1] + '"""'
+                    else:
+                        line = line + str(args[len(args) - 1])
+                line = line + ')\n'
+                cmd.append(line)
+            else:
+                # special treatment
+                import pprint
+
+                if len(args) > 0:
+                    last_arg = args[len(args) - 1]
+
+                    if type(args[len(args) - 1]) == VolumicZone:
+                        # volumic zone already define
+                        if len(args) == 1 and last_arg.__dict__['_label'] == 'all_cells':
+                            continue
+
+                        line = 'model.' + func + '('
+                        if len(args) > 1:
+                            for i in range(len(args)-1):
+                                line = line + 'zone' + str(i) + ','
+                            line = line + 'zone' + str(len(args) - 1)
+                        line = line + ')\n'
+                        nature = ''
+                        if len(args) > 1:
+                            for i in range(len(args)):
+                                zone = 'zone' + str(i) + ' = Zone("VolumicZone", case, label = "' + args[i].__dict__['_label'] +\
+                                                                            '", codeNumber = "' + str(args[i].__dict__['_codeNumber']) +\
+                                                                            '", localization = "' + args[i].__dict__['_localization'] + '")\n'
+                                cmd.append(zone)
+
+                                nature = 'model.setNature("' + args[i].__dict__['_label'] + '", {'
+
+                                for item in args[i].__dict__['_nature'].keys():
+                                    if args[i].__dict__['_nature'][item] == 'on':
+                                        nature = nature + '"' + item + '": "' + args[i].__dict__['_nature'][item] + '", '
+                                nature = nature + '})\n'
+                                if i == 0:
+                                    cmd.append(nature)
+
+                        cmd.append(line)
+                        cmd.append(nature)
+
+                    elif type(args[len(args) - 1]) == BoundaryZone:
+                        line = 'model.' + func + '('
+                        if len(args) > 1:
+                            for i in range(len(args)-1):
+                                line = line + 'zone' + str(i) + ','
+                            line = line + 'zone' + str(len(args) - 1)
+                        line = line + ')\n'
+                        nature = ''
+                        if len(args) > 1:
+                            for i in range(len(args)):
+                                zone = 'zone' + str(i) + ' = Zone("BoundaryZone", case, label = "' + args[i].__dict__['_label'] +\
+                                                                            '", codeNumber = "' + str(args[i].__dict__['_codeNumber']) +\
+                                                                            '", localization = "' + args[i].__dict__['_localization'] + '")\n'
+                                cmd.append(zone)
+
+                                nature = 'model.setNature("' + args[i].__dict__['_label'] + '", "'
+
+                                nature = nature + args[i].__dict__['_nature'] + '")\n'
+
+                        cmd.append(line)
+                        cmd.append(nature)
+
+                    else:
+                        line = 'model.' + func + '('
+                        if len(args) > 0:
+                            for i in range(len(args)-1):
+                                if type(args[i]) == str:
+                                    line = line + '"""' + args[i] + '""",'
+                                else:
+                                    line = line + str(args[i]) + ','
+                            if type(args[len(args) - 1]) == str:
+                                line = line +  '"""' + args[len(args) - 1] + '"""'
+                            else:
+                                line = line + str(args[len(args) - 1])
+                        line = line + ')\n'
+                        cmd.append(line)
+                else:
+                    # in func we have the type
+                    line = 'model = ' + page + '("' + func + '", case)\n'
+                    cmd.append(line)
+
+
+        # now write
+        try:
+            file = open(self['pythonfile'], 'w')
+            file.write("#automatic python script\n")
+            file.write('import os, sys, string\n')
+            file.write('sys.path.insert(0, "' + self['package'].dirs['pythondir'][1] + '")\n')
+            file.write('sys.path.insert(0, "' + os.path.join(self['package'].dirs['pythondir'][1], self['package'].name) + '")\n\n')
+
+            if self['package'].code_name == 'Code_Saturne':
+                file.write('import cs_package\n')
+                file.write('from Base.XMLinitialize import XMLinit\n')
+            else:
+                file.write('sys.path.insert(0, "' + os.path.join(self['package'].dirs['cspythondir'][1], "code_saturne") + '")\n\n')
+                file.write('import nc_package\n')
+                file.write('from core.XMLinitialize import XMLinit\n')
+            file.write('from Base.XMLengine import Case\n\n')
+
+            if self['xmlfile']:
+                file.write("fp = '" + self['xmlfile'] + "'\n")
+            else:
+                name = os.path.splitext(self['pythonfile'])[0] + ".xml"
+                file.write("fp = '" + name + "'\n")
+
+            if self['package'].code_name == 'Code_Saturne':
+                file.write("case = Case(package = cs_package.package())\n")
+            else:
+                file.write("case = Case(package = nc_package.package())\n")
+            file.write("case['xmlfile'] = fp\n")
+            file.write("case.xmlCleanAllBlank(case.xmlRootNode())\n")
+            file.write("XMLinit(case).initialize()\n")
+
+            for line in modulelst:
+                file.write('from ' + line + ' import *\n')
+            file.write('\n\n')
+
+            for line in cmd:
+                file.write(line)
+
+            file.write('case.xmlSaveDocument()')
+            file.close()
+        except IOError:
+            msg = "Error: unable to save the python file." ,
+            "(XMLengine module, Case class, pythonSaveDocument method)"
+            print(msg)
+
+
     def undoStop(self):
         self.record_local = True
 
@@ -1309,6 +1471,7 @@ class Case(Dico, XMLDocument, QObject):
 
     def undoGlobal(self, f, c):
         if self['current_page'] != '' and self.record_local == False and self.record_global == True:
+            self['dump_python'].append([f.__module__, f.func_name, c])
             if self.xml_prev != self.toString() or self.xml_prev == "":
                 # control if function have same arguments
                 # last argument is value
@@ -1332,6 +1495,7 @@ class Case(Dico, XMLDocument, QObject):
 
     def undo(self, f, c):
         if self['current_page'] != '' and self.record_local == False and self.record_global == True:
+            self['dump_python'].append([f.__module__, f.func_name, c])
             if self.xml_prev != self.toString():
                 # control if function have same arguments
                 # last argument is value

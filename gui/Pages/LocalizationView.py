@@ -598,7 +598,10 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         self.case.undoStopGlobal()
 
         self.zoneType = zoneType
+
         self.mdl = LocalizationModel(zoneType, case)
+        self.case['dump_python'].append([self.mdl.__module__, zoneType, ()])
+
         self.browser = tree
 
         # Model for table View

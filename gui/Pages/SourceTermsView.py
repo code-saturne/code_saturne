@@ -313,7 +313,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
-            self.mdl.setMomentumFormula(self.zone, result)
+            self.mdl.setMomentumFormula(self.zone, str(result))
             self.pushButtonMomentum.setToolTip(result)
             self.pushButtonMomentum.setStyleSheet("background-color: green")
 

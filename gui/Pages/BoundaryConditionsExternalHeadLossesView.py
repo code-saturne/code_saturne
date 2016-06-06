@@ -141,7 +141,7 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaDirection -> %s" % str(result))
-            self.__boundary.setHeadLossesFormula(result)
+            self.__boundary.setHeadLossesFormula(str(result))
             self.pushButtonHeadLossesFormula.setStyleSheet("background-color: green")
             self.pushButtonHeadLossesFormula.setToolTip(result)
 

@@ -54,7 +54,7 @@ from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.LagrangianForm import Ui_LagrangianForm
 from code_saturne.Pages.LagrangianAdvancedOptionsDialogForm import Ui_LagrangianAdvancedOptionsDialogForm
 from code_saturne.Pages.LagrangianModel import LagrangianModel
-from code_saturne.Pages.StartRestartModel import StartRestartModel
+from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -312,7 +312,6 @@ class StandardItemModelCoals(QStandardItemModel):
         self.case = case
         self.model = model
 
-        import code_saturne.Pages.CoalCombustionModel as CoalCombustionModel
         self.coalModel = CoalCombustionModel.CoalCombustionModel(self.case)
         CoalsNumber = self.coalModel.getCoalNumber()
 
@@ -326,8 +325,6 @@ class StandardItemModelCoals(QStandardItemModel):
             self.dataCoals.append(line)
             row = self.rowCount()
             self.setRowCount(row+1)
-
-        del CoalCombustionModel
 
 
     def data(self, index, role):
@@ -410,7 +407,8 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.modelIPHYLA = ComboModel(self.comboBoxIPHYLA,2,1)
         self.modelIPHYLA.addItem(self.tr("No model"), 'off')
         self.modelIPHYLA.addItem(self.tr("Heat transfer and evaporation"), 'thermal')
-        self.modelIPHYLA.addItem(self.tr("Pulverised coal model"), 'coal')
+        if CoalCombustionModel(self.case).getCoalCombustionModel("only") != 'off':
+            self.modelIPHYLA.addItem(self.tr("Pulverised coal model"), 'coal')
 
         # Connections
         self.comboBoxIILAGR.activated[str].connect(self.slotIILAGR)
@@ -441,11 +439,9 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
 #            if mdl not in self.model.lagrangianStatus():
 #                self.modelIILAGR.disableItem(str_model=mdl)
 
-        from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
-        if CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
+        if CoalCombustionModel(self.case).getCoalCombustionModel("only") != 'off':
             self.modelIILAGR.disableItem(str_model="one_way")
             self.modelIILAGR.disableItem(str_model="two_way")
-        del CoalCombustionModel
 
         model = self.model.getCouplingMode()
         self.modelIILAGR.setItem(str_model=model)

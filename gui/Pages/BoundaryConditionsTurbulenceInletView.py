@@ -261,7 +261,7 @@ epsilon = ustar2^1.5/(kappa*dh*0.1);"""
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
-                self.__boundary.setTurbFormula(result)
+                self.__boundary.setTurbFormula(str(result))
                 self.pushButtonTurb.setStyleSheet("background-color: green")
                 self.pushButtonTurb.setToolTip(result)
 
@@ -325,7 +325,7 @@ r23 = 0;
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
-                self.__boundary.setTurbFormula(result)
+                self.__boundary.setTurbFormula(str(result))
                 self.pushButtonTurb.setStyleSheet("background-color: green")
                 self.pushButtonTurb.setToolTip(result)
 
@@ -391,7 +391,7 @@ alpha =  1.;
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
-                self.__boundary.setTurbFormula(result)
+                self.__boundary.setTurbFormula(str(result))
                 self.pushButtonTurb.setStyleSheet("background-color: green")
                 self.pushButtonTurb.setToolTip(result)
 
@@ -447,7 +447,7 @@ alpha = 0;"""
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
-                self.__boundary.setTurbFormula(result)
+                self.__boundary.setTurbFormula(str(result))
                 self.pushButtonTurb.setStyleSheet("background-color: green")
                 self.pushButtonTurb.setToolTip(result)
 
@@ -499,7 +499,7 @@ omega = eps/(cmu * k);"""
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
-                self.__boundary.setTurbFormula(result)
+                self.__boundary.setTurbFormula(str(result))
                 self.pushButtonTurb.setStyleSheet("background-color: green")
                 self.pushButtonTurb.setToolTip(result)
 
@@ -550,7 +550,7 @@ nu_tilda = eps/(cmu * k);"""
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
-                self.__boundary.setTurbFormula(result)
+                self.__boundary.setTurbFormula(str(result))
                 self.pushButtonTurb.setStyleSheet("background-color: green")
                 self.pushButtonTurb.setToolTip(result)
 

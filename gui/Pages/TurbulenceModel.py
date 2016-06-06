@@ -252,9 +252,9 @@ class TurbulenceModel(Variables, Model):
 
             NumericalParamGlobalModel(self.case).setTimeSchemeOrder(2)
 
-            from code_saturne.Pages.NumericalParamEquationModel import NumericalParamEquatModel
-            NumericalParamEquatModel(self.case).setSchemeDefaultValues()
-            del NumericalParamEquatModel
+            from code_saturne.Pages.NumericalParamEquationModel import NumericalParamEquationModel
+            NumericalParamEquationModel(self.case).setSchemeDefaultValues()
+            del NumericalParamEquationModel
 
         elif model_turb == 'v2f-BL-v2/k':
             lst = ('k', 'epsilon', 'phi', 'alpha')

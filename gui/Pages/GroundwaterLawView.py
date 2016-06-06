@@ -698,7 +698,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormula -> %s" % str(result))
-            self.mdl.setGroundwaterLawFormula(name, result)
+            self.mdl.setGroundwaterLawFormula(name, str(result))
             self.pushButtonUserLaw.setStyleSheet("background-color: green")
             self.pushButtonUserLaw.setToolTip(result)
 
@@ -772,7 +772,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaDiff -> %s" % str(result))
-            self.mdl.setDiffFormula(self.scalar, namesca, result)
+            self.mdl.setDiffFormula(self.scalar, namesca, str(result))
             self.pushButtonDiff.setStyleSheet("background-color: green")
             self.pushButtonDiff.setToolTip(result)
 

@@ -172,7 +172,7 @@ class LagrangianBoundariesModel(Model):
         node_class.xmlSetData('frequency', self.default['frequency'])
         node_class.xmlSetData('statistical_groups', self.default['statistical_groups'])
         node_class.xmlSetData('mass_flow_rate', self.default['mass_flow_rate'])
-        if CoalCombustionModel(self.case).getCoalCombustionModel() == 'off':
+        if CoalCombustionModel(self.case).getCoalCombustionModel("only") == 'off':
             node_class.xmlSetData('density', self.default['density'])
             node_class.xmlInitChildNode('temperature', choice=self.default['temperature_choice'])
             node_class.xmlSetData('temperature', self.default['temperature'])

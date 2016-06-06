@@ -560,7 +560,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
-            self.__boundary.setVelocity(result)
+            self.__boundary.setVelocity(str(result))
             self.pushButtonVelocityFormula.setToolTip(result)
             self.pushButtonVelocityFormula.setStyleSheet("background-color: green")
 
@@ -657,7 +657,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaDirection -> %s" % str(result))
-            self.__boundary.setDirection('direction_formula', result)
+            self.__boundary.setDirection('direction_formula', str(result))
             self.pushButtonDirectionFormula.setToolTip(result)
             self.pushButtonDirectionFormula.setStyleSheet("background-color: green")
 
