@@ -277,7 +277,7 @@ cs_user_extra_operations(void)
   cs_lnum_t *elt_list;
 
   BFT_MALLOC(elt_list, n_b_faces, cs_lnum_t);
-  cs_selector_get_b_face_num_list("rotor_blades", &n_elts, elt_list);
+  cs_selector_get_b_face_list("rotor_blades", &n_elts, elt_list);
 
   cs_real_t c = cs_post_moment_of_force(n_elts, elt_list, axis);
 
@@ -298,7 +298,7 @@ cs_user_extra_operations(void)
 
   cs_real_t power = c*omega;
 
-  cs_real_t efficiency = turbomachinery_head*flowrate/(ro0*power);
+  cs_real_t efficiency = turbomachinery_head*flowrate/power;
 
   /* Print in the listing */
 
