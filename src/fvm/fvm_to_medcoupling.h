@@ -168,6 +168,18 @@ fvm_to_medcoupling_export_field(void                  *this_writer_p,
                                 double                 time_value,
                                 const void      *const field_values[]);
 
+/*----------------------------------------------------------------------------
+ * Flush files associated with a given writer.
+ *
+ * In this case, the effective call to coprocessing is done.
+ *
+ * parameters:
+ *   this_writer_p    <-- pointer to associated writer
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_to_medcoupling_flush(void  *this_writer_p);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
