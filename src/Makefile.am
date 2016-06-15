@@ -101,7 +101,7 @@ $(top_srcdir)/src/base/cavitation.f90: cstphy.lo field.lo numvar.lo optcal.lo po
 $(top_srcdir)/src/base/cplsat.f90: paramx.lo
 $(top_srcdir)/src/base/cstphy.f90: paramx.lo
 $(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo mesh.lo period.lo field.lo field_operator.lo
-$(top_srcdir)/src/base/cs_f_interfaces.f90: cs_c_bindings.lo paramx.lo dimens.lo mesh.lo optcal.lo field.lo
+$(top_srcdir)/src/base/cs_f_interfaces.f90: cs_c_bindings.lo paramx.lo dimens.lo mesh.lo optcal.lo field.lo lagran.lo
 $(top_srcdir)/src/base/cs_nz_condensation.f90: pointe.lo
 $(top_srcdir)/src/base/cs_nz_tagmr.f90: optcal.lo pointe.lo parall.lo cs_nz_condensation.lo cs_tagmr.lo
 $(top_srcdir)/src/base/cs_tagmr.f90: pointe.lo
@@ -123,7 +123,7 @@ $(top_srcdir)/src/cogz/coincl.f90: paramx.lo ppppar.lo ppincl.lo
 $(top_srcdir)/src/comb/cpincl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/comb/cs_coal_incl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/comb/cs_fuel_incl.f90: ppppar.lo ppthch.lo
-$(top_srcdir)/src/lagr/lagran.f90: cstnum.lo optcal.lo ppincl.lo ihmpre.lo radiat.lo cpincl.lo ppppar.lo cstphy.lo
+$(top_srcdir)/src/lagr/lagran.f90: cstnum.lo optcal.lo ppincl.lo radiat.lo cpincl.lo ppppar.lo cstphy.lo
 $(top_srcdir)/src/pprt/ppcpfu.f90: ppthch.lo ppppar.lo
 $(top_srcdir)/src/pprt/ppincl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/pprt/ppthch.f90: cstphy.lo
