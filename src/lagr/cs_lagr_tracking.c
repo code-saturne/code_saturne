@@ -3650,8 +3650,7 @@ cs_lagr_tracking_initialize(void)
 
 void
 cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
-                                   cs_real_t        tkelvi,
-                                   int              i_face_zone_num_lagr[])
+                                   cs_real_t        tkelvi)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
@@ -3697,10 +3696,6 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
   particles->weight_failed = 0.0;
 
   _initialize_displacement(particles, part_b_mass_flux);
-
-  /* Initialize  */
-
-  cs_lagr_internal_condition_t *int_cond = cs_lagr_get_internal_conditions(i_face_zone_num_lagr);
 
   /* Main loop on  particles: global propagation */
 
@@ -3829,7 +3824,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
           cs_real_t *face_cog;
           face_cog = fvq->i_face_cog + (3*face_id);
 
-          if (i_face_zone_num_lagr[face_id] >= 0 &&
+          if (cs_glob_lagr_internal_conditions->i_face_zone_num[face_id] >= 0 &&
               face_cog[2] < 0.99 ) {
 
             const double pi = 4 * atan(1);

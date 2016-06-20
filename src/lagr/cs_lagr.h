@@ -1449,18 +1449,6 @@ cs_lagr_get_bdy_conditions(void);
 void
 cs_lagr_finalize_bdy_cond(void);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return pointer to the main internal conditions structure.
- *
- * \return
- *   pointer to current internal_conditions or NULL
- */
-/*----------------------------------------------------------------------------*/
-
-cs_lagr_internal_condition_t *
-cs_lagr_get_internal_conditions(const int i_face_zone_num_lagr[]);
-
 /*----------------------------------------------------------------------------
  * Destroy finalize the global cs_lagr_internal_condition_t structure.
  *----------------------------------------------------------------------------*/
@@ -1506,8 +1494,7 @@ cs_get_lagr_extra_module(void);
 
 void
 cs_lagr_solve_time_step(const int         itypfb[],
-                        const cs_real_t  *dt,
-                        const int         i_face_zone_num_lagr[]);
+                        const cs_real_t  *dt);
 
 /*----------------------------------------------------------------------------*/
 

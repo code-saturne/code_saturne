@@ -305,7 +305,7 @@ endif
 
 if (ipass.eq.1) then
 
-  call cs_user_initialization &
+  call cs_user_f_initialization &
   !==========================
 ( nvar   , nscal  ,                                            &
   dt     )

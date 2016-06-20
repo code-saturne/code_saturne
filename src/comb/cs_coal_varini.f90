@@ -387,7 +387,7 @@ if (ipass.eq.1) then
 ! 3. User initialization
 !===============================================================================
 
-  call cs_user_initialization &
+  call cs_user_f_initialization &
   !==========================
 ( nvar   , nscal  ,                                            &
   dt     )

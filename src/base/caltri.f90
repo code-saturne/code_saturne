@@ -465,12 +465,6 @@ endif
 ! Map arrays from Lagrangian module
 if (iilagr.gt.0) then
   call init_lagr_arrays(tslagr)
-
-  allocate(i_face_zone_num_lagr(nfac))
-  do ifac = 1 , nfac
-   i_face_zone_num_lagr(ifac) = -1
-  enddo
-
 endif
 
 !===============================================================================
@@ -876,7 +870,7 @@ if (inpdt0.eq.0 .and. itrale.gt.0) then
 
     call timer_stats_start(lagr_stats_id)
 
-    call cs_lagr_solve_time_step(itypfb, dt, i_face_zone_num_lagr)
+    call cs_lagr_solve_time_step(itypfb, dt)
 
     call timer_stats_stop(lagr_stats_id)
 
@@ -1152,11 +1146,6 @@ endif
 
 if (ivrtex.eq.1) then
   deallocate(irepvo)
-endif
-
-if (iilagr.gt.0) then
-  call finalize_lagr_arrays
-  deallocate(i_face_zone_num_lagr)
 endif
 
 call turbomachinery_finalize

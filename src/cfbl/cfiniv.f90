@@ -95,7 +95,7 @@ double precision, dimension(:), pointer :: cpro_cp, cpro_cv, mix_mol_mas
 !===============================================================================
 
 if (isuite.eq.0.and.ippmod(igmix).lt.0) then
-  call cs_user_initialization(nvar, nscal, dt)
+  call cs_user_f_initialization(nvar, nscal, dt)
 endif
 
 !===============================================================================

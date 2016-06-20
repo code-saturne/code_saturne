@@ -303,8 +303,7 @@ if ( isuite.eq.0 ) then
 
 
 ! ----- On donne la main a l'utilisateur
-
-    call cs_user_initialization &
+    call cs_user_f_initialization &
   ( nvar   , nscal  ,                                            &
     dt     )
 

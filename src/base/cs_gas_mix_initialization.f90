@@ -131,7 +131,7 @@ call field_get_val_s(iprpfl(igmxml), mix_mol_mas)
 ! 2. User initialization
 !===============================================================================
 
-call cs_user_initialization &
+call cs_user_f_initialization &
 ( nvar   , nscal  ,                                            &
   dt     )
 

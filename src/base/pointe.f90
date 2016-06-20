@@ -372,8 +372,6 @@ module pointe
 
   !> \anchor tslagr
   double precision, pointer, dimension(:,:), save :: tslagr
-
-  integer, allocatable, dimension(:) :: i_face_zone_num_lagr
   !> \}
 
   !> \}

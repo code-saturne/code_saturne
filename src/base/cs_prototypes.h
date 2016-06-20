@@ -353,6 +353,12 @@ void
 cs_user_extra_operations(void);
 
 /*----------------------------------------------------------------------------
+ * This function is called one time step to initialize problem.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cs_user_initialization, cs_user_initialization)(void);
+
+/*----------------------------------------------------------------------------
  * This function is called each time step to define physical properties.
  *----------------------------------------------------------------------------*/
 

@@ -184,10 +184,11 @@ endif
 
 !   - Sous-programme utilisateur
 !     ==========================
+call cs_user_initialization()
 
 if (ippmod(iphpar).eq.0) then
 
-  call cs_user_initialization(nvar, nscal, dt)
+  call cs_user_f_initialization(nvar, nscal, dt)
 
   !     Avec l'interface, il peut y avoir eu initialisation,
   !       meme si usiniv n'est pas utilise.
@@ -207,7 +208,7 @@ else
 
   call ppiniv(nvar, nscal, dt)
 
-  call cs_user_initialization(nvar, nscal, dt)
+  call cs_user_f_initialization(nvar, nscal, dt)
 
   if (ippmod(icompf).ge.0.and.(    isuite.eq.0                 &
                                .or.isuite.eq.1.and.ileaux.eq.0)) then

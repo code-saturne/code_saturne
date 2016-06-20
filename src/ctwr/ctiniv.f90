@@ -108,7 +108,7 @@ double precision dt(ncelet)
 ! 3. USER  OPTIONS
 !===============================================================================
 
-call cs_user_initialization &
+call cs_user_f_initialization &
 !==========================
 ( nvar   , nscal  ,                                            &
   dt     )

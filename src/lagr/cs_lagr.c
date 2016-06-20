@@ -1644,30 +1644,6 @@ cs_lagr_get_bdy_conditions(void)
   return cs_glob_lagr_bdy_conditions;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return pointer to the main boundary conditions structure.
- *
- * \return
- *   pointer to current bdy_contditions or NULL
- */
-/*----------------------------------------------------------------------------*/
-
-cs_lagr_internal_condition_t  *
-cs_lagr_get_internal_conditions(const int i_face_zone_num_lagr[])
-{
-  /* Define a structure with default parameters if not done yet */
-
-  if (cs_glob_lagr_internal_conditions == NULL)
-    cs_glob_lagr_internal_conditions = _create_internal_cond_struct();
-
-  for (cs_lnum_t i = 0; i < cs_glob_mesh->n_i_faces; i++)
-    cs_glob_lagr_internal_conditions->i_face_zone_num[i] =
-      i_face_zone_num_lagr[i];
-
-  return cs_glob_lagr_internal_conditions;
-}
-
 /*----------------------------------------------------------------------------
  * Destroy finalize the global cs_lagr_bdy_condition_t structure.
  *----------------------------------------------------------------------------*/
@@ -1740,8 +1716,7 @@ cs_get_lagr_extra_module(void)
 
 void
 cs_lagr_solve_time_step(const int         itypfb[],
-                        const cs_real_t  *dt,
-                        const int         i_face_zone_num_lagr[])
+                        const cs_real_t  *dt)
 {
   static int ipass = 0;
   cs_time_step_t *ts = cs_get_glob_time_step();
@@ -2286,7 +2261,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         }
 
-        cs_lagr_tracking_particle_movement(vislen, tkelvi, i_face_zone_num_lagr);
+        cs_lagr_tracking_particle_movement(vislen, tkelvi);
 
       }
 
