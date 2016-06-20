@@ -380,6 +380,8 @@ cs_lagr_zone_class_data_t *_lagr_zone_class_data = NULL;
 
 cs_lagr_bdy_condition_t  *cs_glob_lagr_bdy_conditions = NULL;
 
+cs_lagr_internal_condition_t  *cs_glob_lagr_internal_conditions = NULL;
+
 /* Array dimensions for lagrangien user data per zone per class */
 
 int  cs_glob_lagr_nzone_max  = 0;
@@ -920,6 +922,32 @@ _create_bdy_cond_struct(int   n_max_zones)
   bdy_cond->steady_bndy_conditions = false;
 
   return bdy_cond;
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize a cs_lagr_internal_condition_t structure.
+ *
+ * parameters:
+ *   n_max_zones     <--  number max. of boundary zones
+ *
+ * returns:
+ *   a new defined cs_lagr_internal_condition_t structure
+ *----------------------------------------------------------------------------*/
+
+static cs_lagr_internal_condition_t *
+_create_internal_cond_struct()
+{
+  cs_lagr_internal_condition_t *internal_cond = NULL;
+  cs_mesh_t  *mesh = cs_glob_mesh;
+
+  BFT_MALLOC(internal_cond, 1, cs_lagr_internal_condition_t);
+
+  BFT_MALLOC(internal_cond->i_face_zone_num, mesh->n_i_faces, cs_lnum_t);
+
+  for (cs_lnum_t i = 0; i < cs_glob_mesh->n_i_faces; i++)
+    internal_cond->i_face_zone_num[i] = -1;
+
+  return internal_cond;
 }
 
 /*============================================================================
@@ -1592,6 +1620,30 @@ cs_lagr_get_bdy_conditions(void)
   return cs_glob_lagr_bdy_conditions;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to the main boundary conditions structure.
+ *
+ * \return
+ *   pointer to current bdy_contditions or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lagr_internal_condition_t  *
+cs_lagr_get_internal_conditions(const int i_face_zone_num_lagr[])
+{
+  /* Define a structure with default parameters if not done yet */
+
+  if (cs_glob_lagr_internal_conditions == NULL) 
+    cs_glob_lagr_internal_conditions = _create_internal_cond_struct();
+
+  for (cs_lnum_t i = 0; i < cs_glob_mesh->n_i_faces; i++)
+    cs_glob_lagr_internal_conditions->i_face_zone_num[i] = 
+      i_face_zone_num_lagr[i];
+
+  return cs_glob_lagr_internal_conditions;
+}
+
 /*----------------------------------------------------------------------------
  * Destroy finalize the global cs_lagr_bdy_condition_t structure.
  *----------------------------------------------------------------------------*/
@@ -1614,6 +1666,19 @@ cs_lagr_finalize_bdy_cond(void)
     BFT_FREE(cs_glob_lagr_bdy_conditions);
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy finalize the global cs_lagr_internal_condition_t structure.
+ *----------------------------------------------------------------------------*/
+
+void cs_lagr_finalize_internal_cond(void)
+{
+  cs_lagr_internal_condition_t  *internal_cond = cs_glob_lagr_internal_conditions;
+  if (internal_cond != NULL)
+    BFT_FREE(internal_cond->i_face_zone_num);
+
+  return NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -1651,7 +1716,8 @@ cs_get_lagr_extra_module(void)
 
 void
 cs_lagr_solve_time_step(const int         itypfb[],
-                        const cs_real_t  *dt)
+                        const cs_real_t  *dt,
+                        const int         i_face_zone_num_lagr[])
 {
   static int ipass = 0;
   cs_time_step_t *ts = cs_get_glob_time_step();
@@ -2195,7 +2261,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         }
 
-        cs_lagr_tracking_particle_movement(vislen, tkelvi);
+        cs_lagr_tracking_particle_movement(vislen, tkelvi, i_face_zone_num_lagr);
 
       }
 

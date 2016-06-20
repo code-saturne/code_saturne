@@ -76,7 +76,8 @@ cs_lagr_tracking_initialize(void);
 
 void
 cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
-                                   cs_real_t        tkelvi);
+                                   cs_real_t        tkelvi,
+                                   cs_int_t         i_face_zone_num_lagr[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

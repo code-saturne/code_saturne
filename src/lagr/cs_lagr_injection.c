@@ -1744,9 +1744,12 @@ cs_lagr_injection(int        time_id,
 
       cs_lagr_zone_class_data_t *local_userdata
         = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
+      
+      cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
 
       /* si de nouvelles particules sont entrees, */
-      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
+      if (ts->nt_cur % local_userdata->injection_frequency == 0
+          && userdata->flow_rate > 0.0) {
 
         for (cs_lnum_t ip = npt; ip < npt + local_userdata->nb_part; ip++) {
 

@@ -269,12 +269,13 @@ module lagran
 
     !> Execute one time step of the Lagrangian model.
 
-    subroutine cs_lagr_solve_time_step(itypfb, dt)  &
+    subroutine cs_lagr_solve_time_step(itypfb, dt, i_face_zone_num_lagr)  &
       bind(C, name='cs_lagr_solve_time_step')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), dimension(*), intent(in) :: itypfb
       real(kind=c_double), dimension(*), intent(in) :: dt
+      integer(c_int), dimension(*), intent(in) :: i_face_zone_num_lagr
     end subroutine cs_lagr_solve_time_step
 
     !---------------------------------------------------------------------------

@@ -142,14 +142,16 @@ _lages1(cs_real_t     dtp,
 
   /* Integration des eds sur les particules */
 
-  for (cs_lnum_t id = 0; id < 3; id++){
+  for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++){
 
-    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++){
+    for (cs_lnum_t id = 0; id < 3; id++){
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
       cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
-      if (cell_id >= 0) {
+      if (cell_id >= 0 &&
+          cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) != 11
+          ) {
 
         cs_real_t *part_vel      = cs_lagr_particle_attr(particle, p_am,
                                                          CS_LAGR_VELOCITY);
@@ -368,6 +370,41 @@ _lages1(cs_real_t     dtp,
 
         /* --> vitesse particules    */
         part_vel[id] = ter1p + ter2p + ter3p + ter4p + ter5p + tbriu;
+
+      }
+      else if (cell_id >= 0) {
+        
+        // Specific treatment for particles with DEPOSITION_FLAG = 11
+        cs_real_t omega = 1.0;
+        cs_real_t *old_part_coords = cs_lagr_particle_attr_n(particle, p_am, 1,
+                                                             CS_LAGR_COORDS);
+        cs_real_t rcost = ( old_part_coords[1] - 0.0 );
+        cs_real_t rsint = ( old_part_coords[2] - 1.0 );
+        cs_real_t depl[3] = {
+          0.0 ,
+          rcost * ( cos(omega*dtp) - 1.0 ) - rsint * sin(omega*dtp),
+          rsint * ( cos(omega*dtp) - 1.0 ) - rcost * sin(omega*dtp) };
+
+        cs_real_t *part_coords = cs_lagr_particle_attr(particle, p_am,
+                                                       CS_LAGR_COORDS);
+
+        cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am,
+                                                         CS_LAGR_VELOCITY_SEEN);
+      
+        cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
+                                                    CS_LAGR_VELOCITY);
+
+        for (cs_lnum_t id = 0; id < 3; id++) {
+
+          part_coords[id]   = old_part_coords[id] + depl[id];
+
+          part_vel_seen[id] =  0.0;
+        
+        }
+      
+        part_vel[0] = 0.0;
+        part_vel[1] = omega * ( - rcost*sin(omega*dtp) - rsint*cos(omega*dtp) );
+        part_vel[2] = omega * ( - rsint*sin(omega*dtp) + rcost*cos(omega*dtp) );
 
       }
 
@@ -1357,6 +1394,7 @@ _lagdep(cs_real_t     dtp,
   /* Particles management */
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
+  const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
@@ -1389,7 +1427,7 @@ _lagdep(cs_real_t     dtp,
   /* and core of the flow (normalized units)  */
 
   cs_real_t depint      = 100.0;
-
+  
   /* ====================================================================   */
   /* 2. loop on the particles  */
   /* ====================================================================   */
@@ -1400,7 +1438,8 @@ _lagdep(cs_real_t     dtp,
 
     cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
 
-    if (cell_id >= 0) {
+    if (cell_id >= 0 &&
+        cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) != 11) {
 
       cs_real_t *old_part_vel      = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                              CS_LAGR_VELOCITY);
@@ -1645,6 +1684,40 @@ _lagdep(cs_real_t     dtp,
 
     }
 
+    else if ( cell_id >= 0 ) {
+      // Specific treatment for particles with DEPOSITION_FLAG = 11
+      cs_real_t omega = 1.0;
+      cs_real_t *old_part_coords = cs_lagr_particle_attr_n(particle, p_am, 1,
+                                                           CS_LAGR_COORDS);
+      cs_real_t rcost = ( old_part_coords[1] - 0.0 );
+      cs_real_t rsint = ( old_part_coords[2] - 1.0 );
+      cs_real_t depl[3] = {
+        0.0 ,
+        rcost * ( cos(omega*dtp) - 1.0 ) - rsint * sin(omega*dtp),
+        rsint * ( cos(omega*dtp) - 1.0 ) + rcost * sin(omega*dtp) };
+
+      cs_real_t *part_coords = cs_lagr_particle_attr(particle, p_am,
+                                                     CS_LAGR_COORDS);
+
+      cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am,
+                                                       CS_LAGR_VELOCITY_SEEN);
+      
+      cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
+                                                  CS_LAGR_VELOCITY);
+
+      for (cs_lnum_t id = 0; id < 3; id++) {
+
+        part_coords[id]   = old_part_coords[id] + depl[id];
+
+        part_vel_seen[id] =  0.0;
+        
+      }
+      
+      part_vel[0] = 0.0;
+      part_vel[1] = omega * ( - rcost*sin(omega*dtp) - rsint*cos(omega*dtp) );
+      part_vel[2] = omega * ( - rsint*sin(omega*dtp) + rcost*cos(omega*dtp) );
+
+    }
   }
 
 }

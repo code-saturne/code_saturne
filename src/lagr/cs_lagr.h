@@ -629,6 +629,14 @@ typedef struct {
 
 } cs_lagr_bdy_condition_t;
 
+/* Structures useful to deal with iternal conditions */
+
+typedef struct {
+
+  cs_lnum_t  *i_face_zone_num;
+
+} cs_lagr_internal_condition_t;
+
 /* ========================================================================== */
 
 typedef struct {
@@ -1098,6 +1106,7 @@ extern cs_lagr_extra_module_t                *cs_glob_lagr_extra_module;
 extern cs_lagr_coal_comb_t                   *cs_glob_lagr_coal_comb;
 
 extern cs_lagr_bdy_condition_t               *cs_glob_lagr_bdy_conditions;
+extern cs_lagr_internal_condition_t          *cs_glob_lagr_internal_conditions;
 extern cs_lagr_zone_class_data_t             *lagr_zone_class_data;
 
 /* Unit normals and offsets of boundary faces */
@@ -1404,7 +1413,7 @@ cs_get_lagr_brownian(void);
  * \brief Return pointer to the main boundary conditions structure.
  *
  * \return
- *   pointer to current bdy_contditions or NULL
+ *   pointer to current bdy_conditions or NULL
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1417,6 +1426,25 @@ cs_lagr_get_bdy_conditions(void);
 
 void
 cs_lagr_finalize_bdy_cond(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to the main internal conditions structure.
+ *
+ * \return
+ *   pointer to current internal_conditions or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lagr_internal_condition_t *
+cs_lagr_get_internal_conditions(const int i_face_zone_num_lagr[]);
+
+/*----------------------------------------------------------------------------
+ * Destroy finalize the global cs_lagr_internal_condition_t structure.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_finalize_internal_cond(void);
 
 /*----------------------------------------------------------------------------
  * Provide access to cs_lagr_boundary_interactions_t
@@ -1456,7 +1484,8 @@ cs_get_lagr_extra_module(void);
 
 void
 cs_lagr_solve_time_step(const int         itypfb[],
-                        const cs_real_t  *dt);
+                        const cs_real_t  *dt,
+                        const int         i_face_zone_num_lagr[]);
 
 /*----------------------------------------------------------------------------*/
 
