@@ -315,6 +315,11 @@ cs_user_lagr_boundary_conditions(const int  itypfb[])
                                      izone,
                                      density);
 
+      cs_real_t foul_index = 100.0;
+      cs_lagr_set_zone_class_foul_index(iclas,
+                                        izone,
+                                        foul_index);
+
       if (cs_glob_lagr_model->physical_model == 1) {
 
         /* Temperature and Cp   */

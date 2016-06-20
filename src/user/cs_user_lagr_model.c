@@ -313,7 +313,7 @@ cs_user_lagr_model(void)
   /* Integration order of the stochastic differential equations   */
   /* (default 2; acceptable values 1 or 2)    */
 
-  cs_glob_lagr_time_scheme->t_order = 2;
+  cs_glob_lagr_time_scheme->t_order = 1;
 
   /* ==========================================================================
    * 9. Options concerning the treatment of the dispersed phase
@@ -369,6 +369,9 @@ cs_user_lagr_model(void)
        --------------------------------------
        Hamaker constant for the particle/fluid/substrate system:*/
     cs_glob_lagr_physico_chemical->cstham = 6e-20;
+
+    /* Retardation wavelength for the particle/fluid/substrate system:*/
+    cs_glob_lagr_physico_chemical->lambda_vdw = 1000.0;
 
     /* Constants for the elecstrostatic forces
        ---------------------------------------

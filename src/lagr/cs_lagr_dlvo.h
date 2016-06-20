@@ -53,6 +53,7 @@ typedef struct {
   cs_real_t  valen;
   cs_real_t  *debye_length;
   cs_real_t   cstham;
+  cs_real_t   lambda_vdw;
 
 } cs_lagr_dlvo_param_t;
 
@@ -71,7 +72,8 @@ cs_lagr_dlvo_init(const cs_real_t   water_permit,
                   const cs_real_t   valen,
                   const cs_real_t   phi_p,
                   const cs_real_t   phi_s,
-                  const cs_real_t   cstham);
+                  const cs_real_t   cstham,
+                  const cs_real_t   lambda_vdw);
 
 /*----------------------------------------------------------------------------
  * Deallocate the arrays storing temperature and Debye length.
@@ -87,7 +89,7 @@ cs_lagr_dlvo_finalize(void);
 void
 cs_lagr_barrier(const void                     *particle,
                 const cs_lagr_attribute_map_t  *attr_map,
-                cs_lnum_t                       face_id,
+                cs_lnum_t                       iel,
                 cs_real_t                      *energy_barrier);
 
 /*----------------------------------------------------------------------------
@@ -99,6 +101,7 @@ cs_lagr_barrier(const void                     *particle,
 cs_real_t
 cs_lagr_van_der_waals_sphere_plane(cs_real_t  distp,
                                    cs_real_t  rpart,
+                                   cs_real_t  lambda_vdw,
                                    cs_real_t  cstham);
 
 /*----------------------------------------------------------------------------
@@ -110,6 +113,7 @@ cs_real_t
 cs_lagr_van_der_waals_sphere_sphere(cs_real_t    distcc,
                                     cs_real_t    rpart1,
                                     cs_real_t    rpart2,
+                                    cs_real_t    lambda_vdw,
                                     cs_real_t    cstham);
 
 /*----------------------------------------------------------------------------

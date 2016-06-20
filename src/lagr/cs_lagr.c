@@ -1300,6 +1300,28 @@ cs_lagr_set_zone_class_density(int        iclass,
   zonedata->density = density;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set fouling index for a given class of particles and boundary zone
+ *
+ * \param[in]   iclass     class number
+ * \param[in]   izone      boundary zone number
+ * \param[in]   fouling index    pointer to density value
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_set_zone_class_foul_index(int        iclass,
+                                  int        izone,
+                                  cs_real_t  foul_index)
+{
+  cs_lagr_zone_class_data_t *zonedata
+    = cs_lagr_get_zone_class_data(iclass, izone);
+
+  zonedata->foul_index = foul_index;
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1634,11 +1656,11 @@ cs_lagr_get_internal_conditions(const int i_face_zone_num_lagr[])
 {
   /* Define a structure with default parameters if not done yet */
 
-  if (cs_glob_lagr_internal_conditions == NULL) 
+  if (cs_glob_lagr_internal_conditions == NULL)
     cs_glob_lagr_internal_conditions = _create_internal_cond_struct();
 
   for (cs_lnum_t i = 0; i < cs_glob_mesh->n_i_faces; i++)
-    cs_glob_lagr_internal_conditions->i_face_zone_num[i] = 
+    cs_glob_lagr_internal_conditions->i_face_zone_num[i] =
       i_face_zone_num_lagr[i];
 
   return cs_glob_lagr_internal_conditions;
@@ -1759,7 +1781,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
   if (   lagr_model->clogging == 1
       || lagr_model->roughness == 1
       || lagr_model->dlvo == 1)
-    BFT_MALLOC(tempp, n_b_faces, cs_real_t);
+    BFT_MALLOC(tempp, cs_glob_mesh->n_cells, cs_real_t);
 
   ipass ++;
 
@@ -1845,7 +1867,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
           cs_real_t surfb = surfbo[ifac];
           ustarmoy     = ustarmoy + surfb * _ustar;
           surftot      = surftot + surfb;
-          vislen[ifac] = visccf / _ustar;
+          vislen[ifac] = visccf / _ustar; // FIXME to be coherent with wall fn: y/y+
           dtmp[0]      = dtmp[0] + 1.0;
 
         }
@@ -1906,31 +1928,29 @@ cs_lagr_solve_time_step(const int         itypfb[],
       || lagr_model->roughness == 1
       || lagr_model->clogging == 1) {
 
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-
-      cs_lnum_t iel = ifabor[ifac];
+    for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
 
       if (extra->scal_t != NULL) {
 
         if (   cs_glob_thermal_model->itherm == 1
             && cs_glob_thermal_model->itpscl == 2)
-          tempp[ifac] = extra->scal_t->val[iel] + tkelvi;
+          tempp[iel] = extra->scal_t->val[iel] + tkelvi;
 
         else if (   cs_glob_thermal_model->itherm == 1
                  && cs_glob_thermal_model->itpscl == 1)
-          tempp[ifac] = extra->scal_t->val[iel];
+          tempp[iel] = extra->scal_t->val[iel];
 
         else if (cs_glob_thermal_model->itherm == 2) {
 
           mode = 1;
-          CS_PROCF(usthht,USTHHT)(&mode, &extra->scal_t->val[iel], &tempp[ifac]);
+          CS_PROCF(usthht,USTHHT)(&mode, &extra->scal_t->val[iel], &tempp[iel]);
 
         }
 
       }
 
       else
-        tempp[ifac] = cs_glob_fluid_properties->t0;
+        tempp[iel] = cs_glob_fluid_properties->t0;
 
     }
 
@@ -1947,7 +1967,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
                       cs_glob_lagr_physico_chemical->valen,
                       cs_glob_lagr_physico_chemical->phi_p,
                       cs_glob_lagr_physico_chemical->phi_s,
-                      cs_glob_lagr_physico_chemical->cstham);
+                      cs_glob_lagr_physico_chemical->cstham,
+                      cs_glob_lagr_physico_chemical->lambda_vdw);
 
   /* ====================================================================   */
   /*  Initialization for the roughness surface model    */
@@ -1961,6 +1982,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
                    &cs_glob_lagr_physico_chemical->phi_p,
                    &cs_glob_lagr_physico_chemical->phi_s,
                    &cs_glob_lagr_physico_chemical->cstham,
+                   &cs_glob_lagr_physico_chemical->lambda_vdw,
                    &cs_glob_lagr_reentrained_model->espasg,
                    &cs_glob_lagr_reentrained_model->denasp,
                    &cs_glob_lagr_reentrained_model->rayasp,
@@ -1980,7 +2002,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
              &cs_glob_lagr_physico_chemical->phi_p,
              &cs_glob_lagr_physico_chemical->phi_s,
              &cs_glob_lagr_physico_chemical->cstham,
-             &cs_glob_lagr_clogging_model->csthpp);
+             &cs_glob_lagr_clogging_model->csthpp,
+             &cs_glob_lagr_physico_chemical->lambda_vdw);
 
   /* ====================================================================   */
   /* 2.  MISE A JOUR DES NOUVELLES PARTICULES ENTREES DANS LE DOMAINE  */

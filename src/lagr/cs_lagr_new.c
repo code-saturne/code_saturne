@@ -602,7 +602,7 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
           cs_lnum_t  *neighbor_face_id;
           cs_real_t  *particle_yplus;
-          
+
           if (cs_glob_lagr_model->deposition > 0) {
             neighbor_face_id
               = cs_lagr_particle_attr(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);

@@ -373,7 +373,7 @@ _lages1(cs_real_t     dtp,
 
       }
       else if (cell_id >= 0) {
-        
+
         // Specific treatment for particles with DEPOSITION_FLAG = 11
         cs_real_t omega = 1.0;
         cs_real_t *old_part_coords = cs_lagr_particle_attr_n(particle, p_am, 1,
@@ -390,7 +390,7 @@ _lages1(cs_real_t     dtp,
 
         cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am,
                                                          CS_LAGR_VELOCITY_SEEN);
-      
+
         cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
                                                     CS_LAGR_VELOCITY);
 
@@ -399,9 +399,9 @@ _lages1(cs_real_t     dtp,
           part_coords[id]   = old_part_coords[id] + depl[id];
 
           part_vel_seen[id] =  0.0;
-        
+
         }
-      
+
         part_vel[0] = 0.0;
         part_vel[1] = omega * ( - rcost*sin(omega*dtp) - rsint*cos(omega*dtp) );
         part_vel[2] = omega * ( - rsint*sin(omega*dtp) + rcost*cos(omega*dtp) );
@@ -929,7 +929,7 @@ _lagesd(cs_real_t     dtp,
     vflui[1] = 0.;
     vflui[2] = 0.;
   }
-  
+
   /* 2.5 - pressure gradient   */
 
   cs_real_t gdpr[3];
@@ -1427,7 +1427,7 @@ _lagdep(cs_real_t     dtp,
   /* and core of the flow (normalized units)  */
 
   cs_real_t depint      = 100.0;
-  
+
   /* ====================================================================   */
   /* 2. loop on the particles  */
   /* ====================================================================   */
@@ -1701,7 +1701,7 @@ _lagdep(cs_real_t     dtp,
 
       cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am,
                                                        CS_LAGR_VELOCITY_SEEN);
-      
+
       cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
                                                   CS_LAGR_VELOCITY);
 
@@ -1710,9 +1710,9 @@ _lagdep(cs_real_t     dtp,
         part_coords[id]   = old_part_coords[id] + depl[id];
 
         part_vel_seen[id] =  0.0;
-        
+
       }
-      
+
       part_vel[0] = 0.0;
       part_vel[1] = omega * ( - rcost*sin(omega*dtp) - rsint*cos(omega*dtp) );
       part_vel[2] = omega * ( - rsint*sin(omega*dtp) + rcost*cos(omega*dtp) );

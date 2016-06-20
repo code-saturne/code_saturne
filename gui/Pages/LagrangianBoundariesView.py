@@ -339,6 +339,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.comboBoxIPOIT.activated[str].connect(self.slotIPOITChoice)
         self.lineEditIPOIT.textChanged[str].connect(self.slotIPOIT)
         self.lineEditIROPT.textChanged[str].connect(self.slotIROPT)
+        self.lineEditIRCOLM.textChanged[str].connect(self.slotIRCOLM)
 
         self.comboBoxIJUVW.activated[str].connect(self.slotIJUVW)
         self.lineEditIUNO.textChanged[str].connect(self.slotIUNO)
@@ -368,6 +369,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         validatorIPOIT.setExclusiveMin(True)
         validatorIROPT  = DoubleValidator(self.lineEditIROPT, min=0.)
         validatorIROPT.setExclusiveMin(True)
+        validatorIRCOLM = DoubleValidator(self.lineEditIRCOLM, min=0.)
 
         validatorIUNO = DoubleValidator(self.lineEditIUNO)
         validatorIUPT = DoubleValidator(self.lineEditIUPT)
@@ -390,6 +392,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.lineEditIDEBT.setValidator(validatorIDEBT)
         self.lineEditIPOIT.setValidator(validatorIPOIT)
         self.lineEditIROPT.setValidator(validatorIROPT)
+        self.lineEditIRCOLM.setValidator(validatorIRCOLM)
 
         self.lineEditIUNO.setValidator(validatorIUNO)
         self.lineEditIUPT.setValidator(validatorIUPT)
@@ -487,6 +490,13 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.modelIJUVW.setItem(str_model=choice)
         text = self.modelIJUVW.dicoM2V[choice]
         self.slotIJUVW(text)
+
+        #Fouling
+        self.labelIRCOLM.show()
+        self.labelUnitIRCOLM.show()
+        self.lineEditIRCOLM.show()
+        colm = self.model.getFoulingIndexValue(self.label, self.iclass)
+        self.lineEditIRCOLM.setText(str(colm))
 
         # Temperature
         status = self.LM.getHeating()
@@ -625,6 +635,15 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         if self.sender().validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setDensityValue(self.label, self.iclass, value)
+
+    @pyqtSlot(str)
+    def slotIRCOLM(self, text):
+        """
+        Input IRCOLM.
+        """
+        if self.sender().validator().state == QValidator.Acceptable:
+            value = from_qvariant(text, float)
+            self.model.setFoulingIndexValue(self.label, self.iclass, value)
 
 
     @pyqtSlot(str)

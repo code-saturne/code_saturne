@@ -95,9 +95,6 @@ static const double _pi = 3.14159265358979323846;
 /* Cut-off distance for adhesion forces (assumed to be the Born distance) */
 static const cs_real_t  _d_cut_off = 1.65e-10;
 
-/* Characteristic retardation wavelength (m) for Hamaker constant */
-static const cs_real_t _lambda_wl = 1000.0e-9;
-
 /* Boltzmann constant */
 static const double _k_boltzmann = 1.38e-23;
 
@@ -126,9 +123,10 @@ cs_lagr_dlvo_init(const cs_real_t   water_permit,
                   const cs_real_t   valen,
                   const cs_real_t   phi_p,
                   const cs_real_t   phi_s,
-                  const cs_real_t   cstham)
+                  const cs_real_t   cstham,
+                  const cs_real_t   lambda_vdw)
 {
-  cs_lnum_t face_id;
+  cs_lnum_t iel;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
@@ -141,30 +139,31 @@ cs_lagr_dlvo_init(const cs_real_t   water_permit,
   cs_lagr_dlvo_param.phi_p = phi_p;
   cs_lagr_dlvo_param.phi_s = phi_s;
   cs_lagr_dlvo_param.cstham = cstham;
+  cs_lagr_dlvo_param.lambda_vdw = lambda_vdw;
 
   /* Allocate memory for the temperature and Debye length arrays */
 
   if (cs_lagr_dlvo_param.temperature == NULL)
-    BFT_MALLOC(cs_lagr_dlvo_param.temperature, mesh->n_b_faces, cs_real_t);
+    BFT_MALLOC(cs_lagr_dlvo_param.temperature, mesh->n_cells, cs_real_t);
 
   if (cs_lagr_dlvo_param.debye_length == NULL)
-    BFT_MALLOC(cs_lagr_dlvo_param.debye_length, mesh->n_b_faces, cs_real_t);
+    BFT_MALLOC(cs_lagr_dlvo_param.debye_length, mesh->n_cells, cs_real_t);
 
   /* Store the temperature */
 
-  for (face_id = 0; face_id < mesh->n_b_faces; face_id++)
-    cs_lagr_dlvo_param.temperature[face_id] = temperature[face_id];
+  for (iel = 0; iel < mesh->n_cells; iel++)
+    cs_lagr_dlvo_param.temperature[iel] = temperature[iel];
 
   /* Computation and storage of the Debye length */
 
-  for (face_id = 0; face_id < mesh->n_b_faces ; face_id++)
+  for (iel = 0; iel < mesh->n_cells ; iel++)
 
-    cs_lagr_dlvo_param.debye_length[face_id]
+    cs_lagr_dlvo_param.debye_length[iel]
       =   pow(2e3 * pow(_faraday_cst,2)
         * cs_lagr_dlvo_param.ionic_strength /
         (cs_lagr_dlvo_param.water_permit
          * _free_space_permit * PG_CST
-         * cs_lagr_dlvo_param.temperature[face_id]), -0.5);
+         * cs_lagr_dlvo_param.temperature[iel]), -0.5);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf(" epseau = %g\n", cs_lagr_dlvo_param.water_permit);
@@ -200,7 +199,7 @@ cs_lagr_dlvo_finalize()
 void
 cs_lagr_barrier(const void                     *particle,
                 const cs_lagr_attribute_map_t  *attr_map,
-                cs_lnum_t                       face_id,
+                cs_lnum_t                       iel,
                 cs_real_t                      *energy_barrier)
 {
   cs_lnum_t i;
@@ -216,7 +215,7 @@ cs_lagr_barrier(const void                     *particle,
 
   for (i = 0; i < 1001; i++) {
 
-    cs_real_t  step = 1e-10;
+    cs_real_t  step = cs_lagr_dlvo_param.debye_length[iel]/30.0;
 
     /* Interaction between the sphere and the plate */
 
@@ -225,6 +224,7 @@ cs_lagr_barrier(const void                     *particle,
     cs_real_t var1
       = cs_lagr_van_der_waals_sphere_plane(distp,
                                            rpart,
+                                           cs_lagr_dlvo_param.lambda_vdw,
                                            cs_lagr_dlvo_param.cstham);
 
     cs_real_t var2
@@ -233,8 +233,8 @@ cs_lagr_barrier(const void                     *particle,
                                  cs_lagr_dlvo_param.valen,
                                  cs_lagr_dlvo_param.phi_p,
                                  cs_lagr_dlvo_param.phi_s,
-                                 cs_lagr_dlvo_param.temperature[face_id],
-                                 cs_lagr_dlvo_param.debye_length[face_id],
+                                 cs_lagr_dlvo_param.temperature[iel],
+                                 cs_lagr_dlvo_param.debye_length[iel],
                                  cs_lagr_dlvo_param.water_permit);
 
     barr = (var1 + var2);
@@ -257,23 +257,24 @@ cs_lagr_barrier(const void                     *particle,
 cs_real_t
 cs_lagr_van_der_waals_sphere_plane (cs_real_t distp,
                                     cs_real_t rpart,
+                                    cs_real_t lambda_vdw,
                                     cs_real_t cstham)
 {
   cs_real_t var;
 
-  if (distp < (_lambda_wl / 2 / _pi)) {
+  if (distp < (lambda_vdw / 2 / _pi)) {
     var = -cstham * rpart / (6 * distp)
-          * (1 / (1 + 14 * distp / _lambda_wl + 5 * _pi/4.9
-          *  pow(distp,3) / _lambda_wl / pow(rpart,2)));
+          * (1 / (1 + 14 * distp / lambda_vdw + 5 * _pi/4.9
+          *  pow(distp,3) / lambda_vdw / pow(rpart,2)));
   }
   else {
     var = cstham
-      * ((2.45 * _lambda_wl ) /(60. * _pi)
+      * ((2.45 * lambda_vdw ) /(60. * _pi)
          * (  (distp - rpart) / pow(distp,2)
             - (distp + 3. * rpart) / pow(distp + 2. * rpart,2))
-            - 2.17 / 720. / pow(_pi,2) * pow(_lambda_wl,2) * ((distp - 2. * rpart)
+            - 2.17 / 720. / pow(_pi,2) * pow(lambda_vdw,2) * ((distp - 2. * rpart)
             / pow(distp,3) - (distp + 4. * rpart) / pow(distp + 2. * rpart,3))
-            + 0.59 / 5040. / pow(_pi,3) * pow(_lambda_wl,3)
+            + 0.59 / 5040. / pow(_pi,3) * pow(lambda_vdw,3)
             * ((distp - 3. * rpart) /  pow(distp,4) - (distp + 5. * rpart)
             / pow(distp + 2. * rpart,4)));
   }
@@ -290,11 +291,12 @@ cs_real_t
 cs_lagr_van_der_waals_sphere_sphere(cs_real_t  distcc,
                                     cs_real_t  rpart1,
                                     cs_real_t  rpart2,
+                                    cs_real_t  lambda_vdw,
                                     cs_real_t  cstham)
 {
   cs_real_t var = - cstham * rpart1 * rpart2 / (6 * (distcc - rpart1 - rpart2)
                * (rpart1 + rpart2)) * (1 - 5.32 * (distcc - rpart1 - rpart2)
-              / _lambda_wl * log(1 + _lambda_wl / (distcc - rpart1 - rpart2) / 5.32));
+              / lambda_vdw * log(1 + lambda_vdw / (distcc - rpart1 - rpart2) / 5.32));
 
   return var;
 }

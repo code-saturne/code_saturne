@@ -103,6 +103,7 @@ class LagrangianBoundariesModel(Model):
         default['diameter_choice'] = "prescribed"
         default['diameter'] = 1.0e-5
         default['diameter_standard_deviation'] = 0.
+        default['fouling_index'] = 1.
         default['coal_number'] = 1
         default['coal_temperature'] = 800.
         default['coal_composition'] = "raw_coal_as_received"
@@ -185,6 +186,7 @@ class LagrangianBoundariesModel(Model):
         node_class.xmlInitChildNode('diameter', choice=self.default['diameter_choice'])
         node_class.xmlSetData('diameter', self.default['diameter'])
         node_class.xmlSetData('diameter_standard_deviation', self.default['diameter_standard_deviation'])
+        node_class.xmlSetData('fouling_index', self.default['fouling_index'])
 
 
     @Variables.undoGlobal
@@ -388,6 +390,27 @@ class LagrangianBoundariesModel(Model):
         if value == None:
             value = self.defaultParticlesBoundaryValues()['density']
             self.setDensityValue(label, iclass, value)
+        return value
+
+    @Variables.undoLocal
+    def setFoulingIndexValue(self, label, iclass, value):
+        """
+        Update the fouling index value.
+        """
+        self.isFloat(value)
+        self.isGreaterOrEqual(value, 0)
+        self.node_class.xmlSetData('fouling_index', value)
+
+
+    @Variables.noUndo
+    def getFoulingIndexValue(self, label, iclass):
+        """
+        Return the fouling index value.
+        """
+        value = self.node_class.xmlGetDouble('fouling_index')
+        if value == None:
+            value = self.defaultParticlesBoundaryValues()['fouling_index']
+            self.setFoulingIndexValue(label, iclass, value)
         return value
 
 

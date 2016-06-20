@@ -113,6 +113,11 @@ cs_lagr_resuspension(void)
 
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
+  const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  const cs_real_3_t *restrict i_face_normal
+        = (const cs_real_3_t *restrict)fvq->i_face_normal;
+
 /* ================================================================  */
 /* 1.    Resuspension sub model   */
 /* ================================================================  */
@@ -321,7 +326,50 @@ cs_lagr_resuspension(void)
       }
 
     }
-
+    else if (flag == 11 ) {
+      // Treatment of the case for CS_LAGR_IMPOSED_MOTION
+      // Surface and orientation of the normal towards the cell center
+      cs_real_t dotprod = 0.0;
+      cs_real_t vect_cen[3], face_normal[3];
+      const cs_real_t *face_cog = fvq->i_face_cog + (3*face_id);
+      const cs_real_t *cell_cen = fvq->cell_cen + (3*iel);
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        face_normal[ii] = fvq->i_face_normal[3*face_id+ii];
+        vect_cen[ii] = face_cog[ii] - cell_cen[ii];
+        dotprod += vect_cen[ii] * face_normal[ii];
+      }
+      cs_lnum_t isens;
+      if (dotprod > 0)
+        isens = 1;
+      else
+        isens =-1;
+      // Adhesion forces
+      cs_real_t fadh = 1.0;
+      // Gravity forces
+      cs_real_t fgrav = p_mass * isens *
+        (cs_glob_physical_constants->gx * face_normal[0] +
+         cs_glob_physical_constants->gy * face_normal[1] +
+         cs_glob_physical_constants->gz * face_normal[2] );
+      // Forces due to pressure difference
+      cs_lnum_t c_id1 = cs_glob_mesh->i_face_cells[face_id][0];
+      cs_lnum_t c_id2 = cs_glob_mesh->i_face_cells[face_id][1];
+      if (iel == c_id2) {
+        c_id1 = c_id2;
+        c_id2 = iel;
+      }
+      cs_real_t press_out = cs_glob_lagr_extra_module->pressure->val[c_id1];
+      // propce(iel,ipr)
+      cs_real_t press_in = cs_glob_lagr_extra_module->pressure->val[c_id2];
+      const double pi = 4 * atan(1);
+      cs_real_t fpres = (press_out - press_in) * pi * pow(p_diam, 2) * 0.25
+        * cs_lagr_particle_get_real(part, p_am, CS_LAGR_FOULING_INDEX)
+        * isens ;
+      // Resuspension criterion: Fadh + Fgrav + Fpres < 0
+      if ( (fadh + fgrav + fpres) < 0. ) {
+        cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG, 0);
+        // To delete particles: cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_CELL_NUM, 0);
+      }
+    }
   }
 
 }

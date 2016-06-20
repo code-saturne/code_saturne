@@ -96,6 +96,7 @@ typedef struct {
   double     **statistical_weight;/* number of real particles for numerical particles*/
   double     **mass_flow_rate;    /* mass flow rate of particles                     */
   double     **density;           /* density for each class                          */
+  double     **fouling_index;     /* fouling index for each class                    */
   double     **diameter;          /* diameter for each class                         */
   double     **standard_deviation;/* standard deviation of diameter for each class   */
   double     **specific_heat;     /* specific heat for each class                    */
@@ -1033,6 +1034,13 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
           if (iphyla != 2)
             bft_printf("---density = %f \n", rtmp0);
 #endif
+
+          /* Fouling index*/
+          _get_double(&rtmp0, 2, path2, "fouling_index");
+
+          cs_lagr_set_zone_class_foul_index(iclas,
+                                            izone,
+                                            rtmp0);
 
           if (iphyla == 1) {
 

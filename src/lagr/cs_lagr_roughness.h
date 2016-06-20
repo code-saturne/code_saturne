@@ -50,6 +50,7 @@ typedef struct {
   cs_real_t  valen;
   cs_real_t  *debye_length;
   cs_real_t   cstham;
+  cs_real_t   lambda_vdw;
   cs_real_t   espasg;
   cs_real_t   denasp;
   cs_real_t   rayasp;
@@ -77,6 +78,7 @@ roughness_init (const cs_real_t   *water_permit,
                 const cs_real_t   *phi_p,
                 const cs_real_t   *phi_s,
                 const cs_real_t   *cstham,
+                const cs_real_t   *lambda_vdw,
                 const cs_real_t   *espasg,
                 const cs_real_t   *denasp,
                 const cs_real_t   *rayasp,
@@ -100,14 +102,14 @@ cs_lagr_roughness_finalize(void);
  * parameters:
  *   particle       <-- pointer to particle data
  *   attr_map       <-- pointer to attribute map
- *   face_id        <-- id of face neighboring particle
+ *   iel            <-- id of cell where the particle is
  *   energy_barrier <-> energy barrier
  *----------------------------------------------------------------------------*/
 
 void
 cs_lagr_roughness_barrier(const void                     *particle,
                           const cs_lagr_attribute_map_t  *attr_map,
-                          cs_lnum_t                       face_id,
+                          cs_lnum_t                       iel,
                           cs_real_t                      *energy_barrier);
 
 /*----------------------------------------------------------------------------*/

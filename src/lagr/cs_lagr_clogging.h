@@ -56,6 +56,7 @@ typedef struct {
   cs_real_t*  debye_length;
   cs_real_t   cstham;
   cs_real_t   csthpp;
+  cs_real_t   lambda_vdw;
 
 } cs_lagr_clogging_param_t;
 
@@ -80,7 +81,8 @@ cloginit(const cs_real_t   *water_permit,
          const cs_real_t   *phi_p,
          const cs_real_t   *phi_s,
          const cs_real_t   *cstham,
-         const cs_real_t   *csthpp
+         const cs_real_t   *csthpp,
+         const cs_real_t   *lambda_vdw
          );
 
 /*----------------------------------------------------------------------------
@@ -102,7 +104,7 @@ cs_lagr_clogging_finalize(void);
  * parameters:
  *   particle         <-- pointer to particle data
  *   attr_map         <-- pointer to attribute map
- *   face_id          <-- id of face neighboring particle
+ *   iel              <-- id of cell where the particle is
  *   face_area        <-- area of face
  *   energy_barrier   <-> energy barrier
  *   surface_coverage <-> surface coverage
@@ -116,7 +118,7 @@ cs_lagr_clogging_finalize(void);
 int
 cs_lagr_clogging_barrier(const void                     *particle,
                          const cs_lagr_attribute_map_t  *attr_map,
-                         cs_lnum_t                       face_id,
+                         cs_lnum_t                       iel,
                          cs_real_t                      *energy_barrier,
                          cs_real_t                      *surface_coverage,
                          cs_real_t                      *limit,

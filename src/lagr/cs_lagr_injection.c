@@ -1472,6 +1472,10 @@ cs_lagr_injection(int        time_id,
                                     CS_LAGR_STAT_WEIGHT);
           }
 
+          /* Fouling index */
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FOULING_INDEX,
+                                    userdata->foul_index);
+
           /* Modele de Deposition : Initialisation    */
 
           if (cs_glob_lagr_model->deposition == 1) {
@@ -1638,7 +1642,7 @@ cs_lagr_injection(int        time_id,
   for (cs_lnum_t ip = npar1; ip < npar2; ip++) {
 
     unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
-    
+
     cs_lnum_t one = 1;
     cs_real_t random = -1;
     CS_PROCF(zufall, ZUFALL)(&one, &random);
@@ -1744,7 +1748,7 @@ cs_lagr_injection(int        time_id,
 
       cs_lagr_zone_class_data_t *local_userdata
         = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
-      
+
       cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
 
       /* si de nouvelles particules sont entrees, */

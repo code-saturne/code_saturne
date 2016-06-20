@@ -447,6 +447,9 @@ typedef struct {
   /*! density */
   cs_real_t   density;
 
+  /*! fouling index */
+  cs_real_t   foul_index;
+
   /*! particle specific heat */
   cs_real_t   cp;
 
@@ -680,6 +683,10 @@ typedef struct {
 
   /*! Hamaker constant for the particle/fluid/substrate system */
   cs_real_t  cstham;
+
+  /*! Retardation wavelength for VDW forces
+      for the particle/fluid/substrate system */
+  cs_real_t  lambda_vdw;
 
   /*! Dielectric constant of the fluid */
   cs_real_t  epseau;
@@ -1273,6 +1280,21 @@ void
 cs_lagr_set_zone_class_density(int        iclass,
                                int        izone,
                                cs_real_t  density);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set density for a given class and boundary zone
+ *
+ * \param[in]   iclass     class number
+ * \param[in]   izone      boundary zone number
+ * \param[in]   density    pointer to density value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_set_zone_class_foul_index(int        iclass,
+                                  int        izone,
+                                  cs_real_t  foul_index);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -89,6 +89,7 @@ static cs_lagr_roughness_param_t _lagr_roughness_param
    .valen = 0,
    .debye_length = NULL,
    .cstham = 0,
+   .lambda_vdw = 0,
    .espasg = 0,
    .denasp = 0,
    .rayasp = 0,
@@ -128,12 +129,13 @@ roughness_init (const cs_real_t   *water_permit,
                 const cs_real_t   *phi_p,
                 const cs_real_t   *phi_s,
                 const cs_real_t   *cstham,
+                const cs_real_t   *lambda_vdw,
                 const cs_real_t   *espasg,
                 const cs_real_t   *denasp,
                 const cs_real_t   *rayasp,
                 const cs_real_t   *rayasg)
 {
-  int ifac;
+  int iel;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
@@ -146,6 +148,7 @@ roughness_init (const cs_real_t   *water_permit,
   cs_lagr_roughness_param->phi_p = *phi_p;
   cs_lagr_roughness_param->phi_s = *phi_s;
   cs_lagr_roughness_param->cstham = *cstham;
+  cs_lagr_roughness_param->cstham = *lambda_vdw;
   cs_lagr_roughness_param->espasg = *espasg;
   cs_lagr_roughness_param->denasp = *denasp;
   cs_lagr_roughness_param->rayasp = *rayasp;
@@ -154,26 +157,26 @@ roughness_init (const cs_real_t   *water_permit,
   /* Allocate memory for the temperature and Debye length arrays */
 
   if (cs_lagr_roughness_param->temperature == NULL)
-    BFT_MALLOC(cs_lagr_roughness_param->temperature, mesh->n_b_faces, cs_real_t);
+    BFT_MALLOC(cs_lagr_roughness_param->temperature, mesh->n_cells, cs_real_t);
 
   if (cs_lagr_roughness_param->debye_length == NULL)
-    BFT_MALLOC(cs_lagr_roughness_param->debye_length, mesh->n_b_faces, cs_real_t);
+    BFT_MALLOC(cs_lagr_roughness_param->debye_length, mesh->n_cells, cs_real_t);
 
   /* Store the temperature */
 
-  for (ifac = 0; ifac < mesh->n_b_faces; ifac++)
-    cs_lagr_roughness_param->temperature[ifac] = temperature[ifac];
+  for (iel = 0; iel < mesh->n_cells; iel++)
+    cs_lagr_roughness_param->temperature[iel] = temperature[iel];
 
   /* Computation and storage of the Debye length */
 
-  for (ifac = 0; ifac < mesh->n_b_faces ; ifac++)
+  for (iel = 0; iel < mesh->n_cells ; iel++)
 
-    cs_lagr_roughness_param->debye_length[ifac]
+    cs_lagr_roughness_param->debye_length[iel]
       =   pow(2e3 * pow(_faraday_cst,2)
         * cs_lagr_roughness_param->ionic_strength /
         (cs_lagr_roughness_param->water_permit
          * _free_space_permit * PG_CST
-         * cs_lagr_roughness_param->temperature[ifac]), -0.5);
+         * cs_lagr_roughness_param->temperature[iel]), -0.5);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf(" epseau = %g\n", cs_lagr_roughness_param->water_permit);
@@ -204,14 +207,14 @@ cs_lagr_roughness_finalize()
  * parameters:
  *   particle       <-- pointer to particle data
  *   attr_map       <-- pointer to attribute map
- *   face_id        <-- id of face neighboring particle
+ *   iel            <-- id of cell where the particle is
  *   energy_barrier <-> energy barrier
  *----------------------------------------------------------------------------*/
 
 void
 cs_lagr_roughness_barrier(const void                     *particle,
                           const cs_lagr_attribute_map_t  *attr_map,
-                          cs_lnum_t                       face_id,
+                          cs_lnum_t                       iel,
                           cs_real_t                      *energy_barrier)
 {
   cs_int_t  i, dim_aux = 1 ;
@@ -264,8 +267,8 @@ cs_lagr_roughness_barrier(const void                     *particle,
       rpart2[0] = cs_lagr_roughness_param->rayasg;
       rpart2[1] =  cs_lagr_roughness_param->rayasp;
 
-    seff[iclas]  = 2.5 * _pi * (2. * rpart + rpart2[iclas] + 10. *  cs_lagr_roughness_param->debye_length[0])
-      *  ( rpart2[iclas] + 10. * cs_lagr_roughness_param->debye_length[0] );
+    seff[iclas]  = 2.5 * _pi * (2. * rpart + rpart2[iclas] + 10. *  cs_lagr_roughness_param->debye_length[iel])
+      *  ( rpart2[iclas] + 10. * cs_lagr_roughness_param->debye_length[iel] );
 
     value = 700.;
 
@@ -369,7 +372,7 @@ cs_lagr_roughness_barrier(const void                     *particle,
    /*     Loop on the separation distance */
   for (np = 0; np <  500; np++) {
     udlvor[np] = 0.;
-    cs_real_t distp = dismin + (np + 1) * 1.0e-10;
+    cs_real_t distp = dismin + (np + 1) * cs_lagr_roughness_param->debye_length[iel]/30.0;
 
    /*     DLVO between the particle and the rough plate */
 
@@ -378,15 +381,16 @@ cs_lagr_roughness_barrier(const void                     *particle,
    /*     Sphere-plate interaction */
     cs_real_t var1     = cs_lagr_van_der_waals_sphere_plane(distp,
                                                             rpart,
-                                                            cs_lagr_roughness_param->cstham);
+                                                            cs_lagr_roughness_param->cstham,
+                                                            cs_lagr_roughness_param->lambda_vdw);
 
     cs_real_t var2     = cs_lagr_edl_sphere_plane(distp,
                                                   rpart,
                                                   cs_lagr_roughness_param->valen,
                                                   cs_lagr_roughness_param->phi_p,
                                                   cs_lagr_roughness_param->phi_s,
-                                                  cs_lagr_roughness_param->temperature[face_id],
-                                                  cs_lagr_roughness_param->debye_length[face_id],
+                                                  cs_lagr_roughness_param->temperature[iel],
+                                                  cs_lagr_roughness_param->debye_length[iel],
                                                   cs_lagr_roughness_param->water_permit);
 
 
@@ -401,7 +405,8 @@ cs_lagr_roughness_barrier(const void                     *particle,
       var1 = cs_lagr_van_der_waals_sphere_sphere(distcc,
                                                  rpart,
                                                  posasp4[iasp],
-                                                 cs_lagr_roughness_param->cstham);
+                                                 cs_lagr_roughness_param->cstham,
+                                                 cs_lagr_roughness_param->lambda_vdw);
 
 
       var2 = cs_lagr_edl_sphere_sphere(distcc,
@@ -410,8 +415,8 @@ cs_lagr_roughness_barrier(const void                     *particle,
                                        cs_lagr_roughness_param->valen,
                                        cs_lagr_roughness_param->phi_p,
                                        cs_lagr_roughness_param->phi_s,
-                                       cs_lagr_roughness_param->temperature[face_id],
-                                       cs_lagr_roughness_param->debye_length[face_id],
+                                       cs_lagr_roughness_param->temperature[iel],
+                                       cs_lagr_roughness_param->debye_length[iel],
                                        cs_lagr_roughness_param->water_permit);
 
       udlvor[np] = udlvor[np] + (var1 + var2) * (distp + rpart - posasp3[iasp]) / distcc;

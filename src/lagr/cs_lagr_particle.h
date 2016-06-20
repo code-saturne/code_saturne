@@ -79,6 +79,7 @@ typedef enum {
   CS_LAGR_NEIGHBOR_FACE_ID,
   CS_LAGR_MARKO_VALUE,
   CS_LAGR_DEPOSITION_FLAG,
+  CS_LAGR_FOULING_INDEX,
 
   /* Resuspension model additional parameters */
 

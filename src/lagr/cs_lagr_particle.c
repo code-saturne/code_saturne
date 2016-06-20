@@ -174,6 +174,7 @@ const char *cs_lagr_attribute_name[] = {
   "CS_LAGR_NEIGHBOR_FACE_ID",
   "CS_LAGR_MARKO_VALUE",
   "CS_LAGR_DEPOSITION_FLAG",
+  "CS_LAGR_FOULING_INDEX",
   "CS_LAGR_N_LARGE_ASPERITIES",
   "CS_LAGR_N_SMALL_ASPERITIES",
   "CS_LAGR_ADHESION_FORCE",
@@ -739,6 +740,9 @@ cs_lagr_particle_attr_initialize(void)
     attr_keys[CS_LAGR_MARKO_VALUE][1] = ++loc_count;
 
   }
+
+  attr_keys[CS_LAGR_FOULING_INDEX][0] = CS_LAGR_P_RPRP;
+  attr_keys[CS_LAGR_FOULING_INDEX][1] = ++loc_count;
 
   if (lagr_model->resuspension == 1) {
 
