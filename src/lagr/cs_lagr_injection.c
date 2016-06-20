@@ -1636,10 +1636,13 @@ cs_lagr_injection(int        time_id,
 
   for (cs_lnum_t ip = npar1; ip < npar2; ip++) {
 
-    double r = (double)rand() / RAND_MAX;
-
     unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
-    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RANDOM_VALUE, r);
+    
+    cs_lnum_t one = 1;
+    cs_real_t random = -1;
+    CS_PROCF(zufall, ZUFALL)(&one, &random);
+    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RANDOM_VALUE,
+                             random);
 
     /* for safety, build values at previous time step */
     cs_lagr_particles_current_to_previous(p_set, ip);

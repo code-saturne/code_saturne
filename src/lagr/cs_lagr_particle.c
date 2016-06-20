@@ -919,8 +919,11 @@ cs_lagr_part_copy(cs_lnum_t  dest,
   memcpy(particles->p_buffer + particles->p_am->extents*(dest),
          particles->p_buffer + particles->p_am->extents*(src),
          particles->p_am->extents);
+  cs_lnum_t one = 1;
+  cs_real_t random = -1;
+  CS_PROCF(zufall, ZUFALL)(&one, &random);
   cs_lagr_particles_set_real(particles, (dest-1), CS_LAGR_RANDOM_VALUE,
-                             rand()/RAND_MAX);
+                             random);
 }
 
 /*----------------------------------------------------------------------------*/

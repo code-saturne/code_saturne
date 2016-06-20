@@ -805,35 +805,8 @@ _lagesd(cs_real_t     dtp,
 
   cs_real_t visccf = extra->viscl->val[cell_id] / *romf;
 
-  cs_real_t norm = cs_math_3_norm(&(vela[cell_id*3]));
-
   cs_real_t yplus = cs_lagr_particle_get_real(particle, p_am,
                                               CS_LAGR_YPLUS);
-
-  /* Velocity norm w.r.t y+    */
-  cs_real_t norm_vit;
-  if (yplus <= 5.0)
-    norm_vit = yplus * *ustar;
-
-  else if (   yplus > 5.0 && yplus <= 30.0)
-    norm_vit = ( -3.05 + 5.0 * log(yplus)) * *ustar;
-
-  else if (   yplus > 30.0
-           && yplus < 100.0)
-    norm_vit = (2.5 * log (yplus) + 5.5) * *ustar;
-
-  cs_real_t vit[3];
-
-  if (norm_vit > 0.) {
-    vit[0] = norm_vit * vela[cell_id * 3 + 0] / norm;
-    vit[1] = norm_vit * vela[cell_id * 3 + 1] / norm;
-    vit[2] = norm_vit * vela[cell_id * 3 + 2] / norm;
-  }
-  else {
-    vit[0] = 0.;
-    vit[1] = 0.;
-    vit[2] = 0.;
-  }
 
   /* Turbulent kinetic energy and dissipation w.r.t y+  */
   cs_real_t energi, dissip;
@@ -892,11 +865,34 @@ _lagesd(cs_real_t     dtp,
 
   /* 2.4 - flow velocity  */
 
-  cs_real_t vflui1[3], vflui[3];
+  cs_real_t vflui[3];
 
-  cs_math_33_3_product(rot_m, vit, vflui);
-  cs_math_33_3_product(rot_m, vela, vflui1);
+  cs_math_33_3_product(rot_m, vela, vflui);
 
+  cs_real_t norm = sqrt(pow(vflui[1],2)+pow(vflui[2],2));
+
+  /* Velocity norm w.r.t y+    */
+  cs_real_t norm_vit;
+
+  if (yplus <= 5.0)
+    norm_vit = yplus * *ustar;
+
+  else if (   yplus > 5.0 && yplus <= 30.0)
+    norm_vit = ( -3.05 + 5.0 * log(yplus)) * *ustar;
+
+  else if (   yplus > 30.0
+           && yplus < 100.0)
+    norm_vit = (2.5 * log (yplus) + 5.5) * *ustar;
+
+  if (norm_vit > 0.) {
+    vflui[1] = norm_vit * vflui[1] / norm;
+    vflui[2] = norm_vit * vflui[2] / norm;
+  }
+  else {
+    vflui[1] = 0.;
+    vflui[2] = 0.;
+  }
+  
   /* 2.5 - pressure gradient   */
 
   cs_real_t gdpr[3];
@@ -1238,8 +1234,7 @@ _lagesd(cs_real_t     dtp,
             cs_real_t kk  = vpart0[id] - vvue[id] - adh_tor[id] / cst_4;
             cs_real_t kkk = vvue[id] + adh_tor[id] / cst_4;
 
-            depl[id] =   ((cst_1 * kkk * dtp + kk) * exp (cst_1 * dtp) - kk)
-                       * exp ( -cst_1 * dtp) / cst_1;
+            depl[id] =   ( kkk * dtp + kk / cst_1 * (1. - exp ( -cst_1 * dtp)));
 
           }
 
