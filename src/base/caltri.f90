@@ -593,7 +593,7 @@ endif
 !===============================================================================
 
 if (iilagr.gt.0) then
-  call laglec(nsalto, nsalpp , iprpfl)
+  call laglec()
 endif
 
 !===============================================================================
@@ -987,7 +987,7 @@ if (iisuit.eq.1) then
   endif
 
   if (iilagr.gt.0) then
-    call lagout(nsalto, nsalpp, iprpfl)
+    call lagout()
   endif
 
   if (iirayo.gt.0) then

@@ -399,11 +399,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.model = LagrangianModel(self.case)
 
         # Combo model
-        self.modelIILAGR = ComboModel(self.comboBoxIILAGR,3,1)
-        self.modelIILAGR.addItem(self.tr("One-way coupling"), "one_way")
-        self.modelIILAGR.addItem(self.tr("Two-way coupling"), "two_way")
-        self.modelIILAGR.addItem(self.tr("Frozen carrier flow"), "frozen")
-
         self.modelIPHYLA = ComboModel(self.comboBoxIPHYLA,2,1)
         self.modelIPHYLA.addItem(self.tr("No model"), 'off')
         self.modelIPHYLA.addItem(self.tr("Heat transfer and evaporation"), 'thermal')
@@ -411,7 +406,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.modelIPHYLA.addItem(self.tr("Pulverised coal model"), 'coal')
 
         # Connections
-        self.comboBoxIILAGR.activated[str].connect(self.slotIILAGR)
         self.checkBoxISUILA.clicked.connect(self.slotISUILA)
         self.checkBoxISTTIO.clicked.connect(self.slotISTTIO)
         self.checkBoxIDEPST.clicked.connect(self.slotIDEPST)
@@ -432,20 +426,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.lineEditNSTITS.setValidator(validatorNSTITS)
 
         # initialize Widgets
-
-#        # Update the lagrangian list with the calculation features
-#
-#        for mdl in self.model.lagrangianCouplingMode():
-#            if mdl not in self.model.lagrangianStatus():
-#                self.modelIILAGR.disableItem(str_model=mdl)
-
-        if CoalCombustionModel(self.case).getCoalCombustionModel("only") != 'off':
-            self.modelIILAGR.disableItem(str_model="one_way")
-            self.modelIILAGR.disableItem(str_model="two_way")
-
-        model = self.model.getCouplingMode()
-        self.modelIILAGR.setItem(str_model=model)
-        self.slotIILAGR(self.modelIILAGR.dicoM2V[model])
+        model = self.model.getLagrangianModel()
 
         status = self.model.getRestart()
         if status == "on":
@@ -469,21 +450,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.labelISTTIO.setDisabled(True)
             self.checkBoxISTTIO.setChecked(True)
             self.checkBoxISTTIO.setDisabled(True)
-
-        part_model = self.model.getParticlesModel()
-        self.modelIPHYLA.setItem(str_model=part_model)
-        self.slotIPHYLA(self.modelIPHYLA.dicoM2V[part_model])
-
-        self.case.undoStartGlobal()
-
-
-    @pyqtSlot(str)
-    def slotIILAGR(self, text):
-        """
-        Input IILAGR.
-        """
-        model = self.modelIILAGR.dicoV2M[str(text)]
-        self.model.setCouplingMode(model)
 
         self.groupBox2way.hide()
 
@@ -520,6 +486,12 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         elif model == "frozen":
             self.labelISTTIO.setDisabled(True)
             self.checkBoxISTTIO.setDisabled(True)
+
+        part_model = self.model.getParticlesModel()
+        self.modelIPHYLA.setItem(str_model=part_model)
+        self.slotIPHYLA(self.modelIPHYLA.dicoM2V[part_model])
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSlot()

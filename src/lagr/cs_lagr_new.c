@@ -400,25 +400,25 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
   cs_real_3_t *vel;
   cs_real_t *cvar_k, *cvar_r11, *cvar_r22, *cvar_r33, *viscl;
 
-  vel = (cs_real_3_t *)CS_F_(u)->vals[time_id];
+  vel = (cs_real_3_t *)extra->vel->vals[time_id];
 
   if (   extra->itytur == 2
       || extra->iturb == 50
       || extra->iturb == 60) {
 
-    cvar_k = CS_F_(k)->vals[time_id];
+    cvar_k = extra->cvar_k->vals[time_id];
 
   }
 
   else if (extra->itytur == 3) {
 
-    cvar_r11 = CS_F_(r11)->vals[time_id];
-    cvar_r22 = CS_F_(r22)->vals[time_id];
-    cvar_r33 = CS_F_(r33)->vals[time_id];
+    cvar_r11 = extra->cvar_r11->vals[time_id];
+    cvar_r22 = extra->cvar_r22->vals[time_id];
+    cvar_r33 = extra->cvar_r33->vals[time_id];
 
   }
 
-  viscl = CS_F_(mu)->val;
+  viscl = extra->viscl->val;
 
 /* ==============================================================================
  * 1. INITIALISATION
@@ -596,7 +596,7 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
           else {
 
-            romf = CS_F_(rho)->val[iel];
+            romf = extra->cromf->val[iel];
 
           }
 

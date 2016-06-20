@@ -56,17 +56,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(laghlo, LAGHLO)(cs_lnum_t *iperiodicity,
-                         cs_lnum_t *ncepdc,
+CS_PROCF(laghlo, LAGHLO)(cs_lnum_t *ncepdc,
                          cs_lnum_t *icepdc,
                          cs_lnum_t  itypfb[],
-                         cs_real_t  ckupdc[],
-                         cs_lnum_t *nswrgy,
-                         cs_lnum_t *iwarny,
-                         cs_lnum_t *imligy,
-                         cs_real_t *epsrgy,
-                         cs_real_t *extray,
-                         cs_real_t *climgy);
+                         cs_real_t  ckupdc[]);
 
 /*----------------------------------------------------------------------------*/
 

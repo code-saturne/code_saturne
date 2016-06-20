@@ -1449,7 +1449,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         if self.case['package'].name == 'code_saturne' and \
            self.case['prepro'] == False:
-            if self.lag_mdl.getLagrangianStatus() != 'off':
+            if self.lag_mdl.getLagrangianModel() != 'off':
                 self.groupBoxListingParticles.show()
                 period = self.mdl.getListingFrequencyLagrangian()
                 if period == -1:

@@ -491,10 +491,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         text = self.modelIJUVW.dicoM2V[choice]
         self.slotIJUVW(text)
 
-        #Fouling
-        self.labelIRCOLM.show()
-        self.labelUnitIRCOLM.show()
-        self.lineEditIRCOLM.show()
+        # Fouling
         colm = self.model.getFoulingIndexValue(self.label, self.iclass)
         self.lineEditIRCOLM.setText(str(colm))
 

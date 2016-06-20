@@ -155,7 +155,7 @@ class XMLinit(Variables):
             ThermalRadiationModel(self.case).getRadiativeModel()
             grdflow = GroundwaterModel(self.case).getGroundwaterModel()
             AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel()
-            LagrangianModel(self.case).getLagrangianStatus()
+            LagrangianModel(self.case).getLagrangianModel()
 
             return msg
 
@@ -1173,6 +1173,12 @@ class XMLinit(Variables):
                     n = b_node.xmlGetNode(t)
                     if n:
                         n.xmlRemoveNode()
+        if XMLLagrangianNode:
+            if XMLLagrangianNode['model'] == "on":
+                node = XMLLagrangianNode.xmlGetNode('coupling_mode')
+                if node:
+                    XMLLagrangianNode['model'] = node['model']
+                    node.xmlRemoveNode()
 
 
 #-------------------------------------------------------------------------------

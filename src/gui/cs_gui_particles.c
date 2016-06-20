@@ -113,10 +113,6 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-/* Pointer on the main boundaries structure */
-
-extern cs_boundary_t *boundaries;
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -141,12 +137,6 @@ _get_particles_model(const char *const model, int *const imodel)
   if (attr != NULL) {
     if (cs_gui_strcmp(attr, "off"))
       *imodel = 0;
-    else if (cs_gui_strcmp(attr, "one_way"))
-      *imodel = 1;
-    else if (cs_gui_strcmp(attr, "two_way"))
-      *imodel = 2;
-    else if (cs_gui_strcmp(attr, "frozen"))
-      *imodel = 3;
     else if (cs_gui_strcmp(attr, "thermal"))
       *imodel = 1;
     else if (cs_gui_strcmp(attr, "coal"))
@@ -299,7 +289,7 @@ _get_double(double *const  keyword,
 }
 
 /*-----------------------------------------------------------------------------
- * Return value of the attribute of the character type for larangian
+ * Return value of the attribute of the character type for lagrangian
  *
  *   parameters:
  *   param     <--   name of the attribute
@@ -458,11 +448,16 @@ cs_gui_particles_model(void)
 #endif
     return;
   }
+  else if (cs_gui_strcmp(attr, "one_way"))
+    cs_glob_lagr_time_scheme->iilagr = 1;
+  else if (cs_gui_strcmp(attr, "two_way"))
+    cs_glob_lagr_time_scheme->iilagr = 2;
+  else if (cs_gui_strcmp(attr, "frozen"))
+    cs_glob_lagr_time_scheme->iilagr = 3;
   BFT_FREE(attr);
 
   /* Global settings */
 
-  _get_particles_model("coupling_mode", &(cs_glob_lagr_time_scheme->iilagr));
   _get_status(&(cs_glob_lagr_time_scheme->isuila), 2,
               "lagrangian", "restart");
   _get_status(&(cs_glob_lagr_time_scheme->isttio), 2,
@@ -797,15 +792,13 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
 
   /* First iteration only: memory allocation */
 
-  /*
-    if (boundaries == NULL)
-    _init_boundaries(nfabor, nozppm);
-  */
-
   for (cs_lnum_t izone = 0; izone < zones; izone++) {
 
+    char *label = cs_gui_boundary_zone_label(izone + 1);
+    char *nature = cs_gui_boundary_zone_nature(izone + 1);
+
     cs_lnum_t *faces_list = cs_gui_get_faces_list(izone,
-                                                  boundaries->label[izone],
+                                                  label,
                                                   *nfabor, *nozppm, &nelt);
 
     for (cs_lnum_t ielt=0; ielt < nelt; ielt++) {
@@ -817,8 +810,9 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
 
     path2 = cs_xpath_init_path();
     cs_xpath_add_elements(&path2, 2, "boundary_conditions",
-                          boundaries->nature[izone]);
-    cs_xpath_add_test_attribute(&path2, "label", boundaries->label[izone]);
+                          nature);
+    cs_xpath_add_test_attribute(&path2, "label", label);
+    cs_xpath_add_test_attribute(&path2, "field_id", "none");
     cs_xpath_add_element(&path2, "particles");
 
     BFT_MALLOC(path1, strlen(path2)+1, char);
@@ -860,8 +854,8 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
 
       bft_printf("--zone %i : class number %i \n", izone,
                  bdy_cond->b_zone_classes[izone]);
-      bft_printf("--        : label    %s \n", boundaries->label[izone]);
-      bft_printf("--        : nature   %s \n", boundaries->nature[izone]);
+      bft_printf("--        : label    %s \n", label);
+      bft_printf("--        : nature   %s \n", nature);
       bft_printf("--        : p_nature %i \n", bdy_cond->b_zone_natures[izone]);
 #endif
 
@@ -882,15 +876,15 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
 
           sprintf(sclass, "class[%i]", iclas+1);
           BFT_REALLOC(path2,
-                      ( 20+strlen(boundaries->nature[izone])
-                        +10+strlen(boundaries->label[izone])
+                      ( 20+strlen(nature)
+                        +10+strlen(label)
                         +13+strlen(sclass)+1),
                       char);
           strcpy(path2, "");
           sprintf(path2,
                   "boundary_conditions/%s[@label='%s']/particles/%s",
-                  boundaries->nature[izone],
-                  boundaries->label[izone],
+                  nature,
+                  label,
                   sclass);
 
           int itmp0, itmp1, itmp2;
@@ -980,7 +974,7 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
 
 #if _XML_DEBUG_
           bft_printf("---statistical weight choice: %i "
-                     " (1: prescribed, 2: rate, 3: subroutine)\n", choice);
+                     " (1: prescribed, 2: rate, 3: subroutine)\n", itmp0);
 
           if (itmp0 == 1 || itmp0 == 2) {
             bft_printf("----statistical weight = %f \n", rtmp0);
@@ -1011,7 +1005,7 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
 #if _XML_DEBUG_
           bft_printf("---diameter choice = %i "
                      "(1: prescribed, 2: subroutine)\n",
-                     choice);
+                     itmp0);
 
           if (itmp0 == 1) {
             bft_printf("----diameter = %f \n", rtmp0);
@@ -1073,7 +1067,7 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
 #if _XML_DEBUG_
             bft_printf("---temperature choice = %i "
                        "(1: prescribed, 2: subroutine)\n",
-                       choice);
+                       itmp0);
 
             if (itmp0 == 1)
               bft_printf("----temperature = %f \n", rtmp0);

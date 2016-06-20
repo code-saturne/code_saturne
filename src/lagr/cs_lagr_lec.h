@@ -59,18 +59,11 @@ BEGIN_C_DECLS
  *    On realise donc ici l'initialisation des tableaux ouverts
  *    dans MEMLA1, ce qui termine l'etape d'initialisation debutee
  *    dans LAGOPT.
- *
- * Parameters:
- * \param[in] nsalto
- * \param[in] nsalpp
- * \param[in] iprpfl
  */
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(laglec, LAGLEC)(cs_lnum_t *nsalto,
-                         cs_lnum_t *nsalpp,
-                         cs_lnum_t  iprpfl[]);
+CS_PROCF(laglec, LAGLEC)(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -102,18 +95,11 @@ cs_lagr_restart_read_p(void);
  *    - statistiques aux frontieres (PARBOR)
  *    - termes sources de couplage retour (TSLAGR)
  * 3. Finalisation des sorties graphiques
- *
- * Parameters:
- * \param[in] nsalpp
- * \param[in] nsalto
- * \param[in] iprpfl
  */
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (lagout, LAGOUT)(cs_lnum_t *nsalpp,
-                          cs_lnum_t *nsalto,
-                          cs_lnum_t  iprpfl[]);
+CS_PROCF (lagout, LAGOUT)(void);
 
 /*----------------------------------------------------------------------------*/
 

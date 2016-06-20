@@ -427,11 +427,6 @@ cs_f_lagr_reentrained_model_pointers(cs_int_t         **ireent,
                                      cs_real_t        **rayasg);
 
 void
-cs_f_lagr_precipitation_model_pointers(cs_int_t         **nbrclas,
-                                       cs_real_t        **diameter,
-                                       cs_real_t        **rho);
-
-void
 cs_f_lagr_clogging_model_pointers(cs_real_t **jamlim,
                                   cs_real_t **mporos,
                                   cs_real_t **csthpp);
@@ -552,26 +547,6 @@ cs_f_lagr_reentrained_model_pointers(cs_int_t         **ireent,
   *modyeq = &cs_glob_lagr_reentrained_model->modyeq;
   *rayasp = &cs_glob_lagr_reentrained_model->rayasp;
   *rayasg = &cs_glob_lagr_reentrained_model->rayasg;
-}
-
-void
-cs_f_lagr_precipitation_model_pointers(cs_int_t         **nbrclas,
-                                       cs_real_t        **diameter,
-                                       cs_real_t        **rho)
-{
-  *nbrclas  = &cs_glob_lagr_precipitation_model->nbrclas;
-  *diameter = &cs_glob_lagr_precipitation_model->diameter;
-  *rho      = &cs_glob_lagr_precipitation_model->rho;
-
-  cs_int_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
-
-  if (cs_glob_lagr_model->precipitation) {
-    BFT_MALLOC(cs_glob_lagr_precipitation_model->nbprec, ncelet, int);
-    BFT_MALLOC(cs_glob_lagr_precipitation_model->solub, ncelet, cs_real_t);
-    BFT_MALLOC(cs_glob_lagr_precipitation_model->mp_diss,
-               ncelet*cs_glob_lagr_precipitation_model->nbrclas,
-               cs_real_t);
-  }
 }
 
 void
@@ -731,53 +706,80 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.cromf       = cs_field_by_name_try("rho_gas");
   }
   else {
-    _lagr_extra_module.cromf       = CS_F_(rho);
+    _lagr_extra_module.cromf       = cs_field_by_name_try("density");
   }
 
-  _lagr_extra_module.pressure    = CS_F_(p);
-  _lagr_extra_module.vel         = CS_F_(u);
-  _lagr_extra_module.cvar_k      = CS_F_(k);
-  _lagr_extra_module.cvar_ep     = CS_F_(eps);
-  _lagr_extra_module.cvar_omg    = CS_F_(omg);
-  _lagr_extra_module.cvar_r11    = CS_F_(r11);
-  _lagr_extra_module.cvar_r22    = CS_F_(r22);
-  _lagr_extra_module.cvar_r33    = CS_F_(r33);
-  _lagr_extra_module.viscl       = CS_F_(mu);
-  _lagr_extra_module.cpro_viscls = NULL;
+  if (cs_field_by_name_try("pressure") != NULL) {
+    /* we use Code_Saturne */
+    _lagr_extra_module.pressure    = cs_field_by_name_try("pressure");
+    _lagr_extra_module.vel         = cs_field_by_name_try("velocity");
+    _lagr_extra_module.cvar_k      = cs_field_by_name_try("k");
+    _lagr_extra_module.cvar_ep     = cs_field_by_name_try("epsilon");
+    _lagr_extra_module.cvar_omg    = cs_field_by_name_try("omega");
+    _lagr_extra_module.cvar_r11    = cs_field_by_name_try("r11");
+    _lagr_extra_module.cvar_r22    = cs_field_by_name_try("r22");
+    _lagr_extra_module.cvar_r33    = cs_field_by_name_try("r33");
+    _lagr_extra_module.viscl       = cs_field_by_name_try("molecular_viscosity");
+    _lagr_extra_module.cpro_viscls = NULL;
 
-  if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE)
-    _lagr_extra_module.scal_t    = CS_F_(t);
-  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY)
-    _lagr_extra_module.scal_t    = CS_F_(h);
-  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TOTAL_ENERGY)
-    _lagr_extra_module.scal_t    = CS_F_(energy);
-  else
-    _lagr_extra_module.scal_t    = NULL;
+    if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE)
+        _lagr_extra_module.scal_t    = cs_field_by_name_try("temperature");
+    else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY)
+        _lagr_extra_module.scal_t    = cs_field_by_name_try("enthalpy");
+    else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TOTAL_ENERGY)
+        _lagr_extra_module.scal_t    = cs_field_by_name_try("total_energy");
+    else
+        _lagr_extra_module.scal_t    = NULL;
 
-  if (_lagr_extra_module.scal_t != NULL) {
-    _lagr_extra_module.visls0
-      = cs_field_get_key_double(_lagr_extra_module.scal_t,
-                                cs_field_key_id("scalar_diffusivity_ref"));
+    if (_lagr_extra_module.scal_t != NULL) {
+        _lagr_extra_module.visls0
+            = cs_field_get_key_double(_lagr_extra_module.scal_t,
+                    cs_field_key_id("scalar_diffusivity_ref"));
 
-    int l_id = cs_field_get_key_int(_lagr_extra_module.scal_t,
-                                    cs_field_key_id("scalar_diffusivity_id"));
-    if (l_id >= 0)
-      _lagr_extra_module.cpro_viscls = cs_field_by_id(l_id);
+        int l_id = cs_field_get_key_int(_lagr_extra_module.scal_t,
+                cs_field_key_id("scalar_diffusivity_id"));
+        if (l_id >= 0)
+            _lagr_extra_module.cpro_viscls = cs_field_by_id(l_id);
+    }
+
+    _lagr_extra_module.cpro_cp     = cs_field_by_name_try("specific_heat");
+    _lagr_extra_module.temperature = cs_field_by_name_try("temperature");
+    _lagr_extra_module.t_gaz       = cs_field_by_name_try("t_gas");
+    _lagr_extra_module.luminance   = cs_field_by_name_try("luminance");
+    _lagr_extra_module.x_oxyd      = cs_field_by_name_try("ym_o2");
+    _lagr_extra_module.x_eau       = cs_field_by_name_try("ym_h2o");
+    _lagr_extra_module.x_m         = cs_field_by_name_try("xm");
+
+    cs_field_t *f = cs_field_by_name_try("ustar");
+    if (f != NULL)
+        _lagr_extra_module.uetbor = f->val;
+    else
+        _lagr_extra_module.uetbor = NULL;
   }
+  else {
+    /* we use NEPTUNE_CFD */
+    _lagr_extra_module.pressure    = cs_field_by_name_try("Pressure");
+    _lagr_extra_module.vel         = cs_field_by_name_try("lagr_velocity");
+    _lagr_extra_module.cvar_k      = cs_field_by_name_try("lagr_k");
+    _lagr_extra_module.cvar_ep     = cs_field_by_name_try("lagr_epsilon");
+    _lagr_extra_module.cvar_omg    = NULL;
+    _lagr_extra_module.cvar_r11    = cs_field_by_name_try("lagr_r11");
+    _lagr_extra_module.cvar_r22    = cs_field_by_name_try("lagr_r22");
+    _lagr_extra_module.cvar_r33    = cs_field_by_name_try("lagr_r33");
+    _lagr_extra_module.viscl       = cs_field_by_name_try("lagr_molecular_viscosity");
+    _lagr_extra_module.cpro_viscls = NULL;
 
-  _lagr_extra_module.cpro_cp     = CS_F_(cp);
-  _lagr_extra_module.temperature = CS_F_(t);
-  _lagr_extra_module.t_gaz       = cs_field_by_name_try("t_gas");;
-  _lagr_extra_module.luminance   = CS_F_(rad_lumin);
-  _lagr_extra_module.x_oxyd      = cs_field_by_name_try("ym_o2");
-  _lagr_extra_module.x_eau       = cs_field_by_name_try("ym_h2o");
-  _lagr_extra_module.x_m         = cs_field_by_name_try("xm");
+    _lagr_extra_module.scal_t    = cs_field_by_name_try("lagr_enthalpy");
 
-  cs_field_t *f = cs_field_by_name_try("ustar");
-  if (f != NULL)
-    _lagr_extra_module.uetbor = f->val;
-  else
-    _lagr_extra_module.uetbor = NULL;
+    _lagr_extra_module.cpro_cp     = cs_field_by_name_try("lagr_specific_heat");
+    _lagr_extra_module.temperature = cs_field_by_name_try("lagr_temperature");
+    _lagr_extra_module.t_gaz       = NULL;
+    _lagr_extra_module.luminance   = cs_field_by_name_try("luminance");
+    _lagr_extra_module.x_oxyd      = NULL;
+    _lagr_extra_module.x_eau       = NULL;
+    _lagr_extra_module.x_m         = NULL;
+    _lagr_extra_module.cromf       = cs_field_by_name_try("lagr_density");
+    }
 }
 
 static void

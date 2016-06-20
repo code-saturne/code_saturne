@@ -544,11 +544,12 @@ static const cs_real_t *
 _dt_val(void)
 {
   const cs_real_t *dt_val;
+  const cs_field_t *f = cs_field_by_name_try("dt");
 
   if (_p_dt != NULL)
     dt_val = _p_dt;
-  else if (CS_F_(dt) != NULL)
-    dt_val = CS_F_(dt)->val;
+  else if (f != NULL)
+    dt_val = f->val;
   else
     dt_val = &(cs_glob_time_step_options->dtref);
 

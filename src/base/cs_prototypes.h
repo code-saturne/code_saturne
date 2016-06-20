@@ -236,6 +236,15 @@ cs_user_rad_transfer_net_flux(const int        itypfb[],
  * Uniform random number generator
  *----------------------------------------------------------------------------*/
 
+void CS_PROCF (zufalli, zufalli)
+(
+ const cs_int_t   *n              /* --> size of the vector */
+);
+
+/*----------------------------------------------------------------------------
+ * Uniform random number generator
+ *----------------------------------------------------------------------------*/
+
 void CS_PROCF (zufall, zufall)
 (
  const cs_int_t   *n,             /* --> size of the vector */

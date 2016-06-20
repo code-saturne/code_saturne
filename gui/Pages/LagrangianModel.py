@@ -68,9 +68,7 @@ class LagrangianModel(Model):
         """
         self.case = case
         self.node_lagr = self.case.root().xmlInitNode('lagrangian', 'model')
-        self.getLagrangianStatus()
-        self.__lagrangianStatus = ('off', 'on')
-        self.__lagrangianCouplingMode = ('one_way', 'two_way', 'frozen')
+        self.__lagrangianCouplingMode = ('off', 'one_way', 'two_way', 'frozen')
         self.__particlesModels = ("thermal", "coal", "off")
 
 
@@ -80,7 +78,6 @@ class LagrangianModel(Model):
         """
         default = {}
         default['model']                               = "off"
-        default['coupling_mode']                       = "one_way"
         default['restart']                             = "off"
         default['carrier_field_stationary']            = "off"
         default['deposition_submodel']                 = "off"
@@ -102,9 +99,6 @@ class LagrangianModel(Model):
         default['fluid_particles_turbulent_diffusion'] = "off"
         default['complete_model_iteration']            = 0
         default['complete_model_direction']            = 1
-
-        if CoalCombustionModel(self.case).getCoalCombustionModel("only") != 'off':
-            default['coupling_mode']                   = "frozen"
 
         return default
 
@@ -145,46 +139,25 @@ class LagrangianModel(Model):
 
 
     @Variables.undoGlobal
-    def setLagrangianStatus(self, status):
+    def setLagrangianModel(self, mdl):
         """
-        Update the lagrangian module status markup.
+        Update the lagrangian module model markup.
         """
-        self.isOnOff(status)
-        old_status = self.node_lagr['model']
-        self.node_lagr['model'] = status
+        self.isInList(mdl, self.__lagrangianCouplingMode)
+
+        old_mdl = self.node_lagr['model']
+        self.node_lagr['model'] = mdl
         from code_saturne.Pages.OutputControlModel import OutputControlModel
-        if status != 'off':
+        if mdl != 'off':
             OutputControlModel(self.case).addDefaultLagrangianWriter()
             OutputControlModel(self.case).addDefaultLagrangianMesh()
             self.node_out_lag = self.node_lagr.xmlInitChildNode('output')
-        elif old_status and old_status != 'off':
+        elif old_mdl and old_mdl != 'off':
             OutputControlModel(self.case).deleteMesh(['-3'])
             OutputControlModel(self.case).deleteWriter(['-3', '-4'])
         del OutputControlModel
 
-
-    @Variables.noUndo
-    def getLagrangianStatus(self):
-        """
-        Return the status for lagrangian module markup from the XML document.
-        """
-        status = self.node_lagr['model']
-        if status == "":
-            status = self.defaultParticlesValues()['model']
-            self.setLagrangianStatus(status)
-        return status
-
-
-    @Variables.undoLocal
-    def setCouplingMode(self, model):
-        """
-        Update the lagrangian model markup from the XML document.
-        """
-        self.isInList(model, self.__lagrangianCouplingMode)
-        node_coupling = self.node_lagr.xmlInitChildNode('coupling_mode', 'model')
-        node_coupling['model'] = model
-
-        if model == 'two_way':
+        if mdl == 'two_way':
             node_2way = self.node_lagr.xmlInitChildNode('two_way_coupling')
         else:
             node_2way = self.node_lagr.xmlGetChildNode('two_way_coupling')
@@ -193,16 +166,15 @@ class LagrangianModel(Model):
 
 
     @Variables.noUndo
-    def getCouplingMode(self):
+    def getLagrangianModel(self):
         """
-        Return the current lagrangian model.
+        Return the status for lagrangian module markup from the XML document.
         """
-        node_coupling = self.node_lagr.xmlInitChildNode('coupling_mode', 'model')
-        model = node_coupling['model']
-        if model not in self.__lagrangianCouplingMode:
-            model = self.defaultParticlesValues()['coupling_mode']
-            self.setCouplingMode(model)
-        return model
+        mdl = self.node_lagr['model']
+        if mdl == "":
+            mdl = self.defaultParticlesValues()['model']
+            self.setLagrangianModel(mdl)
+        return mdl
 
 
     @Variables.undoLocal
@@ -236,7 +208,7 @@ class LagrangianModel(Model):
         self.isOnOff(status)
         node_steady = self.node_lagr.xmlInitChildNode('carrier_field_stationary', 'status')
 
-        if not (self.getCouplingMode() == "frozen"):
+        if not (self.getLagrangianModel() == "frozen"):
             node_steady['status'] = status
         else:
             node_steady['status'] = "on"
@@ -748,50 +720,6 @@ class LagrangianTestCase(ModelTest):
 
         assert model.node_lagr == self.xmlNodeFromString(doc), \
                'Could not instantiate LagrangianModel'
-
-
-    def checkLagrangianStatus(self):
-        """Check whether the Lagrangian status could be set and get."""
-        mdl = LagrangianModel(self.case)
-        mdl.setLagrangianStatus("on")
-
-        assert mdl.node_lagr == self.xmlNodeFromString("""<lagrangian model="on"/>"""), \
-               'Could not get lagrangian status.'
-
-        assert mdl.getLagrangianStatus() == "on", \
-               'Could not get lagrangian status.'
-
-
-    def checklagrangianStatus(self):
-        """Check whether the lagrangianStatus could be get."""
-        from code_saturne.Pages.TurbulenceModel import TurbulenceModel
-        mdl = LagrangianModel(self.case)
-        TurbulenceModel(self.case).setTurbulenceModel('LES_Smagorinsky')
-
-        assert mdl.lagrangianStatus() == ('off',), \
-               'Could not use the lagrangianStatus method'
-
-
-    def checkLagrangianModel(self):
-        """Check whether the LagrangianModel could be set and get."""
-        mdl = LagrangianModel(self.case)
-
-        assert mdl.lagrangianStatus() == ('off', 'on'), \
-               'Could not use the lagrangianStatus method'
-
-        mdl.setCouplingMode("frozen")
-        doc = """<lagrangian model="off">
-                     <coupling_mode model="frozen"/>
-                 </lagrangian>"""
-
-        assert mdl.node_lagr == self.xmlNodeFromString(doc), \
-               'Could not get lagrangian model.'
-
-        for mode in mdl.lagrangianCouplingMode():
-            mdl.setCouplingMode(mode)
-            name = mdl.getCouplingMode()
-            assert mode == mdl.getCouplingMode(), \
-                   'Could not use the get/setCouplingMode method for %s'% mode
 
 
     def checkRestart(self):

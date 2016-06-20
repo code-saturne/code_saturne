@@ -83,18 +83,11 @@ BEGIN_C_DECLS
  *    On realise donc ici l'initialisation des tableaux ouverts
  *    dans MEMLA1, ce qui termine l'etape d'initialisation debutee
  *    dans LAGOPT.
- *
- * Parameters:
- * \param[in] nsalto
- * \param[in] nsalpp
- * \param[in] iprpfl
  */
 /* ----------------------------------------------------------------  */
 
 void
-CS_PROCF(laglec, LAGLEC)(cs_lnum_t *nsalto,
-                         cs_lnum_t *nsalpp,
-                         cs_lnum_t  iprpfl[])
+CS_PROCF(laglec, LAGLEC)(void)
 {
   cs_lnum_t mstits, musbor, itysup, nbval, nberro;
   cs_lnum_t mstist, jdstnt, nclsto, mstbor, jsttio;
@@ -1363,29 +1356,6 @@ CS_PROCF(laglec, LAGLEC)(cs_lnum_t *nsalto,
                                   CS_TYPE_cs_real_t, st_val);
         }
 
-        /*  Dans le cas specifique de la combustion de grains de charbon     */
-        /*  avec un couplage retour sur une combustion gaz en phase porteuse */
-        /*      --> A verifier l'utilite de cette lecture pour une suite...  */
-
-        if (cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0) {
-
-          for (cs_lnum_t ivar = 0; ivar < *nsalpp; ivar++) {
-
-            cs_lnum_t icha = *nsalto - *nsalpp + ivar;
-            itysup   = 1;
-            nbval    = 1;
-
-            char rubriq[32];
-            sprintf(rubriq, "scalaires_physiques_pariculieres_charbon%04d", icha);
-            cs_field_t *f = cs_field_by_id(iprpfl[icha]);
-            ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq,
-                                             itysup, nbval,
-                                             CS_TYPE_cs_real_t, f->val);
-
-          }
-
-        }
-
       }
 
     }
@@ -2170,18 +2140,11 @@ cs_lagr_restart_read_p(void)
  *    - statistiques aux frontieres (PARBOR)
  *    - termes sources de couplage retour (TSLAGR)
  * 3. Finalisation des sorties graphiques
- *
- * Parameters:
- * \param[in] nsalpp
- * \param[in] nsalto
- * \param[in] iprpfl
  */
 /*--------------------------------------------------------------------*/
 
 void
-CS_PROCF (lagout, LAGOUT)(cs_lnum_t *nsalpp,
-                          cs_lnum_t *nsalto,
-                          cs_lnum_t  iprpfl[])
+CS_PROCF (lagout, LAGOUT)(void)
 {
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
@@ -2628,30 +2591,6 @@ CS_PROCF (lagout, LAGOUT)(cs_lnum_t *nsalpp,
         cs_restart_write_section(cs_lag_stat_restart, nomtsl[ii+1],
                                  itysup, nbval, CS_TYPE_cs_real_t,
                                  st_val);
-
-      }
-
-      /* Dans le cas specifique de la combustion de grains de charbon */
-      /* avec un couplage retour sur une combustion gaz en phase porteuse  */
-      /* --> A verifier l'utilite de cette sauvegarde pour une suite...    */
-
-      if (cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0) {
-
-        for (cs_lnum_t ii = 0; ii < *nsalpp; ii++) {
-
-          cs_lnum_t icha = *nsalto - *nsalpp + ii;
-          itysup = 1;
-          nbval = 1;
-
-          char rubriq[32];
-          sprintf(rubriq, "scalaires_physiques_pariculieres_charbon%04d", ii);
-
-          cs_field_t *f = cs_field_by_id(iprpfl[icha]);
-
-          cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                   itysup, nbval, CS_TYPE_cs_real_t, f->val);
-
-        }
 
       }
 

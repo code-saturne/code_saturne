@@ -586,8 +586,7 @@ if (ncpdct.gt.0) then
   ckupdc )
 
  if (iflow .eq.1) then
-   call laghlo(iperio, ncepdc, icepdc, itypfb, ckupdc, nswrgy,  &
-               iwarny, imligy, epsrgy, extray, climgy)
+   call laghlo(ncepdc, icepdc, itypfb, ckupdc)
  endif
 
 endif

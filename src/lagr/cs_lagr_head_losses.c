@@ -80,12 +80,6 @@ BEGIN_C_DECLS
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Private variables
- *============================================================================*/
-
-cs_lnum_t iperio;
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -97,13 +91,7 @@ cs_lnum_t iperio;
 static void
 _porcel(cs_real_t   mdiam[],
         cs_real_t   porosi[],
-        cs_lnum_t   itypfb[],
-        int         nswrgy,
-        int         iwarny,
-        cs_lnum_t   imligy,
-        cs_real_t   epsrgy,
-        cs_real_t   extray,
-        cs_real_t   climgy)
+        cs_lnum_t   itypfb[])
 {
   /* Initialization
    *----------------*/
@@ -206,15 +194,15 @@ _porcel(cs_real_t   mdiam[],
                      halo_type,
                      1,          /* inc */
                      1,          /* recompute_cocg */
-                     nswrgy,
+                     100,        /* nswrgy */
                      0,          /* idimtr */
                      0,          /* hyd_p_flag */
                      1,          /* w_stride */
-                     iwarny,
-                     imligy,
-                     epsrgy,
-                     extray,
-                     climgy,
+                     2,          /* iwarny */
+                     -1,         /* imligy */
+                     1.e-5,      /* epsrgy */
+                     0.,         /* extray */
+                     1.5,        /* climgy */
                      NULL,
                      coefap,
                      coefbp,
@@ -331,10 +319,10 @@ _porcel(cs_real_t   mdiam[],
 
 
     /* Paralellism and periodicity    */
-    if (cs_glob_rank_id >= 0 || iperio == 1) {
+    if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0) {
 
-      CS_PROCF(synsca,SYNSCA)(porosi);
-      CS_PROCF(synsca,SYNSCA)(mdiam);
+      cs_mesh_sync_var_scal(porosi);
+      cs_mesh_sync_var_scal(mdiam);
 
     }
 
@@ -386,21 +374,11 @@ _porcel(cs_real_t   mdiam[],
 /*-------------------------------------------------------------------*/
 
 void
-CS_PROCF(laghlo, LAGHLO)(cs_lnum_t *iperiodicity,
-                         cs_lnum_t *ncepdc,
+CS_PROCF(laghlo, LAGHLO)(cs_lnum_t *ncepdc,
                          cs_lnum_t *icepdc,
                          cs_lnum_t  itypfb[],
-                         cs_real_t  ckupdc[],
-                         cs_lnum_t *nswrgy,
-                         cs_lnum_t *iwarny,
-                         cs_lnum_t *imligy,
-                         cs_real_t *epsrgy,
-                         cs_real_t *extray,
-                         cs_real_t *climgy)
+                         cs_real_t  ckupdc[])
 {
-
-  iperio = *iperiodicity;
-
   cs_lnum_t ncel   = cs_glob_mesh->n_cells;
   cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
 
@@ -441,6 +419,7 @@ CS_PROCF(laghlo, LAGHLO)(cs_lnum_t *iperiodicity,
   /* cs_lnum_t poro_id; */
   /* field_get_id_try ("clogging_porosity", &poro_id); */
 
+  /* TODO ce champ n'est jamais cree */
   cs_field_t *f_poro = cs_field_by_name_try("clogging_porosity");
 
   cs_real_t *lporo;
@@ -450,8 +429,7 @@ CS_PROCF(laghlo, LAGHLO)(cs_lnum_t *iperiodicity,
   else
     lporo = f_poro->val;
 
-  _porcel(mdiam, lporo, itypfb,
-          *nswrgy, *iwarny, *imligy, *epsrgy, *extray, *climgy);
+  _porcel(mdiam, lporo, itypfb);
 
   /* ====================================================================
    * Calculation of the head loss term with the Ergun law

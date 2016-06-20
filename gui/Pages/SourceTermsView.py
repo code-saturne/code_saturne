@@ -344,7 +344,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
-            self.mdl.setSpeciesFormula(self.zone, self.scalar, result)
+            self.mdl.setSpeciesFormula(self.zone, self.scalar, str(result))
             self.pushButtonSpecies.setToolTip(result)
             self.pushButtonSpecies.setStyleSheet("background-color: green")
 
@@ -376,7 +376,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotSpeciesGroundWaterFormula -> %s" % str(result))
-            self.mdl.setGroundWaterSpeciesFormula(self.zone, self.scalar, result)
+            self.mdl.setGroundWaterSpeciesFormula(self.zone, self.scalar, str(result))
             self.pushButtonSpecies2.setToolTip(result)
             self.pushButtonSpecies2.setStyleSheet("background-color: green")
 
@@ -404,7 +404,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotRichardsFormula -> %s" % str(result))
-            self.mdl.setRichardsFormula(self.zone, result)
+            self.mdl.setRichardsFormula(self.zone, str(result))
             self.pushButtonRichards.setToolTip(result)
             self.pushButtonRichards.setStyleSheet("background-color: green")
 
@@ -461,7 +461,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
-            self.mdl.setThermalFormula(self.zone, self.th_sca_name, result)
+            self.mdl.setThermalFormula(self.zone, self.th_sca_name, str(result))
             self.pushButtonThermal.setToolTip(result)
             self.pushButtonThermal.setStyleSheet("background-color: green")
 

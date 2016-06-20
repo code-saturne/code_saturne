@@ -486,17 +486,9 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
         }
       }
       if (t == NULL) {
-        const cs_field_t *f = CS_F_(t);
-        if (f != NULL) {
-          t = f->val;
-          if (cs_glob_thermal_model->itpscl == 1)
-            c_kelvin = 273.15;
-        }
-      }
-      if (t == NULL) {
-        const cs_field_t *f = CS_F_(h);
+        const cs_field_t *f = cs_field_by_name_try("enthalpy");
         if (f != NULL)
-        h = f->val;
+          h = f->val;
       }
 
       assert(datatype == CS_REAL_TYPE);

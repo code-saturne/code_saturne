@@ -196,6 +196,30 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
                            cs_int_t   *iscalt,
                            cs_real_t  *dtref)
 {
+  cs_lagr_option_definition(isuite, iccvfg, iscalt, dtref);
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Lagrangian module options definition.
+ *
+ * - default initialization
+ * - read user settings
+ * - check settings coherency
+ * - initialize some structures relative to Lagrangian module
+ *
+ * \param[in]  isuite
+ * \param[in]  iccvfg
+ * \param[in]  iscalt
+ * \param[in]  dtref
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_option_definition(cs_int_t   *isuite,
+                          cs_int_t   *iccvfg,
+                          cs_int_t   *iscalt,
+                          cs_real_t  *dtref)
+{
   /* Short-name and write access pointers to global variables */
 
   const cs_lagr_const_dim_t *const_dim = cs_glob_lagr_const_dim;
@@ -3628,6 +3652,16 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
   cs_glob_lagr_source_terms->itsmas = 0;
   cs_glob_lagr_source_terms->itste  = 0;
   cs_glob_lagr_source_terms->itsti  = 0;
+
+  /* if we don't use fortran initialization (NEPTUNE_CFD)
+   * we need allocate memory */
+  if (cs_glob_lagr_source_terms->itsmv1 == NULL)
+    BFT_MALLOC(cs_glob_lagr_source_terms->itsmv1,
+               cs_glob_lagr_const_dim->ncharm2, int);
+
+  if (cs_glob_lagr_source_terms->itsmv2 == NULL)
+    BFT_MALLOC(cs_glob_lagr_source_terms->itsmv2,
+               cs_glob_lagr_const_dim->ncharm2, int);
 
   for (int icha = 0; icha < const_dim->ncharm2; icha++) {
 

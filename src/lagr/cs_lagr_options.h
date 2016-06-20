@@ -62,18 +62,44 @@ BEGIN_C_DECLS
  *   aux conditions aux limites, aux variables parietales,
  *   aux donnees pour le couplage retour.
  *
- * \param[in] iccvfg
- * \param[in] idtvar
- * \param[in] iscalt
- * \param[in] dtref
+ * \param[in]  isuite
+ * \param[in]  iccvfg
+ * \param[in]  iscalt
+ * \param[in]  dtref
  */
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (lagopt, LAGOPT) (cs_lnum_t *iccvfg,
-                           cs_lnum_t *idtvar,
-                           cs_lnum_t *iscalt,
+CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
+                           cs_int_t   *iccvfg,
+                           cs_int_t   *iscalt,
                            cs_real_t *dtref);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Lagrangian module initialization
+ *   1) Initialisation par defaut du parametrage du module
+ *   lagrangien
+ *   2) Lecture du parametrage utilisateur
+ *   3) Verifications du parametrage utilisateur et
+ *   controles de coherence
+ *   4) Initialisation des variables en COMMON et des pointeurs
+ *   sur les tableaux lies aux particules, aux statistiques,
+ *   aux conditions aux limites, aux variables parietales,
+ *   aux donnees pour le couplage retour.
+ *
+ * \param[in]  isuite
+ * \param[in]  iccvfg
+ * \param[in]  iscalt
+ * \param[in]  dtref
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_option_definition(cs_int_t   *isuite,
+                          cs_int_t   *iccvfg,
+                          cs_int_t   *iscalt,
+                          cs_real_t *dtref);
 
 /*----------------------------------------------------------------------------*/
 

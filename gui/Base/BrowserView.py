@@ -735,7 +735,7 @@ Calculation management
 
         nodeLagr = case.xmlGetNode('lagrangian', 'model')
 
-        if nodeLagr and nodeLagr['model'] == "on":
+        if nodeLagr and nodeLagr['model'] != "off":
             self.setRowOpen(self.tr('Particles and droplets tracking'))
             self.setRowOpen(self.tr('Lagrangian solution control'))
             self.setRowOpen(self.tr('Particles boundary conditions'))
