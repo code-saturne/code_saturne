@@ -33,6 +33,8 @@
 
 #include "assert.h"
 
+#include "cs_lagr_particle.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -86,6 +88,21 @@ void
 cs_lagr_tracking_finalize(void);
 
 /*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculates the distance to the wall y+.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_test_wall_cell(const void                     *particle,
+                const cs_lagr_attribute_map_t  *p_am,
+                const cs_real_t                 visc_length[],
+                cs_real_t                      *yplus,
+                cs_lnum_t                      *face_id);
+/*----------------------------------------------------------------------------*/
+
 
 END_C_DECLS
 

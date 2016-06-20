@@ -1930,7 +1930,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
   else  /* Use fields at previous time step    */
     iprev = 1;
 
-  cs_lagr_injection(iprev, itypfb);
+  cs_lagr_injection(iprev, itypfb, vislen);
 
   /* ====================================================================   */
   /* 3.  GESTION DU TEMPS QUI PASSE...   */

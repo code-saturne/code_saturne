@@ -265,7 +265,8 @@ cs_user_lagr_ef(cs_real_t            dt_p,
 void
 cs_user_lagr_in(int                         time_id,
                 int                        *injfac,
-                cs_lagr_zone_class_data_t  *local_userdata)
+                cs_lagr_zone_class_data_t  *local_userdata,
+                cs_real_t                   vislen[] )
 {
   const int ntcabs = cs_glob_time_step->nt_cur;
 
@@ -348,7 +349,7 @@ cs_user_lagr_in(int                         time_id,
   if (false) {
     cs_lnum_t npar1 = p_set->n_particles;
     cs_lnum_t npar2 = p_set->n_particles + p_set->n_part_new;
-    cs_lagr_new_particle_init(npar1, npar2, time_id);
+    cs_lagr_new_particle_init(npar1, npar2, time_id, vislen);
   }
 }
 

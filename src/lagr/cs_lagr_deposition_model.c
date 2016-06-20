@@ -103,35 +103,6 @@ static const double _k_boltz = 1.38e-23;
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
 
-static void
-_dep_inner_zone_diffusion(cs_real_t *dx,
-                          cs_real_t *vvue,
-                          cs_real_t *vpart,
-                          cs_lnum_t *marko,
-                          cs_real_t *tempf,
-                          cs_real_t *depint,
-                          cs_real_t  dtl,
-                          cs_real_t *tstruc,
-                          cs_real_t *tdiffu,
-                          cs_real_t *ttotal,
-                          cs_real_t *vstruc,
-                          cs_real_t *romp,
-                          cs_real_t *taup,
-                          cs_real_t *kdif,
-                          cs_real_t *tlag2,
-                          cs_real_t *yplus,
-                          cs_real_t *lvisq,
-                          cs_real_t *unif1,
-                          cs_real_t *unif2,
-                          cs_real_t *dintrf,
-                          cs_real_t *rpart,
-                          cs_real_t *kdifcl,
-                          cs_lnum_t *indint,
-                          cs_real_t *gnorm,
-                          cs_real_t *vnorm,
-                          cs_real_t *grpn,
-                          cs_real_t *piiln);
-
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
@@ -160,7 +131,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
  *   vnorm     <--    wall-normal fluid (Eulerian) velocity
  *----------------------------------------------------------------------------*/
 
-static void
+void
 _dep_ejection(cs_lnum_t *marko,
               cs_real_t *depint,
               cs_real_t  dtp,
@@ -241,7 +212,7 @@ _dep_ejection(cs_lnum_t *marko,
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
 
-static void
+void
 _dep_sweep(cs_real_t *dx,
            cs_real_t *vvue,
            cs_real_t *vpart,
@@ -402,7 +373,7 @@ _dep_sweep(cs_real_t *dx,
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
 
-static void
+void
 _dep_diffusion_phases(cs_real_t *dx,
                       cs_real_t *vvue,
                       cs_real_t *vpart,
@@ -658,7 +629,7 @@ _dep_diffusion_phases(cs_real_t *dx,
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
 
-static void
+void
 _dep_inner_zone_diffusion(cs_real_t *dx,
                           cs_real_t *vvue,
                           cs_real_t *vpart,

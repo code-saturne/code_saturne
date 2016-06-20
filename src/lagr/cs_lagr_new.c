@@ -381,7 +381,8 @@ cs_lagr_new(cs_lnum_t  *npt,
 void
 cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
                           cs_lnum_t   p_id_u,
-                          cs_lnum_t   time_id)
+                          cs_lnum_t   time_id,
+                          cs_real_t   vislen[])
 {
   cs_lagr_particle_set_t  *pset = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = pset->p_am;
@@ -599,26 +600,22 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
           }
 
-          cs_real_t visccf = viscl[iel] / romf;
-
-          cs_real_t *particle_coords
-            = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COORDS);
-
-          const cs_real_t *b_u_normal = cs_glob_lagr_b_u_normal[ifac];
-
-          cs_real_t d1 = fabs(  particle_coords[0]*b_u_normal[0]
-                              + particle_coords[1]*b_u_normal[1]
-                              + particle_coords[2]*b_u_normal[2]
-                              +                    b_u_normal[3]);
-
-          if (d1 < distp) {
-
-            distp = d1;
-            yplus = distp * extra->uetbor[ifac] / visccf;
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_YPLUS, yplus);
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID, ifac);
-
+          cs_lnum_t  *neighbor_face_id;
+          cs_real_t  *particle_yplus;
+          
+          if (cs_glob_lagr_model->deposition > 0) {
+            neighbor_face_id
+              = cs_lagr_particle_attr(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
+            particle_yplus
+              = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
           }
+          else {
+            neighbor_face_id = NULL;
+            particle_yplus = 0;  /* allow tests even without particle y+ */
+          }
+
+          _test_wall_cell(particle, p_am, vislen,
+                          particle_yplus, neighbor_face_id);
 
         }
 

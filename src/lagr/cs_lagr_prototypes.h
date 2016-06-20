@@ -105,7 +105,8 @@ cs_user_lagr_ef(cs_real_t            dt_p,
 void
 cs_user_lagr_in(int                         time_id,
                 int                        *injfac,
-                cs_lagr_zone_class_data_t  *local_userdata);
+                cs_lagr_zone_class_data_t  *local_userdata,
+                cs_real_t                   vislen[]  );
 
 /*---------------------------------------------------------------------------------*/
 /* \brief User subroutine of the Lagrangian particle-tracking module

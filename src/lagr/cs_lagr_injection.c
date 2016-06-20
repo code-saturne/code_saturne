@@ -111,7 +111,8 @@ BEGIN_C_DECLS
 
 void
 cs_lagr_injection(int        time_id,
-                  const int  itypfb[])
+                  const int  itypfb[],
+                  cs_real_t  vislen[])
 {
   cs_real_t dnbpnw_preci = 0.;
 
@@ -1620,13 +1621,13 @@ cs_lagr_injection(int        time_id,
 
   cs_lnum_t npar1 = p_set->n_particles;
   cs_lnum_t npar2 = p_set->n_particles + nlocnew;
-  cs_lagr_new_particle_init(npar1, npar2, time_id);
+  cs_lagr_new_particle_init(npar1, npar2, time_id, vislen);
 
   /* ==============================================================================
    * 7. MODIFICATION DES TABLEAUX DE DONNEES PARTICULAIRES
    * ============================================================================== */
 
-  cs_user_lagr_in(time_id, iwork, local_zone_class_data);
+  cs_user_lagr_in(time_id, iwork, local_zone_class_data, vislen);
 
   /* ==============================================================================
    * 7bis. Random id associated with particles (to be initialized later)

@@ -1448,7 +1448,8 @@ _lagdep(cs_real_t     dtp,
       /*   the standard model is applied     */
       /* ==============================================================    */
 
-      if (cs_lagr_particle_get_real(particle, p_am, CS_LAGR_YPLUS) > depint) {
+      if (cs_lagr_particle_get_real(particle, p_am, CS_LAGR_YPLUS) > depint &&
+          cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) == 0 ) {
 
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, -1);
 

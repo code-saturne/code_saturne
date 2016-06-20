@@ -86,7 +86,8 @@ cs_lagr_new(cs_lnum_t  *npt,
 void
 cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
                           cs_lnum_t   p_id_u,
-                          cs_lnum_t   time_id);
+                          cs_lnum_t   time_id,
+                          cs_real_t   vislen[]);
 
 /*----------------------------------------------------------------------------*/
 

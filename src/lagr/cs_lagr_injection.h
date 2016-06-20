@@ -54,7 +54,8 @@ BEGIN_C_DECLS
 
 void
 cs_lagr_injection(int        time_id,
-                  const int  itypfb[]);
+                  const int  itypfb[],
+                  cs_real_t  vislen[]);
 
 /*----------------------------------------------------------------------------*/
 
