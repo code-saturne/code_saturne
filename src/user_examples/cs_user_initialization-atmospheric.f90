@@ -45,7 +45,7 @@
 !_______________________________________________________________________________
 
 
-subroutine cs_user_initialization &
+subroutine cs_user_f_initialization &
 !================================
 
  ( nvar   , nscal  ,                                              &
@@ -242,4 +242,4 @@ endif
 deallocate(lstelt)
 
 return
-end subroutine cs_user_initialization
+end subroutine cs_user_f_initialization

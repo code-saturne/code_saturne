@@ -45,7 +45,7 @@
 !_______________________________________________________________________________
 
 
-subroutine cs_user_initialization &
+subroutine cs_user_f_initialization &
  ( nvar   , nscal  ,                                              &
    dt     )
 
@@ -151,4 +151,4 @@ deallocate(lstelt)  ! temporary array for cells selection
 !< [finalize]
 
 return
-end subroutine cs_user_initialization
+end subroutine cs_user_f_initialization

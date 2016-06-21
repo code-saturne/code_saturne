@@ -45,7 +45,7 @@
 !_______________________________________________________________________________
 
 
-subroutine cs_user_initialization &
+subroutine cs_user_f_initialization &
  ( nvar   , nscal  ,                                              &
    dt     )
 
@@ -232,4 +232,4 @@ deallocate(w1, w2, w3, w4)
 !< [finalize]
 
 return
-end subroutine cs_user_initialization
+end subroutine cs_user_f_initialization
