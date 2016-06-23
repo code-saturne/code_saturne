@@ -916,7 +916,7 @@ _create_bdy_cond_struct(int   n_max_zones)
 
   }
 
-  BFT_MALLOC(bdy_cond->b_face_zone_id, mesh->n_b_faces, int);
+  BFT_MALLOC(bdy_cond->b_face_zone_id, mesh->n_b_faces, cs_lnum_t);
 
   for (i = 0; i < cs_glob_mesh->n_b_faces; i++)
     bdy_cond->b_face_zone_id[i] = -1;
@@ -928,8 +928,6 @@ _create_bdy_cond_struct(int   n_max_zones)
 
 /*----------------------------------------------------------------------------
  * Initialize a cs_lagr_internal_condition_t structure.
- *
- * parameters:
  *
  * returns:
  *   a new defined cs_lagr_internal_condition_t structure
@@ -943,7 +941,7 @@ _create_internal_cond_struct()
 
   BFT_MALLOC(internal_cond, 1, cs_lagr_internal_condition_t);
 
-  BFT_MALLOC(internal_cond->i_face_zone_id, mesh->n_i_faces, int);
+  BFT_MALLOC(internal_cond->i_face_zone_id, mesh->n_i_faces, cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
     internal_cond->i_face_zone_id[i] = -1;
