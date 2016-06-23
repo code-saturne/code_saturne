@@ -207,6 +207,14 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
 void
 CS_PROCF (lagstati, LAGSTATI) (void)
 {
+  cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
+
+  if (lagr_model->deposition > 0)
+    cs_field_find_or_create("ustar",
+                            CS_FIELD_PROPERTY | CS_FIELD_PROPERTY,
+                            CS_MESH_LOCATION_BOUNDARY_FACES,
+                            1);
+
   /* Now activate basic statistics */
   cs_lagr_stat_initialize();
 }
@@ -3829,16 +3837,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   }
 
-  /* Define required volume fields */
-
-  if (lagr_model->deposition > 0)
-    cs_field_find_or_create("ustar",
-                            CS_FIELD_PROPERTY | CS_FIELD_PROPERTY,
-                            CS_MESH_LOCATION_BOUNDARY_FACES,
-                            1);
-
   /* Now define particle map */
-
   cs_lagr_particle_attr_initialize();
 }
 

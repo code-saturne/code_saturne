@@ -767,10 +767,8 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.cvar_r22    = cs_field_by_name_try("lagr_r22");
     _lagr_extra_module.cvar_r33    = cs_field_by_name_try("lagr_r33");
     _lagr_extra_module.viscl       = cs_field_by_name_try("lagr_molecular_viscosity");
-    _lagr_extra_module.cpro_viscls = NULL;
-
-    _lagr_extra_module.scal_t    = cs_field_by_name_try("lagr_enthalpy");
-
+    _lagr_extra_module.scal_t      = cs_field_by_name_try("lagr_enthalpy");
+    _lagr_extra_module.cpro_viscls = cs_field_by_name_try("lagr_thermal_conductivity");
     _lagr_extra_module.cpro_cp     = cs_field_by_name_try("lagr_specific_heat");
     _lagr_extra_module.temperature = cs_field_by_name_try("lagr_temperature");
     _lagr_extra_module.t_gaz       = NULL;
@@ -779,6 +777,14 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.x_eau       = NULL;
     _lagr_extra_module.x_m         = NULL;
     _lagr_extra_module.cromf       = cs_field_by_name_try("lagr_density");
+    /* TODO FIX ME */
+    _lagr_extra_module.visls0      = 0.;
+
+    cs_field_t *f = cs_field_by_name_try("wall_friction_velocity");
+    if (f != NULL)
+        _lagr_extra_module.uetbor  = f->val;
+    else
+        _lagr_extra_module.uetbor  = NULL;
     }
 }
 
@@ -853,7 +859,12 @@ _cs_lagr_allocate_zone_class_data(int  iclass,
 
   assert(zone_class_data != NULL);
 
-  if (cs_glob_lagr_model->physical_model == 2) {
+  if (cs_glob_lagr_model->physical_model == 1) {
+    BFT_MALLOC(zone_class_data->temperature,
+               1,
+               cs_real_t);
+  }
+  else if (cs_glob_lagr_model->physical_model == 2) {
 
     BFT_MALLOC(zone_class_data->coke_density,
                cs_glob_lagr_model->n_temperature_layers,
