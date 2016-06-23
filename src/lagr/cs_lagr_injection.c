@@ -382,7 +382,7 @@ cs_lagr_injection(int        time_id,
 
   }
 
-  /* --> Conditions au bord. */
+  /* --> Boundary conditions */
   for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
 
     int izone = bdy_cond->b_zone_id[ii];
