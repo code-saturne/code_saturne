@@ -914,9 +914,9 @@ _create_bdy_cond_struct(int   n_max_zones)
   bdy_cond->n_b_max_zones = n_max_zones;
 
   BFT_MALLOC(bdy_cond->particle_flow_rate, n_max_zones, cs_real_t);
-  BFT_MALLOC(bdy_cond->b_zone_id, n_max_zones, cs_lnum_t);
-  BFT_MALLOC(bdy_cond->b_zone_classes, n_max_zones, cs_lnum_t);
-  BFT_MALLOC(bdy_cond->b_zone_natures, n_max_zones, cs_lnum_t);
+  BFT_MALLOC(bdy_cond->b_zone_id, n_max_zones, int);
+  BFT_MALLOC(bdy_cond->b_zone_classes, n_max_zones, int);
+  BFT_MALLOC(bdy_cond->b_zone_natures, n_max_zones, int);
 
   for (i = 0; i < n_max_zones; i++) {
 
@@ -927,7 +927,7 @@ _create_bdy_cond_struct(int   n_max_zones)
 
   }
 
-  BFT_MALLOC(bdy_cond->b_face_zone_id, mesh->n_b_faces, cs_lnum_t);
+  BFT_MALLOC(bdy_cond->b_face_zone_id, mesh->n_b_faces, int);
 
   for (i = 0; i < cs_glob_mesh->n_b_faces; i++)
     bdy_cond->b_face_zone_id[i] = -1;
@@ -952,7 +952,7 @@ _create_internal_cond_struct()
 
   BFT_MALLOC(internal_cond, 1, cs_lagr_internal_condition_t);
 
-  BFT_MALLOC(internal_cond->i_face_zone_id, mesh->n_i_faces, cs_lnum_t);
+  BFT_MALLOC(internal_cond->i_face_zone_id, mesh->n_i_faces, int);
 
   for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
     internal_cond->i_face_zone_id[i] = -1;
