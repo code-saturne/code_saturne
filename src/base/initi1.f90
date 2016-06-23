@@ -160,6 +160,8 @@ call lagran_init_map
 
 call lagopt(isuite, iccvfg, iscalt, dtref)
 
+call lagstati
+
 !===============================================================================
 ! 3. DEFINITION DES COUPLAGES AVEC SYRTHES
 !===============================================================================

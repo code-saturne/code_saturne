@@ -102,6 +102,15 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                           cs_real_t *dtref);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Lagrangian module initialize statistics fields
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (lagstati, LAGSTATI) (void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

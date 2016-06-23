@@ -185,7 +185,7 @@ extern cs_lagr_stat_options_t   *cs_glob_lagr_stat_options;
  * \param[in]  location_id    id of associated mesh location
  * \param[in]  stat_type      predefined statistics type, or -1
  * \param[in]  m_type         moment type
- * \param[in]  class          particle class id, or 0 for all
+ * \param[in]  class_id       particle class id, or 0 for all
  * \param[in]  dim            dimension associated with element data
  * \param[in]  component_id   attribute component id, or < 0 for all
  * \param[in]  data_func      pointer to function to compute statistics
@@ -209,7 +209,7 @@ cs_lagr_stat_define(const char                *name,
                     int                        location_id,
                     int                        stat_type,
                     cs_lagr_stat_moment_t      m_type,
-                    int                        class,
+                    int                        class_id,
                     int                        dim,
                     int                        component_id,
                     cs_lagr_moment_p_data_t   *data_func,
@@ -230,7 +230,7 @@ cs_lagr_stat_define(const char                *name,
  *
  * \param[in]  name           statistics base name
  * \param[in]  location_id    id of associated mesh location
- * \param[in]  class          particle class id, or 0 for all
+ * \param[in]  class_id       particle class id, or 0 for all
  * \param[in]  w_data_func    pointer to function to compute particle weight
  *                            (if NULL, statistic weight assumed)
  * \param[in]  w_data_input   associated input for w_data_func
@@ -247,7 +247,7 @@ cs_lagr_stat_define(const char                *name,
 int
 cs_lagr_stat_accumulator_define(const char                *name,
                                 int                        location_id,
-                                int                        class,
+                                int                        class_id,
                                 cs_lagr_moment_p_data_t   *w_data_func,
                                 void                      *w_data_input,
                                 int                        nt_start,
@@ -268,7 +268,7 @@ cs_lagr_stat_accumulator_define(const char                *name,
  * \param[in]  location_id    id of associated mesh location
  * \param[in]  stat_type      predefined statistics type, or -1
  * \param[in]  m_type         moment type
- * \param[in]  class          particle class id, or 0 for all
+ * \param[in]  class_id       particle class id, or 0 for all
  * \param[in]  dim            dimension associated with element data
  * \param[in]  component_id   attribute component id, or < 0 for all
  * \param[in]  data_func      pointer to function to compute statistics
@@ -292,7 +292,7 @@ cs_lagr_stat_time_moment_define(const char                *name,
                                 int                        location_id,
                                 int                        stat_type,
                                 cs_lagr_stat_moment_t      m_type,
-                                int                        class,
+                                int                        class_id,
                                 int                        dim,
                                 int                        component_id,
                                 cs_lagr_moment_m_data_t   *data_func,
@@ -458,7 +458,7 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart);
  *
  * \param[in]  stat_type     statistics type
  * \param[in]  m_type        moment type (mean or variance)
- * \param[in]  class         particle statistical class
+ * \param[in]  class_id      particle statistical class
  * \param[in]  component_id  component id, or -1 for all
  *
  * \returns pointer to the field associated to the corresponding moment
@@ -468,21 +468,21 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart);
 cs_field_t *
 cs_lagr_stat_get_moment(int                    stat_type,
                         cs_lagr_stat_moment_t  m_type,
-                        int                    class,
+                        int                    class_id,
                         int                    component_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return statistical weight
  *
- * \param[in]  class       particle statistical class
+ * \param[in]  class_id    particle statistical class
  *
  * \returns pointer to the field associated to the corresponding weight
  */
 /*----------------------------------------------------------------------------*/
 
 cs_field_t *
-cs_lagr_stat_get_stat_weight(int  class);
+cs_lagr_stat_get_stat_weight(int  class_id);
 
 /*----------------------------------------------------------------------------*/
 /*!

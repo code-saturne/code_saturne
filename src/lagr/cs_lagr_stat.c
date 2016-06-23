@@ -417,7 +417,7 @@ _statistical_weight_name(int   class,
  *
  * \param[in]   stat_type     particle statistics type
  * \param[in]   component_id  component id, or -1
- * \param[in]   class         statistical class id, or 0
+ * \param[in]   class_id      statistical class id, or 0
  * \param[in]   moment_type   moment type
  * \param[out]  name          resulting name
  */
@@ -426,7 +426,7 @@ _statistical_weight_name(int   class,
 static void
 _stat_name(int                    stat_type,
            int                    component_id,
-           int                    class,
+           int                    class_id,
            cs_lagr_stat_moment_t  moment_type,
            char                   name[64])
 {
@@ -445,8 +445,8 @@ _stat_name(int                    stat_type,
   if (component_id > -1)
     snprintf(_comp_name, 12, "_l%d", component_id);
 
-  if (class > 0)
-    snprintf(_class_name, 12, "_c%d", class);
+  if (class_id > 0)
+    snprintf(_class_name, 12, "_c%d", class_id);
 
   size_t l0 =   strlen(_comp_name) + strlen(_class_name)
               + strlen(type_name[moment_type]);
@@ -602,7 +602,7 @@ _check_restart(const char                     *name,
                int                             dim,
                cs_lagr_stat_moment_t           moment_type,
                int                             stat_type,
-               int                             class,
+               int                             class_id,
                int                            *nt_start,
                double                         *t_start,
                cs_lagr_stat_restart_t          restart_mode)
@@ -645,7 +645,7 @@ _check_restart(const char                     *name,
           || ri->m_type[i] != (int)moment_type
           || ri->location_id[i] != location_id
           || ri->stat_type[i]  != stat_type
-          || ri->class[i] != class
+          || ri->class[i] != class_id
           || ri->dimension[i] != dim)
         matching_restart = false;
 
@@ -1099,7 +1099,7 @@ _init_vars_attribute(void)
  * \param[in]  m_data_func  mesh-based function used to define data
  *                          values, or NULL
  * \param[in]  data_input   pointer to optional (untyped) value or structure
- * \param[in]  class        statistical class number
+ * \param[in]  class_id     statistical class number
  * \param[in]  location_id  associated mesh location id
  * \param[in]  nt_start     starting time step
  * \param[in]  t_start      starting time
@@ -1113,7 +1113,7 @@ static int
 _find_or_add_wa(cs_lagr_moment_p_data_t  *p_data_func,
                 cs_lagr_moment_m_data_t  *m_data_func,
                 const void               *data_input,
-                int                       class,
+                int                       class_id,
                 int                       location_id,
                 int                       nt_start,
                 double                    t_start,
@@ -1141,7 +1141,7 @@ _find_or_add_wa(cs_lagr_moment_p_data_t  *p_data_func,
   for (int i = 0; i < _n_lagr_stats_wa; i++) {
     mwa = _lagr_stats_wa + i;
     if (   nt_start == mwa->nt_start && fabs(mwa->t_start - _t_start) < 1e-18
-        && prev_wa_id == mwa->restart_id && class == mwa->class
+        && prev_wa_id == mwa->restart_id && class_id == mwa->class
         && p_data_func == mwa->p_data_func && m_data_func == mwa->m_data_func
         && data_input == mwa->data_input)
       return i;
@@ -1176,7 +1176,7 @@ _find_or_add_wa(cs_lagr_moment_p_data_t  *p_data_func,
 
   mwa->location_id = location_id;
 
-  mwa->class = class;
+  mwa->class = class_id;
 
   mwa->p_data_func = p_data_func;
   mwa->m_data_func = m_data_func;
@@ -1190,7 +1190,7 @@ _find_or_add_wa(cs_lagr_moment_p_data_t  *p_data_func,
       && nt_start == 0) {
 
     char name[64];
-    _statistical_weight_name(class, name);
+    _statistical_weight_name(class_id, name);
 
     if (cs_field_by_name_try(name) == NULL) {
       cs_field_t *f
@@ -1250,7 +1250,7 @@ _cs_lagr_moment_associate_field(const char  *name,
  *
  * \param[in]  location_id id  of associated mesh location
  * \param[in]  component_id    attribute component id, or < 0 for all
- * \param[in]  class           statistical class
+ * \param[in]  class_id        statistical class
  * \param[in]  stat_type       statistics type id, or -1
  * \param[in]  dim             dimension associated with element data
  * \param[in]  p_data_func     particle-based function used to define data
@@ -1271,7 +1271,7 @@ _cs_lagr_moment_associate_field(const char  *name,
 static int
 _find_or_add_moment(int                       location_id,
                     int                       component_id,
-                    int                       class,
+                    int                       class_id,
                     int                       stat_type,
                     int                       dim,
                     cs_lagr_moment_p_data_t  *p_data_func,
@@ -1305,7 +1305,7 @@ _find_or_add_moment(int                       location_id,
         && data_input   == mt->data_input
         && m_type       == mt->m_type
         && wa_id        == mt->wa_id
-        && class        == mt->class
+        && class_id     == mt->class
         && prev_id      == mt->restart_id)
       return i;
 
@@ -1349,7 +1349,7 @@ _find_or_add_moment(int                       location_id,
 
   mt->l_id = -1;
   mt->stat_type = stat_type;
-  mt->class = class;
+  mt->class = class_id;
   mt->component_id = component_id;
 
   mt->name = NULL;
@@ -1948,7 +1948,7 @@ _cs_lagr_stat_update_all(void)
                 p_weight *= dt_val[cell_id];
 
                 if (mt->p_data_func == NULL)
-                  pval =cs_lagr_particle_attr(particle, p_set->p_am, attr_id);
+                  pval = cs_lagr_particle_attr(particle, p_set->p_am, attr_id);
                 else
                   mt->p_data_func(mt->data_input, particle, p_set->p_am, pval);
 
@@ -2143,7 +2143,7 @@ _free_all_wa(void)
  * \param[in]  location_id      id of associated mesh location
  * \param[in]  stat_type        predefined statistics type, or -1
  * \param[in]  m_type           moment type
- * \param[in]  class            particle class id, or 0 for all
+ * \param[in]  class_id         particle class id, or 0 for all
  * \param[in]  dim              dimension associated with element data
  * \param[in]  component_id     attribute component id, or < 0 for all
  * \param[in]  p_data_func      pointer to particle function to compute
@@ -2171,7 +2171,7 @@ _stat_define(const char                *name,
              int                        location_id,
              int                        stat_type,
              cs_lagr_stat_moment_t      m_type,
-             int                        class,
+             int                        class_id,
              int                        dim,
              int                        component_id,
              cs_lagr_moment_p_data_t   *p_data_func,
@@ -2192,7 +2192,7 @@ _stat_define(const char                *name,
   if (attr_id > 0) {
     _stat_name(stat_type,
                component_id,
-               class,
+               class_id,
                m_type,
                name_buf);
     _name = name_buf;
@@ -2235,7 +2235,7 @@ _stat_define(const char                *name,
                              moment_dim,
                              m_type,
                              stat_type,
-                             class,
+                             class_id,
                              &_nt_start,
                              &_t_start,
                              restart_mode);
@@ -2256,7 +2256,7 @@ _stat_define(const char                *name,
   const int wa_id = _find_or_add_wa(w_p_data_func,
                                     w_m_data_func,
                                     w_data_input,
-                                    class,
+                                    class_id,
                                     wa_location_id,
                                     _nt_start,
                                     _t_start,
@@ -2287,7 +2287,7 @@ _stat_define(const char                *name,
 
   moment_id = _find_or_add_moment(location_id,
                                   component_id,
-                                  class,
+                                  class_id,
                                   stat_type,
                                   dim,
                                   p_data_func,
@@ -2312,7 +2312,7 @@ _stat_define(const char                *name,
 
     int l_id = _find_or_add_moment(location_id,
                                    component_id,
-                                   class,
+                                   class_id,
                                    stat_type,
                                    dim,
                                    p_data_func,
@@ -2379,7 +2379,7 @@ cs_lagr_stat_define(const char                *name,
                     int                        location_id,
                     int                        stat_type,
                     cs_lagr_stat_moment_t      m_type,
-                    int                        class,
+                    int                        class_id,
                     int                        dim,
                     int                        component_id,
                     cs_lagr_moment_p_data_t   *data_func,
@@ -2394,7 +2394,7 @@ cs_lagr_stat_define(const char                *name,
                        location_id,
                        stat_type,
                        m_type,
-                       class,
+                       class_id,
                        dim,
                        component_id,
                        data_func,
@@ -2418,7 +2418,7 @@ cs_lagr_stat_define(const char                *name,
  *
  * \param[in]  name           statistics base name
  * \param[in]  location_id    id of associated mesh location
- * \param[in]  class          particle class id, or 0 for all
+ * \param[in]  class_id       particle class id, or 0 for all
  * \param[in]  w_data_func    pointer to function to compute particle weight
  *                            (if NULL, statistic weight assumed)
  * \param[in]  w_data_input   associated input for w_data_func
@@ -2435,7 +2435,7 @@ cs_lagr_stat_define(const char                *name,
 int
 cs_lagr_stat_accumulator_define(const char                *name,
                                 int                        location_id,
-                                int                        class,
+                                int                        class_id,
                                 cs_lagr_moment_p_data_t   *w_data_func,
                                 void                      *w_data_input,
                                 int                        nt_start,
@@ -2472,7 +2472,7 @@ cs_lagr_stat_accumulator_define(const char                *name,
                                 1,
                                 0,
                                 -1,
-                                class,
+                                class_id,
                                 &_nt_start,
                                 &_t_start,
                                 restart_mode);
@@ -2490,7 +2490,7 @@ cs_lagr_stat_accumulator_define(const char                *name,
   const int wa_id = _find_or_add_wa(w_data_func,
                                     NULL,
                                     w_data_input,
-                                    class,
+                                    class_id,
                                     wa_location_id,
                                     _nt_start,
                                     _t_start,
@@ -2517,7 +2517,7 @@ cs_lagr_stat_accumulator_define(const char                *name,
  * \param[in]  location_id    id of associated mesh location
  * \param[in]  stat_type      predefined statistics type, or -1
  * \param[in]  m_type         moment type
- * \param[in]  class          particle class id, or 0 for all
+ * \param[in]  class_id       particle class id, or 0 for all
  * \param[in]  dim            dimension associated with element data
  * \param[in]  component_id   attribute component id, or < 0 for all
  * \param[in]  data_func      pointer to function to compute statistics
@@ -2541,7 +2541,7 @@ cs_lagr_stat_time_moment_define(const char                *name,
                                 int                        location_id,
                                 int                        stat_type,
                                 cs_lagr_stat_moment_t      m_type,
-                                int                        class,
+                                int                        class_id,
                                 int                        dim,
                                 int                        component_id,
                                 cs_lagr_moment_m_data_t   *data_func,
@@ -2556,7 +2556,7 @@ cs_lagr_stat_time_moment_define(const char                *name,
                       location_id,
                       stat_type,
                       m_type,
-                      class,
+                      class_id,
                       dim,
                       component_id,
                       NULL,
@@ -3330,7 +3330,7 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
  *
  * \param[in]  stat_type     statistics type
  * \param[in]  m_type        moment type (mean or variance)
- * \param[in]  class         particle statistical class
+ * \param[in]  class_id      particle statistical class
  * \param[in]  component_id  component id, or -1 for all
  *
  * \returns pointer to the field associated to the corresponding moment
@@ -3340,10 +3340,10 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
 cs_field_t *
 cs_lagr_stat_get_moment(int                    stat_type,
                         cs_lagr_stat_moment_t  m_type,
-                        int                    class,
+                        int                    class_id,
                         int                    component_id)
 {
-  assert(class >= 0);
+  assert(class_id >= 0);
   assert(m_type == CS_LAGR_MOMENT_MEAN || m_type == CS_LAGR_MOMENT_VARIANCE);
 
   for (int m_id = 0; m_id < _n_lagr_stats; m_id++) {
@@ -3352,7 +3352,7 @@ cs_lagr_stat_get_moment(int                    stat_type,
 
     if (   mt->m_type       == m_type
         && mt->stat_type    == stat_type
-        && mt->class        == class
+        && mt->class        == class_id
         && mt->component_id == component_id)
       return cs_field_by_id(mt->f_id);
 
@@ -3365,21 +3365,21 @@ cs_lagr_stat_get_moment(int                    stat_type,
 /*!
  * \brief Return statistical weight
  *
- * \param[in]  class       particle statistical class
+ * \param[in]  class_id    particle statistical class
  *
  * \returns pointer to the field associated to the corresponding weight
  */
 /*----------------------------------------------------------------------------*/
 
 cs_field_t *
-cs_lagr_stat_get_stat_weight(int  class)
+cs_lagr_stat_get_stat_weight(int  class_id)
 {
-  assert(class >= 0);
+  assert(class_id >= 0);
 
   for (int i = 0; i < _n_lagr_stats_wa; i++) {
     cs_lagr_moment_wa_t *mwa = _lagr_stats_wa + i;
     if (   mwa->f_id > -1
-        && mwa->class == class)
+        && mwa->class == class_id)
       return cs_field_by_id(mwa->f_id);
   }
 

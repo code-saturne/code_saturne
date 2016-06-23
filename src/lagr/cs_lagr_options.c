@@ -199,6 +199,18 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
   cs_lagr_option_definition(isuite, iccvfg, iscalt, dtref);
 }
 
+/* ---------------------------------------------------------------------- */
+/*! \brief Lagrangian module initialize statistics fields
+ */
+/* ---------------------------------------------------------------------- */
+
+void
+CS_PROCF (lagstati, LAGSTATI) (void)
+{
+  /* Now activate basic statistics */
+  cs_lagr_stat_initialize();
+}
+
 /*----------------------------------------------------------------------------*/
 /*! \brief Lagrangian module options definition.
  *
@@ -3828,10 +3840,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   /* Now define particle map */
 
   cs_lagr_particle_attr_initialize();
-
-  /* Now activate basic statistics */
-
-  cs_lagr_stat_initialize();
 }
 
 /*----------------------------------------------------------------------------*/
