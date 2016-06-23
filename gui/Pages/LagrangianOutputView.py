@@ -49,6 +49,7 @@ from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator
 from code_saturne.Pages.LagrangianOutputForm import Ui_LagrangianOutputForm
 from code_saturne.Pages.LagrangianOutputModel import LagrangianOutputModel
+from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -127,31 +128,40 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         else:
             self.checkBoxIVISMP.setChecked(False)
 
-        status = self.model.getCoalParticleDiameterStatus()
-        if status == "on":
-            self.checkBoxIVISDK.setChecked(True)
-        else:
-            self.checkBoxIVISDK.setChecked(False)
+        if CoalCombustionModel(self.case).getCoalCombustionModel("only") == \
+           "homogeneous_fuel_moisture_lagr":
+            status = self.model.getCoalParticleDiameterStatus()
+            if status == "on":
+                self.checkBoxIVISDK.setChecked(True)
+            else:
+                self.checkBoxIVISDK.setChecked(False)
 
-        status = self.model.getCoalParticleMassStatus()
-        if status == "on":
-            self.checkBoxIVISCH.setChecked(True)
-        else:
-            self.checkBoxIVISCH.setChecked(False)
+            status = self.model.getCoalParticleMassStatus()
+            if status == "on":
+                self.checkBoxIVISCH.setChecked(True)
+            else:
+                self.checkBoxIVISCH.setChecked(False)
 
-        status = self.model.getCokeParticleMassStatus()
-        if status == "on":
-            self.checkBoxIVISCK.setChecked(True)
-        else:
-            self.checkBoxIVISCK.setChecked(False)
+            status = self.model.getCokeParticleMassStatus()
+            if status == "on":
+                self.checkBoxIVISCK.setChecked(True)
+            else:
+                self.checkBoxIVISCK.setChecked(False)
 
-        self.case.undoStartGlobal()
-
-        status = self.model.getMoistureMassStatus()
-        if status == "on":
-            self.checkBoxMoisture.setChecked(True)
+            status = self.model.getMoistureMassStatus()
+            if status == "on":
+                self.checkBoxMoisture.setChecked(True)
+            else:
+                self.checkBoxMoisture.setChecked(False)
         else:
-            self.checkBoxMoisture.setChecked(False)
+            self.checkBoxIVISDK.hide()
+            self.labelIVISDK.hide()
+            self.checkBoxIVISCH.hide()
+            self.labelIVISCH.hide()
+            self.checkBoxIVISCK.hide()
+            self.labelIVISCK.hide()
+            self.checkBoxMoisture.hide()
+            self.labelIMoisture.hide()
 
         self.case.undoStartGlobal()
 
