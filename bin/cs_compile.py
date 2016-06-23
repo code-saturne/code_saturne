@@ -417,6 +417,8 @@ def compile_and_link(pkg, srcdir, destdir,
             cmd = cmd + ["-o", "cs_f_user_extra_operations.o"]
         if f == 'cs_user_initialization.f90':
             cmd = cmd + ["-o", "cs_f_user_initialization.o"]
+        if f == 'cs_user_physical_properties.f90':
+            cmd = cmd + ["-o", "cs_f_user_physical_properties.o"]
         if opt_fcflags != None:
             cmd = cmd + separate_args(opt_fcflags)
         cmd = cmd + ["-I", srcdir]
