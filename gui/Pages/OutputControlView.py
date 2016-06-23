@@ -1217,8 +1217,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.case.undoStopGlobal()
         self.mdl = OutputControlModel(self.case)
 
-        if self.case['package'].name == 'code_saturne' and \
-           self.case['prepro'] == False:
+        if self.case['prepro'] == False:
             # lagrangian model
             self.lag_mdl = LagrangianModel(self.case)
 
@@ -1447,8 +1446,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.lineEditNTLIST.setText(str(ntlist))
         self.slotOutputListing(t)
 
-        if self.case['package'].name == 'code_saturne' and \
-           self.case['prepro'] == False:
+        if self.case['prepro'] == False:
             if self.lag_mdl.getLagrangianModel() != 'off':
                 self.groupBoxListingParticles.show()
                 period = self.mdl.getListingFrequencyLagrangian()
