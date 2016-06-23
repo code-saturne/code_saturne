@@ -783,6 +783,7 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
 
   cs_lnum_t iphyla = cs_glob_lagr_model->physical_model;
   cs_lagr_bdy_condition_t *bdy_cond = cs_lagr_get_bdy_conditions();
+  cs_lagr_get_internal_conditions();
 
   zones = cs_gui_boundary_zones_number();
 

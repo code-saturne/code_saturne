@@ -1359,7 +1359,6 @@ _b_mass_contribution(const cs_lagr_particle_set_t   *particles,
  *   face_id         <-- index of the treated face
  *   t_intersect     <-- used to compute the intersection of the trajectory and
  *                       the face
- *   i_face_zone_num <-- tag for internal face zone (0 if deposible)
  *   p_move_particle <-- particle moves?
  *
  * returns:
@@ -1434,75 +1433,57 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
   for (k = 0; k < 3; k++)
     intersect_pt[k] = disp[k]*t_intersect + p_info->start_coords[k];
 
-  if (internal_conditions->i_face_zone_num[face_id] == CS_LAGR_ISORTL
-   || internal_conditions->i_face_zone_num[face_id] == CS_LAGR_IENTRL ) {
+  // TODO by zone ?
 
-    move_particle = CS_LAGR_PART_MOVE_OFF;
-    particle_state = CS_LAGR_PART_OUT;
+  if (internal_conditions->i_face_zone_id[face_id] == 0) {
 
-    for (k = 0; k < 3; k++)
+    // The particle is not treated yet: the motion is now imposed
+    move_particle = CS_LAGR_PART_MOVE_ON;
+
+    // TODO add a condition from CS_LAGRE_IDEPFA
+    for (k = 0; k < 3; k++) {
+      particle_velocity[k] = 0.0;
       particle_coord[k] = intersect_pt[k];
-  }
-  else if (internal_conditions->i_face_zone_num[face_id] == CS_LAGR_IDEPFA) {
+    }
 
-    cs_real_t particle_diameter
-      = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
+    particles->n_part_dep += 1;
+    particles->weight_dep += particle_stat_weight;
 
-    cs_real_t uxn = particle_velocity[0] * face_norm[0];
-    cs_real_t vyn = particle_velocity[1] * face_norm[1];
-    cs_real_t wzn = particle_velocity[2] * face_norm[2];
+    /* Specific treatment in case of particle resuspension modeling */
 
-    cs_real_t energ = 0.5 * particle_mass * (uxn+vyn+wzn) * (uxn+vyn+wzn);
-    cs_real_t min_porosity;
-    cs_real_t limit;
+    cs_lnum_t *cell_num = cs_lagr_particle_attr(particle,
+                                                p_am,
+                                                CS_LAGR_CELL_NUM);
 
+    cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
+                              CS_LAGR_PART_IMPOSED_MOTION);
 
-    /* Computation of the energy barrier */
-    cs_real_t  energt = 0.;
+    if (cs_glob_lagr_model->resuspension == 0) {
 
-    cs_lagr_barrier(particle,
-                    p_am,
-                    cur_cell_id,
-                    &energt);
-
-     /* Deposition criterion: E_kin > E_barr */
-    if (energ > energt * 0.5 * particle_diameter) {
-
-      cs_real_t *cell_cen = fvq->cell_cen + (3*cur_cell_id);
-      cs_real_3_t vect_cen;
-      for (k = 0; k < 3; k++)
-        vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
+      *cell_num = - *cell_num;
 
       for (k = 0; k < 3; k++) {
-        particle_velocity[k] = 0.0;
-      }
-      // TODO: generalise to force the particle on the intersection
-      // (need to be consistent with what is done in local_prop (c_id1,c_id2)
-      for (k = 0; k < 3; k++) {
-        particle_coord[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
         particle_velocity_seen[k] = 0.0;
       }
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                cur_cell_id +1);
-      cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_NEIGHBOR_FACE_ID ,
-                                face_id);
-      // The particle is not treated yet: the motion is now imposed
-      move_particle = CS_LAGR_PART_MOVE_OFF;
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                CS_LAGR_PART_IMPOSED_MOTION);
 
-      particles->n_part_dep += 1;
-      particles->weight_dep += particle_stat_weight;
+      // The particle is not treated yet: the motion is now imposed
+      particle_state = CS_LAGR_PART_TO_SYNC;
+
+    } else {
+
+      //FIXME enforce cell? *cell_num = cs_glob_mesh->b_face_cells[face_id] + 1;
+
       particle_state = CS_LAGR_PART_TREATED;
 
     }
+
   }
   /* FIXME: JBORD* (user-defined boundary condition) not yet implemented
      nor defined by a macro */
-  else if (internal_conditions->i_face_zone_num[face_id] != -1)
+  else if (internal_conditions->i_face_zone_id[face_id] != -1)
     bft_error(__FILE__, __LINE__, 0,
               _(" Internal condition %d not recognized.\n"),
-              internal_conditions->i_face_zone_num[face_id]);
+              internal_conditions->i_face_zone_id[face_id]);
 
   /* Ensure some fields are updated */
 
@@ -3824,7 +3805,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
           cs_real_t *face_cog;
           face_cog = fvq->i_face_cog + (3*face_id);
 
-          if (cs_glob_lagr_internal_conditions->i_face_zone_num[face_id] >= 0 &&
+          if (cs_glob_lagr_internal_conditions->i_face_zone_id[face_id] >= 0 &&
               face_cog[2] < 0.99 ) {
 
             const double pi = 4 * atan(1);

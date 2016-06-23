@@ -916,7 +916,7 @@ _create_bdy_cond_struct(int   n_max_zones)
 
   }
 
-  BFT_MALLOC(bdy_cond->b_face_zone_id, mesh->n_b_faces, cs_lnum_t);
+  BFT_MALLOC(bdy_cond->b_face_zone_id, mesh->n_b_faces, int);
 
   for (i = 0; i < cs_glob_mesh->n_b_faces; i++)
     bdy_cond->b_face_zone_id[i] = -1;
@@ -930,7 +930,6 @@ _create_bdy_cond_struct(int   n_max_zones)
  * Initialize a cs_lagr_internal_condition_t structure.
  *
  * parameters:
- *   n_max_zones     <--  number max. of boundary zones
  *
  * returns:
  *   a new defined cs_lagr_internal_condition_t structure
@@ -940,14 +939,14 @@ static cs_lagr_internal_condition_t *
 _create_internal_cond_struct()
 {
   cs_lagr_internal_condition_t *internal_cond = NULL;
-  cs_mesh_t  *mesh = cs_glob_mesh;
+  cs_mesh_t *mesh = cs_glob_mesh;
 
   BFT_MALLOC(internal_cond, 1, cs_lagr_internal_condition_t);
 
-  BFT_MALLOC(internal_cond->i_face_zone_num, mesh->n_i_faces, cs_lnum_t);
+  BFT_MALLOC(internal_cond->i_face_zone_id, mesh->n_i_faces, int);
 
-  for (cs_lnum_t i = 0; i < cs_glob_mesh->n_i_faces; i++)
-    internal_cond->i_face_zone_num[i] = -1;
+  for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
+    internal_cond->i_face_zone_id[i] = -1;
 
   return internal_cond;
 }
@@ -1615,6 +1614,35 @@ cs_get_lagr_brownian(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return pointer to the main internal conditions structure.
+ *
+ * \return
+ *   pointer to current internal_contditions or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lagr_internal_condition_t  *
+cs_lagr_get_internal_conditions(void)
+{
+  /* Define a structure with default parameters if not done yet */
+
+  if (cs_glob_lagr_internal_conditions == NULL)
+    cs_glob_lagr_internal_conditions = _create_internal_cond_struct();
+
+  if (cs_glob_lagr_internal_conditions->i_face_zone_id == NULL) {
+    BFT_MALLOC(cs_glob_lagr_internal_conditions->i_face_zone_id, cs_glob_mesh->n_i_faces, int);
+
+    for (cs_lnum_t i = 0; i < cs_glob_mesh->n_i_faces; i++)
+      cs_glob_lagr_internal_conditions->i_face_zone_id[i] = -1;
+
+  }
+
+  return cs_glob_lagr_internal_conditions;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return pointer to the main boundary conditions structure.
  *
  * \return
@@ -1676,9 +1704,8 @@ void cs_lagr_finalize_internal_cond(void)
 {
   cs_lagr_internal_condition_t  *internal_cond = cs_glob_lagr_internal_conditions;
   if (internal_cond != NULL)
-    BFT_FREE(internal_cond->i_face_zone_num);
+    BFT_FREE(internal_cond->i_face_zone_id);
 
-  return NULL;
 }
 
 /*----------------------------------------------------------------------------

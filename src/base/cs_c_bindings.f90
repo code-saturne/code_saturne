@@ -1282,6 +1282,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C user function for initialization
+
+    subroutine cs_user_initialization()  &
+      bind(C, name='cs_user_initialization')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_user_initialization
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C user function for physical model options
 
     subroutine cs_user_model()  &

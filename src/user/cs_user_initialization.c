@@ -1,5 +1,6 @@
 /*============================================================================
- * This function is called each time step to define initialization
+ * This subroutine is called at beginning of the computation
+ * (restart or not) before the loop time step.
  *============================================================================*/
 
 /* VERS */
@@ -64,6 +65,7 @@
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
+#include "cs_lagr.h"
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
@@ -99,13 +101,23 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Function is called each time step to define initialization.
+ * \file cs_user_initialization.c
+ *
+ * \brief Initialize variables
+ *
+ * This subroutine is called at beginning of the computation
+ * (restart or not) before the loop time step.
+ *
+ * This subroutine enables to initialize or modify (for restart)
+ * unkown variables and time step values.
  *
  */
 /*----------------------------------------------------------------------------*/
 
-void CS_PROCF (cs_user_initialization, cs_user_initialization)(void)
+void
+cs_user_initialization(void)
 {
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
 
 END_C_DECLS

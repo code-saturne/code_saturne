@@ -169,6 +169,7 @@ cs_lagr_injection(int        time_id,
   cs_real_t pis6 = cs_math_pi / 6.0;
 
   cs_lagr_bdy_condition_t  *bdy_cond = cs_lagr_get_bdy_conditions();
+  cs_lagr_get_internal_conditions();
 
   /* User initialization by class and boundary */
 

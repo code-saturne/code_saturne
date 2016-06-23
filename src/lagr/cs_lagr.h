@@ -636,7 +636,7 @@ typedef struct {
 
 typedef struct {
 
-  cs_lnum_t  *i_face_zone_num;
+  int  *i_face_zone_id;
 
 } cs_lagr_internal_condition_t;
 
@@ -1429,6 +1429,18 @@ cs_get_lagr_physico_chemical(void);
 
 cs_lagr_brownian_t *
 cs_get_lagr_brownian(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to the main internal conditions structure.
+ *
+ * \return
+ *   pointer to current internal_contditions or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lagr_internal_condition_t  *
+cs_lagr_get_internal_conditions(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

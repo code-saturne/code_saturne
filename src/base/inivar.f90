@@ -63,6 +63,10 @@ use field
 use cfpoin, only:ithvar
 use cs_c_bindings
 use cs_cf_bindings
+use cs_f_interfaces
+
+use, intrinsic :: iso_c_binding
+
 use darcy_module
 
 !===============================================================================
@@ -184,6 +188,7 @@ endif
 
 !   - Sous-programme utilisateur
 !     ==========================
+
 call cs_user_initialization()
 
 if (ippmod(iphpar).eq.0) then
