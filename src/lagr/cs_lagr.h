@@ -1508,6 +1508,29 @@ void
 cs_lagr_solve_time_step(const int         itypfb[],
                         const cs_real_t  *dt);
 
+/*----------------------------------------------------------------------------
+ * Return pointers to lagrangian arrays
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   dim_bound_stat   --> dimensions for bound_stat pointer
+ *   p_bound_stat     --> bound_stat pointer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
+                      cs_real_t  **p_cs_glob_lagr_source_terms);
+
+
+/*----------------------------------------------------------------------------
+ * Free lagrangian arrays
+ *
+ * This function is intended for use by Fortran wrappers.
+ *----------------------------------------------------------------------------*/
+void
+cs_lagr_finalize_c_arrays(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -411,13 +411,6 @@ void
 cs_f_lagr_dim_pointers(cs_int_t     **p_ntersl);
 
 void
-cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
-                      cs_real_t  **p_cs_glob_lagr_source_terms);
-
-void
-cs_lagr_finalize_c_arrays(void);
-
-void
 cs_f_lagr_reentrained_model_pointers(cs_int_t         **ireent,
                                      cs_int_t         **iflow,
                                      cs_real_t        **espasg,

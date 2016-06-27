@@ -50,6 +50,15 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Fortran wrapper for restart files readings
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+CS_PROCF(laglec, LAGLEC)(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Lecture des fichiers suite Lagrangien "lagamo" et "lasamo"
  *    contenant les informations sur les particule, les statistiques
  *    volumiques et aux frontieres, ainsi que les termes sources
@@ -63,7 +72,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(laglec, LAGLEC)(void);
+cs_restart_lagrangian_checkpoint_read(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -84,6 +93,15 @@ cs_lagr_restart_read_p(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Fortran wrapper for restart files writings
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (lagout, LAGOUT)(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Restart files writings
  *
  * 1. Ecriture du fichier suite 'lagava' :
@@ -99,7 +117,7 @@ cs_lagr_restart_read_p(void);
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (lagout, LAGOUT)(void);
+cs_restart_lagrangian_checkpoint_write(void);
 
 /*----------------------------------------------------------------------------*/
 
