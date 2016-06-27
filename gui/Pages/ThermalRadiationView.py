@@ -232,7 +232,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.modelAbsorption.addItem('H2O and CO2 mixing (Modak)', 'modak')
 
         from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
-        if CoalCombustionModel(self.case).getCoalCombustionModel() != "off":
+        if CoalCombustionModel(self.case).getCoalCombustionModel("only") != "off":
             self.modelAbsorption.disableItem(str_model='variable')
             self.modelAbsorption.enableItem(str_model='modak')
         else:
