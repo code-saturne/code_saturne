@@ -661,7 +661,6 @@ Calculation management
         self.setRowClose(self.tr('Radiative transfers'))
         self.setRowClose(self.tr('Conjugate heat transfer'))
         self.setRowClose(self.tr('Atmospheric flows'))
-        self.setRowClose(self.tr('Radiative boundary conditions'))
         self.setRowClose(self.tr('Particles boundary conditions'))
         self.setRowClose(self.tr('Steady flow management'))
         # self.setRowClose(self.tr('Surface solution control'))
@@ -773,8 +772,6 @@ Calculation management
             self.setRowOpen(self.tr('Gas combustion'))
             self.setRowOpen(self.tr('Radiative transfers'))
             self.setRowOpen(self.tr('Conjugate heat transfer'))
-            if node5.xmlGetAttribute('model') != 'off':
-                self.setRowOpen(self.tr('Radiative boundary conditions'))
 
         elif node2['model'] in ('homogeneous_fuel', 'homogeneous_fuel_moisture',
                                 'homogeneous_fuel_moisture_lagr'):
@@ -782,23 +779,17 @@ Calculation management
             self.setRowOpen(self.tr('Pulverized fuel combustion'))
             self.setRowOpen(self.tr('Radiative transfers'))
             self.setRowOpen(self.tr('Conjugate heat transfer'))
-            if node5.xmlGetAttribute('model') != 'off':
-                self.setRowOpen(self.tr('Radiative boundary conditions'))
 
         elif node3['model'] in ('joule', 'arc'):
             self.setRowOpen(self.tr('Thermal model'))
             self.setRowOpen(self.tr('Electrical models'))
             self.setRowOpen(self.tr('Radiative transfers'))
             self.setRowOpen(self.tr('Conjugate heat transfer'))
-            if node5.xmlGetAttribute('model') != 'off':
-                self.setRowOpen(self.tr('Radiative boundary conditions'))
 
         elif node6['model'] and node6['model'] != 'off':
             self.setRowOpen(self.tr('Atmospheric flows'))
             self.setRowOpen(self.tr('Radiative transfers'))
             self.setRowOpen(self.tr('Conjugate heat transfer'))
-            if node5.xmlGetAttribute('model') != 'off':
-                self.setRowOpen(self.tr('Radiative boundary conditions'))
 
             if node6 and node6['model'] in ('dry', 'humid'):
                 self.setRowOpen(self.tr('Thermal model'))
@@ -813,8 +804,6 @@ Calculation management
             if node4.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative transfers'))
                 self.setRowOpen(self.tr('Conjugate heat transfer'))
-                if node5.xmlGetAttribute('model') != 'off':
-                    self.setRowOpen(self.tr('Radiative boundary conditions'))
 
         node7 = node0.xmlGetNode('ale_method', 'status')
         if node7 and node7['status'] == 'on':
