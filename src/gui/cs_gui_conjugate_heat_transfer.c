@@ -110,6 +110,18 @@ _get_syrthes_coupling(const char*  keyword,
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
+ * Wrapper to define new SYRTHES coupling.
+ *
+ * subroutine uisyrc
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uisyrc, UISYRC) (void)
+{
+  cs_gui_syrthes_coupling();
+}
+
+/*-----------------------------------------------------------------------------
  * Define new SYRTHES coupling.
  *
  * In the case of a single Code_Saturne and single SYRTHES instance, the
@@ -118,11 +130,9 @@ _get_syrthes_coupling(const char*  keyword,
  * In case of multiple couplings, a coupling will be matched with available
  * SYRTHES instances prioritarily based on the syrthes_name argument.
  *
- * subroutine uisyrc
- * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uisyrc, UISYRC) (void)
+void cs_gui_syrthes_coupling(void)
 {
   int zone_id;
   int verbosity = 0;

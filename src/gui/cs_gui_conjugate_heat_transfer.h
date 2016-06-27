@@ -40,6 +40,12 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
+ * Wrapper to define new SYRTHES coupling.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uisyrc, UISYRC) (void);
+
+/*-----------------------------------------------------------------------------
  * Define new SYRTHES coupling.
  *
  * In the case of a single Code_Saturne and single SYRTHES instance, the
@@ -50,12 +56,9 @@ BEGIN_C_DECLS
  * on the syrthes_app_num argument. If syrthes_name is empty, matching will
  * be based on syrthes_app_num only.
  *
- * subroutine uisyrc
- * *****************
- *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uisyrc, UISYRC) (void);
+void cs_gui_syrthes_coupling(void);
 
 /*----------------------------------------------------------------------------*/
 
