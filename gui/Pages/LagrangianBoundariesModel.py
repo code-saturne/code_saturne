@@ -133,8 +133,7 @@ class LagrangianBoundariesModel(Model):
             if LagrangianModel(self.case).getCoalFouling() == "on":
                 l.append("fouling")
             self.isInList(value, l)
-        self.node_boundary = self.node_boundaries.xmlInitChildNode(nature, label=labelbc)
-        self.node_boundary['field_id'] = 'none'
+        self.node_boundary = self.node_boundaries.xmlInitChildNode(nature, label=labelbc, field_id='none')
         self.node_particles = self.node_boundary.xmlInitChildNode('particles', 'choice')
         self.node_particles['choice'] = value
         self.setCurrentBoundaryNode(nature, labelbc)
@@ -161,8 +160,7 @@ class LagrangianBoundariesModel(Model):
         """
         Update the current boundary node.
         """
-        self.node_boundary = self.node_boundaries.xmlInitChildNode(nature, label=labelbc)
-        self.node_boundary['field_id'] = 'none'
+        self.node_boundary = self.node_boundaries.xmlInitChildNode(nature, label=labelbc, field_id='none')
         self.node_particles = self.node_boundary.xmlInitChildNode('particles', 'choice')
 
 

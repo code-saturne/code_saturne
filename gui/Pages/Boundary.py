@@ -120,31 +120,31 @@ class Boundary(object) :
                           "joule_inlet",
                           "joule_outlet",
                           "joule_wall"]:
-            self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode(nature, label = label)
+            self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode(nature, label = label, field_id='none')
 
         else:
             if nature == "coal_inlet":
-                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('inlet', label = label)
+                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('inlet', label = label, field_id='none')
 
             elif nature == "compressible_outlet":
-                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('outlet', label = label)
+                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('outlet', label = label, field_id='none')
 
             elif nature in ["radiative_wall",
                             "mobile_boundary",
                             "coupling_mobile_boundary"]:
-                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('wall', label = label)
+                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('wall', label = label, field_id='none')
 
             elif nature == "meteo_inlet":
-                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('inlet', label = label)
+                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('inlet', label = label, field_id='none')
 
             elif nature == "meteo_outlet":
-                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('outlet', label = label)
+                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('outlet', label = label, field_id='none')
 
             elif nature == "joule_inlet":
-                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('inlet', label = label)
+                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('inlet', label = label, field_id='none')
 
             elif nature == "joule_outlet":
-                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('outlet', label = label)
+                self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('outlet', label = label, field_id='none')
 
             elif nature == "joule_wall":
                 self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('wall', label = label)
