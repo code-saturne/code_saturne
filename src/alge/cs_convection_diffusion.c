@@ -207,8 +207,10 @@ _max_limiter_denom(const int              f_id,
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  const cs_real_t *restrict i_massflux = cs_field_by_id( cs_field_get_key_int(f, kimasf) )->val;
-  const cs_real_t *restrict b_massflux = cs_field_by_id( cs_field_get_key_int(f, kbmasf) )->val;
+  const cs_real_t *restrict i_massflux =
+    cs_field_by_id(cs_field_get_key_int(f, kimasf))->val;
+  const cs_real_t *restrict b_massflux =
+    cs_field_by_id(cs_field_get_key_int(f, kbmasf))->val;
 
   //Step 1: Building of the upwind gradient if needed
   cs_real_3_t *grdpa; // For the Implicit part
@@ -237,24 +239,24 @@ _max_limiter_denom(const int              f_id,
   if (ischcp == 0 || ischcp == 1) {
 
     cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-        &gradient_type,
-        &halo_type);
+                               &gradient_type,
+                               &halo_type);
 
     cs_field_gradient_scalar(f,
-        false, /* use_previous_t */
-        gradient_type,
-        halo_type,
-        inc,
-        true, /* _recompute_cocg */
-        grdpa);
+                             false, /* use_previous_t */
+                             gradient_type,
+                             halo_type,
+                             inc,
+                             true, /* _recompute_cocg */
+                             grdpa);
 
     cs_field_gradient_scalar(f,
-        true, /* use_previous_t */
-        gradient_type,
-        halo_type,
-        inc,
-        true, /* _recompute_cocg */
-        grdpaa);
+                             true, /* use_previous_t */
+                             gradient_type,
+                             halo_type,
+                             inc,
+                             true, /* _recompute_cocg */
+                             grdpaa);
 
   }
   /* pure SOLU scheme without using gradient_slope_test function*/
