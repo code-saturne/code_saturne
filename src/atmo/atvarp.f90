@@ -176,10 +176,10 @@ if (ifilechemistry.ge.1) then
     allocate(isca_chem(nespg))
     allocate(dmmk(nespg))
     allocate(chempoint(nespg))
-    call add_model_scalar_field('chemistry_no',  'NO',   isca_chem(1))
-    call add_model_scalar_field('chemistry_no2', 'NO2',  isca_chem(2))
-    call add_model_scalar_field('chemistry_o3',  'NO3',  isca_chem(3))
-    call add_model_scalar_field('chemistry_o3p', 'NO3P', isca_chem(4))
+    call add_model_scalar_field('chemistry_no',  'NO',  isca_chem(1))
+    call add_model_scalar_field('chemistry_no2', 'NO2', isca_chem(2))
+    call add_model_scalar_field('chemistry_o3',  'O3',  isca_chem(3))
+    call add_model_scalar_field('chemistry_o3p', 'O3P', isca_chem(4))
     dmmk(1)=30.d-3 ! Molar mass NO
     dmmk(2)=46.d-3 ! Molar mass NO2
     dmmk(3)=48.d-3 ! Molar mass O3
@@ -194,8 +194,8 @@ if (ifilechemistry.ge.1) then
     allocate(chempoint(nespg))
     call add_model_scalar_field('species_no',    'NO',    isca_chem(1))
     call add_model_scalar_field('species_no2',   'NO2',   isca_chem(2))
-    call add_model_scalar_field('species_o3',    'NO3',   isca_chem(3))
-    call add_model_scalar_field('species_o3p',   'NO3P',  isca_chem(4))
+    call add_model_scalar_field('species_o3',    'O3',    isca_chem(3))
+    call add_model_scalar_field('species_o3p',   'O3P',   isca_chem(4))
     call add_model_scalar_field('species_o1d',   'O1D',   isca_chem(5))
     call add_model_scalar_field('species_oh',    'OH',    isca_chem(6))
     call add_model_scalar_field('species_ho2',   'HO2',   isca_chem(7))
@@ -249,8 +249,8 @@ if (ifilechemistry.ge.1) then
 
     call add_model_scalar_field('species_no',    'NO',    isca_chem(1))
     call add_model_scalar_field('species_no2',   'NO2',   isca_chem(2))
-    call add_model_scalar_field('species_o3',    'NO3',   isca_chem(3))
-    call add_model_scalar_field('species_o3p',   'NO3P',  isca_chem(4))
+    call add_model_scalar_field('species_o3',    'O3',    isca_chem(3))
+    call add_model_scalar_field('species_o3p',   'O3P',   isca_chem(4))
     call add_model_scalar_field('species_o1d',   'O1D',   isca_chem(5))
     call add_model_scalar_field('species_oh',    'OH',    isca_chem(6))
     call add_model_scalar_field('species_ho2',   'HO2',   isca_chem(7))
