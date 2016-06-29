@@ -20,7 +20,7 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{elec**}\label{ap:elbase}
+\programme{cs\_elec\_model}\label{ap:elbase}
 
 \vspace{0,5cm}
 On s'int\'eresse \`a la r\'esolution des \'equations de la
@@ -802,7 +802,7 @@ valeur cible de l'intensit\'e, \var{COUIMP}, ($A$) et une valeur \'elev\'ee
 de d\'epart
 de la diff\'erence de potentiel entre l'anode et la cathode\footnote{Plus pr\'ecis\'ement, l'utilisateur doit imposer un potentiel nul
 en cathode et le potentiel \var{DPOT} \`a l'anode, en utilisant explicitement,
-dans le sous-programme utilisateur \fort{uselcl}, la variable \var{DPOT} qui
+dans le sous-programme utilisateur \fort{cs\_user\_boundary\_conditions}, la variable \var{DPOT} qui
 sera automatiquement recal\'ee au cours du calcul.}, \var{DPOT}, ($V$).
 Le recalage est effectu\'e en fin de pas temps et permet de disposer, pour le pas
 de temps suivant, de valeurs recal\'ees des forces de Laplace et de l'effet
@@ -922,7 +922,7 @@ Les sous-programmes marqu\'es d'un ast\'erisque sont d\'etaill\'es ensuite.
 Les d\'eveloppements ont \'et\'e r\'ealis\'es pour une unique phase (\var{NPHAS}=1).
 
 Les \var{NSCAPP} inconnues scalaires associ\'ees \`a la physique
-particuli\`ere sont d\'efinies dans \fort{elvarp} dans l'ordre
+particuli\`ere sont d\'efinies dans \fort{cs\_elec\_add\_variable\_fields} dans l'ordre
 suivant (en particulier afin de limiter le stockage en m\'emoire lors de
 la r\'esolution s\'equentielle des
 scalaires par \fort{scalai})~:
@@ -941,7 +941,7 @@ scalaires par \fort{scalai})~:
         \fort{dp\_ELE}. La fraction massique du
         dernier constituant n'est pas stock\'ee en m\'emoire. Elle est
         d\'etermin\'ee chaque fois que n\'ecessaire en calculant le compl\'ement \`a l'unit\'e
-        des autres fractions massiques (et, en particulier, lorsque \fort{elthht} est
+        des autres fractions massiques (et, en particulier, lorsque \fort{cs\_elec\_convert\_h\_t} est
         utilis\'e pour le calcul des propri\'et\'es physiques).
 \end{itemize}
 
@@ -976,7 +976,7 @@ vecteur est uniforme et de valeur unit\'e (\var{VISLS0(IPOTVA(i))}=1.D0
 avec \var{i} variant de 1 \`a 3).
 
 Le champ \'electrique, la densit\'e de courant et le champ magn\'etique ne sont
-stock\'es que de mani\`ere temporaire (voir \fort{elflux}).
+stock\'es que de mani\`ere temporaire (voir \fort{cs\_compute\_electric\_field}).
 
 
 \newpage
@@ -994,26 +994,24 @@ stock\'es que de mani\`ere temporaire (voir \fort{elflux}).
         & Positionnement des variables \\
                 &                 & \fort{pplecd} &
         & Branchement des physiques particuli\`eres pour la lecture de fichier de donn\'ees \\
-                &                 &                 & \fort{ellecd}*
+                &                 &                 & \fort{cs\_electrical\_properties\_read}*
         & Lecture du fichier de donn\'ees pour les arcs \'electriques  \fort{dp\_ELE} \\
                 &                 & \fort{ppvarp} &
         & Branchement des physiques particuli\`eres pour le positionnement des inconnues \\
-                &                 &                 & \fort{elvarp}*
+                &                 &                 & \fort{cs\_elec\_add\_variable\_fields}*
         & Positionnement des inconnues (enthalpie, potentiels, fractions massiques) \\
                 &                 & \fort{ppprop} &
         & Branchement des physiques particuli\`eres pour le positionnement des propri\'et\'es\\
-                &                 &                 & \fort{elprop}*
+                &                 &                 & \fort{cs\_elec\_add\_property\_fields}*
         & Positionnement des propri\'et\'es (temp\'erature, effet Joule, forces de Laplace) \\
 %
 \fort{ppini1}         &                &                &
         & Branchement des physiques particuli\`eres pour l'initialisation des
 mots-cl\'es sp\'ecifiques \\
-                &\fort{elini1}         &                &
+                &\fort{cs\_electrical\_model\_specific\_initialization}         &                &
         & Initialisation des mots-cl\'es pour le module \'electrique\\
-                &\fort{useli1}         &                &
+                &\fort{cs\_user\_parameters}         &                &
         & Initialisation des mots-cl\'es utilisateur pour le module \'electrique\\
-                &\fort{elveri}         &                &
-        & V\'erification des mots-cl\'es pour le module \'electrique\\
 \end{tabular}
 \caption{Sous-programme \fort{initi1}~: initialisation des mots-cl\'es et
 positionnement des variables}
@@ -1026,15 +1024,15 @@ positionnement des variables}
 \begin{tabular}{llllp{10cm}}
 \fort{ppiniv}         &                &                &
         & Branchement des physiques particuli\`eres pour l'initialisation des variables \\
-                & \fort{eliniv}*&                &
+                & \fort{cs\_electrical\_model\_initialize}*&                &
         & Initialisation des variables sp\'ecifiques au module \'electrique \\
-                 &                 & \fort{elthht}*&
+                 &                 & \fort{cs\_elec\_convert\_h\_t}*&
         & Transformation temp\'erature-enthalpie et enthalpie-temp\'erature par
                 interpolation sur la base du fichier de donn\'ees \fort{dp\_ELE}
                 (arc \'electrique uniquement) \\
-                 &                 & \fort{useliv} &
+                 &                 & \fort{cs\_user\_initialization} &
         & Initialisation des variables par l'utilisateur  \\
-                 &                 &                 & \fort{elthht}*
+                 &                 &                 & \fort{cs\_elec\_convert\_h\_t}*
         & Transformation temp\'erature-enthalpie et enthalpie-temp\'erature par
                 interpolation sur la base du fichier de donn\'ees \fort{dp\_ELE}
                 (arc \'electrique uniquement) \\
@@ -1052,16 +1050,16 @@ positionnement des variables}
                 & \fort{ppphyv} &                &
         & Branchement des physiques particuli\`eres pour le calcul des
                 propri\'et\'es physiques variables \\
-                & \fort{elphyv} &                &
+                & \fort{cs\_elec\_physical\_properties} &                &
         & Calcul des propri\'et\'es physiques variables pour le module
                 \'electrique. En arc \'electrique, les propri\'et\'es sont
                 calcul\'ees par interpolation \`a partir des tables fournies
                 dans le fichier de donn\'ees \fort{dp\_ELE}\\
-                 &                 & \fort{elthht}*&
+                 &                 & \fort{cs\_elec\_convert\_h\_t}*&
         & Transformation temp\'erature-enthalpie et enthalpie-temp\'erature par
                 interpolation sur la base du fichier de donn\'ees \fort{dp\_ELE}
                 (arc \'electrique uniquement) \\
-                 &                 & \fort{uselph} &
+                 &                 & \fort{cs\_user\_physical\_properties} &
         & Calcul par l'utilisateur des propri\'et\'es physiques variables pour le module
                 \'electrique. Pour les \'etudes Joule, en particulier, les propri\'et\'es
                 doivent \^etre fournies ici sous forme de loi (des exemples sont
@@ -1070,7 +1068,7 @@ positionnement des variables}
         & Transformation temp\'erature-enthalpie et enthalpie-temp\'erature
                 fournie par l'utilisateur (plus sp\'ecifiquement pour les
                 \'etudes Joule, pour lesquelles on ne dispose pas d'un fichier
-                de donn\'ees \`a partir duquel r\'ealiser des interpolations avec \fort{elthht}) \\
+                de donn\'ees \`a partir duquel r\'ealiser des interpolations avec \fort{cs\_elec\_convert\_h\_t}) \\
 \end{tabular}
 \caption{Sous-programme \fort{tridim}~: partie 1 (propri\'et\'es physiques)}
 \end{center}
@@ -1081,7 +1079,7 @@ positionnement des variables}
 \begin{tabular}{llllp{10cm}}
 \fort{ppclim}         &                  &                &
         & Branchement des physiques particuli\`eres pour les conditions aux limites\\
-                & \fort{uselcl} &                &
+                & \fort{cs\_user\_boundary\_conditions} &                &
         & Intervention de l'utilisateur pour les conditions aux limites (en lieu
                 et place de \fort{usclim}, m\^eme pour les variables qui ne sont
                 pas sp\'ecifiques au module \'electrique). Si un recalage
@@ -1093,7 +1091,7 @@ positionnement des variables}
         & R\'esolution des \'equations de Navier-Stokes\\
                 & \fort{predvv} &                &
         & Pr\'ediction de la vitesse~: prise en compte des forces de Laplace
-                calcul\'ees dans \fort{elflux} au pas de temps pr\'ec\'edent\\
+                calcul\'ees dans \fort{cs\_compute\_electric\_field} au pas de temps pr\'ec\'edent\\
 \fort{``turb''} &                  &                &
         & Turbulence : r\'esolution des \'equations pour les mod\`eles
                 n\'ecessitant des \'equations de convection-diffusion\\
@@ -1104,12 +1102,12 @@ positionnement des variables}
         & R\'esolution successive de l'enthalpie, du potentiel scalaire
                 r\'eel et, si \var{IPPMOD(IELJOU)=2}, de la partie imaginaire du
                 potentiel scalaire (appels successifs \`a \fort{covofi} qui appelle
-                \fort{eltssc} pour le calcul du terme d'effet Joule au second
+                \fort{cs\_elec\_source\_terms} pour le calcul du terme d'effet Joule au second
                 membre de l'\'equation de l'enthalpie)\\
-                & \fort{elflux}* &                &
+                & \fort{cs\_compute\_electric\_field}* &                &
         & Calcul du champ \'electrique, de la densit\'e de courant et de l'effet
                 Joule (premier de deux appels au cours du pas de temps courant) \\
-                & \fort{uselrc}* &                &
+                & \fort{cs\_user\_electric\_scaling}* &                &
         & Recalage automatique \'eventuel
                 de
                 la densit\'e de courant, de l'effet Joule, des potentiels et
@@ -1121,14 +1119,14 @@ positionnement des variables}
         & R\'esolution successive, si \var{IPPMOD(IELARC)=2}, des trois
                 composantes du potentiel vecteur. On proc\`ede par
                 appels successifs \`a \fort{covofi} qui appelle
-                \fort{eltssc} pour le calcul du second membre de l'\'equation de
+                \fort{cs\_elec\_source\_terms} pour le calcul du second membre de l'\'equation de
                 Poisson portant sur chaque composante du potentiel. \\
                 & \fort{covofi}         &                &
         & R\'esolution successive des \var{NGAZG-1} fractions massiques
                 caract\'erisant la composition du fluide, s'il est
                 multiconstituant.
                 On proc\`ede par appels successifs \`a \fort{covofi}. \\
-                & \fort{elflux}* &                &
+                & \fort{cs\_compute\_electric\_field}* &                &
         & En arc \'electrique, calcul du champ magn\'etique et
                 des trois composantes des forces de
                 Laplace (deuxi\`eme et dernier appel au cours du pas de temps courant)\\
@@ -1142,36 +1140,14 @@ Navier-Stokes, turbulence et scalaires)}
 
 \newpage
 
-\begin{table}[htp]
-\begin{center}
-\begin{tabular}{llllp{10cm}}
-\fort{postlc}         &                  &                &
-        & Post-traitement\\
-                & \fort{ecrevo}         &                &
-        & \'Ecriture des variables \`a post-traiter\\
-                &                  & \fort{uselen}&
-        & Ajout au post-traitement de variables calcul\'ees par
-                l'utilisateur. En exemple activ\'e standard sont post-trait\'es,
-                s'ils existent, l'oppos\'e du champ \'electrique ({\it i.e.} le
-                gradient du potentiel scalaire, r\'eel ou complexe),  le vecteur
-                densit\'e de courant imaginaire (en effet Joule), le champ
-                magn\'etique (en arc \'electrique) et enfin le module et l'argument
-                du potentiel (en effet Joule, avec \var{IPPMOD(IELJOU)=4})\\
-\end{tabular}
-\caption{Sous-programme \fort{tridim}~: partie 3 (post-traitement)}
-\end{center}
-\end{table}
-
-\newpage
-
 \subsection*{Pr\'ecisions}
 
-\etape{\fort{ellecd}}
+\etape{\fort{cs\_electrical\_properties\_read}}
 
 Ce sous-programme r\'ealise la lecture du fichier de donn\'ees sp\'ecifique
 aux arcs \'electriques. On donne ci-dessous, \`a titre d'exemple, l'ent\^ete
 explicative et deux lignes de donn\'ees d'un fichier type. Ces valeurs sont interpol\'ees chaque
-fois que n\'ecessaire par \fort{elthht} pour d\'eterminer les propri\'et\'es
+fois que n\'ecessaire par \fort{cs\_elec\_convert\_h\_t} pour d\'eterminer les propri\'et\'es
 physiques du fluide \`a une temp\'erature (une enthalpie) donn\'ee.
 
 {\scriptsize
@@ -1192,7 +1168,7 @@ physiques du fluide \`a une temp\'erature (une enthalpie) donn\'ee.
 }
 
 
-\etape{\fort{elvarp}}
+\etape{\fort{cs\_elec\_add\_variable\_fields}}
 
 Ce sous-programme permet de positionner les inconnues de calcul list\'ees
 pr\'ec\'edemment. On y pr\'ecise \'egalement que la chaleur massique \`a
@@ -1201,13 +1177,13 @@ scalaires associ\'es au module \'electrique, hormis la conductivit\'e de
 l'\'eventuel potentiel vecteur (celle-ci est uniforme et de valeur unit\'e).
 
 
-\etape{\fort{elprop}}
+\etape{\fort{cs\_elec\_add\_property\_fields}}
 
 C'est dans ce sous-programme que sont positionn\'ees les propri\'et\'es stock\'ees
 dans le tableau \var{PROPCE}, et en particulier la temp\'erature, l'effet Joule
 et les forces de Laplace.
 
-\etape{\fort{eliniv}}
+\etape{\fort{cs\_elec\_fields\_initialize}}
 
 Ce sous-programme permet de r\'ealiser les initialisations par d\'efaut
 sp\'ecifiques au module.
@@ -1226,9 +1202,9 @@ esp\`ece).
 En arc \'electrique, l'enthalpie est initialis\'ee \`a la valeur de l'enthalpie du m\'elange
 suppos\'e monoconstituant \`a la temp\'erature \var{T0} donn\'ee
 dans \fort{usini1}.  En effet Joule, l'enthalpie est initialis\'ee \`a z\'ero
-(mais l'utilisateur peut fournir une valeur diff\'erente dans \fort{useliv}).
+(mais l'utilisateur peut fournir une valeur diff\'erente dans \fort{cs\_user\_physical\_properties}).
 
-\etape{\fort{elthht}}
+\etape{\fort{cs\_elec\_convert\_h\_t}}
 
 Ce sous-programme permet de r\'ealiser (en arc \'electrique) les interpolations
 n\'ecessaires \`a la d\'e\-ter\-mi\-na\-tion des propri\'et\'es physiques du fluide, \`a
@@ -1237,11 +1213,11 @@ partir des tables fournies dans le fichier de donn\'ees \fort{dp\_ELE}.
 On notera en particulier que ce sous-programme prend en argument le tableau
 \var{YESP(NESP)} qui repr\'esente la fraction massique des \var{NGAZG}
 constituants du fluide. Dans le code, on ne r\'esout que la fraction massique
-des \var{NGAZG}-1 premiers constituants. Avant chaque appel \`a \fort{elthht},
+des \var{NGAZG}-1 premiers constituants. Avant chaque appel \`a \fort{cs\_elec\_convert\_h\_t},
 la fraction massique du dernier constituant doit \^etre calcul\'ee comme le
 compl\'ement \`a l'unit\'e des autres fractions massiques.
 
-\etape{\fort{scalai}, \fort{elflux}, \fort{uselrc}}
+\etape{\fort{scalai}, \fort{cs\_compute\_electric\_field}, \fort{cs\_user\_electric\_scaling}}
 
 Le sous-programme \fort{scalai} permet de calculer, dans l'ordre souhait\'e,
 les \var{NSCAPP} scalaires ``physique particuli\`ere'' associ\'es au module
@@ -1260,25 +1236,25 @@ d'effet Joule n'est pris en compte dans l'\'equation de l'enthalpie qu'\`a
 partir du troisi\`eme pas de temps.
 
 Apr\`es la r\'esolution de l'enthalpie et du potentiel scalaire
-(r\'eel ou complexe), le sous-programme \fort{elflux} permet de calculer
+(r\'eel ou complexe), le sous-programme \fort{cs\_compute\_electric\_field} permet de calculer
 les trois composantes du champ \'electrique
 (que l'on stocke dans des tableaux de travail), puis la densit\'e de courant
 et enfin l'effet Joule, que l'on conserve dans le tableau \var{PROPCE(*,IPPROC(IEFJOU))}
-pour le pas temps suivant (apr\`es recalage \'eventuel dans \fort{uselrc} comme
+pour le pas temps suivant (apr\`es recalage \'eventuel dans \fort{cs\_user\_electric\_scaling} comme
 indiqu\'e ci-apr\`es).
 Lorsque \var{IPPMOD(IELJOU)=2},  l'apport de la partie imaginaire est pris en
 compte pour le calcul de l'effet Joule. Lorsque \var{IPPMOD(IELARC)=2}
 (arc \'electrique), le vecteur densit\'e de courant est
 conserv\'e dans \var{PROPCE}, en lieu et place des forces de Laplace
 \var{PROPCE(*,IPPROC(ILAPLA(i)))}~: il est utilis\'e pour le calcul du potentiel vecteur dans le
-second appel \`a \fort{elflux},
-apr\`es recalage \'eventuel par \fort{uselrc} (en effet, il n'est plus
+second appel \`a \fort{cs\_compute\_electric\_field},
+apr\`es recalage \'eventuel par \fort{cs\_user\_electric\_scaling} (en effet, il n'est plus
 n\'ecessaire de conserver les forces de Laplace \`a ce stade puisque
 la seule \'equation dans laquelle elles interviennent est l'\'equation de la
 quantit\'e de mouvement et qu'elle a d\'ej\`a \'et\'e r\'esolue).
 
-\`A la suite de \fort{elflux},
-le sous-programme \fort{uselrc} effectue le recalage permettant d'adapter automatiquement
+\`A la suite de \fort{cs\_compute\_electric\_field},
+le sous-programme \fort{cs\_user\_electric\_scaling} effectue le recalage permettant d'adapter automatiquement
 les conditions aux limites portant sur les potentiels, si l'utilisateur l'a
 demand\'e ({\it i.e.} si \var{IELCOR=1}).
 On se reportera au paragraphe relatif aux conditions aux limites. On pr\'ecise
@@ -1296,18 +1272,18 @@ pour les conditions aux limites portant sur le potentiel scalaire au pas de
 temps suivant).
 
 Pour les cas d'arc \'electrique (\var{IPPMOD(IELARC)=2}),
-apr\`es \fort{elflux} et \fort{uselrc},
+apr\`es \fort{cs\_compute\_electric\_field} et \fort{cs\_user\_electric\_scaling},
 la r\'esolution s\'equentielle des inconnues scalaires se poursuit dans
 \fort{scalai} avec le calcul des trois composantes du potentiel vecteur. Le second membre de
 l'\'equation de Poisson consid\'er\'ee d\'epend de la densit\'e de courant qui,
-dans \fort{elflux}, a \'et\'e temporairement stock\'ee dans le tableau
-\var{PROPCE(*,IPPROC(ILAPLA(i)))} et qui,  dans \fort{uselrc}, vient d'\^etre
+dans \fort{cs\_compute\_electric\_field}, a \'et\'e temporairement stock\'ee dans le tableau
+\var{PROPCE(*,IPPROC(ILAPLA(i)))} et qui,  dans \fort{cs\_user\_electric\_scaling}, vient d'\^etre
 recal\'ee si \var{IELCOR=1}.
 Les valeurs du potentiel vecteur obtenues int\`egrent donc  naturellement l'\'eventuel
 recalage.
 
 Pour les cas d'arc \'electrique (\var{IPPMOD(IELARC)=2}), un second appel \`a
-\fort{elflux} permet alors de calculer le champ magn\'etique
+\fort{cs\_compute\_electric\_field} permet alors de calculer le champ magn\'etique
 que l'on stocke dans des tableaux de travail et les forces de Laplace que l'on stocke dans
 \var{PROPCE(*,IPPROC(ILAPLA(i)))} pour le pas de temps suivant (la densit\'e de
 courant, que l'on avait temporairement conserv\'ee dans ce tableau, ne servait
