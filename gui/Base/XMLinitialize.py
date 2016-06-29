@@ -229,23 +229,23 @@ class XMLinit(Variables):
         if from_vers == "-1":
             self.__backwardCompatibilityBefore_3_0()
 
-        if from_vers <= "3.0":
+        if from_vers[:3] <= "3.0":
             self.__backwardCompatibilityFrom_3_0()
 
-        if from_vers <= "4.0":
-            if from_vers <= "3.1":
+        if from_vers[:3] <= "4.0":
+            if from_vers[:3] <= "3.1":
                 self.__backwardCompatibilityFrom_3_1()
-            if from_vers <= "3.2":
+            if from_vers[:3] <= "3.2":
                 self.__backwardCompatibilityFrom_3_2()
-            if from_vers <= "3.3":
+            if from_vers[:3] <= "3.3":
                 self.__backwardCompatibilityFrom_3_3()
-            if from_vers <= "4.0":
+            if from_vers[:3] <= "4.0":
                 self.__backwardCompatibilityFrom_4_0()
 
-        if from_vers <= "5.0":
-            if from_vers <= "4.1":
+        if from_vers[:3] <= "5.0":
+            if from_vers[:3] <= "4.1":
                 self.__backwardCompatibilityFrom_4_1()
-            if from_vers <= "4.2":
+            if from_vers[:3] <= "4.2":
                 self.__backwardCompatibilityFrom_4_2()
 
 
