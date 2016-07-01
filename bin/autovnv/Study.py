@@ -275,7 +275,6 @@ class Case(object):
             from core.XMLinitialize import XMLinit
 
         if self.subdomains:
-            self.update_runcase_path(d, self.label, xmlonly)
             cdirs = []
             for d in self.subdomains:
                 cdirs.append(os.path.join(self.label, d))
