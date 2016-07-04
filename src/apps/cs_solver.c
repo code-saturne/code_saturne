@@ -51,6 +51,7 @@
 #include "cs_benchmark.h"
 #include "cs_calcium.h"
 #include "cs_cdo_main.h"
+#include "cs_control.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
 #include "cs_fan.h"
@@ -399,6 +400,8 @@ cs_run(void)
   cs_sat_coupling_all_finalize();
   cs_coupling_finalize();
 #endif
+
+  cs_control_finalize();
 
   /* Print some mesh statistics */
 

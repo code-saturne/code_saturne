@@ -67,6 +67,12 @@ schemes (Original SOLU, CENTER, Standard SOLU)
 Architectural changes
 ---------------------
 
+- Extend control file mechanism with Python module communicating through
+  sockets (which may in turn be extended by an RPC mechanism); the
+  commands are currently limited to connecting, advancing a time step,
+  and disconnecting (in addition to control_file commands), but may
+  be extended.
+
 - Simplify MEDCoupling output writer so as to generate MEDCoupling meshes
   on the current partition rather than aggregating them to the root rank,
   as this should soon be directly usable by a VTK adaptor.

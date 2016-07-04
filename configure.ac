@@ -977,6 +977,26 @@ if test "x$cs_have_cplus_demangle" = "xyes"; then
   AC_DEFINE(HAVE_CPLUS_DEMANGLE, 1, HAVE_CPLUS_DEMANGLE)
 fi
 
+# Optional socket support
+#------------------------
+
+have_socket=no
+
+AC_ARG_ENABLE(sockets,
+  [  --disable-sockets       disable communications through IP sockets],
+  [
+    case "${enableval}" in
+      yes) have_socket=yes ;;
+      no)  have_socket=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-sockets]) ;;
+    esac
+  ],
+  [ have_socket=yes ]
+)
+if test "x$have_socket" = "xyes" ; then
+  AC_DEFINE([HAVE_SOCKET], 1, [sockets support])
+fi
+
 # Optional shared library support
 #--------------------------------
 

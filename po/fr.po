@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-05-24 23:57+0200\n"
+"POT-Creation-Date: 2016-07-04 10:38+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4706,21 +4706,74 @@ msgid "[ok]\n"
 msgstr "[ok]\n"
 
 #, c-format
+msgid ""
+"Communication %s:\n"
+"Error closing socket."
+msgstr ""
+
+#, c-format
+msgid ""
+"Communication %s:\n"
+"Error receiving data through socket."
+msgstr ""
+
+#, c-format
+msgid ""
+"Communication %s:\n"
+"Error sending data through socket."
+msgstr ""
+
+msgid "Error initializing socket communication."
+msgstr "Erreur à l'initialisation de la communication par sockets."
+
+#, c-format
+msgid "Socket communication: host \"%s\" unknown."
+msgstr "Communication par socket : hôte \"%s\" inconnu."
+
+#, c-format
+msgid ""
+"Socket communication: error connecting to\n"
+"%s (port %d)."
+msgstr ""
+
+msgid "Handshake with client failed."
+msgstr ""
+
+#, c-format
+msgid "Connecting to client:  %s ..."
+msgstr ""
+
+msgid "Connecting to client ..."
+msgstr ""
+
+#, c-format
+msgid ""
+"Library compiled without sockets support, so the communicator\n"
+"type argument to cs_control_comm_initialize() must be different\n"
+"from CS_CONTROL_COMM_TYPE_SOCKET (%d)."
+msgstr ""
+
+#, c-format
+msgid "Closing communication: %s\n"
+msgstr "Fermeture de la communication : %s\n"
+
+#, c-format
 msgid "   ignored: \"%s\"\n"
 msgstr "   ignoré : \"%s\"\n"
 
 msgid "ignored"
 msgstr ""
 
+#, c-format
 msgid ""
 "\n"
-" Options set or changed by \"control_file\":\n"
-" -----------------------------------------\n"
+" Options set or changed by \"%s\":\n"
+" -------------------------\n"
 "\n"
 msgstr ""
 "\n"
-" Options positionnées ou modifiées par fichier \"control_file\" :\n"
-" --------------------------------------------------------------\n"
+" Options positionnées ou modifiées par fichier \"%s\" :\n"
+" ---------------------------------------------\n"
 "\n"
 
 msgid "current:"
@@ -4730,13 +4783,18 @@ msgstr "courant :"
 msgid "  flush logs and time plots at time step %12d\n"
 msgstr "  vidage des tampons des fichiers journaux au pas de temps %12d\n"
 
+#, c-format
+msgid "   ignored control command: \"%s\"\n"
+msgstr "   commande de contrôle ignorée : \"%s\"\n"
+
+#, c-format
 msgid ""
 "\n"
-" Finished reading \"control_file\".\n"
+" Finished reading \"%s\".\n"
 "\n"
 msgstr ""
 "\n"
-" Lecture de \"control_file\" terminée.\n"
+" Fin de la lecture de \"%s\".\n"
 "\n"
 
 #, c-format
@@ -12014,6 +12072,13 @@ msgstr ""
 msgid "Max number of loops reached in particle displacement."
 msgstr ""
 
+msgid "Particle lost in local_propagation: it has been removed"
+msgstr ""
+
+#, c-format
+msgid " Internal condition %d not recognized.\n"
+msgstr "La condition interne %d n'est pas reconnue.\n"
+
 #, c-format
 msgid ""
 " Error in %s: in the face number %d \n"
@@ -14453,13 +14518,3 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
-
-#, fuzzy
-#~ msgid ""
-#~ "    Fin de la lecture du fichier suite\n"
-#~ "\n"
-#~ "-------------------------------------------------------------\n"
-#~ msgstr "  ---------------------------------------------------\n"
-
-#~ msgid " The key \"%s\" is not implemented yet."
-#~ msgstr " La clé \"%s\" n'est pas encore gérée."
