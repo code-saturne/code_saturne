@@ -1170,6 +1170,7 @@ _parse_control_buffer(const char         *name,
     /* Advance */
 
     else if (strncmp(s, "advance ", 8) == 0) {
+
       int n = -1;
       if (_read_next_opt_int((const char **)&s, &n) == 0)
         n = 1;
@@ -1178,10 +1179,14 @@ _parse_control_buffer(const char         *name,
       else
         _control_advance_steps += n;
       cur_line = next_line;
+
+#if defined(HAVE_SOCKET)
       if (control_comm != NULL) {
         char retval[5] = "0\0";
         _comm_write_sock(control_comm, retval, 1, 2);
       }
+#endif
+
       break;
     }
 
@@ -1196,12 +1201,14 @@ _parse_control_buffer(const char         *name,
 
     cur_line = next_line;
 
+#if defined(HAVE_SOCKET)
     if (control_comm != NULL) {
       char retval[5];
       sprintf(retval, "%d", retcode);
       retval[4] = '\0';
       _comm_write_sock(control_comm, retval, 1, strlen(retval) + 1);
     }
+#endif
 
   } /* End of loop on lines */
 
