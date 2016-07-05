@@ -1169,7 +1169,7 @@ class MonitoringPointDelegate(QItemDelegate):
         editor = self.sender()
         if isinstance(editor, QLineEdit):
             self.commitData.emit(editor)
-            self.closeEditor.emit(editor)
+            self.closeEditor.emit(editor, QAbstractItemDelegate.NoHint)
 
 
     def setEditorData(self, editor, index):
