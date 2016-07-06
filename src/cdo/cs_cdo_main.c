@@ -55,15 +55,16 @@
 
 /* CDO module */
 #include "cs_cdo.h"
+#include "cs_cdofb_scaleq.h"
+#include "cs_cdovb_scaleq.h"
+#include "cs_cdovcb_scaleq.h"
+#include "cs_domain.h"
+#include "cs_equation.h"
+#include "cs_groundwater.h"
+#include "cs_param.h"
 #include "cs_quadrature.h"
 #include "cs_sla.h"
-#include "cs_param.h"
-#include "cs_equation.h"
-#include "cs_domain.h"
 #include "cs_walldistance.h"
-#include "cs_groundwater.h"
-#include "cs_cdovb_scaleq.h"
-#include "cs_cdofb_scaleq.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -83,7 +84,7 @@ BEGIN_C_DECLS
  * Local constant and enum definitions
  *============================================================================*/
 
-static const char cs_cdoversion[] = "0.5";
+static const char cs_cdoversion[] = "0.6";
 
 /*============================================================================
  * Private function prototypes
@@ -188,10 +189,6 @@ _finalize(cs_domain_t  *domain)
 
   /* Write a restart file */
   cs_domain_write_restart(domain);
-
-  /* Free temporary buffers allocated for each kind of numerical used */
-  cs_cdovb_scaleq_finalize();
-  cs_cdofb_scaleq_finalize();
 
   /* Free cs_domain_structure (imply severals operation to free memory) */
   domain = cs_domain_free(domain);

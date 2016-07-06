@@ -426,18 +426,31 @@ cs_equation_is_steady(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the values of the associated field at each face of the mesh
- *         If the pointer storing the values is NULL, it is allocated inside the
- *         function
+ * \brief  Get the values at each face of the mesh for the field unknowns
+ *         related to this equation.
  *
  * \param[in]   eq        pointer to a cs_equation_t structure
  *
- * \return a pointer to the values (which can be modified)
+ * \return a pointer to the face values
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_equation_get_face_values(cs_equation_t    *eq);
+const cs_real_t *
+cs_equation_get_face_values(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the values at each cell centers for the field unknowns
+ *         related to this equation.
+ *
+ * \param[in]   eq        pointer to a cs_equation_t structure
+ *
+ * \return a pointer to the cell values
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_equation_get_cell_values(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!

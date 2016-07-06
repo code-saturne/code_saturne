@@ -103,6 +103,9 @@ typedef struct {
   cs_equation_t  **equations;
 
   bool             only_steady;
+  bool             do_vb_scal;  // VB schemes for scalar equation requested
+  bool             do_fb_scal;  // FB schemes for scalar equation requested
+  bool             do_vcb_scal; // VCB schemes for scalar equation requested
 
   /* Pre-defined equations to solve
      If xxxxx_eq_id = -1, then this equation is not activated */

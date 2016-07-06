@@ -44,6 +44,7 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_cdo_scheme_geometry.h"
 #include "cs_math.h"
 #include "cs_sort.h"
 #include "cs_timer_stats.h"
@@ -87,8 +88,8 @@ BEGIN_C_DECLS
 /* Main structure used to define a discrete Hodge operator */
 struct _hodge_builder_t {
 
-  int         n_maxent_byc;      /* Max local number of entities by primal
-                                    cells (use for allocation) */
+  int         n_maxent_byc;   /* Max local number of entities by primal cells
+                                 (use for allocation) */
 
   cs_param_hodge_t  h_info;   /* Set of parameters related to the discrete
                                  Hodge operator to build. */
@@ -133,7 +134,7 @@ struct _cost_quant_t {
 struct _wbs_quant_t {
 
   /* Buffers of size n_max_vbyc */
-  double   *w_vol;  /* 1/20 * |p_{e,f}| for each face */
+  double   *w_vol;  /* |p_{ef,c}| for each face */
   double   *wvf;    /* weights related to each vertex for a face */
 
 };
@@ -155,6 +156,7 @@ static int  hodge_vor_ts_id = -1;
 /*! \endcond (end ignore by Doxygen) */
 
 static const double  cs_hodge_wbs_const = 1/60.; // 1/20 * 1/3
+static const double  cs_hodge_vc_coef = 3./20;
 
 /*============================================================================
  * Private function prototypes
@@ -1108,80 +1110,18 @@ _free_wbs_quant(struct _wbs_quant_t  *hq)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute for each face a weight related to each vertex w_{v,f}
- *         This weight is equal to |dc(v) cap f|/|f| so that the sum of the
- *         weights is equal to 1.
- *         Set also the vertices coordinates
- *
- * \param[in]      f         face id in the cellwise numbering
- * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]      lm        pointer to a cs_cdo_locmesh_t structure
- * \param[in, out] hq        pointer to a _wbs_quant_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_set_wbs_quant(short int                   f,
-               const cs_cdo_quantities_t  *quant,
-               const cs_cdo_locmesh_t     *lm,
-               struct _wbs_quant_t        *hq)
-{
-  double  len;
-  cs_real_3_t  un, cp;
-
-  const cs_real_t  *xc = quant->cell_centers + 3*lm->c_id;
-  const cs_quant_t  pfq = lm->face[f];
-  const double  ovf = 0.5/pfq.meas;
-
-  /* Reset weights */
-  for (short int v = 0; v < lm->n_vc; v++) hq->wvf[v] = 0;
-
-  /* Compute the height of the pyramid of base f */
-  cs_math_3_length_unitv(pfq.center, xc, &len, un);
-
-  /* One wants to compute 1/20 * |p_{e,f}| */
-  const double  hf = cs_hodge_wbs_const * fabs(len * _dp3(un, pfq.unitv));
-
-  /* Compute a weight for each vertex of the current face */
-  for (int i = lm->f2e_idx[f], ii = 0; i < lm->f2e_idx[f+1]; i++, ii++) {
-
-    const short int  e = lm->f2e_ids[i];
-    const cs_quant_t  peq = lm->edge[e];
-    const short int  v1 = lm->e2v_ids[2*e];
-    const short int  v2 = lm->e2v_ids[2*e+1];
-
-    cs_math_3_length_unitv(peq.center, pfq.center, &len, un);
-    cs_math_3_cross_product(un, peq.unitv, cp);
-
-    const double  tef = 0.5*peq.meas*len * cs_math_3_norm(cp);
-
-    hq->wvf[v1] += tef;
-    hq->wvf[v2] += tef;
-    hq->w_vol[ii] = hf * tef;
-
-  } /* End of loop on face edges */
-
-  /* wvf = |dual_cell(v) cap f| / |f| */
-  for (short int v = 0; v < lm->n_vc; v++) hq->wvf[v] *= ovf;
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Build a local discrete Hodge operator using the generic WBS algo.
  *          and cellwise view of the mesh
  *          WBS means Whitney Barycentric Subdivision
  *
- * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
- * \param[in]      lm         pointer to a cs_cdo_locmesh_t structure
- * \param[in, out] hb         pointer to a cs_hodge_builder_t structure
- * \param[in, out] hq         pointer to a _wbs_quant_t structure
+ * \param[in]      lm      pointer to a cs_cdo_locmesh_t structure
+ * \param[in, out] hb      pointer to a cs_hodge_builder_t structure
+ * \param[in, out] hq      pointer to a _wbs_quant_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_cellwise_build_with_wbs(const cs_cdo_quantities_t   *quant,
-                         const cs_cdo_locmesh_t      *lm,
+_cellwise_build_with_wbs(const cs_cdo_locmesh_t      *lm,
                          cs_hodge_builder_t          *hb,
                          struct _wbs_quant_t         *hq)
 {
@@ -1213,7 +1153,7 @@ _cellwise_build_with_wbs(const cs_cdo_quantities_t   *quant,
   for (short int f = 0; f < lm->n_fc; f++) {
 
     /* Define useful quantities for WBS algo. */
-    _set_wbs_quant(f, quant, lm, hq);
+    cs_cdo_get_face_wbs0(f, lm, hq->wvf, hq->w_vol); 
 
     for (int i = lm->f2e_idx[f], ii = 0; i < lm->f2e_idx[f+1]; i++, ii++) {
 
@@ -1282,6 +1222,113 @@ _cellwise_build_with_wbs(const cs_cdo_quantities_t   *quant,
     double  *mj = m->val + vj*lm->n_vc;
     for (short int vi = vj+1; vi < lm->n_vc; vi++)
       m->val[vi*lm->n_vc + vj] = mj[vi];
+  }
+
+  if (hodge_wbs_ts_id > -1)
+    cs_timer_stats_stop(hodge_wbs_ts_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local discrete Hodge V+C operator using the WBS algorithm
+ *          and a cellwise view of the mesh
+ *          WBS means Whitney Barycentric Subdivision
+ *
+ * \param[in]      lm         pointer to a cs_cdo_locmesh_t structure
+ * \param[in, out] hb         pointer to a cs_hodge_builder_t structure
+ * \param[in, out] hq         pointer to a _wbs_quant_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cellwise_build_with_hvc(const cs_cdo_locmesh_t      *lm,
+                         cs_hodge_builder_t          *hb,
+                         struct _wbs_quant_t         *hq)
+{
+  /* Sanity check */
+  assert(hb->h_info.algo == CS_PARAM_HODGE_ALGO_WBS);
+  assert(hb->h_info.type == CS_PARAM_HODGE_TYPE_VC);
+
+  if (hodge_cost_ts_id > -1)
+    cs_timer_stats_start(hodge_wbs_ts_id);
+
+  cs_locmat_t  *m = hb->hloc;
+
+  const int  msize = lm->n_vc + 1;
+  const double  c_coef1 = 0.2*lm->vol_c;
+  const double  c_coef2 = cs_hodge_vc_coef * lm->vol_c;
+
+  /* H(c,c) = 0.1*|c| */
+  m->ids[lm->n_vc] = lm->c_id;
+  m->val[msize*lm->n_vc + lm->n_vc] = 0.1*lm->vol_c;
+  
+  /* Initialize the upper part of the local Hodge matrix
+     diagonal and cell column entries */
+  for (short int vi = 0; vi < lm->n_vc; vi++) {
+
+    double  *mi = m->val + vi*msize;
+
+    m->ids[vi] = lm->v_ids[vi];
+    mi[vi] = c_coef1 * lm->wvc[vi];       // Diagonal entry
+    for (short int vj = vi+1; vj < lm->n_vc; vj++)
+      mi[vj] = 0.;
+    mi[lm->n_vc] = c_coef2 * lm->wvc[vi]; // Cell column
+
+  } // Loop on cell vertices
+
+  /* Loop on each pef and add the contribution */
+  for (short int f = 0; f < lm->n_fc; f++) {
+
+    /* Define useful quantities for WBS algo. */
+    const double pfc_vol = cs_cdo_get_face_wbs1(f, lm, hq->wvf, hq->w_vol); 
+    const double f_coef = 0.3 * pfc_vol;
+
+    /* Add face contribution:
+       Diagonal entry    H(i,i) += 0.3*wif*wif*pfc_vol
+       Extra-diag. entry H(i,j) += 0.3*wjf*wif*pfc_vol */
+    for (short int vi = 0; vi < lm->n_vc; vi++) {
+
+      const double  coef_if = f_coef * hq->wvf[vi];
+      double  *mi = m->val + vi*msize;
+  
+      /* Diagonal and Extra-diagonal entries: Add face contribution */
+      for (short int vj = vi; vj < lm->n_vc; vj++)
+        mi[vj] += coef_if * hq->wvf[vj]; 
+
+    } // Extra-diag entries
+
+    /* Add edge-face contribution (only extra-diag) = 0.05 * |p_{ef,c}| */
+    for (int i = lm->f2e_idx[f], ii = 0; i < lm->f2e_idx[f+1]; i++, ii++) {
+
+      const short int  e = lm->f2e_ids[i];
+      const short int  v1 = lm->e2v_ids[2*e];
+      const short int  v2 = lm->e2v_ids[2*e+1];
+
+      /* Sanity check */
+      assert(v1 > -1 && v2 > -1);
+      if (v1 < v2)
+        m->val[v1*msize+v2] += 0.05 * hq->w_vol[ii];
+      else
+        m->val[v2*msize+v1] += 0.05 * hq->w_vol[ii];
+
+    } // Loop on face edges
+
+  } // Loop on cell faces
+
+  /* Take into account the value of the associated property */
+  if (fabs(hb->ptyval - 1.0) > cs_math_get_machine_epsilon()) {
+    for (short int vi = 0; vi < msize; vi++) {
+      double  *mi = m->val + vi*msize;
+      for (short int vj = vi; vj < msize; vj++)
+        mi[vj] *= hb->ptyval;
+    }
+  }
+
+  /* Local matrix is symmetric by construction. Set the lower part. */
+  for (short int vj = 0; vj < msize; vj++) {
+    double  *mj = m->val + vj*msize;
+    for (short int vi = vj+1; vi < msize; vi++)
+      m->val[vi*msize + vj] = mj[vi];
   }
 
   if (hodge_wbs_ts_id > -1)
@@ -1583,7 +1630,7 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
   hb->h_info.coef    = h_info.coef;
 
   /* Initialize by default the property values */
-  hb->ptyval = 1.0; /* for VpCd, CpVd */
+  hb->ptyval = 1.0; /* for VpCd, CpVd and VC */
 
   hb->ptymat[0][0] = 1., hb->ptymat[0][1] = hb->ptymat[0][2] = 0.;
   hb->ptymat[1][1] = 1., hb->ptymat[1][0] = hb->ptymat[1][2] = 0.;
@@ -1595,26 +1642,24 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
 
   case CS_PARAM_HODGE_TYPE_VPCD:
     hb->n_maxent_byc = connect->n_max_vbyc;
-    hb->hloc = cs_locmat_create(hb->n_maxent_byc);
-    hb->hloc->n_ent = connect->v_info->n_elts;
     break;
   case CS_PARAM_HODGE_TYPE_EPFD:
     hb->n_maxent_byc = connect->n_max_ebyc;
-    hb->hloc = cs_locmat_create(hb->n_maxent_byc);
-    hb->hloc->n_ent = connect->e_info->n_elts;
     break;
   case CS_PARAM_HODGE_TYPE_FPED:
   case CS_PARAM_HODGE_TYPE_EDFP:
     hb->n_maxent_byc = connect->n_max_fbyc;
-    hb->hloc = cs_locmat_create(hb->n_maxent_byc);
-    hb->hloc->n_ent = connect->f_info->n_elts;
+    break;
+  case CS_PARAM_HODGE_TYPE_VC:
+    hb->n_maxent_byc = connect->n_max_vbyc + 1;
     break;
   default:
     hb->n_maxent_byc = 0;
-    hb->hloc = NULL;
     break;
 
   }
+
+  hb->hloc = cs_locmat_create(hb->n_maxent_byc);
 
   /* Allocate the structure used to stored quantities used during the build
      of the local discrete Hodge op. */
@@ -1625,7 +1670,8 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
     break;
 
   case CS_PARAM_HODGE_ALGO_WBS:
-    assert(h_info.type == CS_PARAM_HODGE_TYPE_VPCD);
+    assert(h_info.type == CS_PARAM_HODGE_TYPE_VPCD ||
+           h_info.type == CS_PARAM_HODGE_TYPE_VC);
     hb->algoq = _init_wbs_quant(hb->n_maxent_byc);
     break;
 
@@ -1794,7 +1840,6 @@ cs_hodge_build_local_stiffness(const cs_cdo_locmesh_t     *lm,
 /*!
  * \brief   Build a local discrete Hodge using a cell-wise view of the mesh
  *
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]      lm         pointer to a cs_cdo_locmesh_t structure
  * \param[in, out] hb         pointer to a cs_hodge_builder_t structure
  *
@@ -1803,8 +1848,7 @@ cs_hodge_build_local_stiffness(const cs_cdo_locmesh_t     *lm,
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_hodge_build_cellwise(const cs_cdo_quantities_t   *quant,
-                        const cs_cdo_locmesh_t      *lm,
+cs_hodge_build_cellwise(const cs_cdo_locmesh_t      *lm,
                         cs_hodge_builder_t          *hb)
 {
   if (hodge_ts_id > -1)
@@ -1830,6 +1874,10 @@ cs_hodge_build_cellwise(const cs_cdo_quantities_t   *quant,
   case CS_PARAM_HODGE_TYPE_CPVD:
     n_ent = 1;
     break;
+  case CS_PARAM_HODGE_TYPE_VC:
+    n_ent = lm->n_vc + 1;
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               " Invalid type of discrete Hodge operator.");
@@ -1851,7 +1899,13 @@ cs_hodge_build_cellwise(const cs_cdo_quantities_t   *quant,
     break;
 
   case CS_PARAM_HODGE_ALGO_WBS:
-    _cellwise_build_with_wbs(quant, lm, hb, (struct _wbs_quant_t *)hb->algoq);
+    if (hb->h_info.type == CS_PARAM_HODGE_TYPE_VPCD)
+      _cellwise_build_with_wbs(lm, hb, (struct _wbs_quant_t *)hb->algoq);
+    else if (hb->h_info.type == CS_PARAM_HODGE_TYPE_VC)
+      _cellwise_build_with_hvc(lm, hb, (struct _wbs_quant_t *)hb->algoq);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid type of discrete Hodge op. for WBS algorithm."));
     break;
 
   default:
@@ -1941,7 +1995,7 @@ cs_hodge_build_local(int                         c_id,
   case CS_PARAM_HODGE_ALGO_WBS:
     bft_error(__FILE__, __LINE__, 0,
               _(" Please change your function call with the following one:\n"
-                " cs_hodge_build_cellwise(quant, cell_mesh, hodge_builder)"));
+                " cs_hodge_build_cellwise(cell_mesh, hodge_builder)"));
     break;
 
   default:
@@ -2061,7 +2115,7 @@ cs_hodge_compute(const cs_cdo_connect_t      *connect,
 
       /* Set the local mesh structure for the current cell */
       cs_cdo_locmesh_build(c_id, lm_flag, connect, quant, c_mesh);
-      cs_hodge_build_cellwise(quant, c_mesh, hb);
+      cs_hodge_build_cellwise(c_mesh, hb);
 
     }
     else

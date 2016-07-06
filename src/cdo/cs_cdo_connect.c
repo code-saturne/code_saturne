@@ -848,7 +848,7 @@ cs_cdo_connect_flagname(short int  flag)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define a cs_cdo_connect_t structure
+ * \brief Allocate and define by default a cs_cdo_connect_t structure
  *
  * \param[in]  m    pointer to a cs_mesh_t structure
  *
@@ -857,7 +857,7 @@ cs_cdo_connect_flagname(short int  flag)
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_connect_t *
-cs_cdo_connect_build(const cs_mesh_t      *m)
+cs_cdo_connect_init(const cs_mesh_t      *m)
 {
   _edge_builder_t  *builder = _create_edge_builder(m);
 
@@ -886,9 +886,13 @@ cs_cdo_connect_build(const cs_mesh_t      *m)
 
   _free_edge_builder(&builder);
 
-  /* Build additional connectivity c2e, c2v */
+  /* Build additional connectivity c2e, c2v (used to access dual faces and
+     dual volumes) */
   _build_additional_connect(connect);
 
+  connect->v2v = NULL; /* Only defined if CDO-VB or CDO-VCB schemes are
+                          requested */
+  
   /* Build a flag indicated if an element belongs to the interior or border of
      the computatinoal domain. Indicate also the related number of interior and
      border entities */
@@ -926,6 +930,8 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
   /* Specific CDO connectivity */
   cs_index_free(&(connect->c2e));
   cs_index_free(&(connect->c2v));
+  if (connect->v2v != NULL)
+    cs_index_free(&(connect->v2v));
 
   connect->v_info = _connect_info_free(connect->v_info);
   connect->e_info = _connect_info_free(connect->e_info);
@@ -935,6 +941,61 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
   BFT_FREE(connect);
 
   return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update a cs_cdo_connect_t structure with respect to the requested
+ *        space scheme
+ *
+ * \param[in, out]  connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]       do_vb_scal   scalar vertex-based is requested or not
+ * \param[in]       do_vcb_scal  scalar vertex+cell-based is requested or not
+ * \param[in]       do_fb_scal   scalar face-based is requested or not
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_connect_update(cs_cdo_connect_t       *connect,
+                      bool                    do_vb_scal,
+                      bool                    do_vcb_scal,
+                      bool                    do_fb_scal)
+{
+  if (do_vb_scal || do_vcb_scal) {
+    
+    /* Build a (sorted) v2v connectivity index */
+    const cs_lnum_t  n_vertices = connect->v_info->n_elts;
+    const cs_connect_index_t  *c2v = connect->c2v;
+
+    cs_connect_index_t  *v2c = cs_index_transpose(n_vertices, c2v);
+
+    connect->v2v = cs_index_compose(n_vertices, v2c, c2v);
+    cs_index_sort(connect->v2v);
+
+    /* Update index (v2v has a diagonal entry. We remove it since we have in
+       mind an index structure for a  matrix stored using the MSR format */
+    cs_lnum_t  shift = 0;
+    cs_lnum_t  prev_start = connect->v2v->idx[0];
+    cs_lnum_t  prev_end = connect->v2v->idx[1];
+
+    for (cs_lnum_t i = 0; i < n_vertices; i++) {
+
+      for (cs_lnum_t j = prev_start; j < prev_end; j++)
+        if (connect->v2v->ids[j] != i)
+          connect->v2v->ids[shift++] = connect->v2v->ids[j];
+
+      if (i != n_vertices - 1) { // Update prev_start and prev_end
+        prev_start = connect->v2v->idx[i+1];
+        prev_end = connect->v2v->idx[i+2];
+      }
+      connect->v2v->idx[i+1] = shift;
+
+    } // Loop on vertices
+
+    /* Free temporary buffers */
+    cs_index_free(&v2c);
+
+  } // VB or VCB schemes
 }
 
 /*----------------------------------------------------------------------------*/

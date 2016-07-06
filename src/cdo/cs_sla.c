@@ -1711,6 +1711,7 @@ cs_sla_matrix_free(cs_sla_matrix_t  *m)
 
   } /* TYPE_NONE */
 
+  m->type = CS_SLA_MAT_NONE;
   BFT_FREE(m);
 
   return NULL;
@@ -3644,6 +3645,304 @@ cs_sla_system_dump(const char              *name,
 
   if (close_file)
     fclose(_f);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Create a cs_sla_hmatrix_t structure
+ *          This is a square matrix of size n_x+n_cells (stride = 1 up to now)
+ *
+ * \param[in]  n_x       number of hybrid entities
+ * \param[in]  n_cells   number of cells
+ * \param[in]  bktrans   block (1,0) and (0,1) are transposed: true or false
+ * \param[in]  bk00sym   block (0,0) is symmetric: true or false
+ * \param[in]  x2x       pointer to cs_connect_index_t struc.
+ * \param[in]  c2x       pointer to cs_connect_index_t struc.
+ *
+ * \return  a pointer to new allocated hybrid matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sla_hmatrix_t *
+cs_sla_hmatrix_create(cs_lnum_t                   n_x,
+                      cs_lnum_t                   n_cells,
+                      bool                        bktrans,
+                      bool                        bk00sym,
+                      const cs_connect_index_t   *x2x,
+                      const cs_connect_index_t   *c2x)
+{
+  cs_sla_hmatrix_t  *hm = NULL;
+
+  /* Sanity checks */
+  if (x2x == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " Stop creating a hybrid matrix: x2x connectivity index is NULL");
+  if (c2x == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " Stop creating a hybrid matrix: c2x connectivity index is NULL");
+  
+  BFT_MALLOC(hm, 1, cs_sla_hmatrix_t);
+  
+  /* Default initialization */
+  hm->n_rows = n_x + n_cells;
+  hm->n_x = n_x;
+  hm->n_cells = n_cells;
+  hm->flag = 0;
+  if (bktrans && bk00sym) hm->flag |= CS_SLA_MATRIX_SYM;
+
+  hm->c2x = c2x;
+  BFT_MALLOC(hm->cx_vals, c2x->idx[n_cells], double);
+  if (bktrans) {
+
+    hm->xc_vals = NULL;
+# pragma omp parallel for if (n_x > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < c2x->idx[n_cells]; i++)
+      hm->cx_vals[i] = 0;
+
+  }
+  else {
+
+    BFT_MALLOC(hm->xc_vals, c2x->idx[n_cells], double);
+# pragma omp parallel for if (n_x > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < c2x->idx[n_cells]; i++)
+      hm->cx_vals[i] = 0, hm->xc_vals[i] = 0;
+
+  }
+
+  BFT_MALLOC(hm->cc_diag, n_cells, double);
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    hm->cc_diag[i] = 0;
+
+  // index, symmetric, sorted, stride
+  hm->xx_block = cs_sla_matrix_create_msr_from_index(x2x, bk00sym, true, 1);
+  
+  return hm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Free a cs_sla_hmatrix_t structure
+ *
+ * \param[in]  hm     hybrid matrix to free
+ *
+ * \return  a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sla_hmatrix_t *
+cs_sla_hmatrix_free(cs_sla_hmatrix_t  *hm)
+{
+  if (hm == NULL)
+    return NULL;
+
+  /* Sanity check */
+  assert(!(hm->flag & CS_SLA_MATRIX_SHARED));
+
+  BFT_FREE(hm->cc_diag);
+  BFT_FREE(hm->cx_vals);
+  if (hm->xc_vals != NULL)
+    BFT_FREE(hm->xc_vals);
+
+  hm->xx_block = cs_sla_matrix_free(hm->xx_block);
+
+  BFT_FREE(hm);
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute a matrix vector product.
+ *         If inout is not allocated, allocation is done inside this function
+ *         If reset is set to true, initialization inout to 0
+ *
+ * \param[in]       hm       pointer to a cs_sla_hmatrix_t structure
+ * \param[in]       vx       pointer to an array of double (x-based values)
+ * \param[in]       vc       pointer to an array of double (cell-based values)
+ * \param[in, out]  iox      pointer to a pointer of double (x-based values)
+ * \param[in, out]  ioc      pointer to a pointer of double (celle-based values)
+ * \param[in]       reset    if true, first initialize inout to zero
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sla_hmatvec(const cs_sla_hmatrix_t   *hm,
+               const double              vx[],
+               const double              vc[],
+               double                   *iox[],
+               double                   *ioc[],
+               bool                      reset)
+{
+  double  *ox = *iox;
+  double  *oc = *ioc;
+  bool  reset_x = reset;
+  bool  reset_c = reset;
+
+  if (hm == NULL)
+    return;
+
+  /* Compute x-based part */
+  if (ox == NULL) {
+    BFT_MALLOC(ox, hm->n_x, double);
+    reset_x = true;
+  }
+
+  if (reset_x == true)
+# pragma omp parallel for if (hm->n_x > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < hm->n_x; i++)
+      ox[i] = 0.0;
+
+  /* First contribution: ox += Hxx*vx */
+  cs_sla_matvec(hm->xx_block, vx, &ox, false);
+
+  /* Compute cell-based part */
+  if (oc == NULL) {
+    BFT_MALLOC(oc, hm->n_cells, double);
+    reset_c = true;
+  }
+
+  if (reset_c == true)
+# pragma omp parallel for if (hm->n_cells > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < hm->n_cells; i++)
+      oc[i] = 0.0;
+
+  /* First contribution: oc += Hcc*vc */
+# pragma omp parallel for if (hm->n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < hm->n_cells; i++)
+    oc[i] += hm->cc_diag[i]*vc[i];
+
+  /* Second contribution for x-based and cell-based parts */
+  if (hm->xc_vals == NULL) {
+
+    for (cs_lnum_t c_id = 0; c_id < hm->n_cells; c_id++) {
+
+      const double  c_val = vc[c_id]; 
+
+      for (cs_lnum_t j = hm->c2x->idx[c_id]; j < hm->c2x->idx[c_id+1]; j++) {
+
+        const double  xval = hm->cx_vals[j];
+        const cs_lnum_t  x_id = hm->c2x->ids[j];
+
+        oc[c_id] += xval * vx[x_id];
+        ox[x_id] += xval * c_val;
+
+      } // Loop on x entities related to this cell
+    } // Loop on cells
+
+  }
+  else { // blocks (1,0) and (0,1) are not transposed
+
+    for (cs_lnum_t c_id = 0; c_id < hm->n_cells; c_id++) {
+
+      const double  c_val = vc[c_id]; 
+
+      for (cs_lnum_t j = hm->c2x->idx[c_id]; j < hm->c2x->idx[c_id+1]; j++) {
+
+        const cs_lnum_t  x_id = hm->c2x->ids[j];
+
+        oc[c_id] += hm->cx_vals[j] * vx[x_id];
+        ox[x_id] += hm->xc_vals[j] * c_val;
+
+      } // Loop on x entities related to this cell
+    } // Loop on cells
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Assemble a hybrid matrix from local contributions
+ *          --> We assume that the local matrices are symmetric
+ *          --> We assume that the (0,0) block of the assembled matrix has its
+ *              columns sorted
+ *
+ * \param[in]       loc        pointer to a local matrix
+ * \param[in, out]  ass        pointer to a cs_sla_hmatrix_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sla_assemble_hmat_sym(const cs_locmat_t   *loc,
+                         cs_sla_hmatrix_t    *ass)
+{
+  const int  n_ent = loc->n_ent; // n_loc_x + 1
+  const int  n_x_ent = n_ent - 1;
+
+  cs_sla_matrix_t  *bxx = ass->xx_block;
+
+  /* Sanity checks */
+  assert(n_ent > 1);
+  assert(ass->flag & CS_SLA_MATRIX_SYM);
+  assert(bxx->type == CS_SLA_MAT_MSR);
+  assert(bxx->flag & (CS_SLA_MATRIX_SYM | CS_SLA_MATRIX_SORTED));
+
+  /* Assemble local contributions into bxx from x entities */
+  for (int i = 0; i < n_x_ent; i++) {
+
+    const double  *loc_i = loc->val + i*n_ent;
+    const cs_lnum_t  i_id = loc->ids[i];
+
+    /* Add diagonal term : loc(i,i) */
+    bxx->diag[i_id] += loc_i[i];
+
+    const cs_lnum_t  start_i = bxx->idx[i_id];
+    const size_t  n_i_ents = bxx->idx[i_id+1] - start_i; // arg. binary search
+
+    for (int j = i + 1; j < n_x_ent; j++) {
+
+      double  val_ij = loc_i[j];
+
+      if (fabs(val_ij) > cs_math_zero_threshold) { /* Not zero */
+
+        int  j_id = loc->ids[j];
+        cs_lnum_t  start_j = bxx->idx[j_id];
+        size_t  n_j_ents = bxx->idx[j_id+1] - start_j;
+
+        /* First add: loc(i,j) */
+        cs_lnum_t  k_ij = cs_search_binary(n_i_ents, j_id,
+                                           &(bxx->col_id[start_i]));
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_SLA_DBG > 0 /* Sanity check */
+        if (k_ij < 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    " Error detected while assembling a matrix.\n"
+                    " An non-zero entry has not been found.");
+#endif
+
+        bxx->val[start_i+k_ij] += val_ij;
+
+        /* Second add: loc(j,i) */
+        cs_lnum_t  k_ji = cs_search_binary(n_j_ents, i_id,
+                                           &(bxx->col_id[start_j]));
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_SLA_DBG > 0 /* Sanity check */
+        if (k_ji < 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    " Error detected while assembling a matrix.\n"
+                    " An non-zero entry has not been found.");
+#endif
+
+        bxx->val[start_j+k_ji] += val_ij;
+
+      } /* loc[ij] != 0.0 */
+
+    } /* Loop on j (Add extra-diag terms) */
+
+  } /* Loop on i */
+
+  /* Add contribution to cell diagonal */
+  const cs_lnum_t  c_id = loc->ids[n_x_ent];
+  const double  *loc_c = loc->val + n_x_ent*n_ent;
+
+  ass->cc_diag[c_id] += loc_c[n_x_ent];
+
+  /* Add contributions to cx_vals (it's an assignment not an accumulation) */
+  int shift = 0;
+  for (cs_lnum_t i = ass->c2x->idx[c_id]; i < ass->c2x->idx[c_id+1]; i++)
+    ass->cx_vals[i] = loc_c[shift++];
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -375,6 +375,12 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
     _compute_cdofb(connect, cdoq, eq, field, dist);
     break;
 
+  case CS_SPACE_SCHEME_CDOVCB:
+    bft_error(__FILE__, __LINE__, 0,
+              " CDO Vertex+Cell-based is not yet implemented to compute"
+              " the wall distance.");
+    break;
+
   default:
     assert(0);
     break;

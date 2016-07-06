@@ -1,9 +1,9 @@
-#ifndef __CS_CDOVB_DIFFUSION_H__
-#define __CS_CDOVB_DIFFUSION_H__
+#ifndef __CS_CDO_DIFFUSION_H__
+#define __CS_CDO_DIFFUSION_H__
 
 /*============================================================================
  * Build discrete stiffness matrices and handled boundary conditions for the
- * diffusion term in CDO vertex-based schemes
+ * diffusion term in CDO vertex-based  and vertex+cell schemes
  *============================================================================*/
 
 /*
@@ -49,7 +49,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef struct _cs_cdovb_diff_t  cs_cdovb_diff_t;
+typedef struct _cs_cdo_diff_t  cs_cdo_diff_t;
 
 /*============================================================================
  * Public function prototypes
@@ -59,46 +59,48 @@ typedef struct _cs_cdovb_diff_t  cs_cdovb_diff_t;
 /*!
  * \brief   Initialize a builder structure used to build the stiffness matrix
  *
- * \param[in] connect      pointer to a cs_cdo_connect_t struct.
+ * \param[in] connect      pointer to a cs_cdo_connect_t structure
+ * \param[in] space_scheme  scheme used for discretizing in space
  * \param[in] is_uniform   diffusion tensor is uniform ? (true or false)
- * \param[in] h_info       cs_param_hodge_t struct.
+ * \param[in] h_info       cs_param_hodge_t structure
  * \param[in] bc_enforce   type of boundary enforcement for Dirichlet values
  *
- * \return a pointer to a new allocated cs_cdovb_diffusion_builder_t struc.
+ * \return a pointer to a new allocated cs_cdo_diff_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdovb_diff_t *
-cs_cdovb_diffusion_builder_init(const cs_cdo_connect_t       *connect,
-                                bool                          is_uniform,
-                                const cs_param_hodge_t        h_info,
-                                const cs_param_bc_enforce_t   bc_enforce);
+cs_cdo_diff_t *
+cs_cdo_diffusion_builder_init(const cs_cdo_connect_t       *connect,
+                              cs_space_scheme_t             space_scheme,
+                              bool                          is_uniform,
+                              const cs_param_hodge_t        h_info,
+                              const cs_param_bc_enforce_t   bc_enforce);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Free a cs_cdovb_diff_t structure
+ * \brief   Free a cs_cdo_diff_t structure
  *
- * \param[in, out ] diff   pointer to a cs_cdovb_diff_t struc.
+ * \param[in, out ] diff   pointer to a cs_cdo_diff_t struc.
  *
  * \return  NULL
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdovb_diff_t *
-cs_cdovb_diffusion_builder_free(cs_cdovb_diff_t   *diff);
+cs_cdo_diff_t *
+cs_cdo_diffusion_builder_free(cs_cdo_diff_t   *diff);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Get the related Hodge builder structure
  *
- * \param[in]  diff   pointer to a cs_cdovb_diff_t structure
+ * \param[in]  diff   pointer to a cs_cdo_diff_t structure
  *
  * \return  a pointer to a cs_hodge_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_hodge_builder_t *
-cs_cdovb_diffusion_get_hodge_builder(cs_cdovb_diff_t   *diff);
+cs_cdo_diffusion_get_hodge_builder(cs_cdo_diff_t   *diff);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -114,10 +116,10 @@ cs_cdovb_diffusion_get_hodge_builder(cs_cdovb_diff_t   *diff);
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_cdovb_diffusion_build_local(const cs_cdo_quantities_t   *quant,
-                               const cs_cdo_locmesh_t      *lm,
-                               const cs_real_3_t           *tensor,
-                               cs_cdovb_diff_t             *diff);
+cs_cdo_diffusion_build_local(const cs_cdo_quantities_t   *quant,
+                             const cs_cdo_locmesh_t      *lm,
+                             const cs_real_3_t           *tensor,
+                             cs_cdo_diff_t               *diff);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -133,11 +135,11 @@ cs_cdovb_diffusion_build_local(const cs_cdo_quantities_t   *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_get_grd_lvconf(const cs_cdo_quantities_t   *quant,
-                                  const cs_cdo_locmesh_t      *lm,
-                                  const double                *pdi,
-                                  cs_cdovb_diff_t             *diff,
-                                  double                      *grd_lv_conf);
+cs_cdo_diffusion_get_grd_lvconf(const cs_cdo_quantities_t   *quant,
+                                const cs_cdo_locmesh_t      *lm,
+                                const double                *pdi,
+                                cs_cdo_diff_t               *diff,
+                                double                      *grd_lv_conf);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -155,15 +157,15 @@ cs_cdovb_diffusion_get_grd_lvconf(const cs_cdo_quantities_t   *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_weak_bc(cs_lnum_t                    f_id,
-                           const cs_cdo_quantities_t   *quant,
-                           const cs_cdo_locmesh_t      *lm,
-                           const cs_real_t              matpty[3][3],
-                           cs_cdovb_diff_t             *diff,
-                           cs_cdo_locsys_t             *ls);
+cs_cdo_diffusion_weak_bc(cs_lnum_t                    f_id,
+                         const cs_cdo_quantities_t   *quant,
+                         const cs_cdo_locmesh_t      *lm,
+                         const cs_real_t              matpty[3][3],
+                         cs_cdo_diff_t               *diff,
+                         cs_cdo_locsys_t             *ls);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_CDOVB_DIFFUSION_H__ */
+#endif /* __CS_CDO_DIFFUSION_H__ */

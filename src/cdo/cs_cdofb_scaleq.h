@@ -142,6 +142,19 @@ cs_cdofb_scaleq_free(void       *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Destroy a cs_sla_matrix_t related to the system to solve
+ *
+ * \param[in, out]  builder   pointer to a builder structure
+ * \param[in, out]  matrix    pointer to a cs_sla_matrix_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_free_sysmat(void              *builder,
+                            cs_sla_matrix_t   *matrix);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the contributions of source terms (store inside builder)
  *
  * \param[in, out] builder     pointer to a cs_cdofb_scaleq_t structure
@@ -175,17 +188,19 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t        *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Post-process the solution of a scalar convection/diffusion equation
- *         solved with a CDO face-based scheme
+ * \brief  Store solution(s) of the linear system into a field structure
+ *         Update extra-field values if required (for hybrid discretization)
  *
  * \param[in]      solu       solution array
- * \param[in, out] builder    pointer to cs_cdofb_scaleq_t structure
+ * \param[in]      rhs        rhs associated to this solution array
+ * \param[in, out] builder    pointer to cs_cdovb_scaleq_t structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
+                             const cs_real_t            *rhs,
                              void                       *builder,
                              cs_real_t                  *field_val);
 
@@ -209,15 +224,13 @@ cs_cdofb_scaleq_extra_op(const char            *eqname,
  * \brief  Get the computed values at each face
  *
  * \param[in]  builder    pointer to a cs_cdofb_scaleq_t structure
- * \param[in]  field      pointer to a cs_field_t structure
  *
  * \return  a pointer to an array of double (size n_faces)
  */
 /*----------------------------------------------------------------------------*/
 
-const double *
-cs_cdofb_scaleq_get_face_values(const void         *builder,
-                                const cs_field_t   *field);
+double *
+cs_cdofb_scaleq_get_face_values(const void         *builder);
 
 /*----------------------------------------------------------------------------*/
 

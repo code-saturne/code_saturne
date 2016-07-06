@@ -57,6 +57,7 @@
 #include "cs_base.h"
 #include "cs_cdo.h"
 #include "cs_cdovb_scaleq.h"
+#include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_evaluate.h"
 #include "cs_mesh_location.h"
@@ -135,8 +136,10 @@ typedef void
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Store solution(s) of the linear system into a field structure
+ *         Update extra-field values if required (for hybrid discretization)
  *
  * \param[in]      solu       solution array
+ * \param[in]      rhs        rhs associated to this solution array
  * \param[in, out] builder    pointer to builder structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
@@ -144,9 +147,9 @@ typedef void
 
 typedef void
 (cs_equation_update_field_t)(const cs_real_t            *solu,
+                             const cs_real_t            *rhs,
                              void                       *builder,
                              cs_real_t                  *field_val);
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -165,18 +168,17 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the computed values at each face
+ * \brief  Get the computed values at a different location than that of the
+ *         field associated to this equation
  *
  * \param[in]  builder    pointer to a builder structure
- * \param[in]  field      pointer to a cs_field_t structure
  *
- * \return  a pointer to an array of double (size n_faces)
+ * \return  a pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
-typedef const double *
-(cs_equation_get_f_values_t)(const void          *builder,
-                             const cs_field_t    *field);
+typedef double *
+(cs_equation_get_extra_values_t)(const void          *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -240,6 +242,19 @@ typedef cs_real_t *
 
 typedef void *
 (cs_equation_free_builder_t)(void  *builder);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy a cs_sla_matrix_t related to the system to solve
+ *
+ * \param[in, out]  builder   pointer to a builder structure
+ * \param[in, out]  matrix    pointer to a cs_sla_matrix_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_free_sysmat_t)(void              *builder,
+                            cs_sla_matrix_t   *matrix);
 
 /*============================================================================
  * Local variables
@@ -310,16 +325,17 @@ struct _cs_equation_t {
   void                     *builder;
 
   /* Pointer to functions (see prototypes just above) */
-  cs_equation_init_builder_t    *init_builder;
-  cs_equation_free_builder_t    *free_builder;
-  cs_equation_build_system_t    *build_system;
-  cs_equation_compute_source_t  *compute_source;
-  cs_equation_update_field_t    *update_field;
-  cs_equation_extra_op_t        *postprocess;
-  cs_equation_get_fap_t         *compute_flux_across_plane;
-  cs_equation_get_cw_dflux_t    *compute_cellwise_diff_flux;
-  cs_equation_get_f_values_t    *get_f_values;
-  cs_equation_get_tmpbuf_t      *get_tmpbuf;
+  cs_equation_init_builder_t      *init_builder;
+  cs_equation_free_builder_t      *free_builder;
+  cs_equation_build_system_t      *build_system;
+  cs_equation_free_sysmat_t       *free_system_matrix;
+  cs_equation_update_field_t      *update_field;
+  cs_equation_compute_source_t    *compute_source;
+  cs_equation_get_fap_t           *compute_flux_across_plane;
+  cs_equation_get_cw_dflux_t      *compute_cellwise_diff_flux;
+  cs_equation_extra_op_t          *postprocess;
+  cs_equation_get_extra_values_t  *get_extra_values;
+  cs_equation_get_tmpbuf_t        *get_tmpbuf;
 
 };
 
@@ -799,6 +815,7 @@ _create_equation_param(cs_equation_type_t     type,
 static void
 _initialize_field_from_ic(cs_equation_t     *eq)
 {
+  int  ml_id = -1;
   cs_flag_t  dof_flag = 0;
   cs_equation_param_t  *eqp = eq->param;
 
@@ -822,7 +839,8 @@ _initialize_field_from_ic(cs_equation_t     *eq)
   cs_field_t  *field = cs_field_by_id(eq->field_id);
   cs_param_time_t  t_info = eqp->time_info;
 
-  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB) {
+  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB ||
+      eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB) {
 
     dof_flag |= cs_cdo_primal_vtx;
 
@@ -830,8 +848,6 @@ _initialize_field_from_ic(cs_equation_t     *eq)
 
       /* Get and then set the definition of the initial condition */
       const cs_param_def_t  *ic = t_info.ic_definitions + def_id;
-
-      int  ml_id;
 
       if (strlen(ic->ml_name) > 0)
         ml_id = cs_mesh_location_get_id_by_name(ic->ml_name);
@@ -850,10 +866,11 @@ _initialize_field_from_ic(cs_equation_t     *eq)
 
     } // Loop on definitions
 
-  }
-  else { // Face-based schemes
+  } // VB or VCB schemes --> initialize on vertices
 
-    cs_real_t  *face_values = cs_equation_get_face_values(eq);
+  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB) {
+
+    cs_real_t  *face_values = eq->get_extra_values(eq->builder);
     assert(face_values != NULL);
 
     for (int def_id = 0; def_id < t_info.n_ic_definitions; def_id++) {
@@ -861,24 +878,12 @@ _initialize_field_from_ic(cs_equation_t     *eq)
       /* Get and then set the definition of the initial condition */
       const cs_param_def_t  *ic = t_info.ic_definitions + def_id;
 
-      int  ml_id;
-
-      /* Initialize cell-based array */
-      cs_flag_t  cell_flag = dof_flag | cs_cdo_primal_cell;
-
       if (strlen(ic->ml_name) > 0)
         ml_id = cs_mesh_location_get_id_by_name(ic->ml_name);
       else
         ml_id = cs_mesh_location_get_id_by_name(N_("cells"));
 
-      if (ic->def_type == CS_PARAM_DEF_BY_VALUE)
-        cs_evaluate_potential_from_value(cell_flag, ml_id, ic->def.get,
-                                         field->val);
-
-      else if (ic->def_type == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION)
-        cs_evaluate_potential_from_analytic(cell_flag, ml_id, ic->def.analytic,
-                                            field->val);
-
+      /* Initialize cell-based array */
       cs_flag_t  face_flag = dof_flag | cs_cdo_primal_face;
 
       if (ic->def_type == CS_PARAM_DEF_BY_VALUE)
@@ -891,8 +896,41 @@ _initialize_field_from_ic(cs_equation_t     *eq)
 
     } // Loop on definitions
 
-  } // Test on discretization scheme
+  } // FB schemes --> initialize on faces
 
+  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB ||
+      eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB) {
+
+    /* Initialize cell-based array */
+    cs_flag_t  cell_flag = dof_flag | cs_cdo_primal_cell;
+      
+    cs_real_t  *cell_values = field->val;
+    if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB)
+      cell_values = eq->get_extra_values(eq->builder);
+    assert(cell_values != NULL);
+
+    for (int def_id = 0; def_id < t_info.n_ic_definitions; def_id++) {
+
+      /* Get and then set the definition of the initial condition */
+      const cs_param_def_t  *ic = t_info.ic_definitions + def_id;
+
+      if (strlen(ic->ml_name) > 0)
+        ml_id = cs_mesh_location_get_id_by_name(ic->ml_name);
+      else
+        ml_id = cs_mesh_location_get_id_by_name(N_("cells"));
+
+      if (ic->def_type == CS_PARAM_DEF_BY_VALUE)
+        cs_evaluate_potential_from_value(cell_flag, ml_id, ic->def.get,
+                                         cell_values);
+
+      else if (ic->def_type == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION)
+        cs_evaluate_potential_from_analytic(cell_flag, ml_id, ic->def.analytic,
+                                            cell_values);
+
+    } // Loop on definitions
+
+  } // FB or VCB schemes --> initialize on cells
+  
 }
 
 /*============================================================================
@@ -969,7 +1007,7 @@ cs_equation_create(const char            *eqname,
   eq->build_system = NULL;
   eq->update_field = NULL;
   eq->postprocess = NULL;
-  eq->get_f_values = NULL;
+  eq->get_extra_values = NULL;
   eq->get_tmpbuf = NULL;
   eq->free_builder = NULL;
 
@@ -1090,6 +1128,8 @@ cs_equation_summary(const cs_equation_t  *eq)
 
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB)
     bft_printf("  <%s/space scheme>  CDO vertex-based\n", eq->name);
+  else if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB)
+    bft_printf("  <%s/space scheme>  CDO vertex+cell-based\n", eq->name);
   else if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB)
     bft_printf("  <%s/space scheme>  CDO face-based\n", eq->name);
 
@@ -1368,24 +1408,40 @@ cs_equation_last_setup(cs_equation_t  *eq)
     eq->init_builder = cs_cdovb_scaleq_init;
     eq->free_builder = cs_cdovb_scaleq_free;
     eq->build_system = cs_cdovb_scaleq_build_system;
+    eq->free_system_matrix = cs_cdovb_scaleq_free_sysmat;
     eq->compute_source = cs_cdovb_scaleq_compute_source;
     eq->update_field = cs_cdovb_scaleq_update_field;
     eq->postprocess = cs_cdovb_scaleq_extra_op;
     eq->get_tmpbuf = cs_cdovb_scaleq_get_tmpbuf;
-    eq->get_f_values = NULL;
+    eq->get_extra_values = NULL;
     eq->compute_flux_across_plane = cs_cdovb_scaleq_compute_flux_across_plane;
     eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_compute_cw_diff_flux;
+    break;
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    eq->init_builder = cs_cdovcb_scaleq_init;
+    eq->free_builder = cs_cdovcb_scaleq_free;
+    eq->build_system = cs_cdovcb_scaleq_build_system;
+    eq->free_system_matrix = cs_cdovcb_scaleq_free_sysmat;
+    eq->compute_source = cs_cdovcb_scaleq_compute_source;
+    eq->update_field = cs_cdovcb_scaleq_update_field;
+    eq->postprocess = cs_cdovcb_scaleq_extra_op;
+    eq->get_tmpbuf = cs_cdovcb_scaleq_get_tmpbuf;
+    eq->get_extra_values = cs_cdovcb_scaleq_get_cell_values;
+    eq->compute_flux_across_plane = cs_cdovcb_scaleq_compute_flux_across_plane;
+    eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_compute_cw_diff_flux;
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
     eq->init_builder = cs_cdofb_scaleq_init;
     eq->free_builder = cs_cdofb_scaleq_free;
     eq->build_system = cs_cdofb_scaleq_build_system;
+    eq->free_system_matrix = cs_cdofb_scaleq_free_sysmat;
     eq->compute_source = cs_cdofb_scaleq_compute_source;
     eq->update_field = cs_cdofb_scaleq_update_field;
     eq->postprocess = cs_cdofb_scaleq_extra_op;
     eq->get_tmpbuf = cs_cdofb_scaleq_get_tmpbuf;
-    eq->get_f_values = cs_cdofb_scaleq_get_face_values;
+    eq->get_extra_values = cs_cdofb_scaleq_get_face_values;
     eq->compute_flux_across_plane = NULL;
     eq->compute_cellwise_diff_flux = NULL;
     break;
@@ -1448,6 +1504,12 @@ cs_equation_set_param(cs_equation_t       *eq,
     if (strcmp(val, "cdo_vb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
+    }
+    if (strcmp(val, "cdo_vcb") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_CDOVCB;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
+      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
     }
     else if (strcmp(val, "cdo_fb") == 0) {
@@ -2038,6 +2100,7 @@ cs_equation_add_gravity_source_term(cs_equation_t   *eq,
                                                      eqp->var_type);
     break;
 
+  case CS_SPACE_SCHEME_CDOVCB:
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid numerical scheme to set a source term."));
@@ -2115,6 +2178,7 @@ cs_equation_add_source_term_by_val(cs_equation_t   *eq,
                                                      eqp->var_type);
     break;
 
+  case CS_SPACE_SCHEME_CDOVCB: // TODO
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid numerical scheme to set a source term."));
@@ -2174,29 +2238,16 @@ cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
   /* Get the mesh location id from its name */
   _check_ml_name(ml_name, &ml_id);
 
+  cs_source_term_reduction_t  default_red = CS_SOURCE_TERM_REDUC_PRIM;
+  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB)
+    default_red = CS_SOURCE_TERM_REDUC_DUAL;
+
   /* Create and set new source term structure */
-  switch (eqp->space_scheme) {
-  case CS_SPACE_SCHEME_CDOVB:
-    eqp->source_terms[st_id] = cs_source_term_create(name,
-                                                     ml_id,
-                                                     st_type,
-                                                     CS_SOURCE_TERM_REDUC_DUAL,
-                                                     eqp->var_type);
-    break;
-
-  case CS_SPACE_SCHEME_CDOFB:
-    eqp->source_terms[st_id] = cs_source_term_create(name,
-                                                     ml_id,
-                                                     st_type,
-                                                     CS_SOURCE_TERM_REDUC_PRIM,
-                                                     eqp->var_type);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid numerical scheme to set a source term."));
-
-  }
+  eqp->source_terms[st_id] = cs_source_term_create(name,
+                                                   ml_id,
+                                                   st_type,
+                                                   default_red,
+                                                   eqp->var_type);
 
   cs_source_term_def_by_analytic(eqp->source_terms[st_id], ana);
 
@@ -2357,6 +2408,7 @@ cs_equation_create_field(cs_equation_t     *eq)
   /* Associate a predefined mesh_location_id to this field */
   switch (eqp->space_scheme) {
   case CS_SPACE_SCHEME_CDOVB:
+  case CS_SPACE_SCHEME_CDOVCB:
     location_id = cs_mesh_location_get_id_by_name(N_("vertices"));
     break;
   case CS_SPACE_SCHEME_CDOFB:
@@ -2523,15 +2575,15 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
   /* Map a cs_sla_matrix_t structure into a cs_matrix_t structure */
   assert(sla_mat->type == CS_SLA_MAT_MSR);
 
-  bool  do_transfer = false;
+  bool  do_idx_transfer = false;
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB)
     if (eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_STRONG)
-      do_transfer = true;
+      do_idx_transfer = true;
 
   /* First step: create a matrix structure */
   if (eq->ms == NULL)
     eq->ms = cs_matrix_structure_create_msr(CS_MATRIX_MSR,      // type
-                                            do_transfer,        // transfer
+                                            do_idx_transfer,    // transfer
                                             true,               // have_diag
                                             sla_mat->n_rows,    // n_rows
                                             sla_mat->n_cols,    // n_cols_ext
@@ -2557,8 +2609,7 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
                                       &(sla_mat->val));  // extra-diag. values
 
   /* Free non-transferred parts of sla_mat */
-  sla_mat = cs_sla_matrix_free(sla_mat);
-
+  eq->free_system_matrix(eq->builder, sla_mat);
   eq->do_build = false;
 
   if (eq->main_ts_id > -1) {
@@ -2642,7 +2693,7 @@ cs_equation_solve(cs_equation_t   *eq,
   cs_field_current_to_previous(fld);
 
   /* Define the new field value for the current time */
-  eq->update_field(x, eq->builder, fld->val);
+  eq->update_field(x, eq->rhs, eq->builder, fld->val);
 
   if (eq->post_ts_id > -1)
     cs_timer_stats_stop(eq->post_ts_id);
@@ -2937,23 +2988,67 @@ cs_equation_get_type(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the values of the associated field at each face of the mesh
- *         If the pointer storing the values is NULL, it is allocated inside the
- *         function
+ * \brief  Get the values at each face of the mesh for the field unknowns
+ *         related to this equation.
  *
  * \param[in]   eq        pointer to a cs_equation_t structure
  *
- * \return a pointer to the values (which can be modified)
+ * \return a pointer to the face values
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_equation_get_face_values(cs_equation_t    *eq)
+const cs_real_t *
+cs_equation_get_face_values(const cs_equation_t    *eq)
 {
   if (eq == NULL)
     return NULL;
+  if (eq->get_extra_values == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" No function defined for getting the face values in eq. %s"),
+              eq->name);
 
-  return eq->get_f_values(eq->builder, cs_field_by_id(eq->field_id));
+  if (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB)
+    return eq->get_extra_values(eq->builder);
+  else
+    return NULL; // Not implemented
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the values at each cell centers for the field unknowns
+ *         related to this equation.
+ *
+ * \param[in]   eq        pointer to a cs_equation_t structure
+ *
+ * \return a pointer to the cell values
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_equation_get_cell_values(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+  if (eq->get_extra_values == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" No function defined for getting the cell values in eq. %s"),
+              eq->name);
+
+  switch (eq->param->space_scheme) {
+  case CS_SPACE_SCHEME_CDOFB:
+    {
+      cs_field_t  *fld = cs_field_by_id(eq->field_id);
+
+      return fld->val;
+    }
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    return eq->get_extra_values(eq->builder);
+
+  default:
+    return NULL; // Not implemented 
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

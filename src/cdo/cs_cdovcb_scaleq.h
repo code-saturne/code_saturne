@@ -1,8 +1,8 @@
-#ifndef __CS_CDOVB_SCALEQ_H__
-#define __CS_CDOVB_SCALEQ_H__
+#ifndef __CS_CDOVCB_SCALEQ_H__
+#define __CS_CDOVCB_SCALEQ_H__
 
 /*============================================================================
- * Build an algebraic CDO vertex-based system for scalar conv./diff. eq.
+ * Build an algebraic CDO vertex+cell-based system for scalar conv./diff. eq.
  *============================================================================*/
 
 /*
@@ -51,7 +51,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Algebraic system for CDO vertex-based discretization */
-typedef struct _cs_cdovb_scaleq_t cs_cdovb_scaleq_t;
+typedef struct _cs_cdovcb_scaleq_t cs_cdovcb_scaleq_t;
 
 /*============================================================================
  * Public function prototypes
@@ -68,29 +68,29 @@ typedef struct _cs_cdovb_scaleq_t cs_cdovb_scaleq_t;
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                    const cs_cdo_connect_t       *connect,
-                                    const cs_time_step_t         *time_step);
+cs_cdovcb_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
+                                     const cs_cdo_connect_t       *connect,
+                                     const cs_time_step_t         *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Allocate work buffer and general structures related to CDO
- *         vertex-based schemes
+ *         vertex+cell-based schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_initialize(void);
+cs_cdovcb_scaleq_initialize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free work buffer and general structure related to CDO vertex-based
+ * \brief  Free buffers and generic structures related to CDO vertex+cell-based
  *         schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_finalize(void);
+cs_cdovcb_scaleq_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -102,35 +102,35 @@ cs_cdovb_scaleq_finalize(void);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovb_scaleq_get_tmpbuf(void);
+cs_cdovcb_scaleq_get_tmpbuf(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdovb_scaleq_t structure
+ * \brief  Initialize a cs_cdovcb_scaleq_t structure
  *
  * \param[in] eqp       pointer to a cs_equation_param_t structure
  * \param[in] mesh      pointer to a cs_mesh_t structure
  *
- * \return a pointer to a new allocated cs_cdovb_scaleq_t structure
+ * \return a pointer to a new allocated cs_cdovcb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void  *
-cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
-                     const cs_mesh_t             *mesh);
+cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
+                      const cs_mesh_t             *mesh);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a cs_cdovb_scaleq_t structure
+ * \brief  Destroy a cs_cdovcb_scaleq_t structure
  *
- * \param[in, out]  builder   pointer to a cs_cdovb_scaleq_t structure
+ * \param[in, out]  builder   pointer to a cs_cdovcb_scaleq_t structure
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdovb_scaleq_free(void   *builder);
+cs_cdovcb_scaleq_free(void   *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -142,19 +142,19 @@ cs_cdovb_scaleq_free(void   *builder);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_free_sysmat(void              *builder,
-                            cs_sla_matrix_t   *matrix);
+cs_cdovcb_scaleq_free_sysmat(void              *builder,
+                             cs_sla_matrix_t   *matrix);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the contributions of source terms (store inside builder)
  *
- * \param[in, out] builder     pointer to a cs_cdovb_scaleq_t structure
+ * \param[in, out] builder     pointer to a cs_cdovcb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_compute_source(void            *builder);
+cs_cdovcb_scaleq_compute_source(void            *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -165,19 +165,19 @@ cs_cdovb_scaleq_compute_source(void            *builder);
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      dt_cur     current value of the time step
- * \param[in, out] builder    pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] builder    pointer to cs_cdovcb_scaleq_t structure
  * \param[in, out] rhs        right-hand side
  * \param[in, out] sla_mat    pointer to cs_sla_matrix_t structure pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
-                             const cs_real_t             *field_val,
-                             double                       dt_cur,
-                             void                        *builder,
-                             cs_real_t                  **rhs,
-                             cs_sla_matrix_t            **sla_mat);
+cs_cdovcb_scaleq_build_system(const cs_mesh_t             *mesh,
+                              const cs_real_t             *field_val,
+                              double                       dt_cur,
+                              void                        *builder,
+                              cs_real_t                  **rhs,
+                              cs_sla_matrix_t            **sla_mat);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -186,16 +186,31 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
  *
  * \param[in]      solu       solution array
  * \param[in]      rhs        rhs associated to this solution array
- * \param[in, out] builder    pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] builder    pointer to builder structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_update_field(const cs_real_t     *solu,
-                             const cs_real_t     *rhs,
-                             void                *builder,
-                             cs_real_t           *field_val);
+cs_cdovcb_scaleq_update_field(const cs_real_t     *solu,
+                              const cs_real_t     *rhs,
+                              void                *builder,
+                              cs_real_t           *field_val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the computed values at cell centers (DoF used in the linear
+ *         system are located at primal vertices and field related to the
+ *         structure equation is also attached to primal vertices
+ *
+ * \param[in]  builder    pointer to a builder structure
+ *
+ * \return  a pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+double *
+cs_cdovcb_scaleq_get_cell_values(const void          *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -211,12 +226,12 @@ cs_cdovb_scaleq_update_field(const cs_real_t     *solu,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
-                                          const cs_real_t     *pdi,
-                                          int                  ml_id,
-                                          const cs_real_t      direction[],
-                                          double              *diff_flux,
-                                          double              *conv_flux);
+cs_cdovcb_scaleq_compute_flux_across_plane(const void          *builder,
+                                           const cs_real_t     *pdi,
+                                           int                  ml_id,
+                                           const cs_real_t      direction[],
+                                           double              *diff_flux,
+                                           double              *conv_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -229,9 +244,9 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_compute_cw_diff_flux(const cs_real_t   *pdi,
-                                     void              *builder,
-                                     cs_real_t         *diff_flux);
+cs_cdovcb_scaleq_compute_cw_diff_flux(const cs_real_t   *pdi,
+                                      void              *builder,
+                                      cs_real_t         *diff_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -244,12 +259,12 @@ cs_cdovb_scaleq_compute_cw_diff_flux(const cs_real_t   *pdi,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_extra_op(const char            *eqname,
-                         const cs_field_t      *field,
-                         void                  *builder);
+cs_cdovcb_scaleq_extra_op(const char            *eqname,
+                          const cs_field_t      *field,
+                          void                  *builder);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_CDOVB_SCALEQ_H__ */
+#endif /* __CS_CDOVCB_SCALEQ_H__ */

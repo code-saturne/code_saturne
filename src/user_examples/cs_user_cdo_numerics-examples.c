@@ -123,8 +123,9 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      ***********  cs_equation_set_param(eq, key, "val")   ************
 
      CS_EQKEY_SPACE_SCHEME
-     "cdo_vb" for CDO vertex-based scheme
-     "cdo_fb" for CDO face-based scheme
+     "cdo_vb"  for CDO vertex-based scheme
+     "cdo_vcb" for CDO vertex+cell-based scheme
+     "cdo_fb"  for CDO face-based scheme
 
      CS_EQKEY_VERBOSITY
      The higher the more detailed information is displayed

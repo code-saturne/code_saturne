@@ -143,7 +143,6 @@ cs_hodge_build_local_stiffness(const cs_cdo_locmesh_t     *lm,
 /*!
  * \brief   Build a local discrete Hodge using a cell-wise view of the mesh
  *
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]      lm         pointer to a cs_cdo_locmesh_t structure
  * \param[in, out] hb         pointer to a cs_hodge_builder_t structure
  *
@@ -152,8 +151,7 @@ cs_hodge_build_local_stiffness(const cs_cdo_locmesh_t     *lm,
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_hodge_build_cellwise(const cs_cdo_quantities_t   *quant,
-                        const cs_cdo_locmesh_t      *lm,
+cs_hodge_build_cellwise(const cs_cdo_locmesh_t      *lm,
                         cs_hodge_builder_t          *hb);
 
 /*----------------------------------------------------------------------------*/

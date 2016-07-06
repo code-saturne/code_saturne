@@ -106,6 +106,37 @@ typedef struct {
 
 } cs_sla_matrix_t;
 
+/* Specific matrix for hybrid discretization X+C (C for cells) and X=V or F
+
+   This matrix corresponds to 4 blocks :
+   (0,0) --> square MSR matrix of size #X
+   (1,0) --> rectangular matrix based on a cs_connect_index_t (c2x)
+   (1,1) --> diagonal matrix of size number of cells
+   (0,1) --> rectangular matrix sharing the same pattern as block (1,0)
+             Transposed of (1,0) is the matrix is symmetric
+
+   The resulting matrix is square matrix of size #C + #X */
+
+typedef struct {
+
+  int        flag;            // Symmetric, sorted, shared...
+
+  cs_lnum_t  n_x;             // n_vertices or n_faces
+  cs_lnum_t  n_cells;
+  cs_lnum_t  n_rows;          // n_x + n_cells
+
+  const cs_connect_index_t  *c2x;  /* shared with a cs_cdo_connect_t structure
+                                      which is owner. Enable an easy acces to
+                                      blocks (1,0) and (0,1) */
+
+  cs_sla_matrix_t  *xx_block;  // (0,0) block = MSR-type matrix
+  double           *cc_diag;   // (1,1) block = diagonal matrix of size n_cells
+  double           *cx_vals;   // (1,0) block = rectangular based on c2x index
+  double           *xc_vals;   /* (0,1) block = rectangular based on c2x index
+                                  Only allocated if matrix is not symmetric */
+
+} cs_sla_hmatrix_t;
+
 /*============================================================================
  * Public function prototypes for SLA matrices
  *============================================================================*/
@@ -624,6 +655,82 @@ cs_sla_system_dump(const char              *name,
                    FILE                    *f,
                    const cs_sla_matrix_t   *m,
                    const double            *rhs);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Create a cs_sla_hmatrix_t structure
+ *          This is a square matrix of size n_x+n_cells (stride = 1 up to now)
+ *
+ * \param[in]  n_x       number of hybrid entities
+ * \param[in]  n_cells   number of cells
+ * \param[in]  bktrans   block (1,0) and (0,1) are transposed: true or false
+ * \param[in]  bk00sym   block (0,0) is symmetric: true or false
+ * \param[in]  x2x       pointer to cs_connect_index_t struc.
+ * \param[in]  c2x       pointer to cs_connect_index_t struc.
+ *
+ * \return  a pointer to new allocated hybrid matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sla_hmatrix_t *
+cs_sla_hmatrix_create(cs_lnum_t                   n_x,
+                      cs_lnum_t                   n_cells,
+                      bool                        bktrans,
+                      bool                        bk00sym,
+                      const cs_connect_index_t   *x2x,
+                      const cs_connect_index_t   *c2x);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Free a cs_sla_hmatrix_t structure
+ *
+ * \param[in]  hm     hybrid matrix to free
+ *
+ * \return  a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sla_hmatrix_t *
+cs_sla_hmatrix_free(cs_sla_hmatrix_t  *hm);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute a matrix vector product.
+ *         If inout is not allocated, allocation is done inside this function
+ *         If reset is set to true, initialization inout to 0
+ *
+ * \param[in]       hm       pointer to a cs_sla_hmatrix_t structure
+ * \param[in]       vx       pointer to an array of double (x-based values)
+ * \param[in]       vc       pointer to an array of double (cell-based values)
+ * \param[in, out]  iox      pointer to a pointer of double (x-based values)
+ * \param[in, out]  ioc      pointer to a pointer of double (celle-based values)
+ * \param[in]       reset    if true, first initialize inout to zero
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sla_hmatvec(const cs_sla_hmatrix_t   *hm,
+               const double              vx[],
+               const double              vc[],
+               double                   *iox[],
+               double                   *ioc[],
+               bool                      reset);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Assemble a hybrid matrix from local contributions
+ *          --> We assume that the local matrices are symmetric
+ *          --> We assume that the (0,0) block of the assembled matrix has its
+ *              columns sorted
+ *
+ * \param[in]       loc        pointer to a local matrix
+ * \param[in, out]  ass        pointer to a cs_sla_hmatrix_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sla_assemble_hmat_sym(const cs_locmat_t   *loc,
+                         cs_sla_hmatrix_t    *ass);
 
 /*----------------------------------------------------------------------------*/
 

@@ -42,12 +42,19 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Macros used for building a CDO system */
 #define CDO_DIFFUSION   0
 #define CDO_ADVECTION   1
 #define CDO_REACTION    2
 #define CDO_TIME        3
 #define CDO_SOURCETERM  4
 #define N_CDO_TERMS     5
+
+/* Flag related to CDO system building */
+#define CS_CDO_BUILD_HCONF      (1 <<  0)  // 1: build conforming Hodge op.
+#define CS_CDO_BUILD_LOC_HCONF  (1 <<  1)  // 2: build the local conf. Hodge
+#define CS_CDO_PRIMAL_SOURCE    (1 <<  2)  // 4: primal source term requested
+#define CS_CDO_DUAL_SOURCE      (1 <<  3)  // 8: dual source term requested
 
 /* Flags to identify the nature/status of an object (variable, property...) */
 #define CS_FLAG_STATE_UNIFORM     (1 << 0) //    1: uniform (in space)
@@ -81,6 +88,7 @@ BEGIN_C_DECLS
 typedef enum {
 
   CS_SPACE_SCHEME_CDOVB,   /* CDO scheme with vertex-based positionning */
+  CS_SPACE_SCHEME_CDOVCB,  /* CDO scheme with vertex+cell-based positionning */
   CS_SPACE_SCHEME_CDOFB,   /* CDO cell-based scheme with hybridization */
   CS_SPACE_N_SCHEMES
 

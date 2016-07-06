@@ -81,6 +81,7 @@ typedef struct { /* Connectivity structure */
      Use this connectivity to scan dual quantities */
   cs_connect_index_t  *c2e;  // cell -> edges connectivity
   cs_connect_index_t  *c2v;  // cell -> vertices connectivity
+  cs_connect_index_t  *v2v;  // vertex --> vertices through cell connectivity
 
   /* Max. connectitivy size for cells */
   cs_lnum_t  n_max_vbyc;    // max. number of vertices in a cell
@@ -117,7 +118,7 @@ cs_cdo_connect_flagname(short int  flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define a cs_cdo_connect_t structure
+ * \brief Allocate and define by default a cs_cdo_connect_t structure
  *
  * \param[in]  m            pointer to a cs_mesh_t structure
  *
@@ -126,7 +127,7 @@ cs_cdo_connect_flagname(short int  flag);
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_connect_t *
-cs_cdo_connect_build(const cs_mesh_t      *m);
+cs_cdo_connect_init(const cs_mesh_t      *m);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -140,6 +141,24 @@ cs_cdo_connect_build(const cs_mesh_t      *m);
 
 cs_cdo_connect_t *
 cs_cdo_connect_free(cs_cdo_connect_t   *connect);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update a cs_cdo_connect_t structure with respect to the requested
+ *        space scheme
+ *
+ * \param[in, out]  connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]       do_vb_scal   scalar vertex-based is requested or not
+ * \param[in]       do_vcb_scal  scalar vertex+cell-based is requested or not
+ * \param[in]       do_fb_scal   scalar face-based is requested or not
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_connect_update(cs_cdo_connect_t       *connect,
+                      bool                    do_vb_scal,
+                      bool                    do_vcb_scal,
+                      bool                    do_fb_scal);
 
 /*----------------------------------------------------------------------------*/
 /*!

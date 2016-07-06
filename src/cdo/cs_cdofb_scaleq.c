@@ -644,6 +644,25 @@ cs_cdofb_scaleq_free(void   *builder)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Destroy a cs_sla_matrix_t related to the system to solve
+ *
+ * \param[in, out]  builder   pointer to a builder structure
+ * \param[in, out]  matrix    pointer to a cs_sla_matrix_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_free_sysmat(void              *builder,
+                            cs_sla_matrix_t   *matrix)
+{
+  CS_UNUSED(builder);
+
+  /* Free matrix */
+  matrix = cs_sla_matrix_free(matrix);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the contributions of source terms (store inside builder)
  *
  * \param[in, out] builder     pointer to a cs_cdofb_scaleq_t structure
@@ -703,6 +722,10 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t        *mesh,
                              cs_real_t             **rhs,
                              cs_sla_matrix_t       **sla_mat)
 {
+  // To be removed (avoid compilation warnings)
+  CS_UNUSED(field_val);
+  CS_UNUSED(dt_cur);
+  
   cs_sla_matrix_t  *diffusion_mat = NULL;
   cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t *)builder;
 
@@ -732,20 +755,24 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t        *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Post-process the solution of a scalar convection/diffusion equation
- *         solved with a CDO face-based scheme
+ * \brief  Store solution(s) of the linear system into a field structure
+ *         Update extra-field values if required (for hybrid discretization)
  *
  * \param[in]      solu       solution array
- * \param[in, out] builder    pointer to cs_cdofb_scaleq_t structure
+ * \param[in]      rhs        rhs associated to this solution array
+ * \param[in, out] builder    pointer to cs_cdovb_scaleq_t structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
+                             const cs_real_t            *rhs,
                              void                       *builder,
                              cs_real_t                  *field_val)
 {
+  CS_UNUSED(rhs);
+
   int  i, j, l, c_id, f_id;
 
   cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t *)builder;
@@ -818,17 +845,16 @@ cs_cdofb_scaleq_extra_op(const char            *eqname,
                          const cs_field_t      *field,
                          void                  *builder)
 {
-  int  len;
+  CS_UNUSED(eqname); // avoid a compilation warning
 
   char *postlabel = NULL;
-  cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t  *)builder;
 
   const cs_cdo_connect_t  *connect = cs_cdofb_connect;
   const cs_lnum_t  n_i_faces = connect->f_info->n_i_elts;
-  const cs_real_t  *face_pdi = cs_cdofb_scaleq_get_face_values(b, field);
+  const cs_real_t  *face_pdi = cs_cdofb_scaleq_get_face_values(builder);
 
   /* Field post-processing */
-  len = strlen(field->name) + 8 + 1;
+  int  len = strlen(field->name) + 8 + 1;
   BFT_MALLOC(postlabel, len, char);
   sprintf(postlabel, "%s.Border", field->name);
   cs_post_write_var(-2,                    // id du maillage de post
@@ -851,24 +877,20 @@ cs_cdofb_scaleq_extra_op(const char            *eqname,
  * \brief  Get the computed values at each face
  *
  * \param[in]  builder    pointer to a cs_cdofb_scaleq_t structure
- * \param[in]  field      pointer to a cs_field_t structure
  *
  * \return  a pointer to an array of double (size n_faces)
  */
 /*----------------------------------------------------------------------------*/
 
-const double *
-cs_cdofb_scaleq_get_face_values(const void         *builder,
-                                const cs_field_t   *field)
+double *
+cs_cdofb_scaleq_get_face_values(const void    *builder)
 {
-  assert(field != NULL); // avoid a warning in debug mode
+  const cs_cdofb_scaleq_t  *b = (const cs_cdofb_scaleq_t *)builder;
 
-  const cs_cdofb_scaleq_t  *_builder = (const cs_cdofb_scaleq_t *)builder;
-
-  if (_builder == NULL)
+  if (b == NULL)
     return NULL;
   else
-    return _builder->face_values;
+    return b->face_values;
 }
 
 /*----------------------------------------------------------------------------*/

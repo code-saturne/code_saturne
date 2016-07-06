@@ -126,6 +126,7 @@ typedef enum {
   CS_PARAM_HODGE_TYPE_FPED, // from primal faces to dual edges
   CS_PARAM_HODGE_TYPE_EDFP, // from dual edges to primal faces
   CS_PARAM_HODGE_TYPE_CPVD, // from primal cells to dual vertices
+  CS_PARAM_HODGE_TYPE_VC,   // primal vertices + primal cells
   CS_PARAM_N_HODGE_TYPES
 
 } cs_param_hodge_type_t;

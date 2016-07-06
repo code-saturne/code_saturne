@@ -53,6 +53,7 @@
 #include <bft_printf.h>
 
 #include "cs_cdovb_scaleq.h"
+#include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_evaluate.h"
 #include "cs_groundwater.h"
@@ -464,6 +465,7 @@ _set_shared_pointers(const cs_cdo_quantities_t    *quant,
   cs_property_set_shared_pointers(quant, connect, time_step);
   cs_advection_field_set_shared_pointers(quant, connect, time_step);
   cs_cdovb_scaleq_set_shared_pointers(quant, connect, time_step);
+  cs_cdovcb_scaleq_set_shared_pointers(quant, connect, time_step);
 }
 
 /*============================================================================
@@ -494,7 +496,7 @@ cs_domain_init(const cs_mesh_t             *mesh,
   domain->mesh_quantities = mesh_quantities;
 
   /* Build additional connectivity structures */
-  domain->connect = cs_cdo_connect_build(mesh);
+  domain->connect = cs_cdo_connect_init(mesh);
 
   /* Build additional mesh quantities in a seperate structure */
   domain->cdo_quantities =  cs_cdo_quantities_build(mesh,
@@ -539,7 +541,11 @@ cs_domain_init(const cs_mesh_t             *mesh,
   domain->n_predef_equations = 0;
   domain->n_user_equations = 0;
   domain->equations = NULL;
+
   domain->only_steady = true;
+  domain->do_vb_scal = false;
+  domain->do_fb_scal = false;
+  domain->do_vcb_scal = false;
 
   /* Other options */
   domain->output_nt = -1;
@@ -608,9 +614,6 @@ cs_domain_free(cs_domain_t   *domain)
   domain->mesh = NULL;
   domain->mesh_quantities = NULL;
 
-  domain->cdo_quantities = cs_cdo_quantities_free(domain->cdo_quantities);
-  domain->connect = cs_cdo_connect_free(domain->connect);
-
   domain->boundaries = _free_domain_boundaries(domain->boundaries);
 
   BFT_FREE(domain->time_step);
@@ -631,9 +634,22 @@ cs_domain_free(cs_domain_t   *domain)
   }
 
   /* Free memory related to equations */
-  for (int i = 0; i < domain->n_equations; i++)
+  for (int i = 0; i < domain->n_equations; i++)    
     domain->equations[i] = cs_equation_free(domain->equations[i]);
+
   BFT_FREE(domain->equations);
+
+  /* Free temporary buffers allocated for each kind of numerical used */
+  if (domain->do_vb_scal)
+    cs_cdovb_scaleq_finalize();
+  if (domain->do_vcb_scal)
+    cs_cdovcb_scaleq_finalize();
+  if (domain->do_fb_scal)
+    cs_cdofb_scaleq_finalize();
+
+  /* Free CDO structures related to geometric quantities and connectivity */
+  domain->cdo_quantities = cs_cdo_quantities_free(domain->cdo_quantities);
+  domain->connect = cs_cdo_connect_free(domain->connect);
 
   BFT_FREE(domain);
 
@@ -893,9 +909,6 @@ cs_domain_last_setup(cs_domain_t    *domain)
      - Setup the structure related to cs_sles_*
   */
 
-  bool  do_vbscal_scheme = false;
-  bool  do_fbscal_scheme = false;
-
   for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
 
     cs_equation_t  *eq = domain->equations[eq_id];
@@ -912,9 +925,11 @@ cs_domain_last_setup(cs_domain_t    *domain)
     cs_param_var_type_t  vartype = cs_equation_get_var_type(eq);
 
     if (vartype == CS_PARAM_VAR_SCAL && scheme == CS_SPACE_SCHEME_CDOVB)
-      do_vbscal_scheme = true;
+      domain->do_vb_scal = true;
+    else if (vartype == CS_PARAM_VAR_SCAL && scheme == CS_SPACE_SCHEME_CDOVCB)
+      domain->do_vcb_scal = true;
     else if (vartype == CS_PARAM_VAR_SCAL && scheme == CS_SPACE_SCHEME_CDOFB)
-      do_fbscal_scheme = true;
+      domain->do_fb_scal = true;
     else
       bft_error(__FILE__, __LINE__, 0,
                 _(" Undefined type of equation to solve for eq. %s."
@@ -923,11 +938,18 @@ cs_domain_last_setup(cs_domain_t    *domain)
 
   } // Loop on equations
 
-  if (do_vbscal_scheme)
+  if (domain->do_vb_scal)
     cs_cdovb_scaleq_initialize();
-  if (do_fbscal_scheme)
+  if (domain->do_vcb_scal)
+    cs_cdovcb_scaleq_initialize();
+  if (domain->do_fb_scal)
     cs_cdofb_scaleq_initialize();
 
+  if (domain->do_vb_scal || domain->do_vcb_scal)
+    cs_cdo_connect_update(domain->connect,
+                          domain->do_vb_scal,
+                          domain->do_vcb_scal,
+                          domain->do_fb_scal);
 }
 
 /*----------------------------------------------------------------------------*/
