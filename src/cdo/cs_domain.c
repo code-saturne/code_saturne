@@ -634,7 +634,7 @@ cs_domain_free(cs_domain_t   *domain)
   }
 
   /* Free memory related to equations */
-  for (int i = 0; i < domain->n_equations; i++)    
+  for (int i = 0; i < domain->n_equations; i++)
     domain->equations[i] = cs_equation_free(domain->equations[i]);
 
   BFT_FREE(domain->equations);

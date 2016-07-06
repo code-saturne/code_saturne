@@ -535,28 +535,18 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
                                           "cells",         // ml_name
                                           _define_source); // analytic function
 
-  /* Optional: specify additional settings for a source term
-     >> cs_equation_set_source_term_option(eq,      // equation
-                                           stlabel, // label of the source term
-                                           key,     // name of the key
-                                           val)     // value of the key to set
+  /* Optional: specify the quadrature used for computing a source term
 
-     If st_label is set to NULL, all source terms of the equation are set
-     to the given parameters.
-
-     key = "post_freq" Set the behaviour related to post-processing
-     >> val = "-1" no post-processing,
-        val = "0"  at the beginning of the computation,
-        val = "n"  at each n iterations
-
-     key = "quadrature" Set the algortihm used for quadrature
-     >> val = "bary"    used the barycenter approximation
-        val = "higher"  used 4 Gauss points for approximating the integral
-        val = "highest" used 5 Gauss points for approximating the integral
-
+     cs_equation_set_source_term_quadrature(eq,
+                                            label,
+                                            key);
+     >> key takes value among
+     CS_QUADRATURE_BARY     used the barycenter approximation
+     CS_QUADRATURE_HIGHER   used 4 Gauss points for approximating the integral
+     CS_QUADRATURE_HIGHEST  used 5 Gauss points for approximating the integral
   */
 
-  cs_equation_set_source_term_option(eq, "SourceTerm", "quadrature", "bary");
+  cs_equation_set_source_term_quadrature(eq, "SourceTerm", CS_QUADRATURE_BARY);
 
 }
 

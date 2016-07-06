@@ -213,7 +213,7 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
                    const double                 face_pdi[])
 {
   int  i, j;
-  double  l2dgrd, enerd, gdic;
+  double  l2dgrd, enerd;
 
   double  num_l2d = 0, denum_l2d = 0, num_end = 0, denum_end = 0;
   double  *gexc = NULL, *dgc = NULL;

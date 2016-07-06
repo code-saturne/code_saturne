@@ -104,7 +104,7 @@ struct _cs_cdovcb_scaleq_t {
 
   /* Store the values of the field at cell centers */
   cs_real_t         *cell_values;
-  
+
   /* Common members for all terms */
   double                *loc_vals; // local temporary values
   cs_hodge_builder_t    *hb;       // can be used by reaction, time or source
@@ -814,7 +814,7 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_cells; i++)
     b->cell_values[i] = 0;
-  
+
   /* Way of storing information to compute the values at cell center and in
      the same time storing the matrix to inverse after assembling */
   b->hybrid_storage = cs_sla_hmatrix_create(n_vertices,
@@ -1422,7 +1422,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
        be able to compute the values at cell centers.
        rhs is updated before assembling. */
     _condense_and_store(b, cs_cell_sys, cs_cell_condmat);
-    
+
     /* Assemble the matrix related to the advcetion/diffusion/reaction terms
        If advection is activated, the resulting system is not symmetric
        Otherwise, the system is symmetric with extra-diagonal terms. */
@@ -1430,7 +1430,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
       cs_sla_assemble_msr_sym(cs_cell_condmat, sys_mat, false);
     else
       cs_sla_assemble_msr(cs_cell_condmat, sys_mat);
-    
+
     /* Assemble the right-hand side (rhs) */
     for (short int v = 0; v < n_vc; v++)
       full_rhs[cs_cell_mesh->v_ids[v]] += cs_cell_sys->rhs[v];

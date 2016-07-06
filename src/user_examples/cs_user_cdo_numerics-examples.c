@@ -97,8 +97,6 @@ cs_user_cdo_geometric_settings(void)
      CS_CDO_CC_MEANV:   Cell center is computed as the mean of cell vertices
      CS_CDO_CC_BARYC:   Cell center is computed as the real cell barycenter
      CS_CDO_CC_SATURNE: Cell center is given by Code_Saturne
-     CS_CDO_CC_ORTHO:   Cell center is optimized to enforce orthogonality
-                        between cell-face edge and face plane
    */
 
   return CS_CDO_CC_BARYC;

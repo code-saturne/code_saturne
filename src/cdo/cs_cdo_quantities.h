@@ -235,27 +235,6 @@ cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
                      double                     *p_pvol[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute for each face a weight related to each vertex w_{v,f}
- *         This weight is equal to |dc(v) cap f|/|f| so that the sum of the
- *         weights is equal to 1.
- *
- * \param[in]      f_id      id of the face
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in]      quant     pointer to a cs_cdo_quantites_t structure
- * \param[in]      loc_ids   indirection to a local numbering
- * \param[in, out] wf        already allocated to n_max_vbyc (reset)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_compute_face_weights(cs_lnum_t                   f_id,
-                        const cs_cdo_connect_t     *connect,
-                        const cs_cdo_quantities_t  *quant,
-                        const short int             loc_ids[],
-                        double                      wf[]);
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

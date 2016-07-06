@@ -35,7 +35,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_cdo_local.h"
-#include "cs_cdo_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -69,10 +68,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_get_face_wbs0(short int                   f,
-                     const cs_cdo_locmesh_t     *lm,
-                     cs_real_t                  *wvf,
-                     cs_real_t                  *pefc_vol);
+cs_compute_fwbs_q0(short int                   f,
+                   const cs_cdo_locmesh_t     *lm,
+                   cs_real_t                  *wvf,
+                   cs_real_t                  *pefc_vol);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -92,10 +91,10 @@ cs_cdo_get_face_wbs0(short int                   f,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_get_face_wbs1(short int                   f,
-                     const cs_cdo_locmesh_t     *lm,
-                     cs_real_t                  *wvf,
-                     cs_real_t                  *pefc_vol);
+cs_compute_fwbs_q1(short int                   f,
+                   const cs_cdo_locmesh_t     *lm,
+                   cs_real_t                  *wvf,
+                   cs_real_t                  *pefc_vol);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -114,11 +113,11 @@ cs_cdo_get_face_wbs1(short int                   f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_get_face_wbs2(short int                   f,
-                     const cs_cdo_locmesh_t     *lm,
-                     cs_real_3_t                 grd_c,
-                     cs_real_t                  *wvf,
-                     cs_real_t                  *pefc_vol);
+cs_compute_fwbs_q2(short int                   f,
+                   const cs_cdo_locmesh_t     *lm,
+                   cs_real_3_t                 grd_c,
+                   cs_real_t                  *wvf,
+                   cs_real_t                  *pefc_vol);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -139,11 +138,11 @@ cs_cdo_get_face_wbs2(short int                   f,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_get_face_wbs3(short int                   f,
-                     const cs_cdo_locmesh_t     *lm,
-                     cs_real_3_t                 grd_c,
-                     cs_real_t                  *wvf,
-                     cs_real_t                  *pefc_vol);
+cs_compute_fwbs_q3(short int                   f,
+                   const cs_cdo_locmesh_t     *lm,
+                   cs_real_3_t                 grd_c,
+                   cs_real_t                  *wvf,
+                   cs_real_t                  *pefc_vol);
 
 /*----------------------------------------------------------------------------*/
 

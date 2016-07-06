@@ -725,7 +725,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t        *mesh,
   // To be removed (avoid compilation warnings)
   CS_UNUSED(field_val);
   CS_UNUSED(dt_cur);
-  
+
   cs_sla_matrix_t  *diffusion_mat = NULL;
   cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t *)builder;
 

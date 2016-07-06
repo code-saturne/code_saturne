@@ -100,6 +100,8 @@ BEGIN_C_DECLS
 void
 cs_user_cdo_start_extra_op(const cs_domain_t     *domain)
 {
+  CS_UNUSED(domain);
+
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
 
@@ -115,6 +117,8 @@ cs_user_cdo_start_extra_op(const cs_domain_t     *domain)
 void
 cs_user_cdo_extra_op(const cs_domain_t           *domain)
 {
+  CS_UNUSED(domain);
+
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
 
@@ -130,6 +134,8 @@ cs_user_cdo_extra_op(const cs_domain_t           *domain)
 void
 cs_user_cdo_end_extra_op(const cs_domain_t     *domain)
 {
+  CS_UNUSED(domain);
+
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
 

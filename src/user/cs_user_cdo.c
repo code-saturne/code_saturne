@@ -121,6 +121,8 @@ cs_user_cdo_add_mesh_locations(void)
 void
 cs_user_cdo_init_domain(cs_domain_t   *domain)
 {
+  CS_UNUSED(domain);
+
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
 
@@ -137,6 +139,8 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
 void
 cs_user_cdo_set_domain(cs_domain_t   *domain)
 {
+  CS_UNUSED(domain);
+
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
 

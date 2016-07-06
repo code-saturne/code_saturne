@@ -104,7 +104,7 @@ _get_wvf_pefcvol(short int                   f,
     cs_math_3_length_unitv(peq.center, pfq.center, &xef_len, xef_un);
     cs_math_3_cross_product(xef_un, peq.unitv, cp);
 
-    const double  tef = 0.5 * xef_len * peq.meas * cs_math_3_norm(cp); 
+    const double  tef = 0.5 * xef_len * peq.meas * cs_math_3_norm(cp);
     const double  ef_contrib = tef * f_coef; // tef = s(v1,e,f) + s(v2, e, f)
 
     pefc_vol[ii] = tef * hf_coef;
@@ -112,7 +112,7 @@ _get_wvf_pefcvol(short int                   f,
     wvf[lm->e2v_ids[2*e+1]] += ef_contrib;   // for v2
 
   } /* End of loop on face edges */
-  
+
 }
 
 /*============================================================================
@@ -135,10 +135,10 @@ _get_wvf_pefcvol(short int                   f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_get_face_wbs0(short int                   f,
-                     const cs_cdo_locmesh_t     *lm,
-                     cs_real_t                  *wvf,
-                     cs_real_t                  *pefc_vol)
+cs_compute_fwbs_q0(short int                   f,
+                   const cs_cdo_locmesh_t     *lm,
+                   cs_real_t                  *wvf,
+                   cs_real_t                  *pefc_vol)
 {
   const cs_quant_t  pfq = lm->face[f];
   const cs_nvec3_t  deq = lm->dedge[f];
@@ -169,10 +169,10 @@ cs_cdo_get_face_wbs0(short int                   f,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_get_face_wbs1(short int                   f,
-                     const cs_cdo_locmesh_t     *lm,
-                     cs_real_t                  *wvf,
-                     cs_real_t                  *pefc_vol)
+cs_compute_fwbs_q1(short int                   f,
+                   const cs_cdo_locmesh_t     *lm,
+                   cs_real_t                  *wvf,
+                   cs_real_t                  *pefc_vol)
 {
   const cs_quant_t  pfq = lm->face[f];
   const cs_nvec3_t  deq = lm->dedge[f];
@@ -202,11 +202,11 @@ cs_cdo_get_face_wbs1(short int                   f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_get_face_wbs2(short int                   f,
-                     const cs_cdo_locmesh_t     *lm,
-                     cs_real_3_t                 grd_c,
-                     cs_real_t                  *wvf,
-                     cs_real_t                  *pefc_vol)
+cs_compute_fwbs_q2(short int                   f,
+                   const cs_cdo_locmesh_t     *lm,
+                   cs_real_3_t                 grd_c,
+                   cs_real_t                  *wvf,
+                   cs_real_t                  *pefc_vol)
 {
   const cs_quant_t  pfq = lm->face[f];
   const cs_nvec3_t  deq = lm->dedge[f];
@@ -244,11 +244,11 @@ cs_cdo_get_face_wbs2(short int                   f,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_get_face_wbs3(short int                   f,
-                     const cs_cdo_locmesh_t     *lm,
-                     cs_real_3_t                 grd_c,
-                     cs_real_t                  *wvf,
-                     cs_real_t                  *pefc_vol)
+cs_compute_fwbs_q3(short int                   f,
+                   const cs_cdo_locmesh_t     *lm,
+                   cs_real_3_t                 grd_c,
+                   cs_real_t                  *wvf,
+                   cs_real_t                  *pefc_vol)
 {
   const cs_quant_t  pfq = lm->face[f];
   const cs_nvec3_t  deq = lm->dedge[f];

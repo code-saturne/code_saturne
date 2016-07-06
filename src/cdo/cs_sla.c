@@ -3680,9 +3680,9 @@ cs_sla_hmatrix_create(cs_lnum_t                   n_x,
   if (c2x == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " Stop creating a hybrid matrix: c2x connectivity index is NULL");
-  
+
   BFT_MALLOC(hm, 1, cs_sla_hmatrix_t);
-  
+
   /* Default initialization */
   hm->n_rows = n_x + n_cells;
   hm->n_x = n_x;
@@ -3716,7 +3716,7 @@ cs_sla_hmatrix_create(cs_lnum_t                   n_x,
 
   // index, symmetric, sorted, stride
   hm->xx_block = cs_sla_matrix_create_msr_from_index(x2x, bk00sym, true, 1);
-  
+
   return hm;
 }
 
@@ -3817,7 +3817,7 @@ cs_sla_hmatvec(const cs_sla_hmatrix_t   *hm,
 
     for (cs_lnum_t c_id = 0; c_id < hm->n_cells; c_id++) {
 
-      const double  c_val = vc[c_id]; 
+      const double  c_val = vc[c_id];
 
       for (cs_lnum_t j = hm->c2x->idx[c_id]; j < hm->c2x->idx[c_id+1]; j++) {
 
@@ -3835,7 +3835,7 @@ cs_sla_hmatvec(const cs_sla_hmatrix_t   *hm,
 
     for (cs_lnum_t c_id = 0; c_id < hm->n_cells; c_id++) {
 
-      const double  c_val = vc[c_id]; 
+      const double  c_val = vc[c_id];
 
       for (cs_lnum_t j = hm->c2x->idx[c_id]; j < hm->c2x->idx[c_id+1]; j++) {
 

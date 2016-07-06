@@ -892,7 +892,7 @@ cs_cdo_connect_init(const cs_mesh_t      *m)
 
   connect->v2v = NULL; /* Only defined if CDO-VB or CDO-VCB schemes are
                           requested */
-  
+
   /* Build a flag indicated if an element belongs to the interior or border of
      the computatinoal domain. Indicate also the related number of interior and
      border entities */
@@ -961,8 +961,10 @@ cs_cdo_connect_update(cs_cdo_connect_t       *connect,
                       bool                    do_vcb_scal,
                       bool                    do_fb_scal)
 {
+  CS_UNUSED(do_fb_scal);
+
   if (do_vb_scal || do_vcb_scal) {
-    
+
     /* Build a (sorted) v2v connectivity index */
     const cs_lnum_t  n_vertices = connect->v_info->n_elts;
     const cs_connect_index_t  *c2v = connect->c2v;

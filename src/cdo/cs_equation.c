@@ -903,7 +903,7 @@ _initialize_field_from_ic(cs_equation_t     *eq)
 
     /* Initialize cell-based array */
     cs_flag_t  cell_flag = dof_flag | cs_cdo_primal_cell;
-      
+
     cs_real_t  *cell_values = field->val;
     if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB)
       cell_values = eq->get_extra_values(eq->builder);
@@ -930,7 +930,7 @@ _initialize_field_from_ic(cs_equation_t     *eq)
     } // Loop on definitions
 
   } // FB or VCB schemes --> initialize on cells
-  
+
 }
 
 /*============================================================================
@@ -3046,7 +3046,7 @@ cs_equation_get_cell_values(const cs_equation_t    *eq)
     return eq->get_extra_values(eq->builder);
 
   default:
-    return NULL; // Not implemented 
+    return NULL; // Not implemented
   }
 
 }

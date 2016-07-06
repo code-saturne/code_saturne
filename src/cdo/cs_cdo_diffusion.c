@@ -232,7 +232,7 @@ _compute_wbs_stiffness(const cs_cdo_quantities_t   *quant,
 
     /* Compute the gradient of the lagrange function related to a cell
        in each p_{f,c} and the weights for each vertex related to this face */
-    cs_cdo_get_face_wbs2(f, lm, grd_c, wvf, pefc_vol);
+    cs_compute_fwbs_q2(f, lm, grd_c, wvf, pefc_vol);
 
     /* Loop on face edges to scan p_{e,f,c} subvolumes */
     for (int i = lm->f2e_idx[f], jj = 0; i < lm->f2e_idx[f+1]; i++, jj++) {
@@ -352,14 +352,14 @@ _compute_vcb_stiffness(const cs_cdo_quantities_t   *quant,
     /* Compute for the current face:
        - the gradient of the Lagrange function related xc in p_{f,c}
        - weights related to vertices
-       - subvolume p_{ef,c} related to edges 
+       - subvolume p_{ef,c} related to edges
     */
-    const double  pfc_vol = cs_cdo_get_face_wbs3(f, lm, grd_c, wvf, pefc_vol);
+    const double  pfc_vol = cs_compute_fwbs_q3(f, lm, grd_c, wvf, pefc_vol);
 
     /* Compute the contribution to the entry A(c,c) */
     cs_math_33_3_product(tensor, grd_c, matg_c);
     sloc->val[cc] += pfc_vol * _dp3(grd_c, matg_c);
-    
+
     /* Loop on face edges to scan p_{e,f,c} subvolumes */
     for (int i = lm->f2e_idx[f], jj = 0; i < lm->f2e_idx[f+1]; i++, jj++) {
 
@@ -960,9 +960,9 @@ cs_cdo_diffusion_get_grd_lvconf(const cs_cdo_quantities_t   *quant,
     /* Compute for the current face:
        - the gradient of the Lagrange function related xc in p_{f,c}
        - weights related to vertices
-       - subvolume p_{ef,c} related to edges 
+       - subvolume p_{ef,c} related to edges
     */
-    cs_cdo_get_face_wbs2(f, lm, grd_c, wvf, pefc_vol);
+    cs_compute_fwbs_q2(f, lm, grd_c, wvf, pefc_vol);
 
     double  p_f = 0.;
     for (short int v = 0; v < lm->n_vc; v++)

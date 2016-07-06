@@ -372,8 +372,6 @@ cs_reco_dfbyc_at_cell_center(cs_lnum_t                    c_id,
                              const double                *array,
                              cs_real_3_t                  val_xc)
 {
-  int  k;
-
   /* Initialization */
   val_xc[0] = val_xc[1] = val_xc[2] = 0.;
 
@@ -388,12 +386,12 @@ cs_reco_dfbyc_at_cell_center(cs_lnum_t                    c_id,
     const cs_quant_t  peq = quant->edge[e_id];
     const cs_real_t  edge_contrib = array[j]*peq.meas;
 
-    for (k = 0; k < 3; k++)
+    for (int k = 0; k < 3; k++)
       val_xc[k] += edge_contrib * peq.unitv[k];
 
   } // Loop on cell edges
 
-  for (k = 0; k < 3; k++)
+  for (int k = 0; k < 3; k++)
     val_xc[k] *= invvol;
 
 }
@@ -423,18 +421,16 @@ cs_reco_dfbyc_in_pec(cs_lnum_t                    c_id,
                      const double                *array,
                      cs_real_3_t                  val_pec)
 {
-  int  k;
-  double  val_fd, ecoef;
-  cs_dface_t  dfq;
-
   /* Initialize values */
   val_pec[0] = val_pec[1] = val_pec[2] = 0.;
 
   if (array == NULL)
     return;
 
+  cs_lnum_t  _je = -1;
   cs_real_3_t  val_c = {0., 0., 0.};
 
+  const cs_dface_t  *dfq = quant->dface;
   const double  invvol = 1/quant->cell_vol[c_id];
   const cs_quant_t  peq = quant->edge[e_id];
 
@@ -442,27 +438,28 @@ cs_reco_dfbyc_in_pec(cs_lnum_t                    c_id,
   for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++) {
 
     const cs_lnum_t  ej_id = c2e->ids[j];
-    const cs_quant_t  pejq = quant->edge[e_id];
-    const cs_real_t  ej_contrib = array[j]*peq.meas;
+    const cs_quant_t  pejq = quant->edge[ej_id];
 
-    if (e_id == ej_id) {
-      val_fd = array[j];
-      dfq = quant->dface[j];
-      ecoef = 1/(peq.meas * _dp3(dfq.vect, peq.unitv));
-    }
+    if (e_id == ej_id)
+      _je = j;
 
-    for (k = 0; k < 3; k++)
-      val_c[k] += ej_contrib * pejq.unitv[k];
+    for (int k = 0; k < 3; k++)
+      val_c[k] += array[j] * pejq.meas * pejq.unitv[k];
 
   } // Loop on cell edges
 
-  for (k = 0; k < 3; k++)
+  assert(_je != -1);  /* Sanity check */
+
+  /* Compute the constency part related to this cell */
+  for (int k = 0; k < 3; k++)
     val_c[k] *= invvol;
 
   /* Compute the reconstruction inside pec */
-  const double  e_contrib = ecoef*peq.meas * (val_fd - _dp3(dfq.vect,val_c));
-  for (k = 0; k < 3; k++)
-    val_pec[k] = val_c[k] + e_contrib*peq.unitv[k];
+  const double ecoef =
+    (array[_je] - _dp3(dfq[_je].vect,val_c)) / (_dp3(dfq[_je].vect, peq.unitv));
+
+  for (int k = 0; k < 3; k++)
+    val_pec[k] = val_c[k] + ecoef * peq.unitv[k];
 
 }
 

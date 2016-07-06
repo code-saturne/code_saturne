@@ -30,9 +30,10 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <string.h>
+#include <limits.h>
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -394,66 +395,64 @@ _compute_edge_quantities(const cs_mesh_t         *mesh,
 
 static void
 _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
-                          cs_cdo_quantities_t     *iq)    /* In/out */
+                          cs_cdo_quantities_t     *quant)    /* In/out */
 {
-  int  e_id, f_id, c_id, v_id, i, j, k, l, shift;
-  double  vol, xc[3], xv[3];
-  cs_quant_t  eq, fq;
-
-  cs_lnum_t  *cell_shift = NULL;
-
   const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_connect_index_t  *c2v = topo->c2v;
+  const cs_sla_matrix_t  *c2f = topo->c2f;
+  const cs_sla_matrix_t  *f2e = topo->f2e;
 
   /* Compute part of dual volume related to each primal cell */
-  BFT_MALLOC(iq->dcell_vol, topo->c2v->idx[iq->n_cells], double);
-  for (i = 0; i < topo->c2v->idx[iq->n_cells]; i++)
-    iq->dcell_vol[i] = 0.0;
+  const cs_lnum_t  c2v_idx_size = c2v->idx[quant->n_cells];
+  BFT_MALLOC(quant->dcell_vol, c2v_idx_size, double);
+# pragma omp parallel for if (c2v_idx_size > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < c2v_idx_size; i++)
+    quant->dcell_vol[i] = 0.0;
 
-  BFT_MALLOC(cell_shift, iq->n_cells, cs_lnum_t);
-  for (i = 0; i < iq->n_cells; i++)
-    cell_shift[i] = topo->c2v->idx[i];
+  /* Link between the mesh numbering and the cellwise numbering */
+  short int  *vtag = NULL;
+  BFT_MALLOC(vtag, quant->n_vertices, short int);
+# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < quant->n_vertices; i++)
+    vtag[i] = 0;
 
-  /* Fill array : one needs c2v->lst to be ordered. It should have been done. */
-  for (v_id = 0; v_id < iq->n_vertices; v_id++) {
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-    for (k = 0; k < 3; k++)
-      xv[k] = m->vtx_coord[3*v_id+k];
+    const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+    double  *v_vol = quant->dcell_vol + c2v->idx[c_id];
 
-    for (i = topo->v2e->idx[v_id]; i < topo->v2e->idx[v_id+1]; i++) {
+    /* Define vtag */
+    for (cs_lnum_t i = c2v->idx[c_id], ii = 0; i < c2v->idx[c_id+1]; i++, ii++)
+      vtag[c2v->ids[i]] = ii;
 
-      e_id = topo->v2e->col_id[i];
-      eq = iq->edge[e_id]; /* Get quantities related to this edge */
+    for (cs_lnum_t jf = c2f->idx[c_id]; jf < c2f->idx[c_id+1]; jf++) {
 
-      for (j = topo->e2f->idx[e_id]; j < topo->e2f->idx[e_id+1]; j++) {
+      const cs_lnum_t  f_id = topo->c2f->col_id[jf];
+      const cs_quant_t  pfq = quant->face[f_id];
 
-        f_id = topo->e2f->col_id[j];
-        fq = iq->face[f_id]; /* Get quantities related to this face */
+      for (cs_lnum_t je = f2e->idx[f_id]; je < f2e->idx[f_id+1]; je++) {
 
-        /* Get related cell(s) */
-        for (l = topo->f2c->idx[f_id]; l < topo->f2c->idx[f_id+1]; l++) {
+        const cs_lnum_t  e_id = f2e->col_id[je];
+        const cs_lnum_t  eshft = 2*e_id;
+        const cs_lnum_t  v1_id = topo->e2v->col_id[eshft];
+        const cs_lnum_t  v2_id = topo->e2v->col_id[eshft+1];
 
-          /* Get cell center */
-          c_id = topo->f2c->col_id[l];
-          for (k = 0; k < 3; k++)
-            xc[k] = iq->cell_centers[3*c_id+k];
+        const double pvol = 0.5 * cs_math_voltet(m->vtx_coord + 3*v1_id,
+                                                 m->vtx_coord + 3*v2_id,
+                                                 pfq.center,
+                                                 xc);
 
-          vol = cs_math_voltet(xv, eq.center, fq.center, xc);
+        v_vol[vtag[v1_id]] += pvol;
+        v_vol[vtag[v2_id]] += pvol;
 
-          shift = cell_shift[c_id];
-          if (topo->c2v->ids[shift] != v_id)
-            cell_shift[c_id] += 1, shift++;
-          iq->dcell_vol[shift] += vol;
+      } // Loop on face edges
 
-        } /* End of loop on cells related to this face */
+    } // Loop on cell faces
 
-      } /* End of loop on faces related to this edge */
-
-    } /* End of loop on edge related to this vertex */
-
-  } /* End of loop on vertices */
+  }  // Loop on cells
 
   /* Free buffer */
-  BFT_FREE(cell_shift);
+  BFT_FREE(vtag);
 }
 
 /*----------------------------------------------------------------------------
@@ -568,8 +567,6 @@ _saturn_algorithm(const cs_mesh_t             *mesh,
                   const cs_mesh_quantities_t  *mq,
                   cs_cdo_quantities_t         *cdoq) /* In/out */
 {
-  cs_lnum_t  i, j, k;
-
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
   const cs_lnum_t  n_b_faces = mesh->n_b_faces;
@@ -586,132 +583,86 @@ _saturn_algorithm(const cs_mesh_t             *mesh,
   memcpy(cdoq->cell_vol, mq->cell_vol, n_cells*sizeof(cs_real_t));
 
   cdoq->vol_tot = 0.0;
-  for (i = 0; i < n_cells; i++)
+  for (cs_lnum_t i = 0; i < n_cells; i++)
     cdoq->vol_tot += mq->cell_vol[i];
 
   /* Concatenate face centers for interior and border faces */
-  for (i = 0; i < n_i_faces; i++)
-    for (k = 0; k < 3; k++)
-      cdoq->face[i].center[k] = mq->i_face_cog[3*i+k];
-  for (j = 0; j < n_b_faces; j++, i++)
-    for (k = 0; k < 3; k++)
-      cdoq->face[i].center[k] = mq->b_face_cog[3*j+k];
+# pragma omp parallel for if (n_i_faces > CS_THR_MIN)
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
+    for (int k = 0; k < 3; k++)
+      cdoq->face[f_id].center[k] = mq->i_face_cog[3*f_id+k];
 
+  for (cs_lnum_t j = 0, f_id = n_i_faces; j < n_b_faces; j++, f_id++) {
+    for (int k = 0; k < 3; k++)
+      cdoq->face[f_id].center[k] = mq->b_face_cog[3*j+k];
+  }
 }
 
 /*----------------------------------------------------------------------------
   Algorithm for computing mesh quantities : cell centers are computed as the
-  vertex average over cell vertices. Same thing for face centers.
+  vertex average over cell vertices. Other quantities are copied from those
+  computed by Code_Saturne (default algorithm)
   ----------------------------------------------------------------------------*/
 
 static void
 _vtx_algorithm(const cs_mesh_t             *mesh,
                const cs_mesh_quantities_t  *mq,
                const cs_cdo_connect_t      *connect,
-               cs_cdo_quantities_t         *iq) /* In/out */
+               cs_cdo_quantities_t         *quant) /* In/out */
 {
-  int  i, j, k, c_id, f_id, v_id, s, e, n_face_vertices, count;
-  double  xf[3], xc[3], inv;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t  n_faces = n_i_faces + n_b_faces;
+  const cs_connect_index_t  *c2v = connect->c2v;
 
-  int  *vtag = NULL;
+  assert(mq != NULL);
 
-  const double  *xv = mesh->vtx_coord;
-  const int  n_cells = mesh->n_cells;
-  const int  n_vertices = mesh->n_vertices;
-  const int  n_i_faces = mesh->n_i_faces;
-  const int  n_b_faces = mesh->n_b_faces;
-  const int  n_faces = n_i_faces + n_b_faces;
-
-  /* Sanity check */
-  assert(connect->f2c != NULL);
-  assert(connect->c2f != NULL);
-
-  /* Build cell centers and face centers */
-  BFT_MALLOC(iq->face, n_faces, cs_quant_t);
-  BFT_MALLOC(iq->cell_centers, 3*n_cells, double);
-  BFT_MALLOC(vtag, n_vertices, int);
-  for (i = 0; i < n_vertices; i++)
-    vtag[i] = -1;
-
-  for (c_id = 0; c_id < n_cells; c_id++) {   /* Loop on cells */
-
-    count = 0; /* number of cell vertices */
-
-    for (k = 0; k < 3; k++)
-      xc[k] = 0.0;
-
-    for (i = connect->c2f->idx[c_id]; i < connect->c2f->idx[c_id+1]; i++) {
-
-      f_id = connect->c2f->col_id[i];
-      for (k = 0; k < 3; k++)
-        xf[k] = 0.0;
-
-      if (f_id < n_i_faces) { /* Interior faces */
-
-        s = mesh->i_face_vtx_idx[f_id], e = mesh->i_face_vtx_idx[f_id+1];
-        n_face_vertices = e - s;
-
-        for (j = s; j < e; j++) {
-
-          v_id = mesh->i_face_vtx_lst[j];
-          for (k = 0; k < 3; k++)
-            xf[k] += xv[3*v_id+k];
-
-          if (vtag[v_id] != c_id) { /* Not already computed */
-            count++;
-            vtag[v_id] = c_id;
-            for (k = 0; k < 3; k++)
-              xc[k] += xv[3*v_id+k];
-          }
-
-        } /* End of loop on face vertices */
-
-      }
-      else { /* Border faces */
-
-        int _f_id = f_id - n_i_faces;
-        s = mesh->b_face_vtx_idx[_f_id], e = mesh->b_face_vtx_idx[_f_id+1];
-        n_face_vertices = e - s;
-
-        for (j = s; j < e; j++) {
-
-          v_id = mesh->b_face_vtx_lst[j];
-          for (k = 0; k < 3; k++)
-            xf[k] += xv[3*v_id+k];
-
-          if (vtag[v_id] != c_id) { /* Not already computed */
-            count++;
-            vtag[v_id] = c_id;
-            for (k = 0; k < 3; k++)
-              xc[k] += xv[3*v_id+k];
-          }
-
-        } /* End of loop on face vertices */
-
-      } /* End of border faces */
-
-      inv = 1/n_face_vertices;
-      for (k = 0; k < 3; k++)
-        iq->face[f_id].center[k] = inv*xf[k];
-
-    } /* End of loop on cell faces */
-
-    inv = 1/count;
-    for (k = 0; k < 3; k++)
-      iq->cell_centers[3*c_id+k] = inv*xc[k];
-
-  } /* End of loop on cells */
-
-  /* Free memory */
-  BFT_FREE(vtag);
+  BFT_MALLOC(quant->face, n_faces, cs_quant_t);
+  BFT_MALLOC(quant->cell_centers, 3*n_cells, cs_real_t);
+  BFT_MALLOC(quant->cell_vol, n_cells, cs_real_t);
 
   /* Copy cell volumes and compute vol_tot */
-  BFT_MALLOC(iq->cell_vol, n_cells, double);
-  iq->vol_tot = 0.0;
-  for (i = 0; i < n_cells; i++) {
-    iq->cell_vol[i] = mq->cell_vol[i];
-    iq->vol_tot += mq->cell_vol[i];
-  }
+  memcpy(quant->cell_vol, mq->cell_vol, n_cells*sizeof(cs_real_t));
+  quant->vol_tot = 0.0;
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    quant->vol_tot += mq->cell_vol[i];
+
+  /* Concatenate face centers for interior and border faces */
+# pragma omp parallel for if (n_i_faces > CS_THR_MIN)
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
+    for (int k = 0; k < 3; k++)
+      quant->face[f_id].center[k] = mq->i_face_cog[3*f_id+k];
+
+  for (cs_lnum_t j = 0, f_id = n_i_faces; j < n_b_faces; j++, f_id++)
+    for (int k = 0; k < 3; k++)
+      quant->face[f_id].center[k] = mq->b_face_cog[3*j+k];
+
+  /* Compute cell centers */
+  for (cs_lnum_t  c_id = 0; c_id < n_cells; c_id++) {
+
+    const cs_lnum_t  vs = c2v->idx[c_id];
+    const cs_lnum_t  ve = c2v->idx[c_id+1];
+
+    /* Sanity checks */
+    assert(ve - vs > 0);
+    assert(ve - vs < SHRT_MAX);
+
+    const double  coef = 1/(ve-vs);
+    double  *xc = quant->cell_centers + 3*c_id;
+
+    xc[0] = xc[1] = xc[2] = 0;
+    for (cs_lnum_t jv = vs; jv < ve; jv++) {
+
+      const cs_real_t  *xv = mesh->vtx_coord + 3*c2v->ids[jv];
+
+      xc[0] += coef * xv[0];
+      xc[1] += coef * xv[1];
+      xc[2] += coef * xv[2];
+
+    } // Loop on cell vertices
+
+  } // Loop on cells
 
 }
 
@@ -727,7 +678,7 @@ static void
 _mirtich_algorithm(const cs_mesh_t             *mesh,
                    const cs_mesh_quantities_t  *mq,
                    const cs_cdo_connect_t      *connect,
-                   cs_cdo_quantities_t         *iq) /* In/out */
+                   cs_cdo_quantities_t         *quant) /* In/out */
 {
   cs_lnum_t  i, k, c_id, f_id, A, B, C, sgn;
   double  Fvol, inv_surf;
@@ -736,7 +687,7 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
 
   const int X = 0, Y = 1, Z = 2;
   const cs_lnum_t n_cells = mesh->n_cells;
-  const cs_lnum_t n_faces = iq->n_faces;
+  const cs_lnum_t n_faces = quant->n_faces;
 
   /* Sanity check */
 
@@ -745,14 +696,14 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
 
   /* Allocate and initialize cell quantities */
 
-  BFT_MALLOC(iq->face, n_faces, cs_quant_t);
-  BFT_MALLOC(iq->cell_centers, 3*n_cells, cs_real_t);
-  BFT_MALLOC(iq->cell_vol, n_cells, cs_real_t);
+  BFT_MALLOC(quant->face, n_faces, cs_quant_t);
+  BFT_MALLOC(quant->cell_centers, 3*n_cells, cs_real_t);
+  BFT_MALLOC(quant->cell_vol, n_cells, cs_real_t);
 
   for (i = 0; i < n_cells; i++) {
-    iq->cell_vol[i] = 0.0;
+    quant->cell_vol[i] = 0.0;
     for (k = 0; k < 3; k++)
-      iq->cell_centers[3*i+k] = 0.0;
+      quant->cell_centers[3*i+k] = 0.0;
   }
 
   for (f_id = 0; f_id < n_faces; f_id++) {   /* Loop on faces */
@@ -770,9 +721,9 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
     fsubq = _get_fsub_quantities(f_id, connect, mesh->vtx_coord, fspec);
 
     inv_surf = 1.0/fsubq.F1;
-    iq->face[f_id].center[A] = inv_surf * fsubq.Fa;
-    iq->face[f_id].center[B] = inv_surf * fsubq.Fb;
-    iq->face[f_id].center[C] = inv_surf * fsubq.Fc;
+    quant->face[f_id].center[A] = inv_surf * fsubq.Fa;
+    quant->face[f_id].center[B] = inv_surf * fsubq.Fb;
+    quant->face[f_id].center[C] = inv_surf * fsubq.Fc;
 
     /* Update cell quantities */
     for (i = connect->f2c->idx[f_id]; i < connect->f2c->idx[f_id+1]; i++) {
@@ -783,39 +734,39 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
       Fvol = ( (fspec.XYZ[X] == 0) ? fsubq.Fa :
                ( (fspec.XYZ[Y] == 0) ? fsubq.Fb : fsubq.Fc) );
 
-      iq->cell_vol[c_id] += sgn * fspec.q.unitv[0] * Fvol;
-      iq->cell_centers[3*c_id + A] += sgn * fspec.q.unitv[A] * fsubq.Fa2;
-      iq->cell_centers[3*c_id + B] += sgn * fspec.q.unitv[B] * fsubq.Fb2;
-      iq->cell_centers[3*c_id + C] += sgn * fspec.q.unitv[C] * fsubq.Fc2;
+      quant->cell_vol[c_id] += sgn * fspec.q.unitv[0] * Fvol;
+      quant->cell_centers[3*c_id + A] += sgn * fspec.q.unitv[A] * fsubq.Fa2;
+      quant->cell_centers[3*c_id + B] += sgn * fspec.q.unitv[B] * fsubq.Fb2;
+      quant->cell_centers[3*c_id + C] += sgn * fspec.q.unitv[C] * fsubq.Fc2;
 
     } /* End of loop on cell faces */
 
   } /* End of loop on faces */
 
   /* Compute cell center of gravity and total volume */
-  iq->vol_tot = 0.0;
+  quant->vol_tot = 0.0;
 
   for (i = 0; i < n_cells; i++) {
 
-    double  inv_vol2 = 0.5 / iq->cell_vol[i];
+    double  inv_vol2 = 0.5 / quant->cell_vol[i];
 
-    iq->vol_tot += iq->cell_vol[i];
+    quant->vol_tot += quant->cell_vol[i];
 
     for (k = 0; k < 3; k++)
-      iq->cell_centers[3*i+k] *= inv_vol2;
+      quant->cell_centers[3*i+k] *= inv_vol2;
 
 #if CDO_QUANTITIES_DBG > 1
     printf("\n (%4d) volINNOV: % -12.5e | volSAT % -12.5e | %-12.5e\n",
-           i+1, iq->cell_vol[i], mq->cell_vol[i],
-           fabs(iq->cell_vol[i] - mq->cell_vol[i]));
+           i+1, quant->cell_vol[i], mq->cell_vol[i],
+           fabs(quant->cell_vol[i] - mq->cell_vol[i]));
     printf(" INNOVccog (% -.4e, % -.4e, % -.4e)",
-           iq->cell_centers[3*i], iq->cell_centers[3*i+1],
-           iq->cell_centers[3*i+2]);
+           quant->cell_centers[3*i], quant->cell_centers[3*i+1],
+           quant->cell_centers[3*i+2]);
     printf(" SATccog (% -.4e, % -.4e, % -.4e) Delta (% -.4e, % -.4e, % -.4e)\n",
            mq->cell_cen[3*i],mq->cell_cen[3*i+1],mq->cell_cen[3*i+2],
-           fabs(iq->cell_centers[3*i]-mq->cell_cen[3*i]),
-           fabs(iq->cell_centers[3*i+1]-mq->cell_cen[3*i+1]),
-           fabs(iq->cell_centers[3*i+2]-mq->cell_cen[3*i+2]));
+           fabs(quant->cell_centers[3*i]-mq->cell_cen[3*i]),
+           fabs(quant->cell_centers[3*i+1]-mq->cell_cen[3*i+1]),
+           fabs(quant->cell_centers[3*i+2]-mq->cell_cen[3*i+2]));
 #endif
 
   }
@@ -843,13 +794,8 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *mq,
                         const cs_cdo_connect_t      *topo)
 {
-  short int  sgn;
-  cs_lnum_t  i, j, k, c_id, f_id, idx_size;
-  double  vec[3];
-  cs_nvec3_t  v;
-
   cs_cdo_quantities_t  *cdoq = NULL;
-  cs_cdo_cc_algo_t cc_algo = CS_CDO_CC_SATURNE; // default value
+  cs_cdo_cc_algo_t  cc_algo = CS_CDO_CC_SATURNE; // default value
 
   /* Sanity check */
   assert(topo != NULL);
@@ -906,44 +852,47 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
 
   /* Finalize definition of cs_quant_t struct. for faces.
      Define face normal with unitary norm and face area */
-  for (i = 0; i < m->n_i_faces; i++) {
-    cs_nvec3((mq->i_face_normal + 3*i), &v);
-    cdoq->face[i].meas = v.meas;
-    for (k = 0; k < 3; k++)
-      cdoq->face[i].unitv[k] = v.unitv[k];
+# pragma omp parallel for if (m->n_i_faces > CS_THR_MIN)
+  for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id++) {
+    cs_nvec3_t  v;
+    cs_nvec3((mq->i_face_normal + 3*f_id), &v);
+    cdoq->face[f_id].meas = v.meas;
+    for (int k = 0; k < 3; k++)
+      cdoq->face[f_id].unitv[k] = v.unitv[k];
   }
 
-  for (i = 0, j = m->n_i_faces; i < m->n_b_faces; i++, j++) {
+  for (cs_lnum_t i = 0, f_id = m->n_i_faces; i < m->n_b_faces; i++, f_id++) {
+    cs_nvec3_t  v;
     cs_nvec3((mq->b_face_normal + 3*i), &v);
-    cdoq->face[j].meas = v.meas;
-    for (k = 0; k < 3; k++)
-      cdoq->face[j].unitv[k] = v.unitv[k];
+    cdoq->face[f_id].meas = v.meas;
+    for (int k = 0; k < 3; k++)
+      cdoq->face[f_id].unitv[k] = v.unitv[k];
   }
 
   /* Compute dual edge quantities */
-  idx_size = topo->c2f->idx[cdoq->n_cells];
+  const cs_lnum_t  idx_size = topo->c2f->idx[cdoq->n_cells];
+  const cs_sla_matrix_t  *c2f = topo->c2f;
+
   BFT_MALLOC(cdoq->dedge, idx_size, cs_nvec3_t);
 
-  for (c_id = 0; c_id < cdoq->n_cells; c_id++) {
+# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
     cs_real_t  *xc = cdoq->cell_centers + 3*c_id;
 
-    for (i = topo->c2f->idx[c_id]; i < topo->c2f->idx[c_id+1]; i++) {
+    for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
-      f_id = topo->c2f->col_id[i];
-      sgn = topo->c2f->sgn[i];
-      for (k = 0; k < 3; k++)
-        vec[k] = cdoq->face[f_id].center[k] - xc[k];
+      cs_lnum_t  f_id = c2f->col_id[i];
+      short int  sgn = c2f->sgn[i];
 
-      /* Fill dedge */
-      double  meas = _n3(vec);
-      double  inv = 1.0/meas;
+      cs_math_3_length_unitv(xc, cdoq->face[f_id].center,
+                             &(cdoq->dedge[i].meas),
+                             cdoq->dedge[i].unitv);
 
-      cdoq->dedge[i].meas = meas;
-      for (k = 0; k < 3; k++)
-        cdoq->dedge[i].unitv[k] = sgn*inv*vec[k];
+      for (int k = 0; k < 3; k++)
+        cdoq->dedge[i].unitv[k] *= sgn;
 
-    }
+    } // Loop on cell faces
 
   } /* End of loop on cells */
 
@@ -1199,57 +1148,6 @@ cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
 
   /* Return pointer */
   *p_pvol = pvol;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute for each face a weight related to each vertex w_{v,f}
- *         This weight is equal to |dc(v) cap f|/|f| so that the sum of the
- *         weights is equal to 1.
- *
- * \param[in]      f_id      id of the face
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in]      quant     pointer to a cs_cdo_quantites_t structure
- * \param[in]      loc_ids   indirection to a local numbering
- * \param[in, out] wf        already allocated to n_max_vbyc (reset)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_compute_face_weights(cs_lnum_t                   f_id,
-                        const cs_cdo_connect_t     *connect,
-                        const cs_cdo_quantities_t  *quant,
-                        const short int             loc_ids[],
-                        double                      wf[])
-{
-  cs_lnum_t  ii;
-  double  contrib, len;
-  cs_real_3_t  un, cp;
-
-  const cs_quant_t  pfq = quant->face[f_id];
-  const double  invsurf = 1/pfq.meas;
-
-  /* Reset weighting */
-  for (ii = 0; ii < connect->n_max_vbyc; ii++) wf[ii] = 0;
-
-  /* Compute a weight for each vertex of the current face */
-  for (ii = connect->f2e->idx[f_id]; ii < connect->f2e->idx[f_id+1]; ii++) {
-
-    cs_lnum_t  e_id = connect->f2e->col_id[ii];
-    cs_quant_t  peq = quant->edge[e_id];
-    cs_lnum_t  v1_id = connect->e2v->col_id[2*e_id];
-    cs_lnum_t  v2_id = connect->e2v->col_id[2*e_id+1];
-
-    cs_math_3_length_unitv(peq.center, pfq.center, &len, un);
-    cs_math_3_cross_product(un, peq.unitv, cp);
-
-    contrib = 0.25 * peq.meas * len * _n3(cp) * invsurf;
-
-    wf[loc_ids[v1_id]] += contrib;
-    wf[loc_ids[v2_id]] += contrib;
-
-  } /* End of loop on face edges */
-
 }
 
 /*----------------------------------------------------------------------------*/

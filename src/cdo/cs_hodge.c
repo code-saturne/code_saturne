@@ -1153,7 +1153,7 @@ _cellwise_build_with_wbs(const cs_cdo_locmesh_t      *lm,
   for (short int f = 0; f < lm->n_fc; f++) {
 
     /* Define useful quantities for WBS algo. */
-    cs_cdo_get_face_wbs0(f, lm, hq->wvf, hq->w_vol); 
+    cs_compute_fwbs_q0(f, lm, hq->wvf, hq->w_vol);
 
     for (int i = lm->f2e_idx[f], ii = 0; i < lm->f2e_idx[f+1]; i++, ii++) {
 
@@ -1261,7 +1261,7 @@ _cellwise_build_with_hvc(const cs_cdo_locmesh_t      *lm,
   /* H(c,c) = 0.1*|c| */
   m->ids[lm->n_vc] = lm->c_id;
   m->val[msize*lm->n_vc + lm->n_vc] = 0.1*lm->vol_c;
-  
+
   /* Initialize the upper part of the local Hodge matrix
      diagonal and cell column entries */
   for (short int vi = 0; vi < lm->n_vc; vi++) {
@@ -1280,7 +1280,7 @@ _cellwise_build_with_hvc(const cs_cdo_locmesh_t      *lm,
   for (short int f = 0; f < lm->n_fc; f++) {
 
     /* Define useful quantities for WBS algo. */
-    const double pfc_vol = cs_cdo_get_face_wbs1(f, lm, hq->wvf, hq->w_vol); 
+    const double pfc_vol = cs_compute_fwbs_q1(f, lm, hq->wvf, hq->w_vol);
     const double f_coef = 0.3 * pfc_vol;
 
     /* Add face contribution:
@@ -1290,10 +1290,10 @@ _cellwise_build_with_hvc(const cs_cdo_locmesh_t      *lm,
 
       const double  coef_if = f_coef * hq->wvf[vi];
       double  *mi = m->val + vi*msize;
-  
+
       /* Diagonal and Extra-diagonal entries: Add face contribution */
       for (short int vj = vi; vj < lm->n_vc; vj++)
-        mi[vj] += coef_if * hq->wvf[vj]; 
+        mi[vj] += coef_if * hq->wvf[vj];
 
     } // Extra-diag entries
 

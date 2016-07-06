@@ -66,8 +66,8 @@ typedef struct {
 
 } cs_connect_index_t;
 
-/* Structure enabling the repeated usage of local dense matrix associated
-   with a local set of entities */
+/* Structure enabling the repeated usage of local dense square matrix
+   associated  with a local set of entities */
 typedef struct {
 
   int         n_max_ent;  // max number of entities by primal cells
@@ -122,7 +122,7 @@ typedef struct {
 /*!
  * \brief  Compute the euclidean norm 2 of a vector of size len
  *         This algorithm tries to reduce round-off error thanks to
- *          intermediate sums.
+ *         intermediate sums.
  *
  *  \param[in] len     vector dimension
  *  \param[in] v       vector
