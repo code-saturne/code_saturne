@@ -857,6 +857,77 @@ cs_cdo_diffusion_get_tmp_buffers(const cs_cdo_diff_t   *diff,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Define a cell --> Dirichlet boundary faces connectivity
+ *
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      dir_face     pointer to a cs_cdo_bc_list_t structure
+ * \param[in, out] c2bcbf_idx   pointer to the index to build
+ * \param[in, out] c2bcbf_ids   pointer to the list of ids to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_build_c2bcbf(const cs_cdo_connect_t    *connect,
+                              const cs_cdo_bc_list_t    *dir_face,
+                              cs_lnum_t                 *p_c2bcbf_idx[],
+                              cs_lnum_t                 *p_c2bcbf_ids[])
+{
+  cs_lnum_t  *c2bcbf_idx = NULL, *c2bcbf_ids = NULL;
+
+  const cs_lnum_t  n_i_faces = connect->f_info->n_i_elts;
+  const cs_lnum_t  n_cells = connect->c_info->n_elts;
+  const cs_sla_matrix_t  *f2c = connect->f2c;
+
+  /* Allocation and initialization */
+  BFT_MALLOC(c2bcbf_idx, n_cells + 1, cs_lnum_t);
+
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells + 1; c_id++)
+    c2bcbf_idx[c_id] = 0;
+
+  /* First pass: Loop on Dirichlet faces to build index */
+  for (cs_lnum_t i = 0; i < dir_face->n_elts; i++) {
+
+    cs_lnum_t  f_id = dir_face->elt_ids[i] + n_i_faces;
+    cs_lnum_t  c_id = f2c->col_id[f2c->idx[f_id]];
+
+    assert(f2c->idx[f_id+1] - f2c->idx[f_id] == 1); // check if border
+    c2bcbf_idx[c_id+1] += 1;
+
+  }
+
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    c2bcbf_idx[i+1] += c2bcbf_idx[i];
+
+  /* Second pass: Loop on Dirichlet faces to build list of ids */
+  BFT_MALLOC(c2bcbf_ids, c2bcbf_idx[n_cells], cs_lnum_t);
+
+  short int  *count = NULL;
+  BFT_MALLOC(count, n_cells, short int);
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    count[i] = 0;
+
+  for (cs_lnum_t i = 0; i < dir_face->n_elts; i++) {
+
+    cs_lnum_t  f_id = dir_face->elt_ids[i] + n_i_faces;
+    cs_lnum_t  c_id = connect->f2c->col_id[connect->f2c->idx[f_id]];
+    cs_lnum_t  shft = c2bcbf_idx[c_id] + count[c_id];
+
+    c2bcbf_ids[shft] = f_id;
+    count[c_id] += 1;
+
+  }
+
+  BFT_FREE(count);
+
+  /* Return pointers */
+  *p_c2bcbf_idx = c2bcbf_idx;
+  *p_c2bcbf_ids = c2bcbf_ids;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Define the local (cellwise) stiffness matrix
  *
  * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
@@ -976,9 +1047,6 @@ cs_cdo_diffusion_weak_bc(cs_lnum_t                    f_id,
     }
   }
   assert(f != -1);
-
-  bft_printf(" f_id: %d, c_id: %d, f %d, n_fc: %d\n",
-             f_id, cm->c_id, f, cm->n_fc);
 
   /* Compute the product: matpty*face unit normal */
   const cs_quant_t  pfq = cm->face[f];

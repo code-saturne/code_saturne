@@ -31,6 +31,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_cdo.h"
+#include "cs_cdo_bc.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
@@ -116,6 +117,23 @@ void
 cs_cdo_diffusion_get_tmp_buffers(const cs_cdo_diff_t   *diff,
                                  cs_real_3_t          **tmp_vec,
                                  cs_real_t            **tmp_sca);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Define a cell --> Dirichlet boundary faces connectivity
+ *
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      dir_face     pointer to a cs_cdo_bc_list_t structure
+ * \param[in, out] c2bcbf_idx   pointer to the index to build
+ * \param[in, out] c2bcbf_ids   pointer to the list of ids to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_build_c2bcbf(const cs_cdo_connect_t    *connect,
+                              const cs_cdo_bc_list_t    *dir_face,
+                              cs_lnum_t                 *p_c2bcbf_idx[],
+                              cs_lnum_t                 *p_c2bcbf_ids[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
