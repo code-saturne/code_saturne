@@ -33,6 +33,7 @@
 
 #include "cs_cdo.h"
 #include "cs_cdo_connect.h"
+#include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
 #include "cs_param.h"
 #include "cs_property.h"
@@ -82,9 +83,9 @@ typedef enum {
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                       const cs_cdo_connect_t       *connect,
-                                       const cs_time_step_t         *time_step);
+cs_advection_field_set_shared_pointers(const cs_cdo_quantities_t   *quant,
+                                       const cs_cdo_connect_t      *connect,
+                                       const cs_time_step_t        *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -303,6 +304,33 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
                                    const cs_param_advection_t    a_info,
                                    const cs_adv_field_t         *adv,
                                    cs_real_t                    *fluxes);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the flux of the advection field across the
+ *         triangle defined by the two vertices of an edge and the barycenter
+ *         of a face.
+ *
+ * \param[in]  adv       pointer to a cs_adv_field_t structure
+ * \param[in]  a_info    set of parameters for the advection operator
+ * \param[in]  cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]  f         id of the face in the current cell
+ * \param[in]  e         id of the edge in the current cell
+ * \param[in]  v1        id of the first vertex in the current cell
+ * \param[in]  v2        id of the second vertex in the current cell
+ *
+ * \return the value of the flux across tef
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
+                                const cs_param_advection_t   a_info,
+                                const cs_cell_mesh_t        *cm,
+                                short int                    f,
+                                short int                    e,
+                                short int                    v1,
+                                short int                    v2);
 
 /*----------------------------------------------------------------------------*/
 /*!

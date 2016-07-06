@@ -45,10 +45,10 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
 #include "cs_cdo_scheme_geometry.h"
-#include "cs_cdovb_advection.h"
 #include "cs_equation_common.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
@@ -94,7 +94,7 @@ struct _cs_cdovb_scaleq_t {
   cs_lnum_t  n_dof_vertices; /* n_rows = n_cols = n_vertices - dir. vertices */
 
   /* Shortcut to know what to build */
-  bool                   todo[N_CDO_TERMS];
+  bool                   has[N_CDO_TERMS];
   cs_flag_t              flag;
 
   /* Common members for all terms */
@@ -106,7 +106,7 @@ struct _cs_cdovb_scaleq_t {
   cs_cdo_diff_t         *diff;
 
   /* Builder structure for advection term */
-  cs_cdovb_adv_t        *adv;
+  cs_cdo_adv_t          *adv;
 
   /* Time term */
   bool                   time_pty_uniform;
@@ -193,10 +193,10 @@ _add_source_terms(cs_cdovb_scaleq_t     *b,
 {
   const cs_equation_param_t  *eqp = b->eqp;
 
-  if (!b->todo[CDO_SOURCETERM]) // Test if there is at least one source term
+  if (!b->has[CDO_SOURCETERM]) // Test if there is at least one source term
     return;
 
-  if (b->todo[CDO_TIME]) {
+  if (b->has[CDO_TIME]) {
 
     const cs_param_time_t  t_info = eqp->time_info;
 
@@ -340,7 +340,7 @@ _apply_time_scheme(double                   tpty_val,
          Set the local matrix to a (time) diagonal matrix */
       for (short int v = 0; v < cm->n_vc; v++) {
 
-        const double dval_v = tpty_val * cm->wvc[v];
+        const double dval_v = tpty_val * cm->wvc[v]; // |c|*wvc=|dcell(v) cap c|
 
         loc_mat->val[v*loc_mat->n_ent + v] = dval_v;
         loc_rhs[v] += -adr_pn[v] + dval_v * fval[v];
@@ -441,7 +441,7 @@ _apply_time_scheme(double                   tpty_val,
       for (short int v = 0; v < cm->n_vc; v++)
         loc_rhs[v] += tpty_val * adr_pn[v];
 
-      /* Update the local system with the time diagonal matrix */
+      /* Update the local system with the time matrix */
       for (short int vi = 0; vi < cm->n_vc; vi++) {
 
         double  *mi = loc_mat->val + vi*loc_mat->n_ent;
@@ -531,7 +531,7 @@ _compute_dir_values(const cs_mesh_t            *mesh,
 
   if (builder->enforce == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
       builder->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
-    if (builder->todo[CDO_TIME]) {
+    if (builder->has[CDO_TIME]) {
 
       const cs_param_time_t  t_info = eqp->time_info;
 
@@ -805,11 +805,11 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   b->n_dof_vertices = n_vertices;
 
   /* Store a direct access to which term one has to compute */
-  b->todo[CDO_DIFFUSION] = (eqp->flag & CS_EQUATION_DIFFUSION) ? true : false;
-  b->todo[CDO_ADVECTION] = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
-  b->todo[CDO_REACTION] = (eqp->flag & CS_EQUATION_REACTION) ? true : false;
-  b->todo[CDO_TIME] = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
-  b->todo[CDO_SOURCETERM] = (eqp->n_source_terms > 0) ? true : false;
+  b->has[CDO_DIFFUSION] = (eqp->flag & CS_EQUATION_DIFFUSION) ? true : false;
+  b->has[CDO_ADVECTION] = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
+  b->has[CDO_REACTION] = (eqp->flag & CS_EQUATION_REACTION) ? true : false;
+  b->has[CDO_TIME] = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
+  b->has[CDO_SOURCETERM] = (eqp->n_source_terms > 0) ? true : false;
 
   /* Initialization of members common to several terms */
   b->flag = 0;
@@ -822,7 +822,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   /* Diffusion part */
   b->diff = NULL;
   b->diff_pty_uniform = false;
-  if (b->todo[CDO_DIFFUSION]) {
+  if (b->has[CDO_DIFFUSION]) {
 
     bool is_uniform = cs_property_is_uniform(eqp->diffusion_property);
 
@@ -837,16 +837,13 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 
   /* Advection part */
   b->adv = NULL;
-  if (b->todo[CDO_ADVECTION])
-    b->adv = cs_cdovb_advection_builder_init(connect,
-                                             eqp->advection_field,
-                                             eqp->advection_info,
-                                             b->todo[CDO_DIFFUSION]);
+  if (b->has[CDO_ADVECTION])
+    b->adv = cs_cdo_advection_builder_init(connect, eqp, b->has[CDO_DIFFUSION]);
 
   /* Reaction part */
   b->reaction_pty_val = NULL;
   b->reaction_pty_uniform = NULL;
-  if (b->todo[CDO_REACTION]) {
+  if (b->has[CDO_REACTION]) {
 
     if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_WBS)
       b->flag |= CS_CDO_BUILD_LOC_HCONF;
@@ -868,7 +865,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   b->time_mat_is_diag = false;
   b->time_pty_uniform = false;
   b->time_pty_val = 0.;
-  if (b->todo[CDO_TIME]) {
+  if (b->has[CDO_TIME]) {
 
     b->time_pty_uniform = cs_property_is_uniform(eqp->time_property);
     if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI)
@@ -884,7 +881,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 
   /* Source term part */
   b->source_terms = NULL;
-  if (b->todo[CDO_SOURCETERM]) {
+  if (b->has[CDO_SOURCETERM]) {
 
     BFT_MALLOC(b->source_terms, b->n_vertices, cs_real_t);
 
@@ -943,7 +940,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   case CS_PARAM_BC_ENFORCE_STRONG:
     if (b->vtx_dir->n_elts > 0) {
 
-      if (b->todo[CDO_ADVECTION] || b->todo[CDO_TIME])
+      if (b->has[CDO_ADVECTION] || b->has[CDO_TIME])
         bft_error(__FILE__, __LINE__, 0,
                   " Invalid choice of enforcement of the boundary conditions.\n"
                   " Strong enforcement is not implemented when convection or"
@@ -983,7 +980,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    if (b->todo[CDO_DIFFUSION])
+    if (b->has[CDO_DIFFUSION])
       cs_cdo_diffusion_build_c2bcbf(connect,
                                     b->face_bc->dir,
                                     &(b->c2bcbf_idx),
@@ -1023,7 +1020,7 @@ cs_cdovb_scaleq_free(void   *builder)
     b->hb = cs_hodge_builder_free(b->hb);
 
   /* Free builder sub-structures */
-  if (b->todo[CDO_DIFFUSION]) {
+  if (b->has[CDO_DIFFUSION]) {
     b->diff = cs_cdo_diffusion_builder_free(b->diff);
 
     if (b->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM ||
@@ -1034,15 +1031,15 @@ cs_cdovb_scaleq_free(void   *builder)
 
   }
 
-  if (b->todo[CDO_ADVECTION])
-    b->adv = cs_cdovb_advection_builder_free(b->adv);
+  if (b->has[CDO_ADVECTION])
+    b->adv = cs_cdo_advection_builder_free(b->adv);
 
-  if (b->todo[CDO_REACTION]) {
+  if (b->has[CDO_REACTION]) {
     BFT_FREE(b->reaction_pty_uniform);
     BFT_FREE(b->reaction_pty_val);
   }
 
-  if (b->todo[CDO_SOURCETERM])
+  if (b->has[CDO_SOURCETERM])
     BFT_FREE(b->source_terms);
 
   /* Free BC structure */
@@ -1212,13 +1209,13 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
                                         true,   // sorted
                                         1);     // stride
 
-  if (!b->todo[CDO_ADVECTION] && b->enforce != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
+  if (!b->has[CDO_ADVECTION] && b->enforce != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
     sys_mat->flag |= CS_SLA_MATRIX_SYM;
 
   /* Preparatory step for diffusion term */
   cs_real_33_t  diff_tensor = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
-  if (b->todo[CDO_DIFFUSION]) {
+  if (b->has[CDO_DIFFUSION]) {
 
     cs_hodge_builder_t  *hb = cs_cdo_diffusion_get_hodge_builder(b->diff);
 
@@ -1237,16 +1234,16 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
   }
 
   /* Preparatory step for advection term */
-  if (b->todo[CDO_ADVECTION])
+  if (b->has[CDO_ADVECTION])
     cm_flag |=  CS_CDO_LOCAL_F | CS_CDO_LOCAL_FE;
 
   /* Preparatory step for unsteady term */
-  if (b->todo[CDO_TIME])
+  if (b->has[CDO_TIME])
     if (b->time_pty_uniform)
       b->time_pty_val = cs_property_get_cell_value(0, eqp->time_property);
 
   /* Preparatory step for reaction term */
-  if (b->todo[CDO_REACTION]) {
+  if (b->has[CDO_REACTION]) {
 
     for (int r = 0; r < eqp->n_reaction_terms; r++) {
       if (b->reaction_pty_uniform[r]) {
@@ -1320,7 +1317,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
       cs_cell_sys->mat->val[v] = 0;
 
     /* DIFFUSION TERM */
-    if (b->todo[CDO_DIFFUSION]) { /* Define the local stiffness matrix */
+    if (b->has[CDO_DIFFUSION]) { /* Define the local stiffness matrix */
 
       if (b->diff_pty_uniform == false)
         cs_property_get_cell_tensor(c_id,
@@ -1365,10 +1362,11 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
     } /* DIFFUSION */
 
     /* ADVECTION TERM */
-    if (b->todo[CDO_ADVECTION]) { /* Define the local advection matrix */
+    if (b->has[CDO_ADVECTION]) { /* Define the local advection matrix */
 
       cs_locmat_t  *adv_mat =
         cs_cdovb_advection_build_local(cm,
+                                       eqp,
                                        (const cs_real_3_t (*))diff_tensor,
                                        b->adv);
 
@@ -1383,7 +1381,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
       if (cell_flag[c_id] & CS_CDO_CONNECT_BD) {
 
         /* cs_cell_sys is updated inside (matrix and rhs) */
-        cs_cdovb_advection_add_bc(quant, cm, b->adv, cs_cell_sys);
+        cs_cdovb_advection_add_bc(cm, eqp, b->adv, cs_cell_sys);
 
       } // Apply BC
 
@@ -1393,7 +1391,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
       hconf_c = cs_hodge_build_cellwise(cm, b->hb);
 
     /* REACTION TERM */
-    if (b->todo[CDO_REACTION]) { /* Define the local reaction matrix */
+    if (b->has[CDO_REACTION]) { /* Define the local reaction matrix */
 
       double  rpty_val = 0;
       for (int r = 0; r < eqp->n_reaction_terms; r++) // Loop on reaction terms
@@ -1409,7 +1407,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
     } /* REACTION */
 
     /* TIME CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
-    if (b->todo[CDO_TIME]) {
+    if (b->has[CDO_TIME]) {
 
       /* Get the value of the time property */
       double  tpty_val = 0;
@@ -1420,8 +1418,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
 
       /* Apply the time discretization to the local system.
          Update cs_cell_sys (matrix and rhs) */
-      _apply_time_scheme(tpty_val, field_val, cm, hconf_c,
-                         b, cs_cell_sys);
+      _apply_time_scheme(tpty_val, field_val, cm, hconf_c, b, cs_cell_sys);
 
     } /* Time contribution */
 
@@ -1587,7 +1584,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
       const short int  sgn = (_dp3(f.unitv, direction) < 0) ? -1 : 1;
       const double  coef = sgn * f.meas;
 
-      if (b->todo[CDO_DIFFUSION]) { /* Compute the local diffusive flux */
+      if (b->has[CDO_DIFFUSION]) { /* Compute the local diffusive flux */
 
         cs_reco_grd_cell_from_pv(c_id, connect, quant, pdi, gc);
         cs_property_get_cell_tensor(c_id,
@@ -1599,7 +1596,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
 
       }
 
-      if (b->todo[CDO_ADVECTION]) { /* Compute the local advective flux */
+      if (b->has[CDO_ADVECTION]) { /* Compute the local advective flux */
 
         cs_advection_field_get_cell_vector(c_id, eqp->advection_field, &adv_c);
         cs_reco_pv_at_face_center(f_id, connect, quant, pdi, &pf);
@@ -1622,7 +1619,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
       const short int  sgn = (_dp3(f.unitv, direction) < 0) ? -1 : 1;
       const double  coef = 0.5 * sgn * f.meas;
 
-      if (b->todo[CDO_DIFFUSION]) { /* Compute the local diffusive flux */
+      if (b->has[CDO_DIFFUSION]) { /* Compute the local diffusive flux */
 
         cs_reco_grd_cell_from_pv(c1_id, connect, quant, pdi, gc);
         cs_property_get_cell_tensor(c1_id,
@@ -1642,7 +1639,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
 
       }
 
-      if (b->todo[CDO_ADVECTION]) { /* Compute the local advective flux */
+      if (b->has[CDO_ADVECTION]) { /* Compute the local advective flux */
 
         cs_reco_pv_at_face_center(f_id, connect, quant, pdi, &pf);
 
@@ -1684,7 +1681,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_connect_index_t  *c2e = connect->c2e;
 
-  if (!b->todo[CDO_DIFFUSION]) { // No diffusion
+  if (!b->has[CDO_DIFFUSION]) { // No diffusion
 
     for (int i = 0; i < c2e->idx[quant->n_cells]; i++)
       diff_flux = 0;
@@ -1821,7 +1818,7 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
 
   const cs_equation_param_t  *eqp = b->eqp;
 
-  if (b->todo[CDO_ADVECTION] &&
+  if (b->has[CDO_ADVECTION] &&
       (eqp->process_flag & CS_EQUATION_POST_UPWIND_COEF)) {
 
     cs_real_t  *work_c = cs_equation_get_tmpbuf();
@@ -1832,9 +1829,9 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
     sprintf(postlabel, "%s.UpwCoef", eqname);
 
     /* Compute in each cell an evaluation of upwind weight value */
-    cs_cdovb_advection_get_upwind_coef_cell(cs_shared_quant,
-                                            eqp->advection_info,
-                                            work_c);
+    cs_cdo_advection_get_upwind_coef_cell(cs_shared_quant,
+                                          eqp->advection_info,
+                                          work_c);
 
     cs_post_write_var(-1,                   // id du maillage de post
                       postlabel,

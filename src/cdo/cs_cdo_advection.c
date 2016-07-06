@@ -1,5 +1,5 @@
 /*============================================================================
- * Build discrete convection operators for CDO vertex-based schemes
+ * Build discrete convection operators for CDO schemes
  *============================================================================*/
 
 /*
@@ -50,7 +50,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdovb_advection.h"
+#include "cs_cdo_advection.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -61,7 +61,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_cdovb_advection.c
+  \file cs_cdo_advection.c
 
   \brief Build discrete advection operators for CDO vertex-based schemes
 
@@ -73,7 +73,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_CDOVB_ADVECTION_DBG 0
+#define CS_CDO_ADVECTION_DBG 0
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3 cs_math_3_dot_product
@@ -82,21 +82,18 @@ BEGIN_C_DECLS
  * Local structure definitions
  *============================================================================*/
 
-struct _cs_cdovb_adv_t {
+struct _cs_cdo_adv_t {
 
-  /* Settings for the advection operator */
-  cs_param_advection_t    a_info;
-
-  const cs_adv_field_t   *adv;   // shared pointer
-
+  cs_lnum_t      n_i_faces;  // In order to detect border faces
   bool           with_diffusion;
 
-  cs_real_t     *fluxes;    /* flux of the advection field across each dual
-                               face (size: number of edges in a cell) */
-  cs_real_t     *criter;    /* criterion used to evaluate how to upwind
-                               (size: number of edges in a cell) */
+  /* Temporary buffers to store useful quantities needed during the definition
+     of the advection operator */
+  cs_real_3_t   *tmp_vect;
+  cs_real_t     *tmp_scal;
+
   cs_locmat_t   *loc;       /* Local matrix for the convection operator */
-  cs_real_t     *tmp_rhs;   /* local buffer (size: n_max_vbyc) */
+
 };
 
 /*============================================================================
@@ -172,58 +169,26 @@ _upwind_weight(double                      criterion,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize the builder structure and the local matrix related to
- *          the convection operator when diffusion is also activated
- *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      matpty    tensor related to the diffusion property
- * \param[in, out] b         pointer to a convection builder structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_init_with_diffusion(const cs_cell_mesh_t      *cm,
-                     const cs_real_33_t         matpty,
-                     cs_cdovb_adv_t            *b)
-{
-  cs_real_3_t  matnu;
-
-  /* Compute the criterion attached to each edge of the cell which is used
-     to evaluate how to upwind */
-  for (short int e = 0; e < cm->n_ec; e++) {
-
-    const cs_nvec3_t  dfq = cm->dface[e];
-    const double  mean_flux = b->fluxes[e]/dfq.meas;
-
-    cs_math_33_3_product((const cs_real_t (*)[3])matpty, dfq.unitv, matnu);
-
-    cs_real_t  diff_contrib = _dp3(dfq.unitv, matnu);
-    if (diff_contrib > cs_math_zero_threshold)
-      b->criter[e] = cm->edge[e].meas * mean_flux / diff_contrib;
-    else
-      b->criter[e] = mean_flux * cs_math_big_r; // dominated by convection
-
-  } // Loop on cell edges
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Define the local convection operator between primal edges and dual
  *          cells. (Non-conservative formulation)
  *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in, out] b         pointer to a convection builder structure
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      a_info   set of parameters related to the advection operator
+ * \param[in, out] b        pointer to a cs_cdo_adv_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_build_local_epcd(const cs_cell_mesh_t    *cm,
-                  cs_cdovb_adv_t          *b)
+_build_local_epcd(const cs_cell_mesh_t        *cm,
+                  const cs_param_advection_t   a_info,
+                  cs_cdo_adv_t                *b)
 {
+  assert(a_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS); // Sanity check
+
   cs_locmat_t  *m = b->loc;
 
-  const cs_param_advection_t  a_info = b->a_info;
+  const cs_real_t  *fluxes = b->tmp_scal;
+  const cs_real_t  *upwcoef = b->tmp_scal + cm->n_ec;
 
   if (a_info.scheme == CS_PARAM_ADVECTION_SCHEME_CENTERED) {
 
@@ -231,24 +196,22 @@ _build_local_epcd(const cs_cell_mesh_t    *cm,
        Loop on cell edges */
     for (short int e = 0; e < cm->n_ec; e++) {
 
-      const cs_real_t  wflx = 0.5*b->fluxes[e];
+      const short int  shft = 2*e;
+      const cs_real_t  wflx = 0.5 * fluxes[e] * cm->e2v_sgn[shft]; // sgn_v1
 
       if (fabs(wflx) > 0) {
-
-        short int  shft = 2*e;
-        short int  sgn_v1 = cm->e2v_sgn[shft]; // fd(e),cd(v) = -v,e
 
         /* Update local convection matrix */
         short int  v1 = cm->e2v_ids[shft];
         short int  v2 = cm->e2v_ids[shft+1];
         assert(v1 != -1 && v2 != -1);        // Sanity check
         double  *m1 = m->val + v1*m->n_ent, *m2 = m->val + v2*m->n_ent;
-        const double contrib = sgn_v1 * wflx;
 
-        m1[v1] +=  contrib;
-        m1[v2] =  -contrib;
-        m2[v2] += -contrib;
-        m2[v1] =   contrib;
+        // Use the fact that fd(e),cd(v) = -v,e and sgn_v1 = -sgn_v2
+        m1[v1] +=  wflx;
+        m1[v2] =  -wflx;
+        m2[v2] += -wflx;
+        m2[v1] =   wflx;
 
       } // convective flux is greater than zero
 
@@ -260,17 +223,16 @@ _build_local_epcd(const cs_cell_mesh_t    *cm,
     /* Loop on cell edges */
     for (short int e = 0; e < cm->n_ec; e++) {
 
-      const cs_real_t  beta_flx = b->fluxes[e];
+      const short int  shft = 2*e;
+      const short int  sgn_v1 = cm->e2v_sgn[shft];
+      const cs_real_t  beta_flx = fluxes[e] * sgn_v1;
 
       if (fabs(beta_flx) > 0) {
 
-        short int  shft = 2*e;
-        short int  sgn_v1 = cm->e2v_sgn[shft];
-
-        /* Compute the updwind coefficient knowing that fd(e),cd(v) = -v,e */
-        const double  wv1 = _upwind_weight(-sgn_v1 * b->criter[e], a_info);
-        const double  c1mw = sgn_v1 * beta_flx * (1 - wv1);
-        const double  cw = sgn_v1 * beta_flx * wv1;
+        /* Compute the upwind coefficient knowing that fd(e),cd(v) = -v,e */
+        const double  wv1 = _upwind_weight(-sgn_v1 * upwcoef[e], a_info);
+        const double  c1mw = beta_flx * (1 - wv1);
+        const double  cw = beta_flx * wv1;
 
         /* Update local convection matrix */
         short int  v1 = cm->e2v_ids[shft];
@@ -296,18 +258,23 @@ _build_local_epcd(const cs_cell_mesh_t    *cm,
  * \brief   Define the local convection operator between primal vertices and
  *          dual faces. (Conservative formulation)
  *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in, out] b         pointer to a convection builder structure
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      a_info   set of parameters related to the advection operator
+ * \param[in, out] b        pointer to a cs_cdo_adv_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_build_local_vpfd(const cs_cell_mesh_t    *cm,
-                  cs_cdovb_adv_t          *b)
+_build_local_vpfd(const cs_cell_mesh_t         *cm,
+                  const cs_param_advection_t    a_info,
+                  cs_cdo_adv_t                 *b)
 {
+  assert(a_info.formulation == CS_PARAM_ADVECTION_FORM_CONSERV); // Sanity check
+
   cs_locmat_t  *m = b->loc;
 
-  const cs_param_advection_t  a_info = b->a_info;
+  const cs_real_t  *fluxes = b->tmp_scal;
+  const cs_real_t  *upwcoef = b->tmp_scal + cm->n_ec;
 
   if (a_info.scheme == CS_PARAM_ADVECTION_SCHEME_CENTERED) {
 
@@ -315,13 +282,10 @@ _build_local_vpfd(const cs_cell_mesh_t    *cm,
        Loop on cell edges */
     for (short int e = 0; e < cm->n_ec; e++) {
 
-      const cs_real_t  wflx = 0.5*b->fluxes[e];
+      const short int  shft = 2*e;
+      const cs_real_t  wflx = 0.5*fluxes[e]*cm->e2v_sgn[shft];
 
       if (fabs(wflx) > 0) {
-
-        short int  shft = 2*e;
-        short int  sgn_v1 = cm->e2v_sgn[shft]; // fd(e),cd(v) = -v,e
-        const double contrib = sgn_v1 * wflx;
 
         /* Update local convection matrix */
         short int  v1 = cm->e2v_ids[shft];
@@ -329,10 +293,10 @@ _build_local_vpfd(const cs_cell_mesh_t    *cm,
         assert(v1 != -1 && v2 != -1);        // Sanity check
         double  *m1 = m->val + v1*m->n_ent, *m2 = m->val + v2*m->n_ent;
 
-        m1[v1] += -contrib;
-        m1[v2] =  -contrib;
-        m2[v2] +=  contrib; // sgn_v2 = -sgn_v1
-        m2[v1] =   contrib; // sgn_v2 = -sgn_v1
+        m1[v1] += -wflx;
+        m1[v2] =  -wflx;
+        m2[v2] +=  wflx; // sgn_v2 = -sgn_v1
+        m2[v1] =   wflx; // sgn_v2 = -sgn_v1
 
       } // convective flux is greater than zero
 
@@ -344,7 +308,7 @@ _build_local_vpfd(const cs_cell_mesh_t    *cm,
     /* Loop on cell edges */
     for (short int e = 0; e < cm->n_ec; e++) {
 
-      const cs_real_t  beta_flx = b->fluxes[e];
+      const cs_real_t  beta_flx = fluxes[e];
 
       if (fabs(beta_flx) > 0) {
 
@@ -352,7 +316,7 @@ _build_local_vpfd(const cs_cell_mesh_t    *cm,
         short int  sgn_v1 = cm->e2v_sgn[shft];
 
         /* Compute the updwind coefficient knowing that fd(e),cd(v) = -v,e */
-        const double  wv1 = _upwind_weight(-sgn_v1 * b->criter[e], a_info);
+        const double  wv1 = _upwind_weight(-sgn_v1 * upwcoef[e], a_info);
         const double  cw1 = sgn_v1 * beta_flx * wv1;
         const double  cw2 = sgn_v1 * beta_flx * (1 - wv1);
 
@@ -384,48 +348,61 @@ _build_local_vpfd(const cs_cell_mesh_t    *cm,
  * \brief   Initialize a builder structure for the convection operator
  *
  * \param[in]  connect       pointer to the connectivity structure
- * \param[in]  adv_field     pointer to a cs_adv_field_t structure
- * \param[in]  a_info        set of options for the advection term
+ * \param[in]  eqp           pointer to a cs_equation_param_t structure
  * \param[in]  do_diffusion  true is diffusion is activated
  *
  * \return a pointer to a new allocated builder structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdovb_adv_t *
-cs_cdovb_advection_builder_init(const cs_cdo_connect_t      *connect,
-                                const cs_adv_field_t        *adv,
-                                const cs_param_advection_t   a_info,
-                                bool                         do_diffusion)
+cs_cdo_adv_t *
+cs_cdo_advection_builder_init(const cs_cdo_connect_t      *connect,
+                              const cs_equation_param_t   *eqp,
+                              bool                         do_diffusion)
 {
-  cs_cdovb_adv_t  *b = NULL;
-  cs_lnum_t  n_max_ec = connect->n_max_ebyc, n_max_vc = connect->n_max_vbyc;
+  int  n_sysc = 0;
+  cs_cdo_adv_t  *b = NULL;
 
-  BFT_MALLOC(b, 1, cs_cdovb_adv_t);
+  BFT_MALLOC(b, 1, cs_cdo_adv_t);
 
-  b->adv = adv; // share the pointer to an advection field structure
-
-  /* Copy a cs_param_convection_t structure */
-  b->a_info.formulation = a_info.formulation;
-  b->a_info.scheme = a_info.scheme;
-  b->a_info.weight_criterion = a_info.weight_criterion;
-  b->a_info.quad_type = a_info.quad_type;
-
+  b->n_i_faces = connect->f_info->n_i_elts;
   b->with_diffusion = do_diffusion;
+  b->tmp_vect = NULL;
+  b->tmp_scal = NULL;
 
-  /* Allocate and initialize buffers */
-  BFT_MALLOC(b->fluxes, n_max_ec, cs_real_t);
-  BFT_MALLOC(b->criter, n_max_ec, cs_real_t);
-  for (int i = 0; i < n_max_ec; i++) {
-    b->fluxes[i] = 0;
-    b->criter[i] = 0;
-  }
+  switch (eqp->space_scheme) {
 
-  BFT_MALLOC(b->tmp_rhs, n_max_vc, cs_real_t);
-  for (int i = 0; i < n_max_vc; i++)
-    b->tmp_rhs[i] = 0;
+  case CS_SPACE_SCHEME_CDOVB:
+    {
+      const cs_lnum_t  n_max_ec = connect->n_max_ebyc;
+      const cs_lnum_t  n_max_vc = connect->n_max_vbyc;
 
-  b->loc = cs_locmat_create(connect->n_max_vbyc);
+      n_sysc = n_max_vc;
+
+      int  s_size = 2*n_max_ec;
+      BFT_MALLOC(b->tmp_scal, s_size, cs_real_t);
+      for (int i = 0; i < s_size; i++)
+        b->tmp_scal[i] = 0;
+
+    }
+    break;
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    {
+      const cs_lnum_t  n_max_vc = connect->n_max_vbyc;
+
+      n_sysc = n_max_vc + 1;
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid numerical scheme for advection."));
+    break;
+
+  } // switch on space_scheme
+
+  b->loc = cs_locmat_create(n_sysc);
 
   return b;
 }
@@ -434,21 +411,20 @@ cs_cdovb_advection_builder_init(const cs_cdo_connect_t      *connect,
 /*!
  * \brief   Destroy a builder structure for the convection operator
  *
- * \param[in, out] b   pointer to a cs_cdovb_adv_t struct. to free
+ * \param[in, out] b   pointer to a cs_cdo_adv_t struct. to free
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdovb_adv_t *
-cs_cdovb_advection_builder_free(cs_cdovb_adv_t  *b)
+cs_cdo_adv_t *
+cs_cdo_advection_builder_free(cs_cdo_adv_t  *b)
 {
   if (b == NULL)
     return b;
 
-  BFT_FREE(b->fluxes);
-  BFT_FREE(b->criter);
-  BFT_FREE(b->tmp_rhs);
+  BFT_FREE(b->tmp_scal);
+  BFT_FREE(b->tmp_vect);
 
   b->loc = cs_locmat_free(b->loc);
 
@@ -459,9 +435,11 @@ cs_cdovb_advection_builder_free(cs_cdovb_adv_t  *b)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the convection operator attached to a cell
+ * \brief   Compute the convection operator attached to a cell with a CDO
+ *          vertex-based scheme
  *
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      diffmat   tensor related to the diffusion property
  * \param[in, out] b         pointer to a convection builder structure
  *
@@ -470,39 +448,71 @@ cs_cdovb_advection_builder_free(cs_cdovb_adv_t  *b)
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_cdovb_advection_build_local(const cs_cell_mesh_t      *cm,
-                               const cs_real_33_t         diffmat,
-                               cs_cdovb_adv_t            *b)
+cs_cdovb_advection_build_local(const cs_cell_mesh_t       *cm,
+                               const cs_equation_param_t  *eqp,
+                               const cs_real_33_t          diffmat,
+                               cs_cdo_adv_t               *b)
 {
+  assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB); // Sanity check
+
   /* Initialize local matrix structure */
+  b->loc->n_ent = cm->n_vc;
+
   for (short int v = 0; v < cm->n_vc; v++)
     b->loc->ids[v] = cm->v_ids[v];
-  b->loc->n_ent = cm->n_vc;
+
   for (short int v = 0; v < cm->n_vc*cm->n_vc; v++)
     b->loc->val[v] = 0;
 
   /* Compute the flux across the dual face attached to each edge of the cell */
-  cs_advection_field_get_flux_dfaces(cm->c_id, b->a_info, b->adv, b->fluxes);
+  cs_real_t  *fluxes = b->tmp_scal;
+
+  cs_advection_field_get_flux_dfaces(cm->c_id,
+                                     eqp->advection_info,
+                                     eqp->advection_field,
+                                     fluxes);
 
   /* Compute the criterion attached to each edge of the cell which is used
      to evaluate how to upwind */
-  if (b->a_info.scheme != CS_PARAM_ADVECTION_SCHEME_CENTERED) {
-    if (b->with_diffusion)
-      _init_with_diffusion(cm, diffmat, b);
+  cs_real_t  *upwcoef = b->tmp_scal + cm->n_ec;
+
+  if (eqp->advection_info.scheme != CS_PARAM_ADVECTION_SCHEME_CENTERED) {
+
+    if (b->with_diffusion) {
+
+      cs_real_3_t  matnu;
+
+      for (short int e = 0; e < cm->n_ec; e++) {
+
+        const cs_nvec3_t  dfq = cm->dface[e];
+        const double  mean_flux = fluxes[e]/dfq.meas;
+
+        cs_math_33_3_product((const cs_real_t (*)[3])diffmat, dfq.unitv, matnu);
+
+        cs_real_t  diff_contrib = _dp3(dfq.unitv, matnu);
+        if (diff_contrib > cs_math_zero_threshold)
+          upwcoef[e] = cm->edge[e].meas * mean_flux / diff_contrib;
+        else
+          upwcoef[e] = mean_flux * cs_math_big_r; // dominated by convection
+
+      } // Loop on cell edges
+
+    }
     else
       for (short int e = 0; e < cm->n_ec; e++)
-        b->criter[e] = 1/cm->dface[e].meas * b->fluxes[e];
+        upwcoef[e] = 1/cm->dface[e].meas * fluxes[e];
+
   }
 
   /* Build the local convection operator */
-  switch (b->a_info.formulation) {
+  switch (eqp->advection_info.formulation) {
 
   case CS_PARAM_ADVECTION_FORM_NONCONS:
-    _build_local_epcd(cm,  b);
+    _build_local_epcd(cm, eqp->advection_info, b);
     break;
 
   case CS_PARAM_ADVECTION_FORM_CONSERV:
-    _build_local_vpfd(cm, b);
+    _build_local_vpfd(cm, eqp->advection_info, b);
     break;
 
   default:
@@ -518,33 +528,69 @@ cs_cdovb_advection_build_local(const cs_cell_mesh_t      *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the convection operator attached to a cell with a CDO
+ *          vertex+cell-based scheme
+ *
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      diffmat   tensor related to the diffusion property
+ * \param[in, out] b         pointer to a convection builder structure
+ *
+ * \return a pointer to a local dense matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_locmat_t *
+cs_cdovcb_advection_build_local(const cs_cell_mesh_t       *cm,
+                                const cs_equation_param_t  *eqp,
+                                const cs_real_33_t          diffmat,
+                                cs_cdo_adv_t               *b)
+{
+  assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB); // Sanity check
+
+  /* Initialize local matrix structure */
+  int  n_sysc = cm->n_vc + 1;
+
+  for (short int v = 0; v < cm->n_vc; v++)
+    b->loc->ids[v] = cm->v_ids[v];
+  b->loc->ids[cm->n_vc] = cm->c_id;
+  b->loc->n_ent = n_sysc;
+
+  for (short int v = 0; v < n_sysc*n_sysc; v++)
+    b->loc->val[v] = 0;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the BC contribution for the convection operator
  *
- * \param[in]      quant         pointer to the cdo quantities structure
- * \param[in]      cm            pointer to a cs_cell_mesh_t struct.
- * \param[in, out] advb          pointer to a convection builder structure
- * \param[in, out] ls            cell-wise structure sotring the local system
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in, out] b         pointer to a convection builder structure
+ * \param[in, out] ls        cell-wise structure sotring the local system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
-                          cs_cell_mesh_t              *cm,
-                          cs_cdovb_adv_t              *advb,
-                          cs_cdo_locsys_t             *ls)
+cs_cdovb_advection_add_bc(const cs_cell_mesh_t       *cm,
+                          const cs_equation_param_t  *eqp,
+                          cs_cdo_adv_t               *b,
+                          cs_cdo_locsys_t            *ls)
 {
   cs_nvec3_t  adv_vec;
-  cs_locmat_t  *m = advb->loc; /* Use this local dense matrix as an array
-                                  taking into account the diagonal contrib. */
 
-  const cs_adv_field_t  *adv_field = advb->adv;
-  const cs_param_advection_t  a_info = advb->a_info;
-  const cs_real_t  *xyz = quant->vtx_coord;
+  cs_real_t  *tmp_rhs = b->tmp_scal;
+  cs_locmat_t  *m = b->loc; /* Use this local dense matrix as an array
+                               taking into account the diagonal contrib. */
+
+  const cs_adv_field_t  *adv_field = eqp->advection_field;
+  const cs_param_advection_t  a_info = eqp->advection_info;
 
   /* Reset local temporay RHS and diagonal contributions */
   for (short int v = 0; v < cm->n_vc; v++) {
     m->val[v] = 0;
-    advb->tmp_rhs[v] = 0;
+    tmp_rhs[v] = 0;
   }
 
   /* Loop on border faces.
@@ -554,13 +600,12 @@ cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
 
     for (short int f = 0; f < cm->n_fc; f++) {
 
-      cs_lnum_t  f_id = cm->f_ids[f];
-      if (f_id >= quant->n_i_faces) { // Border face
+      if (cm->f_ids[f] >= b->n_i_faces) { // Border face
 
-      const cs_quant_t  pfq = cm->face[f];
+        const cs_quant_t  pfq = cm->face[f];
 
-      /* Retrieve the value of the advection field in the current cell */
-      cs_advection_field_get_cell_vector(cm->c_id, adv_field, &adv_vec);
+        /* Retrieve the value of the advection field in the current cell */
+        cs_advection_field_get_cell_vector(cm->c_id, adv_field, &adv_vec);
 
         const double  dp = _dp3(adv_vec.unitv, pfq.unitv);
         if (fabs(dp) > cs_math_zero_threshold) {
@@ -568,18 +613,18 @@ cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
           /* Loop on border face edges */
           for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-            const short int  e = cm->f2e_ids[i];
-            const short int  v1 = cm->e2v_ids[2*e];
-            const short int  v2 = cm->e2v_ids[2*e+1];
-            const double  surf = 0.5 * cs_math_surftri(xyz + 3*cm->v_ids[v1],
-                                                       xyz + 3*cm->v_ids[v2],
+            const short int  eshft = 2*cm->f2e_ids[i];
+            const short int  v1 = cm->e2v_ids[eshft];
+            const short int  v2 = cm->e2v_ids[eshft+1];
+            const double  surf = 0.5 * cs_math_surftri(cm->xv + 3*v1,
+                                                       cm->xv + 3*v2,
                                                        pfq.center);
             const double  flx = dp * adv_vec.meas * surf;
 
             if (dp < 0) { // advection field is inward w.r.t. the face normal
 
-              advb->tmp_rhs[v1] -= flx * ls->dir_bc[v1];
-              advb->tmp_rhs[v2] -= flx * ls->dir_bc[v2];
+              tmp_rhs[v1] -= flx * ls->dir_bc[v1];
+              tmp_rhs[v2] -= flx * ls->dir_bc[v2];
 
               if (a_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS) {
                 m->val[v1] -= flx;
@@ -608,47 +653,43 @@ cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
 
     for (short int f = 0; f < cm->n_fc; f++) {
 
-      cs_lnum_t  f_id = cm->f_ids[f];
-      if (f_id >= quant->n_i_faces) { // Border face
+      if (cm->f_ids[f] >= b->n_i_faces) { // Border face
 
         /* Loop on border face edges */
         for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
           const short int  e = cm->f2e_ids[i];
-          const cs_lnum_t  e_id = cm->e_ids[e];
           const short int  v1 = cm->e2v_ids[2*e];
           const short int  v2 = cm->e2v_ids[2*e+1];
-          const double  flx1 = cs_advection_field_get_flux_svef(cm->v_ids[v1],
-                                                                e_id, f_id,
-                                                                a_info,
-                                                                adv_field);
+          const double  flx_tef = cs_advection_field_get_flux_tef(adv_field,
+                                                                  a_info,
+                                                                  cm,
+                                                                  f, e, v1, v2);
+          /* Assume that flx_tef has the same level of contribution for the
+             two vertices */
+          const double  flx = 0.5 * flx_tef;
 
-          if (flx1 < 0) { // advection field is inward w.r.t. the face normal
 
-            advb->tmp_rhs[v1] -= flx1 * ls->dir_bc[v1];
-            if (a_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS)
-              m->val[v1] -= flx1;
+          if (flx < 0) { // advection field is inward w.r.t. the face normal
 
-          }
-          else  // advection is oriented outward
-            if (a_info.formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
-              m->val[v1] += flx1;
+            tmp_rhs[v1] -= flx * ls->dir_bc[v1];
+            tmp_rhs[v2] -= flx * ls->dir_bc[v2];
 
-          const double  flx2 = cs_advection_field_get_flux_svef(cm->v_ids[v2],
-                                                                e_id, f_id,
-                                                                a_info,
-                                                                adv_field);
-
-          if (flx2 < 0) { // advection field is inward w.r.t. the face normal
-
-            advb->tmp_rhs[v2] -= flx2 * ls->dir_bc[v2];
-            if (a_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS)
-              m->val[v2] -= flx2;
+            if (a_info.formulation == CS_PARAM_ADVECTION_FORM_NONCONS) {
+              m->val[v1] -= flx;
+              m->val[v2] -= flx;
+            }
 
           }
-          else  // advection is oriented outward
-            if (a_info.formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
-              m->val[v2] += flx2;
+          else { // advection is oriented outward
+
+            if (a_info.formulation == CS_PARAM_ADVECTION_FORM_CONSERV) {
+              m->val[v1] += flx;
+              m->val[v1] += flx;
+
+            }
+
+          } // outward
 
         } // Loop on face edges
 
@@ -661,9 +702,32 @@ cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
   /* Update the diagonal and the RHS of the local system matrix */
   for (short int v = 0; v < cm->n_vc; v++)  {
     ls->mat->val[v*cm->n_vc + v] += m->val[v];
-    ls->rhs[v] += advb->tmp_rhs[v];
+    ls->rhs[v] += tmp_rhs[v];
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the BC contribution for the convection operator with CDO
+ *          V+C schemes
+ *
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in, out] b         pointer to a convection builder structure
+ * \param[in, out] ls        cell-wise structure sotring the local system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovcb_advection_add_bc(const cs_cell_mesh_t       *cm,
+                           const cs_equation_param_t  *eqp,
+                           cs_cdo_adv_t               *b,
+                           cs_cdo_locsys_t            *ls)
+{
+  // TODO
+
+  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -680,9 +744,9 @@ cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_advection_get_upwind_coef_cell(const cs_cdo_quantities_t   *cdoq,
-                                        const cs_param_advection_t   a_info,
-                                        cs_real_t                    coefval[])
+cs_cdo_advection_get_upwind_coef_cell(const cs_cdo_quantities_t   *cdoq,
+                                      const cs_param_advection_t   a_info,
+                                      cs_real_t                    coefval[])
 {
   /* Sanity check */
   assert(coefval != NULL);

@@ -41,6 +41,7 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_advection_field.h \
 cs_cdo.h \
+cs_cdo_advection.h \
 cs_cdo_bc.h \
 cs_cdo_connect.h \
 cs_cdo_diffusion.h \
@@ -50,7 +51,6 @@ cs_cdo_quantities.h \
 cs_cdo_scheme_geometry.h \
 cs_cdo_toolbox.h \
 cs_cdofb_scaleq.h \
-cs_cdovb_advection.h \
 cs_cdovb_scaleq.h \
 cs_cdovcb_scaleq.h \
 cs_domain.h \
@@ -74,6 +74,7 @@ noinst_LTLIBRARIES = libcscdo.la
 libcscdo_la_SOURCES = \
 cs_advection_field.c \
 cs_cdo.c \
+cs_cdo_advection.c \
 cs_cdo_bc.c \
 cs_cdo_connect.c \
 cs_cdo_diffusion.c \
@@ -83,7 +84,6 @@ cs_cdo_quantities.c \
 cs_cdo_scheme_geometry.c \
 cs_cdo_toolbox.c \
 cs_cdofb_scaleq.c \
-cs_cdovb_advection.c \
 cs_cdovb_scaleq.c \
 cs_cdovcb_scaleq.c \
 cs_domain.c \

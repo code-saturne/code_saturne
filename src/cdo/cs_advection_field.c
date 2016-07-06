@@ -75,17 +75,17 @@ struct _cs_adv_field_t {
 
   char  *restrict name;
 
-  cs_desc_t  desc;       /* Short descriptor (mask of bits) */
+  cs_desc_t  desc;          // Short descriptor (mask of bits)
 
-  cs_flag_t  post_flag;  /* Short descriptor dedicated to postprocessing */
-  int     vtx_field_id;  /* id among cs_field_t structures (-1 if not used) */
-  int     cell_field_id; /* id among cs_field_t structures (-1 if not used) */
+  cs_flag_t  post_flag;     // Short descriptor dedicated to postprocessing
+  int        vtx_field_id;  // id among cs_field_t structures (-1 if not used)
+  int        cell_field_id; // id among cs_field_t structures (-1 if not used)
 
-  cs_param_def_type_t    def_type;
-  cs_def_t               def;
+  cs_param_def_type_t  def_type;
+  cs_def_t             def;
 
   /* Useful buffers to deal with more complex definitions
-     var and struc are not owned by this structure.  */
+     N.B.: var and struc are not owned by this structure.  */
   cs_desc_t    array_desc;  // short description of the related array
   const cs_real_t  *array;  // if the advection field hinges on an array
   const void       *struc;  // if the advection field hinges on a structure
@@ -991,6 +991,138 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
 
   } /* Not uniform in this cell */
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the flux of the advection field across the
+ *         triangle defined by the two vertices of an edge and the barycenter
+ *         of a face.
+ *
+ * \param[in]  adv       pointer to a cs_adv_field_t structure
+ * \param[in]  a_info    set of parameters for the advection operator
+ * \param[in]  cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]  f         id of the face in the current cell
+ * \param[in]  e         id of the edge in the current cell
+ * \param[in]  v1        id of the first vertex in the current cell
+ * \param[in]  v2        id of the second vertex in the current cell
+ *
+ * \return the value of the flux across tef
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
+                                const cs_param_advection_t   a_info,
+                                const cs_cell_mesh_t        *cm,
+                                short int                    f,
+                                short int                    e,
+                                short int                    v1,
+                                short int                    v2)
+{
+  cs_real_t  adv_flx = 0;
+
+  if (adv == NULL)
+    return adv_flx;
+
+  const cs_real_t  *xv1 = cm->xv + 3*v1;
+  const cs_real_t  *xv2 = cm->xv + 3*v2;
+  const cs_quant_t  pfq = cm->face[f];
+
+  cs_real_t  tef = cs_math_surftri(xv1, xv2, pfq.center);
+
+  /* Compute the flux accros the portion of primal face */
+  switch (adv->def_type) {
+
+  case CS_PARAM_DEF_BY_VALUE:
+    adv_flx = tef * _dp3(adv->def.get.vect, pfq.unitv);
+    break;
+
+  case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_get_t  get;
+
+      const double  t_cur = cs_time_step->t_cur;
+
+      switch (a_info.quad_type) {
+
+      case CS_QUADRATURE_BARY:
+        {
+          cs_real_3_t  xg;
+
+          for (int k = 0; k < 3; k++)
+            xg[k] = cs_math_onethird * (xv1[k] + xv2[k] + pfq.center[k]);
+
+          /* Call the analytic function. result is stored in get */
+          adv->def.analytic(t_cur, xg, &get);
+          adv_flx = tef * _dp3(get.vect, pfq.unitv);
+        }
+        break;
+
+      case CS_QUADRATURE_HIGHER:
+        {
+          cs_real_t  w, add = 0.;
+          cs_real_3_t  gpts[3];
+
+          cs_quadrature_tria_3pts(xv1, xv2, pfq.center, tef, gpts, &w);
+
+          for (int p = 0; p < 3; p++) {
+            adv->def.analytic(t_cur, gpts[p], &get);
+            add += _dp3(get.vect, pfq.unitv);
+          }
+          adv_flx += add * w;
+        }
+        break;
+
+      case CS_QUADRATURE_HIGHEST: // Not yet implemented
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " Invalid type of quadrature for computing the flux of %s"
+                  " across an elementary triangle s(v,e,f).\n"
+                  " This functionality is not implemented yet.", adv->name);
+        break;
+      }
+
+    }
+    break; // DEF_ANALYTIC_FUNCTION
+
+    case CS_PARAM_DEF_BY_ARRAY:
+      {
+        cs_real_3_t  reco;
+
+        /* Test if flag has at least the pattern of the reference support */
+        if (cs_cdo_same_support(adv->array_desc.location,
+                                cs_cdo_dual_face_byc)) {
+
+          const cs_connect_index_t  *c2e = cs_cdo_connect->c2e;
+
+          /* Compute the reconstruction of the flux in pec */
+          cs_reco_dfbyc_in_pec(cm->c_id, cm->e_ids[e], c2e, cs_cdo_quant,
+                               adv->array,
+                               reco);
+
+          /* The reconstruction yields a constant vector field */
+          adv_flx = tef * _dp3(pfq.unitv, reco);
+
+        }
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    " Invalid support for evaluating the advection field %s"
+                    " across tef.", adv->name);
+
+      } // DEF_BY_ARRAY
+      break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid type of definition for computing the flux of %s"
+              " across the triangle tef.\n"
+              " This functionality is not implemented yet.", adv->name);
+    break;
+
+  } // switch def_type
+
+  return adv_flx;
 }
 
 /*----------------------------------------------------------------------------*/
