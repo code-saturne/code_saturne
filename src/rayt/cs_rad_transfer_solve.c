@@ -49,6 +49,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_boundary_conditions.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_gui_util.h"
