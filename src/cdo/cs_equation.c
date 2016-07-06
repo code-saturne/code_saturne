@@ -42,6 +42,7 @@
 #endif
 
 #if defined(HAVE_PETSC)
+#include <petscversion.h>
 #include <petscdraw.h>
 #include <petscviewer.h>
 #include <petscksp.h>
@@ -469,7 +470,11 @@ _petsc_setup_hook(void   *context,
     break;
   case CS_PARAM_PRECOND_BJACOB:
     PCSetType(pc, PCBJACOBI);  /* Block-Jacobi (diagonal) preconditioning */
+#if PETSC_VERSION_GE(3,7,0)
+    PetscOptionsSetValue(NULL, "-sub_pc_factor_levels", "2");
+#else
     PetscOptionsSetValue("-sub_pc_factor_levels", "2");
+#endif
     break;
   case CS_PARAM_PRECOND_SSOR:
     PCSetType(pc, PCSOR);
@@ -493,6 +498,15 @@ _petsc_setup_hook(void   *context,
       int  amg_type = 1;
 
       if (amg_type == 0) { // GAMG
+#if PETSC_VERSION_GE(3,7,0)
+        PetscOptionsSetValue(NULL, "-pc_gamg_agg_nsmooths", "1");
+        PetscOptionsSetValue(NULL, "-mg_levels_ksp_type", "richardson");
+        PetscOptionsSetValue(NULL, "-mg_levels_pc_type", "sor");
+        PetscOptionsSetValue(NULL, "-mg_levels_ksp_max_it", "1");
+        PetscOptionsSetValue(NULL, "-pc_gamg_threshold", "0.02");
+        PetscOptionsSetValue(NULL, "-pc_gamg_reuse_interpolation", "TRUE");
+        PetscOptionsSetValue(NULL, "-pc_gamg_square_graph", "4");
+#else
         PetscOptionsSetValue("-pc_gamg_agg_nsmooths", "1");
         PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
         PetscOptionsSetValue("-mg_levels_pc_type", "sor");
@@ -500,10 +514,20 @@ _petsc_setup_hook(void   *context,
         PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
         PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
         PetscOptionsSetValue("-pc_gamg_square_graph", "4");
-
+#endif
         PCSetType(pc, PCGAMG);
       }
       else if (amg_type == 1) { // Boomer AMG (hypre)
+#if PETSC_VERSION_GE(3,7,0)
+        PetscOptionsSetValue(NULL,"-pc_type", "hypre");
+        PetscOptionsSetValue(NULL,"-pc_hypre_type","boomeramg");
+        PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_coarsen_type","HMIS");
+        PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_interp_type","ext+i-cc");
+        PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_agg_nl","2");
+        PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_P_max","4");
+        PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_strong_threshold","0.5");
+        PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_no_CF","");
+#else
         PetscOptionsSetValue("-pc_type", "hypre");
         PetscOptionsSetValue("-pc_hypre_type","boomeramg");
         PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
@@ -512,6 +536,7 @@ _petsc_setup_hook(void   *context,
         PetscOptionsSetValue("-pc_hypre_boomeramg_P_max","4");
         PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
         PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
+#endif
 
         PCSetType(pc, PCHYPRE);
       }
