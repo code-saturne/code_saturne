@@ -1037,7 +1037,7 @@ cs_cdo_diffusion_weak_bc(cs_lnum_t                    f_id,
 
   const cs_param_hodge_t  h_info = diff->h_info;
   const cs_param_hodge_algo_t  h_algo = h_info.algo;
-  
+
   /* Set the local face id */
   short int f = -1; // not set
   for (short int ii = 0; ii < cm->n_fc; ii++) {

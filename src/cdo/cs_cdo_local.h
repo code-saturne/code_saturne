@@ -83,21 +83,21 @@ typedef struct {
 
   /* Vertex information */
   short int    n_vc;   // local number of vertices in a cell
-  cs_lnum_t   *v_ids;  // local vertex ids [0, n_vc-1]
+  cs_lnum_t   *v_ids;  // vertex ids on this rank
   double      *xv;     // local vertex coordinates (copy)
   short int   *vtag;   // link between mesh and cell-wise numbering (-1 not set)
   double      *wvc;    // weight |vol_dc(v) cap vol_c|/|vol_c for each cell vtx
 
   /* Edge information */
   short int    n_ec;   // local number of edges in a cell
-  cs_lnum_t   *e_ids;  // local edge ids [0, n_ec-1]
+  cs_lnum_t   *e_ids;  // edge ids on this rank
   short int   *etag;   // link between mesh and cell-wise numbering (-1 not set)
   cs_quant_t  *edge;   // local edge quantities (xe, length and unit vector)
   cs_nvec3_t  *dface;  // local dual face quantities (area and unit normal)
 
   /* Face information */
   short int    n_fc;   // local number of faces in a cell
-  cs_lnum_t   *f_ids;  // local face ids [0, n_fc-1]
+  cs_lnum_t   *f_ids;  // face ids on this rank
   short int   *f_sgn;  // incidence number between f and c
   cs_quant_t  *face;   // local face quantities (xf, area and unit normal)
   cs_nvec3_t  *dedge;  // local dual edge quantities (length and unit vector)

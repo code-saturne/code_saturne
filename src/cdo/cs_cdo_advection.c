@@ -559,6 +559,7 @@ cs_cdovcb_advection_build_local(const cs_cell_mesh_t       *cm,
   for (short int v = 0; v < n_sysc*n_sysc; v++)
     b->loc->val[v] = 0;
 
+  return b->loc;
 }
 
 /*----------------------------------------------------------------------------*/
