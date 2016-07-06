@@ -1362,7 +1362,6 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
 
           /* cs is updated inside (matrix and rhs) */
           cs_cdo_diffusion_weak_bc(b->c2bf_bc_ids[j], // border face id
-                                   quant,
                                    mesh_c,
                                    (const cs_real_3_t (*))diff_tensor,
                                    b->diff,

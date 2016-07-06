@@ -144,8 +144,8 @@ struct _cs_cdovb_scaleq_t {
   double                *dir_val; // size = vtx_dir->n_nhmg_elts
 
   /* In case of a weak enforcement of the Dirichlet BCs */
-  cs_lnum_t             *c2bf_bc_idx;  // size: n_cells + 1
-  cs_lnum_t             *c2bf_bc_ids;  // cell --> border faces ids
+  cs_lnum_t             *c2bcbf_idx;  // size: n_cells + 1
+  cs_lnum_t             *c2bcbf_ids;  // cell --> border faces ids
 
   /* Indirection between zipped numbering (without BC) and initial numbering
      Allocated only if the boundary conditions are strongly enforced. */
@@ -964,8 +964,8 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   for (cs_lnum_t i = 0; i < b->vtx_dir->n_nhmg_elts; i++)
     b->dir_val[i] = 0.0;
 
-  b->c2bf_bc_idx = NULL;
-  b->c2bf_bc_ids = NULL;
+  b->c2bcbf_idx = NULL;
+  b->c2bcbf_ids = NULL;
 
   /* Strong enforcement means that we need an indirection list between the
      compress (or zip) and initial numbering of vertices */
@@ -1019,18 +1019,14 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
     if (b->todo[CDO_DIFFUSION]) {
 
-      short int  *count = NULL;
-
       const cs_sla_matrix_t  *f2c = connect->f2c;
       const cs_cdo_bc_list_t  *face_dir = b->face_bc->dir;
 
       /* Allocation and initialization */
-      BFT_MALLOC(count, n_cells, short int);
-      BFT_MALLOC(b->c2bf_bc_idx, n_cells + 1, cs_lnum_t);
-      b->c2bf_bc_idx[n_cells] = 0;
+      BFT_MALLOC(b->c2bcbf_idx, n_cells + 1, cs_lnum_t);
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < n_cells; i++)
-        b->c2bf_bc_idx[i] = 0, count[i] = 0;
+      for (cs_lnum_t c_id = 0; c_id < n_cells + 1; c_id++)
+        b->c2bcbf_idx[c_id] = 0;
 
       /* First pass: Loop on Dirichlet faces to build index */
       for (cs_lnum_t i = 0; i < face_dir->n_elts; i++) {
@@ -1039,25 +1035,29 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
         cs_lnum_t  c_id = f2c->col_id[f2c->idx[f_id]];
 
         assert(f2c->idx[f_id+1] - f2c->idx[f_id] == 1); // check if border
-        count[c_id] += 1;
+        b->c2bcbf_idx[c_id+1] += 1;
 
       }
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < n_cells; i++) {
-        b->c2bf_bc_idx[i+1] = b->c2bf_bc_idx[i] + count[i];
-        count[i] = 0;
-      }
+      for (cs_lnum_t i = 0; i < n_cells; i++)
+        b->c2bcbf_idx[i+1] += b->c2bcbf_idx[i];
 
       /* Second pass: Loop on Dirichlet faces to build list of ids */
-      BFT_MALLOC(b->c2bf_bc_ids, b->c2bf_bc_idx[n_cells], cs_lnum_t);
+      BFT_MALLOC(b->c2bcbf_ids, b->c2bcbf_idx[n_cells], cs_lnum_t);
+
+      short int  *count = NULL;
+      BFT_MALLOC(count, n_cells, short int);
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++)
+        count[i] = 0;
+
       for (cs_lnum_t i = 0; i < face_dir->n_elts; i++) {
 
         cs_lnum_t  f_id = face_dir->elt_ids[i] + n_i_faces;
         cs_lnum_t  c_id = connect->f2c->col_id[connect->f2c->idx[f_id]];
-        cs_lnum_t  shft = b->c2bf_bc_idx[c_id] + count[c_id];
+        cs_lnum_t  shft = b->c2bcbf_idx[c_id] + count[c_id];
 
-        b->c2bf_bc_ids[shft] = f_id;
+        b->c2bcbf_ids[shft] = f_id;
         count[c_id] += 1;
 
       }
@@ -1105,8 +1105,8 @@ cs_cdovb_scaleq_free(void   *builder)
 
     if (b->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM ||
         b->enforce ==  CS_PARAM_BC_ENFORCE_WEAK_NITSCHE) {
-      BFT_FREE(b->c2bf_bc_idx);
-      BFT_FREE(b->c2bf_bc_ids);
+      BFT_FREE(b->c2bcbf_idx);
+      BFT_FREE(b->c2bcbf_ids);
     }
 
   }
@@ -1418,14 +1418,13 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
 #endif
 
       /* Weakly enforced Dirichlet BCs for cells attached to the boundary */
-      if (b->c2bf_bc_idx != NULL && cell_flag[c_id] & CS_CDO_CONNECT_BD) {
+      if (b->c2bcbf_idx != NULL && cell_flag[c_id] & CS_CDO_CONNECT_BD) {
 
-        for (cs_lnum_t j = b->c2bf_bc_idx[c_id];
-             j < b->c2bf_bc_idx[c_id+1]; j++) {
+        for (cs_lnum_t j = b->c2bcbf_idx[c_id];
+             j < b->c2bcbf_idx[c_id+1]; j++) {
 
           /* cs_cell_sys is updated inside (matrix and rhs) */
-          cs_cdo_diffusion_weak_bc(b->c2bf_bc_ids[j], // border face id
-                                   quant,
+          cs_cdo_diffusion_weak_bc(b->c2bcbf_ids[j], // border face id
                                    cm,
                                    (const cs_real_3_t (*))diff_tensor,
                                    b->diff,

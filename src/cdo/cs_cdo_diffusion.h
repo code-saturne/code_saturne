@@ -143,21 +143,19 @@ cs_cdo_diffusion_build_local(const cs_cdo_quantities_t   *quant,
  *          technique (symmetrized or not)
  *
  * \param[in]       f_id      face id (a border face attached to a Dir. BC)
- * \param[in]       quant     pointer to a cs_cdo_quantities_t struct.
- * \param[in]       lm        pointer to a cs_cell_mesh_t struct.
+ * \param[in]       cm        pointer to a cs_cell_mesh_t struct.
  * \param[in]       matpty    3x3 matrix related to the diffusion property
  * \param[in, out]  diff      auxiliary structure used to build the diff. term
- * \param[in, out]  ls        cell-wise structure storing the local system
+ * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_diffusion_weak_bc(cs_lnum_t                    f_id,
-                         const cs_cdo_quantities_t   *quant,
-                         const cs_cell_mesh_t        *lm,
+                         const cs_cell_mesh_t        *cm,
                          const cs_real_t              matpty[3][3],
                          cs_cdo_diff_t               *diff,
-                         cs_cdo_locsys_t             *ls);
+                         cs_cdo_locsys_t             *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

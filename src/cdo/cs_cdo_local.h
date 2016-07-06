@@ -321,6 +321,23 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
                    cs_face_mesh_t              *fm);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_face_mesh_t structure for a given cell from a
+ *         cs_cell_mesh_t structure.
+ *         v_ids and e_ids are defined in the cell numbering given by cm
+ *
+ * \param[in]       cm        pointer to the reference cs_cell_mesh_t structure
+ * \param[in]       f_id      face id in the cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
+                                  short int                f,
+                                  cs_face_mesh_t          *fm);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

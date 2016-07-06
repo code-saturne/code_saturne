@@ -741,5 +741,106 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_face_mesh_t structure for a given cell from a
+ *         cs_cell_mesh_t structure
+ *
+ * \param[in]       cm        pointer to the reference cs_cell_mesh_t structure
+ * \param[in]       f_id      face id in the cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
+                                  short int                f,
+                                  cs_face_mesh_t          *fm)
+{
+  if (fm == NULL || cm == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(f > -1 && f < cm->n_fc);
+
+  fm->c_id = cm->c_id;
+  fm->xc = cm->xc;
+
+  /* Face-related quantities */
+  const cs_quant_t  pfq = cm->face[f];
+
+  fm->f_id = f;
+  fm->f_sgn = cm->f_sgn[f];
+  fm->face.meas = pfq.meas;
+  for (int k = 0; k < 3; k++) {
+    fm->face.center[k] = pfq.center[k];
+    fm->face.unitv[k] = pfq.unitv[k];
+  }
+
+  const cs_nvec3_t  deq = cm->dedge[f];
+
+  fm->dedge.meas = deq.meas;
+  for (int k = 0; k < 3; k++)
+    fm->dedge.unitv[k] = deq.unitv[k];
+
+  const int  festart = cm->f2e_idx[f];
+  const int  feend = cm->f2e_idx[f+1];
+
+  fm->n_vf = fm->n_ef = feend - festart;
+  short int nv = 0;
+  for (int i = 0; i < fm->n_vf; i++)
+    fm->v_ids[i] = -1;
+
+  for (int j = festart, je = 0; j < feend; j++, je++) {
+
+    const short int  e = cm->f2e_ids[j];
+    const cs_quant_t  peq = cm->edge[e];
+
+    fm->e_ids[je] = e;
+    fm->edge[je].meas = peq.meas;
+    for (int k = 0; k < 3; k++) {
+      fm->edge[je].center[k] = peq.center[k];
+      fm->edge[je].unitv[k] = peq.unitv[k];
+    }
+
+    const cs_lnum_t  eshft = 2*e;
+    cs_lnum_t  v1c_id = cm->e2v_ids[eshft];
+    cs_lnum_t  v2c_id = cm->e2v_ids[eshft+1];
+
+    /* Compact vertex numbering to this face */
+    short int  v1 = -1, v2 = -1;
+    for (int v = 0; v < fm->n_vf; v++) {
+      if (fm->v_ids[v] == -1) break; // Reached the end of the list of vertices
+      else {
+        if (fm->v_ids[v] == v1c_id) v1 = v;
+        else if (fm->v_ids[v] == v2c_id) v2 = v;
+      }
+    }
+
+    /* Add vertices if not already identified */
+    if (v1 == -1) // Not found -> Add v1
+      fm->v_ids[nv] = v1c_id, v1 = nv++;
+    if (v2 == -1) // Not found -> Add v2
+      fm->v_ids[nv] = v2c_id, v2 = nv++;
+
+    /* Update e2v_ids */
+    const int _eshft = 2*je;
+    fm->e2v_ids[_eshft]   = v1;
+    fm->e2v_ids[_eshft+1] = v2;
+
+  } // Loop on face edges
+
+  assert(nv == fm->n_vf); // Sanity check
+
+  /* Update vertex coordinates */
+  int  shift = 0;
+  for (short int v = 0; v < fm->n_vf; v++) {
+    const cs_real_t *xv = cm->xv + 3*fm->v_ids[v];
+    for (int k = 0; k < 3; k++)
+      fm->xv[shift++] = xv[k];
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
