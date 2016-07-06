@@ -68,6 +68,16 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
+/* Physical state where a particle can be. */
+
+enum {
+  CS_LAGR_PART_IN_FLOW        = 0,
+  CS_LAGR_PART_DEPOSITED      = 1,
+  CS_LAGR_PART_ROLLING        = 2,
+  CS_LAGR_PART_NO_MOTION      = 10,
+  CS_LAGR_PART_IMPOSED_MOTION = 11
+};
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -1403,7 +1413,8 @@ _lagdep(cs_real_t     dtp,
     cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
 
     if (cell_id >= 0 &&
-        cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) != 11) {
+        cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
+        != CS_LAGR_PART_IMPOSED_MOTION) {
 
       cs_real_t *old_part_vel      = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                              CS_LAGR_VELOCITY);
@@ -1648,18 +1659,13 @@ _lagdep(cs_real_t     dtp,
 
     }
 
-      // Specific treatment for particles with DEPOSITION_FLAG = 11
+    /* Specific treatment for particles with
+     * DEPOSITION_FLAG == CS_LAGR_PART_IMPOSED_MOTION */
     else if ( cell_id >= 0 ) {
-      cs_real_t omega = 1.0;//TODO make it user defined.
+      cs_real_t disp[3] = {0., 0., 0.};
+
       cs_real_t *old_part_coords = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                            CS_LAGR_COORDS);
-      cs_real_t rcost = ( old_part_coords[1] - 0.0 );
-      cs_real_t rsint = ( old_part_coords[2] - 1.0 );
-      cs_real_t depl[3] = {
-        0.0 ,
-        rcost * ( cos(omega*dtp) - 1.0 ) - rsint * sin(omega*dtp),
-        rsint * ( cos(omega*dtp) - 1.0 ) + rcost * sin(omega*dtp) };
-
       cs_real_t *part_coords = cs_lagr_particle_attr(particle, p_am,
                                                      CS_LAGR_COORDS);
 
@@ -1669,18 +1675,19 @@ _lagdep(cs_real_t     dtp,
       cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
                                                   CS_LAGR_VELOCITY);
 
+      cs_user_lagr_imposed_motion(old_part_coords,
+                                  dtp,
+                                  &disp);
+
       for (cs_lnum_t id = 0; id < 3; id++) {
 
-        part_coords[id]   = old_part_coords[id] + depl[id];
+        part_coords[id] = old_part_coords[id] + disp[id];
 
         part_vel_seen[id] =  0.0;
 
+        part_vel[id] = disp[id]/dtp;
+
       }
-
-      part_vel[0] = 0.0;
-      part_vel[1] = omega * ( - rcost*sin(omega*dtp) - rsint*cos(omega*dtp) );
-      part_vel[2] = omega * ( - rsint*sin(omega*dtp) + rcost*cos(omega*dtp) );
-
     }
   }
 
