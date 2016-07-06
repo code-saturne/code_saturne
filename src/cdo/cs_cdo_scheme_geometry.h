@@ -78,7 +78,7 @@ cs_compute_grdc(const cs_face_mesh_t     *fm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute tef (the are of the triangle of base e and apex f
+ * \brief  Compute tef (the area of the triangle of base e and apex f)
  *
  * \param[in]  e     id of the edge in the face-wise numbering
  * \param[in]  fm    pointer to a cs_face_mesh_t structure
@@ -103,6 +103,33 @@ cs_compute_tef(short int                 e,
   /* tef = ||(xe -xf) x e||/2 = s(v1,e,f) + s(v2, e, f) */
   return 0.5 * xef_len * peq.meas * cs_math_3_norm(un);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute tec (the area of the triangle of base e and apex c)
+ *
+ * \param[in]  e     id of the edge in the face-wise numbering
+ * \param[in]  cm    pointer to a cs_cell_mesh_t structure
+ *
+ * \return the value the area of the triangle tec
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static double
+cs_compute_tec(short int                 e,
+               const cs_cell_mesh_t     *cm)
+{
+  double  xec_len;
+  cs_real_3_t  xec_un, un;
+
+  const cs_quant_t  peq = cm->edge[e];
+
+  cs_math_3_length_unitv(peq.center, cm->xc, &xec_len, xec_un);
+  cs_math_3_cross_product(xec_un, peq.unitv, un);
+
+  /* tec = ||(xe -xc) x e||/2 */
+  return 0.5 * xec_len * peq.meas * cs_math_3_norm(un);
 }
 
 /*----------------------------------------------------------------------------*/

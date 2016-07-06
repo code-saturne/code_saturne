@@ -74,24 +74,6 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t      *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute for each p_{f,c} the value of the gradient of the Lagrange
- *         shape function attached to x_c
- *
- *  \param[in]      connect  pointer to the connectivity struct.
- *  \param[in]      quant    pointer to the additional quantities struct.
- *  \param[in]      c_id     cell id
- *  \param[in, out] grdc     allocated buffer of size 3*n_max_fbyc
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_conf_grdc(const cs_cdo_connect_t     *connect,
-                  const cs_cdo_quantities_t  *quant,
-                  cs_lnum_t                   c_id,
-                  cs_real_3_t                *grdc);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Reconstruct the value at the cell center from an array of values
  *         defined on primal vertices.
  *
@@ -121,10 +103,22 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_reco_potential_face_value(const cs_face_mesh_t    *fm,
-                             const double            *p_v,
-                             double                  *p_f);
+static inline void
+cs_reco_pv_at_face_center(const cs_face_mesh_t    *fm,
+                          const double            *p_v,
+                          double                  *p_f)
+{
+  *p_f = 0.;
+
+  if (p_v == NULL)
+    return;
+
+  const cs_quant_t  pfq = fm->face;
+
+  for (short int e = 0; e < fm->n_ef; e++)
+    *p_f += (p_v[fm->e2v_ids[2*e]] + p_v[fm->e2v_ids[2*e+1]]) * fm->tef[e];
+  *p_f *= 0.5 / pfq.meas;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -140,11 +134,11 @@ cs_reco_potential_face_value(const cs_face_mesh_t    *fm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_pv_at_face_center(cs_lnum_t                    f_id,
-                          const cs_cdo_connect_t      *connect,
-                          const cs_cdo_quantities_t   *quant,
-                          const double                *pdi,
-                          cs_real_t                   *pdi_f);
+cs_reco_pf_from_pv(cs_lnum_t                     f_id,
+                   const cs_cdo_connect_t       *connect,
+                   const cs_cdo_quantities_t    *quant,
+                   const double                 *pdi,
+                   cs_real_t                    *pdi_f);
 
 /*----------------------------------------------------------------------------*/
 /*!

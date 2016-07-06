@@ -82,6 +82,7 @@ static cs_real_t  _machine_epsilon = 1.11e-16;
 const cs_real_t cs_math_zero_threshold = FLT_MIN;
 const cs_real_t cs_math_onethird = 1./3.;
 const cs_real_t cs_math_onesix = 1./6.;
+const cs_real_t cs_math_onetwelve = 1./12.;
 
 /*! epsilon \f$ 10^{-12}\f$ */
 const cs_real_t cs_math_epzero = 1e-12;

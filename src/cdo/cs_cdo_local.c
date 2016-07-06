@@ -41,6 +41,8 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_math.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -303,8 +305,7 @@ cs_cell_mesh_create(const cs_cdo_connect_t     *connect)
 
   /* face --> edges connectivity */
   BFT_MALLOC(cm->f2e_idx, cm->n_max_fbyc + 1, short int);
-  int  n_max_ebyf = connect->n_max_vbyf;
-  BFT_MALLOC(cm->f2e_ids, cm->n_max_fbyc*n_max_ebyf, short int);
+  BFT_MALLOC(cm->f2e_ids, 2*cm->n_max_ebyc, short int);
 
   /* edge --> face connectivity */
   BFT_MALLOC(cm->e2f_ids, 2*cm->n_max_ebyc, short int);
@@ -584,12 +585,14 @@ cs_face_mesh_create(const cs_cdo_connect_t     *connect)
   fm->n_vf = 0;
   BFT_MALLOC(fm->v_ids, fm->n_max_vbyf, cs_lnum_t);
   BFT_MALLOC(fm->xv, 3*fm->n_max_vbyf, double);
+  BFT_MALLOC(fm->wvf, fm->n_max_vbyf, double);
 
   /* Edge-related quantities */
   fm->n_ef = 0;
   BFT_MALLOC(fm->e_ids, fm->n_max_vbyf, cs_lnum_t);
   BFT_MALLOC(fm->edge,  fm->n_max_vbyf, cs_quant_t);
   BFT_MALLOC(fm->e2v_ids, 2*fm->n_max_vbyf, short int);
+  BFT_MALLOC(fm->tef, fm->n_max_vbyf, double);
 
   return fm;
 }
@@ -612,10 +615,12 @@ cs_face_mesh_free(cs_face_mesh_t     **p_fm)
 
   BFT_FREE(fm->v_ids);
   BFT_FREE(fm->xv);
+  BFT_FREE(fm->wvf);
 
   BFT_FREE(fm->e_ids);
   BFT_FREE(fm->edge);
   BFT_FREE(fm->e2v_ids);
+  BFT_FREE(fm->tef);
 
   BFT_FREE(fm);
   *p_fm = NULL;
@@ -738,6 +743,35 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
       fm->xv[shift++] = xv[k];
   }
 
+  /* Define wvf and tef */
+  for (int i = 0; i < fm->n_vf; i++)
+    fm->wvf[i] = 0;
+
+  for (short int e = 0; e < fm->n_ef; e++) {
+
+    double  xef_len;
+    cs_real_3_t  xef_un, un;
+
+    const short int  v1 = fm->e2v_ids[2*e];
+    const short int  v2 = fm->e2v_ids[2*e+1];
+    const cs_quant_t  peq = fm->edge[e];
+
+    cs_math_3_length_unitv(peq.center, pfq.center, &xef_len, xef_un);
+    cs_math_3_cross_product(xef_un, peq.unitv, un);
+
+    /* tef = ||(xe -xf) x e||/2 = s(v1,e,f) + s(v2, e, f) */
+    const double  tef = 0.5 * xef_len * peq.meas * cs_math_3_norm(un);
+
+    fm->wvf[v1] += tef;
+    fm->wvf[v2] += tef;
+    fm->tef[e] = tef;
+
+  }
+
+  const double  invf = 0.5/pfq.meas;
+  for (short int v = 0; v < fm->n_vf; v++)
+    fm->wvf[v] *= invf;
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -838,6 +872,35 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
     for (int k = 0; k < 3; k++)
       fm->xv[shift++] = xv[k];
   }
+
+  /* Define wvf and tef */
+  for (int i = 0; i < fm->n_vf; i++)
+    fm->wvf[i] = 0;
+
+  for (short int e = 0; e < fm->n_ef; e++) {
+
+    double  xef_len;
+    cs_real_3_t  xef_un, un;
+
+    const short int  v1 = fm->e2v_ids[2*e];
+    const short int  v2 = fm->e2v_ids[2*e+1];
+    const cs_quant_t  peq = fm->edge[e];
+
+    cs_math_3_length_unitv(peq.center, pfq.center, &xef_len, xef_un);
+    cs_math_3_cross_product(xef_un, peq.unitv, un);
+
+    /* tef = ||(xe -xf) x e||/2 = s(v1,e,f) + s(v2, e, f) */
+    const double  tef = 0.5 * xef_len * peq.meas * cs_math_3_norm(un);
+
+    fm->wvf[v1] += tef;
+    fm->wvf[v2] += tef;
+    fm->tef[e] = tef;
+
+  }
+
+  const double  invf = 0.5/pfq.meas;
+  for (short int v = 0; v < fm->n_vf; v++)
+    fm->wvf[v] *= invf;
 
 }
 

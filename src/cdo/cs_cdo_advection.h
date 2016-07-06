@@ -64,6 +64,28 @@ typedef struct _cs_cdo_adv_t  cs_cdo_adv_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Set the value of the stabilization coefficient used in CIP scheme
+ *
+ * \param[in]  new_value     value of the stabilization coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_set_cip_coef(double     new_value);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the value of the stabilization coefficient used in CIP scheme
+ *
+ * \return   the value the stabilization coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdo_advection_get_cip_coef(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Initialize a builder structure for the convection operator
  *
  * \param[in]  connect       pointer to the connectivity structure
@@ -107,10 +129,10 @@ cs_cdo_advection_builder_free(cs_cdo_adv_t  *b);
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_cdovb_advection_build_local(const cs_cell_mesh_t       *cm,
-                               const cs_equation_param_t  *eqp,
-                               const cs_real_33_t          diffmat,
-                               cs_cdo_adv_t               *b);
+cs_cdovb_advection_build(const cs_cell_mesh_t       *cm,
+                         const cs_equation_param_t  *eqp,
+                         const cs_real_33_t          diffmat,
+                         cs_cdo_adv_t               *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -119,7 +141,6 @@ cs_cdovb_advection_build_local(const cs_cell_mesh_t       *cm,
  *
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in]      diffmat   tensor related to the diffusion property
  * \param[in, out] b         pointer to a convection builder structure
  *
  * \return a pointer to a local dense matrix structure
@@ -127,10 +148,9 @@ cs_cdovb_advection_build_local(const cs_cell_mesh_t       *cm,
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_cdovcb_advection_build_local(const cs_cell_mesh_t       *cm,
-                                const cs_equation_param_t  *eqp,
-                                const cs_real_33_t          diffmat,
-                                cs_cdo_adv_t               *b);
+cs_cdovcb_advection_build(const cs_cell_mesh_t       *cm,
+                          const cs_equation_param_t  *eqp,
+                          cs_cdo_adv_t               *b);
 
 /*----------------------------------------------------------------------------*/
 /*!

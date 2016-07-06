@@ -40,6 +40,7 @@
 #include <bft_mem.h>
 
 #include "cs_math.h"
+#include "cs_cdo_scheme_geometry.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -144,52 +145,6 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
   /* Return pointers */
   *p_crec = crec;
   *p_frec = frec;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute for each p_{f,c} the value of the gradient of the Lagrange
- *         shape function attached to x_c
- *
- *  \param[in]      connect  pointer to the connectivity struct.
- *  \param[in]      quant    pointer to the additional quantities struct.
- *  \param[in]      c_id     cell id
- *  \param[in, out] grdc     allocated buffer of size 3*n_max_fbyc
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_conf_grdc(const cs_cdo_connect_t     *connect,
-                  const cs_cdo_quantities_t  *quant,
-                  cs_lnum_t                   c_id,
-                  cs_real_3_t                *grdc)
-{
-  cs_lnum_t  j, l;
-  cs_real_t  len;
-  cs_real_3_t  unitv;
-
-  if (grdc == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              " Buffer must be pre-allocated.");
-
-  const cs_sla_matrix_t  *c2f = connect->c2f;
-  const cs_real_t  *cell_centers = quant->cell_centers;
-
-  for (j = c2f->idx[c_id], l = 0; j < c2f->idx[c_id+1]; j++, l++) {
-
-    cs_lnum_t  f_id = c2f->col_id[j];
-    short int  sgn = c2f->sgn[j];
-    cs_quant_t  fq = quant->face[f_id];
-
-    cs_math_3_length_unitv(fq.center, cell_centers + 3*c_id, &len, unitv);
-
-    cs_real_t  ohf = -sgn/(len * fabs(_dp3(fq.unitv, unitv)));
-
-    for (int k = 0; k < 3; k++)
-      grdc[l][k] = ohf * fq.unitv[k];
-
-  } // Loop on cell faces
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -309,49 +264,6 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
  * \brief  Reconstruct the value at the face center from an array of values
  *         defined on primal vertices.
  *
- *  \param[in]      fm     pointer to cs_face_mesh_t structure
- *  \param[in]      p_v    pointer to an array of values (local to this face)
- *  \param[in, out] p_f    value of the reconstruction at the face center
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_potential_face_value(const cs_face_mesh_t    *fm,
-                             const double            *p_v,
-                             double                  *p_f)
-{
-  *p_f = 0.;
-
-  if (p_v == NULL)
-    return;
-
-  double  xef_len;
-  cs_real_3_t  xef_un, un;
-
-  const cs_quant_t  pfq = fm->face;
-
-  for (short int e = 0; e < fm->n_ef; e++) {
-
-    const cs_quant_t  peq = fm->edge[e];
-
-    cs_math_3_length_unitv(peq.center, pfq.center, &xef_len, xef_un);
-    cs_math_3_cross_product(xef_un, peq.unitv, un);
-
-    /* tef = ||(xe -xf) x e||/2 = s(v1,e,f) + s(v2, e, f) */
-    const double tef = 0.5 * xef_len*peq.meas * cs_math_3_norm(un);
-
-    *p_f += (p_v[fm->e2v_ids[2*e]] + p_v[fm->e2v_ids[2*e+1]]) * tef;
-
-  } // Loop on face edges
-
-  *p_f *= 0.5 / pfq.meas;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reconstruct the value at the face center from an array of values
- *         defined on primal vertices.
- *
  *  \param[in]      f_id     face id (interior and border faces)
  *  \param[in]      connect  pointer to a cs_cdo_connect_t structure
  *  \param[in]      quant    pointer to the additional quantities struct.
@@ -361,11 +273,11 @@ cs_reco_potential_face_value(const cs_face_mesh_t    *fm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_pv_at_face_center(cs_lnum_t                    f_id,
-                          const cs_cdo_connect_t      *connect,
-                          const cs_cdo_quantities_t   *quant,
-                          const double                *pdi,
-                          cs_real_t                   *pdi_f)
+cs_reco_pf_from_pv(cs_lnum_t                     f_id,
+                   const cs_cdo_connect_t       *connect,
+                   const cs_cdo_quantities_t    *quant,
+                   const double                 *pdi,
+                   cs_real_t                    *pdi_f)
 {
   *pdi_f = 0.;
 

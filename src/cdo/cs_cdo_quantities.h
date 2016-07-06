@@ -61,6 +61,20 @@ typedef enum {
 
 } cs_cdo_cc_algo_t;
 
+/* Structure storing information about variation of entities accros the
+   mesh for a given type of entity (cell, face and edge) */
+typedef struct {
+
+  double   meas_min;  // Min. value of the entity measure (vol, surf or lenght)
+  double   meas_max;  // Max. value of the entity measure (vol, surf or lenght)
+  double   h_min;     // Estimation of the min. value of the diameter
+  double   h_max;     // Estimation of the max. value of the diameter
+
+  cs_lnum_t   min_id; // Entity if related to the min. value
+  cs_lnum_t   max_id; // Entity if related to the max. value
+
+} cs_quant_info_t;
+
 /* For primal vector quantities (edge or face) */
 typedef struct {
 
@@ -89,26 +103,29 @@ typedef struct { /* Specific mesh quantities */
   double        vol_tot;
 
   /* Cell-based quantities */
-  cs_lnum_t     n_cells;
-  cs_real_t    *cell_centers;
-  cs_real_t    *cell_vol;
+  cs_lnum_t        n_cells;
+  cs_real_t       *cell_centers;
+  cs_real_t       *cell_vol;
+  cs_quant_info_t  cell_info;
 
   /* Face-based quantities */
-  cs_lnum_t     n_i_faces;
-  cs_lnum_t     n_b_faces;
-  cs_lnum_t     n_faces;    /* n_i_faces + n_b_faces */
-  cs_quant_t   *face;       /* Face quantities */
-  cs_nvec3_t   *dedge;      /* Dual edge quantities (length and unit vector)
-                               Scan with the c2f connectivity */
+  cs_lnum_t        n_i_faces;
+  cs_lnum_t        n_b_faces;
+  cs_lnum_t        n_faces;   /* n_i_faces + n_b_faces */
+  cs_quant_t      *face;      /* Face quantities */
+  cs_nvec3_t      *dedge;     /* Dual edge quantities (length and unit vector)
+                                 Scan with the c2f connectivity */
+  cs_quant_info_t  face_info;
 
   /* Edge-based quantities */
-  cs_lnum_t     n_edges;
-  cs_quant_t   *edge;       /* Edge quantities */
-  cs_dface_t   *dface;      /* For each edge belonging to a cell, two
-                               contributions coming from 2 triangles
-                               s(x_cell, x_face, x_edge) for face in Face_edge
-                               are considered.
-                               Scan with the c2e connectivity */
+  cs_lnum_t        n_edges;
+  cs_quant_t      *edge;      /* Edge quantities */
+  cs_dface_t      *dface;     /* For each edge belonging to a cell, two
+                                 contributions coming from 2 triangles
+                                 s(x_cell, x_face, x_edge) for face in Face_edge
+                                 are considered.
+                                 Scan with the c2e connectivity */
+  cs_quant_info_t  edge_info;
 
   /* Vertex-based quantities */
   cs_lnum_t   n_vertices;
@@ -156,6 +173,18 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
 
 cs_cdo_quantities_t *
 cs_cdo_quantities_free(cs_cdo_quantities_t   *q);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Summarize generic information about the cdo mesh quantities
+ *
+ * \param[in]  cdoq     pointer to cs_cdo_quantities_t structure
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -1365,10 +1365,9 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
     if (b->has[CDO_ADVECTION]) { /* Define the local advection matrix */
 
       cs_locmat_t  *adv_mat =
-        cs_cdovb_advection_build_local(cm,
-                                       eqp,
-                                       (const cs_real_3_t (*))diff_tensor,
-                                       b->adv);
+        cs_cdovb_advection_build(cm, eqp,
+                                 (const cs_real_3_t (*))diff_tensor,
+                                 b->adv);
 
       cs_locmat_add(cs_cell_sys->mat, adv_mat);
 
@@ -1599,7 +1598,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
       if (b->has[CDO_ADVECTION]) { /* Compute the local advective flux */
 
         cs_advection_field_get_cell_vector(c_id, eqp->advection_field, &adv_c);
-        cs_reco_pv_at_face_center(f_id, connect, quant, pdi, &pf);
+        cs_reco_pf_from_pv(f_id, connect, quant, pdi, &pf);
         *conv_flux += coef * adv_c.meas * _dp3(adv_c.unitv, f.unitv) * pf;
 
       }
@@ -1641,7 +1640,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
 
       if (b->has[CDO_ADVECTION]) { /* Compute the local advective flux */
 
-        cs_reco_pv_at_face_center(f_id, connect, quant, pdi, &pf);
+        cs_reco_pf_from_pv(f_id, connect, quant, pdi, &pf);
 
         cs_advection_field_get_cell_vector(c1_id, eqp->advection_field, &adv_c);
         *conv_flux += coef * adv_c.meas * _dp3(adv_c.unitv, f.unitv) * pf;

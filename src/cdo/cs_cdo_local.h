@@ -44,12 +44,12 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-#define CS_CDO_LOCAL_V  (1 <<  0) //  1: local information related to vertices
-#define CS_CDO_LOCAL_E  (1 <<  1) //  2: local information related to edges
-#define CS_CDO_LOCAL_F  (1 <<  2) //  4: local information related to faces
-#define CS_CDO_LOCAL_EV (1 <<  3) //  8: cell-wise edge --> vertices connect.
-#define CS_CDO_LOCAL_FE (1 <<  4) // 16: cell-wise face --> edges connect.
-#define CS_CDO_LOCAL_EF (1 <<  5) // 32: cell-wise edge --> faces connect.
+#define CS_CDO_LOCAL_V   (1 << 0) //  1: local information related to vertices
+#define CS_CDO_LOCAL_E   (1 << 1) //  2: local information related to edges
+#define CS_CDO_LOCAL_F   (1 << 2) //  4: local information related to faces
+#define CS_CDO_LOCAL_EV  (1 << 3) //  8: cell-wise edge --> vertices connect.
+#define CS_CDO_LOCAL_FE  (1 << 4) // 16: cell-wise face --> edges connect.
+#define CS_CDO_LOCAL_EF  (1 << 5) // 32: cell-wise edge --> faces connect.
 
 /*============================================================================
  * Type definitions
@@ -137,13 +137,15 @@ typedef struct {
 
   /* Vertex information */
   short int    n_vf;    // local number of vertices on this face
-  cs_lnum_t   *v_ids;   // local vertex ids [0, n_vf-1]
+  cs_lnum_t   *v_ids;   // vertex ids on this rank or in the cellwise numbering
   double      *xv;      // local vertex coordinates (copy)
+  double      *wvf;     // weight related to each vertex
 
   /* Edge information */
   short int    n_ef;    // local number of edges in on this face (= n_vf)
-  cs_lnum_t   *e_ids;   // local edge ids [0, n_ef-1]
+  cs_lnum_t   *e_ids;   // edge ids on this rank or in the cellwise numbering
   cs_quant_t  *edge;    // local edge quantities (xe, length and unit vector)
+  double      *tef;     // area of the triangle of base e and apex xf
 
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyf) */
   short int   *e2v_ids;  // face-wise edge -> vertices connectivity
@@ -327,7 +329,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
  *         v_ids and e_ids are defined in the cell numbering given by cm
  *
  * \param[in]       cm        pointer to the reference cs_cell_mesh_t structure
- * \param[in]       f_id      face id in the cs_cell_mesh_t structure
+ * \param[in]       f         face id in the cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure to set
  */
 /*----------------------------------------------------------------------------*/

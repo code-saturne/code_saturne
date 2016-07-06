@@ -32,6 +32,7 @@
 
 #include <limits.h>
 #include <assert.h>
+#include <float.h>
 #include <math.h>
 #include <string.h>
 
@@ -559,6 +560,82 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
 }
 
 /*----------------------------------------------------------------------------
+ * Define the cs_quant_info_t structures related to cells, faces and edges
+ * ---------------------------------------------------------------------------*/
+
+static void
+_compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
+{
+  assert(quant != NULL); // Sanity check
+
+  /* Cell info (set default values) */
+  quant->cell_info.min_id = quant->cell_info.max_id = -1;
+  quant->cell_info.h_min = quant->cell_info.meas_min = DBL_MAX;
+  quant->cell_info.h_max = quant->cell_info.meas_max = -DBL_MAX;
+
+  for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    const double  meas = quant->cell_vol[c_id];
+
+    if (meas > quant->cell_info.meas_max) {
+      quant->cell_info.meas_max = meas;
+      quant->cell_info.h_max = pow(meas, cs_math_onethird);
+      quant->cell_info.max_id = c_id;
+    }
+    if (meas < quant->cell_info.meas_min) {
+      quant->cell_info.meas_min = meas;
+      quant->cell_info.h_min = pow(meas, cs_math_onethird);
+      quant->cell_info.min_id = c_id;
+    }
+
+  } // Loop on cells
+
+  /* Face info (set default values) */
+  quant->face_info.min_id = quant->face_info.max_id = -1;
+  quant->face_info.h_min = quant->face_info.meas_min = DBL_MAX;
+  quant->face_info.h_max = quant->face_info.meas_max = -DBL_MAX;
+
+  for (cs_lnum_t  f_id = 0; f_id < quant->n_faces; f_id++) {
+
+    const double  meas = quant->face[f_id].meas;
+
+    if (meas > quant->face_info.meas_max) {
+      quant->face_info.meas_max = meas;
+      quant->face_info.h_max = sqrt(meas);
+      quant->face_info.max_id = f_id;
+    }
+    if (meas < quant->face_info.meas_min) {
+      quant->face_info.meas_min = meas;
+      quant->face_info.h_min = sqrt(meas);
+      quant->face_info.min_id = f_id;
+    }
+
+  } // Loop on faces
+
+  /* Edge info (set default values) */
+  quant->edge_info.min_id = quant->edge_info.max_id = -1;
+  quant->edge_info.h_min = quant->edge_info.meas_min = DBL_MAX;
+  quant->edge_info.h_max = quant->edge_info.meas_max = -DBL_MAX;
+
+  for (cs_lnum_t  e_id = 0; e_id < quant->n_edges; e_id++) {
+
+    const double  meas = quant->edge[e_id].meas;
+
+    if (meas > quant->edge_info.meas_max) {
+      quant->edge_info.meas_max = meas;
+      quant->edge_info.h_max = meas;
+      quant->edge_info.max_id = e_id;
+    }
+    if (meas < quant->edge_info.meas_min) {
+      quant->edge_info.meas_min = meas;
+      quant->edge_info.h_min = meas;
+      quant->edge_info.min_id = e_id;
+    }
+
+  } // Loop on edges
+
+}
+/*----------------------------------------------------------------------------
   Algorithm for computing mesh quantities : copy data from Saturne structure
   ----------------------------------------------------------------------------*/
 
@@ -904,6 +981,9 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
 
   _compute_dcell_quantities(topo, cdoq);
 
+  /* Define cs_quant_info_t structure */
+  _compute_quant_info(cdoq);
+
   return cdoq;
 }
 
@@ -939,6 +1019,29 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *q)
   BFT_FREE(q);
 
   return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Summarize generic information about the cdo mesh quantities
+ *
+ * \param[in]  cdoq     pointer to cs_cdo_quantities_t structure
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
+{
+  /* Output */
+  bft_printf("\n CDO mesh quantities information:\n");
+  bft_printf(" --cdo-- h_cell  %6.4e %6.4e (min/max)\n",
+             quant->cell_info.h_min, quant->cell_info.h_max);
+  bft_printf(" --cdo-- h_face  %6.4e %6.4e (min/max)\n",
+             quant->face_info.h_min, quant->face_info.h_max);
+  bft_printf(" --cdo-- h_edge  %6.4e %6.4e (min/max)\n",
+             quant->edge_info.h_min, quant->edge_info.h_max);
+  bft_printf("\n");
 }
 
 /*----------------------------------------------------------------------------*/

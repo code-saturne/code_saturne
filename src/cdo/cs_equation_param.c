@@ -619,6 +619,9 @@ switch (eqp->type) {
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
         bft_printf(" centered\n");
         break;
+      case CS_PARAM_ADVECTION_SCHEME_CIP:
+        bft_printf(" continuous interior penalty\n");
+        break;
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
         bft_printf(" upwind\n");
         break;

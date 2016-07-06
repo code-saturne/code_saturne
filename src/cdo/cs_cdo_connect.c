@@ -1024,23 +1024,23 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect)
   if (connect->v_info != NULL) {
     i = connect->v_info;
     bft_printf("\n");
-    bft_printf("                     |   full  |  intern |  border |\n");
-    bft_printf("  --dim-- n_vertices | %7d | %7d | %7d |\n",
+    bft_printf("                     |    full    |   intern   |   border   |");
+    bft_printf("\n  --dim-- n_vertices | %10d | %10d | %10d |\n",
                i->n_elts, i->n_i_elts, i->n_b_elts);
   }
   if (connect->e_info != NULL) {
     i = connect->e_info;
-    bft_printf("  --dim-- n_edges    | %7d | %7d | %7d |\n",
+    bft_printf("  --dim-- n_edges    | %10d | %10d | %10d |\n",
                i->n_elts, i->n_i_elts, i->n_b_elts);
   }
   if (connect->f_info != NULL) {
     i = connect->f_info;
-    bft_printf("  --dim-- n_faces    | %7d | %7d | %7d |\n",
+    bft_printf("  --dim-- n_faces    | %10d | %10d | %10d |\n",
                i->n_elts, i->n_i_elts, i->n_b_elts);
   }
   if (connect->c_info != NULL) {
     i = connect->c_info;
-    bft_printf("  --dim-- n_cells    | %7d | %7d | %7d |\n",
+    bft_printf("  --dim-- n_cells    | %10d | %10d | %10d |\n",
                i->n_elts, i->n_i_elts, i->n_b_elts);
   }
   bft_printf("\n");

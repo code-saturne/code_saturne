@@ -170,6 +170,20 @@ cs_advection_field_get_name(const cs_adv_field_t   *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the type of definition used to set the current advection
+ *         field structure
+ *
+ * \param[in]    adv    pointer to an advection field structure
+ *
+ * \return  the type of definition
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_def_type_t
+cs_advection_field_get_deftype(const cs_adv_field_t   *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Print a summary of a cs_adv_field_t structure
  *
  * \param[in]  adv      pointer to a cs_adv_field_t structure to summarize
@@ -263,6 +277,21 @@ cs_advection_field_get_cell_vector(cs_lnum_t              c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the value of the advection field for a given face
+ *
+ * \param[in]      adv     pointer to a cs_adv_field_t structure
+ * \param[in]      xyz     coordinates where to evaluate the advection field
+ * \param[in, out] vect    pointer to a cs_nvec3_t structure (meas + unitv)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_get_at_xyz(const cs_adv_field_t   *adv,
+                              const cs_real_3_t       xyz,
+                              cs_nvec3_t             *vect);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the value of the advection field at cell centers
  *
  * \param[in]      adv           pointer to a cs_adv_field_t structure
@@ -286,6 +315,19 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
 void
 cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
                                cs_real_t             *vtx_values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the max. value of the advection field among cells
+ *
+ * \param[in]      adv       pointer to a cs_adv_field_t structure
+ *
+ * \return the  max. value of the magnitude of the field at cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_advection_field_get_cell_max(const cs_adv_field_t      *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!

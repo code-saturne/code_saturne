@@ -32,6 +32,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -294,6 +295,26 @@ cs_advection_field_get_name(const cs_adv_field_t   *adv)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the type of definition used to set the current advection
+ *         field structure
+ *
+ * \param[in]    adv    pointer to an advection field structure
+ *
+ * \return  the type of definition
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_def_type_t
+cs_advection_field_get_deftype(const cs_adv_field_t   *adv)
+{
+  if (adv == NULL)
+    return CS_PARAM_N_DEF_TYPES;
+
+  return adv->def_type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Print a summary of a cs_adv_field_t structure
  *
  * \param[in]  adv      pointer to a cs_adv_field_t structure to summarize
@@ -474,10 +495,11 @@ cs_advection_field_def_by_array(cs_adv_field_t     *adv,
 
   adv->def_type = CS_PARAM_DEF_BY_ARRAY;
   adv->array_desc.location = desc.location;
-  adv->array_desc.state = desc.state   ;
+  adv->array_desc.state = desc.state;
   adv->array = array;
 
-  if (cs_cdo_same_support(desc.location, cs_cdo_dual_face_byc))
+  if (cs_cdo_same_support(desc.location, cs_cdo_dual_face_byc) ||
+      cs_cdo_same_support(desc.location, cs_cdo_primal_cell))
     adv->desc.state |= CS_FLAG_STATE_CELLWISE;
 }
 
@@ -558,9 +580,9 @@ cs_advection_field_create_field(cs_adv_field_t   *adv)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_get_cell_vector(cs_lnum_t              c_id,
-                                   const cs_adv_field_t  *adv,
-                                   cs_nvec3_t            *vect)
+cs_advection_field_get_cell_vector(cs_lnum_t               c_id,
+                                   const cs_adv_field_t   *adv,
+                                   cs_nvec3_t             *vect)
 {
   /* Initialize the vector */
   vect->meas = 0.;
@@ -593,21 +615,29 @@ cs_advection_field_get_cell_vector(cs_lnum_t              c_id,
 
   case CS_PARAM_DEF_BY_ARRAY:
     {
-      cs_real_3_t  recoval;
+      cs_real_3_t  val;
 
       /* Test if location has at least the pattern of the reference support */
       if (cs_cdo_same_support(adv->array_desc.location, cs_cdo_dual_face_byc))
         cs_reco_dfbyc_at_cell_center(c_id,
                                      cs_cdo_connect->c2e,
                                      cs_cdo_quant,
-                                     adv->array, recoval);
+                                     adv->array, val);
+
+      else if (cs_cdo_same_support(adv->array_desc.location,
+                                   cs_cdo_primal_cell)) {
+
+        for (int k = 0; k < 3; k++)
+          val[k] = adv->array[3*c_id+k];
+
+      }
       else
         bft_error(__FILE__, __LINE__, 0,
                   " Invalid support for evaluating the advection field %s"
                   " at the cell center of cell %d.", adv->name, c_id);
 
       /* Switch to a cs_nvec3_t representation */
-      cs_nvec3(recoval, vect);
+      cs_nvec3(val, vect);
     }
     break;
 
@@ -616,6 +646,58 @@ cs_advection_field_get_cell_vector(cs_lnum_t              c_id,
               " Stop computing the vector field for cell id %d related to"
               " the advection field %s.\n"
               " Type of definition not handled yet.", c_id, adv->name);
+    break;
+
+  } /* type of definition */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the advection field for a given face
+ *
+ * \param[in]      adv     pointer to a cs_adv_field_t structure
+ * \param[in]      xyz     coordinates where to evaluate the advection field
+ * \param[in, out] vect    pointer to a cs_nvec3_t structure (meas + unitv)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_get_at_xyz(const cs_adv_field_t   *adv,
+                              const cs_real_3_t       xyz,
+                              cs_nvec3_t             *vect)
+{
+  /* Initialize the vector */
+  vect->meas = 0.;
+  for (int k = 0; k < 3; k++)
+    vect->unitv[k] = 0;
+
+  if (adv == NULL)
+    return;
+
+  switch (adv->def_type) {
+
+  case CS_PARAM_DEF_BY_VALUE:
+    cs_nvec3(adv->def.get.vect, vect);
+    break;
+
+  case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_get_t  get;
+
+      /* Call the analytic function. result is stored in get */
+      adv->def.analytic(cs_time_step->t_cur, xyz, &get);
+
+      /* Switch to a cs_nvec3_t representation */
+      cs_nvec3(get.vect, vect);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " Stop computing the vector field at face centers related to"
+              " the advection field %s.\n"
+              " Type of definition not handled yet.", adv->name);
     break;
 
   } /* type of definition */
@@ -786,56 +868,58 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
 
   case CS_PARAM_DEF_BY_ARRAY:
     {
-      cs_lnum_t  j, c_id;
-      cs_real_3_t  recoval;
+      cs_real_3_t  val;
+      double  *dc_vol = NULL;
 
-      const cs_cdo_connect_t  *topo = cs_cdo_connect;
+      BFT_MALLOC(dc_vol, quant->n_vertices, double);
+      for (cs_lnum_t j = 0; j < quant->n_vertices; j++) {
+        dc_vol[j] = 0;
+        vtx_values[3*j] = vtx_values[3*j+1] = vtx_values[3*j+2] = 0.0;
+      }
+
+      const cs_connect_index_t  *c2v = cs_cdo_connect->c2v;
 
       /* Test if flag has at least the pattern of the reference support */
       if (cs_cdo_same_support(adv->array_desc.location, cs_cdo_dual_face_byc)) {
 
-        double  *dc_vol = NULL;
-
-        BFT_MALLOC(dc_vol, quant->n_vertices, double);
-        for (j = 0; j < quant->n_vertices; j++) {
-          dc_vol[j] = 0;
-          vtx_values[3*j] = vtx_values[3*j+1] = vtx_values[3*j+2] = 0.0;
-        }
-
-        for (c_id = 0; c_id < quant->n_cells; c_id++) {
+        for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
           cs_reco_dfbyc_at_cell_center(c_id,
-                                       topo->c2e,
+                                       cs_cdo_connect->c2e,
                                        quant,
-                                       adv->array, recoval);
+                                       adv->array, val);
 
-          for (j = topo->c2v->idx[c_id]; j < topo->c2v->idx[c_id+1]; j++) {
+          for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-            const cs_lnum_t  v_id = topo->c2v->ids[j];
+            const cs_lnum_t  v_id = c2v->ids[j];
             const cs_lnum_t  shift_v = 3*v_id;
             const double  dcc_vol = quant->dcell_vol[j];
 
             dc_vol[v_id] += dcc_vol;
-
             for (int k = 0; k < 3; k++)
-              vtx_values[shift_v + k] += dcc_vol * recoval[k];
+              vtx_values[shift_v + k] += dcc_vol * val[k];
 
           } // Loop on cell vertices
 
         } // Loop on cells
 
-        for (j = 0; j < quant->n_vertices; j++) {
+      }
+      else if (cs_cdo_same_support(adv->array_desc.location,
+                                   cs_cdo_primal_cell)) {
 
-          const double  inv_dcvol = 1/dc_vol[j];
-          const cs_lnum_t  shift_v = 3*j;
+        for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+          for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-          for (int k = 0; k < 3; k++)
-            vtx_values[shift_v+k] *= inv_dcvol;
+            const cs_lnum_t  v_id = c2v->ids[j];
+            const cs_lnum_t  shift_v = 3*v_id;
+            const double  dcc_vol = quant->dcell_vol[j];
 
-        } // Loop on vertices
+            dc_vol[v_id] += dcc_vol;
+            for (int k = 0; k < 3; k++)
+              vtx_values[shift_v + k] += dcc_vol * adv->array[3*c_id+k];
 
-        /* Free temporary buffer */
-        BFT_FREE(dc_vol);
+          } // Loop on cell vertices
+        } // Loop on cells
 
       }
       else
@@ -843,6 +927,18 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
                   " Invalid support for evaluating the advection field %s"
                   " at vertices.", adv->name);
 
+      for (cs_lnum_t j = 0; j < quant->n_vertices; j++) {
+
+        const double  inv_dcvol = 1/dc_vol[j];
+        const cs_lnum_t  shift_v = 3*j;
+
+        for (int k = 0; k < 3; k++)
+          vtx_values[shift_v+k] *= inv_dcvol;
+
+      } // Loop on vertices
+
+      /* Free temporary buffer */
+      BFT_FREE(dc_vol);
     }
     break;
 
@@ -855,6 +951,58 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
 
   } /* type of definition */
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the max. value of the advection field among cells
+ *
+ * \param[in]      adv       pointer to a cs_adv_field_t structure
+ *
+ * \return the  max. value of the magnitude of the field at cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_advection_field_get_cell_max(const cs_adv_field_t      *adv)
+{
+  double  beta_max = 0.0;
+
+  if (adv == NULL)
+    return beta_max;
+
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  switch (adv->def_type) {
+
+  case CS_PARAM_DEF_BY_VALUE:
+    beta_max = cs_math_3_norm(adv->def.get.vect);
+    break;
+
+  case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+  case CS_PARAM_DEF_BY_ARRAY:
+    {
+      cs_nvec3_t  adv_cell;
+
+      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+        cs_advection_field_get_cell_vector(c_id, adv, &adv_cell);
+        beta_max = fmax(beta_max, adv_cell.meas);
+
+      } // Loop on cells
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " Stop computing the max. ratio of the vector field inside each"
+              " cell for field called %s\n"
+              " Type of definition not handled yet.", adv->name);
+    break;
+
+  } /* type of definition */
+
+  return beta_max;
 }
 
 /*----------------------------------------------------------------------------*/

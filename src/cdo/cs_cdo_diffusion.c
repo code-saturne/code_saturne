@@ -116,7 +116,6 @@ struct _cs_cdo_diff_t {
 
 // Advanced developper parameters (weakly enforced the boundary conditions)
 static const double  cs_weak_nitsche_pena_coef = 500;
-static const double  cs_wbs_tef_weight = 1/12.;
 
 /*============================================================================
  * Private constant variables
@@ -522,7 +521,7 @@ _ntrgrd_wbs_algo(const cs_face_mesh_t     *fm,
 
     wvf[v1] += tef;
     wvf[v2] += tef;
-    wtef[e] = tef * cs_wbs_tef_weight;
+    wtef[e] = tef * cs_math_onetwelve;
 
     /* Gradient of the Lagrange function related to v1 and v2 */
     cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])u_vc, l_vc,
@@ -640,7 +639,7 @@ _ntrgrd_vcb_algo(const cs_face_mesh_t     *fm,
 
     wvf[v1] += tef;
     wvf[v2] += tef;
-    wtef[e] = tef * cs_wbs_tef_weight;
+    wtef[e] = tef * cs_math_onetwelve;
 
     /* Gradient of the Lagrange function related to v1 and v2 */
     cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])u_vc, l_vc,

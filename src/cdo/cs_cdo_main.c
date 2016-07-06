@@ -168,6 +168,7 @@ _setup_domain(cs_mesh_t             *m,
 
   /* Sumary of the settings */
   cs_cdo_connect_summary(domain->connect);
+  cs_cdo_quantities_summary(domain->cdo_quantities);
   cs_domain_summary(domain);
 
   return domain;

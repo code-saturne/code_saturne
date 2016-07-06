@@ -662,6 +662,36 @@ _condense_and_store(cs_cdovcb_scaleq_t        *b,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Update the value of stabilization coefficient in given situation
+ *
+ * \param[in] adv     pointer to a cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_cip_coef(const cs_adv_field_t     *adv)
+{
+  assert(adv != NULL); // Sanity check
+
+  const double  gseed = 1e-2;  /* Default value to multiply according to the
+                                  problem and the ratio of diameters */
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const double  hc_max = quant->cell_info.h_max;
+  const double  hc_min = quant->cell_info.h_min;
+  const double  hf_max = quant->face_info.h_max;
+  const double  hf_min = quant->face_info.h_min;
+  const double  hcMm = hc_max * hc_min;
+  const double  hfMm = hf_min * hf_max;
+  const double  rho_fc = hcMm / hfMm;
+
+  double  gamma = gseed * hc_max * hc_max * rho_fc;
+
+  cs_cdo_advection_set_cip_coef(gamma);
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -1136,9 +1166,11 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
 {
   cs_cdovcb_scaleq_t  *b = (cs_cdovcb_scaleq_t *)builder;
 
+  const cs_equation_param_t  *eqp = b->eqp;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_equation_param_t  *eqp = b->eqp;
+
+  cs_flag_t  cmflag = cs_cdovcb_cmflag;
 
   /* Allocate and initialize a matrix with the larger stencil (that related
      to diffusion => all vertices of a cell are potentially in interaction)
@@ -1165,6 +1197,13 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
                                   diff_tensor);
 
   } // DIFFUSION
+
+  if (b->has[CDO_ADVECTION]) {
+
+    cmflag |= CS_CDO_LOCAL_EF;
+    _set_cip_coef(eqp->advection_field);
+
+  }
 
   /* Preparatory step for unsteady term */
   if (b->has[CDO_TIME])
@@ -1218,7 +1257,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
   // Preparatory step fur a future use of openMP
   int  t_id = 0;
   cs_cell_mesh_t *mesh_c = cs_cdo_local_get_cell_mesh(t_id);
-  cs_cdo_locsys_t  *cs = cs_cdovcb_cell_systems[t_id];
+  cs_cdo_locsys_t  *csys = cs_cdovcb_cell_systems[t_id];
 
   /* Main loop on cells to build the linear system */
   /* --------------------------------------------- */
@@ -1226,7 +1265,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
     /* Set the local mesh structure for the current cell */
-    cs_cell_mesh_build(c_id, cs_cdovcb_cmflag, connect, quant, mesh_c);
+    cs_cell_mesh_build(c_id, cmflag, connect, quant, mesh_c);
 
     /* Cell-wise view of the linear system to build */
     const int  n_vc = mesh_c->n_vc;
@@ -1238,20 +1277,20 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
        has at least one border face */
     if (cell_flag[c_id] & CS_CDO_CONNECT_BD)
       for (short int v = 0; v < n_vc; v++)
-        cs->dir_bc[v] = dir_bc_vals[mesh_c->v_ids[v]];
+        csys->dir_bc[v] = dir_bc_vals[mesh_c->v_ids[v]];
 
     /* Initialize the local matrix storing advection/diffusion/reaction terms */
-    cs->mat->n_ent = n_sysc;
+    csys->mat->n_ent = n_sysc;
     for (short int v = 0; v < n_vc; v++) {
-      cs->mat->ids[v] = mesh_c->v_ids[v];
-      cs->rhs[v] = 0.;
+      csys->mat->ids[v] = mesh_c->v_ids[v];
+      csys->rhs[v] = 0.;
     }
-    cs->mat->ids[n_vc] = c_id;
-    cs->rhs[n_vc] = cell_rhs[c_id]; /* Store the rhs_c (used for static
+    csys->mat->ids[n_vc] = c_id;
+    csys->rhs[n_vc] = cell_rhs[c_id]; /* Store the rhs_c (used for static
                                        condensation) */
 
     for (short int v = 0; v < n_sysc*n_sysc; v++)
-      cs->mat->val[v] = 0;
+      csys->mat->val[v] = 0;
 
     /* DIFFUSION TERM */
     if (b->has[CDO_DIFFUSION]) { /* Define the local stiffness matrix */
@@ -1268,7 +1307,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
                                      (const cs_real_3_t (*))diff_tensor,
                                      b->diff);
 
-      cs_locmat_add(cs->mat, diff_mat);
+      cs_locmat_add(csys->mat, diff_mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
       bft_printf(">> Local diffusion matrix");
@@ -1281,12 +1320,12 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
         for (cs_lnum_t j = b->c2bcbf_idx[c_id];
              j < b->c2bcbf_idx[c_id+1]; j++) {
 
-          /* cs is updated inside (matrix and rhs) */
+          /* csys is updated inside (matrix and rhs) */
           cs_cdo_diffusion_weak_bc(b->c2bcbf_ids[j], // border face id
                                    mesh_c,
                                    (const cs_real_3_t (*))diff_tensor,
                                    b->diff,
-                                   cs); // cs is updated inside
+                                   csys); // csys is updated inside
 
         } // Loop on border faces
 
@@ -1301,25 +1340,19 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
     /* ADVECTION TERM */
     if (b->has[CDO_ADVECTION]) { /* Define the local advection matrix */
 
-      cs_locmat_t  *adv_mat =
-        cs_cdovcb_advection_build_local(mesh_c, eqp,
-                                        (const cs_real_3_t (*))diff_tensor,
-                                        b->adv);
+      cs_locmat_t  *adv_mat = cs_cdovcb_advection_build(mesh_c, eqp, b->adv);
 
-      cs_locmat_add(cs->mat, adv_mat);
+      cs_locmat_add(csys->mat, adv_mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
       bft_printf(">> Local advection matrix");
       cs_locmat_dump(c_id, adv_mat);
 #endif
 
-      /* Last treatment for the advection term: Apply boundary conditions */
-      if (cell_flag[c_id] & CS_CDO_CONNECT_BD) {
-
-        /* cs is updated inside (matrix and rhs) */
-        cs_cdovcb_advection_add_bc(mesh_c, eqp, b->adv, cs);
-
-      } // Apply BC
+      /* Last treatment for the advection term: Apply boundary conditions
+         csys is updated inside (matrix and rhs) */
+      if (cell_flag[c_id] & CS_CDO_CONNECT_BD)
+        cs_cdovcb_advection_add_bc(mesh_c, eqp, b->adv, csys);
 
     } /* ADVECTION */
 
@@ -1338,7 +1371,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
                                                  eqp->reaction_properties[r]);
 
       /* Update local system matrix with the reaction term */
-      cs_locmat_mult_add(cs->mat, rpty_val, hconf_cell);
+      cs_locmat_mult_add(csys->mat, rpty_val, hconf_cell);
 
     } /* REACTION */
 
@@ -1353,8 +1386,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
         tpty_val = cs_property_get_cell_value(c_id, eqp->time_property)/dt_cur;
 
       /* Apply the time discretization to the local system.
-         Update cs (matrix and rhs) */
-      _apply_time_scheme(tpty_val, field_val, mesh_c, hconf_cell, b, cs);
+         Update csys (matrix and rhs) */
+      _apply_time_scheme(tpty_val, field_val, mesh_c, hconf_cell, b, csys);
 
     } /* Time contribution */
 
@@ -1362,7 +1395,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
        a matrix of size n_vc. Store information in hybrid_storage in order to
        be able to compute the values at cell centers.
        rhs is updated before assembling. */
-    _condense_and_store(b, cs, cs_cell_condmat);
+    _condense_and_store(b, csys, cs_cell_condmat);
 
     /* Assemble the matrix related to the advcetion/diffusion/reaction terms
        If advection is activated, the resulting system is not symmetric
@@ -1374,12 +1407,12 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
 
     /* Assemble the right-hand side (rhs) */
     for (short int v = 0; v < n_vc; v++)
-      full_rhs[mesh_c->v_ids[v]] += cs->rhs[v];
-    cell_rhs[c_id] = cs->rhs[n_vc];
+      full_rhs[mesh_c->v_ids[v]] += csys->rhs[v];
+    cell_rhs[c_id] = csys->rhs[n_vc];
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 0
     bft_printf(">> (FINAL) Local system matrix");
-    cs_locmat_dump(c_id, cs);
+    cs_locmat_dump(c_id, csys->mat);
 #endif
 
   } // Main loop on cells
@@ -1566,7 +1599,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const void          *builder,
       for (short int v = 0; v < fm->n_vf; v++)
         p_v[v] = pdi[fm->v_ids[v]];
 
-      cs_reco_potential_face_value(fm, p_v, &p_f);
+      cs_reco_pv_at_face_center(fm, p_v, &p_f);
 
       if (b->has[CDO_DIFFUSION]) { /* Compute the local diffusive flux */
 
@@ -1613,7 +1646,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const void          *builder,
       for (short int v = 0; v < fm->n_vf; v++)
         p_v[v] = pdi[fm->v_ids[v]];
 
-      cs_reco_potential_face_value(fm, p_v, &p_f);
+      cs_reco_pv_at_face_center(fm, p_v, &p_f);
 
       if (b->has[CDO_DIFFUSION]) { /* Compute the local diffusive flux */
 
