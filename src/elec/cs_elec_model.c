@@ -425,6 +425,8 @@ _field_pointer_properties_map_electric_arcs(void)
                        cs_field_by_name_try("current_im"));
   cs_field_pointer_map(CS_ENUMF_(laplf),
                        cs_field_by_name_try("laplace_force"));
+  cs_field_pointer_map(CS_ENUMF_(magfl),
+                       cs_field_by_name_try("magnetic_field"));
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1703,6 +1705,7 @@ cs_compute_electric_field(const cs_mesh_t  *mesh,
     if (cs_glob_elec_option->ielarc > 0) {
       cs_real_3_t *cpro_laplf = (cs_real_3_t *)(CS_F_(laplf)->val);
       cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
+      cs_real_3_t *cpro_magfl = (cs_real_3_t *)(CS_F_(magfl)->val);
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         cpro_laplf[iel][0] =    cpro_curre[iel][1] * Bz[iel]
                               - cpro_curre[iel][2] * By[iel];
@@ -1710,6 +1713,9 @@ cs_compute_electric_field(const cs_mesh_t  *mesh,
                               - cpro_curre[iel][0] * Bz[iel];
         cpro_laplf[iel][2] =    cpro_curre[iel][0] * By[iel]
                               - cpro_curre[iel][1] * Bx[iel];
+        cpro_magfl[iel][0] =    Bx[iel];
+        cpro_magfl[iel][1] =    By[iel];
+        cpro_magfl[iel][2] =    Bz[iel];
       }
     }
 
@@ -2062,6 +2068,19 @@ cs_elec_add_property_fields(const int  *ielarc,
 
       /* Mapping to field and postprocessing */
       cs_field_post_id(f->id);
+
+      f = cs_field_create("magnetic_field",
+                          field_type,
+                          CS_MESH_LOCATION_CELLS,
+                          3,    /* dim */
+                          has_previous);
+      cs_field_set_key_int(f, keyvis, 1);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "Mag_Field");
+
+      /* Mapping to field and postprocessing */
+      cs_field_post_id(f->id);
+
     }
 
     if (cs_glob_elec_option->ixkabe == 1) {
