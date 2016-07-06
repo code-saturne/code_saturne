@@ -107,37 +107,20 @@ struct _hodge_builder_t {
   cs_locmat_t      *hloc;       /* Local dense matrix related to a local
                                    discrete Hodge op. */
 
-  void             *algoq;      /* Quantities used during the definition of
-                                   the local discrete Hodge op.
-                                   This structure is attached to each type
-                                   of algorithm */
+  /* Temporary buffers storing geometrical quantities attached to each type
+     of algorithm.
 
-};
+     Geometric quantities related to the construction of local discrete
+     Hodge op. when the algo. is either COST (included DGA, SUSHI, Generalized
+     Crouzeix-Raviart) and the type is between edges and faces (primal or dual).
 
-/* Geometric quantities related to the construction of local discrete
-   Hodge op. when the algo. is either COST (included DGA, SUSHI, Generalized
-   Crouzeix-Raviart) and the type is  between edges and faces (primal or dual).
-*/
+     Quantities related to the construction of a local discrete  Hodge op.
+     when the Whitney Barycentric Subdivision algo. is employed.
+     Used only for Vp --> Cd hodge (up to now)
+  */
 
-struct _cost_quant_t {
-
-  double    *kappa;     /* symmetric dense matrix of size n_ent */
-  double    *alpha;     /* dense matrix of size n_ent (not symmetric) */
-
-  cs_real_3_t  *pq;     /* primal geometric quantity (size: n_ent) */
-  cs_real_3_t  *dq;     /* dual geometric quantity (size: n_ent) */
-
-};
-
-/* Quantities related to the construction of a local discrete  Hodge op.
-   when the Whitney Barycentric Subdivision algo. is employed.
-   Used only for Vp --> Cd hodge (up to now) */
-
-struct _wbs_quant_t {
-
-  /* Buffers of size n_max_vbyc */
-  double   *w_vol;  /* |p_{ef,c}| for each face */
-  double   *wvf;    /* weights related to each vertex for a face */
+  double          *tmp_scal;
+  cs_real_3_t     *tmp_vect;
 
 };
 
@@ -439,71 +422,6 @@ _init_hodge_face(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Allocate and initialize a _cost_quant_t structure
- *
- * \param[in]  n_max_ent    max number of entities by primal cell
- *
- * \return  a pointer to a new allocated _cost_quant_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static struct _cost_quant_t *
-_init_cost_quant(int    n_max_ent)
-{
-   struct _cost_quant_t *hq = NULL;
-
-  BFT_MALLOC(hq, 1, struct _cost_quant_t);
-
-  hq->kappa = NULL;
-  hq->alpha = NULL;
-  hq->pq = NULL;
-  hq->dq = NULL;
-
-  if (n_max_ent > 0) {
-
-    const int  tot_size = n_max_ent*(1 + n_max_ent);
-
-    BFT_MALLOC(hq->kappa, tot_size, double);
-    for (int i = 0; i < tot_size; i++)
-      hq->kappa[i] = 0;
-
-    hq->alpha = hq->kappa + n_max_ent;
-
-    BFT_MALLOC(hq->pq, n_max_ent, cs_real_3_t);
-    BFT_MALLOC(hq->dq, n_max_ent, cs_real_3_t);
-
-  }
-
-  return hq;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Free a cs_hodge_costq_t structure
- *
- * \param[in]  hq    pointer to the cs_hodge_costq_t struct. to free
- *
- * \return  a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-static struct _cost_quant_t *
-_free_cost_quant(struct _cost_quant_t  *hq)
-{
-  if (hq == NULL)
-    return hq;
-
-  BFT_FREE(hq->kappa); /* Free in the same time alpha */
-  BFT_FREE(hq->pq);
-  BFT_FREE(hq->dq);
-
-  BFT_FREE(hq);
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Compute quantities used for defining the entries of the discrete
  *          Hodge for COST algo.
  *          Initialize the local discrete Hodge op. with the consistency part
@@ -513,8 +431,9 @@ _free_cost_quant(struct _cost_quant_t  *hq)
  * \param[in]      ptymat     values of the tensor related to the material pty
  * \param[in]      pq         pointer to the first set of quantities
  * \param[in]      dq         pointer to the second set of quantities
+ * \param[in, out] alpha      geometrical quantity
+ * \param[in, out] kappa      geometrical quantity
  * \param[in, out] hloc       pointer to a cs_locmat_t struct.
- * \param[in, out] hq         pointer to a _cost_quant_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -524,7 +443,8 @@ _compute_cost_quant(const int               n_ent,
                     const cs_real_33_t      ptymat,
                     const cs_real_3_t      *pq,
                     const cs_real_3_t      *dq,
-                    struct _cost_quant_t   *hq,
+                    double                 *alpha,
+                    double                 *kappa,
                     cs_locmat_t            *hloc)
 {
   /* Compute several useful quantities
@@ -539,7 +459,7 @@ _compute_cost_quant(const int               n_ent,
 
     const double  dsvol_i = _dp3(dq[i], pq[i]);
 
-    double  *alpha_i = hq->alpha + i*n_ent;
+    double  *alpha_i = alpha + i*n_ent;
     double  *mi = hloc->val + i*n_ent;
 
     alpha_i[i] = 1 - invcvol * dsvol_i;
@@ -548,7 +468,7 @@ _compute_cost_quant(const int               n_ent,
     const double  qmq_ii = _dp3(dq[i], mdq_i);
 
     mi[i] = invcvol * qmq_ii;
-    hq->kappa[i] = 3. * qmq_ii / dsvol_i;
+    kappa[i] = 3. * qmq_ii / dsvol_i;
 
     for (int j = i+1; j < n_ent; j++) {
 
@@ -557,7 +477,7 @@ _compute_cost_quant(const int               n_ent,
 
       /* Compute T (not symmetric) */
       alpha_i[j] = -invcvol * _dp3(pq[j], dq[i]);
-      hq->alpha[j*n_ent + i] = -invcvol * _dp3(pq[i], dq[j]);
+      alpha[j*n_ent + i] = -invcvol * _dp3(pq[i], dq[j]);
 
     } /* Loop on entities (J) */
 
@@ -573,14 +493,12 @@ _compute_cost_quant(const int               n_ent,
  *
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] hb         pointer to a cs_hodge_builder_t structure
- * \param[in, out] hq         pointer to a _cost_quant_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _cellwise_build_with_cost(const cs_cell_mesh_t      *cm,
-                          cs_hodge_builder_t        *hb,
-                          struct _cost_quant_t      *hq)
+                          cs_hodge_builder_t        *hb)
 {
   if (hodge_cost_ts_id > -1)
     cs_timer_stats_start(hodge_cost_ts_id);
@@ -590,20 +508,25 @@ _cellwise_build_with_cost(const cs_cell_mesh_t      *cm,
   const int  n_ent = hloc->n_ent;
   const cs_param_hodge_t  h_info = hb->h_info;
 
+  double  *kappa = hb->tmp_scal;
+  double  *alpha = hb->tmp_scal + n_ent;
+  cs_real_3_t  *pq = hb->tmp_vect;
+  cs_real_3_t  *dq = hb->tmp_vect + n_ent;
+
   /* Set numbering and geometrical quantities Hodge builder */
   switch (h_info.type) {
 
   case CS_PARAM_HODGE_TYPE_EPFD:
 
-    for (int _e = 0; _e < cm->n_ec; _e++) {
+    for (short int e = 0; e < cm->n_ec; e++) {
 
-      const cs_nvec3_t  dfq = cm->dface[_e];
-      const cs_quant_t  peq = cm->edge[_e];
+      const cs_nvec3_t  dfq = cm->dface[e];
+      const cs_quant_t  peq = cm->edge[e];
 
-      hloc->ids[_e] = cm->e_ids[_e];
+      hloc->ids[e] = cm->e_ids[e];
       for (int k = 0; k < 3; k++) {
-        hq->dq[_e][k] = dfq.meas * dfq.unitv[k];
-        hq->pq[_e][k] = peq.meas * peq.unitv[k];
+        dq[e][k] = dfq.meas * dfq.unitv[k];
+        pq[e][k] = peq.meas * peq.unitv[k];
       }
 
     } /* Loop on cell edges */
@@ -611,15 +534,15 @@ _cellwise_build_with_cost(const cs_cell_mesh_t      *cm,
 
   case CS_PARAM_HODGE_TYPE_FPED:
 
-    for (int _f = 0; _f < cm->n_fc; _f++) {
+    for (short int f = 0; f < cm->n_fc; f++) {
 
-      const cs_nvec3_t  deq = cm->dedge[_f];
-      const cs_quant_t  pfq = cm->face[_f];
+      const cs_nvec3_t  deq = cm->dedge[f];
+      const cs_quant_t  pfq = cm->face[f];
 
-      hloc->ids[_f] = cm->f_ids[_f];
+      hloc->ids[f] = cm->f_ids[f];
       for (int k = 0; k < 3; k++) {
-        hq->pq[_f][k] = pfq.meas * pfq.unitv[k];
-        hq->dq[_f][k] = deq.meas * deq.unitv[k];
+        pq[f][k] = pfq.meas * pfq.unitv[k];
+        dq[f][k] = deq.meas * deq.unitv[k];
       }
 
     } /* Loop on cell faces */
@@ -627,16 +550,16 @@ _cellwise_build_with_cost(const cs_cell_mesh_t      *cm,
 
   case CS_PARAM_HODGE_TYPE_EDFP:
 
-    for (int _f = 0; _f < cm->n_fc; _f++) {
+    for (short int f = 0; f < cm->n_fc; f++) {
 
-      const short int  sgn = cm->f_sgn[_f];
-      const cs_nvec3_t  deq = cm->dedge[_f];
-      const cs_quant_t  pfq = cm->face[_f];
+      const short int  sgn = cm->f_sgn[f];
+      const cs_nvec3_t  deq = cm->dedge[f];
+      const cs_quant_t  pfq = cm->face[f];
 
-      hloc->ids[_f] = cm->f_ids[_f];
+      hloc->ids[f] = cm->f_ids[f];
       for (int k = 0; k < 3; k++) {
-        hq->pq[_f][k] = sgn * deq.meas * deq.unitv[k];
-        hq->dq[_f][k] = sgn * pfq.meas * pfq.unitv[k];
+        pq[f][k] = sgn * deq.meas * deq.unitv[k];
+        dq[f][k] = sgn * pfq.meas * pfq.unitv[k];
       }
 
     } /* Loop on cell faces */
@@ -665,31 +588,30 @@ _cellwise_build_with_cost(const cs_cell_mesh_t      *cm,
       h_info.type == CS_PARAM_HODGE_TYPE_EPFD)
     _compute_cost_quant(n_ent, invcvol,
                         (const cs_real_3_t *)hb->ptymat,
-                        (const cs_real_t (*)[3])hq->pq,
-                        (const cs_real_t (*)[3])hq->dq,
-                        hq, hloc);
+                        (const cs_real_t (*)[3])pq,
+                        (const cs_real_t (*)[3])dq,
+                        alpha, kappa, hloc);
 
   /* DUAL --> PRIMAL */
   else if (h_info.type == CS_PARAM_HODGE_TYPE_EDFP)
     _compute_cost_quant(n_ent, invcvol,
                         (const cs_real_3_t *)hb->ptymat,
-                        (const cs_real_t (*)[3])hq->dq,
-                        (const cs_real_t (*)[3])hq->pq,
-                        hq, hloc);
-
-  double  stab_part;
+                        (const cs_real_t (*)[3])dq,
+                        (const cs_real_t (*)[3])pq,
+                        alpha, kappa, hloc);
 
   for (int i = 0; i < n_ent; i++) { /* Loop on cell entities I */
 
     const int  shift_i = i*n_ent;
-    const double  *alpha_i = hq->alpha + shift_i;
+    const double  *alpha_i = alpha + shift_i;
+
     double  *mi = hloc->val + shift_i;
 
     /* Add contribution from the stabilization part for
        each sub-volume related to a primal entity */
-    stab_part = 0;
+    double  stab_part = 0;
     for (int k = 0; k < n_ent; k++) /* Loop over sub-volumes */
-      stab_part += hq->kappa[k] * alpha_i[k] * alpha_i[k];
+      stab_part += kappa[k] * alpha_i[k] * alpha_i[k];
 
     mi[i] += beta2 * stab_part; // Consistency part has already been computed
 
@@ -697,14 +619,14 @@ _cellwise_build_with_cost(const cs_cell_mesh_t      *cm,
     for (int j = i + 1; j < n_ent; j++) { /* Loop on cell entities J */
 
       const int  shift_j = j*n_ent;
-      const double  *alpha_j = hq->alpha + shift_j;
+      const double  *alpha_j = alpha + shift_j;
       double  *mj = hloc->val + shift_j;
 
       /* Add contribution from the stabilization part for
          each sub-volume related to a primal entity */
       stab_part = 0;
       for (int k = 0; k < n_ent; k++) /* Loop over sub-volumes */
-        stab_part += hq->kappa[k] * alpha_i[k] * alpha_j[k];
+        stab_part += kappa[k] * alpha_i[k] * alpha_j[k];
 
       mi[j] += beta2 * stab_part;
       mj[i] = mi[j]; // Symmetric by construction
@@ -725,24 +647,26 @@ _cellwise_build_with_cost(const cs_cell_mesh_t      *cm,
  * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
  * \param[in, out] hb         pointer to a cs_hodge_builder_t struct.
- * \param[in, out] hq         pointer to a _cost_quant_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_build_using_cost(int                         cid,
-                  const cs_cdo_connect_t     *connect,
-                  const cs_cdo_quantities_t  *quant,
-                  cs_hodge_builder_t         *hb,
-                  struct _cost_quant_t       *hq)
+_build_using_cost(int                          cid,
+                  const cs_cdo_connect_t      *connect,
+                  const cs_cdo_quantities_t   *quant,
+                  cs_hodge_builder_t          *hb)
 {
   int  i, j, k;
 
   if (hodge_cost_ts_id > -1)
     cs_timer_stats_start(hodge_cost_ts_id);
 
-  int  n_ent = 0;
   cs_locmat_t  *hloc = hb->hloc;
+  int  n_ent = hloc->n_ent;
+  double  *kappa = hb->tmp_scal;
+  double  *alpha = hb->tmp_scal + n_ent;
+  cs_real_3_t  *pq = hb->tmp_vect;
+  cs_real_3_t  *dq = hb->tmp_vect + n_ent;
 
   const cs_param_hodge_t  h_info = hb->h_info;
 
@@ -753,20 +677,22 @@ _build_using_cost(int                         cid,
     {
       const cs_connect_index_t  *c2e = connect->c2e;
 
+      short int e = 0;
       for (i = c2e->idx[cid]; i < c2e->idx[cid+1]; i++) {
 
         const cs_lnum_t  e_id = c2e->ids[i];
         const cs_dface_t  fd = quant->dface[i];   /* Dual face quantities */
         const cs_quant_t  ep = quant->edge[e_id]; /* Edge quantities */
 
-        hloc->ids[n_ent] = e_id;
+        hloc->ids[e] = e_id;
         for (k = 0; k < 3; k++) {
-          hq->dq[n_ent][k] = fd.vect[k];
-          hq->pq[n_ent][k] = ep.meas * ep.unitv[k];
+          dq[e][k] = fd.vect[k];
+          pq[e][k] = ep.meas * ep.unitv[k];
         }
-        n_ent++;
+        e++;
 
       } /* Loop on cell edges */
+      assert(e == hloc->n_ent);
 
     }
     break;
@@ -775,20 +701,22 @@ _build_using_cost(int                         cid,
     {
       const cs_sla_matrix_t  *c2f = connect->c2f;
 
+      short int f = 0;
       for (i = c2f->idx[cid]; i < c2f->idx[cid+1]; i++) {
 
         const cs_lnum_t  f_id = c2f->col_id[i];
-        const cs_nvec3_t  ed = quant->dedge[i]; /* Dual edge quantities */
-        const cs_quant_t  fp = quant->face[f_id];  /* Face quantities */
+        const cs_nvec3_t  ed = quant->dedge[i];   /* Dual edge quantities */
+        const cs_quant_t  fp = quant->face[f_id]; /* Face quantities */
 
-        hloc->ids[n_ent] = f_id;
+        hloc->ids[f] = f_id;
         for (k = 0; k < 3; k++) {
-          hq->pq[n_ent][k] = fp.meas * fp.unitv[k];
-          hq->dq[n_ent][k] = ed.meas * ed.unitv[k];
+          pq[f][k] = fp.meas * fp.unitv[k];
+          dq[f][k] = ed.meas * ed.unitv[k];
         }
-        n_ent++;
+        f++;
 
       } /* Loop on cell faces */
+      assert(f == hloc->n_ent);
 
     }
     break;
@@ -797,6 +725,7 @@ _build_using_cost(int                         cid,
     {
       const cs_sla_matrix_t  *c2f = connect->c2f;
 
+      short int f = 0;
       for (i = c2f->idx[cid]; i < c2f->idx[cid+1]; i++) {
 
         const cs_lnum_t  f_id = c2f->col_id[i];
@@ -804,14 +733,15 @@ _build_using_cost(int                         cid,
         const cs_nvec3_t  ed = quant->dedge[i];    /* Dual edge quantities */
         const cs_quant_t  fp = quant->face[f_id];  /* Face quantities */
 
-        hloc->ids[n_ent] = f_id;
+        hloc->ids[f] = f_id;
         for (k = 0; k < 3; k++) {
-          hq->pq[n_ent][k] = sgn * fp.meas * fp.unitv[k];
-          hq->dq[n_ent][k] = sgn * ed.meas * ed.unitv[k];
+          pq[f][k] = sgn * fp.meas * fp.unitv[k];
+          dq[f][k] = sgn * ed.meas * ed.unitv[k];
         }
-        n_ent++;
+        f++;
 
       } /* Loop on cell faces */
+      assert(f == hloc->n_ent);
 
     }
     break;
@@ -824,7 +754,6 @@ _build_using_cost(int                         cid,
 
   /* Sanity checks */
   assert(n_ent < hloc->n_max_ent + 1);
-  assert(n_ent == hloc->n_ent);
 
   /* Compute additional geometrical quantities: qmq and T
      Initial the local Hodge matrix with the consistency part which is
@@ -840,31 +769,29 @@ _build_using_cost(int                         cid,
       h_info.type == CS_PARAM_HODGE_TYPE_EPFD)
     _compute_cost_quant(n_ent, invcvol,
                         (const cs_real_3_t *)hb->ptymat,
-                        (const cs_real_t (*)[3])hq->pq,
-                        (const cs_real_t (*)[3])hq->dq,
-                        hq, hloc);
+                        (const cs_real_t (*)[3])pq,
+                        (const cs_real_t (*)[3])dq,
+                        alpha, kappa, hloc);
 
   /* DUAL --> PRIMAL */
   else if (h_info.type == CS_PARAM_HODGE_TYPE_EDFP)
     _compute_cost_quant(n_ent, invcvol,
                         (const cs_real_3_t *)hb->ptymat,
-                        (const cs_real_t (*)[3])hq->dq,
-                        (const cs_real_t (*)[3])hq->pq,
-                        hq, hloc);
-
-  double  stab_part;
+                        (const cs_real_t (*)[3])dq,
+                        (const cs_real_t (*)[3])pq,
+                        alpha, kappa, hloc);
 
   for (i = 0; i < n_ent; i++) { /* Loop on cell entities I */
 
     const int  shift_i = i*n_ent;
-    const double  *alpha_i = hq->alpha + shift_i;
+    const double  *alpha_i = alpha + shift_i;
     double  *mi = hloc->val + shift_i;
 
     /* Add contribution from the stabilization part for
        each sub-volume related to a primal entity */
-    stab_part = 0;
+    double  stab_part = 0;
     for (k = 0; k < n_ent; k++) /* Loop over sub-volumes */
-      stab_part += hq->kappa[k] * alpha_i[k] * alpha_i[k];
+      stab_part += kappa[k] * alpha_i[k] * alpha_i[k];
 
     mi[i] += beta2 * stab_part; // Consistency part has already been computed
 
@@ -872,14 +799,14 @@ _build_using_cost(int                         cid,
     for (j = i + 1; j < n_ent; j++) { /* Loop on cell entities J */
 
       const int  shift_j = j*n_ent;
-      const double  *alpha_j = hq->alpha + shift_j;
+      const double  *alpha_j = alpha + shift_j;
       double  *mj = hloc->val + shift_j;
 
       /* Add contribution from the stabilization part for
          each sub-volume related to a primal entity */
       stab_part = 0;
       for (k = 0; k < n_ent; k++) /* Loop over sub-volumes */
-        stab_part += hq->kappa[k] * alpha_i[k] * alpha_j[k];
+        stab_part += kappa[k] * alpha_i[k] * alpha_j[k];
 
       mi[j] += beta2 * stab_part;
       mj[i] = mi[j]; // Symmetric by construction
@@ -910,30 +837,33 @@ _build_stiffness_using_cost(const cs_cell_mesh_t     *cm,
   if (hodge_cost_ts_id > -1)
     cs_timer_stats_start(hodge_cost_ts_id);
 
-  int  n_ent = 0;
   cs_locmat_t  *hloc = hb->hloc;
-  struct _cost_quant_t  *hq = (struct _cost_quant_t *)hb->algoq;
 
+  const int  n_ent = hloc->n_ent;;
   const cs_param_hodge_t  h_info = hb->h_info;
+
+  double  *kappa = hb->tmp_scal;
+  double  *alpha = hb->tmp_scal + n_ent;
+  cs_real_3_t  *pq = hb->tmp_vect;
+  cs_real_3_t  *dq = hb->tmp_vect + n_ent;
 
   /* Set numbering and geometrical quantities Hodge builder */
   switch (h_info.type) {
 
   case CS_PARAM_HODGE_TYPE_EPFD:
     {
-      n_ent = cm->n_ec;
-      hloc->n_ent = cm->n_ec;
       for (int ii = 0; ii < n_ent; ii++) {
 
         cs_nvec3_t  dfq = cm->dface[ii];
         cs_quant_t  peq = cm->edge[ii];
 
         for (int k = 0; k < 3; k++) {
-          hq->dq[ii][k] = dfq.meas * dfq.unitv[k];
-          hq->pq[ii][k] = peq.meas * peq.unitv[k];
+          dq[ii][k] = dfq.meas * dfq.unitv[k];
+          pq[ii][k] = peq.meas * peq.unitv[k];
         }
 
       } /* Loop on cell edges */
+      assert(n_ent == cm->n_ec);
     }
     break;
 
@@ -954,16 +884,14 @@ _build_stiffness_using_cost(const cs_cell_mesh_t     *cm,
 
   _compute_cost_quant(n_ent, invcvol,
                       (const cs_real_3_t *)hb->ptymat,
-                      (const cs_real_t (*)[3])hq->pq,
-                      (const cs_real_t (*)[3])hq->dq,
-                      hq, hloc);
-
-  double  stab_part;
+                      (const cs_real_t (*)[3])pq,
+                      (const cs_real_t (*)[3])dq,
+                      alpha, kappa, hloc);
 
   for (int ei = 0; ei < n_ent; ei++) { /* Loop on cell entities I */
 
     const int  shift_i = ei*n_ent;
-    const double  *alpha_i = hq->alpha + shift_i;
+    const double  *alpha_i = alpha + shift_i;
     const short int  _2ei = 2*ei;
     const short int  i1ei = cm->e2v_sgn[_2ei];
     const short int  i2ei = cm->e2v_sgn[_2ei+1];
@@ -976,9 +904,9 @@ _build_stiffness_using_cost(const cs_cell_mesh_t     *cm,
 
     /* Add contribution from the stabilization part for
        each sub-volume related to a primal entity */
-    stab_part = 0;
+    double  stab_part = 0;
     for (int ek = 0; ek < n_ent; ek++) /* Loop over sub-volumes */
-      stab_part += hq->kappa[ek] * alpha_i[ek] * alpha_i[ek];
+      stab_part += kappa[ek] * alpha_i[ek] * alpha_i[ek];
 
     /* Diagonal value: consistency part has already been computed */
     const double  dval = hi[ei] + beta2 * stab_part;
@@ -994,7 +922,7 @@ _build_stiffness_using_cost(const cs_cell_mesh_t     *cm,
     for (int ej = ei + 1; ej < n_ent; ej++) { /* Loop on cell entities J */
 
       const int  shift_j = ej*n_ent;
-      const double  *alpha_j = hq->alpha + shift_j;
+      const double  *alpha_j = alpha + shift_j;
       const short int  _2ej = 2*ej;
       const short int  j1ej = cm->e2v_sgn[_2ej];
       const short int  j2ej = cm->e2v_sgn[_2ej+1];
@@ -1008,7 +936,7 @@ _build_stiffness_using_cost(const cs_cell_mesh_t     *cm,
          each sub-volume related to a primal entity */
       stab_part = 0;
       for (int ek = 0; ek < n_ent; ek++) /* Loop over sub-volumes */
-        stab_part += hq->kappa[ek] * alpha_i[ek] * alpha_j[ek];
+        stab_part += kappa[ek] * alpha_i[ek] * alpha_j[ek];
 
       /* Extra-diagonal value */
       const double xval = hi[ej] + beta2 * stab_part;
@@ -1062,70 +990,18 @@ _build_stiffness_using_cost(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a structure used to compute a discrete Hodge op. when using
- *          WBS algo.
- *
- * \param[in]   n_max_vbyc    max number of vertices in a cell
- *
- * \return a pointer to a _wbs_quant_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static struct _wbs_quant_t *
-_init_wbs_quant(int    n_max_vbyc)
-{
-  struct _wbs_quant_t  *hq = NULL;
-
-  /* Allocate structure */
-  BFT_MALLOC(hq, 1, struct _wbs_quant_t);
-
-  BFT_MALLOC(hq->w_vol, n_max_vbyc, double);
-  BFT_MALLOC(hq->wvf, n_max_vbyc, double);
-
-  return  hq;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Free a structure used to compute a discrete Hodge op. when using
- *          WBS algo.
- *
- * \param[in]   hq     pointer to a _wbs_quant_t structure
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-static struct _wbs_quant_t *
-_free_wbs_quant(struct _wbs_quant_t  *hq)
-{
-  if (hq == NULL)
-    return hq;
-
-  BFT_FREE(hq->w_vol);
-  BFT_FREE(hq->wvf);
-
-  BFT_FREE(hq);
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Build a local discrete Hodge operator using the generic WBS algo.
  *          and cellwise view of the mesh
  *          WBS means Whitney Barycentric Subdivision
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hb      pointer to a cs_hodge_builder_t structure
- * \param[in, out] hq      pointer to a _wbs_quant_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _cellwise_build_with_wbs(const cs_cell_mesh_t      *cm,
-                         cs_hodge_builder_t        *hb,
-                         struct _wbs_quant_t       *hq)
+                         cs_hodge_builder_t        *hb)
 {
   /* Sanity check */
   assert(hb->h_info.algo == CS_PARAM_HODGE_ALGO_WBS);
@@ -1135,6 +1011,8 @@ _cellwise_build_with_wbs(const cs_cell_mesh_t      *cm,
     cs_timer_stats_start(hodge_wbs_ts_id);
 
   cs_locmat_t  *m = hb->hloc;
+  double  *wvf = hb->tmp_scal;
+  double  *pefc_vol = hb->tmp_scal + cm->n_vc;
 
   const double  c_coef = 0.1*cm->vol_c;
 
@@ -1142,11 +1020,12 @@ _cellwise_build_with_wbs(const cs_cell_mesh_t      *cm,
   for (short int vi = 0; vi < cm->n_vc; vi++) {
 
     double  *mi = m->val + vi*cm->n_vc;
-    const double  vi_coef = c_coef * cm->wvc[vi];
+    const double  vi_coef = 4 * c_coef * cm->wvc[vi];
 
     m->ids[vi] = cm->v_ids[vi];
-    mi[vi] = vi_coef * cm->wvc[vi];   // Diagonal entry
-    for (short int vj = vi+1; vj < cm->n_vc; vj++)
+    // Diag. entry has an additional contrib
+    mi[vi] = vi_coef * (0.5 + cm->wvc[vi]);
+    for (short int vj = vi + 1; vj < cm->n_vc; vj++)
       mi[vj] = vi_coef * cm->wvc[vj]; // Extra-diagonal entries
 
   } // Loop on cell vertices
@@ -1155,63 +1034,44 @@ _cellwise_build_with_wbs(const cs_cell_mesh_t      *cm,
   for (short int f = 0; f < cm->n_fc; f++) {
 
     /* Define useful quantities for WBS algo. */
-    cs_compute_fwbs_q0(f, cm, hq->wvf, hq->w_vol);
+    const double pfc_vol = cs_compute_fwbs_q1(f, cm, wvf, pefc_vol);
+    const double f_coef = 0.3 * pfc_vol;
 
+    /* Add face contribution:
+       Diagonal entry    H(i,i) += 0.3*wif*wif*pfc_vol
+       Extra-diag. entry H(i,j) += 0.3*wjf*wif*pfc_vol */
+    for (short int vi = 0; vi < cm->n_vc; vi++) {
+
+      double  *mi = m->val + vi*cm->n_vc;
+
+      /* Diagonal and Extra-diagonal entries: Add face contribution */
+      const double  coef_if = f_coef * wvf[vi];
+      for (short int vj = vi; vj < cm->n_vc; vj++)
+        mi[vj] += coef_if * wvf[vj];
+
+    } // Face contribution
+
+    /* Add edge-face contribution (only extra-diag) = 0.05 * |p_{ef,c}| */
     for (int i = cm->f2e_idx[f], ii = 0; i < cm->f2e_idx[f+1]; i++, ii++) {
 
-      const short int  e = cm->f2e_ids[i];
-      const short int  v1 = cm->e2v_ids[2*e];
-      const short int  v2 = cm->e2v_ids[2*e+1];
+      const short int  eshft = 2*cm->f2e_ids[i];
+      const short int  v1 = cm->e2v_ids[eshft];
+      const short int  v2 = cm->e2v_ids[eshft+1];
 
       /* Sanity check */
       assert(v1 > -1 && v2 > -1);
 
-      /* Add local contribution */
-      for (short int vi = 0; vi < cm->n_vc; vi++) {
-
-        double  *mi = m->val + vi*cm->n_vc;
-
-        const bool  is_vi = (vi == v1 || vi == v2) ? true : false;
-
-        const double  wic = cm->wvc[vi];
-        const double  wif = hq->wvf[vi];
-
-        double  dval = 2*wif*(wif + wic);
-        if (is_vi)
-          dval += 2*(1 + wic + wif);
-        /* 1/20 * |tet| (cf. Rapport HI-A7/7561 in 1991) */
-        dval *= hq->w_vol[ii];
-        mi[vi] += dval;  /* Add diagonal entry */
-
-        /* Extra-diagonal entries */
-        for (short int vj = vi+1; vj < cm->n_vc; vj++) {
-
-          const bool  is_vj = (vj == v1 || vj == v2) ? true : false;
-
-          const double  wjc = cm->wvc[vj];
-          const double  wjf = hq->wvf[vj];
-
-          double xval = 2*wif*wjf + wif*wjc + wic*wjf;
-          if (is_vi)
-            xval += wjf + wjc;
-          if (is_vj)
-            xval += wif + wic;
-          if (is_vi && is_vj)
-            xval += 1;
-          xval *= hq->w_vol[ii];
-
-          mi[vj] += xval; /* Add extra-diag. entry */
-
-        } // Extra-diag entries
-
-      } // Loop on cell vertices
+      if (v1 < v2)
+        m->val[v1*cm->n_vc+v2] += 0.05 * pefc_vol[ii];
+      else
+        m->val[v2*cm->n_vc+v1] += 0.05 * pefc_vol[ii];
 
     } // Loop on face edges
 
   } // Loop on cell faces
 
   /* Take into account the value of the associated property */
-  if (fabs(hb->ptyval - 1.0) > cs_math_get_machine_epsilon()) {
+  if (fabs(hb->ptyval - 1.0) > 10*cs_math_get_machine_epsilon()) {
     for (short int vi = 0; vi < cm->n_vc; vi++) {
       double  *mi = m->val + vi*cm->n_vc;
       for (short int vj = vi; vj < cm->n_vc; vj++)
@@ -1238,14 +1098,12 @@ _cellwise_build_with_wbs(const cs_cell_mesh_t      *cm,
  *
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] hb         pointer to a cs_hodge_builder_t structure
- * \param[in, out] hq         pointer to a _wbs_quant_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _cellwise_build_with_hvc(const cs_cell_mesh_t      *cm,
-                         cs_hodge_builder_t        *hb,
-                         struct _wbs_quant_t       *hq)
+                         cs_hodge_builder_t        *hb)
 {
   /* Sanity check */
   assert(hb->h_info.algo == CS_PARAM_HODGE_ALGO_WBS);
@@ -1255,6 +1113,8 @@ _cellwise_build_with_hvc(const cs_cell_mesh_t      *cm,
     cs_timer_stats_start(hodge_wbs_ts_id);
 
   cs_locmat_t  *m = hb->hloc;
+  double  *wvf = hb->tmp_scal;
+  double  *pefc_vol = hb->tmp_scal + cm->n_vc;
 
   const int  msize = cm->n_vc + 1;
   const double  c_coef1 = 0.2*cm->vol_c;
@@ -1282,7 +1142,7 @@ _cellwise_build_with_hvc(const cs_cell_mesh_t      *cm,
   for (short int f = 0; f < cm->n_fc; f++) {
 
     /* Define useful quantities for WBS algo. */
-    const double pfc_vol = cs_compute_fwbs_q1(f, cm, hq->wvf, hq->w_vol);
+    const double pfc_vol = cs_compute_fwbs_q1(f, cm, wvf, pefc_vol);
     const double f_coef = 0.3 * pfc_vol;
 
     /* Add face contribution:
@@ -1290,12 +1150,12 @@ _cellwise_build_with_hvc(const cs_cell_mesh_t      *cm,
        Extra-diag. entry H(i,j) += 0.3*wjf*wif*pfc_vol */
     for (short int vi = 0; vi < cm->n_vc; vi++) {
 
-      const double  coef_if = f_coef * hq->wvf[vi];
+      const double  coef_if = f_coef * wvf[vi];
       double  *mi = m->val + vi*msize;
 
       /* Diagonal and Extra-diagonal entries: Add face contribution */
       for (short int vj = vi; vj < cm->n_vc; vj++)
-        mi[vj] += coef_if * hq->wvf[vj];
+        mi[vj] += coef_if * wvf[vj];
 
     } // Extra-diag entries
 
@@ -1309,9 +1169,9 @@ _cellwise_build_with_hvc(const cs_cell_mesh_t      *cm,
       /* Sanity check */
       assert(v1 > -1 && v2 > -1);
       if (v1 < v2)
-        m->val[v1*msize+v2] += 0.05 * hq->w_vol[ii];
+        m->val[v1*msize+v2] += 0.05 * pefc_vol[ii];
       else
-        m->val[v2*msize+v1] += 0.05 * hq->w_vol[ii];
+        m->val[v2*msize+v1] += 0.05 * pefc_vol[ii];
 
     } // Loop on face edges
 
@@ -1664,25 +1524,41 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
   }
 
   hb->hloc = cs_locmat_create(hb->n_maxent_byc);
+  hb->tmp_scal = NULL;
+  hb->tmp_vect = NULL;
+
+  int  v_size = 0;
+  int  s_size = 0;
 
   /* Allocate the structure used to stored quantities used during the build
      of the local discrete Hodge op. */
   switch (h_info.algo) {
 
   case CS_PARAM_HODGE_ALGO_COST:
-    hb->algoq = _init_cost_quant(hb->n_maxent_byc);
+    v_size = 2*hb->n_maxent_byc;
+    s_size = hb->n_maxent_byc * (1 + hb->n_maxent_byc);
     break;
 
   case CS_PARAM_HODGE_ALGO_WBS:
     assert(h_info.type == CS_PARAM_HODGE_TYPE_VPCD ||
            h_info.type == CS_PARAM_HODGE_TYPE_VC);
-    hb->algoq = _init_wbs_quant(hb->n_maxent_byc);
+    s_size = 2*hb->n_maxent_byc;
     break;
 
   default:
-    hb->algoq = NULL;
     break;
 
+  }
+
+  if (s_size > 0) {
+    BFT_MALLOC(hb->tmp_scal, s_size, double);
+    for (int i = 0; i < s_size; i++) hb->tmp_scal[i] = 0.;
+  }
+
+  if (v_size > 0) {
+    BFT_MALLOC(hb->tmp_vect, v_size, cs_real_3_t);
+    for (int i = 0; i < v_size; i++)
+      hb->tmp_vect[i][0] = hb->tmp_vect[i][1] = hb->tmp_vect[i][2] = 0.;
   }
 
   if (hodge_ts_id > -1)
@@ -1710,21 +1586,10 @@ cs_hodge_builder_free(cs_hodge_builder_t  *hb)
   if (hodge_ts_id > -1)
     cs_timer_stats_start(hodge_ts_id);
 
+  BFT_FREE(hb->tmp_vect);
+  BFT_FREE(hb->tmp_scal);
+
   hb->hloc = cs_locmat_free(hb->hloc);
-
-  switch (hb->h_info.algo) {
-  case CS_PARAM_HODGE_ALGO_COST:
-    hb->algoq = _free_cost_quant((struct _cost_quant_t *)hb->algoq);
-    break;
-
-  case CS_PARAM_HODGE_ALGO_WBS:
-    hb->algoq = _free_wbs_quant((struct _wbs_quant_t *)hb->algoq);
-    break;
-
-  default:
-    hb->algoq = NULL;
-    break;
-  }
 
   BFT_FREE(hb);
 
@@ -1932,7 +1797,7 @@ cs_hodge_build_cellwise(const cs_cell_mesh_t      *cm,
   switch (hb->h_info.algo) {
 
   case CS_PARAM_HODGE_ALGO_COST:
-    _cellwise_build_with_cost(cm, hb, (struct _cost_quant_t *)hb->algoq);
+    _cellwise_build_with_cost(cm, hb);
     break;
 
   case CS_PARAM_HODGE_ALGO_VORONOI:
@@ -1941,9 +1806,9 @@ cs_hodge_build_cellwise(const cs_cell_mesh_t      *cm,
 
   case CS_PARAM_HODGE_ALGO_WBS:
     if (hb->h_info.type == CS_PARAM_HODGE_TYPE_VPCD)
-      _cellwise_build_with_wbs(cm, hb, (struct _wbs_quant_t *)hb->algoq);
+      _cellwise_build_with_wbs(cm, hb);
     else if (hb->h_info.type == CS_PARAM_HODGE_TYPE_VC)
-      _cellwise_build_with_hvc(cm, hb, (struct _wbs_quant_t *)hb->algoq);
+      _cellwise_build_with_hvc(cm, hb);
     else
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid type of discrete Hodge op. for WBS algorithm."));
@@ -2025,8 +1890,7 @@ cs_hodge_build_local(int                         c_id,
   switch (h_info.algo) {
 
   case CS_PARAM_HODGE_ALGO_COST:
-    _build_using_cost(c_id, connect, quant, hb,
-                      (struct _cost_quant_t *)hb->algoq);
+    _build_using_cost(c_id, connect, quant, hb);
     break;
 
   case CS_PARAM_HODGE_ALGO_VORONOI:
