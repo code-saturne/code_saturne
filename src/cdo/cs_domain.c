@@ -52,11 +52,8 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
-#include "cs_cdo_local.h"
-#include "cs_cdovb_scaleq.h"
-#include "cs_cdovcb_scaleq.h"
-#include "cs_cdofb_scaleq.h"
 #include "cs_evaluate.h"
+#include "cs_equation_common.h"
 #include "cs_groundwater.h"
 #include "cs_hodge.h"
 #include "cs_log_iteration.h"
@@ -465,8 +462,6 @@ _set_shared_pointers(const cs_cdo_quantities_t    *quant,
   cs_evaluate_set_shared_pointers(quant, connect, time_step);
   cs_property_set_shared_pointers(quant, connect, time_step);
   cs_advection_field_set_shared_pointers(quant, connect, time_step);
-  cs_cdovb_scaleq_set_shared_pointers(quant, connect, time_step);
-  cs_cdovcb_scaleq_set_shared_pointers(quant, connect, time_step);
 }
 
 /*============================================================================
@@ -543,10 +538,8 @@ cs_domain_init(const cs_mesh_t             *mesh,
   domain->n_user_equations = 0;
   domain->equations = NULL;
 
+  domain->scheme_flag = 0;
   domain->only_steady = true;
-  domain->do_vb_scal = false;
-  domain->do_fb_scal = false;
-  domain->do_vcb_scal = false;
 
   /* Other options */
   domain->output_nt = -1;
@@ -640,16 +633,8 @@ cs_domain_free(cs_domain_t   *domain)
 
   BFT_FREE(domain->equations);
 
-  /* Free cell-wise and face-wise view of a mesh */
-  cs_cdo_local_finalize();
-
-  /* Free temporary buffers allocated for each kind of numerical used */
-  if (domain->do_vb_scal)
-    cs_cdovb_scaleq_finalize();
-  if (domain->do_vcb_scal)
-    cs_cdovcb_scaleq_finalize();
-  if (domain->do_fb_scal)
-    cs_cdofb_scaleq_finalize();
+  /* Free common structures relatated to equations */
+  cs_equation_free_common_structures(domain->scheme_flag);
 
   /* Free CDO structures related to geometric quantities and connectivity */
   domain->cdo_quantities = cs_cdo_quantities_free(domain->cdo_quantities);
@@ -905,6 +890,39 @@ cs_domain_last_setup(cs_domain_t    *domain)
     cs_property_set_timer_stats(domain->verbosity);
   }
 
+  /* Define a scheme flag for the current domain */
+  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
+
+    cs_equation_t  *eq = domain->equations[eq_id];
+    cs_space_scheme_t  scheme = cs_equation_get_space_scheme(eq);
+    cs_param_var_type_t  vartype = cs_equation_get_var_type(eq);
+
+    if (vartype == CS_PARAM_VAR_SCAL)
+      domain->scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+
+    if (scheme == CS_SPACE_SCHEME_CDOVB)
+      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVB;
+    else if (scheme == CS_SPACE_SCHEME_CDOVCB)
+      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVCB;
+    else if (scheme == CS_SPACE_SCHEME_CDOFB)
+      domain->scheme_flag |= CS_SCHEME_FLAG_CDOFB;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Undefined type of equation to solve for eq. %s."
+                  " Please check your settings."), cs_equation_get_name(eq));
+
+  } // Loop on equations
+
+  /* Build additionnal connectivity according to the type of numerical
+     schemes requested for solving the current computional domain */
+  cs_cdo_connect_update(domain->connect, domain->scheme_flag);
+
+  /* Allocate common structures for solving equations */
+  cs_equation_allocate_common_structures(domain->connect,
+                                         domain->cdo_quantities,
+                                         domain->time_step,
+                                         domain->scheme_flag);
+
   /* Proceed to the last settings of a cs_equation_t structure
      - Assign to a cs_equation_t structure a list of function to manage this
        structure during the computation.
@@ -925,38 +943,8 @@ cs_domain_last_setup(cs_domain_t    *domain)
     if (!cs_equation_is_steady(eq))
       domain->only_steady = false;
 
-    cs_space_scheme_t  scheme = cs_equation_get_space_scheme(eq);
-    cs_param_var_type_t  vartype = cs_equation_get_var_type(eq);
+  } // Loop on domain equations
 
-    if (vartype == CS_PARAM_VAR_SCAL && scheme == CS_SPACE_SCHEME_CDOVB)
-      domain->do_vb_scal = true;
-    else if (vartype == CS_PARAM_VAR_SCAL && scheme == CS_SPACE_SCHEME_CDOVCB)
-      domain->do_vcb_scal = true;
-    else if (vartype == CS_PARAM_VAR_SCAL && scheme == CS_SPACE_SCHEME_CDOFB)
-      domain->do_fb_scal = true;
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Undefined type of equation to solve for eq. %s."
-                  " Please check your settings."),
-                cs_equation_get_name(eq));
-
-  } // Loop on equations
-
-  if (domain->do_vb_scal)
-    cs_cdovb_scaleq_initialize();
-  if (domain->do_vcb_scal)
-    cs_cdovcb_scaleq_initialize();
-  if (domain->do_fb_scal)
-    cs_cdofb_scaleq_initialize();
-
-  if (domain->do_vb_scal || domain->do_vcb_scal)
-    cs_cdo_connect_update(domain->connect,
-                          domain->do_vb_scal,
-                          domain->do_vcb_scal,
-                          domain->do_fb_scal);
-
-  /* Allocate cell-wise and face_wise view of a mesh */
-  cs_cdo_local_initialize(domain->connect);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1905,7 +1893,9 @@ cs_domain_postprocess(cs_domain_t  *domain)
 
   /* Predefined extra-operations related to equations */
   for (int eq_id = 0; eq_id < domain->n_equations; eq_id++)
-    cs_equation_extra_op(domain->equations[eq_id]);
+    cs_equation_extra_op(domain->equations[eq_id],
+                         domain->time_step,
+                         domain->dt_cur);
 
   /* User-defined extra operations */
   cs_user_cdo_extra_op(domain);

@@ -49,6 +49,7 @@
 #include "cs_cdo_diffusion.h"
 #include "cs_cdo_scheme_geometry.h"
 #include "cs_cdovb_advection.h"
+#include "cs_equation_common.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_math.h"
@@ -159,8 +160,6 @@ struct _cs_cdovb_scaleq_t {
  *============================================================================*/
 
 static double  cs_cdovb_threshold = 1e-12; // Set during initialization
-static size_t  cs_cdovb_scal_work_size = 0;
-static cs_real_t  *cs_cdovb_scal_work = NULL;
 static cs_sla_matrix_t  *cs_cdovb_hconf = NULL;
 static cs_cdo_locsys_t  *cs_cell_sys = NULL;
 
@@ -585,9 +584,10 @@ _strong_bc_enforcement(cs_cdovb_scaleq_t       *bld,
 
   cs_sla_matrix_t  *full_matrix = *matrix, *final_matrix = NULL;
   double  *full_rhs = *rhs, *final_rhs = NULL;
-  double  *tmp_rhs = cs_cdovb_scal_work;
-  double  *x_bc = cs_cdovb_scal_work + bld->n_vertices;
-  double  *contrib = cs_cdovb_scal_work + 2*bld->n_vertices;
+  double  *work = cs_equation_get_tmpbuf();
+  double  *tmp_rhs = work;
+  double  *x_bc = work + bld->n_vertices;
+  double  *contrib = work + 2*bld->n_vertices;
 
 # pragma omp parallel for if (bld->n_vertices > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < bld->n_vertices; i++)
@@ -738,18 +738,9 @@ cs_cdovb_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 void
 cs_cdovb_scaleq_initialize(void)
 {
-  /* Sanity check */
-  assert(cs_cdovb_scal_work == NULL && cs_cdovb_scal_work_size == 0);
-
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
-  const cs_lnum_t  n_cells = cs_shared_quant->n_cells;
 
   cs_cdovb_threshold = 0.01*cs_math_get_machine_epsilon();
-
-  /* Work buffers */
-  cs_cdovb_scal_work_size = CS_MAX(3*n_vertices, n_cells);
-  BFT_MALLOC(cs_cdovb_scal_work, cs_cdovb_scal_work_size, cs_real_t);
 
   /* Structure used to build the final system by a cell-wise process */
   cs_cell_sys = cs_cdo_locsys_create(connect->n_max_vbyc);
@@ -765,34 +756,11 @@ cs_cdovb_scaleq_initialize(void)
 void
 cs_cdovb_scaleq_finalize(void)
 {
-  if (cs_cdovb_scal_work != NULL) {
-    cs_cdovb_scal_work_size = 0;
-    BFT_FREE(cs_cdovb_scal_work );
-  }
-
   /* Free Hodge operator defined from conforming reconstruction op. */
   cs_cdovb_hconf = cs_sla_matrix_free(cs_cdovb_hconf);
 
   /* Free local structures */
   cs_cdo_locsys_free(&cs_cell_sys);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve a pointer to a temporary buffer related to scalar equations
- *         discretized with CDO vertex-based schemes
- *
- * \return  a pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdovb_scaleq_get_tmpbuf(void)
-{
-  /* Sanity check */
-  assert(cs_cdovb_scal_work != NULL);
-
-  return cs_cdovb_scal_work;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1173,6 +1141,7 @@ cs_cdovb_scaleq_compute_source(void   *builder)
 {
   cs_desc_t  desc;
 
+  double  *work = cs_equation_get_tmpbuf();
   double  *st_eval = NULL, *primal_cumul = NULL;
   cs_cdovb_scaleq_t  *b = (cs_cdovb_scaleq_t *)builder;
   const cs_equation_param_t  *eqp = b->eqp;
@@ -1180,7 +1149,7 @@ cs_cdovb_scaleq_compute_source(void   *builder)
   if (eqp->n_source_terms == 0)
     return;
 
-  st_eval = cs_cdovb_scal_work;
+  st_eval = work;
 
   /* Reset source term array */
 # pragma omp parallel for if (b->n_vertices > CS_THR_MIN)
@@ -1189,7 +1158,7 @@ cs_cdovb_scaleq_compute_source(void   *builder)
 
   if (b->flag & CS_CDO_PRIMAL_SOURCE) {
 
-    primal_cumul = cs_cdovb_scal_work + b->n_vertices;
+    primal_cumul = work + b->n_vertices;
 
 # pragma omp parallel for if (b->n_vertices > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < b->n_vertices; i++)
@@ -1351,7 +1320,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
 
   /* Temporary pre-allocated buffers (the following buffer is used in
      _add_source_terms thus be careful if the order of calls is changed) */
-  cs_real_t  *dir_bc_vals = cs_cdovb_scal_work;
+  cs_real_t  *dir_bc_vals = cs_equation_get_tmpbuf();
   cs_flag_t  *cell_flag = connect->c_info->flag;
 
    /* Initialize arrays */
@@ -1772,7 +1741,8 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
   assert(cm->n_max_ebyc == connect->n_max_ebyc);
 
   /* Retrieve temporary buffers */
-  double  *p_v = cs_cdovb_scal_work; // used as a temporary buffer
+  double  *work = cs_equation_get_tmpbuf();
+  double  *p_v = work; // used as a temporary buffer
 
   /* Default flag value for vertex-based scalar equations */
   cs_flag_t  cm_flag = cs_cdovb_cmflag;
@@ -1817,9 +1787,9 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
     case CS_PARAM_HODGE_ALGO_COST:
     case CS_PARAM_HODGE_ALGO_VORONOI:
       {
-        double  *vec = cs_cdovb_scal_work + cm->n_vc;
+        double  *vec = work + cm->n_vc;
 
-        assert(cs_cdovb_scal_work_size >=
+        assert(cs_equation_get_tmpbuf_size() >=
                (size_t)cm->n_vc + (size_t)cm->n_ec); // Sanity check
 
         if (b->diff_pty_uniform == false ||
@@ -1892,84 +1862,35 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
 {
   CS_UNUSED(field);
 
-  int  len;
-  char *postlabel = NULL;
   cs_cdovb_scaleq_t  *b = (cs_cdovb_scaleq_t  *)builder;
 
   const cs_equation_param_t  *eqp = b->eqp;
 
-  bool  do_peclet_post = (eqp->process_flag & CS_EQUATION_POST_PECLET ||
-                          eqp->process_flag & CS_EQUATION_POST_UPWIND_COEF);
+  if (b->todo[CDO_ADVECTION] &&
+      (eqp->process_flag & CS_EQUATION_POST_UPWIND_COEF)) {
 
-  if (b->todo[CDO_ADVECTION] && b->todo[CDO_DIFFUSION] && do_peclet_post) {
+    cs_real_t  *work_c = cs_equation_get_tmpbuf();
+    char *postlabel = NULL;
+    int  len = strlen(eqname) + 8 + 1;
 
-    cs_real_t  *work_c = cs_cdovb_scal_work;
-    cs_real_3_t  base_vect;
-
-    len = strlen(eqname) + 9 + 1;
     BFT_MALLOC(postlabel, len, char);
+    sprintf(postlabel, "%s.UpwCoef", eqname);
 
-    for (int k = 0; k < 3; k++) {
+    /* Compute in each cell an evaluation of upwind weight value */
+    cs_cdovb_advection_get_upwind_coef_cell(cs_shared_quant,
+                                            eqp->advection_info,
+                                            work_c);
 
-      if (k == 0) {
-        sprintf(postlabel, "%s.Peclet.X", eqname);
-        base_vect[0] = 1, base_vect[1] = base_vect[2] = 0;
-      }
-      else if (k == 1) {
-        sprintf(postlabel, "%s.Peclet.Y", eqname);
-        base_vect[1] = 1, base_vect[0] = base_vect[2] = 0;
-      }
-      else {
-        sprintf(postlabel, "%s.Peclet.Z", eqname);
-        base_vect[2] = 1, base_vect[1] = base_vect[0] = 0;
-      }
-
-      cs_cdovb_advection_get_peclet_cell(cs_shared_quant,
-                                         eqp->advection_field,
-                                         eqp->diffusion_property,
-                                         base_vect,
-                                         &work_c);
-
-      if (eqp->process_flag & CS_EQUATION_POST_PECLET)
-        cs_post_write_var(-1,                   // id du maillage de post
-                          postlabel,
-                          1,
-                          true,                 // interlace
-                          true,                 // true = original mesh
-                          CS_POST_TYPE_cs_real_t,
-                          work_c,               // values on cells
-                          NULL,                 // values at internal faces
-                          NULL,                 // values at border faces
-                          cs_shared_time_step); // time step management struct.
-
-      if (eqp->process_flag & CS_EQUATION_POST_UPWIND_COEF) {
-
-        if (k == 0)
-          sprintf(postlabel, "%s.UpwCoefX", eqname);
-        else if (k == 1)
-          sprintf(postlabel, "%s.UpwCoefY", eqname);
-        else
-          sprintf(postlabel, "%s.UpwCoefZ", eqname);
-
-        /* Compute in each cell an evaluation of upwind weight value */
-        cs_cdovb_advection_get_upwind_coef_cell(cs_shared_quant,
-                                                eqp->advection_info,
-                                                work_c);
-
-        cs_post_write_var(-1,                   // id du maillage de post
-                          postlabel,
-                          1,
-                          true,                 // interlace
-                          true,                 // true = original mesh
-                          CS_POST_TYPE_cs_real_t,
-                          work_c,               // values on cells
-                          NULL,                 // values at internal faces
-                          NULL,                 // values at border faces
-                          cs_shared_time_step); // time step management struct.
-
-      } /* Post upwinding coefficient */
-
-    } // Loop on space dimension
+    cs_post_write_var(-1,                   // id du maillage de post
+                      postlabel,
+                      1,
+                      true,                 // interlace
+                      true,                 // true = original mesh
+                      CS_POST_TYPE_cs_real_t,
+                      work_c,               // values on cells
+                      NULL,                 // values at internal faces
+                      NULL,                 // values at border faces
+                      cs_shared_time_step); // time step management struct.
 
     BFT_FREE(postlabel);
 

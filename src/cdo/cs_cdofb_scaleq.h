@@ -43,7 +43,7 @@
 #include "cs_field.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
-#include "cs_equation_priv.h"
+#include "cs_equation_param.h"
 #include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
@@ -99,18 +99,6 @@ cs_cdofb_scaleq_initialize(void);
 
 void
 cs_cdofb_scaleq_finalize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve a pointer to a temporary buffer related to scalar equations
- *         discretized with CDO face-based schemes
- *
- * \return  a pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdofb_scaleq_get_tmpbuf(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

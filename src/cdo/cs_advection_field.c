@@ -1365,6 +1365,86 @@ cs_advection_field_extra_post(void                      *input,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the Peclet number in each cell
+ *
+ * \param[in]      adv        pointer to the advection field struct.
+ * \param[in]      diff       pointer to the diffusion property struct.
+ * \param[in, out] peclet     pointer to an array storing Peclet number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_get_peclet(const cs_adv_field_t        *adv,
+                        const cs_property_t         *diff,
+                        cs_real_t                    peclet[])
+{
+  cs_real_t  ptymat[3][3];
+  cs_real_3_t  ptydir;
+  cs_nvec3_t  adv_c;
+
+  const bool  pty_uniform = cs_property_is_uniform(diff);
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
+
+  assert(peclet != NULL); // Sanity check
+
+  /* Get the value of the material property at the first cell center */
+  if (pty_uniform)
+    cs_property_get_cell_tensor(0, diff, false, ptymat);
+
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+    /* Get the value of the material property at the cell center */
+    if (!pty_uniform)
+      cs_property_get_cell_tensor(c_id, diff, false, ptymat);
+
+    cs_advection_field_get_cell_vector(c_id, adv, &adv_c);
+
+    cs_real_t  hc = pow(cdoq->cell_vol[c_id], cs_math_onethird);
+
+    cs_math_33_3_product((const cs_real_t (*)[3])ptymat, adv_c.unitv, ptydir);
+
+    peclet[c_id] = hc * adv_c.meas / _dp3(adv_c.unitv, ptydir);
+
+  } // Loop on cells
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the Courant number in each cell
+ *
+ * \param[in]      adv        pointer to the advection field struct.
+ * \param[in]      dt         value of the current time step
+ * \param[in, out] courant    pointer to an array storing Courant numbers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_get_courant(const cs_adv_field_t        *adv,
+                         double                       dt,
+                         cs_real_t                    courant[])
+{
+  assert(courant != NULL); // Sanity check
+  assert(dt > 0.);
+
+  cs_nvec3_t  adv_c;
+
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
+
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+    cs_advection_field_get_cell_vector(c_id, adv, &adv_c);
+
+    const cs_real_t  hc = pow(cdoq->cell_vol[c_id], cs_math_onethird);
+
+    courant[c_id] = dt * adv_c.meas / hc;
+
+  } // Loop on cells
+
+}
+
+/*----------------------------------------------------------------------------*/
 
 #undef _dp3
 

@@ -55,7 +55,8 @@ cs_cdovb_scaleq.h \
 cs_cdovcb_scaleq.h \
 cs_domain.h \
 cs_equation.h \
-cs_equation_priv.h \
+cs_equation_common.h \
+cs_equation_param.h \
 cs_evaluate.h \
 cs_groundwater.h \
 cs_hodge.h \
@@ -87,6 +88,8 @@ cs_cdovb_scaleq.c \
 cs_cdovcb_scaleq.c \
 cs_domain.c \
 cs_equation.c \
+cs_equation_common.c \
+cs_equation_param.c \
 cs_evaluate.c \
 cs_groundwater.c \
 cs_hodge.c \

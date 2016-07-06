@@ -668,58 +668,6 @@ cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the Peclet number in each cell in a given direction
- *
- * \param[in]      cdoq           pointer to the cdo quantities structure
- * \param[in]      adv            pointer to the advection field struct.
- * \param[in]      diff_property  pointer to the diffusion property struct.
- * \param[in]      dir_vect       direction for estimating the Peclet number
- * \param[in, out] peclet         pointer to the pointer of real numbers to fill
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_advection_get_peclet_cell(const cs_cdo_quantities_t   *cdoq,
-                                   const cs_adv_field_t        *adv,
-                                   const cs_property_t         *diff_property,
-                                   const cs_real_3_t            dir_vect,
-                                   cs_real_t                   *p_peclet[])
-{
-  cs_real_t  ptymat[3][3];
-  cs_real_3_t  ptydir;
-  cs_nvec3_t  adv_field;
-
-  cs_real_t  *peclet = *p_peclet;
-  bool  pty_uniform = cs_property_is_uniform(diff_property);
-
-  if (peclet == NULL)
-    BFT_MALLOC(peclet, cdoq->n_cells, cs_real_t);
-
-  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
-
-    /* Get the value of the material property at the cell center */
-    if (!pty_uniform || c_id == 0)
-      cs_property_get_cell_tensor(c_id, diff_property, false, ptymat);
-
-    cs_advection_field_get_cell_vector(c_id, adv, &adv_field);
-
-    cs_real_t  hc = pow(cdoq->cell_vol[c_id], cs_math_onethird);
-    cs_real_t  dp = adv_field.meas * _dp3(adv_field.unitv, dir_vect);
-
-    cs_math_33_3_product((const cs_real_t (*)[3])ptymat, dir_vect, ptydir);
-
-    cs_real_t  inv_denum = 1/(_dp3(dir_vect, ptydir));
-
-    peclet[c_id] = hc * dp * inv_denum;
-
-  } // Loop on cells
-
-  /* Return pointer */
-  *p_peclet = peclet;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Compute the value in each cell of the upwinding coefficient given
  *          a related Peclet number
  *

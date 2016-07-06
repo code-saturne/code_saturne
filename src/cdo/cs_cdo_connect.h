@@ -149,17 +149,13 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect);
  *        space scheme
  *
  * \param[in, out]  connect      pointer to a cs_cdo_connect_t structure
- * \param[in]       do_vb_scal   scalar vertex-based is requested or not
- * \param[in]       do_vcb_scal  scalar vertex+cell-based is requested or not
- * \param[in]       do_fb_scal   scalar face-based is requested or not
+ * \param[in]       scheme_flag  type of numerical schemes requested
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_connect_update(cs_cdo_connect_t       *connect,
-                      bool                    do_vb_scal,
-                      bool                    do_vcb_scal,
-                      bool                    do_fb_scal);
+                      cs_flag_t               scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

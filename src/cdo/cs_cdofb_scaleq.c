@@ -45,14 +45,15 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_cdo_bc.h"
+#include "cs_equation_common.h"
+#include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_math.h"
-#include "cs_search.h"
 #include "cs_post.h"
 #include "cs_quadrature.h"
+#include "cs_search.h"
 #include "cs_source_term.h"
-#include "cs_cdo_bc.h"
-#include "cs_hodge.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -122,13 +123,10 @@ struct  _cs_cdofb_scaleq_t {
  * Private variables
  *============================================================================*/
 
-static size_t  _fbscal_work_size = 0;
-static cs_real_t  *_fbscal_work = NULL;
-
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
-static const cs_cdo_quantities_t  *cs_cdofb_quant;
-static const cs_cdo_connect_t  *cs_cdofb_connect;
-static const cs_time_step_t  *cs_time_step;
+static const cs_cdo_quantities_t  *cs_shared_quant;
+static const cs_cdo_connect_t  *cs_shared_connect;
+static const cs_time_step_t  *cs_shared_time_step;
 
 /*============================================================================
  * Private function prototypes
@@ -233,9 +231,9 @@ _build_diffusion_system(const cs_mesh_t             *m,
   const cs_cdo_bc_list_t  *dir_faces = builder->face_bc->dir;
   const cs_equation_param_t  *eqp = builder->eqp;
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-  const cs_time_step_t  *time_step = cs_time_step;
-  const cs_cdo_connect_t  *connect = cs_cdofb_connect;
-  const cs_cdo_quantities_t  *quant = cs_cdofb_quant;
+  const cs_time_step_t  *time_step = cs_shared_time_step;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_cells = quant->n_cells;
 
   cs_sla_matrix_t  *full_matrix = _init_diffusion_matrix(connect, quant);
@@ -249,11 +247,12 @@ _build_diffusion_system(const cs_mesh_t             *m,
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
 
   /* Buffers stored in _fbscal_work */
-  double  *contrib = _fbscal_work;                     // size: n_faces
-  double  *face_rhs = _fbscal_work + builder->n_faces; // size: n_faces
+  double  *work = cs_equation_get_tmpbuf();
+  double  *contrib = work;                      // size: n_faces
+  double  *face_rhs = work + builder->n_faces;  // size: n_faces
 
   for (i = 0; i < 2*builder->n_faces; i++)
-    _fbscal_work[i] = 0;
+    contrib[i] = 0;
 
   /*  Build full-size operators:
 
@@ -344,7 +343,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
     {
       if (dir_faces->n_nhmg_elts > 0) {
 
-        double  *x_bc = _fbscal_work + 2*builder->n_faces;  // size: n_faces
+        double  *x_bc = work + 2*builder->n_faces;  // size: n_faces
 
         for (i = 0; i < builder->n_faces; i++)
           x_bc[i] = 0;
@@ -427,9 +426,9 @@ cs_cdofb_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
                                     const cs_time_step_t         *time_step)
 {
   /* Assign static const pointers */
-  cs_cdofb_quant = quant;
-  cs_cdofb_connect = connect;
-  cs_time_step = time_step;
+  cs_shared_quant = quant;
+  cs_shared_connect = connect;
+  cs_shared_time_step = time_step;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -442,14 +441,7 @@ cs_cdofb_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 void
 cs_cdofb_scaleq_initialize(void)
 {
-  /* Sanity check */
-  assert(_fbscal_work == NULL && _fbscal_work_size == 0);
-
-  const cs_lnum_t  n_faces = cs_cdofb_connect->f_info->n_elts;
-
-  /* Work buffers */
-  _fbscal_work_size = 3*n_faces;
-  BFT_MALLOC(_fbscal_work, _fbscal_work_size, cs_real_t);
+  return; // Nothing to do up to now
 }
 
 /*----------------------------------------------------------------------------*/
@@ -462,31 +454,8 @@ cs_cdofb_scaleq_initialize(void)
 void
 cs_cdofb_scaleq_finalize(void)
 {
-  if (_fbscal_work == NULL)
-    return;
-
-  _fbscal_work_size = 0;
-  BFT_FREE(_fbscal_work);
+  return;
 }
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve a pointer to a temporary buffer related to scalar equations
- *         discretized with CDO face-based schemes
- *
- * \return  a pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdofb_scaleq_get_tmpbuf(void)
-{
-  /* Sanity check */
-  assert(_fbscal_work != NULL);
-
-  return _fbscal_work;
-}
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -511,7 +480,7 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
   assert(eqp->var_type == CS_PARAM_VAR_SCAL);
 
   const cs_lnum_t  n_cells = mesh->n_cells;
-  const cs_lnum_t  n_faces = cs_cdofb_quant->n_faces;
+  const cs_lnum_t  n_faces = cs_shared_quant->n_faces;
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
   const cs_lnum_t  n_b_faces = mesh->n_b_faces;
 
@@ -682,7 +651,7 @@ cs_cdofb_scaleq_compute_source(void            *builder)
   if (eqp->n_source_terms == 0)
     return;
 
-  double  *contrib = _fbscal_work;
+  double  *contrib = cs_equation_get_tmpbuf();
   cs_desc_t  desc = {.location = CS_FLAG_SCAL | cs_cdo_primal_cell,
                      .state = CS_FLAG_STATE_DENSITY};
 
@@ -780,8 +749,8 @@ cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
   const cs_cdo_bc_list_t  *dir_faces = b->face_bc->dir;
   const cs_equation_param_t  *eqp = b->eqp;
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-  const cs_cdo_connect_t  *connect = cs_cdofb_connect;
-  const cs_cdo_quantities_t  *quant = cs_cdofb_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
   /* Set computed solution in builder->face_values */
   if (b->n_dof_faces < b->n_faces) {
@@ -849,7 +818,7 @@ cs_cdofb_scaleq_extra_op(const char            *eqname,
 
   char *postlabel = NULL;
 
-  const cs_cdo_connect_t  *connect = cs_cdofb_connect;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_lnum_t  n_i_faces = connect->f_info->n_i_elts;
   const cs_real_t  *face_pdi = cs_cdofb_scaleq_get_face_values(builder);
 
@@ -857,6 +826,7 @@ cs_cdofb_scaleq_extra_op(const char            *eqname,
   int  len = strlen(field->name) + 8 + 1;
   BFT_MALLOC(postlabel, len, char);
   sprintf(postlabel, "%s.Border", field->name);
+
   cs_post_write_var(-2,                    // id du maillage de post
                     postlabel,
                     field->dim,
@@ -866,7 +836,7 @@ cs_cdofb_scaleq_extra_op(const char            *eqname,
                     NULL,                  // values on cells
                     NULL,                  // values at internal faces
                     face_pdi + n_i_faces,  // values at border faces
-                    cs_time_step);         // time step management structure
+                    cs_shared_time_step);  // time step management structure
 
 
   BFT_FREE(postlabel);

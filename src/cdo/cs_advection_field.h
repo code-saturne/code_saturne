@@ -32,9 +32,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_cdo.h"
-#include "cs_param.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
+#include "cs_param.h"
+#include "cs_property.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
@@ -385,6 +386,36 @@ cs_advection_field_extra_post(void                      *input,
                               const cs_lnum_t            i_face_list[],
                               const cs_lnum_t            b_face_list[],
                               const cs_time_step_t      *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the Peclet number in each cell
+ *
+ * \param[in]      adv        pointer to the advection field struct.
+ * \param[in]      diff       pointer to the diffusion property struct.
+ * \param[in, out] peclet     pointer to an array storing Peclet number
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_get_peclet(const cs_adv_field_t        *adv,
+                        const cs_property_t         *diff,
+                        cs_real_t                    peclet[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the Courant number in each cell
+ *
+ * \param[in]      adv        pointer to the advection field struct.
+ * \param[in]      dt         value of the current time step
+ * \param[in, out] courant    pointer to an array storing Courant numbers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_get_courant(const cs_adv_field_t        *adv,
+                         double                       dt,
+                         cs_real_t                    courant[]);
 
 /*----------------------------------------------------------------------------*/
 

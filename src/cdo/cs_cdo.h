@@ -56,7 +56,7 @@ BEGIN_C_DECLS
 #define CS_CDO_PRIMAL_SOURCE    (1 <<  2)  // 4: primal source term requested
 #define CS_CDO_DUAL_SOURCE      (1 <<  3)  // 8: dual source term requested
 
-/* Flags to identify the nature/status of an object (variable, property...) */
+/* Flags use to identify the nature/status of an object (variable, property) */
 #define CS_FLAG_STATE_UNIFORM     (1 << 0) //    1: uniform (in space)
 #define CS_FLAG_STATE_CELLWISE    (1 << 1) //    2: cellwise uniform
 #define CS_FLAG_STATE_UNSTEADY    (1 << 2) //    4: unsteady
@@ -66,7 +66,7 @@ BEGIN_C_DECLS
 #define CS_FLAG_STATE_DENSITY     (1 << 6) //   64: density
 #define CS_FLAG_STATE_OWNER       (1 << 7) //  128: owner
 
-/* Flags to identify where is located a variable and how to access to
+/* Flags use to identify where is located a variable and how to access to
    its values */
 #define CS_FLAG_PRIMAL       (1 <<  0) //    1: on primal mesh
 #define CS_FLAG_DUAL         (1 <<  1) //    2: on dual mesh
@@ -80,6 +80,17 @@ BEGIN_C_DECLS
 #define CS_FLAG_TENS         (1 <<  9) //  512: tensor-valued (stride = 9)
 #define CS_FLAG_SCAN_BY_CELL (1 << 10) // 1024: by cell (c2e, c2f, c2v)
 
+/* Flags use to identify the type of numerical schemes requested for computing
+   the different equations attached to the computational domain. If flag is
+   activated, then at least one equation solved is discretized using thiq kind
+   of numerical scheme. */
+#define CS_SCHEME_FLAG_CDOVB     (1 << 0) //  1: CDO vertex-based scheme
+#define CS_SCHEME_FLAG_CDOVCB    (1 << 1) //  2: CDO vertex+cell-based scheme
+#define CS_SCHEME_FLAG_CDOFB     (1 << 2) //  4: CDO face-based scheme
+#define CS_SCHEME_FLAG_HHO       (1 << 3) //  8: Hybrid-High Order scheme
+#define CS_SCHEME_FLAG_SCALAR    (1 << 4) // 16: scheme for scalar eq.
+#define CS_SCHEME_FLAG_VECTOR    (1 << 5) // 32: scheme for a vector eq.
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -90,6 +101,7 @@ typedef enum {
   CS_SPACE_SCHEME_CDOVB,   /* CDO scheme with vertex-based positionning */
   CS_SPACE_SCHEME_CDOVCB,  /* CDO scheme with vertex+cell-based positionning */
   CS_SPACE_SCHEME_CDOFB,   /* CDO cell-based scheme with hybridization */
+  CS_SPACE_SCHEME_HHO,     /* Hybrid High Order scheme (CDO-FB + high-order) */
   CS_SPACE_N_SCHEMES
 
 } cs_space_scheme_t;

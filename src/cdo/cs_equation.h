@@ -30,7 +30,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_cdo_quantities.h"
-#include "cs_equation_priv.h"
+#include "cs_equation_param.h"
 #include "cs_field.h"
 #include "cs_param.h"
 #include "cs_mesh.h"
@@ -84,6 +84,71 @@ typedef enum {
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate a pointer to a buffer of size at least the 2*n_cells for
+ *         managing temporary usage of memory when dealing with equations
+ *         Call specific structure allocation related to a numerical scheme
+ *         according the scheme flag
+ *         The size of the temporary buffer can be bigger according to the
+ *         numerical settings
+ *         Set also shared pointers from the main domain members
+ *
+ * \param[in]  connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant         pointer to additional mesh quantities struct.
+ * \param[in]  time_step     pointer to a time step structure
+ * \param[in]  scheme_flag   flag to identify which kind of numerical scheme is
+ *                           requested to solve the computational domain
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
+                                       const cs_cdo_quantities_t  *quant,
+                                       const cs_time_step_t       *time_step,
+                                       cs_flag_t                   scheme_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate a pointer to a buffer of size at least the 2*n_cells for
+ *         managing temporary usage of memory when dealing with equations
+ *         Call specific structure allocation related to a numerical scheme
+ *         according the scheme flag
+ *         The size of the temporary buffer can be bigger according to the
+ *         numerical settings
+ *
+ * \param[in]  scheme_flag   flag to identify which kind of numerical scheme is
+ *                           requested to solve the computational domain
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_free_common_structures(cs_flag_t   scheme_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a pointer to a buffer of size at least the 2*n_cells
+ *         The size of the temporary buffer can be bigger according to the
+ *         numerical settings
+ *
+ * \return  a pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_equation_get_tmpbuf(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the allocation size of the temporary buffer
+ *
+ * \return  the size of the temporary buffer
+ */
+/*----------------------------------------------------------------------------*/
+
+size_t
+cs_equation_get_tmpbuf_size(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -404,12 +469,16 @@ cs_equation_solve(cs_equation_t   *eq,
 /*!
  * \brief  Predefined extra-operations related to this equation
  *
- * \param[in]  eq         pointer to a cs_equation_t structure
+ * \param[in]  eq      pointer to a cs_equation_t structure
+ * \param[in]  ts      pointer to a cs_time_step_t struct.
+ * \param[in]  dt      value of the cureent time step
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_extra_op(const cs_equation_t        *eq);
+cs_equation_extra_op(const cs_equation_t     *eq,
+                     const cs_time_step_t    *ts,
+                     double                   dt);
 
 /*----------------------------------------------------------------------------*/
 /*!

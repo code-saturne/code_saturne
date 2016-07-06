@@ -1310,5 +1310,73 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the Fourier number in each cell
+ *
+ * \param[in]      pty        pointer to the diffusive property struct.
+ * \param[in]      dt         value of the current time step
+ * \param[in, out] fourier    pointer to an array storing Fourier numbers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_get_fourier(const cs_property_t     *pty,
+                        double                   dt,
+                        cs_real_t                fourier[])
+{
+  assert(fourier != NULL); // Sanity check
+  assert(dt > 0.);
+
+  const bool  pty_uniform = cs_property_is_uniform(pty);
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
+
+  if (pty->type == CS_PROPERTY_ISO) {
+
+    cs_real_t  ptyval = 0.;
+    if (pty_uniform)
+      ptyval = cs_property_get_cell_value(0, pty);
+
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+      if (!pty_uniform)
+        ptyval = cs_property_get_cell_value(c_id, pty);
+
+      const cs_real_t  hc = pow(cdoq->cell_vol[c_id], cs_math_onethird);
+
+      fourier[c_id] = dt * ptyval / (hc * hc);
+
+    } // Loop on cells
+
+  }
+  else { // Property is orthotropic or anisotropic
+
+    cs_real_t  eig_max, eig_ratio;
+    cs_real_t  ptymat[3][3];
+
+    /* Get the value of the material property at the first cell center */
+    if (pty_uniform) {
+      cs_property_get_cell_tensor(0, pty, false, ptymat);
+      cs_math_33_eigen((const cs_real_t (*)[3])ptymat, &eig_ratio, &eig_max);
+    }
+
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+      /* Get the value of the material property at the cell center */
+      if (!pty_uniform) {
+        cs_property_get_cell_tensor(c_id, pty, false, ptymat);
+        cs_math_33_eigen((const cs_real_t (*)[3])ptymat, &eig_ratio, &eig_max);
+      }
+
+      const cs_real_t  hc = pow(cdoq->cell_vol[c_id], cs_math_onethird);
+
+      fourier[c_id] = dt * eig_max / (hc * hc);
+
+    } // Loop on cells
+
+  } // Type of property
+
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

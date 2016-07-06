@@ -35,7 +35,7 @@
 #include "cs_field.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
-#include "cs_equation_priv.h"
+#include "cs_equation_param.h"
 #include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/

@@ -49,6 +49,7 @@
 #include "cs_cdo_scheme_geometry.h"
 #include "cs_cdovb_advection.h"
 #include "cs_cdo_diffusion.h"
+#include "cs_equation_common.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_math.h"
@@ -164,8 +165,6 @@ struct _cs_cdovcb_scaleq_t {
  *============================================================================*/
 
 static double  cs_cdovcb_threshold = 1e-12; // Set during initialization
-static size_t  cs_cdovcb_scal_work_size = 0;
-static cs_real_t  *cs_cdovcb_scal_work = NULL;
 static cs_locmat_t  *cs_cell_condmat = NULL;
 
 /* Size = 1 if openMP is not used */
@@ -698,18 +697,9 @@ cs_cdovcb_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 void
 cs_cdovcb_scaleq_initialize(void)
 {
-  /* Sanity check */
-  assert(cs_cdovcb_scal_work == NULL && cs_cdovcb_scal_work_size == 0);
-
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
-  const cs_lnum_t  n_cells = cs_shared_quant->n_cells;
 
   cs_cdovcb_threshold = 0.01*cs_math_get_machine_epsilon();
-
-  /* Work buffers */
-  cs_cdovcb_scal_work_size = 2*(n_vertices + n_cells);
-  BFT_MALLOC(cs_cdovcb_scal_work, cs_cdovcb_scal_work_size, cs_real_t);
 
   /* Structure used to build the final system by a cell-wise process */
   cs_cell_condmat = cs_locmat_create(connect->n_max_vbyc);
@@ -743,11 +733,6 @@ cs_cdovcb_scaleq_initialize(void)
 void
 cs_cdovcb_scaleq_finalize(void)
 {
-  if (cs_cdovcb_scal_work != NULL) {
-    cs_cdovcb_scal_work_size = 0;
-    BFT_FREE(cs_cdovcb_scal_work );
-  }
-
   /* Free the related discrete Hodge operator associated to a unity property */
   cs_cdovcb_hconf = cs_sla_hmatrix_free(cs_cdovcb_hconf);
 
@@ -757,24 +742,6 @@ cs_cdovcb_scaleq_finalize(void)
   for (int i = 0; i < cs_glob_n_threads; i++)
     cs_cdo_locsys_free(&(cs_cdovcb_cell_systems[i]));
   BFT_FREE(cs_cdovcb_cell_systems);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve a pointer to a temporary buffer related to scalar equations
- *         discretized with CDO vertex-based schemes
- *
- * \return  a pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdovcb_scaleq_get_tmpbuf(void)
-{
-  /* Sanity check */
-  assert(cs_cdovcb_scal_work != NULL);
-
-  return cs_cdovcb_scal_work;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1138,8 +1105,9 @@ cs_cdovcb_scaleq_compute_source(void   *builder)
 
   const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
 
-  double  *eval_v = cs_cdovcb_scal_work;
-  double  *eval_c = cs_cdovcb_scal_work + n_vertices;
+  double  *work = cs_equation_get_tmpbuf();
+  double  *eval_v = work;
+  double  *eval_c = work + n_vertices;
   cs_cdovcb_scaleq_t  *b = (cs_cdovcb_scaleq_t *)builder;
 
   const cs_equation_param_t  *eqp = b->eqp;
@@ -1160,7 +1128,7 @@ cs_cdovcb_scaleq_compute_source(void   *builder)
 
     assert(cs_source_term_get_reduction(st) == CS_SOURCE_TERM_REDUC_PRIM);
 
-    double  *mv_v = cs_cdovcb_scal_work + b->n_sys;
+    double  *mv_v = work + b->n_sys;
     double  *mv_c = mv_v + n_vertices;
 
     /* Fill eval_v inside this function */
@@ -1281,7 +1249,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
 
   /* Temporary pre-allocated buffers (the following buffer is used in
      _add_source_terms (be careful if the order of calls is changed) */
-  cs_real_t  *dir_bc_vals = cs_cdovcb_scal_work;
+  cs_real_t  *dir_bc_vals = cs_equation_get_tmpbuf();
   cs_flag_t  *cell_flag = connect->c_info->flag;
 
    /* Initialize arrays */
@@ -1623,7 +1591,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const void          *builder,
 
   // To be modified for an fully integration of openMP
   cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(0);
-  double  *p_v = cs_cdovcb_scal_work; // used as a temporary buffer
+  double  *p_v = cs_equation_get_tmpbuf(); // used as a temporary buffer
 
   if (ml_t == CS_MESH_LOCATION_BOUNDARY_FACES) {
 
@@ -1788,7 +1756,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
   cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(0);
 
   /* Retrieve temporary buffers */
-  double  *p_v = cs_cdovcb_scal_work; // used as a temporary buffer
+  double  *p_v = cs_equation_get_tmpbuf(); // used as a temporary buffer
 
   /* Define the flux by cellwise contributions */
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {

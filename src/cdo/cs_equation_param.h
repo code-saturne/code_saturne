@@ -1,8 +1,8 @@
-#ifndef __CS_EQUATION_PRIV_H__
-#define __CS_EQUATION_PRIV_H__
+#ifndef __CS_EQUATION_PARAM_H__
+#define __CS_EQUATION_PARAM_H__
 
 /*============================================================================
- * Routines to handle cs_equation_t structure and its related structures
+ * Header to handle specific settings related to a cs_equation_t structure
  *============================================================================*/
 
 /*
@@ -50,9 +50,10 @@ BEGIN_C_DECLS
 #define CS_EQUATION_REACTION      (1 <<  4)  // 16: reaction term
 
 /* Extra operations flag */
-#define CS_EQUATION_POST_NONE        (1 << 0)
-#define CS_EQUATION_POST_PECLET      (2 << 0)
-#define CS_EQUATION_POST_UPWIND_COEF (3 << 0)
+#define CS_EQUATION_POST_PECLET      (1 << 0) //  1: Export Peclet number
+#define CS_EQUATION_POST_COURANT     (1 << 1) //  2: Export Courant number
+#define CS_EQUATION_POST_FOURIER     (1 << 2) //  4: Export Fourier number
+#define CS_EQUATION_POST_UPWIND_COEF (1 << 3) //  8: Export upwinding co ef.
 
 /*============================================================================
  * Type definitions
@@ -151,7 +152,66 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create a cs_equation_param_t
+ *
+ * \param[in] type             type of equation
+ * \param[in] var_type         type of variable (scalar, vector, tensor...)
+ * \param[in] default_bc       type of boundary condition set by default
+ *
+ * \return a pointer to a new allocated cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_equation_param_create(cs_equation_type_t     type,
+                         cs_param_var_type_t    var_type,
+                         cs_param_bc_type_t     default_bc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_equation_param_t
+ *
+ * \param[in] eqp          pointer to a cs_equation_param_t
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_equation_param_free(cs_equation_param_t     *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Summary of a cs_equation_param_t structure
+ *
+ * \param[in]  eqname   name of the related equation
+ * \param[in]  eq       pointer to a cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_summary(const char                 *eqname,
+                          const cs_equation_param_t  *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize SLES structure for the resolution of the linear system
+ *        according to the settings related to this equation
+ *
+ * \param[in]   eqname       pointer to an cs_equation_t structure
+ * \param[in]   eqp          pointer to a cs_equation_param_t struct.
+ * \param[in]   field_id     id of the cs_field_t struct. for this equation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_init_sles(const char                 *eqname,
+                            const cs_equation_param_t  *eqp,
+                            int                         field_id);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_EQUATION_PRIV_H__ */
+#endif /* __CS_EQUATION_PARAM_H__ */

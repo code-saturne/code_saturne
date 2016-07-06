@@ -406,6 +406,21 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
                            const cs_property_t   *pty);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the Fourier number in each cell
+ *
+ * \param[in]      pty        pointer to the diffusive property struct.
+ * \param[in]      dt         value of the current time step
+ * \param[in, out] fourier    pointer to an array storing Fourier numbers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_get_fourier(const cs_property_t     *pty,
+                        double                   dt,
+                        cs_real_t                fourier[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
