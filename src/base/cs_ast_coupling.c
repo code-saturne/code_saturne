@@ -130,7 +130,6 @@ static cs_calcium_timedep_t  time_dep = CALCIUM_iteration;
 void CS_PROCF(astgeo, ASTGEO)
 (
   cs_int_t   *nbfast,
-  cs_int_t   *nbnast,
   cs_int_t   *lstfac,
   cs_int_t   *idfast,
   cs_int_t   *idnast,

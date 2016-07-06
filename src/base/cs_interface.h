@@ -267,7 +267,7 @@ cs_interface_set_n_elts(const cs_interface_set_t  *ifs);
 
 const cs_interface_t *
 cs_interface_set_get(const cs_interface_set_t  *ifs,
-                      int                       interface_id);
+                     int                        interface_id);
 
 /*----------------------------------------------------------------------------
  * Return pointer to the periocicity structure associated of an interface set.

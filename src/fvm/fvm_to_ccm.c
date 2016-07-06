@@ -2127,9 +2127,9 @@ _write_vertices_l(const cs_mesh_t      *mesh,
                         CCMIOINDEXC(range[0]-1),
                         CCMIOINDEXC(range[1]-1));
 
-    if (error != kCCMIONoErr)
-      bft_error(__FILE__, __LINE__, 0,
-                _("CCMIO error %d writing vertices."), (int)error);
+  if (error != kCCMIONoErr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("CCMIO error %d writing vertices."), (int)error);
 }
 
 /*----------------------------------------------------------------------------

@@ -266,14 +266,10 @@ if (nbaste.gt.0) then
   ! Free memory
 
 !       Recuperation des parametres commun du couplage
-  call astpar                                                     &
-  !==========
- ( ntmabs, nalimx, epalim, ttpabs, dtref )
+  call astpar(ntmabs, nalimx, epalim, ttpabs, dtref)
 
 !       Envoi des donnees geometriques a Code_Aster
-  call astgeo                                                     &
-  !==========
- ( nbfast, nbnast, lstfac, idfloc, idnloc, almax )
+  call astgeo(nbfast, lstfac, idfloc, idnloc, almax)
 
   ! Free memory
   deallocate(lstfac)

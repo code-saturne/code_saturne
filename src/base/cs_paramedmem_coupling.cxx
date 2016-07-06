@@ -228,7 +228,7 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
                   const cs_lnum_t   *elts_list,
                   MEDCouplingUMesh  *med_mesh)
 {
-  cs_lnum_t i, j, k;
+  cs_lnum_t i, j;
   INTERP_KERNEL::NormalizedCellType type;
 
   cs_lnum_t vtx_count = 0;
@@ -349,8 +349,7 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
                   MEDCouplingUMesh  *med_mesh)
 {
   cs_lnum_t i, j, k;
-  cs_lnum_t  c_id, c_id1, c_id2, face_id, n_loc_cells;
-  fvm_element_t fvm_type;
+  cs_lnum_t  c_id, c_id1, c_id2, face_id;
   INTERP_KERNEL::NormalizedCellType type;
 
   cs_lnum_t vtx_count = 0, cell_count = 0;
@@ -561,7 +560,6 @@ static void
 _init_mesh(cs_paramedmem_coupling_t  *coupling,
            _paramedmem_mesh_t        *mesh)
 {
-  cs_lnum_t i;
   cs_mesh_t *parent_mesh = cs_glob_mesh;
 
   assert(mesh != NULL);
@@ -746,8 +744,6 @@ cs_paramedmem_define_mesh(cs_paramedmem_coupling_t  *coupling,
                           bool                       is_dest)
 {
   int id;
-  char *coupled_mesh_name = NULL;
-  cs_lnum_t *elt_list = NULL;
 
   _paramedmem_mesh_t *mesh = NULL;
 

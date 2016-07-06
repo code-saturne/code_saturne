@@ -72,7 +72,6 @@ typedef struct _cs_ast_coupling_t  cs_ast_coupling_t;
 void CS_PROCF(astgeo, ASTGEO)
 (
  cs_int_t   *nbfast,
- cs_int_t   *nbnast,
  cs_int_t   *lstfac,
  cs_int_t   *idfast,
  cs_int_t   *idnast,
