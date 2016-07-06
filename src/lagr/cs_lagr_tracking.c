@@ -1624,9 +1624,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO1) {
       particles->n_part_dep += 1;
       particles->weight_dep += particle_stat_weight;
-      if (cs_glob_lagr_model->deposition ==1 )
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                CS_LAGR_PART_DEPOSITED);
+      if (cs_glob_lagr_model->deposition ==1)
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
+                                  CS_LAGR_PART_DEPOSITED);
     }
 
     bdy_conditions->particle_flow_rate[boundary_zone]
@@ -3782,47 +3782,49 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
       fvq->i_f_face_normal[3*ifac+j] = fvq->i_face_normal[3*ifac+j];
   }
 
-  for (cs_lnum_t ip = 0; ip < particles->n_particles; ip++) {
+  if (lagr_model->deposition == 1) {
+    for (cs_lnum_t ip = 0; ip < particles->n_particles; ip++) {
 
-    unsigned char *particle = particles->p_buffer + p_am->extents * ip;
+      unsigned char *particle = particles->p_buffer + p_am->extents * ip;
 
-    cs_lnum_t cell_num = cs_lagr_particles_get_lnum(particles, ip, CS_LAGR_CELL_NUM);
+      cs_lnum_t cell_num = cs_lagr_particles_get_lnum(particles, ip, CS_LAGR_CELL_NUM);
 
-    if (cell_num >=0 &&
-        cs_lagr_particles_get_lnum(particles, ip, CS_LAGR_DEPOSITION_FLAG) ==
-        CS_LAGR_PART_IMPOSED_MOTION ) {
+      if (cell_num >=0 &&
+          cs_lagr_particles_get_lnum(particles, ip, CS_LAGR_DEPOSITION_FLAG) ==
+          CS_LAGR_PART_IMPOSED_MOTION ) {
 
-      cs_lnum_t cell_id = cell_num - 1;
-      for (cs_lnum_t i = _particle_track_builder->cell_face_idx[cell_id];
-           i < _particle_track_builder->cell_face_idx[cell_id+1] ;
-           i++ ) {
+        cs_lnum_t cell_id = cell_num - 1;
+        for (cs_lnum_t i = _particle_track_builder->cell_face_idx[cell_id];
+             i < _particle_track_builder->cell_face_idx[cell_id+1] ;
+             i++ ) {
 
-        cs_lnum_t face_num = _particle_track_builder->cell_face_lst[i];
+          cs_lnum_t face_num = _particle_track_builder->cell_face_lst[i];
 
-        if (face_num > 0) {
+          if (face_num > 0) {
 
-          cs_lnum_t face_id = face_num - 1;
-          cs_real_t *face_cog;
-          face_cog = fvq->i_face_cog + (3*face_id);
+            cs_lnum_t face_id = face_num - 1;
+            cs_real_t *face_cog;
+            face_cog = fvq->i_face_cog + (3*face_id);
 
-          if (cs_glob_lagr_internal_conditions->i_face_zone_id[face_id] >= 0 &&
-              face_cog[2] < 0.99 ) {
+            if (cs_glob_lagr_internal_conditions->i_face_zone_id[face_id] >= 0 &&
+                face_cog[2] < 0.99 ) {
 
-            const double pi = 4 * atan(1);
-            cs_real_t temp = pi * 0.25
-              * pow(cs_lagr_particles_get_real(particles, ip, CS_LAGR_DIAMETER),2.)
-              * cs_lagr_particles_get_real(particles, ip, CS_LAGR_FOULING_INDEX)
-              * cs_lagr_particles_get_real(particles, ip, CS_LAGR_STAT_WEIGHT);
+              const double pi = 4 * atan(1);
+              cs_real_t temp = pi * 0.25
+                * pow(cs_lagr_particles_get_real(particles, ip, CS_LAGR_DIAMETER),2.)
+                * cs_lagr_particles_get_real(particles, ip, CS_LAGR_FOULING_INDEX)
+                * cs_lagr_particles_get_real(particles, ip, CS_LAGR_STAT_WEIGHT);
 
-            cs_lagr_particles_set_lnum(particles, ip, CS_LAGR_NEIGHBOR_FACE_ID, face_id);
+              cs_lagr_particles_set_lnum(particles, ip, CS_LAGR_NEIGHBOR_FACE_ID, face_id);
 
-            for (cs_lnum_t id = 0; id < 3; id++)
-              fvq->i_f_face_normal[3*face_id + id] -= temp
-                * fvq->i_face_normal[3*face_id + id]
-                / fvq->i_face_surf[face_id];
+              for (cs_lnum_t id = 0; id < 3; id++)
+                fvq->i_f_face_normal[3*face_id + id] -= temp
+                  * fvq->i_face_normal[3*face_id + id]
+                  / fvq->i_face_surf[face_id];
+
+            }
 
           }
-
         }
       }
     }
