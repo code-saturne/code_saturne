@@ -58,17 +58,17 @@ BEGIN_C_DECLS
  * By default gravity and drag force are the only forces acting on the particles
  * (the gravity components gx gy gz are assigned in the GUI or in usipsu)
  *
- * \param[in]    dt_p       time step (for the cell)
- * \param[in]    taup       particle relaxation time
- * \param[in]    tlag       relaxation time for the flow
- * \param[in]    piil       term in the integration of the sde
- * \param[in]    bx         characteristics of the turbulence
- * \param[in]    tsfext     infos for the return coupling
- * \param[in]    vagaus     Gaussian random variables
- * \param[in]    gradpr     pressure gradient
- * \param[in]    gradvf   gradient of the flow velocity
- * \param[inout] romp     particle density
- * \param[out]   fextla   user external force field (m/s^2)$
+ * \param[in]      dt_p     time step (for the cell)
+ * \param[in]      taup     particle relaxation time
+ * \param[in]      tlag     relaxation time for the flow
+ * \param[in]      piil     term in the integration of the sde
+ * \param[in]      bx       characteristics of the turbulence
+ * \param[in]      tsfext   infos for the return coupling
+ * \param[in]      vagaus   Gaussian random variables
+ * \param[in]      gradpr   pressure gradient
+ * \param[in]      gradvf   gradient of the flow velocity
+ * \param[in,out]  romp     particle density
+ * \param[out]     fextla   user external force field (m/s^2)$
  */
 /*----------------------------------------------------------------------------*/
 
@@ -126,7 +126,7 @@ cs_user_lagr_model(void);
  * This function is called at different points, at which different attributes
  * may be modified.
  *
- * \param[inout]  particle  particle structure
+ * \param[in,out] particle  particle structure
  * \param[in]     p_am      particle attributes map
  * \param[in]     face_id   id of particle injection face
  * \param[in]     attr_id   id of variable modifiable by this call. called for

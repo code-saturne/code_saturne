@@ -3793,9 +3793,9 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
         CS_LAGR_PART_IMPOSED_MOTION ) {
 
       cs_lnum_t cell_id = cell_num - 1;
-      for ( cs_lnum_t i = _particle_track_builder->cell_face_idx[cell_id];
-            i < _particle_track_builder->cell_face_idx[cell_id+1] ;
-            i++ ) {
+      for (cs_lnum_t i = _particle_track_builder->cell_face_idx[cell_id];
+           i < _particle_track_builder->cell_face_idx[cell_id+1] ;
+           i++ ) {
 
         cs_lnum_t face_num = _particle_track_builder->cell_face_lst[i];
 
