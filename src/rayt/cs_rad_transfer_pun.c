@@ -125,6 +125,7 @@ BEGIN_C_DECLS
  * \param[in, out]  rovsdt    work array for unsteady term
  * \param[in]       twall     wall temperature in Kelvin
  * \param[in, out]  ckmel     absorption coefficient for gas-particles mix
+ * \param[out]      q         explicit flux density vector
  * \param[in]       abo       weights of the i-th gray gas at boundaries
  * \param[in]       iband     number of the i-th gray gas
  */
@@ -144,6 +145,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
                     cs_real_t        rovsdt[],
                     cs_real_t        twall[],
                     cs_real_t        ckmel[],
+                    cs_real_3_t      q[],
                     const cs_real_t  abo[],
                     int              iband)
 {
@@ -154,8 +156,6 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
   if (cs_glob_rad_transfer_params->imoadf >= 1)
     f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
-  cs_field_t *f_q = cs_field_by_name_try("radiative_flux");
-  cs_real_3_t *q = (cs_real_3_t *) f_q->val;
   cs_field_t *f_qinci = cs_field_by_name_try("rad_incident_flux");
   cs_field_t *f_theta4 = cs_field_by_name_try("rad_absorption");
   cs_field_t *f_thetaa = cs_field_by_name_try("rad_emission");
@@ -166,38 +166,19 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
   cs_real_t *dpvar;
   BFT_MALLOC(dpvar, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
 
-  /* ====================================================================
-   * 1. PARAMETRAGE DU SOLVEUR ET INITIALISATION
-   * ====================================================================   */
+  /* Solver settings and initialization */
 
-  /* -> Parametrage de cs_equation_iterative_solve_scalar */
+  cs_var_cal_opt_t  vcopt = cs_parameters_var_cal_opt_default();
 
-  cs_var_cal_opt_t *vcopt;
-  BFT_MALLOC(vcopt, 1, cs_var_cal_opt_t);
-  vcopt->imrgra = cs_glob_space_disc->imrgra;
-  vcopt->nswrsm =  1;
-  vcopt->istat  = -1;
-  vcopt->nswrgr =  100;
-  vcopt->imligr = -1;
-  vcopt->ircflu =  1;
-  vcopt->iwgrec =  0;
-  vcopt->ischcv =  1;
-  vcopt->isstpc =  0;
-  vcopt->idften =  1;
-  vcopt->iswdyn =  0;
-  vcopt->iwarni =  cs_glob_rad_transfer_params->iimlum;
-  vcopt->blencv =  0.0;
-  vcopt->epsilo =  1e-08;
-  vcopt->epsrsm =  1e-08;
-  vcopt->epsrgr =  1e-05;
-  vcopt->climgr =  1.5;
-  vcopt->extrag =  0.0;
-  vcopt->relaxv =  1.0;
-  /* -> Pas de convection pour le modele P1   */
-  vcopt->iconv  =  0;
-  /* -> Equation de diffusion  */
-  vcopt->idiff  =  1;
-  vcopt->idifft = -1;
+  vcopt.imrgra = cs_glob_space_disc->imrgra;
+  vcopt.istat  = -1;
+  vcopt.isstpc =  0;
+  vcopt.iwarni =  cs_glob_rad_transfer_params->iimlum;
+  vcopt.blencv =  0.0;
+  vcopt.epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
+  vcopt.iconv  =  0;      /* No convection for P1 model */
+  vcopt.idiff  =  1;      /* Diffusion equation */
+  vcopt.idifft = -1;
 
   int iescap = 0;
   int imucpp = 0;
@@ -241,7 +222,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
                                      ndirc1,
                                      iescap,
                                      imucpp,
-                                     vcopt,
+                                     &vcopt,
                                      f_thetaa->val,
                                      f_theta4->val,
                                      coefap,
@@ -280,7 +261,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
-  cs_gradient_type_by_imrgra(vcopt->imrgra,
+  cs_gradient_type_by_imrgra(vcopt.imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -383,7 +364,6 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
 
   /* Free memory     */
   BFT_FREE(dpvar);
-  BFT_FREE(vcopt);
 }
 
 /*----------------------------------------------------------------------------*/

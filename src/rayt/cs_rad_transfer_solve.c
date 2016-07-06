@@ -340,7 +340,7 @@ _cs_rad_transfer_sol(cs_real_t    *restrict coefap,
                      cs_real_t    *restrict smbrs,
                      cs_real_t    *restrict rovsdt,
                      cs_real_3_t  *restrict q,
-                     int          iband)
+                     int           iband)
 {
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   cs_lnum_t n_i_faces  = cs_glob_mesh->n_i_faces;
@@ -370,34 +370,18 @@ _cs_rad_transfer_sol(cs_real_t    *restrict coefap,
     /* Pointer to the spectral flux density field */
     f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
-  cs_var_cal_opt_t *vcopt;
-  BFT_MALLOC(vcopt, 1, cs_var_cal_opt_t);
-  vcopt->iwarni =  cs_glob_rad_transfer_params->iimlum;
-  vcopt->iconv  =  1;
-  vcopt->istat  = -1;
+  cs_var_cal_opt_t vcopt = cs_parameters_var_cal_opt_default();
 
-  /* no face diffusion */
-
-  vcopt->idiff  =  0;
-  vcopt->idifft = -1;
-  vcopt->idften =  1;
-  vcopt->iswdyn =  0;
-  vcopt->ischcv =  1;
-  vcopt->isstpc =  0;
-  vcopt->nswrgr =  100;
-  vcopt->nswrsm =  2;
-  vcopt->imrgra =  cs_glob_space_disc->imrgra;
-  vcopt->imligr = -1;
-  vcopt->ircflu =  1;
-  vcopt->iwgrec =  0;
-  vcopt->thetav =  1.0;
-  vcopt->blencv =  0;
-  vcopt->epsilo =  1.e-8;
-  vcopt->epsrsm =  1.e-8;
-  vcopt->epsrgr =  1.e-05;
-  vcopt->climgr =  1.5;
-  vcopt->extrag =  0;
-  vcopt->relaxv =  1;
+  vcopt.iwarni =  cs_glob_rad_transfer_params->iimlum;
+  vcopt.iconv  =  1;
+  vcopt.istat  = -1;
+  vcopt.idiff  =  0; /* no face diffusion */
+  vcopt.idifft = -1;
+  vcopt.isstpc =  0;
+  vcopt.nswrsm =  2;
+  vcopt.imrgra =  cs_glob_space_disc->imrgra;
+  vcopt.blencv =  0;
+  vcopt.epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
 
   int iescap = 0;
   int imucpp = 0;
@@ -406,7 +390,7 @@ _cs_rad_transfer_sol(cs_real_t    *restrict coefap,
   int ndirc1 = 1;
 
   /* Pure convection */
-  vcopt->iconv = 1;
+  vcopt.iconv = 1;
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1)
     _order_by_direction();
@@ -537,7 +521,7 @@ _cs_rad_transfer_sol(cs_real_t    *restrict coefap,
                                              ndirc1,
                                              iescap,
                                              imucpp,
-                                             vcopt,
+                                             &vcopt,
                                              rua,
                                              ru,
                                              coefap,
@@ -602,7 +586,6 @@ _cs_rad_transfer_sol(cs_real_t    *restrict coefap,
   BFT_FREE(dpvar);
   BFT_FREE(ru);
   BFT_FREE(rua);
-  BFT_FREE(vcopt);
 }
 
 /*-------------------------------------------------------------------------------*/
@@ -1315,11 +1298,11 @@ cs_rad_transfer_solve(int               bc_type[],
                           coefap, coefbp,
                           cofafp, cofbfp,
                           flurds, flurdb,
-                          viscf , viscb,
-                          smbrs , rovsdt,
-                          tparo , ckmel,
-                          agbi  , ngg);
-
+                          viscf, viscb,
+                          smbrs, rovsdt,
+                          tparo, ckmel,
+                          iqpar,
+                          agbi, ngg);
     }
 
     /* Solving of the radiative transfer equation (DOM)

@@ -76,6 +76,7 @@ BEGIN_C_DECLS
  * \param[in, out]  rovsdt    work array for unsteady term
  * \param[in]       twall     wall temperature in Kelvin
  * \param[in, out]  ckmel     absorption coefficient for gas-particles mix
+ * \param[out]      q         explicit flux density vector
  * \param[in]       abo       weights of the i-th gray gas at boundaries
  * \param[in]       iband     number of the i-th gray gas
  */
@@ -95,6 +96,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
                     cs_real_t        rovsdt[],
                     cs_real_t        twall[],
                     cs_real_t        ckmel[],
+                    cs_real_3_t      q[],
                     const cs_real_t  abo[],
                     int              iband);
 
