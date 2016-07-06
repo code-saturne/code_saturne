@@ -1842,7 +1842,8 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
   assert(sla_mat->type == CS_SLA_MAT_MSR);
 
   bool  do_idx_transfer = false;
-  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB)
+  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB ||
+      eqp->space_scheme == CS_SPACE_SCHEME_CDOFB)
     if (eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_STRONG)
       do_idx_transfer = true;
 
