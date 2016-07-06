@@ -51,6 +51,7 @@ use pointe
 use optcal
 use numvar
 use cstphy
+use cstnum, only: epzero
 use entsor
 use albase
 use parall
@@ -487,12 +488,47 @@ if (iporos.ge.1) then
 
   call field_get_val_s(ipori, porosi)
 
-  do iel = 1, ncel
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(porosi)
+  endif
+
+  do iel = 1, ncelet
     cell_f_vol(iel) = volume(iel) * porosi(iel)
   enddo
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(cell_f_vol)
+  ! For integral formulation, in case of 0 fluid volume, clip fluid faces
+  if (iporos.eq.3) then
+    do ifac = 1, nfac
+      if (porosi(ifacel(1, ifac)).lt.epzero) then
+        porosi(ifacel(1, ifac)) = 0.d0
+        isolid_0(ifacel(1, ifac)) = 1
+
+        suffac(1, ifac) = 0.d0
+        suffac(2, ifac) = 0.d0
+        suffac(3, ifac) = 0.d0
+        suffan(ifac) = 0.d0
+      else if (porosi(ifacel(2, ifac)).lt.epzero) then
+        porosi(ifacel(2, ifac)) = 0.d0
+        isolid_0(ifacel(2, ifac)) = 1
+
+        suffac(1, ifac) = 0.d0
+        suffac(2, ifac) = 0.d0
+        suffac(3, ifac) = 0.d0
+        suffan(ifac) = 0.d0
+      endif
+    enddo
+
+    do ifac = 1, nfabor
+      if (porosi(ifabor(ifac)).lt.epzero) then
+        porosi(ifabor(ifac)) = 0.d0
+        isolid_0(ifabor(ifac)) = 1
+
+        suffbo(1, ifac) = 0.d0
+        suffbo(2, ifac) = 0.d0
+        suffbo(3, ifac) = 0.d0
+        suffbn(ifac) = 0.d0
+      endif
+    enddo
   endif
 
 endif

@@ -529,6 +529,8 @@ itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 if (iporos.ge.1) then
   f_name = 'porosity'
   call field_create(f_name, itycat, ityloc, 1, .false., ipori)
+  call field_set_key_int(ipori, keylog, 1)
+  call field_set_key_int(ipori, keyvis, 1)
   if (iporos.eq.2) then
     f_name = 'tensorial_porosity'
     call field_create(f_name, itycat, ityloc, 6, .false., iporf)
