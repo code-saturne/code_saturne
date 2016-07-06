@@ -87,6 +87,7 @@ typedef struct { /* Connectivity structure */
   cs_lnum_t  n_max_vbyc;    // max. number of vertices in a cell
   cs_lnum_t  n_max_ebyc;    // max. number of edges in a cell
   cs_lnum_t  n_max_fbyc;    // max. number of faces in a cell
+  cs_lnum_t  n_max_vbyf;    // max. number of vertices in a face
 
   /* Status internal or border entity */
   cs_connect_info_t  *v_info;  // count of interior/border vertices

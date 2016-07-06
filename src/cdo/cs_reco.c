@@ -309,6 +309,49 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
  * \brief  Reconstruct the value at the face center from an array of values
  *         defined on primal vertices.
  *
+ *  \param[in]      fm     pointer to cs_face_mesh_t structure
+ *  \param[in]      p_v    pointer to an array of values (local to this face)
+ *  \param[in, out] p_f    value of the reconstruction at the face center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_potential_face_value(const cs_face_mesh_t    *fm,
+                             const double            *p_v,
+                             double                  *p_f)
+{
+  *p_f = 0.;
+
+  if (p_v == NULL)
+    return;
+
+  double  xef_len;
+  cs_real_3_t  xef_un, un;
+
+  const cs_quant_t  pfq = fm->face;
+
+  for (short int e = 0; e < fm->n_ef; e++) {
+
+    const cs_quant_t  peq = fm->edge[e];
+
+    cs_math_3_length_unitv(peq.center, pfq.center, &xef_len, xef_un);
+    cs_math_3_cross_product(xef_un, peq.unitv, un);
+
+    /* tef = ||(xe -xf) x e||/2 = s(v1,e,f) + s(v2, e, f) */
+    const double tef = 0.5 * xef_len*peq.meas * cs_math_3_norm(un);
+
+    *p_f += (p_v[fm->e2v_ids[2*e]] + p_v[fm->e2v_ids[2*e+1]]) * tef;
+
+  } // Loop on face edges
+
+  *p_f *= 0.5 / pfq.meas;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value at the face center from an array of values
+ *         defined on primal vertices.
+ *
  *  \param[in]      f_id     face id (interior and border faces)
  *  \param[in]      connect  pointer to a cs_cdo_connect_t structure
  *  \param[in]      quant    pointer to the additional quantities struct.

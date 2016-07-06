@@ -98,7 +98,7 @@ cs_cdovb_advection_builder_free(cs_cdovb_adv_t  *b);
 /*!
  * \brief   Compute the convection operator attached to a cell
  *
- * \param[in]      lm        pointer to a cs_cdo_locmesh_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
  * \param[in]      diffmat   tensor related to the diffusion property
  * \param[in, out] b         pointer to a convection builder structure
  *
@@ -107,16 +107,16 @@ cs_cdovb_advection_builder_free(cs_cdovb_adv_t  *b);
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_cdovb_advection_build_local(const cs_cdo_locmesh_t      *lm,
-                               const cs_real_33_t           diffmat,
-                               cs_cdovb_adv_t              *b);
+cs_cdovb_advection_build_local(const cs_cell_mesh_t      *cm,
+                               const cs_real_33_t         diffmat,
+                               cs_cdovb_adv_t            *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the BC contribution for the convection operator
  *
  * \param[in]      quant         pointer to the cdo quantities structure
- * \param[in]      lm            pointer to a cs_cdo_locmesh_t struct.
+ * \param[in]      cm            pointer to a cs_cell_mesh_t struct.
  * \param[in, out] advb          pointer to a convection builder structure
  * \param[in, out] ls            cell-wise structure sotring the local system
  */
@@ -124,7 +124,7 @@ cs_cdovb_advection_build_local(const cs_cdo_locmesh_t      *lm,
 
 void
 cs_cdovb_advection_add_bc(const cs_cdo_quantities_t   *quant,
-                          cs_cdo_locmesh_t            *lm,
+                          cs_cell_mesh_t              *cm,
                           cs_cdovb_adv_t              *advb,
                           cs_cdo_locsys_t             *ls);
 

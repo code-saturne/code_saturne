@@ -626,13 +626,11 @@ _build_additional_connect(cs_cdo_connect_t  *connect)
 static void
 _compute_max_ent(cs_cdo_connect_t  *connect)
 {
-  int  i, n_ent;
-
   /* Max number of faces for a cell */
   connect->n_max_fbyc = 0;
   if (connect->c2f != NULL) {
-    for (i = 0; i < connect->c2f->n_rows; i++) {
-      n_ent = connect->c2f->idx[i+1] - connect->c2f->idx[i];
+    for (int i = 0; i < connect->c2f->n_rows; i++) {
+      int n_ent = connect->c2f->idx[i+1] - connect->c2f->idx[i];
       if (n_ent > connect->n_max_fbyc)
         connect->n_max_fbyc = n_ent;
     }
@@ -641,8 +639,8 @@ _compute_max_ent(cs_cdo_connect_t  *connect)
   /* Max number of edges for a cell */
   connect->n_max_ebyc = 0;
   if (connect->c2e != NULL) {
-    for (i = 0; i < connect->c2e->n; i++) {
-      n_ent = connect->c2e->idx[i+1] - connect->c2e->idx[i];
+    for (int i = 0; i < connect->c2e->n; i++) {
+      int n_ent = connect->c2e->idx[i+1] - connect->c2e->idx[i];
       if (n_ent > connect->n_max_ebyc)
         connect->n_max_ebyc = n_ent;
     }
@@ -651,12 +649,17 @@ _compute_max_ent(cs_cdo_connect_t  *connect)
   /* Max number of vertices for a cell */
   connect->n_max_vbyc = 0;
   if (connect->c2v != NULL) {
-    for (i = 0; i < connect->c2v->n; i++) {
-      n_ent = connect->c2v->idx[i+1] - connect->c2v->idx[i];
+    for (int i = 0; i < connect->c2v->n; i++) {
+      int n_ent = connect->c2v->idx[i+1] - connect->c2v->idx[i];
       if (n_ent > connect->n_max_vbyc)
         connect->n_max_vbyc = n_ent;
     }
   }
+
+  /* Max number of vertices (or edges) in a face */
+  connect->n_max_vbyf = 0;
+  if (connect->f2e != NULL)
+    connect->n_max_vbyf = connect->f2e->info.stencil_max;
 
 }
 

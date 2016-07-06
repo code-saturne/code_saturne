@@ -52,6 +52,7 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_cdo_local.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
@@ -639,6 +640,9 @@ cs_domain_free(cs_domain_t   *domain)
 
   BFT_FREE(domain->equations);
 
+  /* Free cell-wise and face-wise view of a mesh */
+  cs_cdo_local_finalize();
+
   /* Free temporary buffers allocated for each kind of numerical used */
   if (domain->do_vb_scal)
     cs_cdovb_scaleq_finalize();
@@ -950,6 +954,9 @@ cs_domain_last_setup(cs_domain_t    *domain)
                           domain->do_vb_scal,
                           domain->do_vcb_scal,
                           domain->do_fb_scal);
+
+  /* Allocate cell-wise and face_wise view of a mesh */
+  cs_cdo_local_initialize(domain->connect);
 }
 
 /*----------------------------------------------------------------------------*/

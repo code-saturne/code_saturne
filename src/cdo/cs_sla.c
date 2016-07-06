@@ -1795,7 +1795,8 @@ cs_sla_matrix_clean(int                verbosity,
 
     /* Set to zero too small entries */
     for (cs_lnum_t i = m->idx[row_id]; i < m->idx[row_id+1]; i++) {
-      if (fabs(m->val[i]) < _thd)
+      double absval = fabs(m->val[i]);
+      if (absval > DBL_MIN && absval < _thd)
         m->val[i] = 0., counter++;
     }
 

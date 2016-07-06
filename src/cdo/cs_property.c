@@ -81,7 +81,7 @@ struct _cs_property_t {
      - anisotropic = 9 => CS_PARAM_VAR_TENS
   */
 
-  cs_property_type_t   type;     // isotropic, anistotropic...
+  cs_property_type_t   type;  // isotropic, anistotropic...
 
   /* Members to define the value of the property by subdomains (up to now,
      only subdomains built from an union of cells are considered) */

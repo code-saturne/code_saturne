@@ -194,12 +194,12 @@ typedef double *
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_get_fap_t)(const void            *builder,
-                        const cs_real_t       *f_vals,
-                        int                    ml_id,
-                        const cs_real_t        direction[],
-                        double                *diff_flux,
-                        double                *conv_flux);
+(cs_equation_flux_plane_t)(const void            *builder,
+                           const cs_real_t       *f_vals,
+                           int                    ml_id,
+                           const cs_real_t        direction[],
+                           double                *diff_flux,
+                           double                *conv_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -213,7 +213,7 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_get_cw_dflux_t)(const cs_real_t    *f_vals,
+(cs_equation_cell_difflux_t)(const cs_real_t    *f_vals,
                              void               *builder,
                              cs_real_t          *d_flux);
 
@@ -331,8 +331,8 @@ struct _cs_equation_t {
   cs_equation_free_sysmat_t       *free_system_matrix;
   cs_equation_update_field_t      *update_field;
   cs_equation_compute_source_t    *compute_source;
-  cs_equation_get_fap_t           *compute_flux_across_plane;
-  cs_equation_get_cw_dflux_t      *compute_cellwise_diff_flux;
+  cs_equation_flux_plane_t        *compute_flux_across_plane;
+  cs_equation_cell_difflux_t      *compute_cellwise_diff_flux;
   cs_equation_extra_op_t          *postprocess;
   cs_equation_get_extra_values_t  *get_extra_values;
   cs_equation_get_tmpbuf_t        *get_tmpbuf;
@@ -1415,7 +1415,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
     eq->get_tmpbuf = cs_cdovb_scaleq_get_tmpbuf;
     eq->get_extra_values = NULL;
     eq->compute_flux_across_plane = cs_cdovb_scaleq_compute_flux_across_plane;
-    eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_compute_cw_diff_flux;
+    eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_cellwise_diff_flux;
     break;
 
   case CS_SPACE_SCHEME_CDOVCB:
@@ -1429,7 +1429,7 @@ cs_equation_last_setup(cs_equation_t  *eq)
     eq->get_tmpbuf = cs_cdovcb_scaleq_get_tmpbuf;
     eq->get_extra_values = cs_cdovcb_scaleq_get_cell_values;
     eq->compute_flux_across_plane = cs_cdovcb_scaleq_compute_flux_across_plane;
-    eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_compute_cw_diff_flux;
+    eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_cellwise_diff_flux;
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
@@ -1506,7 +1506,7 @@ cs_equation_set_param(cs_equation_t       *eq,
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
     }
-    if (strcmp(val, "cdo_vcb") == 0) {
+    else if (strcmp(val, "cdo_vcb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVCB;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
@@ -3095,7 +3095,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of the diffusive flux across all faces.
+ * \brief  Cellwise computation of the diffusive flux across all cell faces.
  *         Primal or dual faces are considered according to the space scheme.
  *
  * \param[in]      eq          pointer to a cs_equation_t structure
@@ -3109,6 +3109,7 @@ cs_equation_compute_diff_flux(const cs_equation_t   *eq,
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+
   if (eq->compute_cellwise_diff_flux == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" Cellwise computation of the diffusive flux is not\n"

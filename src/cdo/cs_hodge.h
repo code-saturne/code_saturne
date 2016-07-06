@@ -98,6 +98,30 @@ cs_hodge_builder_free(cs_hodge_builder_t  *hb);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Get the flag indicating the status of the property
+ *
+ * \param[in, out]  hb       pointer to a cs_hodge_builder_t structure
+ *
+ * \return true or flase
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_hodge_builder_get_setting_flag(cs_hodge_builder_t    *hb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Set the flag indicating the status of the property to false
+ *
+ * \param[in, out]  hb       pointer to a cs_hodge_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_builder_unset(cs_hodge_builder_t    *hb);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Set the value of the property attached to a hodge builder
  *
  * \param[in, out]  hb       pointer to a cs_hodge_builder_t structure
@@ -128,22 +152,22 @@ cs_hodge_builder_set_tensor(cs_hodge_builder_t     *hb,
  *          the local discrete gradient and divergence
  *          S = Gloc^t * H * Gloc
  *
- * \param[in]      lm         pointer to a cs_cdo_locmesh_t struct.
+ * \param[in]      lm         pointer to a cs_cell_mesh_t struct.
  * \param[in, out] hb         pointer to a cs_hodge_builder_t struct.
  * \param[in, out] sloc       pointer to a local stiffness matrix struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_build_local_stiffness(const cs_cdo_locmesh_t     *lm,
-                               cs_hodge_builder_t         *hb,
-                               cs_locmat_t                *sloc);
+cs_hodge_build_local_stiffness(const cs_cell_mesh_t     *lm,
+                               cs_hodge_builder_t       *hb,
+                               cs_locmat_t              *sloc);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Build a local discrete Hodge using a cell-wise view of the mesh
  *
- * \param[in]      lm         pointer to a cs_cdo_locmesh_t structure
+ * \param[in]      lm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] hb         pointer to a cs_hodge_builder_t structure
  *
  * \return a pointer to a cs_locmat_t struct. (local dense matrix)
@@ -151,8 +175,8 @@ cs_hodge_build_local_stiffness(const cs_cdo_locmesh_t     *lm,
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_hodge_build_cellwise(const cs_cdo_locmesh_t      *lm,
-                        cs_hodge_builder_t          *hb);
+cs_hodge_build_cellwise(const cs_cell_mesh_t      *lm,
+                        cs_hodge_builder_t        *hb);
 
 /*----------------------------------------------------------------------------*/
 /*!

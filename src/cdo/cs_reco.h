@@ -31,8 +31,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_quantities.h"
 #include "cs_cdo_connect.h"
+#include "cs_cdo_local.h"
+#include "cs_cdo_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -108,6 +109,22 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
                           const cs_cdo_quantities_t   *quant,
                           const double                *array,
                           cs_real_t                   *val_xc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value at the face center from an array of values
+ *         defined on primal vertices.
+ *
+ *  \param[in]      fm     pointer to cs_face_mesh_t structure
+ *  \param[in]      p_v    pointer to an array of values (local to this face)
+ *  \param[in, out] p_f    value of the reconstruction at the face center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_potential_face_value(const cs_face_mesh_t    *fm,
+                             const double            *p_v,
+                             double                  *p_f);
 
 /*----------------------------------------------------------------------------*/
 /*!

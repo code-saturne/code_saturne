@@ -86,7 +86,7 @@ typedef struct { /* TODO: remove what is the less necessary in order to
 typedef struct { /* Specific mesh quantities */
 
   /* Global mesh quantities */
-  double      vol_tot;
+  double        vol_tot;
 
   /* Cell-based quantities */
   cs_lnum_t     n_cells;

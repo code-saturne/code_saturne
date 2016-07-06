@@ -104,6 +104,21 @@ cs_cdo_diffusion_get_hodge_builder(cs_cdo_diff_t   *diff);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Get temporary buffers attached to a cs_cdo_diff_t structure
+ *
+ * \param[in]       diff     pointer to a cs_cdo_diff_t structure
+ * \param[in, out]  tmp_vec  pointer to a buffer of cs_real_3_t
+ * \param[in, out]  tmp_sca  pointer to a buffer of cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_get_tmp_buffers(const cs_cdo_diff_t   *diff,
+                                 cs_real_3_t          **tmp_vec,
+                                 cs_real_t            **tmp_sca);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Define the local (cellwise) stiffness matrix
  *
  * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
@@ -117,29 +132,9 @@ cs_cdo_diffusion_get_hodge_builder(cs_cdo_diff_t   *diff);
 
 cs_locmat_t *
 cs_cdo_diffusion_build_local(const cs_cdo_quantities_t   *quant,
-                             const cs_cdo_locmesh_t      *lm,
+                             const cs_cell_mesh_t        *lm,
                              const cs_real_3_t           *tensor,
                              cs_cdo_diff_t               *diff);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the gradient of the conforming reconstruction in each
- *          p_{ef,c} tetrahedron
- *
- * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
- * \param[in]      lm          cell-wise connectivity and quantitites
- * \param[in]      pdi         cellwise values of the discrete potential
- * \param[in, out] diff        auxiliary structure used to build the diff. term
- * \param[in, out] grd_lv_conf gradient of the conforming reconstruction
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_diffusion_get_grd_lvconf(const cs_cdo_quantities_t   *quant,
-                                const cs_cdo_locmesh_t      *lm,
-                                const double                *pdi,
-                                cs_cdo_diff_t               *diff,
-                                double                      *grd_lv_conf);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -149,20 +144,69 @@ cs_cdo_diffusion_get_grd_lvconf(const cs_cdo_quantities_t   *quant,
  *
  * \param[in]       f_id      face id (a border face attached to a Dir. BC)
  * \param[in]       quant     pointer to a cs_cdo_quantities_t struct.
- * \param[in]       lm        pointer to a cs_cdo_locmesh_t struct.
+ * \param[in]       lm        pointer to a cs_cell_mesh_t struct.
  * \param[in]       matpty    3x3 matrix related to the diffusion property
  * \param[in, out]  diff      auxiliary structure used to build the diff. term
- * \param[in, out]  ls        cell-wise structure sotring the local system
+ * \param[in, out]  ls        cell-wise structure storing the local system
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_diffusion_weak_bc(cs_lnum_t                    f_id,
                          const cs_cdo_quantities_t   *quant,
-                         const cs_cdo_locmesh_t      *lm,
+                         const cs_cell_mesh_t        *lm,
                          const cs_real_t              matpty[3][3],
                          cs_cdo_diff_t               *diff,
                          cs_cdo_locsys_t             *ls);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the diffusive flux across dual faces for a given cell
+ *          The computation takes into account a subdivision into tetrahedra of
+ *          the current cell based on p_{ef,c}
+ *
+ * \param[in]       cm        pointer to a cs_face_mesh_t structure
+ * \param[in]       dfaces    pointer to the dual faces related to cell edges
+ * \param[in]       pty_tens  3x3 matrix related to the diffusion property
+ * \param[in]       p_v       array of values attached to face vertices
+ * \param[in]       p_c       value attached to the cell
+ * \param[in, out]  diff      auxiliary structure dedicated to diffusion
+ * \param[in, out]  c_flux    flux across dual faces inside this cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_cellwise_flux(const cs_cell_mesh_t      *cm,
+                               const cs_dface_t          *dfaces,
+                               const cs_real_t            pty_tens[3][3],
+                               const double              *p_v,
+                               const double               p_c,
+                               cs_cdo_diff_t             *diff,
+                               double                    *c_flux);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the diffusive flux across a face (based on a subdivision
+ *          into tetrahedra of the volume p_{f,c})
+ *
+ * \param[in]       fm        pointer to a cs_face_mesh_t structure
+ * \param[in]       pty_tens  3x3 matrix related to the diffusion property
+ * \param[in]       p_v       array of values attached to face vertices
+ * \param[in]       p_f       value attached to the face
+ * \param[in]       p_c       value attached to the cell
+ * \param[in, out]  diff      auxiliary structure dedicated to diffusion
+ *
+ * \return the value of the diffusive flux across the current face
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdo_diffusion_face_flux(const cs_face_mesh_t      *fm,
+                           const cs_real_t            pty_tens[3][3],
+                           const double              *p_v,
+                           const double               p_f,
+                           const double               p_c,
+                           cs_cdo_diff_t             *diff);
 
 /*----------------------------------------------------------------------------*/
 

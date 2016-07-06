@@ -639,7 +639,7 @@ _vtx_algorithm(const cs_mesh_t             *mesh,
       quant->face[f_id].center[k] = mq->b_face_cog[3*j+k];
 
   /* Compute cell centers */
-  for (cs_lnum_t  c_id = 0; c_id < n_cells; c_id++) {
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     const cs_lnum_t  vs = c2v->idx[c_id];
     const cs_lnum_t  ve = c2v->idx[c_id+1];
@@ -648,7 +648,7 @@ _vtx_algorithm(const cs_mesh_t             *mesh,
     assert(ve - vs > 0);
     assert(ve - vs < SHRT_MAX);
 
-    const double  coef = 1/(ve-vs);
+    const double  coef = 1./(ve-vs);
     double  *xc = quant->cell_centers + 3*c_id;
 
     xc[0] = xc[1] = xc[2] = 0;
