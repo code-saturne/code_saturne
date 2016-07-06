@@ -1873,8 +1873,6 @@ cs_elec_add_variable_fields(const int  *ielarc,
 
   const cs_data_elec_t  *e_props = cs_glob_elec_properties; /* local name */
 
-  //const int keysca = cs_field_key_id("scalar_id");
-
   {
     int f_id = cs_variable_field_create("enthalpy", "Enthalpy",
                                         CS_MESH_LOCATION_CELLS, dim);
