@@ -189,8 +189,6 @@ endif
 !   - Sous-programme utilisateur
 !     ==========================
 
-call cs_user_initialization()
-
 if (ippmod(iphpar).eq.0) then
 
   call cs_user_f_initialization(nvar, nscal, dt)
@@ -231,6 +229,7 @@ else
 
 endif
 
+call cs_user_initialization()
 
 ! Si l'utilisateur a change Ptot, on change P* en consequence,
 ! sinon on met Ptot a P0 + rho.g.r
