@@ -135,11 +135,9 @@ class Case(object):
         runcase = cs_runcase.runcase(run_ref)
 
         if runcase.cmd_name == "code_saturne":
-            from Base.XMLinitialize import XMLinit
             from cs_package import package
             pkg = package(old_pkg.scriptdir)
         elif runcase.cmd_name == "neptune_cfd":
-            from core.XMLinitialize import XMLinit
             from nc_package import package
             pkg = package(old_pkg.scriptdir)
 
@@ -264,7 +262,6 @@ class Case(object):
         # 1) Load the xml file of parameters in order to update it
         #    with the __backwardCompatibility method.
 
-        from Base.XMLengine import Case
         from Pages.ScriptRunningModel import ScriptRunningModel
         from cs_exec_environment import \
             separate_args, get_command_single_value, update_command_single_value, assemble_args, enquote_arg
