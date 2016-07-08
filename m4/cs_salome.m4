@@ -493,10 +493,10 @@ if test "x$with_salome_med" != "xno" ; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  MEDCOUPLING_CPPFLAGS="-I$SALOME_MED/include/salome"
-  MEDCOUPLING_LDFLAGS="-L$SALOME_MED/lib/salome"
+  MEDCOUPLING_CPPFLAGS="-I$SALOME_MED/include"
+  MEDCOUPLING_LDFLAGS="-L$SALOME_MED/lib"
   # Add the libdir to the runpath as libtool does not do this for modules
-  MEDCOUPLINGRUNPATH="-R$SALOME_MED/lib/salome"
+  MEDCOUPLINGRUNPATH="-R$SALOME_MED/lib"
   MEDCOUPLING_LIBS="-lmedcoupling -linterpkernel"
 
   CPPFLAGS="${CPPFLAGS} ${MEDCOUPLING_CPPFLAGS}"
