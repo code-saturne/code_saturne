@@ -774,6 +774,7 @@ cs_equation_set_param(cs_equation_t       *eq,
       eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
     }
     else {
       const char *_val = val;

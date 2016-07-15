@@ -336,7 +336,7 @@ cs_param_bc_create(cs_param_bc_type_t  default_bc)
 
   bc->default_bc = default_bc;
   /* Initialization by default */
-  bc->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+  bc->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
   bc->quad_type = CS_QUADRATURE_BARY;
   bc->use_subdiv = false;
 
