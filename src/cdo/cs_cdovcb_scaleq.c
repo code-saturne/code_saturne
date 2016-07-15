@@ -1177,11 +1177,13 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
      "adr" means Advection/Diffusion/Reaction
   */
   cs_sla_matrix_t  *sys_mat = b->hybrid_storage->xx_block;
-  if (sys_mat == NULL)
+  if (sys_mat == NULL) {
     sys_mat = cs_sla_matrix_create_msr_from_index(connect->v2v,
                                                   false,  // symmetric
                                                   true,   // sorted
                                                   1);     // stride
+    b->hybrid_storage->xx_block = sys_mat;
+  }
 
   if (!b->has[CDO_ADVECTION] && b->enforce != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
     sys_mat->flag |= CS_SLA_MATRIX_SYM;

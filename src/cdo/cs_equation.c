@@ -362,7 +362,7 @@ _initialize_field_from_ic(cs_equation_t     *eq)
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB ||
       eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB) {
 
-    dof_flag |= cs_cdo_primal_vtx;
+    cs_flag_t  vtx_flag = dof_flag | cs_cdo_primal_vtx;
 
     for (int def_id = 0; def_id < t_info.n_ic_definitions; def_id++) {
 
@@ -375,13 +375,13 @@ _initialize_field_from_ic(cs_equation_t     *eq)
         ml_id = cs_mesh_location_get_id_by_name(N_("vertices"));
 
       if (ic->def_type == CS_PARAM_DEF_BY_VALUE)
-        cs_evaluate_potential_from_value(dof_flag, ml_id, ic->def.get,
+        cs_evaluate_potential_from_value(vtx_flag, ml_id, ic->def.get,
                                          field->val);
       else if (ic->def_type == CS_PARAM_DEF_BY_QOV)
-        cs_evaluate_potential_from_qov(dof_flag, ml_id, ic->def.get,
+        cs_evaluate_potential_from_qov(vtx_flag, ml_id, ic->def.get,
                                        field->val);
       else if (ic->def_type == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION)
-        cs_evaluate_potential_from_analytic(dof_flag, ml_id, ic->def.analytic,
+        cs_evaluate_potential_from_analytic(vtx_flag, ml_id, ic->def.analytic,
                                             field->val);
 
     } // Loop on definitions
@@ -390,6 +390,7 @@ _initialize_field_from_ic(cs_equation_t     *eq)
 
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB) {
 
+    cs_flag_t  face_flag = dof_flag | cs_cdo_primal_face;
     cs_real_t  *face_values = eq->get_extra_values(eq->builder);
     assert(face_values != NULL);
 
@@ -404,12 +405,9 @@ _initialize_field_from_ic(cs_equation_t     *eq)
         ml_id = cs_mesh_location_get_id_by_name(N_("cells"));
 
       /* Initialize cell-based array */
-      cs_flag_t  face_flag = dof_flag | cs_cdo_primal_face;
-
       if (ic->def_type == CS_PARAM_DEF_BY_VALUE)
         cs_evaluate_potential_from_value(face_flag, ml_id, ic->def.get,
                                          face_values);
-
       else if (ic->def_type == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION)
         cs_evaluate_potential_from_analytic(face_flag, ml_id, ic->def.analytic,
                                             face_values);
@@ -423,8 +421,8 @@ _initialize_field_from_ic(cs_equation_t     *eq)
 
     /* Initialize cell-based array */
     cs_flag_t  cell_flag = dof_flag | cs_cdo_primal_cell;
-
     cs_real_t  *cell_values = field->val;
+
     if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB)
       cell_values = eq->get_extra_values(eq->builder);
     assert(cell_values != NULL);
@@ -960,7 +958,7 @@ cs_equation_set_param(cs_equation_t       *eq,
     if (strcmp(val, "peclet") == 0)
       eqp->process_flag |= CS_EQUATION_POST_PECLET;
     else if (strcmp(val, "courant") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_FOURIER;
+      eqp->process_flag |= CS_EQUATION_POST_COURANT;
     else if (strcmp(val, "fourier") == 0)
       eqp->process_flag |= CS_EQUATION_POST_FOURIER;
     else if (strcmp(val, "upwind_coef") == 0)

@@ -276,21 +276,6 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
         }
         break;
 
-      case CS_PARAM_BC_HMG_DIRICHLET:
-        if (elt_ids == NULL) /* Full selection */
-          for (i = 0; i < n_elts[0]; i++)
-            bc->dir->elt_ids[i] = i;
-
-        else { /* Partial selection */
-
-          shift = count[type] + bc->dir->n_nhmg_elts;
-          for (i = 0; i < n_elts[0]; i++)
-            bc->dir->elt_ids[shift + i] = elt_ids[i];
-          count[type] += n_elts[0];
-
-        }
-        break;
-
       case CS_PARAM_BC_NEUMANN:
         if (elt_ids == NULL) { /* Full selection */
           for (i = 0; i < n_elts[0]; i++) {
@@ -305,21 +290,6 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
             bc->neu->elt_ids[shift + i] = elt_ids[i];
             bc->neu->def_ids[shift + i] = id;
           }
-          count[type] += n_elts[0];
-
-        }
-        break;
-
-      case CS_PARAM_BC_HMG_NEUMANN:
-        if (elt_ids == NULL) /* Full selection */
-          for (i = 0; i < n_elts[0]; i++)
-            bc->neu->elt_ids[i] = i;
-
-        else { /* Partial selection */
-
-          shift = count[type] + bc->neu->n_nhmg_elts;
-          for (i = 0; i < n_elts[0]; i++)
-            bc->neu->elt_ids[shift + i] = elt_ids[i];
           count[type] += n_elts[0];
 
         }
@@ -344,6 +314,12 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
         }
         break;
 
+      /* Nothing to do (no related definition since it's trivial)
+         List of associated elements is managed with a second loop */
+      case CS_PARAM_BC_HMG_NEUMANN:
+      case CS_PARAM_BC_HMG_DIRICHLET:
+        break;
+        
       default:
         bft_error(__FILE__, __LINE__, 0,
                   _(" Invalid type of boundary condition.\n"
@@ -352,6 +328,18 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
 
     } // Loop on boundary conditions
 
+    /* Fill BC lists with elements attached to homogeneous conditions.
+       Enable to take into account the default BC */
+    cs_lnum_t  shift_dir = bc->dir->n_nhmg_elts;
+    cs_lnum_t  shift_neu = bc->neu->n_nhmg_elts;
+
+    for (i = 0; i < n_b_faces; i++) {
+      if (bc_types[i] == CS_PARAM_BC_HMG_DIRICHLET)
+        bc->dir->elt_ids[shift_dir++] = i;
+      else if (bc_types[i] == CS_PARAM_BC_HMG_NEUMANN)
+        bc->neu->elt_ids[shift_neu++] = i;
+    }
+ 
     BFT_FREE(bc_types);
 
   } /* n_b_faces > 0 */
@@ -467,7 +455,7 @@ cs_cdo_bc_vtx_dir_create(const cs_mesh_t    *m,
         vtx_dir->def_ids[nhmg_count++] = vtx_def[v_id];
       }
       else if (vtx_type[v_id] == CS_PARAM_BC_HMG_DIRICHLET) {
-        vtx_dir->elt_ids[ n_nhmg_vertices + hmg_count] = v_id;
+        vtx_dir->elt_ids[n_nhmg_vertices + hmg_count] = v_id;
         hmg_count++;
       }
 
