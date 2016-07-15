@@ -51,9 +51,7 @@ BEGIN_C_DECLS
 
 /* Extra operations flag */
 #define CS_EQUATION_POST_PECLET      (1 << 0) //  1: Export Peclet number
-#define CS_EQUATION_POST_COURANT     (1 << 1) //  2: Export Courant number
-#define CS_EQUATION_POST_FOURIER     (1 << 2) //  4: Export Fourier number
-#define CS_EQUATION_POST_UPWIND_COEF (1 << 3) //  8: Export upwinding co ef.
+#define CS_EQUATION_POST_UPWIND_COEF (1 << 1) //  2: Export upwinding co ef.
 
 /*============================================================================
  * Type definitions

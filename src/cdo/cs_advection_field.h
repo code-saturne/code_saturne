@@ -56,10 +56,8 @@ typedef struct _cs_adv_field_t cs_adv_field_t;
 /* List of available keys for setting an advection field */
 typedef enum {
 
+  CS_ADVKEY_DEFINE_AT,
   CS_ADVKEY_POST,
-  CS_ADVKEY_POST_UNITV,
-  CS_ADVKEY_CELL_FIELD,
-  CS_ADVKEY_VERTEX_FIELD,
   CS_ADVKEY_N_KEYS
 
 } cs_advection_field_key_t;
@@ -409,56 +407,6 @@ cs_advection_field_update(cs_adv_field_t   *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if additional predefined postprocessing is requested
- *
- * \param[in]     adv     pointer to a cs_adv_field_t structure
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_advection_field_needs_post(const cs_adv_field_t   *adv);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Predefined post-processing output for advection fields.
- *         Prototype of this function is fixed since it is a function pointer
- *         defined in cs_post.h (cs_post_time_mesh_dep_output_t)
- *
- * \param[in, out] input        pointer to a optional structure (here a
- *                              cs_groundwater_t structure)
- * \param[in]      mesh_id      id of the output mesh for the current call
- * \param[in]      cat_id       category id of the output mesh for this call
- * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),
- *                              interior faces (ent_flag[1]), boundary faces
- *                              (ent_flag[2]), particles (ent_flag[3]) or probes
- *                              (ent_flag[4])
- * \param[in]      n_cells      local number of cells of post_mesh
- * \param[in]      n_i_faces    local number of interior faces of post_mesh
- * \param[in]      n_b_faces    local number of boundary faces of post_mesh
- * \param[in]      cell_list    list of cells (1 to n)
- * \param[in]      i_face_list  list of interior faces (1 to n)
- * \param[in]      b_face_list  list of boundary faces (1 to n)
- * \param[in]      time_step    pointer to a cs_time_step_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_advection_field_extra_post(void                      *input,
-                              int                        mesh_id,
-                              int                        cat_id,
-                              int                        ent_flag[5],
-                              cs_lnum_t                  n_cells,
-                              cs_lnum_t                  n_i_faces,
-                              cs_lnum_t                  n_b_faces,
-                              const cs_lnum_t            cell_list[],
-                              const cs_lnum_t            i_face_list[],
-                              const cs_lnum_t            b_face_list[],
-                              const cs_time_step_t      *time_step);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Compute the Peclet number in each cell
  *
  * \param[in]      adv        pointer to the advection field struct.
@@ -470,22 +418,22 @@ cs_advection_field_extra_post(void                      *input,
 void
 cs_advection_get_peclet(const cs_adv_field_t        *adv,
                         const cs_property_t         *diff,
-                        cs_real_t                    peclet[]);
+                        double                       peclet[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the Courant number in each cell
+ * \brief  Predefined post-processing output for advection fields.
  *
- * \param[in]      adv        pointer to the advection field struct.
- * \param[in]      dt         value of the current time step
- * \param[in, out] courant    pointer to an array storing Courant numbers
+ * \param[in]  adv         pointer to a cs_adv_field_t structure
+ * \param[in]  time_step   pointer to a cs_time_step_t struct.
+ * \param[in]  dt_cur      value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_get_courant(const cs_adv_field_t        *adv,
-                         double                       dt,
-                         cs_real_t                    courant[]);
+cs_advection_field_extra_post(const cs_adv_field_t      *adv,
+                              const cs_time_step_t      *time_step,
+                              double                     dt_cur);
 
 /*----------------------------------------------------------------------------*/
 

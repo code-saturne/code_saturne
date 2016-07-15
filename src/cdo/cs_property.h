@@ -61,6 +61,14 @@ typedef enum {
 
 typedef struct _cs_property_t cs_property_t;
 
+/* List of available keys for setting an advection field */
+typedef enum {
+
+  CS_PTYKEY_POST,
+  CS_PTYKEY_N_KEYS
+
+} cs_property_key_t;
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -189,6 +197,21 @@ cs_property_get_type(const cs_property_t   *pty);
 
 void
 cs_property_summary(const cs_property_t   *pty);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set optional parameters related to a cs_property_t structure
+ *
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       key       key related to the member of pty to set
+ * \param[in]       keyval    accessor to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_option(cs_property_t       *pty,
+                       cs_property_key_t    key,
+                       const char          *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -419,6 +442,21 @@ void
 cs_property_get_fourier(const cs_property_t     *pty,
                         double                   dt,
                         cs_real_t                fourier[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined post-processing output for property structures
+ *
+ * \param[in]  pty         pointer to the property structure
+ * \param[in]  time_step   pointer to a cs_time_step_t structure
+ * \param[in]  dt_cur      value of the current time step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_extra_post(const cs_property_t       *pty,
+                       const cs_time_step_t      *time_step,
+                       double                     dt_cur);
 
 /*----------------------------------------------------------------------------*/
 

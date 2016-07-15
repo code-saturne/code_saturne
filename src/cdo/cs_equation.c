@@ -958,18 +958,13 @@ cs_equation_set_param(cs_equation_t       *eq,
   case CS_EQKEY_EXTRA_OP:
     if (strcmp(val, "peclet") == 0)
       eqp->process_flag |= CS_EQUATION_POST_PECLET;
-    else if (strcmp(val, "courant") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_COURANT;
-    else if (strcmp(val, "fourier") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_FOURIER;
     else if (strcmp(val, "upwind_coef") == 0)
       eqp->process_flag |= CS_EQUATION_POST_UPWIND_COEF;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 (" Invalid value \"%s\" for CS_EQKEY_EXTRA_OP\n"
-                 " Valid keys are \"peclet\", \"courant\", \"fourier\" or."
-                 " \"upwind_coef\"."), _val);
+                 " Valid keys are \"peclet\", or \"upwind_coef\"."), _val);
     }
     break;
 
@@ -1987,137 +1982,6 @@ cs_equation_solve(cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined extra-operations related to this equation
- *
- * \param[in]  eq      pointer to a cs_equation_t structure
- * \param[in]  ts      pointer to a cs_time_step_t struct.
- * \param[in]  dt      value of the cureent time step
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_extra_op(const cs_equation_t     *eq,
-                     const cs_time_step_t    *ts,
-                     double                   dt)
-{
-  if (eq == NULL)
-    return;
-
-  int  len;
-  char *postlabel = NULL;
-
-  const cs_field_t  *field = cs_field_by_id(eq->field_id);
-  const cs_equation_param_t  *eqp = eq->param;
-
-  /* Cases where a post-processing is not required */
-  if (eqp->process_flag == 0)
-    return;
-
-  if (eq->main_ts_id > -1) {
-    cs_timer_stats_start(eq->main_ts_id);
-    if (eq->solve_ts_id > -1)
-      cs_timer_stats_start(eq->solve_ts_id);
-  }
-
-  /* Post-processing of common adimensionnal quantities:
-     Fourier, Courant, Peclet */
-
-  if (eqp->process_flag & CS_EQUATION_POST_PECLET) {
-
-    cs_real_t  *tmp = cs_equation_get_tmpbuf();
-
-    /* Compute the Peclet number in each cell */
-    cs_advection_get_peclet(eqp->advection_field,
-                            eqp->diffusion_property,
-                            tmp);
-
-    len = strlen(eq->name) + 7 + 1;
-    BFT_MALLOC(postlabel, len, char);
-    sprintf(postlabel, "%s.Peclet", eq->name);
-
-    cs_post_write_var(-1,             // id du maillage de post
-                      postlabel,
-                      1,
-                      true,           // interlace
-                      true,           // true = original mesh
-                      CS_POST_TYPE_cs_real_t,
-                      tmp,            // values on cells
-                      NULL,           // values at internal faces
-                      NULL,           // values at border faces
-                      ts);            // time step management struct.
-
-    BFT_FREE(postlabel);
-
-  } // Peclet
-
-  if (eqp->process_flag & CS_EQUATION_POST_FOURIER) {
-
-    cs_real_t  *tmp = cs_equation_get_tmpbuf();
-
-    /* Compute the Fourier number in each cell */
-    cs_property_get_fourier(eqp->diffusion_property,
-                            dt,
-                            tmp);
-
-    len = strlen(eq->name) + 8 + 1;
-    BFT_MALLOC(postlabel, len, char);
-    sprintf(postlabel, "%s.Fourier", eq->name);
-
-    cs_post_write_var(-1,             // id du maillage de post
-                      postlabel,
-                      1,
-                      true,           // interlace
-                      true,           // true = original mesh
-                      CS_POST_TYPE_cs_real_t,
-                      tmp,            // values on cells
-                      NULL,           // values at internal faces
-                      NULL,           // values at border faces
-                      ts);            // time step management struct.
-
-    BFT_FREE(postlabel);
-
-  } // Fourier
-
-  if (eqp->process_flag & CS_EQUATION_POST_COURANT) {
-
-    cs_real_t  *tmp = cs_equation_get_tmpbuf();
-
-    /* Compute the Courant number in each cell */
-    cs_advection_get_courant(eqp->advection_field,
-                             dt,
-                             tmp);
-
-    len = strlen(eq->name) + 8 + 1;
-    BFT_MALLOC(postlabel, len, char);
-    sprintf(postlabel, "%s.Courant", eq->name);
-
-    cs_post_write_var(-1,             // id du maillage de post
-                      postlabel,
-                      1,
-                      true,           // interlace
-                      true,           // true = original mesh
-                      CS_POST_TYPE_cs_real_t,
-                      tmp,            // values on cells
-                      NULL,           // values at internal faces
-                      NULL,           // values at border faces
-                      ts);            // time step management struct.
-
-    BFT_FREE(postlabel);
-
-  } // Courant
-
-  /* Perform post-processing specific to a numerical scheme */
-  eq->postprocess(eq->name, field, eq->builder);
-
-  if (eq->main_ts_id > -1) {
-    if (eq->post_ts_id > -1)
-      cs_timer_stats_stop(eq->post_ts_id);
-    cs_timer_stats_stop(eq->main_ts_id);
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Return true is the given equation is steady otherwise false
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
@@ -2494,6 +2358,79 @@ cs_equation_compute_diff_flux(const cs_equation_t   *eq,
                                  eq->builder,
                                  diff_flux);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations related to this equation
+ *
+ * \param[in]  eq      pointer to a cs_equation_t structure
+ * \param[in]  ts      pointer to a cs_time_step_t struct.
+ * \param[in]  dt      value of the current time step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_extra_post(const cs_equation_t     *eq,
+                       const cs_time_step_t    *ts,
+                       double                   dt)
+{
+  if (eq == NULL)
+    return;
+
+  int  len;
+  char *postlabel = NULL;
+
+  const cs_field_t  *field = cs_field_by_id(eq->field_id);
+  const cs_equation_param_t  *eqp = eq->param;
+
+  /* Cases where a post-processing is not required */
+  if (eqp->process_flag == 0)
+    return;
+
+  if (eq->main_ts_id > -1) {
+    cs_timer_stats_start(eq->main_ts_id);
+    if (eq->post_ts_id > -1)
+      cs_timer_stats_start(eq->post_ts_id);
+  }
+
+  /* Post-processing of a common adimensionnal quantities: the Peclet number */
+  if (eqp->process_flag & CS_EQUATION_POST_PECLET) {
+
+    len = strlen(eq->name) + 7 + 1;
+    BFT_MALLOC(postlabel, len, char);
+    sprintf(postlabel, "%s.Peclet", eq->name);
+
+    /* Compute the Peclet number in each cell */
+    double  *peclet = cs_equation_get_tmpbuf();
+    cs_advection_get_peclet(eqp->advection_field,
+                            eqp->diffusion_property,
+                            peclet);
+
+    /* Post-process */
+    cs_post_write_var(-1,             // id du maillage de post
+                      postlabel,
+                      1,
+                      true,           // interlace
+                      true,           // true = original mesh
+                      CS_POST_TYPE_cs_real_t,
+                      peclet,         // values on cells
+                      NULL,           // values at internal faces
+                      NULL,           // values at border faces
+                      ts);            // time step management struct.
+
+    BFT_FREE(postlabel);
+
+  } // Peclet number
+
+  /* Perform post-processing specific to a numerical scheme */
+  eq->postprocess(eq->name, field, eq->builder);
+
+  if (eq->main_ts_id > -1) {
+    if (eq->post_ts_id > -1)
+      cs_timer_stats_stop(eq->post_ts_id);
+    cs_timer_stats_stop(eq->main_ts_id);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

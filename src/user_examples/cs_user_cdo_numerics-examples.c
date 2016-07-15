@@ -231,8 +231,6 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
 
      CS_EQKEY_EXTRA_OP: Additional post-processing options:
      "peclet"  post-process an estimation of the Peclet number in each cell
-     "courant" post-process an estimation of the Courant number in each cell
-     "fourier" post-process an estimation of the Fourier number in each cell
      "upwind_coef" post-process an estimation of the upwinding coefficient
 
   */

@@ -467,21 +467,6 @@ cs_equation_solve(cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined extra-operations related to this equation
- *
- * \param[in]  eq      pointer to a cs_equation_t structure
- * \param[in]  ts      pointer to a cs_time_step_t struct.
- * \param[in]  dt      value of the cureent time step
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_extra_op(const cs_equation_t     *eq,
-                     const cs_time_step_t    *ts,
-                     double                   dt);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Return true is the given equation is steady otherwise false
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
@@ -692,6 +677,21 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 void
 cs_equation_compute_diff_flux(const cs_equation_t   *eq,
                               cs_real_t             *diff_flux);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations related to this equation
+ *
+ * \param[in]  eq      pointer to a cs_equation_t structure
+ * \param[in]  ts      pointer to a cs_time_step_t struct.
+ * \param[in]  dt      value of the current time step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_extra_post(const cs_equation_t     *eq,
+                       const cs_time_step_t    *ts,
+                       double                   dt);
 
 /*----------------------------------------------------------------------------*/
 

@@ -30,9 +30,10 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
 #include <math.h>
 
@@ -46,6 +47,7 @@
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
+#include "cs_post.h"
 #include "cs_reco.h"
 #include "cs_timer_stats.h"
 
@@ -65,14 +67,16 @@ BEGIN_C_DECLS
 
 #define CS_PROPERTY_DBG  1
 
+#define CS_PROPERTY_POST_FOURIER (1 << 1)  // postprocess Fourier number
+
 /* Set of parameters attached to a property */
 struct _cs_property_t {
 
-  char  *restrict name;
+  char  *restrict  name;
+  cs_flag_t        post_flag; // Indicate what to postprocess
 
   /* Short descriptor to know where is defined the property and what kind of
      property one considers (mask of bits) */
-
   cs_desc_t   flag;
 
   /* The number of values to set depends on the type of property
@@ -486,6 +490,8 @@ cs_property_create(const char    *name,
 
   BFT_MALLOC(pty, 1, cs_property_t);
 
+  pty->post_flag = 0;
+
   /* Copy name */
   int  len = strlen(name) + 1;
   BFT_MALLOC(pty->name, len, char);
@@ -766,6 +772,49 @@ cs_property_summary(const cs_property_t   *pty)
     } /* switch on def_type */
 
   } // Loop on subdomains
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set optional parameters related to a cs_property_t structure
+ *
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       key       key related to the member of pty to set
+ * \param[in]       keyval    accessor to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_option(cs_property_t       *pty,
+                       cs_property_key_t    key,
+                       const char          *keyval)
+{
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+  /* Conversion of the string to lower case */
+  char val[CS_BASE_STRING_LEN];
+  for (size_t i = 0; i < strlen(keyval); i++)
+    val[i] = tolower(keyval[i]);
+  val[strlen(keyval)] = '\0';
+
+  switch(key) {
+  case CS_PTYKEY_POST:
+    if (strcmp(val, "fourier") == 0)
+      pty->post_flag |= CS_PROPERTY_POST_FOURIER;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                N_(" Invalid value %s for setting key CS_PTYKEY_POST\n"
+                   " Valid choices are \"fourier\".\n"
+                   " Please modify your setting.\n"), val);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Key not implemented for setting an advection field."));
+
+  } /* Switch on keys */
 
 }
 
@@ -1349,9 +1398,9 @@ cs_property_get_fourier(const cs_property_t     *pty,
       if (!pty_uniform)
         ptyval = cs_property_get_cell_value(c_id, pty);
 
-      const cs_real_t  hc = pow(cdoq->cell_vol[c_id], cs_math_onethird);
+      const cs_real_t  hc2 = pow(cdoq->cell_vol[c_id], 2*cs_math_onethird);
 
-      fourier[c_id] = dt * ptyval / (hc * hc);
+      fourier[c_id] = dt * ptyval / hc2;
 
     } // Loop on cells
 
@@ -1375,13 +1424,66 @@ cs_property_get_fourier(const cs_property_t     *pty,
         cs_math_33_eigen((const cs_real_t (*)[3])ptymat, &eig_ratio, &eig_max);
       }
 
-      const cs_real_t  hc = pow(cdoq->cell_vol[c_id], cs_math_onethird);
+      const cs_real_t  hc2 = pow(cdoq->cell_vol[c_id], 2*cs_math_onethird);
 
-      fourier[c_id] = dt * eig_max / (hc * hc);
+      fourier[c_id] = dt * eig_max / hc2;
 
     } // Loop on cells
 
   } // Type of property
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined post-processing output for property structures
+ *
+ * \param[in]  pty         pointer to the property structure
+ * \param[in]  time_step   pointer to a cs_time_step_t structure
+ * \param[in]  dt_cur      value of the current time step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_extra_post(const cs_property_t       *pty,
+                       const cs_time_step_t      *time_step,
+                       double                     dt_cur)
+{
+  if (pty == NULL)
+    return;
+  if (pty->post_flag == 0)
+    return;
+
+  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
+
+  if (pty->post_flag & CS_PROPERTY_POST_FOURIER) {
+
+    char  *label = NULL;
+    double  *fourier = NULL;
+    int len = strlen(pty->name) + 8 + 1;
+
+    BFT_MALLOC(fourier, cdoq->n_cells, double);
+    BFT_MALLOC(label, len, char);
+    sprintf(label, "%s.Fourier", pty->name);
+
+    /* Compute Fourier number */
+    cs_property_get_fourier(pty, dt_cur, fourier);
+
+    cs_post_write_var(-1,             // id du maillage de post
+                      label,
+                      1,
+                      true,           // interlace
+                      true,           // true = original mesh
+                      CS_POST_TYPE_cs_real_t,
+                      fourier,        // values on cells
+                      NULL,           // values at internal faces
+                      NULL,           // values at border faces
+                      time_step);     // time step management struct.
+
+    BFT_FREE(label);
+    BFT_FREE(fourier);
+
+  } // Post Fourier number
 
 }
 

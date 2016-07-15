@@ -886,16 +886,8 @@ cs_domain_last_setup(cs_domain_t    *domain)
     bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   /* Set pointers of function if additional postprocessing is requested */
-  for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++) {
-
-    cs_adv_field_t *adv = domain->adv_fields[adv_id];
-
-    /* Add default post-processing */
-    if (cs_advection_field_needs_post(adv))
-      cs_post_add_time_mesh_dep_output(cs_advection_field_extra_post,
-                                       adv);
-
-  }
+  cs_post_add_time_mesh_dep_output(cs_domain_extra_post,
+                                   domain);
 
   if (domain->verbosity > 0 && domain->profiling) {
     cs_hodge_set_timer_stats(domain->verbosity);
@@ -1159,7 +1151,7 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
       // TODO: Check how the following value is set in FORTRAN
       // domain->time_options.dtref = 0.5*(dtmin + dtmax);
       if (domain->time_options.dtref < 0) // Should be the initial val.
-        domain->time_options.dtref = domain->dt_cur; 
+        domain->time_options.dtref = domain->dt_cur;
 
     }
     else
@@ -1438,8 +1430,8 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
   cs_adv_field_t  *adv_field = cs_domain_get_advection_field(domain,
                                                              "darcian_flux");
 
-  cs_advection_field_set_option(adv_field, CS_ADVKEY_CELL_FIELD, "true");
-  cs_advection_field_set_option(adv_field, CS_ADVKEY_POST, "true");
+  cs_advection_field_set_option(adv_field, CS_ADVKEY_DEFINE_AT, "cells");
+  cs_advection_field_set_option(adv_field, CS_ADVKEY_POST, "field");
 
   /* Create a new equation */
   cs_equation_t  *richards_eq = cs_groundwater_initialize(domain->connect,
@@ -1900,51 +1892,6 @@ cs_domain_solve(cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Process the computed solution
- *
- * \param[in]  domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_postprocess(cs_domain_t  *domain)
-{
-  /* Extra-operations */
-  /* ================ */
-
-  /* Predefined extra-operations related to advection fields */
-  for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
-    cs_advection_field_update(domain->adv_fields[adv_id]);
-
-  /* Predefined extra-operations related to equations */
-  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++)
-    cs_equation_extra_op(domain->equations[eq_id],
-                         domain->time_step,
-                         domain->dt_cur);
-
-  /* User-defined extra operations */
-  cs_user_cdo_extra_op(domain);
-
-  /* Log output */
-  if (cs_domain_needs_log(domain))
-    cs_log_iteration();
-
-  /* Post-processing */
-  /* =============== */
-
-  /* Activation or not of each writer according to the time step */
-  cs_post_activate_by_time_step(domain->time_step);
-
-  /* User-defined activation of writers for a fine-grained control */
-  cs_user_postprocess_activate(domain->time_step->nt_max,
-                               domain->time_step->nt_cur,
-                               domain->time_step->t_cur);
-
-  cs_post_write_vars(domain->time_step);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Write a restart file for the CDO module
  *
  * \param[in]  domain     pointer to a cs_domain_t structure
@@ -2029,6 +1976,127 @@ cs_domain_write_restart(const cs_domain_t  *domain)
 
   /* Finalize restart process */
   cs_restart_destroy(&restart);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Process the computed solution
+ *
+ * \param[in]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_postprocess(cs_domain_t  *domain)
+{
+  /* Extra-operations */
+  /* ================ */
+
+  /* Predefined extra-operations related to advection fields */
+  for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
+    cs_advection_field_update(domain->adv_fields[adv_id]);
+
+  /* User-defined extra operations */
+  cs_user_cdo_extra_op(domain);
+
+  /* Log output */
+  if (cs_domain_needs_log(domain))
+    cs_log_iteration();
+
+  /* Post-processing */
+  /* =============== */
+
+  /* Activation or not of each writer according to the time step */
+  cs_post_activate_by_time_step(domain->time_step);
+
+  /* User-defined activation of writers for a fine-grained control */
+  cs_user_postprocess_activate(domain->time_step->nt_max,
+                               domain->time_step->nt_cur,
+                               domain->time_step->t_cur);
+
+  /* Predefined extra-operations related to
+      - the domain (advection fields and properties),
+      - equations
+      - groundwater flows
+     are also handled during the call of this function thanks to
+     cs_post_add_time_mesh_dep_output() function pointer
+  */
+  cs_post_write_vars(domain->time_step);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined post-processing output for the groundwater flow module
+ *         prototype of this function is fixed since it is a function pointer
+ *         defined in cs_post.h (cs_post_time_mesh_dep_output_t)
+ *
+ * \param[in, out] input        pointer to a optional structure (here a
+ *                              cs_groundwater_t structure)
+ * \param[in]      mesh_id      id of the output mesh for the current call
+ * \param[in]      cat_id       category id of the output mesh for this call
+ * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),
+ *                              interior faces (ent_flag[1]), boundary faces
+ *                              (ent_flag[2]), particles (ent_flag[3]) or probes
+ *                              (ent_flag[4])
+ * \param[in]      n_cells      local number of cells of post_mesh
+ * \param[in]      n_i_faces    local number of interior faces of post_mesh
+ * \param[in]      n_b_faces    local number of boundary faces of post_mesh
+ * \param[in]      cell_list    list of cells (1 to n)
+ * \param[in]      i_face_list  list of interior faces (1 to n)
+ * \param[in]      b_face_list  list of boundary faces (1 to n)
+ * \param[in]      time_step    pointer to a cs_time_step_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_extra_post(void                      *input,
+                     int                        mesh_id,
+                     int                        cat_id,
+                     int                        ent_flag[5],
+                     cs_lnum_t                  n_cells,
+                     cs_lnum_t                  n_i_faces,
+                     cs_lnum_t                  n_b_faces,
+                     const cs_lnum_t            cell_list[],
+                     const cs_lnum_t            i_face_list[],
+                     const cs_lnum_t            b_face_list[],
+                     const cs_time_step_t      *time_step)
+{
+  CS_UNUSED(cat_id);
+  CS_UNUSED(ent_flag);
+  CS_UNUSED(n_cells);
+  CS_UNUSED(n_i_faces);
+  CS_UNUSED(n_b_faces);
+  CS_UNUSED(cell_list);
+  CS_UNUSED(i_face_list);
+  CS_UNUSED(b_face_list);
+
+  if (input == NULL)
+    return;
+
+  if (mesh_id != -1) /* Post-processing only on the generic volume mesh */
+    return;
+
+  cs_domain_t  *domain = (cs_domain_t *)input;
+
+  /* Post-processing related to advection fields */
+  for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
+    cs_advection_field_extra_post(domain->adv_fields[adv_id],
+                                  time_step,
+                                  domain->dt_cur);
+
+  /* Post-processing related to properties */
+  for (int pty_id = 0; pty_id < domain->n_properties; pty_id++)
+    cs_property_extra_post(domain->properties[pty_id],
+                           time_step,
+                           domain->dt_cur);
+
+  /* Post-processing related to equations */
+  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++)
+    cs_equation_extra_post(domain->equations[eq_id],
+                           time_step,
+                           domain->dt_cur);
+
 }
 
 /*----------------------------------------------------------------------------*/
