@@ -500,6 +500,7 @@ cs_domain_init(const cs_mesh_t             *mesh,
                                                     domain->connect);
 
   /* Default initialization of the time step */
+  domain->is_last_iter = false;
   domain->dt_cur = default_time_step;
   domain->time_step_def_type = CS_PARAM_DEF_BY_VALUE;
   domain->time_step_def.get.val = default_time_step;
@@ -744,6 +745,9 @@ cs_domain_needs_log(const cs_domain_t      *domain)
       return true;
   }
 
+  if (domain->is_last_iter)
+    return true;
+
   return false;
 }
 
@@ -953,6 +957,8 @@ cs_domain_last_setup(cs_domain_t    *domain)
 
   } // Loop on domain equations
 
+  if (domain->only_steady)
+    domain->is_last_iter = true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1131,34 +1137,45 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
 
   if (domain->only_steady)
     return;
-  if (domain->time_step_def_type == CS_PARAM_DEF_BY_VALUE)
-    return; // job has already been done during the initial setting
 
-  int  nt_cur = domain->time_step->nt_cur;
-  double  t_cur = domain->time_step->t_cur;
+  const cs_time_step_t  *ts = domain->time_step;
+  const double  t_cur = ts->t_cur;
+  const int  nt_cur = ts->nt_cur;
+
   cs_param_def_type_t  def_type = domain->time_step_def_type;
 
-  if (def_type == CS_PARAM_DEF_BY_TIME_FUNCTION) {
+  if (def_type != CS_PARAM_DEF_BY_VALUE) {
 
-    domain->dt_cur = domain->time_step_def.time_func(nt_cur, t_cur);
+    if (def_type == CS_PARAM_DEF_BY_TIME_FUNCTION) {
 
-    /* Update time_options */
-    double  dtmin = CS_MIN(domain->time_options.dtmin, domain->dt_cur);
-    double  dtmax = CS_MAX(domain->time_options.dtmax, domain->dt_cur);
+      domain->dt_cur = domain->time_step_def.time_func(nt_cur, t_cur);
 
-    domain->time_options.dtmin = dtmin;
-    domain->time_options.dtmax = dtmax;
-    // TODO: Check how the following value is set in FORTRAN
-    // domain->time_options.dtref = 0.5*(dtmin + dtmax);
-    if (domain->time_options.dtref < 0)
-      domain->time_options.dtref = domain->dt_cur; // Should be the initial val.
+      /* Update time_options */
+      double  dtmin = CS_MIN(domain->time_options.dtmin, domain->dt_cur);
+      double  dtmax = CS_MAX(domain->time_options.dtmax, domain->dt_cur);
+
+      domain->time_options.dtmin = dtmin;
+      domain->time_options.dtmax = dtmax;
+      // TODO: Check how the following value is set in FORTRAN
+      // domain->time_options.dtref = 0.5*(dtmin + dtmax);
+      if (domain->time_options.dtref < 0) // Should be the initial val.
+        domain->time_options.dtref = domain->dt_cur; 
+
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                " Invalid way of defining the current time step.\n"
+                " Please modify your settings.");
 
   }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid way of defining the current time step.\n"
-              " Please modify your settings.");
 
+  /* Check if this is the last iteration */
+  if (ts->t_max > 0) // t_max has been set
+    if (t_cur + domain->dt_cur > ts->t_max)
+      domain->is_last_iter = true;
+  if (ts->nt_max > 0) // nt_max has been set
+    if (nt_cur + 1 > ts->nt_max)
+      domain->is_last_iter = true;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -263,10 +263,6 @@ cs_cdo_main(cs_mesh_t             *m,
 
   }
 
-  /* Information about the last iteration */
-  cs_log_printf(CS_LOG_DEFAULT, "\n  Stop execution at iteration %d\n",
-                domain->time_step->nt_cur - 1);
-
   /* Free main CDO structures */
   _finalize(domain);
 

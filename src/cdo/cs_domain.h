@@ -77,6 +77,7 @@ typedef struct {
   cs_domain_boundary_t          *boundaries;
 
   /* Time step management */
+  bool                     is_last_iter;       // true or false
   double                   dt_cur;             // current time step
   cs_param_def_type_t      time_step_def_type; // Way of defining the time step
   cs_def_t                 time_step_def;      // Definition of the time_step
