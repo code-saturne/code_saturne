@@ -116,6 +116,8 @@ get_ic(cs_real_t           time,
        const cs_real_3_t   xyz,
        cs_get_t           *get)
 {
+  CS_UNUSED(time);
+
   const double  x = xyz[0], xll = (x - L)/L;
   const double  hr = -100;
 

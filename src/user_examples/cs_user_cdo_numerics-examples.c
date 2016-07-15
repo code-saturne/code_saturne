@@ -220,8 +220,9 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      CS_EQKEY_ADV_SCHEME
      "upwind"
      "centered"
-     "samarskii": upwind/centered with a weight depending on the Peclet number
-     "sg": upwind/centered with a weight depending on the Peclet number
+     "samarskii" upwind/centered with a weight depending on the Peclet number
+     "sg"        upwind/centered with a weight depending on the Peclet number
+     "cip"       "continuous interior penalty" (only for VCB schemes
 
      CS_EQKEY_ADV_FLUX_QUADRA (see CS_EQKEY_BC_QUADRATURE)
      "bary" (default)
@@ -229,20 +230,25 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      "highest"
 
      CS_EQKEY_EXTRA_OP: Additional post-processing options:
-     "peclet" to post-process an estimation of the Peclet number in each cell
-     "upwind_coef" to post-process an estimation of the upwinding coefficient
+     "peclet"  post-process an estimation of the Peclet number in each cell
+     "courant" post-process an estimation of the Courant number in each cell
+     "fourier" post-process an estimation of the Fourier number in each cell
+     "upwind_coef" post-process an estimation of the upwinding coefficient
 
   */
 
   cs_equation_t  *eq = cs_domain_get_equation(domain, "FVCA6.1");
 
+  /* The modification of the space discretization should be apply first */
   cs_equation_set_param(eq, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+
+  /* Modify other parameters than the space discretization */
   cs_equation_set_param(eq, CS_EQKEY_VERBOSITY, "2");
   cs_equation_set_param(eq, CS_EQKEY_HODGE_DIFF_ALGO, "cost");
   cs_equation_set_param(eq, CS_EQKEY_HODGE_DIFF_COEF, "dga");
 
+  /* Linear algebra settings */
   cs_equation_set_param(eq, CS_EQKEY_SOLVER_FAMILY, "petsc");
-
   cs_equation_set_param(eq, CS_EQKEY_PRECOND, "amg");
   cs_equation_set_param(eq, CS_EQKEY_ITSOL, "cg");
   cs_equation_set_param(eq, CS_EQKEY_ITSOL_MAX_ITER, "2500");

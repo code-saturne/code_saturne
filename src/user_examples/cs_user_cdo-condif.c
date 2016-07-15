@@ -95,6 +95,8 @@ _define_adv_field(cs_real_t           time,
                   const cs_real_3_t   xyz,
                   cs_get_t           *get)
 {
+  CS_UNUSED(time);
+
   const double  x = xyz[0], y = xyz[1], z = xyz[2];
 
   (*get).vect[0] = y - 0.5;
@@ -111,6 +113,8 @@ _define_bcs(cs_real_t           time,
             const cs_real_3_t   xyz,
             cs_get_t           *get)
 {
+  CS_UNUSED(time);
+
   double  bcval = 0.0;
 
   const double  x = xyz[0], y = xyz[1], z = xyz[2];
@@ -130,6 +134,8 @@ _define_source(cs_real_t           time,
                const cs_real_3_t   xyz,
                cs_get_t           *get)
 {
+  CS_UNUSED(time);
+
   cs_real_t  gx, gy, gz, gxx, gyy, gzz, gxy, gxz, gyz;
   cs_real_33_t  cond;
 
@@ -456,6 +462,11 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
   cs_adv_field_t  *adv = cs_domain_get_advection_field(domain, "adv_field");
 
   cs_advection_field_def_by_analytic(adv, _define_adv_field);
+
+  /* Activate the post-processing of the advection field
+     and the related Courant number */
+  cs_advection_field_set_option(adv, CS_ADVKEY_POST, "field");
+  cs_advection_field_set_option(adv, CS_ADVKEY_POST, "courant");
 
   /* ======================
      User-defined equations

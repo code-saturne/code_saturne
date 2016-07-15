@@ -282,7 +282,7 @@ cs_cdo_main(cs_mesh_t             *m,
                 "t--> CDO total runtime                 %12.3f s\n",
                 time_count.wall_nsec*1e-9);
 
-  printf("\n  --> Exit: simulation completed for the CDO module\n\n");
+  printf("\n  --> Exit CDO module: simulation completed.\n\n");
 
   return;
 }
