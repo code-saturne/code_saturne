@@ -216,6 +216,11 @@ cs_cdo_main(cs_mesh_t             *m,
   /* Timer statistics */
   const int  cdo_ts_id = cs_timer_stats_create("stages", "cdo", "cdo");
 
+  /* Sanity check (TO BE REMOVED) */
+  if (cs_glob_n_ranks > 1)
+    bft_error(__FILE__, __LINE__, 0,
+              " CDO schemes are not yet implemented for parallel computing");
+
   /* Initialization of several modules */
   cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
   cs_quadrature_setup();         /* Compute constant used in quadrature rules */
