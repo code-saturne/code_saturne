@@ -42,7 +42,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_cdo_scheme_geometry.h"
 #include "cs_math.h"

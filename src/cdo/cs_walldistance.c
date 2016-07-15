@@ -46,8 +46,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
+#include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_post.h"
@@ -148,10 +148,13 @@ _compute_cdofb(const cs_cdo_connect_t     *connect,
                                            dist,          // data
                                            false);        // absolute values ?
 
-  bft_printf("\n -bnd- WallDistance.Max   % 10.6e\n", dinfo.max.value);
-  bft_printf(" -bnd- WallDistance.Mean  % 10.6e\n", dinfo.mean);
-  bft_printf(" -bnd- WallDistance.Sigma % 10.6e\n\n", dinfo.sigma);
-  bft_printf("%s", msepline);
+  cs_log_printf(CS_LOG_DEFAULT,
+                "\n -bnd- WallDistance.Max   % 10.6e\n", dinfo.max.value);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " -bnd- WallDistance.Mean  % 10.6e\n", dinfo.mean);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " -bnd- WallDistance.Sigma % 10.6e\n\n", dinfo.sigma);
+  cs_log_printf(CS_LOG_DEFAULT, "%s", msepline);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -239,9 +242,12 @@ _compute_cdovb(const cs_cdo_connect_t     *connect,
                                            dist,             // data
                                            false);           // abs. values ?
 
-  bft_printf("\n -bnd- WallDistance.Max   % 10.6e\n", dinfo.max.value);
-  bft_printf(" -bnd- WallDistance.Mean  % 10.6e\n", dinfo.mean);
-  bft_printf(" -bnd- WallDistance.Sigma % 10.6e\n", dinfo.sigma);
+  cs_log_printf(CS_LOG_DEFAULT,
+                "\n -bnd- WallDistance.Max   % 10.6e\n", dinfo.max.value);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " -bnd- WallDistance.Mean  % 10.6e\n", dinfo.mean);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " -bnd- WallDistance.Sigma % 10.6e\n", dinfo.sigma);
 
   /* Free memory */
   BFT_FREE(gdi);

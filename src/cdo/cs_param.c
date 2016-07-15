@@ -40,7 +40,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
-#include "bft_printf.h"
 
 #include "cs_mesh_location.h"
 #include "cs_field.h"

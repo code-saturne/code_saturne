@@ -39,8 +39,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
+#include "cs_log.h"
 #include "cs_mesh_location.h"
 #include "cs_evaluate.h"
 
@@ -299,19 +299,19 @@ cs_source_term_summary(const char               *eqname,
     eqn = eqname;
 
   if (st == NULL) {
-    bft_printf("  <%s/NULL>\n", eqn);
+    cs_log_printf(CS_LOG_SETUP, "  <%s/NULL>\n", eqn);
     return;
   }
 
-  bft_printf("  <%s/%s> type: ", eqn, st->name);
+  cs_log_printf(CS_LOG_SETUP, "  <%s/%s> type: ", eqn, st->name);
   switch (st->type) {
 
   case CS_SOURCE_TERM_GRAVITY:
-    bft_printf(" Gravity");
+    cs_log_printf(CS_LOG_SETUP, " Gravity");
     break;
 
   case CS_SOURCE_TERM_USER:
-    bft_printf(" User-defined");
+    cs_log_printf(CS_LOG_SETUP, " User-defined");
     break;
 
   default:
@@ -319,13 +319,14 @@ cs_source_term_summary(const char               *eqname,
     break;
 
   }
-  bft_printf(" mesh_location: %s\n", cs_mesh_location_get_name(st->ml_id));
+  cs_log_printf(CS_LOG_SETUP,
+                " mesh_location: %s\n", cs_mesh_location_get_name(st->ml_id));
 
-  bft_printf("  <%s/%s> Definition: %s\n",
-             eqn, st->name, cs_param_get_def_type_name(st->def_type));
+  cs_log_printf(CS_LOG_SETUP, "  <%s/%s> Definition: %s\n",
+                eqn, st->name, cs_param_get_def_type_name(st->def_type));
   if (st->def_type == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION)
-    bft_printf("  <%s/%s> Quadrature: %s\n",
-               eqn, st->name, cs_quadrature_get_type_name(st->quad_type));
+    cs_log_printf(CS_LOG_SETUP, "  <%s/%s> Quadrature: %s\n",
+                  eqn, st->name, cs_quadrature_get_type_name(st->quad_type));
 
 }
 

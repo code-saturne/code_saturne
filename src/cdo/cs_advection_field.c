@@ -42,11 +42,11 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_math.h"
 #include "cs_mesh_location.h"
 #include "cs_field.h"
+#include "cs_log.h"
 #include "cs_post.h"
 #include "cs_reco.h"
 
@@ -332,25 +332,26 @@ cs_advection_field_summary(const cs_adv_field_t   *adv)
   if (adv->desc.state & CS_FLAG_STATE_UNIFORM)  is_uniform = true;
   if (adv->desc.state & CS_FLAG_STATE_UNSTEADY) is_steady = false;
 
-  bft_printf("  %s >> uniform [%s], steady [%s], ",
-             adv->name, cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
+  cs_log_printf(CS_LOG_SETUP,
+                "  %s >> uniform [%s], steady [%s], ", adv->name,
+                cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
 
   switch (adv->def_type) {
 
   case CS_PARAM_DEF_BY_VALUE:
     {
       const cs_get_t  get = adv->def.get;
-      bft_printf("value: (% 5.3e, % 5.3e, % 5.3e)\n",
-                 get.vect[0], get.vect[1], get.vect[2]);
+      cs_log_printf(CS_LOG_SETUP, "value: (% 5.3e, % 5.3e, % 5.3e)\n",
+                    get.vect[0], get.vect[1], get.vect[2]);
     }
     break;
 
   case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-    bft_printf("definition by an analytical function\n");
+    cs_log_printf(CS_LOG_SETUP, "definition by an analytical function\n");
     break;
 
   case CS_PARAM_DEF_BY_ARRAY:
-    bft_printf("definition by an array \n");
+    cs_log_printf(CS_LOG_SETUP, "definition by an array \n");
     break;
 
   default:
@@ -1534,8 +1535,9 @@ cs_advection_field_extra_post(void                      *input,
   const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
 
 #if defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(" <post/advection_field %s> iter: %d; mesh_id: %d\n",
-             adv->name, time_step->nt_cur, mesh_id);
+  cs_log_printf(CS_LOG_SETUP,
+                " <post/advection_field %s> iter: %d; mesh_id: %d\n",
+                adv->name, time_step->nt_cur, mesh_id);
 #endif
 
   if (post_unitv) { /* Compute buf_size */

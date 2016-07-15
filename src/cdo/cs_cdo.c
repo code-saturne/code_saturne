@@ -42,7 +42,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_error.h"
-#include "bft_printf.h"
+
 #include "cs_defs.h"
 #include "cs_math.h"
 

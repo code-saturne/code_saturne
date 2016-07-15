@@ -39,7 +39,6 @@
 
 #include "bft_error.h"
 #include "bft_mem.h"
-#include "bft_printf.h"
 
 #include "fvm_defs.h"
 
@@ -226,11 +225,12 @@ cs_cdo_main(cs_mesh_t             *m,
   cs_quadrature_setup();         /* Compute constant used in quadrature rules */
 
   /* Output information */
-  bft_printf("\n");
-  bft_printf("%s", lsepline);
-  bft_printf("\tStart CDO Module  *** Experimental ***\n");
-  bft_printf("%s", lsepline);
-  bft_printf("\n -msg- Version.Tag  %s\n", cs_cdoversion);
+  cs_log_printf(CS_LOG_DEFAULT, "\n");
+  cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
+  cs_log_printf(CS_LOG_DEFAULT, "\tStart CDO Module  *** Experimental ***\n");
+  cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
+  cs_log_printf(CS_LOG_DEFAULT, "\n -msg- Version.Tag  %s\n", cs_cdoversion);
+  cs_log_printf(CS_LOG_SETUP,"\n -cdo-settings-begin\n");
 
   cs_timer_t t0 = cs_timer_time();
   cs_timer_stats_start(cdo_ts_id);
@@ -238,9 +238,13 @@ cs_cdo_main(cs_mesh_t             *m,
   /*  Build high-level structures and create algebraic systems */
   cs_domain_t  *domain = _setup_domain(m, mq);
 
-  bft_printf("\n%s", lsepline);
-  bft_printf("      Start main loop on time iteration\n");
-  bft_printf("%s", lsepline);
+  cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+  cs_log_printf(CS_LOG_DEFAULT, "      Start main loop on time iteration\n");
+  cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
+
+  /* Flush listing and setup.log files */
+  cs_log_printf_flush(CS_LOG_DEFAULT);
+  cs_log_printf_flush(CS_LOG_SETUP);
 
   while (cs_domain_needs_iterate(domain)) { // Main time loop
 
@@ -259,12 +263,17 @@ cs_cdo_main(cs_mesh_t             *m,
 
   }
 
+  /* Information about the last iteration */
+  cs_log_printf(CS_LOG_DEFAULT, "\n  Stop execution at iteration %d\n",
+                domain->time_step->nt_cur - 1);
+
   /* Free main CDO structures */
   _finalize(domain);
 
-  bft_printf("\n%s", lsepline);
-  bft_printf("\tExit CDO Module\n");
-  bft_printf("%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP,"\n -cdo-settings-end\n");
+  cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+  cs_log_printf(CS_LOG_DEFAULT, "\tExit CDO Module\n");
+  cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
 
   cs_timer_stats_stop(cdo_ts_id);
   cs_timer_t  t1 = cs_timer_time();

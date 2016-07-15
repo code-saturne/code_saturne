@@ -39,7 +39,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_math.h"
 #include "cs_mesh_location.h"

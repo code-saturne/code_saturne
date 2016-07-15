@@ -41,9 +41,9 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_defs.h"
+#include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
 #include "cs_reco.h"
@@ -681,18 +681,18 @@ cs_property_summary(const cs_property_t   *pty)
   if (pty->flag.state & CS_FLAG_STATE_UNIFORM)  is_uniform = true;
   if (pty->flag.state & CS_FLAG_STATE_UNSTEADY) is_steady = false;
 
-  bft_printf("  %s >> uniform [%s], steady [%s], ",
-             pty->name, cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
+  cs_log_printf(CS_LOG_SETUP, "  %s >> uniform [%s], steady [%s], ",
+                pty->name, cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
 
   switch(pty->type) {
   case CS_PROPERTY_ISO:
-    bft_printf("type: isotropic\n");
+    cs_log_printf(CS_LOG_SETUP, "type: isotropic\n");
     break;
   case CS_PROPERTY_ORTHO:
-    bft_printf("type: orthotropic\n");
+    cs_log_printf(CS_LOG_SETUP, "type: orthotropic\n");
     break;
   case CS_PROPERTY_ANISO:
-    bft_printf("type: anisotropic\n");
+    cs_log_printf(CS_LOG_SETUP, "type: anisotropic\n");
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
@@ -701,13 +701,15 @@ cs_property_summary(const cs_property_t   *pty)
   }
 
   /* Definition */
-  bft_printf("  %s >> n_subdomains    %d\n", pty->name, pty->n_subdomains);
+  cs_log_printf(CS_LOG_SETUP,
+                "  %s >> n_subdomains    %d\n", pty->name, pty->n_subdomains);
 
   for (int i = 0; i < pty->n_subdomains; i++) {
 
     cs_param_def_t  *pdef  = pty->defs + i;
 
-    bft_printf("  %s >> location  %s,", pty->name, pdef->ml_name);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  %s >> location  %s,", pty->name, pdef->ml_name);
 
     switch (pdef->def_type) {
 
@@ -718,19 +720,22 @@ cs_property_summary(const cs_property_t   *pty)
         switch(pty->type) {
 
         case CS_PROPERTY_ISO:
-          bft_printf(" definition by value: % 5.3e\n", mat.val);
+          cs_log_printf(CS_LOG_SETUP,
+                        " definition by value: % 5.3e\n", mat.val);
           break;
         case CS_PROPERTY_ORTHO:
-          bft_printf(" definition by value: (% 5.3e, % 5.3e, % 5.3e)\n",
-                     mat.vect[0], mat.vect[1], mat.vect[2]);
+          cs_log_printf(CS_LOG_SETUP,
+                        " definition by value: (% 5.3e, % 5.3e, % 5.3e)\n",
+                        mat.vect[0], mat.vect[1], mat.vect[2]);
           break;
         case CS_PROPERTY_ANISO:
-          bft_printf("\n                       |% 5.3e, % 5.3e, % 5.3e|\n"
-                     "  definition by value: |% 5.3e, % 5.3e, % 5.3e|\n"
-                     "                       |% 5.3e, % 5.3e, % 5.3e|\n",
-                     mat.tens[0][0], mat.tens[0][1], mat.tens[0][2],
-                     mat.tens[1][0], mat.tens[1][1], mat.tens[1][2],
-                     mat.tens[2][0], mat.tens[2][1], mat.tens[2][2]);
+          cs_log_printf(CS_LOG_SETUP,
+                        "\n                       |% 5.3e, % 5.3e, % 5.3e|\n"
+                        "  definition by value: |% 5.3e, % 5.3e, % 5.3e|\n"
+                        "                       |% 5.3e, % 5.3e, % 5.3e|\n",
+                        mat.tens[0][0], mat.tens[0][1], mat.tens[0][2],
+                        mat.tens[1][0], mat.tens[1][1], mat.tens[1][2],
+                        mat.tens[2][0], mat.tens[2][1], mat.tens[2][2]);
           break;
         default:
           break;
@@ -740,15 +745,17 @@ cs_property_summary(const cs_property_t   *pty)
       break; // BY_VALUE
 
     case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-      bft_printf("  definition by an analytical function\n");
+      cs_log_printf(CS_LOG_SETUP, "  definition by an analytical function\n");
       break;
 
     case CS_PARAM_DEF_BY_LAW_ONESCA:
-      bft_printf("  definition by a law based on one scalar\n");
+      cs_log_printf(CS_LOG_SETUP,
+                    "  definition by a law based on one scalar\n");
       break;
 
     case CS_PARAM_DEF_BY_LAW_SCAVEC:
-      bft_printf("  definition by law based on one scalar + one vector\n");
+      cs_log_printf(CS_LOG_SETUP,
+                    "  definition by law based on one scalar + one vector\n");
       break;
 
     default:
@@ -1205,13 +1212,14 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
   } /* Inversion of the tensor */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_PROPERTY_DBG > 1
-  bft_printf("\n  Tensor property for cell %d\n"
-             "   | % 10.6e  % 10.6e  % 10.6e |\n"
-             "   | % 10.6e  % 10.6e  % 10.6e |\n"
-             "   | % 10.6e  % 10.6e  % 10.6e |\n", c_id,
-             tensor[0][0], tensor[0][1], tensor[0][2],
-             tensor[1][0], tensor[1][1], tensor[1][2],
-             tensor[2][0], tensor[2][1], tensor[2][2]);
+  cs_log_printf(CS_LOG_DEFAULT,
+                "\n  Tensor property for cell %d\n"
+                "   | % 10.6e  % 10.6e  % 10.6e |\n"
+                "   | % 10.6e  % 10.6e  % 10.6e |\n"
+                "   | % 10.6e  % 10.6e  % 10.6e |\n", c_id,
+                tensor[0][0], tensor[0][1], tensor[0][2],
+                tensor[1][0], tensor[1][1], tensor[1][2],
+                tensor[2][0], tensor[2][1], tensor[2][2]);
 #endif
 
   if (property_ts_id > -1)

@@ -46,7 +46,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_base.h"
 #include "cs_cdo.h"
@@ -54,9 +53,10 @@
 #include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_evaluate.h"
-#include "cs_sles.h"
+#include "cs_log.h"
 #include "cs_mesh_location.h"
 #include "cs_post.h"
+#include "cs_sles.h"
 #include "cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
@@ -583,10 +583,11 @@ cs_equation_summary(const cs_equation_t  *eq)
   if (eq == NULL)
     return;
 
-  bft_printf("\n%s", lsepline);
-  bft_printf("\tSummary of settings for %s eq. (variable %s)\n",
-             eq->name, eq->varname);
-  bft_printf("%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP,
+                "\tSummary of settings for %s eq. (variable %s)\n",
+                eq->name, eq->varname);
+  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
 
   cs_equation_param_summary(eq->name, eq->param);
 }
@@ -1831,13 +1832,19 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
 
     cs_sla_matrix_info_t  minfo = sla_mat->info;
 
-    bft_printf("\n Sparse Linear Algebra (SLA) sumup:\n");
-    bft_printf("  <%s/sla> A.size         %d\n", eqn, sla_mat->n_rows);
-    bft_printf("  <%s/sla> A.nnz          %lu\n", eqn, minfo.nnz);
-    bft_printf("  <%s/sla> A.FillIn       %5.2e %%\n", eqn, minfo.fillin);
-    bft_printf("  <%s/sla> A.StencilMin   %d\n", eqn, minfo.stencil_min);
-    bft_printf("  <%s/sla> A.StencilMax   %d\n", eqn, minfo.stencil_max);
-    bft_printf("  <%s/sla> A.StencilMean  %5.2e\n", eqn, minfo.stencil_mean);
+    cs_log_printf(CS_LOG_DEFAULT, "\n Sparse Linear Algebra (SLA) sumup:\n");
+    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sla> A.size         %d\n",
+                  eqn, sla_mat->n_rows);
+    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sla> A.nnz          %lu\n",
+                  eqn, minfo.nnz);
+    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sla> A.FillIn       %5.2e %%\n",
+                  eqn, minfo.fillin);
+    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sla> A.StencilMin   %d\n",
+                  eqn, minfo.stencil_min);
+    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sla> A.StencilMax   %d\n",
+                  eqn, minfo.stencil_max);
+    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sla> A.StencilMean  %5.2e\n",
+                  eqn, minfo.stencil_mean);
   }
 
   /* Map a cs_sla_matrix_t structure into a cs_matrix_t structure */
@@ -1946,12 +1953,14 @@ cs_equation_solve(cs_equation_t   *eq,
                                                    NULL);  // aux. buffers
 
   if (do_logcvg)
-    bft_printf("  <%s/sles_cvg> code  %d n_iters  %d residual  % -8.4e\n",
-               eq->name, code, n_iters, residual);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "  <%s/sles_cvg> code  %d n_iters  %d residual  % -8.4e\n",
+                  eq->name, code, n_iters, residual);
 
   if (eq->param->sles_verbosity > 0)
-    printf("# %s >> n_iters = %d with a residual norm = %8.5e\n",
-           eq->name, n_iters, residual);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  "# %s >> n_iters = %d with a residual norm = %8.5e\n",
+                  eq->name, n_iters, residual);
 
   if (eq->solve_ts_id > -1)
     cs_timer_stats_stop(eq->solve_ts_id);

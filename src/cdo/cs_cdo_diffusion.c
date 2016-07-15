@@ -41,9 +41,9 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_cdo_scheme_geometry.h"
+#include "cs_log.h"
 #include "cs_math.h"
 #include "cs_property.h"
 
@@ -1213,7 +1213,7 @@ cs_cdo_diffusion_weak_bc(cs_lnum_t                    f_id,
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
-  bft_printf(">> Local weak bc matrix (f_id: %d)", f_id);
+  cs_log_printf(CS_LOG_DEFAULT, ">> Local weak bc matrix (f_id: %d)", f_id);
   cs_locmat_dump(cm->c_id, ntrgrd);
 #endif
 

@@ -50,12 +50,12 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_evaluate.h"
 #include "cs_equation_common.h"
 #include "cs_groundwater.h"
 #include "cs_hodge.h"
+#include "cs_log.h"
 #include "cs_log_iteration.h"
 #include "cs_mesh_location.h"
 #include "cs_post.h"
@@ -762,26 +762,29 @@ cs_domain_summary(const cs_domain_t   *domain)
     return;
 
   /* Output information */
-  bft_printf("\n%s", lsepline);
-  bft_printf("\tSummary of domain settings\n");
-  bft_printf("%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP, "\tSummary of domain settings\n");
+  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
 
-  bft_printf(" -msg- n_cdo_equations          %d\n", domain->n_equations);
-  bft_printf(" -msg- n_predefined_equations   %d\n",
-             domain->n_predef_equations);
-  bft_printf(" -msg- n_user_equations         %d\n", domain->n_user_equations);
-  bft_printf(" -msg- n_properties             %d\n", domain->n_properties);
+  cs_log_printf(CS_LOG_SETUP, " -msg- n_cdo_equations          %d\n",
+                domain->n_equations);
+  cs_log_printf(CS_LOG_SETUP, " -msg- n_predefined_equations   %d\n",
+                domain->n_predef_equations);
+  cs_log_printf(CS_LOG_SETUP, " -msg- n_user_equations         %d\n",
+                domain->n_user_equations);
+  cs_log_printf(CS_LOG_SETUP, " -msg- n_properties             %d\n",
+                domain->n_properties);
 
   /* Boundary */
   cs_domain_boundary_t  *bdy = domain->boundaries;
 
-  bft_printf("\n  Domain boundary by default: ");
+  cs_log_printf(CS_LOG_SETUP, "\n  Domain boundary by default: ");
   switch (bdy->default_boundary) {
   case CS_PARAM_BOUNDARY_WALL:
-    bft_printf(" wall\n");
+    cs_log_printf(CS_LOG_SETUP, " wall\n");
     break;
   case CS_PARAM_BOUNDARY_SYMMETRY:
-    bft_printf(" symmetry\n");
+    cs_log_printf(CS_LOG_SETUP, " symmetry\n");
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
@@ -790,48 +793,53 @@ cs_domain_summary(const cs_domain_t   *domain)
   }
 
   /* Number of border faces for each type of boundary */
-  bft_printf("  >> Number of faces with a wall boundary:      %d\n",
-             bdy->n_type_elts[CS_PARAM_BOUNDARY_WALL]);
-  bft_printf("  >> Number of faces with an inlet boundary:    %d\n",
-             bdy->n_type_elts[CS_PARAM_BOUNDARY_INLET]);
-  bft_printf("  >> Number of faces with an outlet boundary:   %d\n",
-             bdy->n_type_elts[CS_PARAM_BOUNDARY_OUTLET]);
-  bft_printf("  >> Number of faces with a symmetry boundary:  %d\n",
-             bdy->n_type_elts[CS_PARAM_BOUNDARY_SYMMETRY]);
+  cs_log_printf(CS_LOG_SETUP,
+                "  >> Number of faces with a wall boundary:      %d\n",
+                bdy->n_type_elts[CS_PARAM_BOUNDARY_WALL]);
+  cs_log_printf(CS_LOG_SETUP,
+                "  >> Number of faces with an inlet boundary:    %d\n",
+                bdy->n_type_elts[CS_PARAM_BOUNDARY_INLET]);
+  cs_log_printf(CS_LOG_SETUP,
+                "  >> Number of faces with an outlet boundary:   %d\n",
+                bdy->n_type_elts[CS_PARAM_BOUNDARY_OUTLET]);
+  cs_log_printf(CS_LOG_SETUP,
+                "  >> Number of faces with a symmetry boundary:  %d\n",
+                bdy->n_type_elts[CS_PARAM_BOUNDARY_SYMMETRY]);
 
   /* Time step summary */
-  bft_printf("\n  Time step information\n");
+  cs_log_printf(CS_LOG_SETUP, "\n  Time step information\n");
   if (domain->only_steady)
-    bft_printf("  >> Steady-state computation");
+    cs_log_printf(CS_LOG_SETUP, "  >> Steady-state computation");
 
   else { /* Time information */
 
-    bft_printf("  >> Time step status:");
+    cs_log_printf(CS_LOG_SETUP, "  >> Time step status:");
     if (domain->time_options.idtvar == 0)
-      bft_printf("  constant\n");
+      cs_log_printf(CS_LOG_SETUP, "  constant\n");
     else if (domain->time_options.idtvar == 1)
-      bft_printf("  variable in time\n");
+      cs_log_printf(CS_LOG_SETUP, "  variable in time\n");
     else
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid idtvar value for the CDO module.\n"));
-    bft_printf("  >> Type of definition: %s",
-               cs_param_get_def_type_name(domain->time_step_def_type));
+    cs_log_printf(CS_LOG_SETUP, "  >> Type of definition: %s",
+                  cs_param_get_def_type_name(domain->time_step_def_type));
     if (domain->time_step_def_type == CS_PARAM_DEF_BY_VALUE)
-      bft_printf(" => %5.3e\n", domain->dt_cur);
+      cs_log_printf(CS_LOG_SETUP, " => %5.3e\n", domain->dt_cur);
     else
-      bft_printf("\n");
+      cs_log_printf(CS_LOG_SETUP, "\n");
 
-    bft_printf("  >> Final simulation time: %5.3e (nt_max: %d)\n",
-               domain->time_step->t_max, domain->time_step->nt_max);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  >> Final simulation time: %5.3e (nt_max: %d)\n",
+                  domain->time_step->t_max, domain->time_step->nt_max);
   }
-  bft_printf("\n");
+  cs_log_printf(CS_LOG_SETUP, "\n");
 
   if (domain->verbosity > 0) {
 
     /* Properties */
-    bft_printf("\n%s", lsepline);
-    bft_printf("\tSummary of the definition of properties\n");
-    bft_printf("%s", lsepline);
+    cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
+    cs_log_printf(CS_LOG_SETUP, "\tSummary of the definition of properties\n");
+    cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
 
     for (int i = 0; i < domain->n_properties; i++)
       cs_property_summary(domain->properties[i]);
@@ -839,9 +847,9 @@ cs_domain_summary(const cs_domain_t   *domain)
     /* Advection fields */
     if (domain->n_adv_fields > 0) {
 
-      bft_printf("\n%s", lsepline);
-      bft_printf("\tSummary of the advection field\n");
-      bft_printf("%s", lsepline);
+      cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
+      cs_log_printf(CS_LOG_SETUP, "\tSummary of the advection field\n");
+      cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
 
       for (int i = 0; i < domain->n_adv_fields; i++)
         cs_advection_field_summary(domain->adv_fields[i]);
@@ -1202,7 +1210,7 @@ cs_domain_add_property(cs_domain_t     *domain,
 
   if (pty != NULL) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_(" An existing property has already the name %s.\n"
+    cs_log_printf(CS_LOG_DEFAULT, _(" An existing property has already the name %s.\n"
                  " Stop adding this property.\n"), pty_name);
     return;
   }
@@ -1263,7 +1271,7 @@ cs_domain_add_advection_field(cs_domain_t     *domain,
 
   if (adv != NULL) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_(" An existing advection field has already the name %s.\n"
+    cs_log_printf(CS_LOG_DEFAULT, _(" An existing advection field has already the name %s.\n"
                  " Stop adding this advection field.\n"), adv_name);
     return;
   }
@@ -1801,15 +1809,15 @@ cs_domain_solve(cs_domain_t  *domain)
 
     /* Output information */
     if (domain->only_steady) {
-      bft_printf("\n%s", lsepline);
-      bft_printf("      Solve steady-state problem(s)\n");
-      bft_printf("%s", lsepline);
+      cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+      cs_log_printf(CS_LOG_DEFAULT, "      Solve steady-state problem(s)\n");
+      cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
     }
     else if (do_output) {
-      bft_printf("\n%s", lsepline);
-      bft_printf("-ite- %5d; time = %5.3e s >> Solve domain\n",
+      cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+      cs_log_printf(CS_LOG_DEFAULT, "-ite- %5d; time = %5.3e s >> Solve domain\n",
                  nt_cur, domain->time_step->t_cur);
-      bft_printf("%s", lsepline);
+      cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
     }
     /* Predefined equation for the computation of the wall distance */
     if (domain->wall_distance_eq_id > -1) {
@@ -1850,10 +1858,10 @@ cs_domain_solve(cs_domain_t  *domain)
 
     /* Output information */
     if (do_output) {
-      bft_printf("\n%s", lsepline);
-      bft_printf("-ite- %5d; time = %5.3e s >> Solve domain\n",
+      cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+      cs_log_printf(CS_LOG_DEFAULT, "-ite- %5d; time = %5.3e s >> Solve domain\n",
                  nt_cur, domain->time_step->t_cur);
-      bft_printf("%s", lsepline);
+      cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
     }
 
     if (domain->richards_eq_id > -1)

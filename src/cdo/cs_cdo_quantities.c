@@ -41,8 +41,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
+#include "cs_log.h"
 #include "cs_math.h"
 #include "cs_prototypes.h"
 
@@ -905,19 +905,22 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   switch (cc_algo) { /* Compute face/cell centers and cell volumes */
 
   case CS_CDO_CC_BARYC:
-    bft_printf(" -cdo- Cell.Center.Algo >> Mirtich\n");
+    cs_log_printf(CS_LOG_SETUP,
+                  " -cdo- Cell.Center.Algo >> Mirtich\n");
     /* Compute (real) barycentric centers, face centers and cell volumes */
     _mirtich_algorithm(m, mq, topo, cdoq);
     break;
 
   case CS_CDO_CC_MEANV:
-    bft_printf(" -cdo- Cell.Center.Algo >> Vertices.MeanValue\n");
+    cs_log_printf(CS_LOG_SETUP,
+                  " -cdo- Cell.Center.Algo >> Vertices.MeanValue\n");
     /* Compute cell centers, face centers and cell volumes and total volume */
     _vtx_algorithm(m, mq, topo, cdoq);
     break;
 
   case CS_CDO_CC_SATURNE:
-    bft_printf(" -cdo- Cell.Center.Algo >> Original\n");
+    cs_log_printf(CS_LOG_SETUP,
+                  " -cdo- Cell.Center.Algo >> Original\n");
     _saturn_algorithm(m, mq, cdoq);
     break;
 
@@ -1034,14 +1037,14 @@ void
 cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
 {
   /* Output */
-  bft_printf("\n CDO mesh quantities information:\n");
-  bft_printf(" --cdo-- h_cell  %6.4e %6.4e (min/max)\n",
-             quant->cell_info.h_min, quant->cell_info.h_max);
-  bft_printf(" --cdo-- h_face  %6.4e %6.4e (min/max)\n",
-             quant->face_info.h_min, quant->face_info.h_max);
-  bft_printf(" --cdo-- h_edge  %6.4e %6.4e (min/max)\n",
-             quant->edge_info.h_min, quant->edge_info.h_max);
-  bft_printf("\n");
+  cs_log_printf(CS_LOG_DEFAULT, "\n CDO mesh quantities information:\n");
+  cs_log_printf(CS_LOG_DEFAULT, " --cdo-- h_cell  %6.4e %6.4e (min/max)\n",
+                quant->cell_info.h_min, quant->cell_info.h_max);
+  cs_log_printf(CS_LOG_DEFAULT, " --cdo-- h_face  %6.4e %6.4e (min/max)\n",
+                quant->face_info.h_min, quant->face_info.h_max);
+  cs_log_printf(CS_LOG_DEFAULT, " --cdo-- h_edge  %6.4e %6.4e (min/max)\n",
+                quant->edge_info.h_min, quant->edge_info.h_max);
+  cs_log_printf(CS_LOG_DEFAULT, "\n");
 }
 
 /*----------------------------------------------------------------------------*/

@@ -39,7 +39,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
-#include "bft_printf.h"
 
 #include "cs_mesh_location.h"
 
@@ -319,7 +318,7 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
       case CS_PARAM_BC_HMG_NEUMANN:
       case CS_PARAM_BC_HMG_DIRICHLET:
         break;
-        
+
       default:
         bft_error(__FILE__, __LINE__, 0,
                   _(" Invalid type of boundary condition.\n"
@@ -339,7 +338,7 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
       else if (bc_types[i] == CS_PARAM_BC_HMG_NEUMANN)
         bc->neu->elt_ids[shift_neu++] = i;
     }
- 
+
     BFT_FREE(bc_types);
 
   } /* n_b_faces > 0 */

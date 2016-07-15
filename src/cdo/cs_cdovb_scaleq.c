@@ -43,7 +43,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
@@ -1334,7 +1333,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
       cs_locmat_add(cs_cell_sys->mat, diff_mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-      bft_printf(">> Local diffusion matrix");
+      cs_log_printf(CS_LOG_DEFAULT, ">> Local diffusion matrix");
       cs_locmat_dump(c_id, diff_mat);
 #endif
 
@@ -1354,7 +1353,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
         } // Loop on border faces
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-      bft_printf(">> Local diffusion matrix after weak enforcement");
+      cs_log_printf(CS_LOG_DEFAULT,
+                    ">> Local diffusion matrix after weak enforcement");
       cs_locmat_dump(c_id, cs_cell_sys->mat);
 #endif
       } /* Weak enforcement of Dirichlets BCs */
@@ -1372,7 +1372,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
       cs_locmat_add(cs_cell_sys->mat, adv_mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-      bft_printf(">> Local advection matrix");
+      cs_log_printf(CS_LOG_DEFAULT, ">> Local advection matrix");
       cs_locmat_dump(c_id, adv_mat);
 #endif
 
@@ -1434,7 +1434,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t             *mesh,
       full_rhs[cm->v_ids[v]] += cs_cell_sys->rhs[v];
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
-    bft_printf(">> (FINAL) Local system matrix");
+    cs_log_printf(CS_LOG_DEFAULT, ">> (FINAL) Local system matrix");
     cs_locmat_dump(c_id, cs_cell_sys->mat);
 #endif
 
@@ -1547,8 +1547,9 @@ cs_cdovb_scaleq_compute_flux_across_plane(const void          *builder,
   if (ml_t != CS_MESH_LOCATION_INTERIOR_FACES &&
       ml_t != CS_MESH_LOCATION_BOUNDARY_FACES) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_(" Mesh location type is incompatible with the computation\n"
-                 " of the flux across faces.\n"));
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _(" Mesh location type is incompatible with the computation\n"
+                    " of the flux across faces.\n"));
     return;
   }
 

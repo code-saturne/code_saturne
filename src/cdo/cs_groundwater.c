@@ -45,16 +45,16 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
-#include "cs_post.h"
-#include "cs_mesh_location.h"
-#include "cs_field.h"
 #include "cs_cdo.h"
-#include "cs_math.h"
-#include "cs_param.h"
-#include "cs_reco.h"
+#include "cs_field.h"
 #include "cs_hodge.h"
+#include "cs_log.h"
+#include "cs_math.h"
+#include "cs_mesh_location.h"
+#include "cs_param.h"
+#include "cs_post.h"
+#include "cs_reco.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1040,19 +1040,21 @@ cs_groundwater_summary(const cs_groundwater_t   *gw)
   /* Sanity checks */
   _check_settings(gw);
 
-  bft_printf("\n");
-  bft_printf("%s", lsepline);
-  bft_printf("\tSummary of the groundwater module\n");
-  bft_printf("%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP, "\n");
+  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP, "\tSummary of the groundwater module\n");
+  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
 
   if (gw->with_gravitation)
-    bft_printf("  <GW/Gravitation> true -- Axis = [%.2f %.2f %.2f]\n",
-               gw->gravity[0], gw->gravity[1], gw->gravity[2]);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  <GW/Gravitation> true -- Axis = [%.2f %.2f %.2f]\n",
+                  gw->gravity[0], gw->gravity[1], gw->gravity[2]);
   else
-    bft_printf("  <GW/Gravitation> false\n");
+    cs_log_printf(CS_LOG_SETUP, "  <GW/Gravitation> false\n");
 
-  bft_printf("  <GW/Tracer> n_tracer_equations %d\n", gw->n_tracers);
-  bft_printf("  <GW/Soils>  n_soils %d\n", gw->n_soils);
+  cs_log_printf(CS_LOG_SETUP,
+                "  <GW/Tracer> n_tracer_equations %d\n", gw->n_tracers);
+  cs_log_printf(CS_LOG_SETUP, "  <GW/Soils>  n_soils %d\n", gw->n_soils);
 
   const cs_property_t  *permeability = gw->permeability;
 
@@ -1062,29 +1064,36 @@ cs_groundwater_summary(const cs_groundwater_t   *gw)
     const char *ml_name = cs_mesh_location_get_name(soil.ml_id);
     const cs_get_t  sat_perm = soil.saturated_permeability;
 
-    bft_printf("  <GW/Soil %s>", ml_name);
-    bft_printf(" residual_moisture %5.3e", soil.residual_moisture);
-    bft_printf(" saturated_moisture %5.3e\n", soil.saturated_moisture);
-    bft_printf("  <GW/Soil %s>", ml_name);
+    cs_log_printf(CS_LOG_SETUP, "  <GW/Soil %s>", ml_name);
+    cs_log_printf(CS_LOG_SETUP,
+                  " residual_moisture %5.3e", soil.residual_moisture);
+    cs_log_printf(CS_LOG_SETUP,
+                  " saturated_moisture %5.3e\n", soil.saturated_moisture);
+    cs_log_printf(CS_LOG_SETUP, "  <GW/Soil %s>", ml_name);
 
     switch (cs_property_get_type(permeability)) {
 
     case CS_PROPERTY_ISO:
-      bft_printf(" saturated_permeability (iso) %5.3e\n", sat_perm.val);
+      cs_log_printf(CS_LOG_SETUP,
+                    " saturated_permeability (iso) %5.3e\n", sat_perm.val);
       break;
 
     case CS_PROPERTY_ORTHO:
-      bft_printf(" saturated_permeability (ortho) %5.3e %5.3e %5.3e\n",
-                 sat_perm.vect[0], sat_perm.vect[1], sat_perm.vect[2]);
+      cs_log_printf(CS_LOG_SETUP,
+                    " saturated_permeability (ortho) %5.3e %5.3e %5.3e\n",
+                    sat_perm.vect[0], sat_perm.vect[1], sat_perm.vect[2]);
       break;
 
     case CS_PROPERTY_ANISO:
-      bft_printf(" saturated_permeability (aniso) %-5.3e %5.3e %5.3e\n"
-                 "                                %-5.3e %5.3e %5.3e\n"
-                 "                                %-5.3e %5.3e %5.3e\n",
-                 sat_perm.tens[0][0], sat_perm.tens[0][1], sat_perm.tens[0][2],
-                 sat_perm.tens[1][0], sat_perm.tens[1][1], sat_perm.tens[1][2],
-                 sat_perm.tens[2][0], sat_perm.tens[2][1], sat_perm.tens[2][2]);
+      cs_log_printf(CS_LOG_SETUP,
+                    " saturated_permeability (aniso) %-5.3e %5.3e %5.3e\n"
+                    "                                %-5.3e %5.3e %5.3e\n"
+                    "                                %-5.3e %5.3e %5.3e\n",
+                    sat_perm.tens[0][0], sat_perm.tens[0][1],
+                    sat_perm.tens[0][2], sat_perm.tens[1][0],
+                    sat_perm.tens[1][1], sat_perm.tens[1][2],
+                    sat_perm.tens[2][0], sat_perm.tens[2][1],
+                    sat_perm.tens[2][2]);
       break;
 
     default:
@@ -1095,19 +1104,19 @@ cs_groundwater_summary(const cs_groundwater_t   *gw)
 
     } // Switch on property type
 
-    bft_printf("  <GW/Soil %s>", ml_name);
+    cs_log_printf(CS_LOG_SETUP, "  <GW/Soil %s>", ml_name);
     switch (soil.model) {
     case CS_GROUNDWATER_MODEL_GENUCHTEN:
-      bft_printf(" model VanGenuchten-Mualen\n");
+      cs_log_printf(CS_LOG_SETUP, " model VanGenuchten-Mualen\n");
       break;
     case CS_GROUNDWATER_MODEL_SATURATED:
-      bft_printf(" model saturated\n");
+      cs_log_printf(CS_LOG_SETUP, " model saturated\n");
       break;
     case CS_GROUNDWATER_MODEL_TRACY:
-      bft_printf(" model Tracy\n");
+      cs_log_printf(CS_LOG_SETUP, " model Tracy\n");
       break;
     case CS_GROUNDWATER_MODEL_USER:
-      bft_printf(" model User-defined\n");
+      cs_log_printf(CS_LOG_SETUP, " model User-defined\n");
       break;
 
     default:
@@ -1122,19 +1131,20 @@ cs_groundwater_summary(const cs_groundwater_t   *gw)
 
     switch (gw->global_model) {
     case CS_GROUNDWATER_MODEL_COMPOSITE:
-      bft_printf("  <GW/Global model> composite model\n");
+      cs_log_printf(CS_LOG_SETUP, "  <GW/Global model> composite model\n");
       break;
     case CS_GROUNDWATER_MODEL_GENUCHTEN:
-      bft_printf("  <GW/Global model> model VanGenuchten-Mualen\n");
+      cs_log_printf(CS_LOG_SETUP,
+                    "  <GW/Global model> model VanGenuchten-Mualen\n");
       break;
     case CS_GROUNDWATER_MODEL_SATURATED:
-      bft_printf("  <GW/Global model> model saturated\n");
+      cs_log_printf(CS_LOG_SETUP, "  <GW/Global model> model saturated\n");
       break;
     case CS_GROUNDWATER_MODEL_TRACY:
-      bft_printf("  <GW/Global model> model Tracy\n");
+      cs_log_printf(CS_LOG_SETUP, "  <GW/Global model> model Tracy\n");
       break;
     case CS_GROUNDWATER_MODEL_USER:
-      bft_printf("  <GW/Global model> model User-defined\n");
+      cs_log_printf(CS_LOG_SETUP, "  <GW/Global model> model User-defined\n");
       break;
 
     default:

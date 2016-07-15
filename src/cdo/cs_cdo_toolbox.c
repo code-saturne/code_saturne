@@ -41,10 +41,10 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_cdo.h"
 #include "cs_blas.h"
+#include "cs_log.h"
 #include "cs_math.h"
 #include "cs_sort.h"
 
@@ -1012,18 +1012,18 @@ cs_locmat_dump(int                 parent_id,
 {
   int  i, j;
 
-  bft_printf("\n  << parent id: %d >>\n", parent_id);
+  cs_log_printf(CS_LOG_DEFAULT, "\n  << parent id: %d >>\n", parent_id);
 
   /* List sub-entity ids */
   for (i = 0; i < lm->n_ent; i++)
-    bft_printf(" %9d", lm->ids[i]);
-  bft_printf("\n");
+    cs_log_printf(CS_LOG_DEFAULT, " %9d", lm->ids[i]);
+  cs_log_printf(CS_LOG_DEFAULT, "\n");
 
   for (i = 0; i < lm->n_ent; i++) {
-    bft_printf(" %5d", lm->ids[i]);
+    cs_log_printf(CS_LOG_DEFAULT, " %5d", lm->ids[i]);
     for (j = 0; j < lm->n_ent; j++)
-      bft_printf(" % .4e", lm->val[i*lm->n_ent+j]);
-    bft_printf("\n");
+      cs_log_printf(CS_LOG_DEFAULT, " % .4e", lm->val[i*lm->n_ent+j]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
 
 }

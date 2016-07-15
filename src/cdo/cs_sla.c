@@ -42,8 +42,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
-#include "bft_printf.h"
 
+#include "cs_log.h"
 #include "cs_math.h"
 #include "cs_sort.h"
 #include "cs_search.h"
@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define  CS_SLA_DBG 1
+#define  CS_SLA_DBG 0
 
 /* Sparse Accumulator: see Gilbert etal. and Buluc (PhD) */
 /* ===================================================== */
@@ -1750,11 +1750,13 @@ cs_sla_matrix_clean_zeros(cs_sla_matrix_t   *m,
     } /* End of loop on row entries */
   } /* End of loop on rows */
 
-  if (counter > 0 && verbosity > 2) // temporary
-    bft_printf(" -msg- cs_sla_matrix_clean_zeros >>"
-               " type: %s; n_rows: %6d; threshold: %6.3e; cleaning done: %d\n",
-               _sla_matrix_type[m->type], m->n_rows, threshold, counter);
-
+#if defined(DEBUG) && !defined(NDEBUG)
+  if (counter > 0 && verbosity > 2)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " -msg- cs_sla_matrix_clean_zeros >>"
+                  " type: %s; n_rows: %6d; threshold: %6.3e; cleaned: %d\n",
+                  _sla_matrix_type[m->type], m->n_rows, threshold, counter);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1803,9 +1805,10 @@ cs_sla_matrix_clean(int                verbosity,
   } // Loop on matrix rows
 
   if (counter > 0 && verbosity > 2)
-    bft_printf(" -msg- Matrix cleaning >>"
-               " n_rows: %6d; threshold: %6.3e; %d entries set to zero\n",
-               m->n_rows, threshold, counter);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " -msg- Matrix cleaning >>"
+                  " n_rows: %6d; threshold: %6.3e; %d entries set to zero\n",
+                  m->n_rows, threshold, counter);
 
 }
 

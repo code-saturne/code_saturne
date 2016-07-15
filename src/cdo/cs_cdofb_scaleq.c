@@ -43,7 +43,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
-#include "bft_printf.h"
 
 #include "cs_cdo_bc.h"
 #include "cs_equation_common.h"

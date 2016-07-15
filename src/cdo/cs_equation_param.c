@@ -44,9 +44,9 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_error.h>
-#include <bft_printf.h>
 #include <bft_mem.h>
 
+#include "cs_log.h"
 #include "cs_mesh_location.h"
 #include "cs_multigrid.h"
 
@@ -206,10 +206,11 @@ _petsc_setup_hook(void   *context,
         precond == CS_PARAM_PRECOND_ILU0) {
       precond = CS_PARAM_PRECOND_BJACOB;
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(" Modify the requested preconditioner to able a parallel"
-                 " computation with PETSC.\n"
-                 " Switch to a block jacobi preconditioner.\n"
-                 " Please check your settings.");
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " Modify the requested preconditioner to able a parallel"
+                    " computation with PETSC.\n"
+                    " Switch to a block jacobi preconditioner.\n"
+                    " Please check your settings.");
     }
   }
 
@@ -469,28 +470,31 @@ cs_equation_param_summary(const char                  *eqname,
   if (eqp == NULL)
     return;
 
-switch (eqp->type) {
+  switch (eqp->type) {
   case CS_EQUATION_TYPE_USER:
-    bft_printf("  <%s/type> User-defined\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "  <%s/type> User-defined\n", eqname);
     break;
   case CS_EQUATION_TYPE_PREDEFINED:
-    bft_printf("  <%s/type> Predefined\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "  <%s/type> Predefined\n", eqname);
     break;
   case CS_EQUATION_TYPE_GROUNDWATER:
-    bft_printf("  <%s/type> Associated to groundwater flows\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "  <%s/type> Associated to groundwater flows\n",
+                  eqname);
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
-              " Eq. %s has no type.\n"
-              " Please check your settings.", eqname);
+              " Eq. %s has no type.\n Please check your settings.", eqname);
   }
 
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB)
-    bft_printf("  <%s/space scheme>  CDO vertex-based\n", eqname);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  <%s/space scheme>  CDO vertex-based\n", eqname);
   else if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB)
-    bft_printf("  <%s/space scheme>  CDO vertex+cell-based\n", eqname);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  <%s/space scheme>  CDO vertex+cell-based\n", eqname);
   else if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB)
-    bft_printf("  <%s/space scheme>  CDO face-based\n", eqname);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  <%s/space scheme>  CDO face-based\n", eqname);
 
   bool  unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
   bool  convection = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
@@ -498,28 +502,31 @@ switch (eqp->type) {
   bool  reaction = (eqp->flag & CS_EQUATION_REACTION) ? true : false;
   bool  source_term = (eqp->n_source_terms > 0) ? true : false;
 
-  bft_printf("  <%s/Terms>  unsteady:%s, convection:%s, diffusion:%s,"
-             " reaction:%s, source term:%s\n",
-             eqname, cs_base_strtf(unsteady), cs_base_strtf(convection),
-             cs_base_strtf(diffusion), cs_base_strtf(reaction),
-             cs_base_strtf(source_term));
+  cs_log_printf(CS_LOG_SETUP,
+                "  <%s/Terms>  unsteady:%s, convection:%s, diffusion:%s,"
+                " reaction:%s, source term:%s\n",
+                eqname, cs_base_strtf(unsteady), cs_base_strtf(convection),
+                cs_base_strtf(diffusion), cs_base_strtf(reaction),
+                cs_base_strtf(source_term));
 
   /* Boundary conditions */
   if (eqp->verbosity > 0) {
     cs_param_bc_t  *bcp = eqp->bc;
 
-    bft_printf("  <%s/Boundary Conditions>\n", eqname);
-    bft_printf("\t<BC/Default> %s\n", cs_param_get_bc_name(bcp->default_bc));
+    cs_log_printf(CS_LOG_SETUP, "  <%s/Boundary Conditions>\n", eqname);
+    cs_log_printf(CS_LOG_SETUP,
+                  "\t<BC/Default> %s\n", cs_param_get_bc_name(bcp->default_bc));
     if (eqp->verbosity > 1)
-      bft_printf("\t<BC/Enforcement> %s\n",
-                 cs_param_get_bc_enforcement_name(bcp->enforcement));
-    bft_printf("\t<BC/N_Definitions> %d\n", bcp->n_defs);
+      cs_log_printf(CS_LOG_SETUP, "\t<BC/Enforcement> %s\n",
+                    cs_param_get_bc_enforcement_name(bcp->enforcement));
+    cs_log_printf(CS_LOG_SETUP, "\t<BC/N_Definitions> %d\n", bcp->n_defs);
     if (eqp->verbosity > 1) {
       for (int id = 0; id < bcp->n_defs; id++)
-        bft_printf("\t\t<BC> Location: %s; Type: %s; Definition type: %s\n",
-                   cs_mesh_location_get_name(bcp->defs[id].loc_id),
-                   cs_param_get_bc_name(bcp->defs[id].bc_type),
-                   cs_param_get_def_type_name(bcp->defs[id].def_type));
+        cs_log_printf(CS_LOG_SETUP,
+                      "\t\t<BC> Location: %s; Type: %s; Definition type: %s\n",
+                      cs_mesh_location_get_name(bcp->defs[id].loc_id),
+                      cs_param_get_bc_name(bcp->defs[id].bc_type),
+                      cs_param_get_def_type_name(bcp->defs[id].def_type));
     }
   }
 
@@ -528,45 +535,49 @@ switch (eqp->type) {
     const cs_param_time_t  t_info = eqp->time_info;
     const cs_param_hodge_t  h_info = eqp->time_hodge;
 
-    bft_printf("\n  <%s/Unsteady term>\n", eqname);
-    bft_printf("  <Time/Initial condition> number of definitions %d\n",
-               t_info.n_ic_definitions);
+    cs_log_printf(CS_LOG_SETUP, "\n  <%s/Unsteady term>\n", eqname);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  <Time/Initial condition> number of definitions %d\n",
+                  t_info.n_ic_definitions);
     for (int i = 0; i < t_info.n_ic_definitions; i++) {
       const cs_param_def_t  *ic = t_info.ic_definitions + i;
-      bft_printf("\t<Time/Initial condition> Location %s; Definition %s\n",
-                 ic->ml_name, cs_param_get_def_type_name(ic->def_type));
+      cs_log_printf(CS_LOG_SETUP,
+                    "\t<Time/Initial condition> Location %s; Definition %s\n",
+                    ic->ml_name, cs_param_get_def_type_name(ic->def_type));
     }
-    bft_printf("  <Time/Scheme> ");
+    cs_log_printf(CS_LOG_SETUP, "  <Time/Scheme> ");
     switch (t_info.scheme) {
     case CS_TIME_SCHEME_IMPLICIT:
-      bft_printf("implicit\n");
+      cs_log_printf(CS_LOG_SETUP, "implicit\n");
       break;
     case CS_TIME_SCHEME_EXPLICIT:
-      bft_printf("explicit\n");
+      cs_log_printf(CS_LOG_SETUP, "explicit\n");
       break;
     case CS_TIME_SCHEME_CRANKNICO:
-      bft_printf("Crank-Nicolson\n");
+      cs_log_printf(CS_LOG_SETUP, "Crank-Nicolson\n");
       break;
     case CS_TIME_SCHEME_THETA:
-      bft_printf("theta scheme with value %f\n", t_info.theta);
+      cs_log_printf(CS_LOG_SETUP, "theta scheme with value %f\n", t_info.theta);
       break;
     default:
       bft_error(__FILE__, __LINE__, 0, " Invalid time scheme.");
       break;
     }
-    bft_printf("  <Time/Mass lumping> %s\n", cs_base_strtf(t_info.do_lumping));
-    bft_printf("  <Time/Property> %s\n",
-               cs_property_get_name(eqp->time_property));
+    cs_log_printf(CS_LOG_SETUP, "  <Time/Mass lumping> %s\n",
+                  cs_base_strtf(t_info.do_lumping));
+    cs_log_printf(CS_LOG_SETUP, "  <Time/Property> %s\n",
+                  cs_property_get_name(eqp->time_property));
 
     if (eqp->verbosity > 0) {
-      bft_printf("  <Time/Hodge> %s - %s\n",
-                 cs_param_hodge_get_type_name(h_info),
-                 cs_param_hodge_get_algo_name(h_info));
-      bft_printf("\t<Time/Hodge> Inversion of property: %s\n",
-                 cs_base_strtf(h_info.inv_pty));
+      cs_log_printf(CS_LOG_SETUP, "  <Time/Hodge> %s - %s\n",
+                    cs_param_hodge_get_type_name(h_info),
+                    cs_param_hodge_get_algo_name(h_info));
+      cs_log_printf(CS_LOG_SETUP, "\t<Time/Hodge> Inversion of property: %s\n",
+                    cs_base_strtf(h_info.inv_pty));
       if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
-        bft_printf("\t<Time/Hodge> Value of the coercivity coef.: %.3e\n",
-                   h_info.coef);
+        cs_log_printf(CS_LOG_SETUP,
+                      "\t<Time/Hodge> Value of the coercivity coef.: %.3e\n",
+                      h_info.coef);
     }
 
   } /* Unsteady term */
@@ -575,19 +586,21 @@ switch (eqp->type) {
 
     const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
 
-    bft_printf("\n  <%s/Diffusion term>\n", eqname);
-    bft_printf("  <Diffusion> Property: %s\n",
-               cs_property_get_name(eqp->diffusion_property));
+    cs_log_printf(CS_LOG_SETUP, "\n  <%s/Diffusion term>\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "  <Diffusion> Property: %s\n",
+                  cs_property_get_name(eqp->diffusion_property));
 
     if (eqp->verbosity > 0) {
-      bft_printf("  <Diffusion/Hodge> %s - %s\n",
-                 cs_param_hodge_get_type_name(h_info),
-                 cs_param_hodge_get_algo_name(h_info));
-      bft_printf("\t<Diffusion/Hodge> Inversion of property: %s\n",
-                 cs_base_strtf(h_info.inv_pty));
+      cs_log_printf(CS_LOG_SETUP, "  <Diffusion/Hodge> %s - %s\n",
+                    cs_param_hodge_get_type_name(h_info),
+                    cs_param_hodge_get_algo_name(h_info));
+      cs_log_printf(CS_LOG_SETUP,
+                    "\t<Diffusion/Hodge> Inversion of property: %s\n",
+                    cs_base_strtf(h_info.inv_pty));
       if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
-        bft_printf("\t<Diffusion/Hodge> Value of the coercivity coef.: %.3e\n",
-                   h_info.coef);
+        cs_log_printf(CS_LOG_SETUP,
+                      "\t<Diffusion/Hodge> Coercivity coef.: %.3e\n",
+                      h_info.coef);
     }
 
   } /* Diffusion term */
@@ -596,40 +609,42 @@ switch (eqp->type) {
 
     const cs_param_advection_t  a_info = eqp->advection_info;
 
-    bft_printf("\n  <%s/Advection term>\n", eqname);
-    bft_printf("  <Advection field>  %s\n",
-               cs_advection_field_get_name(eqp->advection_field));
+    cs_log_printf(CS_LOG_SETUP, "\n  <%s/Advection term>\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "  <Advection field>  %s\n",
+                  cs_advection_field_get_name(eqp->advection_field));
 
     if (eqp->verbosity > 0) {
-      bft_printf("  <Advection/Formulation>");
+      cs_log_printf(CS_LOG_SETUP, "  <Advection/Formulation>");
       switch(a_info.formulation) {
       case CS_PARAM_ADVECTION_FORM_CONSERV:
-        bft_printf(" Conservative\n");
+        cs_log_printf(CS_LOG_SETUP, " Conservative\n");
         break;
       case CS_PARAM_ADVECTION_FORM_NONCONS:
-        bft_printf(" Non-conservative\n");
+        cs_log_printf(CS_LOG_SETUP, " Non-conservative\n");
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,
                   " Invalid operator type for advection.");
       }
 
-      bft_printf("  <Advection/Scheme> ");
+      cs_log_printf(CS_LOG_SETUP, "  <Advection/Scheme> ");
       switch(a_info.scheme) {
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-        bft_printf(" centered\n");
+        cs_log_printf(CS_LOG_SETUP, " centered\n");
         break;
       case CS_PARAM_ADVECTION_SCHEME_CIP:
-        bft_printf(" continuous interior penalty\n");
+        cs_log_printf(CS_LOG_SETUP, " continuous interior penalty\n");
         break;
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        bft_printf(" upwind\n");
+        cs_log_printf(CS_LOG_SETUP, " upwind\n");
         break;
       case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
-        bft_printf(" upwind weighted with Samarskii function\n");
+        cs_log_printf(CS_LOG_SETUP,
+                      " upwind weighted with Samarskii function\n");
         break;
       case CS_PARAM_ADVECTION_SCHEME_SG:
-        bft_printf(" upwind weighted with Scharfetter-Gummel function\n");
+        cs_log_printf(CS_LOG_SETUP,
+                      " upwind weighted with Scharfetter-Gummel function\n");
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,
@@ -642,35 +657,36 @@ switch (eqp->type) {
 
   if (reaction) {
 
-    bft_printf("\n  <%s/Number of reaction terms> %d\n",
-               eqname, eqp->n_reaction_terms);
+    cs_log_printf(CS_LOG_SETUP, "\n  <%s/Number of reaction terms> %d\n",
+                  eqname, eqp->n_reaction_terms);
 
     if (eqp->verbosity > 0) {
 
       const cs_param_hodge_t  h_info = eqp->reaction_hodge;
 
-      bft_printf("  <Reaction/Hodge> %s - %s\n",
-                 cs_param_hodge_get_type_name(h_info),
-                 cs_param_hodge_get_algo_name(h_info));
+      cs_log_printf(CS_LOG_SETUP, "  <Reaction/Hodge> %s - %s\n",
+                    cs_param_hodge_get_type_name(h_info),
+                    cs_param_hodge_get_algo_name(h_info));
       if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
-        bft_printf("\t<Reaction/Hodge> Value of the coercivity coef.: %.3e\n",
-                   h_info.coef);
+        cs_log_printf(CS_LOG_SETUP,
+                      "\t<Reaction/Hodge> Coercivity coef.: %.3e\n",
+                      h_info.coef);
 
     }
 
     for (int r_id = 0; r_id < eqp->n_reaction_terms; r_id++) {
       cs_param_reaction_t  r_info = eqp->reaction_info[r_id];
-      bft_printf("  <Reaction tem %02d> Property: %s; Operator type: %s\n",
-                 r_id, cs_property_get_name(eqp->reaction_properties[r_id]),
-                 cs_param_reaction_get_type_name(r_info.type));
-
+      cs_log_printf(CS_LOG_SETUP,
+                    "  <Reaction tem %02d> Property: %s; Operator type: %s\n",
+                    r_id, cs_property_get_name(eqp->reaction_properties[r_id]),
+                    cs_param_reaction_get_type_name(r_info.type));
     }
 
   } // Reaction terms
 
   if (source_term) {
 
-    bft_printf("\n  <%s/Source terms>\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "\n  <%s/Source terms>\n", eqname);
     for (int s_id = 0; s_id < eqp->n_source_terms; s_id++)
       cs_source_term_summary(eqname, eqp->source_terms[s_id]);
 
@@ -679,19 +695,21 @@ switch (eqp->type) {
   /* Iterative solver information */
   const cs_param_itsol_t   itsol = eqp->itsol_info;
 
-  bft_printf("\n  <%s/Sparse Linear Algebra>", eqname);
+  cs_log_printf(CS_LOG_SETUP, "\n  <%s/Sparse Linear Algebra>", eqname);
   if (eqp->algo_info.type == CS_EQUATION_ALGO_CS_ITSOL)
-    bft_printf(" Code_Saturne iterative solvers\n");
+    cs_log_printf(CS_LOG_SETUP, " Code_Saturne iterative solvers\n");
   else if (eqp->algo_info.type == CS_EQUATION_ALGO_PETSC_ITSOL)
-    bft_printf(" PETSc iterative solvers\n");
-  bft_printf("\t<sla> Solver.MaxIter     %d\n", itsol.n_max_iter);
-  bft_printf("\t<sla> Solver.Name        %s\n",
-             cs_param_get_solver_name(itsol.solver));
-  bft_printf("\t<sla> Solver.Precond     %s\n",
-             cs_param_get_precond_name(itsol.precond));
-  bft_printf("\t<sla> Solver.Eps        % -10.6e\n", itsol.eps);
-  bft_printf("\t<sla> Solver.Normalized  %s\n",
-             cs_base_strtf(itsol.resid_normalized));
+    cs_log_printf(CS_LOG_SETUP, " PETSc iterative solvers\n");
+  cs_log_printf(CS_LOG_SETUP,
+                "\t<sla> Solver.MaxIter     %d\n", itsol.n_max_iter);
+  cs_log_printf(CS_LOG_SETUP, "\t<sla> Solver.Name        %s\n",
+                cs_param_get_solver_name(itsol.solver));
+  cs_log_printf(CS_LOG_SETUP, "\t<sla> Solver.Precond     %s\n",
+                cs_param_get_precond_name(itsol.precond));
+  cs_log_printf(CS_LOG_SETUP,
+                "\t<sla> Solver.Eps        % -10.6e\n", itsol.eps);
+  cs_log_printf(CS_LOG_SETUP, "\t<sla> Solver.Normalized  %s\n",
+                cs_base_strtf(itsol.resid_normalized));
 
 }
 
