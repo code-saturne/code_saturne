@@ -112,16 +112,6 @@ typedef enum {
   CS_LAGR_PART_ERR
 } cs_lagr_tracking_state_t;
 
-/* Physical state where a particle can be. */
-
-enum {
-  CS_LAGR_PART_IN_FLOW        = 0,
-  CS_LAGR_PART_DEPOSITED      = 1,
-  CS_LAGR_PART_ROLLING        = 2,
-  CS_LAGR_PART_NO_MOTION      = 10,
-  CS_LAGR_PART_IMPOSED_MOTION = 11
-};
-
 enum {
   CS_LAGR_PART_MOVE_OFF = 0,
   CS_LAGR_PART_MOVE_ON  = 1
@@ -1523,7 +1513,7 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
 
   /* Ensure some fields are updated */
 
-  if (p_am->size[CS_LAGR_DEPOSITION_FLAG] > 0) {
+  if (p_am->size[CS_LAGR_DEPOSITION_FLAG] != CS_LAGR_PART_IN_FLOW) {
 
     cs_lnum_t depo_flag
       = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
@@ -1660,7 +1650,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO1) {
       particles->n_part_dep += 1;
       particles->weight_dep += particle_stat_weight;
-      if (cs_glob_lagr_model->deposition ==1)
+      if (cs_glob_lagr_model->deposition == 1)
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
                                   CS_LAGR_PART_DEPOSITED);
     }
@@ -3827,7 +3817,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
 
       if (cell_num >=0 &&
           cs_lagr_particles_get_lnum(particles, ip, CS_LAGR_DEPOSITION_FLAG) ==
-          CS_LAGR_PART_IMPOSED_MOTION ) {
+          CS_LAGR_PART_IMPOSED_MOTION) {
 
         cs_lnum_t cell_id = cell_num - 1;
 

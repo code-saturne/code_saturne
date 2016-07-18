@@ -670,7 +670,8 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
       }
 
       /* No deposited particles at the injection */
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG, 0);
+      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
+                                CS_LAGR_PART_IN_FLOW);
 
       /* Initialization of additional "pointers"
        * for the resuspension model              */

@@ -440,7 +440,7 @@ precdi (cs_real_t   *vela,
         cs_lagr_particle_set_lnum(particle, p_am,
                                   CS_LAGR_NEIGHBOR_FACE_ID, -1);
         cs_lagr_particle_set_lnum(particle, p_am,
-                                  CS_LAGR_DEPOSITION_FLAG, 0);
+                                  CS_LAGR_DEPOSITION_FLAG, CS_LAGR_PART_IN_FLOW);
 
       }
 

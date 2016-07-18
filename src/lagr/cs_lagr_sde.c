@@ -68,16 +68,6 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
-/* Physical state where a particle can be. */
-
-enum {
-  CS_LAGR_PART_IN_FLOW        = 0,
-  CS_LAGR_PART_DEPOSITED      = 1,
-  CS_LAGR_PART_ROLLING        = 2,
-  CS_LAGR_PART_NO_MOTION      = 10,
-  CS_LAGR_PART_IMPOSED_MOTION = 11
-};
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -968,7 +958,7 @@ _lagesd(cs_real_t     dtp,
                      &piilp[0],
                      depint);
 
-  if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) > 0) {
+  if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) != CS_LAGR_PART_IN_FLOW) {
 
     depl[0]  = 0.0;
     vpart[0] = 0.0;
@@ -977,7 +967,7 @@ _lagesd(cs_real_t     dtp,
 
   /* Integration in the 2 other directions    */
   if (cs_lagr_particle_get_lnum(particle, p_am,
-                                CS_LAGR_DEPOSITION_FLAG) == 0) {
+                                CS_LAGR_DEPOSITION_FLAG) == CS_LAGR_PART_IN_FLOW) {
 
     for (cs_lnum_t id = 1; id < 3; id++) {
 
@@ -1118,7 +1108,7 @@ _lagesd(cs_real_t     dtp,
   if (cs_glob_lagr_reentrained_model->ireent == 1) {
 
     if (cs_lagr_particle_get_real(particle, p_am,
-                                  CS_LAGR_DEPOSITION_FLAG) > 0) {
+                                  CS_LAGR_DEPOSITION_FLAG) != CS_LAGR_PART_IN_FLOW) {
 
       /* Resuspension model
        * Calculation of the hydrodynamic drag and torque
@@ -1142,7 +1132,7 @@ _lagesd(cs_real_t     dtp,
           && drag[0] < 0.0) {
 
         /* The particle is resuspended    */
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG, 0);
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG, CS_LAGR_PART_IN_FLOW);
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
 
@@ -1231,7 +1221,7 @@ _lagesd(cs_real_t     dtp,
           /* with the flow seen   */
           /* --> The particle starts or keep on rolling    */
 
-          cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_DEPOSITION_FLAG, 2);
+          cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_DEPOSITION_FLAG, CS_LAGR_PART_ROLLING);
 
           vpart[0] = 0.0;
 
@@ -1256,7 +1246,7 @@ _lagesd(cs_real_t     dtp,
           /* The particle is not set into motion or stops
            * the flag is set to 10 and velocity and displacement are null */
 
-          cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_DEPOSITION_FLAG, 10);
+          cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_DEPOSITION_FLAG, CS_LAGR_PART_NO_MOTION);
 
           for (cs_lnum_t id = 1; id < 3; id++) {
 
@@ -1276,7 +1266,7 @@ _lagesd(cs_real_t     dtp,
   else {
 
     if (cs_lagr_particle_get_lnum(particle, p_am,
-                                  CS_LAGR_DEPOSITION_FLAG) > 0) {
+                                  CS_LAGR_DEPOSITION_FLAG) != CS_LAGR_PART_IN_FLOW) {
 
       for (cs_lnum_t id = 1; id < 3; id++) {
 
@@ -1463,7 +1453,8 @@ _lagdep(cs_real_t     dtp,
       /* ==============================================================    */
 
       if (cs_lagr_particle_get_real(particle, p_am, CS_LAGR_YPLUS) > depint &&
-          cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) == 0 ) {
+          cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
+          == CS_LAGR_PART_IN_FLOW) {
 
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, -1);
 
