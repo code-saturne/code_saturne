@@ -133,6 +133,8 @@ cs_block_dist_compute_sizes(int        rank_id,
     bi.rank_step *= 2;
     _n_ranks = n_ranks / bi.rank_step;
   }
+  if (n_ranks % bi.rank_step)
+    _n_ranks += 1;
   if (bi.rank_step > n_ranks) {
     bi.rank_step = n_ranks;
     _n_ranks = 1;
