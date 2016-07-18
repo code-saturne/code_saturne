@@ -303,43 +303,6 @@ fvm_tesselation_sub_elt_index(const fvm_tesselation_t  *this_tesselation,
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Compute index values corresponding to given range of indices,
- * for an element -> sub-element value distribution.
- *
- * This index is used mainly to gather a decoded tesselation connectivity
- * or element -> sub-element data distribution, expanding the corresponding
- * data only on the given range.
- * Only the index values in the start_id to end_id range are set by
- * this function, starting with index[start_id] = 0.
- *
- * parameters:
- *   this_tesselation      <-- tesselation structure
- *   connect_type          <-- destination element type
- *   stride                <-- number of associated values per sub-element
- *   start_id              <-- start index of polyhedra subset in parent section
- *   buffer_limit          <-- maximum number of sub-elements of destination
- *                             element type allowable for vertex_num[] buffer
- *   global_num_end        <-> past the end (maximum + 1) parent element
- *                             global number (reduced on return if required
- *                             by buffer_size limits)
- *   index                 --> sub-element index
- *   comm                  <-- associated MPI communicator
- *
- * returns:
- *   polyhedron index end corresponding to decoded range
- *----------------------------------------------------------------------------*/
-
-cs_lnum_t
-fvm_tesselation_range_index_g(const fvm_tesselation_t  *this_tesselation,
-                              fvm_element_t             connect_type,
-                              int                       stride,
-                              cs_lnum_t                 start_id,
-                              cs_lnum_t                 buffer_limit,
-                              cs_gnum_t                *global_num_end,
-                              cs_lnum_t                 index[],
-                              MPI_Comm                  comm);
-
-/*----------------------------------------------------------------------------
  * Decode tesselation to a connectivity buffer.
  *
  * parameters:
