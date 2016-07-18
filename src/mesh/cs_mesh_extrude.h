@@ -60,6 +60,8 @@ BEGIN_C_DECLS
  * extrusions.
  *
  * \param[in, out]  m             mesh
+ * \param[in]       interior_gc   if true, maintain group classes of
+ *                                interior faces previously on boundary
  * \param[in]       n_faces       number of selected boundary faces
  * \param[in]       n_vertices    number of selected vertices
  * \param[in]       faces         list of selected boundary faces (0 to n-1),
@@ -77,6 +79,7 @@ BEGIN_C_DECLS
 
 void
 cs_mesh_extrude(cs_mesh_t          *m,
+                bool                interior_gc,
                 cs_lnum_t           n_faces,
                 cs_lnum_t           n_vertices,
                 const cs_lnum_t     faces[],
@@ -90,18 +93,21 @@ cs_mesh_extrude(cs_mesh_t          *m,
  * \brief Extrude mesh boundary faces in the normal direction by a constant
  *        thickness.
  *
- * \param[in, out]  m           mesh
- * \param[in]       n_layers    number of layers
- * \param[in]       thickness   extrusion thickness
- * \param[in]       reason      geometric reason for extrusion refinement
- * \param[in]       n_faces     number of selected boundary faces
- * \param[in]       faces       list of selected boundary faces (0 to n-1),
- *                              or NULL if no indirection is needed
+ * \param[in, out]  m            mesh
+ * \param[in]       interior_gc  if true, maintain group classes of
+ *                               interior faces previously on boundary
+ * \param[in]       n_layers     number of layers
+ * \param[in]       thickness    extrusion thickness
+ * \param[in]       reason       geometric reason for extrusion refinement
+ * \param[in]       n_faces      number of selected boundary faces
+ * \param[in]       faces        list of selected boundary faces (0 to n-1),
+ *                               or NULL if no indirection is needed
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_mesh_extrude_constant(cs_mesh_t        *m,
+                         bool              interior_gc,
                          cs_lnum_t         n_layers,
                          double            thickness,
                          double            reason,

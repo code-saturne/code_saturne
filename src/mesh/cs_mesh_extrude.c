@@ -905,6 +905,8 @@ _add_extruded_cells(cs_mesh_t          *m,
  * added cells.
  *
  * \param[in, out]  m              mesh
+ * \param[in]       interior_gc    if true, maintain group classes of
+ *                                 interior faces previously on boundary
  * \param[in]       n_faces        number of selected boundary faces
  * \param[in]       n_vtx_ini      number of initial vertices
  * \param[in]       n_cells_ini    number of initial cells
@@ -920,6 +922,7 @@ _add_extruded_cells(cs_mesh_t          *m,
 
 static void
 _add_layer_faces(cs_mesh_t        *m,
+                 bool              interior_gc,
                  cs_lnum_t         n_faces,
                  cs_lnum_t         n_vtx_ini,
                  cs_lnum_t         n_cells_ini,
@@ -1057,7 +1060,11 @@ _add_layer_faces(cs_mesh_t        *m,
 
         m->i_face_cells[n_i_faces_ini + s_id][0] = m->b_face_cells[f_id];
         m->i_face_cells[n_i_faces_ini + s_id][1] = n_cells_ini + s_id;
-        m->i_face_family[n_i_faces_ini + s_id] = default_family_id;
+        if (interior_gc)
+          m->i_face_family[n_i_faces_ini + s_id] = default_family_id;
+        else
+          m->i_face_family[n_i_faces_ini + s_id]
+            = m->b_face_family[f_id];
 
         /* Other faces shifted */
 
@@ -1446,6 +1453,8 @@ _add_side_faces(cs_mesh_t           *m,
  * extrusions.
  *
  * \param[in, out]  m             mesh
+ * \param[in]       interior_gc   if true, maintain group classes of
+ *                                interior faces previously on boundary
  * \param[in]       n_faces       number of selected boundary faces
  * \param[in]       n_vertices    number of selected vertices
  * \param[in]       faces         list of selected boundary faces (0 to n-1),
@@ -1463,6 +1472,7 @@ _add_side_faces(cs_mesh_t           *m,
 
 void
 cs_mesh_extrude(cs_mesh_t          *m,
+                bool                interior_gc,
                 cs_lnum_t           n_faces,
                 cs_lnum_t           n_vertices,
                 const cs_lnum_t     faces[],
@@ -1570,6 +1580,7 @@ cs_mesh_extrude(cs_mesh_t          *m,
     v_s_id[vertices[i]] = i;
 
   _add_layer_faces(m,
+                   interior_gc,
                    n_faces,
                    n_vtx_ini,
                    n_cells_ini,
@@ -1651,18 +1662,21 @@ cs_mesh_extrude(cs_mesh_t          *m,
  * \brief Extrude mesh boundary faces in the normal direction by a constant
  *        thickness.
  *
- * \param[in, out]  m           mesh
- * \param[in]       n_layers    number of layers
- * \param[in]       thickness   extrusion thickness
- * \param[in]       reason      geometric reason for extrusion refinement
- * \param[in]       n_faces     number of selected boundary faces
- * \param[in]       faces       list of selected boundary faces (0 to n-1),
- *                              or NULL if no indirection is needed
+ * \param[in, out]  m            mesh
+ * \param[in]       interior_gc  if true, maintain group classes of
+ *                               interior faces previously on boundary
+ * \param[in]       n_layers     number of layers
+ * \param[in]       thickness    extrusion thickness
+ * \param[in]       reason       geometric reason for extrusion refinement
+ * \param[in]       n_faces      number of selected boundary faces
+ * \param[in]       faces        list of selected boundary faces (0 to n-1),
+ *                               or NULL if no indirection is needed
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_mesh_extrude_constant(cs_mesh_t        *m,
+                         bool              interior_gc,
                          cs_lnum_t         n_layers,
                          double            thickness,
                          double            reason,
@@ -1766,6 +1780,7 @@ cs_mesh_extrude_constant(cs_mesh_t        *m,
   /* Now call lower-level function */
 
   cs_mesh_extrude(m,
+                  interior_gc,
                   n_faces,
                   n_sel_v,
                   faces,

@@ -13,6 +13,10 @@ User changes
 - When using boundary condition zones defined by the GUI, error reporting
   for overlapping zones is improved, with associated visualization.
 
+- When extruding boundary faces, the group class id of interior faces
+  previously on the boundary may by kept as an option.
+  This is the default using the GUI.
+
 Changes
 -------
 
