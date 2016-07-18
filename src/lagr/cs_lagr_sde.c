@@ -176,12 +176,12 @@ _lages1(cs_real_t     dtp,
         cs_real_t force = 0.0;
 
         if (cs_glob_lagr_time_scheme->iadded_mass == 0)
-          force = (  rom * gradpr[cell_id][id] / romp[ip]
+          force = (- gradpr[cell_id][id] / romp[ip]
                    + grav[id] + fextla[ip][id]) * taup[ip];
 
         /* Added-mass term?     */
         else
-          force =   (  rom * gradpr[cell_id][id] / romp[ip]
+          force =   (- gradpr[cell_id][id] / romp[ip]
                      * (1.0 + 0.5 * cs_glob_lagr_time_scheme->added_mass_const)
                   / (1.0 + 0.5 * cs_glob_lagr_time_scheme->added_mass_const * rom / romp[ip])
                   + grav[id] + fextla[ip][id]) * taup[ip];
@@ -387,19 +387,18 @@ _lages1(cs_real_t     dtp,
  *    la vitesse du fluide vu sont forcement a l'ordre 1
  *    (meme si on est a l'ordre 2 par ailleurs).
  * --------------------------------------------------------------------
- * Arguments
- *
- * taup(nbpart)    <-- temps caracteristique dynamique
- * tlag(nbpart)    <-- temps caracteristique fluide
- * piil(nbpart,3)  <-- terme dans l'integration des eds up
- * bx(nbpart,3,2)  <-- caracteristiques de la turbulence
- * tsfext(nbpart)  --> infos pour couplage retour dynamique
- * vagaus          <-- variables aleatoires gaussiennes
- * nbpart,nvgaus)
- * gradpr(3,ncel)  <-- gradient de pression
- * romp            <-- masse volumique des particules
- * fextla          <-- champ de forces exterieur
- *   (ncelet,3)        utilisateur (m/s2)
+ * Parameters
+ * \param[in] taup      temps caracteristique dynamique
+ * \param[in] tlag      temps caracteristique fluide
+ * \param[in] piil      terme dans l'integration des eds up
+ * \param[in] bx        caracteristiques de la turbulence
+ * \param[in] tsfext    infos pour couplage retour dynamique
+ * \param[in] vagaus    variables aleatoires gaussiennes
+ * \param[in] gradpr    pressure gradient
+ * \param[in] romp      masse volumique des particules
+ * \param[in] brgaus
+ * \param[in] terbru
+ * \param[in] fextla    champ de forces exterieur utilisateur (m/s2)
  * -----------------------------------------------------------------------------*/
 
 static void
@@ -471,11 +470,11 @@ _lages2(cs_real_t     dtp,
         cs_real_t rom   = extra->cromf->val[cell_id];
 
         if (cs_glob_lagr_time_scheme->iadded_mass == 0)
-          auxl[ip * 6 + id] = (rom * gradpr[cell_id][id] / romp[ip] + grav[id] + fextla[ip][id]) * taup[ip];
+          auxl[ip * 6 + id] = (- gradpr[cell_id][id] / romp[ip] + grav[id] + fextla[ip][id]) * taup[ip];
 
         /* Added-mass term?     */
         else
-          auxl[ip * 6 + id] =   (   rom * gradpr[cell_id][id] / romp[ip]
+          auxl[ip * 6 + id] =   ( - gradpr[cell_id][id] / romp[ip]
                                   * (1.0 + 0.5 * cs_glob_lagr_time_scheme->added_mass_const)
                                   / (1.0 + 0.5 * cs_glob_lagr_time_scheme->added_mass_const * rom / romp[ip])
                                   + grav[id] + fextla[ip][id] )
@@ -975,7 +974,7 @@ _lagesd(cs_real_t     dtp,
     for (cs_lnum_t id = 1; id < 3; id++) {
 
       cs_real_t tci   = piilp[id] * tlp + vflui[id];
-      cs_real_t force = (*romf * gdpr[id] / romp[*ip] + ggp[id]) * taup[*ip];
+      cs_real_t force = (- gdpr[id] / romp[*ip] + ggp[id]) * taup[*ip];
       cs_real_t aux1  = exp ( -dtp / taup[*ip]);
       cs_real_t aux2  = exp ( -dtp / tlp);
       cs_real_t aux3  = tlp / (tlp - taup[*ip]);
@@ -1473,12 +1472,12 @@ _lagdep(cs_real_t     dtp,
           cs_real_t force = 0.0;
 
           if (cs_glob_lagr_time_scheme->iadded_mass == 0)
-            force = (romf * gradpr[cell_id][id] / romp[ip]
+            force = (- gradpr[cell_id][id] / romp[ip]
                      + grav[id] + fextla[ip][id]) * taup[ip];
 
           /* Added-mass term?     */
           else
-            force =   ( romf * gradpr[cell_id][id] / romp[ip]
+            force =   ( - gradpr[cell_id][id] / romp[ip]
                   * (1.0 + 0.5 * cs_glob_lagr_time_scheme->added_mass_const)
                   / (1.0 + 0.5 * cs_glob_lagr_time_scheme->added_mass_const * romf / romp[ip])
                   + grav[id] + fextla[ip][id])* taup[ip];

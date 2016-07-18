@@ -413,7 +413,6 @@ _dep_diffusion_phases(cs_real_t *dx,
   CS_PROCF(normalen,NORMALEN) (&quatre, vagaus);
 
   cs_real_t vpart0 = *vpart;
-  cs_real_t ro0 = cs_glob_fluid_properties->ro0;
 
   cs_real_t vvue0;
   if (*marko == 12)
@@ -423,7 +422,7 @@ _dep_diffusion_phases(cs_real_t *dx,
 
   tci = *piiln * *tlag2 + *vnorm;
 
-  force = (ro0 * *grpn / *romp + *gnorm) * *taup;
+  force = (- *grpn / *romp + *gnorm) * *taup;
 
   /* --> Coefficients and deterministic terms computation
    *     ------------------------------------------------    */

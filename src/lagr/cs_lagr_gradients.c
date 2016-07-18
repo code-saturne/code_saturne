@@ -119,7 +119,7 @@ cs_lagr_gradients(int            time_id,
   cs_var_cal_opt_t var_cal_opt;
 
   /* ====================================================================
-   * 1. Compute pressure gradient / rho
+   * 1. Compute pressure gradient
    * ====================================================================   */
 
   /* FIXME for iphydr = 1 and 2     */
@@ -141,8 +141,7 @@ cs_lagr_gradients(int            time_id,
                            iccocg,
                            gradpr);
 
-  /* Calcul de -Grad P / Rom
-   * Warning, in standard calculation, the computed pressure is
+  /* Warning, in standard calculation, the computed pressure is
    * the hydrostatic pressure and not the real one */
 
   if (   cs_glob_stokes_model->iphydr == 0
@@ -154,15 +153,6 @@ cs_lagr_gradients(int            time_id,
         gradpr[iel][id] += ro0 * grav[id];
 
     }
-
-  }
-
-  for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
-
-    cs_real_t unsrho = 1.0 / extra->cromf->val[iel];
-
-    for (int id = 0; id < 3; id++)
-      gradpr[iel][id] *= - unsrho;
 
   }
 

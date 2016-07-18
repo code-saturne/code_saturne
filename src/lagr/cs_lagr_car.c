@@ -540,7 +540,9 @@ cs_lagr_car(int              iprev,
          *       ou
          *       Calcul de II = ( -grad(P)/Rom(f) ) */
 
-        piil[ip][id] = gradpr[cell_id][id] + grav[id];
+        cs_real_t romf = extra->cromf->val[cell_id];
+
+        piil[ip][id] = -gradpr[cell_id][id] / romf + grav[id];
 
         if (   cs_glob_lagr_time_scheme->modcpl > 0
             &&   cs_glob_time_step->nt_cur
