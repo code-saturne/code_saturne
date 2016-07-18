@@ -163,6 +163,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   /* Extrude selected boundary */
 
   cs_mesh_extrude_constant(mesh,
+                           false,
                            n_layers,
                            thickness,
                            reason,

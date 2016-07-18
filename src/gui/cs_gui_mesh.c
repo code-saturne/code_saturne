@@ -702,6 +702,7 @@ cs_gui_mesh_extrude(cs_mesh_t  *mesh)
                                 selected_faces);
 
     cs_mesh_extrude_constant(mesh,
+                             true,
                              n_layers,
                              thickness,
                              reason,
