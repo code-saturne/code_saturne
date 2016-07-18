@@ -461,6 +461,8 @@ cs_run(void)
 
   cs_timer_stats_finalize();
 
+  cs_file_free_defaults();
+
   cs_base_time_summary();
   cs_base_mem_finalize();
 }

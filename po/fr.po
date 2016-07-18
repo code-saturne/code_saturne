@@ -9796,13 +9796,13 @@ msgid ""
 "been defined, which conflicts with the current transient definition.\n"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "MEDparfileOpen() failed to open file: %s"
-msgstr "MEDfileClose() n'a pas pu fermer le fichier \"%s\"\n"
+msgstr "MEDparfileOpen() n'a pas pu ouvrir le fichier : %s"
 
-#, fuzzy, c-format
+#, c-format
 msgid "MEDfileOpen() failed to open file: %s"
-msgstr "MEDfileClose() n'a pas pu fermer le fichier \"%s\"\n"
+msgstr "MEDrfileOpen() n'a pas pu ouvrir le fichier : %s"
 
 #, c-format
 msgid "MEDfileClose() failed to close file \"%s\"\n"
@@ -9850,14 +9850,12 @@ msgid ""
 "but re-defined with datatype %d."
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "MEDfilterBlockOfEntityCr() failed for coordinates.\n"
 "Associated writer: \"%s\"\n"
 "Associated med_mesh: \"%s\"\n"
 msgstr ""
-"MEDfileOpen() n'a pas pu réouvrir le fichier : %s\n"
-"Gestionnaire associé : \"%s\"\n"
 
 #, c-format
 msgid ""
@@ -9873,14 +9871,12 @@ msgid ""
 "Associated med_mesh: \"%s\"\n"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "MEDfilterBlockOfEntityCr() failed for families.\n"
 "Associated writer: \"%s\"\n"
 "Associated med_mesh: \"%s\"\n"
 msgstr ""
-"MEDfileOpen() n'a pas pu réouvrir le fichier : %s\n"
-"Gestionnaire associé : \"%s\"\n"
 
 #, c-format
 msgid ""
@@ -9898,14 +9894,12 @@ msgid ""
 "Associated MED geometrical element: \"%i\"\n"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "MEDfilterBlockOfEntityCr() failed for connectivty.\n"
 "Associated writer: \"%s\"\n"
 "Associated med_mesh: \"%s\"\n"
 msgstr ""
-"MEDfileOpen() n'a pas pu réouvrir le fichier : %s\n"
-"Gestionnaire associé : \"%s\"\n"
 
 #, c-format
 msgid ""
@@ -9937,14 +9931,12 @@ msgid ""
 "Associated med_mesh_name: \"%s\"\n"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "MEDfilterBlockOfEntityCr() failed for field values.\n"
 "Associated writer: \"%s\"\n"
 "Associated med_mesh: \"%s\"\n"
 msgstr ""
-"MEDfileOpen() n'a pas pu réouvrir le fichier : %s\n"
-"Gestionnaire associé : \"%s\"\n"
 
 msgid "Empty MED filename."
 msgstr "Nom de fichier MED vide."
@@ -14608,10 +14600,3 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
-
-#~ msgid ""
-#~ "MEDfileOpen() failed to open file: %s\n"
-#~ "Associated writer: \"%s\"\n"
-#~ msgstr ""
-#~ "MEDfileOpen() n'a pas pu ouvrir le fichier : %s\n"
-#~ "Gestionnaire associé : \"%s\"\n"

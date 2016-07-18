@@ -2789,6 +2789,44 @@ cs_file_dump(const cs_file_t  *f)
   bft_printf("\n");
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free the default options for file access.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_file_free_defaults(void)
+{
+  _mpi_io_positionning = CS_FILE_MPI_EXPLICIT_OFFSETS;
+
+  _default_access_r = CS_FILE_DEFAULT;
+  _default_access_w = CS_FILE_DEFAULT;
+
+  /* Communicator and hints used for file operations */
+
+#if defined(HAVE_MPI)
+  _mpi_defaults_are_set = false;
+  _mpi_rank_step = 1;
+  _mpi_min_coll_buf_size = 1024*1024*8;
+  _mpi_comm = MPI_COMM_NULL;
+
+  if (_mpi_io_comm != MPI_COMM_NULL) {
+    MPI_Comm_free(&_mpi_io_comm);
+    _mpi_io_comm = MPI_COMM_NULL;
+  }
+#endif
+
+#if defined(HAVE_MPI_IO)
+#  if MPI_VERSION > 1
+  if (_mpi_io_hints_r != MPI_INFO_NULL)
+    MPI_Info_free(&_mpi_io_hints_r);
+  if (_mpi_io_hints_w != MPI_INFO_NULL)
+    MPI_Info_free(&_mpi_io_hints_w);
+#  endif /* MPI_VERSION > 1 */
+#endif /* defined(HAVE_MPI_IO) */
+}
+
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------*/
@@ -3033,8 +3071,11 @@ cs_file_set_default_comm(int       block_rank_step,
                          int       block_min_size,
                          MPI_Comm  comm)
 {
-  if (block_rank_step > 0)
+  if (block_rank_step > 0) {
+    if (block_rank_step > cs_glob_n_ranks)
+      block_rank_step = cs_glob_n_ranks;
     _mpi_rank_step = block_rank_step;
+  }
 
   if (block_min_size > -1)
     _mpi_min_coll_buf_size = block_min_size;
@@ -3055,52 +3096,86 @@ cs_file_set_default_comm(int       block_rank_step,
 
     if (_mpi_comm != MPI_COMM_NULL) {
 
-      if (block_rank_step < 2) {
+      if (_mpi_rank_step < 2) {
         _mpi_rank_step = 1;
         MPI_Comm_dup(_mpi_comm, &_mpi_io_comm);
       }
 
-      else { /* Create reduced communicator */
-
-        int rank_id;
-        int n_ranks;
-        int ranges[1][3];
-        MPI_Group old_group, new_group;
-
-        _mpi_rank_step = block_rank_step;
-
-        MPI_Comm_size(_mpi_comm, &n_ranks);
-        MPI_Comm_rank(_mpi_comm, &rank_id);
-
-        MPI_Comm_group(_mpi_comm, &old_group);
-
-        if (block_rank_step > n_ranks)
-          _mpi_rank_step = n_ranks;
-
-        MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
-
-        ranges[0][0] = 0;
-        ranges[0][1] = n_ranks - 1;
-        ranges[0][2] = block_rank_step;
-
-        MPI_Group_range_incl(old_group, 1, ranges, &new_group);
-        MPI_Comm_create(_mpi_comm, new_group, &_mpi_io_comm);
-        MPI_Group_free(&new_group);
-
-        MPI_Group_free(&old_group);
-
-        if (rank_id % block_rank_step)
-          _mpi_io_comm = MPI_COMM_NULL;
-
-        MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
-
-      }
+      else /* Create reduced communicator */
+        _mpi_io_comm = cs_file_block_comm(_mpi_rank_step, _mpi_comm);
 
     }
 
   }
 
   _mpi_defaults_are_set = true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create an MPI communicator for distributed block parallel IO.
+ *
+ * \param[in]  block_rank_step  MPI rank stepping between non-empty blocks
+ * \param[in]  comm             Handle to main MPI communicator
+ *
+ * \return communicator associated with IO, MPI_COMM_NULL for ranks not
+ *         participating in parallel IO (including ranks participating in IO
+ *         where communicator size would be 1)
+ */
+/*----------------------------------------------------------------------------*/
+
+MPI_Comm
+cs_file_block_comm(int       block_rank_step,
+                   MPI_Comm  comm)
+{
+  MPI_Comm  new_comm = MPI_COMM_NULL;
+
+  if (comm == MPI_COMM_NULL)
+    return new_comm;
+
+  int rank_id, n_ranks;
+  MPI_Comm_rank(comm, &rank_id);
+  MPI_Comm_size(comm, &n_ranks);
+  if (n_ranks < 2) {
+    new_comm = MPI_COMM_NULL;
+    return new_comm;
+  }
+
+  if (block_rank_step > n_ranks)
+    block_rank_step = n_ranks;
+
+  if (block_rank_step < 2)
+    MPI_Comm_dup(comm, &new_comm);
+
+  /* Create reduced communicator in more general case */
+
+  else {
+
+    int ranges[1][3];
+    MPI_Group old_group, new_group;
+
+    MPI_Comm_group(comm, &old_group);
+
+    MPI_Barrier(comm); /* For debugging */
+
+    ranges[0][0] = 0;
+    ranges[0][1] = n_ranks - 1;
+    ranges[0][2] = block_rank_step;
+
+    MPI_Group_range_incl(old_group, 1, ranges, &new_group);
+    MPI_Comm_create(comm, new_group, &new_comm);
+    MPI_Group_free(&new_group);
+
+    MPI_Group_free(&old_group);
+
+    if (rank_id % block_rank_step)
+      new_comm = MPI_COMM_NULL;
+
+    MPI_Barrier(comm); /* For debugging */
+
+  }
+
+  return new_comm;
 }
 
 #endif /* defined(HAVE_MPI) */
