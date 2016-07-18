@@ -460,43 +460,43 @@ cs_have_paramedmem=no
 # Configure options
 #------------------
 
-AC_ARG_WITH(salome-med,
-            [AS_HELP_STRING([--with-salome-med=PATH],
+AC_ARG_WITH(medcoupling,
+            [AS_HELP_STRING([--with-medcoupling=PATH],
                             [specify directory for MEDCoupling and ParaMEDMEM])],
             [if test "x$withval" = "x"; then
                if test -z "$MEDCOUPLING_ROOT_DIR"; then
-                 with_salome_med=yes
+                 with_medcoupling=yes
                else
-                 with_salome_med=$MEDCOUPLING_ROOT_DIR
+                 with_medcoupling=$MEDCOUPLING_ROOT_DIR
                fi
              fi],
             [if test -z "$MEDCOUPLING_ROOT_DIR"; then
-               with_salome_med=check
+               with_medcoupling=check
              else
-               with_salome_med=$MEDCOUPLING_ROOT_DIR
+               with_medcoupling=$MEDCOUPLING_ROOT_DIR
              fi])
 
-if test "x$with_salome_med" != "xno" -a "x$enable_shared" = "xno" ; then
-  AC_MSG_WARN([SALOME MEDCoupling support plugin disabled as build is static only.])
-  with_salome_med=no
+if test "x$with_medcoupling" != "xno" -a "x$enable_shared" = "xno" ; then
+  AC_MSG_WARN([MEDCoupling support plugin disabled as build is static only.])
+  with_medcoupling=no
 fi
 
-if test "x$with_salome_med" != "xno" ; then
+if test "x$with_medcoupling" != "xno" ; then
 
-  if test x"$with_salome_med" != xyes -a x"$with_salome_med" != xcheck ; then
-    SALOME_MED="$with_salome_med"
+  if test x"$with_medcoupling" != xyes -a x"$with_medcoupling" != xcheck ; then
+    MEDCOUPLING="$with_medcoupling"
   else
-    SALOME_MED="/usr"
+    MEDCOUPLING="/usr"
   fi
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  MEDCOUPLING_CPPFLAGS="-I$SALOME_MED/include"
-  MEDCOUPLING_LDFLAGS="-L$SALOME_MED/lib"
+  MEDCOUPLING_CPPFLAGS="-I$MEDCOUPLING/include"
+  MEDCOUPLING_LDFLAGS="-L$MEDCOUPLING/lib"
   # Add the libdir to the runpath as libtool does not do this for modules
-  MEDCOUPLINGRUNPATH="-R$SALOME_MED/lib"
+  MEDCOUPLINGRUNPATH="-R$MEDCOUPLING/lib"
   MEDCOUPLING_LIBS="-lmedcoupling -linterpkernel"
 
   CPPFLAGS="${CPPFLAGS} ${MEDCOUPLING_CPPFLAGS}"
@@ -510,7 +510,7 @@ if test "x$with_salome_med" != "xno" ; then
 
   AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <MEDCouplingUMesh.hxx>]],
-[[using namespace ParaMEDMEM;
+[[using namespace MEDCoupling;
 MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
                    ],
                    [ AC_DEFINE([HAVE_MEDCOUPLING], 1, [MEDCoupling support])
@@ -530,7 +530,7 @@ MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
     AC_LINK_IFELSE([AC_LANG_PROGRAM(
   [[#include <InterpKernelDEC.hxx>
 #include <set>]],
-  [[using namespace ParaMEDMEM;
+  [[using namespace MEDCoupling;
 int procs_source_c[1]={0};
 std::set<int> procs_source(procs_source_c, procs_source_c+1);
 int procs_target_c[1]={1};
@@ -557,7 +557,7 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
   #-------------------
 
   if test "x$cs_have_medcoupling" = "xno" ; then
-    if test "x$with_salome_med" != "xcheck" ; then
+    if test "x$with_medcoupling" != "xcheck" ; then
       AC_MSG_FAILURE([MEDCoupling support is requested, but test for MEDCoupling failed!])
     else
       AC_MSG_WARN([no MEDCoupling support])
