@@ -449,6 +449,13 @@ void
 cs_file_dump(const cs_file_t  *f);
 
 /*----------------------------------------------------------------------------
+ * Free the default options for file access.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_file_free_defaults(void);
+
+/*----------------------------------------------------------------------------
  * Get the default options for file access.
  *
  * parameters:
@@ -564,6 +571,23 @@ void
 cs_file_set_default_comm(int       block_rank_step,
                          int       block_min_size,
                          MPI_Comm  comm);
+
+/*----------------------------------------------------------------------------
+ * Create an MPI communicator for distributed block parallel IO.
+ *
+ * parameters:
+ *   block_rank_step <-- MPI rank stepping between non-empty blocks
+ *   comm            <-- Handle to main MPI communicator
+ *
+ * returns:
+ *   communicator associated with IO, MPI_COMM_NULL for ranks not
+ *   participating in parallel IO (including ranks participating in IO
+ *   where communicator size would be 1)
+ *----------------------------------------------------------------------------*/
+
+MPI_Comm
+cs_file_block_comm(int       block_rank_step,
+                   MPI_Comm  comm);
 
 #endif /* defined(HAVE_MPI) */
 

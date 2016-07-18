@@ -107,6 +107,7 @@ fvm_to_med_version_string(int string_index,
  *   divide_polygons     tesselate polygons with triangles
  *   divide_polyhedra    tesselate polyhedra with tetrahedra and pyramids
  *                       (adding a vertex near each polyhedron's center)
+ *   serial_io           force serial IO even when parallel IO is available
  *
  * parameters:
  *   name           <-- base output case name.
@@ -181,6 +182,22 @@ void
 fvm_to_med_set_mesh_time(void          *const this_writer,
                          const int            time_step,
                          const double         time_value);
+
+/*----------------------------------------------------------------------------
+ * Indicate a given mesh is present in a MED file.
+ *
+ * This does not do any verification that the mesh is indeed present,
+ * so this should be ensured before. The writer info is simply updated
+ * so that additional fields may be output or updated in an existing file.
+ *
+ * parameters:
+ *   this_writer  <-- pointer to associated writer.
+ *   mesh         <-- pointer to nodal mesh structure that should be written.
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_to_med_map_nodal(void               *this_writer,
+                     const fvm_nodal_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Write nodal mesh to a MED file

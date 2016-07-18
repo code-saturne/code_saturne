@@ -67,6 +67,9 @@ schemes (Original SOLU, CENTER, Standard SOLU)
 Architectural changes
 ---------------------
 
+- Added parallel IO for MED output when underlying MED library is built
+  with parallel (HDF5) IO support.
+
 - Extend control file mechanism with Python module communicating through
   sockets (which may in turn be extended by an RPC mechanism); the
   commands are currently limited to connecting, advancing a time step,
