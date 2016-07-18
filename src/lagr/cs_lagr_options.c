@@ -153,6 +153,19 @@ _init_lagr_encrustation_pointers(void)
 }
 
 /*----------------------------------------------------------------------------
+ * Free encrustation pointers.
+ *----------------------------------------------------------------------------*/
+
+static void
+_free_lagr_encrustation_pointers(void)
+{
+  BFT_FREE(cs_glob_lagr_encrustation->enc1);
+  BFT_FREE(cs_glob_lagr_encrustation->enc2);
+  BFT_FREE(cs_glob_lagr_encrustation->tprenc);
+  BFT_FREE(cs_glob_lagr_encrustation->visref);
+}
+
+/*----------------------------------------------------------------------------
  * Initialize boundary interaction pointers.
  *----------------------------------------------------------------------------*/
 
@@ -167,6 +180,17 @@ _init_lagr_boundary_interaction_pointers(void)
     BFT_MALLOC(cs_glob_lagr_boundary_interactions->imoybr,
                cs_glob_lagr_const_dim->nusbrd + 10,
                int);
+}
+
+/*----------------------------------------------------------------------------
+ * Free boundary interaction pointers.
+ *----------------------------------------------------------------------------*/
+
+static void
+_free_lagr_boundary_interaction_pointers(void)
+{
+  BFT_FREE(cs_glob_lagr_boundary_interactions->iusb);
+  BFT_FREE(cs_glob_lagr_boundary_interactions->imoybr);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -320,8 +344,18 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   cs_user_lagr_model();
 
-  if (lagr_time_scheme->iilagr == 0)
+  if (lagr_time_scheme->iilagr == 0) {
+
+    _free_lagr_encrustation_pointers();
+    _free_lagr_boundary_interaction_pointers();
+
+    BFT_FREE(cs_glob_lagr_source_terms->itsmv1);
+    BFT_FREE(cs_glob_lagr_source_terms->itsmv2);
+
+    cs_lagr_finalize_bdy_cond();
+
     return;
+  }
 
   /* Check user initializations of Lagrangian module
      ----------------------------------------------- */

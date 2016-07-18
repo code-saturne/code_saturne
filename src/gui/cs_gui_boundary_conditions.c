@@ -494,44 +494,50 @@ _boundary_scalar(const char   *nature,
       } else if (cs_gui_strcmp(choice, "dirichlet_formula")) {
         cs_xpath_add_element(&path, "dirichlet_formula");
         cs_xpath_add_function_text(&path);
-        if (cs_gui_get_text_value(path)){
+        const char *t_value = cs_gui_get_text_value(path);
+        if (t_value) {
           const char *sym[] = {f->name};
           boundaries->type_code[f_id][izone] = DIRICHLET_FORMULA;
           boundaries->scalar[f_id][izone * dim + i] =
-            _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path),
+            _boundary_scalar_init_mei_tree(t_value,
                                            sym,
                                            dtref,
                                            ttcabs,
                                            ntcabs,
                                            1);
+          BFT_FREE(t_value);
         }
       } else if (cs_gui_strcmp(choice, "neumann_formula")) {
         cs_xpath_add_element(&path, "neumann_formula");
         cs_xpath_add_function_text(&path);
-        if (cs_gui_get_text_value(path)){
+        const char *t_value = cs_gui_get_text_value(path);
+        if (t_value != NULL) {
           const char *sym[] = {"flux"};
           boundaries->type_code[f_id][izone] = NEUMANN_FORMULA;
           boundaries->scalar[f_id][izone * dim + i] =
-            _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path),
+            _boundary_scalar_init_mei_tree(t_value,
                                            sym,
                                            dtref,
                                            ttcabs,
                                            ntcabs,
                                            1);
+          BFT_FREE(t_value);
         }
-      } else if (cs_gui_strcmp(choice, "exchange_coefficient_formula")){
+      } else if (cs_gui_strcmp(choice, "exchange_coefficient_formula")) {
         cs_xpath_add_element (&path, "exchange_coefficient_formula");
         cs_xpath_add_function_text(&path);
-        if (cs_gui_get_text_value(path)){
+        const char *t_value = cs_gui_get_text_value(path);
+        if (t_value != NULL) {
           const char *sym[] = {f->name,"hc"};
           boundaries->type_code[f_id][izone] = EXCHANGE_COEFF_FORMULA;
           boundaries->scalar[f_id][izone * dim + i] =
-            _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path),
+            _boundary_scalar_init_mei_tree(t_value,
                                            sym,
                                            dtref,
                                            ttcabs,
                                            ntcabs,
                                            2);
+          BFT_FREE(t_value);
         }
       } else if (cs_gui_strcmp(choice, "exchange_coefficient")) {
         cs_xpath_add_element(&path2, "exchange_coefficient");
@@ -786,7 +792,7 @@ _inlet_compressible(int         izone,
     strcpy(path_value, path1);
     cs_xpath_add_attribute(&path1, "status");
     status = cs_gui_get_attribute_value(path1);
-    if (cs_gui_strcmp(status, "on")){
+    if (cs_gui_strcmp(status, "on")) {
       cs_xpath_add_function_text(&path_value);
       if (cs_gui_get_double(path_value, &value))
         boundaries->prein[izone] = value;
@@ -799,7 +805,7 @@ _inlet_compressible(int         izone,
     strcpy(path_value, path2);
     cs_xpath_add_attribute(&path2, "status");
     status = cs_gui_get_attribute_value(path2);
-    if (cs_gui_strcmp(status, "on")){
+    if (cs_gui_strcmp(status, "on")) {
       cs_xpath_add_function_text(&path_value);
       if (cs_gui_get_double(path_value, &value))
         boundaries->rhoin[izone] = value;
@@ -812,7 +818,7 @@ _inlet_compressible(int         izone,
     strcpy(path_value, path3);
     cs_xpath_add_attribute(&path3, "status");
     status = cs_gui_get_attribute_value(path3);
-    if (cs_gui_strcmp(status, "on")){
+    if (cs_gui_strcmp(status, "on")) {
       cs_xpath_add_function_text(&path_value);
       if (cs_gui_get_double(path_value, &value))
         boundaries->tempin[izone] = value;
@@ -825,7 +831,7 @@ _inlet_compressible(int         izone,
     strcpy(path_value, path4);
     cs_xpath_add_attribute(&path4, "status");
     status = cs_gui_get_attribute_value(path4);
-    if (cs_gui_strcmp(status, "on")){
+    if (cs_gui_strcmp(status, "on")) {
       cs_xpath_add_function_text(&path_value);
       if (cs_gui_get_double(path_value, &value))
         boundaries->entin[izone] = value;
@@ -833,7 +839,7 @@ _inlet_compressible(int         izone,
     BFT_FREE(status);
     BFT_FREE(path_value);
   }
-  else if (cs_gui_strcmp(buff, "subsonic_inlet_PH")){
+  else if (cs_gui_strcmp(buff, "subsonic_inlet_PH")) {
     boundaries->itype[izone] = *iephcf;
 
     cs_xpath_add_element(&path1, "total_pressure");
