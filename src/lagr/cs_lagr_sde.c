@@ -94,7 +94,7 @@ static const double _k_boltz = 1.38e-23;
  * \param[in] piil      terme dans l'integration des eds up
  * \param[in] bx        caracteristiques de la turbulence
  * \param[in] vagaus    variables aleatoires gaussiennes
- * \param[in] gradpr    gradient de pression
+ * \param[in] gradpr    pressure gradient
  * \param[in] romp      masse volumique des particules
  * \param[in] fextla    champ de forces exterieur utilisateur (m/s2)
  */
@@ -1466,7 +1466,8 @@ _lagdep(cs_real_t     dtp,
           cs_real_t force = 0.0;
 
           if (cs_glob_lagr_time_scheme->iadded_mass == 0)
-            force  = (romf * gradpr[cell_id][id] / romp[ip] + grav[id] + fextla[ip][id]) * taup[ip];
+            force  = (romf * gradpr[cell_id][id] / romp[ip]
+                     + grav[id] + fextla[ip][id]) * taup[ip];
 
           /* Added-mass term?     */
           else {
@@ -1652,7 +1653,7 @@ _lagdep(cs_real_t     dtp,
 
     /* Specific treatment for particles with
      * DEPOSITION_FLAG == CS_LAGR_PART_IMPOSED_MOTION */
-    else if ( cell_id >= 0 ) {
+    else if (cell_id >= 0) {
       cs_real_t disp[3] = {0., 0., 0.};
 
       cs_real_t *old_part_coords = cs_lagr_particle_attr_n(particle, p_am, 1,

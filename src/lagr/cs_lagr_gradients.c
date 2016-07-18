@@ -132,6 +132,7 @@ cs_lagr_gradients(int            time_id,
                              &gradient_type,
                              &halo_type);
 
+  // FIXME not coherent with iphydr...
   cs_field_gradient_scalar(extra->pressure,
                            time_id,
                            gradient_type,
@@ -149,7 +150,7 @@ cs_lagr_gradients(int            time_id,
 
     for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
 
-      for (cs_lnum_t id = 0; id < 3; id++)
+      for (int id = 0; id < 3; id++)
         gradpr[iel][id] += ro0 * grav[id];
 
     }
@@ -160,7 +161,7 @@ cs_lagr_gradients(int            time_id,
 
     cs_real_t unsrho = 1.0 / extra->cromf->val[iel];
 
-    for (cs_lnum_t id = 0; id < 3; id++)
+    for (int id = 0; id < 3; id++)
       gradpr[iel][id] *= - unsrho;
 
   }
