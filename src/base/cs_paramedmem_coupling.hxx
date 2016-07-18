@@ -51,7 +51,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-using namespace ParaMEDMEM;
+using namespace MEDCoupling;
 
 /*=============================================================================
  * Local Macro Definitions
@@ -228,7 +228,7 @@ cs_paramedmem_field_get_id(cs_paramedmem_coupling_t  *coupling,
  *   pointer to ParaFIELD to which values were assigned
  *----------------------------------------------------------------------------*/
 
-ParaMEDMEM::ParaFIELD *
+MEDCoupling::ParaFIELD *
 cs_paramedmem_field_get(cs_paramedmem_coupling_t  *coupling,
                         int                        field_id);
 
