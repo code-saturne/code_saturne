@@ -93,7 +93,7 @@ BEGIN_C_DECLS
 
 static int           _n_setups = 0;
 static cs_sles_t    *_sles_setup[CS_SLES_DEFAULT_N_SETUPS];
-static cs_matrix_t  *_matrix_setup[CS_SLES_DEFAULT_N_SETUPS];
+static cs_matrix_t  *_matrix_setup[CS_SLES_DEFAULT_N_SETUPS][3];
 
 static const int _poly_degree_default = 0;
 static const int _n_max_iter_default = 10000;
@@ -368,6 +368,131 @@ cs_sles_default_get_verbosity(int          f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Call sparse linear equation solver setup for convection-diffusion
+ *        systems
+ *
+ * \param[in]       f_id                   associated field id, or < 0
+ * \param[in]       name                   associated name if f_id < 0, or NULL
+ * \param[in]       diag_block_size        block sizes for diagonal, or NULL
+ * \param[in]       extra_diag_block_size  block sizes for extra diagonal,
+ *                                         or NULL
+ * \param[in]       da                     diagonal values (NULL if zero)
+ * \param[in]       xa                     extradiagonal values (NULL if zero)
+ * \param[in]       da_conv                diagonal values (NULL if zero)
+ * \param[in]       xa_conv                extradiagonal values (NULL if zero)
+ * \param[in]       da_diff                diagonal values (NULL if zero)
+ * \param[in]       xa_diff                extradiagonal values (NULL if zero)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_setup_native_conv_diff(int                  f_id,
+                               const char          *name,
+                               const int           *diag_block_size,
+                               const int           *extra_diag_block_size,
+                               const cs_real_t     *da,
+                               const cs_real_t     *xa,
+                               const cs_real_t     *da_conv,
+                               const cs_real_t     *xa_conv,
+                               const cs_real_t     *da_diff,
+                               const cs_real_t     *xa_diff)
+{
+  cs_matrix_t *a = NULL, *a_conv = NULL, *a_diff = NULL;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  /* Check if this system has already been setup */
+
+  cs_sles_t *sc = cs_sles_find_or_add(f_id, name);
+
+  int setup_id = 0;
+  while (setup_id < _n_setups) {
+    if (_sles_setup[setup_id] == sc)
+      break;
+    else
+      setup_id++;
+  }
+
+  if (setup_id >= _n_setups) {
+
+    _n_setups += 1;
+
+    if (_n_setups > CS_SLES_DEFAULT_N_SETUPS)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         "Too many linear systems solved without calling cs_sles_free_native\n"
+         "  maximum number of systems: %d\n"
+         "If this is not an error, increase CS_SLES_DEFAULT_N_SETUPS\n"
+         "  in file %s.", CS_SLES_DEFAULT_N_SETUPS, __FILE__);
+
+    if (a == NULL)
+      a = cs_matrix_msr(false,
+                        diag_block_size,
+                        extra_diag_block_size);
+
+    cs_matrix_set_coefficients(a,
+                               false,
+                               diag_block_size,
+                               extra_diag_block_size,
+                               m->n_i_faces,
+                               (const cs_lnum_2_t *)(m->i_face_cells),
+                               da,
+                               xa);
+
+    cs_matrix_t *a_ref = cs_matrix_default(false,
+                                           diag_block_size,
+                                           extra_diag_block_size);
+    if (a_conv == NULL)
+      a_conv = cs_matrix_create_by_copy(a_ref);
+
+    cs_matrix_set_coefficients(a_conv,
+                               false,
+                               diag_block_size,
+                               extra_diag_block_size,
+                               m->n_i_faces,
+                               (const cs_lnum_2_t *)(m->i_face_cells),
+                               da_conv,
+                               xa_conv);
+
+    if (a_diff == NULL)
+      a_diff = cs_matrix_create_by_copy(a_ref);
+
+    cs_matrix_set_coefficients(a_diff,
+                               false,
+                               diag_block_size,
+                               extra_diag_block_size,
+                               m->n_i_faces,
+                               (const cs_lnum_2_t *)(m->i_face_cells),
+                               da_diff,
+                               xa_diff);
+
+    _sles_setup[setup_id] = sc;
+    _matrix_setup[setup_id][0] = a;
+    _matrix_setup[setup_id][1] = a_conv;
+    _matrix_setup[setup_id][2] = a_diff;
+
+  }
+  else {
+    a      = _matrix_setup[setup_id][0];
+    a_conv = _matrix_setup[setup_id][1];
+    a_diff = _matrix_setup[setup_id][2];
+  }
+
+  /* Setup system */
+
+  if (strcmp(cs_sles_get_type(sc), "cs_multigrid_t") != 0)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       "%s requires a cs_multigrid_t solver type", __func__);
+
+  int verbosity = cs_sles_get_verbosity(sc);
+
+  cs_multigrid_t  *mg = cs_sles_get_context(sc);
+  cs_multigrid_setup_conv_diff(mg, name, a, a_conv, a_diff, verbosity);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Call sparse linear equation solver using native matrix arrays.
  *
  * \param[in]       f_id                   associated field id, or < 0
@@ -508,11 +633,13 @@ cs_sles_solve_native(int                  f_id,
                                xa);
 
     _sles_setup[setup_id] = sc;
-    _matrix_setup[setup_id] = a;
+    _matrix_setup[setup_id][0] = a;
+    _matrix_setup[setup_id][1] = NULL;
+    _matrix_setup[setup_id][2] = NULL;
 
   }
   else
-    a = _matrix_setup[setup_id];
+    a = _matrix_setup[setup_id][0];
 
   /* Solve system */
 
@@ -557,15 +684,23 @@ cs_sles_free_native(int          f_id,
   if (setup_id < _n_setups) {
 
     cs_sles_free(sc);
-    cs_matrix_release_coefficients(_matrix_setup[setup_id]);
+    for (int i = 0; i < 3; i++) {
+      if (_matrix_setup[setup_id][i] != NULL)
+        cs_matrix_release_coefficients(_matrix_setup[setup_id][i]);
+    }
+    for (int i = 1; i < 3; i++) { /* Remove "copied" matrixes */
+      if (_matrix_setup[setup_id][i] != NULL)
+        cs_matrix_destroy(&(_matrix_setup[setup_id][i]));
+    }
 
     _n_setups -= 1;
 
     if (setup_id < _n_setups) {
-      _matrix_setup[setup_id] = _matrix_setup[_n_setups];
-      _sles_setup[setup_id] = _sles_setup[_n_setups];;
+      for (int i = 0; i < 3; i++) {
+        _matrix_setup[setup_id][i] = _matrix_setup[_n_setups][i];
+      _sles_setup[setup_id] = _sles_setup[_n_setups];
+      }
     }
-
   }
 }
 

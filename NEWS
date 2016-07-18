@@ -43,6 +43,9 @@ Changes
 Numerics
 --------
 
+- Add optional multigrid solver for scalars with convection and diffusion,
+  based on the PhD work of Sana Khelifi.
+
 - Improve robustness of Boundary conditions for wall functions of scalars.
   Mainly impact Atmospheric flows.
 

@@ -1215,6 +1215,24 @@ cs_sles_set_verbosity(cs_sles_t  *sles,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get the verbosity for a given linear equation solver.
+ *
+ * This verbosity will be used by cs_sles_setup and cs_sles_solve.
+ *
+ * \param[in, out]  sles       pointer to solver object
+ *
+ * \return  verbosity level
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_sles_get_verbosity(cs_sles_t  *sles)
+{
+  return sles->verbosity;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return type name of solver context.
  *
  * The returned string is intended to help determine which type is associated

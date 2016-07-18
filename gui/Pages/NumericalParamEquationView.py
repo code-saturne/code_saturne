@@ -119,6 +119,7 @@ class SolverChoiceDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
 
+        mg = index.model().dataSolver[index.row()]['mg']
         editor.addItem("Automatic")
         editor.addItem("Conjugate gradient")
         editor.addItem("Jacobi")
@@ -127,7 +128,7 @@ class SolverChoiceDelegate(QItemDelegate):
         editor.addItem("GMRES")
         editor.addItem("Gauss Seidel")
         editor.addItem("conjugate residual")
-        if index.row() <= 0:
+        if mg:
             editor.addItem("Multigrid")
         editor.installEventFilter(self)
         return editor
@@ -525,6 +526,7 @@ class StandardItemModelSolver(QStandardItemModel):
 
             dico            = {}
             dico['name']    = name
+            dico['mg']      = self.NPE.getSolverAllowMultigrid(name)
             dico['iresol']  = self.NPE.getSolverChoice(name)
             dico['precond'] = self.NPE.getPreconditioningChoice(name)
             dico['epsilo']  = self.NPE.getSolverPrecision(name)

@@ -5688,6 +5688,26 @@ cs_gui_linear_solvers(void)
            n_max_iter,
            0, 0, 0,  /* precond degree */
            1, 1, 1); /* precision multiplier */
+
+        /* If we have convection, set appropriate options */
+        if (f_id >= 0) {
+          cs_var_cal_opt_t var_cal_opt;
+          cs_field_get_key_struct(cs_field_by_id(f_id),
+                                  cs_field_key_id("var_cal_opt"),
+                                  &var_cal_opt);
+          if (var_cal_opt.iconv > 0)
+            cs_multigrid_set_solver_options
+              (mg,
+               CS_SLES_P_GAUSS_SEIDEL,
+               CS_SLES_P_GAUSS_SEIDEL,
+               CS_SLES_P_GAUSS_SEIDEL,
+               100, /* n max cycles */
+               3,   /* n max iter for descent (default 2) */
+               2,   /* n max iter for ascent (default 10) */
+               100, /* n max iter coarse solver */
+               0, 0, 0,  /* precond degree */
+               -1, -1, 1); /* precision multiplier */
+        }
       }
 
       BFT_FREE(algo_choice);

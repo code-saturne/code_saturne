@@ -255,14 +255,33 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   cs_field_t *f;
 
   cs_real_t *dam, *xam, *smbini, *w1, *adxk, *adxkm1, *dpvarm1, *rhs0;
+  cs_real_t *dam_conv, *xam_conv, *dam_diff, *xam_diff;
+
+  bool conv_diff_mg = false;
 
   /*============================================================================
    * 0.  Initialization
    *==========================================================================*/
 
+  /* Name */
+  const char *var_name = cs_sles_name(f_id, name);
+
+  /* Determine if we are in the special convection-diffusion
+     multigrid case */
+
+  if (iconvp > 0) {
+    cs_sles_t *sc = cs_sles_find_or_add(f_id, name);
+    if (strcmp(cs_sles_get_type(sc), "cs_multigrid_t") == 0)
+      conv_diff_mg = true;
+  }
+
   /* Allocate temporary arrays */
 
   BFT_MALLOC(dam, n_cells_ext, cs_real_t);
+  if (conv_diff_mg) {
+    BFT_MALLOC(dam_conv, n_cells_ext, cs_real_t);
+    BFT_MALLOC(dam_diff, n_cells_ext, cs_real_t);
+  }
   BFT_MALLOC(smbini, n_cells_ext, cs_real_t);
 
   if (iswdyp >= 1) {
@@ -279,14 +298,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
   }
 
-  /* Name */
-  const char *var_name = cs_sles_name(f_id, name);
-
   /* Symmetric matrix, except if advection */
   isym = 1;
   if (iconvp > 0) isym = 2;
 
   BFT_MALLOC(xam,isym*n_faces,cs_real_t);
+  if (conv_diff_mg) {
+    BFT_MALLOC(xam_conv, 2*n_faces, cs_real_t);
+    BFT_MALLOC(xam_diff,   n_faces, cs_real_t);
+  }
 
   /* Matrix block size */
   ibsize = 1;
@@ -341,22 +361,45 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    * 1.  Building of the "simplified" matrix
    *==========================================================================*/
 
-  cs_matrix_wrapper_scalar(iconvp,
-                           idiffp,
-                           ndircp,
-                           isym,
-                           thetap,
-                           imucpp,
-                           coefbp,
-                           cofbfp,
-                           rovsdt,
-                           i_massflux,
-                           b_massflux,
-                           i_viscm,
-                           b_viscm,
-                           xcpp,
-                           dam,
-                           xam);
+  if (conv_diff_mg) {
+    cs_matrix_wrapper_scalar_conv_diff(iconvp,
+                                       idiffp,
+                                       ndircp,
+                                       thetap,
+                                       imucpp,
+                                       coefbp,
+                                       cofbfp,
+                                       rovsdt,
+                                       i_massflux,
+                                       b_massflux,
+                                       i_viscm,
+                                       b_viscm,
+                                       xcpp,
+                                       dam,
+                                       xam,
+                                       dam_conv,
+                                       xam_conv,
+                                       dam_diff,
+                                       xam_diff);
+  }
+  else {
+    cs_matrix_wrapper_scalar(iconvp,
+                             idiffp,
+                             ndircp,
+                             isym,
+                             thetap,
+                             imucpp,
+                             coefbp,
+                             cofbfp,
+                             rovsdt,
+                             i_massflux,
+                             b_massflux,
+                             i_viscm,
+                             b_viscm,
+                             xcpp,
+                             dam,
+                             xam);
+  }
 
   /* For steady computations, the diagonal is relaxed */
   if (idtvar < 0) {
@@ -585,6 +628,18 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       rotation_mode = CS_HALO_ROTATION_IGNORE;
     else
       rotation_mode = CS_HALO_ROTATION_COPY;
+
+    if (conv_diff_mg)
+      cs_sles_setup_native_conv_diff(f_id,
+                                     var_name,
+                                     db_size,
+                                     eb_size,
+                                     dam,
+                                     xam,
+                                     dam_conv,
+                                     xam_conv,
+                                     dam_diff,
+                                     xam_diff);
 
     cs_sles_solve_native(f_id,
                          var_name,
@@ -884,6 +939,13 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /*  Free memory */
   BFT_FREE(dam);
   BFT_FREE(xam);
+  if (conv_diff_mg) {
+    BFT_FREE(dam_conv);
+    BFT_FREE(xam_conv);
+    BFT_FREE(dam_diff);
+    BFT_FREE(xam_diff);
+  }
+
   BFT_FREE(smbini);
   if (iswdyp >= 1) {
     BFT_FREE(adxk);
