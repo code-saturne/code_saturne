@@ -658,6 +658,40 @@ cs_sles_default_error(cs_sles_t                    *sles,
 
   } /* End of "cs_sles_it_t" case */
 
+  else if (strcmp(cs_sles_get_type(sles), "cs_multigrid_t") == 0) {
+
+    cs_sles_it_t  *c_old = cs_sles_get_context(sles);
+
+    alternative = true;
+
+    if (alternative) {
+
+      const cs_sles_it_type_t sles_it_type = cs_sles_it_get_type(c_old);
+
+      const int f_id = cs_sles_get_f_id(sles);
+      const char *name = cs_sles_get_name(sles);
+
+      /* Switch to alternative solver if possible */
+
+      bft_printf(_("\n\n"
+                   "%s [%s]: divergence\n"
+                   "  fallback from multigrid to %s-preconditionned CG solver\n"
+                   "  for re-try and subsequent solves.\n"), "Jacobi");
+
+      cs_sles_free(sles);
+
+      cs_sles_it_t  *c_new = cs_sles_it_define(f_id,
+                                               name,
+                                               sles_it_type,
+                                               0, /* poly_degree */
+                                               0);
+
+      cs_sles_it_transfer_parameters(c_old, c_new);
+
+    }
+
+  } /* End of "cs_multigrid_t" case */
+
   /* Reset solution if new solve is expected */
 
   if (alternative) {

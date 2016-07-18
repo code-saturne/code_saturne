@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-07-04 10:38+0200\n"
+"POT-Creation-Date: 2016-07-13 18:52+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3828,6 +3828,20 @@ msgstr ""
 "\n"
 "%s [%s]: divergence\n"
 "  secours: basculement du préconditionnement %s à Jacobi (diagonal)\n"
+"  pour nouvelle tentative et résolutions ultérieures.\n"
+
+#, c-format
+msgid ""
+"\n"
+"\n"
+"%s [%s]: divergence\n"
+"  fallback from multigrid to %s-preconditionned CG solver\n"
+"  for re-try and subsequent solves.\n"
+msgstr ""
+"\n"
+"\n"
+"%s [%s]: divergence\n"
+"  basculement du solveur multigrille vers GC préconditionné %s \n"
 "  pour nouvelle tentative et résolutions ultérieures.\n"
 
 msgid "Conjugate gradient"
@@ -8193,6 +8207,9 @@ msgstr ""
 msgid " Key not implemented for setting an advection field."
 msgstr ""
 
+msgid " Invalid numerical scheme for advection."
+msgstr ""
+
 msgid ""
 " Incompatible type of boundary condition by default.\n"
 " Please modify your settings.\n"
@@ -8222,10 +8239,21 @@ msgid ""
 " is not defined in the edge structure.\n"
 msgstr ""
 
+msgid ""
+" Invalid space scheme for building the stiffness matrix.\n"
+" Please check your settings."
+msgstr ""
+
 msgid " Convection term is not handled yet.\n"
 msgstr ""
 
 msgid " Unsteady terms are not handled yet.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Face %d not found.\n"
+" Stop build a face mesh."
 msgstr ""
 
 msgid "Unkwown algorithm for cell center computation\n"
@@ -8348,24 +8376,6 @@ msgstr ""
 msgid ""
 " Stop setting an empty cs_equation_t structure.\n"
 " Please check your settings.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Undefined iterative solver for solving %s equation.\n"
-" Please modify your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" PETSC algorithms used to solve %s are not linked.\n"
-" Please install Code_Saturne with PETSc."
-msgstr ""
-
-#, c-format
-msgid ""
-" Algorithm requested to solve %s is not implemented yet.\n"
-" Please modify your settings."
 msgstr ""
 
 msgid " Mesh location name is NULL."
@@ -8538,6 +8548,14 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid " No function defined for getting the face values in eq. %s"
+msgstr ""
+
+#, c-format
+msgid " No function defined for getting the cell values in eq. %s"
+msgstr ""
+
+#, c-format
 msgid ""
 " Computation of the diffusive and convective flux across\n"
 " a plane is not available for equation %s\n"
@@ -8547,6 +8565,24 @@ msgstr ""
 msgid ""
 " Cellwise computation of the diffusive flux is not\n"
 " available for equation %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Undefined iterative solver for solving %s equation.\n"
+" Please modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" PETSC algorithms used to solve %s are not linked.\n"
+" Please install Code_Saturne with PETSc."
+msgstr ""
+
+#, c-format
+msgid ""
+" Algorithm requested to solve %s is not implemented yet.\n"
+" Please modify your settings."
 msgstr ""
 
 msgid "Invalid quadrature type.\n"
@@ -8606,7 +8642,7 @@ msgstr ""
 msgid " Groundwater module is activated but no soil is defined."
 msgstr ""
 
-msgid " Richards equation is only available for CDO-VB schemes."
+msgid " Richards eq. is only available for vertex-based schemes."
 msgstr ""
 
 msgid " Invalid type of property."
@@ -8621,9 +8657,12 @@ msgstr ""
 msgid " Invalid type of algorithm to build a discrete Hodge operator\n"
 msgstr ""
 
+msgid " Invalid type of discrete Hodge op. for WBS algorithm."
+msgstr ""
+
 msgid ""
 " Please change your function call with the following one:\n"
-" cs_hodge_build_cellwise(quant, cell_mesh, hodge_builder)"
+" cs_hodge_build_cellwise(cell_mesh, hodge_builder)"
 msgstr ""
 
 msgid " Invalid type of Hodge operator.\n"
@@ -9757,6 +9796,18 @@ msgid ""
 "been defined, which conflicts with the current transient definition.\n"
 msgstr ""
 
+#, fuzzy, c-format
+msgid "MEDparfileOpen() failed to open file: %s"
+msgstr "MEDfileClose() n'a pas pu fermer le fichier \"%s\"\n"
+
+#, fuzzy, c-format
+msgid "MEDfileOpen() failed to open file: %s"
+msgstr "MEDfileClose() n'a pas pu fermer le fichier \"%s\"\n"
+
+#, c-format
+msgid "MEDfileClose() failed to close file \"%s\"\n"
+msgstr "MEDfileClose() n'a pas pu fermer le fichier \"%s\"\n"
+
 #, c-format
 msgid ""
 "MEDmeshCr() failed to create a new med_mesh.\n"
@@ -9799,6 +9850,22 @@ msgid ""
 "but re-defined with datatype %d."
 msgstr ""
 
+#, fuzzy, c-format
+msgid ""
+"MEDfilterBlockOfEntityCr() failed for coordinates.\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh: \"%s\"\n"
+msgstr ""
+"MEDfileOpen() n'a pas pu réouvrir le fichier : %s\n"
+"Gestionnaire associé : \"%s\"\n"
+
+#, c-format
+msgid ""
+"MEDmeshNodeCoordinateAdvancedWr() failed to write coords.\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh: \"%s\"\n"
+msgstr ""
+
 #, c-format
 msgid ""
 "MEDmeshNodeCoordinateWr() failed to write coords.\n"
@@ -9806,9 +9873,43 @@ msgid ""
 "Associated med_mesh: \"%s\"\n"
 msgstr ""
 
+#, fuzzy, c-format
+msgid ""
+"MEDfilterBlockOfEntityCr() failed for families.\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh: \"%s\"\n"
+msgstr ""
+"MEDfileOpen() n'a pas pu réouvrir le fichier : %s\n"
+"Gestionnaire associé : \"%s\"\n"
+
+#, c-format
+msgid ""
+"MEDmeshEntityAttributeAdvancedWr() failed to write family numbers:\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh_name: \"%s\"\n"
+"Associated MED geometrical element: \"%i\"\n"
+msgstr ""
+
 #, c-format
 msgid ""
 "MEDmeshEntityFamilyNumberWr() failed to write family numbers:\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh_name: \"%s\"\n"
+"Associated MED geometrical element: \"%i\"\n"
+msgstr ""
+
+#, fuzzy, c-format
+msgid ""
+"MEDfilterBlockOfEntityCr() failed for connectivty.\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh: \"%s\"\n"
+msgstr ""
+"MEDfileOpen() n'a pas pu réouvrir le fichier : %s\n"
+"Gestionnaire associé : \"%s\"\n"
+
+#, c-format
+msgid ""
+"%s failed to write connectivity:\n"
 "Associated writer: \"%s\"\n"
 "Associated med_mesh_name: \"%s\"\n"
 "Associated MED geometrical element: \"%i\"\n"
@@ -9836,28 +9937,17 @@ msgid ""
 "Associated med_mesh_name: \"%s\"\n"
 msgstr ""
 
-msgid "Empty MED filename."
-msgstr "Nom de fichier MED vide."
-
-#, c-format
+#, fuzzy, c-format
 msgid ""
-"MEDfileOpen() failed to open file: %s\n"
+"MEDfilterBlockOfEntityCr() failed for field values.\n"
 "Associated writer: \"%s\"\n"
-msgstr ""
-"MEDfileOpen() n'a pas pu ouvrir le fichier : %s\n"
-"Gestionnaire associé : \"%s\"\n"
-
-#, c-format
-msgid "MEDfileClose() failed to close file \"%s\"\n"
-msgstr "MEDfileClose() n'a pas pu fermer le fichier \"%s\"\n"
-
-#, c-format
-msgid ""
-"MEDfileOpen() failed to re-open file: %s\n"
-"Associated writer: \"%s\"\n"
+"Associated med_mesh: \"%s\"\n"
 msgstr ""
 "MEDfileOpen() n'a pas pu réouvrir le fichier : %s\n"
 "Gestionnaire associé : \"%s\"\n"
+
+msgid "Empty MED filename."
+msgstr "Nom de fichier MED vide."
 
 msgid "Mesh name required to continue.\n"
 msgstr "Un nom de maillage est nécessaire pour continuer.\n"
@@ -14518,3 +14608,10 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
+
+#~ msgid ""
+#~ "MEDfileOpen() failed to open file: %s\n"
+#~ "Associated writer: \"%s\"\n"
+#~ msgstr ""
+#~ "MEDfileOpen() n'a pas pu ouvrir le fichier : %s\n"
+#~ "Gestionnaire associé : \"%s\"\n"
