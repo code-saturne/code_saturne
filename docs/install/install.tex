@@ -460,6 +460,9 @@ manually using \texttt{mpirun}, then pursue the build process.
 The Autotools installation of MED is simple on most machines,
 but a few remarks may be useful for specific cases.
 
+Note that as of MED 3.2.0, HDF5 1.8 is required, but HDF5 1.10 is
+not supported yet.
+
 MED has a C API, is written in a mix of C and C++ code,
 and provides both a C (\texttt{libmedC}) and an Fortran API
 (\texttt{libmed}). Both libraries are always built, so a Fortran
@@ -761,10 +764,10 @@ Select configuration options, then run {\tt configure}, for example:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ /home/user/Code\_Saturne/\verscs/src/code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/4.1/arch/prod
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/4.3/arch/prod
 \textbackslash \\
-\textcolor{Violet}{--with-med}=/home/user/opt/med-3.1 \textbackslash \\
-\textcolor{red}{CC}=/home/user/opt/mpich-3.0/bin/mpicc \textcolor{red}{FC}=gfortran
+\textcolor{Violet}{--with-med}=/home/user/opt/med-3.2 \textbackslash \\
+\textcolor{red}{CC}=/home/user/opt/mpich-3.2/bin/mpicc \textcolor{red}{FC}=gfortran
 }\end{minipage}}
 
 In the rest of this section, we will assume that we are in
@@ -793,11 +796,11 @@ For a side-by-side debug build for the example above, we simply replace \texttt{
 \$ mkdir dbg\\
 \$ cd dbg\\
 \$ ../../code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/4.1/arch/\textcolor{Magenta}{dbg}
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/4.3/arch/\textcolor{Magenta}{dbg}
 \textbackslash \\
-\textcolor{Violet}{--with-med}=/home/user/opt/med-3.1 \textbackslash \\
+\textcolor{Violet}{--with-med}=/home/user/opt/med-3.2 \textbackslash \\
 \textcolor{Magenta}{--enable-debug} \textbackslash \\
-\textcolor{red}{CC}=/home/user/opt/mpich-3.0/bin/mpicc \textcolor{red}{FC}=gfortran
+\textcolor{red}{CC}=/home/user/opt/mpich-3.2/bin/mpicc \textcolor{red}{FC}=gfortran
 }\end{minipage}}
 
 \subsection{Shared or static builds\label{sec:config:shared}}
@@ -1013,7 +1016,7 @@ libraries are installed:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/\verscs \\
-\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/4.1 \\
+\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/4.3 \\
 \$ \textcolor{OliveGreen}{CS\_OPT}=/home/projects/opt
 }\end{minipage}}
 
@@ -1032,9 +1035,9 @@ build on a cluster named \texttt{athos}, using the Intel compilers
 \textbackslash \\
 \textcolor{Violet}{--with-blas}=/opt/intel/l\_ics2013.1.039/composerxe\_xe\_2013\_sp1/mkl \textbackslash \\
 \textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/athos \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.10/arch/athos
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.17/arch/athos
 \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.1/arch/athos
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.2/arch/athos
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.2/arch/athos \textbackslash \\
 \textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.06.23/arch/athos \textbackslash \\
@@ -1160,9 +1163,9 @@ For an example, let us start with the front-end build:
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend
 \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.13/arch/frontend
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.17/arch/frontend
 \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.1/arch/frontend
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.2/arch/frontend
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.2/arch/frontend \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/frontend \\
@@ -1180,8 +1183,8 @@ compute nodes:
 \textcolor{Violet}{--with-blas}=/opt/ibmmath/essl/5.1 \textbackslash \\
 \textcolor{Violet}{--with-blas-type}=ESSL \textbackslash \\
 \textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/bgq \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.13/arch/bgq \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.1/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.17/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.2/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.2/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/bgq \textbackslash \\
 \textcolor{Violet}{
@@ -1222,8 +1225,8 @@ options such as in the following example are recommended:
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/xc30
 \textbackslash \\
 \textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/xc30 \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.13/arch/xc30 \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.1/arch/xc30 \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.17/arch/xc30 \textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.2/arch/xc30 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.2/arch/xc30 \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/xc30 \textbackslash \\
 \textcolor{Violet}{

@@ -602,9 +602,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.16",
-                    archive="hdf5-1.8.16.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.16/src/%s")
+                    version="1.8.17",
+                    archive="hdf5-1.8.17.tar.gz",
+                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.17/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -628,12 +628,12 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.1.0",
-                    archive="med-3.1.0.tar.gz",
+                    version="3.2.0",
+                    archive="med-3.2.0.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
-        p.config_opts = "--with-med_int=int --disable-fortran"
+        p.config_opts = "--with-med_int=long --disable-fortran --disable-python"
 
         # Libxml2 library (possible mirror at "ftp://fr.rpmfind.net/pub/libxml/%s")
 
