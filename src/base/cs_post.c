@@ -299,6 +299,8 @@ typedef struct {
   int                     edges_ref;     /* Base mesh for edges mesh */
 
   bool                    add_groups;    /* Add group information if present */
+  bool                    post_domain;   /* Output domain number in parallel
+                                            if true */
 
   int                     n_writers;     /* Number of associated writers */
   int                    *writer_id;     /* Array of associated writer ids */
@@ -338,10 +340,6 @@ static cs_real_t  *_cs_post_ini_vtx_coo = NULL;
 /* Minimum global mesh time dependency */
 
 fvm_writer_time_dep_t  _cs_post_mod_flag_min = FVM_WRITER_FIXED_MESH;
-
-/* Flag to indicate output of domain number in parallel mode */
-
-static bool        _cs_post_domain = true;
 
 /* Flag for stable numbering of particles */
 
@@ -1059,6 +1057,10 @@ _predefine_mesh(int        mesh_id,
   post_mesh->nt_last = -2;
 
   post_mesh->add_groups = false;
+  if (post_mesh->id == -1 || post_mesh->id == -2)
+    post_mesh->post_domain = true;
+  else
+    post_mesh->post_domain = false;
 
   for (j = 0; j < 5; j++) {
     post_mesh->criteria[j] = NULL;
@@ -1972,7 +1974,7 @@ _cs_post_write_domain(fvm_writer_t       *writer,
 
   const int32_t   *var_ptr[1] = {NULL};
 
-  if (cs_glob_n_ranks < 2 || _cs_post_domain == false)
+  if (cs_glob_n_ranks < 2)
     return;
 
   dim_ent = fvm_nodal_get_max_entity_dim(exp_mesh);
@@ -2087,7 +2089,7 @@ _cs_post_write_mesh(cs_post_mesh_t        *post_mesh,
 
     }
 
-    if (write_mesh == true && (post_mesh->id == -1 || post_mesh->id == -2)) {
+    if (write_mesh == true && post_mesh->post_domain) {
 
       _cs_post_write_domain(writer->writer,
                             post_mesh->exp_mesh,
@@ -3985,6 +3987,25 @@ cs_post_mesh_get_b_face_ids(int        mesh_id,
     bft_error(__FILE__, __LINE__, 0,
               _("%s called before post-processing meshes are built."),
               "cs_post_mesh_get_b_face_ids()");
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set whether postprocessing mesh's parallel domain should be output.
+ *
+ * \param[in]  mesh_id      postprocessing mesh id
+ * \param[in]  post_domain  true if parallel domain should be output,
+ *                          false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_mesh_set_post_domain(int   mesh_id,
+                             bool  post_domain)
+{
+  cs_post_mesh_t  *mesh = _cs_post_meshes + _cs_post_mesh_id(mesh_id);
+
+  mesh->post_domain = post_domain;
 }
 
 /*----------------------------------------------------------------------------*/

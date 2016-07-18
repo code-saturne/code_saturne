@@ -5,6 +5,9 @@ Trunk (unreleased)
 User changes
 ------------
 
+- Allow user activation or deactivation of parallel domain
+  visualization output (cs_post_mesh_set_post_domain function).
+
 - Automatic computation of head loss for a given volumic zone.
 
 - When using boundary condition zones defined by the GUI, error reporting

@@ -663,6 +663,19 @@ cs_post_mesh_get_b_face_ids(int        mesh_id,
                             cs_lnum_t  b_face_ids[]);
 
 /*----------------------------------------------------------------------------
+ * Set whether postprocessing mesh's parallel domain should be output.
+ *
+ * parameters:
+ *   mesh_id     <-- id of mesh to remove
+ *   post_domain <- true if parallel domain should be output,
+ *                  false otherwise.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_mesh_set_post_domain(int   mesh_id,
+                             bool  post_domain);
+
+/*----------------------------------------------------------------------------
  * Remove a post-processing mesh.
  *
  * No further post-processing output will be allowed on this mesh,
