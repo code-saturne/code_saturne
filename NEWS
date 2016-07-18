@@ -54,6 +54,9 @@ Physical modelling
 Numerics
 --------
 
+- Add optional multigrid solver for scalars with convection and diffusion,
+  based on the PhD work of Sana Khelifi.
+
 - Lagragian module: new trajectory algorithm which does not loose particles even
   for warpped faces (cs_lagr_tracking).
 

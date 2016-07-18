@@ -618,6 +618,18 @@ class NumericalParamEquationModel(Model):
 
 
     @Variables.noUndo
+    def getSolverAllowMultigrid(self, name):
+        """ Return value of variable dimension for variable labelled name """
+        node = self._getSolverNameNode(name)
+        dim = node['dimension']
+        if not dim:
+            dim = 1
+        if int(dim) <= 1:
+            return True
+        return False
+
+
+    @Variables.noUndo
     def getSolverChoice(self, name):
         """ Return choice of solver for variable labelled name """
         node = self._getSolverNameNode(name)

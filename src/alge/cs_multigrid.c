@@ -66,6 +66,7 @@
 #include "cs_sles_pc.h"
 #include "cs_timer.h"
 #include "cs_time_plot.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -947,7 +948,6 @@ _cs_multigrid_post_function(void                  *mgh,
   char *var_name = NULL;
   cs_multigrid_t *mg = mgh;
   const char *base_name = NULL;
-  const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
 
   /* Return if necessary structures inconsistent or have been destroyed */
 
@@ -967,8 +967,8 @@ _cs_multigrid_post_function(void                  *mgh,
 
   for (ii = 0; ii < mg->n_levels_post; ii++) {
 
-    sprintf(var_name, "mg %s %2d %3d",
-            base_name, (ii+1), nt_cur);
+    sprintf(var_name, "mg %s %2d",
+            base_name, (ii+1));
 
     cs_post_write_var(-1,
                       var_name,
@@ -979,14 +979,14 @@ _cs_multigrid_post_function(void                  *mgh,
                       mg->post_cell_num[ii],
                       NULL,
                       NULL,
-                      NULL);
+                      cs_glob_time_step);
 
     BFT_FREE(mg->post_cell_num[ii]);
 
     if (mg->post_cell_rank != NULL) {
 
-      sprintf(var_name, "rk %s %2d %3d",
-              base_name, (ii+1), nt_cur);
+      sprintf(var_name, "rk %s %2d",
+              base_name, (ii+1));
 
       cs_post_write_var(-1,
                         var_name,
@@ -997,7 +997,7 @@ _cs_multigrid_post_function(void                  *mgh,
                         mg->post_cell_rank[ii],
                         NULL,
                         NULL,
-                        NULL);
+                        cs_glob_time_step);
 
       BFT_FREE(mg->post_cell_rank[ii]);
 
@@ -2487,6 +2487,37 @@ cs_multigrid_setup(void               *context,
                    const cs_matrix_t  *a,
                    int                 verbosity)
 {
+  cs_multigrid_setup_conv_diff(context,
+                               name,
+                               a,
+                               NULL,
+                               NULL,
+                               verbosity);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup multigrid sparse linear equation solver.
+ *
+ * \param[in, out]  context    pointer to multigrid solver info and context
+ *                             (actual type: cs_multigrid_t  *)
+ * \param[in]       name       pointer to name of linear system
+ * \param[in]       a          associated matrix
+ * \param[in]       a_conv     associated matrix (convection)
+ * \param[in]       a_diff     associated matrix (diffusion)
+ * \param[in]       verbosity  associated verbosity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_setup_conv_diff(void               *context,
+                             const char         *name,
+                             const cs_matrix_t  *a,
+                             const cs_matrix_t  *a_conv,
+                             const cs_matrix_t  *a_diff,
+                             int                 verbosity)
+
+{
   cs_multigrid_t  *mg = context;
 
   cs_timer_t t0, t1, t2;
@@ -2540,7 +2571,9 @@ cs_multigrid_setup(void               *context,
                                  mq->cell_cen,
                                  mq->cell_vol,
                                  mq->i_face_normal,
-                                 a);
+                                 a,
+                                 a_conv,
+                                 a_diff);
 
   _multigrid_add_level(mg, g); /* Assign to hierarchy */
 

@@ -90,6 +90,8 @@ extern const char *cs_grid_coarsening_type_name[];
  *   cell_vol              <-- Cell volume (size: n_cells_ext)
  *   face_normal           <-- Internal face normals (size: 3.n_faces)
  *   a                     <-- Associated matrix
+ *   a_conv                <-- Associated matrix (convection)
+ *   a_diff                <-- Associated matrix (diffusion)
  *
  * returns:
  *   base grid structure
@@ -107,7 +109,9 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                            const cs_real_t       *cell_cen,
                            const cs_real_t       *cell_vol,
                            const cs_real_t       *face_normal,
-                           const cs_matrix_t     *a);
+                           const cs_matrix_t     *a,
+                           const cs_matrix_t     *a_conv,
+                           const cs_matrix_t     *a_diff);
 
 /*----------------------------------------------------------------------------
  * Destroy a grid structure.

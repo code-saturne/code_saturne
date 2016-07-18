@@ -252,6 +252,28 @@ cs_multigrid_setup(void               *context,
                    int                 verbosity);
 
 /*----------------------------------------------------------------------------
+ * Setup multigrid sparse linear equation solver with seperate
+ * convection-diffusion matrixes
+ *
+ * parameters:
+ *   context   <-> pointer to multigrid info and context
+ *                 (actual type: cs_multigrid_t  *)
+ *   name      <-- pointer to name of linear system
+ *   a         <-- associated matrix
+ *   a_conv    <-- associated matrix (convection)
+ *   a_diff    <-- associated matrix (diffusion)
+ *   verbosity <-- associated verbosity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_setup_conv_diff(void               *context,
+                             const char         *name,
+                             const cs_matrix_t  *a,
+                             const cs_matrix_t  *a_conv,
+                             const cs_matrix_t  *a_diff,
+                             int                 verbosity);
+
+/*----------------------------------------------------------------------------
  * Call multigrid sparse linear equation solver.
  *
  * parameters:
