@@ -267,6 +267,8 @@ typedef struct _cs_sles_it_convergence_t {
  *  Global variables
  *============================================================================*/
 
+static bool _thread_debug = false;
+
 /* Mean system rows threshold under which we use single-reduce version of PCG */
 
 static cs_lnum_t _pcg_sr_threshold = 512;
@@ -3254,7 +3256,7 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
     if (diag_block_size == 1) {
 
 #     pragma omp parallel for private(r) reduction(+:res2)      \
-                          if(n_rows > CS_THR_MIN)
+                          if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ll = 0; ll < n_rows; ll++) {
 
         cs_lnum_t ii = order[ll];
@@ -3264,15 +3266,17 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
         const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
 
         cs_real_t vxm1 = vx[ii];
-
-        vx[ii] = rhs[ii];
+        cs_real_t vx0 = rhs[ii];
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-          vx[ii] -= (m_row[jj]*vx[col_id[jj]]);
+          vx0 -= (m_row[jj]*vx[col_id[jj]]);
 
-        vx[ii] *= ad_inv[ii];
+        vx0 *= ad_inv[ii];
 
-        r = ad[ii] * (vx[ii]-vxm1);
+        r = ad[ii] * (vx0-vxm1);
+
+        vx[ii] = vx0;
+
         res2 += (r*r);
       }
 
@@ -3280,7 +3284,7 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
     else {
 
 #     pragma omp parallel for private(r) reduction(+:res2) \
-                          if(n_rows > CS_THR_MIN)
+                          if(n_rows > CS_THR_MIN  && !_thread_debug)
       for (cs_lnum_t ll = 0; ll < n_rows; ll++) {
 
         cs_lnum_t ii = order[ll];
@@ -3289,31 +3293,27 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
         const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
         const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
 
-        cs_real_t vxm1;
-
         for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
 
-          vxm1 = vx[ii*db_size[1] + kk];
-
-          vx[ii*db_size[1] + kk] = rhs[ii*db_size[1] + kk];
+          cs_real_t vxm1 = vx[ii*db_size[1] + kk];
+          cs_real_t vx0 = rhs[ii*db_size[1] + kk];
 
           for (cs_lnum_t jj = 0; jj < kk; jj++)
-            vx[ii*db_size[1] + kk]
-              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
-                 * vx[ii*db_size[1] + jj];
+            vx0 -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                   * vx[ii*db_size[1] + jj];
           for (cs_lnum_t jj = kk+1; jj < db_size[0]; jj++)
-            vx[ii*db_size[1] + kk]
-              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
-                 * vx[ii*db_size[1] + jj];
+            vx0 -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                   * vx[ii*db_size[1] + jj];
 
           for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-            vx[ii*db_size[1] + kk]
-              -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+            vx0 -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
 
-          vx[ii*db_size[1] + kk] *= ad_inv[ii*db_size[1] + kk];
+          vx0 *= ad_inv[ii*db_size[1] + kk];
 
-          r = ad[ii*db_size[1] + kk] * (vx[ii*db_size[1] + kk]-vxm1);
+          r = ad[ii*db_size[1] + kk] * (vx0-vxm1);
           res2 += (r*r);
+
+          vx[ii*db_size[1] + kk] = vx0;
 
         }
 
@@ -3438,7 +3438,7 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
     if (diag_block_size == 1) {
 
 #     pragma omp parallel for private(r) reduction(+:res2)      \
-                          if(n_rows > CS_THR_MIN)
+                          if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
         const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
@@ -3446,54 +3446,51 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
         const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
 
         cs_real_t vxm1 = vx[ii];
-
-        vx[ii] = rhs[ii];
+        cs_real_t vx0 = rhs[ii];
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-          vx[ii] -= (m_row[jj]*vx[col_id[jj]]);
+          vx0 -= (m_row[jj]*vx[col_id[jj]]);
 
-        vx[ii] *= ad_inv[ii];
+        vx0 *= ad_inv[ii];
 
-        r = ad[ii] * (vx[ii]-vxm1);
+        r = ad[ii] * (vx0-vxm1);
         res2 += (r*r);
+
+        vx[ii] = vx0;
       }
 
     }
     else {
 
 #     pragma omp parallel for private(r) reduction(+:res2) \
-                          if(n_rows > CS_THR_MIN)
+                          if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
         const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
         const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
         const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
 
-        cs_real_t vxm1;
-
         for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
 
-          vxm1 = vx[ii*db_size[1] + kk];
-
-          vx[ii*db_size[1] + kk] = rhs[ii*db_size[1] + kk];
+          cs_real_t vxm1 = vx[ii*db_size[1] + kk];
+          cs_real_t vx0 = rhs[ii*db_size[1] + kk];
 
           for (cs_lnum_t jj = 0; jj < kk; jj++)
-            vx[ii*db_size[1] + kk]
-              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
-                 * vx[ii*db_size[1] + jj];
+            vx0 -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                   * vx[ii*db_size[1] + jj];
           for (cs_lnum_t jj = kk+1; jj < db_size[0]; jj++)
-            vx[ii*db_size[1] + kk]
-              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
-                 * vx[ii*db_size[1] + jj];
+            vx0 -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                   * vx[ii*db_size[1] + jj];
 
           for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-            vx[ii*db_size[1] + kk]
-              -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+            vx0 -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
 
-          vx[ii*db_size[1] + kk] *= ad_inv[ii*db_size[1] + kk];
+          vx0 *= ad_inv[ii*db_size[1] + kk];
 
-          r = ad[ii*db_size[1] + kk] * (vx[ii*db_size[1] + kk]-vxm1);
+          r = ad[ii*db_size[1] + kk] * (vx0-vxm1);
           res2 += (r*r);
+
+          vx[ii*db_size[1] + kk] = vx0;
 
         }
 
@@ -3616,25 +3613,26 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
     if (diag_block_size == 1) {
 
-#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+#     pragma omp parallel for if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
         const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
         const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
         const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
 
-        vx[ii] = rhs[ii];
+        cs_real_t vx0 = rhs[ii];
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-          vx[ii] -= (m_row[jj]*vx[col_id[jj]]);
+          vx0 -= (m_row[jj]*vx[col_id[jj]]);
 
-        vx[ii] *= ad_inv[ii];
+        vx[ii] = vx0 * ad_inv[ii];
+
       }
 
     }
     else {
 
-#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+#     pragma omp parallel for if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
         const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
@@ -3643,22 +3641,19 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
         for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
 
-          vx[ii*db_size[1] + kk] = rhs[ii*db_size[1] + kk];
+          cs_real_t vx0 = rhs[ii*db_size[1] + kk];
 
           for (cs_lnum_t jj = 0; jj < kk; jj++)
-            vx[ii*db_size[1] + kk]
-              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
-                 * vx[ii*db_size[1] + jj];
+            vx0 -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                   * vx[ii*db_size[1] + jj];
           for (cs_lnum_t jj = kk+1; jj < db_size[0]; jj++)
-            vx[ii*db_size[1] + kk]
-              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
-                 * vx[ii*db_size[1] + jj];
+            vx0 -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                   * vx[ii*db_size[1] + jj];
 
           for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-            vx[ii*db_size[1] + kk]
-              -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+            vx0 -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
 
-          vx[ii*db_size[1] + kk] *= ad_inv[ii*db_size[1] + kk];
+          vx[ii*db_size[1] + kk] = vx0 * ad_inv[ii*db_size[1] + kk];
 
         }
 
@@ -3702,7 +3697,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
     if (diag_block_size == 1) {
 
 #     pragma omp parallel for private(r) reduction(+:res2)      \
-                          if(n_rows > CS_THR_MIN)
+                          if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ii = n_rows - 1; ii > - 1; ii--) {
 
         const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
@@ -3710,55 +3705,52 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
         const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
 
         cs_real_t vxm1 = vx[ii];
-
-        vx[ii] = rhs[ii];
+        cs_real_t vx0 = rhs[ii];
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-          vx[ii] -= (m_row[jj]*vx[col_id[jj]]);
+          vx0 -= (m_row[jj]*vx[col_id[jj]]);
 
-        vx[ii] *= ad_inv[ii];
+        vx0 *= ad_inv[ii];
 
-        r = ad[ii] * (vx[ii]-vxm1);
+        r = ad[ii] * (vx0-vxm1);
         res2 += (r*r);
+
+        vx[ii] = vx0;
       }
 
     }
     else {
 
 #     pragma omp parallel for private(r) reduction(+:res2) \
-                          if(n_rows > CS_THR_MIN)
+                          if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ii = n_rows - 1; ii > - 1; ii--) {
 
         const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
         const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
         const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
 
-        cs_real_t vxm1;
-
         for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
 
-          vxm1 = vx[ii*db_size[1] + kk];
+          cs_real_t vxm1 = vx[ii*db_size[1] + kk];
 
-          vx[ii*db_size[1] + kk] = rhs[ii*db_size[1] + kk];
+          cs_real_t vx0 = rhs[ii*db_size[1] + kk];
 
           for (cs_lnum_t jj = 0; jj < kk; jj++)
-            vx[ii*db_size[1] + kk]
-              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
-                 * vx[ii*db_size[1] + jj];
+            vx0 -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                   * vx[ii*db_size[1] + jj];
           for (cs_lnum_t jj = kk+1; jj < db_size[0]; jj++)
-            vx[ii*db_size[1] + kk]
-              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
-                 * vx[ii*db_size[1] + jj];
+            vx0 -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                   * vx[ii*db_size[1] + jj];
 
           for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-            vx[ii*db_size[1] + kk]
-              -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+            vx0 -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
 
-          vx[ii*db_size[1] + kk] *= ad_inv[ii*db_size[1] + kk];
+          vx0 *= ad_inv[ii*db_size[1] + kk];
 
-          r = ad[ii*db_size[1] + kk] * (vx[ii*db_size[1] + kk]-vxm1);
+          r = ad[ii*db_size[1] + kk] * (vx0-vxm1);
           res2 += (r*r);
 
+          vx[ii*db_size[1] + kk] = vx0;
         }
 
       }
