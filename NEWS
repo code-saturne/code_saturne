@@ -122,7 +122,7 @@ Architectural changes
   * writers can now use the 'separate_meshes' option to create a
     separate format-specific writer per mesh.
 
-- SALOME version required for MEDCoupling is now version 7.8.
+- SALOME version required for MEDCoupling is now version 8.0
   in this version, MEDCoupling is a full standalone library and may
   be used separately from the MED module.
 
