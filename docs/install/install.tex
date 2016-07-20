@@ -159,17 +159,15 @@ The SALOME platform is currently only compatible with Python 2,
 so Python 3 should only be used when not building with SALOME support.
 
 In practice, the code is known to build and function properly at least with the
-GNU compilers 4.4 and above (up to 5.1 at this date), Intel compilers 11 and
-above (up to 15 at this date), IBM XL Fortran 14 and C 12 compilers.
+GNU compilers 4.4 and above (up to 6.1 at this date), Intel compilers 11 and
+above (up to 16 at this date), IBM XL Fortran 14 and C 12 compilers, and Clang
+(tested with 3.7 or above).
 
 Note also that while \CS makes heavy use of Python, this is for scripts and
 for the GUI only; The solver only uses compiled code, so we may for example use
 a 32-bit version of Python with 64-bit \CS libraries and executables.
-On supercomputers with separate front-end and compute node architectures,
-Python is not required on the compute nodes (except as a dependency for
-the optional Paraview/Catalyst support). Also, the version of Python
-used by ParaView/Catalyst may be independent from the one used for
-building \CS.
+Also, the version of Python used by ParaView/Catalyst may be independent
+from the one used for building \CS.
 
 \section{Third-Party libraries\label{sec:ext_lib}}
 
@@ -1410,5 +1408,106 @@ Another less elegant but safe solution is to configure the build for
 installation to a test directory, and once it is tested,
 re-configure the build for installation to the final production
 directory, and rebuild and install.
+
+\subsubsection{Dynamic linking and path issues on some systems}
+
+On Linux systems and Unix-like, there are several ways for a library or executable
+to find dynamic libraries, listed here in decreasing priority:
+
+\begin{itemize}
+\item the \texttt{LD\_PRELOAD} environment variable explicitly lists
+      libraries to be loaded with maximum priority, before the libraries
+      otherwise specified (useful mainly for instrumentation
+      and debugging, and should be avoided otherwise);
+\item the \texttt{RPATH} binary header of the dependent library or executable;
+      (if both are present, the library has priority);
+\item the \texttt{LD\_LIBRARY\_PATH} environment variable;
+\item the \texttt{RUNPATH} binary header of executable;
+\item \texttt{/etc/ld.so.cache};
+\item base library directories (\texttt{/lib} and /\texttt{/usr/lib});
+\end{itemize}
+
+Note that changing the last two items usually require administrative privileges,
+and we have encountered cases where installing to /\texttt{/usr/lib} was not
+sufficient without updating \texttt{/etc/ld.so.cache}. We do not consider
+\texttt{LD\_PRELOAD} here, as it has other specific uses.
+
+So basically, when using libraries in non-default paths, the remaining
+options are between \texttt{RPATH} or \texttt{RUNPATH} binary headers, or the
+\texttt{LD\_LIBRARY\_PATH} environment variable.
+
+The major advantage of using binary headers is that the executable
+can be run without needing to source a specific environment, which
+is very useful, especially when running under MPI (where the propagation
+of environment variables may depend on the MPI library and batch system's
+configuration), or running under debuggers (where library paths would have
+to be sourced first).
+
+In addition, the \texttt{RPATH} binary header has priority over
+\texttt{LD\_LIBRARY\_PATH}, allowing the installation to be ``protected''
+from settings in the user environment required by other tools.
+this is why the \CS installation chooses this mode by default,
+unless the \texttt{--enable-relocatable} option is passed to
+{\tt configure}.
+
+Unfortunately, the ELF library spec indicates that the use of the
+\texttt{DT\_RPATH} entry (for \texttt{RPATH}) has been superseded by the
+\texttt{DT\_RUNPATH} (for \texttt{RUNPATH}). Most systems still use
+\texttt{RPATH}, but some (such as SUSE and Gentoo) have defaulted to
+\texttt{RUNPATH}, which provides no way of ``protecting'' an executable
+or library from external settings.
+
+Also, the \texttt{--enable-new-dtags} linker option allows replacing
+\texttt{RPATH} with \texttt{RUNPATH}, so adding \texttt{-Wl,--enable-new-dtags}
+to the {\tt configure} options will do this.
+
+The addition of \texttt{RUNPATH} to the ELF specifications may have
+corrected the oversight of not being able to supersede an executable's
+settings when needed (though \texttt{LD\_PRELOAD} is usually sufficient
+for debugging, but the bright minds who decided that it should
+replace \texttt{RPATH} and not simply supplement it did not provide
+a solution for the following scenario:
+
+\begin{enumerate}
+\item \CS in installed, along with the MED and HDF libraries,
+       on a system where \texttt{--enable-new-dtags} is enabled by default.
+\item Another code is installed, with its own (older) versions of MED and HDF
+      libraries; this second code requires sourcing environment variables
+      including \texttt{LD\_LIBRARY\_PATH} to work at all, so the user
+      adds those libraries to his environment (or the admins add it to
+      environment modules).
+\item \CS now uses the older libraries, and is not capable of reading
+      files generated with more recent versions
+\end{enumerate}
+
+The aforementioned scenario occurs with \CS and Syrthes, on some
+machines, and could occur with \CS and some SALOME libraries, and there is
+no way around it short of changing the installation logic of these other tools,
+or using a cumbersome wrapper to launch \CS, which could still fail when
+\CS needs to load a Syrthes or SALOME environment for coupled cases.
+A wrapper would lead to its own problems, as for example Qt is needed
+by the GUI but not the executable, so to avoid \emph{causing} issues with
+a debugger using its own version of Qt, separate sections would need
+to be defined. None of those issues exist with \texttt{RPATH}.
+
+Some administrators consider text-based wrappers a cleaner solution
+then hard-coded paths, as they can be updated, but that argument is
+in bad faith, as it transfers the problems to the code developers,
+while utilities on various systems allow editing those headers.
+In addition, in our experience, those administrators with the
+strongest stance against use of \texttt{RPATH} are the ones who
+most often exceed their own abilities by modifying installations
+in ways defying all attempts at quality control (rather than re-installing,
+which provides a clean trace), so none has succeeded so far in
+presenting us a consistently better solution, though we certainly
+would be interested.
+
+So hopefully, you will not be affected by such issues on your
+system, but if you are, you may need to define an
+\texttt{LD\_LIBRARY\_PATH} environment variable, ugly a solution
+as it may be. {\emph{If this causes further issues, please
+do not complain to the \CS support team, but please ask those
+(administrators or Linux distribution packagers) who decided upon this
+policy to solve those issues they created}.
 
 \end{document}

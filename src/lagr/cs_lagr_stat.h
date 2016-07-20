@@ -90,10 +90,8 @@ typedef enum {
  * Lagrangian statistics.
  *
  * Note: if the input pointer is non-NULL, it must point to valid data
- * when the selection function is called, so either:
- * - that value or structure should not be temporary (i.e. local);
- * - post-processing output must be ensured using cs_post_write_meshes()
- *   with a fixed-mesh writer before the data pointed to goes out of scope;
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
  *
  * parameters:
  *   input    <-- pointer to optional (untyped) value or structure.
@@ -115,10 +113,8 @@ typedef void
  * If the matching values are multidimensional, they must be interleaved.
  *
  * Note: if the input pointer is non-NULL, it must point to valid data
- * when the selection function is called, so either:
- * - that value or structure should not be temporary (i.e. local);
- * - post-processing output must be ensured using cs_post_write_meshes()
- *   with a fixed-mesh writer before the data pointed to goes out of scope;
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
  *
  * parameters:
  *   input       <-- pointer to optional (untyped) value or structure.
