@@ -464,6 +464,7 @@ _alltoall_caller_swap_src_dest(_mpi_all_to_all_caller_t  *dc)
  *   n_elts           <-- number of elements
  *   stride           <-- number of values per entity (interlaced)
  *   datatype         <-- type of data considered
+ *   reverse          <-- true if reverse mode
  *   elt              <-- element values
  *   dest_id          <-- element destination id, or NULL
  *   recv_id          <-- element receive id (for reverse mode), or NULL
@@ -619,6 +620,9 @@ _alltoall_caller_exchange_meta(_mpi_all_to_all_caller_t  *dc,
  * parameters:
  *   d         <-> pointer to associated all-to-all distributor
  *   dc        <-> associated MPI_Alltoall(v) caller structure
+ *   reverse   <-- true if reverse mode
+ *   dest_rank <-- destination rank (in direct mode), used here to reorder
+ *                 data in reverse mode.
  *   dest_data <-> destination data buffer, or NULL
  *
  * returns:
@@ -628,6 +632,8 @@ _alltoall_caller_exchange_meta(_mpi_all_to_all_caller_t  *dc,
 static  void *
 _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
                             _mpi_all_to_all_caller_t  *dc,
+                            bool                       reverse,
+                            const int                  dest_rank[],
                             void                      *dest_data)
 {
   size_t elt_size = cs_datatype_size[dc->datatype]*dc->stride;
@@ -639,7 +645,8 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
     BFT_MALLOC(_dest_data, dc->recv_size*elt_size, unsigned char);
 
   /* Data buffer for MPI exchange (may merge data and metadata) */
-  if (dc->dest_id_datatype == CS_LNUM_TYPE || d->dest_id != NULL)
+  if (   dc->dest_id_datatype == CS_LNUM_TYPE || d->dest_id != NULL
+      || reverse)
     BFT_MALLOC(_recv_data, dc->recv_size*dc->comp_size, unsigned char);
   else
     _recv_data = _dest_data;
@@ -668,16 +675,29 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
     dc->dest_id_datatype = CS_DATATYPE_NULL;
   }
 
-  /* Now handle main data buffer */
+  /* Now handle main data buffer (reverse implies reordering data) */
 
   if (_dest_data != _recv_data) {
     const unsigned char *sp = _recv_data + d->dc->elt_shift;
-    if (d->recv_id != NULL) {
+    if (d->recv_id != NULL && !reverse) {
       for (size_t i = 0; i < d->dc->recv_size; i++) {
         size_t w_displ = d->recv_id[i]*elt_size;
         size_t r_displ = d->dc->comp_size*i;
         for (size_t j = 0; j < elt_size; j++)
           _dest_data[w_displ + j] = sp[r_displ + j];
+      }
+    }
+    else if (reverse) {
+      for (int i = 0; i < dc->n_ranks; i++)
+        dc->send_count[i] = 0;
+      for (size_t i = 0; i < d->dc->recv_size; i++) {
+        int rank_id = dest_rank[i];
+        size_t w_displ = i*elt_size;
+        size_t r_displ = (  dc->recv_displ[rank_id]
+                          + dc->send_count[rank_id])*dc->comp_size;
+        for (size_t j = 0; j < elt_size; j++)
+          _dest_data[w_displ + j] = sp[r_displ + j];
+        dc->send_count[rank_id] += 1;
       }
     }
     else {
@@ -914,7 +934,7 @@ cs_all_to_all_destroy(cs_all_to_all_t **d)
 
 void
 cs_all_to_all_transfer_dest_rank(cs_all_to_all_t   *d,
-                                 cs_lnum_t        **dest_rank)
+                                 int              **dest_rank)
 {
   cs_assert(d != NULL);
 
@@ -1121,7 +1141,11 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
                                  d->dest_id,
                                  d->recv_id,
                                  d->dest_rank);
-      _dest_data = _alltoall_caller_exchange_s(d, d->dc, dest_data);
+      _dest_data = _alltoall_caller_exchange_s(d,
+                                               d->dc,
+                                               reverse,
+                                               d->dest_rank,
+                                               dest_data);
       if (reverse) {
         _alltoall_caller_swap_src_dest(d->dc);
         if (d->dc->send_buffer == src_data)

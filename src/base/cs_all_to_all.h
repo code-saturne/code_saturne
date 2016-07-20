@@ -182,7 +182,7 @@ cs_all_to_all_destroy(cs_all_to_all_t **d);
 
 void
 cs_all_to_all_transfer_dest_rank(cs_all_to_all_t   *d,
-                                 cs_lnum_t        **dest_rank);
+                                 int              **dest_rank);
 
 /*----------------------------------------------------------------------------*/
 /*!
