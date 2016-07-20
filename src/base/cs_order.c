@@ -676,6 +676,96 @@ _order_lnum_s(const cs_lnum_t   number[],
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Descend binary tree for the ordering of a cs_real_t array.
+ *
+ * parameters:
+ *   value    <-- pointer to values of entities that should be ordered.
+ *   level    <-- level of the binary tree to descend
+ *   nb_ent   <-- number of entities in the binary tree to descend
+ *   order    <-> ordering array
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_order_real_descend_tree(const cs_real_t   value[],
+                         size_t            level,
+                         const size_t      nb_ent,
+                         cs_lnum_t         order[])
+{
+  size_t i_save, i1, i2, lv_cur;
+
+  i_save = (size_t)(order[level]);
+
+  while (level <= (nb_ent/2)) {
+
+    lv_cur = (2*level) + 1;
+
+    if (lv_cur < nb_ent - 1) {
+
+      i1 = (size_t)(order[lv_cur+1]);
+      i2 = (size_t)(order[lv_cur]);
+
+      if (value[i1] > value[i2]) lv_cur++;
+    }
+
+    if (lv_cur >= nb_ent) break;
+
+    i1 = i_save;
+    i2 = (size_t)(order[lv_cur]);
+
+    if (value[i1] >= value[i2]) break;
+
+    order[level] = order[lv_cur];
+    level = lv_cur;
+
+  }
+
+  order[level] = i_save;
+}
+
+/*----------------------------------------------------------------------------
+ * Order an array of local values.
+ *
+ * parameters:
+ *   value   <-- array of entity values
+ *   order   <-- pre-allocated ordering table
+ *   nb_ent  <-- number of entities considered
+ *----------------------------------------------------------------------------*/
+
+static void
+_order_real(const cs_real_t   value[],
+            cs_lnum_t         order[],
+            const size_t      nb_ent)
+{
+  size_t i;
+  cs_lnum_t o_save;
+
+  /* Initialize ordering array */
+
+  for (i = 0 ; i < nb_ent ; i++)
+    order[i] = i;
+
+  if (nb_ent < 2)
+    return;
+
+  /* Create binary tree */
+
+  i = (nb_ent / 2) ;
+  do {
+    i--;
+    _order_real_descend_tree(value, i, nb_ent, order);
+  } while (i > 0);
+
+  /* Sort binary tree */
+
+  for (i = nb_ent - 1 ; i > 0 ; i--) {
+    o_save   = order[0];
+    order[0] = order[i];
+    order[i] = o_save;
+    _order_real_descend_tree(value, 0, i, order);
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -1196,6 +1286,47 @@ cs_order_lnum_allocated_s(const cs_lnum_t  list[],
                               NULL,
                               order,
                               nb_ent);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute an ordering table associated with an array of local values.
+ *
+ * \param[in]   list    optional list (1 to n numbering) of selected entities
+ *                      (or NULL if all nb_ent are selected). This list may
+ *                      contain element numbers in any order
+ * \param[in]   value   array of all entity values (value of entity i given
+ *                      by value[i] or value[list[i] - 1]) if list exists
+ * \param[out]  order   pointer to pre-allocated ordering table
+ * \param[in]   nb_ent  number of entities considered
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_order_real_allocated(const cs_lnum_t  list[],
+                        const cs_real_t  val[],
+                        cs_lnum_t        order[],
+                        size_t           nb_ent)
+{
+  size_t i;
+  cs_real_t *val_list;
+
+  /* Explicit numbering */
+
+  if (list != NULL) {
+    BFT_MALLOC(val_list, nb_ent, cs_lnum_t);
+    for (i = 0 ; i < nb_ent ; i++)
+      val_list[i] = val[list[i] - 1];
+    _order_real(val_list,
+                order,
+                nb_ent);
+    BFT_FREE(val_list);
+  }
+  else
+    _order_real(val,
+                order,
+                nb_ent);
 
 }
 

@@ -44,7 +44,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Hilbert code
-   (could be switched from double to long double for extened range) */
+   (could be switched from double to long double for extended range) */
 
 typedef double  fvm_hilbert_code_t;
 
@@ -138,55 +138,40 @@ fvm_hilbert_local_order_coords(int                dim,
                                const cs_coord_t   coords[],
                                cs_lnum_t          order[]);
 
-/*----------------------------------------------------------------------------
- * Get the quantile associated to a Hilbert code using a binary search.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for conversion of a double precision value in
+ * range [0, 1] to a given Hilbert code.
  *
- * No check is done to ensure that the code is present in the quantiles.
- *
- * parameters:
- *   n_quantiles    <-- number of quantiles
- *   code           <-- code we are searching for
- *   quantile_start <-- first Hilbert code in each quantile (size: n_quantiles)
- *
- * returns:
- *   id associated to the given code in the codes array.
- *----------------------------------------------------------------------------*/
+ * \param[in]   s      coordinate between 0 and 1
+ * \param[out]  elt    pointer to element
+ * \param[in]   input  pointer to optional (untyped) value or structure.
+ */
+/*----------------------------------------------------------------------------*/
 
-size_t
-fvm_hilbert_quantile_search(size_t              n_quantiles,
-                            fvm_hilbert_code_t  code,
-                            fvm_hilbert_code_t  quantile_start[]);
+void
+fvm_hilbert_s_to_code(double       s,
+                      void        *elt,
+                      const void  *input);
 
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Build a global Hilbert encoding rank index.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for comparison of 2 Hilbert codes.
  *
- * The rank_index[i] contains the first Hilbert code assigned to rank [i].
+ * This function is the same type as that used by qsort_r.
  *
- * parameters:
- *   dim          <-- 1D, 2D or 3D
- *   n_codes      <-- number of Hilbert codes to be indexed
- *   hilbert_code <-- array of Hilbert codes to be indexed
- *   weight       <-- weighting related to each code
- *   order        <-- ordering array
- *   rank_index   <-> pointer to the global Hilbert encoding rank index
- *   comm         <-- MPI communicator on which we build the global index
+ * \param[in]  elt1   coordinate between 0 and 1
+ * \param[in]  elt2   pointer to optional (untyped) value or structure.
+ * \param[in]  input  pointer to optional (untyped) value or structure.
  *
- * returns:
- *  the fit related to the Hilbert encoding distribution (lower is better).
- *----------------------------------------------------------------------------*/
+ * \return < 0 if elt1 < elt2, 0 if elt1 == elt2, > 0 if elt1 > elt2
+ */
+/*----------------------------------------------------------------------------*/
 
-double
-fvm_hilbert_build_rank_index(int                       dim,
-                             cs_lnum_t                 n_codes,
-                             const fvm_hilbert_code_t  hilbert_code[],
-                             const cs_lnum_t           weight[],
-                             const cs_lnum_t           order[],
-                             fvm_hilbert_code_t        rank_index[],
-                             MPI_Comm                  comm);
-
-#endif /* HAVE_MPI */
+int
+fvm_hilbert_compare(const void  *elt1,
+                    const void  *elt2,
+                    const void  *input);
 
 /*----------------------------------------------------------------------------*/
 

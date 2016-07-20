@@ -353,433 +353,6 @@ _descend_hilbert_heap(cs_gnum_t                  parent,
   } /* End while */
 }
 
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Evaluate a distribution array.
- *
- * parameters:
- *   n_ranges     <-- Number of ranges in the distribution
- *   distribution <-- Number of elements associated to each range of
- *                    the distribution
- *   optim        <-- Optimal count in each range
- *
- * returns:
- *   a fit associated to the distribution. If fit = 0,
- *   distribution is perfect.
- *----------------------------------------------------------------------------*/
-
-static double
-_evaluate_distribution(int          n_ranges,
-                       cs_gnum_t   *distribution,
-                       double       optim)
-{
-  int  i;
-  double  d_low = 0, d_up = 0, fit = 0;
-
-  /*
-     d_low is the max gap between the distribution count and the optimum when
-     distribution is lower than optimum.
-     d_up is the max gap between the distribution count and the optimum when
-     distribution is greater than optimum.
-  */
-
-  for (i = 0; i < n_ranges; i++) {
-
-    if (distribution[i] > optim)
-      d_up = CS_MAX(d_up, distribution[i] - optim);
-    else
-      d_low = CS_MAX(d_low, optim - distribution[i]);
-
-  }
-
-  fit = (d_up + d_low) / optim;
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (cs_glob_rank_id <= 0)
-    bft_printf("<DISTRIBUTION EVALUATION> optim: %g, fit: %g\n",
-               optim, fit);
-#endif
-
-  return  fit;
-}
-
-/*----------------------------------------------------------------------------
- * Define a global distribution associated to a sampling array i.e. count
- * the number of elements in each range.
- *
- * parameters:
- *   dim           <-- 2D or 3D
- *   n_ranks       <-- number of ranks (= number of ranges)
- *   gsum_weight   <-- global sum of all weightings
- *   n_codes       <-- local number of Hilbert codes
- *   hilbert_codes <-- local list of Hilbert codes to distribute
- *   weight        <-- weighting related to each code
- *   order         <-- ordering array
- *   sampling      <-- sampling array
- *   c_freq        <-> pointer to the cumulative frequency array
- *   g_distrib     <-> pointer to a distribution array
- *   comm          <-- mpi communicator
- *----------------------------------------------------------------------------*/
-
-static void
-_define_rank_distrib(int                       dim,
-                     int                       n_ranks,
-                     cs_gnum_t                 gsum_weight,
-                     cs_lnum_t                 n_codes,
-                     const fvm_hilbert_code_t  hilbert_codes[],
-                     const cs_lnum_t           weight[],
-                     const cs_lnum_t           order[],
-                     const fvm_hilbert_code_t  sampling[],
-                     double                    cfreq[],
-                     cs_gnum_t                 g_distrib[],
-                     MPI_Comm                  comm)
-{
-  int  id, rank_id;
-  fvm_hilbert_code_t  sample_code;
-  cs_lnum_t   i;
-
-  int  bucket_id = 1;
-  cs_gnum_t   *l_distrib = NULL;
-
-  const int  sampling_factor = _sampling_factors[dim];
-  const int  n_samples = sampling_factor * n_ranks;
-
-  /* Initialization */
-
-  BFT_MALLOC(l_distrib, n_samples, cs_gnum_t);
-
-  for (id = 0; id < n_samples; id++) {
-    l_distrib[id] = 0;
-    g_distrib[id] = 0;
-  }
-
-  /* hilbert_codes are supposed to be ordered */
-
-  sample_code = sampling[bucket_id];
-
-  for (i = 0; i < n_codes; i++) {
-
-    cs_gnum_t   o_id = order[i];
-
-    if (sample_code >= hilbert_codes[o_id])
-      l_distrib[bucket_id - 1] += weight[o_id];
-
-    else {
-
-      while (hilbert_codes[o_id] > sample_code) {
-        bucket_id++;
-        assert(bucket_id < n_samples + 1);
-        sample_code = sampling[bucket_id];
-      }
-
-      l_distrib[bucket_id - 1] += weight[o_id];
-
-    }
-
-  } /* End of loop on elements */
-
-  /* Define the global distribution */
-
-  MPI_Allreduce(l_distrib, g_distrib, n_samples, CS_MPI_GNUM, MPI_SUM, comm);
-
-  BFT_FREE(l_distrib);
-
-  /* Define the cumulative frequency related to g_distribution */
-
-  cfreq[0] = 0.;
-  for (id = 0; id < n_samples; id++)
-    cfreq[id+1] = cfreq[id] + (double)g_distrib[id]/(double)gsum_weight;
-  cfreq[n_samples] = 1.0;
-
-#if 0 && defined(DEBUG) && !defined(DEBUG) /* For debugging purpose only */
-
-  if (cs_glob_rank_id <= 0) {
-
-    FILE  *dbg_file = NULL;
-    char  *rfilename = NULL;
-    int  len;
-    static int  loop_id1 = 0;
-
-    len = strlen("DistribOutput_l.dat")+1+2;
-    BFT_MALLOC(rfilename, len, char);
-    sprintf(rfilename, "DistribOutput_l%02d.dat", loop_id1);
-
-    loop_id1++;
-
-    dbg_file = fopen(rfilename, "w");
-
-    fprintf(dbg_file,
-            "# Sample_id  |  OptCfreq  |  Cfreq  |  Sampling  |"
-            "Global Distrib\n");
-    for (i = 0; i < n_samples; i++)
-      fprintf(dbg_file, "%8d %15.5f %15.10f %15.10f %10u\n",
-              i, (double)i/(double)n_samples, cfreq[i],
-              (double)(sampling[i]), distrib[i]);
-    fprintf(dbg_file, "%8d %15.5f %15.10f %15.10f %10u\n",
-            i, 1.0, 1.0, 1.0, 0);
-
-    fclose(dbg_file);
-    BFT_FREE(rfilename);
-
-  }
-
-#endif /* debugging output */
-
-  /* Convert global distribution from n_samples to n_ranks */
-
-  for (rank_id = 0; rank_id < n_ranks; rank_id++) {
-
-    cs_gnum_t   sum = 0;
-    cs_lnum_t   shift = rank_id * sampling_factor;
-
-    for (id = 0; id < sampling_factor; id++)
-      sum += g_distrib[shift + id];
-    g_distrib[rank_id] = sum;
-
-  } /* End of loop on ranks */
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG) /* Sanity check in debug */
-  {
-    cs_gnum_t   sum = 0;
-    for (rank_id = 0; rank_id < n_ranks; rank_id++)
-      sum += g_distrib[rank_id];
-
-    if (sum != gsum_weight)
-      bft_error(__FILE__, __LINE__, 0,
-                "Error while computing global distribution.\n"
-                "sum = %u and gsum_weight = %u\n",
-                sum, gsum_weight);
-  }
-#endif /* sanity check */
-
-}
-
-/*----------------------------------------------------------------------------
- * Update a distribution associated to sampling to assume a well-balanced
- * distribution of the leaves of the tree.
- *
- * parameters:
- *   dim      <-- 1D, 2D or 3D
- *   n_ranks  <-- number of ranks (= number of ranges)
- *   c_freq   <-> cumulative frequency array
- *   sampling <-> pointer to pointer to a sampling array
- *   comm     <-- mpi communicator
- *----------------------------------------------------------------------------*/
-
-static void
-_update_sampling(int                  dim,
-                 int                  n_ranks,
-                 double               c_freq[],
-                 fvm_hilbert_code_t  *sampling[])
-{
-  int  i, j, next_id;
-  double  target_freq, f_high, f_low, delta;
-  double  s_low, s_high;
-
-  fvm_hilbert_code_t  *new_sampling = NULL, *_sampling = *sampling;
-
-  const int  sampling_factor = _sampling_factors[dim];
-  const int  n_samples = sampling_factor * n_ranks;
-  const double  unit = 1/(double)n_samples;
-
-  /* Compute new_sampling */
-
-  BFT_MALLOC(new_sampling, n_samples + 1, fvm_hilbert_code_t);
-
-  new_sampling[0] = _sampling[0];
-
-  next_id = 1;
-
-  for (i = 0; i < n_samples; i++) {
-
-    target_freq = (i+1)*unit;
-
-    /* Find the next id such as c_freq[next_id] >= target_freq */
-
-    for (j = next_id; j < n_samples + 1; j++) {
-      if (c_freq[j] >= target_freq) {
-        next_id = j;
-        break;
-      }
-    }
-
-    /* Find new s such as new_s is equal to target_freq by
-       a linear interpolation */
-
-    f_low = c_freq[next_id-1];
-    f_high = c_freq[next_id];
-
-    s_low = _sampling[next_id-1];
-    s_high = _sampling[next_id];
-
-    if (f_high - f_low > 0) {
-      delta = (target_freq - f_low) * (s_high - s_low) / (f_high - f_low);
-      new_sampling[i+1] = s_low + delta;
-    }
-    else /* f_high = f_low */
-      new_sampling[i+1] = s_low + 0.5 * (s_low + s_high);
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-    bft_printf(" <_update_distrib> (rank: %d) delta: %g, target: %g,"
-               " next_id: %d, f_low: %g, f_high: %g, s_low: %g, s_high: %g\n"
-               "\t => new_sampling: %g\n",
-               cs_glob_rank_id, delta, target_freq, next_id,
-               f_low, f_high, s_low, s_high, new_sampling[i+1]);
-#endif
-
-  } /* End of loop on samples */
-
-  new_sampling[n_samples] = 1.0;
-
-  BFT_FREE(_sampling);
-
-  /* Return pointers */
-
-  *sampling = new_sampling;
-}
-
-/*----------------------------------------------------------------------------
- * Compute a sampling array which assumes a well-balanced distribution of
- * leaves of the tree among the ranks.
- *
- * parameters:
- *   dim           <-- 2D or 3D
- *   n_ranks       <-- number of ranks
- *   gmax_level    <-- level on which Hilbert encoding is build
- *   n_codes       <-- local number of Hilbert ids
- *   hilbert_codes <-- local list of Hilbert ids to distribute
- *   weight        <-- weighting related to each code
- *   order         <-- ordering array
- *   sampling      <-> pointer to pointer to a sampling array
- *   comm          <-- mpi communicator
- *
- * returns:
- *   fit associated to the returned sampling array
- *----------------------------------------------------------------------------*/
-
-static double
-_bucket_sampling(int                       dim,
-                 int                       n_ranks,
-                 cs_lnum_t                 n_codes,
-                 const fvm_hilbert_code_t  hilbert_codes[],
-                 const cs_lnum_t           weight[],
-                 const cs_lnum_t           order[],
-                 fvm_hilbert_code_t       *sampling[],
-                 MPI_Comm                  comm)
-{
-  int  i, n_iters;
-  cs_lnum_t   j;
-  double  fit, best_fit, optim;
-
-  cs_gnum_t   lsum_weight = 0, gsum_weight = 0;
-  cs_gnum_t   *distrib = NULL;
-  double  *cfreq = NULL;
-  fvm_hilbert_code_t  *best_sampling = NULL;
-  fvm_hilbert_code_t  *_sampling = *sampling;
-
-  const int  sampling_factor = _sampling_factors[dim];
-  const int  n_samples = sampling_factor * n_ranks;
-  const double  unit = 1/(double)n_samples;
-
-  /* Compute the global number of elements and the optimal number of elements
-     on each rank */
-
-  for (j = 0; j < n_codes; j++)
-    lsum_weight += weight[j];
-
-  MPI_Allreduce(&lsum_weight, &gsum_weight, 1, CS_MPI_GNUM, MPI_SUM, comm);
-
-  optim = (double)gsum_weight / (double)n_ranks;
-
-  /* Define a naive sampling (uniform distribution) */
-
-  for (i = 0; i < n_samples + 1; i++)
-    _sampling[i] = i*unit;
-
-  /* Define the distribution associated to the current sampling array */
-
-  BFT_MALLOC(distrib, n_samples, cs_gnum_t);
-  BFT_MALLOC(cfreq, n_samples + 1, double);
-
-  _define_rank_distrib(dim,
-                       n_ranks,
-                       gsum_weight,
-                       n_codes,
-                       hilbert_codes,
-                       weight,
-                       order,
-                       _sampling,
-                       cfreq,
-                       distrib,
-                       comm);
-
-  /* Initialize best choice */
-
-  fit = _evaluate_distribution(n_ranks, distrib, optim);
-  best_fit = fit;
-
-  BFT_MALLOC(best_sampling, n_samples + 1, fvm_hilbert_code_t);
-
-  for (i = 0; i < (n_samples + 1); i++)
-    best_sampling[i] = _sampling[i];
-
-  /* Loop to get a better sampling array */
-
-  for (n_iters = 0;
-       (   n_iters < fvm_hilbert_distrib_n_iter_max
-        && fit > fvm_hilbert_distrib_tol);
-       n_iters++)  {
-
-    _update_sampling(dim, n_ranks, cfreq, &_sampling);
-
-    /* Compute the new distribution associated to the new sampling */
-
-    _define_rank_distrib(dim,
-                         n_ranks,
-                         gsum_weight,
-                         n_codes,
-                         hilbert_codes,
-                         weight,
-                         order,
-                         _sampling,
-                         cfreq,
-                         distrib,
-                         comm);
-
-    fit = _evaluate_distribution(n_ranks, distrib, optim);
-
-    /* Save the best sampling array and its fit */
-
-    if (fit < best_fit) {
-
-      best_fit = fit;
-      for (i = 0; i < (n_samples + 1); i++)
-        best_sampling[i] = _sampling[i];
-
-    }
-
-  } /* End of while */
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (cs_glob_rank_id <= 0) {
-    bft_printf("\n  <_bucket_sampling> n_iter: %d, opt: %g, best_fit: %g\n",
-               n_iters, optim, best_fit);
-#endif
-
-  /* Free memory */
-
-  BFT_FREE(cfreq);
-  BFT_FREE(distrib);
-  BFT_FREE(_sampling);
-
-  *sampling = best_sampling;
-
-  return best_fit;
-}
-
-#endif /* FM_HAVE_MPI */
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1021,137 +594,59 @@ fvm_hilbert_local_order_coords(int                dim,
   BFT_FREE(h_code);
 }
 
-/*----------------------------------------------------------------------------
- * Get the quantile associated to a Hilbert code using a binary search.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for conversion of a double precision value in
+ * range [0, 1] to a given Hilbert code.
  *
- * No check is done to ensure that the code is present in the quantiles.
- *
- * parameters:
- *   n_quantiles    <-- number of quantiles
- *   code           <-- code we are searching for
- *   quantile_start <-- first Hilbert code in each quantile (size: n_quantiles)
- *
- * returns:
- *   id associated to the given code in the codes array.
- *----------------------------------------------------------------------------*/
+ * \param[in]   s      coordinate between 0 and 1
+ * \param[out]  elt    pointer to element
+ * \param[in]   input  pointer to optional (untyped) value or structure.
+ */
+/*----------------------------------------------------------------------------*/
 
-size_t
-fvm_hilbert_quantile_search(size_t              n_quantiles,
-                            fvm_hilbert_code_t  code,
-                            fvm_hilbert_code_t  quantile_start[])
+void
+fvm_hilbert_s_to_code(double       s,
+                      void        *elt,
+                      const void  *input)
 {
-  size_t mid_id = 0;
-  size_t start_id = 0;
-  size_t end_id = n_quantiles;
+  CS_UNUSED(input);
 
-  /* use binary search */
-
-  while (start_id + 1 < end_id) {
-    mid_id = start_id + ((end_id -start_id) / 2);
-    if (quantile_start[mid_id] > code)
-      end_id = mid_id;
-    else
-      start_id = mid_id;
-  }
-
-  /* We may have stopped short of the required value,
-     or have multiple occurences of a quantile start
-     (in case of empty quantiles), of which we want to
-     find the find highest one */
-
-  while (   start_id < n_quantiles - 1
-         && code >= quantile_start[start_id+1])
-    start_id++;
-
-  return start_id;
+  fvm_hilbert_code_t  *hc = elt;
+  *hc = s;
 }
 
-#if defined(HAVE_MPI)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for comparison of 2 Hilbert codes.
+ *
+ * This function is the same type as that used by qsort_r.
+ *
+ * \param[in]  elt1   coordinate between 0 and 1
+ * \param[in]  elt2   pointer to optional (untyped) value or structure.
+ * \param[in]  input  pointer to optional (untyped) value or structure.
+ *
+ * \return < 0 if elt1 < elt2, 0 if elt1 == elt2, > 0 if elt1 > elt2
+ */
+/*----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------
- * Build a global Hilbert encoding rank index.
- *
- * The rank_index[i] contains the first Hilbert code assigned to rank [i].
- *
- * parameters:
- *   dim          <-- 1D, 2D or 3D
- *   n_codes      <-- number of Hilbert codes to be indexed
- *   hilbert_code <-- array of Hilbert codes to be indexed
- *   weight       <-- weighting related to each code
- *   order        <-- ordering array
- *   rank_index   <-> pointer to the global Hilbert encoding rank index
- *   comm         <-- MPI communicator on which we build the global index
- *
- * returns:
- *  the fit related to the Hilbert encoding distribution (lower is better).
- *----------------------------------------------------------------------------*/
-
-double
-fvm_hilbert_build_rank_index(int                       dim,
-                             cs_lnum_t                 n_codes,
-                             const fvm_hilbert_code_t  hilbert_code[],
-                             const cs_lnum_t           weight[],
-                             const cs_lnum_t           order[],
-                             fvm_hilbert_code_t        rank_index[],
-                             MPI_Comm                  comm)
+int
+fvm_hilbert_compare(const void  *elt1,
+                    const void  *elt2,
+                    const void  *input)
 {
-  int  i, id, rank_id, n_ranks, n_samples;
-  double  best_fit;
+  CS_UNUSED(input);
 
-  fvm_hilbert_code_t  *sampling = NULL;
+  int retval = 0;
+  if (  *(const fvm_hilbert_code_t *)elt1
+      < *(const fvm_hilbert_code_t *)elt2)
+    retval = -1;
+  else if (  *(const fvm_hilbert_code_t *)elt1
+           > *(const fvm_hilbert_code_t *)elt2)
+    retval = 1;
 
-  const int  sampling_factor = _sampling_factors[dim];
-
-  /* Allocations and Initialization */
-
-  MPI_Comm_size(comm, &n_ranks);
-
-  n_samples = sampling_factor * n_ranks;
-
-  BFT_MALLOC(sampling, n_samples + 1, fvm_hilbert_code_t);
-
-  for (i = 0; i < (n_samples + 1); i++)
-    sampling[i] = 0;
-
-  best_fit = _bucket_sampling(dim,
-                              n_ranks,
-                              n_codes,
-                              hilbert_code,
-                              weight,
-                              order,
-                              &sampling,
-                              comm);
-
-  /* Define Hilbert index */
-
-  for (rank_id = 0; rank_id < n_ranks + 1; rank_id++) {
-    id = rank_id * sampling_factor;
-    rank_index[rank_id] = sampling[id];
-  }
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  { /* Dump Hilbert index and associated sampling on rank 0 */
-    bft_printf("\nHilbert rank index:\n\n");
-    for (rank_id = 0; rank_id < n_ranks + 1; rank_id++) {
-      id = sampling_factor * rank_id;
-      bft_printf("rank: %5d (sampling:   %f)\n"
-                 "           rank_index: %f\n",
-                 rank_id,
-                 (double)sampling[id], (double)rank_index[rank_id]);
-    }
-    bft_printf("\n");
-    bft_printf_flush();
-  }
-#endif
-
-  /* Free memory */
-
-  BFT_FREE(sampling);
-
-  return best_fit;
+  return retval;
 }
-
-#endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------*/
 

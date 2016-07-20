@@ -251,6 +251,26 @@ fvm_io_num_create_from_sfc(const cs_coord_t  coords[],
                            fvm_io_num_sfc_t  sfc_type);
 
 /*----------------------------------------------------------------------------
+ * Creation of an I/O numbering structure based on real values, assuming
+ * ordering by increasing values.
+ *
+ * It is expected that entities are unique (i.e. not duplicated on 2 or
+ * more ranks). If 2 entities have a same value, their global
+ * number will be determined by their initial order.
+ *
+ * parameters:
+ *   val        <-- pointer to real values
+ *   n_entities <-- number of entities considered
+ *
+ * returns:
+ *  pointer to I/O numbering structure
+ *----------------------------------------------------------------------------*/
+
+fvm_io_num_t *
+fvm_io_num_create_from_real(const cs_real_t  val[],
+                            size_t           n_entities);
+
+/*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure based on a simple accumulation
  * (i.e. scan) of counts on successive ranks.
  *

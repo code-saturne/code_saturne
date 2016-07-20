@@ -236,6 +236,27 @@ cs_order_lnum_allocated(const cs_lnum_t  list[],
                         cs_lnum_t        order[],
                         size_t           nb_ent);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute an ordering table associated with an array of local values.
+ *
+ * \param[in]   list    optional list (1 to n numbering) of selected entities
+ *                      (or NULL if all nb_ent are selected). This list may
+ *                      contain element numbers in any order
+ * \param[in]   val     array of all entity values (value of entity i given
+ *                      by value[i] or value[list[i] - 1]) if list exists
+ *                      (if NULL, a default 1 to n numbering is considered)
+ * \param[out]  order   pointer to pre-allocated ordering table
+ * \param[in]   nb_ent  number of entities considered
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_order_real_allocated(const cs_lnum_t  list[],
+                        const cs_real_t  val[],
+                        cs_lnum_t        order[],
+                        size_t           nb_ent);
+
 /*----------------------------------------------------------------------------
  * Compute a lexicographical ordering table associated with an array of
  * strided local numbers.

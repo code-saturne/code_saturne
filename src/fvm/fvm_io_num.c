@@ -44,6 +44,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <float.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -60,6 +61,8 @@
 
 #include "cs_all_to_all.h"
 #include "cs_order.h"
+#include "cs_parall.h"
+#include "cs_sort_partition.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -133,9 +136,71 @@ const char  *fvm_io_num_sfc_type_name[] = {N_("Morton (in bounding box)"),
                                            N_("Hilbert (in bounding box)"),
                                            N_("Hilbert (in bounding cube)")};
 
+static const int _sampling_factors[4] = {1, /* OD */
+                                         2, /* 1D */
+                                         2, /* 2D */
+                                         4, /* 3D */};
+
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Function pointer for conversion of a double precision value in
+ * range [0, 1] to the same value.
+ *
+ * This is a trivial function, passed through a function pointer
+ * to cs_sort_partition_dest_rank_id.
+ *
+ * parameters:
+ *   s     <-- coordinate between 0 and 1
+ *   elt   -->  pointer to element
+ *   input <-- pointer to optional (untyped) value or structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_s_to_real(double       s,
+           void        *elt,
+           const void  *input)
+{
+  CS_UNUSED(input);
+
+  cs_real_t  *v = elt;
+  *v = s;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief function pointer for comparison of 2
+ *
+ * This function is the same type as that used by qsort_r.
+ *
+ * \param[in]  elt1   coordinate between 0 and 1
+ * \param[in]  elt2   pointer to optional (untyped) value or structure.
+ * \param[in]  input  pointer to optional (untyped) value or structure.
+ *
+ * \return < 0 if elt1 < elt2, 0 if elt1 == elt2, > 0 if elt1 > elt2
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_s_compare(const void  *elt1,
+           const void  *elt2,
+           const void  *input)
+{
+  CS_UNUSED(input);
+
+  int retval = 0;
+  if (  *(const cs_real_t *)elt1
+      < *(const cs_real_t *)elt2)
+    retval = -1;
+  else if (  *(const cs_real_t *)elt1
+           > *(const cs_real_t *)elt2)
+    retval = 1;
+
+  return retval;
+}
 
 /*----------------------------------------------------------------------------
  * Use bubble sort on an expectedly short sequence of coordinates
@@ -543,7 +608,7 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
   for (cs_lnum_t i = 0; i < b_size; i++)
     b_gnum[i] += gnum_shift;
 
-  /* Return global order to all processors */
+  /* Return global order to all ranks */
 
   cs_all_to_all_copy_array(d,
                            CS_GNUM_TYPE,
@@ -1314,8 +1379,6 @@ _create_from_coords_morton(const cs_coord_t  coords[],
 {
   size_t i;
   cs_coord_t extents[6];
-  cs_lnum_t *order = NULL;
-  fvm_morton_code_t *m_code = NULL;
 
 #if defined(HAVE_MPI)
   MPI_Comm comm = cs_glob_mpi_comm;
@@ -1345,129 +1408,81 @@ _create_from_coords_morton(const cs_coord_t  coords[],
 
   _adjust_extents(extents, box_to_cube);
 
-  BFT_MALLOC(m_code, n_entities, fvm_morton_code_t);
-  BFT_MALLOC(order, n_entities, cs_lnum_t);
-
-  fvm_morton_encode_coords(dim, level, extents, n_entities, coords, m_code);
-
-  fvm_morton_local_order(n_entities, m_code, order);
-
 #if defined(HAVE_MPI)
 
   if (n_ranks > 1) {
 
-    int rank_id;
-    cs_lnum_t j, shift;
+    int *dest_rank = NULL;
+    cs_lnum_t *order = NULL;
+    fvm_morton_code_t *m_code = NULL;
+    int input[1] = {dim};
 
-    size_t n_block_ents = 0;
-    cs_gnum_t current_global_num = 0, global_num_shift = 0;
+    BFT_MALLOC(m_code, n_entities, fvm_morton_code_t);
+    BFT_MALLOC(order, n_entities, cs_lnum_t);
+    BFT_MALLOC(dest_rank, n_entities, int);
 
-    int *c_rank = NULL;
-    int *send_count = NULL, *send_shift = NULL;
-    int *recv_count = NULL, *recv_shift = NULL;
-    cs_coord_t *send_coords = NULL, *recv_coords = NULL;
-    cs_lnum_t *weight = NULL;
-    cs_gnum_t *block_global_num = NULL, *part_global_num = NULL;
-    fvm_morton_code_t *morton_index = NULL;
+    fvm_morton_encode_coords(dim, level, extents, n_entities, coords, m_code);
+    fvm_morton_local_order(n_entities, m_code, order);
 
-    BFT_MALLOC(weight, n_entities, cs_lnum_t);
-    BFT_MALLOC(morton_index, n_ranks + 1, fvm_morton_code_t);
-
-    for (i = 0; i < n_entities; i++)
-      weight[i] = 1;
-
-    fvm_morton_build_rank_index(dim,
-                                level,
-                                n_entities,
-                                m_code,
-                                weight,
-                                order,
-                                morton_index,
-                                comm);
+    cs_sort_partition_dest_rank_id(_sampling_factors[dim],
+                                   sizeof(fvm_morton_code_t),
+                                   n_entities,
+                                   m_code,
+                                   NULL, /* weight */
+                                   order,
+                                   dest_rank,
+                                   fvm_morton_s_to_code,
+                                   fvm_morton_compare_o,
+                                   input,
+                                   comm);
 
     BFT_FREE(order);
-    BFT_FREE(weight);
-    BFT_MALLOC(c_rank, n_entities, int);
-
-    for (i = 0; i < n_entities; i++)
-      c_rank[i] = fvm_morton_quantile_search(n_ranks,
-                                             m_code[i],
-                                             morton_index);
-
-    BFT_FREE(morton_index);
     BFT_FREE(m_code);
 
-    /* Build send_buf, send_count and send_shift
-       to build a rank to coords indexed list */
+    cs_all_to_all_t
+      *d = cs_all_to_all_create(this_io_num->global_num_size,
+                                0,     /* flags */
+                                NULL,  /* dest_id */
+                                dest_rank,
+                                comm);
 
-    BFT_MALLOC(send_count, n_ranks, int);
-    BFT_MALLOC(recv_count, n_ranks, int);
-    BFT_MALLOC(send_shift, n_ranks + 1, int);
-    BFT_MALLOC(recv_shift, n_ranks + 1, int);
+    cs_all_to_all_transfer_dest_rank(d, &dest_rank);
 
-    for (rank_id = 0; rank_id < n_ranks; rank_id++)
-      send_count[rank_id] = 0;
+    cs_real_t *b_coords
+      = cs_all_to_all_copy_array(d,
+                                 CS_REAL_TYPE,
+                                 3,
+                                 false, /* reverse */
+                                 coords,
+                                 NULL);
 
-    for (i = 0; i < n_entities; i++)
-      send_count[c_rank[i]] += dim;
+    size_t b_size = cs_all_to_all_n_elts_dest(d);
 
-    /* Exchange number of coords to send to each process */
+    /* Now re-build Morton codes on block distribution
+       (exchanging and ordering Morton codes directly would be more
+       efficient, but using coordinates allows breaking ties for
+       possibly identical codes through lexicographical ordering). */
 
-    MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-    send_shift[0] = 0;
-    recv_shift[0] = 0;
-    for (rank_id = 0; rank_id < n_ranks; rank_id++) {
-      send_shift[rank_id + 1] = send_shift[rank_id] + send_count[rank_id];
-      recv_shift[rank_id + 1] = recv_shift[rank_id] + recv_count[rank_id];
-    }
-
-    /* Build send and receive buffers */
-
-    BFT_MALLOC(send_coords, send_shift[n_ranks], cs_coord_t);
-
-    for (rank_id = 0; rank_id < n_ranks; rank_id++)
-      send_count[rank_id] = 0;
-
-    for (i = 0; i < n_entities; i++) {
-      rank_id = c_rank[i];
-      shift = send_shift[rank_id] + send_count[rank_id];
-      for (j = 0; j < dim; j++)
-        send_coords[shift + j] = coords[i*dim + j];
-      send_count[rank_id] += dim;
-    }
-
-    BFT_MALLOC(recv_coords, recv_shift[n_ranks], cs_coord_t);
-
-    /* Exchange coords between processes */
-
-    MPI_Alltoallv(send_coords, send_count, send_shift, CS_MPI_COORD,
-                  recv_coords, recv_count, recv_shift, CS_MPI_COORD,
-                  comm);
-
-    BFT_FREE(send_coords);
-
-    /* Now re-build Morton codes on block distribution */
-
-    n_block_ents = recv_shift[n_ranks] / dim;
-
-    BFT_MALLOC(m_code, n_block_ents, fvm_morton_code_t);
-    BFT_MALLOC(order, n_block_ents, cs_lnum_t);
+    BFT_MALLOC(order, b_size, cs_lnum_t);
+    BFT_MALLOC(m_code, b_size, fvm_morton_code_t);
 
     fvm_morton_encode_coords(dim,
                              level,
                              extents,
-                             n_block_ents,
-                             recv_coords,
+                             b_size,
+                             b_coords,
                              m_code);
 
-    fvm_morton_local_order(n_block_ents, m_code, order);
+    fvm_morton_local_order(b_size, m_code, order);
 
     /* Check ordering; if two entities have the same Morton codes,
        use lexicographical coordinates ordering to ensure the
        final order is deterministic. */
 
-    _check_morton_ordering(dim, n_block_ents, recv_coords, m_code, order);
+    _check_morton_ordering(dim, b_size, b_coords, m_code, order);
+
+    BFT_FREE(m_code);
+    BFT_FREE(b_coords);
 
     /* Determine global order; requires ordering to loop through buffer by
        increasing number (blocks associated with each process are
@@ -1476,68 +1491,43 @@ _create_from_coords_morton(const cs_coord_t  coords[],
        such that for each block, the global number of an entity is equal to
        the cumulative number of sub-entities */
 
-    BFT_FREE(m_code);
-    BFT_FREE(recv_coords);
-    BFT_MALLOC(block_global_num, n_block_ents, cs_gnum_t);
+    cs_gnum_t *b_gnum;
+    BFT_MALLOC(b_gnum, b_size, cs_gnum_t);
 
-    for (i = 0; i < n_block_ents; i++)
-      block_global_num[order[i]] = i+1;
+    for (i = 0; i < b_size; i++)
+      b_gnum[order[i]] = i+1;
 
     BFT_FREE(order);
 
-    current_global_num = n_block_ents;
+    cs_gnum_t gnum_shift = 0, current_gnum = b_size;
 
-    /* At this stage, block_global_num[] is valid for this process, and
-       current_global_num indicates the total number of entities handled
+    /* At this stage, b_gnum[] is valid for this process, and
+       current_gnum indicates the total number of entities handled
        by this process; we must now shift global numberings on different
        processes by the cumulative total number of entities handled by
        each process */
 
-    MPI_Scan(&current_global_num, &global_num_shift, 1, CS_MPI_GNUM,
+    MPI_Scan(&current_gnum, &gnum_shift, 1, CS_MPI_GNUM,
              MPI_SUM, comm);
-    global_num_shift -= current_global_num;
+    gnum_shift -= current_gnum;
 
-    for (i = 0; i < n_block_ents; i++)
-      block_global_num[i] += global_num_shift;
+    for (i = 0; i < b_size; i++)
+      b_gnum[i] += gnum_shift;
 
-    /* Return global order to all processors */
+    /* Return global order to all ranks */
 
-    for (rank_id = 0; rank_id < n_ranks; rank_id++) {
-      send_count[rank_id] /= dim;
-      recv_count[rank_id] /= dim;
-      send_shift[rank_id] /= dim;
-      recv_shift[rank_id] /= dim;
-    }
-
-    send_shift[n_ranks] /= dim;
-
-    BFT_MALLOC(part_global_num, send_shift[n_ranks], cs_gnum_t);
-
-    MPI_Alltoallv(block_global_num, recv_count, recv_shift, CS_MPI_GNUM,
-                  part_global_num, send_count, send_shift, CS_MPI_GNUM,
-                  comm);
-
-    for (rank_id = 0; rank_id < n_ranks; rank_id++)
-      send_count[rank_id] = 0;
-
-    for (i = 0; i < n_entities; i++) {
-      rank_id = c_rank[i];
-      shift = send_shift[rank_id] + send_count[rank_id];
-      this_io_num->_global_num[i] = part_global_num[shift];
-      send_count[rank_id] += 1;
-    }
+    cs_all_to_all_copy_array(d,
+                             CS_GNUM_TYPE,
+                             1,
+                             true, /* reverse */
+                             b_gnum,
+                             this_io_num->_global_num);
 
     /* Free memory */
 
-    BFT_FREE(c_rank);
+    BFT_FREE(b_gnum);
 
-    BFT_FREE(block_global_num);
-    BFT_FREE(part_global_num);
-
-    BFT_FREE(send_count);
-    BFT_FREE(recv_count);
-    BFT_FREE(send_shift);
-    BFT_FREE(recv_shift);
+    cs_all_to_all_destroy(&d);
 
     /* Get final maximum global number value */
 
@@ -1549,6 +1539,15 @@ _create_from_coords_morton(const cs_coord_t  coords[],
 #endif /* HAVE_MPI */
 
   if (n_ranks == 1) {
+
+    cs_lnum_t *order = NULL;
+    fvm_morton_code_t *m_code = NULL;
+
+    BFT_MALLOC(m_code, n_entities, fvm_morton_code_t);
+    BFT_MALLOC(order, n_entities, cs_lnum_t);
+
+    fvm_morton_encode_coords(dim, level, extents, n_entities, coords, m_code);
+    fvm_morton_local_order(n_entities, m_code, order);
 
     _check_morton_ordering(dim, n_entities, coords, m_code, order);
 
@@ -1592,7 +1591,6 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
 {
   size_t i;
   cs_coord_t extents[6];
-  cs_lnum_t *order = NULL;
 
 #if defined(HAVE_MPI)
   MPI_Comm comm = cs_glob_mpi_comm;
@@ -1621,120 +1619,69 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
 
   _adjust_extents(extents, box_to_cube);
 
-  BFT_MALLOC(order, n_entities, cs_lnum_t);
-
 #if defined(HAVE_MPI)
 
   if (n_ranks > 1) {
 
-    int rank_id;
-    cs_lnum_t j, shift;
-
-    size_t n_block_ents = 0;
-    cs_gnum_t current_global_num = 0, global_num_shift = 0;
-
-    int *c_rank = NULL;
-    int *send_count = NULL, *send_shift = NULL;
-    int *recv_count = NULL, *recv_shift = NULL;
-    cs_coord_t *send_coords = NULL, *recv_coords = NULL;
-    cs_lnum_t *weight = NULL;
-    cs_gnum_t *block_global_num = NULL, *part_global_num = NULL;
+    int *dest_rank = NULL;
+    cs_lnum_t *order = NULL;
     fvm_hilbert_code_t *h_code = NULL;
-    fvm_hilbert_code_t *hilbert_index = NULL;
 
     BFT_MALLOC(h_code, n_entities, fvm_hilbert_code_t);
+    BFT_MALLOC(order, n_entities, cs_lnum_t);
+    BFT_MALLOC(dest_rank, n_entities, int);
 
     fvm_hilbert_encode_coords(dim, extents, n_entities, coords, h_code);
-
     fvm_hilbert_local_order(n_entities, h_code, order);
 
-    BFT_MALLOC(weight, n_entities, cs_lnum_t);
-    BFT_MALLOC(hilbert_index, (n_ranks + 1)*3, fvm_hilbert_code_t);
-
-    for (i = 0; i < n_entities; i++)
-      weight[i] = 1;
-
-    fvm_hilbert_build_rank_index(dim,
-                                 n_entities,
-                                 h_code,
-                                 weight,
-                                 order,
-                                 hilbert_index,
-                                 comm);
+    cs_sort_partition_dest_rank_id(_sampling_factors[dim],
+                                   sizeof(fvm_hilbert_code_t),
+                                   n_entities,
+                                   h_code,
+                                   NULL, /* weight */
+                                   order,
+                                   dest_rank,
+                                   fvm_hilbert_s_to_code,
+                                   fvm_hilbert_compare,
+                                   NULL,
+                                   comm);
 
     BFT_FREE(order);
-    BFT_FREE(weight);
-    BFT_MALLOC(c_rank, n_entities, int);
-
-    for (i = 0; i < n_entities; i++)
-      c_rank[i] = fvm_hilbert_quantile_search(n_ranks,
-                                              h_code[i],
-                                              hilbert_index);
-
-    BFT_FREE(hilbert_index);
     BFT_FREE(h_code);
 
-    /* Build send_buf, send_count and send_shift
-       to build a rank to coords indexed list */
+    cs_all_to_all_t
+      *d = cs_all_to_all_create(this_io_num->global_num_size,
+                                0,     /* flags */
+                                NULL,  /* dest_id */
+                                dest_rank,
+                                comm);
 
-    BFT_MALLOC(send_count, n_ranks, int);
-    BFT_MALLOC(recv_count, n_ranks, int);
-    BFT_MALLOC(send_shift, n_ranks + 1, int);
-    BFT_MALLOC(recv_shift, n_ranks + 1, int);
+    cs_all_to_all_transfer_dest_rank(d, &dest_rank);
 
-    for (rank_id = 0; rank_id < n_ranks; rank_id++)
-      send_count[rank_id] = 0;
+    cs_real_t *b_coords
+      = cs_all_to_all_copy_array(d,
+                                 CS_REAL_TYPE,
+                                 3,
+                                 false, /* reverse */
+                                 coords,
+                                 NULL);
 
-    for (i = 0; i < n_entities; i++)
-      send_count[c_rank[i]] += dim;
+    size_t b_size = cs_all_to_all_n_elts_dest(d);
 
-    /* Exchange number of coords to send to each process */
+    /* Now re-build Hilbert coords on block distribution
+       (exchanging and ordering Hilbert codes directly would be more
+       efficient, but using coordinates allows breaking ties for
+       possibly identical codes through lexicographical ordering). */
 
-    MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-    send_shift[0] = 0;
-    recv_shift[0] = 0;
-    for (rank_id = 0; rank_id < n_ranks; rank_id++) {
-      send_shift[rank_id + 1] = send_shift[rank_id] + send_count[rank_id];
-      recv_shift[rank_id + 1] = recv_shift[rank_id] + recv_count[rank_id];
-    }
-
-    /* Build send and receive buffers */
-
-    BFT_MALLOC(send_coords, send_shift[n_ranks], cs_coord_t);
-
-    for (rank_id = 0; rank_id < n_ranks; rank_id++)
-      send_count[rank_id] = 0;
-
-    for (i = 0; i < n_entities; i++) {
-      rank_id = c_rank[i];
-      shift = send_shift[rank_id] + send_count[rank_id];
-      for (j = 0; j < dim; j++)
-        send_coords[shift + j] = coords[i*dim + j];
-      send_count[rank_id] += dim;
-    }
-
-    BFT_MALLOC(recv_coords, recv_shift[n_ranks], cs_coord_t);
-
-    /* Exchange coords between processes */
-
-    MPI_Alltoallv(send_coords, send_count, send_shift, CS_MPI_COORD,
-                  recv_coords, recv_count, recv_shift, CS_MPI_COORD,
-                  comm);
-
-    BFT_FREE(send_coords);
-
-    /* Now re-order coords on block distribution */
-
-    n_block_ents = recv_shift[n_ranks] / dim;
-
-    BFT_MALLOC(order, n_block_ents, cs_lnum_t);
+    BFT_MALLOC(order, b_size, cs_lnum_t);
 
     fvm_hilbert_local_order_coords(dim,
                                    extents,
-                                   n_block_ents,
-                                   recv_coords,
+                                   b_size,
+                                   b_coords,
                                    order);
+
+    BFT_FREE(b_coords);
 
     /* Determine global order; requires ordering to loop through buffer by
        increasing number (blocks associated with each process are
@@ -1743,67 +1690,43 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
        such that for each block, the global number of an entity is equal to
        the cumulative number of sub-entities */
 
-    BFT_FREE(recv_coords);
-    BFT_MALLOC(block_global_num, n_block_ents, cs_gnum_t);
+    cs_gnum_t *b_gnum;
+    BFT_MALLOC(b_gnum, b_size, cs_gnum_t);
 
-    for (i = 0; i < n_block_ents; i++)
-      block_global_num[order[i]] = i+1;
+    for (i = 0; i < b_size; i++)
+      b_gnum[order[i]] = i+1;
 
     BFT_FREE(order);
 
-    current_global_num = n_block_ents;
+    cs_gnum_t gnum_shift = 0, current_gnum = b_size;
 
-    /* At this stage, block_global_num[] is valid for this process, and
-       current_global_num indicates the total number of entities handled
+    /* At this stage, b_gnum[] is valid for this process, and
+       current_gnum indicates the total number of entities handled
        by this process; we must now shift global numberings on different
        processes by the cumulative total number of entities handled by
        each process */
 
-    MPI_Scan(&current_global_num, &global_num_shift, 1, CS_MPI_GNUM,
+    MPI_Scan(&current_gnum, &gnum_shift, 1, CS_MPI_GNUM,
              MPI_SUM, comm);
-    global_num_shift -= current_global_num;
+    gnum_shift -= current_gnum;
 
-    for (i = 0; i < n_block_ents; i++)
-      block_global_num[i] += global_num_shift;
+    for (i = 0; i < b_size; i++)
+      b_gnum[i] += gnum_shift;
 
-    /* Return global order to all processors */
+    /* Return global order to all ranks */
 
-    for (rank_id = 0; rank_id < n_ranks; rank_id++) {
-      send_count[rank_id] /= dim;
-      recv_count[rank_id] /= dim;
-      send_shift[rank_id] /= dim;
-      recv_shift[rank_id] /= dim;
-    }
-
-    send_shift[n_ranks] /= dim;
-
-    BFT_MALLOC(part_global_num, send_shift[n_ranks], cs_gnum_t);
-
-    MPI_Alltoallv(block_global_num, recv_count, recv_shift, CS_MPI_GNUM,
-                  part_global_num, send_count, send_shift, CS_MPI_GNUM,
-                  comm);
-
-    for (rank_id = 0; rank_id < n_ranks; rank_id++)
-      send_count[rank_id] = 0;
-
-    for (i = 0; i < n_entities; i++) {
-      rank_id = c_rank[i];
-      shift = send_shift[rank_id] + send_count[rank_id];
-      this_io_num->_global_num[i] = part_global_num[shift];
-      send_count[rank_id] += 1;
-    }
+    cs_all_to_all_copy_array(d,
+                             CS_GNUM_TYPE,
+                             1,
+                             true, /* reverse */
+                             b_gnum,
+                             this_io_num->_global_num);
 
     /* Free memory */
 
-    BFT_FREE(c_rank);
+    BFT_FREE(b_gnum);
 
-    BFT_FREE(block_global_num);
-    BFT_FREE(part_global_num);
-
-    BFT_FREE(send_count);
-    BFT_FREE(recv_count);
-    BFT_FREE(send_shift);
-    BFT_FREE(recv_shift);
+    cs_all_to_all_destroy(&d);
 
     /* Get final maximum global number value */
 
@@ -1815,6 +1738,9 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
 #endif /* HAVE_MPI */
 
   if (n_ranks == 1) {
+
+    cs_lnum_t *order = NULL;
+    BFT_MALLOC(order, n_entities, cs_lnum_t);
 
     fvm_hilbert_local_order_coords(dim,
                                    extents,
@@ -2445,7 +2371,7 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_id[],
  * Creation of an I/O numbering structure based on a space-filling curve.
  *
  * It is expected that entities are unique (i.e. not duplicated on 2 or
- * more ranks). If 2 entities have a same Morton codeor Hilbert, their global
+ * more ranks). If 2 entities have a same Morton or Hilbert code, their global
  * number will be determined by lexicographical ordering of coordinates.
  *
  * parameters:
@@ -2481,6 +2407,199 @@ fvm_io_num_create_from_sfc(const cs_coord_t  coords[],
     break;
   default:
     assert(0);
+  }
+
+  return this_io_num;
+}
+
+/*----------------------------------------------------------------------------
+ * Creation of an I/O numbering structure based on real values, assuming
+ * ordering by increasing values.
+ *
+ * It is expected that entities are unique (i.e. not duplicated on 2 or
+ * more ranks). If 2 entities have a same value, their global
+ * number will be determined by their initial order.
+ *
+ * parameters:
+ *   val        <-- pointer to real values
+ *   n_entities <-- number of entities considered
+ *
+ * returns:
+ *  pointer to I/O numbering structure
+ *----------------------------------------------------------------------------*/
+
+fvm_io_num_t *
+fvm_io_num_create_from_real(const cs_real_t  val[],
+                            size_t           n_entities)
+{
+  size_t i;
+
+#if defined(HAVE_MPI)
+  MPI_Comm comm = cs_glob_mpi_comm;
+#endif
+
+  const int n_ranks = cs_glob_n_ranks;
+
+  fvm_io_num_t  *this_io_num = NULL;
+
+  /* Create structure */
+
+  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+
+  this_io_num->global_num_size = n_entities;
+
+  BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
+  this_io_num->global_num = this_io_num->_global_num;
+
+  /* Scale values */
+
+  double v_min = DBL_MAX;
+  double v_max = -DBL_MAX;
+
+  for (i = 0; i < n_entities; i++) {
+    if (val[i] < v_min) v_min = val[i];
+    if (val[i] > v_max) v_max = val[i];
+  }
+
+  cs_parall_min(1, CS_DOUBLE, &v_min);
+  cs_parall_max(1, CS_DOUBLE, &v_max);
+
+  if (v_max <= v_min)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: point set is empty or contains identical values."),
+              __func__);
+
+  double scale = (1.0 - 1.e12) / (v_max - v_min);
+
+  cs_real_t *s_val;
+  BFT_MALLOC(s_val, n_entities, cs_real_t);
+
+  for (i = 0; i < n_entities; i++)
+    s_val[i] = (val[i] - v_min)*scale;
+
+#if defined(HAVE_MPI)
+
+  if (n_ranks > 1) {
+
+    int *dest_rank = NULL;
+    cs_lnum_t *order = NULL;
+
+    BFT_MALLOC(order, n_entities, cs_lnum_t);
+    BFT_MALLOC(dest_rank, n_entities, int);
+
+    cs_order_real_allocated(NULL, s_val, order, n_entities);
+
+    cs_sort_partition_dest_rank_id(_sampling_factors[1],
+                                   sizeof(cs_real_t),
+                                   n_entities,
+                                   s_val,
+                                   NULL, /* weight */
+                                   order,
+                                   dest_rank,
+                                   _s_to_real,
+                                   _s_compare,
+                                   NULL,
+                                   comm);
+
+    BFT_FREE(order);
+
+    cs_all_to_all_t
+      *d = cs_all_to_all_create(this_io_num->global_num_size,
+                                0,     /* flags */
+                                NULL,  /* dest_id */
+                                dest_rank,
+                                comm);
+
+    cs_all_to_all_transfer_dest_rank(d, &dest_rank);
+
+    cs_real_t *b_val
+      = cs_all_to_all_copy_array(d,
+                                 CS_REAL_TYPE,
+                                 1,
+                                 false, /* reverse */
+                                 s_val,
+                                 NULL);
+
+    BFT_FREE(s_val);
+
+    size_t b_size = cs_all_to_all_n_elts_dest(d);
+
+    /* Now re-build order on block distribution. */
+
+    BFT_MALLOC(order, b_size, cs_lnum_t);
+
+    cs_order_real_allocated(NULL, b_val, order, b_size);
+
+    BFT_FREE(b_val);
+
+    /* Determine global order; requires ordering to loop through buffer by
+       increasing number (blocks associated with each process are
+       already sorted, but the whole "gathered" block is not).
+       We build an initial global order based on the initial global numbering,
+       such that for each block, the global number of an entity is equal to
+       the cumulative number of sub-entities */
+
+    cs_gnum_t *b_gnum;
+    BFT_MALLOC(b_gnum, b_size, cs_gnum_t);
+
+    for (i = 0; i < b_size; i++)
+      b_gnum[order[i]] = i+1;
+
+    BFT_FREE(order);
+
+    cs_gnum_t gnum_shift = 0, current_gnum = b_size;
+
+    /* At this stage, b_gnum[] is valid for this process, and
+       current_gnum indicates the total number of entities handled
+       by this process; we must now shift global numberings on different
+       processes by the cumulative total number of entities handled by
+       each process */
+
+    MPI_Scan(&current_gnum, &gnum_shift, 1, CS_MPI_GNUM,
+             MPI_SUM, comm);
+    gnum_shift -= current_gnum;
+
+    for (i = 0; i < b_size; i++)
+      b_gnum[i] += gnum_shift;
+
+    /* Return global order to all ranks */
+
+    cs_all_to_all_copy_array(d,
+                             CS_GNUM_TYPE,
+                             1,
+                             true, /* reverse */
+                             b_gnum,
+                             this_io_num->_global_num);
+
+    /* Free memory */
+
+    BFT_FREE(b_gnum);
+
+    cs_all_to_all_destroy(&d);
+
+    /* Get final maximum global number value */
+
+    this_io_num->global_count
+      = _fvm_io_num_global_max_unordered(this_io_num, comm);
+
+  }
+
+#endif /* HAVE_MPI */
+
+  if (n_ranks == 1) {
+
+    cs_lnum_t *order = NULL;
+    BFT_MALLOC(order, n_entities, cs_lnum_t);
+
+    cs_order_real_allocated(NULL, val, order, n_entities);
+
+    for (i = 0; i < n_entities; i++)
+      this_io_num->_global_num[order[i]] = i+1;
+
+    BFT_FREE(order);
+
+    this_io_num->global_count = n_entities;
+
   }
 
   return this_io_num;

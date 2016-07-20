@@ -1328,51 +1328,6 @@ fvm_morton_binary_search(cs_lnum_t           size,
   return start;
 }
 
-/*----------------------------------------------------------------------------
- * Get the quantile associated to a Morton code using a binary search.
- *
- * No check is done to ensure that the code is present in the quantiles.
- *
- * parameters:
- *   n_quantiles    <-- number of quantiles
- *   code           <-- code we are searching for
- *   quantile_start <-- first Morton code in each quantile (size: n_quantiles)
- *
- * returns:
- *   id associated to the given code in the codes array.
- *----------------------------------------------------------------------------*/
-
-size_t
-fvm_morton_quantile_search(size_t              n_quantiles,
-                           fvm_morton_code_t   code,
-                           fvm_morton_code_t  *quantile_start)
-{
-  size_t mid_id = 0;
-  size_t start_id = 0;
-  size_t end_id = n_quantiles;
-
-  /* use binary search */
-
-  while (start_id + 1 < end_id) {
-    mid_id = start_id + ((end_id -start_id) / 2);
-    if (_a_gt_b(quantile_start[mid_id], code))
-      end_id = mid_id;
-    else
-      start_id = mid_id;
-  }
-
-  /* We may have stopped short of the required value,
-     or have multiple occurences of a quantile start
-     (in case of empty quantiles), of which we want to
-     find the find highest one */
-
-  while (   start_id < n_quantiles - 1
-         && _a_ge_b(code, quantile_start[start_id+1]))
-    start_id++;
-
-  return start_id;
-}
-
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
@@ -1463,6 +1418,64 @@ fvm_morton_build_rank_index(int                      dim,
 }
 
 #endif /* HAVE_MPI */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for conversion of a double precision value in
+ * range [0, 1] to a given Morton code.
+ *
+ * \param[in]   s      coordinate between 0 and 1
+ * \param[out]  elt    pointer to element
+ * \param[in]   input  pointer to optional (untyped) value or structure;
+ *                     here, this is an interger representing the spatial
+ *                     dimension.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+fvm_morton_s_to_code(double       s,
+                     void        *elt,
+                     const void  *input)
+{
+  const int level = sizeof(fvm_morton_int_t)*8 - 1;
+  const int dim = *((const int *)input);
+
+  fvm_morton_code_t  *hc = elt;
+
+  *hc = _double_to_code(dim, s, level);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for comparison of 2 Morton codes.
+ *
+ * This function is the same type as that used by qsort_r.
+ *
+ * \param[in]  elt1   coordinate between 0 and 1
+ * \param[in]  elt2   pointer to optional (untyped) value or structure.
+ * \param[in]  input  pointer to optional (untyped) value or structure.
+ *
+ * \return < 0 if elt1 < elt2, 0 if elt1 == elt2, > 0 if elt1 > elt2
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+fvm_morton_compare_o(const void  *elt1,
+                     const void  *elt2,
+                     const void  *input)
+{
+  CS_UNUSED(input);
+
+  int retval = 0;
+  if (_a_ge_b(*(const fvm_morton_code_t *)elt1,
+              *(const fvm_morton_code_t *)elt2) == false)
+    retval = -1;
+  else if (_a_gt_b(*(const fvm_morton_code_t *)elt1,
+                   *(const fvm_morton_code_t *)elt2) == true)
+    retval = 1;
+
+  return retval;
+}
 
 /*----------------------------------------------------------------------------
  * Dump a Morton to standard output or to a file.

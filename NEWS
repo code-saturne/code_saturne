@@ -91,6 +91,9 @@ schemes (Original SOLU, CENTER, Standard SOLU)
 Architectural changes
 ---------------------
 
+- Refactored parallel numbering for space-filling curves and added
+  a numbering generation based on a 1D series of real values.
+
 - Added parallel IO for MED output when underlying MED library is built
   with parallel (HDF5) IO support.
 
