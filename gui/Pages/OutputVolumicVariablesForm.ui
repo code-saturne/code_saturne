@@ -20,7 +20,7 @@
      </property>
      <layout class="QGridLayout" >
       <item row="0" column="0" >
-       <widget class="QTableView" name="tableViewOutput" />
+       <widget class="QTreeView" name="treeViewOutput" />
       </item>
      </layout>
     </widget>

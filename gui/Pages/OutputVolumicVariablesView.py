@@ -202,85 +202,136 @@ class LabelDelegate(QItemDelegate):
 
             model.setData(index, to_qvariant(p_value), Qt.DisplayRole)
 
+
+#-------------------------------------------------------------------------------
+# item class
+#-------------------------------------------------------------------------------
+class item_class(object):
+    '''
+    custom data object
+    '''
+    def __init__(self, name, label, listing, post, probes):
+        self.name    = name
+        self.label   = label
+        self.listing = listing
+        self.post    = post
+        self.probes  = probes
+
+    def __repr__(self):
+        return "variable - %s %s // listing %s // post %s // probes %s"\
+               % (self.name, self.label, self.listing, self.post, self.probes)
+
+#-------------------------------------------------------------------------------
+# Treeitem class
+#-------------------------------------------------------------------------------
+class TreeItem(object):
+    '''
+    a python object used to return row/column data, and keep note of
+    it's parents and/or children
+    '''
+    def __init__(self, item, header, parentItem):
+        self.item = item
+        self.parentItem = parentItem
+        self.header = header
+        self.childItems = []
+
+
+    def appendChild(self, item):
+        self.childItems.append(item)
+
+
+    def child(self, row):
+        return self.childItems[row]
+
+
+    def childCount(self):
+        return len(self.childItems)
+
+
+    def columnCount(self):
+        return 5
+
+
+    def data(self, column, role):
+        if self.item == None:
+            if column == 0:
+                return to_qvariant(self.header)
+            else:
+                return to_qvariant()
+        else:
+            if column == 0 and role == Qt.DisplayRole:
+                return to_qvariant(self.item.label)
+            elif column == 1 and role == Qt.DisplayRole:
+                return to_qvariant(self.item.name)
+            elif column == 2 and role == Qt.CheckStateRole:
+                value = self.item.listing
+                if value == 'on':
+                    return to_qvariant(Qt.Checked)
+                elif value == 'onoff':
+                    return to_qvariant(Qt.PartiallyChecked)
+                else:
+                    return to_qvariant(Qt.Unchecked)
+            elif column == 3 and role == Qt.CheckStateRole:
+                value = self.item.post
+                if value == 'on':
+                    return to_qvariant(Qt.Checked)
+                elif value == 'onoff':
+                    return to_qvariant(Qt.PartiallyChecked)
+                else:
+                    return to_qvariant(Qt.Unchecked)
+            elif column == 4 and role == Qt.DisplayRole:
+                return to_qvariant(self.item.probes)
+        return to_qvariant()
+
+
+    def parent(self):
+        return self.parentItem
+
+
+    def row(self):
+        if self.parentItem:
+            return self.parentItem.childItems.index(self)
+        return 0
+
+
 #-------------------------------------------------------------------------------
 # StandarItemModelOutput class
 #-------------------------------------------------------------------------------
 
-class VolumicOutputStandardItemModel(QStandardItemModel):
+class VolumicOutputStandardItemModel(QAbstractItemModel):
 
     def __init__(self, parent, case, mdl):
         """
         """
-        QStandardItemModel.__init__(self)
+        QAbstractItemModel.__init__(self)
 
         self.parent = parent
         self.case   = case
         self.mdl    = mdl
 
-        self.setColumnCount(5)
-        self.dataLabel    = []
-        self.dataName     = []
-        self.dataPrinting = []
-        self.dataPost     = []
-        self.dataProbe    = []
+        self.noderoot = {}
+        self.prtlist = []
+        for (name, tpe) in self.mdl.list_name:
+            if tpe not in self.prtlist:
+                self.prtlist.append(tpe)
+
+        self.rootItem = TreeItem(None, "ALL", None)
+        self.parents = {0 : self.rootItem}
+
         self.disabledItem = []
         self.populateModel()
 
-
-    def populateModel(self):
-        """Data initialization"""
-        for name in self.mdl.list_name:
-            # row number
-            row = self.rowCount()
-            self.setRowCount(row + 1)
-
-            # XML Model data
-            label = self.mdl.dicoLabelName[name]
-            printing = self.mdl.getPrintingStatus(label)
-
-            if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
-                post = "off"
-                self.mdl.setPostStatus(label, post)
-                self.disabledItem.append((row, 3))
-            else:
-                 post = self.mdl.getPostStatus(label)
-
-            if TimeStepModel(self.case).getTimePassing() in (0, 1):
-                if name == 'local_time_step':
-                    self.disabledItem.append((row, 3))
-                    self.disabledItem.append((row, 4))
-
-            if not self.mdl.getVariableProbeList():
-                self.disabledItem.append((row, 4))
-
-            listProbe = self.mdl.getProbesList(label)
-            if listProbe:
-                probes = " ".join(listProbe)
-            else:
-                probes = ""
-
-            # StandardItemModel data
-            self.dataLabel.append(label)
-            self.dataName.append(name)
-            self.dataPrinting.append(printing)
-            self.dataPost.append(post)
-            self.dataProbe.append(probes)
-
-        # Initialize the flags
-        for row in range(self.rowCount()):
-            for column in range(self.columnCount()):
-                if column == 0 or column == 4:
-                    role = Qt.DisplayRole
-                else:
-                    role = Qt.CheckStateRole
-                index = self.index(row, column)
-                value = self.data(index, role)
-                self.setData(index, value)
-
+    def columnCount(self, parent = None):
+        if parent and parent.isValid():
+            return parent.internalPointer().columnCount()
+        else:
+            return 5
 
     def data(self, index, role):
         if not index.isValid():
             return to_qvariant()
+
+        item = index.internalPointer()
 
         # ToolTips
         if role == Qt.ToolTipRole:
@@ -302,32 +353,11 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
 
         # Display
         if role == Qt.DisplayRole:
-            row = index.row()
-            if index.column() == 0:
-                return to_qvariant(self.dataLabel[row])
-            if index.column() == 1:
-                return to_qvariant(self.dataName[row])
-            elif index.column() == 4:
-                return to_qvariant(self.dataProbe[row])
-            else:
-                return to_qvariant()
-
-        # CheckState
-        if role == Qt.CheckStateRole:
-            row = index.row()
-            if index.column() == 2:
-                value = self.dataPrinting[row]
-                if value == 'on':
-                    return to_qvariant(Qt.Checked)
-                else:
-                    return to_qvariant(Qt.Unchecked)
-
-            elif index.column() == 3:
-                value = self.dataPost[row]
-                if value == 'on':
-                    return to_qvariant(Qt.Checked)
-                else:
-                    return to_qvariant(Qt.Unchecked)
+            return item.data(index.column(), role)
+        elif role == Qt.CheckStateRole:
+            return item.data(index.column(), role)
+        #if role == Qt.TextAlignmentRole and index.column() > 1:
+        #    return to_qvariant(Qt.AlignHCenter)
 
         return to_qvariant()
 
@@ -340,12 +370,22 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
         if (index.row(), index.column()) in self.disabledItem:
             return Qt.ItemIsEnabled
 
-        if index.column() == 2 or index.column() == 3:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
-        elif index.column() == 1:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        itm = index.internalPointer()
+        if itm in self.noderoot.values():
+            # traitement des categories
+            if index.column() == 2 or index.column() == 3:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable | Qt.ItemIsTristate
+            elif index.column() == 4:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            else:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            if index.column() == 2 or index.column() == 3:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+            elif index.column() == 1:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            else:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
@@ -363,41 +403,204 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
         return to_qvariant()
 
 
+    def index(self, row, column, parent = QModelIndex()):
+        if not self.hasIndex(row, column, parent):
+            return QModelIndex()
+
+        if not parent.isValid():
+            parentItem = self.rootItem
+        else:
+            parentItem = parent.internalPointer()
+
+        try:
+            childItem = parentItem.child(row)
+        except:
+            childItem = None
+
+        if childItem:
+            return self.createIndex(row, column, childItem)
+        else:
+            return QModelIndex()
+
+
+    def parent(self, index):
+        if not index.isValid():
+            return QModelIndex()
+
+        childItem = index.internalPointer()
+        if not childItem:
+            return QModelIndex()
+
+        parentItem = childItem.parent()
+
+        if parentItem == self.rootItem:
+            return QModelIndex()
+
+        return self.createIndex(parentItem.row(), 0, parentItem)
+
+
+    def rowCount(self, parent=QModelIndex()):
+        if parent.column() > 0:
+            return 0
+        if not parent.isValid():
+            p_Item = self.rootItem
+        else:
+            p_Item = parent.internalPointer()
+        return p_Item.childCount()
+
+
+    def populateModel(self):
+        for bs in self.prtlist:
+            item = item_class(bs, bs, "off", "off", "")
+            newparent = TreeItem(item, bs, self.rootItem)
+            self.rootItem.appendChild(newparent)
+            self.noderoot[bs] = newparent
+
+        for (name, value) in self.mdl.list_name:
+            row = self.rowCount()
+            parentItem = self.noderoot[value]
+            label = self.mdl.dicoLabelName[name]
+            printing = self.mdl.getPrintingStatus(name)
+
+            if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
+                post = "off"
+                self.mdl.setPostStatus(name, post)
+                self.disabledItem.append((row, 3))
+            else:
+                 post = self.mdl.getPostStatus(name)
+
+            if TimeStepModel(self.case).getTimePassing() in (0, 1):
+                if name == 'local_time_step':
+                    self.disabledItem.append((row, 3))
+                    self.disabledItem.append((row, 4))
+
+            if not self.mdl.getVariableProbeList():
+                self.disabledItem.append((row, 4))
+
+            listProbe = self.mdl.getProbesList(name)
+            if listProbe:
+                probes = " ".join(listProbe)
+            else:
+                probes = ""
+
+            # StandardItemModel data
+            item = item_class(name, label, printing, post, probes)
+            newItem = TreeItem(item, "", parentItem)
+            parentItem.appendChild(newItem)
+
+        # update parent item
+        for item in self.rootItem.childItems:
+            size = len(item.childItems)
+            listing = 0
+            post    = 0
+            probes  = 0
+
+            for itm in item.childItems:
+                if itm.item.listing == "on":
+                    listing = listing + 1
+                if itm.item.post == "on":
+                    post = post + 1
+                if itm.item.probes == "on":
+                    probes = probes + 1
+
+            if listing == 0:
+                item.item.listing = "off"
+            elif listing == size:
+                item.item.listing = "on"
+            else:
+                item.item.listing = "onoff"
+
+            if post == 0:
+                item.item.post = "off"
+            elif post == size:
+                item.item.post = "on"
+            else:
+                item.item.post = "onoff"
+
+#            if probes == 0:
+#                item.item.probes = "off"
+#            elif probes == size:
+#                item.item.probes = "on"
+#            else:
+#                item.item.probes = "onoff"
+
+
     def setData(self, index, value, role=None):
         row = index.row()
+        item = index.internalPointer()
+
         if index.column() == 0:
             label = str(from_qvariant(value, to_text_string))
             if label == "":
-                label = self.dataLabel[row]
-            self.mdl.setVariableLabel(self.dataLabel[row], label)
-            self.dataLabel[row] = label
+                label = item.label
+            if item not in self.noderoot.values():
+                self.mdl.setVariableLabel(item.item.label, label)
+            item.item.label = label
 
         elif index.column() == 2:
             v = from_qvariant(value, int)
             if v == Qt.Checked:
-                self.dataPrinting[row] = "on"
+                item.item.listing = "on"
             else:
-                self.dataPrinting[row] = "off"
-            self.mdl.setPrintingStatus(self.dataLabel[row], self.dataPrinting[row])
+                item.item.listing = "off"
+            if item not in self.noderoot.values():
+                self.mdl.setPrintingStatus(item.item.name, item.item.listing)
+                # count for parent item
+                size = len(item.parentItem.childItems)
+                listing = 0
+                for itm in item.parentItem.childItems:
+                    if itm.item.listing == "on":
+                        listing = listing + 1
+                if listing == 0:
+                    item.parentItem.item.listing = "off"
+                elif listing == size:
+                    item.parentItem.item.listing = "on"
+                else:
+                    item.parentItem.item.listing = "onoff"
+
+            else:
+                for itm in item.childItems:
+                    self.mdl.setPrintingStatus(itm.item.name, item.item.listing)
+                    itm.item.listing = item.item.listing
 
         elif index.column() == 3:
             v = from_qvariant(value, int)
             if v == Qt.Checked:
-                self.dataPost[row] = "on"
+                item.item.post = "on"
             else:
-                self.dataPost[row] = "off"
+                item.item.post = "off"
 
             if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
-                self.dataPost[row] = "off"
+                item.item.post = "off"
 
-            self.mdl.setPostStatus(self.dataLabel[row], self.dataPost[row])
+            if item not in self.noderoot.values():
+                self.mdl.setPostStatus(item.item.name, item.item.post)
+                # count for parent item
+                size = len(item.parentItem.childItems)
+                post = 0
+                for itm in item.parentItem.childItems:
+                    if itm.item.post == "on":
+                        post = post + 1
+                if post == 0:
+                    item.parentItem.item.post = "off"
+                elif post == size:
+                    item.parentItem.item.post = "on"
+                else:
+                    item.parentItem.item.post = "onoff"
+            else:
+                # set for each variable
+                for itm in item.childItems:
+                    self.mdl.setPrintingStatus(itm.item.name, item.item.post)
+                    itm.item.post = item.item.post
 
         elif index.column() == 4:
             probes = str(from_qvariant(value, to_text_string))
-            self.dataProbe[row] = probes
-            self.mdl.updateProbes(self.dataLabel[row], probes)
+            item.item.probes = probes
+            if item not in self.noderoot.values():
+                self.mdl.updateProbes(item.item.name, item.item.probes)
 
-        self.dataChanged.emit(index, index)
+        self.dataChanged.emit(QModelIndex(), QModelIndex())
+
         return True
 
 
@@ -423,23 +626,21 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.mdl = OutputVolumicVariablesModel(self.case)
 
         self.modelOutput = VolumicOutputStandardItemModel(parent, self.case, self.mdl)
-        self.tableViewOutput.setModel(self.modelOutput)
-        self.tableViewOutput.setAlternatingRowColors(True)
-        self.tableViewOutput.resizeColumnToContents(0)
-        self.tableViewOutput.resizeRowsToContents()
-        self.tableViewOutput.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.tableViewOutput.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tableViewOutput.setEditTriggers(QAbstractItemView.DoubleClicked)
-        if QT_API == "PYQT4":
-            self.tableViewOutput.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        elif QT_API == "PYQT5":
-            self.tableViewOutput.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.treeViewOutput.setModel(self.modelOutput)
+        self.treeViewOutput.setAlternatingRowColors(True)
+        self.treeViewOutput.setSelectionBehavior(QAbstractItemView.SelectItems)
+        self.treeViewOutput.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.treeViewOutput.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.treeViewOutput.expandAll()
+        self.treeViewOutput.setDragEnabled(False)
 
-        labelDelegate = LabelDelegate(self.tableViewOutput, self.mdl)
-        self.tableViewOutput.setItemDelegateForColumn(0, labelDelegate)
+        labelDelegate = LabelDelegate(self.treeViewOutput, self.mdl)
+        self.treeViewOutput.setItemDelegateForColumn(0, labelDelegate)
 
-        probesDelegate = ProbesDelegate(self.tableViewOutput, self.mdl)
-        self.tableViewOutput.setItemDelegateForColumn(4, probesDelegate)
+        probesDelegate = ProbesDelegate(self.treeViewOutput, self.mdl)
+        self.treeViewOutput.setItemDelegateForColumn(4, probesDelegate)
+        self.treeViewOutput.resizeColumnToContents(0)
+        self.treeViewOutput.resizeColumnToContents(1)
 
         self.case.undoStartGlobal()
 
