@@ -344,7 +344,7 @@ cs_lagr_resuspension(void)
       else
         isens =-1;
       // Adhesion forces
-      cs_real_t fadh = 1.0;
+      cs_real_t fadh = 0.0; // FIXME: provide a physical value
       // Gravity forces
       cs_real_t fgrav = p_mass * isens *
         (cs_glob_physical_constants->gx * face_normal[0] +
@@ -364,7 +364,8 @@ cs_lagr_resuspension(void)
       cs_real_t fpres = (press_out - press_in) * pi * pow(p_diam, 2) * 0.25
         * cs_lagr_particle_get_real(part, p_am, CS_LAGR_FOULING_INDEX)
         * isens ;
-      // Resuspension criterion: Fadh + Fgrav + Fpres < 0
+      //fpres = 0.0; // FIXME: forced value to avoid resuspension
+      /* Resuspension criterion: Fadh + Fgrav + Fpres < 0 */
       if ( (fadh + fgrav + fpres) < 0. ) {
         cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG, 0);
         // To delete particles: cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_CELL_NUM, 0);
