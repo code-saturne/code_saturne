@@ -109,14 +109,17 @@ cs_lagr_resuspension(void)
   const cs_lagr_attribute_map_t *p_am = p_set->p_am;
 
   cs_lagr_boundary_interactions_t *lag_bi = cs_glob_lagr_boundary_interactions;
-  cs_lnum_t n_faces = cs_glob_mesh->n_b_faces;
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  cs_lnum_t n_faces = mesh->n_b_faces;
 
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
-  const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-
   const cs_real_3_t *restrict i_face_normal
         = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+        = (const cs_real_3_t *restrict)fvq->b_face_normal;
 
 /* ================================================================  */
 /* 1.    Resuspension sub model   */
@@ -164,12 +167,12 @@ cs_lagr_resuspension(void)
       temp = cs_glob_fluid_properties->t0;
 
     cs_lnum_t flag = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG);
-    if (flag == 1)
+    if (flag == CS_LAGR_PART_DEPOSITED)
       /* The particle has just deposited     */
       /* The adhesion force is calculated    */
       cs_lagr_adh(ip, temp, &adhesion_energ);
 
-    else if (flag == 2){
+    else if (flag == CS_LAGR_PART_ROLLING) {
 
       /* The particle is rolling   */
 
@@ -189,13 +192,11 @@ cs_lagr_resuspension(void)
 
         cs_lagr_adh(ip, temp, &adhesion_energ);
 
-        if (   test_colli == 1
-               && cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) > 0) {
+        if (test_colli == 1
+            && cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) > 0) {
 
           cs_real_t kinetic_energy =  0.5 * p_mass
-                                    * (  pow(part_vel[0], 2)
-                                       + pow(part_vel[1], 2)
-                                       + pow(part_vel[2], 2));
+                                   * cs_math_3_dot_product(part_vel, part_vel);
 
           if (kinetic_energy > adhesion_energ) {
 
@@ -203,20 +204,22 @@ cs_lagr_resuspension(void)
              * along the wall-normal distance                                           */
 
 
-            cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG, 0);
+            cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
+                                      CS_LAGR_PART_IN_FLOW);
             cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
             cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
             cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES, 0);
             cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, 0);
             cs_lagr_particle_set_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM, 0.0);
 
-            cs_real_t norm_face = cs_glob_mesh_quantities->b_face_surf[face_id];
+            cs_real_t norm_face = fvq->b_face_surf[face_id];
 
-            cs_real_t norm_velocity = sqrt(pow(part_vel[0], 2) + pow (part_vel[1], 2) + pow (part_vel[2], 2));
+            cs_real_t norm_velocity = sqrt(cs_math_3_dot_product(part_vel,
+                                                                 part_vel));
 
-            for (cs_lnum_t id = 0; id < 3; id++)
+            for (int id = 0; id < 3; id++)
               part_vel[id] = -norm_velocity / norm_face
-                            * cs_glob_mesh_quantities->b_face_normal[face_id * 3 +id];
+                            * b_face_normal[face_id][id];
 
             /* Update of the number and weight of resuspended particles     */
             p_set->n_part_resusp += 1;
@@ -237,7 +240,8 @@ cs_lagr_resuspension(void)
 
         cs_lnum_t ii = 1;
         while (   ii <= ndiam
-               && (cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG) == 2)) {
+               && (cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG)
+                 == CS_LAGR_PART_ROLLING)) {
 
           cs_lagr_adh(ip, temp, &adhesion_energ);
 
@@ -245,12 +249,10 @@ cs_lagr_resuspension(void)
           /* at the current sub-time-step assuming linear variation  */
           /* (constant acceleration)   */
 
-          cs_real_t v_part_t    = sqrt(  pow(prev_part_vel[0], 2)
-                                       + pow(prev_part_vel[1], 2)
-                                       + pow(prev_part_vel[2], 2));
-          cs_real_t v_part_t_dt = sqrt(  pow(part_vel[0], 2)
-                                       + pow(part_vel[1], 2)
-                                       + pow(part_vel[2], 2));
+          cs_real_t v_part_t = sqrt(cs_math_3_dot_product(prev_part_vel,
+                                                          prev_part_vel));
+          cs_real_t v_part_t_dt = sqrt(cs_math_3_dot_product(part_vel,
+                                                             part_vel));
 
           cs_real_t sub_dt = cs_glob_lagr_time_step->dtp / ndiam;
 
@@ -269,7 +271,8 @@ cs_lagr_resuspension(void)
 
           if ((domep * sub_dt) > omep) {
 
-            cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG, 10);
+            cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
+                                      CS_LAGR_PART_NO_MOTION);
             part_vel[0] = 0.0;
             part_vel[1] = 0.0;
             part_vel[2] = 0.0;
@@ -289,20 +292,22 @@ cs_lagr_resuspension(void)
               /* The particle is resuspended    */
               /* and its kinetic energy is totally converted   */
               /* along the wall-normal distance */
-              cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG, 0);
+              cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
+                                        CS_LAGR_PART_IN_FLOW);
               cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
               cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
               cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES, 0);
               cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, 0);
               cs_lagr_particle_set_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM, 0.0);
 
-              cs_real_t norm_face = cs_glob_mesh_quantities->b_face_surf[face_id];
+              cs_real_t norm_face = fvq->b_face_surf[face_id];
 
-              cs_real_t norm_velocity = sqrt(pow(part_vel[0], 2) + pow (part_vel[1], 2) + pow (part_vel[2], 2));
+              cs_real_t norm_velocity = sqrt(cs_math_3_dot_product(part_vel,
+                                                                   part_vel));
 
-              for (cs_lnum_t id = 0; id < 3; id++)
+              for (int id = 0; id < 3; id++)
                 part_vel[id] = -norm_velocity / norm_face
-                              * cs_glob_mesh_quantities->b_face_normal[face_id * 3 +id];
+                              * b_face_normal[face_id][id];
 
               /* Update of the number and weight of resuspended particles     */
               p_set->n_part_resusp += 1;
@@ -326,48 +331,50 @@ cs_lagr_resuspension(void)
       }
 
     }
-    else if (flag == 11 ) {
-      // Treatment of the case for CS_LAGR_IMPOSED_MOTION
-      // Surface and orientation of the normal towards the cell center
-      cs_real_t dotprod = 0.0;
-      cs_real_t vect_cen[3], face_normal[3];
+    /* Treatment of the case for user imposed motion */
+    else if (flag == CS_LAGR_PART_IMPOSED_MOTION) {
+
       const cs_real_t *face_cog = fvq->i_face_cog + (3*face_id);
       const cs_real_t *cell_cen = fvq->cell_cen + (3*iel);
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        face_normal[ii] = fvq->i_face_normal[3*face_id+ii];
-        vect_cen[ii] = face_cog[ii] - cell_cen[ii];
-        dotprod += vect_cen[ii] * face_normal[ii];
-      }
-      cs_lnum_t isens;
-      if (dotprod > 0)
-        isens = 1;
-      else
-        isens =-1;
-      // Adhesion forces
+      cs_real_3_t vect_cen = {face_cog[0] - cell_cen[0],
+                              face_cog[1] - cell_cen[1],
+                              face_cog[2] - cell_cen[2]};
+
+      /* Reorient the face so that it is the outwarding normal */
+      int reorient_face = 1;
+      if (iel == mesh->i_face_cells[face_id][1])
+        reorient_face = -1;
+
+      /* Adhesion forces */
       cs_real_t fadh = 0.0; // FIXME: provide a physical value
-      // Gravity forces
-      cs_real_t fgrav = p_mass * isens *
-        (cs_glob_physical_constants->gx * face_normal[0] +
-         cs_glob_physical_constants->gy * face_normal[1] +
-         cs_glob_physical_constants->gz * face_normal[2] );
-      // Forces due to pressure difference
-      cs_lnum_t c_id1 = cs_glob_mesh->i_face_cells[face_id][0];
-      cs_lnum_t c_id2 = cs_glob_mesh->i_face_cells[face_id][1];
+
+      /* Gravity forces */
+      cs_real_3_t gravity = {cs_glob_physical_constants->gx,
+                             cs_glob_physical_constants->gy,
+                             cs_glob_physical_constants->gz};
+      // FIXME Archimede
+      cs_real_t fgrav = p_mass * reorient_face
+                      * cs_math_3_dot_product(gravity, i_face_normal[face_id]);
+
+      /* Forces due to pressure difference */
+      cs_lnum_t c_id1 = mesh->i_face_cells[face_id][0];
+      cs_lnum_t c_id2 = mesh->i_face_cells[face_id][1];
+
       if (iel == c_id2) {
-        c_id1 = c_id2;
-        c_id2 = iel;
+        c_id2 = c_id1;
+        c_id1 = iel;
       }
+
       cs_real_t press_out = cs_glob_lagr_extra_module->pressure->val[c_id1];
-      // propce(iel,ipr)
       cs_real_t press_in = cs_glob_lagr_extra_module->pressure->val[c_id2];
       const double pi = 4 * atan(1);
       cs_real_t fpres = (press_out - press_in) * pi * pow(p_diam, 2) * 0.25
-        * cs_lagr_particle_get_real(part, p_am, CS_LAGR_FOULING_INDEX)
-        * isens ;
-      //fpres = 0.0; // FIXME: forced value to avoid resuspension
+        * cs_lagr_particle_get_real(part, p_am, CS_LAGR_FOULING_INDEX);
+
       /* Resuspension criterion: Fadh + Fgrav + Fpres < 0 */
-      if ( (fadh + fgrav + fpres) < 0. ) {
-        cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG, 0);
+      if ((fadh + fgrav + fpres) < 0.) {
+        cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
+                                  CS_LAGR_PART_IN_FLOW);
         // To delete particles: cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_CELL_NUM, 0);
       }
     }

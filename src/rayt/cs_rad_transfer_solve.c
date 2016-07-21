@@ -378,7 +378,7 @@ _cs_rad_transfer_sol(cs_real_t    *restrict coefap,
   vcopt.idiff  =  0; /* no face diffusion */
   vcopt.idifft = -1;
   vcopt.isstpc =  0;
-  vcopt.nswrsm =  2;
+  vcopt.nswrsm =  2;//FIXME useless
   vcopt.imrgra =  cs_glob_space_disc->imrgra;
   vcopt.blencv =  0;
   vcopt.epsrsm =  1e-08;  /* TODO: try with default (1e-07) */

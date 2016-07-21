@@ -2346,7 +2346,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 
-          if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_DEPOSITION_FLAG) > 0) {
+          if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_DEPOSITION_FLAG) != CS_LAGR_PART_IN_FLOW) {
 
             cs_lnum_t face_id = cs_lagr_particles_get_lnum
                                   (p_set, npt, CS_LAGR_NEIGHBOR_FACE_ID);
