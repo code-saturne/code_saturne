@@ -1,6 +1,8 @@
 
-Release 4.1.4 (unreleased)
-==========================
+Release 4.1.4 (Jul 21 2016)
+===========================
+
+This is the last release of the 4.1 series.
 
 Bug fixes:
 ----------
@@ -20,7 +22,6 @@ Bug fixes:
   /usr/include/scotch/ptscotch.h present.
 
 - Fix postprocessing output of parallel rank for sub-meshes.
-
 
 Release 4.1.3 (Mar 15 2016)
 ===========================
