@@ -309,7 +309,7 @@ endif
 !     ==========================
 
 call usipsu(nmodpp)
-call cs_user_parameters
+call user_parameters
 
 ! If time step is local or variable, pass information to C layer, as it
 ! may be needed for some field (or moment) definitions.

@@ -648,11 +648,11 @@ module cs_c_bindings
 
     !> \brief  General user parameters
 
-    subroutine cs_user_parameters()  &
+    subroutine user_parameters()  &
       bind(C, name='cs_user_parameters')
       use, intrinsic :: iso_c_binding
       implicit none
-    end subroutine cs_user_parameters
+    end subroutine user_parameters
 
     !---------------------------------------------------------------------------
 
@@ -1273,7 +1273,7 @@ module cs_c_bindings
 
     ! Interface to C user function for boundary conditions
 
-    subroutine cs_user_boundary_conditions(nvarcl,                           &
+    subroutine user_boundary_conditions(nvarcl,                           &
                                            icodcl, bc_type, izfrdp, rcodcl)  &
       bind(C, name='cs_user_boundary_conditions')
       use, intrinsic :: iso_c_binding
@@ -1283,27 +1283,27 @@ module cs_c_bindings
       integer(kind=c_int), dimension(*), intent(inout) :: bc_type
       integer(kind=c_int), dimension(*), intent(inout) :: izfrdp
       real(kind=c_double), dimension(*), intent(inout) :: rcodcl
-    end subroutine cs_user_boundary_conditions
+    end subroutine user_boundary_conditions
 
     !---------------------------------------------------------------------------
 
     ! Interface to C user function for extra operations
 
-    subroutine cs_user_extra_operations()  &
+    subroutine user_extra_operations()  &
       bind(C, name='cs_user_extra_operations')
       use, intrinsic :: iso_c_binding
       implicit none
-    end subroutine cs_user_extra_operations
+    end subroutine user_extra_operations
 
     !---------------------------------------------------------------------------
 
     ! Interface to C user function for initialization
 
-    subroutine cs_user_initialization()  &
+    subroutine user_initialization()  &
       bind(C, name='cs_user_initialization')
       use, intrinsic :: iso_c_binding
       implicit none
-    end subroutine cs_user_initialization
+    end subroutine user_initialization
 
     !---------------------------------------------------------------------------
 

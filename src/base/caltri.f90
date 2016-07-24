@@ -937,7 +937,7 @@ if (itrale.gt.0) then
  ( nvar   , nscal  ,                                              &
    dt     )
 
-  call cs_user_extra_operations()
+  call user_extra_operations()
 
   call timer_stats_stop(post_stats_id)
 

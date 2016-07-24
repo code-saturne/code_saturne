@@ -986,7 +986,7 @@ do while (iterns.le.nterup)
     rcodcl )
 
   ! C version
-  call cs_user_boundary_conditions &
+  call user_boundary_conditions &
   ( nvarcl ,                                                       &
     icodcl ,          itypfb , izfppp ,                            &
     rcodcl )
@@ -1552,7 +1552,7 @@ if (ippmod(idarcy).eq.1) then
     rcodcl )
 
   ! C version
-  call cs_user_boundary_conditions &
+  call user_boundary_conditions &
   ( nvarcl ,                                                       &
     icodcl ,          itypfb , izfppp ,                            &
     rcodcl )
