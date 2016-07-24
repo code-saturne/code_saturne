@@ -82,8 +82,7 @@ cs_user_boundary_conditions-base.f90 \
 cs_user_boundary_conditions-compressible.f90 \
 cs_user_boundary_conditions-cooling_towers.f90 \
 cs_user_boundary_conditions-electric_arcs.f90 \
-cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90 \
-cs_user_boundary_conditions_elec.c \
+cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c \
 cs_user_boundary_conditions-fuel.f90 \
 cs_user_boundary_conditions-gas_3ptchem.f90 \
 cs_user_boundary_conditions-gas_ebu.f90 \

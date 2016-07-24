@@ -979,11 +979,18 @@ do while (iterns.le.nterup)
   !     - Sous-programme utilisateur
   !       ==========================
 
-  call cs_user_boundary_conditions &
+  call cs_f_user_boundary_conditions &
   ( nvar   , nscal  ,                                              &
     icodcl , itrifb , itypfb , izfppp ,                            &
     dt     ,                                                       &
     rcodcl )
+
+  ! C version
+  call cs_user_boundary_conditions &
+  ( nvarcl ,                                                       &
+    icodcl ,          itypfb , izfppp ,                            &
+    rcodcl )
+
 
   !     - Interface Code_Saturne
   !       ======================
@@ -1538,11 +1545,18 @@ if (ippmod(idarcy).eq.1) then
 
   endif
 
-  call cs_user_boundary_conditions &
+  call cs_f_user_boundary_conditions &
   ( nvar   , nscal  ,                                              &
     icodcl , itrifb , itypfb , izfppp ,                            &
     dt     ,                                                       &
     rcodcl )
+
+  ! C version
+  call cs_user_boundary_conditions &
+  ( nvarcl ,                                                       &
+    icodcl ,          itypfb , izfppp ,                            &
+    rcodcl )
+
 
   call condli &
    ( nvar   , nscal  , iterns ,                                    &

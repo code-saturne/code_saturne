@@ -1269,6 +1269,21 @@ module cs_c_bindings
       character(kind=c_char, len=1), dimension(*), intent(in) :: selection_crit
     end subroutine cs_pressure_drop_by_zone
 
+    !---------------------------------------------------------------------------
+
+    ! Interface to C user function for boundary conditions
+
+    subroutine cs_user_boundary_conditions(nvarcl,                           &
+                                           icodcl, bc_type, izfrdp, rcodcl)  &
+      bind(C, name='cs_user_boundary_conditions')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: nvarcl
+      integer(kind=c_int), dimension(*), intent(inout) :: icodcl
+      integer(kind=c_int), dimension(*), intent(inout) :: bc_type
+      integer(kind=c_int), dimension(*), intent(inout) :: izfrdp
+      real(kind=c_double), dimension(*), intent(inout) :: rcodcl
+    end subroutine cs_user_boundary_conditions
 
     !---------------------------------------------------------------------------
 

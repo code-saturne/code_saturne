@@ -176,14 +176,6 @@ CS_PROCF (eliniv, ELINIV) (cs_int_t *isuite);
 void
 CS_PROCF (elreca, ELRECA) (cs_real_t *dt);
 
-void
-CS_PROCF (usclim_trans, UICLIM_TRANS)(cs_int_t   *icodcl,
-                                      cs_real_t  *rcodcl,
-                                      cs_int_t   *itypfb,
-                                      cs_int_t   *izfppp,
-                                      cs_int_t   *iparoi,
-                                      cs_int_t   *nvarcl);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
