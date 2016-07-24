@@ -331,29 +331,22 @@ cs_lagr_resuspension(void)
       }
 
     }
-    /* Treatment of the case for user imposed motion */
+    /* Treatment of internal deposition and user imposed motion */
     else if (flag == CS_LAGR_PART_IMPOSED_MOTION) {
-
-      const cs_real_t *face_cog = fvq->i_face_cog + (3*face_id);
-      const cs_real_t *cell_cen = fvq->cell_cen + (3*iel);
-      cs_real_3_t vect_cen = {face_cog[0] - cell_cen[0],
-                              face_cog[1] - cell_cen[1],
-                              face_cog[2] - cell_cen[2]};
 
       /* Reorient the face so that it is the outwarding normal */
       int reorient_face = 1;
       if (iel == mesh->i_face_cells[face_id][1])
         reorient_face = -1;
 
-      /* Adhesion forces */
-      cs_real_t fadh = 0.0; // FIXME: provide a physical value
+      /* Adhesion forces not implemented */
 
       /* Gravity forces */
       cs_real_3_t gravity = {cs_glob_physical_constants->gx,
                              cs_glob_physical_constants->gy,
                              cs_glob_physical_constants->gz};
-      // FIXME Archimede
-      cs_real_t fgrav = p_mass * reorient_face
+
+			cs_real_t fgrav = p_mass * reorient_face
                       * cs_math_3_dot_product(gravity, i_face_normal[face_id]);
 
       /* Forces due to pressure difference */
@@ -365,17 +358,18 @@ cs_lagr_resuspension(void)
         c_id1 = iel;
       }
 
+      /* Warning: dynamic pressure, FIXME for iphydr = 1 */
       cs_real_t press_out = cs_glob_lagr_extra_module->pressure->val[c_id1];
       cs_real_t press_in = cs_glob_lagr_extra_module->pressure->val[c_id2];
-      const double pi = 4 * atan(1);
-      cs_real_t fpres = (press_out - press_in) * pi * pow(p_diam, 2) * 0.25
+
+      cs_real_t fpres = (press_out - press_in) * cs_math_pi * pow(p_diam, 2) * 0.25
         * cs_lagr_particle_get_real(part, p_am, CS_LAGR_FOULING_INDEX);
 
-      /* Resuspension criterion: Fadh + Fgrav + Fpres < 0 */
-      if ((fadh + fgrav + fpres) < 0.) {
+      /* Resuspension criterion: Fgrav + Fpres < 0 */
+      if ((fgrav + fpres) < 0.) {
         cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
                                   CS_LAGR_PART_IN_FLOW);
-        // To delete particles: cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_CELL_NUM, 0);
+				/* TODO: impose particle velocity? Do some stats? */
       }
     }
   }
