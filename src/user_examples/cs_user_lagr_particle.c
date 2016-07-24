@@ -419,8 +419,8 @@ cs_user_lagr_new_p_attr(unsigned char                  *particle,
 void
 cs_user_lagr_imposed_motion(const cs_real_3_t coords,
                             const cs_real_t   dt,
-                            cs_real_3_t       disp){
-
+                            cs_real_3_t       disp)
+{
 
   /* Angular velocity */
   cs_real_t omega = 1.0;

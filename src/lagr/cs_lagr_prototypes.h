@@ -67,7 +67,7 @@ BEGIN_C_DECLS
  * \param[in]      vagaus   Gaussian random variables
  * \param[in]      gradpr   pressure gradient
  * \param[in]      gradvf   gradient of the flow velocity
- * \param[in,out]  romp     particle density
+ * \param[in,out]  rho_p     particle density
  * \param[out]     fextla   user external force field (m/s^2)$
  */
 /*----------------------------------------------------------------------------*/
@@ -82,7 +82,7 @@ cs_user_lagr_ef(cs_real_t            dt_p,
                 const cs_real_33_t   vagaus[],
                 const cs_real_3_t    gradpr[],
                 const cs_real_33_t   gradvf[],
-                cs_real_t            romp[],
+                cs_real_t            rho_p[],
                 cs_real_3_t          fextla[]);
 
 /*----------------------------------------------------------------------------*/
@@ -152,12 +152,12 @@ cs_user_lagr_new_p_attr(unsigned char                  *particle,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_rt(cs_lnum_t        numpt,
-                cs_real_t        rep,
+cs_user_lagr_rt(cs_lnum_t        id_p,
+                cs_real_t        re_p,
                 cs_real_t        uvwr,
-                cs_real_t        romf,
-                cs_real_t        romp,
-                cs_real_t        xnul,
+                cs_real_t        rho_f,
+                cs_real_t        rho_p,
+                cs_real_t        nu_f,
                 cs_real_t        taup[],
                 const cs_real_t  dt[]);
 
@@ -172,14 +172,14 @@ cs_user_lagr_rt(cs_lnum_t        numpt,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_rt_t(cs_lnum_t        numpt,
-                  cs_real_t        rep,
+cs_user_lagr_rt_t(cs_lnum_t        id_p,
+                  cs_real_t        re_p,
                   cs_real_t        uvwr,
-                  cs_real_t        romf,
-                  cs_real_t        romp,
-                  cs_real_t        xnul,
-                  cs_real_t        xcp,
-                  cs_real_t        xrkl,
+                  cs_real_t        rho_f,
+                  cs_real_t        rho_p,
+                  cs_real_t        nu_f,
+                  cs_real_t        cp_f,
+                  cs_real_t        k_f,
                   cs_real_t        tauc[],
                   const cs_real_t  dt[]);
 

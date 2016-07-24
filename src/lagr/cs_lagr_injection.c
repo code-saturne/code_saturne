@@ -388,19 +388,19 @@ cs_lagr_injection(int        time_id,
 
     int izone = bdy_cond->b_zone_id[ii];
 
-    if (   bdy_cond->b_zone_natures[izone] != CS_LAGR_IENTRL
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_ISORTL
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_IREBOL
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_IDEPO1
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_IDEPO2
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_ISYMTL
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_IENCRL
+    if (   bdy_cond->b_zone_natures[izone] != CS_LAGR_INLET
+        && bdy_cond->b_zone_natures[izone] != CS_LAGR_OUTLET
+        && bdy_cond->b_zone_natures[izone] != CS_LAGR_REBOUND
+        && bdy_cond->b_zone_natures[izone] != CS_LAGR_DEPO1
+        && bdy_cond->b_zone_natures[izone] != CS_LAGR_DEPO2
+        && bdy_cond->b_zone_natures[izone] != CS_LAGR_SYM
+        && bdy_cond->b_zone_natures[izone] != CS_LAGR_FOULING
         && bdy_cond->b_zone_natures[izone] != CS_LAGR_JBORD1
         && bdy_cond->b_zone_natures[izone] != CS_LAGR_JBORD2
         && bdy_cond->b_zone_natures[izone] != CS_LAGR_JBORD3
         && bdy_cond->b_zone_natures[izone] != CS_LAGR_JBORD4
         && bdy_cond->b_zone_natures[izone] != CS_LAGR_JBORD5
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_IDEPFA) {
+        && bdy_cond->b_zone_natures[izone] != CS_LAGR_DEPO_DLVO) {
 
       bft_printf(_("\n Lagrangian module: \n"));
       bft_printf(_("   Zone %d nature is unknown = %d\n"),
@@ -416,11 +416,11 @@ cs_lagr_injection(int        time_id,
 
     int izone = bdy_cond->b_zone_id[ii];
 
-    if (   bdy_cond->b_zone_natures[izone] == CS_LAGR_IENCRL
+    if (   bdy_cond->b_zone_natures[izone] == CS_LAGR_FOULING
         && cs_glob_lagr_model->physical_model != 2) {
 
       bft_printf(_("\n Lagrangian module: \n"));
-      bft_printf(_("   Zone %d nature is of type CS_LAGR_IENCRL,\n"
+      bft_printf(_("   Zone %d nature is of type CS_LAGR_FOULING,\n"
                    "   but cs_glob_lagr_model->physical_model is not equal to 2\n"),
                  (int)izone + 1);
       iok = iok + 1;
@@ -433,10 +433,10 @@ cs_lagr_injection(int        time_id,
 
     int izone = bdy_cond->b_zone_id[ii];
 
-    if (bdy_cond->b_zone_natures[izone] == CS_LAGR_IENCRL && cs_glob_lagr_model->fouling != 1) {
+    if (bdy_cond->b_zone_natures[izone] == CS_LAGR_FOULING && cs_glob_lagr_model->fouling != 1) {
 
       bft_printf(_("\n Lagrangian module: \n"));
-      bft_printf(_("   Zone %d nature is of type CS_LAGR_IENCRL, but fouling is not activated\n"),
+      bft_printf(_("   Zone %d nature is of type CS_LAGR_FOULING, but fouling is not activated\n"),
                  (int)izone + 1);
       iok = iok + 1;
 

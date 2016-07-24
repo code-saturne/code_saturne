@@ -45,19 +45,19 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_LAGR_IENTRL = 1,
-  CS_LAGR_ISORTL = 2,
-  CS_LAGR_IREBOL = 3,
-  CS_LAGR_IDEPO1 = 4,
-  CS_LAGR_IDEPO2 = 5,
-  CS_LAGR_IENCRL = 7,
+  CS_LAGR_INLET = 1,
+  CS_LAGR_OUTLET = 2,
+  CS_LAGR_REBOUND = 3,
+  CS_LAGR_DEPO1 = 4,
+  CS_LAGR_DEPO2 = 5,
+  CS_LAGR_FOULING = 7,
   CS_LAGR_JBORD1 = 8,
   CS_LAGR_JBORD2 = 9,
   CS_LAGR_JBORD3 = 10,
   CS_LAGR_JBORD4 = 11,
   CS_LAGR_JBORD5 = 12,
-  CS_LAGR_IDEPFA = 13,
-  CS_LAGR_ISYMTL = 14
+  CS_LAGR_DEPO_DLVO = 13,
+  CS_LAGR_SYM = 14
 
 } cs_lagr_bc_type_t;
 
@@ -295,24 +295,24 @@ typedef struct {
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle
       temperature (in degrees Celsius).
-      Useful if \ref iphyla=1 and if there is a thermal scalar associated with
+      Useful if \ref physical_model=1 and if there is a thermal scalar associated with
       the continuous phase
   */
   int   itpvar;
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle
-      diameter. Useful if \ref iphyla = 1
+      diameter. Useful if \ref physical_model = 1
   */
   int   idpvar;
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle mass
-      Useful if si \ref iphyla = 1
+      Useful if \ref physical_model = 1
   */
   int   impvar;
 
   /*  initialization temperature (in degree Celsius) for the particles already
       present in the calculation domain when an evolution equation on
-      the particle temperature is activated during a calculation (\ref iphyla =
+      the particle temperature is activated during a calculation (\ref physical_model =
       1 and \ref itpvar = 1).
       Useful if \ref isuila = 1 and \ref itpvar = 0 in the previous calculation
   */
@@ -322,7 +322,7 @@ typedef struct {
      of the particles already present
      in the calculation domain when an evolution equation
      on the particle temperature is activated during a calculation
-     (\ref iphyla = 1 and \ref itpvar = 1).
+     (\ref physical_model = 1 and \ref itpvar = 1).
      Useful if \ref isuila = 1 and \ref itpvar = 0 in the previous calculation
   */
   cs_real_t          cppart;
@@ -428,12 +428,12 @@ typedef struct {
     - 2: user profile to be defined in cs_user_lagr_boundary_conditions */
   int        diameter_profile;
 
-  /*! type of coal initial composition (if \ref iphyla=2)
+  /*! type of coal initial composition (if \ref physical_model=2)
     - 1: coal initial composition is given by DP_FCP
     - 0: user profile to be defined cs_user_lagr_boundary_conditions */
   int        coal_profile;
 
-  /*! coal number of the particle (if \ref iphyla=2)*/
+  /*! coal number of the particle (if \ref physical_model=2)*/
   int        coal_number;
 
   /*! statistics group number */
@@ -504,12 +504,12 @@ typedef struct {
   int  ltsdyn;
 
   /*! activation (=1) or not (=0) of the two-way coupling on the mass.
-    Useful if \ref iilagr = 2, \ref iphyla = 1 and \ref impvar = 1 */
+    Useful if \ref iilagr = 2, \ref physical_model = 1 and \ref impvar = 1 */
   int  ltsmas;
 
-  /*  if \ref iphyla = 1 and \ref itpvar = 1, \ref ltsthe
+  /*  if \ref physical_model = 1 and \ref itpvar = 1, \ref ltsthe
    activates (=1) or not (=0) the two-way coupling on temperature.
-   if \ref iphyla = 2, \ref ltsthe activates (=1) or not (=0) the
+   if \ref physical_model = 2, \ref ltsthe activates (=1) or not (=0) the
    two-way coupling on the eulerian variables related to pulverised
    coal combustion.
    Useful if \ref iilagr = 2 */
@@ -656,7 +656,7 @@ typedef struct {
 
   /*  activates (=1) or not (=0) the option of coal particle fouling.
    It then is necessary to specify the domain boundaries
-   on which fouling may take place. Useful if \ref iphyla = 2*/
+   on which fouling may take place. Useful if \ref physical_model = 2*/
   int  iencra;
 
   /*  encrustation data*/
@@ -672,13 +672,13 @@ typedef struct {
 
   /*  limit temperature (in degree Celsius) below which the coal particles do
    not cause any fouling (if the fouling model is activated).
-   Useful if \ref iphyla = 2 and \ref iencra = 1*/
+   Useful if \ref physical_model = 2 and \ref iencra = 1*/
 //TODO
   cs_real_t  *tprenc;//ncharm2
 
   /*  ash critical viscosity in \f$ kg.m^{-1}.s^{-1} \f$, in the fouling model
    cf J.D. Watt et T. Fereday (J.Inst.Fuel, Vol.42-p99).
-   Useful if \ref iphyla = 2 and \ref iencra = 1*/
+   Useful if \ref physical_model = 2 and \ref iencra = 1*/
 //TODO
   cs_real_t  *visref;//ncharm2
 
@@ -935,17 +935,17 @@ typedef struct {
 
   /* associates (=1) or not (=0) the variable "shrinking core diameter of
      the coal particles" with the output of particles or trajectories.
-     useful only if \ref iphyla = 2 */
+     useful only if \ref physical_model = 2 */
   int  ivisdk;
 
   /* associates (=1) or not (=0) the variable "mass of reactive coal of the
      coal particles" with the output of particles or trajectories.
-     useful only if \ref iphyla = 2 */
+     useful only if \ref physical_model = 2 */
   int  ivisch;
 
   /* associates (=1) or not (=0) the variable "mass of coal of the
      coal particles" with the output of particles or trajectories.
-     useful only if \ref iphyla = 2 */
+     useful only if \ref physical_model = 2 */
   int  ivisck;
 
   /*! TODO */
