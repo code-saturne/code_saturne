@@ -126,6 +126,8 @@ class LagrangianBoundariesModel(Model):
             self.isInList(value, ["inlet"])
         elif nature == "outlet":
             self.isInList(value, ["outlet"])
+        elif nature == "free_inlet_outlet":
+            self.isInList(value, ["outlet"])
         elif nature == "symmetry":
             self.isInList(value, ["part_symmetry"])
         elif nature == "wall":
@@ -145,7 +147,8 @@ class LagrangianBoundariesModel(Model):
         Return value for the boundary condition.
         """
         default = { "wall" : "deposit1", "inlet" : "inlet",
-                    "outlet" : "outlet", "symmetry" : "part_symmetry"}
+                "outlet" : "outlet", "free_inlet_outlet" : "outlet",
+                "symmetry" : "part_symmetry"}
         self.setCurrentBoundaryNode(nature, labelbc)
         if self.node_particles:
             val = self.node_particles['choice']

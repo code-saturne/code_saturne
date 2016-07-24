@@ -164,6 +164,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
                            "fouling" : self.tr("Fouling") },
                 "inlet" : { "inlet" : self.tr("Particles inlet") },
                 "outlet" : { "outlet" : self.tr("Particles outlet") },
+                "free_inlet_outlet" : { "outlet" : self.tr("Particles outlet") },
                 "symmetry" : { "part_symmetry" : self.tr("Particles zero-flux") }
                 }
         else:
@@ -174,6 +175,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
                            "deposit2" : self.tr("Deposition") },
                 "inlet" : { "inlet" : self.tr("Particles inlet") },
                 "outlet" : { "outlet" : self.tr("Particles outlet") },
+                "free_inlet_outlet" : { "outlet" : self.tr("Particles outlet") },
                 "symmetry" : { "part_symmetry" : self.tr("Particles zero-flux") }
                 }
 
