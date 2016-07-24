@@ -249,6 +249,18 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                            cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
+ * Compute fluid section mesh quantities at the initial step
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_fluid_sections(const cs_mesh_t       *mesh,
+                            cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------
  * Compute mesh quantities
  *
  * parameters:

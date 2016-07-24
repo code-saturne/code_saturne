@@ -2467,6 +2467,48 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute fluid section mesh quantities at the initial step
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_fluid_sections(const cs_mesh_t       *mesh,
+                            cs_mesh_quantities_t  *mesh_quantities)
+{
+  cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  cs_lnum_t  n_b_faces = mesh->n_b_faces;
+
+  cs_real_3_t *restrict i_face_normal
+    = (cs_real_3_t *restrict)mesh_quantities->i_face_normal;
+  cs_real_3_t *restrict b_face_normal
+    = (cs_real_3_t *restrict)mesh_quantities->b_face_normal;
+  cs_real_3_t *restrict i_f_face_normal
+    = (cs_real_3_t *restrict)mesh_quantities->i_f_face_normal;
+  cs_real_3_t *restrict b_f_face_normal
+    = (cs_real_3_t *restrict)mesh_quantities->b_f_face_normal;
+
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    mesh_quantities->i_f_face_surf[face_id] =
+      mesh_quantities->i_face_surf[face_id];
+
+    for (int i = 0; i < 3; i++)
+      i_f_face_normal[face_id][i] = i_face_normal[face_id][i];
+  }
+
+	for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    mesh_quantities->b_f_face_surf[face_id] =
+      mesh_quantities->b_face_surf[face_id];
+
+    for (int i = 0; i < 3; i++)
+      b_f_face_normal[face_id][i] = b_face_normal[face_id][i];
+  }
+
+}
+
+/*----------------------------------------------------------------------------
  * Compute mesh quantities -> vectors II' and JJ'
  *
  * parameters:
