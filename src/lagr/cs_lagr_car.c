@@ -536,9 +536,9 @@ cs_lagr_car(int              iprev,
 
       if (cell_id >= 0) {
 
-        /* -->   Calcul de II = ( -grad(P)/Rom(f)+grad(<Vf>)*(<Up>-<Uf>) )
-         *       ou
-         *       Calcul de II = ( -grad(P)/Rom(f) ) */
+        /* -->   Compute: II = ( -grad(P)/Rom(f)+grad(<Vf>)*(<Up>-<Uf>) + g )
+         *       or
+         *       Compute: II = ( -grad(P)/Rom(f) + g) */
 
         cs_real_t romf = extra->cromf->val[cell_id];
 

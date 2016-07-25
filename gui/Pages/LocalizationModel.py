@@ -191,9 +191,6 @@ class BoundaryZone(Zone):
                     self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', 'groundwater']
                 del GroundwaterModel
                 from code_saturne.Pages.LagrangianModel import LagrangianModel
-                if LagrangianModel(self.case).getLagrangianModel() != "off":
-                    self._natureList = ['wall', 'inlet', 'outlet', 'symmetry']
-                del LagrangianModel
             else:
                 self._natureList = ['wall', 'inlet', 'outlet', 'symmetry']
         else:

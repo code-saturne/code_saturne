@@ -824,29 +824,29 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
     if (interaction != NULL) {
 
       if (cs_gui_strcmp(interaction, "inlet"))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_IENTRL;
+        bdy_cond->b_zone_natures[izone] = CS_LAGR_INLET;
 
       else if(cs_gui_strcmp(interaction, "outlet"))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_ISORTL;
+        bdy_cond->b_zone_natures[izone] = CS_LAGR_OUTLET;
 
       else if(cs_gui_strcmp(interaction, "bounce"))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_IREBOL;
+        bdy_cond->b_zone_natures[izone] = CS_LAGR_REBOUND;
 
       else if(cs_gui_strcmp(interaction, "part_symmetry"))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_ISYMTL;
+        bdy_cond->b_zone_natures[izone] = CS_LAGR_SYM;
 
       else if(cs_gui_strcmp(interaction, "deposit1"))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_IDEPO1;
+        bdy_cond->b_zone_natures[izone] = CS_LAGR_DEPO1;
 
       else if(cs_gui_strcmp(interaction, "deposit2"))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_IDEPO2;
+        bdy_cond->b_zone_natures[izone] = CS_LAGR_DEPO2;
 
       else if(cs_gui_strcmp(interaction, "fouling") && iphyla == 2)
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_IENCRL;
+        bdy_cond->b_zone_natures[izone] = CS_LAGR_FOULING;
 
       else if(   cs_gui_strcmp(interaction, "fouling")
               && (iphyla == 0  || iphyla == 1))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_IDEPFA;
+        bdy_cond->b_zone_natures[izone] = CS_LAGR_DEPO_DLVO;
 
 #if _XML_DEBUG_
       bft_printf("--b_zone_natures[%i] = %i has %i class(es) \n", izone,
@@ -862,7 +862,7 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
 
       /* Additional info for inlet */
 
-      if (bdy_cond->b_zone_natures[izone] == CS_LAGR_IENTRL) {
+      if (bdy_cond->b_zone_natures[izone] == CS_LAGR_INLET) {
 
         strcpy(path1, path2);
         cs_xpath_add_element(&path1, "class");

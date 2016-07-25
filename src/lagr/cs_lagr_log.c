@@ -556,27 +556,27 @@ cs_lagr_log_iteration(void)
 
       char const *chcond;
 
-      if (bdy_cond->b_zone_natures[nb] == CS_LAGR_IENTRL)
+      if (bdy_cond->b_zone_natures[nb] == CS_LAGR_INLET)
         chcond = "INLET";
 
-      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_IREBOL)
+      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_REBOUND)
         chcond = "REBOUND";
 
-      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_ISORTL)
+      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_OUTLET)
         chcond = "OUTLET";
 
-      else if (   bdy_cond->b_zone_natures[nb] == CS_LAGR_IDEPO1
-               || bdy_cond->b_zone_natures[nb] == CS_LAGR_IDEPO2)
+      else if (   bdy_cond->b_zone_natures[nb] == CS_LAGR_DEPO1
+               || bdy_cond->b_zone_natures[nb] == CS_LAGR_DEPO2)
         chcond = "DEPOSITION";
 
-      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_IENCRL)
+      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_FOULING)
         chcond = "FOULING";
 
-      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_IDEPFA)
+      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_DEPO_DLVO)
         chcond = "DLVO CONDITIONS";
 
-      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_ISYMTL)
-        chcond = "DLVO CONDITIONS";
+      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_SYM)
+        chcond = "SYMMETRY";
 
       else
         chcond = "USER";

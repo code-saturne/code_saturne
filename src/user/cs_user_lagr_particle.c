@@ -107,17 +107,17 @@ BEGIN_C_DECLS
  * By default gravity and drag force are the only forces acting on the particles
  * (the gravity components gx gy gz are assigned in the GUI or in usipsu)
  *
- * \param[in]    dt_p       time step (for the cell)
- * \param[in]    taup       particle relaxation time
- * \param[in]    tlag       relaxation time for the flow
- * \param[in]    piil       term in the integration of the sde
- * \param[in]    bx         characteristics of the turbulence
- * \param[in]    tsfext     infos for the return coupling
- * \param[in]    vagaus     Gaussian random variables
- * \param[in]    gradpr     pressure gradient
- * \param[in]    gradvf   gradient of the flow velocity
- * \param[inout] romp     particle density
- * \param[out]   fextla   user external force field (m/s^2)$
+ * \param[in]     dt_p     time step (for the cell)
+ * \param[in]     taup     particle relaxation time
+ * \param[in]     tlag     relaxation time for the flow
+ * \param[in]     piil     term in the integration of the sde
+ * \param[in]     bx       characteristics of the turbulence
+ * \param[in]     tsfext   infos for the return coupling
+ * \param[in]     vagaus   Gaussian random variables
+ * \param[in]     gradpr   pressure gradient
+ * \param[in]     gradvf   gradient of the flow velocity
+ * \param[in,out] rho_p     particle density
+ * \param[out]    fextla   user external force field (m/s^2)$
  */
 /*----------------------------------------------------------------------------*/
 
@@ -131,7 +131,7 @@ cs_user_lagr_ef(cs_real_t            dt_p,
                 const cs_real_33_t   vagaus[],
                 const cs_real_3_t    gradpr[],
                 const cs_real_33_t   gradvf[],
-                cs_real_t            romp[],
+                cs_real_t            rho_p[],
                 cs_real_3_t          fextla[])
 {
 }
@@ -171,7 +171,7 @@ cs_user_lagr_in(int                         time_id,
  * This function is called at different points, at which different attributes
  * may be modified.
  *
- * \param[inout]  particle  particle structure
+ * \param[in,out] particle  particle structure
  * \param[in]     p_am      particle attributes map
  * \param[in]     face_id   id of particle injection face
  * \param[in]     attr_id   id of variable modifiable by this call. called for
@@ -233,27 +233,27 @@ cs_user_lagr_new_p_attr(unsigned char                  *particle,
  *
  *      Prt    : Prandtl number
  *
- * \param[in]   numpt  particle id
- * \param[in]   rep    particle Reynolds number
+ * \param[in]   id_p   particle id
+ * \param[in]   re_p   particle Reynolds number
  * \param[in]   uvwr   relative velocity of the particle
  *                     (flow-seen velocity - part. velocity)
- * \param[in]   romf   fluid density at  particle position
- * \param[in]   romp   particle density
- * \param[in]   xnul   kinematic viscosity of the fluid at particle position
- * \param[in]   xcp    specific heat of the fluid at particle position
- * \param[in]   xrkl   diffusion coefficient of the fluid at particle position
+ * \param[in]   rho_f  fluid density at  particle position
+ * \param[in]   rho_p  particle density
+ * \param[in]   nu_f   kinematic viscosity of the fluid at particle position
+ * \param[in]   cp_f   specific heat of the fluid at particle position
+ * \param[in]   k_f    diffusion coefficient of the fluid at particle position
  * \param[out]  taup   thermal relaxation time
  * \param[in]   dt     time step (per cell)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_rt(cs_lnum_t        numpt,
-                cs_real_t        rep,
+cs_user_lagr_rt(cs_lnum_t        id_p,
+                cs_real_t        re_p,
                 cs_real_t        uvwr,
-                cs_real_t        romf,
-                cs_real_t        romp,
-                cs_real_t        xnul,
+                cs_real_t        rho_f,
+                cs_real_t        rho_p,
+                cs_real_t        nu_f,
                 cs_real_t        taup[],
                 const cs_real_t  dt[])
 {
@@ -267,7 +267,7 @@ cs_user_lagr_rt(cs_lnum_t        numpt,
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
 
-  unsigned char *particle = p_set->p_buffer + p_am->extents * numpt;
+  unsigned char *particle = p_set->p_buffer + p_am->extents * id_p;
   cs_real_t p_diam = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
 
   /*===============================================================================
@@ -284,13 +284,13 @@ cs_user_lagr_rt(cs_lnum_t        numpt,
     cs_real_t cd1  = 0.15;
     cs_real_t cd2  = 0.687;
 
-    if (rep <= 1000)
-      fdr = 18.0 * xnul * (1.0 + cd1 * pow(rep, cd2)) / (p_diam * p_diam);
+    if (re_p <= 1000)
+      fdr = 18.0 * nu_f * (1.0 + cd1 * pow(re_p, cd2)) / (p_diam * p_diam);
 
     else
       fdr = (0.44 * 3.0 / 4.0) * uvwr / p_diam;
 
-    taup[numpt] = romp / romf / fdr;
+    taup[id_p] = rho_p / rho_f / fdr;
 
   }
 
@@ -306,22 +306,22 @@ cs_user_lagr_rt(cs_lnum_t        numpt,
 
   cs_real_t dd2 = p_diam * p_diam;
 
-  if ( rep <= rec1 )
-    fdr = 18.0 * xnul / dd2;
+  if ( re_p <= rec1 )
+    fdr = 18.0 * nu_f / dd2;
 
-  else if ( rep <= rec2 )
-    fdr = 3.0/4.0 * xnul / dd2 * (22.73 + 0.0903 / rep + 3.69 * rep );
+  else if ( re_p <= rec2 )
+    fdr = 3.0/4.0 * nu_f / dd2 * (22.73 + 0.0903 / re_p + 3.69 * re_p );
 
-  else if ( rep <= rec3 )
-    fdr = 3.0/4.0 * xnul / dd2 * (29.1667 - 3.8889 / rep + 1.222 * rep);
+  else if ( re_p <= rec3 )
+    fdr = 3.0/4.0 * nu_f / dd2 * (29.1667 - 3.8889 / re_p + 1.222 * re_p);
 
-  else if ( rep <=rec4 )
-    fdr = 18.0 * xnul / dd2 *(1.0 + 0.15 * pow(rep,0.687));
+  else if ( re_p <=rec4 )
+    fdr = 18.0 * nu_f / dd2 *(1.0 + 0.15 * pow(re_p,0.687));
 
   else
     fdr = (0.44 * 3.0 / 4.0) * uvwr / p_diam;
 
-  taup[numpt] = romp / romf / fdr;
+  taup[id_p] = rho_p / rho_f / fdr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -333,50 +333,56 @@ cs_user_lagr_rt(cs_lnum_t        numpt,
  * This function is called in a loop on the particles, so be careful
  * to avoid too costly operations.
  *
+ * \param[in]   id_p   particle id
+ * \param[in]   re_p   particle Reynolds number
+ * \param[in]   uvwr   relative velocity of the particle
+ *                     (flow-seen velocity - part. velocity)
+ * \param[in]   rho_f  fluid density at  particle position
+ * \param[in]   rho_p  particle density
+ * \param[in]   nu_f   kinematic viscosity of the fluid at particle position
+ * \param[in]   cp_f   specific heat of the fluid at particle position
+ * \param[in]   k_f    diffusion coefficient of the fluid at particle position
+ * \param[out]  tauc   thermal relaxation time
+ * \param[in]   dt     time step (per cell)
+*
 */
 
 void
-cs_user_lagr_rt_t(cs_lnum_t        numpt,
-                  cs_real_t        rep,
+cs_user_lagr_rt_t(cs_lnum_t        id_p,
+                  cs_real_t        re_p,
                   cs_real_t        uvwr,
-                  cs_real_t        romf,
-                  cs_real_t        romp,
-                  cs_real_t        xnul,
-                  cs_real_t        xcp,
-                  cs_real_t        xrkl,
+                  cs_real_t        rho_f,
+                  cs_real_t        rho_p,
+                  cs_real_t        nu_f,
+                  cs_real_t        cp_f,
+                  cs_real_t        k_f,
                   cs_real_t        tauc[],
                   const cs_real_t  dt[])
 {
   return;  /* Remove this line to use this function */
 
-  /*===============================================================================
-   * 1. Initializations
-   *===============================================================================*/
-
-  /* Particles management */
+  /* 1. Initializations: Particles management */
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
 
-  unsigned char *particle = p_set->p_buffer + p_am->extents * numpt;
+  unsigned char *particle = p_set->p_buffer + p_am->extents * id_p;
 
-  /*===============================================================================
-   * 2. Standard thermal relaxation time
-   *=============================================================================== */
+
+	/* 2. Standard thermal relaxation time */
 
   /* This example is unactivated, it gives the standard thermal relaxation time
    * as an indication.*/
 
-
   if (false) {
 
-    cs_real_t prt = xnul / xrkl;
+    cs_real_t prt = nu_f / k_f;
 
-    cs_real_t fnus = 2.0 + 0.55 * sqrt(rep) * pow(prt, 1./3.);
+    cs_real_t fnus = 2.0 + 0.55 * sqrt(re_p) * pow(prt, 1./3.);
 
     cs_real_t diam = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
-    cs_real_t p_cp = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CP);
+    cs_real_t cp_p = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CP);
 
-    tauc[numpt]= diam * diam * romp * p_cp  / ( fnus * 6.0 * romf * xcp * xrkl);
+    tauc[id_p]= diam * diam * rho_p * cp_p  / ( fnus * 6.0 * rho_f * cp_f * k_f);
 
   }
 
@@ -414,22 +420,13 @@ cs_user_lagr_imposed_motion(const cs_real_3_t coords,
  *   isttio = 0 : unsteady Lagrangian calculation
  *          = 1 : steady Lagrangian calculation
  *
- *   istala : calculation of the statistics if >= 1, else no stats
- *
  *   isuist : Restart of statistics calculation if >= 1, else no stats
  *
  *   idstnt : Number of the time step for the start of the statistics calculation
  *
  *   nstist : Number of the time step of the start of the steady computation
  *
- *   npst   : Number of iterations of the computation of the steady statistics
- *
- *   npstt  : Total number of iterations of the statistics calculation since the
- *            beginning of the calculation, including the unsteady part
- *
- *   tstat  : Physical time of the recording of the steady volume statistics
- *            (for the unsteady part, tstat = dtp the Lagrangian time step)
- *
+ * \param[in]  dt      time step (per cell)
  */
 /*-------------------------------------------------------------------------------*/
 

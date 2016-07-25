@@ -366,7 +366,7 @@ if (nfpt1t.eq.0) deallocate(izft1d)
  /,/,'TRAITEMENT DES SOURCES DE CONDENSATION ACTIVE ',/,&
    '                 SUR  UN TOTAL DE ',I10,' CELLULES')
  2004 format(                                                     &
-    /,'TTES PHASES  : MODULE THERMIQUE 1D EN PAROI ACTIVE     ',/,&
+    /,'MODULE THERMIQUE 1D EN PAROI ACTIVE     ',/,&
       '   SUR UN TOTAL DE ',I10,' FACES DE BORD',/,               &
       '   (',I10,' FACES DE BORD EN LOCAL)',/)
 #else
@@ -380,7 +380,7 @@ if (nfpt1t.eq.0) deallocate(izft1d)
  /,/,'CONDENSATION SOURCE TERMS TREATMENT ACTIVATED ',/, &
    '                 ON A TOTAL OF ',I10,' CELLS')
  2004 format(                                               &
- /,'ALL PHASES  : 1D-WALL THERMAL MODULE ACTIVATED ',/,     &
+ /,'1D-WALL THERMAL MODULE ACTIVATED ',/,     &
    '   ON A TOTAL OF ',I10,' BOUNDARY FACES',/,             &
    '   (',I10,' LOCAL BOUNDARY FACES)',/)
 #endif
@@ -937,7 +937,7 @@ if (itrale.gt.0) then
  ( nvar   , nscal  ,                                              &
    dt     )
 
-  call cs_user_extra_operations()
+  call user_extra_operations()
 
   call timer_stats_stop(post_stats_id)
 

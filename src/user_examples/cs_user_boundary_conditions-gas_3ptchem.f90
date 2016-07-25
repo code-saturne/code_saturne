@@ -69,7 +69,7 @@
 !>                                     \grad T \cdot \vect{n} \f$
 !_______________________________________________________________________________
 
-subroutine cs_user_boundary_conditions &
+subroutine cs_f_user_boundary_conditions &
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    dt     ,                                                       &
@@ -439,4 +439,4 @@ enddo
 deallocate(lstelt)  ! temporary array for boundary faces selection
 
 return
-end subroutine cs_user_boundary_conditions
+end subroutine cs_f_user_boundary_conditions

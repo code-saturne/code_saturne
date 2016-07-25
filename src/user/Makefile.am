@@ -71,13 +71,13 @@ AM_LDFLAGS =
 
 EXTRA_DIST = cs_user_modules.f90 cs_user_parameters.f90 \
 cs_user_extra_operations.f90 cs_user_physical_properties.f90 \
-cs_user_initialization.f90
+cs_user_initialization.f90 cs_user_boundary_conditions.f90
 
 # Library source files
 
 userfiles = \
 cs_user_atmospheric_model.f90 \
-cs_user_boundary_conditions.f90 \
+cs_user_boundary_conditions.c \
 cs_user_boundary_mass_source_terms.f90 \
 cs_user_cdo.c \
 cs_user_cdo_numerics.c \
@@ -116,6 +116,17 @@ usvort.f90 \
 usvosy.f90
 
 # Special treatment to files existing both in f90 and C:
+cs_user_f_boundary_conditions = $(top_srcdir)/src/user/cs_user_boundary_conditions.f90
+
+cs_f_user_boundary_conditions.o: $(cs_user_f_boundary_conditions)
+	$(FCCOMPILE) -c -o cs_f_user_boundary_conditions.o  $(cs_user_f_boundary_conditions)
+
+cs_f_user_boundary_conditions.obj: $(cs_user_f_boundary_conditions)
+	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_boundary_conditions)`
+
+cs_f_user_boundary_conditions.lo: $(cs_user_f_boundary_conditions)
+	$(LTFCCOMPILE) -c -o cs_f_user_boundary_conditions.o $(cs_user_f_boundary_conditions)
+
 cs_user_f_parameters = $(top_srcdir)/src/user/cs_user_parameters.f90
 
 cs_f_user_parameters.o: $(cs_user_f_parameters)
@@ -163,13 +174,14 @@ cs_f_user_physical_properties.lo: $(cs_user_f_physical_properties)
 noinst_LTLIBRARIES = libcsuser.la
 libcsuser_la_SOURCES = $(userfiles)
 libcsuser_la_LIBADD = cs_f_user_parameters.lo cs_f_user_extra_operations.lo \
-cs_f_user_initialization.lo cs_f_user_physical_properties.lo
+cs_f_user_initialization.lo cs_f_user_physical_properties.lo \
+cs_f_user_boundary_conditions.lo
 libcsuser_la_LDFLAGS = -no-undefined
 
 userdir = $(pkgdatadir)/user
 user_DATA = $(userfiles) cs_user_modules.f90 cs_user_parameters.f90 \
 cs_user_extra_operations.f90 cs_user_physical_properties.f90 \
-cs_user_initialization.f90
+cs_user_initialization.f90 cs_user_boundary_conditions.f90
 
 
 clean-local:

@@ -229,7 +229,7 @@ else
 
 endif
 
-call cs_user_initialization()
+call user_initialization()
 
 ! Si l'utilisateur a change Ptot, on change P* en consequence,
 ! sinon on met Ptot a P0 + rho.g.r

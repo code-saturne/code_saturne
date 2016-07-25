@@ -65,16 +65,16 @@
  *   This is used definition of for inlet and of the other boundaries
  *
  *   Boundary faces may be selected using the
- *    \ref cs_selector_get_b_face_num_list function.
+ *    \ref cs_selector_get_b_face_list function.
  *
  * parameters:
  *
- * \param[in] itypfb    type of the boundary faces
+ * \param[in] bc_type    type of the boundary faces
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_boundary_conditions(const int  itypfb[])
+cs_user_lagr_boundary_conditions(const int  bc_type[])
 {
   return;  /* remove to use */
 
@@ -99,11 +99,11 @@ cs_user_lagr_boundary_conditions(const int  itypfb[])
      from the properties (groups, ...) of the boundary faces, from the
      boundary conditions, or even from their coordinates. To do this,
      we fill the ifrlag(mesh->n_b_faces) array which gives for every boundary
-     face the number (id+1) of the zone to which it belongs ifrlag(ifac)
+     face the number (id+1) of the zone to which it belongs ifrlag(face_id)
 
      Be careful, all the boundary faces must have been assigned.
 
-     The number of the zones (thus the values of ifrlag(ifac)) is arbitrarily
+     The number of the zones (thus the values of ifrlag(face_id)) is arbitrarily
      chosen by the user, but must be a positive integer and inferior or equal
      to nflagm.
 
@@ -115,8 +115,8 @@ cs_user_lagr_boundary_conditions(const int  itypfb[])
                               &nlelt,
                               lstelt);
   for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt++) {
-    cs_lnum_t ifac = lstelt[ilelt];
-    lagr_bdy_cond->b_face_zone_id[ifac] = 0; /* zone_id */
+    cs_lnum_t face_id = lstelt[ilelt];
+    lagr_bdy_cond->b_face_zone_id[face_id] = 0; /* zone_id */
   }
 
   /* Second zone numbered izone = 1 */
@@ -125,15 +125,15 @@ cs_user_lagr_boundary_conditions(const int  itypfb[])
                               lstelt);
 
   for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt++) {
-    cs_lnum_t ifac = lstelt[ilelt];
-    lagr_bdy_cond->b_face_zone_id[ifac] = 1; /* zone_id */
+    cs_lnum_t face_id = lstelt[ilelt];
+    lagr_bdy_cond->b_face_zone_id[face_id] = 1; /* zone_id */
   }
 
   /* Third zone numbered izone = 3 (inlet) */
 
-  for (cs_lnum_t ifac = 0; ifac < nlelt; ifac++) {
-    if (itypfb[ifac] == CS_INLET) {
-      lagr_bdy_cond->b_face_zone_id[ifac] = 3; /* zone_id */
+  for (cs_lnum_t face_id = 0; face_id < nlelt; face_id++) {
+    if (bc_type[face_id] == CS_INLET) {
+      lagr_bdy_cond->b_face_zone_id[face_id] = 3; /* zone_id */
     }
   }
 
@@ -143,8 +143,8 @@ cs_user_lagr_boundary_conditions(const int  itypfb[])
                               lstelt);
 
   for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt++) {
-    cs_lnum_t ifac = lstelt[ilelt];
-    lagr_bdy_cond->b_face_zone_id[ifac] = 4; /* zone_id */
+    cs_lnum_t face_id = lstelt[ilelt];
+    lagr_bdy_cond->b_face_zone_id[face_id] = 4; /* zone_id */
   }
 
   /* Injection per particle class into the calculation domain
@@ -184,41 +184,20 @@ cs_user_lagr_boundary_conditions(const int  itypfb[])
 
      b_zone_classes number of classes per zone
      b_zone_natures boundary conditions for the particles
-       = ientrl -> zone of particle inlet
-       = isortl -> particle outlet
-       = irebol -> rebound of the particles
-       = idepo1 -> definitive deposition
-       = idepo2 -> definitive deposition, but the particle remains in memory
-                   (useful only if iensi2 = 1)
-       = idepfa -> deposition of the particle with DLVO forces
-       = iencrl -> fouling (coal only physical_model = 2)
-       = isymtl -> symmetry condition for the particles (zero flux)
+       = CS_LAGR_INLET     -> zone of particle inlet
+       = CS_LAGR_OUTLET    -> particle outlet
+       = CS_LAGR_REBOUND   -> rebound of the particles
+       = CS_LAGR_DEPO1     -> definitive deposition
+       = CS_LAGR_DEPO2     -> definitive deposition, but the particle remains in memory
+                              (useful only if iensi2 = 1)
+       = CS_LAGR_DEPO_DLVO -> deposition of the particle with DLVO forces
+       = CS_LAGR_FOULING   -> fouling (coal only physical_model = 2)
+       = CS_LAGR_SYM       -> symmetry condition for the particles (zero flux)
 
-     ijnbp : number of particles per class and per zone
-     ijfre : injection frequency. If ijfre = 0, then the injection
-             occurs only at the first absolute iteration.
-     iclst : number of the group to which the particle belongs
-             (only if one wishes to calculate statistics per group)
-     velocity_profile:
-             type of condition on the velocity
-                 = -1 imposed flow velocity
-                 = 0 imposed velocity along the normal direction of the
-                     boundary face, with norm equal to rczpar(iuno)
-                 = 1 imposed velocity: we prescribe u, v and w
-                 = 2 user-defined profile
-     statistical weight profile:
-                 = 1 automatic: we prescribe idebt and ipoit
-                 = 2 user-defined profile
-     temperature condition profile:
-                 = 1 imposed temperature: we prescribe itpt
-                 = 2 user-defined profile
-     diameter condition profile:
-                 = 1 imposed diameter: we prescribe idpt and ivdpt
-                 = 2 user-defined profile
-     inuchl : number of the coal of the particle (only if physical_model = 2)
-     irawcl : type of coal injection composition (only if physical_model = 2)
-                 = 0 coal injected with an user-defined composition
-                 = 1 raw coal injection
+     *   nb_part : number of particles per class and per zone
+     *   injection_frequency : injection frequency. If injection_frequency = 0,
+		                      then the injection occurs only at the first absolute
+													iteration.
 
      *   cluster : number of the group to which the particle belongs
                    (only if one wishes to calculate statistics per group)
@@ -260,7 +239,7 @@ cs_user_lagr_boundary_conditions(const int  itypfb[])
 
   int  izone = 0;
   nbclas = lagr_bdy_cond->b_zone_classes[izone];
-  lagr_bdy_cond->b_zone_natures[izone] = CS_LAGR_IENTRL;
+  lagr_bdy_cond->b_zone_natures[izone] = CS_LAGR_INLET;
 
   for (cs_lnum_t iclas = 0; iclas < nbclas; iclas++) {
 
@@ -450,7 +429,7 @@ cs_user_lagr_boundary_conditions(const int  itypfb[])
   /* ---> Second zone, numbered izone = 1 */
   /* IUSCLB : rebound of the particle    */
   izone  = 1;
-  lagr_bdy_cond->b_zone_natures[izone] = CS_LAGR_IREBOL;
+  lagr_bdy_cond->b_zone_natures[izone] = CS_LAGR_REBOUND;
 
   /* same procedure for the other zones...    */
 

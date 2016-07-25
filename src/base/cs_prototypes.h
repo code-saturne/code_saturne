@@ -343,6 +343,17 @@ void
 cs_user_coupling(void);
 
 /*----------------------------------------------------------------------------
+ * This function is called at each time step for boundary conditions.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_boundary_conditions(int         nvarcl,
+                            int         icodcl[],
+                            int         bc_type[],
+                            int         izfrdp[],
+                            cs_real_t   rcodcl[]);
+
+/*----------------------------------------------------------------------------
  * This function is called at the end of each time step.
  *
  * It has a very general purpose, although it is recommended to handle

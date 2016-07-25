@@ -1265,9 +1265,9 @@ _test_wall_cell(const void                     *particle,
       cs_lnum_t f_id = CS_ABS(face_num) - 1;
       cs_lnum_t b_zone_id = bdy_conditions->b_face_zone_id[f_id];
 
-      if (   (bdy_conditions->b_zone_natures[b_zone_id] == CS_LAGR_IDEPO1)
-          || (bdy_conditions->b_zone_natures[b_zone_id] == CS_LAGR_IDEPO2)
-          || (bdy_conditions->b_zone_natures[b_zone_id] == CS_LAGR_IDEPFA)) {
+      if (   (bdy_conditions->b_zone_natures[b_zone_id] == CS_LAGR_DEPO1)
+          || (bdy_conditions->b_zone_natures[b_zone_id] == CS_LAGR_DEPO2)
+          || (bdy_conditions->b_zone_natures[b_zone_id] == CS_LAGR_DEPO_DLVO)) {
 
         cs_real_t x_face = cs_glob_lagr_b_u_normal[f_id][0];
         cs_real_t y_face = cs_glob_lagr_b_u_normal[f_id][1];
@@ -1423,8 +1423,8 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
   for (k = 0; k < 3; k++)
     intersect_pt[k] = disp[k]*t_intersect + p_info->start_coords[k];
 
-  if (internal_conditions->i_face_zone_id[face_id] == CS_LAGR_ISORTL
-   || internal_conditions->i_face_zone_id[face_id] == CS_LAGR_IENTRL ) {
+  if (internal_conditions->i_face_zone_id[face_id] == CS_LAGR_OUTLET
+   || internal_conditions->i_face_zone_id[face_id] == CS_LAGR_INLET ) {
 
     move_particle = CS_LAGR_PART_MOVE_OFF;
     particle_state = CS_LAGR_PART_OUT;
@@ -1432,7 +1432,7 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
     for (k = 0; k < 3; k++)
       particle_coord[k] = intersect_pt[k];
   }
-  else if (internal_conditions->i_face_zone_id[face_id] == CS_LAGR_IDEPFA) {
+  else if (internal_conditions->i_face_zone_id[face_id] == CS_LAGR_DEPO_DLVO) {
 
     cs_real_t particle_diameter
       = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
@@ -1465,8 +1465,7 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
       for (k = 0; k < 3; k++) {
         particle_velocity[k] = 0.0;
       }
-      // TODO: generalise to force the particle on the intersection
-      // (need to be consistent with what is done in local_prop (c_id1,c_id2)
+      /* Force the particle on the intersection but in the original cell */
       for (k = 0; k < 3; k++) {
         particle_coord[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
         particle_velocity_seen[k] = 0.0;
@@ -1486,9 +1485,9 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
                                                   p_am,
                                                   CS_LAGR_CELL_NUM);
 
-      if (cs_glob_lagr_model->resuspension == 0) {
+      if (cs_glob_lagr_model->resuspension == 0) {//FIXME ???
 
-        *cell_num = - *cell_num;
+        *cell_num = - *cell_num;//TODO check
         // The particle is not treated yet: the motion is now imposed
         particle_state = CS_LAGR_PART_TO_SYNC;
 
@@ -1513,13 +1512,13 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
 
   /* Ensure some fields are updated */
 
+  //FIXME already done.
   if (p_am->size[CS_LAGR_DEPOSITION_FLAG] != CS_LAGR_PART_IN_FLOW) {
 
     cs_lnum_t depo_flag
       = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
 
-    if (   depo_flag == CS_LAGR_PART_ROLLING
-        || depo_flag == CS_LAGR_PART_DEPOSITED
+    if (   depo_flag == CS_LAGR_PART_DEPOSITED
         || depo_flag == CS_LAGR_PART_IMPOSED_MOTION) {
       //FIXME enforce cell?
       //cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
@@ -1640,14 +1639,14 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   for (k = 0; k < 3; k++)
     intersect_pt[k] = disp[k]*t_intersect + p_info->start_coords[k];
 
-  if (   bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_ISORTL
-      || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IENTRL
-      || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO1) {
+  if (   bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_OUTLET
+      || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_INLET
+      || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO1) {
 
     move_particle = CS_LAGR_PART_MOVE_OFF;
     particle_state = CS_LAGR_PART_OUT;
 
-    if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO1) {
+    if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO1) {
       particles->n_part_dep += 1;
       particles->weight_dep += particle_stat_weight;
       if (cs_glob_lagr_model->deposition == 1)
@@ -1664,7 +1663,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       particle_coord[k] = intersect_pt[k];
   }
 
-  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO2) {
+  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO2) {
 
     const cs_real_t particle_diameter
       = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
@@ -1710,7 +1709,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   }
 
-  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPFA) {
+  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO_DLVO) {
 
     cs_real_t particle_diameter
       = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
@@ -2062,7 +2061,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     }
   }
 
-  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IREBOL) {
+  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_REBOUND) {
 
     move_particle = CS_LAGR_PART_MOVE_ON;
     particle_state = CS_LAGR_PART_TO_SYNC;
@@ -2103,7 +2102,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   }
 
-  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_ISYMTL) {
+  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_SYM) {
 
     move_particle = CS_LAGR_PART_MOVE_ON;
     particle_state = CS_LAGR_PART_TO_SYNC;
@@ -2144,7 +2143,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   }
 
-  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IENCRL) {
+  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_FOULING) {
 
     /* Fouling of the particle, if its properties make it possible and
        with respect to a probability
@@ -2328,11 +2327,11 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   if (cs_glob_lagr_post_options->iensi3 > 0) {
 
-    if  (   bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO1
-         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO2
-         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPFA
-         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IREBOL
-         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IENCRL) {
+    if  (   bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO1
+         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO2
+         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO_DLVO
+         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_REBOUND
+         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_FOULING) {
 
       /* Number of particle-boundary interactions  */
       if (cs_glob_lagr_boundary_interactions->inbrbd > 0)

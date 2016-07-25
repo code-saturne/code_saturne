@@ -579,10 +579,10 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
         cs_real_t romf;
         /* Test if the particle is located in a boundary cell */
 
-        if (   _bdy_conditions->b_zone_natures[zone_id] == CS_LAGR_IDEPO1
-            || _bdy_conditions->b_zone_natures[zone_id] == CS_LAGR_IDEPO2
-            || _bdy_conditions->b_zone_natures[zone_id] == CS_LAGR_IDEPFA
-            || _bdy_conditions->b_zone_natures[zone_id] == CS_LAGR_IREBOL) {
+        if (   _bdy_conditions->b_zone_natures[zone_id] == CS_LAGR_DEPO1
+            || _bdy_conditions->b_zone_natures[zone_id] == CS_LAGR_DEPO2
+            || _bdy_conditions->b_zone_natures[zone_id] == CS_LAGR_DEPO_DLVO
+            || _bdy_conditions->b_zone_natures[zone_id] == CS_LAGR_REBOUND) {
 
           /* Calculation of the wall units  */
 

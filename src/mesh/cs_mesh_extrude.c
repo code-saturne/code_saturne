@@ -1060,7 +1060,7 @@ _add_layer_faces(cs_mesh_t        *m,
 
         m->i_face_cells[n_i_faces_ini + s_id][0] = m->b_face_cells[f_id];
         m->i_face_cells[n_i_faces_ini + s_id][1] = n_cells_ini + s_id;
-        if (interior_gc)
+        if (!interior_gc)
           m->i_face_family[n_i_faces_ini + s_id] = default_family_id;
         else
           m->i_face_family[n_i_faces_ini + s_id]

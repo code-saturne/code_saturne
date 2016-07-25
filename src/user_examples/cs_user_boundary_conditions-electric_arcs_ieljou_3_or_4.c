@@ -2,10 +2,12 @@
  * Boundary condition for transformers.
  *============================================================================*/
 
+/* VERS */
+
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2015 EDF S.A.
+  Copyright (C) 1998-2016 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -20,13 +22,11 @@
   You should have received a copy of the GNU General Public License along with
   this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*/
+ */
 
 /*----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -46,8 +46,9 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
-#include "cs_mesh_quantities.h"
 #include "cs_mesh_location.h"
+#include "cs_mesh_quantities.h"
+#include "cs_parameters.h"
 #include "cs_time_step.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -63,22 +64,45 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User definition for electric arcs.
+ *
+ * \param[in]     nvarcl        total number of variable BC's
+ * \param[in]     bc_type       boundary face types
+ * \param[in]     icodcl        boundary face code
+ *                                - 1  -> Dirichlet
+ *                                - 2  -> convective outlet
+ *                                - 3  -> flux density
+ *                                - 4  -> sliding wall and u.n=0 (velocity)
+ *                                - 5  -> friction and u.n=0 (velocity)
+ *                                - 6  -> roughness and u.n=0 (velocity)
+ *                                - 9  -> free inlet/outlet (velocity)
+ *                                inflowing possibly blocked
+ * \param[in]     izfrdp        boundary faces -> zone number
+ * \param[in]     rcodcl        boundary condition values
+ *                                rcodcl(3) = flux density value
+ *                                (negative for gain) in W/m2
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (usclim_trans, UICLIM_TRANS)(cs_int_t   *icodcl,
-                                      cs_real_t  *rcodcl,
-                                      cs_int_t   *itypfb,
-                                      cs_int_t   *izfppp,
-                                      cs_int_t   *iparoi,
-                                      cs_int_t   *nvarcl)
+cs_user_boundary_conditions(int         nvarcl,
+                            int         icodcl[],
+                            int         bc_type[],
+                            int         izfrdp[],
+                            cs_real_t   rcodcl[])
 {
   const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
-  const cs_lnum_t *ifabor = cs_glob_mesh->b_face_cells;
-  const cs_lnum_t nfabor = cs_glob_mesh->n_b_faces;
-  const cs_real_3_t *surfbo = (const cs_real_3_t *) cs_glob_mesh_quantities->b_face_normal;
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_real_3_t *b_face_normal =
+		(const cs_real_3_t *) cs_glob_mesh_quantities->b_face_normal;
   cs_lnum_t *lstelt = NULL;
   cs_lnum_t  nelts;
-  int isca;
   cs_field_t *f;
 
   const int keyvar = cs_field_key_id("variable_id");
@@ -136,7 +160,7 @@ CS_PROCF (usclim_trans, UICLIM_TRANS)(cs_int_t   *icodcl,
   for (int i = 0; i < nbelec; i++) {
 
     sprintf(name, "%07d", transfo->ielecc[i]);
-    cs_selector_get_b_face_num_list(name, &nelts, lstelt);
+    cs_selector_get_b_face_list(name, &nelts, lstelt);
 
     cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
     cs_real_3_t *cpro_curim = NULL;
@@ -145,15 +169,15 @@ CS_PROCF (usclim_trans, UICLIM_TRANS)(cs_int_t   *icodcl,
 
     for (cs_lnum_t ilelt = 0; ilelt < nelts; ilelt++) {
 
-      cs_lnum_t ifac = lstelt[ilelt];
-      cs_lnum_t iel = ifabor[iel];
+      cs_lnum_t face_id = lstelt[ilelt];
+      cs_lnum_t cell_id = b_face_cells[face_id];
 
       for (cs_lnum_t id = 0; id < 3; id++)
-        sir[i] += cpro_curre[iel][id] * surfbo[id][ifac];
+        sir[i] += cpro_curre[cell_id][id] * b_face_normal[id][face_id];
 
       if (cs_glob_elec_option->ieljou == 4)
         for (cs_lnum_t id = 0; id < 3; id++)
-          sii[i] += cpro_curim[iel][id] * surfbo[id][ifac];
+          sii[i] += cpro_curim[cell_id][id] * b_face_normal[id][face_id];
     }
 
     BFT_FREE(lstelt);
@@ -261,39 +285,39 @@ CS_PROCF (usclim_trans, UICLIM_TRANS)(cs_int_t   *icodcl,
   /* 2.5 Take in account of Boundary Conditions */
   for (int i = 0; i < nbelec; i++) {
     sprintf(name, "%07d", transfo->ielecc[i]);
-    cs_selector_get_b_face_num_list(name, &nelts, lstelt);
+    cs_selector_get_b_face_list(name, &nelts, lstelt);
 
     for (cs_lnum_t ilelt = 0; ilelt < nelts; ilelt++) {
-      int ifac = lstelt[ilelt];
-      int iel = ifabor[ifac];
+      cs_lnum_t face_id = lstelt[ilelt];
+      cs_lnum_t cell_id = b_face_cells[face_id];
 
-      itypfb[ifac] = *iparoi;
-      izfppp[ifac] = i;
+      bc_type[face_id] = CS_SMOOTHWALL;
+      izfrdp[face_id] = i;
 
       if (transfo->ielect[i] != 0) {
         f = CS_F_(potr);
-        isca = cs_field_get_key_int(f, keyvar) - 1;
-        icodcl[isca * nfabor + ifac] = 1;
-        rcodcl[isca * nfabor + ifac] = ur[transfo->ielect[i]][transfo->ielecb[i]];
+        int ivar = cs_field_get_key_int(f, keyvar) - 1;
+        icodcl[ivar * n_b_faces + face_id] = 1;
+        rcodcl[ivar * n_b_faces + face_id] = ur[transfo->ielect[i]][transfo->ielecb[i]];
 
         if (cs_glob_elec_option->ieljou == 4) {
           f = CS_F_(poti);
-          isca = cs_field_get_key_int(f, keyvar) - 1;
-          icodcl[isca * nfabor + ifac] = 1;
-          rcodcl[isca * nfabor + ifac] = ur[transfo->ielect[i]][transfo->ielecb[i]];
+          ivar = cs_field_get_key_int(f, keyvar) - 1;
+          icodcl[ivar * n_b_faces + face_id] = 1;
+          rcodcl[ivar * n_b_faces + face_id] = ur[transfo->ielect[i]][transfo->ielecb[i]];
         }
       }
       else {
         f = CS_F_(potr);
-        isca = cs_field_get_key_int(f, keyvar) - 1;
-        icodcl[isca * nfabor + ifac] = 3;
-        rcodcl[2 * nfabor * (*nvarcl) + isca * nfabor + ifac] = 0.;
+        int ivar = cs_field_get_key_int(f, keyvar) - 1;
+        icodcl[ivar * n_b_faces + face_id] = 3;
+        rcodcl[2 * n_b_faces * nvarcl + ivar * n_b_faces + face_id] = 0.;
 
         if (cs_glob_elec_option->ieljou == 4) {
           f = CS_F_(poti);
-          isca = cs_field_get_key_int(f, keyvar) - 1;
-          icodcl[isca * nfabor + ifac] = 3;
-          rcodcl[2 * nfabor * (*nvarcl) + isca * nfabor + ifac] = 0.;
+          ivar = cs_field_get_key_int(f, keyvar) - 1;
+          icodcl[ivar * n_b_faces + face_id] = 3;
+          rcodcl[2 * n_b_faces * nvarcl + ivar * n_b_faces + face_id] = 0.;
         }
       }
     }
@@ -304,28 +328,28 @@ CS_PROCF (usclim_trans, UICLIM_TRANS)(cs_int_t   *icodcl,
   /* Test, if not any reference transformer
    *       a piece of wall may be at ground. */
   if (transfo->ntfref == 0) {
-    bool itrouv = false;
-    for (int ifac = 0; ifac < nfabor; ifac++) {
-      if (itypfb[ifac] == *iparoi) {
+    bool found = false;
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      if (bc_type[face_id] == CS_SMOOTHWALL) {
         f = CS_F_(potr);
-        isca = cs_field_get_key_int(f, keyvar) - 1;
-        if (icodcl[isca * nfabor + ifac] == 1) {
+        int ivar = cs_field_get_key_int(f, keyvar) - 1;
+        if (icodcl[ivar * n_b_faces + face_id] == 1) {
           if (cs_glob_elec_option->ieljou == 3) {
-            if (fabs(rcodcl[isca * nfabor + ifac]) < 1.e-20)
-              itrouv = true;
+            if (fabs(rcodcl[ivar * n_b_faces + face_id]) < 1.e-20)
+              found = true;
           }
           else if (cs_glob_elec_option->ieljou == 4) {
-            double val = fabs(rcodcl[isca * nfabor + ifac]);
+            double val = fabs(rcodcl[ivar * n_b_faces + face_id]);
             f = CS_F_(poti);
-            isca = cs_field_get_key_int(f, keyvar) - 1;
-            if (fabs(rcodcl[isca * nfabor + ifac]) < 1.e-20 &&
+            ivar = cs_field_get_key_int(f, keyvar) - 1;
+            if (fabs(rcodcl[ivar * n_b_faces + face_id]) < 1.e-20 &&
                 val < 1.e-20)
-              itrouv = true;
+              found = true;
           }
         }
       }
     }
-    if (!itrouv)
+    if (!found)
       bft_error(__FILE__, __LINE__, 0,
               _("ERROR in JOULE : \n"
                 "Lack of reference : choose a transformer for wich\n"
