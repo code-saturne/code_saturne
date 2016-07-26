@@ -1485,21 +1485,10 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
                                                   p_am,
                                                   CS_LAGR_CELL_NUM);
 
-      if (cs_glob_lagr_model->resuspension == 0) {//FIXME ???
-
-        *cell_num = - *cell_num;//TODO check
-        // The particle is not treated yet: the motion is now imposed
-        particle_state = CS_LAGR_PART_TO_SYNC;
-
-      } else {
-
-        particle_state = CS_LAGR_PART_TREATED;
-
-      }
+      particle_state = CS_LAGR_PART_TREATED;
 
       particles->n_part_dep += 1;
       particles->weight_dep += particle_stat_weight;
-      // FIXME: particle_state = CS_LAGR_PART_TREATED;
 
     }
   }
@@ -1509,25 +1498,6 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
     bft_error(__FILE__, __LINE__, 0,
               _(" Internal condition %d not recognized.\n"),
               internal_conditions->i_face_zone_id[face_id]);
-
-  /* Ensure some fields are updated */
-
-  //FIXME already done.
-  if (p_am->size[CS_LAGR_DEPOSITION_FLAG] != CS_LAGR_PART_IN_FLOW) {
-
-    cs_lnum_t depo_flag
-      = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
-
-    if (   depo_flag == CS_LAGR_PART_DEPOSITED
-        || depo_flag == CS_LAGR_PART_IMPOSED_MOTION) {
-      //FIXME enforce cell?
-      //cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-      //                          cell_id + 1);
-      cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_NEIGHBOR_FACE_ID ,
-                                face_id);
-    }
-
-  }
 
   /* Return pointer */
 
