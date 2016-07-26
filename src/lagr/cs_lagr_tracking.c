@@ -3772,9 +3772,14 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
   }
 
   /* Imposed_motion: additional loop */
-  for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_i_faces ; ifac++) {
-    for (cs_lnum_t j = 0; j < 3; j++)
-      fvq->i_f_face_normal[3*ifac+j] = fvq->i_face_normal[3*ifac+j];
+  if (cs_glob_porous_model == 3) {
+    for (cs_lnum_t face_id = 0; face_id < cs_glob_mesh->n_i_faces ; face_id++) {
+      /* Internal face flagged as internal deposition */
+      if (cs_glob_lagr_internal_conditions->i_face_zone_id[face_id] >= 0) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          fvq->i_f_face_normal[3*face_id+j] = fvq->i_face_normal[3*face_id+j];
+      }
+    }
   }
 
   if (lagr_model->deposition == 1) {
@@ -3806,8 +3811,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
             /* Internal face flagged as internal deposition */
             if (cs_glob_lagr_internal_conditions->i_face_zone_id[face_id] >= 0) {
 
-              const double pi = 4 * atan(1);
-              cs_real_t temp = pi * 0.25
+              cs_real_t temp = cs_math_pi * 0.25
                 * pow(cs_lagr_particles_get_real(particles, ip, CS_LAGR_DIAMETER),2.)
                 * cs_lagr_particles_get_real(particles, ip, CS_LAGR_FOULING_INDEX)
                 * cs_lagr_particles_get_real(particles, ip, CS_LAGR_STAT_WEIGHT);
