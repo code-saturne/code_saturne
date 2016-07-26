@@ -1,0 +1,203 @@
+%-------------------------------------------------------------------------------
+
+% This file is part of Code_Saturne, a general-purpose CFD tool.
+%
+% Copyright (C) 1998-2016 EDF S.A.
+%
+% This program is free software; you can redistribute it and/or modify it under
+% the terms of the GNU General Public License as published by the Free Software
+% Foundation; either version 2 of the License, or (at your option) any later
+% version.
+%
+% This program is distributed in the hope that it will be useful, but WITHOUT
+% ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+% FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+% details.
+%
+% You should have received a copy of the GNU General Public License along with
+% this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+% Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+%-------------------------------------------------------------------------------
+
+%-------------------------------------------------------------------------------
+\section{Trajectography}\label{sec:lagrangian:trajecto}
+%-------------------------------------------------------------------------------
+
+\definecolor{orange}{rgb}{1,0.65,0.0}
+% Blue edf
+\definecolor{blueedf}{RGB}{0,91,187}
+% Orange edf
+\definecolor{orangeedf}{RGB}{255,160,47}
+% Dark blue edf
+\definecolor{bluededf}{RGB}{9,53,122}
+% Dark orange edf
+\definecolor{orangededf}{RGB}{254,88,21}
+% Green edf
+\definecolor{greenedf}{RGB}{80,158,47}
+% Green edf
+\definecolor{greenbedf}{RGB}{196,214,47}
+
+\newcommand{\lra}[1]{\langle #1 \rangle }
+\newcommand{\mb}[1]{\mathbf{#1}}
+\newcommand{\bds}[1]{\boldsymbol{#1}}
+\newcommand{\mc}[1]{\mathcal{#1}}
+
+% Style pour dessiner un maillage
+\tikzset{
+	% Link between two entities
+	connect/.style={very thick, color=#1},
+	connect/.default=blueedf,
+	light/.style={thin, densely dashed, color=#1},
+	light/.default=Dual,
+    % Label of entities
+	lab/.style 2 args={scale=1.05, thin, #2, color=#1, fill=#1!8, inner sep=1pt},
+	lab/.default={blueedf}{rectangle, rounded corners=3pt},
+	% Support de fonctions
+	focus/.style={very thick,color=orangeedf!65},
+	front/.style={fill=blueedf!5, thick,opacity=0.5},
+	back/.style={dashed,thin,fill=blueedf!10},
+	backline/.style={dashed,thin,draw=blueedf},
+	dualvol/.style={color=greenedf, fill=greenedf!20, opacity=0.5},
+	subvol/.style={fill=orangeedf!20, thick,opacity=0.5},
+	frakvol/.style={fill=black!25, thick,opacity=0.5},
+}
+
+The Lagrangian tracking of particles within a mesh implies that both the global coordinates of each particle and its location within the mesh need to be determined. While the particle displacement is calculated according to the particle equations of motion, a specific trajectography module allows to evaluate the cell to which the particle belongs.
+
+The main idea of the algorithm for trajectrography is the following (see also \figurename{}~\ref{fig:lagrangian:trajecto1}): knowing the initial particle location $O$, its current cell and the particle location at the end of the time step $D$, we check if the particle displacement crosses one of the faces of the cell in which the particle is. For that purpose, for each face of the current cell, we calculate if there is an intersection $I$ between the particle displacement vector $\vect{OD}$ and each subtriangle composing the face (for instance, the face on the right-hand side in \figurename{}~\ref{fig:lagrangian:trajecto1} can be decomposed into four subtriangles, here ($GP_1P_2$), ($GP_2P_3$), ($GP_3P_4$) and ($GP_4P_1$)). In this example, to determine whether the intersection with the line ($OD$) is inside the triangle ($GP_1P_2$), three conditions need to be fulfilled:
+\begin{subequations}
+\begin{align}
+ \frac{\vect{OD}\cdot(\vect{GP_1}\wedge\vect{GO})}{\vect{OD}\cdot(\vect{GP_2}\wedge\vect{GP_1})} < 0 \\
+ \frac{\vect{OD}\cdot(\vect{GP_2}\wedge\vect{GO})}{\vect{OD}\cdot(\vect{GP_2}\wedge\vect{GP_1})} > 0  \\
+ \frac{\vect{OD}\cdot(\vect{P_1P_2}\wedge\vect{P_1O})}{\vect{OD}\cdot(\vect{GP_2}\wedge\vect{GP_1})} < 0
+\end{align}
+\label{eq:lagrangian:trajecto_1}
+\end{subequations}
+It should be noted that these three conditions are based on geometric considerations (similar to the M\"{o}ller-Trumbore algorithm) which amount to checking if the intersection point $I$ is located on the proper side of each edge of the triangle. For computational purposes, only the sign of these parameters are calculated in the calculation. This choice has been made to avoid to treat properly the case where the intersection is right on the edge (in that case, the calculated value is identical for both faces containing the edge meaning that the intersection exists only on one side of the edge).
+
+If the line ($OD$) crosses a triangle, the coordinates of the intersection point $I$ are calculated using:
+\begin{equation}
+ \vect{x}_I = \vect{x}_O + t \times \vect{OD}
+\label{eq:lagrangian:trajecto_2}
+\end{equation}
+with $t\in [0,1[$ given by:
+\begin{equation}
+ t =  \frac{\vect{GO}\cdot(\vect{GP_2}\wedge\vect{GP_1})}{\vect{OD}\cdot(\vect{GP_2}\wedge\vect{GP_1})}
+\label{eq:lagrangian:trajecto_3}
+\end{equation}
+
+Moreover, Eqs.~\eqref{eq:lagrangian:trajecto_1} actually provide information whether the whole line ($OD$) crosses one of the faces of the current cell. Comparing the orientation of the displacement vector to the orientation of the local normal to the triangle (oriented towards the cell center) thus gives information on the number of times the line ($OD$) enters (parameter \textit{n\_{in}}) and leaves (parameter \textit{n\_{out}}) the current cell. This is used to check if the particle is really inside the current cell, which amounts to the following condition: $n_{in}=n_{out}>0$.
+
+\newcommand{\defprg}{%
+\def\vp{-0.3} %vertical position
+\def\hp{-0.5} %horizaontal position
+
+\coordinate(P0) at (0,0,0);
+\coordinate(P1) at (4,0,0);
+\coordinate(P2) at (4,2.5,0);
+\coordinate(P3) at (0,2.5,0);
+\coordinate(P4) at (2,3.3,0);
+\coordinate(P5) at (2,-0.8,0);
+\coordinate(P6) at (0-\hp,0-\vp,-4);
+\coordinate(P7) at (4-\hp,0-\vp,-4);
+\coordinate(P8) at (4-\hp,2.5-\vp,-4);
+\coordinate(P9) at (0-\hp,2.5-\vp,-4);
+\coordinate(P10) at (2-\hp,3.3-\vp,-4);
+\coordinate(P11) at (2-\hp,-0.8-\vp,-4);
+
+\coordinate(D0) at (1,1.5,-1);
+\coordinate(D1) at (5.5,0.5,-1);
+\coordinate(DI) at (4,0.83,-1);
+
+\coordinate(F1278) at (barycentric cs:P1=0.25,P2=0.25,P7=0.25,P8=0.25);
+\coordinate(F24810) at (barycentric cs:P2=0.25,P4=0.25,P8=0.25,P10=0.25);
+\coordinate(F012345) at (barycentric cs:P0=0.166,P1=0.166,P2=0.166,P3=0.166,P4=0.166,P5=0.166);
+
+\coordinate(C) at (barycentric cs:P0=0.0833,P1=0.0833,P2=0.0833,P3=0.0833,P4=0.0833,P5=0.0833,P6=0.0833,P7=0.0833,P8=0.0833,P9=0.0833,P10=0.0833,P11=0.0833);
+}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+
+\defprg
+\path[front] (P3) -- (P4) -- (P2) -- (P1) -- (P5) -- (P0) -- cycle; % Devant
+\path[front] (P3) -- (P9) -- (P10) -- (P8) -- (P2) -- (P4) -- cycle; % Toit
+\path[front] (P1) -- (P7) -- (P8) -- (P2) -- cycle; % Droite
+
+% \path[subvol] (F1278) -- (P2) -- (C) -- (E12) -- cycle;
+\draw[connect=orangeedf, thin] (F1278) -- (P1) -- (P2) -- (P7) -- (P8) -- cycle;
+\draw[dashed,orangeedf, thin] (F1278) -- (C);
+
+\draw[orangeedf] (P1) node[scale=1.2] {$\bullet$} node[orangeedf,below right= 0.5ex and 0.1ex] {$\boldsymbol{P}_{1}$};
+\draw[orangeedf] (P2) node[scale=1.2] {$\bullet$} node[orangeedf,above =1mm] {$\boldsymbol{P}_{2}$};
+\draw[orangeedf] (P7) node[scale=1.2] {$\bullet$} node[orangeedf,right=0.1ex] {$\boldsymbol{P}_{4}$};
+\draw[orangeedf] (P8) node[scale=1.2] {$\bullet$} node[orangeedf,above right=0.3ex and 0.1ex] {$\boldsymbol{P}_{3}$};
+\draw[orangeedf] (F1278) node[scale=1.2] {$\times$} node[orangeedf,below right= 0.5ex and -0.5ex] {$\boldsymbol{G}$};
+\draw[blueedf] (C) node[scale=1.2] {$\circ$} node[blueedf,left=1mm] {$\boldsymbol{C}$};
+
+\draw[greenedf] (D0) node[scale=1.2] {$\times$} node[greenedf,below left=0.3ex and 0.3ex] {$\boldsymbol{O}$};
+\draw[greenedf] (D1) node[scale=1.2] {$\times$} node[greenedf,above right=0.3ex and 0.1ex] {$\boldsymbol{D}$};
+\draw[greenedf] (DI) node[scale=1.2] {$\times$} node[greenedf,above=0.3ex] {$\boldsymbol{I}$};
+\draw[dashed,greenedf] (D0) -- (DI);
+\draw[->,greenedf,very thick] (DI) -- (D1);
+
+\draw[connect=blueedf] (P3) -- (P4) -- (P2) -- (P1) -- (P5) -- (P0) -- cycle;
+\draw[connect=blueedf] (P9) -- (P10) -- (P8) -- (P7);
+\draw[connect=blueedf] (P3) -- (P9) (P4) -- (P10) (P2) -- (P8) (P1) -- (P7);
+\draw[backline] (P7) -- (P11) -- (P6) -- (P9);
+\draw[backline] (P0) -- (P6) (P5) -- (P11);
+
+\end{tikzpicture}
+\caption{Sketch showing a particle displacement from $O$ to $D$ within a cell. \label{fig:lagrangian:trajecto1}}
+\end{figure}
+
+Besides, a specific treatment has been added to deal with the case of warped faces. As depicted in \figurename{}~\ref{fig:lagrangian:trajecto2}, in this case, the particle displacement vector $\vect{OD}$ may cross several subtriangles of a single face. To properly treat such cases, a parameter has been added to measure how many times the displacement vector $\vect{OD}$ enters and leaves one face (in a similar way to the one used for the parameters \textit{n\_{in}} and \textit{n\_{out}}). As a result, depending on the value of this parameter, two different cases can be distinguished: either the particle leaves through the current face (positive parameter) or does not leave the cell through this face (zero value).
+\newcommand{\defwarped}{
+
+\coordinate(P1) at (0,0,0);
+\coordinate(P2) at (4,0,0);
+\coordinate(P3) at (4.3,0.5,-4);
+\coordinate(P4) at (0.3,0.5,-4);
+\coordinate(P5) at (2.15,2.0,-2);
+\coordinate(C) at (2.15,3.75,-2);
+
+\coordinate(D0) at (0.1,1.2,-1);
+\coordinate(D1) at (5.5,0.68,-1);
+\coordinate(DI2) at (4,0.83,-1);
+\coordinate(DI1) at (1.1,1.105,-1);
+
+\coordinate(F1234) at (barycentric cs:P1=0.25,P2=0.25,P3=0.25,P4=0.25);
+}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\defwarped
+\draw[orangeedf] (P4) -- (P1) -- (P2) -- (P3); % Base 1
+\draw[orangeedf, dashed] (P3) -- (P4); % Base 2
+\draw[orangeedf] (P1) -- (P5) -- (P3) ; % Pyramid 1
+\draw[orangeedf] (P2) -- (P5) -- (P4) ; % Pyramid 2
+
+\draw[orangeedf] (P1) node[scale=1.2] {$\bullet$} node[orangeedf,below left= 0.5ex and 0.1ex] {$\boldsymbol{P}_{1}$};
+\draw[orangeedf] (P2) node[scale=1.2] {$\bullet$} node[orangeedf,below =1mm] {$\boldsymbol{P}_{2}$};
+\draw[orangeedf] (P3) node[scale=1.2] {$\bullet$} node[orangeedf,right=0.1ex] {$\boldsymbol{P}_{3}$};
+\draw[orangeedf] (P4) node[scale=1.2] {$\bullet$} node[orangeedf,left=0.3ex] {$\boldsymbol{P}_{4}$};
+\draw[orangeedf] (P5) node[scale=1.2] {$\bullet$} node[orangeedf,above=0.3ex] {$\boldsymbol{P}_{5}$};
+\draw[orangeedf] (F1234) node[scale=1.2] {$\times$} node[orangeedf,below right= 0.5ex and -0.5ex] {$\boldsymbol{G}$};
+\draw[blueedf] (C) node[scale=1.2] {$\circ$} node[blueedf,left=1mm] {$\boldsymbol{C}$};
+
+\draw[greenedf] (D0) node[scale=1.2] {$\times$} node[greenedf,below left=0.3ex and 0.3ex] {$\boldsymbol{O}$};
+\draw[greenedf] (D1) node[scale=1.2] {$\times$} node[greenedf,above right=0.3ex and 0.1ex] {$\boldsymbol{D}$};
+\draw[greenedf] (DI1) node[scale=1.2] {$\times$} node[greenedf,below right=0.3ex and 0.05ex] {$\boldsymbol{I_1}$};
+\draw[greenedf] (DI2) node[scale=1.2] {$\times$} node[greenedf,above=0.3ex] {$\boldsymbol{I_2}$};
+\draw[greenedf,very thick] (D0) -- (DI1);
+\draw[dashed,greenedf] (DI1) -- (DI2);
+\draw[->,greenedf,very thick] (DI2) -- (D1);
+\end{tikzpicture}
+\caption{Sketch showing a particle displacement from $O$ to $D$ going through a warped face.
+\label{fig:lagrangian:trajecto2}}
+\end{figure}
+
+This procedure is repeated until the particles reaches a cell where it remains (no exit through any faces of the new cell). Warning: to avoid high computational costs, a maximum number of $100$ cells can be crossed by each particle in a single time step, otherwise it is considered lost (this maximum value can be changed).

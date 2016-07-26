@@ -69,6 +69,13 @@
 %
 \renewcommand{\arraystretch}{2.0}
 %
+
+\usepackage{pgfplots}
+\usetikzlibrary{shapes,arrows,positioning,backgrounds,fit,calc}
+\usetikzlibrary{plotmarks}
+\usetikzlibrary{patterns}
+\usetikzlibrary{matrix}
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INFO POUR PAGES DE GARDES
 \titreCS{\CS \verscs Theory Guide}
@@ -178,7 +185,7 @@ See \S~ \ref{ap:elbase}.
 %\chapter{Radiative transfer}
 
 \chapter{Lagrangian particle tracking}
-See \S~ \ref{ap:elbase}.
+\include{lagrangian}.
 
 %\chapter{Atmospheric flows}
 
