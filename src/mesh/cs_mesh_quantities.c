@@ -2498,14 +2498,13 @@ cs_mesh_init_fluid_sections(const cs_mesh_t       *mesh,
       i_f_face_normal[face_id][i] = i_face_normal[face_id][i];
   }
 
-	for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-    mesh_quantities->b_f_face_surf[face_id] =
-      mesh_quantities->b_face_surf[face_id];
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    mesh_quantities->b_f_face_surf[face_id]
+      = mesh_quantities->b_face_surf[face_id];
 
     for (int i = 0; i < 3; i++)
       b_f_face_normal[face_id][i] = b_face_normal[face_id][i];
   }
-
 }
 
 /*----------------------------------------------------------------------------

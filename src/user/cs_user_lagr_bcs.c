@@ -188,16 +188,16 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
        = CS_LAGR_OUTLET    -> particle outlet
        = CS_LAGR_REBOUND   -> rebound of the particles
        = CS_LAGR_DEPO1     -> definitive deposition
-       = CS_LAGR_DEPO2     -> definitive deposition, but the particle remains in memory
-                              (useful only if iensi2 = 1)
+       = CS_LAGR_DEPO2     -> definitive deposition, but the particle remains
+                              in memory (useful only if iensi2 = 1)
        = CS_LAGR_DEPO_DLVO -> deposition of the particle with DLVO forces
        = CS_LAGR_FOULING   -> fouling (coal only physical_model = 2)
        = CS_LAGR_SYM       -> symmetry condition for the particles (zero flux)
 
      *   nb_part : number of particles per class and per zone
      *   injection_frequency : injection frequency. If injection_frequency = 0,
-		                      then the injection occurs only at the first absolute
-													iteration.
+                               then the injection occurs only at the first
+                               absolute iteration.
 
      *   cluster : number of the group to which the particle belongs
                    (only if one wishes to calculate statistics per group)
@@ -215,8 +215,8 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
               = 1 automatic: we prescribe
                     flow_rate:   mass flow rate (kg/s)
                     stat_weight: statistical weight (number of samples) associated
-                                 to the particle (automatically computed to respect a mass
-                                 flow rate if it is defined)
+                                 to the particle (automatically computed to respect
+                                 a mass flow rate if it is defined)
               = 2 user-defined profile
 
      *   temperature_profile : type of temperature condition
@@ -226,8 +226,8 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
               = 2 user-defined profile
 
      *   diameter_profile : type of diameter condition
-              = 1 imposed diameter: we prescribe diameter  (m)
-                                        diameter_variance: standard deviation of the diameter (m)
+              = 1 imposed diameter: we prescribe diameter (m) and diameter_variance
+                                    (standard deviation, in m)
               = 2 user-defined profile
      *   coal_number : number of the coal of the particle (only if physical_model = 2)
 

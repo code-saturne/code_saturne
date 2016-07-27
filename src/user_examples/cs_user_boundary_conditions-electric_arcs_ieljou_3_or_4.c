@@ -99,8 +99,8 @@ cs_user_boundary_conditions(int         nvarcl,
 {
   const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  const cs_real_3_t *b_face_normal =
-		(const cs_real_3_t *) cs_glob_mesh_quantities->b_face_normal;
+  const cs_real_3_t *b_face_normal
+    = (const cs_real_3_t *) cs_glob_mesh_quantities->b_face_normal;
   cs_lnum_t *lstelt = NULL;
   cs_lnum_t  nelts;
   cs_field_t *f;

@@ -138,6 +138,53 @@ cs_user_lagr_ef(cs_real_t            dt_p,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief User function (non-mandatory intervention)
+ *
+ * User-defined modifications on the variables at the end of the
+ * Lagrangian time step and calculation of user-defined
+ * additional statistics on the particles.
+ *
+ * About the user-defined additional statistics, we recall that:
+ *
+ *   isttio = 0 : unsteady Lagrangian calculation
+ *          = 1 : steady Lagrangian calculation
+ *
+ *   isuist : Restart of statistics calculation if >= 1, else no stats
+ *
+ *   idstnt : Number of the time step for the start of the statistics calculation
+ *
+ *   nstist : Number of the time step of the start of the steady computation
+ *
+ * \param[in]  dt      time step (per cell)
+ */
+/*-------------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_extra_operations(const cs_real_t  dt[])
+{
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Impose the motion of a particle falgged CS_LAGR_PART_IMPOSED_MOTION.
+ *
+ * User-defined modifications on the particle position and its
+ * velocity.
+ * \param[in]  coords    old particle coordinates
+ * \param[in]  dt        time step (per particle)
+ * \param[out] disp      particle dispacement
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_imposed_motion(const cs_real_3_t coords,
+                            const cs_real_t   dt,
+                            cs_real_3_t       disp)
+{
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief User setting of particle inlet conditions for the particles (inlet
  *        and treatment for the other boundaries)
  *
@@ -257,71 +304,6 @@ cs_user_lagr_rt(cs_lnum_t        id_p,
                 cs_real_t        taup[],
                 const cs_real_t  dt[])
 {
-  return;  /* Remove this for usage */
-
-  /*===============================================================================
-   * 1. Initializations
-   *===============================================================================*/
-
-  /* Particles management */
-  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
-  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
-
-  unsigned char *particle = p_set->p_buffer + p_am->extents * id_p;
-  cs_real_t p_diam = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
-
-  /*===============================================================================
-   * 2. Relaxation time with the standard (Wen-Yu) formulation of the drag coefficient
-   *===============================================================================*/
-
-  /* This example is unactivated, it gives the standard relaxation time
-   * as an indication:*/
-
-  cs_real_t fdr;
-
-  if (false) {
-
-    cs_real_t cd1  = 0.15;
-    cs_real_t cd2  = 0.687;
-
-    if (re_p <= 1000)
-      fdr = 18.0 * nu_f * (1.0 + cd1 * pow(re_p, cd2)) / (p_diam * p_diam);
-
-    else
-      fdr = (0.44 * 3.0 / 4.0) * uvwr / p_diam;
-
-    taup[id_p] = rho_p / rho_f / fdr;
-
-  }
-
-  /*===============================================================================
-   * 3. Computation of the relaxation time with the drag coefficient of
-   *    S.A. Morsi and A.J. Alexander, J. of Fluid Mech., Vol.55, pp 193-208 (1972)
-   *===============================================================================*/
-
-  cs_real_t rec1 =  0.1;
-  cs_real_t rec2 =  1.0;
-  cs_real_t rec3 =  10.0;
-  cs_real_t rec4 = 200.0;
-
-  cs_real_t dd2 = p_diam * p_diam;
-
-  if ( re_p <= rec1 )
-    fdr = 18.0 * nu_f / dd2;
-
-  else if ( re_p <= rec2 )
-    fdr = 3.0/4.0 * nu_f / dd2 * (22.73 + 0.0903 / re_p + 3.69 * re_p );
-
-  else if ( re_p <= rec3 )
-    fdr = 3.0/4.0 * nu_f / dd2 * (29.1667 - 3.8889 / re_p + 1.222 * re_p);
-
-  else if ( re_p <=rec4 )
-    fdr = 18.0 * nu_f / dd2 *(1.0 + 0.15 * pow(re_p,0.687));
-
-  else
-    fdr = (0.44 * 3.0 / 4.0) * uvwr / p_diam;
-
-  taup[id_p] = rho_p / rho_f / fdr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -344,8 +326,8 @@ cs_user_lagr_rt(cs_lnum_t        id_p,
  * \param[in]   k_f    diffusion coefficient of the fluid at particle position
  * \param[out]  tauc   thermal relaxation time
  * \param[in]   dt     time step (per cell)
-*
-*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_lagr_rt_t(cs_lnum_t        id_p,
@@ -358,80 +340,6 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
                   cs_real_t        k_f,
                   cs_real_t        tauc[],
                   const cs_real_t  dt[])
-{
-  return;  /* Remove this line to use this function */
-
-  /* 1. Initializations: Particles management */
-  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
-  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
-
-  unsigned char *particle = p_set->p_buffer + p_am->extents * id_p;
-
-
-	/* 2. Standard thermal relaxation time */
-
-  /* This example is unactivated, it gives the standard thermal relaxation time
-   * as an indication.*/
-
-  if (false) {
-
-    cs_real_t prt = nu_f / k_f;
-
-    cs_real_t fnus = 2.0 + 0.55 * sqrt(re_p) * pow(prt, 1./3.);
-
-    cs_real_t diam = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
-    cs_real_t cp_p = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CP);
-
-    tauc[id_p]= diam * diam * rho_p * cp_p  / ( fnus * 6.0 * rho_f * cp_f * k_f);
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Impose the motion of a particle falgged CS_LAGR_PART_IMPOSED_MOTION.
- *
- * User-defined modifications on the particle position and its
- * velocity.
- * \param[in]  coords    old particle coordinates
- * \param[in]  dt        time step (per particle)
- * \param[out] disp      particle dispacement
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_lagr_imposed_motion(const cs_real_3_t coords,
-                            const cs_real_t   dt,
-                            cs_real_3_t       disp)
-{
-}
-
-/*-----------------------------------------------------------------*/
-/*! \brief User function (non-mandatory intervention)
- *
- * User-defined modifications on the variables at the end of the
- * Lagrangian time step and calculation of user-defined
- * additional statistics on the particles.
- *
- * About the user-defined additional statistics, we recall that:
- *
- *
- *   isttio = 0 : unsteady Lagrangian calculation
- *          = 1 : steady Lagrangian calculation
- *
- *   isuist : Restart of statistics calculation if >= 1, else no stats
- *
- *   idstnt : Number of the time step for the start of the statistics calculation
- *
- *   nstist : Number of the time step of the start of the steady computation
- *
- * \param[in]  dt      time step (per cell)
- */
-/*-------------------------------------------------------------------------------*/
-
-void
-cs_user_lagr_extra_operations(const cs_real_t  dt[])
 {
 }
 
