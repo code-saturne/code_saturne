@@ -451,7 +451,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
 
     def populateModel(self):
         for bs in self.prtlist:
-            item = item_class(bs, bs, "off", "off", "")
+            item = item_class("", bs, "off", "off", "")
             newparent = TreeItem(item, bs, self.rootItem)
             self.rootItem.appendChild(newparent)
             self.noderoot[bs] = newparent
