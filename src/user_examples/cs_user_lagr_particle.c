@@ -526,6 +526,187 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Modification of the calculation of the particle relaxation time
+ *  with respect to the chosen formulation for the drag coefficient
+ *
+ * This function is called in a loop on the particles, so be careful
+ * to avoid too costly operations.
+ *
+ *                m   Cp
+ *                 p    p
+ *       Tau = ---------------
+ *          c          2
+ *                PI d    h
+ *                    p    e
+ *
+ *      Tau  : Thermal relaxation time (value to be computed)
+ *         c
+ *
+ *      m    : Particle mass
+ *       p
+ *
+ *      Cp   : Particle specific heat
+ *        p
+ *
+ *      d    : Particle diameter
+ *       p
+ *
+ *      h    : Coefficient of thermal exchange
+ *       e
+ *
+ *  he coefficient of thermal exchange is calculated from a Nusselt number,
+ *  itself evaluated by a correlation (Ranz-Marshall by default)
+ *
+ *             h  d
+ *              e  p
+ *      Nu = --------  = 2 + 0.55 Re **(0.5) Prt**(0.33)
+ *            Lambda                p
+ *
+ *      Lambda : Thermal conductivity of the carrier field
+ *
+ *      Re     : Particle Reynolds number
+ *        p
+ *
+ *      Prt    : Prandtl number
+ *
+ * \param[in]   id_p   particle id
+ * \param[in]   re_p   particle Reynolds number
+ * \param[in]   uvwr   relative velocity of the particle
+ *                     (flow-seen velocity - part. velocity)
+ * \param[in]   rho_f  fluid density at  particle position
+ * \param[in]   rho_p  particle density
+ * \param[in]   nu_f   kinematic viscosity of the fluid at particle position
+ * \param[in]   cp_f   specific heat of the fluid at particle position
+ * \param[in]   k_f    diffusion coefficient of the fluid at particle position
+ * \param[out]  taup   thermal relaxation time
+ * \param[in]   dt     time step (per cell)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_rt(cs_lnum_t        id_p,
+                cs_real_t        re_p,
+                cs_real_t        uvwr,
+                cs_real_t        rho_f,
+                cs_real_t        rho_p,
+                cs_real_t        nu_f,
+                cs_real_t        taup[],
+                const cs_real_t  dt[])
+{
+  /* Particles management */
+  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
+
+  unsigned char *particle = p_set->p_buffer + p_am->extents * id_p;
+  cs_real_t p_diam = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
+
+  /*===============================================================================
+   * Relaxation time with the standard (Wen-Yu) formulation of the drag coefficient
+   *===============================================================================*/
+
+  /* This example gives the standard relaxation time as an indication:*/
+
+  cs_real_t fdr;
+
+  cs_real_t cd1  = 0.15;
+  cs_real_t cd2  = 0.687;
+
+  if (re_p <= 1000)
+    fdr = 18.0 * nu_f * (1.0 + cd1 * pow(re_p, cd2)) / (p_diam * p_diam);
+
+  else
+    fdr = (0.44 * 3.0 / 4.0) * uvwr / p_diam;
+
+  taup[id_p] = rho_p / rho_f / fdr;
+
+  /*===============================================================================
+   * Computation of the relaxation time with the drag coefficient of
+   * S.A. Morsi and A.J. Alexander, J. of Fluid Mech., Vol.55, pp 193-208 (1972)
+   *===============================================================================*/
+
+  cs_real_t rec1 =  0.1;
+  cs_real_t rec2 =  1.0;
+  cs_real_t rec3 =  10.0;
+  cs_real_t rec4 = 200.0;
+
+  cs_real_t dd2 = p_diam * p_diam;
+
+  if (re_p <= rec1)
+    fdr = 18.0 * nu_f / dd2;
+
+  else if (re_p <= rec2)
+    fdr = 3.0/4.0 * nu_f / dd2 * (22.73 + 0.0903 / re_p + 3.69 * re_p);
+
+  else if (re_p <= rec3)
+    fdr = 3.0/4.0 * nu_f / dd2 * (29.1667 - 3.8889 / re_p + 1.222 * re_p);
+
+  else if (re_p <=rec4)
+    fdr = 18.0 * nu_f / dd2 *(1.0 + 0.15 * pow(re_p, 0.687));
+
+  else
+    fdr = (0.44 * 3.0 / 4.0) * uvwr / p_diam;
+
+  taup[id_p] = rho_p / rho_f / fdr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Modification of the computation of the thermal relaxation time
+ *        of the particles with respect to the chosen formulation of
+ *        the Nusselt number.
+ *
+ * This function is called in a loop on the particles, so be careful
+ * to avoid too costly operations.
+ *
+ * \param[in]   id_p   particle id
+ * \param[in]   re_p   particle Reynolds number
+ * \param[in]   uvwr   relative velocity of the particle
+ *                     (flow-seen velocity - part. velocity)
+ * \param[in]   rho_f  fluid density at  particle position
+ * \param[in]   rho_p  particle density
+ * \param[in]   nu_f   kinematic viscosity of the fluid at particle position
+ * \param[in]   cp_f   specific heat of the fluid at particle position
+ * \param[in]   k_f    diffusion coefficient of the fluid at particle position
+ * \param[out]  tauc   thermal relaxation time
+ * \param[in]   dt     time step (per cell)
+ */
+/*-------------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_rt_t(cs_lnum_t        id_p,
+                  cs_real_t        re_p,
+                  cs_real_t        uvwr,
+                  cs_real_t        rho_f,
+                  cs_real_t        rho_p,
+                  cs_real_t        nu_f,
+                  cs_real_t        cp_f,
+                  cs_real_t        k_f,
+                  cs_real_t        tauc[],
+                  const cs_real_t  dt[])
+{
+  /* 1. Initializations: Particles management */
+  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
+
+  unsigned char *particle = p_set->p_buffer + p_am->extents * id_p;
+
+  /* 2. Standard thermal relaxation time */
+
+  /* This example gives the standard thermal relaxation time
+   * as an indication.*/
+
+  cs_real_t prt = nu_f / k_f;
+
+  cs_real_t fnus = 2.0 + 0.55 * sqrt(re_p) * pow(prt, 1./3.);
+
+  cs_real_t diam = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
+  cs_real_t cp_p = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CP);
+
+  tauc[id_p]= diam * diam * rho_p * cp_p  / ( fnus * 6.0 * rho_f * cp_f * k_f);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief User integration of the SDE for the user-defined variables.
  *
  * The variables are constant by default. The SDE must be of the form:

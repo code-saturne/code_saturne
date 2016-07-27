@@ -346,8 +346,9 @@ cs_lagr_resuspension(void)
                              cs_glob_physical_constants->gy,
                              cs_glob_physical_constants->gz};
 
-			cs_real_t fgrav = p_mass * reorient_face
-                      * cs_math_3_dot_product(gravity, i_face_normal[face_id]);
+      cs_real_t fgrav
+        =   p_mass * reorient_face
+          * cs_math_3_dot_product(gravity, i_face_normal[face_id]);
 
       /* Forces due to pressure difference */
       cs_lnum_t c_id1 = mesh->i_face_cells[face_id][0];
@@ -369,7 +370,7 @@ cs_lagr_resuspension(void)
       if ((fgrav + fpres) < 0.) {
         cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
                                   CS_LAGR_PART_IN_FLOW);
-				/* TODO: impose particle velocity? Do some stats? */
+        /* TODO: impose particle velocity? Do some stats? */
       }
     }
   }
