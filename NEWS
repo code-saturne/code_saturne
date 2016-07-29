@@ -2,8 +2,22 @@
 Trunk (unreleased)
 ==================
 
-Release 4.3.0 (unreleased)
-==========================
+Physical modelling
+------------------
+
+- Lagrangian module: add deposition and resuspension models on internal faces.
+  The user can the impose the motion of deposited particles. If integral
+  approach for porous modelling is set up (iporos=3), then the internal fluid
+  section is reduced by particle deposition.
+
+Architectural changes
+---------------------
+
+- Refactored parallel numbering for space-filling curves and added
+  a numbering generation based on a 1D series of real values.
+
+Release 4.3.0 (July 29 2016)
+============================
 
 User changes
 ------------
@@ -43,14 +57,6 @@ Changes
   cs_selector_get_i_face_num_list, it is no longer necessary to build
   selection mechanisms during the optional mesh modification step.
 
-Physical modelling
-------------------
-
-- Lagrangian module: add deposition and resuspension models on internal faces.
-  The user can the impose the motion of deposited particles. If integral
-  approach for porous modelling is set up (iporos=3), then the internal fluid
-  section is reduced by particle deposition.
-
 Numerics
 --------
 
@@ -58,7 +64,7 @@ Numerics
   based on the PhD work of Sana Khelifi.
 
 - Lagragian module: new trajectory algorithm which does not loose particles even
-  for warpped faces (cs_lagr_tracking).
+  for warped faces (cs_lagr_tracking).
 
 - Improve robustness of Boundary conditions for wall functions of scalars.
   Mainly impact Atmospheric flows.
@@ -90,9 +96,6 @@ schemes (Original SOLU, CENTER, Standard SOLU)
 
 Architectural changes
 ---------------------
-
-- Refactored parallel numbering for space-filling curves and added
-  a numbering generation based on a 1D series of real values.
 
 - Added parallel IO for MED output when underlying MED library is built
   with parallel (HDF5) IO support.

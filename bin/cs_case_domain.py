@@ -1371,7 +1371,7 @@ class aster_domain(base_domain):
         if os.path.isabs(self.conf):
             s.path = self.conf
         else:
-            s_path = os.path.join(self.aster_home, 'config.txt')
+            s_path = os.path.join(self.aster_home, 'share', 'aster', 'config.txt')
         s = open(s_path, 'r')
         template = s.read()
         s.close()
@@ -1379,7 +1379,7 @@ class aster_domain(base_domain):
         import re
 
         e_re = re.compile('profile.sh')
-        e_subst = os.path.join(self.aster_home, 'profile.sh')
+        e_subst = os.path.join(self.aster_home, 'share', 'aster', 'profile.sh')
         template = re.sub(e_re, e_subst, template)
 
         e_re = re.compile('Execution/E_SUPERV.py')
