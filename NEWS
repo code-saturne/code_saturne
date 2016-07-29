@@ -46,6 +46,9 @@ Numerics
 - Add optional multigrid solver for scalars with convection and diffusion,
   based on the PhD work of Sana Khelifi.
 
+- Lagragian module: new trajectory algorithm which does not loose particles even
+  for warped faces (cs_lagr_tracking).
+
 - Improve robustness of Boundary conditions for wall functions of scalars.
   Mainly impact Atmospheric flows.
 

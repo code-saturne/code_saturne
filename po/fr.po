@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-07-13 18:52+0200\n"
+"POT-Creation-Date: 2016-07-29 17:57+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -10563,13 +10563,13 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   Zone %d nature is of type CS_LAGR_IENCRL,\n"
+"   Zone %d nature is of type CS_LAGR_FOULING,\n"
 "   but cs_glob_lagr_model->physical_model is not equal to 2\n"
 msgstr ""
 
 #, c-format
 msgid ""
-"   Zone %d nature is of type CS_LAGR_IENCRL, but fouling is not activated\n"
+"   Zone %d nature is of type CS_LAGR_FOULING, but fouling is not activated\n"
 msgstr ""
 
 #, c-format
