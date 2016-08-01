@@ -175,7 +175,7 @@ const char *f_base[] =
 int
 main (int argc, char *argv[])
 {
-  bft_mem_init(getenv("CS_MEM_TRACE"));
+  bft_mem_init(getenv("CS_MEM_LOG"));
 
   /* Cont elements */
 

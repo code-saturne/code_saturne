@@ -474,7 +474,7 @@ test_3 (void)
 int
 main (int argc, char *argv[])
 {
-  bft_mem_init(getenv("FVM_MEM_TRACE"));
+  bft_mem_init(getenv("CS_MEM_LOG"));
 
   test_1();
 

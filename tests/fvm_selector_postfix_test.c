@@ -83,7 +83,7 @@ main (int argc, char *argv[])
   const char infix[] = "sphere[0, 0, 0, 2] and (not no_group[])";
 #endif
 
-  bft_mem_init(getenv("FVM_MEM_TRACE"));
+  bft_mem_init(getenv("CS_MEM_LOG"));
 
   pf = fvm_selector_postfix_create(infix,
                                    n_groups,
