@@ -1183,7 +1183,7 @@ end subroutine fldvar_check_nscapp
 !> \result             scalar number for defined field
 !-------------------------------------------------------------------------------
 
-function cs_add_model_field_indexes(f_id) result(iscal) &
+function cs_c_add_model_field_indexes(f_id) result(iscal) &
   bind(C, name='cs_add_model_field_indexes')
 
   use, intrinsic :: iso_c_binding
@@ -1206,7 +1206,7 @@ function cs_add_model_field_indexes(f_id) result(iscal) &
 
   iscal = iscal0
 
-end function cs_add_model_field_indexes
+end function cs_c_add_model_field_indexes
 
 !---------------------------------------------------------------------------
 
