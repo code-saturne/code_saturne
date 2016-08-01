@@ -1333,6 +1333,8 @@ cs_matrix_assembler_destroy(cs_matrix_assembler_t  **ma)
   if (ma != NULL) {
     cs_matrix_assembler_t *_ma = *ma;
 
+#if defined(HAVE_MPI)
+
     cs_halo_destroy(&(_ma->halo));
 
     BFT_FREE(_ma->coeff_recv_col_g_id);
@@ -1349,6 +1351,8 @@ cs_matrix_assembler_destroy(cs_matrix_assembler_t  **ma)
 
     BFT_FREE(_ma->d_g_c_id);
     BFT_FREE(_ma->d_r_idx);
+
+#endif /* HAVE_MPI */
 
     BFT_FREE(_ma->g_rc_id);
 
@@ -1482,7 +1486,15 @@ cs_matrix_assembler_set_comm(cs_matrix_assembler_t  *ma,
 const cs_halo_t *
 cs_matrix_assembler_get_halo(const cs_matrix_assembler_t  *ma)
 {
+#if defined(HAVE_MPI)
+
   return ma->halo;
+
+#else
+
+  return NULL;
+
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

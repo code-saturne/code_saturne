@@ -513,6 +513,8 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
   return halo;
 }
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Create a halo structure from distant element distant ranks and ids.
@@ -743,6 +745,8 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
 
   return halo;
 }
+
+#endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------*/
 /*!
