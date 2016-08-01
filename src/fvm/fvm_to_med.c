@@ -243,7 +243,11 @@ _med_file_open(fvm_to_med_writer_t  *w,
 
   /* Open in serial mode in other cases */
 
+#if defined(HAVE_MPI)
   if (w->rank == 0 && w->block_comm == MPI_COMM_NULL) {
+#else
+  if (w->rank == 0) {
+#endif
     w->fid = MEDfileOpen(w->filename, amode);
     if (w->fid < 0)
       bft_error(__FILE__, __LINE__, 0,
@@ -2136,6 +2140,8 @@ _export_families_g(const fvm_writer_section_t  *export_section,
   return current_section;
 }
 
+#endif /* HAVE_MPI */
+
 /*----------------------------------------------------------------------------
  * Count local and global elements for a given section type.
  *
@@ -2182,6 +2188,8 @@ _count_connect_g(const fvm_writer_section_t  *export_sections,
   } while (   current_section != NULL
            && current_section->continues_previous);
 }
+
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Return global element number array if needed.
@@ -4247,7 +4255,7 @@ fvm_to_med_init_writer(const char                   *name,
       else if (   (l_opt == 9)
                && (strncmp(options + i1, "serial_io", l_opt) == 0)) {
         writer->min_rank_step = writer->n_ranks;
-#if !defined(HAVE_MPI)
+#if defined(HAVE_MPI)
         writer->block_comm = MPI_COMM_NULL;
 #endif
       }
