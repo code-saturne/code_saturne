@@ -494,7 +494,7 @@ _boundary_scalar(const char   *nature,
       } else if (cs_gui_strcmp(choice, "dirichlet_formula")) {
         cs_xpath_add_element(&path, "dirichlet_formula");
         cs_xpath_add_function_text(&path);
-        const char *t_value = cs_gui_get_text_value(path);
+        char *t_value = cs_gui_get_text_value(path);
         if (t_value) {
           const char *sym[] = {f->name};
           boundaries->type_code[f_id][izone] = DIRICHLET_FORMULA;
@@ -510,7 +510,7 @@ _boundary_scalar(const char   *nature,
       } else if (cs_gui_strcmp(choice, "neumann_formula")) {
         cs_xpath_add_element(&path, "neumann_formula");
         cs_xpath_add_function_text(&path);
-        const char *t_value = cs_gui_get_text_value(path);
+        char *t_value = cs_gui_get_text_value(path);
         if (t_value != NULL) {
           const char *sym[] = {"flux"};
           boundaries->type_code[f_id][izone] = NEUMANN_FORMULA;
@@ -526,7 +526,7 @@ _boundary_scalar(const char   *nature,
       } else if (cs_gui_strcmp(choice, "exchange_coefficient_formula")) {
         cs_xpath_add_element (&path, "exchange_coefficient_formula");
         cs_xpath_add_function_text(&path);
-        const char *t_value = cs_gui_get_text_value(path);
+        char *t_value = cs_gui_get_text_value(path);
         if (t_value != NULL) {
           const char *sym[] = {f->name,"hc"};
           boundaries->type_code[f_id][izone] = EXCHANGE_COEFF_FORMULA;
