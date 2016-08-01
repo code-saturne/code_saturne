@@ -192,6 +192,65 @@ cs_sort_indexed(cs_lnum_t        n_elts,
                 const cs_lnum_t  elt_idx[],
                 cs_lnum_t        elts[]);
 
+/*----------------------------------------------------------------------------
+ * Sort rows of an indexed structure of global ids
+ *
+ * parameters:
+ *   n_elts  <-- number of indexed elements
+ *   elt_idx <-- element index (size: n_elts+1)
+ *   elts    <-> indexed values
+ *
+ * returns:
+ *   true if no values were encountered multiple times in a given row
+ *---------------------------------------------------------------------------*/
+
+bool
+cs_sort_indexed_gnum(cs_lnum_t        n_elts,
+                     const cs_lnum_t  elt_idx[],
+                     cs_gnum_t        elts[]);
+
+/*----------------------------------------------------------------------------
+ * Sort an array of global number and remove duplicate entries.
+ *
+ * The calling code may choose to reallocate the array to the new, compacted
+ * size; this is not done automatically, to avoid the overhead of memory
+ * management in cases where it is not useful (i.e. when the array is
+ * discarded soon after use).
+ *
+ * parameters:
+ *   n_elts <-- initial number of elements
+ *   elts   <-> elements to sort
+ *
+ * returns:
+ *   number of compacted elements
+ *---------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_sort_and_compact_gnum(cs_lnum_t  n_elts,
+                         cs_gnum_t  elts[]);
+
+/*----------------------------------------------------------------------------
+ * Sort an array of global number couples and remove duplicate entries.
+ *
+ * Lexicographical ordering is considered.
+ *
+ * The calling code may choose to reallocate the array to the new, compacted
+ * size; this is not done automatically, to avoid the overhead of memory
+ * management in cases where it is not useful (i.e. when the array is
+ * discarded soon after use).
+ *
+ * parameters:
+ *   n_elts <-- initial number of elements
+ *   elts   <-> elements to sort (size: n_elts*2, interleaved)
+ *
+ * returns:
+ *   number of compacted elements
+ *---------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_sort_and_compact_gnum_2(cs_lnum_t  n_elts,
+                           cs_gnum_t  elts[]);
+
 /*---------------------------------------------------------------------------*/
 
 END_C_DECLS

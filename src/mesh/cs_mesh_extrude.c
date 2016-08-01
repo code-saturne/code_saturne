@@ -1648,7 +1648,7 @@ cs_mesh_extrude(cs_mesh_t          *m,
 
   if (m->halo != NULL || m->cell_cells_lst != NULL) {
     cs_halo_type_t halo_type = m->halo_type;
-    m->halo = cs_halo_destroy(m->halo);
+    cs_halo_destroy(&(m->halo));
     assert(m == cs_glob_mesh);
     cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : NULL;
     cs_mesh_init_halo(m, mb, halo_type);

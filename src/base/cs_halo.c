@@ -46,6 +46,8 @@
 #include "cs_order.h"
 
 #include "cs_interface.h"
+#include "cs_rank_neighbors.h"
+
 #include "fvm_periodicity.h"
 
 /*----------------------------------------------------------------------------
@@ -315,18 +317,18 @@ _zero_rotation_values(const cs_halo_t  *halo,
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Create a halo structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a halo structure given an interface set.
  *
- * parameters:
- *   ifs  <--  pointer to a cs_interface_set structure
+ * \param[in]  ifs  pointer to a cs_interface_set structure
  *
- * returns:
- *  pointer to created cs_halo_t structure
- *---------------------------------------------------------------------------*/
+ * \return  pointer to created cs_halo_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_halo_t *
-cs_halo_create(cs_interface_set_t  *ifs)
+cs_halo_create(const cs_interface_set_t  *ifs)
 {
   cs_lnum_t  i, tmp_id, perio_lst_size;
 
@@ -447,15 +449,15 @@ cs_halo_create(cs_interface_set_t  *ifs)
   return halo;
 }
 
-/*----------------------------------------------------------------------------
- * Create a halo structure, using a reference halo
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a halo structure, given a reference halo.
  *
- * parameters:
- *   ref  <--  pointer to reference halo
+ * \param[in]  ref  pointer to reference halo
  *
- * returns:
- *  pointer to created cs_halo_t structure
- *---------------------------------------------------------------------------*/
+ * \return  pointer to created cs_halo_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_halo_t *
 cs_halo_create_from_ref(const cs_halo_t  *ref)
@@ -511,34 +513,263 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
   return halo;
 }
 
-/*----------------------------------------------------------------------------
- * Destroy a halo structure
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a halo structure from distant element distant ranks and ids.
  *
- * parameters:
- *   halo  <--  pointer to cs_halo_t structure to destroy
+ * \remark  This function does not handle periodicity. For most matrix-vector,
+ *          products and similar operations, periodicity of translation an
+ *          even rotation could be handled with no specific halo information,
+ *          simply by assigning an equivalence between two periodic elements.
+ *          For rotation, this would require also applying a rotation through
+ *          the matrix coefficients (this would have the advantage of being
+ *          compatible with external libraries). An alternative would be
+ *          to add rotation information to a given halo as a second stage,
+ *          through a specialized operator which can be added in the future.
  *
- * Returns:
- *  pointer to deleted halo structure (NULL)
- *---------------------------------------------------------------------------*/
+ * \param[in]  rn              associated rank neighbors info
+ * \param[in]  n_local_elts    number of elements for local rank
+ * \param[in]  n_distant_elts  number of distant elements for local rank
+ * \param[in]  elt_rank_id     distant element rank index in rank neighbors,
+ *                             ordered by rank (size: n_distant_elts)
+ * \param[in]  elt_id          distant element id (at distant rank),
+ *                             ordered by rank (size: n_distant_elts)
+ *
+ * \return  pointer to created cs_halo_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_halo_t *
-cs_halo_destroy(cs_halo_t  *halo)
+cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
+                                   cs_lnum_t                   n_local_elts,
+                                   cs_lnum_t                   n_distant_elts,
+                                   const int                   elt_rank_id[],
+                                   const cs_lnum_t             elt_id[])
 {
-  if (halo == NULL)
-    return NULL;
+  cs_halo_t  *halo = NULL;
+
+  BFT_MALLOC(halo, 1, cs_halo_t);
 
   halo->n_c_domains = 0;
-  BFT_FREE(halo->c_domain_rank);
+  halo->n_transforms = 0;
 
-  BFT_FREE(halo->send_perio_lst);
-  BFT_FREE(halo->send_index);
-  BFT_FREE(halo->perio_lst);
-  BFT_FREE(halo->index);
+  halo->n_rotations = 0;
 
-  if (halo->send_list != NULL)
-    BFT_FREE(halo->send_list);
+  halo->periodicity = NULL;
+  halo->send_perio_lst = NULL;
+  halo->perio_lst = NULL;
 
-  BFT_FREE(halo);
+  halo->n_local_elts = n_local_elts;
+
+  for (int i = 0; i < CS_HALO_N_TYPES; i++) {
+    halo->n_send_elts[i] = 0;
+    halo->n_elts [i] = n_distant_elts;
+  }
+
+  /* Count elements for each rank;
+     check they are are ordered lexicographically */
+
+  cs_lnum_t *rank_count;
+  BFT_MALLOC(rank_count, rn->size*2, cs_lnum_t);
+  for (int i = 0; i < rn->size; i++)
+    rank_count[i] = 0;
+
+  int rank_prev = -1;
+  int elt_prev = -1;
+  for (cs_lnum_t i = 0; i < n_distant_elts; i++) {
+    int rank_id = elt_rank_id[i];
+    if (   rank_id < rank_prev
+        || (rank_id == rank_prev && elt_id[i] <= elt_prev))
+      bft_error
+        (__FILE__, __LINE__, 0,
+         "%s:\n"
+         "  Rank and distant element ids passed to this function must\n"
+         "  be lexicographically ordered; this is not the case here.",
+         __func__);
+    rank_count[rank_id] += 1;
+    rank_prev = rank_id;
+    elt_prev = elt_id[i];
+  }
+
+  /* Now exchange counts with neighboring elaments */
+
+  MPI_Comm comm = cs_glob_mpi_comm;
+  MPI_Request *request = NULL;
+  MPI_Status *status = NULL;
+
+  BFT_MALLOC(request, rn->size*2, MPI_Request);
+  BFT_MALLOC(status, rn->size*2, MPI_Status);
+
+  /* Exchange local range with neighbor ranks */
+
+  int request_count = 0;
+  const int local_rank = cs_glob_rank_id;
+
+  for (int i = 0; i < rn->size; i++) {
+    MPI_Irecv(rank_count + rn->size + i,
+              1,
+              CS_MPI_LNUM,
+              rn->rank[i],
+              local_rank,
+              comm,
+              &(request[request_count++]));
+  }
+
+  for (int i = 0; i < rn->size; i++) {
+    MPI_Isend(rank_count + i,
+              1,
+              CS_MPI_LNUM,
+              rn->rank[i],
+              rn->rank[i],
+              comm,
+              &(request[request_count++]));
+  }
+
+  MPI_Waitall(request_count, request, status);
+
+  /* Now build send and receive indexes to exchange data;
+     the receive index can be directly assigned to the halo;
+     also check if cs_glob_rank_id belongs to interface set in order to
+     order ranks with local rank at first place */
+
+  int        loc_r_index = -1;
+  cs_lnum_t  r_displ = 0, loc_r_displ = 0;
+  cs_lnum_t  recv_count = 0, send_count = 0;
+
+  halo->n_c_domains = 0;
+  for (int i = 0; i < rn->size; i++) {
+    if (rank_count[i] + rank_count[rn->size + i] > 0) {
+      halo->n_c_domains += 1;
+      if (rn->rank[i] == local_rank) {
+        loc_r_index = i;
+        loc_r_displ = r_displ;
+        assert(rank_count[i] == rank_count[rn->size + i]);
+      }
+      r_displ += rank_count[i];
+      recv_count += rank_count[rn->size + i];
+    }
+  }
+
+  BFT_MALLOC(halo->c_domain_rank, halo->n_c_domains, int);
+
+  BFT_MALLOC(halo->send_list, recv_count, cs_lnum_t);
+  BFT_MALLOC(halo->send_index, halo->n_c_domains*2+1, cs_lnum_t);
+  BFT_MALLOC(halo->index, halo->n_c_domains*2+1, cs_lnum_t);
+
+  halo->n_c_domains = 0;
+  send_count = 0;
+  recv_count = 0;
+
+  halo->index[0] = 0;
+  halo->send_index[0] = 0;
+
+  if (loc_r_index > -1) {
+    halo->c_domain_rank[0] = local_rank;
+    cs_lnum_t  l_count = rank_count[loc_r_index];
+    for (cs_lnum_t i = 0; i < l_count; i++)
+      halo->send_list[i] = elt_id[loc_r_displ + i];
+    send_count += l_count;
+    recv_count += l_count;
+    halo->n_c_domains = 1;
+    for (int j = 1; j < 3; j++) {
+      halo->index[j] = recv_count;
+      halo->send_index[j] = send_count;
+    }
+  }
+
+  for (int i = 0; i < rn->size; i++) {
+    if (   rank_count[i] + rank_count[rn->size + i] > 0
+        && rn->rank[i] != local_rank) {
+      halo->c_domain_rank[halo->n_c_domains] = rn->rank[i];
+      recv_count += rank_count[i];
+      send_count += rank_count[rn->size + i];
+      for (int j = 1; j < 3; j++) {
+        halo->index[halo->n_c_domains*2 + j] = recv_count;
+        halo->send_index[halo->n_c_domains*2 + j] = send_count;
+      }
+      halo->n_c_domains += 1;
+    }
+  }
+
+  BFT_FREE(rank_count);
+
+  for (int i = 0; i < CS_HALO_N_TYPES; i++)
+    halo->n_send_elts[i] = send_count;
+
+  /* Now send lists to matching ranks (reverse send and receive) */
+
+  request_count = 0;
+
+  for (int i = 0; i < halo->n_c_domains; i++) {
+    int rank_id = halo->c_domain_rank[i];
+    if (rank_id == local_rank) continue;
+    cs_lnum_t r_shift = halo->send_index[2*i];
+    cs_lnum_t r_size  = halo->send_index[2*i+1] - r_shift;
+    if (r_size > 0)
+      MPI_Irecv(halo->send_list + r_shift,
+                r_size,
+                CS_MPI_LNUM,
+                rank_id,
+                local_rank,
+                comm,
+                &(request[request_count++]));
+  }
+
+  for (int i = 0; i < halo->n_c_domains; i++) {
+    int rank_id = halo->c_domain_rank[i];
+    if (rank_id == local_rank) continue;
+    cs_lnum_t s_shift = halo->index[2*i];
+    cs_lnum_t s_size  = halo->index[2*i+1] - s_shift;
+    if (s_shift < loc_r_displ) { /* case with local rank first */
+      assert(halo->c_domain_rank[0] == local_rank);
+      s_shift -= halo->index[2];
+    }
+    if (s_size > 0)
+      MPI_Isend(elt_id + s_shift,
+                s_size,
+                CS_MPI_LNUM,
+                rank_id,
+                rank_id,
+                comm,
+                &(request[request_count++]));
+  }
+
+  MPI_Waitall(request_count, request, status);
+
+  BFT_FREE(request);
+  BFT_FREE(status);
+
+  _cs_glob_n_halos += 1;
+
+  return halo;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * brief Destroy a halo structure.
+ *
+ * \param[in, out]  halo  pointer to pointer to cs_halo structure to destroy.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_destroy(cs_halo_t  **halo)
+{
+  if (halo == NULL)
+    return;
+
+  cs_halo_t  *_halo = *halo;
+
+  BFT_FREE(_halo->c_domain_rank);
+
+  BFT_FREE(_halo->send_perio_lst);
+  BFT_FREE(_halo->send_index);
+  BFT_FREE(_halo->perio_lst);
+  BFT_FREE(_halo->index);
+
+  BFT_FREE(_halo->send_list);
+
+  BFT_FREE(*halo);
 
   _cs_glob_n_halos -= 1;
 
@@ -562,8 +793,6 @@ cs_halo_destroy(cs_halo_t  *halo)
 #endif
 
   }
-
-  return NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -921,8 +1150,9 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
     }
 
     /* Assemble buffers for halo exchange;
-       avoid threading for now, as dynamic scheduling led to slightly higher cost here,
-       and even static scheduling might lead to false sharing for small halos. */
+       avoid threading for now, as dynamic scheduling led to slightly
+       higher cost here, and even static scheduling might lead to
+       false sharing for small halos. */
 
     for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
@@ -1065,8 +1295,9 @@ cs_halo_sync_num(const cs_halo_t  *halo,
     }
 
     /* Assemble buffers for halo exchange;
-       avoid threading for now, as dynamic scheduling led to slightly higher cost here,
-       and even static scheduling might lead to false sharing for small halos. */
+       avoid threading for now, as dynamic scheduling led to slightly
+       higher cost here, and even static scheduling might lead to
+       false sharing for small halos. */
 
     for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
@@ -1673,9 +1904,9 @@ cs_halo_dump(const cs_halo_t  *halo,
                    index[2*i], index[2*i+1]);
 
         if (print_level == 1 && list != NULL) {
-          bft_printf("\n            id      cell number\n");
+          bft_printf("\n            id      cell id\n");
           for (j = index[2*i]; j < index[2*i+1]; j++)
-            bft_printf("    %10d %10d\n", j, list[j]+1);
+            bft_printf("    %10d %10d\n", j, list[j]);
         }
 
       } /* there are elements on standard neighborhood */
@@ -1687,10 +1918,10 @@ cs_halo_dump(const cs_halo_t  *halo,
                    index[2*i+1], index[2*i+2]);
 
         if (print_level == 1 && list != NULL) {
-          bft_printf("\n            id      cell number\n");
+          bft_printf("\n            id      cell id\n");
           for (j = index[2*i+1]; j < index[2*i+2]; j++)
             bft_printf("    %10d %10d %10d\n",
-                       j, list[j]+1, halo->n_local_elts+j+1);
+                       j, list[j], halo->n_local_elts+j);
         }
 
       } /* If there are elements on extended neighborhood */

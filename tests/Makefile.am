@@ -112,6 +112,7 @@ cs_core_test \
 cs_file_test \
 cs_interface_test \
 cs_map_test \
+cs_matrix_test \
 cs_moment_test \
 cs_rank_neighbors_test \
 fvm_selector_test \
@@ -156,6 +157,14 @@ cs_map_test_SOURCES  = cs_map_test.c
 cs_map_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_map_test_LDADD    = $(LDADD_CS_TESTS)
 
+cs_matrix_test_SOURCES  = \
+cs_matrix_test.c \
+$(top_srcdir)/src/base/cs_halo.c \
+$(top_srcdir)/src/base/cs_sort.c \
+$(top_srcdir)/src/alge/cs_matrix_assembler.c
+cs_matrix_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+cs_matrix_test_LDADD    = $(LDADD_CS_TESTS)
+
 cs_moment_test_SOURCES  = cs_moment_test.c
 cs_moment_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_moment_test_LDADD    = $(LDADD_CS_TESTS)
@@ -183,4 +192,10 @@ unittests.py
 
 # Uncomment for tests execution at "make check"
 #TESTS=$(check_PROGRAMS)
+
+# Distribution
+
+EXTRA_DIST = $(top_srcdir)/tests/graphics
+dist-hook:
+	rm -rf `find $(distdir)/tests/graphics -type d -name .svn`
 

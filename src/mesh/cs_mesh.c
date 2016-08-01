@@ -2299,7 +2299,7 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
 
     if (mesh->vtx_interfaces != NULL)
       cs_interface_set_destroy(&(mesh->vtx_interfaces));
-    mesh->halo = cs_halo_destroy(mesh->halo);
+    cs_halo_destroy(&(mesh->halo));
 
   }
 

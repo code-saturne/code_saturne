@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-07-13 18:52+0200\n"
+"POT-Creation-Date: 2016-07-31 20:28+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -8192,15 +8192,15 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid value %s for setting key CS_ADVKEY_POST\n"
-" Valid choices are \"true\" or \"false\".\n"
+" Invalid value %s for setting key CS_ADVKEY_DEFINE_AT\n"
+" Valid choices are \"cells\" or \"vertices\".\n"
 " Please modify your setting.\n"
 msgstr ""
 
 #, c-format
 msgid ""
-" Invalid value %s for setting key CS_ADVKEY_POST_UNITV\n"
-" Valid choices are \"true\" or \"false\".\n"
+" Invalid value %s for setting key CS_ADVKEY_POST\n"
+" Valid choices are \"field\" or \"courant\".\n"
 " Please modify your setting.\n"
 msgstr ""
 
@@ -8774,6 +8774,13 @@ msgstr ""
 msgid " Invalid type of definition for a property."
 msgstr ""
 
+#, c-format
+msgid ""
+" Invalid value %s for setting key CS_PTYKEY_POST\n"
+" Valid choices are \"fourier\".\n"
+" Please modify your setting.\n"
+msgstr ""
+
 msgid "barycentric"
 msgstr ""
 
@@ -9134,6 +9141,10 @@ msgstr "Hilbert (dans boîte englobante)"
 
 msgid "Hilbert (in bounding cube)"
 msgstr "Hilbert (dans cube englobant)"
+
+#, c-format
+msgid "%s: point set is empty or contains identical values."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -10563,13 +10574,13 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   Zone %d nature is of type CS_LAGR_IENCRL,\n"
+"   Zone %d nature is of type CS_LAGR_FOULING,\n"
 "   but cs_glob_lagr_model->physical_model is not equal to 2\n"
 msgstr ""
 
 #, c-format
 msgid ""
-"   Zone %d nature is of type CS_LAGR_IENCRL, but fouling is not activated\n"
+"   Zone %d nature is of type CS_LAGR_FOULING, but fouling is not activated\n"
 msgstr ""
 
 #, c-format

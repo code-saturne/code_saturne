@@ -4068,7 +4068,7 @@ cs_grid_destroy(cs_grid_t **grid)
       BFT_FREE(g->_face_normal);
 
     if (g->_halo != NULL)
-      g->_halo = cs_halo_destroy(g->_halo);
+      cs_halo_destroy(&(g->_halo));
 
     if (g->_da != NULL)
       BFT_FREE(g->_da);

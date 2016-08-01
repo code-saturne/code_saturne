@@ -53,6 +53,7 @@ BEGIN_C_DECLS
  *
  *  - Native
  *  - Compressed Sparse Row (CSR)
+ *  - Modified Compressed Sparse Row (MSR), with separate diagonal
  *  - Symmetric Compressed Sparse Row (CSR_SYM)
  */
 

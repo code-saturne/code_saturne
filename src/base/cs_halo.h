@@ -33,6 +33,7 @@
 
 #include "cs_base.h"
 #include "cs_interface.h"
+#include "cs_rank_neighbors.h"
 
 #include "fvm_periodicity.h"
 
@@ -165,44 +166,75 @@ typedef struct {
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Create a halo structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a halo structure given an interface set.
  *
- * parameters:
- *   ifs  <--  pointer to a fvm_interface_set structure
+ * \param[in]  ifs  pointer to a cs_interface_set structure
  *
- * returns:
- *   pointer to created cs_halo_t structure
- *---------------------------------------------------------------------------*/
+ * \return  pointer to created cs_halo_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_halo_t *
-cs_halo_create(cs_interface_set_t  *ifs);
+cs_halo_create(const cs_interface_set_t  *ifs);
 
-/*----------------------------------------------------------------------------
- * Create a halo structure, using a reference halo
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a halo structure, given a reference halo.
  *
- * parameters:
- *   ref  <--  pointer to reference halo
+ * \param[in]  ref  pointer to reference halo
  *
- * returns:
- *   pointer to created cs_halo_t structure
- *---------------------------------------------------------------------------*/
+ * \return  pointer to created cs_halo_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_halo_t *
 cs_halo_create_from_ref(const cs_halo_t  *ref);
 
-/*----------------------------------------------------------------------------
- * Destroy a halo structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a halo structure from distant element distant ranks and ids.
  *
- * parameters:
- *   this_halo  <--  pointer to cs_halo structure to destroy
+ * \remark  This function does not handle periodicity. For most matrix-vector,
+ *          products and similar operations, periodicity of translation an
+ *          even rotation could be handled with no specific halo information,
+ *          simply by assigning an equivalence between two periodic elements.
+ *          For rotation, this would require also applying a rotation through
+ *          the matrix coefficients (this would have the advantage of being
+ *          compatible with external libraries). An alternative would be
+ *          to add rotation information to a given halo as a second stage,
+ *          through a specialized operator which can be added in the future.
  *
- * returns:
- *   pointer to deleted halo structure (NULL)
- *---------------------------------------------------------------------------*/
+ * \param[in]  rn              associated rank neighbors info
+ * \param[in]  n_local_elts    number of elements for local rank
+ * \param[in]  n_distant_elts  number of distant elements for local rank
+ * \param[in]  elt_rank_id     distant element rank index in rank neighbors,
+ *                             ordered by rank (size: n_distant_elts)
+ * \param[in]  elt_id          distant element id (at distant rank),
+ *                             ordered by rank (size: n_distant_elts)
+ *
+ * \return  pointer to created cs_halo_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_halo_t *
-cs_halo_destroy(cs_halo_t  *this_halo);
+cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
+                                   cs_lnum_t                   n_local_elts,
+                                   cs_lnum_t                   n_distant_elts,
+                                   const int                   elt_rank_id[],
+                                   const cs_lnum_t             elt_id[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * brief Destroy a halo structure.
+ *
+ * \param[in, out]  halo  pointer to pointer to cs_halo structure to destroy.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_destroy(cs_halo_t  **halo);
 
 /*----------------------------------------------------------------------------
  * Update global buffer sizes so as to be usable with a given halo.
@@ -219,7 +251,7 @@ cs_halo_destroy(cs_halo_t  *this_halo);
  *---------------------------------------------------------------------------*/
 
 void
-cs_halo_update_buffers(const cs_halo_t *halo);
+cs_halo_update_buffers(const cs_halo_t  *halo);
 
 /*----------------------------------------------------------------------------
  * Free global halo backup buffer.

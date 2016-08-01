@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2015 EDF S.A.
+  Copyright (C) 1998-2016 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -458,9 +458,9 @@ cs_rank_neighbors_to_index(const cs_rank_neighbors_t  *n,
 
         /* use binary search */
 
-        size_t start_id = 0;
-        size_t end_id = n_neighbors - 1;
-        size_t mid_id = (end_id -start_id) / 2;
+        cs_lnum_t start_id = 0;
+        cs_lnum_t end_id = n_neighbors - 1;
+        cs_lnum_t mid_id = (end_id -start_id) / 2;
 
         while (start_id <= end_id) {
           int rank_cmp = rank[mid_id];
@@ -602,7 +602,7 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
           n_max_elts *= 2;
           BFT_REALLOC(recvbuf, n_max_elts, int);
         }
-        MPI_Recv(recvbuf + n_elts, 1, MPI_INT, status.MPI_SOURCE,
+        MPI_Recv(recvbuf + n_elts, 1, MPI_INT, status. MPI_SOURCE,
                  tag, comm, &status_recv);
         recvbuf[n_elts] = status.MPI_SOURCE;
         n_elts += 1;

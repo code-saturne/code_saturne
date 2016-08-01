@@ -1,0 +1,610 @@
+/*
+  This file is part of Code_Saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2016 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+#include "cs_defs.h"
+
+#include <assert.h>
+#include <math.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <sys/time.h>
+#include <unistd.h>
+
+#include "bft_error.h"
+#include "bft_mem.h"
+#include "bft_mem_usage.h"
+#include "bft_printf.h"
+
+#include "cs_system_info.h"
+
+#include "cs_blas.h"
+#include "cs_defs.h"
+#include "cs_timer.h"
+
+#include "cs_matrix.h"
+#include "cs_matrix_priv.h"
+#include "cs_matrix_assembler.h"
+#include "cs_matrix_util.h"
+
+/*----------------------------------------------------------------------------*/
+
+/* Minimum size for OpenMP loops (needs benchmarking to adjust) */
+#define THR_MIN 128
+
+/* Global matrix info */
+
+cs_gnum_t  _n_g_vtx = 0;
+cs_gnum_t  _vtx_range[2];
+
+cs_lnum_t  _n_vtx = 0, _n_edges = 0;
+
+cs_gnum_t  *_g_vtx_id = NULL;
+cs_lnum_2_t  *_edges = NULL;
+
+bool _full_connect = true;
+bool _symmetric = true;
+
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Analysis of environment variables to determine
+ * if we require MPI, and initialization if necessary.
+ *----------------------------------------------------------------------------*/
+
+static void
+_mpi_init(void)
+{
+  int flag = 0;
+  bool use_mpi = false;
+
+#if   defined(__bg__) || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+
+  use_mpi = true;
+
+#elif defined(MPICH2) || defined(MPICH)
+  if (getenv("PMI_RANK") != NULL)
+    use_mpi = true;
+
+#elif defined(OPEN_MPI)
+  if (getenv("OMPI_COMM_WORLD_RANK") != NULL)    /* OpenMPI 1.3 and above */
+    use_mpi = true;
+
+#endif /* Tests for known MPI variants */
+
+  /* If we have determined from known MPI environment variables
+     of command line arguments that we are running under MPI,
+     initialize MPI */
+
+  if (use_mpi == true) {
+
+    MPI_Initialized(&flag);
+
+    if (!flag) {
+#if defined(MPI_VERSION) && (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
+      int mpi_threads;
+      MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &mpi_threads);
+#else
+      MPI_Init(NULL, NULL);
+#endif
+    }
+
+    cs_glob_mpi_comm = MPI_COMM_WORLD;
+    MPI_Comm_size(cs_glob_mpi_comm, &cs_glob_n_ranks);
+    MPI_Comm_rank(cs_glob_mpi_comm, &cs_glob_rank_id);
+
+  }
+
+}
+
+#endif /* HAVE_MPI */
+
+/*----------------------------------------------------------------------------
+ * build base data based on rank id.
+ *----------------------------------------------------------------------------*/
+
+static int
+_base_data_4(int        rank_id,
+             cs_lnum_t  cell_vtx[10][4])
+{
+  cs_lnum_t n_cells = 0;
+
+  _n_g_vtx = 20;
+
+  if (rank_id == 0) {
+    _n_vtx = 6;
+    n_cells = 2;
+    _vtx_range[0] = 0;
+    _vtx_range[1] = 5;
+  }
+  else if (rank_id == 1) {
+    _n_vtx = 6;
+    n_cells = 2;
+    _vtx_range[0] = 5;
+    _vtx_range[1] = 10;
+  }
+  else if (rank_id == 2) {
+    _n_vtx = 12;
+    n_cells = 5;
+    _vtx_range[0] = 10;
+    _vtx_range[1] = 14;
+  }
+  else if (rank_id == 3) {
+    _n_vtx = 8;
+    n_cells = 3;
+    _vtx_range[0] = 14;
+    _vtx_range[1] = 20;
+  }
+
+  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+
+  if (rank_id == 0) {
+    _g_vtx_id[0] = 0;
+    _g_vtx_id[1] = 1;
+    _g_vtx_id[2] = 2;
+    _g_vtx_id[3] = 3;
+    _g_vtx_id[4] = 11;
+    _g_vtx_id[5] = 4;
+    cell_vtx[0][0] = 0;
+    cell_vtx[0][1] = 1;
+    cell_vtx[0][2] = 3;
+    cell_vtx[0][3] = 2;
+    cell_vtx[1][0] = 2;
+    cell_vtx[1][1] = 3;
+    cell_vtx[1][2] = 5;
+    cell_vtx[1][3] = 4;
+  }
+  else if (rank_id == 1) {
+    _g_vtx_id[0] = 10;
+    _g_vtx_id[1] = 5;
+    _g_vtx_id[2] = 6;
+    _g_vtx_id[3] = 7;
+    _g_vtx_id[4] = 8;
+    _g_vtx_id[5] = 9;
+    cell_vtx[0][0] = 0;
+    cell_vtx[0][1] = 1;
+    cell_vtx[0][2] = 3;
+    cell_vtx[0][3] = 2;
+    cell_vtx[1][0] = 2;
+    cell_vtx[1][1] = 3;
+    cell_vtx[1][2] = 5;
+    cell_vtx[1][3] = 4;
+  }
+  else if (rank_id == 2) {
+    _g_vtx_id[0] = 1;
+    _g_vtx_id[1] = 10;
+    _g_vtx_id[2] = 3;
+    _g_vtx_id[3] = 6;
+    _g_vtx_id[4] = 11;
+    _g_vtx_id[5] = 4;
+    _g_vtx_id[6] = 8;
+    _g_vtx_id[7] = 9;
+    _g_vtx_id[8] = 14;
+    _g_vtx_id[9] = 12;
+    _g_vtx_id[10] = 15;
+    _g_vtx_id[11] = 13;
+    cell_vtx[0][0] = 0;
+    cell_vtx[0][1] = 1;
+    cell_vtx[0][2] = 3;
+    cell_vtx[0][3] = 2;
+    cell_vtx[1][0] = 2;
+    cell_vtx[1][1] = 3;
+    cell_vtx[1][2] = 6;
+    cell_vtx[1][3] = 5;
+    cell_vtx[2][0] = 4;
+    cell_vtx[2][1] = 5;
+    cell_vtx[2][2] = 9;
+    cell_vtx[2][3] = 8;
+    cell_vtx[3][0] = 5;
+    cell_vtx[3][1] = 6;
+    cell_vtx[3][2] = 10;
+    cell_vtx[3][3] = 9;
+    cell_vtx[4][0] = 6;
+    cell_vtx[4][1] = 7;
+    cell_vtx[4][2] = 11;
+    cell_vtx[4][3] = 10;
+  }
+  else if (rank_id == 3) {
+    _g_vtx_id[0] = 14;
+    _g_vtx_id[1] = 12;
+    _g_vtx_id[2] = 15;
+    _g_vtx_id[3] = 13;
+    _g_vtx_id[4] = 16;
+    _g_vtx_id[5] = 17;
+    _g_vtx_id[6] = 18;
+    _g_vtx_id[7] = 19;
+    cell_vtx[0][0] = 0;
+    cell_vtx[0][1] = 1;
+    cell_vtx[0][2] = 5;
+    cell_vtx[0][3] = 4;
+    cell_vtx[1][0] = 1;
+    cell_vtx[1][1] = 2;
+    cell_vtx[1][2] = 6;
+    cell_vtx[1][3] = 5;
+    cell_vtx[2][0] = 2;
+    cell_vtx[2][1] = 3;
+    cell_vtx[2][2] = 7;
+    cell_vtx[2][3] = 6;
+  }
+
+  return n_cells;
+}
+
+static int
+_base_data_3(int        rank_id,
+             cs_lnum_t  cell_vtx[10][4])
+{
+  cs_lnum_t n_cells = 0;
+
+  _n_g_vtx = 15;
+
+  if (rank_id == 0) {
+    _n_vtx = 6;
+    n_cells = 2;
+    _vtx_range[0] = 0;
+    _vtx_range[1] = 5;
+  }
+  else if (rank_id == 1) {
+    _n_vtx = 6;
+    n_cells = 2;
+    _vtx_range[0] = 5;
+    _vtx_range[1] = 10;
+  }
+  else if (rank_id == 2) {
+    _n_vtx = 12;
+    n_cells = 5;
+    _vtx_range[0] = 10;
+    _vtx_range[1] = 16;
+  }
+
+  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+
+  if (rank_id == 0) {
+    _g_vtx_id[0] = 0;
+    _g_vtx_id[1] = 1;
+    _g_vtx_id[2] = 2;
+    _g_vtx_id[3] = 3;
+    _g_vtx_id[4] = 11;
+    _g_vtx_id[5] = 4;
+    cell_vtx[0][0] = 0;
+    cell_vtx[0][1] = 1;
+    cell_vtx[0][2] = 3;
+    cell_vtx[0][3] = 2;
+    cell_vtx[1][0] = 2;
+    cell_vtx[1][1] = 3;
+    cell_vtx[1][2] = 5;
+    cell_vtx[1][3] = 4;
+  }
+  else if (rank_id == 1) {
+    _g_vtx_id[0] = 10;
+    _g_vtx_id[1] = 5;
+    _g_vtx_id[2] = 6;
+    _g_vtx_id[3] = 7;
+    _g_vtx_id[4] = 8;
+    _g_vtx_id[5] = 9;
+    cell_vtx[0][0] = 0;
+    cell_vtx[0][1] = 1;
+    cell_vtx[0][2] = 3;
+    cell_vtx[0][3] = 2;
+    cell_vtx[1][0] = 2;
+    cell_vtx[1][1] = 3;
+    cell_vtx[1][2] = 5;
+    cell_vtx[1][3] = 4;
+  }
+  else if (rank_id == 2) {
+    _g_vtx_id[0] = 1;
+    _g_vtx_id[1] = 10;
+    _g_vtx_id[2] = 3;
+    _g_vtx_id[3] = 6;
+    _g_vtx_id[4] = 11;
+    _g_vtx_id[5] = 4;
+    _g_vtx_id[6] = 8;
+    _g_vtx_id[7] = 9;
+    _g_vtx_id[8] = 12;
+    _g_vtx_id[9] = 13;
+    _g_vtx_id[10] = 14;
+    _g_vtx_id[11] = 15;
+    cell_vtx[0][0] = 0;
+    cell_vtx[0][1] = 1;
+    cell_vtx[0][2] = 3;
+    cell_vtx[0][3] = 2;
+    cell_vtx[1][0] = 2;
+    cell_vtx[1][1] = 3;
+    cell_vtx[1][2] = 6;
+    cell_vtx[1][3] = 5;
+    cell_vtx[2][0] = 4;
+    cell_vtx[2][1] = 5;
+    cell_vtx[2][2] = 9;
+    cell_vtx[2][3] = 8;
+    cell_vtx[3][0] = 5;
+    cell_vtx[3][1] = 6;
+    cell_vtx[3][2] = 10;
+    cell_vtx[3][3] = 9;
+    cell_vtx[4][0] = 6;
+    cell_vtx[4][1] = 7;
+    cell_vtx[4][2] = 11;
+    cell_vtx[4][3] = 10;
+  }
+
+  return n_cells;
+}
+
+static int
+_base_data_2(int        rank_id,
+             cs_lnum_t  cell_vtx[10][4])
+{
+  cs_lnum_t n_cells = 0;
+
+  _n_g_vtx = 12;
+
+  if (rank_id == 0) {
+    _n_vtx = 8;
+    n_cells = 3;
+    _vtx_range[0] = 0;
+    _vtx_range[1] = 6;
+  }
+  else if (rank_id == 1) {
+    _n_vtx = 8;
+    n_cells = 3;
+    _vtx_range[0] = 6;
+    _vtx_range[1] = 12;
+  }
+
+  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+
+  if (rank_id == 0) {
+    _g_vtx_id[0] = 0;
+    _g_vtx_id[1] = 1;
+    _g_vtx_id[2] = 6;
+    _g_vtx_id[3] = 2;
+    _g_vtx_id[4] = 3;
+    _g_vtx_id[5] = 8;
+    _g_vtx_id[6] = 4;
+    _g_vtx_id[7] = 5;
+    cell_vtx[0][0] = 0;
+    cell_vtx[0][1] = 1;
+    cell_vtx[0][2] = 4;
+    cell_vtx[0][3] = 3;
+    cell_vtx[1][0] = 1;
+    cell_vtx[1][1] = 2;
+    cell_vtx[1][2] = 5;
+    cell_vtx[1][3] = 4;
+    cell_vtx[2][0] = 3;
+    cell_vtx[2][1] = 4;
+    cell_vtx[2][2] = 7;
+    cell_vtx[2][3] = 6;
+  }
+  else if (rank_id == 1) {
+    _g_vtx_id[0] = 6;
+    _g_vtx_id[1] = 7;
+    _g_vtx_id[2] = 3;
+    _g_vtx_id[3] = 8;
+    _g_vtx_id[4] = 9;
+    _g_vtx_id[5] = 5;
+    _g_vtx_id[6] = 10;
+    _g_vtx_id[7] = 11;
+    cell_vtx[0][0] = 0;
+    cell_vtx[0][1] = 1;
+    cell_vtx[0][2] = 4;
+    cell_vtx[0][3] = 3;
+    cell_vtx[1][0] = 2;
+    cell_vtx[1][1] = 3;
+    cell_vtx[1][2] = 6;
+    cell_vtx[1][3] = 5;
+    cell_vtx[2][0] = 3;
+    cell_vtx[2][1] = 4;
+    cell_vtx[2][2] = 7;
+    cell_vtx[2][3] = 6;
+  }
+
+  return n_cells;
+}
+
+static int
+_base_data_1(cs_lnum_t  cell_vtx[10][4])
+{
+  cs_lnum_t n_cells = 3;
+
+  _n_g_vtx = 8;
+
+  _n_vtx = 8;
+  n_cells = 3;
+
+  _vtx_range[0] = 0;
+  _vtx_range[1] = 8;
+
+  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+
+  _g_vtx_id[0] = 0;
+  _g_vtx_id[1] = 1;
+  _g_vtx_id[2] = 2;
+  _g_vtx_id[3] = 3;
+  _g_vtx_id[4] = 4;
+  _g_vtx_id[5] = 5;
+  _g_vtx_id[6] = 6;
+  _g_vtx_id[7] = 7;
+  cell_vtx[0][0] = 0;
+  cell_vtx[0][1] = 1;
+  cell_vtx[0][2] = 5;
+  cell_vtx[0][3] = 4;
+  cell_vtx[1][0] = 1;
+  cell_vtx[1][1] = 2;
+  cell_vtx[1][2] = 6;
+  cell_vtx[1][3] = 5;
+  cell_vtx[2][0] = 2;
+  cell_vtx[2][1] = 3;
+  cell_vtx[2][2] = 7;
+  cell_vtx[2][3] = 6;
+
+  return n_cells;
+}
+
+static void
+_base_data(int rank_id,
+           int n_ranks)
+{
+  cs_lnum_t n_cells = 0;
+  cs_lnum_t cell_vtx[10][4];
+
+  if (n_ranks >= 4)
+    n_cells = _base_data_4(rank_id, cell_vtx);
+  else if (n_ranks == 3)
+    n_cells = _base_data_3(rank_id, cell_vtx);
+  else if (n_ranks == 2)
+    n_cells = _base_data_2(rank_id, cell_vtx);
+  else if (n_ranks == 1)
+    n_cells = _base_data_1(cell_vtx);
+
+  /* Compute number of local graph edges */
+
+  _n_edges = n_cells * 4;
+  if (_full_connect) _n_edges += n_cells*2;
+  if (_symmetric) _n_edges *= 2;
+
+  BFT_MALLOC(_edges, _n_edges, cs_lnum_2_t);
+
+  cs_lnum_t j = 0;
+  cs_lnum_t j_step = (_symmetric) ? 2 : 1;
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    _edges[j][0] = cell_vtx[i][0]; _edges[j][1] = cell_vtx[i][1]; j+= j_step;
+    _edges[j][0] = cell_vtx[i][1]; _edges[j][1] = cell_vtx[i][2]; j+= j_step;
+    _edges[j][0] = cell_vtx[i][2]; _edges[j][1] = cell_vtx[i][3]; j+= j_step;
+    _edges[j][0] = cell_vtx[i][3]; _edges[j][1] = cell_vtx[i][0]; j+= j_step;
+    if (_full_connect) {
+      _edges[j][0] = cell_vtx[i][0]; _edges[j][1] = cell_vtx[i][2]; j+= j_step;
+      _edges[j][0] = cell_vtx[i][1]; _edges[j][1] = cell_vtx[i][3]; j+= j_step;
+    }
+  }
+  if (_symmetric) {
+    for (cs_lnum_t i = 0; i < _n_edges; i+=2) {
+      _edges[i+1][0] = _edges[i][1];
+      _edges[i+1][1] = _edges[i][0];
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * build base data based on rabnk id.
+ *----------------------------------------------------------------------------*/
+
+static void
+_free_base_data(void)
+{
+
+  BFT_FREE(_g_vtx_id);
+  BFT_FREE(_edges);
+}
+
+/*----------------------------------------------------------------------------*/
+
+int
+main (int argc, char *argv[])
+{
+  int sub_id;
+  double t_measure = 1.0;
+  double test_sum = 0.0;
+
+  /* Internationalization */
+
+#ifdef HAVE_SETLOCALE
+  if (!setlocale (LC_ALL,"")) {
+#if defined (DEBUG)
+     bft_printf("locale not supported by C library"
+                " or bad LANG environment variable");
+#endif
+  }
+#endif /* HAVE_SETLOCALE */
+
+  /* Initialization and environment */
+
+#if defined(HAVE_MPI)
+  _mpi_init();
+#endif
+
+  if (getenv("CS_MEM_LOG") != NULL) {
+    char mem_log_file_name[128];
+    snprintf(mem_log_file_name, 127, "%s.%d",
+             getenv("CS_MEM_LOG"), cs_glob_rank_id);
+    bft_mem_init(mem_log_file_name);
+  }
+  else
+    bft_mem_init(NULL);
+
+  (void)cs_timer_wtime();
+
+#if defined(HAVE_MPI)
+  cs_system_info(cs_glob_mpi_comm);
+#else
+  cs_system_info();
+#endif
+
+  _base_data(cs_glob_rank_id, cs_glob_n_ranks);
+
+  /* Main tests */
+
+  cs_matrix_assembler_t  *ma
+    = cs_matrix_assembler_create(_vtx_range, true);
+
+  cs_gnum_t g_row_id[3], g_col_id[3];
+  cs_lnum_t j = 0;
+  for (cs_lnum_t i = 0; i < _n_edges; i++) {
+    g_row_id[j] = _g_vtx_id[_edges[i][0]];
+    g_col_id[j] = _g_vtx_id[_edges[i][1]];
+    j++;
+    if (j == 3) {
+      cs_matrix_assembler_add_ids(ma, j, g_row_id, g_col_id);
+      j = 0;
+    }
+  }
+  cs_matrix_assembler_add_ids(ma, j, g_row_id, g_col_id);
+
+  cs_matrix_assembler_compute_structure(ma);
+
+  const cs_halo_t *halo = cs_matrix_assembler_get_halo(ma);
+
+  cs_halo_dump(halo, 1);
+
+  bft_printf("\n");
+
+  /* Finalize */
+
+  cs_matrix_assembler_destroy(&ma);
+
+  _free_base_data();
+
+  bft_mem_end();
+
+#if defined(HAVE_MPI)
+  {
+    int mpi_flag;
+    MPI_Initialized(&mpi_flag);
+    if (mpi_flag != 0)
+      MPI_Finalize();
+  }
+#endif /* HAVE_MPI */
+
+  exit (EXIT_SUCCESS);
+}
