@@ -185,8 +185,6 @@ struct _cs_grid_t {
 
   const cs_real_t  *xa0;            /* Symmetrized extra-diagonal (shared) */
   cs_real_t        *_xa0;           /* Symmetrized extra-diagonal (private) */
-  const cs_real_t  *xa0_conv;       /* Symmetrized extra-diagonal (shared) */
-  cs_real_t        *_xa0_conv;      /* Symmetrized extra-diagonal (private) */
   const cs_real_t  *xa0_diff;       /* Symmetrized extra-diagonal (shared) */
   cs_real_t        *_xa0_diff;      /* Symmetrized extra-diagonal (private) */
 
@@ -326,8 +324,6 @@ _create_grid(void)
   g->_xa_diff = NULL;
   g->xa0 = NULL;
   g->_xa0 = NULL;
-  g->xa0_conv = NULL;
-  g->_xa0_conv = NULL;
   g->xa0_diff = NULL;
   g->_xa0_diff = NULL;
 
@@ -3524,6 +3520,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
           c_da[ic] -= w1[ic];
       }
     }
+
+    BFT_FREE(w1);
   }
 #endif
 }
@@ -3568,7 +3566,6 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   cs_real_t *c_face_normal = coarse_grid->_face_normal;
 
   cs_real_t *c_xa0 = coarse_grid->_xa0;
-  cs_real_t *c_xa0_conv = coarse_grid->_xa0_conv;
   cs_real_t *c_xa0_diff = coarse_grid->_xa0_diff;
   cs_real_t *c_xa0ij = coarse_grid->xa0ij;
   cs_real_t *c_da = coarse_grid->_da;
@@ -3588,7 +3585,6 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   const cs_real_t *f_face_normal = fine_grid->face_normal;
   const cs_real_t *f_xa0 = fine_grid->xa0;
   const cs_real_t *f_da = fine_grid->da;
-  const cs_real_t *f_xa0_conv = fine_grid->xa0_conv;
   const cs_real_t *f_da_conv = fine_grid->da_conv;
   const cs_real_t *f_xa_conv = fine_grid->xa_conv;
   const cs_real_t *f_xa0_diff = fine_grid->xa0_diff;
@@ -3608,8 +3604,6 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   for (c_face = 0; c_face < c_n_faces; c_face++) {
     c_xa0[2*c_face]         = 0.;
     c_xa0[2*c_face +1]      = 0.;
-    c_xa0_conv[2*c_face]    = 0.;
-    c_xa0_conv[2*c_face +1] = 0.;
     c_xa0_diff[c_face]      = 0.;
     c_face_normal[3*c_face]    = 0.;
     c_face_normal[3*c_face +1] = 0.;
@@ -3626,8 +3620,8 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
       c_xa0[2*c_face]         += f_xa0[2*face_id];
       c_xa0[2*c_face +1]      += f_xa0[2*face_id +1];
-      c_xa0_conv[2*c_face]    += f_xa0_conv[2*face_id];
-      c_xa0_conv[2*c_face +1] += f_xa0_conv[2*face_id +1];
+      c_xa_conv[2*c_face]     += f_xa_conv[2*face_id];
+      c_xa_conv[2*c_face +1]  += f_xa_conv[2*face_id +1];
       c_xa0_diff[c_face]      += f_xa0_diff[face_id];
       c_face_normal[3*c_face]    += f_face_normal[3*face_id];
       c_face_normal[3*c_face +1] += f_face_normal[3*face_id +1];
@@ -3641,8 +3635,8 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
       c_xa0[2*c_face]         += f_xa0[2*face_id +1];
       c_xa0[2*c_face +1]      += f_xa0[2*face_id];
-      c_xa0_conv[2*c_face]    += f_xa0_conv[2*face_id +1];
-      c_xa0_conv[2*c_face +1] += f_xa0_conv[2*face_id];
+      c_xa_conv[2*c_face]     += f_xa_conv[2*face_id +1];
+      c_xa_conv[2*c_face +1]  += f_xa_conv[2*face_id];
       c_xa0_diff[c_face]      += f_xa0_diff[face_id];
       c_face_normal[3*c_face]    -= f_face_normal[3*face_id];
       c_face_normal[3*c_face +1] -= f_face_normal[3*face_id +1];
@@ -3739,8 +3733,6 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   for (c_face = 0; c_face < c_n_faces; c_face++) {
     c_xa[2*c_face]         = c_xa0[2*c_face];
     c_xa[2*c_face +1]      = c_xa0[2*c_face +1];
-    c_xa_conv[2*c_face]    = c_xa0_conv[2*c_face];
-    c_xa_conv[2*c_face +1] = c_xa0_conv[2*c_face +1];
     c_xa_diff[c_face]      = c_xa0_diff[c_face];
   }
 
@@ -4014,8 +4006,6 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
   else if (g->conv_diff) {
     g->xa0  = g->xa;
     g->_xa0 = NULL;
-    g->xa0_conv = g->xa_conv;
-    g->_xa0_conv = NULL;
     g->xa0_diff = g->xa_diff;
     g->_xa0_diff = NULL;
   }
@@ -4094,8 +4084,6 @@ cs_grid_destroy(cs_grid_t **grid)
       BFT_FREE(g->_xa_diff);
     if (g->_xa0 != NULL)
       BFT_FREE(g->_xa0);
-    if (g->_xa0_conv != NULL)
-      BFT_FREE(g->_xa0_conv);
     if (g->_xa0_diff != NULL)
       BFT_FREE(g->_xa0_diff);
 
@@ -4413,8 +4401,6 @@ cs_grid_coarsen(const cs_grid_t   *f,
   c->xa0 = c->_xa0;
 
   if (conv_diff) {
-    BFT_MALLOC(c->_xa0_conv, c->n_faces*2, cs_real_t);
-    c->xa0_conv = c->_xa0_conv;
     BFT_MALLOC(c->_xa0_diff, c->n_faces, cs_real_t);
     c->xa0_diff = c->_xa0_diff;
   }
