@@ -5,6 +5,9 @@ Release 4.3.1 (unreleased)
 Bug fixes:
 ----------
 
+- Work around an ISO-C bindings bug with XL compiler for Blue Gene
+  preventing link on Blue Gene/Q.
+
 - Fix for build with MED and without MPI.
 
 Release 4.3.0 (July 29 2016)
