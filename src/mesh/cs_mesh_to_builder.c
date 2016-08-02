@@ -1384,7 +1384,8 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
   if (transfer) {
     if (mesh->vtx_interfaces != NULL)
       cs_interface_set_destroy(&(mesh->vtx_interfaces));
-    cs_halo_destroy(&(mesh->halo));
+    if (mesh->halo != NULL)
+      cs_halo_destroy(&(mesh->halo));
   }
 
   /* Periodicity data */

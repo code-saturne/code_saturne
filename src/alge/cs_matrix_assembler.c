@@ -1335,7 +1335,8 @@ cs_matrix_assembler_destroy(cs_matrix_assembler_t  **ma)
 
 #if defined(HAVE_MPI)
 
-    cs_halo_destroy(&(_ma->halo));
+    if (_ma->halo != NULL)
+      cs_halo_destroy(&(_ma->halo));
 
     BFT_FREE(_ma->coeff_recv_col_g_id);
     BFT_FREE(_ma->coeff_recv_col_id);
