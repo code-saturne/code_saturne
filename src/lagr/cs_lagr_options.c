@@ -3471,11 +3471,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   /* des termes sources pour le couplage retour    */
   cs_glob_lagr_source_terms->npts = 0;
 
-  /* Initialize time scheme options */
-
-  lagr_time_scheme->isttio = 0;
-  lagr_time_scheme->isuila = 0;
-
   /* Initialisation du sous-pas     */
   cs_glob_lagr_time_step->nor = 0;
 
