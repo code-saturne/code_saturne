@@ -92,6 +92,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_matrix.h"
+#include "cs_matrix_assembler.h"
 #include "cs_matrix_priv.h"
 
 /*----------------------------------------------------------------------------*/
@@ -2561,32 +2562,22 @@ _copy_diagonal_csr(const cs_matrix_t  *matrix,
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_lnum_t  n_rows = ms->n_rows;
 
-  if (ms->have_diag == true) {
+# pragma omp parallel for  if(n_rows > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    const cs_lnum_t  *restrict col_id = ms->col_id + ms->row_index[ii];
+    const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
+    cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
-      const cs_lnum_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      da[ii] = 0.0;
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        if (col_id[jj] == ii) {
-          da[ii] = m_row[jj];
-          break;
-        }
+    da[ii] = 0.0;
+    for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
+      if (col_id[jj] == ii) {
+        da[ii] = m_row[jj];
+        break;
       }
-
     }
 
   }
-  else { /* if (have_diag == false) */
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      da[ii] = 0.0;
-  }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -3767,6 +3758,329 @@ _release_coeffs_msr(cs_matrix_t  *matrix)
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function for initialization of CSR matrix coefficients using
+ *        local row ids and column indexes.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       db size   optional diagonal block sizes
+ * \param[in]       eb size   optional extra-diagonal block sizes
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_csr_assembler_values_init(void        *matrix_p,
+                           const int   *db_size,
+                           const int   *eb_size)
+{
+  CS_UNUSED(db_size);
+
+  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
+
+  cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
+
+  const cs_lnum_t n_rows = matrix->n_rows;
+  cs_lnum_t e_stride = 1;
+  if (eb_size != NULL)
+    e_stride = eb_size[3];
+
+  const cs_matrix_struct_csr_t  *ms = matrix->structure;
+
+  /* Initialize diagonal values */
+
+  BFT_REALLOC(mc->_val, e_stride*ms->row_index[ms->n_rows], cs_real_t);
+  mc->val = mc->_val;
+
+# pragma omp parallel for  if(n_rows*db_size[0] > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    cs_lnum_t n_s_cols = (ms->row_index[ii+1] - ms->row_index[ii])*e_stride;
+    cs_lnum_t displ = ms->row_index[ii]*e_stride;
+    for (cs_lnum_t jj = 0; jj < n_s_cols; jj++)
+      mc->_val[displ + jj] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for addition to CSR matrix coefficients using
+ *        local row ids and column indexes.
+ *
+ * Values whose associated row index is negative should be ignored;
+ * Values whose column index is -1 are assumed to be assigned to a
+ * separately stored diagonal. Other indexes shoudl be valid.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \remark  Note that we pass column indexes (not ids) here; as the
+ *          caller is already assumed to have identified the index
+ *          matching a given column id.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       n         number of values to add
+ * \param[in]       stride    associated data block size
+ * \param[in]       row_id    associated local row ids
+ * \param[in]       col_idx   associated local column indexes
+ * \param[in]       val       pointer to values (size: n*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_csr_assembler_values_add(void             *matrix_p,
+                          cs_lnum_t         n,
+                          cs_lnum_t         stride,
+                          const cs_lnum_t   row_id[],
+                          const cs_lnum_t   col_idx[],
+                          const cs_real_t   vals[])
+{
+  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
+
+  cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
+
+  const cs_lnum_t n_rows = matrix->n_rows;
+  const cs_matrix_struct_csr_t  *ms = matrix->structure;
+
+  if (stride == 1) {
+
+    /* Copy instead of test for OpenMP to avoid outlining for small sets */
+
+    if (n_rows*stride <= CS_THR_MIN) {
+      for (cs_lnum_t ii = 0; ii < n; ii++) {
+        if (row_id[ii] < 0)
+          continue;
+        else {
+          cs_lnum_t r_id = row_id[ii];
+          mc->_val[ms->row_index[r_id] + col_idx[ii]] += vals[ii];
+        }
+      }
+    }
+
+    else {
+#     pragma omp parallel for  if(n_rows*stride > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n; ii++) {
+        if (row_id[ii] < 0)
+          continue;
+        else {
+          cs_lnum_t r_id = row_id[ii];
+          mc->_val[ms->row_index[r_id] + col_idx[ii]] += vals[ii];
+        }
+      }
+    }
+  }
+
+  else { /* if (stride > 1) */
+
+    /* Copy instead of test for OpenMP to avoid outlining for small sets */
+
+    if (n_rows*stride <= CS_THR_MIN) {
+      for (cs_lnum_t ii = 0; ii < n; ii++) {
+        if (row_id[ii] < 0)
+          continue;
+        else {
+          cs_lnum_t r_id = row_id[ii];
+          cs_lnum_t displ = (ms->row_index[r_id] + col_idx[ii])*stride;
+          for (cs_lnum_t jj = 0; jj < stride; jj++)
+            mc->_val[displ + jj] += vals[ii*stride + jj];
+        }
+      }
+    }
+
+    else {
+#     pragma omp parallel for  if(n_rows*stride > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n; ii++) {
+        if (row_id[ii] < 0)
+          continue;
+        else {
+          cs_lnum_t r_id = row_id[ii];
+          cs_lnum_t displ = (ms->row_index[r_id] + col_idx[ii])*stride;
+          for (cs_lnum_t jj = 0; jj < stride; jj++)
+            mc->_val[displ + jj] += vals[ii*stride + jj];
+        }
+      }
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function for initialization of MSR matrix coefficients using
+ *        local row ids and column indexes.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       db size   optional diagonal block sizes
+ * \param[in]       eb size   optional extra-diagonal block sizes
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_msr_assembler_values_init(void        *matrix_p,
+                           const int   *db_size,
+                           const int   *eb_size)
+{
+  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
+
+  cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
+
+  const cs_lnum_t n_rows = matrix->n_rows;
+
+  cs_lnum_t d_stride = 1;
+  if (db_size != NULL)
+    d_stride = db_size[3];
+  cs_lnum_t e_stride = 1;
+  if (eb_size != NULL)
+    e_stride = eb_size[3];
+
+  const cs_matrix_struct_csr_t  *ms = matrix->structure;
+
+  /* Initialize diagonal values */
+
+  BFT_REALLOC(mc->_d_val, d_stride*n_rows, cs_real_t);
+  mc->d_val = mc->_d_val;
+  mc->max_db_size = d_stride;
+
+  BFT_REALLOC(mc->_x_val, e_stride*ms->row_index[ms->n_rows], cs_real_t);
+  mc->x_val = mc->_x_val;
+  mc->max_eb_size = e_stride;
+
+# pragma omp parallel for  if(n_rows*db_size[0] > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    for (cs_lnum_t jj = 0; jj < d_stride; jj++)
+      mc->_d_val[ii*d_stride + jj] = 0;
+    cs_lnum_t n_s_cols = (ms->row_index[ii+1] - ms->row_index[ii])*e_stride;
+    cs_lnum_t displ = ms->row_index[ii]*e_stride;
+    for (cs_lnum_t jj = 0; jj < n_s_cols; jj++)
+      mc->_x_val[displ + jj] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for addition to MSR matrix coefficients using
+ *        local row ids and column indexes.
+ *
+ * Values whose associated row index is negative should be ignored;
+ * Values whose column index is -1 are assumed to be assigned to a
+ * separately stored diagonal. Other indexes shoudl be valid.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \remark  Note that we pass column indexes (not ids) here; as the
+ *          caller is already assumed to have identified the index
+ *          matching a given column id.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       n         number of values to add
+ * \param[in]       stride    associated data block size
+ * \param[in]       row_id    associated local row ids
+ * \param[in]       col_idx   associated local column indexes
+ * \param[in]       val       pointer to values (size: n*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_msr_assembler_values_add(void             *matrix_p,
+                          cs_lnum_t         n,
+                          cs_lnum_t         stride,
+                          const cs_lnum_t   row_id[],
+                          const cs_lnum_t   col_idx[],
+                          const cs_real_t   vals[])
+{
+  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
+
+  cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
+
+  const cs_lnum_t n_rows = matrix->n_rows;
+  const cs_matrix_struct_csr_t  *ms = matrix->structure;
+
+  if (stride == 1) {
+
+    /* Copy instead of test for OpenMP to avoid outlining for small sets */
+
+    if (n_rows*stride <= CS_THR_MIN) {
+      for (cs_lnum_t ii = 0; ii < n; ii++) {
+        cs_lnum_t r_id = row_id[ii];
+        if (r_id < 0)
+          continue;
+        if (col_idx[ii] < 0)
+          mc->_d_val[r_id] += vals[ii];
+        else
+          mc->_x_val[ms->row_index[r_id] + col_idx[ii]] += vals[ii];
+      }
+    }
+
+    else {
+#     pragma omp parallel for  if(n_rows*stride > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n; ii++) {
+        cs_lnum_t r_id = row_id[ii];
+        if (r_id < 0)
+          continue;
+        if (col_idx[ii] < 0)
+          mc->_d_val[r_id] += vals[ii];
+        else
+          mc->_x_val[ms->row_index[r_id] + col_idx[ii]] += vals[ii];
+      }
+    }
+  }
+
+  else { /* if (stride > 1) */
+
+    /* Copy instead of test for OpenMP to avoid outlining for small sets */
+
+    if (n_rows*stride <= CS_THR_MIN) {
+      for (cs_lnum_t ii = 0; ii < n; ii++) {
+        cs_lnum_t r_id = row_id[ii];
+        if (r_id < 0)
+          continue;
+        if (col_idx[ii] < 0) {
+          for (cs_lnum_t jj = 0; jj < stride; jj++)
+            mc->_d_val[r_id*stride + jj] += vals[ii*stride + jj];
+        }
+        else {
+          cs_lnum_t displ = (ms->row_index[r_id] + col_idx[ii])*stride;
+          for (cs_lnum_t jj = 0; jj < stride; jj++)
+            mc->_x_val[displ + jj] += vals[ii*stride + jj];
+        }
+      }
+    }
+
+    else {
+#     pragma omp parallel for  if(n_rows*stride > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n; ii++) {
+        cs_lnum_t r_id = row_id[ii];
+        if (r_id < 0)
+          continue;
+        if (col_idx[ii] < 0) {
+          for (cs_lnum_t jj = 0; jj < stride; jj++)
+            mc->_d_val[r_id*stride + jj] += vals[ii*stride + jj];
+        }
+        else {
+          cs_lnum_t displ = (ms->row_index[r_id] + col_idx[ii])*stride;
+          for (cs_lnum_t jj = 0; jj < stride; jj++)
+            mc->_x_val[displ + jj] += vals[ii*stride + jj];
+        }
+      }
+    }
+  }
+
+}
+
 /*----------------------------------------------------------------------------
  * Local matrix.vector product y = A.x with MSR matrix.
  *
@@ -3858,6 +4172,8 @@ _mat_vec_p_l_msr_omp_sched(bool                exclude_diag,
     {
 
       cs_lnum_t n_s_rows = cs_align(n_rows * 0.9, CS_CL);
+      if (n_s_rows > n_rows)
+        n_s_rows = n_rows;
 
 #     pragma omp for nowait
       for (cs_lnum_t ii = 0; ii < n_s_rows; ii++) {
@@ -3901,6 +4217,8 @@ _mat_vec_p_l_msr_omp_sched(bool                exclude_diag,
     {
 
       cs_lnum_t n_s_rows = cs_align(n_rows * 0.9, CS_CL);
+      if (n_s_rows > n_rows)
+        n_s_rows = n_rows;
 
 #     pragma omp for
       for (cs_lnum_t ii = 0; ii < n_s_rows; ii++) {
@@ -4277,11 +4595,15 @@ _pre_vector_multiply_sync(cs_halo_rotation_t   rotation_mode,
 
       /* Synchronize periodic values */
 
+#if !defined(_CS_UNIT_MATRIX_TEST) /* unit tests do not link with full library */
+
       if (matrix->halo->n_transforms > 0 && db_size[0] == 3)
         cs_halo_perio_sync_var_vect(matrix->halo,
                                     CS_HALO_STANDARD,
                                     x,
                                     db_size[1]);
+
+#endif
 
     }
 
@@ -5007,6 +5329,7 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
   ms->row_num = cell_num;
   ms->halo = halo;
   ms->numbering = numbering;
+  ms->assembler = NULL;
 
   return ms;
 }
@@ -5094,6 +5417,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
 
   ms->halo = halo;
   ms->numbering = numbering;
+  ms->assembler = NULL;
 
   return ms;
 }
@@ -5159,6 +5483,131 @@ cs_matrix_structure_create_msr_shared(bool                    have_diag,
   ms->row_num = cell_num;
   ms->halo = halo;
   ms->numbering = numbering;
+  ms->assembler = NULL;
+
+  return ms;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a matrix structure using a matrix assembler.
+ *
+ * Only CSR and MSR formats are handled.
+ *
+ * \param[in]  type  type of matrix considered
+ * \param[in]  ma    pointer to matrix assembler structure
+ *
+ * \return  a pointer to a created matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_structure_t *
+cs_matrix_structure_create_from_assembler(cs_matrix_type_t        type,
+                                          cs_matrix_assembler_t  *ma)
+{
+  cs_matrix_structure_t *ms = NULL;
+
+  BFT_MALLOC(ms, 1, cs_matrix_structure_t);
+
+  ms->type = type;
+
+  ms->n_rows = cs_matrix_assembler_get_n_rows(ma);
+  ms->n_cols_ext = cs_matrix_assembler_get_n_columns(ma);;
+
+  /* Get info on assembler structure */
+
+  bool             ma_sep_diag = cs_matrix_assembler_get_separate_diag(ma);
+  const cs_lnum_t *row_index = cs_matrix_assembler_get_row_index(ma);
+  const cs_lnum_t *col_id = cs_matrix_assembler_get_col_ids(ma);
+
+  /* Define structure */
+
+  switch(ms->type) {
+
+  case CS_MATRIX_CSR:
+    /* Assume diagonal is present (should not be important
+       for assembly using matrix assembler) */
+    if (ma_sep_diag == false)
+      ms->structure = _create_struct_csr_from_shared(true, /* have_diag */
+                                                     false, /* for safety */
+                                                     ms->n_rows,
+                                                     ms->n_cols_ext,
+                                                     row_index,
+                                                     col_id);
+    else {
+      cs_lnum_t *_row_index, *_col_id;
+      BFT_MALLOC(_row_index, ms->n_rows + 1, cs_lnum_t);
+      BFT_MALLOC(_col_id, row_index[ms->n_rows] + ms->n_rows, cs_lnum_t);
+      _row_index[0] = 0;
+      for (cs_lnum_t i = 0; i < ms->n_rows; i++) {
+        cs_lnum_t n_cols = row_index[i+1] - row_index[i];
+        cs_lnum_t j = 0, k = 0;
+        const cs_lnum_t *s_c_id = col_id + row_index[i];
+        cs_lnum_t *d_c_id = _col_id + row_index[i] + i;
+        while (j < n_cols && s_c_id[j] < i)
+          d_c_id[k++] = s_c_id[j++];
+        d_c_id[k++] = i;
+        while (j < n_cols)
+          d_c_id[k++] = s_c_id[j++];
+        _row_index[i+1] = row_index[i+1] + i + 1;
+      }
+      ms->structure = _create_struct_csr_from_csr(true, /* have_idag */
+                                                  true,
+                                                  ms->n_rows,
+                                                  ms->n_cols_ext,
+                                                  &_row_index,
+                                                  &_col_id);
+    }
+    break;
+
+  case CS_MATRIX_MSR:
+    if (ma_sep_diag == true)
+      ms->structure = _create_struct_csr_from_shared(false,
+                                                     false, /* for safety */
+                                                     ms->n_rows,
+                                                     ms->n_cols_ext,
+                                                     row_index,
+                                                     col_id);
+    else {
+      cs_lnum_t *_row_index, *_col_id;
+      BFT_MALLOC(_row_index, ms->n_rows + 1, cs_lnum_t);
+      BFT_MALLOC(_col_id, row_index[ms->n_rows], cs_lnum_t);
+      _row_index[0] = 0;
+      cs_lnum_t k = 0;
+      for (cs_lnum_t i = 0; i < ms->n_rows; i++) {
+        cs_lnum_t n_cols = row_index[i+1] - row_index[i];
+        const cs_lnum_t *s_c_id = col_id + row_index[i];
+        for (cs_lnum_t j = 0; j < n_cols; j++) {
+          if (s_c_id[j] != i)
+            _col_id[k++] = s_c_id[j];
+        }
+        _row_index[i+1] = k;
+      }
+      BFT_REALLOC(_col_id, _row_index[ms->n_rows], cs_lnum_t);
+      ms->structure = _create_struct_csr_from_csr(false,
+                                                  true,
+                                                  ms->n_rows,
+                                                  ms->n_cols_ext,
+                                                  &_row_index,
+                                                  &_col_id);
+    }
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: handling of matrices in %s format\n"
+                "is not operational yet."),
+              __func__,
+              _(cs_matrix_type_name[type]));
+    break;
+  }
+
+  /* Set pointers to structures shared from mesh here */
+
+  ms->halo = cs_matrix_assembler_get_halo(ma);
+
+  ms->numbering = NULL;
+
+  ms->assembler = ma;
 
   return ms;
 }
@@ -5259,6 +5708,7 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
 
   m->halo = ms->halo;
   m->numbering = ms->numbering;
+  m->assembler = ms->assembler;
 
   for (mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++) {
     for (i = 0; i < 2; i++)
@@ -5363,6 +5813,8 @@ cs_matrix_create_by_variant(const cs_matrix_structure_t  *ms,
                             const cs_matrix_variant_t    *mv)
 {
   cs_matrix_t *m = cs_matrix_create(ms);
+
+  m->assembler = ms->assembler;
 
   if (mv != NULL) {
     if (mv->type == ms->type) {
@@ -5911,6 +6363,79 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
   /* Set fill type to impossible value */
 
   _clear_fill_info(matrix);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create and initialize a CSR matrix assembler values structure.
+ *
+ * The associated matrix's structure must have been created using
+ * \ref cs_matrix_structure_create_from_assembler.
+ *
+ * Block sizes are defined by an optional array of 4 values:
+ *   0: useful block size, 1: vector block extents,
+ *   2: matrix line extents,  3: matrix line*column extents
+ *
+ * \param[in, out]  matrix                 pointer to matrix structure
+ * \param[in]       diag_block_size        block sizes for diagonal, or NULL
+ * \param[in]       extra_diag_block_size  block sizes for extra diagonal,
+ *                                         or NULL
+ *
+ * \return  pointer to initialized matrix assembler values structure;
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_assembler_values_t *
+cs_matrix_assembler_values_init(cs_matrix_t  *matrix,
+                                const int    *diag_block_size,
+                                const int    *extra_diag_block_size)
+{
+  cs_matrix_assembler_values_t *mav = NULL;
+
+  /* Set fill type */
+
+  _set_fill_info(matrix,
+                 false, /* symmetric */
+                 diag_block_size,
+                 extra_diag_block_size);
+
+  /* Create values assembler */
+
+  switch(matrix->type) {
+  case CS_MATRIX_CSR:
+    mav = cs_matrix_assembler_values_create(matrix->assembler,
+                                            false,
+                                            diag_block_size,
+                                            extra_diag_block_size,
+                                            (void *)matrix,
+                                            _csr_assembler_values_init,
+                                            _csr_assembler_values_add,
+                                            NULL,
+                                            NULL,
+                                            NULL);
+    break;
+  case CS_MATRIX_MSR:
+    mav = cs_matrix_assembler_values_create(matrix->assembler,
+                                            true,
+                                            diag_block_size,
+                                            extra_diag_block_size,
+                                            (void *)matrix,
+                                            _msr_assembler_values_init,
+                                            _msr_assembler_values_add,
+                                            NULL,
+                                            NULL,
+                                            NULL);
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: handling of matrices in %s format\n"
+                "is not operational yet."),
+              __func__,
+              _(cs_matrix_type_name[matrix->type]));
+    break;
+  }
+
+  return mav;
 }
 
 /*----------------------------------------------------------------------------*/

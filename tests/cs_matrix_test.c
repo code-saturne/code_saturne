@@ -546,8 +546,9 @@ main (int argc, char *argv[])
 
   if (getenv("CS_MEM_LOG") != NULL) {
     char mem_log_file_name[128];
+    int r_id = CS_MAX(cs_glob_rank_id, 0);
     snprintf(mem_log_file_name, 127, "%s.%d",
-             getenv("CS_MEM_LOG"), cs_glob_rank_id);
+             getenv("CS_MEM_LOG"), r_id);
     bft_mem_init(mem_log_file_name);
   }
   else
@@ -563,35 +564,177 @@ main (int argc, char *argv[])
 
   _base_data(cs_glob_rank_id, cs_glob_n_ranks);
 
-  /* Main tests */
+  /* Loop on assembler external/internal diagonal */
 
-  cs_matrix_assembler_t  *ma
-    = cs_matrix_assembler_create(_vtx_range, true);
+  for (int id_ie = 0; id_ie < 2; id_ie++) {
 
-  cs_gnum_t g_row_id[3], g_col_id[3];
-  cs_lnum_t j = 0;
-  for (cs_lnum_t i = 0; i < _n_edges; i++) {
-    g_row_id[j] = _g_vtx_id[_edges[i][0]];
-    g_col_id[j] = _g_vtx_id[_edges[i][1]];
-    j++;
-    if (j == 3) {
-      cs_matrix_assembler_add_ids(ma, j, g_row_id, g_col_id);
+    bool sep_diag = (id_ie == 0) ? true : false;
+
+    /* Create a matrix assembler */
+
+    cs_matrix_assembler_t  *ma
+      = cs_matrix_assembler_create(_vtx_range, sep_diag);
+
+    cs_matrix_assembler_set_options(ma, 0);
+
+    /* Define connectivities */
+
+    {
+      cs_gnum_t g_row_id[3], g_col_id[3];
+
+      /* Diagonal (1 of every 2 ids to make things harder) */
+
+      cs_lnum_t j = 0;
+      for (cs_lnum_t i = 0; i < _n_vtx; i++) {
+        if (_g_vtx_id[i] % 2)
+          continue;
+        g_row_id[j] = _g_vtx_id[i];
+        g_col_id[j] = _g_vtx_id[i];
+        j++;
+        if (j == 3) {
+          cs_matrix_assembler_add_g_ids(ma, j, g_row_id, g_col_id);
+          j = 0;
+        }
+      }
+      cs_matrix_assembler_add_g_ids(ma, j, g_row_id, g_col_id);
+      j = 0;
+
+      /* Exra-diagonal */
+      for (cs_lnum_t i = 0; i < _n_edges; i++) {
+        g_row_id[j] = _g_vtx_id[_edges[i][0]];
+        g_col_id[j] = _g_vtx_id[_edges[i][1]];
+        j++;
+        if (j == 3) {
+          cs_matrix_assembler_add_g_ids(ma, j, g_row_id, g_col_id);
+          j = 0;
+        }
+      }
+      cs_matrix_assembler_add_g_ids(ma, j, g_row_id, g_col_id);
       j = 0;
     }
+
+    /* Now compute structure */
+
+    cs_matrix_assembler_compute(ma);
+
+    /* Assembler is now read for use */
+
+#if 0
+    cs_halo_dump(cs_matrix_assembler_get_halo(ma), 1);
+#endif
+
+    /* Create associated structures annd matrices
+       (2 matrices are created simultaneously, to exercice
+       the const/shareable aspect of the assembler) */
+
+    cs_matrix_structure_t  *ms_0
+      = cs_matrix_structure_create_from_assembler(CS_MATRIX_CSR, ma);
+    cs_matrix_structure_t  *ms_1
+      = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+
+    cs_matrix_t  *m_0 = cs_matrix_create(ms_0);
+    cs_matrix_t  *m_1 = cs_matrix_create(ms_1);
+
+    /* Now prepare to add values */
+
+    for (int mav_id = 0; mav_id < 2; mav_id++) {
+
+      cs_matrix_assembler_values_t *mav = NULL;
+
+      if (mav_id == 0)
+        mav = cs_matrix_assembler_values_init(m_0, NULL, NULL);
+      else
+        mav = cs_matrix_assembler_values_init(m_1, NULL, NULL);
+
+      /* Same ids required as for assembler (at least, no additional ids),
+         so loop in a similar manner for safety, but with different
+         loop size here (6 instead of 3) */
+
+      cs_gnum_t g_row_id[6], g_col_id[6];
+      cs_real_t val[6];
+      cs_lnum_t j = 0;
+
+      /* Add terms */
+
+      {
+        /* Diagonal */
+
+        for (cs_lnum_t i = 0; i < _n_vtx; i++) {
+          if (_g_vtx_id[i] % 2)
+            continue;
+          g_row_id[j] = _g_vtx_id[i];
+          g_col_id[j] = _g_vtx_id[i];
+          val[j] = cos(g_row_id[j] + 0.1) + sin(g_col_id[j] + 0.1);
+          j++;
+          if (j == 6) {
+            cs_matrix_assembler_values_add_g(mav, j, g_row_id, g_col_id, val);
+            j = 0;
+          }
+        }
+        cs_matrix_assembler_values_add_g(mav, j, g_row_id, g_col_id, val);
+        j = 0;
+
+        /* Extra-diagonal */
+
+        for (cs_lnum_t i = 0; i < _n_edges; i++) {
+          g_row_id[j] = _g_vtx_id[_edges[i][0]];
+          g_col_id[j] = _g_vtx_id[_edges[i][1]];
+          val[j] = cos(g_row_id[j] + 0.1) + sin(g_col_id[j] + 0.1);
+          j++;
+          if (j == 6) {
+            cs_matrix_assembler_values_add_g(mav, j, g_row_id, g_col_id, val);
+            j = 0;
+          }
+        }
+        cs_matrix_assembler_values_add_g(mav, j, g_row_id, g_col_id, val);
+        j = 0;
+      }
+
+      if (mav_id == 0)
+        cs_matrix_assembler_values_done(mav); /* optional */
+
+      cs_matrix_assembler_values_finalize(&mav);
+
+    }
+
+    /* Test SpMV */
+
+    cs_lnum_t n_rows = cs_matrix_get_n_rows(m_0);
+    cs_lnum_t n_cols = cs_matrix_get_n_columns(m_0);
+
+    cs_real_t *x, *y_0, *y_1;
+    BFT_MALLOC(x, n_cols, cs_real_t);
+    BFT_MALLOC(y_0, n_cols, cs_real_t);
+    BFT_MALLOC(y_1, n_cols, cs_real_t);
+    for (cs_lnum_t i = 0; i < n_rows; i++)
+      x[i] = (i+1)*0.5;
+
+    cs_matrix_vector_multiply(CS_HALO_ROTATION_COPY, m_0, x, y_0);
+    cs_matrix_vector_multiply(CS_HALO_ROTATION_COPY, m_1, x, y_1);
+
+    bft_printf("\nSpMV pass %d\n", id_ie);
+    for (cs_lnum_t i = 0; i < n_rows; i++)
+      bft_printf("%d: %f %f\n", i, y_0[i], y_1[i]);
+
+    BFT_FREE(x);
+    BFT_FREE(y_0);
+    BFT_FREE(y_1);
+
+    cs_matrix_release_coefficients(m_0);
+    cs_matrix_release_coefficients(m_1);
+
+    cs_matrix_destroy(&m_0);
+    cs_matrix_destroy(&m_1);
+
+    cs_matrix_structure_destroy(&ms_0);
+    cs_matrix_structure_destroy(&ms_1);
+
+    cs_matrix_assembler_destroy(&ma);
   }
-  cs_matrix_assembler_add_ids(ma, j, g_row_id, g_col_id);
-
-  cs_matrix_assembler_compute_structure(ma);
-
-  const cs_halo_t *halo = cs_matrix_assembler_get_halo(ma);
-
-  cs_halo_dump(halo, 1);
 
   bft_printf("\n");
 
   /* Finalize */
-
-  cs_matrix_assembler_destroy(&ma);
 
   _free_base_data();
 

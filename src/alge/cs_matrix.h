@@ -36,6 +36,7 @@
 #include "cs_halo.h"
 #include "cs_numbering.h"
 #include "cs_halo_perio.h"
+#include "cs_matrix_assembler.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -240,6 +241,23 @@ cs_matrix_structure_create_msr_shared(bool                    have_diag,
                                       const cs_lnum_t        *col_id,
                                       const cs_halo_t        *halo,
                                       const cs_numbering_t   *numbering);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a matrix structure using a matrix assembler.
+ *
+ * Only CSR and MSR formats are handled.
+ *
+ * \param[in]  type  type of matrix considered
+ * \param[in]  ma    pointer to matrix assembler structure
+ *
+ * \return  a pointer to a created matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_structure_t *
+cs_matrix_structure_create_from_assembler(cs_matrix_type_t        type,
+                                          cs_matrix_assembler_t  *ma);
 
 /*----------------------------------------------------------------------------
  * Destroy a matrix structure.
@@ -520,6 +538,31 @@ cs_matrix_transfer_coefficients_msr(cs_matrix_t         *matrix,
                                     const cs_lnum_t      col_id[],
                                     cs_real_t          **d_val,
                                     cs_real_t          **x_val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create and initialize a CSR matrix assembler values structure.
+ *
+ * The associated matrix's structure must have been created using
+ * \ref cs_matrix_structure_create_from_assembler.
+ *
+ * Block sizes are defined by an optional array of 4 values:
+ *   0: useful block size, 1: vector block extents,
+ *   2: matrix line extents,  3: matrix line*column extents
+ *
+ * \param[in, out]  matrix                 pointer to matrix structure
+ * \param[in]       diag_block_size        block sizes for diagonal, or NULL
+ * \param[in]       extra_diag_block_size  block sizes for extra diagonal,
+ *                                         or NULL
+ *
+ * \return  pointer to initialized matrix assembler values structure;
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_assembler_values_t *
+cs_matrix_assembler_values_init(cs_matrix_t  *matrix,
+                                const int    *diag_block_size,
+                                const int    *extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
  * Release shared matrix coefficients.

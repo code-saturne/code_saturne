@@ -72,6 +72,7 @@
 
 #include "bft_mem.h"
 #include "bft_error.h"
+#include "bft_printf.h"
 
 #include "cs_base.h"
 #include "cs_blas.h"
@@ -79,8 +80,11 @@
 #include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_mesh_quantities.h"
 #include "cs_matrix.h"
+#include "cs_matrix_assembler.h"
+#include "cs_matrix_default.h"
 #include "cs_matrix_tuning.h"
 #include "cs_timer.h"
 
@@ -112,6 +116,20 @@ BEGIN_C_DECLS
 /*============================================================================
  *  Global variables
  *============================================================================*/
+
+static const char *_matrix_operation_name[CS_MATRIX_N_FILL_TYPES][2]
+  = {{N_("y <- A.x"),
+      N_("y <- (A-D).x")},
+     {N_("Symmetric y <- A.x"),
+      N_("Symmetric y <- (A-D).x")},
+     {N_("Block diagonal y <- A.x"),
+      N_("Block diagonal y <- (A-D).x")},
+     {N_("Block 6 diagonal y <- A.x"),
+      N_("Block 6 diagonal y <- (A-D).x")},
+     {N_("Block diagonal symmetric y <- A.x"),
+      N_("Block diagonal symmetric y <- (A-D).x")},
+     {N_("Block y <- A.x"),
+      N_("Block y <- (A-D).x")}};
 
 /*============================================================================
  * Private function definitions
@@ -419,7 +437,6 @@ _matrix_vector_test(double                 t_measure,
 
   cs_matrix_destroy(&m);
   cs_matrix_structure_destroy(&ms);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -733,6 +750,397 @@ _sub_matrix_vector_test(double               t_measure,
 
 }
 
+/*----------------------------------------------------------------------------
+ * Copy array to reference for matrix computation check.
+ *
+ * parameters:
+ *   n_elts      <-- number values to compare
+ *   y           <-- array to copare or copy
+ *   yr          <-- reference array
+ *
+ * returns:
+ *   maximum difference between values
+ *----------------------------------------------------------------------------*/
+
+static double
+_matrix_check_compare(cs_lnum_t        n_elts,
+                      const cs_real_t  y[],
+                      cs_real_t        yr[])
+{
+  cs_lnum_t  ii;
+
+  double dmax = 0.0;
+
+  for (ii = 0; ii < n_elts; ii++) {
+    double d = CS_ABS(y[ii] - yr[ii]);
+    if (d > dmax)
+      dmax = d;
+  }
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+    double dmaxg;
+    MPI_Allreduce(&dmax, &dmaxg, 1, MPI_DOUBLE, MPI_MAX, cs_glob_mpi_comm);
+    dmax = dmaxg;
+  }
+
+#endif
+
+  return dmax;
+}
+
+/*----------------------------------------------------------------------------
+ * Check local matrix.vector product operations using matrix assembler
+ *
+ * parameters:
+ *   n_rows      <-- local number of rows
+ *   n_cols_ext  <-- number of local + ghost columns
+ *   n_edges     <-- local number of (undirected) graph edges
+ *   cell_num    <-- optional global cell numbers (1 to n), or NULL
+ *   edges       <-- edges (symmetric row <-> column) connectivity
+ *   halo        <-- cell halo structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_matrix_check_asmb(cs_lnum_t              n_rows,
+                   cs_lnum_t              n_cols_ext,
+                   cs_lnum_t              n_edges,
+                   const cs_lnum_2_t     *edges,
+                   const cs_halo_t       *halo)
+{
+  cs_lnum_t  ii;
+  int  f_id;
+
+  cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL;
+  cs_real_t  *yr0 = NULL;
+  int d_block_size[4] = {3, 3, 3, 9};
+  int ed_block_size[4] = {3, 3, 3, 9};
+
+  cs_matrix_fill_type_t f_type[]
+    = {CS_MATRIX_SCALAR,           /* Simple scalar matrix */
+       CS_MATRIX_BLOCK_D};
+
+  const char *t_name[] = {"general assembly",
+                          "local rows assembly",
+                          "assembly from shared"};
+
+  /* Allocate and initialize  working arrays */
+
+  if (CS_MEM_ALIGN > 0) {
+    BFT_MEMALIGN(x, CS_MEM_ALIGN, n_cols_ext*d_block_size[1], cs_real_t);
+    BFT_MEMALIGN(y, CS_MEM_ALIGN, n_cols_ext*d_block_size[1], cs_real_t);
+    BFT_MEMALIGN(yr0, CS_MEM_ALIGN, n_cols_ext*d_block_size[1], cs_real_t);
+  }
+  else {
+    BFT_MALLOC(x, n_cols_ext*d_block_size[1], cs_real_t);
+    BFT_MALLOC(y, n_cols_ext*d_block_size[1], cs_real_t);
+    BFT_MALLOC(yr0, n_cols_ext*d_block_size[1], cs_real_t);
+  }
+
+  BFT_MALLOC(da, n_cols_ext*d_block_size[3], cs_real_t);
+  BFT_MALLOC(xa, n_edges*2*ed_block_size[3], cs_real_t);
+
+  cs_gnum_t *cell_gnum = NULL;
+  if (cs_glob_mesh->global_cell_num != NULL) {
+    BFT_MALLOC(cell_gnum, n_cols_ext, cs_gnum_t);
+    for (ii = 0; ii < n_rows; ii++)
+      cell_gnum[ii] = cs_glob_mesh->global_cell_num[ii];
+    if (halo != NULL)
+      cs_halo_sync_untyped(halo,
+                           CS_HALO_ROTATION_COPY,
+                           sizeof(cs_gnum_t),
+                           cell_gnum);
+  }
+
+  /* Global cell ids, based on range/scan */
+
+  cs_gnum_t l_range[2] = {0, n_rows};
+  cs_gnum_t n_g_rows = n_rows;
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    cs_gnum_t g_shift;
+    cs_gnum_t l_shift = n_rows;
+    MPI_Scan(&l_shift, &g_shift, 1, CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
+    MPI_Allreduce(&l_shift, &n_g_rows, 1, CS_MPI_GNUM, MPI_SUM,
+                  cs_glob_mpi_comm);
+    l_range[0] = g_shift - l_shift;
+    l_range[1] = g_shift;
+  }
+#endif
+
+  cs_gnum_t *r_g_id;
+  BFT_MALLOC(r_g_id, n_cols_ext, cs_gnum_t);
+  for (ii = 0; ii < n_rows; ii++)
+    r_g_id[ii] = ii + l_range[0];
+  if (halo != NULL)
+    cs_halo_sync_untyped(halo,
+                         CS_HALO_ROTATION_COPY,
+                         sizeof(cs_gnum_t),
+                         r_g_id);
+
+  /* Loop on fill options */
+
+  for (f_id = 0; f_id < 2; f_id++) {
+
+    const int *_d_block_size
+      = (f_type[f_id] >= CS_MATRIX_BLOCK_D) ? d_block_size : NULL;
+    const cs_lnum_t stride = (_d_block_size != NULL) ? d_block_size[1] : 1;
+    const cs_lnum_t sd = stride*stride; /* for current fill types */
+    const cs_lnum_t se = 1;             /* for current fill types */
+
+    /* Initialize arrays; we need to be careful here, so that
+       the array values are consisten across MPI ranks.
+       This requires using a specific initialiation for each fill type. */
+
+    if (cell_gnum != NULL) {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cols_ext; ii++) {
+        cs_gnum_t jj = (cell_gnum[ii] - 1)*sd;
+        for (cs_lnum_t kk = 0; kk < sd; kk++) {
+          da[ii*sd+kk] = 1.0 + cos(jj*sd+kk);
+        }
+      }
+    }
+    else {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cols_ext*sd; ii++)
+        da[ii] = 1.0 + cos(ii);
+    }
+
+    const cs_gnum_t *face_gnum = cs_glob_mesh->global_i_face_num;
+    if (face_gnum != NULL) {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_edges; ii++) {
+        cs_gnum_t jj = (face_gnum[ii] - 1)*se;
+        for (cs_lnum_t kk = 0; kk < se; kk++) {
+          xa[(ii*se+kk)*2]
+            = 0.5*(0.9 + cos(jj*se+kk));
+          xa[(ii*se+kk)*2 + 1]
+            = -0.5*(0.9 + cos(jj*se+kk));
+        }
+      }
+    }
+    else {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_edges*se; ii++) {
+        xa[ii*2] = 0.5*(0.9 + cos(ii));
+        xa[ii*2 + 1] = -0.5*(0.9 + cos(ii));
+      }
+    }
+
+    if (cell_gnum != NULL) {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cols_ext; ii++) {
+        cs_gnum_t jj = (cell_gnum[ii] - 1)*stride;
+        for (cs_lnum_t kk = 0; kk < stride; kk++)
+          x[ii*stride+kk] = sin(jj*stride+kk);
+      }
+    }
+    else {
+#     pragma omp parallel for
+      for (ii = 0; ii < n_cols_ext*stride; ii++)
+        x[ii] = sin(ii);
+    }
+
+    /* Reference */
+
+    cs_matrix_vector_native_multiply(2,      /* isym */
+                                     stride, /* ibsize */
+                                     1,      /* iesize */
+                                     0,
+                                     da,
+                                     xa,
+                                     x,
+                                     yr0);
+
+    /* Test for matrix assembler (for MSR case) */
+
+    const cs_lnum_t block_size = 800;
+    cs_gnum_t g_row_id[800];
+    cs_gnum_t g_col_id[800];
+    cs_real_t val[1600];
+
+    cs_matrix_assembler_t *ma = NULL;
+
+    /* 3 variant construction methods, 2 coefficient methods */
+
+    const char *ma_name[] = {"distributed contribution assember",
+                             "local rows assembler",
+                             "shared index assembler"};
+
+    for (int c_id = 0; c_id < 3; c_id++) {
+
+      if (c_id < 2) {
+
+        ma = cs_matrix_assembler_create(l_range, true);
+
+        /* Add connectivities */
+
+        cs_matrix_assembler_add_g_ids(ma, n_rows, r_g_id, r_g_id);
+
+        if (c_id == 0) { /* Rank contributions through global edges */
+          cs_lnum_t jj = 0;
+          for (ii = 0; ii < n_edges; ii++) {
+            cs_lnum_t i0 = edges[ii][0];
+            cs_lnum_t i1 = edges[ii][1];
+            g_row_id[jj] = r_g_id[i0];
+            g_col_id[jj] = r_g_id[i1];
+            jj++;
+            g_row_id[jj] = r_g_id[i1];
+            g_col_id[jj] = r_g_id[i0];
+            jj++;
+            if (jj >= block_size - 1) {
+              cs_matrix_assembler_add_g_ids(ma, jj, g_row_id, g_col_id);
+              jj = 0;
+            }
+          }
+          cs_matrix_assembler_add_g_ids(ma, jj, g_row_id, g_col_id);
+        }
+        else { /* Rank contributions are local */
+          cs_lnum_t jj = 0;
+          for (ii = 0; ii < n_edges; ii++) {
+            cs_lnum_t i0 = edges[ii][0];
+            cs_lnum_t i1 = edges[ii][1];
+            if (i0 < n_rows) {
+              g_row_id[jj] = r_g_id[i0];
+              g_col_id[jj] = r_g_id[i1];
+              jj++;
+            }
+            if (i1 < n_rows) {
+              g_row_id[jj] = r_g_id[i1];
+              g_col_id[jj] = r_g_id[i0];
+              jj++;
+            }
+            if (jj >= block_size - 1) {
+              cs_matrix_assembler_add_g_ids(ma, jj, g_row_id, g_col_id);
+              jj = 0;
+            }
+          }
+          cs_matrix_assembler_add_g_ids(ma, jj, g_row_id, g_col_id);
+        }
+
+        cs_matrix_assembler_compute(ma);
+      }
+      else {
+        const cs_mesh_adjacencies_t  *madj = cs_glob_mesh_adjacencies;
+        ma = cs_matrix_assembler_create_from_shared(n_rows,
+                                                    true,
+                                                    madj->cell_cells_idx,
+                                                    madj->cell_cells,
+                                                    halo);
+      }
+
+      cs_matrix_structure_t  *ms
+        = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+
+      cs_matrix_t  *m = cs_matrix_create(ms);
+
+      cs_matrix_assembler_values_t *mav = NULL;
+
+      if (f_type[f_id] == CS_MATRIX_SCALAR)
+        mav = cs_matrix_assembler_values_init(m, NULL, NULL);
+      else if (f_type[f_id] == CS_MATRIX_BLOCK_D)
+        mav = cs_matrix_assembler_values_init(m, d_block_size, NULL);
+
+      cs_matrix_assembler_values_add_g(mav, n_rows,
+                                       r_g_id, r_g_id, da);
+
+      if (c_id == 0) { /* Rank contributions through global edges */
+        cs_lnum_t jj = 0;
+        for (ii = 0; ii < n_edges; ii++) {
+          cs_lnum_t i0 = edges[ii][0];
+          cs_lnum_t i1 = edges[ii][1];
+          g_row_id[jj] = r_g_id[i0];
+          g_col_id[jj] = r_g_id[i1];
+          if (i0 < n_rows && i1 < n_rows)
+            val[jj] = xa[ii*2];
+          else
+            val[jj] = xa[ii*2]*0.5; /* count half contribution twice */
+          jj++;
+          g_row_id[jj] = r_g_id[i1];
+          g_col_id[jj] = r_g_id[i0];
+          if (i0 < n_rows && i1 < n_rows)
+            val[jj] = xa[ii*2+1];
+          else
+            val[jj] = xa[ii*2+1]*0.5;
+          jj++;
+          if (jj >= block_size - 1) {
+            cs_matrix_assembler_values_add_g(mav, jj,
+                                             g_row_id, g_col_id, val);
+            jj = 0;
+          }
+        }
+        for (ii = 0; ii < jj; ii++) {
+        }
+
+        cs_matrix_assembler_values_add_g(mav, jj, g_row_id, g_col_id, val);
+      }
+      else { /* Rank contributions are local */
+        cs_lnum_t jj = 0;
+        for (ii = 0; ii < n_edges; ii++) {
+          cs_lnum_t i0 = edges[ii][0];
+          cs_lnum_t i1 = edges[ii][1];
+          if (i0 < n_rows) {
+            g_row_id[jj] = r_g_id[i0];
+            g_col_id[jj] = r_g_id[i1];
+            val[jj] = xa[ii*2];
+            jj++;
+          }
+          if (i1 < n_rows) {
+            g_row_id[jj] = r_g_id[i1];
+            g_col_id[jj] = r_g_id[i0];
+            val[jj] = xa[ii*2+1];
+            jj++;
+          }
+          if (jj >= block_size - 1) {
+            cs_matrix_assembler_values_add_g(mav, jj,
+                                             g_row_id, g_col_id, val);
+            jj = 0;
+          }
+        }
+        cs_matrix_assembler_values_add_g(mav, jj, g_row_id, g_col_id, val);
+      }
+
+      cs_matrix_assembler_values_finalize(&mav);
+
+      cs_matrix_vector_multiply(CS_HALO_ROTATION_COPY, m, x, y);
+
+      cs_matrix_release_coefficients(m);
+
+      cs_matrix_destroy(&m);
+      cs_matrix_structure_destroy(&ms);
+
+      if (f_id == 0) /* no need to log multiple identical assemblers */
+        cs_matrix_assembler_log_rank_counts(ma, CS_LOG_DEFAULT, ma_name[c_id]);
+
+      cs_matrix_assembler_destroy(&ma);
+
+      double dmax = _matrix_check_compare(n_rows*stride, y, yr0);
+      bft_printf("\n%s\n",
+                 _matrix_operation_name[f_type[f_id]][0]);
+      bft_printf("  %-32s : %12.5e\n",
+                 t_name[c_id],
+                 dmax);
+      bft_printf_flush();
+
+    } /* end of loop on construction method */
+
+  } /* end of loop on fill types */
+
+  BFT_FREE(r_g_id);
+  BFT_FREE(cell_gnum);
+
+  BFT_FREE(yr0);
+
+  BFT_FREE(y);
+  BFT_FREE(x);
+
+  BFT_FREE(xa);
+  BFT_FREE(da);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -781,6 +1189,8 @@ cs_benchmark(int  mpi_trace_mode)
   double                 fill_weights_nsym[] = {0.5, 0.3, 0.1, 0.1};
   double                 fill_weights_sym[] = {0.8, 0.2};
 
+  cs_matrix_initialize();
+
   /* Allocate and initialize  working arrays */
   /*-----------------------------------------*/
 
@@ -825,6 +1235,18 @@ cs_benchmark(int  mpi_trace_mode)
                          i_face_cells,
                          mesh->halo,
                          mesh->i_face_numbering);
+
+
+  cs_mesh_adjacencies_initialize();
+  cs_mesh_adjacencies_update_mesh();
+
+  _matrix_check_asmb(n_cells,
+                     n_cells_ext,
+                     n_faces,
+                     i_face_cells,
+                     mesh->halo);
+
+  cs_mesh_adjacencies_finalize();
 
   /* Enter tuning phase */
 
@@ -892,6 +1314,8 @@ cs_benchmark(int  mpi_trace_mode)
                           xa,
                           x,
                           y);
+
+  cs_matrix_finalize();
 
   cs_log_separator(CS_LOG_PERFORMANCE);
 

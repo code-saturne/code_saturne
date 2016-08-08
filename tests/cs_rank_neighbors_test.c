@@ -42,6 +42,8 @@
 
 /*---------------------------------------------------------------------------*/
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------
  * Print message on standard output
  *----------------------------------------------------------------------------*/
@@ -134,6 +136,8 @@ _build_rank_neighbors(int rank,
   return n;
 }
 
+#endif /* HAVE_MPI */
+
 /*---------------------------------------------------------------------------*/
 
 int
@@ -153,8 +157,6 @@ main (int argc, char *argv[])
     MPI_Comm_rank(cs_glob_mpi_comm, &rank);
     MPI_Comm_size(cs_glob_mpi_comm, &size);
   }
-
-#endif /* (HAVE_MPI) */
 
   bft_error_handler_set(_bft_error_handler);
 
@@ -261,13 +263,17 @@ main (int argc, char *argv[])
 
   bft_mem_end();
 
-#if defined(HAVE_MPI)
   {
     int mpi_flag;
     MPI_Initialized(&mpi_flag);
     if (mpi_flag != 0)
       MPI_Finalize();
   }
+
+#else
+
+  bft_printf("rank neighborhoods only make sense for MPI\n");
+
 #endif
 
   exit (EXIT_SUCCESS);

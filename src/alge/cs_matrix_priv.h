@@ -255,6 +255,8 @@ struct _cs_matrix_structure_t {
   const cs_halo_t       *halo;         /* Parallel or periodic halo */
   const cs_numbering_t  *numbering;    /* Vectorization or thread-related
                                           numbering information */
+
+  const cs_matrix_assembler_t  *assembler;   /* Associated matrix assembler */
 };
 
 /* Structure associated with Matrix (representation-independent part) */
@@ -295,6 +297,7 @@ struct _cs_matrix_t {
   const cs_halo_t       *halo;         /* Parallel or periodic halo */
   const cs_numbering_t  *numbering;    /* Vectorization or thread-related
                                           numbering information */
+  const cs_matrix_assembler_t  *assembler;   /* Associated matrix assembler */
 
   /* Pointer to shared arrays from coefficient assignment from
      "native" type. This should be removed in the future, but requires

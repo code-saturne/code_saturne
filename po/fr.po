@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-07-31 20:28+0200\n"
+"POT-Creation-Date: 2016-08-05 12:58+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -2883,6 +2883,42 @@ msgid ""
 "\n"
 msgstr ""
 
+msgid "y <- A.x"
+msgstr ""
+
+msgid "y <- (A-D).x"
+msgstr ""
+
+msgid "Symmetric y <- A.x"
+msgstr ""
+
+msgid "Symmetric y <- (A-D).x"
+msgstr ""
+
+msgid "Block diagonal y <- A.x"
+msgstr ""
+
+msgid "Block diagonal y <- (A-D).x"
+msgstr ""
+
+msgid "Block 6 diagonal y <- A.x"
+msgstr ""
+
+msgid "Block 6 diagonal y <- (A-D).x"
+msgstr ""
+
+msgid "Block diagonal symmetric y <- A.x"
+msgstr ""
+
+msgid "Block diagonal symmetric y <- (A-D).x"
+msgstr ""
+
+msgid "Block y <- A.x"
+msgstr ""
+
+msgid "Block y <- (A-D).x"
+msgstr ""
+
 #, c-format
 msgid ""
 "  N ops:       %12ld\n"
@@ -3171,6 +3207,37 @@ msgstr ""
 "  nombre total limite de cellules grossières: %llu\n"
 "  nombre minimum de rangs actifs:             %d\n"
 
+#, c-format
+msgid "    minimum count =         %10d\n"
+msgstr "    nombre minimal =        %10d\n"
+
+#, c-format
+msgid ""
+"    maximum count =         %10d\n"
+"\n"
+msgstr ""
+"    nombre maximal =        %10d\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+"Neighbor rank counts for matrix assembler: %s\n"
+"-----------------------------------------\n"
+msgstr ""
+
+msgid "Neighbor ranks for vector update (halo)"
+msgstr ""
+
+msgid "Neighbor ranks for matrix assembly"
+msgstr ""
+
+msgid "Maximum neighbor ranks during halo construction"
+msgstr ""
+
+msgid "Maximum neighbor ranks during assembly determination"
+msgstr ""
+
 msgid "invalid value of isym"
 msgstr ""
 
@@ -3202,42 +3269,6 @@ msgstr ""
 msgid ""
 "Matrix product variant using function %s\n"
 "does not handle case with excluded diagonal."
-msgstr ""
-
-msgid "y <- A.x"
-msgstr ""
-
-msgid "y <- (A-D).x"
-msgstr ""
-
-msgid "Symmetric y <- A.x"
-msgstr ""
-
-msgid "Symmetric y <- (A-D).x"
-msgstr ""
-
-msgid "Block diagonal y <- A.x"
-msgstr ""
-
-msgid "Block diagonal y <- (A-D).x"
-msgstr ""
-
-msgid "Block 6 diagonal y <- A.x"
-msgstr ""
-
-msgid "Block 6 diagonal y <- (A-D).x"
-msgstr ""
-
-msgid "Block diagonal symmetric y <- A.x"
-msgstr ""
-
-msgid "Block diagonal symmetric y <- (A-D).x"
-msgstr ""
-
-msgid "Block y <- A.x"
-msgstr ""
-
-msgid "Block y <- (A-D).x"
 msgstr ""
 
 msgid ""

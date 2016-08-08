@@ -16,9 +16,6 @@ Architectural changes
 - Added matrix assembler structure, to allow more general assembly of
   matrices, especially in parallel cases with rows matching elements
   shared on ranks (needed for parallelization of CDO operators).
-  Work in progress (at this stage, the base structure is built;
-  it needs to be combined with matrix structures and functions must
-  be added to allow effective assembly of matrix coefficients).
 
 - Refactored parallel numbering for space-filling curves and added
   a numbering generation based on a 1D series of real values.

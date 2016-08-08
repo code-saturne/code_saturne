@@ -38,6 +38,7 @@ endif
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/ctwr \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/mesh \
@@ -161,7 +162,11 @@ cs_matrix_test_SOURCES  = \
 cs_matrix_test.c \
 $(top_srcdir)/src/base/cs_halo.c \
 $(top_srcdir)/src/base/cs_sort.c \
+$(top_srcdir)/src/alge/cs_matrix.c \
 $(top_srcdir)/src/alge/cs_matrix_assembler.c
+cs_matrix_test_CPPFLAGS  = \
+-D_CS_UNIT_MATRIX_TEST \
+$(AM_CPPFLAGS)
 cs_matrix_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_matrix_test_LDADD    = $(LDADD_CS_TESTS)
 
@@ -185,17 +190,15 @@ cs_sizes_test_SOURCES  = cs_sizes_test.c
 cs_sizes_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_sizes_test_LDADD    = $(LDADD_CS_TESTS)
 
-# Graphical User Interface unit tests
-
-EXTRA_DIST = \
-unittests.py
-
 # Uncomment for tests execution at "make check"
 #TESTS=$(check_PROGRAMS)
 
 # Distribution
 
-EXTRA_DIST = $(top_srcdir)/tests/graphics
+EXTRA_DIST = \
+unittests.py \
+$(top_srcdir)/tests/graphics
+
 dist-hook:
 	rm -rf `find $(distdir)/tests/graphics -type d -name .svn`
 

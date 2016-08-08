@@ -301,9 +301,9 @@ main (int argc, char *argv[])
 
   cs_lnum_t n_elements = 20;
 
-#if defined(HAVE_MPI)
-
   cs_gnum_t *global_number = NULL;
+
+#if defined(HAVE_MPI)
 
   /* Initialization */
 

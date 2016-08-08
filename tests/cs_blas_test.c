@@ -2765,7 +2765,9 @@ main (int argc, char *argv[])
 
   /* Initialization and environment */
 
+#if defined(HAVE_MPI)
   _mpi_init();
+#endif
 
   _pi = 4 * atan(1);
 
