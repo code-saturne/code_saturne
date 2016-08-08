@@ -160,7 +160,6 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
                            cs_lnum_t              n_rows,
                            cs_lnum_t              n_cols_ext,
                            cs_lnum_t              n_edges,
-                           const cs_gnum_t       *cell_num,
                            const cs_lnum_2_t     *edges,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering);
@@ -220,7 +219,6 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
  *   direct_assembly  <-- true if each value corresponds to a unique face
  *   n_rows           <-- local number of rows
  *   n_cols_ext       <-- local number of columns + ghosts
- *   cell_num         <-- global cell numbers, or NULL
  *   row_index        <-- pointer to index on rows
  *   col_id           <-- pointer to array of colum ids related to the row index
  *   halo             <-- halo structure for synchronization, or NULL
@@ -236,7 +234,6 @@ cs_matrix_structure_create_msr_shared(bool                    have_diag,
                                       bool                    direct_assmbly,
                                       cs_lnum_t               n_rows,
                                       cs_lnum_t               n_cols_ext,
-                                      const cs_gnum_t        *cell_num,
                                       const cs_lnum_t        *row_index,
                                       const cs_lnum_t        *col_id,
                                       const cs_halo_t        *halo,
@@ -937,7 +934,6 @@ cs_matrix_variant_type(const cs_matrix_variant_t  *mv);
  *   n_rows         <-- number of local rows
  *   n_cols_ext     <-- number of columns + ghosts
  *   n_edges        <-- local number of (undirected) graph edges
- *   cell_num       <-- optional global cell numbers (1 to n), or NULL
  *   edges          <-- edges (symmetric row <-> column) connectivity
  *   halo           <-- cell halo structure
  *   numbering      <-- vectorization or thread-related numbering info, or NULL
@@ -947,7 +943,6 @@ void
 cs_matrix_variant_test(cs_lnum_t              n_rows,
                        cs_lnum_t              n_cols_ext,
                        cs_lnum_t              n_edges,
-                       const cs_gnum_t       *cell_num,
                        const cs_lnum_2_t     *edges,
                        const cs_halo_t       *halo,
                        const cs_numbering_t  *numbering);

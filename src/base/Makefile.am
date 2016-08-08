@@ -124,6 +124,7 @@ cs_preprocess.h \
 cs_preprocessor_data.h \
 cs_probe.h \
 cs_prototypes.h \
+cs_range_set.h \
 cs_renumber.h \
 cs_resource.h \
 cs_restart.h \
@@ -265,6 +266,7 @@ cs_post_util.c \
 cs_preprocess.c \
 cs_preprocessor_data.c \
 cs_probe.c \
+cs_range_set.c \
 cs_resource.c \
 cs_restart.c \
 cs_restart_default.c \

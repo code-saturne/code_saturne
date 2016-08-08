@@ -4486,7 +4486,6 @@ cs_grid_coarsen(const cs_grid_t   *f,
                                             c->n_cells,
                                             c->n_cells_ext,
                                             c->n_faces,
-                                            NULL,  /* global_cell_num */
                                             c->face_cell,
                                             c->halo,
                                             NULL);  /* face_numbering */
@@ -4511,7 +4510,6 @@ cs_grid_coarsen(const cs_grid_t   *f,
                                                 c->n_cells,
                                                 c->n_cells_ext,
                                                 c->n_faces,
-                                                NULL,
                                                 c->face_cell,
                                                 c->halo,
                                                 NULL);

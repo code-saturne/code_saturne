@@ -161,6 +161,7 @@ cs_map_test_LDADD    = $(LDADD_CS_TESTS)
 cs_matrix_test_SOURCES  = \
 cs_matrix_test.c \
 $(top_srcdir)/src/base/cs_halo.c \
+$(top_srcdir)/src/base/cs_range_set.c \
 $(top_srcdir)/src/base/cs_sort.c \
 $(top_srcdir)/src/alge/cs_matrix.c \
 $(top_srcdir)/src/alge/cs_matrix_assembler.c

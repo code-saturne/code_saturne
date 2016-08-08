@@ -667,7 +667,7 @@ cs_sles_petsc_setup(void               *context,
                || (   strcmp(c->mat_type[0], MATAIJ) == 0
                    && cs_glob_n_ranks > 1))) {
 
-    const cs_gnum_t *grow_num = cs_matrix_get_block_row_gnum(n_rows, halo);
+    const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(n_rows, halo);
 
     PetscInt *col_gid;
     const cs_lnum_t *a_row_index, *a_col_id;
@@ -679,7 +679,7 @@ cs_sles_petsc_setup(void               *context,
 
     for (cs_lnum_t j = 0; j < n_rows; j++) {
       for (cs_lnum_t i = a_row_index[j]; i < a_row_index[j+1]; ++i)
-        col_gid[i] = grow_num[a_col_id[i]] - 1;
+        col_gid[i] = grow_id[a_col_id[i]];
     }
 
     PetscInt     *row_index = a_row_index;
@@ -744,7 +744,7 @@ cs_sles_petsc_setup(void               *context,
 
   else {
 
-    const cs_gnum_t *grow_num = cs_matrix_get_block_row_gnum(n_rows, halo);
+    const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(n_rows, halo);
 
     MatCreate(PETSC_COMM_WORLD, &(sd->a));
     MatSetType(sd->a, c->mat_type[0]);
@@ -883,8 +883,8 @@ cs_sles_petsc_setup(void               *context,
       for (cs_lnum_t b_id = 0; b_id < n_rows; b_id++) {
         for (cs_lnum_t ii = 0; ii < db_size; ii++) {
           for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-            PetscInt idxm[] = {grow_num[b_id*db_size + ii] - 1};
-            PetscInt idxn[] = {grow_num[b_id*db_size + jj] - 1};
+            PetscInt idxm[] = {grow_id[b_id*db_size + ii]};
+            PetscInt idxn[] = {grow_id[b_id*db_size + jj]};
             PetscScalar v[] = {d_val[b_id*b_size[3] + ii*b_size[2] + jj]};
             MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
           }
@@ -902,16 +902,16 @@ cs_sles_petsc_setup(void               *context,
             cs_lnum_t c_id_1 = face_cell[face_id][1];
             if (c_id_0 < n_rows) {
               for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-                PetscInt idxm[] = {grow_num[c_id_0*db_size + kk] - 1};
-                PetscInt idxn[] = {grow_num[c_id_1*db_size + kk] - 1};
+                PetscInt idxm[] = {grow_id[c_id_0*db_size + kk]};
+                PetscInt idxn[] = {grow_id[c_id_1*db_size + kk]};
                 PetscScalar v[] = {x_val[face_id]};
                 MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
               }
             }
             if (c_id_1 < n_rows) {
               for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-                PetscInt idxm[] = {grow_num[c_id_1*db_size + kk] - 1};
-                PetscInt idxn[] = {grow_num[c_id_0*db_size + kk] - 1};
+                PetscInt idxm[] = {grow_id[c_id_1*db_size + kk]};
+                PetscInt idxn[] = {grow_id[c_id_0*db_size + kk]};
                 PetscScalar v[] = {x_val[face_id]};
                 MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
               }
@@ -926,16 +926,16 @@ cs_sles_petsc_setup(void               *context,
             cs_lnum_t c_id_1 = face_cell[face_id][1];
             if (c_id_0 < n_rows) {
               for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-                PetscInt idxm[] = {grow_num[c_id_0*db_size + kk] - 1};
-                PetscInt idxn[] = {grow_num[c_id_1*db_size + kk] - 1};
+                PetscInt idxm[] = {grow_id[c_id_0*db_size + kk]};
+                PetscInt idxn[] = {grow_id[c_id_1*db_size + kk]};
                 PetscScalar v[] = {x_val[2*face_id]};
                 MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
               }
             }
             if (c_id_1 < n_rows) {
               for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-                PetscInt idxm[] = {grow_num[c_id_1*db_size + kk] - 1};
-                PetscInt idxn[] = {grow_num[c_id_0*db_size + kk] - 1};
+                PetscInt idxm[] = {grow_id[c_id_1*db_size + kk]};
+                PetscInt idxn[] = {grow_id[c_id_0*db_size + kk]};
                 PetscScalar v[] = {x_val[2*face_id + 1]};
                 MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
               }
@@ -955,9 +955,9 @@ cs_sles_petsc_setup(void               *context,
             cs_lnum_t c_id_1 = face_cell[face_id][1];
             if (c_id_0 < n_rows) {
               for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-                PetscInt idxm[] = {grow_num[c_id_0*db_size + ii] - 1};
+                PetscInt idxm[] = {grow_id[c_id_0*db_size + ii]};
                 for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-                  PetscInt idxn[] = {grow_num[c_id_1*db_size + jj]};
+                  PetscInt idxn[] = {grow_id[c_id_1*db_size + jj]};
                   PetscScalar v[]
                     = {x_val[face_id*b_size[3] + ii*b_size[2] + jj]};
                   MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
@@ -966,9 +966,9 @@ cs_sles_petsc_setup(void               *context,
             }
             if (c_id_1 < n_rows) {
               for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-                PetscInt idxm[] = {grow_num[c_id_1*db_size + ii] - 1};
+                PetscInt idxm[] = {grow_id[c_id_1*db_size + ii]};
                 for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-                  PetscInt idxn[] = {grow_num[c_id_0*db_size + jj] - 1};
+                  PetscInt idxn[] = {grow_id[c_id_0*db_size + jj]};
                   PetscScalar v[]
                     = {x_val[face_id*b_size[3] + ii*b_size[2] + jj]};
                   MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
@@ -986,9 +986,9 @@ cs_sles_petsc_setup(void               *context,
             cs_lnum_t c_id_1 = face_cell[face_id][1];
             if (c_id_0 < n_rows) {
               for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-                PetscInt idxm[] = {grow_num[c_id_0*db_size + ii] - 1};
+                PetscInt idxm[] = {grow_id[c_id_0*db_size + ii]};
                 for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-                  PetscInt idxn[] = {grow_num[c_id_1*db_size + jj] - 1};
+                  PetscInt idxn[] = {grow_id[c_id_1*db_size + jj]};
                   PetscScalar v[]
                     = {x_val[face_id*2*b_size[3] + ii*b_size[2] + jj]};
                   MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
@@ -997,9 +997,9 @@ cs_sles_petsc_setup(void               *context,
             }
             if (c_id_1 < n_rows) {
               for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-                PetscInt idxm[] = {grow_num[c_id_1*db_size + ii] - 1};
+                PetscInt idxm[] = {grow_id[c_id_1*db_size + ii]};
                 for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-                  PetscInt idxn[] = {grow_num[c_id_0*db_size + jj] - 1};
+                  PetscInt idxn[] = {grow_id[c_id_0*db_size + jj]};
                   PetscScalar v[]
                     = {x_val[(face_id*2+1)*b_size[3] + ii*b_size[2] + jj]};
                   MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
@@ -1036,8 +1036,8 @@ cs_sles_petsc_setup(void               *context,
         for (cs_lnum_t b_id = 0; b_id < n_rows; b_id++) {
           for (cs_lnum_t ii = 0; ii < db_size; ii++) {
             for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-              PetscInt idxm[] = {grow_num[b_id*db_size + ii] - 1};
-              PetscInt idxn[] = {grow_num[b_id*db_size + jj] - 1};
+              PetscInt idxm[] = {grow_id[b_id*db_size + ii]};
+              PetscInt idxn[] = {grow_id[b_id*db_size + jj]};
               PetscScalar v[] = {d_val[b_id*b_size[3] + ii*b_size[2] + jj]};
               MatSetValues(sd->a, m, idxm, n, idxn, v, INSERT_VALUES);
             }
@@ -1054,8 +1054,8 @@ cs_sles_petsc_setup(void               *context,
           for (cs_lnum_t i = a_row_index[row_id]; i < a_row_index[row_id+1]; i++) {
             cs_lnum_t c_id = a_col_id[i];
             for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-              PetscInt idxm[] = {grow_num[row_id*db_size + kk] - 1};
-              PetscInt idxn[] = {grow_num[c_id*db_size + kk] - 1};
+              PetscInt idxm[] = {grow_id[row_id*db_size + kk]};
+              PetscInt idxn[] = {grow_id[c_id*db_size + kk]};
               PetscScalar v[] = {a_val[i]};
               MatSetValues(sd->a, m, idxm, n, idxn, v, INSERT_VALUES);
             }
@@ -1069,9 +1069,9 @@ cs_sles_petsc_setup(void               *context,
           for (cs_lnum_t i = a_row_index[row_id]; i < a_row_index[row_id+1]; i++) {
             cs_lnum_t c_id = a_col_id[i];
             for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-              PetscInt idxm[] = {grow_num[row_id*db_size + ii] - 1};
+              PetscInt idxm[] = {grow_id[row_id*db_size + ii]};
               for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-                PetscInt idxn[] = {grow_num[c_id*db_size + jj] - 1};
+                PetscInt idxn[] = {grow_id[c_id*db_size + jj]};
                 PetscScalar v[] = {d_val[i*b_size[3] + ii*b_size[2] + jj]};
                 MatSetValues(sd->a, m, idxm, n, idxn, v, INSERT_VALUES);
               }

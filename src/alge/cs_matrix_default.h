@@ -228,7 +228,7 @@ cs_matrix_get_tuning_runs(int     *n_min_products,
                           double  *t_measure);
 
 /*----------------------------------------------------------------------------
- * Return a global block row numbering.
+ * Return a (0-based) global block row numbering.
  *
  * The numbering is built if not previously present, and returned otherwise.
  *
@@ -244,7 +244,7 @@ cs_matrix_get_tuning_runs(int     *n_min_products,
  *----------------------------------------------------------------------------*/
 
 const cs_gnum_t *
-cs_matrix_get_block_row_gnum(cs_lnum_t         n_rows,
+cs_matrix_get_block_row_g_id(cs_lnum_t         n_rows,
                              const cs_halo_t  *halo);
 
 /*----------------------------------------------------------------------------*/

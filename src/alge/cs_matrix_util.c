@@ -2130,7 +2130,6 @@ cs_matrix_dump_test(cs_lnum_t              n_cells,
                                        n_cells,
                                        n_cells_ext,
                                        n_edges,
-                                       cell_num,
                                        edges,
                                        halo,
                                        numbering);

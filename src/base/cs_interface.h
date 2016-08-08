@@ -414,12 +414,12 @@ cs_interface_set_copy_indexed(const cs_interface_set_t  *ifs,
  *----------------------------------------------------------------------------*/
 
 void
-cs_interface_set_sum(cs_interface_set_t  *ifs,
-                     cs_lnum_t            n_elts,
-                     cs_lnum_t            stride,
-                     bool                 interlace,
-                     cs_datatype_t        datatype,
-                     void                *var);
+cs_interface_set_sum(const cs_interface_set_t  *ifs,
+                     cs_lnum_t                  n_elts,
+                     cs_lnum_t                  stride,
+                     bool                       interlace,
+                     cs_datatype_t              datatype,
+                     void                      *var);
 
 /*----------------------------------------------------------------------------
  * Update to maximum value for elements associated with an interface set.
@@ -440,38 +440,12 @@ cs_interface_set_sum(cs_interface_set_t  *ifs,
  *----------------------------------------------------------------------------*/
 
 void
-cs_interface_set_max(cs_interface_set_t  *ifs,
-                     cs_lnum_t            n_elts,
-                     cs_lnum_t            stride,
-                     bool                 interlace,
-                     cs_datatype_t        datatype,
-                     void                *var);
-
-/*----------------------------------------------------------------------------
- * Update to maximum value for elements associated with an interface set.
- *
- * On input, the variable array should contain local contributions. On output,
- * contributions from matching elements on parallel or periodic boundaries
- * have been added.
- *
- * Only the values of elements belonging to the interfaces are modified.
- *
- * parameters:
- *   ifs       <-- pointer to a fvm_interface_set_t structure
- *   n_elts    <-- number of elements in var buffer
- *   stride    <-- number of values (non interlaced) by entity
- *   interlace <-- true if variable is interlaced (for stride > 1)
- *   datatype  <-- type of data considered
- *   var       <-> variable buffer
- *----------------------------------------------------------------------------*/
-
-void
-cs_interface_set_max(cs_interface_set_t  *ifs,
-                     cs_lnum_t            n_elts,
-                     cs_lnum_t            stride,
-                     bool                 interlace,
-                     cs_datatype_t        datatype,
-                     void                *var);
+cs_interface_set_max(const cs_interface_set_t  *ifs,
+                     cs_lnum_t                  n_elts,
+                     cs_lnum_t                  stride,
+                     bool                       interlace,
+                     cs_datatype_t              datatype,
+                     void                      *var);
 
 /*----------------------------------------------------------------------------
  * Dump printout of an interface list.

@@ -251,7 +251,6 @@ struct _cs_matrix_structure_t {
      local->local cell numbering for future info or renumbering,
      and halo) */
 
-  const cs_gnum_t       *row_num;      /* Global row numbers */
   const cs_halo_t       *halo;         /* Parallel or periodic halo */
   const cs_numbering_t  *numbering;    /* Vectorization or thread-related
                                           numbering information */

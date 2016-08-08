@@ -82,7 +82,6 @@ BEGIN_C_DECLS
  *   n_cells        <-- number of local cells
  *   n_cells_ext    <-- number of cells including ghost cells (array size)
  *   n_faces        <-- local number of internal faces
- *   cell_num       <-- Optional global cell numbers (1 to n), or NULL
  *   face_cell      <-- face -> cells connectivity
  *   halo           <-- cell halo structure
  *   numbering      <-- vectorization or thread-related numbering info, or NULL
@@ -102,7 +101,6 @@ cs_matrix_variant_tuned(double                 t_measure,
                         cs_lnum_t              n_cells,
                         cs_lnum_t              n_cells_ext,
                         cs_lnum_t              n_faces,
-                        const cs_gnum_t       *cell_num,
                         const cs_lnum_2_t     *face_cell,
                         const cs_halo_t       *halo,
                         const cs_numbering_t  *numbering);

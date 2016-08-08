@@ -48,6 +48,8 @@
 #include "cs_matrix_assembler.h"
 #include "cs_matrix_util.h"
 
+#include "cs_range_set.h"
+
 /*----------------------------------------------------------------------------*/
 
 /* Minimum size for OpenMP loops (needs benchmarking to adjust) */
@@ -731,6 +733,94 @@ main (int argc, char *argv[])
 
     cs_matrix_assembler_destroy(&ma);
   }
+
+  bft_printf("\n");
+
+  /* Test partition ids on vertices */
+
+  cs_gnum_t *g_vtx_num;
+  BFT_MALLOC(g_vtx_num, _n_vtx, cs_gnum_t);
+  for (cs_lnum_t i = 0; i < _n_vtx; i++)
+    g_vtx_num[i] = _g_vtx_id[i] + 1;
+  cs_interface_set_t *vtx_ifs
+    = cs_interface_set_create(_n_vtx,
+                              NULL,
+                              g_vtx_num,
+                              NULL,
+                              0,
+                              NULL,
+                              NULL,
+                              NULL);
+
+  BFT_FREE(g_vtx_num);
+
+  cs_range_set_t *rs = cs_range_set_create(vtx_ifs, NULL, _n_vtx, true, 0);
+
+  cs_real_t *v0, *v1, *v2;
+  BFT_MALLOC(v0, _n_vtx, cs_real_t);
+  BFT_MALLOC(v1, _n_vtx, cs_real_t);
+  BFT_MALLOC(v2, _n_vtx, cs_real_t);
+
+  for (cs_lnum_t i = 0; i < _n_vtx; i++)
+    v0[i] = rs->g_id[i]+1;
+
+  cs_range_set_zero_out_of_range(rs,
+                                 CS_REAL_TYPE,
+                                 1,
+                                 v0);
+
+  for (cs_lnum_t i = 0; i < _n_vtx; i++)
+    printf("zero r%d: %d %f\n", cs_glob_rank_id, (int)(rs->g_id[i]), v0[i]);
+
+  bft_printf("\n");
+
+  for (cs_lnum_t i = 0; i < _n_vtx; i++)
+    v1[i] = v0[i];
+
+  cs_range_set_gather(rs,
+                      CS_REAL_TYPE,
+                      1,
+                      v0,
+                      v2);
+
+  cs_range_set_gather(rs,
+                      CS_REAL_TYPE,
+                      1,
+                      v1,
+                      v1);
+
+  for (cs_lnum_t i = 0; i < rs->n_elts[0]; i++)
+    printf("gather r%d: %f %f\n", cs_glob_rank_id,
+           v1[i], v2[i]);
+
+  bft_printf("\n");
+
+  for (cs_lnum_t i = 0; i < rs->n_elts[1]; i++)
+    v0[i] = -2;
+
+  cs_range_set_scatter(rs,
+                       CS_REAL_TYPE,
+                       1,
+                       v2,
+                       v0);
+
+  cs_range_set_scatter(rs,
+                       CS_REAL_TYPE,
+                       1,
+                       v1,
+                       v1);
+
+  for (cs_lnum_t i = 0; i < rs->n_elts[1]; i++)
+    printf("scatter r%d: %d %f %f\n", cs_glob_rank_id,
+           (int)(rs->g_id[i]), v0[i], v1[i]);
+
+  BFT_FREE(v2);
+  BFT_FREE(v1);
+  BFT_FREE(v0);
+
+  cs_range_set_destroy(&rs);
+
+  cs_interface_set_destroy(&vtx_ifs);
 
   bft_printf("\n");
 

@@ -4109,7 +4109,7 @@ cs_interface_set_copy_array(const cs_interface_set_t  *ifs,
   int i;
   cs_lnum_t j;
   int local_rank = 0;
-  int stride_size = cs_datatype_size[datatype]*stride;
+  cs_lnum_t stride_size = cs_datatype_size[datatype]*stride;
   unsigned char *send_buf = NULL;
   unsigned char *_dest = dest;
   const unsigned char *_src = src;
@@ -4463,16 +4463,16 @@ cs_interface_set_copy_indexed(const cs_interface_set_t  *ifs,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_interface_set_sum(cs_interface_set_t  *ifs,
-                     cs_lnum_t            n_elts,
-                     cs_lnum_t            stride,
-                     bool                 interlace,
-                     cs_datatype_t        datatype,
-                     void                *var)
+cs_interface_set_sum(const cs_interface_set_t  *ifs,
+                     cs_lnum_t                  n_elts,
+                     cs_lnum_t                  stride,
+                     bool                       interlace,
+                     cs_datatype_t              datatype,
+                     void                      *var)
 {
   int i;
   cs_lnum_t j, k, l;
-  int stride_size = cs_datatype_size[datatype]*stride;
+  cs_lnum_t stride_size = cs_datatype_size[datatype]*stride;
   unsigned char *buf = NULL;
 
   BFT_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
@@ -4688,16 +4688,16 @@ cs_interface_set_sum(cs_interface_set_t  *ifs,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_interface_set_max(cs_interface_set_t  *ifs,
-                     cs_lnum_t            n_elts,
-                     cs_lnum_t            stride,
-                     bool                 interlace,
-                     cs_datatype_t        datatype,
-                     void                *var)
+cs_interface_set_max(const cs_interface_set_t  *ifs,
+                     cs_lnum_t                  n_elts,
+                     cs_lnum_t                  stride,
+                     bool                       interlace,
+                     cs_datatype_t              datatype,
+                     void                      *var)
 {
   int i;
   cs_lnum_t j, k, l;
-  int stride_size = cs_datatype_size[datatype]*stride;
+  cs_lnum_t stride_size = cs_datatype_size[datatype]*stride;
   unsigned char *buf = NULL;
 
   BFT_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);

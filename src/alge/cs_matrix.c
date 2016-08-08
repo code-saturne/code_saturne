@@ -4659,7 +4659,6 @@ _matrix_check_compare(cs_lnum_t        n_elts,
  *   n_rows      <-- local number of rows
  *   n_cols_ext  <-- number of local + ghost columns
  *   n_edges     <-- local number of (undirected) graph edges
- *   cell_num    <-- optional global cell numbers (1 to n), or NULL
  *   edges       <-- edges (symmetric row <-> column) connectivity
  *   halo        <-- cell halo structure
  *   numbering   <-- vectorization or thread-related numbering info, or NULL
@@ -4671,7 +4670,6 @@ _matrix_check(int                    n_variants,
               cs_lnum_t              n_rows,
               cs_lnum_t              n_cols_ext,
               cs_lnum_t              n_edges,
-              const cs_gnum_t       *cell_num,
               const cs_lnum_2_t     *edges,
               const cs_halo_t       *halo,
               const cs_numbering_t  *numbering,
@@ -4757,7 +4755,6 @@ _matrix_check(int                    n_variants,
                                         n_rows,
                                         n_cols_ext,
                                         n_edges,
-                                        cell_num,
                                         edges,
                                         halo,
                                         numbering);
@@ -5256,7 +5253,6 @@ _set_spmv_func(cs_matrix_type_t             m_type,
  * \param[in]  n_rows      local number of rows
  * \param[in]  n_cols_ext  number of local + ghost columns
  * \param[in]  n_edges     local number of (undirected) graph edges
- * \param[in]  cell_num    optional global cell numbers (1 to n), or NULL
  * \param[in]  edges       edges (symmetric row <-> column) connectivity
  * \param[in]  halo        halo structure associated with cells, or NULL
  * \param[in]  numbering   vectorization or thread-related numbering info,
@@ -5272,7 +5268,6 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
                            cs_lnum_t              n_rows,
                            cs_lnum_t              n_cols_ext,
                            cs_lnum_t              n_edges,
-                           const cs_gnum_t       *cell_num,
                            const cs_lnum_2_t     *edges,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering)
@@ -5326,7 +5321,6 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
 
   /* Set pointers to structures shared from mesh here */
 
-  ms->row_num = cell_num;
   ms->halo = halo;
   ms->numbering = numbering;
   ms->assembler = NULL;
@@ -5438,7 +5432,6 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
                                 a unique face
  * \param[in]  n_rows           local number of rows
  * \param[in]  n_cols_ext       local number of columns + ghosts
- * \param[in]  cell_num         global cell numbers, or NULL
  * \param[in]  row_index        index on rows
  * \param[in]  col_id           array of colum ids related to the row index
  * \param[in]  halo             halo structure for synchronization, or NULL
@@ -5454,7 +5447,6 @@ cs_matrix_structure_create_msr_shared(bool                    have_diag,
                                       bool                    direct_assembly,
                                       cs_lnum_t               n_rows,
                                       cs_lnum_t               n_cols_ext,
-                                      const cs_gnum_t        *cell_num,
                                       const cs_lnum_t        *row_index,
                                       const cs_lnum_t        *col_id,
                                       const cs_halo_t        *halo,
@@ -5480,7 +5472,6 @@ cs_matrix_structure_create_msr_shared(bool                    have_diag,
 
   /* Set pointers to structures shared from mesh here */
 
-  ms->row_num = cell_num;
   ms->halo = halo;
   ms->numbering = numbering;
   ms->assembler = NULL;
@@ -7451,7 +7442,6 @@ cs_matrix_variant_type(const cs_matrix_variant_t  *mv)
  * \param[in]  n_rows       local number of rows
  * \param[in]  n_cols_ext   number of local + ghost columns
  * \param[in]  n_edges      local number of (undirected) graph edges
- * \param[in]  cell_num     optional global cell numbers (1 to n), or NULL
  * \param[in]  edges        edges (symmetric row <-> column) connectivity
  * \param[in]  halo         cell halo structure
  * \param[in]  numbering    vectorization or thread-related numbering info,
@@ -7465,7 +7455,6 @@ void
 cs_matrix_variant_test(cs_lnum_t              n_rows,
                        cs_lnum_t              n_cols_ext,
                        cs_lnum_t              n_edges,
-                       const cs_gnum_t       *cell_num,
                        const cs_lnum_2_t     *edges,
                        const cs_halo_t       *halo,
                        const cs_numbering_t  *numbering)
@@ -7502,7 +7491,6 @@ cs_matrix_variant_test(cs_lnum_t              n_rows,
                 n_rows,
                 n_cols_ext,
                 n_edges,
-                cell_num,
                 edges,
                 halo,
                 numbering,

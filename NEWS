@@ -13,6 +13,13 @@ Physical modelling
 Architectural changes
 ---------------------
 
+- removed global_row number from matrix structures, as it was never used,
+  and could cause confusion with global ids such as those used with
+  range sets (which are realy used in some cases).
+
+- Added range set structure, to ease operations related to handling of an
+  owning rank for distributed entities.
+
 - Added matrix assembler structure, to allow more general assembly of
   matrices, especially in parallel cases with rows matching elements
   shared on ranks (needed for parallelization of CDO operators).

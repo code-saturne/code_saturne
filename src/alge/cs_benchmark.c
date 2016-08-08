@@ -284,7 +284,6 @@ _matrix_vector_test(double                 t_measure,
                                   n_cells,
                                   n_cells_ext,
                                   n_faces,
-                                  cell_num,
                                   face_cell,
                                   halo,
                                   numbering);
@@ -1189,7 +1188,24 @@ cs_benchmark(int  mpi_trace_mode)
   double                 fill_weights_nsym[] = {0.5, 0.3, 0.1, 0.1};
   double                 fill_weights_sym[] = {0.8, 0.2};
 
+  cs_mesh_adjacencies_initialize();
+  cs_mesh_adjacencies_update_mesh();
+
   cs_matrix_initialize();
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Benchmark mode activated\n"
+                  "========================\n"));
+
+  /* Run some feature tests */
+  /*------------------------*/
+
+  _matrix_check_asmb(n_cells,
+                     n_cells_ext,
+                     n_faces,
+                     i_face_cells,
+                     mesh->halo);
 
   /* Allocate and initialize  working arrays */
   /*-----------------------------------------*/
@@ -1215,14 +1231,6 @@ cs_benchmark(int  mpi_trace_mode)
     xa[ii*2 + 1] = -0.5;
   }
 
-  /* Run tests */
-  /*-----------*/
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "Benchmark mode activated\n"
-                  "========================\n"));
-
   /* Call matrix tuning */
   /*--------------------*/
 
@@ -1231,22 +1239,9 @@ cs_benchmark(int  mpi_trace_mode)
   cs_matrix_variant_test(n_cells,
                          n_cells_ext,
                          n_faces,
-                         mesh->global_cell_num,
                          i_face_cells,
                          mesh->halo,
                          mesh->i_face_numbering);
-
-
-  cs_mesh_adjacencies_initialize();
-  cs_mesh_adjacencies_update_mesh();
-
-  _matrix_check_asmb(n_cells,
-                     n_cells_ext,
-                     n_faces,
-                     i_face_cells,
-                     mesh->halo);
-
-  cs_mesh_adjacencies_finalize();
 
   /* Enter tuning phase */
 
@@ -1265,7 +1260,6 @@ cs_benchmark(int  mpi_trace_mode)
                                n_cells,
                                n_cells_ext,
                                n_faces,
-                               mesh->global_cell_num,
                                i_face_cells,
                                mesh->halo,
                                mesh->i_face_numbering);
@@ -1293,7 +1287,6 @@ cs_benchmark(int  mpi_trace_mode)
                                n_cells,
                                n_cells_ext,
                                n_faces,
-                               mesh->global_cell_num,
                                i_face_cells,
                                mesh->halo,
                                mesh->i_face_numbering);
@@ -1316,6 +1309,8 @@ cs_benchmark(int  mpi_trace_mode)
                           y);
 
   cs_matrix_finalize();
+
+  cs_mesh_adjacencies_finalize();
 
   cs_log_separator(CS_LOG_PERFORMANCE);
 

@@ -58,6 +58,7 @@
 #include "cs_mesh_adjacencies.h"
 #include "cs_numbering.h"
 #include "cs_prototypes.h"
+#include "cs_range_set.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -132,7 +133,7 @@ static int _n_min_products = 10;
 
 /* Pointer to global (block-based) numbering, if used */
 static cs_lnum_t  _row_num_size = 0;
-static cs_gnum_t  *_global_row_num = NULL;
+static cs_gnum_t  *_global_row_id = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -169,11 +170,12 @@ _initialize_api(void)
  *----------------------------------------------------------------------------*/
 
 static void
-_build_block_row_num(cs_lnum_t         n_rows,
-                     const cs_halo_t  *halo)
+_build_block_row_g_id(cs_lnum_t         n_rows,
+                      const cs_halo_t  *halo)
 {
   cs_lnum_t _n_rows = n_rows;
-  cs_gnum_t row_start = 1;
+
+  cs_gnum_t l_range[2];
 
   _row_num_size = n_rows;
   if (halo != NULL) {
@@ -181,25 +183,15 @@ _build_block_row_num(cs_lnum_t         n_rows,
     _n_rows += halo->n_elts[CS_HALO_EXTENDED];
   }
 
-  BFT_REALLOC(_global_row_num, _n_rows, cs_gnum_t);
+  BFT_REALLOC(_global_row_id, _n_rows, cs_gnum_t);
 
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
-    cs_gnum_t loc_shift = n_rows;
-    MPI_Scan(&loc_shift, &row_start, 1, CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
-    row_start = row_start + 1 - loc_shift;
-  }
-#endif
-
-# pragma omp parallel for  if(_n_rows > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < _n_rows; i++)
-    _global_row_num[i] =  (cs_gnum_t)i + row_start;
-
-  if (halo != NULL)
-    cs_halo_sync_untyped(halo,
-                         CS_HALO_EXTENDED,
-                         sizeof(cs_gnum_t),
-                         _global_row_num);
+  cs_range_set_define(NULL,
+                      halo,
+                      n_rows,
+                      false,
+                      0, /* g_id_base */
+                      l_range,
+                      _global_row_id);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -345,7 +337,6 @@ cs_matrix_initialize(void)
                                      mesh->n_cells,
                                      mesh->n_cells_with_ghosts,
                                      mesh->n_i_faces,
-                                     mesh->global_cell_num,
                                      (const cs_lnum_2_t *)(mesh->i_face_cells),
                                      mesh->halo,
                                      mesh->i_face_numbering);
@@ -394,7 +385,6 @@ cs_matrix_initialize(void)
                                                   ma->single_faces_to_cells,
                                                   mesh->n_cells,
                                                   mesh->n_cells_with_ghosts,
-                                                  mesh->global_cell_num,
                                                   ma->cell_cells_idx,
                                                   ma->cell_cells,
                                                   mesh->halo,
@@ -407,7 +397,6 @@ cs_matrix_initialize(void)
                                        mesh->n_cells,
                                        mesh->n_cells_with_ghosts,
                                        mesh->n_i_faces,
-                                       mesh->global_cell_num,
                                        (const cs_lnum_2_t *)(mesh->i_face_cells),
                                        mesh->halo,
                                        mesh->i_face_numbering);
@@ -434,7 +423,7 @@ cs_matrix_initialize(void)
 void
 cs_matrix_finalize(void)
 {
-  BFT_FREE(_global_row_num);
+  BFT_FREE(_global_row_id);
 
   for (cs_matrix_fill_type_t mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++)
     _tuned_matrix_id[mft] = -1;
@@ -473,8 +462,8 @@ cs_matrix_update_mesh(void)
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_adjacencies_t  *ma = cs_glob_mesh_adjacencies;
 
-  if (_global_row_num != NULL)
-    _build_block_row_num(mesh->n_cells, mesh->halo);
+  if (_global_row_id != NULL)
+    _build_block_row_g_id(mesh->n_cells, mesh->halo);
 
   for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
 
@@ -491,7 +480,6 @@ cs_matrix_update_mesh(void)
                                                   ma->single_faces_to_cells,
                                                   mesh->n_cells,
                                                   mesh->n_cells_with_ghosts,
-                                                  mesh->global_cell_num,
                                                   ma->cell_cells_idx,
                                                   ma->cell_cells,
                                                   mesh->halo,
@@ -504,7 +492,6 @@ cs_matrix_update_mesh(void)
                                        mesh->n_cells,
                                        mesh->n_cells_with_ghosts,
                                        mesh->n_i_faces,
-                                       mesh->global_cell_num,
                                        (const cs_lnum_2_t *)(mesh->i_face_cells),
                                        mesh->halo,
                                        mesh->i_face_numbering);
@@ -532,7 +519,6 @@ cs_matrix_update_mesh(void)
                                                 ma->single_faces_to_cells,
                                                 mesh->n_cells,
                                                 mesh->n_cells_with_ghosts,
-                                                mesh->global_cell_num,
                                                 ma->cell_cells_idx,
                                                 ma->cell_cells,
                                                 mesh->halo,
@@ -544,7 +530,6 @@ cs_matrix_update_mesh(void)
                                      mesh->n_cells,
                                      mesh->n_cells_with_ghosts,
                                      mesh->n_i_faces,
-                                     mesh->global_cell_num,
                                      (const cs_lnum_2_t *)(mesh->i_face_cells),
                                      mesh->halo,
                                      mesh->i_face_numbering);
@@ -566,7 +551,6 @@ cs_matrix_update_mesh(void)
                                    mesh->n_cells,
                                    mesh->n_cells_with_ghosts,
                                    mesh->n_i_faces,
-                                   mesh->global_cell_num,
                                    (const cs_lnum_2_t *)(mesh->i_face_cells),
                                    mesh->halo,
                                    mesh->i_face_numbering);
@@ -653,7 +637,6 @@ cs_matrix_msr(bool        symmetric,
                                                   ma->single_faces_to_cells,
                                                   mesh->n_cells,
                                                   mesh->n_cells_with_ghosts,
-                                                  mesh->global_cell_num,
                                                   ma->cell_cells_idx,
                                                   ma->cell_cells,
                                                   mesh->halo,
@@ -665,7 +648,6 @@ cs_matrix_msr(bool        symmetric,
                                        mesh->n_cells,
                                        mesh->n_cells_with_ghosts,
                                        mesh->n_i_faces,
-                                       mesh->global_cell_num,
                                        (const cs_lnum_2_t *)(mesh->i_face_cells),
                                        mesh->halo,
                                        mesh->i_face_numbering);
@@ -727,7 +709,6 @@ cs_matrix_native(bool        symmetric,
                                      mesh->n_cells,
                                      mesh->n_cells_with_ghosts,
                                      mesh->n_i_faces,
-                                     mesh->global_cell_num,
                                      (const cs_lnum_2_t *)(mesh->i_face_cells),
                                      mesh->halo,
                                      mesh->i_face_numbering);
@@ -868,7 +849,7 @@ cs_matrix_get_tuning_runs(int     *n_min_products,
 }
 
 /*----------------------------------------------------------------------------
- * Return a global block row numbering.
+ * Return a (0-based) global block row numbering.
  *
  * The numbering is built if not previously present, and returned otherwise.
  *
@@ -884,14 +865,14 @@ cs_matrix_get_tuning_runs(int     *n_min_products,
  *----------------------------------------------------------------------------*/
 
 const cs_gnum_t *
-cs_matrix_get_block_row_gnum(cs_lnum_t         n_rows,
+cs_matrix_get_block_row_g_id(cs_lnum_t         n_rows,
                              const cs_halo_t  *halo)
 {
-  const cs_gnum_t  *g_row_num = _global_row_num;
+  const cs_gnum_t  *g_row_num = _global_row_id;
 
-  if (_global_row_num == NULL || n_rows > _row_num_size) {
-    _build_block_row_num(n_rows, halo);
-    g_row_num = _global_row_num;
+  if (_global_row_id == NULL || n_rows > _row_num_size) {
+    _build_block_row_g_id(n_rows, halo);
+    g_row_num = _global_row_id;
   }
 
   return g_row_num;
