@@ -311,7 +311,7 @@
   <action name="displayCaseAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/document-properties.png</normaloff>:/icons/22x22/document-properties.png</iconset>
+     <normaloff>:/icons/22x22/text-xml.png</normaloff>:/icons/22x22/text-xml.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Show current case</string>

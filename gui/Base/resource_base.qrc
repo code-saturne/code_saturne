@@ -1,8 +1,7 @@
 <RCC>
-  <qresource prefix="/" >
+  <qresource prefix="/">
     <file>icons/22x22/document-new.png</file>
     <file>icons/22x22/document-open.png</file>
-    <file>icons/22x22/document-properties.png</file>
     <file>icons/22x22/document-save-as.png</file>
     <file>icons/22x22/document-save.png</file>
     <file>icons/22x22/edit-redo.png</file>
@@ -18,6 +17,7 @@
     <file>icons/22x22/help-browser.png</file>
     <file>icons/22x22/MONO-bulle-HD.png</file>
     <file>icons/22x22/prepro-mode.png</file>
+    <file>icons/22x22/text-xml.png</file>
     <file>icons/22x22/calc-mode.png</file>
   </qresource>
 </RCC>
