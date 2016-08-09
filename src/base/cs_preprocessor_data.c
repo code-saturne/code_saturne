@@ -2091,6 +2091,8 @@ cs_preprocessor_data_add_file(const char     *file_name,
 
   data_size += (_align_size(n_group_renames * sizeof(char *)) * 2);
 
+  assert(n_group_renames == 0 || group_rename != NULL);
+
   for (i = 0; i < n_group_renames; i++) {
     data_size += _align_size(strlen(group_rename[i*2]) + 1);
     if (group_rename[i*2+1] != NULL)
