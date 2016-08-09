@@ -725,21 +725,23 @@ cs_lagr_log_iteration(void)
 
     }
 
+    cs_real_t vmax[2] = {cs_glob_lagr_source_terms->vmax,
+                         cs_glob_lagr_source_terms->tmamax};
+    cs_gnum_t cpt = cs_glob_lagr_source_terms->ntxerr;
+
+    cs_parall_max(2, CS_REAL_TYPE, vmax);
+    cs_parall_counter(&cpt, 1);
+
     cs_log_printf(CS_LOG_DEFAULT,
-                  _("Maximum particle volume fraction : %14.5E\n"),
-                  cs_glob_lagr_source_terms->vmax);
+                  _("Maximum particle volume fraction: %14.5e\n"), vmax[0]);
     cs_log_printf(CS_LOG_DEFAULT,
-                  _("Maximum particle mass fraction :  %14.5E\n"),
-                  cs_glob_lagr_source_terms->tmamax);
+                  _("Maximum particle mass fraction:   %14.5e\n"), vmax[1]);
     cs_log_printf(CS_LOG_DEFAULT,
-                  _("Number of cells with a part. volume fraction greater than 0.8 :%10d\n"),
-                  cs_glob_lagr_source_terms->ntxerr);
+                  _("Number of cells with a particle volume fraction "
+                    "greater than 0.8: %10llu\n"), (unsigned long long)cpt);
     cs_log_separator(CS_LOG_DEFAULT);
 
   }
-
-  return;
-
 }
 
 /*----------------------------------------------------------------------------*/

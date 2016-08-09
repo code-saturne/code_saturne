@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-08-05 12:58+0200\n"
+"POT-Creation-Date: 2016-08-09 14:08+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6538,6 +6538,10 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid "Called %s with unhandled datatype (%d)."
+msgstr ""
+
+#, c-format
 msgid ""
 "Warning: The %s (%s)\n"
 "         exchange type is not available with the current MPI libary.\n"
@@ -11997,15 +12001,16 @@ msgid "Number of iterations for the steady-state source terms:%10d\n"
 msgstr ""
 
 #, c-format
-msgid "Maximum particle volume fraction : %14.5E\n"
+msgid "Maximum particle volume fraction: %14.5e\n"
 msgstr ""
 
 #, c-format
-msgid "Maximum particle mass fraction :  %14.5E\n"
+msgid "Maximum particle mass fraction:   %14.5e\n"
 msgstr ""
 
 #, c-format
-msgid "Number of cells with a part. volume fraction greater than 0.8 :%10d\n"
+msgid ""
+"Number of cells with a particle volume fractiongreater than 0.8: %10llu\n"
 msgstr ""
 
 #, c-format
