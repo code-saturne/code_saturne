@@ -2054,7 +2054,6 @@ cs_matrix_log_info(const cs_matrix_t  *matrix,
  *   n_cells     <-- number of local cells
  *   n_cells_ext <-- number of cells including ghost cells (array size)
  *   n_edges     <-- local number of graph edges
- *   cell_num    <-- global cell numbers (1 to n)
  *   edges       <-- graph edges connectivity
  *   halo        <-- cell halo structure
  *   numbering   <-- vectorization or thread-related numbering info, or NULL
@@ -2064,7 +2063,6 @@ void
 cs_matrix_dump_test(cs_lnum_t              n_cells,
                     cs_lnum_t              n_cells_ext,
                     cs_lnum_t              n_edges,
-                    const cs_gnum_t       *cell_num,
                     const cs_lnum_2_t     *edges,
                     const cs_halo_t       *halo,
                     const cs_numbering_t  *numbering)
