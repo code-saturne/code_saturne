@@ -67,8 +67,6 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 
-#include "cs_prototypes.h"
-
 #include "cs_lagr.h"
 #include "cs_lagr_new.h"
 #include "cs_lagr_particle.h"
@@ -406,10 +404,11 @@ cs_user_lagr_new_p_attr(unsigned char                  *particle,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Impose the motion of a particle falgged CS_LAGR_PART_IMPOSED_MOTION.
+ * \brief Impose the motion of a particle flagged CS_LAGR_PART_IMPOSED_MOTION.
  *
  * User-defined modifications on the particle position and its
  * velocity.
+ *
  * \param[in]  coords    old particle coordinates
  * \param[in]  dt        time step (per particle)
  * \param[out] disp      particle dispacement
@@ -417,17 +416,15 @@ cs_user_lagr_new_p_attr(unsigned char                  *particle,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_imposed_motion(const cs_real_3_t coords,
-                            const cs_real_t   dt,
-                            cs_real_3_t       disp)
+cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
+                            cs_real_t        dt,
+                            cs_real_t        disp[3])
 {
-
   /* Angular velocity */
   cs_real_t omega = 1.0;
 
-
   /* Here we impose the particle to move arround a cylinder with
-   * the axe  is (*, 0, 1) */
+   * the axis  is (*, 0, 1) */
   cs_real_t rcost = (coords[1] - 0.0);
   cs_real_t rsint = (coords[2] - 1.0);
 
@@ -435,10 +432,7 @@ cs_user_lagr_imposed_motion(const cs_real_3_t coords,
   disp[0] = 0.;
   disp[1] = rcost * (cos(omega*dt) - 1.0 ) - rsint * sin(omega*dt);
   disp[2] = rsint * (cos(omega*dt) - 1.0 ) + rcost * sin(omega*dt);
-
-
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!

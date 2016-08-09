@@ -70,8 +70,6 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 
-#include "cs_prototypes.h"
-
 #include "cs_lagr.h"
 #include "cs_lagr_particle.h"
 #include "cs_lagr_stat.h"
@@ -166,20 +164,21 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Impose the motion of a particle falgged CS_LAGR_PART_IMPOSED_MOTION.
+ * \brief Impose the motion of a particle flagged CS_LAGR_PART_IMPOSED_MOTION.
  *
  * User-defined modifications on the particle position and its
  * velocity.
- * \param[in]  coords    old particle coordinates
- * \param[in]  dt        time step (per particle)
- * \param[out] disp      particle dispacement
+ *
+ * \param[in]   coords    old particle coordinates
+ * \param[in]   dt        time step (per particle)
+ * \param[out]  disp      particle dispacement
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_imposed_motion(const cs_real_3_t coords,
-                            const cs_real_t   dt,
-                            cs_real_3_t       disp)
+cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
+                            cs_real_t        dt,
+                            cs_real_t        disp[3])
 {
 }
 

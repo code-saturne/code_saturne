@@ -1662,7 +1662,7 @@ _lagdep(cs_real_t     dtp,
 
       cs_user_lagr_imposed_motion(old_part_coords,
                                   dtp,
-                                  &disp);
+                                  disp);
 
       for (cs_lnum_t id = 0; id < 3; id++) {
 
