@@ -61,6 +61,8 @@ use paramx
 use entsor
 use vorinc
 
+use cs_c_bindings
+
 !===============================================================================
 
 implicit none
@@ -119,7 +121,7 @@ do ii = 1, ncevor
 ! la fluctuation dans la direction normale
 ! a la paroi
 
-    call normalen(iun,dw1(1))
+    call cs_random_normal(1, dw1)
     ufluc = ( ufluc -                                             &
             (1.d0-2.d0/3.d0*cst2)*du_vor*vfluc*dtref +            &
              2.d0* sqrt(2.d0/3.d0*(cst1-1.d0)*ee_vor*dtref)       &

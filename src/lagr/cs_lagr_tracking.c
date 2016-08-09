@@ -62,6 +62,7 @@
 #include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
+#include "cs_random.h"
 #include "cs_search.h"
 #include "cs_timer_stats.h"
 
@@ -1824,7 +1825,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         }
         else {
 
-          cs_lnum_t i, one = 1;
+          cs_lnum_t i;
           cs_real_t random = -1;
           cs_real_t scov_cdf;
           void *cur_part = NULL;
@@ -1833,7 +1834,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
              with the depositing one (according to the relative surface coverage
              of each class of particles) */
 
-          CS_PROCF(zufall, ZUFALL)(&one, &random);
+          cs_random_uniform(1, &random);
           cs_real_t scov_rand =  (random * (*surface_coverage));
 
           scov_cdf = 0.;
@@ -2144,8 +2145,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         viscp = 0.1e0 * exp(log(10.e0)*tmp);
 
       if (viscp >= visref_icoal) {
-        int  one = 1;
-        CS_PROCF(zufall, ZUFALL)(&one, &random);
+        cs_random_uniform(1, &random);
         trap = 1.e0- (visref_icoal / viscp);
       }
 

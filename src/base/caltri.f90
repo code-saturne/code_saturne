@@ -164,24 +164,10 @@ end interface
 ! Initialization
 !===============================================================================
 
-! Initialize random number generator
-! (not always necessary, but not at all costly)
-
-! If parallelized particle-tracking is in use,
-! seed the random number generator with
-! (rank number+1) to avoid potential statistical bias
-
-if ((iilagr.gt.0).and.(irangp.ge.0)) then
-  call zufalli(irangp + 1)
-else
-  call zufalli(1)
-endif
-
 !--> Probes output tracking
 ttchis = -1.d0
 
 ! Test presence of control_file to modify ntmabs if required
-!
 
 ntmsav = ntmabs
 

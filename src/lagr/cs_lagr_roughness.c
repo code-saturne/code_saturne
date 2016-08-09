@@ -52,6 +52,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
+#include "cs_random.h"
 #include "cs_search.h"
 #include "cs_halo.h"
 #include "cs_lagr_dlvo.h"
@@ -217,7 +218,7 @@ cs_lagr_roughness_barrier(const void                     *particle,
                           cs_lnum_t                       iel,
                           cs_real_t                      *energy_barrier)
 {
-  cs_int_t  i, dim_aux = 1 ;
+  cs_int_t  i;
   cs_real_t param2, value;
   cs_lnum_t param1,contact,compt_max;
   cs_lnum_t iclas, ints, np, iasp;
@@ -226,13 +227,12 @@ cs_lagr_roughness_barrier(const void                     *particle,
   cs_real_t scov[2], seff[1];
   cs_lnum_t nbtemp[12000];
   cs_lnum_t nbasp[1], nclas, nbaspt[1], nasptot;
-  cs_real_t*random;
-  cs_lnum_t one = 1;
+  cs_real_t random;
 
   contact = 0;
   compt_max = 5000;
 
-  /* Computation of the surface coverage  */
+  /* Computation of the surface coverage */
 
   nclas = 2;
   cs_real_t scovtot = 0.;
@@ -277,8 +277,8 @@ cs_lagr_roughness_barrier(const void                     *particle,
     if (value2  > 700) {
       param1 = value2 / 700;
       param2 = fmod(value2 , 700.);
-      CS_PROCF(fische, FISCHE)(&dim_aux, &param2, nbaspt);
-      CS_PROCF(fische, FISCHE)(&param1, &value , nbtemp);
+      cs_random_poisson(1, param2, nbaspt);
+      cs_random_poisson(param1, value , nbtemp);
       for (ints = 0; ints < param1; ints++) {
         nbaspt[0] = nbaspt[0] + nbtemp[ints];
       }
@@ -286,7 +286,7 @@ cs_lagr_roughness_barrier(const void                     *particle,
     }
     else
     {
-      CS_PROCF(fische, FISCHE)(&dim_aux, &value2 , nbaspt);
+      cs_random_poisson(1, value2 , nbaspt);
       nbasp[iclas] = nbaspt[0];
     }
 
@@ -297,17 +297,14 @@ cs_lagr_roughness_barrier(const void                     *particle,
       iboucle  = 0;
       do {
         contact = 0;
-        BFT_MALLOC(random,1,cs_real_t);
-        CS_PROCF(zufall, ZUFALL)(&one, random);
+        cs_random_uniform(1, &random);
 
-        posasp1[i + nasptot] = pow(seff[iclas] /_pi, 0.5) * (*random);
-        posasp2[i + nasptot] = 2 * _pi * (*random);
+        posasp1[i + nasptot] = pow(seff[iclas] /_pi, 0.5) * random;
+        posasp2[i + nasptot] = 2 * _pi * random;
         posasp3[i + nasptot] = 0.;
         posasp4[i + nasptot] = rpart2[iclas];
 
-        BFT_FREE(random);
-
-   /* No contact between two asperities of a same class */
+        /* No contact between two asperities of a same class */
         for (iasp = 0; iasp < nasp - nasptot; iasp++) {
 
           distasp = pow(posasp1[i + nasptot] * cos(posasp2[i + nasptot])- posasp1[iasp + nasptot] * cos(posasp2[iasp + nasptot]),2)
@@ -322,15 +319,12 @@ cs_lagr_roughness_barrier(const void                     *particle,
       }while (contact != 0 && iboucle < compt_max);
 
       if (iboucle > compt_max) {
-        BFT_MALLOC(random,1,cs_real_t);
-        CS_PROCF(zufall, ZUFALL)(&one, random);
+        cs_random_uniform(1, &random);
 
         posasp1[i + nasptot] = pow(seff[iclas] / _pi,0.5) * 2.;
-        posasp2[i + nasptot] = 2 * _pi * (*random);
+        posasp2[i + nasptot] = 2 * _pi * random;
         posasp3[i + nasptot] = 0.;
         posasp4[i + nasptot] = rpart2[iclas];
-
-        BFT_FREE(random);
       }
 
    /* No contact between two asperities of various class */

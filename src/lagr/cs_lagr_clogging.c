@@ -56,6 +56,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
+#include "cs_random.h"
 #include "cs_search.h"
 #include "cs_halo.h"
 
@@ -230,7 +231,6 @@ cs_lagr_clogging_barrier(const void                     *particle,
   cs_real_t mean_nb_cont;
 
   cs_lnum_t  dim_aux = 1, contact_count[1];
-  cs_real_t  contact_count_r[1];
   cs_real_t  value;
   cs_lnum_t  i;
 
@@ -255,11 +255,12 @@ cs_lagr_clogging_barrier(const void                     *particle,
 
   value = 700.;
   if (mean_nb_cont > value) {
-    CS_PROCF(normalen, NORMALEN)(&dim_aux, contact_count_r);
-    contact_count[0] = (int) contact_count_r[0] * pow(mean_nb_cont,0.5) + mean_nb_cont;
+    cs_real_t  contact_count_r;
+    cs_random_normal(1, &contact_count_r);
+    contact_count[0] = (int) contact_count_r * pow(mean_nb_cont,0.5) + mean_nb_cont;
   }
   else {
-    CS_PROCF(fische, FISCHE)(&dim_aux, &mean_nb_cont, contact_count);
+    cs_random_poisson(dim_aux, mean_nb_cont, contact_count);
   }
 
   /* If the surface coverage is above the jamming limit,

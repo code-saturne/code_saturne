@@ -59,6 +59,7 @@
 #include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
+#include "cs_random.h"
 #include "cs_search.h"
 #include "cs_time_step.h"
 #include "cs_timer_stats.h"
@@ -178,10 +179,9 @@ _inlet2(cs_lagr_particle_set_t  *p_set,
 
   /* Calculations of the instantaneous particle velocity */
 
-  cs_lnum_t two = 2;
   cs_real_t vgauss[2];
 
-  CS_PROCF(normalen,NORMALEN) (&two,vgauss);
+  cs_random_normal(2, vgauss);
 
   cs_real_t *part_vel
     = cs_lagr_particle_attr(particle, p_set->p_am, CS_LAGR_VELOCITY);

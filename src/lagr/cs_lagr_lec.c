@@ -565,15 +565,13 @@ cs_restart_lagrangian_checkpoint_read(void)
         itysup  = 0;
         nbval   = 1;
 
-        cs_int_t *tabvar;
+        cs_int_t tabvar;
 
-        BFT_MALLOC(tabvar, 1, cs_int_t);
         char rubriq[]  = "iteration_debut_stats_frontieres_stationnaires";
         ierror = cs_restart_read_section(cs_lag_stat_restart,
                                          rubriq, itysup, nbval, CS_TYPE_cs_int_t,
-                                         tabvar);
-        mstbor = tabvar[0];
-        BFT_FREE(tabvar);
+                                         &tabvar);
+        mstbor = tabvar;
       }
 
       /*  ---> S'il y a une erreur, on suppose que c'est parce que le fichier   */

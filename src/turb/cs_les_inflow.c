@@ -53,6 +53,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_prototypes.h"
+#include "cs_random.h"
 #include "cs_timer.h"
 #include "cs_mesh_location.h"
 #include "cs_restart.h"
@@ -226,10 +227,8 @@ _random_method(const cs_int_t   n_points,
 
   double    random[3];
 
-  int       three = 3;
-
   for (point_id = 0; point_id < n_points; point_id++) {
-    CS_PROCF(normalen, NORMALEN) (&three, random);
+    cs_random_normal(3, random);
     for (coo_id = 0; coo_id < 3; coo_id++)
       fluctuations[point_id*3 + coo_id] = random[coo_id];
   }
@@ -284,7 +283,7 @@ _batten_method(const cs_int_t       n_points,
       /* Random generation of the n_modes frequencies following a normal
          law with a mean of 1 and a variance of 1 (i.e. N(1,1)). */
 
-      CS_PROCF(normalen, NORMALEN) (&inflow->n_modes, inflow->frequency);
+      cs_random_normal(inflow->n_modes, inflow->frequency);
 
       for (mode_id = 0; mode_id < inflow->n_modes; mode_id++)
         inflow->frequency[mode_id] += 1.;
@@ -292,7 +291,7 @@ _batten_method(const cs_int_t       n_points,
       /* Random generation of the n_modes wave vectors following a normal
          law with a mean of 0 and a variance of 0.5 (i.e. N(0,1/2)). */
 
-      CS_PROCF(normalen, NORMALEN) (&three_n_modes, inflow->wave_vector);
+      cs_random_normal(three_n_modes, inflow->wave_vector);
 
       for (mode_id = 0; mode_id < inflow->n_modes; mode_id++)
         for (coo_id = 0; coo_id < 3; coo_id++)
@@ -309,8 +308,8 @@ _batten_method(const cs_int_t       n_points,
         /* Temporary random vectors following a normal law N(0,1) necessary
            to compute the random amplitudes of the sines and cosines */
 
-        CS_PROCF(normalen, NORMALEN) (&three, rcos);
-        CS_PROCF(normalen, NORMALEN) (&three, rsin);
+        cs_random_normal(3, rcos);
+        cs_random_normal(3, rsin);
 
         _CROSS_PRODUCT_3D(inflow->amplitude_cos + mode_id*3,
                           rcos,
@@ -455,8 +454,6 @@ _synthetic_eddy_method(const cs_int_t    n_points,
   int        struct_id;
 
   cs_lnum_t  j;
-
-  int        one = 1;
 
   double     alpha;
   double     random = -1.;
@@ -654,7 +651,7 @@ _synthetic_eddy_method(const cs_int_t    n_points,
 
         for (coo_id = 0; coo_id < 3; coo_id++) {
 
-          CS_PROCF(zufall, ZUFALL)(&one, &random);
+          cs_random_uniform(1, &random);
           inflow->energy[struct_id*3 + coo_id]
             = (random < 0.5) ? -1. : 1.;
 
@@ -664,7 +661,7 @@ _synthetic_eddy_method(const cs_int_t    n_points,
 
         for (coo_id = 0; coo_id < 3; coo_id++) {
 
-          CS_PROCF(zufall, ZUFALL)(&one,&random);
+          cs_random_uniform(1, &random);
           inflow->position[struct_id*3 + coo_id] =
             box_min_coord[coo_id] + random*box_length[coo_id];
 
@@ -795,9 +792,9 @@ _synthetic_eddy_method(const cs_int_t    n_points,
         for (coo_id = 0; coo_id < 3; coo_id++) {
 
           if (randomize[coo_id] == 1) {
-            CS_PROCF(zufall, ZUFALL)(&one, &random);
-            inflow->position[struct_id*3 + coo_id] =
-              box_min_coord[coo_id] + random*box_length[coo_id];
+            cs_random_uniform(1, &random);
+            inflow->position[struct_id*3 + coo_id]
+              = box_min_coord[coo_id] + random*box_length[coo_id];
           }
 
         }
@@ -806,9 +803,9 @@ _synthetic_eddy_method(const cs_int_t    n_points,
 
         for (coo_id = 0; coo_id < 3; coo_id++) {
 
-          CS_PROCF(zufall, ZUFALL)(&one, &random);
-          inflow->energy[struct_id*3 + coo_id] =
-            (random < 0.5) ? -1. : 1.;
+          cs_random_uniform(1, &random);
+          inflow->energy[struct_id*3 + coo_id]
+            = (random < 0.5) ? -1. : 1.;
         }
 
       }

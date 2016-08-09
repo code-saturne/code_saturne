@@ -66,6 +66,7 @@
 #include "cs_parall.h"
 #include "cs_physical_model.h"
 #include "cs_prototypes.h"
+#include "cs_random.h"
 #include "cs_search.h"
 #include "cs_timer_stats.h"
 
@@ -131,7 +132,6 @@ cs_lagr_new(cs_lnum_t  *npt,
   particles = cs_glob_lagr_particle_set;
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
-  const int one = 1;
 
   /* CALCUL DE LA SURFACE MAX DE L'ENTREE :   */
   cs_real_t surfm  = -10.0;
@@ -170,7 +170,7 @@ cs_lagr_new(cs_lnum_t  *npt,
     bool goon = true;
     while (goon) {
 
-      CS_PROCF(zufall, ZUFALL)(&one, &random);
+      cs_random_uniform(1, &random);
       random = random * (cs_real_t) ((maxfac - minfac + 1) - eps);
 
       ifac    = minfac + (int) (random);
@@ -181,7 +181,7 @@ cs_lagr_new(cs_lnum_t  *npt,
 
           /* tirage aleatoire pour determiner si cette face convient */
           /* plus la fa7 est grande plus elle a des chance d'etre choisie */
-          CS_PROCF(zufall, ZUFALL)(&one, &random);
+          cs_random_uniform(1, &random);
 
           if (random <= (fvq->b_face_surf[ifac] / surfm)) {
 
@@ -242,9 +242,9 @@ cs_lagr_new(cs_lnum_t  *npt,
       vec[2]    = are[0] * are[4] - are[1] * are[3];
       surftr[1] = sqrt (vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
 
-      /* tirage d'un nombre aleatoire entre 0 et 1     */
+      /* tirage d'un nombre aleatoire entre 0 et 1 */
       /* pour determiner quel triangle choisir    */
-      CS_PROCF(zufall, ZUFALL) (&one, &random);
+      cs_random_uniform(1, &random);
 
       /* si le deuxieme triangle est choisit, on reorganise */
       /* les points : 4 <--> 2     */
@@ -291,7 +291,7 @@ cs_lagr_new(cs_lnum_t  *npt,
       /* 1) tirage du point 4 sur l'arete 12 */
       random = 0.0;
       while (random <= 0.0 || random >= 1.0)
-        CS_PROCF(zufall, ZUFALL) (&one, &random);
+        cs_random_uniform(1, &random);
 
       for (cs_lnum_t i = 0; i < 3; i++)
         ctr[3 * 3 + i]     = random * ctr[i] + (1.0 - random) * ctr[3 + i];
@@ -299,7 +299,7 @@ cs_lagr_new(cs_lnum_t  *npt,
       /* 2) tirage du point 5 sur l'arete 13 */
       random = 0.0;
       while (random <= 0.0 || random >= 1.0)
-        CS_PROCF(zufall, ZUFALL) (&one, &random);
+        cs_random_uniform(1, &random);
 
       for (cs_lnum_t i = 0; i < 3; i++)
         ctr[12 + i]     = random * ctr[i] + (1.0 - random) * ctr[6 + i];
@@ -504,8 +504,6 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
   /* --> CALCUL DES TIRAGES ALEATOIRES   */
   /*     CALCUL DU TEMPS CARACTERISTIQUE DES PARTICULES */
-  /*     remarque : NORMALEN est dans le fichier ZUFALL.F    */
-  /*     ^^^^^^^^    */
 
   cs_lnum_t nomb = p_id_u - p_id_l;
   cs_real_t *vagaus[3];
@@ -515,9 +513,9 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
   if (cs_glob_lagr_time_scheme->idistu == 1 && nomb > 0) {
 
-    CS_PROCF(normalen,NORMALEN) (&nomb, vagaus[0]);
-    CS_PROCF(normalen,NORMALEN) (&nomb, vagaus[1]);
-    CS_PROCF(normalen,NORMALEN) (&nomb, vagaus[2]);
+    cs_random_normal(nomb, vagaus[0]);
+    cs_random_normal(nomb, vagaus[1]);
+    cs_random_normal(nomb, vagaus[2]);
 
   }
 
@@ -635,9 +633,8 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
       else {
 
-        int one = 1;
         cs_real_t random;
-        CS_PROCF (zufall, ZUFALL) (&one, &random);
+        cs_random_uniform(1, &random);
 
         if (random < 0.25) {
 

@@ -118,6 +118,7 @@ cs_moment_test \
 cs_rank_neighbors_test \
 fvm_selector_test \
 fvm_selector_postfix_test \
+cs_random_test \
 cs_sizes_test
 
 LDFLAGS_CS_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) \
@@ -174,6 +175,12 @@ cs_matrix_test_LDADD    = $(LDADD_CS_TESTS)
 cs_moment_test_SOURCES  = cs_moment_test.c
 cs_moment_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_moment_test_LDADD    = $(LDADD_CS_TESTS)
+
+cs_random_test_SOURCES  = \
+cs_random_test.c \
+$(top_srcdir)/src/base/cs_random.c
+cs_random_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+cs_random_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_rank_neighbors_test_SOURCES  = cs_rank_neighbors_test.c
 cs_rank_neighbors_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)

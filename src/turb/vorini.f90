@@ -72,6 +72,7 @@ use cstnum
 use optcal
 use entsor
 use vorinc
+use cs_c_bindings
 
 !===============================================================================
 
@@ -90,7 +91,7 @@ double precision xtmps(nvomax)   , xtpsli(nvomax)
 
 ! Local variables
 
-integer          ii, jj, kk, iii, iun, ivort, iient, iok
+integer          ii, jj, kk, iii, ivort, iient, iok
 
 double precision dd
 double precision drand(1), phidat, xx, yy, zz
@@ -205,8 +206,6 @@ call vorimp(ient)
 ! 3. REMPLISSAGE DES TABLEAUX DE DONNEES EN ENTREE
 !===============================================================================
 
-iun = 1
-
 if(icas(ient).eq.1.or.icas(ient).eq.2.or.icas(ient).eq.3) then
   open(file=ficvor(ient),unit=impdvo)
   rewind(impdvo)
@@ -316,20 +315,20 @@ if(isuivo.eq.0.or.initvo(ient).eq.1) then
 !-------------------------------
 !  Tirage des positions
 !-------------------------------
-  iun = 1
+
   if(icas(ient).eq.1)then
     do ii = 1, nvor
-      call zufall(iun,drand(1))
+      call cs_random_uniform(1, drand)
       yzv(ii,1) = lly(ient) * drand(1) - lly(ient)/2.d0
-      call zufall(iun,drand(1))
+      call cs_random_uniform(1, drand)
       yzv(ii,2) = llz(ient) * drand(1) - llz(ient)/2.d0
     enddo
   elseif(icas(ient).eq.2) then
     do ii = 1, nvor
  15         continue
-      call zufall(iun,drand(1))
+      call cs_random_uniform(1, drand)
       yzv(ii,1) = lld(ient) * drand(1) - lld(ient)/2.0d0
-      call zufall(iun,drand(1))
+      call cs_random_uniform(1, drand)
       yzv(ii,2) = lld(ient) * drand(1) - lld(ient)/2.0d0
       if ((yzv(ii,1)**2+yzv(ii,2)**2).gt.                     &
            (lld(ient)/2.d0)**2) then
@@ -338,9 +337,9 @@ if(isuivo.eq.0.or.initvo(ient).eq.1) then
     enddo
   elseif(icas(ient).eq.3.or.icas(ient).eq.4) then
     do ii = 1, nvor
-      call zufall(iun,drand(1))
+      call cs_random_uniform(1, drand)
       yzv(ii,1) = ymin(ient) + lly(ient) * drand(1)
-      call zufall(iun,drand(1))
+      call cs_random_uniform(1, drand)
       yzv(ii,2) = zmin(ient) + llz(ient) * drand(1)
     enddo
   endif
@@ -349,7 +348,7 @@ if(isuivo.eq.0.or.initvo(ient).eq.1) then
 !--------------
   if(itlivo(ient).eq.1) then
     do ii = 1, nvor
-      call zufall(iun,drand(1))
+      call cs_random_uniform(1, drand)
       xtmps(ii) = drand(1)*tlimvo(ient)
 
 ! on fait cela pour que les vortex ne disparaissent pas tous
@@ -378,7 +377,7 @@ if(isuivo.eq.0.or.initvo(ient).eq.1) then
 !------------------
   do ii = 1, nvor
     xsignv(ii) = 1.d0
-    call zufall(iun,drand(1))
+    call cs_random_uniform(1, drand)
     if (drand(1).lt.0.5d0) xsignv(ii) = -1.d0
   enddo
 endif

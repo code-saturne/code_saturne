@@ -956,6 +956,30 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function for uniform distribution random number
+
+    subroutine cs_random_uniform(n, a) &
+      bind(C, name='cs_random_uniform')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: n
+      real(kind=c_double), dimension(*), intent(out) :: a
+    end subroutine cs_random_uniform
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for normal distribution random number
+
+    subroutine cs_random_normal(n, x) &
+      bind(C, name='cs_random_normal')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: n
+      real(kind=c_double), dimension(*), intent(out) :: x
+    end subroutine cs_random_normal
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function initializing a restart file
 
     function cs_restart_create(name, path, mode) result(r) &

@@ -52,6 +52,7 @@
 #include "bft_printf.h"
 
 #include "cs_physical_constants.h"
+#include "cs_random.h"
 #include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
@@ -409,8 +410,7 @@ _dep_diffusion_phases(cs_real_t *dx,
   cs_real_t  p33, grga2, gagam, gaome, yplusa, dxaux, dtp1;
 
   cs_real_t vagaus[4];
-  cs_lnum_t quatre = 4;
-  CS_PROCF(normalen,NORMALEN) (&quatre, vagaus);
+  cs_random_normal(4, vagaus);
 
   cs_real_t vpart0 = *vpart;
 
@@ -658,10 +658,8 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
                           cs_real_t *piiln)
 {
   cs_real_t vagaus[3], vagausbr[2];
-  cs_lnum_t n = 3;
-  CS_PROCF(normalen,NORMALEN) (&n, vagaus);
-  n = 2;
-  CS_PROCF(normalen,NORMALEN) (&n, vagausbr);
+  cs_random_normal(3, vagaus);
+  cs_random_normal(2, vagaus);
 
   cs_real_t force  = *gnorm * *taup;
   cs_real_t vvue0  = *vvue;
@@ -1063,9 +1061,8 @@ cs_lagr_deposition(cs_real_t  dtp,
   paux   = paux / (1.0 + paux);
   cs_real_t kdifcl = kdif * (tdiffu / ttotal);
 
-  cs_lnum_t two = 2;
   cs_real_t unif[2];
-  CS_PROCF (zufall,ZUFALL) (&two, unif);
+  cs_random_uniform(2, unif);
 
   cs_lnum_t indint = 0;
 
@@ -1082,8 +1079,7 @@ cs_lagr_deposition(cs_real_t  dtp,
   }
   else if (*marko == 20) {
 
-    cs_lnum_t one = 1;
-    CS_PROCF (zufall,ZUFALL) (&one, &unif1);
+    cs_random_uniform(1, &unif1);
 
     if (unif1 < paux)
       *marko  = 1;
@@ -1094,8 +1090,7 @@ cs_lagr_deposition(cs_real_t  dtp,
   }
   else if (*marko == 30) {
 
-    cs_lnum_t one = 1;
-    CS_PROCF (zufall,ZUFALL) (&one, &unif1);
+    cs_random_uniform(1, &unif1);
 
     if (unif1 < 0.5)
       *marko  = 1;

@@ -63,6 +63,7 @@
 #include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
+#include "cs_random.h"
 #include "cs_search.h"
 #include "cs_timer_stats.h"
 
@@ -428,9 +429,8 @@ precdi (cs_real_t   *vela,
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RESIDENCE_TIME, 0.0);
 
       if (cs_glob_lagr_model->deposition == 1) {
-        cs_lnum_t one = 1;
         cs_real_t random;
-        CS_PROCF(zufall,ZUFALL) (&one, &random);
+        cs_random_uniform(1, &random);
         cs_lagr_particle_set_real(particle, p_am,
                                   CS_LAGR_INTERF, 5.0 + 15.0 * random);
         cs_lagr_particle_set_real(particle, p_am,

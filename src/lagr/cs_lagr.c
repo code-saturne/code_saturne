@@ -260,7 +260,7 @@ cs_lagr_encrustation_t *cs_glob_lagr_encrustation
 
 /* lagr physico chemical structure and associated pointer */
 static cs_lagr_physico_chemical_t _cs_glob_lagr_physico_chemical
-  = {0, 0, 0, 0, 0, 0};
+= {0, 0, 0, 0, 0, 0, 0};
 cs_lagr_physico_chemical_t *cs_glob_lagr_physico_chemical
   = &_cs_glob_lagr_physico_chemical;
 
@@ -938,7 +938,7 @@ _create_bdy_cond_struct(int   n_max_zones)
  *----------------------------------------------------------------------------*/
 
 static cs_lagr_internal_condition_t *
-_create_internal_cond_struct()
+_create_internal_cond_struct(void)
 {
   cs_lagr_internal_condition_t *internal_cond = NULL;
   cs_mesh_t *mesh = cs_glob_mesh;

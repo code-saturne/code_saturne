@@ -87,6 +87,7 @@
 #include "cs_preprocessor_data.h"
 #include "cs_probe.h"
 #include "cs_prototypes.h"
+#include "cs_random.h"
 #include "cs_restart.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
@@ -187,6 +188,11 @@ cs_run(void)
   cs_partition_external_library_info();
 
   bft_printf("\n");
+
+  /* Initialize random number generator
+     (used in only some cases, but safe to do, and inexpensive) */
+
+  cs_random_seed(cs_glob_rank_id + 1);
 
   /* Initialize global structures for main mesh */
 

@@ -58,6 +58,7 @@
 #include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
+#include "cs_random.h"
 #include "cs_search.h"
 #include "cs_timer_stats.h"
 
@@ -923,9 +924,8 @@ cs_lagr_part_copy(cs_lnum_t  dest,
   memcpy(particles->p_buffer + particles->p_am->extents*(dest),
          particles->p_buffer + particles->p_am->extents*(src),
          particles->p_am->extents);
-  cs_lnum_t one = 1;
   cs_real_t random = -1;
-  CS_PROCF(zufall, ZUFALL)(&one, &random);
+  cs_random_uniform(1, &random);
   cs_lagr_particles_set_real(particles, (dest-1), CS_LAGR_RANDOM_VALUE,
                              random);
 }

@@ -68,6 +68,7 @@
 
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_random.h"
 #include "cs_prototypes.h"
 
 #include "cs_gui_particles.h"
@@ -1029,9 +1030,8 @@ cs_lagr_injection(int        time_id,
 
           for (cs_lnum_t ipart = 0; ipart < userdata->nb_part; ipart++) {
 
-            int one = 1;
             cs_real_t random;
-            CS_PROCF(zufall, ZUFALL)(&one, &random);
+            cs_random_uniform(1, &random);
 
             /* blindage   */
             random = random + 1e-09;
@@ -1232,12 +1232,11 @@ cs_lagr_injection(int        time_id,
 
             if (userdata->diameter_variance > 0.0) {
 
-              int one = 1;
-              double    random[1];
-              CS_PROCF (normalen,NORMALEN) (&one, random);
+              double    random;
+              cs_random_normal(1, &random);
 
               cs_real_t diam =   userdata->diameter
-                               + random[0] * userdata->diameter_variance;
+                               + random * userdata->diameter_variance;
               cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, diam);
 
               /* On verifie qu'on obtient un diametre dans la gamme des 99,7% */
@@ -1482,8 +1481,7 @@ cs_lagr_injection(int        time_id,
           if (cs_glob_lagr_model->deposition == 1) {
 
             cs_real_t random;
-            int one = 1;
-            CS_PROCF(zufall, ZUFALL)(&one, &random);
+            cs_random_uniform(1, &random);
             cs_lagr_particle_set_real(particle, p_am,
                                       CS_LAGR_INTERF, 5.0 + 15.0 * random);
             cs_lagr_particle_set_real(particle, p_am,
@@ -1644,9 +1642,8 @@ cs_lagr_injection(int        time_id,
 
     unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-    cs_lnum_t one = 1;
     cs_real_t random = -1;
-    CS_PROCF(zufall, ZUFALL)(&one, &random);
+    cs_random_uniform(1, &random);
     cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RANDOM_VALUE,
                              random);
 

@@ -75,6 +75,7 @@ use cstnum
 use cstphy
 use entsor
 use vorinc
+use cs_c_bindings
 
 !===============================================================================
 
@@ -94,7 +95,7 @@ double precision xtps(nvomax)   , xtpsli(nvomax)
 
 ! Local variables
 
-integer          ii, jj, kk, iii, iun
+integer          ii, jj, kk, iii
 
 double precision sens, dy, dz
 double precision xxv, xxw
@@ -105,7 +106,7 @@ double precision phidat
 !===============================================================================
 ! 1. DEPLACEMENT DES VORTEX
 !===============================================================================
-iun = 1
+
 do ii = 1, nvor
   xtps(ii) = xtps(ii) + dtref
 enddo
@@ -120,15 +121,15 @@ if(idepvo(ient).eq.1)then
   enddo
   do ii = 1, nvor
     sens = 1.d0
-    call zufall(iun,drand(1))
+    call cs_random_uniform(1, drand)
     if (drand(1).lt.0.5d0) sens = -1.d0
-    call zufall(iun,drand(1))
+    call cs_random_uniform(1, drand)
     dy = drand(1) * ud(ient) * dtref
     yzv(ii,1) = yzv(ii,1) + sens * dy
     sens = 1.d0
-    call zufall(iun,drand(1))
+    call cs_random_uniform(1, drand)
     if (drand(1).lt.0.5d0) sens = -1.d0
-    call zufall(iun,drand(1))
+    call cs_random_uniform(1, drand)
     dz = drand(1) * ud(ient) * dtref
     yzv(ii,2) = yzv(ii,2) + sens * dz
   enddo
@@ -249,24 +250,24 @@ do ii = 1, nvor
 ! - Position
 
     if(icas(ient).eq.1) then
-      call zufall(iun,drand(1))
+      call cs_random_uniform(1, drand)
       yzv(ii,1) = lly(ient) * drand(1) - lly(ient) / 2.d0
-      call zufall(iun,drand(1))
+      call cs_random_uniform(1, drand)
       yzv(ii,2) = llz(ient) * drand(1) - llz(ient) / 2.d0
     elseif(icas(ient).eq.2) then
  15   continue
-      call zufall(iun,drand(1))
+      call cs_random_uniform(1, drand)
       yzv(ii,1) = lld(ient) * drand(1) - lld(ient) / 2.0d0
-      call zufall(iun,drand(1))
+      call cs_random_uniform(1, drand)
       yzv(ii,2) = lld(ient) * drand(1) - lld(ient) / 2.0d0
       if((yzv(ii,1)**2+yzv(ii,2)**2).gt.                      &
          (lld(ient)/2.0d0)**2) then
         goto 15
       endif
     elseif(icas(ient).eq.3.or.icas(ient).eq.4) then
-      call zufall(iun,drand(1))
+      call cs_random_uniform(1, drand)
       yzv(ii,1) = ymin(ient) + lly(ient) * drand(1)
-      call zufall(iun,drand(1))
+      call cs_random_uniform(1, drand)
       yzv(ii,2) = zmin(ient) + llz(ient) * drand(1)
     endif
 
@@ -290,7 +291,7 @@ do ii = 1, nvor
 
 ! - Sens de rotation
 
-    call zufall(iun,drand(1))
+    call cs_random_uniform(1, drand)
     if(drand(1).gt.0.5d0) xsignv(ii) = -1.0d0*xsignv(ii)
   endif
 enddo

@@ -48,6 +48,7 @@
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
 #include "cs_prototypes.h"
+#include "cs_random.h"
 #include "cs_thermal_model.h"
 
 #include "cs_lagr.h"
@@ -1360,7 +1361,6 @@ _lagdep(cs_real_t     dtp,
   /* Particles management */
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
-  const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
@@ -1713,7 +1713,6 @@ cs_lagr_sde(cs_real_t      dt_p,
             cs_real_t      terbru[],
             cs_real_t      vislen[])
 {
-  cs_lnum_t one = 1;
   cs_real_t *romp;
 
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
@@ -1759,7 +1758,7 @@ cs_lagr_sde(cs_real_t      dt_p,
         for (cs_lnum_t id = 0; id < 3; id++) {
 
           for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++)
-            CS_PROCF(normalen, NORMALEN)(&one, &(vagaus[ip][id][ivf]));
+            cs_random_normal(1, &(vagaus[ip][id][ivf]));
 
         }
 
@@ -1770,15 +1769,11 @@ cs_lagr_sde(cs_real_t      dt_p,
   }
   else {
 
-    for (cs_lnum_t ivf = 0; ivf < 3; ivf++) {
-
-      for (cs_lnum_t id = 0; id < 3; id++) {
-
-        for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++)
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+      for (cs_lnum_t ivf = 0; ivf < 3; ivf++) {
+        for (cs_lnum_t id = 0; id < 3; id++)
           vagaus[ip][id][ivf] = 0.0;
-
       }
-
     }
 
   }
@@ -1794,8 +1789,7 @@ cs_lagr_sde(cs_real_t      dt_p,
     for (cs_lnum_t ivf = 0; ivf < cs_glob_lagr_const_dim->nbrgau; ivf++) {
 
       for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++)
-        CS_PROCF(normalen, NORMALEN)
-          (&one, &(brgaus[ip * cs_glob_lagr_const_dim->nbrgau + ivf]));
+        cs_random_normal(1, &(brgaus[ip * cs_glob_lagr_const_dim->nbrgau + ivf]));
 
     }
 

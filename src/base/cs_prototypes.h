@@ -128,16 +128,6 @@ extern void CS_PROCF (findpt, FINDPT)
 );
 
 /*----------------------------------------------------------------------------
- * Generator for distribution function of p's
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (fische, FISCHE)
-(
- const cs_int_t   *n,
- const cs_real_t  *mu,
-       cs_int_t    p[]);
-
-/*----------------------------------------------------------------------------
  * Check necessity of extended mesh from FORTRAN options.
  *
  * Interface Fortran :
@@ -231,35 +221,6 @@ cs_user_rad_transfer_net_flux(const int        itypfb[],
                               const cs_real_t  eps[],
                               const cs_real_t  ck[],
                               cs_real_t        net_flux[]);
-
-/*----------------------------------------------------------------------------
- * Uniform random number generator
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (zufalli, zufalli)
-(
- const cs_int_t   *n              /* --> size of the vector */
-);
-
-/*----------------------------------------------------------------------------
- * Uniform random number generator
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (zufall, zufall)
-(
- const cs_int_t   *n,             /* --> size of the vector */
- const cs_real_t  *a              /* <-- generated random number vector */
-);
-
-/*----------------------------------------------------------------------------
- * Gaussian random number generator
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (normalen, normalen)
-(
- const cs_int_t   *n,             /* --> size of the vector */
- const cs_real_t  *x              /* <-- generated random number vector */
-);
 
 /*----------------------------------------------------------------------------
  * Convert temperature to enthalpy at boundary
@@ -639,7 +600,6 @@ cs_user_turbomachinery(void);
 void
 cs_user_turbomachinery_rotor(void);
 
-
 /*============================================================================
  *  CDO User function prototypes
  *============================================================================*/
@@ -749,8 +709,6 @@ void
 cs_user_cdo_end_extra_op(const cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define scaling parameter for electric model
 */
@@ -759,7 +717,9 @@ cs_user_cdo_end_extra_op(const cs_domain_t     *domain);
 void
 cs_user_scaling_elec(const cs_mesh_t             *mesh,
                      const cs_mesh_quantities_t  *mesh_quantities,
-                           cs_real_t             *dt);
+                     cs_real_t                   *dt);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

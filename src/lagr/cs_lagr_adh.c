@@ -56,6 +56,7 @@
 #include "bft_error.h"
 
 #include "cs_physical_constants.h"
+#include "cs_random.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
@@ -313,7 +314,7 @@ cs_lagr_adh(cs_lnum_t   ip,
     cs_lnum_t tmp = 1;
     cs_real_t rtmp;
 
-    CS_PROCF(normalen,NORMALEN) (&tmp, &rtmp);
+    cs_random_normal(1, &rtmp);
 
     tmp = (int)nmoyag + sqrt(nmoyag) * rtmp;
     tmp = CS_MAX(0, tmp);
@@ -323,10 +324,9 @@ cs_lagr_adh(cs_lnum_t   ip,
   }
   else {
 
-    cs_lnum_t tmp = 1;
     cs_lnum_t ntmp;
 
-    CS_PROCF(fische, FISCHE)(&tmp, &nmoyag, &ntmp);
+    cs_random_poisson(1, nmoyag, &ntmp);
 
     cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES, ntmp);
 
@@ -341,10 +341,9 @@ cs_lagr_adh(cs_lnum_t   ip,
 
     if (nmoyag > 600.0) {
 
-      cs_lnum_t tmp = 1;
       cs_real_t rtmp;
 
-      CS_PROCF(normalen,NORMALEN) (&tmp, &rtmp);
+      cs_random_normal(1, &rtmp);
 
       nbasg = (int)nmoyag + sqrt (nmoyag) * rtmp;
       nbasg = CS_MAX(0, nbasg);
@@ -352,10 +351,9 @@ cs_lagr_adh(cs_lnum_t   ip,
     }
     else {
 
-      cs_lnum_t tmp = 1;
       cs_lnum_t ntmp;
 
-      CS_PROCF(fische, FISCHE)(&tmp, &nmoyag, &ntmp);
+      cs_random_poisson(1, nmoyag, &ntmp);
 
       nbasg = ntmp;
 
@@ -385,7 +383,7 @@ cs_lagr_adh(cs_lnum_t   ip,
       cs_lnum_t tmp = 1;
       cs_real_t rtmp;
 
-      CS_PROCF(normalen,NORMALEN) (&tmp, &rtmp);
+      cs_random_normal(1, &rtmp);
 
       tmp = (int)nmoyap + sqrt(nmoyap) * rtmp;
       tmp = CS_MAX(0, tmp);
@@ -395,10 +393,9 @@ cs_lagr_adh(cs_lnum_t   ip,
     }
     else {
 
-      cs_lnum_t tmp = 1;
       cs_lnum_t ntmp;
 
-      CS_PROCF(fische, FISCHE)(&tmp, &nmoyap, &ntmp);
+      cs_random_poisson(1, nmoyap, &ntmp);
 
       cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, ntmp);
 
@@ -412,10 +409,9 @@ cs_lagr_adh(cs_lnum_t   ip,
 
       if (nmoyap > 600.0) {
 
-        cs_lnum_t tmp = 1;
         cs_real_t rtmp;
 
-        CS_PROCF(normalen,NORMALEN) (&tmp, &rtmp);
+        cs_random_normal(1, &rtmp);
 
         nbasp = (int)nmoyap + sqrt (nmoyap) * rtmp;
         nbasp = CS_MAX(0, nbasp);
@@ -425,10 +421,9 @@ cs_lagr_adh(cs_lnum_t   ip,
       }
       else {
 
-        cs_lnum_t tmp = 1;
         cs_lnum_t ntmp;
 
-        CS_PROCF(fische, FISCHE)(&tmp, &nmoyap, &ntmp);
+        cs_random_poisson(1, nmoyap, &ntmp);
         nbasp = ntmp;
 
       }
@@ -458,7 +453,7 @@ cs_lagr_adh(cs_lnum_t   ip,
       cs_lnum_t tmp = 1;
       cs_real_t rtmp;
 
-      CS_PROCF(normalen,NORMALEN) (&tmp, &rtmp);
+      cs_random_normal(1, &rtmp);
 
       tmp = (int)nmoyap + sqrt(nmoyap) * rtmp;
       tmp = CS_MAX(0, tmp);
@@ -468,10 +463,9 @@ cs_lagr_adh(cs_lnum_t   ip,
     }
     else {
 
-      cs_lnum_t tmp = 1;
       cs_lnum_t ntmp;
 
-      CS_PROCF(fische, FISCHE)(&tmp, &nmoyap, &ntmp);
+      cs_random_poisson(1, nmoyap, &ntmp);
 
       cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, ntmp);
 
@@ -485,10 +479,9 @@ cs_lagr_adh(cs_lnum_t   ip,
 
       if (nmoyap > 600.0) {
 
-        cs_lnum_t tmp = 1;
         cs_real_t rtmp;
 
-        CS_PROCF(normalen,NORMALEN) (&tmp, &rtmp);
+        cs_random_normal(1, &rtmp);
 
         nbasp = (int)nmoyap + sqrt (nmoyap) * rtmp;
         nbasp = CS_MAX(0, nbasp);
@@ -496,10 +489,9 @@ cs_lagr_adh(cs_lnum_t   ip,
       }
       else {
 
-        cs_lnum_t tmp = 1;
         cs_lnum_t ntmp;
 
-        CS_PROCF(fische, FISCHE)(&tmp, &nmoyap, &ntmp);
+        cs_random_poisson(1, nmoyap, &ntmp);
 
         nbasp = ntmp;
 
@@ -603,11 +595,9 @@ cs_lagr_adh(cs_lnum_t   ip,
   else
     *adhesion_energ = CS_ABS(*adhesion_energ);
 
-
-  /*  Calculation of adhesion torques exerted on the particle     */
-  cs_lnum_t tmp = 1;
+  /*  Calculation of adhesion torques exerted on the particle */
   cs_real_t rtmp;
-  CS_PROCF(zufall,ZUFALL)(&tmp, &rtmp);
+  cs_random_uniform(1, &rtmp);
 
   cs_real_t dismom = rtmp;
   if (nbasp > 0)
