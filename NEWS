@@ -13,7 +13,24 @@ Physical modelling
 Architectural changes
 ---------------------
 
-- removed global_row number from matrix structures, as it was never used,
+- Removed all the remaining mappings between fields and propce array:
+  * removed propce arrays
+  * removed ipproc array
+  * removed nproce
+  * removed iprpfl indirection array between field indices and properties
+    numbers; iprpfl is kept for compatibility but is just an identity
+    function (hence still known in user subroutines);
+  * irom, iviscl, etc.. are now directly field indices (hence starting from 0)
+  * test on variability of specific heat (icp), isochoric specific heat (icv)
+    and volumetric viscosity (iviscv) are consequently shifted of 1
+    (-1 : uniform field, >=0: non uniform)
+  * renamed _owner utility subroutines
+  * renamed most used add_property_field into add_property_field_1d
+  * mesh viscosity now a 3-dimensional field when strictly orthotropic
+  * removed iroma, ivisla, ivista, icpa variables; previous values of these
+      fields now accessed by field_get_val_prev subroutine.
+
+- Removed global_row number from matrix structures, as it was never used,
   and could cause confusion with global ids such as those used with
   range sets (which are realy used in some cases).
 
