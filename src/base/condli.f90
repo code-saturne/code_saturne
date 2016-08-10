@@ -178,7 +178,7 @@ integer          ihcp  , iscal
 integer          inc   , iprev , iccocg
 integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
-integer          ifcvsl, ipccv
+integer          ifcvsl
 integer          itplus, itstar
 integer          f_id, iut, ivt, iwt, iflmab
 integer          kbfid, b_f_id
@@ -222,8 +222,8 @@ double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, viscls
 double precision, dimension(:), pointer :: cpro_cp, cpro_cv, cvar_s, cvara_s
 double precision, dimension(:), pointer :: bvar_s, btemp_s
-double precision, dimension(:), pointer :: cpro_visma1, cpro_visma2, cpro_visma3
-double precision, dimension(:,:), pointer :: cvar_ts, cvara_ts
+double precision, dimension(:), pointer :: cpro_visma_s
+double precision, dimension(:,:), pointer :: cvar_ts, cvara_ts, cpro_visma_v
 
 ! darcy arrays
 double precision, dimension(:), pointer :: permeability
@@ -285,8 +285,6 @@ endif
 ! velipb stores the velocity in i' of boundary cells
 
 ! initialize variables to avoid compiler warnings
-
-ipccv = 0
 
 rinfiv(1) = rinfin
 rinfiv(2) = rinfin
@@ -412,17 +410,8 @@ xyp0   = xyzp0(2)
 xzp0   = xyzp0(3)
 
 ! --- physical quantities
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
-
-! --- compressible
-if (ippmod(icompf).ge.0) then
-  if(icv.gt.0) then
-    ipccv  = ipproc(icv)
-  else
-    ipccv = 0
-  endif
-endif
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 
 !===============================================================================
 ! 5. compute the temperature or the enthalpy in i' for boundary cells
@@ -2201,12 +2190,12 @@ endif
 
 if (nscal.ge.1) then
 
-  if(icp.gt.0) then
-    call field_get_val_s(iprpfl(icp), cpro_cp)
+  if(icp.ge.0) then
+    call field_get_val_s(icp, cpro_cp)
   endif
 
-  if (ipccv.gt.0) then
-    call field_get_val_s(iprpfl(ipccv), cpro_cv)
+  if (ippmod(icompf).ge.0.and.icv.ge.0) then
+    call field_get_val_s(icv, cpro_cv)
   endif
 
   do ii = 1, nscal
@@ -2237,7 +2226,7 @@ if (nscal.ge.1) then
     endif
 
     if (iscacp(iscal).eq.1) then
-      if(icp.gt.0) then
+      if(icp.ge.0) then
         ihcp = 2
       else
         ihcp = 1
@@ -2384,7 +2373,7 @@ if (nscal.ge.1) then
         !       lorsque la variable transportee est l'enthalpie
         !         iscsth(ii).eq.2 : hcov(ifac,iph) = hint*cpr
         !         avec
-        !            if(icp.gt.0) then
+        !            if(icp.ge.0) then
         !              cpr = cpro_cp(iel)
         !            else
         !              cpr = cp0
@@ -2410,7 +2399,7 @@ if (nscal.ge.1) then
           ! Enthalpy
           if (itherm.eq.2) then
             ! If Cp is variable
-            if (icp.gt.0) then
+            if (icp.ge.0) then
               bhconv(ifac) = hint*cpro_cp(iel)
             else
               bhconv(ifac) = hint*cp0
@@ -2419,7 +2408,7 @@ if (nscal.ge.1) then
           ! Total energy (compressible module)
           elseif (itherm.eq.3) then
             ! If Cv is variable
-            if (ipccv.gt.0) then
+            if (ippmod(icompf).ge.0.and.icv.ge.0) then
               bhconv(ifac) = hint*cpro_cv(iel)
             else
               bhconv(ifac) = hint*cv0
@@ -2461,7 +2450,7 @@ if (nscal.ge.1) then
           ! Enthalpy
           if (itherm.eq.2) then
             ! If Cp is variable
-            if (icp.gt.0) then
+            if (icp.ge.0) then
               bhconv(ifac) = hint*cpro_cp(iel)
             else
               bhconv(ifac) = hint*cp0
@@ -2470,7 +2459,7 @@ if (nscal.ge.1) then
           ! Energy (compressible module)
           elseif (itherm.eq.3) then
             ! If Cv is variable
-            if (ipccv.gt.0) then
+            if (ippmod(icompf).ge.0.and.icv.ge.0) then
               bhconv(ifac) = hint*cpro_cv(iel)
             else
               bhconv(ifac) = hint*cv0
@@ -2650,9 +2639,11 @@ if (iale.eq.1) then
   call field_get_coefaf_v(ivarfl(iuma), cfaale)
   call field_get_coefbf_v(ivarfl(iuma), cfbale)
 
-  call field_get_val_s(iprpfl(ivisma(1)), cpro_visma1)
-  call field_get_val_s(iprpfl(ivisma(2)), cpro_visma2)
-  call field_get_val_s(iprpfl(ivisma(3)), cpro_visma3)
+  if (iortvm.eq.0) then
+    call field_get_val_s(ivisma, cpro_visma_s)
+  else
+    call field_get_val_v(ivisma, cpro_visma_v)
+  endif
 
   do ifac = 1, nfabor
 
@@ -2660,11 +2651,11 @@ if (iale.eq.1) then
     distbf = distb(ifac)
     srfbn2 = surfbn(ifac)**2
     if (iortvm.eq.0) then
-      hint = cpro_visma1(iel)/distbf
+      hint = cpro_visma_s(iel)/distbf
     else
-      hint = ( cpro_visma1(iel)*surfbo(1,ifac)**2    &
-             + cpro_visma2(iel)*surfbo(2,ifac)**2    &
-             + cpro_visma3(iel)*surfbo(3,ifac)**2 )  &
+      hint = ( cpro_visma_v(1,iel)*surfbo(1,ifac)**2    &
+             + cpro_visma_v(2,iel)*surfbo(2,ifac)**2    &
+             + cpro_visma_v(3,iel)*surfbo(3,ifac)**2 )  &
            /distbf/srfbn2
     endif
 

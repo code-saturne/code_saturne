@@ -275,8 +275,6 @@ module entsor
   character(len=80), save :: nomva0
 
   !> locator pointer for variables output
-  integer, save :: ipppro(npromx)
-  !> locator pointer for variables output
   integer, save :: ippdt
   !> locator pointer for variables output
   integer, save :: ipptx
@@ -457,7 +455,7 @@ contains
 '@    ======='                                                 ,/,&
 '@     Number of possible time plots too large'                ,/,&
 '@'                                                            ,/,&
-'@  The type of calcultion defined'                            ,/,&
+'@  The type of calculation defined'                           ,/,&
 '@    leads to a number of potential time plots'               ,/,&
 '@    for active fields equal to ', i10                        ,/,&
 '@  The maximum number of time plots defined'                  ,/,&

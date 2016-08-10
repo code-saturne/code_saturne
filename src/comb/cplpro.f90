@@ -73,35 +73,24 @@ implicit none
 
 ! Local variables
 
-integer       nprini
-
 !===============================================================================
 
-nprini = nproce
-
 ! Continuous phase (gas mixture)
-call add_property_field('t_gas', 'T_Gas', itemp1)
+call add_property_field_1d('t_gas', 'T_Gas', itemp1)
 
 ! State variables
 
 ! ---> Variables algebriques propres a la phase continue
 
-call add_property_field('ym_chx1m', 'Ym_CHx1m', iym1(1))
-call add_property_field('ym_chx2m', 'Ym_CHx2m', iym1(2))
-call add_property_field('ym_co',    'Ym_CO',    iym1(3))
-call add_property_field('ym_o2',    'Ym_O2',    iym1(4))
-call add_property_field('ym_co2',   'Ym_CO2',   iym1(5))
-call add_property_field('ym_h2o',   'Ym_H2O',   iym1(6))
-call add_property_field('ym_n2',    'Ym_N2',    iym1(7))
-call add_property_field('xm',       'Xm',       immel)
+call add_property_field_1d('ym_chx1m', 'Ym_CHx1m', iym1(1))
+call add_property_field_1d('ym_chx2m', 'Ym_CHx2m', iym1(2))
+call add_property_field_1d('ym_co',    'Ym_CO',    iym1(3))
+call add_property_field_1d('ym_o2',    'Ym_O2',    iym1(4))
+call add_property_field_1d('ym_co2',   'Ym_CO2',   iym1(5))
+call add_property_field_1d('ym_h2o',   'Ym_H2O',   iym1(6))
+call add_property_field_1d('ym_n2',    'Ym_N2',    iym1(7))
+call add_property_field_1d('xm',       'Xm',       immel)
 call hide_property(immel)
-
-! Nb de variables algebriques (ou d'etat)
-!     propre a la physique particuliere NSALPP
-!     total NSALTO
-
-nsalpp = nproce - nprini
-nsalto = nproce
 
 return
 end subroutine cplpro

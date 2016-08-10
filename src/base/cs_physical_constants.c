@@ -108,10 +108,10 @@ BEGIN_C_DECLS
         equations of state.
   \var  cs_fluid_properties_t::icp
         property index of the isobaric specific heat
-        - 0: uniform isobaric specific heat (no property field defined)
+        - -1: uniform isobaric specific heat (no property field defined)
   \var  cs_fluid_properties_t::icv
         property index of the isochoric specific heat
-        - 0: uniform isochoric specific heat (no property field defined)
+        - -1: uniform isochoric specific heat (no property field defined)
   \var  cs_fluid_properties_t::irovar
         variable density field \f$ \rho \f$:
         - 0: false
@@ -289,8 +289,8 @@ static cs_physical_constants_t _physical_constants = {
 static cs_fluid_properties_t  _fluid_properties = {
   .ixyzp0   = -1,
   .ieos     = -1,
-  .icp      = 0,
-  .icv      = 0,
+  .icp      = -1,
+  .icv      = -1,
   .irovar   = 0,
   .ivivar   = 0,
   .ivsuth   = 0,

@@ -202,7 +202,7 @@ if (iwarni(ivar).ge.1) then
 endif
 
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iviscl, viscl)
 
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 if (iturb.ne.31) call field_get_val_s(ivarfl(ial), cvar_al)

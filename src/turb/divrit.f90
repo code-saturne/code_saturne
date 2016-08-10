@@ -130,8 +130,8 @@ allocate(gradt(3,ncelet), thflxf(nfac), thflxb(nfabor))
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
-if (ibeta.gt.0) then
-  call field_get_val_s(iprpfl(ipproc(ibeta)), cpro_beta)
+if (ibeta.ge.0) then
+  call field_get_val_s(ibeta, cpro_beta)
 endif
 
 ! Compute scalar gradient
@@ -251,7 +251,7 @@ if (ityturt(iscal).ne.3) then
 
         ! AFM and EB-AFM models
         !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
-        if (ityturt(iscal).eq.2.and.ibeta.gt.0) then
+        if (ityturt(iscal).eq.2.and.ibeta.ge.0) then
           if (itt.gt.0) then
             temp(ii) = temp(ii) - ctheta(iscal)*xtt*                           &
                        etaafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
@@ -318,7 +318,7 @@ if (ityturt(iscal).ne.3) then
 
         ! AFM and EB-AFM models
         !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
-        if (ityturt(iscal).eq.2.and.ibeta.gt.0) then
+        if (ityturt(iscal).eq.2.and.ibeta.ge.0) then
           if (itt.gt.0) then
             temp(ii) = temp(ii) - ctheta(iscal)*xtt*                            &
                        etaafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)

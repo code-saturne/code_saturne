@@ -45,7 +45,6 @@
 !> \param[in]     isostd        indicator of standar outlet
 !>                               +index of the reference face
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     frcxt         external force generating the hydrostatic
 !>                              pressure
 !> \param[in]     prhyd         hydrostatic pressure predicted at cell centers
@@ -58,7 +57,7 @@
 subroutine navstv &
  ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
    isostd ,                                                       &
-   dt     , propce ,                                              &
+   dt     ,                                                       &
    frcxt  , prhyd  ,                                              &
    trava  , ximpa  , uvwk   )
 
@@ -69,7 +68,7 @@ subroutine navstv &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb, nproce
+use dimens, only: ndimfb
 use numvar
 use entsor
 use cstphy
@@ -103,7 +102,6 @@ integer          nvar   , nscal  , iterns , icvrge , itrale
 integer          isostd(nfabor+1)
 
 double precision, pointer, dimension(:)   :: dt
-double precision, pointer, dimension(:,:) :: propce
 double precision, pointer, dimension(:,:) :: frcxt
 double precision, pointer, dimension(:) :: prhyd
 double precision, pointer, dimension(:,:) :: trava, uvwk
@@ -356,8 +354,8 @@ if (nterup.gt.1) then
 endif
 
 ! --- Physical quantities
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 
 ! Initialize timers
 t1 = 0.d0
@@ -410,7 +408,7 @@ endif
 
 if (icavit.ge.0) then
 
-  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
+  call field_get_val_s(iprtot, cpro_prtot)
 
   call cavitation_compute_source_term (cpro_prtot, cvara_voidf)
 
@@ -672,7 +670,7 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
     ! Resize main real array
 
-    call resize_main_real_array ( dt , propce )
+    call resize_main_real_array ( dt )
 
     ! Update turbomachinery module
 
@@ -680,7 +678,7 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
     ! Update field mappings ("owner" fields handled by turbomachinery_update)
 
-    call fldtri(nproce, dt, propce)
+    call fldtri(dt)
 
     ! Resize other arrays related to the velocity-pressure resolution
 
@@ -712,8 +710,8 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
     call field_get_val_s(icrom, crom)
 
-    call field_get_val_s(iprpfl(iviscl), viscl)
-    call field_get_val_s(iprpfl(ivisct), visct)
+    call field_get_val_s(iviscl, viscl)
+    call field_get_val_s(ivisct, visct)
 
     call field_get_val_v(ivarfl(iu), vel)
     call field_get_val_prev_v(ivarfl(iu), vela)
@@ -820,7 +818,7 @@ endif
 if (iale.eq.1) then
 
   if (itrale.gt.nalinf) then
-    call alelav(propce)
+    call alelav
   endif
 
 endif
@@ -1181,7 +1179,7 @@ if (icavit.ge.0) then
 
   call cavitation_update_phys_prop &
  ( cvar_voidf, coavoi, cobvoi, ivoifl, bvoifl, &
-   crom, brom, propce(:,ipproc(iviscl)), imasfl, bmasfl )
+   crom, brom, imasfl, bmasfl )
 
   ! Verbosity
 
@@ -1375,7 +1373,7 @@ endif
 ! En compressible, la pression resolue est deja la pression totale
 
 if (ippmod(icompf).lt.0) then
-  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
+  call field_get_val_s(iprtot, cpro_prtot)
   xxp0   = xyzp0(1)
   xyp0   = xyzp0(2)
   xzp0   = xyzp0(3)

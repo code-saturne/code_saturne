@@ -66,7 +66,6 @@ implicit none
 
 integer          ivar  , iel
 integer          ii    , jj    , ifac
-integer          ipcvlo
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
@@ -107,8 +106,8 @@ allocate(viscf(nfac), viscb(nfabor))
 allocate(dpvar(ncelet))
 
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 
 call field_get_val_s(ivarfl(ial), cvar_al)
 call field_get_val_prev_s(ivarfl(ial), cvara_al)
@@ -152,13 +151,6 @@ if(iwarni(ivar).ge.1) then
 endif
 
 thetv  = thetav(ivar)
-
-ipcvlo = ipproc(iviscl)
-if(isto2t.gt.0) then
-  if(iviext.gt.0) then
-    ipcvlo = ipproc(ivisla)
-  endif
-endif
 
 do iel = 1, ncel
   smbr(iel) = 0.d0

@@ -118,7 +118,7 @@ endif
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
-call field_get_val_s(iprpfl(itempc),cpro_tempc)
+call field_get_val_s(itempc,cpro_tempc)
 call field_get_val_s(ivarfl(ivart), cvar_vart)
 if (ippmod(iatmos).ge.2) call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
 
@@ -174,7 +174,7 @@ enddo
 
 if (ippmod(iatmos).ge.2) then ! humid atmosphere physics
 
-  call field_get_val_s(iprpfl(iliqwt),cpro_liqwt)
+  call field_get_val_s(iliqwt,cpro_liqwt)
 
   if (moddis.eq.1)then ! all or nothing condensation scheme
     call all_or_nothing()

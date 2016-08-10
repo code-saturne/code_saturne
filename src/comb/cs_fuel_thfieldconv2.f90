@@ -82,9 +82,9 @@ double precision, dimension(:), pointer :: cpro_rom2, cpro_diam2
 !===============================================================================
 ! --- Initialization of T2 as T1
 
-call field_get_val_s(iprpfl(itemp1),cpro_temp1)
+call field_get_val_s(itemp1,cpro_temp1)
 do icla = 1, nclafu
-  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+  call field_get_val_s(itemp2(icla),cpro_temp2)
   do iel = 1, ncel
     cpro_temp2(iel) = cpro_temp1(iel)
   enddo
@@ -98,9 +98,9 @@ do icla = 1, nclafu
 
   call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
   call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
-  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
-  call field_get_val_s(iprpfl(idiam2(icla)),cpro_rom2)
-  call field_get_val_s(iprpfl(irom2(icla)),cpro_diam2)
+  call field_get_val_s(itemp2(icla),cpro_temp2)
+  call field_get_val_s(idiam2(icla),cpro_rom2)
+  call field_get_val_s(irom2(icla),cpro_diam2)
 
   mkfini = rho0fl*pi/6.d0*dinikf(icla)**3
 

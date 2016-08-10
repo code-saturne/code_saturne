@@ -82,8 +82,6 @@ double precision secvif(nfac), secvib(nfabor)
 ! Local variables
 
 integer          iel, ifac, ii, jj
-integer          ipcvst
-integer          ipcvsv
 
 double precision d2s3m, secvsi, secvsj, pnd
 
@@ -102,25 +100,12 @@ double precision, dimension(:), pointer :: cproa_viscl, cproa_visct
 ! Allocate temporary arrays
 allocate(secvis(ncelet))
 
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 
-if(ippmod(icompf).ge.0) then
-  if(iviscv.gt.0) then
-    ipcvsv = ipproc(iviscv)
-    call field_get_val_s(iprpfl(iviscv), cpro_viscv)
-  else
-    ipcvsv = 0
-  endif
-else
-  ipcvsv = -1
-endif
-
-! If we extrapolate the source terms, then we take the physical properties at
-! time n FIXME check if it is consistent with viscfa.f90
-if(isno2t.gt.0) then
-  if(iviext.gt.0) then
-    ipcvst = ipproc(ivista)
+if (ippmod(icompf).ge.0) then
+  if (iviscv.ge.0) then
+    call field_get_val_s(iviscv, cpro_viscv)
   endif
 endif
 
@@ -134,7 +119,7 @@ d2s3m = -2.d0/3.d0
 
 ! Laminar viscosity
 if(isno2t.gt.0 .and. iviext.gt.0) then
-  call field_get_val_prev_s(iprpfl(iviscl), cproa_viscl)
+  call field_get_val_prev_s(iviscl, cproa_viscl)
   do iel = 1, ncel
     secvis(iel) = d2s3m*cproa_viscl(iel)
   enddo
@@ -145,20 +130,22 @@ else
 endif
 
 ! Volume viscosity if present
-if (ipcvsv.gt.0) then
-  do iel = 1, ncel
-    secvis(iel) = secvis(iel) + cpro_viscv(iel)
-  enddo
-elseif (ipcvsv.eq.0) then
-  do iel = 1, ncel
-    secvis(iel) = secvis(iel) + viscv0
-  enddo
+if (ippmod(icompf).ge.0) then
+  if (iviscv.ge.0) then
+    do iel = 1, ncel
+      secvis(iel) = secvis(iel) + cpro_viscv(iel)
+    enddo
+  else
+    do iel = 1, ncel
+      secvis(iel) = secvis(iel) + viscv0
+    enddo
+  endif
 endif
 
 ! Turbulent viscosity (if not in Rij or LES)
 if (itytur.ne.3 .and. itytur.ne.4) then
   if(isno2t.gt.0 .and. iviext.gt.0) then
-    call field_get_val_prev_s(iprpfl(ivisct), cproa_visct)
+    call field_get_val_prev_s(ivisct, cproa_visct)
     do iel = 1, ncel
       secvis(iel) = secvis(iel) + d2s3m*cproa_visct(iel)
     enddo

@@ -112,7 +112,7 @@ call field_get_val_s(f_id,cpro_tsri)
 write(f_name,  '("rad_st_", i2.2)') ipcl
 call field_get_id(f_name, f_id)
 call field_get_val_s(f_id,cpro_tsre)
-call field_get_val_s(iprpfl(ix2(numcla)),cpro_x2)
+call field_get_val_s(ix2(numcla),cpro_x2)
 
 do iel = 1, ncel
   cpro_tsri(iel) = max(-cpro_tsri(iel),zero)

@@ -97,8 +97,8 @@ double precision, dimension(:), pointer :: mix_mol_mas
 iok = 0
 
 !-- Specific heat
-if (icp.gt.0) then
-  call field_get_val_s(iprpfl(icp), cpro_cp)
+if (icp.ge.0) then
+  call field_get_val_s(icp, cpro_cp)
 
 !-- Stop if Cp is not variable
 else
@@ -125,7 +125,7 @@ call field_get_val_s_by_name(name_d, y_d)
 call field_get_id(name_d, f_id)
 call field_get_key_struct_gas_mix_species_prop(f_id, s_d)
 
-call field_get_val_s(iprpfl(igmxml), mix_mol_mas)
+call field_get_val_s(igmxml, mix_mol_mas)
 
 !===============================================================================
 ! 2. User initialization

@@ -148,8 +148,8 @@ if ((itytur.eq.2).or.(itytur.eq.5).or.(iturb.eq.60)) then
 endif
 
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 
 call field_get_val_s(ivarfl(iep), cvar_ep)
 
@@ -165,8 +165,8 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-if (ibeta.gt.0) then
-  call field_get_val_s(iprpfl(ipproc(ibeta)), cpro_beta)
+if (ibeta.ge.0) then
+  call field_get_val_s(ibeta, cpro_beta)
 endif
 
 call field_get_val_v(ivsten, visten)

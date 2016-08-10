@@ -205,7 +205,7 @@ call field_get_val_prev_v(ivarfl(iu), vela)
 ! --- Physical properties
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(ivisct, visct)
 
 if (itytur.eq.3) then
   call field_get_val_s(ivarfl(ir11), cvar_r11)

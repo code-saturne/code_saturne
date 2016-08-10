@@ -249,13 +249,13 @@ call cppdfr                                                       &
 ! 4. CALCUL DES CONCENTRATIONS MOYENNES
 !===============================================================================
 
-call field_get_val_s(iprpfl(iym1(ichx1)),cpro_cyf1)
-call field_get_val_s(iprpfl(iym1(ichx2)),cpro_cyf2)
-call field_get_val_s(iprpfl(iym1(ico)),cpro_cyf3)
-call field_get_val_s(iprpfl(iym1(io2)),cpro_cyox)
-call field_get_val_s(iprpfl(iym1(ico2)),cpro_cyp1)
-call field_get_val_s(iprpfl(iym1(ih2o)),cpro_cyp2)
-call field_get_val_s(iprpfl(iym1(in2)),cpro_cyin)
+call field_get_val_s(iym1(ichx1),cpro_cyf1)
+call field_get_val_s(iym1(ichx2),cpro_cyf2)
+call field_get_val_s(iym1(ico),cpro_cyf3)
+call field_get_val_s(iym1(io2),cpro_cyox)
+call field_get_val_s(iym1(ico2),cpro_cyp1)
+call field_get_val_s(iym1(ih2o),cpro_cyp2)
+call field_get_val_s(iym1(in2),cpro_cyin)
 
 call cplym1                                                       &
 !==========
@@ -283,7 +283,7 @@ call cplym1                                                       &
 ! --> Clipping eventuel des fractions massiques
 
 do ice = 1, (ngaze-2*ncharb)
-  call field_get_val_s(iprpfl(iym1(ice)),cpro_cyce(ice)%p)
+  call field_get_val_s(iym1(ice),cpro_cyce(ice)%p)
 enddo
 
 do iel = 1, ncel
@@ -298,8 +298,8 @@ enddo
 ! 4. CALCUL DE LA TEMPERATURE ET DE LA MASSE VOLUMIQUE
 !===============================================================================
 
-call field_get_val_s(iprpfl(itemp1),cpro_temp1)
-call field_get_val_s(iprpfl(immel),cpro_mmel)
+call field_get_val_s(itemp1,cpro_temp1)
+call field_get_val_s(immel,cpro_mmel)
 
 !  CALCUL DE LA TEMPERATURE DU GAZ
 !     EN FONCTION DE L'ENTHALPIE DU GAZ ET DES CONCENTRATIONS

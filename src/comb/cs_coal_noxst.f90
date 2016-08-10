@@ -156,12 +156,12 @@ wmo2   = wmole(io2  )
 ! --- pointeurs
 !
 
-call field_get_val_s(iprpfl(ighcn1),cpro_exp1)
-call field_get_val_s(iprpfl(ighcn2),cpro_exp2)
-call field_get_val_s(iprpfl(ignoth),cpro_exp3)
-call field_get_val_s(iprpfl(ignh31),cpro_exp4)
-call field_get_val_s(iprpfl(ignh32),cpro_exp5)
-call field_get_val_s(iprpfl(igrb),cpro_exprb)
+call field_get_val_s(ighcn1,cpro_exp1)
+call field_get_val_s(ighcn2,cpro_exp2)
+call field_get_val_s(ignoth,cpro_exp3)
+call field_get_val_s(ignh31,cpro_exp4)
+call field_get_val_s(ignh32,cpro_exp5)
+call field_get_val_s(igrb,cpro_exprb)
 
 !
 ! Parametres des lois d'Arrhenius
@@ -209,9 +209,9 @@ enddo
 ! 2. CALCUL SANS LES PDF
 !===============================================================================
 
-call field_get_val_s(iprpfl(itemp1),cpro_temp1)
-call field_get_val_s(iprpfl(iym1(io2)),cpro_yo2)
-call field_get_val_s(iprpfl(immel),cpro_mmel)
+call field_get_val_s(itemp1,cpro_temp1)
+call field_get_val_s(iym1(io2),cpro_yo2)
+call field_get_val_s(immel,cpro_mmel)
 
 do iel = 1, ncel
 !
@@ -267,7 +267,7 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 .or. ipdf4.eq.1 .or.     &
     call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl(icla)%p)
     call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl(icla)%p)
     call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl(icla)%p)
-    call field_get_val_s(iprpfl(itemp2(icla)), cpro_temp2(icla)%p)
+    call field_get_val_s(itemp2(icla), cpro_temp2(icla)%p)
     if ( ippmod(iccoal) .eq. 1 ) then
       call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl(icla)%p)
     endif

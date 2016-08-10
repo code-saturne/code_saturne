@@ -143,9 +143,9 @@ wmo2   = wmole(io2  )
 !
 ! --- pointeurs
 !
-call field_get_val_s(iprpfl(ighcn1),cpro_exp1)
-call field_get_val_s(iprpfl(ighcn2),cpro_exp2)
-call field_get_val_s(iprpfl(ignoth),cpro_exp3)
+call field_get_val_s(ighcn1,cpro_exp1)
+call field_get_val_s(ighcn2,cpro_exp2)
+call field_get_val_s(ignoth,cpro_exp3)
 !
 ! Parametres des lois d'Arrhenius
 !
@@ -176,9 +176,9 @@ enddo
 ! 2. CALCUL SANS LES PDF
 !===============================================================================
 
-call field_get_val_s(iprpfl(itemp1),cpro_temp1)
-call field_get_val_s(iprpfl(iym1(io2)),cpro_yo2)
-call field_get_val_s(iprpfl(immel),cpro_mmel)
+call field_get_val_s(itemp1,cpro_temp1)
+call field_get_val_s(iym1(io2),cpro_yo2)
+call field_get_val_s(immel,cpro_mmel)
 
 do iel = 1, ncel
 !
@@ -220,7 +220,7 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
   do icla = 1, nclafu
     call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl(icla)%p)
     call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl(icla)%p)
-    call field_get_val_s(iprpfl(itemp2(icla)), cpro_temp2(icla)%p)
+    call field_get_val_s(itemp2(icla), cpro_temp2(icla)%p)
   enddo
 
 !

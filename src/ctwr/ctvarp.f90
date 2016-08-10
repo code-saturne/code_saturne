@@ -90,8 +90,7 @@ call add_model_scalar_field('humidity', 'Humidity', ihumid)
 
 ! Cp is variable
 
-icp = 1
+icp = 0
 
 return
 end subroutine
-

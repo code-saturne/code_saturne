@@ -2296,7 +2296,7 @@ void CS_PROCF (cscpva, CSCPVA) (void)
   cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
 
   if (_properties_choice_id("specific_heat", &choice))
-    phys_pp->icp = choice;
+    phys_pp->icp = (choice > 0) ? 0 : -1;
 
 #if _XML_DEBUG_
   bft_printf("==>CSCPVA\n");
@@ -2309,10 +2309,10 @@ void CS_PROCF (cscpva, CSCPVA) (void)
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSCVVVA (ICP)
+ * SUBROUTINE CSCVVVA (IVISCV)
  * *****************
  *
- * INTEGER          IVISCV     -->   specific heat variable or constant indicator
+ * INTEGER        IVISCV  --> volumic viscosity variable or constant indicator
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csvvva, CSVVVA) (int *iviscv)
@@ -2320,7 +2320,7 @@ void CS_PROCF (csvvva, CSVVVA) (int *iviscv)
   int choice;
 
   if (_properties_choice_id("volume_viscosity", &choice))
-    *iviscv = choice;
+    *iviscv = (choice > 0) ? 0 : -1;
 
 #if _XML_DEBUG_
   bft_printf("==>CSVVVA\n");

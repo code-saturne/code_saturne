@@ -188,11 +188,11 @@ call field_get_val_s_by_name("y_h2o_g", y_h2o_g)
 !-- Pointer to density value
 call field_get_val_s(icrom, cpro_rho)
 ! --- Molecular dynamic viscosity value
-call field_get_val_s(iprpfl(iviscl), cpro_viscl)
+call field_get_val_s(iviscl, cpro_viscl)
 
 !-- Specific heat
-if (icp.gt.0) then
-  call field_get_val_s(iprpfl(icp), cpro_cp)
+if (icp.ge.0) then
+  call field_get_val_s(icp, cpro_cp)
 
 !-- Stop if Cp is not variable
 else

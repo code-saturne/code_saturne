@@ -400,7 +400,7 @@ double precision, dimension(:), pointer :: cpro_viscl
 !===============================================================================
 
 d2s3 = 2.d0/3.d0
-call field_get_val_s(iprpfl(iviscl), cpro_viscl)
+call field_get_val_s(iviscl, cpro_viscl)
 
 ! Example 1 : - mean velocity, Reynolds stresses an dissipation are deduced
 !==========   from a wall law for the first synthetic turbulence inlet,

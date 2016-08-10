@@ -89,7 +89,7 @@ if (ippmod(icompf).ge.0) then
 
   ! Pointer and reference value for volumetric molecular viscosity
   ! (constant by default)
-  iviscv = 0
+  iviscv = -1
   viscv0 = 0.d0
 
 endif

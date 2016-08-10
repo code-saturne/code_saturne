@@ -113,7 +113,7 @@ double precision, dimension(:), pointer :: viscl
 
 
 call field_get_val_s(ibrom, brom)
-call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iviscl, viscl)
 
 d2s3 = 2.d0/3.d0
 

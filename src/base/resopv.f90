@@ -1334,7 +1334,7 @@ call divmas(init, imasfl , bmasfl , divu)
 
 if (idilat.ge.4) then
 
-  call field_get_val_s(iprpfl(iustdy(itsrho)), cpro_tsrho)
+  call field_get_val_s(iustdy(itsrho), cpro_tsrho)
 
   allocate(velflx(nfac), velflb(ndimfb))
 

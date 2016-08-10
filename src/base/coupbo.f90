@@ -148,8 +148,8 @@ allocate(hparoi(nfabor))
 
 if (itherm.eq.2) then
 
-  if (icp.gt.0) then
-    call field_get_val_s(iprpfl(icp), cpro_cp)
+  if (icp.ge.0) then
+    call field_get_val_s(icp, cpro_cp)
   endif
   ! Temperature near boundary faces
   allocate(wa(nfabor))
@@ -158,8 +158,8 @@ if (itherm.eq.2) then
 else if (itherm.eq.3) then
 
   call field_get_val_v(ivarfl(iu), vel)
-  if (icv.gt.0) then
-    call field_get_val_s(iprpfl(icv), cpro_cv)
+  if (icv.ge.0) then
+    call field_get_val_s(icv, cpro_cv)
   endif
   call field_get_val_s(icrom, cpro_rho)
   ! Epsilon sup for perfect gas at cells
@@ -231,7 +231,7 @@ do inbcou = 1, nbccou
         ifac = lfcou(iloc)
         iel  = ifabor(ifac)
         tfluid(iloc) = wa(ifac)
-        if (icp.gt.0) then
+        if (icp.ge.0) then
           hparoi(iloc) = hbord(ifac)*cpro_cp(iel)
         else
           hparoi(iloc) = hbord(ifac)*cp0
@@ -261,7 +261,7 @@ do inbcou = 1, nbccou
                                + vel(2,iel)**2                      &
                                + vel(3,iel)**2)                     &
                         + wa(iel) )
-        if (icv.gt.0) then
+        if (icv.ge.0) then
           tfluid(iloc) = cvt/cpro_cv(iel)
           hparoi(iloc) = hbord(ifac)*cpro_cv(iel)
         else

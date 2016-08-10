@@ -78,7 +78,7 @@ double precision, dimension(nfbrps), intent(out)   :: bflux
 integer ::         inc, iccocg
 integer ::         ifac, iloc, ivar
 integer ::         iel
-integer ::         ifccp, iflmab
+integer ::         iflmab
 
 double precision :: cpp   , srfbn
 double precision :: flumab, diipbx, diipby, diipbz, tcel
@@ -111,11 +111,8 @@ if (iscalt.gt.0) then
 
   call field_get_val_prev_s(ivarfl(ivar), tscalp)
 
-  if (iscacp(iscalt).eq.1 .and. icp.gt.0) then
-    ifccp  = iprpfl(icp)
-    call field_get_val_s(ifccp, cpro_cp)
-  else
-    ifccp = -1
+  if (iscacp(iscalt).eq.1 .and. icp.ge.0) then
+    call field_get_val_s(icp, cpro_cp)
   endif
 
   call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
@@ -153,7 +150,7 @@ if (iscalt.gt.0) then
              + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
 
       if (iscacp(iscalt).eq.1) then
-        if (ifccp.ge.0) then
+        if (icp.ge.0) then
           cpp = cpro_cp(iel)
         else
           cpp = cp0
@@ -184,7 +181,7 @@ if (iscalt.gt.0) then
       tcel = tscalp(iel)
 
       if (iscacp(iscalt).eq.1) then
-        if (ifccp.ge.0) then
+        if (icp.ge.0) then
           cpp = cpro_cp(iel)
         else
           cpp = cp0
@@ -658,4 +655,3 @@ enddo
 
 return
 end subroutine post_stress_tangential
-

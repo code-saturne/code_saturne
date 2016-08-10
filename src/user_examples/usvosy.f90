@@ -125,8 +125,8 @@ call field_get_val_v(ivarfl(iu), cvar_vel)
 
 ! Cell properties
 call field_get_val_s(icrom, cpro_rom)
-call field_get_val_s(iprpfl(iviscl), cpro_viscl)
-if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
+call field_get_val_s(iviscl, cpro_viscl)
+if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
 
 call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
 if (ifcvsl.ge.0) then
@@ -189,7 +189,7 @@ do iloc = 1, ncecpl  ! Loop on coupled cells
   rho = cpro_rom(iel)
   mu = cpro_viscl(iel)
 
-  if (icp.gt.0) then
+  if (icp.ge.0) then
     cp = cpro_cp(iel)
   else
     cp = cp0

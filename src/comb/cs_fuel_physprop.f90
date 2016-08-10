@@ -342,7 +342,7 @@ do iel = 1, ncel
   enth1(iel) = (cvar_scalt(iel)-enth1(iel))/ cpro_x1(iel)
 enddo
 
-call field_get_val_s(iprpfl(irom1), cpro_rom1)
+call field_get_val_s(irom1, cpro_rom1)
 
 call cs_fuel_physprop1 &
 !=====================
@@ -379,7 +379,7 @@ call  cs_fuel_thfieldconv2 ( ncelet , ncel )
 call field_get_val_s(icrom, crom)
 
 do icla = 1, nclafu
-  call field_get_val_s(iprpfl(irom2(icla)),cpro_ro2(icla)%p)
+  call field_get_val_s(irom2(icla),cpro_ro2(icla)%p)
 enddo
 
 
@@ -484,9 +484,9 @@ if (i_comb_drift.ge.1) then
     ! We only handle here one scalar with a drift per particle class
     if (icla.ge.1.and.btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
-      call field_get_val_s(iprpfl(irom2(icla)), cpro_rom2)
-      call field_get_val_s(iprpfl(idiam2(icla)), cpro_diam2)
-      call field_get_val_s(iprpfl(iyfol(icla)), cpro_x2)!FIXME PP is it correct?
+      call field_get_val_s(irom2(icla), cpro_rom2)
+      call field_get_val_s(idiam2(icla), cpro_diam2)
+      call field_get_val_s(iyfol(icla), cpro_x2)!FIXME PP is it correct?
 
       ! Position of variables, coefficients
       ! -----------------------------------
@@ -542,7 +542,7 @@ if (i_comb_drift.eq.1) then
     write(name,'(a,i2.2)')'vd_p_' ,icla
     call field_get_val_v_by_name(name, vdp_i)
 
-    call field_get_val_s(iprpfl(iyfol(icla)), cpro_x2)!FIXME PP is it correct?
+    call field_get_val_s(iyfol(icla), cpro_x2)!FIXME PP is it correct?
     do iel = 1,ncel
       ! Vdi = Vpi-Vs
       if (cpro_x2(iel).gt. 1.d-7 ) then
@@ -595,7 +595,7 @@ elseif (i_comb_drift.gt.1) then
     write(name,'(a,i2.2)')'vg_p_' ,icla
     call field_get_val_v_by_name(name, vg_pi)
 
-    call field_get_val_s(iprpfl(iyfol(icla)), cpro_x2)!FIXME
+    call field_get_val_s(iyfol(icla), cpro_x2)!FIXME
 
     do iel = 1, ncel
 

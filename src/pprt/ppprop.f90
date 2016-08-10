@@ -122,7 +122,7 @@ endif
 
 ! Add the mixture molar mass fraction field
 if (ippmod(igmix).ge.0) then
-  call add_property_field('mix_mol_mas', 'Mix_mol_mass', igmxml)
+  call add_property_field_1d('mix_mol_mas', 'Mix_mol_mass', igmxml)
 
   ! Gas mixtures with Air/Helium and the Helium gas deduced
   if (ippmod(igmix).eq.0) then
@@ -145,7 +145,7 @@ if (ippmod(igmix).ge.0) then
 
   idim1 =  1
   has_previous = .true.
-  call add_property_field_owner(name_d, label_d, idim1, has_previous, iddgas)
+  call add_property_field(name_d, label_d, idim1, has_previous, iddgas)
 endif
 
 end subroutine ppprop

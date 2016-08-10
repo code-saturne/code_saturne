@@ -151,8 +151,8 @@ interface
 
 if (itherm.eq.2) then
 
-  if (icp.gt.0) then
-    call field_get_val_s(iprpfl(icp), cpro_cp)
+  if (icp.ge.0) then
+    call field_get_val_s(icp, cpro_cp)
   endif
 
   ! Temperature near boundary faces
@@ -163,7 +163,7 @@ if (itherm.eq.2) then
     ifac = ifpt1d(ii)
     iel  = ifabor(ifac)
     tbord(ifac) = wa(ifac)
-    if (icp.gt.0) then
+    if (icp.ge.0) then
       hbord(ifac) = hbord(ifac)*cpro_cp(iel)
     else
       hbord(ifac) = hbord(ifac)*cp0
@@ -174,8 +174,8 @@ else if (itherm.eq.3) then
 
   call field_get_val_v(ivarfl(iu), vel)
   call field_get_val_s(icrom, cpro_rho)
-  if (icv.gt.0) then
-    call field_get_val_s(iprpfl(icv), cpro_cv)
+  if (icv.ge.0) then
+    call field_get_val_s(icv, cpro_cv)
   endif
 
   ! Epsilon sup for perfect gas at cells
@@ -191,7 +191,7 @@ else if (itherm.eq.3) then
                            + vel(2,iel)**2                      &
                            + vel(3,iel)**2)                     &
                     + wa(iel) )
-    if (icv.gt.0) then
+    if (icv.ge.0) then
       tbord(ifac) = cvt/cpro_cv(iel)
       hbord(ifac) = hbord(ifac)*cpro_cv(iel)
     else

@@ -162,7 +162,7 @@ do ii = 1, nscal
       endif
     endif
     ! Now create matching property
-    call add_property_field_owner(f_name, f_label, 1, .false., ifcvsl)
+    call add_property_field(f_name, f_label, 1, .false., ifcvsl)
     call field_set_key_int(ivarfl(isca(ii)), kivisl, ifcvsl)
   endif
 enddo

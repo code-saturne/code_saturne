@@ -110,7 +110,7 @@ double precision, dimension(:), pointer :: cvar_scalt
 !===============================================================================
 
 !< [init]
-call field_get_val_s(iprpfl(iviscl), cpro_viscl)
+call field_get_val_s(iviscl, cpro_viscl)
 call field_get_val_s(icrom, cpro_rom)
 
 ! Key id for drift scalar

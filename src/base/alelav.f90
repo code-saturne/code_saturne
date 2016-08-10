@@ -31,16 +31,7 @@
 !>
 !-------------------------------------------------------------------------------
 
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     propce        physical properties at cell centers
-!_______________________________________________________________________________
-
-subroutine alelav &
- ( propce )
+subroutine alelav
 
 !===============================================================================
 
@@ -56,7 +47,7 @@ use optcal
 use cstnum
 use cstphy
 use pointe
-use albase, only: ialtyb
+use albase, only: ialtyb, iortvm
 use parall
 use period
 use mesh
@@ -67,15 +58,10 @@ use cs_c_bindings
 
 implicit none
 
-! Arguments
-
-double precision propce(ncelet,*)
-
 ! Local variables
 
 character(len=80) :: chaine
 integer          iel   , isou  , jsou  , ifac
-integer          ipcvmx, ipcvmy, ipcvmz
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
@@ -99,8 +85,8 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:,:) :: smbr
 double precision, allocatable, dimension(:,:,:) :: fimp
 double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer :: brom
-double precision, dimension(:,:), pointer :: mshvel, mshvela
+double precision, dimension(:), pointer :: brom, cpro_vism_s
+double precision, dimension(:,:), pointer :: mshvel, mshvela, cpro_vism_v
 
 !===============================================================================
 
@@ -116,9 +102,13 @@ allocate(fimp(3,3,ncelet))
 rinfiv(1) = rinfin
 rinfiv(2) = rinfin
 rinfiv(3) = rinfin
-ipcvmx = ipproc(ivisma(1))
-ipcvmy = ipproc(ivisma(2))
-ipcvmz = ipproc(ivisma(3))
+
+if (iortvm.eq.0) then
+  call field_get_val_s(ivisma, cpro_vism_s)
+else
+  call field_get_val_v(ivisma, cpro_vism_v)
+endif
+
 ! The mass flux is necessary to call coditv but not used (ICONV=0)
 ! Except for the free surface, where it is used as a Boundary condition
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
@@ -151,12 +141,12 @@ do ifac = 1, nfabor
     iel = ifabor(ifac)
     distbf = distb(ifac)
     srfbn2 = surfbn(ifac)**2
-    if (ipcvmx.eq.ipcvmy) then
-      hint = propce(iel,ipproc(ivisma(1)))/distbf
+    if (iortvm.eq.0) then
+      hint = cpro_vism_s(iel)/distbf
     else !FIXME
-      hint = ( propce(iel,ipproc(ivisma(1)))*surfbo(1,ifac)**2    &
-             + propce(iel,ipproc(ivisma(2)))*surfbo(2,ifac)**2    &
-             + propce(iel,ipproc(ivisma(3)))*surfbo(3,ifac)**2 )  &
+      hint = ( cpro_vism_v(1,iel)*surfbo(1,ifac)**2    &
+             + cpro_vism_v(2,iel)*surfbo(2,ifac)**2    &
+             + cpro_vism_v(3,iel)*surfbo(3,ifac)**2 )  &
            /distbf/srfbn2
     endif
 
@@ -191,17 +181,17 @@ do iel = 1, ncelet
   enddo
 enddo
 
-if (ipcvmx.eq.ipcvmy) then
+if (iortvm.eq.0) then
   call viscfa &
   !==========
 ( imvisf ,                                                       &
-  propce(1,ipcvmx),                                              &
+  cpro_vism_s ,                                                  &
   viscf  , viscb  )
 else
   call visort &
   !==========
 ( imvisf ,                                                       &
-  propce(1,ipcvmx), propce(1,ipcvmy), propce(1,ipcvmz),          &
+  cpro_vism_v(1,:), cpro_vism_v(2,:), cpro_vism_v(3,:),          &
   viscf  , viscb  )
 endif
 

@@ -148,7 +148,7 @@ if (ippmod(iccoal).ge.0) then
     if (ippmod(iccoal).eq.1) then
       call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwt(icla)%p)
     endif
-    call field_get_val_s(iprpfl(ix2(icla)), cpro_x2(icla)%p)
+    call field_get_val_s(ix2(icla), cpro_x2(icla)%p)
  enddo
 
   allocate(cvar_f1m(ncharb))
@@ -160,7 +160,7 @@ if (ippmod(iccoal).ge.0) then
   enddo
 
   do ige = 1, ngazg
-    call field_get_val_s(iprpfl(iym1(ige)), cpro_ym1(ige)%p)
+    call field_get_val_s(iym1(ige), cpro_ym1(ige)%p)
   enddo
 
 else if (ippmod(icfuel).ge.0) then
@@ -173,11 +173,11 @@ else if (ippmod(icfuel).ge.0) then
 
   do icla = 1, nclafu
     call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol(icla)%p)
-    call field_get_val_prev_s(iprpfl(irom2(icla)), cpro_rom2(icla)%p)
-    call field_get_val_prev_s(iprpfl(idiam2(icla)), cpro_diam2(icla)%p)
+    call field_get_val_prev_s(irom2(icla), cpro_rom2(icla)%p)
+    call field_get_val_prev_s(idiam2(icla), cpro_diam2(icla)%p)
   enddo
   do ige = 1, ngaze
-    call field_get_val_s(iprpfl(iym1(ige)), cpro_ym1(ige)%p)
+    call field_get_val_s(iym1(ige), cpro_ym1(ige)%p)
   enddo
 
 else if (ippmod(ielarc).ge.1) then

@@ -91,7 +91,7 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(ivarfl(ik), cvar_k)
 call field_get_val_s(ivarfl(iep), cvar_ep)
 
-call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iviscl, viscl)
 
 ! Initialization to avoid compiler warnings
 

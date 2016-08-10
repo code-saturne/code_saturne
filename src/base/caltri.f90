@@ -121,7 +121,6 @@ integer, allocatable, dimension(:) :: isostd
 
 double precision, pointer, dimension(:)   :: dt => null()
 double precision, pointer, dimension(:)   :: porosi => null()
-double precision, pointer, dimension(:,:) :: propce => null()
 double precision, pointer, dimension(:,:) :: disale => null()
 
 double precision, pointer, dimension(:,:) :: frcxt => null()
@@ -136,7 +135,7 @@ interface
   subroutine tridim &
   ( itrale , nvar   , nscal  ,                                     &
     isostd ,                                                       &
-    dt     , propce ,                                              &
+    dt     ,                                                       &
     frcxt  , prhyd  )
 
     use dimens, only: ndimfb
@@ -148,7 +147,6 @@ interface
     integer, dimension(nfabor+1)              :: isostd
 
     double precision, pointer, dimension(:)   :: dt
-    double precision, pointer, dimension(:,:) :: propce
     double precision, pointer, dimension(:,:) :: frcxt
     double precision, pointer, dimension(:)   :: prhyd
 
@@ -379,7 +377,6 @@ if (nfpt1t.eq.0) deallocate(izft1d)
 ! Allocate main arrays
 
 allocate(dt(ncelet))
-allocate(propce(ncelet,nproce))
 
 ! Allocate arrays on boundary faces
 
@@ -458,11 +455,11 @@ endif
 ! Default initializations
 !===============================================================================
 
-call fldtri(nproce, dt, propce)
+call fldtri(dt)
 
 call field_allocate_or_map_all
 
-call iniva0(nvar, nscal, dt, propce, frcxt, prhyd)
+call iniva0(nvar, nscal, dt, frcxt, prhyd)
 
 ! Compute the porosity if needed
 if (iporos.ge.1) then
@@ -878,7 +875,6 @@ call tridim                                                       &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
    dt     ,                                                       &
-   propce ,                                                       &
    frcxt  , prhyd  )
 
 
@@ -1155,7 +1151,7 @@ if (nfpt1d.gt.0) then
 endif
 
 ! Free main arrays
-deallocate(dt, propce)
+deallocate(dt)
 
 deallocate(isostd)
 if (iphydr.eq.1) then

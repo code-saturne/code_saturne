@@ -101,7 +101,7 @@ endif
 
 if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
 
-  call field_get_val_s(iprpfl(itemp), cpro_t)
+  call field_get_val_s(itemp, cpro_t)
 
   do iel = 1, ncel
     t(iel) = cpro_t(iel)
@@ -111,7 +111,7 @@ if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
 
 else if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
 
-  call field_get_val_s(iprpfl(itemp1), cpro_t)
+  call field_get_val_s(itemp1, cpro_t)
 
   do iel = 1, ncel
     t(iel) = cpro_t(iel)
@@ -122,7 +122,7 @@ else if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
 else if (ippmod(ieljou).ge.1 .or.                              &
          ippmod(ielarc).ge.1) then
 
-  call field_get_val_s(iprpfl(itemp), cpro_t)
+  call field_get_val_s(itemp, cpro_t)
 
   do iel = 1, ncel
     t(iel) = cpro_t(iel)

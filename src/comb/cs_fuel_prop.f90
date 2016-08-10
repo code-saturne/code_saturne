@@ -65,7 +65,7 @@ implicit none
 ! Local variables
 
 integer          icla
-integer          f_id, itycat, ityloc, idim1, idim3, nprini
+integer          f_id, itycat, ityloc, idim1, idim3
 integer          keyccl
 integer          iopchr
 
@@ -90,72 +90,70 @@ call field_get_key_id("scalar_class", keyccl)
 
 ! ---> Definition of pointers related to state variables
 
-nprini = nproce
-
 ! Continuous phase (gaseous mix)
-call add_property_field('t_gas', 'T_Gas', itemp1)
-call add_property_field('rho_gas', 'Rho_Gas', irom1)
+call add_property_field_1d('t_gas', 'T_Gas', itemp1)
+call add_property_field_1d('rho_gas', 'Rho_Gas', irom1)
 
 ! Gas mixture fractions
-call add_property_field('ym_fo0',   'Ym_FO0',   iym1(1))
-call add_property_field('ym_fov',   'Ym_FOV',   iym1(2))
-call add_property_field('ym_co',    'Ym_CO',    iym1(3))
-call add_property_field('ym_h2s',   'Ym_H2S',   iym1(4))
-call add_property_field('ym_h2',    'Ym_H2',    iym1(5))
-call add_property_field('ym_hcn',   'Ym_HCN',   iym1(6))
-call add_property_field('ym_nh3',   'Ym_NH3',   iym1(7))
-call add_property_field('ym_o2',    'Ym_O2',    iym1(8))
-call add_property_field('ym_co2',   'Ym_CO2',   iym1(9))
-call add_property_field('ym_h2o',   'Ym_H2O',   iym1(10))
-call add_property_field('ym_so2',   'Ym_SO2',   iym1(11))
-call add_property_field('ym_n2',    'Ym_N2',    iym1(12))
+call add_property_field_1d('ym_fo0',   'Ym_FO0',   iym1(1))
+call add_property_field_1d('ym_fov',   'Ym_FOV',   iym1(2))
+call add_property_field_1d('ym_co',    'Ym_CO',    iym1(3))
+call add_property_field_1d('ym_h2s',   'Ym_H2S',   iym1(4))
+call add_property_field_1d('ym_h2',    'Ym_H2',    iym1(5))
+call add_property_field_1d('ym_hcn',   'Ym_HCN',   iym1(6))
+call add_property_field_1d('ym_nh3',   'Ym_NH3',   iym1(7))
+call add_property_field_1d('ym_o2',    'Ym_O2',    iym1(8))
+call add_property_field_1d('ym_co2',   'Ym_CO2',   iym1(9))
+call add_property_field_1d('ym_h2o',   'Ym_H2O',   iym1(10))
+call add_property_field_1d('ym_so2',   'Ym_SO2',   iym1(11))
+call add_property_field_1d('ym_n2',    'Ym_N2',    iym1(12))
 
 ! Algebraic variables specific to gas - particles suspension
-call add_property_field('xm',    'Xm',    immel)
+call add_property_field_1d('xm',    'Xm',    immel)
 call hide_property(immel)
 
 ! Algebraic variables specific to continuous phase
 if (ieqnox .eq. 1) then
-  call add_property_field('exp1',      'EXP1',      ighcn1)
-  call add_property_field('exp2',      'EXP1',      ighcn2)
-  call add_property_field('exp3',      'EXP3',      ignoth)
+  call add_property_field_1d('exp1',      'EXP1',      ighcn1)
+  call add_property_field_1d('exp2',      'EXP1',      ighcn2)
+  call add_property_field_1d('exp3',      'EXP3',      ignoth)
 endif
 
 ! Dispersed phase (particle classes)
 do icla = 1, nclafu
   write(f_name,  '(a,i2.2)') 't_fuel_', icla
   write(f_label, '(a,i2.2)') 'T_Fuel_', icla
-  call add_property_field(f_name, f_label, itemp2(icla))
+  call add_property_field_1d(f_name, f_label, itemp2(icla))
 enddo
 
 do icla = 1, nclafu
   write(f_name,  '(a,i2.2)') 'rho_fuel_', icla
   write(f_label, '(a,i2.2)') 'Rho_Fuel_', icla
-  call add_property_field(f_name, f_label, irom2(icla))
+  call add_property_field_1d(f_name, f_label, irom2(icla))
 enddo
 
 do icla = 1, nclafu
   write(f_name,  '(a,i2.2)') 'diameter_fuel_', icla
   write(f_label, '(a,i2.2)') 'Diam_Drop_', icla
-  call add_property_field(f_name, f_label, idiam2(icla))
+  call add_property_field_1d(f_name, f_label, idiam2(icla))
 enddo
 
 do icla = 1, nclafu
   write(f_name,  '(a,i2.2)') 'h1_hlf_', icla
   write(f_label, '(a,i2.2)') 'H1-Hlf_', icla
-  call add_property_field(f_name, f_label, ih1hlf(icla))
+  call add_property_field_1d(f_name, f_label, ih1hlf(icla))
 enddo
 
 do icla = 1, nclafu
   write(f_name,  '(a,i2.2)') 'eva_fuel_', icla
   write(f_label, '(a,i2.2)') 'EVA_Fuel_', icla
-  call add_property_field(f_name, f_label, igmeva(icla))
+  call add_property_field_1d(f_name, f_label, igmeva(icla))
 enddo
 
 do icla = 1, nclafu
   write(f_name,  '(a,i2.2)') 'het_ts_fuel_', icla
   write(f_label, '(a,i2.2)') 'Het_TS_Fuel_', icla
-  call add_property_field(f_name, f_label, igmhtf(icla))
+  call add_property_field_1d(f_name, f_label, igmhtf(icla))
 enddo
 
 if (i_comb_drift.ge.1) then
@@ -238,16 +236,9 @@ call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
 !-----
 
 ! Mass fraction of elements: C,  O,  H (used in balances)
-call add_property_field('balance_c', 'Balance_C', ibcarbone)
-call add_property_field('balance_o', 'Balance_O', iboxygen)
-call add_property_field('balance_h', 'Balance_H', ibhydrogen)
-
-! Nb algebraic (or state) variables
-!   specific to specific physic: nsalpp
-!   total: nsalto
-
-nsalpp = nproce - nprini
-nsalto = nproce
+call add_property_field_1d('balance_c', 'Balance_C', ibcarbone)
+call add_property_field_1d('balance_o', 'Balance_O', iboxygen)
+call add_property_field_1d('balance_h', 'Balance_H', ibhydrogen)
 
 !--------
 ! Formats

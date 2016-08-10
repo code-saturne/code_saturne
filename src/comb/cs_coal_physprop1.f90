@@ -218,18 +218,18 @@ do icha = 1, ncharb
 enddo
 
 ! pointer
-call field_get_val_s(iprpfl(iym1(ichx1)),cpro_cyf1)
-call field_get_val_s(iprpfl(iym1(ichx2)),cpro_cyf2)
-call field_get_val_s(iprpfl(iym1(ico  )),cpro_cyf3)
-call field_get_val_s(iprpfl(iym1(ih2s )),cpro_cyf4)
-call field_get_val_s(iprpfl(iym1(ihy  )),cpro_cyf5)
-call field_get_val_s(iprpfl(iym1(ihcn )),cpro_cyf6)
-call field_get_val_s(iprpfl(iym1(inh3 )),cpro_cyf7)
-call field_get_val_s(iprpfl(iym1(io2  )),cpro_cyox)
-call field_get_val_s(iprpfl(iym1(ico2 )),cpro_cyp1)
-call field_get_val_s(iprpfl(iym1(ih2o )),cpro_cyp2)
-call field_get_val_s(iprpfl(iym1(iso2 )),cpro_cyp3)
-call field_get_val_s(iprpfl(iym1(in2  )),cpro_cyin)
+call field_get_val_s(iym1(ichx1),cpro_cyf1)
+call field_get_val_s(iym1(ichx2),cpro_cyf2)
+call field_get_val_s(iym1(ico  ),cpro_cyf3)
+call field_get_val_s(iym1(ih2s ),cpro_cyf4)
+call field_get_val_s(iym1(ihy  ),cpro_cyf5)
+call field_get_val_s(iym1(ihcn ),cpro_cyf6)
+call field_get_val_s(iym1(inh3 ),cpro_cyf7)
+call field_get_val_s(iym1(io2  ),cpro_cyox)
+call field_get_val_s(iym1(ico2 ),cpro_cyp1)
+call field_get_val_s(iym1(ih2o ),cpro_cyp2)
+call field_get_val_s(iym1(iso2 ),cpro_cyp3)
+call field_get_val_s(iym1(in2  ),cpro_cyin)
 
 ipass = ipass + 1
 
@@ -378,7 +378,7 @@ call cs_gascomb &
 allocate(cpro_ym1(ngazg))
 
 do ice = 1, ngazg
-  call field_get_val_s(iprpfl(iym1(ice)), cpro_ym1(ice)%p)
+  call field_get_val_s(iym1(ice), cpro_ym1(ice)%p)
 enddo
 
 do iel = 1, ncel
@@ -402,8 +402,8 @@ enddo
 ! 4. Calculation of temperature and density
 !===============================================================================
 
-call field_get_val_s(iprpfl(itemp1),cpro_temp1)
-call field_get_val_s(iprpfl(immel),cpro_mmel)
+call field_get_val_s(itemp1,cpro_temp1)
+call field_get_val_s(immel,cpro_mmel)
 
 call cs_coal_thfieldconv1(MESH_LOCATION_CELLS, enth, cpro_temp1)
 
@@ -449,24 +449,24 @@ if ( ieqnox .eq. 1 .and. ipass .gt. 1 ) then
 
 else if ( ieqnox .eq. 1 ) then
 
-  call field_get_val_s(iprpfl(ighcn1),cpro_ghcn1)
-  call field_get_val_s(iprpfl(ighcn2),cpro_ghcn2)
-  call field_get_val_s(iprpfl(ignoth),cpro_gnoth)
-  call field_get_val_s(iprpfl(ignh31),cpro_gnh31)
-  call field_get_val_s(iprpfl(ignh32),cpro_gnh32)
-  call field_get_val_s(iprpfl(ifhcnr),cpro_fhcnr)
-  call field_get_val_s(iprpfl(ifhcnd),cpro_fhcnd)
-  call field_get_val_s(iprpfl(ifhcnc),cpro_fhcnc)
-  call field_get_val_s(iprpfl(ifnh3d),cpro_fnh3d)
-  call field_get_val_s(iprpfl(ifnh3c),cpro_fnh3c)
-  call field_get_val_s(iprpfl(ifnohc),cpro_fnohc)
-  call field_get_val_s(iprpfl(ifnonh),cpro_fnonh)
-  call field_get_val_s(iprpfl(ifnoch),cpro_fnoch)
-  call field_get_val_s(iprpfl(ifnoth),cpro_fnoth)
-  call field_get_val_s(iprpfl(icnohc),cpro_cnohc)
-  call field_get_val_s(iprpfl(icnonh),cpro_cnonh)
-  call field_get_val_s(iprpfl(icnorb),cpro_cnorb)
-  call field_get_val_s(iprpfl(igrb),cpro_grb)
+  call field_get_val_s(ighcn1,cpro_ghcn1)
+  call field_get_val_s(ighcn2,cpro_ghcn2)
+  call field_get_val_s(ignoth,cpro_gnoth)
+  call field_get_val_s(ignh31,cpro_gnh31)
+  call field_get_val_s(ignh32,cpro_gnh32)
+  call field_get_val_s(ifhcnr,cpro_fhcnr)
+  call field_get_val_s(ifhcnd,cpro_fhcnd)
+  call field_get_val_s(ifhcnc,cpro_fhcnc)
+  call field_get_val_s(ifnh3d,cpro_fnh3d)
+  call field_get_val_s(ifnh3c,cpro_fnh3c)
+  call field_get_val_s(ifnohc,cpro_fnohc)
+  call field_get_val_s(ifnonh,cpro_fnonh)
+  call field_get_val_s(ifnoch,cpro_fnoch)
+  call field_get_val_s(ifnoth,cpro_fnoth)
+  call field_get_val_s(icnohc,cpro_cnohc)
+  call field_get_val_s(icnonh,cpro_cnonh)
+  call field_get_val_s(icnorb,cpro_cnorb)
+  call field_get_val_s(igrb,cpro_grb)
 
   do iel = 1, ncel
     cpro_ghcn1(iel) = 0.d0
@@ -495,9 +495,9 @@ endif
 ! 6. Calculation of balances in C, O et H
 !===============================================================================
 
-call field_get_val_s(iprpfl(ibcarbone),cpro_bcarbone)
-call field_get_val_s(iprpfl(iboxygen),cpro_boxygen)
-call field_get_val_s(iprpfl(ibhydrogen),cpro_bhydrogen)
+call field_get_val_s(ibcarbone,cpro_bcarbone)
+call field_get_val_s(iboxygen,cpro_boxygen)
+call field_get_val_s(ibhydrogen,cpro_bhydrogen)
 
 do iel=1,ncel
   cpro_bcarbone(iel) = cpro_x1(iel)                                &

@@ -171,7 +171,7 @@ if (inpdt0.eq.0) then
 
   ! Physical quantity numbers
   call field_get_val_s(icrom, crom)
-  call field_get_val_s(iprpfl(ivisct), cpro_visct)
+  call field_get_val_s(ivisct, cpro_visct)
 
   ! Pointers to the mass fluxes
   call field_get_key_int(ivarfl(ivar), kimasf, iflmas)
@@ -182,11 +182,11 @@ if (inpdt0.eq.0) then
   ! The balance is in Joule, so store the specific heat when dealing
   ! with the Temperature.
 
-  if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
+  if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
 
   ! If it is a temperature
   if (itherm.eq.1) then
-    if (icp.gt.0) then
+    if (icp.ge.0) then
       do iel = 1, ncel
         xcp(iel) = cpro_cp(iel)
       enddo
@@ -488,7 +488,7 @@ if (inpdt0.eq.0) then
       else
         xvar = smacel(ieltsm,ivar)
       endif
-      if (icp.gt.0) then
+      if (icp.ge.0) then
         if (xgamma.lt.0.d0) then
           xbilma =   xbilma  &
                    + volume(iel) * cpro_cp(iel) * dt(iel) * xgamma * xvar

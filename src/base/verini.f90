@@ -386,7 +386,7 @@ endif
 
 !     Test du theta de la diffusivite des scalaires et de Cp : ils doivent etre
 !       variables en (en espace) si on les extrapole (en temps) (...)
-if ( icpext.gt.0 .and. icp.le.0 ) then
+if ( icpext.gt.0 .and. icp.lt.0 ) then
   write(nfecra,2135) icpext, icp
   iok = iok + 1
 endif
@@ -1514,7 +1514,7 @@ if (nscal.gt.0) then
 
 !     Si CP0 est utilise (resolution d'un scalaire en temperature
 !       et CP constant), il doit etre positif
-  if (icp.eq.0) then
+  if (icp.eq.-1) then
     if (cp0.lt.0.d0) then
       iisct = 0
       do iis = 1, nscal

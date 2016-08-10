@@ -178,14 +178,14 @@ endif
 call field_get_coefaf_s(ivarfl(ipr), coefaf_p)
 call field_get_coefbf_s(ivarfl(ipr), coefbf_p)
 
-if (icp.gt.0) then
-  call field_get_val_s(iprpfl(icp), cpro_cp)
+if (icp.ge.0) then
+  call field_get_val_s(icp, cpro_cp)
 else
   cpro_cp => rvoid1
 endif
 
-if (icv.gt.0) then
-  call field_get_val_s(iprpfl(icv), cpro_cv)
+if (icv.ge.0) then
+  call field_get_val_s(icv, cpro_cv)
 else
   cpro_cv => rvoid1
 endif

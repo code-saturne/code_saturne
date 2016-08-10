@@ -133,14 +133,14 @@ if (ipucou.ne.1) then
   ihisvr(ippty,1) = 0
   ihisvr(ipptz,1) = 0
 endif
-ipp = ipppro(ipproc(ivisct))
+ipp = field_post_id(ivisct)
 if ((iturb.eq.10 .or. itytur.eq.2                        &
      .or. itytur.eq.5 .or. iturb.eq.60                   &
      .or. iturb.eq.70)                                   &
      .and.ihisvr(ipp,1).eq.-999) ihisvr(ipp,1) = -1
 if (idtvar.lt.0) then
-  ihisvr(ipppro(ipproc(icour)),1) = 0
-  ihisvr(ipppro(ipproc(ifour)),1) = 0
+  ihisvr(field_post_id(icour),1) = 0
+  ihisvr(field_post_id(ifour),1) = 0
 endif
 
 n_moments = cs_time_moment_n_moments()

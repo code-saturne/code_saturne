@@ -128,8 +128,8 @@ call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
 
 ! --- Numero des grandeurs physiques
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(irom1), cpro_rom1)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(irom1, cpro_rom1)
+call field_get_val_s(ivisct, visct)
 
 call field_get_val_s(ivarfl(isca(ifvap)), cvar_fvap)
 
@@ -234,11 +234,11 @@ endif
 !==============================================================================
 
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(itemp1),cpro_temp1)
+call field_get_val_s(itemp1,cpro_temp1)
 do icla=1,nclafu
 !
-  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
-  call field_get_val_s(iprpfl(igmeva(icla)),cpro_gmeva)
+  call field_get_val_s(itemp2(icla),cpro_temp2)
+  call field_get_val_s(igmeva(icla),cpro_gmeva)
   do iel = 1, ncel
 !
     t2mt1  = cpro_temp2(iel)-cpro_temp1(iel)

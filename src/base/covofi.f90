@@ -56,7 +56,6 @@
 !> \param[in]     itypcd        type of surface condensation source term
 !> \param[in]     itypst        type of volume  condensation source term
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        variable value associated to the mass source
@@ -79,7 +78,7 @@ subroutine covofi &
    iscal  , itspdv ,                                              &
    icepdc , icetsm , ifbpcd , ltmast ,                            &
    itypsm , itypcd , itypst ,                                     &
-   dt     , propce , tslagr ,                                     &
+   dt     , tslagr ,                                              &
    ckupdc , smacel , spcond , svcond , flxmst ,                   &
    viscf  , viscb  )
 
@@ -114,7 +113,7 @@ use cs_f_interfaces
 use atchem
 use darcy_module
 use cs_c_bindings
-use pointe, only: itypfb
+use pointe, only: itypfb, pmapper_double_r1
 
 !===============================================================================
 
@@ -132,7 +131,6 @@ integer          ifbpcd(nfbpcd), itypcd(nfbpcd,nvar)
 integer          ltmast(ncelet), itypst(ncelet,nvar)
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision spcond(nfbpcd,nvar)
@@ -149,7 +147,6 @@ integer          iprev , inc   , iccocg, iii, iiun, ibcl
 integer          ivarsc
 integer          iiscav
 integer          ifcvsl, iflmas, iflmab
-integer          ipcvso
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
@@ -192,8 +189,9 @@ double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: visct, cpro_cp, cproa_scal_st
 double precision, dimension(:), pointer :: cpro_scal_st
-double precision, dimension(:), pointer :: cpro_viscls
+double precision, dimension(:), pointer :: cpro_viscls, cpro_visct
 double precision, dimension(:), pointer :: cpro_tsscal
+double precision, dimension(:), pointer :: cpro_x2icla
 ! Darcy arrays
 double precision, allocatable, dimension(:) :: diverg
 double precision, dimension(:), pointer :: cpro_delay, cpro_sat
@@ -271,7 +269,7 @@ call field_have_previous(icrom, lprev)
 if (lprev) then
   call field_get_val_prev_s(icrom, croma)
 endif
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(ivisct, visct)
 
 call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
 if (ifcvsl.ge.0) then
@@ -279,7 +277,7 @@ if (ifcvsl.ge.0) then
 endif
 
 if (idilat.ge.4) then
-  call field_get_val_s(iprpfl(iustdy(iscal)), cpro_tsscal)
+  call field_get_val_s(iustdy(iscal), cpro_tsscal)
 endif
 
 ! --- Numero de propriété du terme source si extrapolation
@@ -321,8 +319,8 @@ if (imucpp.eq.0) then
     xcpp(iel) = 1.d0
   enddo
 elseif (imucpp.eq.1) then
-  if (icp.gt.0) then
-    call field_get_val_s(iprpfl(icp), cpro_cp)
+  if (icp.ge.0) then
+    call field_get_val_s(icp, cpro_cp)
     do iel = 1, ncel
       xcpp(iel) = cpro_cp(iel)
     enddo
@@ -502,23 +500,23 @@ if (iirayo.ge.1) then
     endif
 
     if (iscal .eq.ihgas) then
-
       call field_get_id("rad_st", f_id)
       call field_get_val_s(f_id, cpro_tsre1)
-
       do iel = 1, ncel
-
         smbrs(iel) = smbrs(iel)+volume(iel)*cpro_tsre1(iel)
-        do icla = 1, nclacp
-          write(f_name,  '("rad_st_", i2.2)') icla+1
-          call field_get_id(f_name, f_id)
-          call field_get_val_s(f_id, cpro_tsre)
+      enddo
+
+      do icla = 1, nclacp
+        write(f_name,  '("rad_st_", i2.2)') icla+1
+        call field_get_id(f_name, f_id)
+        call field_get_val_s(f_id, cpro_tsre)
+        call field_get_val_s(ix2(icla), cpro_x2icla)
+        do iel = 1, ncel
           smbrs(iel) = smbrs(iel)-volume(iel)*cpro_tsre(iel) &
-                                             *propce(iel,ipproc(ix2(icla)))
+                                             *cpro_x2icla(iel)
         enddo
       enddo
     endif
-
   endif
 
   ! -> Fuel
@@ -727,8 +725,8 @@ if (itspdv.eq.1) then
     if (st_prv_id .ge. 0) then
 
       ! Not extapolated value of the viscosity
-      ipcvso = ipproc(ivisct)
-      if (iviext.gt.0) ipcvso = ipproc(ivista)
+      call field_get_val_s(ivisct, cpro_visct)
+      if (iviext.gt.0) call field_get_val_prev_s(ivisct, cpro_visct)
 
       ! iscal is the variance of the scalar iiscav
       ! with modelized turbulent fluxes GGDH or AFM or DFM
@@ -753,7 +751,7 @@ if (itspdv.eq.1) then
       else
         do iel = 1, ncel
           cproa_scal_st(iel) = cproa_scal_st(iel)                                     &
-               + 2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)                  &
+               + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                  &
                *cell_f_vol(iel)/sigmas(iscal)                                     &
                *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
@@ -761,7 +759,8 @@ if (itspdv.eq.1) then
 
     ! If not time extrapolation...
     else
-      ipcvso = ipproc(ivisct)
+
+      call field_get_val_s(ivisct, cpro_visct)
 
       ! iscal is the variance of the scalar iiscav
       ! with modelized turbulent fluxes GGDH or AFM or DFM
@@ -798,7 +797,7 @@ if (itspdv.eq.1) then
       else
         do iel = 1, ncel
           smbrs(iel) = smbrs(iel)                                            &
-                     + 2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)           &
+                     + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)           &
                      * cell_f_vol(iel)/sigmas(iscal)                             &
                      * (grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
@@ -808,7 +807,7 @@ if (itspdv.eq.1) then
       if (idilat.ge.4) then
         do iel = 1, ncel
           cpro_tsscal(iel) = cpro_tsscal(iel) +                   &
-               2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)        &
+               2.d0*xcpp(iel)*max(cpro_visct(iel),zero)        &
              *cell_f_vol(iel)/sigmas(iscal)                       &
              *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo

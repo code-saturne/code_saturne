@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+#include "cs_field.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -109,6 +110,8 @@ typedef enum {
   /* Specific physics variables and properties */
 
   CS_ENUMF_(t_kelvin),     /*!< temperature, in Kelvin */
+
+  CS_ENUMF_(vism),         /*!< mesh viscosity */
 
   CS_ENUMF_(pot_t),        /*!< potential temperature */
   CS_ENUMF_(totwt),        /*!< total water content */

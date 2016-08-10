@@ -241,7 +241,7 @@ call user_initialization()
 
 if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
   call field_get_val_s(ivarfl(ipr), cvar_pr)
-  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
+  call field_get_val_s(iprtot, cpro_prtot)
   xxp0   = xyzp0(1)
   xyp0   = xyzp0(2)
   xzp0   = xyzp0(3)
@@ -262,7 +262,7 @@ if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
   enddo
 else if ((ippmod(idarcy).ge.0).and.(darcy_gravity.ge.1)) then
   call field_get_val_s(ivarfl(ipr), cvar_pr)
-  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
+  call field_get_val_s(iprtot, cpro_prtot)
   do iel = 1, ncel
     cpro_prtot(iel) = cvar_pr(iel) - xyzcen(1,iel)*darcy_gravity_x &
                                    - xyzcen(2,iel)*darcy_gravity_y &

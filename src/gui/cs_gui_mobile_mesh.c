@@ -49,6 +49,7 @@
 #include "mei_evaluate.h"
 
 #include "cs_base.h"
+#include "cs_field_pointer.h"
 #include "cs_gui_util.h"
 #include "cs_gui_variables.h"
 #include "cs_gui_boundary_conditions.h"
@@ -764,15 +765,9 @@ get_uistr2_data(const char    *label,
 
 /*----------------------------------------------------------------------------
  *  uivima
- *
- * viscmx   <--  VISCMX
- * viscmy   <--  VISCMY
- * viscmz   <--  VISCMZ
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uivima, UIVIMA) (double         *const viscmx,
-                                double         *const viscmy,
-                                double         *const viscmz)
+void CS_PROCF (uivima, UIVIMA) (void)
 {
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
@@ -783,6 +778,7 @@ void CS_PROCF (uivima, UIVIMA) (double         *const viscmx,
                                   "mesh_viscosity_2",
                                   "mesh_viscosity_3" };
   int variable_nbr   = 1;
+  int ivar           = 0;
 
   /* Get formula */
   mei_tree_t *ev;
@@ -796,10 +792,8 @@ void CS_PROCF (uivima, UIVIMA) (double         *const viscmx,
   if (!aleFormula) {
     bft_printf("Warning : Formula is null for ale. Use constant value\n");
     for (iel = 0; iel < n_cells; iel++) {
-      viscmx[iel] = 1.;
-      if (isOrthotrop) {
-        viscmy[iel] = 1.;
-        viscmz[iel] = 1.;
+      for (ivar = 0; ivar < variable_nbr; ivar++) {
+        CS_F_(vism)->val[variable_nbr*iel + ivar] = 1.;
       }
     }
   }
@@ -822,11 +816,11 @@ void CS_PROCF (uivima, UIVIMA) (double         *const viscmx,
 
       mei_evaluate(ev);
 
-      /* Set viscmx, viscmy and viscmz */
-      viscmx[iel] = mei_tree_lookup(ev, "mesh_viscosity_1");
+      /* Set mesh_u components */
+      CS_F_(vism)->val[variable_nbr*iel] = mei_tree_lookup(ev, "mesh_viscosity_1");
       if (isOrthotrop) {
-        viscmy[iel] = mei_tree_lookup(ev, "mesh_viscosity_2");
-        viscmz[iel] = mei_tree_lookup(ev, "mesh_viscosity_3");
+        CS_F_(vism)->val[variable_nbr*iel + 1] = mei_tree_lookup(ev, "mesh_viscosity_2");
+        CS_F_(vism)->val[variable_nbr*iel + 2] = mei_tree_lookup(ev, "mesh_viscosity_3");
       }
     }
     mei_tree_destroy(ev);

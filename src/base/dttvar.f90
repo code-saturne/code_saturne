@@ -111,7 +111,7 @@ integer          inc, iccocg
 integer          nswrgp, imligp
 integer          f_id
 integer          nbrval, nclptr
-integer          ipccou, ipcfou, ntcam1
+integer          ntcam1
 
 double precision epsrgp, climgp, extrap
 double precision cfmax,cfmin, w1min, w2min, w3min
@@ -157,14 +157,12 @@ endif
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
-call field_get_val_s(iprpfl(icour), cpro_cour)
-call field_get_val_s(iprpfl(ifour), cpro_four)
-ipccou  = ipproc(icour)
-ipcfou  = ipproc(ifour)
+call field_get_val_s(icour, cpro_cour)
+call field_get_val_s(ifour, cpro_four)
 
 if (ntlist.gt.0) then
   modntl = mod(ntcabs,ntlist)
@@ -175,8 +173,8 @@ else
 endif
 
 if (                                                             &
-   .not. (iconv(iu).ge.1 .and. ipccou.ge.1) .and.                &
-   .not. (idiff(iu).ge.1 .and. ipcfou.ge.1) .and.                &
+   .not. (iconv(iu).ge.1 .and. icour.ge.1) .and.                &
+   .not. (idiff(iu).ge.1 .and. ifour.ge.1) .and.                &
    .not. ((iconv(iu).ge.1 .or.idiff(iu).ge.1).and.               &
            (iwarnp.ge.2.or.modntl.eq.0)) .and.                   &
    .not. (ippmod(icompf).ge.0.and.                               &
@@ -638,7 +636,7 @@ if (idtvar.ge.0) then
 ! 4.2  CALCUL DU NOMBRE DE COURANT POUR AFFICHAGE
 !===============================================================================
 
-  if (iconv(iu).ge.1 .and. ipccou.ge.1) then
+  if (iconv(iu).ge.1 .and. icour.ge.1) then
 
     idiff0 = 0
     cnom   =' COURANT'
@@ -707,7 +705,7 @@ if (idtvar.ge.0) then
 ! 4.3  CALCUL DU NOMBRE DE FOURIER POUR AFFICHAGE
 !===============================================================================
 
-  if (idiff(iu).ge.1 .and. ipcfou.ge.1) then
+  if (idiff(iu).ge.1 .and. ifour.ge.1) then
 
     iconv0 = 0
     CNOM   =' FOURIER'

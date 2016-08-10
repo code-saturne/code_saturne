@@ -182,8 +182,8 @@ endif
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
 
-call field_get_val_s(iprpfl(ivisct), cvisct)
-call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(ivisct, cvisct)
+call field_get_val_s(iviscl, viscl)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -213,16 +213,16 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(icrom, cromo)
 call field_get_val_s(ibrom, bromo)
-call field_get_val_s(iprpfl(ivisct), cpro_pcvto)
-call field_get_val_s(iprpfl(iviscl), cpro_pcvlo)
+call field_get_val_s(ivisct, cpro_pcvto)
+call field_get_val_s(iviscl, cpro_pcvlo)
 if (istprv.ge.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
     call field_get_val_prev_s(ibrom, bromo)
   endif
   if (iviext.gt.0) then
-    call field_get_val_s(iprpfl(ivista), cpro_pcvto)
-    call field_get_val_s(iprpfl(ivisla), cpro_pcvlo)
+    call field_get_val_prev_s(ivisct, cpro_pcvto)
+    call field_get_val_prev_s(iviscl, cpro_pcvlo)
   endif
 endif
 

@@ -101,8 +101,8 @@ double precision, dimension(:), pointer :: viscl, visct
 !===============================================================================
 
 ! --- Physical quantities
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 
 !===============================================================================
 ! VITESSE DE DEFILEMENT POUR LES PAROIS FLUIDES ET SYMETRIES

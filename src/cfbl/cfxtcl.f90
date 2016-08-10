@@ -157,8 +157,8 @@ call field_get_val_s(ibrom, brom)
 
 call field_get_val_s(ivarfl(ien), cvar_en)
 
-if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
-if (icv.gt.0) call field_get_val_s(iprpfl(icv), cpro_cv)
+if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
+if (icv.ge.0) call field_get_val_s(icv, cpro_cv)
 
 ! list of the variables of the compressible model
 ivarcf(1) = ipr
@@ -279,7 +279,7 @@ do ifac = 1, nfabor
       ! difficult.
 
       icodcl(ifac,ien) = 5
-      if(icv.eq.0) then
+      if(icv.eq.-1) then
         rcodcl(ifac,ien,1) = cv0*rcodcl(ifac,itk,1)
       else
         rcodcl(ifac,ien,1) = cpro_cv(iel)*rcodcl(ifac,itk,1)
@@ -442,8 +442,8 @@ do ifac = 1, nfabor
 
     cpb(1) = 0.d0
     cvb(1) = 0.d0
-    if (icp.gt.0) cpb(1) = cpro_cp(iel)
-    if (icv.gt.0) cvb(1) = cpro_cv(iel)
+    if (icp.ge.0) cpb(1) = cpro_cp(iel)
+    if (icv.ge.0) cvb(1) = cpro_cv(iel)
 
     l_size = 1
     call cs_cf_thermo_pt_from_de(cpb, cvb, brom(ifac:ifac), bc_en(ifac:ifac), &

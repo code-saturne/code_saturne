@@ -150,8 +150,8 @@ endif
 
 if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics only
 
-  call field_get_val_s(iprpfl(iliqwt), cpro_liqwt)
-  call field_get_val_s(iprpfl(itempc), cpro_tempc)
+  call field_get_val_s(iliqwt, cpro_liqwt)
+  call field_get_val_s(itempc, cpro_tempc)
 
   ! Test minimum liquid water to carry out drop sedimentation
   qliqmax = 0.d0

@@ -279,9 +279,8 @@ contains
 
   ! Resize main real array, update pointers and synchronize halo
 
-  subroutine resize_main_real_array ( dt , propce )
+  subroutine resize_main_real_array ( dt )
 
-    use dimens, only: nproce
     use field
     use mesh  , only: ncel, ncelet
     use numvar
@@ -294,47 +293,31 @@ contains
     ! Arguments
 
     double precision, pointer, dimension(:)   :: dt
-    double precision, pointer, dimension(:,:) :: propce
 
     ! Local variables
 
     integer iel, iprop
 
     double precision, allocatable, dimension(:) :: dt0
-    double precision, allocatable, dimension(:,:) :: proce0
 
     ! Buffering array
 
     allocate(dt0(ncelet))
-    allocate(proce0(ncelet,nproce))
 
     do iel = 1, ncel
       dt0(iel) = dt(iel)
     enddo
 
-    do iprop = 1, nproce
-      do iel = 1, ncel
-        proce0(iel,iprop) = propce(iel,iprop)
-      enddo
-    enddo
-
     ! Reallocate main arrays
 
-    deallocate(dt, propce)
+    deallocate(dt)
 
     allocate(dt(ncelet))
-    allocate(propce(ncelet,nproce))
 
     ! Update new main real array  : "real" cells
 
     do iel = 1, ncel
       dt(iel) = dt0(iel)
-    enddo
-
-    do iprop = 1, nproce
-      do iel = 1, ncel
-        propce(iel,iprop) = proce0(iel,iprop)
-      enddo
     enddo
 
     ! Update new main real array : "ghost" cells
@@ -345,16 +328,11 @@ contains
 
       call synsca(dt)
 
-      do iprop = 1, nproce
-        if (iprop.eq.ipproc(irom)) call synsca (propce(1,iprop))
-      enddo
-
     endif
 
     ! Free buffer
 
     deallocate(dt0)
-    deallocate(proce0)
 
   return
   end subroutine resize_main_real_array

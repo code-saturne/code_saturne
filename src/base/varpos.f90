@@ -72,7 +72,6 @@ integer       iscal , id, ityloc, itycat, ifcvsl
 integer       ii
 integer       iok   , ippok
 integer       ivisph, iest
-integer       nprmax
 integer       idttur
 
 double precision gravn2
@@ -125,27 +124,22 @@ endif
 !===============================================================================
 
 ! CP when variable
-if (icp.ne.0) then
-  call add_property_field('specific_heat', 'Specific Heat', icp)
+if (icp.ge.0) then
+  call add_property_field_1d('specific_heat', 'Specific Heat', icp)
 endif
 
 ! Density at the second previous time step for cavitation algorithm
 if (icavit.ge.0.or.idilat.gt.1) then
-  call add_property_field('density_old', 'Density Old', iromaa)
-  icroaa = iprpfl(iromaa)
+  call add_property_field_1d('density_old', 'Density Old', iromaa)
+  icroaa = iromaa
 endif
 
 ! ALE mesh viscosity
 if (iale.eq.1) then
-  call add_property_field('mesh_viscosity_1', 'Mesh ViscX', ivisma(1))
-  ! si la viscosite est isotrope, les trois composantes pointent
-  !  au meme endroit
   if (iortvm.eq.0) then
-    ivisma(2) = ivisma(1)
-    ivisma(3) = ivisma(1)
+    call add_property_field('mesh_viscosity', 'Mesh Visc', 1, .false., ivisma)
   else
-    call add_property_field('mesh_viscosity_2', 'Mesh ViscY', ivisma(2))
-    call add_property_field('mesh_viscosity_3', 'Mesh ViscZ', ivisma(3))
+    call add_property_field('mesh_viscosity', 'Mesh Visc', 3, .false., ivisma)
   endif
 endif
 
@@ -290,7 +284,7 @@ do iscal = 1, nscal
 
   if (iscal.eq.iscalt) then
     if (iturt(iscalt).gt.0.and.irovar.eq.1) then
-      call add_property_field('thermal_expansion', 'Beta', ibeta)
+      call add_property_field_1d('thermal_expansion', 'Beta', ibeta)
     endif
   endif
 
@@ -405,10 +399,6 @@ if (iok.gt.0) then
   call csexit(1)
 endif
 
-! Numeros de propriete
-
-nprmax = nproce
-
 ! Source term for weakly compressible algorithm (semi analytic scheme)
 if (idilat.ge.4) then
   do iscal = 1, nscal
@@ -416,14 +406,14 @@ if (idilat.ge.4) then
     call field_get_name(id, s_name)
     call field_get_label(id, s_label)
     f_name  = trim(s_name) // '_dila_st'
-    call add_property_field(f_name, '', iustdy(iscal))
-    id = iprpfl(iustdy(iscal))
+    call add_property_field_1d(f_name, '', iustdy(iscal))
+    id = iustdy(iscal)
     call field_set_key_int(id, keyipp, -1)
     call field_set_key_int(id, keyvis, 0)
   enddo
   itsrho = nscal + 1
-  call add_property_field('dila_st', '', iustdy(itsrho))
-  id = iprpfl(iustdy(iscal))
+  call add_property_field_1d('dila_st', '', iustdy(itsrho))
+  id = iustdy(iscal)
   call field_set_key_int(id, keyipp, -1)
   call field_set_key_int(id, keyvis, 0)
 endif
@@ -432,29 +422,21 @@ endif
 ! if we perform a hydrostatic pressure correction (icalhy=1)
 if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0.or.ipthrm.eq.1 &
      .or.ippmod(icompf).ge.0) then
-  nproce = nproce + 1
-  iroma  = nproce
-  call field_set_n_previous(iprpfl(irom), 1)
+  call field_set_n_previous(irom, 1)
   if (iroext.gt.0.or.idilat.gt.1) then
     call field_set_n_previous(ibrom, 1)
   endif
 endif
 ! Dans le cas d'une extrapolation de la viscosite totale
 if (iviext.gt.0) then
-  nproce = nproce + 1
-  ivisla = nproce
-  call field_set_n_previous(iprpfl(iviscl), 1)
-  nproce = nproce + 1
-  ivista = nproce
-  call field_set_n_previous(iprpfl(ivisct), 1)
+  call field_set_n_previous(iviscl, 1)
+  call field_set_n_previous(ivisct, 1)
 endif
 
 ! CP s'il est variable
-if (icp.ne.0) then
+if (icp.ge.0) then
   if (icpext.gt.0) then
-    nproce = nproce + 1
-    icpa   = nproce
-    call field_set_n_previous(iprpfl(icp), 1)
+    call field_set_n_previous(icp, 1)
   endif
 endif
 
@@ -579,22 +561,22 @@ enddo
 if (iescal(iespre).gt.0) then
   write(f_name,  '(a14,i1)') 'est_error_pre_', iescal(iespre)
   write(f_label, '(a5,i1)') 'EsPre', iescal(iespre)
-  call add_property_field_owner(f_name, f_label, 1, .false., iestim(iespre))
+  call add_property_field(f_name, f_label, 1, .false., iestim(iespre))
 endif
 if (iescal(iesder).gt.0) then
   write(f_name,  '(a14,i1)') 'est_error_der_', iescal(iesder)
   write(f_label, '(a5,i1)') 'EsDer', iescal(iesder)
-  call add_property_field_owner(f_name, f_label, 1, .false., iestim(iesder))
+  call add_property_field(f_name, f_label, 1, .false., iestim(iesder))
 endif
 if (iescal(iescor).gt.0) then
   write(f_name,  '(a14,i1)') 'est_error_cor_', iescal(iescor)
   write(f_label, '(a5,i1)') 'EsCor', iescal(iescor)
-  call add_property_field_owner(f_name, f_label, 1, .false., iestim(iescor))
+  call add_property_field(f_name, f_label, 1, .false., iestim(iescor))
 endif
 if (iescal(iestot).gt.0) then
   write(f_name,  '(a14,i1)') 'est_error_tot_', iescal(iestot)
   write(f_label, '(a5,i1)') 'EsTot', iescal(iestot)
-  call add_property_field_owner(f_name, f_label, 1, .false., iestim(iestot))
+  call add_property_field(f_name, f_label, 1, .false., iestim(iestot))
 endif
 
 !===============================================================================
@@ -1175,4 +1157,3 @@ call field_set_key_int(f_id, kst, st_id)
 return
 
 end subroutine add_source_term_field
-

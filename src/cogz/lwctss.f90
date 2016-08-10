@@ -143,7 +143,7 @@ ivar = isca(iscal)
 
 ! ---
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(ivisct, visct)
 
 call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
 call field_get_val_prev_s(ivarfl(isca(iyfm)), cvara_yfm)
@@ -168,10 +168,10 @@ allocate(cpro_tscl(ndirac))
 allocate(cpro_rhol(ndirac))
 
 do idirac = 1, ndirac
-  call field_get_val_s(iprpfl(ifmel(idirac)), cpro_fmel(idirac)%p)
-  call field_get_val_s(iprpfl(ifmal(idirac)), cpro_fmal(idirac)%p)
-  call field_get_val_s(iprpfl(irhol(idirac)), cpro_rhol(idirac)%p)
-  call field_get_val_s(iprpfl(itscl(idirac)), cpro_tscl(idirac)%p)
+  call field_get_val_s(ifmel(idirac), cpro_fmel(idirac)%p)
+  call field_get_val_s(ifmal(idirac), cpro_fmal(idirac)%p)
+  call field_get_val_s(irhol(idirac), cpro_rhol(idirac)%p)
+  call field_get_val_s(itscl(idirac), cpro_tscl(idirac)%p)
 enddo
 
 !===============================================================================

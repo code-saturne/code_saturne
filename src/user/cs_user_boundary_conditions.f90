@@ -330,10 +330,10 @@
 !>
 !> Cell value field ids
 !>
-!> - Density:                        \c iprpfl(irom)
-!> - Dynamic molecular viscosity:    \c iprpfl(iviscl)
-!> - Turbulent viscosity:            \c iprpfl(ivisct)
-!> - Specific heat:                  \c iprpfl(icp)
+!> - Density:                        \c irom
+!> - Dynamic molecular viscosity:    \c iviscl
+!> - Turbulent viscosity:            \c ivisct
+!> - Specific heat:                  \c icp
 !> - Diffusivity(lambda):            \c field_get_key_int(ivarfl(isca(iscal)), &
 !>                                      kivisl, ...)
 !>

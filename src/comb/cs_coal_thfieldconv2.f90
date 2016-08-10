@@ -107,9 +107,9 @@ eh1( : ) = zero
 
 ! --- Initialization from T2 to T1
 
-call field_get_val_s(iprpfl(itemp1),cpro_temp1)
+call field_get_val_s(itemp1,cpro_temp1)
 do icla = 1, nclacp
-  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+  call field_get_val_s(itemp2(icla),cpro_temp2)
   do iel = 1, ncel
     cpro_temp2(iel) = cpro_temp1(iel)
   enddo
@@ -125,7 +125,7 @@ if ( ihflt2.eq.0 ) then
 
   do icla = 1, nclacp
     call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
-    call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+    call field_get_val_s(itemp2(icla),cpro_temp2)
     icha = ichcor(icla)
     do iel = 1, ncel
       cpro_temp2(iel) =                                       &
@@ -147,7 +147,7 @@ else
       call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
     endif
     call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
-    call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+    call field_get_val_s(itemp2(icla),cpro_temp2)
 
     i = npoc-1
     do iel = 1, ncel

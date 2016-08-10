@@ -276,7 +276,7 @@ elseif (iappel.eq.3) then
 !===============================================================================
 
   !-- pointer to the specific heat
-  if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
+  if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
 
   !-- pointer to the enthalpy value
   ivarh = isca(iscalt)

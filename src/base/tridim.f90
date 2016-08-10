@@ -37,7 +37,6 @@
 !> \param[in]     isostd        standard output indicator
 !>                              + reference face number
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] propce        physical properties at cell centers
 !> \param[in]     frcxt         external force generating hydrostatic pressure
 !> \param[in]     prhyd         predicted hydrostatic pressure
 !______________________________________________________________________________
@@ -46,7 +45,7 @@ subroutine tridim &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
-   dt     , propce ,                                              &
+   dt     ,                                                       &
    frcxt  , prhyd  )
 
 !===============================================================================
@@ -105,7 +104,6 @@ integer          nvar   , nscal
 integer          isostd(nfabor+1)
 
 double precision, pointer, dimension(:)   :: dt
-double precision, pointer, dimension(:,:) :: propce
 double precision, pointer, dimension(:,:) :: frcxt
 double precision, pointer, dimension(:) :: prhyd
 
@@ -120,7 +118,7 @@ integer          ntrela
 integer          icmst
 
 integer          isvhb, iz
-integer          ii    , ippcv , ikpdc
+integer          ii    ,  ikpdc
 integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
@@ -189,7 +187,7 @@ interface
   subroutine navstv &
   ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
     isostd ,                                                       &
-    dt     , propce ,                                              &
+    dt     ,                                                       &
     frcxt  , prhyd  ,                                              &
     trava  , ximpa  , uvwk   )
 
@@ -203,7 +201,6 @@ interface
     integer          isostd(nfabor+1)
 
     double precision, pointer, dimension(:)   :: dt
-    double precision, pointer, dimension(:,:) :: propce
     double precision, pointer, dimension(:,:) :: frcxt
     double precision, pointer, dimension(:) :: prhyd
     double precision, pointer, dimension(:,:) :: trava, uvwk
@@ -301,7 +298,7 @@ if (ippmod(idarcy).eq.-1) then
     if(iwarni(ipr).ge.2) then
       write(nfecra,2000) ntcabs
     endif
-    call field_get_val_s(iprpfl(iprtot), cpro_prtot)
+    call field_get_val_s(iprtot, cpro_prtot)
     xxp0   = xyzp0(1)
     xyp0   = xyzp0(2)
     xzp0   = xyzp0(3)
@@ -498,7 +495,7 @@ if (inpdt0.eq.1.and.isuite.eq.1) return
 
 if (itrale.gt.0) then
   iappel = 1
-  call schtmp(nscal, iappel, propce)
+  call schtmp(nscal, iappel)
 endif
 
 
@@ -550,11 +547,11 @@ if (iwarni(iu).ge.1) then
   write(nfecra,1010)
 endif
 
-call phyvar(nvar, nscal, dt, propce)
+call phyvar(nvar, nscal, dt)
 
 if (itrale.gt.0) then
   iappel = 2
-  call schtmp(nscal, iappel, propce)
+  call schtmp(nscal, iappel)
 endif
 
 
@@ -1185,15 +1182,12 @@ do while (iterns.le.nterup)
 
   if (itherm .eq. 3) then
 
-    if(icv.gt.0) then
-      ippcv = ipproc(icv)
+    if(icv.ge.0) then
       cvcst = 0.d0
     else
-      ippcv = 1
       cvcst = cv0
     endif
   else
-    ippcv = 1
     cvcst = 0.d0
   endif
 
@@ -1346,7 +1340,7 @@ do while (iterns.le.nterup)
     ! otherwise it is done in navstv.f90
     if (itrale.eq.0) then
 
-      call alelav(propce)
+      call alelav
       must_return = .true.
 
     endif
@@ -1401,7 +1395,7 @@ do while (iterns.le.nterup)
       call navstv &
       ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
         isostd ,                                                       &
-        dt     , propce ,                                              &
+        dt     ,                                                       &
         frcxt  , prhyd  ,                                              &
         trava  , ximpav , uvwk   )
 
@@ -1476,7 +1470,7 @@ do while (iterns.le.nterup)
       !     On teste le flux de masse
       if ((istmpf.eq.0.and.inslst.eq.0) .or. istmpf.ne.0) then
         iappel = 3
-        call schtmp(nscal, iappel, propce)
+        call schtmp(nscal, iappel)
       endif
 
       if (inslst.eq.1) goto 100
@@ -1612,7 +1606,7 @@ if (iccvfg.eq.0) then
   !     pour conserver
   if (istmpf.eq.0) then
     iappel = 4
-    call schtmp(nscal, iappel, propce)
+    call schtmp(nscal, iappel)
   endif
 
 !===============================================================================
@@ -1769,7 +1763,7 @@ if (nscal.ge.1) then
 
   call scalai                                                     &
  ( nvar   , nscal  ,                                              &
-   dt     , propce )
+   dt     )
 
   ! Diffusion terms for weakly compressible algorithm
   if (idilat.ge.4) then
@@ -1792,7 +1786,7 @@ if (allocated(delay_id)) deallocate(delay_id)
 
 
 iappel = 5
-call schtmp(nscal, iappel, propce)
+call schtmp(nscal, iappel)
 
 !===============================================================================
 ! Update flow through fans

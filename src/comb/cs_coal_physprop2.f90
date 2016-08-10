@@ -147,9 +147,9 @@ do icla = 1, nclacp
     call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
   endif
 
-  call field_get_val_s(iprpfl(ix2(icla)),cpro_x2)
-  call field_get_val_s(iprpfl(irom2(icla)),cpro_rom2)
-  call field_get_val_s(iprpfl(idiam2(icla)),cpro_diam2)
+  call field_get_val_s(ix2(icla),cpro_x2)
+  call field_get_val_s(irom2(icla),cpro_rom2)
+  call field_get_val_s(idiam2(icla),cpro_diam2)
   xashcl = xashch(ichcor(icla))
 
   do iel = 1, ncel

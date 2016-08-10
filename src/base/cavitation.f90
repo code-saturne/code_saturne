@@ -295,17 +295,18 @@ contains
   !> \param[in]  bvoifl Volumetric flux at boundary faces array
   !> \param[out] crom   Density at cell center array
   !> \param[out] brom   Density at boudary faces array
-  !> \param[out] viscl  Dynamic viscosity array
   !> \param[out] imasfl Mass flux at internal faces array
   !> \param[out] bmasfl Mass flux at internal boundary faces array
 
   subroutine cavitation_update_phys_prop  &
             ( voidf, coavoi, cobvoi, ivoifl, bvoifl, &
-              crom, brom, viscl, imasfl, bmasfl )
+              crom, brom, imasfl, bmasfl )
 
     use paramx
     use pointe, only: itypfb
     use mesh
+    use numvar
+    use field
 
     ! Arguments
 
@@ -313,13 +314,15 @@ contains
     double precision coavoi(nfabor), cobvoi(nfabor)
     double precision ivoifl(nfac), bvoifl(nfabor)
     double precision crom(ncelet), brom(nfabor)
-    double precision viscl(ncelet)
     double precision imasfl(nfac), bmasfl(nfabor)
 
     ! Local variables
 
     integer iel, ifac, ii, jj
     double precision bvoidf, flui, fluj, flub
+    double precision, dimension(:), pointer :: viscl
+
+    call field_get_val_s(iviscl, viscl)
 
     ! Update mixture density
 
@@ -376,11 +379,12 @@ contains
 
   !> \param[in]      crom   Density array
   !> \param[in]      voidf  Void fraction array
-  !> \param[in,out]  visct  Turbulent viscosity array
 
-  subroutine cavitation_correct_visc_turb (crom, voidf, visct)
+  subroutine cavitation_correct_visc_turb (crom, voidf)
 
     use mesh
+    use numvar
+    use field
 
     ! Arguments
 
@@ -391,10 +395,13 @@ contains
 
     integer iel
     double precision frho
+    double precision, dimension(:), pointer :: cpro_visct
+
+    call field_get_val_s(ivisct, cpro_visct)
 
     do iel = 1, ncel
       frho = ( rov + (1.d0-voidf(iel))**mcav*(rol - rov) )/max(crom(iel),1.d-12)
-      visct(iel) = frho*visct(iel)
+      cpro_visct(iel) = frho*cpro_visct(iel)
     enddo
 
   end subroutine cavitation_correct_visc_turb

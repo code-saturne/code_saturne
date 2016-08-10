@@ -249,10 +249,9 @@ if (ippmod(icod3p).eq.1 .or.   &
 
   ! Although we are in enthalpy formulation, we keep Cp constant
 
-  icp = 0
+  icp = -1
 
 endif
 
 return
 end subroutine
-

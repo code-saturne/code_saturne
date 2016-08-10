@@ -316,7 +316,7 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .ncharm = 0,
      .nozppm = 0,
      .iirayo = 0,
-     .icp = 0,
+     .icp = -1,
      .diftl0 = 0,
      .cmu = 0,
      .visls0 = 0,

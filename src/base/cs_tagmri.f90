@@ -143,8 +143,8 @@ enddo
 if (isvtb.eq.iscalt .and. itherm.eq.2) then
 
 ! --- Specific heat
-if (icp.gt.0) then
-  call field_get_val_s(iprpfl(icp), cpro_cp)
+if (icp.ge.0) then
+  call field_get_val_s(icp, cpro_cp)
 ! --- Stop if Cp is not variable
 else
   write(nfecra,1000) icp

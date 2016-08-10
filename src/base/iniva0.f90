@@ -36,14 +36,13 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[out]    dt            time step value
-!> \param[out]    propce        physical properties at cell centers
 !> \param[out]    frcxt         external stress generating hydrostatic pressure
 !> \param[out]    prhyd         hydrostatic pressure predicted
 !______________________________________________________________________________
 
 subroutine iniva0 &
  ( nvar   , nscal  ,                                              &
-   dt     , propce , frcxt  , prhyd)
+   dt     , frcxt  , prhyd)
 
 !===============================================================================
 ! Module files
@@ -54,7 +53,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nproce
 use pointe
 use entsor
 use albase
@@ -79,7 +77,7 @@ implicit none
 integer          nvar   , nscal
 
 double precision frcxt(3,ncelet), prhyd(ncelet)
-double precision dt(ncelet), propce(ncelet,*)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -88,7 +86,6 @@ integer          iel   , ifac  , isou
 integer          iclip , ii    , jj    , idim
 integer          iivism
 integer          ifcvsl
-integer          nn
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          f_id,  f_dim
 integer          kscmin, kscmax
@@ -112,8 +109,9 @@ double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_prtot
 double precision, dimension(:), pointer :: cpro_viscls, cproa_viscls, cvar_tempk
-double precision, dimension(:), pointer :: cproa_viscl, cproa_cp
+double precision, dimension(:), pointer :: cproa_viscl, cproa_cp, cpro_visma_s
 double precision, dimension(:), pointer :: mix_mol_mas
+double precision, dimension(:,:), pointer :: cpro_visma_v
 
 !===============================================================================
 
@@ -133,43 +131,6 @@ if ( ippmod(icompf).ge.0 ) then
     isympa(ifac) = 1
   enddo
 endif
-
-! Initialize all cell property fields to zero
-! (this is useful only for fields which are mapped;
-! fields who own their values, such as variables, are already
-! initialized after allocation).
-
-do iprop = 1, nproce
-
-  f_id = iprpfl(iprop)
-
-  if (f_id.lt.0) cycle
-
-  call field_get_dim(f_id, f_dim)
-
-  if (f_dim.gt.1) then
-    call field_get_val_v(f_id, field_v_v)
-  else if (f_dim.eq.1) then
-    call field_get_val_s(f_id, field_s_v)
-  endif
-
-  if (f_dim.gt.1) then
-    !$omp parallel do private(isou)
-    do iel = 1, ncelet
-      do isou = 1, f_dim
-        field_v_v(isou,iel) = 0.d0
-      enddo
-    enddo
-  else
-    !$omp parallel do
-    do iel = 1, ncelet
-      field_s_v(iel) = 0.d0
-    enddo
-  endif
-
-  call field_current_to_previous(f_id) ! For those properties requiring it.
-
-enddo
 
 !===============================================================================
 ! 2. PAS DE TEMPS
@@ -215,28 +176,28 @@ if (iroext.gt.0.or.icavit.ge.0) then
 endif
 
 !     Viscosite moleculaire
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 
 !     Viscosite moleculaire aux cellules (et au pdt precedent si ordre2)
 do iel = 1, ncel
   viscl(iel) = viscl0
 enddo
 if(iviext.gt.0) then
-  call field_get_val_prev_s(iprpfl(iviscl), cproa_viscl)
+  call field_get_val_prev_s(iviscl, cproa_viscl)
   do iel = 1, ncel
     cproa_viscl(iel) = viscl(iel)
   enddo
 endif
 
 !     Chaleur massique aux cellules (et au pdt precedent si ordre2)
-if(icp.gt.0) then
-  call field_get_val_s(iprpfl(icp), cpro_cp)
+if(icp.ge.0) then
+  call field_get_val_s(icp, cpro_cp)
   do iel = 1, ncel
     cpro_cp(iel) = cp0
   enddo
   if(icpext.gt.0) then
-    call field_get_val_prev_s(iprpfl(icp), cproa_cp)
+    call field_get_val_prev_s(icp, cproa_cp)
     do iel = 1, ncel
       cproa_cp(iel) = cpro_cp(iel)
     enddo
@@ -251,7 +212,7 @@ endif
 ! into account
 if ((ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0).or.                          &
     (ippmod(idarcy).ge.0.and.darcy_gravity.ge.1)) then
-  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
+  call field_get_val_s(iprtot, cpro_prtot)
   do iel = 1, ncel
     cpro_prtot(iel) = - rinfin
   enddo
@@ -260,7 +221,7 @@ endif
 ! Initialization of mix_mol_mas with default values (air)
 ! (used in cs_cf_thermo_default_init)
 if(ippmod(igmix).ge.0) then
-  call field_get_val_s(iprpfl(igmxml), mix_mol_mas)
+  call field_get_val_s(igmxml, mix_mol_mas)
   do iel =1, ncel
     mix_mol_mas(iel) = xmasmr
   enddo
@@ -304,14 +265,19 @@ enddo
 
 !     Viscosite de maillage en ALE
 if (iale.eq.1) then
-  nn = 1
-  if (iortvm.eq.1) nn = 3
-  do ii = 1, nn
-    iivism = ipproc(ivisma(ii))
-    do iel = 1, ncel
-      propce(iel,iivism) = 1.d0
+  if (iortvm.eq.1) then
+    call field_get_val_v(ivisma, cpro_visma_v)
+    do ii = 1, 3
+      do iel = 1, ncel
+        cpro_visma_v(ii,iel) = 1.d0
+      enddo
     enddo
-  enddo
+  else
+    call field_get_val_s(ivisma, cpro_visma_s)
+    do iel = 1, ncel
+      cpro_visma_s(iel) = 1.d0
+    enddo
+  endif
 endif
 
 ! Porosity

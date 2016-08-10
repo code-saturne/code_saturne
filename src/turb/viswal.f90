@@ -82,7 +82,7 @@ double precision, dimension(:), pointer :: visct
 ! 1. Initialization
 !===============================================================================
 
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(ivisct, visct)
 call field_get_val_s(icrom, crom)
 
 third  = 1.d0/3.d0

@@ -166,13 +166,13 @@ call field_get_val_s(icrom, crom)
 
 ! --- Gas phase temperature
 
-call field_get_val_s(iprpfl(itemp1), cpro_temp1)
-call field_get_val_s(iprpfl(irom1), cpro_rom1)
+call field_get_val_s(itemp1, cpro_temp1)
+call field_get_val_s(irom1, cpro_rom1)
 
-call field_get_val_prev_s(iprpfl(iym1(io2)), cpro_yox)
-call field_get_val_prev_s(iprpfl(iym1(ico2)), cpro_yco2)
-call field_get_val_prev_s(iprpfl(iym1(ico)), cpro_yco)
-call field_get_val_prev_s(iprpfl(iym1(ih2o)), cpro_yh2o)
+call field_get_val_prev_s(iym1(io2), cpro_yox)
+call field_get_val_prev_s(iym1(ico2), cpro_yco2)
+call field_get_val_prev_s(iym1(ico), cpro_yco)
+call field_get_val_prev_s(iym1(ih2o), cpro_yh2o)
 
 call field_get_val_v(ivarfl(iu), vel)
 
@@ -210,12 +210,12 @@ if ( ivar .ge. isca(ih2(1)) .and. ivar .le. isca(ih2(nclafu)) ) then
   call field_get_key_int(ivarfl(ivar), keyccl, numcla)
 
   call field_get_val_prev_s(ivarfl(isca(iyfol(numcla))), cvara_yfolcl)
-  call field_get_val_s(iprpfl(irom2(numcla)),cpro_rom2)
-  call field_get_val_s(iprpfl(idiam2(numcla)),cpro_diam2)
-  call field_get_val_s(iprpfl(itemp2(numcla)),cpro_temp2)
-  call field_get_val_s(iprpfl(igmeva(numcla)),cpro_cgev)
-  call field_get_val_s(iprpfl(igmhtf(numcla)),cpro_cght)
-  call field_get_val_s(iprpfl(ih1hlf(numcla)),cpro_chgl)
+  call field_get_val_s(irom2(numcla),cpro_rom2)
+  call field_get_val_s(idiam2(numcla),cpro_diam2)
+  call field_get_val_s(itemp2(numcla),cpro_temp2)
+  call field_get_val_s(igmeva(numcla),cpro_cgev)
+  call field_get_val_s(igmhtf(numcla),cpro_cght)
+  call field_get_val_s(ih1hlf(numcla),cpro_chgl)
 
   !       The variable is the liquid enthalpy for the mixture mass
   !       The interfacial flux contribute to the variation of the liquid
@@ -287,12 +287,12 @@ elseif ( ivar .ge. isca(iyfol(1))     .and.                       &
   ! index of the droplet class
   call field_get_key_int(ivarfl(ivar), keyccl, numcla)
 
-  call field_get_val_s(iprpfl(irom2(numcla)),cpro_rom2)
-  call field_get_val_s(iprpfl(idiam2(numcla)),cpro_diam2)
-  call field_get_val_s(iprpfl(itemp2(numcla)),cpro_temp2)
-  call field_get_val_s(iprpfl(igmeva(numcla)),cpro_cgev)
-  call field_get_val_s(iprpfl(igmhtf(numcla)),cpro_cght)
-  call field_get_val_s(iprpfl(ih1hlf(numcla)),cpro_chgl)
+  call field_get_val_s(irom2(numcla),cpro_rom2)
+  call field_get_val_s(idiam2(numcla),cpro_diam2)
+  call field_get_val_s(itemp2(numcla),cpro_temp2)
+  call field_get_val_s(igmeva(numcla),cpro_cgev)
+  call field_get_val_s(igmhtf(numcla),cpro_cght)
+  call field_get_val_s(ih1hlf(numcla),cpro_chgl)
 
   do iel = 1, ncel
 
@@ -442,8 +442,8 @@ if ( ivar .eq. isca(ifvap) ) then
 
     call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
     call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfolcl)
-    call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
-    call field_get_val_s(iprpfl(igmeva(icla)),cpro_cgev)
+    call field_get_val_s(itemp2(icla),cpro_temp2)
+    call field_get_val_s(igmeva(icla),cpro_cgev)
 
     do iel = 1, ncel
 
@@ -473,7 +473,7 @@ elseif ( ivar .eq. isca(if7m) ) then
 
     call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
     call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfolcl)
-    call field_get_val_s(iprpfl(igmhtf(icla)),cpro_cght)
+    call field_get_val_s(igmhtf(icla),cpro_cght)
 
     do iel = 1, ncel
       if (cvara_yfolcl(iel) .gt. epsifl) then
@@ -750,11 +750,11 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
   if ( ivar.eq.isca(iyhcn) .or. ivar.eq.isca(iyno) ) then
 
-    call field_get_val_s(iprpfl(ighcn1),cpro_exp1)
-    call field_get_val_s(iprpfl(ighcn2),cpro_exp2)
-    call field_get_val_s(iprpfl(ignoth),cpro_exp3)
-    call field_get_val_s(iprpfl(immel), cpro_mmel)
-    call field_get_val_s(iprpfl(iym1(in2)),cpro_yn2)
+    call field_get_val_s(ighcn1,cpro_exp1)
+    call field_get_val_s(ighcn2,cpro_exp2)
+    call field_get_val_s(ignoth,cpro_exp3)
+    call field_get_val_s(immel, cpro_mmel)
+    call field_get_val_s(iym1(in2),cpro_yn2)
 
     ! QPR= %N released during the evaporation/average volatile materials
     !          rate
@@ -805,9 +805,9 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
         do icla=1,nclafu
 
-          call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
-          call field_get_val_s(iprpfl(igmeva(icla)),cpro_cgev)
-          call field_get_val_s(iprpfl(igmhtf(icla)),cpro_cght)
+          call field_get_val_s(itemp2(icla),cpro_temp2)
+          call field_get_val_s(igmeva(icla),cpro_cgev)
+          call field_get_val_s(igmhtf(icla),cpro_cght)
 
           gmvap = gmvap                                           &
                  + crom(iel)*cpro_cgev(iel)                   &

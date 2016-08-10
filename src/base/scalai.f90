@@ -34,12 +34,11 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     propce        physical properties at cell centers
 !______________________________________________________________________________
 
 subroutine scalai &
  ( nvar   , nscal  ,                                              &
-   dt     , propce )
+   dt     )
 
 !===============================================================================
 ! Module files
@@ -72,7 +71,6 @@ implicit none
 integer          nvar   , nscal
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 
 ! Local variables
 
@@ -286,7 +284,7 @@ if (nscapp.gt.0) then
    iisc   , itspdv ,                                              &
    icepdc , icetsm , ifbpcd , ltmast ,                            &
    itypsm , itypcd , itypst ,                                     &
-   dtr    , propce , tslagr ,                                     &
+   dtr    , tslagr ,                                              &
    ckupdc , smacel , spcond , svcond , flxmst ,                   &
    viscf  , viscb  )
 
@@ -444,7 +442,7 @@ if (nscaus.gt.0) then
    iisc   , itspdv ,                                              &
    icepdc , icetsm , ifbpcd , ltmast ,                            &
    itypsm , itypcd , itypst ,                                     &
-   dtr    , propce , tslagr ,                                     &
+   dtr    , tslagr ,                                              &
    ckupdc , smacel , spcond , svcond , flxmst ,                   &
    viscf  , viscb  )
 

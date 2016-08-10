@@ -710,7 +710,7 @@ endif
 
 ! Although we are in enthalpy formulation, we keep Cp constant
 
-icp = 0
+icp = -1
 
 return
 end subroutine

@@ -68,7 +68,7 @@ implicit none
 
 ! Local variables
 
-integer         ipp, icla, icha, igg, it, ir, ih, if, izone
+integer         icla, icha, igg, it, ir, ih, if, izone
 integer         isol, ige, iat , iii
 integer         idirac
 
@@ -108,8 +108,6 @@ iyfm   = 0
 iyfp2m = 0
 icoyfp = 0
 !       Variables algebriques ou d'etat
-nsalpp = 0
-nsalto = 0
 itemp  = 0
 do igg = 1, ngazgm
   iym(igg) = 0
@@ -731,4 +729,3 @@ enddo
 
 return
 end subroutine ppinii
-

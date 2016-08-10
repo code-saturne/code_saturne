@@ -133,15 +133,15 @@ enddo
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
-call field_get_val_s(iprpfl(itemp), cpro_temp)
-call field_get_val_s(iprpfl(iym(1)), cpro_ym1)
-call field_get_val_s(iprpfl(iym(2)), cpro_ym2)
-call field_get_val_s(iprpfl(iym(3)), cpro_ym3)
+call field_get_val_s(itemp, cpro_temp)
+call field_get_val_s(iym(1), cpro_ym1)
+call field_get_val_s(iym(2), cpro_ym2)
+call field_get_val_s(iym(3), cpro_ym3)
 
 if ( iirayo.gt.0 ) then
-  call field_get_val_s(iprpfl(ickabs), cpro_ckabs)
-  call field_get_val_s(iprpfl(it4m), cpro_t4m)
-  call field_get_val_s(iprpfl(it3m), cpro_t3m)
+  call field_get_val_s(ickabs, cpro_ckabs)
+  call field_get_val_s(it4m, cpro_t4m)
+  call field_get_val_s(it3m, cpro_t3m)
 endif
 
 call field_get_val_s(ivarfl(isca(iygfm)), cvar_ygfm)
@@ -387,7 +387,7 @@ endif
 
 do igg = 1, ngazg
   call field_get_val_s(ibym(1), bsval)
-  call field_get_val_s(iprpfl(iym(igg)),cpro_ymgg)
+  call field_get_val_s(iym(igg),cpro_ymgg)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     bsval(ifac) = cpro_ymgg(iel)

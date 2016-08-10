@@ -89,18 +89,18 @@ double precision, dimension(:), pointer :: prod1, prod2, prod3 , xiner
 
 !===============================================================================
 
-call field_get_val_s(iprpfl(iym1(ifo0)), fuel1)
-call field_get_val_s(iprpfl(iym1(ifov)), fuel2)
-call field_get_val_s(iprpfl(iym1(ico )), fuel3)
-call field_get_val_s(iprpfl(iym1(ih2s)), fuel4)
-call field_get_val_s(iprpfl(iym1(ihy )), fuel5)
-call field_get_val_s(iprpfl(iym1(ihcn)), fuel6)
-call field_get_val_s(iprpfl(iym1(inh3)), fuel7)
-call field_get_val_s(iprpfl(iym1(io2 )), oxyd)
-call field_get_val_s(iprpfl(iym1(ico2)), prod1)
-call field_get_val_s(iprpfl(iym1(ih2o)), prod2)
-call field_get_val_s(iprpfl(iym1(iso2)), prod3)
-call field_get_val_s(iprpfl(iym1(in2 )), xiner)
+call field_get_val_s(iym1(ifo0), fuel1)
+call field_get_val_s(iym1(ifov), fuel2)
+call field_get_val_s(iym1(ico ), fuel3)
+call field_get_val_s(iym1(ih2s), fuel4)
+call field_get_val_s(iym1(ihy ), fuel5)
+call field_get_val_s(iym1(ihcn), fuel6)
+call field_get_val_s(iym1(inh3), fuel7)
+call field_get_val_s(iym1(io2 ), oxyd)
+call field_get_val_s(iym1(ico2), prod1)
+call field_get_val_s(iym1(ih2o), prod2)
+call field_get_val_s(iym1(iso2), prod3)
+call field_get_val_s(iym1(in2 ), xiner)
 
 if (location_id .eq. MESH_LOCATION_CELLS) then
 

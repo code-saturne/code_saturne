@@ -62,7 +62,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, jj, iscal, iprop, iest
+integer          ii, jj, iscal, iest
 integer          istr
 
 !===============================================================================
@@ -285,9 +285,6 @@ enddo
 !     NTLIST : periode d'ecriture
 !       ( -1 : dernier pas de temps : > 0 : periode)
 
-do ii = 1, npromx
-  ipppro(ii) = 1
-enddo
 ippdt        = 1
 ipptx        = 1
 ippty        = 1
@@ -355,7 +352,6 @@ nscaus = 0
 nscapp = 0
 nscasp = 0
 nvar   = 0
-nproce = 0
 
 !===============================================================================
 ! 5. POSITION DES VARIABLES DE numvar.f90
@@ -365,10 +361,6 @@ nproce = 0
 
 do ii = 1, nvarmx
   ivarfl(ii) = -1
-enddo
-
-do ii = 1, npromx
-  iprpfl(ii) = -1
 enddo
 
 idtten = -1
@@ -405,22 +397,16 @@ call ppinii
 !==========
 
 ! --- Proprietes physiques au sens large
+irom   = -1
+iviscl = -1
+ivisct = -1
+icour  = -1
+ifour  = -1
+icp    = -1
+iprtot = -1
 
-do iprop  = 1, npromx
-  ipproc(iprop) = iprop
-enddo
-
-irom   = 0
-iroma  = 0
-iviscl = 0
-ivisct = 0
-icour  = 0
-ifour  = 0
-icp    = 0
-iprtot = 0
-
-itemp  = 0
-ibeta  = 0
+itemp  = -1
+ibeta  = -1
 
 iforbr = -1
 iyplbr = -1

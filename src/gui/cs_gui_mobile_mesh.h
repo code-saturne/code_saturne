@@ -77,15 +77,9 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
  *
  * SUBROUTINE uivima
  * *****************
- *
- * viscmx   <--  VISCMX
- * viscmy   <--  VISCMY
- * viscmz   <--  VISCMZ
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uivima, UIVIMA) ( double         *const viscmx,
-                                 double         *const viscmy,
-                                 double         *const viscmz);
+void CS_PROCF (uivima, UIVIMA) (void);
 
 /*-----------------------------------------------------------------------------
  * uialcl

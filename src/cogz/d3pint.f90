@@ -128,7 +128,7 @@ save          ipass
 allocate(cpro_csca(ngazg))
 
 do icg = 1, ngazg
-  call field_get_val_s(iprpfl(iym(icg)), cpro_csca(icg)%p)
+  call field_get_val_s(iym(icg), cpro_csca(icg)%p)
 enddo
 
 ! Initialize variables to avoid compiler warnings
@@ -266,22 +266,22 @@ endif
 
 ! ---> Positions des variables, coefficients
 
-call field_get_val_s(iprpfl(itemp), cpro_temp)
+call field_get_val_s(itemp, cpro_temp)
 call field_get_val_s(icrom, cpro_rho)
 
 if (idilat.ge.4) then
   call field_get_val_s(icroaa, cproaa_rho)
-  call field_get_val_s(iprpfl(iustdy(itsrho)), cpro_tsrho)
-  call field_get_val_s(iprpfl(iustdy(ifm  )), cpro_tsfm)
-  call field_get_val_s(iprpfl(iustdy(ifp2m  )), cpro_tsfp2m)
-  call field_get_val_s(iprpfl(iustdy(iscalt)), cpro_tsscalt)
-  call field_get_val_s(iprpfl(iym(3)), cpro_ym3)
+  call field_get_val_s(iustdy(itsrho), cpro_tsrho)
+  call field_get_val_s(iustdy(ifm  ), cpro_tsfm)
+  call field_get_val_s(iustdy(ifp2m  ), cpro_tsfp2m)
+  call field_get_val_s(iustdy(iscalt), cpro_tsscalt)
+  call field_get_val_s(iym(3), cpro_ym3)
 endif
 
 if ( iirayo.gt.0 ) then
-  call field_get_val_s(iprpfl(ickabs), cpro_ckabs)
-  call field_get_val_s(iprpfl(it4m), cpro_t4m)
-  call field_get_val_s(iprpfl(it3m), cpro_t3m)
+  call field_get_val_s(ickabs, cpro_ckabs)
+  call field_get_val_s(it4m, cpro_t4m)
+  call field_get_val_s(it3m, cpro_t3m)
 endif
 
 do iel = 1, ncel

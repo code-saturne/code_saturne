@@ -106,7 +106,7 @@ allocate(vistot(ncelet))
 allocate(viscf(nfac), viscb(nfabor))
 allocate(xcpp(ncelet))
 
-if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
+if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
 
 do iscal = 1, nscal
 
@@ -131,7 +131,7 @@ do iscal = 1, nscal
       xcpp(iel) = 1.d0
     enddo
   elseif (imucpp.eq.1) then
-    if (icp.gt.0) then
+    if (icp.ge.0) then
       do iel = 1, ncel
         xcpp(iel) = cpro_cp(iel)
       enddo
@@ -184,7 +184,7 @@ do iscal = 1, nscal
   endif
 
   ! Index for turbulent diffusivity
-  call field_get_val_s(iprpfl(ivisct), visct)
+  call field_get_val_s(ivisct, visct)
 
   if (idiff(ivar).ge.1) then
 
@@ -223,7 +223,7 @@ do iscal = 1, nscal
   endif
 
   ! Source term
-  call field_get_val_s(iprpfl(iustdy(iscal)), cpro_tsscal)
+  call field_get_val_s(iustdy(iscal), cpro_tsscal)
 
   ! Diffusion term calculation
   call field_get_coefa_s(ivarfl(ivar), coefap)

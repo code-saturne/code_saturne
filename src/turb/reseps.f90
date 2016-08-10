@@ -174,8 +174,8 @@ if (iwarni(ivar).ge.1) then
 endif
 
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 
 call field_get_val_s(ivarfl(iep), cvar_ep)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)

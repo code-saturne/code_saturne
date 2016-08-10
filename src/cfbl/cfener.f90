@@ -157,14 +157,14 @@ call field_get_val_s(ivarfl(ivar), cvar_energ)
 call field_get_val_s(ivarfl(isca(itempk)), cvar_tempk)
 call field_get_val_v(ivarfl(iu), vel)
 
-if (icp.gt.0) then
-  call field_get_val_s(iprpfl(icp), cpro_cp)
+if (icp.ge.0) then
+  call field_get_val_s(icp, cpro_cp)
 else
   cpro_cp => rvoid1
 endif
 
-if (icv.gt.0) then
-  call field_get_val_s(iprpfl(icv), cpro_cv)
+if (icv.ge.0) then
+  call field_get_val_s(icv, cpro_cv)
 else
   cpro_cv => rvoid1
 endif
@@ -189,7 +189,7 @@ call field_get_val_prev_s(icrom, cromo)
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
 
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(ivisct, visct)
 
 call field_get_key_int(ivarfl(ivar), kimasf, iflmas)
 call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
@@ -425,7 +425,7 @@ if( idiff(ivar).ge. 1 ) then
     w1(iel) = visct(iel)/sigmas(iscal)
   enddo
 !     CP*MUT/SIGMAS
-  if(icp.gt.0) then
+  if(icp.ge.0) then
     do iel = 1, ncel
       w1(iel) = w1(iel)*cpro_cp(iel)
     enddo
@@ -435,7 +435,7 @@ if( idiff(ivar).ge. 1 ) then
     enddo
   endif
 !     (CP/CV)*MUT/SIGMAS
-  if(icv.gt.0) then
+  if(icv.ge.0) then
     do iel = 1, ncel
       w1(iel) = w1(iel)/cpro_cv(iel)
     enddo

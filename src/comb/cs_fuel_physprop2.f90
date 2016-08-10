@@ -111,8 +111,8 @@ do icla = 1, nclafu
 
   call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
   call field_get_val_s(ivarfl(isca(ing(icla))), cvar_ngcl)
-  call field_get_val_s(iprpfl(idiam2(icla)), cpro_diam2)
-  call field_get_val_s(iprpfl(irom2(icla)), cpro_rom2)
+  call field_get_val_s(idiam2(icla), cpro_diam2)
+  call field_get_val_s(irom2(icla), cpro_rom2)
 
   do iel = 1, ncel
 

@@ -59,7 +59,7 @@ implicit none
 
 ! Local variables
 
-integer       nprini, ifcvsl
+integer       ifcvsl
 
 !===============================================================================
 
@@ -85,10 +85,8 @@ end interface
 
 !===============================================================================
 
-nprini = nproce
-
 ! Variability of specific heat at constant volume Cv (constant by default)
-icv = 0
+icv = -1
 cv0 = 0.d0
 call cs_cf_set_thermo_options
 
@@ -103,27 +101,27 @@ call uscfx1
 
 ! Dynamic viscosity of reference of the scalar total energy (ienerg).
 call field_get_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
-if (ifcvsl.ge.0 .or. icv.gt.0) then
+if (ifcvsl.ge.0 .or. icv.ge.0) then
   call field_set_key_int(ivarfl(isca(ienerg)), kivisl, 0)
 else
   call field_set_key_int(ivarfl(isca(ienerg)), kivisl, -1)
 endif
 
 ! Properties definition initialization according to their variability
-if (icv.gt.0) then
-  call add_property_field('specific_heat_const_vol', &
+if (icv.ge.0) then
+  call add_property_field_1d('specific_heat_const_vol', &
                           'Specific_Heat_Const_Vol', &
                           icv)
   call hide_property(icv)
-  ihisvr(field_post_id(iprpfl(icv)),1) = 0
+  ihisvr(field_post_id(icv),1) = 0
 endif
 
-if (iviscv.ne.0) then
-  call add_property_field('volume_viscosity', &
+if (iviscv.ge.0) then
+  call add_property_field_1d('volume_viscosity', &
                           'Volume_Viscosity', &
                           iviscv)
   call hide_property(iviscv)
-  ihisvr(field_post_id(iprpfl(iviscv)),1) = 0
+  ihisvr(field_post_id(iviscv),1) = 0
 endif
 
 ! MAP to C API
@@ -133,13 +131,6 @@ call cs_field_pointer_map_compressible
 if (iihmpr.eq.1) then
   call cs_gui_labels_compressible
 endif
-
-! Nb algebraic (or state) variables
-!   specific to specific physic: nsalpp
-!   total: nsalto
-
-nsalpp = nproce - nprini
-nsalto = nproce
 
 return
 end subroutine

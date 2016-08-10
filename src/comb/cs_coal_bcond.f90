@@ -134,7 +134,7 @@ double precision, dimension(:), pointer :: viscl
 ! 0. Initializations
 !===============================================================================
 call field_get_val_s(ibrom, brom)
-call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iviscl, viscl)
 call field_get_val_s_by_name("b_x_c", b_x1)
 
 

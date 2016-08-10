@@ -394,7 +394,7 @@ if (iecaux.eq.1) then
     ! Scalar source terms for dilatable model (idilat = 4, 5)
     if (idilat.ge.4) then
       do iscal = 1, nscal
-        f_id = iprpfl(iustdy(iscal))
+        f_id = iustdy(iscal)
         call restart_write_field_vals(rp, f_id, 0)
       enddo
     endif
@@ -415,19 +415,19 @@ if (iecaux.eq.1) then
   if (iviext.gt.0.or.icavit.ge.0) then
     !  Viscosite moleculaire - cellules (si variable ou cavitation)
     if (ivivar.eq.1.or.icavit.ge.0) then
-      call restart_write_field_vals(rp, iprpfl(iviscl), 0)
+      call restart_write_field_vals(rp, iviscl, 0)
     endif
 
     if (iviext.gt.0) then
       ! Viscosite turbulente ou de sous-maille - cellules
-      call restart_write_field_vals(rp, iprpfl(ivisct), 0)
+      call restart_write_field_vals(rp, ivisct, 0)
     endif
   endif
 
-  if ((icpext.gt.0.and.icp.gt.0).or.              &
-       (ippmod(ieljou).ge.1.and.icp.gt.0))  then
+  if ((icpext.gt.0.and.icp.ge.0).or.              &
+       (ippmod(ieljou).ge.1.and.icp.ge.0))  then
     !  Chaleur massique - cellules
-    call restart_write_field_vals(rp, iprpfl(icp), 0)
+    call restart_write_field_vals(rp, icp, 0)
   endif
 
   call restart_write_linked_fields(rp, "scalar_diffusivity_id", iecr)
@@ -632,12 +632,7 @@ if (iecaux.eq.1) then
     ival(1) = iortvm
     call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
-    call restart_write_field_vals(rp, iprpfl(ipproc(ivisma(1))), 0)
-
-    if (iortvm.eq.1) then
-      call restart_write_field_vals(rp, iprpfl(ipproc(ivisma(2))), 0)
-      call restart_write_field_vals(rp, iprpfl(ipproc(ivisma(3))), 0)
-    endif
+    call restart_write_field_vals(rp, ivisma, 0)
 
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des donnees ALE    '

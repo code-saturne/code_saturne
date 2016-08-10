@@ -140,7 +140,8 @@ double precision, dimension(:,:), pointer :: coefa_rij, coefaf_rij, coefad_rij
 double precision, dimension(:,:,:), pointer :: coefb_rij, coefbf_rij, coefbd_rij
 
 double precision, dimension(:), pointer :: viscl, visct
-double precision, dimension(:), pointer :: cpro_visma1, cpro_visma2, cpro_visma3
+double precision, dimension(:), pointer :: cpro_visma_s
+double precision, dimension(:,:), pointer :: cpro_visma_v
 
 !===============================================================================
 
@@ -152,8 +153,8 @@ cpp = 0.d0
 
 if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
 
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 
 ! Boundary Conditions
 
@@ -650,9 +651,11 @@ if (iale.eq.1) then
   call field_get_coefaf_v(ivarfl(iuma), cfaale)
   call field_get_coefbf_v(ivarfl(iuma), cfbale)
 
-  call field_get_val_s(iprpfl(ivisma(1)), cpro_visma1)
-  call field_get_val_s(iprpfl(ivisma(2)), cpro_visma2)
-  call field_get_val_s(iprpfl(ivisma(3)), cpro_visma3)
+  if (iortvm.eq.0) then
+    call field_get_val_s(ivisma, cpro_visma_s)
+  else
+    call field_get_val_v(ivisma, cpro_visma_v)
+  endif
 
   do ifac = 1, nfabor
     if (icodcl(ifac,iuma).eq.4) then
@@ -668,9 +671,15 @@ if (iale.eq.1) then
       srfbnf = surfbn(ifac)
 
       ! --- Physical properties
-      vismsh(1) = cpro_visma1(iel)
-      vismsh(2) = cpro_visma2(iel)
-      vismsh(3) = cpro_visma3(iel)
+      if (iortvm.eq.0) then
+        vismsh(1) = cpro_visma_s(iel)
+        vismsh(2) = cpro_visma_s(iel)
+        vismsh(3) = cpro_visma_s(iel)
+      else
+        vismsh(1) = cpro_visma_v(1,iel)
+        vismsh(2) = cpro_visma_v(2,iel)
+        vismsh(3) = cpro_visma_v(3,iel)
+      endif
 
       hintv(1) = vismsh(1)/distbf
       hintv(2) = vismsh(2)/distbf
@@ -803,7 +812,7 @@ integer          icodcl(nfabor,nvarcl)
 
 integer          ivar, f_id
 integer          ifac, iel, isou, jsou
-integer          ipccv, ifcvsl
+integer          ifcvsl
 
 double precision cpp, rkl, visclc
 double precision distbf, srfbnf
@@ -828,7 +837,7 @@ f_id = ivarfl(ivar)
 
 call field_get_val_s(ivarfl(ivar), val_s)
 call field_get_val_v(ivsten, visten)
-call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iviscl, viscl)
 
 call field_get_coefa_s(f_id, coefap)
 call field_get_coefb_s(f_id, coefbp)
@@ -837,22 +846,13 @@ call field_get_coefbf_s(f_id, cofbfp)
 
 call field_get_val_s(icrom, crom)
 
-if (icp.gt.0) then
-  call field_get_val_s(iprpfl(icp), cpro_cp)
+if (icp.ge.0) then
+  call field_get_val_s(icp, cpro_cp)
 endif
 
 call field_get_key_int (f_id, kivisl, ifcvsl)
 if (ifcvsl .ge. 0) then
   call field_get_val_s(ifcvsl, viscls)
-endif
-
-ipccv = 0
-if (ippmod(icompf) .ge. 0) then
-  if (icv.gt.0) then
-    ipccv  = ipproc(icv)
-  else
-    ipccv = 0
-  endif
 endif
 
 ! Turbulent diffusive flux of the scalar T
@@ -883,7 +883,7 @@ do ifac = 1, nfabor
     visclc = viscl(iel)
     cpp = 1.d0
     if (iscacp(iscal).eq.1) then
-      if (icp.gt.0) then
+      if (icp.ge.0) then
         cpp = cpro_cp(iel)
       else
         cpp = cp0

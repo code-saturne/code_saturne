@@ -122,7 +122,7 @@ save             ipass
 
 
 call field_get_val_s(ibrom, brom)
-call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iviscl, viscl)
 
 ! --> On construit une liste des numeros des zones frontieres.
 !           (liste locale au processeur, en parallele)

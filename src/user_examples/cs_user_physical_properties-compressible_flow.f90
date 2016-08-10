@@ -59,7 +59,7 @@
 !> variable, use the user subroutine \ref usvist)
 !>
 !> To set a variable isobaric specific heat, the integer \c icp must
-!> have been set to 1: the value for \c icp is set automatically in the
+!> have been set to 0: the value for \c icp is set automatically in the
 !> subroutine \ref cf_set_thermo_options, depending on the thermodynamics laws
 !> selected by the user.
 !>
@@ -192,7 +192,7 @@ call field_get_val_s(ivarfl(ivart), cvar_scalt)
 ! --- Molecular dynamic viscosity 'cpro_viscl'
 !     (physical properties at the cell centers)
 
-call field_get_val_s(iprpfl(iviscl), cpro_viscl)
+call field_get_val_s(iviscl, cpro_viscl)
 
 ! --- User-defined coefficients for the selected law.
 !     The values hereafter are provided as a mere example. They
@@ -229,17 +229,17 @@ enddo
 ivart = isca(itempk)
 call field_get_val_s(ivarfl(ivart), cvar_scalt)
 
-! --- Molecular dynamic viscosity
+! --- Molecular volumetric viscosity
 
-if (iviscv.gt.0) then
-  call field_get_val_s(iprpfl(iviscv), cpro_viscv)
+if (iviscv.ge.0) then
+  call field_get_val_s(iviscv, cpro_viscv)
 else
   cpro_viscv => NULL()
 endif
 
-! --- Stop if the viscosity has not been defined as variable
+! --- Stop if the volumetric viscosity has not been defined as variable
 
-if (iviscv.le.0) then
+if (iviscv.lt.0) then
   write(nfecra,2000) iviscv
   call csexit (1)
 endif
@@ -281,16 +281,16 @@ call field_get_val_s(ivarfl(ivart), cvar_scalt)
 
 ! --- Isobaric specific heat
 
-if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
+if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
 
 ! --- Stop if the isobaric or isochoric specific heat (cpro_cp or cpro_cv) has not
 !     been defined as variable
 
-if (icp.le.0) then
+if (icp.lt.0) then
   write(nfecra,1000) icp
   call csexit (1)
 endif
-if (icv.le.0) then
+if (icv.lt.0) then
   write(nfecra,1001) icv
   call csexit (1)
 endif
@@ -315,8 +315,8 @@ enddo
 
 ! --- The isochoric specific heat is deduced from the isobaric specific heat
 
-call field_get_val_s(iprpfl(icv), cpro_cv)
-call field_get_val_s(iprpfl(igmxml), mix_mol_mas)
+call field_get_val_s(icv, cpro_cv)
+call field_get_val_s(igmxml, mix_mol_mas)
 call cs_cf_thermo_cv(cpro_cp, mix_mol_mas, cpro_cv, ncel)
 
 !< [example_3]

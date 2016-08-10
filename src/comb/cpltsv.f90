@@ -145,7 +145,7 @@ endif
 
 ! --- Numero des grandeurs physiques
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(ivisct, visct)
 
 if ( itytur.eq.2 .or. iturb.eq.50 ) then
   call field_get_val_prev_s(ivarfl(ik), cvara_k)

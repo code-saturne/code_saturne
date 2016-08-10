@@ -163,20 +163,14 @@ module numvar
   !----------------------------------------------------------------------------
 
   !> \defgroup physical_prop Physical properties
-  !> \brief Physical properties are stored in propce.
+  !> \brief Physical properties are using the field API.
   !> See \ref cs_user_boundary_conditions for some examples.
 
   !> \addtogroup physical_prop
   !> \{
 
-  !> pointer to cell properties (propce)
-  integer, save :: ipproc(npromx)
-
-  !> Density at the current time step
+  !> Density at the current time step (equal to icrom, kept for compatibility)
   integer, save :: irom
-
-  !> Density at the previous time step
-  integer, save :: iroma
 
   !> Density at the second previous time step
   integer, save :: iromaa
@@ -186,15 +180,6 @@ module numvar
 
   !> dynamic turbulent viscosity
   integer, save :: ivisct
-
-  !> dynamic molecular viscosity (in kg/(m.s)) at the previous time-step
-  integer, save :: ivisla
-
-  !> dynamic turbulent viscosity at the previous time-step
-  integer, save :: ivista
-
-  !> specific heat \f$ C_p \f$ at the previous time-step
-  integer, save :: icpa
 
   !> error estimator for Navier-Stokes
   integer, save :: iestim(nestmx)
@@ -248,7 +233,7 @@ module numvar
 
   !> Mesh velocity viscosity for the ALE module
   !> \remark might be orthotropic
-  integer, save :: ivisma(3)
+  integer, save :: ivisma
 
   !> pointer for dilatation source terms
   integer, save :: iustdy(nscamx)
@@ -299,11 +284,32 @@ module numvar
   !> Field id for variable i
   integer, save :: ivarfl(nvarmx)
 
-  !> Field id for property i
-  integer, save :: iprpfl(npromx)
-
   !> Field id for the dttens tensor
   integer, save :: idtten
+
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  !> \anchor iprpfl
+  !> Identity function for compatibility with deprecated iprpfl array
+
+  elemental pure function iprpfl(f_id) result(r_f_id)
+
+    implicit none
+
+    ! Parameters
+
+    integer, intent(in) :: f_id
+    integer             :: r_f_id
+
+    ! Function body
+
+    r_f_id = f_id
+
+  end function iprpfl
 
   !> \}
 

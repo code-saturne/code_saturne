@@ -130,9 +130,9 @@ call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
 
 ! --- Numero des grandeurs physiques
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(ivisct, visct)
 
-call field_get_val_s(iprpfl(irom1), cpro_rom1)
+call field_get_val_s(irom1, cpro_rom1)
 
 if ( itytur.eq.2 .or. iturb.eq.50 ) then
   call field_get_val_prev_s(ivarfl(ik), cvara_k)
@@ -263,8 +263,8 @@ if ( iold .eq. 1 ) then
   do icla=1,nclacp
     call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
     call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
-    call field_get_val_s(iprpfl(igmdv1(icla)), cpro_cgd1)
-    call field_get_val_s(iprpfl(igmdv2(icla)), cpro_cgd2)
+    call field_get_val_s(igmdv1(icla), cpro_cgd1)
+    call field_get_val_s(igmdv2(icla), cpro_cgd2)
     do iel = 1, ncel
       gdev1 = -crom(iel)*cpro_cgd1(iel)               &
                                  *cvar_xchcl(iel)
@@ -297,8 +297,8 @@ else
 !
   do icla=1,nclacp
     call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
-    call field_get_val_s(iprpfl(igmdv1(icla)), cpro_cgd1)
-    call field_get_val_s(iprpfl(igmdv2(icla)), cpro_cgd2)
+    call field_get_val_s(igmdv1(icla), cpro_cgd1)
+    call field_get_val_s(igmdv2(icla), cpro_cgd2)
     do iel = 1, ncel
       gdev1 = -crom(iel)*cpro_cgd1(iel)       &
                                  *cvar_xchcl(iel)

@@ -297,9 +297,8 @@ call field_set_key_int(f_id, keyvis, ifllog)
 ! (here for specific heat, first checking if it is variable)
 
 !< [usipes_ex_04]
-if (icp.ne.0) then
-  f_id = iprpfl(icp)
-  call field_set_key_str (f_id, keylbl, 'Cp')
+if (icp.ge.0) then
+  call field_set_key_str (icp, keylbl, 'Cp')
 endif
 !< [usipes_ex_04]
 

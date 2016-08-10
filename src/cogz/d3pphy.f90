@@ -258,7 +258,7 @@ deallocate(indpdf)
 ! --> Fractions massiques des especes globales au bord
 do igg = 1, ngazg
   call field_get_val_s(ibym(igg), bsval)
-  call field_get_val_s(iprpfl(iym(igg)),cpro_ymgg)
+  call field_get_val_s(iym(igg),cpro_ymgg)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     bsval(ifac) = cpro_ymgg(iel)

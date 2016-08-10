@@ -104,6 +104,7 @@ character        cindfp*2,cindfs*4,cindff*4,cindfm*4
 character        cindfc*2,cindfl*4
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
+character*80     fname
 logical          lprev
 integer          iel   , ifac, ii, istr, nlfld, iscal
 integer          iz, kk
@@ -126,12 +127,11 @@ type(c_ptr) :: rp
 
 double precision, dimension(:), pointer :: sval
 double precision, dimension(:), pointer :: voidfl
-double precision, dimension(:,:), pointer :: disale
-
-double precision, dimension(:), pointer :: cpro_vism1, cpro_vism2, cpro_vism3
+double precision, dimension(:,:), pointer :: disale, cpro_visma_v
 
 double precision, allocatable, dimension(:,:) :: tmurbf
 double precision, allocatable, dimension(:) :: tparbf
+double precision, allocatable, dimension(:) :: vismbf
 !===============================================================================
 
 !===============================================================================
@@ -337,7 +337,7 @@ if (irovar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
   ! Scalar source terms for dilatable model  (idilat = 4, 5)
   if (idilat.ge.4) then
     do iscal = 1, nscal
-      f_id = iprpfl(iustdy(iscal))
+      f_id = iustdy(iscal)
       call restart_read_field_vals(rp, f_id, 0, ierror)
     enddo
   endif
@@ -360,14 +360,14 @@ if (iviext.gt.0.or.(icavit.ge.0.and.jcavit.ge.0)) then
   !         Viscosite moleculaire - cellules
   !         Uniquement si elle est variable ou pour le modele de cavitation
   if (ivivar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
-    call restart_read_field_vals(rp, iprpfl(iviscl), 0, ierror)
+    call restart_read_field_vals(rp, iviscl, 0, ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
   endif
 
   !         Viscosite turbulente ou de sous-maille - cellules
   if (iviext.gt.0) then
-    call restart_read_field_vals(rp, iprpfl(ivisct), 0, ierror)
+    call restart_read_field_vals(rp, ivisct, 0, ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
   endif
@@ -388,13 +388,13 @@ endif
 !        et quand l'utilisateur peut s'en servir pour passer
 !        de H a T, comme en effet Joule par exemple).
 
-if ((icpext.gt.0.and.icp.gt.0).or.                &
-     (ippmod(ieljou).ge.1.and.icp.gt.0)) then
+if ((icpext.gt.0.and.icp.ge.0).or.                &
+     (ippmod(ieljou).ge.1.and.icp.ge.0)) then
 
   inierr = 0
 
   ! Chaleur massique - cellules
-  call restart_read_field_vals(rp, iprpfl(icp), 0, ierror)
+  call restart_read_field_vals(rp, icp, 0, ierror)
   nberro = nberro+ierror
   inierr = inierr+ierror
 
@@ -832,20 +832,25 @@ if (iale.eq.1 .and. jale.eq.1) then
   call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
   jortvm = ival(1)
 
-  call restart_read_field_vals(rp, iprpfl(ivisma(1)), 0, ierror)
-
   if (iortvm.eq.1) then
-    if (jortvm.eq.1) then
-      call restart_read_field_vals(rp, iprpfl(ivisma(2)), 0, ierror)
-      call restart_read_field_vals(rp, iprpfl(ivisma(3)), 0, ierror)
-    else
-      call field_get_val_s(iprpfl(ivisma(1)), cpro_vism1)
-      call field_get_val_s(iprpfl(ivisma(2)), cpro_vism2)
-      call field_get_val_s(iprpfl(ivisma(3)), cpro_vism3)
+    if (jortvm.ne.1) then
+      call field_get_name(ivisma, fname)
+      rubriq = trim(fname)//'::vals::0'
+      itysup = 1
+      nbval  = 1
+      allocate(vismbf(ncelet))
+      call restart_read_section_real_t(rp,rubriq,itysup,nbval,   &
+                                       vismbf,ierror)
+
+      call field_get_val_v(ivisma, cpro_visma_v)
       do iel = 1, ncel
-        cpro_vism2(iel) = cpro_vism1(iel)
-        cpro_vism3(iel) = cpro_vism1(iel)
+        cpro_visma_v(1,iel) = vismbf(iel)
+        cpro_visma_v(2,iel) = vismbf(iel)
+        cpro_visma_v(3,iel) = vismbf(iel)
       enddo
+      deallocate(vismbf)
+    else
+      call restart_read_field_vals(rp, ivisma, 0, ierror)
     endif
   endif
 

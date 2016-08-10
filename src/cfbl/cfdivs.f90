@@ -82,7 +82,6 @@ double precision vel(3,ncelet)
 ! Local variables
 
 integer          inc, iel, ifac, ii, jj
-integer          ipcvsv
 integer          iprev
 
 double precision vecfac, kappa, mu, trgdru
@@ -109,13 +108,10 @@ allocate(vistot(ncelet))
 allocate(gradv(3,3,ncelet))
 allocate(tempv(3, ncelet))
 
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
-if(iviscv.gt.0) then
-  ipcvsv = ipproc(iviscv)
-  call field_get_val_s(iprpfl(ipcvsv), cpro_kappa)
-else
-  ipcvsv = 0
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
+if(iviscv.ge.0) then
+  call field_get_val_s(iviscv, cpro_kappa)
 endif
 
 ! --- Calcul de la viscosite totale
@@ -134,7 +130,7 @@ endif
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(vistot)
-  if (ipcvsv.gt.0) then
+  if (iviscv.ge.0) then
     call synsca(cpro_kappa)
   endif
 endif
@@ -153,7 +149,7 @@ call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
 !     i.e. sigma_ij v_j e_i
 
 ! Variable kappa in space
-if (ipcvsv.gt.0) then
+if (iviscv.ge.0) then
   do iel = 1, ncel
     kappa = cpro_kappa(iel)
     mu = vistot(iel)

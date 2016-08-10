@@ -94,9 +94,9 @@ if (ifcven.ge.0) then
     enddo
   endif
 
-  if (icv.gt.0) then
-    call field_get_val_s(iprpfl(icp), cpro_cp)
-    call field_get_val_s(iprpfl(icv), cpro_cv)
+  if (icv.ge.0) then
+    call field_get_val_s(icp, cpro_cp)
+    call field_get_val_s(icv, cpro_cv)
     call field_get_val_s_by_name("mix_mol_mas", mix_mol_mas)
 
     call cs_cf_thermo_cv(cpro_cp, mix_mol_mas, cpro_cv, ncel)

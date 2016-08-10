@@ -338,6 +338,9 @@ cs_field_pointer_map_base(void)
   cs_field_pointer_map(CS_ENUMF_(mu_t),
                        cs_field_by_name_try("turbulent_viscosity"));
 
+  cs_field_pointer_map(CS_ENUMF_(vism),
+                       cs_field_by_name_try("mesh_viscosity"));
+
   cs_field_pointer_map(CS_ENUMF_(poro),
                        cs_field_by_name_try("porosity"));
   cs_field_pointer_map(CS_ENUMF_(t_poro),

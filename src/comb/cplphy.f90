@@ -49,7 +49,7 @@ subroutine cplphy &
 !  (une routine specifique est dediee a cela : usvist)
 
 
-!  Il FAUT AVOIR PRECISE icp = 1
+!  Il FAUT AVOIR PRECISE icp = 0
 !     ==================
 !    si on souhaite imposer une chaleur specifique
 !    CP variable (sinon: ecrasement memoire).

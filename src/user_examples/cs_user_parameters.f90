@@ -1079,8 +1079,8 @@ p0 = 1.01325d5
 
 !     When no specific physics module is active, we may specify if the
 !       density, specific heat, and the molecular viscosity
-!       are constant (irovar=0, ivivar=0, icp=0), which is the default
-!       or variable (irovar=1, ivivar=1, icp=1)
+!       are constant (irovar=0, ivivar=0, icp=-1), which is the default
+!       or variable (irovar=1, ivivar=1, icp=0)
 
 !     For those properties we choose as variable, the corresponding law
 !       must be defined in usphyv
@@ -1089,7 +1089,7 @@ p0 = 1.01325d5
 
 irovar = 1
 ivivar = 1
-icp = 0
+icp = -1
 
 ! We only specify XYZ0 if we explicitely fix Dirichlet conditions
 ! for the pressure.
@@ -1898,10 +1898,10 @@ if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
   call field_set_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
 
   ! --> Volumetric molecular viscosity
-  !       iviscv = 0 : uniform  in space and constant in time
-  !              = 1 : variable in space and time
+  !       iviscv = -1 : uniform  in space and constant in time
+  !              =  0 : variable in space and time
 
-  iviscv = 0
+  iviscv = -1
 
 endif
 

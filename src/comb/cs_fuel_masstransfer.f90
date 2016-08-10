@@ -97,9 +97,9 @@ double precision, dimension(:), pointer :: cpro_rom1
 ! --- Initialization of mass transfert terms
 
 do icla = 1, nclafu
-  call field_get_val_s(iprpfl(igmeva(icla)),cpro_cgev)
-  call field_get_val_s(iprpfl(igmhtf(icla)),cpro_cght)
-  call field_get_val_s(iprpfl(ih1hlf(icla)),cpro_chgl)
+  call field_get_val_s(igmeva(icla),cpro_cgev)
+  call field_get_val_s(igmhtf(icla),cpro_cght)
+  call field_get_val_s(ih1hlf(icla),cpro_chgl)
   do iel = 1, ncel
     cpro_cgev(iel) = zero
     cpro_cght(iel) = zero
@@ -110,9 +110,9 @@ enddo
 ! --- Pointer
 
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(iym1(io2)),cpro_yox)
-call field_get_val_s(iprpfl(itemp1),cpro_temp1)
-call field_get_val_s(iprpfl(irom1),cpro_rom1)
+call field_get_val_s(iym1(io2),cpro_yox)
+call field_get_val_s(itemp1,cpro_temp1)
+call field_get_val_s(irom1,cpro_rom1)
 !
 pref = 1.013d0
 
@@ -129,30 +129,30 @@ if (ifcvsl.ge.0) then
   call field_get_val_s(ifcvsl, cpro_viscls)
 endif
 
-if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
+if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
 
 do icla = 1, nclafu
 
-  call field_get_val_s(iprpfl(irom2(icla)),cpro_rom2)
-  call field_get_val_s(iprpfl(idiam2(icla)),cpro_diam2)
-  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
-  call field_get_val_s(iprpfl(igmhtf(icla)),cpro_cght)
-  call field_get_val_s(iprpfl(ih1hlf(icla)),cpro_chgl)
+  call field_get_val_s(irom2(icla),cpro_rom2)
+  call field_get_val_s(idiam2(icla),cpro_diam2)
+  call field_get_val_s(itemp2(icla),cpro_temp2)
+  call field_get_val_s(igmhtf(icla),cpro_cght)
+  call field_get_val_s(ih1hlf(icla),cpro_chgl)
 
   xnuss = 2.d0
 
   call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfolcl)
-  if ( icp.gt.0 ) call field_get_val_s(iprpfl(icp), cpro_cp)
+  if ( icp.ge.0 ) call field_get_val_s(icp, cpro_cp)
 
   do iel = 1, ncel
     if (ifcvsl.ge.0) then
-      if (icp.gt.0) then
+      if (icp.ge.0) then
         lambda = cpro_viscls(iel) * cpro_cp(iel)
       else
         lambda = cpro_viscls(iel) * cp0
       endif
     else
-      if (icp.gt.0) then
+      if (icp.ge.0) then
         lambda = visls0(iscalt) * cpro_cp(iel)
       else
         lambda = visls0(iscalt) * cp0
@@ -179,10 +179,10 @@ do icla = 1, nclafu
 
   call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfolcl)
   call field_get_val_prev_s(ivarfl(isca(ing(icla))), cvara_ngcl)
-  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
-  call field_get_val_s(iprpfl(igmhtf(icla)),cpro_cght)
-  call field_get_val_s(iprpfl(ih1hlf(icla)),cpro_chgl)
-  call field_get_val_s(iprpfl(igmeva(icla)),cpro_cgev)
+  call field_get_val_s(itemp2(icla),cpro_temp2)
+  call field_get_val_s(igmhtf(icla),cpro_cght)
+  call field_get_val_s(ih1hlf(icla),cpro_chgl)
+  call field_get_val_s(igmeva(icla),cpro_cgev)
 
   do iel = 1, ncel
 

@@ -43,7 +43,7 @@
 !> It is \b forbidden to modify turbulent viscosity \c visct here
 !> (a specific subroutine is dedicated to that: \ref usvist)
 !>
-!> - icp = 1 must <b> have been specified </b>
+!> - icp = 0 must <b> have been specified </b>
 !>    in \ref usipsu if we wish to define a variable specific heat
 !>    cpro_cp (otherwise: memory overwrite).
 !>
@@ -261,7 +261,7 @@ subroutine ussmag &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
    ckupdc , smacel ,                                              &
-   smagor , mijlij , mijmij )
+   mijlij , mijmij )
 
 !===============================================================================
 !> FONCTION :
@@ -297,8 +297,6 @@ subroutine ussmag &
 !> \param[in]     ckupdc        work array for head loss terms
 !> \param[in]     smacel        values of variables related to mass source
 !>                              term. If ivar=ipr, smacel=mass flux
-!> \param[in]     smagor        smagorinsky constant in the case of a dynamic
-!>                              model
 !> \param[in]     mijlij        mij.lij before the local averaging
 !> \param[in]     mijmij        mij.mij before the local averaging
 !_______________________________________________________________________________
@@ -331,7 +329,13 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision smagor(ncelet), mijlij(ncelet), mijmij(ncelet)
+double precision mijlij(ncelet), mijmij(ncelet)
+
+! Local
+
+double precision, dimension(:), pointer :: cpro_smago
+
+call field_get_val_s(ismago, cpro_smago)
 
 !===============================================================================
 
@@ -383,15 +387,11 @@ end subroutine ussmag
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[out]    viscmx        mesh viscosity in X direction
-!> \param[out]    viscmy        mesh viscosity in Y direction
-!> \param[out]    viscmz        mesh viscosity in Z direction
 !_______________________________________________________________________________
 
 subroutine usvima &
  ( nvar   , nscal  ,                                              &
-   dt     ,                                                       &
-   viscmx , viscmy , viscmz )
+   dt     )
 
 !===============================================================================
 
@@ -421,9 +421,19 @@ implicit none
 integer          nvar   , nscal
 
 double precision dt(ncelet)
-double precision viscmx(ncelet), viscmy(ncelet), viscmz(ncelet)
+
+! Local
+
+double precision, dimension(:), pointer :: cpro_vism_s
+double precision, dimension(:,:), pointer :: cpro_vism_v
 
 !===============================================================================
+
+if (iortvm.eq.0) then
+  call field_get_val_s(ivisma, cpro_vism_s)
+else
+  call field_get_val_v(ivisma, cpro_vism_v)
+endif
 
 !----
 ! Formats

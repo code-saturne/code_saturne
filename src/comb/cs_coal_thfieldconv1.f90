@@ -94,18 +94,18 @@ type(pmapper_double_r1), dimension(:), allocatable :: cvar_f1m, cvar_f2m
 
 !===============================================================================
 
-call field_get_val_s(iprpfl(iym1(ichx1)), fuel1)
-call field_get_val_s(iprpfl(iym1(ichx2)), fuel2)
-call field_get_val_s(iprpfl(iym1(ico  )), fuel3)
-call field_get_val_s(iprpfl(iym1(ih2s )), fuel4)
-call field_get_val_s(iprpfl(iym1(ihy  )), fuel5)
-call field_get_val_s(iprpfl(iym1(ihcn )), fuel6)
-call field_get_val_s(iprpfl(iym1(inh3 )), fuel7)
-call field_get_val_s(iprpfl(iym1(io2  )), oxyd)
-call field_get_val_s(iprpfl(iym1(ico2 )), prod1)
-call field_get_val_s(iprpfl(iym1(ih2o )), prod2)
-call field_get_val_s(iprpfl(iym1(iso2 )), prod3)
-call field_get_val_s(iprpfl(iym1(in2  )), xiner)
+call field_get_val_s(iym1(ichx1), fuel1)
+call field_get_val_s(iym1(ichx2), fuel2)
+call field_get_val_s(iym1(ico  ), fuel3)
+call field_get_val_s(iym1(ih2s ), fuel4)
+call field_get_val_s(iym1(ihy  ), fuel5)
+call field_get_val_s(iym1(ihcn ), fuel6)
+call field_get_val_s(iym1(inh3 ), fuel7)
+call field_get_val_s(iym1(io2  ), oxyd)
+call field_get_val_s(iym1(ico2 ), prod1)
+call field_get_val_s(iym1(ih2o ), prod2)
+call field_get_val_s(iym1(iso2 ), prod3)
+call field_get_val_s(iym1(in2  ), xiner)
 
 ! Massic fraction of gas
 call field_get_val_s_by_name("x_c", x1)

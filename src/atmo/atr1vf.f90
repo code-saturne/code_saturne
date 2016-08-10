@@ -122,7 +122,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
   call field_get_val_s(icrom, crom)
   call field_get_val_prev_s(ivarfl(isca(itotwt)), cvara_totwt)
-  call field_get_val_s(iprpfl(itempc), cpro_tempc)
+  call field_get_val_s(itempc, cpro_tempc)
 
   !===============================================================================
   ! 2.  Computing long-wave and short-wave radiative fluxes

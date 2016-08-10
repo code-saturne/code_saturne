@@ -269,8 +269,8 @@ if (itsqdm.ne.0) then
   idiffp = idiff(iu)
   if (idiffp.ge. 1) then
 
-     call field_get_val_s(iprpfl(iviscl), viscl)
-     call field_get_val_s(iprpfl(ivisct), visct)
+     call field_get_val_s(iviscl, viscl)
+     call field_get_val_s(ivisct, visct)
 
      if (itytur.eq.3) then
         do iel = 1, ncel

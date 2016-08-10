@@ -97,11 +97,11 @@ allocate(cvar_espg(nespg_siream+nesp_aer*nbin_aer+nbin_aer))
 ! Densisty
 call field_get_val_s(icrom, crom)
 
-if (ippmod(iatmos).ge.1) call field_get_val_s(iprpfl(itempc), cpro_tempc)
+if (ippmod(iatmos).ge.1) call field_get_val_s(itempc, cpro_tempc)
 
 if (ippmod(iatmos).ge.2) then
   call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
-  call field_get_val_s(iprpfl(iliqwt), cpro_liqwt)
+  call field_get_val_s(iliqwt, cpro_liqwt)
 endif
 
 ! Arrays of pointers containing the fields values for each species

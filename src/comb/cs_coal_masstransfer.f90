@@ -121,10 +121,10 @@ endif
 ! --- Initialization of mass transfert terms
 
 do icla = 1, nclacp
-  call field_get_val_s(iprpfl(igmdv1(icla)),cpro_cgd1)
-  call field_get_val_s(iprpfl(igmdv2(icla)),cpro_cgd2)
-  call field_get_val_s(iprpfl(igmdch(icla)),cpro_cgch)
-  call field_get_val_s(iprpfl(igmhet(icla)),cpro_cght)
+  call field_get_val_s(igmdv1(icla),cpro_cgd1)
+  call field_get_val_s(igmdv2(icla),cpro_cgd2)
+  call field_get_val_s(igmdch(icla),cpro_cgch)
+  call field_get_val_s(igmhet(icla),cpro_cght)
   do iel = 1, ncel
     cpro_cgd1(iel) = zero
     cpro_cgd2(iel) = zero
@@ -142,7 +142,7 @@ call field_get_val_s(icrom, crom)
 x2     ( : ) = zero
 x2srho2( : ) = zero
 do icla = 1, nclacp
-  call field_get_val_s(iprpfl(irom2(icla)),cpro_rom2)
+  call field_get_val_s(irom2(icla),cpro_rom2)
   call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xchcl)
   call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xckcl)
   call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
@@ -179,10 +179,10 @@ enddo
 
 do icla = 1, nclacp
 
-  call field_get_val_s(iprpfl(igmdv1(icla)),cpro_cgd1)
-  call field_get_val_s(iprpfl(igmdv2(icla)),cpro_cgd2)
-  call field_get_val_s(iprpfl(igmdch(icla)),cpro_cgch)
-  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+  call field_get_val_s(igmdv1(icla),cpro_cgd1)
+  call field_get_val_s(igmdv2(icla),cpro_cgd2)
+  call field_get_val_s(igmdch(icla),cpro_cgch)
+  call field_get_val_s(itemp2(icla),cpro_temp2)
 
   do iel = 1, ncel
 
@@ -226,8 +226,8 @@ enddo
 call field_get_val_s(icrom, crom)
 do icla = 1, nclacp
   call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xchcl)
-  call field_get_val_s(iprpfl(igmdv1(icla)),cpro_cgd1)
-  call field_get_val_s(iprpfl(igmdv2(icla)),cpro_cgd2)
+  call field_get_val_s(igmdv1(icla),cpro_cgd1)
+  call field_get_val_s(igmdv2(icla),cpro_cgd2)
   do iel = 1, ncel
     xch = cvara_xchcl(iel)
     devto1(ichcor(icla)) = devto1(ichcor(icla)) -                 &
@@ -257,16 +257,16 @@ enddo
 ! 4. Mass transfert by heterogeneous combustion with O2
 !===============================================================================
 
-call field_get_val_s(iprpfl(iym1(io2)),cpro_yox)
-call field_get_val_s(iprpfl(itemp1),cpro_temp1)
-call field_get_val_s(iprpfl(irom1),cpro_rom1)
+call field_get_val_s(iym1(io2),cpro_yox)
+call field_get_val_s(itemp1,cpro_temp1)
+call field_get_val_s(irom1,cpro_rom1)
 
 do icla = 1, nclacp
 
   call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
-  call field_get_val_s(iprpfl(idiam2(icla)),cpro_diam2)
-  call field_get_val_s(iprpfl(igmhet(icla)),cpro_cght)
-  call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+  call field_get_val_s(idiam2(icla),cpro_diam2)
+  call field_get_val_s(igmhet(icla),cpro_cght)
+  call field_get_val_s(itemp2(icla),cpro_temp2)
 
   icha = ichcor(icla)
 
@@ -336,14 +336,14 @@ enddo
 
 if ( ihtco2 .eq. 1) then
 
-  call field_get_val_s(iprpfl(iym1(ico2)),cpro_yco2)
+  call field_get_val_s(iym1(ico2),cpro_yco2)
 
   do icla = 1, nclacp
 
     call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
-    call field_get_val_s(iprpfl(idiam2(icla)),cpro_diam2)
-    call field_get_val_s(iprpfl(ighco2(icla)),cpro_cght)
-    call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+    call field_get_val_s(idiam2(icla),cpro_diam2)
+    call field_get_val_s(ighco2(icla),cpro_cght)
+    call field_get_val_s(itemp2(icla),cpro_temp2)
 
     icha = ichcor(icla)
 
@@ -415,14 +415,14 @@ endif
 
 if ( ihth2o .eq. 1) then
 
-  call field_get_val_s(iprpfl(iym1(ih2o)),cpro_yh2o)
+  call field_get_val_s(iym1(ih2o),cpro_yh2o)
 
   do icla = 1, nclacp
 
     call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
-    call field_get_val_s(iprpfl(idiam2(icla)),cpro_diam2)
-    call field_get_val_s(iprpfl(ighh2o(icla)),cpro_cght)
-    call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
+    call field_get_val_s(idiam2(icla),cpro_diam2)
+    call field_get_val_s(ighh2o(icla),cpro_cght)
+    call field_get_val_s(itemp2(icla),cpro_temp2)
 
     icha = ichcor(icla)
 
@@ -510,17 +510,17 @@ if ( ippmod(iccoal) .ge. 1 ) then
     call field_get_val_s(ifcvsl, cpro_viscls)
   endif
 
-  if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
+  if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
 
   do iel = 1, ncel
     if (ifcvsl.ge.0) then
-      if (icp.gt.0) then
+      if (icp.ge.0) then
         w1(iel) = cpro_viscls(iel) * cpro_cp(iel)
       else
         w1(iel) = cpro_viscls(iel) * cp0
       endif
     else
-      if (icp.gt.0) then
+      if (icp.ge.0) then
         w1(iel) = visls0(iscalt) * cpro_cp(iel)
       else
         w1(iel) = visls0(iscalt) * cp0
@@ -546,12 +546,12 @@ if ( ippmod(iccoal) .ge. 1 ) then
 
     icha = ichcor(icla)
 
-    call field_get_val_s(iprpfl(irom2(icla)),cpro_rom2)
-    call field_get_val_s(iprpfl(igmsec(icla)),cpro_csec)
-    call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
-    call field_get_val_s(iprpfl(idiam2(icla)),cpro_diam2)
-    call field_get_val_s(iprpfl(immel),cpro_mmel)
-    call field_get_val_s(iprpfl(iym1(ih2o)),cpro_yh2o)
+    call field_get_val_s(irom2(icla),cpro_rom2)
+    call field_get_val_s(igmsec(icla),cpro_csec)
+    call field_get_val_s(itemp2(icla),cpro_temp2)
+    call field_get_val_s(idiam2(icla),cpro_diam2)
+    call field_get_val_s(immel,cpro_mmel)
+    call field_get_val_s(iym1(ih2o),cpro_yh2o)
 
     ! -------- Calculation of the diameter of particles in W2
     !          d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5

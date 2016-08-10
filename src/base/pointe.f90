@@ -38,7 +38,7 @@ module pointe
   !> \{
 
   !> \defgroup fortran_pointer_containers Containers to Fortran array pointers.
-  !> An array of one of these these derived types can be used to manage a set of
+  !> An array of one of these derived types can be used to manage a set of
   !> pointers (Fortran not allow arrays of pointers directly, so this
   !> technique is a classical workaround.
 

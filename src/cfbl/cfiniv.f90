@@ -105,10 +105,10 @@ endif
 ! Note that the only eos with a variable Cv is the ideal gas mix (ieos=3).
 !===============================================================================
 
-if (icv.gt.0) then
-  call field_get_val_s(iprpfl(icp), cpro_cp)
-  call field_get_val_s(iprpfl(icv), cpro_cv)
-  call field_get_val_s(iprpfl(igmxml), mix_mol_mas)
+if (icv.ge.0) then
+  call field_get_val_s(icp, cpro_cp)
+  call field_get_val_s(icv, cpro_cv)
+  call field_get_val_s(igmxml, mix_mol_mas)
 
   call cs_cf_thermo_cv(cpro_cp, mix_mol_mas, cpro_cv, ncel)
 endif ! Constant cv computed in iniusi

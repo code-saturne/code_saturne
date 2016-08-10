@@ -91,8 +91,8 @@ call field_get_coefb_v(ivarfl(iu), coefbu)
 ! --- Memory
 allocate(s2(ncelet))
 
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 call field_get_val_s(icrom, crom)
 
 call field_get_val_s(ivarfl(ik), cvar_k)

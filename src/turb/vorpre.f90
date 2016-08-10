@@ -133,7 +133,7 @@ enddo
 ! Chaque processeur stocke dans les tableaux 'w1x', ...
 ! les coordonnees des faces ou il doit ensuite utiliser des vortex
 
-call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(iviscl, viscl)
 call field_get_val_s(icrom, crom)
 do ifac = 1, nfabor
   ient = irepvo(ifac)

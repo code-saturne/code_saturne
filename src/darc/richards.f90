@@ -695,7 +695,7 @@ endif
 ! update pressure head (h = H - z) for post-processing
 ! Only used when gravity is taken into account
 if (darcy_gravity.ge.1) then
-  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
+  call field_get_val_s(iprtot, cpro_prtot)
   !$omp parallel do
   do iel = 1, ncel
     cpro_prtot(iel) = cvar_pr(iel) - xyzcen(1,iel)*darcy_gravity_x             &

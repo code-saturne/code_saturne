@@ -123,13 +123,13 @@ double precision, dimension(:), pointer :: cpro_taupg
 !< [init]
 allocate(visco(ncelet))
 
-call field_get_val_s(iprpfl(iym1(3)), cpro_ym1_3)
-call field_get_val_s(iprpfl(iym1(5)), cpro_ym1_5)
-call field_get_val_s(iprpfl(iym1(7)), cpro_ym1_7)
-call field_get_val_s(iprpfl(iym1(8)), cpro_ym1_8)
-call field_get_val_s(iprpfl(iym1(9)), cpro_ym1_9)
-call field_get_val_s(iprpfl(iym1(11)), cpro_ym1_11)
-call field_get_val_s(iprpfl(iym1(12)), cpro_ym1_12)
+call field_get_val_s(iym1(3), cpro_ym1_3)
+call field_get_val_s(iym1(5), cpro_ym1_5)
+call field_get_val_s(iym1(7), cpro_ym1_7)
+call field_get_val_s(iym1(8), cpro_ym1_8)
+call field_get_val_s(iym1(9), cpro_ym1_9)
+call field_get_val_s(iym1(11), cpro_ym1_11)
+call field_get_val_s(iym1(12), cpro_ym1_12)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -156,10 +156,10 @@ call field_get_n_fields(nfld)
 !< [example_1]
 
 ! Temperature
-call field_get_val_s(iprpfl(itemp1), cpro_temp1)
+call field_get_val_s(itemp1, cpro_temp1)
 
 ! Gas density
-call field_get_val_s(iprpfl(irom1), cpro_rom1)
+call field_get_val_s(irom1, cpro_rom1)
 
 ! First initialization
 if (ntcabs.le.1) then
@@ -168,8 +168,8 @@ if (ntcabs.le.1) then
     cpro_rom1(iel) = ro0
   enddo
   do icla = 1, nclacp
-    call field_get_val_s(iprpfl(irom2(icla)), cpro_rom2)
-    call field_get_val_s(iprpfl(idiam2(icla)), cpro_diam2)
+    call field_get_val_s(irom2(icla), cpro_rom2)
+    call field_get_val_s(idiam2(icla), cpro_diam2)
     do iel = 1, ncel
       cpro_rom2(iel)  = rho20(icla)
       cpro_diam2(iel) = diam20(icla)
@@ -298,9 +298,9 @@ do iflid = 0, nfld-1
   ! We only handle here one scalar with a drift per particle class
   if (icla.ge.1.and.btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
-    call field_get_val_s(iprpfl(irom2(icla)), cpro_rom2)
-    call field_get_val_s(iprpfl(idiam2(icla)), cpro_diam2)
-    call field_get_val_s(iprpfl(ix2(icla)), cpro_x2)
+    call field_get_val_s(irom2(icla), cpro_rom2)
+    call field_get_val_s(idiam2(icla), cpro_diam2)
+    call field_get_val_s(ix2(icla), cpro_x2)
 
     ! Position of variables, coefficients
     ! -----------------------------------

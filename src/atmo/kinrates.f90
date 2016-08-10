@@ -80,12 +80,12 @@ hspec = 0.0d0
 
 if (ippmod(iatmos).ge.1) then
   call field_get_val_s(icrom, crom)
-  call field_get_val_s(iprpfl(itempc), cpro_tempc)
+  call field_get_val_s(itempc, cpro_tempc)
 endif
 
 if (ippmod(iatmos).ge.2) then
   call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
-  call field_get_val_s(iprpfl(iliqwt), cpro_liqwt)
+  call field_get_val_s(iliqwt, cpro_liqwt)
 endif
 
 ! Computation of kinetic rates in every cell

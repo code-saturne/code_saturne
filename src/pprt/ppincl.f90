@@ -245,23 +245,6 @@ module ppincl
 
   !> \}
 
-  !--> NOMBRE DE VARIABLES ALGEBRIQUES OU D'ETAT
-  !    pour la physique particuliere NSALPP
-  !    total NSALTO
-
-  !> \defgroup number_variables Number of algebraic or state variables
-
-  !> \addtogroup number_variables
-  !> \{
-
-  !> number of properties for specific physic
-  integer, save :: nsalpp
-  !> highest specific physic property number
-  integer, save :: nsalto
-
-
-  !> \}
-
   !--> PARAMETERS ASSOCIATED WITH THE GAS MIXTURE MODELLING
 
   !> \defgroup modelling chosen by the user

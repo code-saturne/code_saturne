@@ -225,8 +225,8 @@ f8m( : ) = 0.d0
 f9m( : ) = 0.d0
 
 do icla = 1, nclacp
-  call field_get_val_s(iprpfl(ix2(icla)),cpro_x2b(icla)%p)
-  call field_get_val_s(iprpfl(irom2(icla)),cpro_ro2(icla)%p)
+  call field_get_val_s(ix2(icla),cpro_x2b(icla)%p)
+  call field_get_val_s(irom2(icla),cpro_ro2(icla)%p)
 enddo
 
 do iel = 1, ncel
@@ -335,7 +335,7 @@ do iel = 1, ncel
   enth1(iel) = cvar_hgas(iel) / cpro_x1(iel)
 enddo
 
-call field_get_val_s(iprpfl(irom1), cpro_rom1)
+call field_get_val_s(irom1, cpro_rom1)
 
 call cs_coal_physprop1 &
 !=====================
@@ -472,9 +472,9 @@ if (i_comb_drift.ge.1) then
     ! We only handle here one scalar with a drift per particle class
     if (icla.ge.1.and.btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
-      call field_get_val_s(iprpfl(irom2(icla)), cpro_rom2)
-      call field_get_val_s(iprpfl(idiam2(icla)), cpro_diam2)
-      call field_get_val_s(iprpfl(ix2(icla)), cpro_x2)
+      call field_get_val_s(irom2(icla), cpro_rom2)
+      call field_get_val_s(idiam2(icla), cpro_diam2)
+      call field_get_val_s(ix2(icla), cpro_x2)
 
       ! Position of variables, coefficients
       ! -----------------------------------
@@ -530,7 +530,7 @@ if (i_comb_drift.eq.1) then
     write(name,'(a,i2.2)')'vd_p_' ,icla
     call field_get_val_v_by_name(name, vdp_i)
 
-    call field_get_val_s(iprpfl(ix2(icla)), cpro_x2)
+    call field_get_val_s(ix2(icla), cpro_x2)
     do iel = 1,ncel
       ! Vdi = Vpi-Vs
       if (cpro_x2(iel).gt. 1.d-7 ) then
@@ -583,7 +583,7 @@ elseif (i_comb_drift.gt.1) then
     write(name,'(a,i2.2)')'vg_p_' ,icla
     call field_get_val_v_by_name(name, vg_pi)
 
-    call field_get_val_s(iprpfl(ix2(icla)), cpro_x2)
+    call field_get_val_s(ix2(icla), cpro_x2)
 
     do iel = 1, ncel
 

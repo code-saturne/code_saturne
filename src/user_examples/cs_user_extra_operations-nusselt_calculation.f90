@@ -122,7 +122,7 @@ if (ntcabs.eq.ntmabs) then
 
   iscal = iscalt         ! temperature scalar number
   ivar =  isca(iscal)    ! temperature variable number
-  call field_get_val_s(iprpfl(iviscl), viscl)
+  call field_get_val_s(iviscl, viscl)
   call field_get_coefa_s(ivarfl(ivar), coefap)
   call field_get_coefb_s(ivarfl(ivar), coefbp)
 

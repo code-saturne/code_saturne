@@ -110,7 +110,7 @@ double precision, dimension(:), pointer :: lambda
 ierror = 0
 if (irovar.le.0) ierror = 1
 if (ivivar.le.0) ierror = 1
-if (icp.le.0)    ierror = 1
+if (icp.lt.0)    ierror = 1
 
 if (ierror.gt.0) then
   call csexit(1)
@@ -128,10 +128,10 @@ else
 endif
 
 ! Molecular dynamic viscosity value
-call field_get_val_s(iprpfl(iviscl), cpro_viscl)
+call field_get_val_s(iviscl, cpro_viscl)
 ! Specific heat value
-if (icp.gt.0) then
-  call field_get_val_s(iprpfl(icp), cpro_cp)
+if (icp.ge.0) then
+  call field_get_val_s(icp, cpro_cp)
 
 ! Stop if Cp is not variable
 else
@@ -143,7 +143,7 @@ endif
 call field_get_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)
 call field_get_val_s(ifcvsl, cpro_venth)
 
-call field_get_val_s(iprpfl(igmxml), mix_mol_mas)
+call field_get_val_s(igmxml, mix_mol_mas)
 
 ! Deduce mass fraction (y_d) which is
 ! y_h2o_g in presence of steam or

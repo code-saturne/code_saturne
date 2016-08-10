@@ -42,13 +42,12 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 
 subroutine phyvar &
  ( nvar   , nscal  ,                                              &
-   dt     , propce )
+   dt     )
 
 !===============================================================================
 
@@ -84,7 +83,6 @@ implicit none
 integer          nvar   , nscal
 
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 
 ! Local variables
 
@@ -92,8 +90,7 @@ character(len=80) :: chaine
 integer          ivar  , iel   , ifac  , iscal
 integer          ii    , iok   , iok1  , iok2  , iisct, idfm, iggafm
 integer          nn    , isou
-integer          mbrom , ipcvst, ifcvsl
-integer          ipccp , ipcvis, ipcvma
+integer          mbrom , ifcvsl
 integer          iclipc
 Double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision nusa, xi3, fv1, cv13
@@ -106,9 +103,10 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: sval
-double precision, dimension(:,:), pointer :: visten, vistes
+double precision, dimension(:,:), pointer :: visten, vistes, cpro_visma_v
 double precision, dimension(:), pointer :: viscl, visct, cpro_vis
 double precision, dimension(:), pointer :: cvar_voidf
+double precision, dimension(:), pointer :: cpro_var, cpro_beta, cpro_visma_s
 
 integer          ipass
 data             ipass /0/
@@ -214,7 +212,7 @@ if (ntcabs.eq.ntpabs+1 .and. icavit.lt.0) then
   ! Viscosite moleculaire aux cellules
   iok2 = 0
   if (ivivar.eq.0) then
-    call field_get_val_s(iprpfl(iviscl), viscl)
+    call field_get_val_s(iviscl, viscl)
     do iel = 1, ncel
       if ( abs(viscl(iel)-viscl0).gt.epzero) then
         iok2 = 1
@@ -244,7 +242,7 @@ if     (iturb.eq. 0) then
 ! 4.1 Laminar
 ! ===========
 
-  call field_get_val_s(iprpfl(ivisct), visct)
+  call field_get_val_s(ivisct, visct)
 
   do iel = 1, ncel
     visct(iel) = 0.d0
@@ -262,7 +260,7 @@ elseif (itytur.eq.2) then
 ! 4.3 k-epsilon
 ! =============
 
-  call field_get_val_s(iprpfl(ivisct), visct)
+  call field_get_val_s(ivisct, visct)
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iep), cvar_ep)
@@ -278,7 +276,7 @@ elseif (itytur.eq.3) then
 ! 4.4 Rij-epsilon
 ! ===============
 
-  call field_get_val_s(iprpfl(ivisct), visct)
+  call field_get_val_s(ivisct, visct)
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
@@ -318,8 +316,7 @@ elseif (iturb.eq.41) then
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
-   ckupdc , smacel ,                                              &
-   propce(1,ipproc(ismago)) )
+   ckupdc , smacel )
 
 elseif (iturb.eq.42) then
 
@@ -335,8 +332,8 @@ elseif (itytur.eq.5) then
 
   if (iturb.eq.50) then
 
-    call field_get_val_s(iprpfl(iviscl), viscl)
-    call field_get_val_s(iprpfl(ivisct), visct)
+    call field_get_val_s(iviscl, viscl)
+    call field_get_val_s(ivisct, visct)
     call field_get_val_s(icrom, crom)
     call field_get_val_s(ivarfl(ik), cvar_k)
     call field_get_val_s(ivarfl(iep), cvar_ep)
@@ -374,9 +371,9 @@ elseif (iturb.eq.70) then
   cv13 = csav1**3
 
   call field_get_val_s(ivarfl(inusa), cvar_nusa)
-  call field_get_val_s(iprpfl(ivisct), visct)
+  call field_get_val_s(ivisct, visct)
   call field_get_val_s(icrom, crom)
-  call field_get_val_s(iprpfl(iviscl), viscl)
+  call field_get_val_s(iviscl, viscl)
 
   do iel = 1, ncel
     xrom = crom(iel)
@@ -408,7 +405,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
   if (itytur.eq.3) then
     if (irijco.eq.1) then
       call field_get_val_s(icrom, crom)
-      call field_get_val_s(iprpfl(iviscl), viscl)
+      call field_get_val_s(iviscl, viscl)
 
       call field_get_val_s(ivarfl(iep), cvar_ep)
 
@@ -458,7 +455,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
     ! Uncoupled version
     else
       call field_get_val_s(icrom, crom)
-      call field_get_val_s(iprpfl(iviscl), viscl)
+      call field_get_val_s(iviscl, viscl)
 
       call field_get_val_s(ivarfl(iep), cvar_ep)
 
@@ -541,11 +538,10 @@ endif
 if (icavit.ge.0 .and. icvevm.eq.1) then
   if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60 .or. iturb.eq.70) then
 
-    ipcvst = ipproc(ivisct)
     call field_get_val_s(icrom, crom)
     call field_get_val_s(ivarfl(ivoidf), cvar_voidf)
 
-    call cavitation_correct_visc_turb (crom, cvar_voidf, propce(:,ipcvst))
+    call cavitation_correct_visc_turb (crom, cvar_voidf)
 
   endif
 endif
@@ -572,8 +568,8 @@ call usvist &
 ! dans covofi
 
 if (iturb.eq.41) then
-  call field_get_val_s(iprpfl(iviscl), viscl)
-  call field_get_val_s(iprpfl(ivisct), visct)
+  call field_get_val_s(iviscl, viscl)
+  call field_get_val_s(ivisct, visct)
   iclipc = 0
   do iel = 1, ncel
     viscto = viscl(iel) + visct(iel)
@@ -601,18 +597,13 @@ if (iale.eq.1.and.ntcabs.eq.0) then
 
   if (iihmpr.eq.1) then
 
-    call uivima &
-  ( propce(1,ipproc(ivisma(1))),      &
-    propce(1,ipproc(ivisma(2))),      &
-    propce(1,ipproc(ivisma(3))) )
+    call uivima
 
   endif
 
   call usvima &
  ( nvar   , nscal  ,                                              &
-   dt     ,                                                       &
-   propce(1,ipproc(ivisma(1))) ,                                  &
-   propce(1,ipproc(ivisma(2))) , propce(1,ipproc(ivisma(3))) )
+   dt     )
 
 endif
 
@@ -625,20 +616,12 @@ endif
 ! Indicateur d'erreur
 iok = 0
 
-! Rang des variables dans PROPCE
+nn = 3
+
+! Retrieve values of some physical properties fields
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(iviscl), viscl)
-ipcvis = ipproc(iviscl)
-ipcvst = ipproc(ivisct)
-if (icp.gt.0) then
-  ipccp  = ipproc(icp   )
-  nn     = 4
-else
-  ipccp = 0
-  nn    = 3
-endif
-
-
+call field_get_val_s(iviscl, viscl)
+if (icp.ge.0) nn  = 4
 call field_get_val_s(ibrom, brom)
 
 ! Min et max sur les cellules
@@ -653,17 +636,16 @@ do ii = 1, nn
       varmn(ii) = min(varmn(ii),sval(iel))
     enddo
   else
-    if (ii.eq.2) ivar = ipcvis
-    if (ii.eq.3) ivar = ipcvst
-    if (ii.eq.4) ivar = ipccp
-    if (ivar.gt.0) then
-      varmx(ii) = propce(1,ivar)
-      varmn(ii) = propce(1,ivar)
-      do iel = 2, ncel
-        varmx(ii) = max(varmx(ii),propce(iel,ivar))
-        varmn(ii) = min(varmn(ii),propce(iel,ivar))
-      enddo
-    endif
+    ivar = 1
+    if (ii.eq.2) call field_get_val_s(iviscl, cpro_var)
+    if (ii.eq.3) call field_get_val_s(ivisct, cpro_var)
+    if (ii.eq.4) call field_get_val_s(icp, cpro_var)
+    varmx(ii) = cpro_var(1)
+    varmn(ii) = cpro_var(1)
+    do iel = 2, ncel
+      varmx(ii) = max(varmx(ii),cpro_var(iel))
+      varmn(ii) = min(varmn(ii),cpro_var(iel))
+    enddo
   endif
   if (ivar.gt.0) then
     if (irangp.ge.0) then
@@ -689,9 +671,9 @@ endif
 iok1 = 0
 do ii = 1, nn
   if (ii.eq.1) call field_get_name(icrom, chaine)
-  if (ii.eq.2) call field_get_name(iprpfl(iviscl), chaine)
-  if (ii.eq.3) call field_get_name(iprpfl(ivisct), chaine)
-  if (ii.eq.4) call field_get_name(iprpfl(icp), chaine)
+  if (ii.eq.2) call field_get_name(iviscl, chaine)
+  if (ii.eq.3) call field_get_name(ivisct, chaine)
+  if (ii.eq.4) call field_get_name(icp, chaine)
   if (iwarni(iu).ge.1.or.ipass.eq.1.or.varmn(ii).lt.0.d0) then
     if (iok1.eq.0) then
       write(nfecra,3010)
@@ -715,7 +697,7 @@ endif
 
 ! Viscosite moleculaire definie
 ii = 2
-call field_get_name(iprpfl(iviscl), chaine)
+call field_get_name(iviscl, chaine)
 if (varmn(ii).lt.0.d0) then
   write(nfecra,9011)chaine(1:16),varmn(ii)
   iok = iok + 1
@@ -725,16 +707,16 @@ endif
 ! on ne clippe pas mu_t en modele LES dynamique, car on a fait
 ! un clipping sur la viscosite totale
 ii = 3
-call field_get_name(iprpfl(ivisct), chaine)
+call field_get_name(ivisct, chaine)
 if (varmn(ii).lt.0.d0.and.iturb.ne.41) then
   write(nfecra,9012)varmn(ii)
   iok = iok + 1
 endif
 
 ! Chaleur specifique definie
-if (icp.gt.0) then
+if (icp.ge.0) then
   ii = 4
-  call field_get_name(iprpfl(icp), chaine)
+  call field_get_name(icp, chaine)
   if (varmn(ii).lt.0.d0) then
     iisct = 0
     if (itherm.ne.0) iisct = 1
@@ -807,8 +789,9 @@ if (nscal.ge.1) then
 
     if (iscal.eq.iscalt.and.irovar.eq.1.and.ityturt(iscal).eq.2) then
       iok1 = 0
+      call field_get_val_s(ibeta, cpro_beta)
       do iel = 1, ncel
-        if (propce(iel,ipproc(ibeta)).le.0.d0) iok1 = 1
+        if (cpro_beta(iel).le.0.d0) iok1 = 1
       enddo
       if (iok1.eq.1) write(nfecra,9013)
     endif
@@ -821,17 +804,49 @@ endif
 if (iale.eq.1.and.ntcabs.eq.0) then
 
   iok1 = 0
-  nn = 1
-  if (iortvm.eq.1) nn = 3
-  do ii = 1, nn
-    ipcvma = ipproc(ivisma(ii))
+  if (iortvm.eq.1) then
+    call field_get_val_v(ivisma, cpro_visma_v)
+    do ii = 1, 3
+      ! Min et max sur les cellules
+      varmx(1) = cpro_visma_v(ii,1)
+      varmn(1) = cpro_visma_v(ii,1)
+      do iel = 2, ncel
+        varmx(1) = max(varmx(1),cpro_visma_v(ii,iel))
+        varmn(1) = min(varmn(1),cpro_visma_v(ii,iel))
+      enddo
+      if (irangp.ge.0) then
+        call parmax (varmx(1))
+        call parmin (varmn(1))
+      endif
 
+      ! Writings
+      call field_get_name(ivisma, chaine)
+      if (iwarni(iuma).ge.1.or.ipass.eq.1.or.varmn(1).lt.0.d0) then
+        if (iok1.eq.0) then
+          write(nfecra,3210)
+          iok1 = 1
+        endif
+        write(nfecra,3211)chaine(1:16),varmn(1),varmx(1)
+      endif
+
+      ! Verifications de valeur physique
+
+      ! Viscosite de maillage definie
+      call field_get_name(ivisma, chaine)
+      if (varmn(1).le.0.d0) then
+        write(nfecra,9211) varmn(1)
+        iok = iok + 1
+      endif
+
+    enddo
+  else
+    call field_get_val_s(ivisma, cpro_visma_s)
     ! Min et max sur les cellules
-    varmx(1) = propce(1,ipcvma)
-    varmn(1) = propce(1,ipcvma)
+    varmx(1) = cpro_visma_s(1)
+    varmn(1) = cpro_visma_s(1)
     do iel = 2, ncel
-      varmx(1) = max(varmx(1),propce(iel,ipcvma))
-      varmn(1) = min(varmn(1),propce(iel,ipcvma))
+      varmx(1) = max(varmx(1),cpro_visma_s(iel))
+      varmn(1) = min(varmn(1),cpro_visma_s(iel))
     enddo
     if (irangp.ge.0) then
       call parmax (varmx(1))
@@ -839,7 +854,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
     endif
 
     ! Writings
-    call field_get_name(iprpfl(ipcvma), chaine)
+    call field_get_name(ivisma, chaine)
     if (iwarni(iuma).ge.1.or.ipass.eq.1.or.varmn(1).lt.0.d0) then
       if (iok1.eq.0) then
         write(nfecra,3210)
@@ -851,13 +866,13 @@ if (iale.eq.1.and.ntcabs.eq.0) then
     ! Verifications de valeur physique
 
     ! Viscosite de maillage definie
-    call field_get_name(iprpfl(ipcvma), chaine)
+    call field_get_name(ivisma, chaine)
     if (varmn(1).le.0.d0) then
       write(nfecra,9211) varmn(1)
       iok = iok + 1
     endif
 
-  enddo
+  endif
 
   if (iok1.eq.1) write(nfecra,3212)
 

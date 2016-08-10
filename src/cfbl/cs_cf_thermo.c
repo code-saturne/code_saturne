@@ -98,13 +98,13 @@ cs_cf_set_thermo_options(void)
   if (ieos == 1 || ieos == 2) {
     /* Calculation options: constant Cp and Cv (perfect or stiffened gas)
        specific heat Cv0 is calculated in a subsequent section (from Cp0) */
-    fluid_properties->icp = 0;
-    fluid_properties->icv = 0;
+    fluid_properties->icp = -1;
+    fluid_properties->icv = -1;
   }
   else if (ieos == 3) {
     /* variable Cp and Cv for ideal gas mix eos. */
-    fluid_properties->icp = 1;
-    fluid_properties->icv = 1;
+    fluid_properties->icp = 0;
+    fluid_properties->icv = 0;
   }
 }
 

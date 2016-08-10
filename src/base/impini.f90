@@ -220,7 +220,7 @@ endif
 ! --- Dimensions
 
 write(nfecra,1500)
-write(nfecra,1520) nvar,nscal,nscaus,nscapp,nproce
+write(nfecra,1520) nvar,nscal,nscaus,nscapp
 
 write(nfecra,9900)
 
@@ -236,8 +236,7 @@ write(nfecra,9900)
 '       NVAR   = ',4x,i10,    ' (Nb de variables             )',/,&
 '       NSCAL  = ',4x,i10,    ' (Nb de scalaires             )',/,&
 '       NSCAUS = ',4x,i10,    ' (Nb de scalaires utilisateur )',/,&
-'       NSCAPP = ',4x,i10,    ' (Nb de scalaires phys. part. )',/,&
-'       NPROCE = ',4x,i10,    ' (Nb de proprietes (cellules) )',/)
+'       NSCAPP = ',4x,i10,    ' (Nb de scalaires phys. part. )',/)
 
 #else
 
@@ -250,8 +249,7 @@ write(nfecra,9900)
 '       NVAR   = ',4x,i10,    ' (Nb variables                )',/,&
 '       NSCAL  = ',4x,i10,    ' (Nb scalars                  )',/,&
 '       NSCAUS = ',4x,i10,    ' (Nb user scalars             )',/,&
-'       NSCAPP = ',4x,i10,    ' (Nb specific physics scalars )',/,&
-'       NPROCE = ',4x,i10,    ' (Nb cell properties          )',/)
+'       NSCAPP = ',4x,i10,    ' (Nb specific physics scalars )',/)
 
 #endif
 
@@ -292,7 +290,7 @@ write(nfecra,9900)
 '       RO0    = ', e14.5,    ' (Masse volumique     de ref. )',/,&
 '       VISCL0 = ', e14.5,    ' (Visc. molec. dynam. de ref. )',/,&
 '       CP0    = ', e14.5,    ' (Chal. Spec.     de reference)',/,&
-'       ICP    = ',4x,i10,    ' (> 0 : CP variable   (usphyv))',/,&
+'       ICP    = ',4x,i10,    ' (>= 0 : CP variable  (usphyv))',/,&
 '       P0     = ', e14.5,    ' (Pression totale de reference)',/,&
 '       PRED0  = ', e14.5,    ' (Press. reduite  de reference)',/,&
 '       T0     = ', e14.5,    ' (Temperature     de reference)',/,&
@@ -323,7 +321,7 @@ write(nfecra,9900)
 '       RO0    = ', e14.5,    ' (Reference density           )',/,&
 '       VISCL0 = ', e14.5,    ' (Ref. molecular dyn. visc.   )',/,&
 '       CP0    = ', e14.5,    ' (Ref. specific heat          )',/,&
-'       ICP    = ',4x,i10,    ' (> 0: variable CP (usphyv)   )',/,&
+'       ICP    = ',4x,i10,    ' (>= 0: variable CP (usphyv)  )',/,&
 '       P0     = ', e14.5,    ' (Ref. total pressure         )',/,&
 '       PRED0  = ', e14.5,    ' (Ref. reduced pressure       )',/,&
 '       T0     = ', e14.5,    ' (Ref. temperature            )',/,&

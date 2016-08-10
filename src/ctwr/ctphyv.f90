@@ -38,7 +38,7 @@ subroutine ctphyv
 !  (une routine specifique est dediee a cela : usvist)
 
 
-!  Il FAUT AVOIR PRECISE icp = 1
+!  Il FAUT AVOIR PRECISE icp = 0
 !     ==================
 !    si on souhaite imposer une chaleur specifique
 !    CP variable (sinon: ecrasement memoire).
@@ -207,12 +207,12 @@ ivart = isca(itemp4)
 
 ! --- Stop si CP n'est pas variable
 
-if(icp.le.0) then
+if(icp.lt.0) then
   write(nfecra,1000) icp
   call csexit (1)
 endif
 
-call field_get_val_s(iprpfl(icp), cpro_cp)
+call field_get_val_s(icp, cpro_cp)
 
 ! --- Coefficients des lois choisis et imposes par l'utilisateur
 !       Les valeurs donnees ici sont fictives

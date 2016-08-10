@@ -476,12 +476,8 @@ _read_field_vals_legacy(cs_restart_t  *r,
     else if (strcmp(f->name, "void_fraction") == 0)
       strncpy(sec_name, "taux_vide_ce", 127);
 
-    else if (strcmp(f->name, "mesh_viscosity_1") == 0)
-      strncpy(sec_name, "visc_maillage_x", 127);
-    else if (strcmp(f->name, "mesh_viscosity_2") == 0)
-      strncpy(sec_name, "visc_maillage_y", 127);
-    else if (strcmp(f->name, "mesh_viscosity_3") == 0)
-      strncpy(sec_name, "visc_maillage_z", 127);
+    else if (strcmp(f->name, "mesh_viscosity") == 0)
+      strncpy(sec_name, "visc_maillage", 127);
 
     else if (strcmp(f->name, "rad_st") == 0)
       strncpy(sec_name, "rayexp_ce", 127);

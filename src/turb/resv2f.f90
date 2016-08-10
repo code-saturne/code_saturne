@@ -150,8 +150,8 @@ allocate(w4(ncelet), w5(ncelet))
 allocate(dpvar(ncelet))
 
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
@@ -255,13 +255,13 @@ thets  = thetst
 thetv  = thetav(ivar )
 
 call field_get_val_s(icrom, cromo)
-call field_get_val_s(iprpfl(iviscl), cpro_pcvlo)
+call field_get_val_s(iviscl, cpro_pcvlo)
 if (istprv.ge.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif
   if (iviext.gt.0) then
-    call field_get_val_s(iprpfl(ivisla), cpro_pcvlo)
+    call field_get_val_prev_s(iviscl, cpro_pcvlo)
   endif
 endif
 
@@ -525,10 +525,10 @@ endif
 thets  = thetst
 thetv  = thetav(ivar )
 
-call field_get_val_s(iprpfl(ivisct), cpro_pcvto)
+call field_get_val_s(ivisct, cpro_pcvto)
 if (istprv.ge.0) then
   if (iviext.gt.0) then
-    call field_get_val_s(iprpfl(ivista), cpro_pcvto)
+    call field_get_val_prev_s(ivisct, cpro_pcvto)
   endif
 endif
 

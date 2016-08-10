@@ -154,7 +154,6 @@ integer          ifac, iel, isou, ii, jj, kk
 integer          iscal
 integer          modntl
 integer          iuntur, iuiptn, f_id
-integer          ifccp
 
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -482,13 +481,10 @@ if(itytur.eq.3) then
   call field_get_val_s(ivarfl(ir33), cvar_r33)
 endif
 
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
-if (icp.gt.0) then
-  ifccp  = iprpfl(icp)
-  call field_get_val_s(ifccp, cpro_cp)
-else
-  ifccp = -1
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
+if (icp.ge.0) then
+  call field_get_val_s(icp, cpro_cp)
 endif
 
 ! min. and max. of wall tangential velocity
@@ -1538,7 +1534,7 @@ double precision tetmax, tetmin, tplumx, tplumn
 
 integer          ivar, f_id, b_f_id, isvhbl
 integer          ifac, iel, isou, jsou
-integer          ifccp, ifccv, ifcvsl, itplus, itstar
+integer          ifcvsl, itplus, itstar
 
 double precision cpp, rkl, prdtl, visclc, romc, tplus, cpscv
 double precision distfi, distbf, fikis, hint, heq, hflui, hext
@@ -1568,8 +1564,8 @@ f_id = ivarfl(ivar)
 
 call field_get_val_s(ivarfl(ivar), val_s)
 
-call field_get_val_s(iprpfl(iviscl), viscl)
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 
 call field_get_key_int (f_id, kivisl, ifcvsl)
 
@@ -1591,18 +1587,13 @@ call field_get_coefaf_s(f_id, cofafp)
 call field_get_coefbf_s(f_id, cofbfp)
 
 call field_get_val_s(icrom, crom)
-if (icp.gt.0) then
-  ifccp = iprpfl(icp)
-  call field_get_val_s(ifccp, cpro_cp)
-else
-  ifccp = -1
+if (icp.ge.0) then
+  call field_get_val_s(icp, cpro_cp)
 endif
 
-ifccv = -1
 if (ippmod(icompf) .ge. 0) then
-  if (icv.gt.0) then
-    ifccv  = iprpfl(icv)
-    call field_get_val_s(ifccv, cv)
+  if (icv.ge.0) then
+    call field_get_val_s(icv, cv)
   endif
 endif
 
@@ -1700,7 +1691,7 @@ do ifac = 1, nfabor
 
     cpp = 1.d0
     if (iscacp(iscal).eq.1) then
-      if (ifccp.ge.0) then
+      if (icp.ge.0) then
         cpp = cpro_cp(iel)
       else
         cpp = cp0
@@ -1723,12 +1714,12 @@ do ifac = 1, nfabor
     ! Mu*Cv/Lambda.
 
     if (iscal.eq.iscalt .and. itherm.eq.3) then
-      if (ifccp.ge.0) then
+      if (icp.ge.0) then
         prdtl = prdtl*cpro_cp(iel)
       else
         prdtl = prdtl*cp0
       endif
-      if (ifccv.ge.0) then
+      if (icv.ge.0) then
         prdtl = prdtl/cv(iel)
       else
         prdtl = prdtl/cv0
@@ -1739,12 +1730,12 @@ do ifac = 1, nfabor
     if (idften(ivar).eq.1) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (ippmod(icompf) .ge. 0) then
-        if (ifccp.ge.0) then
+        if (icp.ge.0) then
           cpscv = cpro_cp(iel)
         else
           cpscv = cp0
         endif
-        if (ifccv.ge.0) then
+        if (icv.ge.0) then
           cpscv = cpscv/cv(iel)
         else
           cpscv = cpscv/cv0
@@ -1758,12 +1749,12 @@ do ifac = 1, nfabor
     elseif (idften(ivar).eq.6) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (ippmod(icompf) .ge. 0) then
-        if (ifccp.ge.0) then
+        if (icp.ge.0) then
           cpscv = cpro_cp(iel)
         else
           cpscv = cp0
         endif
-        if (ifccv.ge.0) then
+        if (icv.ge.0) then
           cpscv = cpscv/cv(iel)
         else
           cpscv = cpscv/cv0
@@ -1925,7 +1916,7 @@ do ifac = 1, nfabor
       !       lorsque la variable transportee est l'enthalpie
       !         iscsth(ii).eq.2 : hconv(ifac) = hint*cpr
       !         avec
-      !            if (ifccp.ge.0) then
+      !            if (icp.ge.0) then
       !              cpr = cpro_cp(iel)
       !            else
       !              cpr = cp0
@@ -1951,7 +1942,7 @@ do ifac = 1, nfabor
         ! Enthalpy
         if (itherm.eq.2) then
           ! If Cp is variable
-          if (ifccp.ge.0) then
+          if (icp.ge.0) then
             bhconv(ifac) = hflui*cpro_cp(iel)
           else
             bhconv(ifac) = hflui*cp0
@@ -1960,7 +1951,7 @@ do ifac = 1, nfabor
           ! Energie (compressible module)
         elseif (itherm.eq.3) then
           ! If Cv is variable
-          if (ifccv.ge.0) then
+          if (icv.ge.0) then
             bhconv(ifac) = hflui*cv(iel)
           else
             bhconv(ifac) = hflui*cv0
@@ -2019,4 +2010,3 @@ enddo
 
 return
 end subroutine
-

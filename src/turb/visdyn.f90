@@ -56,16 +56,13 @@
 !> \param[in]     smacel        value of variables associated to the
 !>                               mass source
 !>                               for ivar = ipr, smacel = mass flux
-!> \param[in,out] smagor        smagorinski's constant in the cas of
-!>                              a dynamic model
 !______________________________________________________________________________!
 
 subroutine visdyn &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
-   ckupdc , smacel ,                                              &
-   smagor )
+   ckupdc , smacel )
 
 !===============================================================================
 ! Module files
@@ -98,7 +95,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision smagor(ncelet)
 
 ! Local variables
 
@@ -125,7 +121,7 @@ double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:,:), pointer :: vel
-double precision, dimension(:), pointer :: visct
+double precision, dimension(:), pointer :: visct, cpro_smago
 
 !===============================================================================
 
@@ -139,8 +135,10 @@ call field_get_val_prev_v(ivarfl(iu), vel)
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
 
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(ivisct, visct)
 call field_get_val_s(icrom, crom)
+
+call field_get_val_s(ismago, cpro_smago)
 
 ! For the calculation of the viscosity of the sub-mesh
 xfil   = xlesfl
@@ -369,9 +367,9 @@ call les_filter(1, w2, w4)
 
 do iel = 1, ncel
   if(abs(w4(iel)).le.epzero) then
-    smagor(iel) = xsmgmx**2
+    cpro_smago(iel) = xsmgmx**2
   else
-    smagor(iel) = w3(iel)/w4(iel)
+    cpro_smago(iel) = w3(iel)/w4(iel)
   endif
 enddo
 
@@ -380,15 +378,15 @@ call ussmag                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
    ckupdc , smacel ,                                              &
-   smagor , w1     , w2     )
+   w1     , w2     )
 
 iclipc = 0
 do iel = 1, ncel
-  if(smagor(iel).ge.xsmgmx**2) then
-    smagor(iel) = xsmgmx**2
+  if(cpro_smago(iel).ge.xsmgmx**2) then
+    cpro_smago(iel) = xsmgmx**2
     iclipc = iclipc + 1
-  elseif(smagor(iel).le.-xsmgmx**2) then
-    smagor(iel) = -xsmgmx**2
+  elseif(cpro_smago(iel).le.-xsmgmx**2) then
+    cpro_smago(iel) = -xsmgmx**2
     iclipc = iclipc + 1
   endif
 enddo
@@ -400,7 +398,7 @@ enddo
 ! Clipping in (mu + mu_t)>0 in phyvar
 
 do iel = 1, ncel
-  coef = smagor(iel)
+  coef = cpro_smago(iel)
   delta  = xfil * (xa*volume(iel))**xb
   visct(iel) = crom(iel) * coef * delta**2 * visct(iel)
 enddo
@@ -412,9 +410,9 @@ if (iwarni(iu).ge.1) then
   smagmn =  1.0d12
   smagmy =  0.d0
   do iel = 1, ncel
-    smagma = max(smagma,smagor(iel))
-    smagmn = min(smagmn,smagor(iel))
-    smagmy = smagmy + smagor(iel)*volume(iel)
+    smagma = max(smagma,cpro_smago(iel))
+    smagmn = min(smagmn,cpro_smago(iel))
+    smagmy = smagmy + cpro_smago(iel)*volume(iel)
   enddo
   if (irangp.ge.0) then
     call parmax(smagma)

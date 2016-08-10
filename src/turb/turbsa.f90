@@ -156,8 +156,8 @@ allocate(tsexp(ncelet))
 allocate(dpvar(ncelet))
 
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(ivisct), cvisct)
-call field_get_val_s(iprpfl(iviscl), viscl)
+call field_get_val_s(ivisct, cvisct)
+call field_get_val_s(iviscl, viscl)
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(ivarfl(inusa), cvar_nusa)
 call field_get_val_prev_s(ivarfl(inusa), cvara_nusa)
@@ -183,7 +183,7 @@ if (istprv.ge.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif
   if (iviext.gt.0) then
-    call field_get_val_s(iprpfl(ivista), cpro_pcvto)
+    call field_get_val_prev_s(ivisct, cpro_pcvto)
   endif
 endif
 

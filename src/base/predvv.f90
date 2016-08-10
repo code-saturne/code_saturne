@@ -526,7 +526,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   endif
 
   if (idilat.ge.4) then
-    call field_get_val_s(iprpfl(iustdy(itsrho)), cpro_tsrho)
+    call field_get_val_s(iustdy(itsrho), cpro_tsrho)
   endif
 
   ! Dilatable mass conservative algorithm
@@ -1120,8 +1120,8 @@ endif
 
 if (idiff(iu).ge. 1) then
 
-  call field_get_val_s(iprpfl(iviscl), viscl)
-  call field_get_val_s(iprpfl(ivisct), visct)
+  call field_get_val_s(iviscl, viscl)
+  call field_get_val_s(ivisct, visct)
 
   if (itytur.eq.3) then
     do iel = 1, ncel

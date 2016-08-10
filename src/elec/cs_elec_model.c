@@ -594,7 +594,7 @@ cs_electrical_model_initialize(int  ielarc,
   cs_glob_transformer     = _transformer;
 
   cs_fluid_properties_t *fluid_properties = cs_get_glob_fluid_properties();
-  fluid_properties->icp = 1;
+  fluid_properties->icp = 0;
   fluid_properties->irovar = 1;
   fluid_properties->ivivar = 1;
 }

@@ -208,16 +208,16 @@ call field_get_label(ivarfl(ivar), chaine)
 
 ! --- Number of the physic quantity
 call field_get_val_s(icrom, crom)
-if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
+if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
 
-call field_get_val_s(iprpfl(itemp1), cpro_temp1)
-call field_get_val_s(iprpfl(irom1), cpro_rom1)
+call field_get_val_s(itemp1, cpro_temp1)
+call field_get_val_s(irom1, cpro_rom1)
 
-call field_get_val_s(iprpfl(iym1(io2)), cpro_yox)
-call field_get_val_s(iprpfl(iym1(ico2)), cpro_yco2)
-call field_get_val_s(iprpfl(iym1(ico)), cpro_yco)
-call field_get_val_s(iprpfl(iym1(ih2o)), cpro_yh2o)
-call field_get_val_s(iprpfl(immel), cpro_mmel)
+call field_get_val_s(iym1(io2), cpro_yox)
+call field_get_val_s(iym1(ico2), cpro_yco2)
+call field_get_val_s(iym1(ico), cpro_yco)
+call field_get_val_s(iym1(ih2o), cpro_yh2o)
+call field_get_val_s(immel, cpro_mmel)
 
 
 call field_get_val_v(ivarfl(iu), vel)
@@ -270,7 +270,7 @@ if ( ivar.ge.isca(ixch(1)) .and. ivar.le.isca(ixch(nclacp)) ) then
   ! index of the coal particle class
   call field_get_key_int(ivarfl(ivar), keyccl, numcla)
 
-  call field_get_val_s(iprpfl(igmdch(numcla)), cpro_cgch)
+  call field_get_val_s(igmdch(numcla), cpro_cgch)
 
   do iel = 1, ncel
 
@@ -303,16 +303,16 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
   call field_get_val_s(ivarfl(isca(ixch(numcla))), cvar_xchcl)
   call field_get_val_prev_s(ivarfl(isca(ixck(numcla))), cvara_xckcl)
 
-  call field_get_val_s(iprpfl(igmdch(numcla)), cpro_cgch)
-  call field_get_val_s(iprpfl(igmdv1(numcla)), cpro_cgd1)
-  call field_get_val_s(iprpfl(igmdv2(numcla)), cpro_cgd2)
-  call field_get_val_s(iprpfl(igmhet(numcla)), cpro_cght)
+  call field_get_val_s(igmdch(numcla), cpro_cgch)
+  call field_get_val_s(igmdv1(numcla), cpro_cgd1)
+  call field_get_val_s(igmdv2(numcla), cpro_cgd2)
+  call field_get_val_s(igmhet(numcla), cpro_cght)
 
   if ( ihtco2 .eq. 1 ) then
-    call field_get_val_s(iprpfl(ighco2(numcla)), cpro_ghco2)
+    call field_get_val_s(ighco2(numcla), cpro_ghco2)
   endif
   if ( ihth2o .eq. 1 ) then
-    call field_get_val_s(iprpfl(ighh2o(numcla)), cpro_ghh2o)
+    call field_get_val_s(ighh2o(numcla), cpro_ghh2o)
   endif
 
 !
@@ -368,8 +368,8 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
     numcha = ichcor(numcla)
 
-    call field_get_val_s(iprpfl(igmsec(numcla)),cpro_csec)
-    call field_get_val_s(iprpfl(ix2(numcla)),cpro_x2)
+    call field_get_val_s(igmsec(numcla),cpro_csec)
+    call field_get_val_s(ix2(numcla),cpro_x2)
 
     do iel = 1, ncel
 
@@ -438,13 +438,13 @@ if (i_comb_drift.eq.1) then
 
     numcha = ichcor(icla)
 
-    call field_get_val_s(iprpfl(igmhet(icla)), cpro_cght)
+    call field_get_val_s(igmhet(icla), cpro_cght)
 
     if ( ihtco2 .eq. 1 ) then
-      call field_get_val_s(iprpfl(ighco2(icla)), cpro_ghco2)
+      call field_get_val_s(ighco2(icla), cpro_ghco2)
     endif
     if ( ihth2o .eq. 1 ) then
-      call field_get_val_s(iprpfl(ighh2o(icla)), cpro_ghh2o)
+      call field_get_val_s(ighh2o(icla), cpro_ghh2o)
     endif
 
     call field_get_val_prev_s(ivarfl(isca(ixck(icla))) , cvara_coke)
@@ -586,22 +586,22 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
   endif
   numcha = ichcor(numcla)
 
-  call field_get_val_s(iprpfl(ix2(numcla)),cpro_x2)
-  call field_get_val_s(iprpfl(irom2(numcla)),cpro_rom2)
-  call field_get_val_s(iprpfl(idiam2(numcla)),cpro_diam2)
-  call field_get_val_s(iprpfl(itemp2(numcla)),cpro_temp2)
-  call field_get_val_s(iprpfl(igmhet(numcla)),cpro_cght)
+  call field_get_val_s(ix2(numcla),cpro_x2)
+  call field_get_val_s(irom2(numcla),cpro_rom2)
+  call field_get_val_s(idiam2(numcla),cpro_diam2)
+  call field_get_val_s(itemp2(numcla),cpro_temp2)
+  call field_get_val_s(igmhet(numcla),cpro_cght)
 
   if ( ihtco2 .eq. 1 ) then
-    call field_get_val_s(iprpfl(ighco2(numcla)), cpro_ghco2)
+    call field_get_val_s(ighco2(numcla), cpro_ghco2)
   endif
   if ( ihth2o .eq. 1 ) then
-    call field_get_val_s(iprpfl(ighh2o(numcla)), cpro_ghh2o)
+    call field_get_val_s(ighh2o(numcla), cpro_ghh2o)
   endif
 
-  call field_get_val_s(iprpfl(igmdch(numcla)), cpro_cgch)
-  call field_get_val_s(iprpfl(igmdv1(numcla)), cpro_cgd1)
-  call field_get_val_s(iprpfl(igmdv2(numcla)), cpro_cgd2)
+  call field_get_val_s(igmdch(numcla), cpro_cgch)
+  call field_get_val_s(igmdv1(numcla), cpro_cgd1)
+  call field_get_val_s(igmdv2(numcla), cpro_cgd2)
 
   ! ---- Contribution to the explicit and implicit balance
   !        exchanges by molecular distribution
@@ -618,13 +618,13 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
 
   do iel = 1, ncel
     if (ifcvsl.ge.0) then
-      if (icp.gt.0) then
+      if (icp.ge.0) then
         w1(iel) = cpro_viscls(iel) * cpro_cp(iel)
       else
         w1(iel) = cpro_viscls(iel) * cp0
       endif
     else
-      if (icp.gt.0) then
+      if (icp.ge.0) then
         w1(iel) = visls0(iscalt) * cpro_cp(iel)
       else
         w1(iel) = visls0(iscalt) * cp0
@@ -635,7 +635,7 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
   ! ------ Contribution to the explicit and implicit balance
   !        exchanges by molecular distribution
   !      Remark: We use cpro_x2(iel) because we want X2 at the iteration n
-  call field_get_val_s(iprpfl(igmtr(numcla)), cpro_rovsdt2)
+  call field_get_val_s(igmtr(numcla), cpro_rovsdt2)
   do iel = 1, ncel
     ! ------ Calculation of diameter of the particles
     !        d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
@@ -929,8 +929,8 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
 
     ! ---- Contribution of source term interfacial to explicit and implicit balances
 
-    call field_get_val_s(iprpfl(igmsec(numcla)),cpro_csec)
-    call field_get_val_s(iprpfl(itemp2(numcla)),cpro_temp2)
+    call field_get_val_s(igmsec(numcla),cpro_csec)
+    call field_get_val_s(itemp2(numcla),cpro_temp2)
 
     do iel = 1, ncel
 
@@ -991,7 +991,7 @@ if (ivar .eq. isca(ihgas)) then
   ! Explicit contribution due to implicit source term on particle class enthalpy
   ! TODO adapt it to other classes (fuel..)
   do icla = 1, nclacp
-    call field_get_val_s(iprpfl(igmtr(icla)), cpro_rovsdt2)
+    call field_get_val_s(igmtr(icla), cpro_rovsdt2)
     call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_x2h2)
     call field_get_val_prev_s(ivarfl(isca(ih2(icla))), cvara_x2h2)
     do iel = 1, ncel
@@ -1017,7 +1017,7 @@ if ( ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb)) ) then
     w1(iel) = zero
   enddo
   do icla = 1, nclacp
-    call field_get_val_s(iprpfl(igmdv1(icla)), cpro_cgd1)
+    call field_get_val_s(igmdv1(icla), cpro_cgd1)
     call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
     if ( ichcor(icla).eq.numcha ) then
       do iel = 1, ncel
@@ -1051,7 +1051,7 @@ if ( ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb)) ) then
     w1(iel) = zero
   enddo
   do icla = 1, nclacp
-    call field_get_val_s(iprpfl(igmdv2(icla)), cpro_cgd2)
+    call field_get_val_s(igmdv2(icla), cpro_cgd2)
     call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
     if ( ichcor(icla).eq.numcha ) then
       do iel = 1, ncel
@@ -1086,7 +1086,7 @@ if ( ivar.eq.isca(if7m) ) then
   enddo
 
   do icla = 1, nclacp
-    call field_get_val_s(iprpfl(igmhet(icla)),cpro_cght)
+    call field_get_val_s(igmhet(icla),cpro_cght)
     call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
     call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xckcl)
     do iel = 1, ncel
@@ -1126,7 +1126,7 @@ if ( ihtco2 .eq. 1 ) then
     enddo
 
     do icla = 1, nclacp
-      call field_get_val_s(iprpfl(ighco2(icla)), cpro_ghco2)
+      call field_get_val_s(ighco2(icla), cpro_ghco2)
       call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
       call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xckcl)
       do iel = 1, ncel
@@ -1167,7 +1167,7 @@ if ( ihth2o .eq. 1 ) then
     enddo
 
     do icla = 1, nclacp
-      call field_get_val_s(iprpfl(ighh2o(icla)), cpro_ghh2o)
+      call field_get_val_s(ighh2o(icla), cpro_ghh2o)
       call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
       call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xckcl)
       do iel = 1, ncel
@@ -1228,8 +1228,8 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
       call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
       call field_get_val_prev_s(ivarfl(isca(ixwt(icla))), cvara_xwtcl)
-      call field_get_val_s(iprpfl(igmsec(icla)),cpro_csec)
-      call field_get_val_s(iprpfl(ix2(icla)),cpro_x2)
+      call field_get_val_s(igmsec(icla),cpro_csec)
+      call field_get_val_s(ix2(icla),cpro_x2)
 
       numcha = ichcor(icla)
 
@@ -1274,7 +1274,7 @@ if ( ieqco2 .eq. 1 ) then
     allocate(cpro_x2c(nclacp))
 
     do icla = 1, nclacp
-      call field_get_val_s(iprpfl(ix2(icla)),cpro_x2c(icla)%p)
+      call field_get_val_s(ix2(icla),cpro_x2c(icla)%p)
     enddo
 
     ! ---- Contribution of interfacial source term to explicit and implicit balances
@@ -1502,7 +1502,7 @@ if ( ieqco2 .eq. 1 ) then
      allocate(cpro_ghco2a(nclacp))
      do icla = 1,nclacp
        call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xck(icla)%p)
-       call field_get_val_s(iprpfl(ighco2(icla)), cpro_ghco2a(icla)%p)
+       call field_get_val_s(ighco2(icla), cpro_ghco2a(icla)%p)
      enddo
 
      do iel = 1, ncel
@@ -1560,13 +1560,13 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
       call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xck(icla)%p)
       call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xch(icla)%p)
       call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnp(icla)%p)
-      call field_get_val_s(iprpfl(itemp2(icla)), cpro_t2(icla)%p)
-      call field_get_val_s(iprpfl(igmhet(icla)), cpro_gmhet(icla)%p)
+      call field_get_val_s(itemp2(icla), cpro_t2(icla)%p)
+      call field_get_val_s(igmhet(icla), cpro_gmhet(icla)%p)
       if ( ihtco2 .eq. 1 ) then
-        call field_get_val_s(iprpfl(ighco2(icla)), cpro_ghco2a(icla)%p)
+        call field_get_val_s(ighco2(icla), cpro_ghco2a(icla)%p)
       endif
       if ( ihth2o .eq. 1 ) then
-        call field_get_val_s(iprpfl(ighh2o(icla)), cpro_ghh2oa(icla)%p)
+        call field_get_val_s(ighh2o(icla), cpro_ghh2oa(icla)%p)
       endif
       if ( ippmod(iccoal) .eq. 1 ) then
         call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwt(icla)%p)
@@ -1818,9 +1818,9 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
         call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
         call field_get_val_prev_s(ivarfl(isca(ixwt(icla))), cvara_xwtcl)
-        call field_get_val_s(iprpfl(igmsec(icla)),cpro_csec)
-        call field_get_val_s(iprpfl(itemp2(icla)),cpro_temp2)
-        call field_get_val_s(iprpfl(ix2(icla)),cpro_x2)
+        call field_get_val_s(igmsec(icla),cpro_csec)
+        call field_get_val_s(itemp2(icla),cpro_temp2)
+        call field_get_val_s(ix2(icla),cpro_x2)
 
         do iel = 1, ncel
 
@@ -1885,9 +1885,9 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
   if ( ivar.eq.isca(iyhcn) .or. ivar.eq.isca(iyno) ) then
 
     !  Pointer source terms
-    call field_get_val_s(iprpfl(ighcn1),cpro_exp1)
-    call field_get_val_s(iprpfl(ighcn2),cpro_exp2)
-    call field_get_val_s(iprpfl(ignoth),cpro_exp3)
+    call field_get_val_s(ighcn1,cpro_exp1)
+    call field_get_val_s(ighcn2,cpro_exp2)
+    call field_get_val_s(ignoth,cpro_exp3)
 
     !  Mass molar
 
@@ -1912,9 +1912,9 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
       do icla = 1,nclacp
         call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xck(icla)%p)
         call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xch(icla)%p)
-        call field_get_val_s(iprpfl(igmdv1(icla)), cpro_gmdv1(icla)%p)
-        call field_get_val_s(iprpfl(igmdv2(icla)), cpro_gmdv2(icla)%p)
-        call field_get_val_s(iprpfl(igmhet(icla)), cpro_gmhet(icla)%p)
+        call field_get_val_s(igmdv1(icla), cpro_gmdv1(icla)%p)
+        call field_get_val_s(igmdv2(icla), cpro_gmdv2(icla)%p)
+        call field_get_val_s(igmhet(icla), cpro_gmhet(icla)%p)
       enddo
 
       do iel=1,ncel
@@ -1980,7 +1980,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
 
       !  Source term NO
 
-      call field_get_val_s(iprpfl(iym1(in2)),cpro_yn2)
+      call field_get_val_s(iym1(in2),cpro_yn2)
 
       if (iwarni(ivar).ge.1) then
         write(nfecra,1000) chaine(1:8)
@@ -2027,37 +2027,37 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
     do icla = 1,nclacp
       call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xck(icla)%p)
       call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xch(icla)%p)
-      call field_get_val_s(iprpfl(itemp2(icla)), cpro_t2(icla)%p)
-      call field_get_val_s(iprpfl(igmhet(icla)), cpro_gmhet(icla)%p)
-      call field_get_val_s(iprpfl(igmdv1(icla)), cpro_gmdv1(icla)%p)
-      call field_get_val_s(iprpfl(igmdv2(icla)), cpro_gmdv2(icla)%p)
+      call field_get_val_s(itemp2(icla), cpro_t2(icla)%p)
+      call field_get_val_s(igmhet(icla), cpro_gmhet(icla)%p)
+      call field_get_val_s(igmdv1(icla), cpro_gmdv1(icla)%p)
+      call field_get_val_s(igmdv2(icla), cpro_gmdv2(icla)%p)
     enddo
 
     ! Pointer Source terms NO gas phase
-    call field_get_val_s(iprpfl(ighcn1),cpro_exp1)
-    call field_get_val_s(iprpfl(ighcn2),cpro_exp2)
-    call field_get_val_s(iprpfl(ignoth),cpro_exp3)
-    call field_get_val_s(iprpfl(ignh31),cpro_exp4)
-    call field_get_val_s(iprpfl(ignh32),cpro_exp5)
-    call field_get_val_s(iprpfl(igrb),  cpro_exprb)
+    call field_get_val_s(ighcn1,cpro_exp1)
+    call field_get_val_s(ighcn2,cpro_exp2)
+    call field_get_val_s(ignoth,cpro_exp3)
+    call field_get_val_s(ignh31,cpro_exp4)
+    call field_get_val_s(ignh32,cpro_exp5)
+    call field_get_val_s(igrb,  cpro_exprb)
 
-    call field_get_val_s(iprpfl(ifnh3d),cpro_cnorb)
-    call field_get_val_s(iprpfl(ifnh3c),cpro_fnoch)
-    call field_get_val_s(iprpfl(icnohc),cpro_cnohc)
-    call field_get_val_s(iprpfl(ifnohc),cpro_fnohc)
-    call field_get_val_s(iprpfl(ifnonh),cpro_fnonh)
-    call field_get_val_s(iprpfl(ifnoth),cpro_fnoth)
-    call field_get_val_s(iprpfl(icnonh),cpro_cnonh)
-    call field_get_val_s(iprpfl(ifnh3d),cpro_fnh3d)
-    call field_get_val_s(iprpfl(ifnh3c),cpro_fnh3c)
+    call field_get_val_s(ifnh3d,cpro_cnorb)
+    call field_get_val_s(ifnh3c,cpro_fnoch)
+    call field_get_val_s(icnohc,cpro_cnohc)
+    call field_get_val_s(ifnohc,cpro_fnohc)
+    call field_get_val_s(ifnonh,cpro_fnonh)
+    call field_get_val_s(ifnoth,cpro_fnoth)
+    call field_get_val_s(icnonh,cpro_cnonh)
+    call field_get_val_s(ifnh3d,cpro_fnh3d)
+    call field_get_val_s(ifnh3c,cpro_fnh3c)
 
     ! Pointer on CHx1 and CHx2
-    call field_get_val_s(iprpfl(iym1(1)),cpro_cyf1)
-    call field_get_val_s(iprpfl(iym1(2)),cpro_cyf2)
+    call field_get_val_s(iym1(1),cpro_cyf1)
+    call field_get_val_s(iym1(2),cpro_cyf2)
 
-    call field_get_val_s(iprpfl(ifhcnr),cpro_fhcnr)
-    call field_get_val_s(iprpfl(ifhcnd),cpro_fhcnd)
-    call field_get_val_s(iprpfl(ifhcnc),cpro_fhcnc)
+    call field_get_val_s(ifhcnr,cpro_fhcnr)
+    call field_get_val_s(ifhcnd,cpro_fhcnd)
+    call field_get_val_s(ifhcnc,cpro_fhcnc)
 
     ! Mass molar
 
@@ -2418,7 +2418,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
     if (ivar.eq.isca(iyno)) then
 
-      call field_get_val_s(iprpfl(iym1(in2)),cpro_yn2)
+      call field_get_val_s(iym1(in2),cpro_yn2)
 
       do iel = 1, ncel
         cpro_cnorb(iel) = zero

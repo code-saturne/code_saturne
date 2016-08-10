@@ -28,8 +28,7 @@
 subroutine fldtri &
 !================
 
- ( nproce ,                                                            &
-   dt     , propce )
+ ( dt )
 
 !===============================================================================
 ! Purpose:
@@ -42,9 +41,7 @@ subroutine fldtri &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nproce           ! i  ! <-- ! nombre de prop phy aux centres                 !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________.____._____.________________________________________________.
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -82,16 +79,13 @@ implicit none
 
 ! Arguments
 
-integer          nproce, nscal
+integer          nscal
 double precision dt(ncelet)
-double precision propce(ncelet,*)
 
 ! Local variables
 
-logical          lprev
-integer          ii, ivar, iprop
+integer          ii, ivar
 integer          iflid, nfld
-integer          ipcrom, ipcroa
 integer          f_id
 
 integer          ifvar(nvarmx)
@@ -278,30 +272,6 @@ do ii = 1, nscal
         call field_init_bc_coeffs(f_id)
       endif
     endif
-  endif
-enddo
-
-! Density field
-
-ipcrom = ipproc(irom)
-call field_have_previous(iprpfl(ipcrom), lprev)
-if (lprev) then
-  ipcroa = ipproc(iroma)
-  call field_map_values(iprpfl(ipcrom), propce(1, ipcrom), propce(1, ipcroa))
-else
-  ipcroa = -1
-  call field_map_values(iprpfl(ipcrom), propce(1, ipcrom), propce(1, ipcrom))
-endif
-
-! The choice made in VARPOS specifies that we will only be interested in
-! properties at cell centers (no mass flux, nor density at the boundary).
-
-f_id = -1
-do iprop = 1, nproce
-  if (iprop.eq.ipcrom .or. iprop.eq.ipcroa) cycle
-  if (iprpfl(iprop).ne.f_id) then
-    f_id = iprpfl(iprop)
-    call field_map_values(iprpfl(iprop), propce(1, iprop), propce(1, iprop))
   endif
 enddo
 

@@ -98,13 +98,13 @@ allocate(grad(3,ncelet))
 
 ! Pointer to density and turbulent viscosity
 call field_get_val_s(icrom, cromo)
-call field_get_val_s(iprpfl(ivisct), cpro_pcvto)
+call field_get_val_s(ivisct, cpro_pcvto)
 if(isto2t.gt.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif
   if(iviext.gt.0) then
-    call field_get_val_s(iprpfl(ivista), cpro_pcvto)
+    call field_get_val_prev_s(ivisct, cpro_pcvto)
   endif
 endif
 
@@ -226,7 +226,7 @@ iqw = isca(itotwt)
 
 call field_get_val_prev_s(ivarfl(itpp), cvara_tpp)
 call field_get_val_prev_s(ivarfl(iqw), cvara_qw)
-call field_get_val_s(iprpfl(iliqwt), cpro_pcliq)
+call field_get_val_s(iliqwt, cpro_pcliq)
 
 ! compute the coefficients etheta,eq
 

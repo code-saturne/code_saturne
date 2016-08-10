@@ -57,10 +57,6 @@ implicit none
   !> Number of scalars with variable diffusivity
   integer, save :: nvisls
 
-  !> number of properties defined at the cells.
-  !> They will be stored in the array \c propce allocated in \ref caltri
-  integer, save :: nproce
-
   !> fake dimension for arrays coefa and coefb
   !> where \ref nfabor = 0 (to avoid issues with array bounds when
   !> multidimensional arrays have size nfabor in one dimension)

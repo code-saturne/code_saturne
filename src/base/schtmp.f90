@@ -23,8 +23,7 @@
 subroutine schtmp &
 !================
 
- ( nscal  , iappel ,                                              &
-   propce )
+ ( nscal  , iappel )
 
 !===============================================================================
 ! FONCTION :
@@ -42,7 +41,6 @@ subroutine schtmp &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iappel           ! e  ! <-- ! numero de l'appel (avant ou apres              !
 !                  !    !     ! phyvar                                         !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -73,20 +71,18 @@ implicit none
 
 integer          nscal  , iappel
 
-double precision propce(ncelet,*)
-
 ! Local variables
 
 integer          iel    , ifac   , iscal
 integer          iflmas , iflmab
-integer          ipcvsa , ipcvta , ifcvsl
-integer          iicpa
+integer          ifcvsl
 double precision flux   , theta  , aa, bb, viscos, xmasvo, varcp
 double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 double precision, dimension(:), pointer :: i_mass_flux_prev, b_mass_flux_prev
 double precision, dimension(:), pointer :: brom, crom, broma, croma
 double precision, dimension(:), pointer :: viscl, visct
-double precision, dimension(:), pointer :: cpro_cp, cpro_viscls, cproa_viscls
+double precision, dimension(:), pointer :: cpro_cp, cpro_visls, cproa_visls
+double precision, dimension(:), pointer :: cpro_cpa, cpro_visla, cpro_vista
 
 !===============================================================================
 
@@ -148,21 +144,21 @@ if (iappel.eq.1) then
     call field_current_to_previous(ibrom)
   endif
   if (iviext.gt.0) then
-    call field_get_val_s(iprpfl(iviscl), viscl)
-    call field_get_val_s(iprpfl(ivisct), visct)
-    ipcvsa = ipproc(ivisla)
-    ipcvta = ipproc(ivista)
+    call field_get_val_s(iviscl, viscl)
+    call field_get_val_s(ivisct, visct)
+    call field_get_val_prev_s(iviscl, cpro_visla)
+    call field_get_val_prev_s(ivisct, cpro_vista)
     do iel = 1, ncel
-      propce(iel,ipcvsa) = viscl(iel)
-      propce(iel,ipcvta) = visct(iel)
+      cpro_visla(iel) = viscl(iel)
+      cpro_vista(iel) = visct(iel)
     enddo
   endif
   if (icpext.gt.0) then
-    if (icp.gt.0) then
-      call field_get_val_s(iprpfl(icp), cpro_cp)
-      iicpa  = ipproc(icpa  )
+    if (icp.ge.0) then
+      call field_get_val_s(icp, cpro_cp)
+      call field_get_val_prev_s(icp, cpro_cpa)
       do iel = 1, ncel
-        propce(iel,iicpa ) = cpro_cp(iel)
+        cpro_cpa(iel) = cpro_cp(iel)
       enddo
     endif
   endif
@@ -175,10 +171,10 @@ if (iappel.eq.1) then
       call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
       if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
         if (ivsext(iscal).gt.0) then
-          call field_get_val_s(ifcvsl, cpro_viscls)
-          call field_get_val_prev_s(ifcvsl, cproa_viscls)
+          call field_get_val_s(ifcvsl, cpro_visls)
+          call field_get_val_prev_s(ifcvsl, cproa_visls)
           do iel = 1, ncel
-            cproa_viscls(iel) = cpro_viscls(iel)
+            cproa_visls(iel) = cpro_visls(iel)
           enddo
         endif
       endif
@@ -214,13 +210,13 @@ elseif (iappel.eq.2) then
   if (initvi.ne.1) then
     initvi = 1
     if (iviext.gt.0) then
-      call field_get_val_s(iprpfl(iviscl), viscl)
-      call field_get_val_s(iprpfl(ivisct), visct)
-      ipcvsa = ipproc(ivisla)
-      ipcvta = ipproc(ivista)
+      call field_get_val_s(iviscl, viscl)
+      call field_get_val_s(ivisct, visct)
+      call field_get_val_prev_s(iviscl, cpro_visla)
+      call field_get_val_prev_s(ivisct, cpro_vista)
       do iel = 1, ncel
-        propce(iel,ipcvsa) = viscl(iel)
-        propce(iel,ipcvta) = visct(iel)
+        cpro_visla(iel) = viscl(iel)
+        cpro_vista(iel) = visct(iel)
       enddo
     endif
   endif
@@ -228,10 +224,10 @@ elseif (iappel.eq.2) then
     initcp = 1
     if (icpext.gt.0) then
       if (icp   .gt.0) then
-        call field_get_val_s(iprpfl(icp), cpro_cp)
-        iicpa  = ipproc(icpa)
+        call field_get_val_s(icp, cpro_cp)
+        call field_get_val_prev_s(icp, cpro_cpa)
         do iel = 1, ncel
-          propce(iel,iicpa) = cpro_cp(iel)
+          cpro_cpa(iel) = cpro_cp(iel)
         enddo
       endif
     endif
@@ -247,10 +243,10 @@ elseif (iappel.eq.2) then
         call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
         if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
           if (ivsext(iscal).gt.0) then
-            call field_get_val_s(ifcvsl, cpro_viscls)
-            call field_get_val_prev_s(ifcvsl, cproa_viscls)
+            call field_get_val_s(ifcvsl, cpro_visls)
+            call field_get_val_prev_s(ifcvsl, cproa_visls)
             do iel = 1, ncel
-              cproa_viscls(iel) = cpro_viscls(iel)
+              cproa_visls(iel) = cpro_visls(iel)
             enddo
           endif
         endif
@@ -288,32 +284,32 @@ elseif (iappel.eq.2) then
     enddo
   endif
   if (iviext.gt.0) then
-    call field_get_val_s(iprpfl(iviscl), viscl)
-    call field_get_val_s(iprpfl(ivisct), visct)
-    ipcvsa = ipproc(ivisla)
-    ipcvta = ipproc(ivista)
+    call field_get_val_s(iviscl, viscl)
+    call field_get_val_s(ivisct, visct)
+    call field_get_val_prev_s(iviscl, cpro_visla)
+    call field_get_val_prev_s(ivisct, cpro_vista)
     theta  = thetvi
     do iel = 1, ncel
       viscos = viscl(iel)
       viscl(iel) = (1.d0+theta) * viscl(iel)    &
-           -       theta  * propce(iel,ipcvsa)
-      propce(iel,ipcvsa) = viscos
+           -       theta  * cpro_visla(iel)
+      cpro_visla(iel) = viscos
       viscos = visct(iel)
       visct(iel) = (1.d0+theta) * visct(iel)    &
-           -       theta  * propce(iel,ipcvta)
-      propce(iel,ipcvta) = viscos
+           -       theta  * cpro_vista(iel)
+      cpro_vista(iel) = viscos
     enddo
   endif
   if (icpext.gt.0) then
-    if (icp.gt.0) then
-      call field_get_val_s(iprpfl(icp), cpro_cp)
-      iicpa  = ipproc(icpa)
+    if (icp.ge.0) then
+      call field_get_val_s(icp, cpro_cp)
+      call field_get_val_prev_s(icp, cpro_cpa)
       theta  = thetcp
       do iel = 1, ncel
         varcp  = cpro_cp(iel)
         cpro_cp(iel) = (1.d0+theta) * cpro_cp(iel)      &
-                      -      theta  * propce(iel,iicpa)
-        propce(iel,iicpa ) = varcp
+                      -      theta  * cpro_cpa(iel)
+        cpro_cpa(iel) = varcp
       enddo
     endif
   endif
@@ -327,13 +323,13 @@ elseif (iappel.eq.2) then
       if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
         if (ivsext(iscal).gt.0) then
           theta  = thetvs(iscal)
-          call field_get_val_s(ifcvsl, cpro_viscls)
-          call field_get_val_prev_s(ifcvsl, cproa_viscls)
+          call field_get_val_s(ifcvsl, cpro_visls)
+          call field_get_val_prev_s(ifcvsl, cproa_visls)
           do iel = 1, ncel
-            viscos = cpro_viscls(iel)
-            cpro_viscls(iel) = (1.d0+theta)*cpro_viscls(iel) &
-                                    -theta *cproa_viscls(iel)
-            cproa_viscls(iel) = viscos
+            viscos = cpro_visls(iel)
+            cpro_visls(iel) = (1.d0+theta)*cpro_visls(iel) &
+                                    -theta *cproa_visls(iel)
+            cproa_visls(iel) = viscos
           enddo
         endif
       endif
@@ -502,21 +498,21 @@ elseif (iappel.eq.5) then
     enddo
   endif
   if (iviext.gt.0) then
-    call field_get_val_s(iprpfl(iviscl), viscl)
-    call field_get_val_s(iprpfl(ivisct), visct)
-    ipcvsa = ipproc(ivisla)
-    ipcvta = ipproc(ivista)
+    call field_get_val_s(iviscl, viscl)
+    call field_get_val_s(ivisct, visct)
+    call field_get_val_prev_s(iviscl, cpro_visla)
+    call field_get_val_prev_s(ivisct, cpro_vista)
     do iel = 1, ncel
-      viscl(iel) = propce(iel,ipcvsa)
-      visct(iel) = propce(iel,ipcvta)
+      viscl(iel) = cpro_visla(iel)
+      visct(iel) = cpro_vista(iel)
     enddo
   endif
   if (icpext.gt.0) then
-    if (icp.gt.0) then
-      call field_get_val_s(iprpfl(icp), cpro_cp)
-      iicpa  = ipproc(icpa)
+    if (icp.ge.0) then
+      call field_get_val_s(icp, cpro_cp)
+      call field_get_val_prev_s(icp, cpro_cpa)
       do iel = 1, ncel
-        cpro_cp(iel) = propce(iel,iicpa)
+        cpro_cp(iel) = cpro_cpa(iel)
       enddo
     endif
   endif
@@ -529,10 +525,10 @@ elseif (iappel.eq.5) then
       call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
       if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
         if (ivsext(iscal).gt.0) then
-          call field_get_val_s(ifcvsl, cpro_viscls)
-          call field_get_val_prev_s(ifcvsl, cproa_viscls)
+          call field_get_val_s(ifcvsl, cpro_visls)
+          call field_get_val_prev_s(ifcvsl, cproa_visls)
           do iel = 1, ncel
-            cpro_viscls(iel) = cproa_viscls(iel)
+            cpro_visls(iel) = cproa_visls(iel)
           enddo
         endif
       endif

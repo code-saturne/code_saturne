@@ -93,7 +93,7 @@ call field_get_coefb_v(ivarfl(iu), coefbu)
 ! Allocate temporary arrays for gradients calculation
 allocate(gradv(3, 3, ncelet))
 
-call field_get_val_s(iprpfl(ivisct), visct)
+call field_get_val_s(ivisct, visct)
 call field_get_val_s(icrom, crom)
 
 ! --- For the calculation of viscosity on the sub-mesh

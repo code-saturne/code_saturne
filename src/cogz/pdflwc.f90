@@ -167,12 +167,12 @@ gmax = -grand
 !===============================================================================
 
 call field_get_val_s(icrom, crom)
-call field_get_val_s(iprpfl(itemp), cpro_temp)
-call field_get_val_s(iprpfl(iym(1)), cpro_ym1)
-call field_get_val_s(iprpfl(iym(2)), cpro_ym2)
-call field_get_val_s(iprpfl(iym(3)), cpro_ym3)
-call field_get_val_s(iprpfl(itsc), cpro_tsc)
-call field_get_val_s(iprpfl(imam), cpro_mam)
+call field_get_val_s(itemp, cpro_temp)
+call field_get_val_s(iym(1), cpro_ym1)
+call field_get_val_s(iym(2), cpro_ym2)
+call field_get_val_s(iym(3), cpro_ym3)
+call field_get_val_s(itsc, cpro_tsc)
+call field_get_val_s(imam, cpro_mam)
 
 allocate(cpro_fmel(ndirac))
 allocate(cpro_fmal(ndirac))
@@ -183,13 +183,13 @@ allocate(cpro_maml(ndirac))
 allocate(cpro_ampl(ndirac))
 
 do idirac = 1, ndirac
-  call field_get_val_s(iprpfl(iampl(idirac)), cpro_ampl(idirac)%p)
-  call field_get_val_s(iprpfl(ifmel(idirac)), cpro_fmel(idirac)%p)
-  call field_get_val_s(iprpfl(ifmal(idirac)), cpro_fmal(idirac)%p)
-  call field_get_val_s(iprpfl(iteml(idirac)), cpro_teml(idirac)%p)
-  call field_get_val_s(iprpfl(imaml(idirac)), cpro_maml(idirac)%p)
-  call field_get_val_s(iprpfl(irhol(idirac)), cpro_rhol(idirac)%p)
-  call field_get_val_s(iprpfl(itscl(idirac)), cpro_tscl(idirac)%p)
+  call field_get_val_s(iampl(idirac), cpro_ampl(idirac)%p)
+  call field_get_val_s(ifmel(idirac), cpro_fmel(idirac)%p)
+  call field_get_val_s(ifmal(idirac), cpro_fmal(idirac)%p)
+  call field_get_val_s(iteml(idirac), cpro_teml(idirac)%p)
+  call field_get_val_s(imaml(idirac), cpro_maml(idirac)%p)
+  call field_get_val_s(irhol(idirac), cpro_rhol(idirac)%p)
+  call field_get_val_s(itscl(idirac), cpro_tscl(idirac)%p)
 enddo
 
 ! ---> Initialisation
