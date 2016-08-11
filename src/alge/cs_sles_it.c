@@ -4284,6 +4284,10 @@ cs_sles_it_solve(void                *context,
 
   c->setup_data->initial_residue = -1;
 
+  if (verbosity > 1)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _(" RHS norm:          %11.4e\n\n"), r_norm);
+
   /* Only call solver for "active" ranks */
 
 #if defined(HAVE_MPI)
