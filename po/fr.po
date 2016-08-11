@@ -14371,13 +14371,29 @@ msgid "%6d             %11.4e\n"
 msgstr ""
 
 #, c-format
-msgid "'Flux net radiatif sur toutes les frontieres  Fnet = %11.4e Watt\n"
+msgid "Net radiative flux on all boundaries:      Fnet = %11.4e Watt\n"
 msgstr ""
 
 #, c-format
 msgid ""
-"Volume integral of radiative source term Srad = %11.4e Watt\n"
+"Volume integral of radiative source term:  Srad = %11.4e Watt\n"
 "(If IDIVER = 1 or 2, we must have Srad = -Fnet)\n"
+msgstr ""
+
+#, c-format
+msgid "Maximum variation: %9.4f %%\n"
+msgstr ""
+
+#, c-format
+msgid "Decreasing wall temperature: %8d wall faces\n"
+msgstr ""
+
+#, c-format
+msgid "Increasing wall temperature: %8d wall faces\n"
+msgstr ""
+
+msgid ""
+"Fixed profiles   Temp max (C)   Temp min (C)   Temp mean (C)  Net flux (W)\n"
 msgstr ""
 
 msgid "Max. size of synthetic eddies:\n"

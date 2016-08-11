@@ -5,6 +5,8 @@ Release 4.3.1 (unreleased)
 Bug fixes:
 ----------
 
+- Radiative module: fixed regresion using the Modak absorption model.
+
 - Work around an ISO-C bindings bug with XL compiler for Blue Gene
   preventing link on Blue Gene/Q.
 
