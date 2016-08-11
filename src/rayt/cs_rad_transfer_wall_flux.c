@@ -238,7 +238,7 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvarcl,
 
       rapmax = CS_MAX(rapmax, abrapp);
       if (rapp <= 0.0)
-        nmoins--;
+        nmoins++;
       else
         nplus++;
 
@@ -563,13 +563,13 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvarcl,
 
       if (rapmax > 0 || nmoins > 0 || nplus > 0) {
         cs_log_printf(CS_LOG_DEFAULT,
-                      "Maximum variation: %9.4f %%\n",
+                      _("Maximum variation: %9.4f %%\n"),
                       rapmax * 100.0);
         cs_log_printf(CS_LOG_DEFAULT,
-                      "Diminishing wall temperature: %8d wall faces\n",
+                      _("Decreasing wall temperature: %8d wall faces\n"),
                       nmoins);
         cs_log_printf(CS_LOG_DEFAULT,
-                      "Increasing wall temperature: %8d wall faces\n",
+                      _("Increasing wall temperature: %8d wall faces\n"),
                       nplus);
         cs_log_printf(CS_LOG_DEFAULT,
                       "-----------------------------------------------------------------------\n");
@@ -577,7 +577,8 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvarcl,
 
       if (iitpim == 1) {
         cs_log_printf(CS_LOG_DEFAULT,
-                      "Fixed profiles   Temp max (C)   Temp min (C)   Temp mean (C)  Net flux (W)\n");
+                      _("Fixed profiles   Temp max (C)   Temp min (C)   "
+                        "Temp mean (C)  Net flux (W)\n"));
         for (int izone = 0; izone < nozrdm; izone++) {
           if (indtp[izone] == cs_glob_rad_transfer_params->itpimp)
             cs_log_printf(CS_LOG_DEFAULT,

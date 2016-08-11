@@ -1711,9 +1711,10 @@ cs_rad_transfer_solve(int               bc_type[],
   if (cs_glob_rank_id >= 0)
     cs_parall_sum(1, CS_DOUBLE, &aa);
 
-  cs_log_printf(CS_LOG_DEFAULT,
-                _("'Flux net radiatif sur toutes les frontieres  Fnet = %11.4e Watt\n"),
-                aa);
+  cs_log_printf
+    (CS_LOG_DEFAULT,
+     _("Net radiative flux on all boundaries:      Fnet = %11.4e Watt\n"),
+     aa);
 
   /*Semi-analitical radiative source terms */
 
@@ -1906,7 +1907,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
     cs_log_printf
       (CS_LOG_DEFAULT,
-       _("Volume integral of radiative source term Srad = %11.4e Watt\n"
+       _("Volume integral of radiative source term:  Srad = %11.4e Watt\n"
          "(If IDIVER = 1 or 2, we must have Srad = -Fnet)\n"),
        aa);
 

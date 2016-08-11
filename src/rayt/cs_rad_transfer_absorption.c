@@ -184,7 +184,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
           ys = cpro_ym3[cell_id]*cm->gas.coefeg[2][cm->gas.iic-1];
         else if (cm->isoot == 0)
           ys = xsoot * cpro_ym3[cell_id];
-        else if (cm->isoot > 1)
+        else if (cm->isoot >= 1)
           ys = cvar_fsm[cell_id];
         else
           ys = 0;
