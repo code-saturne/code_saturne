@@ -44,14 +44,11 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     oflmap        pointer to old field map
-!> \param[out]    frcxt         external forces making hydrostatic pressure
-!> \param[out]    prhyd         predicted hydrostatic pressure
 !_______________________________________________________________________________
 
 
 subroutine lecamx &
- ( oflmap ,                                                       &
-   frcxt  , prhyd  )
+ ( oflmap )
 
 !===============================================================================
 
@@ -94,8 +91,6 @@ implicit none
 
 type(c_ptr)      oflmap
 
-double precision frcxt(3,ncelet), prhyd(ncelet)
-
 ! Local variables
 
 character        rubriq*64,car4*4,car2*2
@@ -132,6 +127,7 @@ double precision, dimension(:,:), pointer :: disale, cpro_visma_v
 double precision, allocatable, dimension(:,:) :: tmurbf
 double precision, allocatable, dimension(:) :: tparbf
 double precision, allocatable, dimension(:) :: vismbf
+
 !===============================================================================
 
 !===============================================================================
@@ -699,23 +695,12 @@ endif
 !===============================================================================
 
 if (iphydr.eq.1) then
-  nberro=0
 
   itysup = 1
   nbval  = 3
 
-  ! TODO read the old format
-  rubriq = 'force_ext_ce_phase01'
-  call restart_read_section_real_t(rp,rubriq,itysup,nbval,frcxt,ierror)
-  nberro=nberro+ierror
-
-  if (nberro.ne.0) then
-    car54 = 'Lecture des forces exterieures                        '
-    write(nfecra,8300)car54
-  endif
-
-  car54 = ' Fin de la lecture des forces exterieures             '
-  write(nfecra,1110)car54
+  call field_get_id('volume_forces', f_id)
+  call restart_read_field_vals(rp, f_id, 0, ierror)
 
 endif
 
@@ -725,22 +710,11 @@ endif
 
 if (iphydr.eq.2) then
 
-  nberro=0
-
   itysup = 1
   nbval  = 1
 
-  rubriq = 'Prhyd_pre_phase01'
-  call restart_read_section_real_t(rp,rubriq,itysup,nbval,prhyd,ierror)
-  nberro=nberro+ierror
-
- if (nberro.ne.0) then
-   car54 = 'Lecture de la pression hydrostatique predite          '
-   write(nfecra,8300)car54
-  endif
-
-  car54 =' Fin de la lecture de la pression hydro. predite      '
-  write(nfecra,1110)car54
+  call field_get_id('hydrostatic_pressure_prd', f_id)
+  call restart_read_field_vals(rp, f_id, 0, ierror)
 
 endif
 

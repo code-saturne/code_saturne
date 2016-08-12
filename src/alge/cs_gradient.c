@@ -5576,20 +5576,9 @@ cs_gradient_scalar(const char                *var_name,
     if (c_weight != NULL)
       cs_halo_sync_var(halo, halo_type, c_weight);
 
-    /* TODO: check if f_ext components are all up to date, in which
-     *       case we need no special treatment for tr_dim > 0 */
-
     if (hyd_p_flag == 1) {
-      if (tr_dim > 0)
-        cs_halo_sync_components_strided(halo,
-                                        halo_type,
-                                        CS_HALO_ROTATION_IGNORE,
-                                        (cs_real_t *)f_ext,
-                                        3);
-      else {
-        cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)f_ext, 3);
-        cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)f_ext, 3);
-      }
+      cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)f_ext, 3);
+      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)f_ext, 3);
     }
 
   }

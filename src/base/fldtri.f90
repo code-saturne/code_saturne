@@ -25,10 +25,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine fldtri &
-!================
-
- ( dt )
+subroutine fldtri
 
 !===============================================================================
 ! Purpose:
@@ -79,13 +76,12 @@ implicit none
 
 ! Arguments
 
-integer          nscal
-double precision dt(ncelet)
+integer nscal
 
 ! Local variables
 
 integer          ii, ivar
-integer          iflid, nfld
+integer          nfld
 integer          f_id
 
 integer          ifvar(nvarmx)
@@ -279,9 +275,6 @@ enddo
 !-----------------------------------------------------------------
 
 ! Local time step
-
-call field_get_id('dt', iflid)
-call field_map_values(iflid, dt, dt)
 
 ! Set previous values for backward n order in time
 do ivar = 1, nvar

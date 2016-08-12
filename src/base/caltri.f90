@@ -121,9 +121,6 @@ double precision, pointer, dimension(:)   :: dt => null()
 double precision, pointer, dimension(:)   :: porosi => null()
 double precision, pointer, dimension(:,:) :: disale => null()
 
-double precision, pointer, dimension(:,:) :: frcxt => null()
-double precision, pointer, dimension(:)   :: prhyd => null()
-
 !===============================================================================
 ! Interfaces
 !===============================================================================
@@ -132,8 +129,7 @@ interface
 
   subroutine tridim &
   ( itrale , nvar   , nscal  ,                                     &
-    dt     ,                                                       &
-    frcxt  , prhyd  )
+    dt     )
 
     use dimens, only: ndimfb
     use mesh, only: nfabor
@@ -143,8 +139,6 @@ interface
     integer                                   :: itrale, nvar, nscal
 
     double precision, pointer, dimension(:)   :: dt
-    double precision, pointer, dimension(:,:) :: frcxt
-    double precision, pointer, dimension(:)   :: prhyd
 
   end subroutine tridim
 
@@ -370,24 +364,6 @@ if (nfpt1t.eq.0) deallocate(izft1d)
 ! Memory management
 !===============================================================================
 
-! Allocate main arrays
-
-allocate(dt(ncelet))
-
-! Allocate arrays on boundary faces
-
-if (iphydr.eq.1) then
-  allocate(frcxt(3, ncelet))
-else
-  frcxt => rvoid2
-endif
-
-if (iphydr.eq.2) then
-  allocate(prhyd(ncelet))
-else
-  prhyd => rvoid1
-endif
-
 call boundary_conditions_init
 
 call init_aux_arrays(ncelet, nfabor)
@@ -450,11 +426,13 @@ endif
 ! Default initializations
 !===============================================================================
 
-call fldtri(dt)
+call fldtri
 
 call field_allocate_or_map_all
 
-call iniva0(nvar, nscal, dt, frcxt, prhyd)
+call field_get_val_s_by_name('dt', dt)
+
+call iniva0(nvar, nscal)
 
 ! Compute the porosity if needed
 if (iporos.ge.1) then
@@ -557,7 +535,7 @@ if (isuite.eq.1) then
 
   call timer_stats_start(restart_stats_id)
 
-  call lecamo(frcxt, prhyd)
+  call lecamo
 
   ! Using ALE, geometric parameters must be recalculated
   if (iale.eq.1) then
@@ -586,7 +564,7 @@ endif
 !    dt rom romb viscl visct viscls (tpucou with periodicity)
 !===============================================================================
 
-call inivar(nvar, nscal, dt)
+call inivar(nvar, nscal)
 
 !===============================================================================
 ! Radiative transfer: possible restart
@@ -868,8 +846,7 @@ call dmtmps(titer1)
 call tridim                                                       &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
-   dt     ,                                                       &
-   frcxt  , prhyd  )
+   dt     )
 
 
 if (inpdt0.eq.0 .and. itrale.gt.0) then
@@ -971,7 +948,7 @@ if (iisuit.eq.1) then
     if(iwarn0.gt.0) write(nfecra,3021)ntcabs,ttcabs
   endif
 
-  call ecrava(frcxt, prhyd)
+  call ecrava
 
   if (iturbo.eq.2 .and. iecaux.eq.1) then
     call trbsui
@@ -1145,15 +1122,6 @@ if (nfpt1d.gt.0) then
 endif
 
 ! Free main arrays
-deallocate(dt)
-
-if (iphydr.eq.1) then
-  deallocate(frcxt)
-endif
-
-if (iphydr.eq.2) then
-  deallocate(prhyd)
-endif
 
 if (ivrtex.eq.1) then
   deallocate(irepvo)

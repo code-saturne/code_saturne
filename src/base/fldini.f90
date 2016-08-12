@@ -255,6 +255,19 @@ enddo
 ! Reserved fields whose ids are not saved (may be queried by name)
 !-----------------------------------------------------------------
 
+itycat = FIELD_INTENSIVE
+ityloc = 1 ! cells
+
+if (iphydr.eq.1) then
+  call field_find_or_create('volume_forces', &
+                            itycat, ityloc, idim3, f_id)
+endif
+
+if (iphydr.eq.2) then
+  call field_find_or_create('hydrostatic_pressure_prd', &
+                            itycat, ityloc, idim1, f_id)
+endif
+
 ! friction velocity at the wall, in the case of a LES calculation
 ! with van Driest-wall damping (delayed here rather than placed in
 ! addfld, as idries may be set in modini).

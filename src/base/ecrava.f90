@@ -20,10 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ecrava &
-!================
-
- ( frcxt  , prhyd  )
+subroutine ecrava
 
 !===============================================================================
 ! Purpose:
@@ -36,9 +33,6 @@ subroutine ecrava &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! frcxt(3,ncelet)  ! tr ! <-- ! force exterieure generant la pression          !
-!                  !    !     !  hydrostatique                                 !
-! prhyd(ncelet)    ! tr ! <-- ! hydrostatic pressure predicted                 !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -84,8 +78,6 @@ use cs_nz_tagmr, only:znmurx, znmur, ztmur
 implicit none
 
 ! Arguments
-
-double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
 
@@ -523,39 +515,15 @@ if (iecaux.eq.1) then
 ! ---> Force exterieure
 
   if (iphydr.eq.1) then
-
-    itysup = 1
-    nbval  = 3
-
-    rubriq = 'force_ext_ce_phase01'
-    call restart_write_section_real_t(rp,rubriq,itysup,nbval,frcxt)
-
-#if defined(_CS_LANG_FR)
-    car54=' Fin de l''ecriture des forces exterieures            '
-#else
-    car54=' End writing the external forces                      '
-#endif
-    write(nfecra,1110)car54
-
+    call field_get_id('volume_forces', f_id)
+    call restart_write_field_vals(rp, f_id, 0)
   endif
 
 ! ---> Pression hydrostatique predite
 
   if (iphydr.eq.2) then
-
-    itysup = 1
-    nbval  = 1
-
-    rubriq = 'Prhyd_pre_phase01'
-    call restart_write_section_real_t(rp,rubriq,itysup,nbval,prhyd)
-
-#if defined(_CS_LANG_FR)
-    car54=' Fin d''ecriture de la pression hydrostatique predite '
-#else
-    car54=' End writing the predicted hydrostatic pressure       '
-#endif
-    write(nfecra,1110)car54
-
+    call field_get_id('hydrostatic_pressure_prd', f_id)
+    call restart_write_field_vals(rp, f_id, 0)
   endif
 
 !----------------------------------------------------------------

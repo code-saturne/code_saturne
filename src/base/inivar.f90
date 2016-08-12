@@ -34,12 +34,10 @@
 !------------------------------------------------------------------------------
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     dt            value of time step
 !______________________________________________________________________________
 
 subroutine inivar &
- ( nvar   , nscal  ,                                              &
-   dt     )
+ ( nvar   , nscal )
 
 !===============================================================================
 ! Module files
@@ -77,8 +75,6 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet)
-
 ! Local variables
 
 character(len=80) :: chaine
@@ -103,6 +99,7 @@ double precision scmaxp, scminp
 double precision rvoid(1)
 double precision vvoid(3)
 
+double precision, dimension(:), pointer :: dt
 double precision, dimension(:), pointer :: field_s_v
 double precision, dimension(:,:), pointer :: field_v_v
 double precision, dimension(:), pointer :: cvar_pr
@@ -118,6 +115,8 @@ double precision, dimension(:), pointer :: cpro_prtot
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+call field_get_val_s_by_name('dt', dt)
 
 call field_get_n_fields(n_fields)
 

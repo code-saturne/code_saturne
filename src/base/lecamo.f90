@@ -34,13 +34,10 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[out]    frcxt         external forces making hydrostatic pressure
-!> \param[out]    prhyd         predicted hydrostatic pressure
 !_______________________________________________________________________________
 
 
-subroutine lecamo &
- ( frcxt  , prhyd  )
+subroutine lecamo
 
 !===============================================================================
 
@@ -64,8 +61,6 @@ use cs_c_bindings
 implicit none
 
 ! Arguments
-
-double precision frcxt(3,ncelet), prhyd(ncelet)
 
 ! Local variables
 
@@ -91,7 +86,7 @@ call lecamp(oflmap)
 !===============================================================================
 
 if (ileaux.eq.1) then
-  call lecamx(oflmap, frcxt, prhyd)
+  call lecamx(oflmap)
 endif
 
 !===============================================================================

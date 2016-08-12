@@ -35,14 +35,10 @@
 !------------------------------------------------------------------------------
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[out]    dt            time step value
-!> \param[out]    frcxt         external stress generating hydrostatic pressure
-!> \param[out]    prhyd         hydrostatic pressure predicted
 !______________________________________________________________________________
 
 subroutine iniva0 &
- ( nvar   , nscal  ,                                              &
-   dt     , frcxt  , prhyd)
+ ( nvar   , nscal  )
 
 !===============================================================================
 ! Module files
@@ -76,30 +72,25 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision frcxt(3,ncelet), prhyd(ncelet)
-double precision dt(ncelet)
-
 ! Local variables
 
-integer          iis   , iscal , iprop
-integer          iel   , ifac  , isou
+integer          iis   , iscal
+integer          iel   , ifac
 integer          iclip , ii    , jj    , idim
-integer          iivism
 integer          ifcvsl
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
-integer          f_id,  f_dim
 integer          kscmin, kscmax
 
 logical          have_previous
 
 double precision xxk, xcmu, trii
 
+double precision, dimension(:), pointer :: dt
 double precision, dimension(:), pointer :: brom, crom, crom_prev2
 double precision, dimension(:), pointer :: cofbcp
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:,:), pointer :: porosf
 double precision, dimension(:), pointer :: field_s_v
-double precision, dimension(:,:), pointer :: field_v_v
 
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
@@ -118,6 +109,8 @@ double precision, dimension(:,:), pointer :: cpro_visma_v
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+call field_get_val_s_by_name('dt', dt)
 
 ! Initialize variables to avoid compiler warnings
 
@@ -613,29 +606,7 @@ do ii = 1, nfld
 enddo
 
 !===============================================================================
-! 8.  INITIALISATION DE LA FORCE EXTERIEURE QUAND IPHYDR=1
-!===============================================================================
-
-if(iphydr.eq.1) then
-  do iel = 1, ncel
-    frcxt(1,iel) = 0.d0
-    frcxt(2,iel) = 0.d0
-    frcxt(3,iel) = 0.d0
-  enddo
-endif
-
-!===============================================================================
-! 9.  INITIALISATION DE LA PRESSION HYDROSTATIQUE QUAND IPHYDR=2
-!===============================================================================
-
-if(iphydr.eq.2) then
-  do iel = 1, ncel
-    prhyd(iel) = 0.d0
-  enddo
-endif
-
-!===============================================================================
-! 10.  INITIALISATIONS EN ALE OU MAILLAGE MOBILE
+! 8.  INITIALISATIONS EN ALE OU MAILLAGE MOBILE
 !===============================================================================
 
 if (iale.eq.1) then

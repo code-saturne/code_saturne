@@ -47,7 +47,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     frcxt         external force generating the hydrostatic
 !>                              pressure
-!> \param[in]     prhyd         hydrostatic pressure predicted at cell centers
 !> \param[in]     trava         work array for pressure velocity coupling
 !> \param[in]     ximpa         work array for pressure velocity coupling
 !> \param[in]     uvwk          work array for pressure velocity coupling
@@ -58,7 +57,7 @@ subroutine navstv &
  ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
    isostd ,                                                       &
    dt     ,                                                       &
-   frcxt  , prhyd  ,                                              &
+   frcxt  ,                                                       &
    trava  , ximpa  , uvwk   )
 
 !===============================================================================
@@ -103,7 +102,6 @@ integer          isostd(nfabor+1)
 
 double precision, pointer, dimension(:)   :: dt
 double precision, pointer, dimension(:,:) :: frcxt
-double precision, pointer, dimension(:) :: prhyd
 double precision, pointer, dimension(:,:) :: trava, uvwk
 double precision, pointer, dimension(:,:,:) :: ximpa
 
@@ -380,7 +378,7 @@ endif
 
 if (iphydr.eq.2) then
 
-  call prehyd(prhyd, grdphd)
+  call prehyd(grdphd)
 
 endif
 
@@ -668,17 +666,14 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
     call resize_aux_arrays
 
-    ! Resize main real array
-
-    call resize_main_real_array ( dt )
-
     ! Update turbomachinery module
 
     call turbomachinery_update
 
     ! Update field mappings ("owner" fields handled by turbomachinery_update)
 
-    call fldtri(dt)
+    call fldtri
+    call field_get_val_s_by_name('dt', dt)
 
     ! Resize other arrays related to the velocity-pressure resolution
 
@@ -691,9 +686,8 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
       call resize_n_sca_real_arrays(ntersl, tslagr)
 
     if (iphydr.eq.1) then
-      call resize_vec_real_array(frcxt)
+      call field_get_val_v_by_name('volume_forces', frcxt)
     elseif (iphydr.eq.2) then
-      call resize_sca_real_array(prhyd)
       call resize_vec_real_array(grdphd)
     endif
 

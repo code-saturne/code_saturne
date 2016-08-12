@@ -115,8 +115,6 @@
 !> \param[out]    hbord         coefficients d'echange aux bords
 !> \param[out]    theipb        boundary temperature in \f$ \centip \f$
 !>                               (more exaclty the energetic variable)
-!> \param[in]     frcxt         external force responsible for the hydrostatic
-!>                               pressure
 !_______________________________________________________________________________
 
 subroutine condli &
@@ -124,7 +122,7 @@ subroutine condli &
    isvhb  ,                                                       &
    icodcl , isostd ,                                              &
    dt     , rcodcl ,                                              &
-   visvdr , hbord  , theipb , frcxt  )
+   visvdr , hbord  , theipb )
 
 !===============================================================================
 ! Module files
@@ -166,7 +164,6 @@ integer          isostd(nfabor+1)
 
 double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
-double precision frcxt(3,ncelet)
 double precision visvdr(ncelet)
 double precision hbord(nfabor),theipb(nfabor)
 
@@ -389,7 +386,7 @@ endif
 call typecl &
  ( nvar   , nscal  ,                                              &
    itypfb , itrifb , icodcl , isostd ,                            &
-   rcodcl , frcxt  )
+   rcodcl )
 
 !===============================================================================
 ! 3. check the consistency of the bcs

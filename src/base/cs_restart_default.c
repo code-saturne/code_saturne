@@ -473,6 +473,12 @@ _read_field_vals_legacy(cs_restart_t  *r,
     else if (strcmp(f->name, "dt") == 0)
       strncpy(sec_name, "dt_variable_espace_ce", 127);
 
+    else if (strcmp(f->name, "volume_forces") == 0)
+      strncpy(sec_name, "force_ext_ce_phase01", 127);
+
+    else if (strcmp(f->name, "hydrostatic_pressure_prd") == 0)
+      strncpy(sec_name, "Prhyd_pre_phase01", 127);
+
     else if (strcmp(f->name, "void_fraction") == 0)
       strncpy(sec_name, "taux_vide_ce", 127);
 

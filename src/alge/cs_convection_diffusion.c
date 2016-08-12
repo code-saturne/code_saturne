@@ -102,6 +102,31 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Synchronize halos for scalar variables.
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   tr_dim         <-- 0 if pvar does not match a tensor
+ *                        or there is no periodicity of rotation
+ *                      2 for Reynolds stress
+ *   pvar           <-> variable
+ *----------------------------------------------------------------------------*/
+
+static void
+_sync_scalar_halo(const cs_mesh_t  *m,
+                  int               tr_dim,
+                  cs_real_t         pvar[])
+{
+  if (m->halo != NULL) {
+    if (tr_dim > 0)
+      cs_halo_sync_component(m->halo, CS_HALO_STANDARD, CS_HALO_ROTATION_IGNORE,
+                             pvar);
+    else
+      cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar);
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Return pointer to slope test indicator field values if active.
  *
  * parameters:
@@ -1864,6 +1889,9 @@ cs_convection_diffusion_scalar(int                       idtvar,
                        grad);
 
   } else {
+
+    _sync_scalar_halo(m, tr_dim, pvar); /* for safety */
+
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
       grad[cell_id][0] = 0.;

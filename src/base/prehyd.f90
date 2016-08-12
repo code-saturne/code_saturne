@@ -65,15 +65,12 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in,out] prhyd         hydrostatic pressure predicted with
-!>                              the a priori momentum equation reduced
-!>                              \f$ P_{hydro} \f$
 !> \param[out]    grdphd         the a priori hydrostatic pressure gradient
 !>                              \f$ \partial _x (P_{hydro}) \f$
 !_______________________________________________________________________________
 
 subroutine prehyd &
- ( prhyd , grdphd  )
+ ( grdphd  )
 
 !===============================================================================
 
@@ -102,7 +99,7 @@ implicit none
 
 ! Arguments
 
-double precision prhyd(ncelet), grdphd(ndim, ncelet)
+double precision grdphd(ndim, ncelet)
 
 ! Local variables
 
@@ -131,7 +128,7 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: xinvro
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: smbr, rovsdt
-double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: imasfl, bmasfl, prhyd
 double precision, dimension(:), pointer :: crom
 
 !===============================================================================
@@ -139,6 +136,9 @@ double precision, dimension(:), pointer :: crom
 !===============================================================================
 ! 1. Initializations
 !===============================================================================
+
+! Map arrays
+call field_get_val_s_by_name('hydrostatic_pressure_prd', prhyd)
 
 ! Allocate temporary arrays
 

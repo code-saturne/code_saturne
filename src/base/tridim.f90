@@ -35,15 +35,12 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     frcxt         external force generating hydrostatic pressure
-!> \param[in]     prhyd         predicted hydrostatic pressure
 !______________________________________________________________________________
 
 subroutine tridim &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
-   dt     ,                                                       &
-   frcxt  , prhyd  )
+   dt     )
 
 !===============================================================================
 ! Module files
@@ -99,8 +96,7 @@ integer          itrale
 integer          nvar   , nscal
 
 double precision, pointer, dimension(:)   :: dt
-double precision, pointer, dimension(:,:) :: frcxt
-double precision, pointer, dimension(:) :: prhyd
+double precision, pointer, dimension(:,:) :: frcxt => null()
 
 ! Local variables
 
@@ -184,7 +180,7 @@ interface
   ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
     isostd ,                                                       &
     dt     ,                                                       &
-    frcxt  , prhyd  ,                                              &
+    frcxt  ,                                                       &
     trava  , ximpa  , uvwk   )
 
     use dimens, only: ndimfb
@@ -198,7 +194,6 @@ interface
 
     double precision, pointer, dimension(:)   :: dt
     double precision, pointer, dimension(:,:) :: frcxt
-    double precision, pointer, dimension(:) :: prhyd
     double precision, pointer, dimension(:,:) :: trava, uvwk
     double precision, pointer, dimension(:,:,:) :: ximpa
 
@@ -274,6 +269,12 @@ endif
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
 call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
+
+if (iphydr.eq.1) then
+  call field_get_val_v_by_name('volume_forces', frcxt)
+else
+  frcxt => rvoid2
+endif
 
 !===============================================================================
 ! 2.  AU DEBUT DU CALCUL ON REINITIALISE LA PRESSION
@@ -426,15 +427,6 @@ if (ipass.eq.1) then
     call field_get_val_s(icrom, crom)
     if (irangp.ge.0 .or. iperio.eq.1) then
       call synsce (crom)
-    endif
-
-  endif
-
-! --- Communication de prhyd
-  if (iphydr.eq.2) then
-
-    if (irangp.ge.0 .or. iperio.eq.1) then
-      call synsce (prhyd(1))
     endif
 
   endif
@@ -1131,8 +1123,7 @@ do while (iterns.le.nterup)
   icodcl , isostd ,                                              &
   dt     ,                                                       &
   rcodcl ,                                                       &
-  visvdr , hbord  , theipb ,                                     &
-  frcxt  )
+  visvdr , hbord  , theipb )
 
   if (nftcdt.gt.0) then
     ! Coefficient exchange of the enthalpy scalar
@@ -1396,7 +1387,7 @@ do while (iterns.le.nterup)
       ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
         isostd ,                                                       &
         dt     ,                                                       &
-        frcxt  , prhyd  ,                                              &
+        frcxt  ,                                                       &
         trava  , ximpav , uvwk   )
 
       ! Update local pointer arrays for transient turbomachinery computations
@@ -1557,7 +1548,7 @@ if (ippmod(idarcy).eq.1) then
      isvhb  ,                                                      &
      icodcl , isostd ,                                             &
      dt     , rcodcl ,                                             &
-     visvdr , hbord  , theipb , frcxt  )
+     visvdr , hbord  , theipb )
 
 endif
 

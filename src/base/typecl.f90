@@ -64,13 +64,12 @@
 !>                                 -# for a scalar \f$ cp \left( K +
 !>                                     \dfrac{K_T}{\sigma_T} \right)
 !>                                     \grad T \cdot \vect{n} \f$
-!> \param[in]     frcxt         external force generating hydrostatic pressure
 !______________________________________________________________________________
 
 subroutine typecl &
  ( nvar   , nscal  ,                                              &
    itypfb , itrifb , icodcl , isostd ,                            &
-   rcodcl , frcxt  )
+   rcodcl )
 
 !===============================================================================
 ! Module files
@@ -107,7 +106,6 @@ integer          itypfb(ndimfb) , itrifb(ndimfb)
 integer          isostd(ndimfb+1)
 
 double precision rcodcl(ndimfb,nvarcl,3)
-double precision frcxt(3,ncelet)
 
 ! Local variables
 
@@ -128,8 +126,11 @@ double precision, allocatable, dimension(:) :: pripb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: bmasfl
 
+double precision, pointer, dimension(:,:) :: frcxt
 double precision, dimension(:), pointer :: cvara_pr
 double precision, dimension(:), pointer :: cpro_prtot
+
+double precision, dimension(1,1), target :: rvoid2
 
 integer          ipass
 data             ipass /0/
@@ -587,6 +588,12 @@ if (irangp.ge.0) then
 endif
 
 if (itbslb.gt.0) then
+
+  if (iphydr.eq.1) then
+    call field_get_val_v_by_name('volume_forces', frcxt)
+  else
+    frcxt => rvoid2
+  endif
 
   ! Allocate a work array for the gradient calculation
   allocate(grad(3,ncelet))
