@@ -34,8 +34,6 @@
 !> \param[in]     itrale        ALE iteration number
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     isostd        standard output indicator
-!>                              + reference face number
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     frcxt         external force generating hydrostatic pressure
 !> \param[in]     prhyd         predicted hydrostatic pressure
@@ -44,7 +42,6 @@
 subroutine tridim &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
-   isostd ,                                                       &
    dt     ,                                                       &
    frcxt  , prhyd  )
 
@@ -101,8 +98,6 @@ implicit none
 integer          itrale
 integer          nvar   , nscal
 
-integer          isostd(nfabor+1)
-
 double precision, pointer, dimension(:)   :: dt
 double precision, pointer, dimension(:,:) :: frcxt
 double precision, pointer, dimension(:) :: prhyd
@@ -140,6 +135,7 @@ save             infpar
 
 integer, allocatable, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: ilzfbr
+integer, allocatable, dimension(:) :: isostd
 
 double precision, allocatable, dimension(:) :: flmalf, flmalb, xprale
 double precision, allocatable, dimension(:,:) :: cofale
@@ -235,6 +231,8 @@ call field_get_n_fields(nfld)
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+allocate(isostd(nfabor+1))
 
 must_return = .false.
 
@@ -1365,6 +1363,8 @@ do while (iterns.le.nterup)
 
     if (allocated(delay_id)) deallocate(delay_id)
 
+    deallocate(isostd)
+
     return
 
   endif
@@ -1775,8 +1775,9 @@ endif
 ! Free memory
 deallocate(icodcl, rcodcl)
 
-! Darcy
 if (allocated(delay_id)) deallocate(delay_id)
+
+deallocate(isostd)
 
 !===============================================================================
 ! 16.  TRAITEMENT DU FLUX DE MASSE, DE LA VISCOSITE,

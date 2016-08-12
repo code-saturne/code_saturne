@@ -117,8 +117,6 @@ double precision, save :: ttchis
 
 character        ficsui*32
 
-integer, allocatable, dimension(:) :: isostd
-
 double precision, pointer, dimension(:)   :: dt => null()
 double precision, pointer, dimension(:)   :: porosi => null()
 double precision, pointer, dimension(:,:) :: disale => null()
@@ -134,7 +132,6 @@ interface
 
   subroutine tridim &
   ( itrale , nvar   , nscal  ,                                     &
-    isostd ,                                                       &
     dt     ,                                                       &
     frcxt  , prhyd  )
 
@@ -144,7 +141,6 @@ interface
     implicit none
 
     integer                                   :: itrale, nvar, nscal
-    integer, dimension(nfabor+1)              :: isostd
 
     double precision, pointer, dimension(:)   :: dt
     double precision, pointer, dimension(:,:) :: frcxt
@@ -380,7 +376,6 @@ allocate(dt(ncelet))
 
 ! Allocate arrays on boundary faces
 
-allocate(isostd(nfabor+1))
 if (iphydr.eq.1) then
   allocate(frcxt(3, ncelet))
 else
@@ -873,7 +868,6 @@ call dmtmps(titer1)
 call tridim                                                       &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
-   isostd ,                                                       &
    dt     ,                                                       &
    frcxt  , prhyd  )
 
@@ -1153,7 +1147,6 @@ endif
 ! Free main arrays
 deallocate(dt)
 
-deallocate(isostd)
 if (iphydr.eq.1) then
   deallocate(frcxt)
 endif
