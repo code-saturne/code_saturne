@@ -55,6 +55,7 @@
 #include "fvm_periodicity.h"
 
 #include "cs_base.h"
+#include "cs_physical_constants.h"
 #include "cs_halo.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -947,16 +948,14 @@ _manage_error(cs_lnum_t                       failsafe_mode,
 static bool
 _continue_displacement(void)
 {
-  int test = 0;
+  bool test = 0;
 
   const cs_lagr_particle_set_t  *set = cs_glob_lagr_particle_set;
   const cs_lnum_t  n_particles = set->n_particles;
 
-  for (cs_lnum_t i = 0; i < n_particles; i++) {
-    if (_get_tracking_info(set, i)->state == CS_LAGR_PART_TO_SYNC) {
+  for (cs_lnum_t i = 0; i < n_particles && test == 0; i++) {
+    if (_get_tracking_info(set, i)->state == CS_LAGR_PART_TO_SYNC)
       test = 1;
-      break;
-    }
   }
 
   cs_parall_max(1, CS_INT_TYPE, &test);
@@ -1517,8 +1516,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                     cs_lnum_t                  face_num,
                     double                     t_intersect,
                     cs_lnum_t                  boundary_zone,
-                    cs_lnum_t                 *p_move_particle,
-                    cs_real_t                  tkelvi)
+                    cs_lnum_t                 *p_move_particle)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const double pi = 4 * atan(1);
@@ -2129,11 +2127,12 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     cs_real_t  enc2_icoal
       = cs_glob_lagr_encrustation->enc2[particle_coal_number - 1];
 
-    if (temp_ext_part > tprenc_icoal+tkelvi) {
+    if (temp_ext_part > tprenc_icoal+cs_physical_constants_celsius_to_kelvin) {
 
       /* Coal viscosity*/
       tmp = (  (1.0e7*enc1_icoal)
-             / ((temp_ext_part-150.e0-tkelvi)*(temp_ext_part-150.e0-tkelvi)))
+             / ((temp_ext_part-150.e0-cs_physical_constants_celsius_to_kelvin)
+               *(temp_ext_part-150.e0-cs_physical_constants_celsius_to_kelvin)))
             + enc2_icoal;
       if (tmp <= 0.0) {
         bft_error
@@ -2336,8 +2335,7 @@ _local_propagation(void                           *particle,
                    int                             displacement_step_id,
                    int                             failsafe_mode,
                    const cs_real_t                 visc_length[],
-                   const cs_field_t               *u,
-                   cs_real_t                       tkelvi)
+                   const cs_field_t               *u)
 {
   cs_lnum_t  i, k;
   cs_real_t  disp[3];
@@ -2815,8 +2813,7 @@ _local_propagation(void                           *particle,
                               face_num,
                               t_intersect,
                               bdy_conditions->b_face_zone_id[face_num-1],
-                              &move_particle,
-                              tkelvi);
+                              &move_particle);
 
       if (cs_glob_lagr_time_scheme->t_order == 2)
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_SWITCH_ORDER_1,
@@ -3612,8 +3609,7 @@ cs_lagr_tracking_initialize(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
-                                   cs_real_t        tkelvi)
+cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
@@ -3685,8 +3681,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
                                             n_displacement_steps,
                                             failsafe_mode,
                                             visc_length,
-                                            u,
-                                            tkelvi);
+                                            u);
 
         _tracking_info(particles, i)->state = cur_part_state;
 

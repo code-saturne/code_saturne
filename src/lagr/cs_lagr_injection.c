@@ -64,6 +64,7 @@
 #include "cs_thermal_model.h"
 #include "cs_parameters.h"
 #include "cs_physical_model.h"
+#include "cs_physical_constants.h"
 #include "cs_time_step.h"
 
 #include "cs_field.h"
@@ -131,8 +132,8 @@ cs_lagr_injection(int        time_id,
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
 
-  cs_real_t tkelvi =  273.15;
-  cs_real_t tkelvn = -273.15;
+  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+  cs_real_t tkelvn = -cs_physical_constants_celsius_to_kelvin;
 
   /* Non-lagrangian fields */
   cs_real_t *vela = extra->vel->vals[time_id];

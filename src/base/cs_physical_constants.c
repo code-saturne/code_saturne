@@ -327,6 +327,11 @@ const double cs_physical_constants_r = 8.31446;
 
 const double cs_physical_constants_kb = 1.38e-23;
 
+/*! Conversion from Celsius to Kelvin: 275.15   */
+
+const double cs_physical_constants_celsius_to_kelvin = 273.15;
+
+
 const cs_physical_constants_t  *cs_glob_physical_constants = &_physical_constants;
 
 const cs_fluid_properties_t  *cs_glob_fluid_properties = &_fluid_properties;

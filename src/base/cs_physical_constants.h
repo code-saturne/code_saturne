@@ -108,6 +108,8 @@ typedef struct {
 
 extern const double cs_physical_constants_r; /* Ideal gas constant (J/mol/K) */
 extern const double cs_physical_constants_kb; /* Boltzmann constant (J/K) */
+extern const double cs_physical_constants_celsius_to_kelvin; /* Celsius to
+                                                                Kelvin*/
 
 /* Pointer to main physical constants structure */
 

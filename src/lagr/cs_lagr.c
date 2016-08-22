@@ -1750,8 +1750,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
   static int ipass = 0;
   cs_time_step_t *ts = cs_get_glob_time_step();
 
-  cs_real_t tkelvi = 273.15;
-
   int  mode;
 
   cs_lagr_boundary_interactions_t *lag_bdi = cs_glob_lagr_boundary_interactions;
@@ -1940,7 +1938,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         if (   cs_glob_thermal_model->itherm == 1
             && cs_glob_thermal_model->itpscl == 2)
-          tempp[iel] = extra->scal_t->val[iel] + tkelvi;
+          tempp[iel] = extra->scal_t->val[iel]
+            + cs_physical_constants_celsius_to_kelvin;
 
         else if (   cs_glob_thermal_model->itherm == 1
                  && cs_glob_thermal_model->itpscl == 1)
@@ -2290,7 +2289,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         }
 
-        cs_lagr_tracking_particle_movement(vislen, tkelvi);
+        cs_lagr_tracking_particle_movement(vislen);
 
       }
 

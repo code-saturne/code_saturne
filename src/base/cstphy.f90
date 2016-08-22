@@ -44,10 +44,6 @@ module cstphy
   double precision :: tkelvi
   parameter(tkelvi = 273.15d0)
 
-  !> Temperature in degrees Celsius corresponding to 0 Kelvin (= -273,15)
-  double precision :: tkelvn
-  parameter(tkelvn = -273.15d0)
-
   !> Calories (1 cvar_al = xcal2j J)
   double precision :: xcal2j
   parameter(xcal2j = 4.1855d0)
