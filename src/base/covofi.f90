@@ -167,7 +167,7 @@ double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
-double precision smbexp, dvar
+double precision smbexp, dvar, cprovol, prod
 double precision temp, idifftp
 
 double precision rvoid(1)
@@ -723,9 +723,10 @@ if (itspdv.eq.1) then
         call field_get_val_v(f_id, xut)
 
         do iel = 1, ncel
-          c_st_scal(iel) = c_st_scal(iel) -2.d0*xcpp(iel)*volume(iel) &
-                                          *(xut(1,iel)*grad(1,iel)    &
-                                           +xut(2,iel)*grad(2,iel)    &
+          c_st_scal(iel) = c_st_scal(iel)                                  &
+                         - 2.d0*xcpp(iel)*volume(iel)*crom(iel)            &
+                                          *(xut(1,iel)*grad(1,iel)         &
+                                           +xut(2,iel)*grad(2,iel)         &
                                            +xut(3,iel)*grad(3,iel) )
         enddo
       ! SGDH model
@@ -755,10 +756,21 @@ if (itspdv.eq.1) then
         call field_get_val_v(f_id, xut)
 
         do iel = 1, ncel
-          smbrs(iel) = smbrs(iel) -2.d0*xcpp(iel)*volume(iel)   &
-                                  *(xut(1,iel)*grad(1,iel)      &
-                                   +xut(2,iel)*grad(2,iel)      &
-                                   +xut(3,iel)*grad(3,iel) )
+          cprovol = xcpp(iel)*volume(iel)*crom(iel)
+          ! Special time stepping to ensure positivity of the variance
+          prod = -2.d0 * (xut(1,iel)*grad(1,iel)      &
+                         +xut(2,iel)*grad(2,iel)      &
+                         +xut(3,iel)*grad(3,iel) )
+
+          smbrs(iel) = smbrs(iel) + max(prod * cprovol, 0.d0)
+
+          ! Implicit "production" term when negative, but check if the
+          ! variance is non-zero.
+          if (cvar_var(iel).gt. epzero * abs(prod * dt(iel)) &
+            .and.prod*cprovol.lt.0.d0) then
+            rovsdt(iel) = rovsdt(iel)  &
+                        - prod * cprovol / cvar_var(iel)
+          endif
         enddo
 
       ! SGDH model
