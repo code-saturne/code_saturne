@@ -422,17 +422,8 @@ elseif (iappel.eq.4) then
   call field_get_val_prev_s(iflmas, i_mass_flux_prev)
   call field_get_val_prev_s(iflmab, b_mass_flux_prev)
 
-  if (istmpf.eq.2) then
-    theta  = thetfl
-    aa = 1.d0/(2.d0-theta)
-    bb = (1.d0-theta)/(2.d0-theta)
-    do ifac = 1 , nfac
-      i_mass_flux(ifac) = aa * i_mass_flux(ifac) + bb * i_mass_flux_prev(ifac)
-    enddo
-    do ifac = 1 , nfabor
-      b_mass_flux(ifac) = aa * b_mass_flux(ifac) + bb * b_mass_flux_prev(ifac)
-    enddo
-  else if (istmpf.eq.0) then
+  ! Already checked
+  if (istmpf.eq.0) then
     do ifac = 1 , nfac
       flux = i_mass_flux(ifac)
       i_mass_flux(ifac) = i_mass_flux_prev(ifac)
