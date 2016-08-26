@@ -366,7 +366,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                                 _("in Lagrangian module"),
                                 "cs_glob_lagr_time_scheme->iilagr",
                                 lagr_time_scheme->iilagr,
-                                0, 3);
+                                1, 3);
 
   /* Restart needed if computation on frozen field.
      Note that for the Lagrangian module, frozen field also includes scalars. */
@@ -3541,40 +3541,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     }
 
     if (lagr_model->clogging == 1) {
-
-      /* At the moment, there is no specific distinction of clogging parameters */
-      /* to allow a calculation without visualisation of the results  */
-      /* Thus, we need: iclogst=1 and iclgst=1    */
-      if (cs_glob_lagr_boundary_interactions->iclgst == 0) {
-
-        bft_error(__FILE__, __LINE__, 0,
-                  "@\n"
-                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                  "@\n"
-                  "\n"
-                  "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                  "@    =========\n"
-                  "@    LES STATISTIQUES AUX FRONTIERES\n"
-                  "@    POUR LE COLMATAGE NE SONT PAS ACTIVEES (ICLGST = 1)\n"
-                  "@    ALORS QUE LE MODELE DE COLMATAGE EST ACTIVE (ICLOGST=1).\n"
-                  "@    IL Y A INCOHERENCE!  (LAGOPT).\n"
-                  "@\n"
-                  "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                  "@       ICLOGST = %d\n"
-                  "@       ICLGST  = %d\n"
-                  "@\n"
-                  "@    ICLGST DEVRAIT ETRE EGAL A 1\n"
-                  "@\n"
-                  "@  Le calcul ne sera pas execute.\n"
-                  "@\n"
-                  "@  Verifier la valeur de ICLGST dans la  USLAG1.\n"
-                  "@\n"
-                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                  "@\n",
-                  lagr_model->clogging,
-                  cs_glob_lagr_boundary_interactions->iclgst);
-
-      }
 
       irf++;
       cs_glob_lagr_boundary_interactions->inclg = irf;

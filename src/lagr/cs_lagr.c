@@ -2071,6 +2071,64 @@ cs_lagr_solve_time_step(const int         itypfb[],
     /* 5. PROGRESSION DES PARTICULES  */
     /* ====================================================================   */
 
+    cs_lnum_t one = 1;
+    /* Allocate temporay arrays  */
+    cs_real_33_t *vagaus;
+    BFT_MALLOC(vagaus, p_set->n_particles, cs_real_33_t);
+
+    /* Random values   */
+    if (cs_glob_lagr_time_scheme->idistu == 1) {
+
+      if (p_set->n_particles > 0) {
+
+        for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+
+          for (cs_lnum_t ivf = 0; ivf < 3; ivf++) {
+
+            for (cs_lnum_t id = 0; id < 3; id++)
+
+              cs_random_normal(1, &(vagaus[ip][id][ivf]));
+
+          }
+
+        }
+
+      }
+
+    }
+    else {
+
+      for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+
+        for (cs_lnum_t ivf = 0; ivf < 3; ivf++) {
+
+          for (cs_lnum_t id = 0; id < 3; id++)
+
+            vagaus[ip][id][ivf] = 0.0;
+
+        }
+
+      }
+
+    }
+
+    cs_real_t *brgaus = NULL;
+
+    /* Brownian movement */
+
+    if (cs_glob_lagr_brownian->lamvbr == 1) {
+
+      BFT_MALLOC(brgaus, cs_glob_lagr_const_dim->nbrgau * p_set->n_particles, cs_real_t);
+
+      for (cs_lnum_t ivf = 0; ivf < cs_glob_lagr_const_dim->nbrgau; ivf++) {
+
+        for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++)
+          cs_random_normal(1, &(brgaus[ip * cs_glob_lagr_const_dim->nbrgau + ivf]));
+
+      }
+
+    }
+
     bool go_on = true;
     while (go_on) {
 
@@ -2080,12 +2138,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       /* Allocations     */
 
-      cs_real_t   *taup, *bx;
+      cs_real_t   *taup;
+      cs_real_33_t *bx;
       cs_real_3_t *tlag, *piil;
       BFT_MALLOC(taup, p_set->n_particles, cs_real_t);
       BFT_MALLOC(tlag, p_set->n_particles, cs_real_3_t);
       BFT_MALLOC(piil, p_set->n_particles, cs_real_3_t);
-      BFT_MALLOC(bx, p_set->n_particles * 3 * 2, cs_real_t);
+      BFT_MALLOC(bx, p_set->n_particles, cs_real_33_t);
 
       cs_real_t *tsfext = NULL;
       if (cs_glob_lagr_time_scheme->iilagr == 2)
@@ -2144,7 +2203,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
           for (cs_lnum_t ii = 0; ii < 3; ii++) {
 
-            bx[p_set->n_particles * ii + ip] = jbx1[ii];
+            bx[ip][ii][0] = jbx1[ii];
 
           }
 
@@ -2176,7 +2235,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
                   gradpr,
                   gradvf,
                   terbru,
-                  vislen);
+                  vislen,
+                  vagaus,
+                  brgaus );
 
       /* Save bx values associated with particles for next pass */
 
@@ -2188,7 +2249,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
           cs_real_t *jbx1 = cs_lagr_particles_attr(p_set, ip, CS_LAGR_TURB_STATE_1);
 
           for (int  ii = 0; ii < 3; ii++)
-            jbx1[ii] = bx[p_set->n_particles * (3 * 1 + ii) + ip];
+            jbx1[ii] = bx[ip][ii][0];
 
         }
 
@@ -2402,6 +2463,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
         go_on = false; //exit the while loop
 
     }
+
+    /* Free memory */
+    if (cs_glob_lagr_brownian->lamvbr == 1)
+      BFT_FREE(brgaus);
+
+    BFT_FREE(vagaus);
 
   }  /* end if number of particle > 0 */
 

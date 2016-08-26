@@ -106,7 +106,7 @@ _lages1(cs_real_t     dtp,
         cs_real_t    *taup,
         cs_real_3_t  *tlag,
         cs_real_3_t  *piil,
-        cs_real_t    *bx,
+        cs_real_33_t *bx,
         cs_real_33_t *vagaus,
         cs_real_3_t  *gradpr,
         cs_real_t    *romp,
@@ -196,9 +196,9 @@ _lages1(cs_real_t     dtp,
         aux3 = tlag[ip][id] / (tlag[ip][id] - taup[ip]);
         aux4 = tlag[ip][id] / (tlag[ip][id] + taup[ip]);
         aux5 = tlag[ip][id] * (1.0 - aux2);
-        aux6 = pow(bx[p_set->n_particles * (3 * nor + id) + ip], 2.0) * tlag[ip][id];
+        aux6 = pow(bx[ip][id][nor-1],2.0) * tlag[ip][id];
         aux7 = tlag[ip][id] - taup[ip];
-        aux8 = pow(bx[p_set->n_particles * (3 * nor + id) + ip], 2.0) * pow(aux3, 2);
+        aux8 = pow(bx[ip][id][nor-1],2.0) * pow(aux3, 2);
 
         /* --> trajectory terms */
         cs_real_t aa = taup[ip] * (1.0 - aux1);
@@ -223,33 +223,8 @@ _lages1(cs_real_t     dtp,
         ter3p = tci * (ee - dd);
         ter4p = force * ee;
 
-        /* --> (2.3) Coefficients computation for the stochastic integral    */
-        /* --> Integral for particles position */
+        /* --> integrale sur la vitesse du fluide vu     */
         gama2  = 0.5 * (1.0 - aux2 * aux2);
-        omegam = (0.5 * aux4 * (aux5 - aux2 * aa) - 0.5 * aux2 * bb) * sqrt(aux6);
-        omega2 =  aux7 * (aux7 * dtp - 2.0 * (tlag[ip][id] * aux5 - taup[ip] * aa))
-                 + 0.5 * tlag[ip][id] * tlag[ip][id] * aux5 * (1.0 + aux2)
-                 + 0.5 * taup[ip] * taup[ip] * aa * (1.0 + aux1)
-                 - 2.0 * aux4 * tlag[ip][id] * taup[ip] * taup[ip] * (1.0 - aux1 * aux2);
-        omega2 = aux8 * omega2;
-
-        if (CS_ABS(gama2) > cs_math_epzero) {
-
-          p21 = omegam / sqrt(gama2);
-          p22 = omega2 - pow(p21, 2);
-          p22 = sqrt(CS_MAX(0.0, p22));
-
-        }
-        else {
-
-          p21 = 0.0;
-          p22 = 0.0;
-
-        }
-
-        ter5x = p21 * vagaus[ip][id][0] + p22 * vagaus[ip][id][1];
-
-        /* --> integral for the flow-seen velocity  */
         p11   = sqrt(gama2 * aux6);
         ter3f = p11 * vagaus[ip][id][0];
 
@@ -262,14 +237,42 @@ _lages1(cs_real_t     dtp,
 
         grga2 = (aux9 - 2.0 * aux11 + aux10) * aux8;
         gagam = (aux9 - aux11) * (aux8 / aux3);
+
+        if (CS_ABS(p11) > cs_math_epzero) {
+
+          p21 = gagam / p11;
+          p22 = grga2 - pow(p21, 2);
+          p22 = sqrt(CS_MAX(0.0, p22));
+
+        }
+        else {
+
+          p21 = 0.0;
+          p22 = 0.0;
+
+        }
+
+        ter5p = p21 * vagaus[ip][id][0] + p22 * vagaus[ip][id][1];
+
+        /* --> (2.3) Calcul des coefficients pour les integrales stochastiques :  */
+        /* --> integrale sur la position des particules  */
         gaome = ( (tlag[ip][id] - taup[ip]) * (aux5 - aa)
                   - tlag[ip][id] * aux9
                   - taup[ip] * aux10
                   + (tlag[ip][id] + taup[ip]) * aux11)
                 * aux8;
+        omegam = aux3 * ( (tlag[ip][id] - taup[ip]) * (1.0 - aux2)
+                          - 0.5 * tlag[ip][id] * (1.0 - aux2 * aux2)
+                          + pow(taup[ip],2) / (tlag[ip][id] + taup[ip]) * (1.0 - aux1 * aux2)
+                          ) * aux6;
+        omega2 =   aux7 * (aux7 * dtp - 2.0 * (tlag[ip][id] * aux5 - taup[ip] * aa))
+                 + 0.5 * tlag[ip][id] * tlag [ip][id] * aux5 * (1.0 + aux2)
+                 + 0.5 * taup[ip] * taup[ip] * aa * (1.0 + aux1)
+                 - 2.0 * aux4 * tlag[ip][id] * taup[ip] * taup[ip] * (1.0 - aux1* aux2);
+        omega2 = aux8 * omega2;
 
         if (p11 > cs_math_epzero)
-          p31 = gagam / p11;
+          p31 = omegam / p11;
         else
           p31 = 0.0;
 
@@ -278,9 +281,9 @@ _lages1(cs_real_t     dtp,
         else
           p32 = 0.0;
 
-        p33 = grga2 - pow(p31, 2) - pow(p32, 2);
+        p33 = omega2 - pow(p31, 2) - pow(p32, 2);
         p33 = sqrt(CS_MAX(0.0, p33));
-        ter5p = p31 * vagaus[ip][id][0] + p32 * vagaus[ip][id][1] + p33 * vagaus[ip][id][2];
+        ter5x = p31 * vagaus[ip][id][0] + p32 * vagaus[ip][id][1] + p33 * vagaus[ip][id][2];
 
         /* --> (2.3) Calcul des Termes dans le cas du mouvement Brownien :   */
         if (cs_glob_lagr_brownian->lamvbr == 1) {
@@ -407,7 +410,7 @@ _lages2(cs_real_t     dtp,
         cs_real_t    *taup,
         cs_real_3_t  *tlag,
         cs_real_3_t  *piil,
-        cs_real_t    *bx,
+        cs_real_33_t *bx,
         cs_real_t    *tsfext,
         cs_real_33_t *vagaus,
         cs_real_3_t  *gradpr,
@@ -481,8 +484,12 @@ _lages2(cs_real_t     dtp,
                                   + grav[id] + fextla[ip][id] )
                               * taup[ip];
 
-        auxl[ip * 6 + id + 3] =   piil[ip][id] * tlag[ip][id]
-                                + extra->vel->vals[nor][cell_id];
+        if (nor == 1)
+          auxl[ip * 6 + id + 3] =   piil[ip][id] * tlag[ip][id] +
+                                    extra->vel->vals[1][cell_id * 3 + id];
+        else
+          auxl[ip * 6 + id + 3] =   piil[ip][id] * tlag[ip][id] +
+                                    extra->vel->vals[0][cell_id * 3 + id];
 
       }
 
@@ -620,8 +627,8 @@ _lages2(cs_real_t     dtp,
           ter3    =  -aux6 + (aux6 - 1.0) / (2.0 * aux1);
           ter4    = 1.0 - (aux6 - 1.0) / (2.0 * aux1);
 
-          sige    =   (  ter3 * bx[p_set->n_particles * (3 * (nor-1) + id) + ip]
-                       + ter4 * bx[p_set->n_particles * (3 * nor + id) + ip])
+          sige    =   (  ter3 * bx[ip][id][0]
+                       + ter4 * bx[ip][id][1] )
                     * (1.0 / (1.0 - aux6));
 
           ter5    = 0.5 * tlag[ip][id] * (1.0 - aux6);
@@ -644,9 +651,6 @@ _lages2(cs_real_t     dtp,
           aux10   = 1.0 - aux7 * aux7;
           aux11   = tapn / (tlag[ip][id] + tapn);
           aux12   = tlag[ip][id] / (tlag[ip][id] - tapn);
-          aux14   = tlag[ip][id] - tapn;
-          aux15   = tlag[ip][id] * (1.0 - aux3);
-          aux16   = tapn * (1.0 - aux7);
           aux17   = sige * sige * aux12 * aux12;
           aux18   = 0.5 * tlag[ip][id] * aux9;
           aux19   = 0.5 * tapn * aux10;
@@ -656,18 +660,14 @@ _lages2(cs_real_t     dtp,
           gamma2  = sige * sige * aux18;
           grgam2  = aux17 * (aux18 - 2.0 * aux20 + aux19);
           gagam   = sige * sige * aux12 * (aux18 - aux20);
-          omega2  = aux17 * (aux14 * (aux14 * dtp - 2.0 * tlag[ip][id] * aux15 + 2.0 * tapn * aux16) + tlag[ip][id] * tlag[ip][id] * aux18 + tapn * tapn * aux19- 2.0 * tlag[ip][id] * tapn * aux20);
-          omegam  = aux14 * (1.0 - aux3) - aux18 + tapn * aux11 * aux8;
-          omegam  = omegam * sige * sige * aux12 * tlag[ip][id];
-          gaome   = aux17 * (aux14 * (aux15 - aux16) - tlag[ip][id] * aux18 - tapn * aux19 + tapn * tlag[ip][id] * aux8);
 
           /* ---> simulation du vecteur Gaussien */
 
           p11     = sqrt(CS_MAX(0.0, gamma2));
           if (p11 > cs_math_epzero) {
 
-            p21  = omegam / p11;
-            p22  = omega2 - p21 * p21;
+            p21  = gagam / p11;
+            p22  = grgam2 - p21 * p21;
             p22  = sqrt(CS_MAX(0.0, p22));
 
           }
@@ -678,19 +678,7 @@ _lages2(cs_real_t     dtp,
 
           }
 
-          if (p11 > cs_math_epzero)
-            p31  = gagam / p11;
-          else
-            p31  = 0.0;
-
-          if (p22 > cs_math_epzero)
-            p32  = (gaome - p31 * p21) / p22;
-          else
-            p32  = 0.0;
-
-          p33     = grgam2 - p31 * p31 - p32 * p32;
-          p33     = sqrt(CS_MAX(0.0, p33));
-          ter4    = p31 * vagaus[ip][id][0] + p32 * vagaus[ip][id][1] + p33 * vagaus[ip][id][2];
+          ter4    = p21 * vagaus[ip][id][0] + p22 * vagaus[ip][id][1];
 
           /* ---> Calcul des Termes dans le cas du mouvement Brownien     */
           if (cs_glob_lagr_brownian->lamvbr == 1)
@@ -1008,7 +996,11 @@ _lagesd(cs_real_t     dtp,
 
       /* --> (2.3) Coefficients computation for the stochastic integrals:  */
       cs_real_t gama2  = 0.5 * (1.0 - aux2 * aux2);
-      cs_real_t omegam = (0.5 * aux4 * (aux5 - aux2 * aa) - 0.5 * aux2 * bb) * sqrt (aux6);
+      cs_real_t omegam = aux3 * ( (tlp - taup[*ip]) * (1.0 - aux2)
+                                  - 0.5 * tlp * (1.0 - aux2 * aux2)
+                                  + pow(taup[*ip],2) / (tlp + taup[*ip])
+                                  * (1.0 - aux1 * aux2)
+                                  ) * aux6;
       cs_real_t omega2 =   aux7
                          * (aux7 * dtp - 2.0 * (tlp * aux5 - taup[*ip] * aa))
                          + 0.5 * tlp * tlp * aux5 * (1.0 + aux2)
@@ -1351,7 +1343,7 @@ _lagdep(cs_real_t     dtp,
         cs_real_t    *taup,
         cs_real_3_t  *tlag,
         cs_real_3_t  *piil,
-        cs_real_t    *bx,
+        cs_real_33_t *bx,
         cs_real_33_t *vagaus,
         cs_real_3_t  *gradpr,
         cs_real_t    *romp,
@@ -1491,9 +1483,9 @@ _lagdep(cs_real_t     dtp,
           aux3 = tlag[ip][id] / (tlag[ip][id] - taup[ip]);
           aux4 = tlag[ip][id] / (tlag[ip][id] + taup[ip]);
           aux5 = tlag[ip][id] * (1.0 - aux2);
-          aux6 = pow(bx[p_set->n_particles * (3 * nor + id) + ip], 2.0) * tlag[ip][id];
+          aux6 = pow(bx[ip][id][nor-1], 2.0) * tlag[ip][id];
           aux7 = tlag[ip][id] - taup[ip];
-          aux8 = pow(bx[p_set->n_particles * (3 * nor + id) + ip], 2.0) * pow(aux3, 2);
+          aux8 = pow(bx[ip][id][nor-1], 2.0) * pow (aux3, 2);
 
           /* --> trajectory terms */
           cs_real_t aa = taup[ip] * (1.0 - aux1);
@@ -1521,7 +1513,11 @@ _lagdep(cs_real_t     dtp,
           /* --> (2.3) Coefficients computation for the stochastic integral    */
           /* --> Integral for particles position */
           gama2  = 0.5 * (1.0 - aux2 * aux2);
-          omegam = (0.5 * aux4 * (aux5 - aux2 * aa) - 0.5 * aux2 * bb) * sqrt(aux6);
+          omegam = aux3 * ( (tlag[ip][id] - taup[ip]) * (1.0 - aux2)
+                                  - 0.5 * tlag[ip][id] * (1.0 - aux2 * aux2)
+                                  + pow(taup[ip],2) / (tlag[ip][id] + taup[ip])
+                                  * (1.0 - aux1 * aux2)
+                                  ) * aux6;
           omega2 =  aux7 * (aux7 * dtp - 2.0 * (tlag[ip][id] * aux5 - taup[ip] * aa))
                    + 0.5 * tlag[ip][id] * tlag[ip][id] * aux5 * (1.0 + aux2)
                    + 0.5 * taup[ip] * taup[ip] * aa * (1.0 + aux1)
@@ -1698,6 +1694,7 @@ _lagdep(cs_real_t     dtp,
  * \param[in]  tsfext    info for return coupling source terms
  * \param[in]  gradpr    pressure gradient
  * \param[in]  gradvf    fluid velocity gradient
+ * \param[in] vagaus(nbpart,nvgaus)  variables aleatoires gaussiennes
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1706,12 +1703,14 @@ cs_lagr_sde(cs_real_t      dt_p,
             cs_real_t      taup[],
             cs_real_3_t    tlag[],
             cs_real_3_t    piil[],
-            cs_real_t      bx[],
+            cs_real_33_t   bx[],
             cs_real_t      tsfext[],
             cs_real_3_t    gradpr[],
             cs_real_33_t   gradvf[],
             cs_real_t      terbru[],
-            cs_real_t      vislen[])
+            cs_real_t      vislen[],
+            cs_real_33_t  *vagaus,
+            cs_real_t     *brgaus )
 {
   cs_real_t *romp;
 
@@ -1745,56 +1744,6 @@ cs_lagr_sde(cs_real_t      dt_p,
   cs_real_3_t *fextla;
   BFT_MALLOC(fextla, p_set->n_particles, cs_real_3_t);
 
-  cs_real_33_t *vagaus;
-  BFT_MALLOC(vagaus, p_set->n_particles, cs_real_33_t);
-
-  /* Random values   */
-  if (cs_glob_lagr_time_scheme->idistu == 1) {
-
-    if (p_set->n_particles > 0) {
-
-      for (cs_lnum_t ivf = 0; ivf < 3; ivf++) {
-
-        for (cs_lnum_t id = 0; id < 3; id++) {
-
-          for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++)
-            cs_random_normal(1, &(vagaus[ip][id][ivf]));
-
-        }
-
-      }
-
-    }
-
-  }
-  else {
-
-    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
-      for (cs_lnum_t ivf = 0; ivf < 3; ivf++) {
-        for (cs_lnum_t id = 0; id < 3; id++)
-          vagaus[ip][id][ivf] = 0.0;
-      }
-    }
-
-  }
-
-  cs_real_t *brgaus = NULL;
-
-  /* Brownian movement */
-
-  if (cs_glob_lagr_brownian->lamvbr == 1) {
-
-    BFT_MALLOC(brgaus, cs_glob_lagr_const_dim->nbrgau * p_set->n_particles, cs_real_t);
-
-    for (cs_lnum_t ivf = 0; ivf < cs_glob_lagr_const_dim->nbrgau; ivf++) {
-
-      for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++)
-        cs_random_normal(1, &(brgaus[ip * cs_glob_lagr_const_dim->nbrgau + ivf]));
-
-    }
-
-  }
-
   for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
     fextla[ip][0] = 0.0;
     fextla[ip][1] = 0.0;
@@ -1805,7 +1754,7 @@ cs_lagr_sde(cs_real_t      dt_p,
                   (const cs_real_t *)taup,
                   (const cs_real_3_t *)tlag,
                   (const cs_real_3_t *)piil,
-                  (const cs_real_t *)bx,
+                  (const cs_real_33_t *)bx,
                   (const cs_real_t *)tsfext,
                   (const cs_real_33_t *)vagaus,
                   (const cs_real_3_t *)gradpr,
@@ -1838,12 +1787,7 @@ cs_lagr_sde(cs_real_t      dt_p,
     _lages2(dt_p, taup, tlag, piil, bx, tsfext,
             vagaus, gradpr, romp, brgaus, terbru, fextla);
 
-  /* Free memory */
-  if (cs_glob_lagr_brownian->lamvbr == 1)
-    BFT_FREE(brgaus);
-
   BFT_FREE(romp);
-  BFT_FREE(vagaus);
   BFT_FREE(fextla);
 }
 

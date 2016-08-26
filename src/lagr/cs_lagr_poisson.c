@@ -412,9 +412,8 @@ cs_lagr_poisson(const int  itypfb[])
                               0,
                               -1);
 
-  stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY_SEEN);
   cs_field_t *mean_fv
-    = cs_lagr_stat_get_moment(stat_type,
+    = cs_lagr_stat_get_moment(CS_LAGR_STAT_VOLUME_FRACTION,
                               CS_LAGR_MOMENT_MEAN,
                               0,
                               -1);

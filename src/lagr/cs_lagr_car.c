@@ -123,7 +123,7 @@ cs_lagr_car(int              iprev,
             cs_real_t        taup[],
             cs_real_3_t      tlag[],
             cs_real_3_t      piil[],
-            cs_real_t        bx[],
+            cs_real_33_t     bx[],
             cs_real_t        tempct[],
             cs_real_3_t      gradpr[],
             cs_real_33_t     gradvf[],
@@ -452,9 +452,9 @@ cs_lagr_car(int              iprev,
                                                  + (  (bbi[id] * ktil / energi[cell_id] - 1.0)
                                                     * 2.0 / 3.0));
               if (bxi > 0.0)
-                bx[p_set->n_particles * (3 * nor + id) + ip] = sqrt(bxi);
+                bx[ip][id][nor-1] = sqrt(bxi);
               else
-                bx[p_set->n_particles * (3 * nor + id) + ip] = 0.0;
+                bx[ip][id][nor-1] = 0.0;
 
             }
 
@@ -474,9 +474,9 @@ cs_lagr_car(int              iprev,
 
             }
 
-            bx[p_set->n_particles * (3 * nor    ) + ip] = sqrt (c0 * dissip[cell_id]);
-            bx[p_set->n_particles * (3 * nor + 1) + ip] = bx[p_set->n_particles * (3 * nor) + ip];
-            bx[p_set->n_particles * (3 * nor + 2) + ip] = bx[p_set->n_particles * (3 * nor) + ip];
+            bx[ip][0][nor-1] = sqrt (c0 * dissip[cell_id]);
+            bx[ip][1][nor-1] = bx[ip][0][nor-1];
+            bx[ip][2][nor-1] = bx[ip][0][nor-1];
 
           }
 
@@ -487,8 +487,7 @@ cs_lagr_car(int              iprev,
           for (cs_lnum_t id = 0; id < 3; id++ ){
 
             tlag[ip][id]    = cs_math_epzero;
-            bx[p_set->n_particles * (3 * nor + id) + ip] = 0.0;
-            /* bx[ip * 6 + id * 2 + nor] = 0.0; */
+            bx[ip][id][nor-1] = 0.0;
 
           }
 
@@ -511,8 +510,7 @@ cs_lagr_car(int              iprev,
         for (cs_lnum_t id = 0; id < 3; id++ ){
 
           tlag[ip][id] = cs_math_epzero;
-          bx[p_set->n_particles * (nor * 3 + id) + ip] = 0.0;
-          /* bx[ip * 6 + id * 2 + nor]  = 0.0; */
+          bx[ip][id][nor-1] = 0.0;
 
         }
 

@@ -63,12 +63,14 @@ cs_lagr_sde(cs_real_t      dt_p,
             cs_real_t      taup[],
             cs_real_3_t    tlag[],
             cs_real_3_t    piil[],
-            cs_real_t      bx[],
+            cs_real_33_t   bx[],
             cs_real_t      tsfext[],
             cs_real_3_t    gradpr[],
             cs_real_33_t   gradvf[],
             cs_real_t      terbru[],
-            cs_real_t      vislen[]);
+            cs_real_t      vislen[],
+            cs_real_33_t  *vagaus,
+            cs_real_t     *brgaus );
 
 /*----------------------------------------------------------------------------*/
 /*!
