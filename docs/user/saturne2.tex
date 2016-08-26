@@ -733,8 +733,8 @@ useful if {\tt idtvar}=-1}
 This relaxation parameter is only useful for the pressure with the unsteady
 algorithm (so as to improve the convergence in case of meshes of insufficient
 quality or and for some of the turbulent models ({\tt iturb} = 20, 21,
-50 or 60 and {\tt ikecou}=0; if {\tt ikecou}=1, {\tt relaxv(ivar)}
-is not used, whatever its value may be). Default values are 0.7 for turbulent
+50, 51, 60 or 70 and {\tt ikecou}=0; if {\tt ikecou}=1, {\tt relaxv(ivar)}
+is not used, whatever its value may be). Default values are 1. for turbulent
 variables and 1. for pressure.\\
 {\tt relaxv} also stores the value of the relaxation coefficient when using the steady
 algorithm, deduced from the value of {\tt relxst} (defaulting to

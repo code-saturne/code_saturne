@@ -5,6 +5,8 @@ Release 4.0.6 (unreleased)
 Bug fixes:
 ----------
 
+- Minor fix in user doc.
+
 - Fix bug in AFM and DFM models with buoyancy and variance.
 
 - Fix access to a variable value in radiation term for fuel combustion.
