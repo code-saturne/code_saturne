@@ -153,7 +153,7 @@ cs_post_turbomachinery_head(const char               *criteria_in,
     case CS_MESH_LOCATION_CELLS:
 
       BFT_MALLOC(elt_list, mesh->n_cells, cs_lnum_t);
-      cs_selector_get_cell_num_list(criteria, &n_elts, elt_list);
+      cs_selector_get_cell_list(criteria, &n_elts, elt_list);
 
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         cs_lnum_t cell_id = elt_list[i];
@@ -168,7 +168,7 @@ cs_post_turbomachinery_head(const char               *criteria_in,
     case CS_MESH_LOCATION_BOUNDARY_FACES:
 
       BFT_MALLOC(elt_list, mesh->n_b_faces, cs_lnum_t);
-      cs_selector_get_b_face_num_list(criteria, &n_elts, elt_list);
+      cs_selector_get_b_face_list(criteria, &n_elts, elt_list);
 
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         cs_lnum_t face_id = elt_list[i];
@@ -184,7 +184,7 @@ cs_post_turbomachinery_head(const char               *criteria_in,
     case CS_MESH_LOCATION_INTERIOR_FACES:
 
       BFT_MALLOC(elt_list, mesh->n_i_faces, cs_lnum_t);
-      cs_selector_get_i_face_num_list(criteria, &n_elts, elt_list);
+      cs_selector_get_i_face_list(criteria, &n_elts, elt_list);
 
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         cs_lnum_t face_id = elt_list[i];
