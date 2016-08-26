@@ -35,6 +35,18 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     itypfb        boundary face types
 !> \param[out]    izfppp        boundary face zone number
+!> \param[out]    icodcl        boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
 !> \param[out]    rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -52,7 +64,7 @@
 !_______________________________________________________________________________
 
 subroutine d3ptcl &
- ( itypfb , izfppp ,                                                     &
+ ( itypfb , izfppp , icodcl,                                             &
    rcodcl )
 
 !===============================================================================
@@ -62,6 +74,7 @@ subroutine d3ptcl &
 !===============================================================================
 
 use paramx
+use dimens, only : nscal
 use numvar
 use optcal
 use cstphy
@@ -84,15 +97,16 @@ implicit none
 
 integer          itypfb(nfabor)
 integer          izfppp(nfabor)
+integer          icodcl(nfabor,nvarcl)
 
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
-integer          igg, ifac, izone, mode
+integer          igg, ifac, izone, mode, iscal
 integer          ii, iel, ifue, ioxy, iok
 integer          icke
-double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
+double precision qimabs, qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision ustar2, xkent, xeent
 double precision qcalc(nozppm)
 double precision coefg(ngazgm)
@@ -127,21 +141,21 @@ enddo
 !  On suppose que toutes les gandeurs fournies sont positives, ce qui
 !    permet d'utiliser un max pour que tous les procs les connaissent.
 !    Si ce n'est pas le cas, c'est plus complique mais on pourrait
-!    s'en tirer avec un max quand meme.
+!    s'en tirer avec un max quand meme, sauf qimp qui peut etre negatif.
 
 if(irangp.ge.0) then
   call parmax(tinfue)
-  !==========
   call parmax(tinoxy)
-  !==========
-  call parrmx(nozapm,qimp  )
-  !==========
+  ! qimabs  = |qimp|, or 0 if no boundary faces on the rank
+  do ii = 1, nozapm
+    qimabs = abs(qimp(ii))
+    ! the rank owning the max of qimabs, meaning |qimp|, share
+    ! qimp with the others
+    call parmxl(1,qimabs,qimp(ii))    
+  enddo
   call parimx(nozapm,iqimp )
-  !==========
   call parimx(nozapm,ientox)
-  !==========
   call parimx(nozapm,ientfu)
-  !==========
 endif
 
 !===============================================================================
@@ -206,21 +220,33 @@ do ifac = 1, nfabor
     ! Fuel inlet at TINFUE
     if (ientfu(izone).eq.1) then
 
-      ! Mean mixture fraction
-      rcodcl(ifac,isca(ifm),1)   = 1.d0
+      ! Neumann for outflow
+      if (qimp(izone).lt.0.d0) then
 
-      ! Mixture fraction variance
-      rcodcl(ifac,isca(ifp2m),1) = 0.d0
+        do iscal = 1, nscal
+          icodcl(ifac,isca(iscal)) = 3
+          rcodcl(ifac,isca(iscal),3) = 0.d0
+        enddo
 
-      ! Mixture enthalpy
-      if (ippmod(icod3p).eq.1) then
-        rcodcl(ifac,isca(iscalt),1) = hinfue
-      endif
+      ! Dirichlet for inflow
+      else
+        ! Mean mixture fraction
+        rcodcl(ifac,isca(ifm),1)   = 1.d0
 
-      ! Soot model
-      if (isoot.ge.1) then
-        rcodcl(ifac,isca(ifsm),1) = 0.d0
-        rcodcl(ifac,isca(inpm),1) = 0.d0
+        ! Mixture fraction variance
+        rcodcl(ifac,isca(ifp2m),1) = 0.d0
+
+        ! Mixture enthalpy
+        if (ippmod(icod3p).eq.1) then
+          rcodcl(ifac,isca(iscalt),1) = hinfue
+        endif
+
+        ! Soot model
+        if (isoot.ge.1) then
+          rcodcl(ifac,isca(ifsm),1) = 0.d0
+          rcodcl(ifac,isca(inpm),1) = 0.d0
+        endif
+
       endif
 
       ! Density
@@ -229,25 +255,38 @@ do ifac = 1, nfabor
     ! Oxydant inlet at TINOXY
     elseif (ientox(izone).eq.1) then
 
-      ! Mean mixture fraction
-      rcodcl(ifac,isca(ifm),1)   = 0.d0
+      ! Neumann for outflow
+      if (qimp(izone).lt.0.d0) then
 
-      ! Mixture fraction variance
-      rcodcl(ifac,isca(ifp2m),1) = 0.d0
+        do iscal = 1, nscal
+          icodcl(ifac,isca(iscal)) = 3
+          rcodcl(ifac,isca(iscal),3) = 0.d0
+        enddo
 
-      ! Mixture enthalpy
-      if ( ippmod(icod3p).eq.1 ) then
-        rcodcl(ifac,isca(iscalt),1) = hinoxy
+      ! Dirichlet for inflow
+      else
+ 
+        ! Mean mixture fraction
+        rcodcl(ifac,isca(ifm),1)   = 0.d0
+
+        ! Mixture fraction variance
+        rcodcl(ifac,isca(ifp2m),1) = 0.d0
+
+        ! Mixture enthalpy
+        if ( ippmod(icod3p).eq.1 ) then
+          rcodcl(ifac,isca(iscalt),1) = hinoxy
+        endif
+
+        ! Soot model
+        if (isoot.ge.1) then
+          rcodcl(ifac,isca(ifsm),1) = 0.d0
+          rcodcl(ifac,isca(inpm),1) = 0.d0
+        endif
+
+        ! Density
+        brom(ifac) = pther/(cs_physical_constants_r*tinoxy/wmolg(2))
+
       endif
-
-      ! Soot model
-      if (isoot.ge.1) then
-        rcodcl(ifac,isca(ifsm),1) = 0.d0
-        rcodcl(ifac,isca(inpm),1) = 0.d0
-      endif
-
-      ! Density
-      brom(ifac) = pther/(cs_physical_constants_r*tinoxy/wmolg(2))
 
     endif
 
@@ -282,7 +321,7 @@ if(irangp.ge.0) then
 endif
 
 do izone = 1, nozapm
-  if ( iqimp(izone).eq.0 ) then
+  if (iqimp(izone).eq.0) then
     qimp(izone) = qcalc(izone)
   endif
 enddo
@@ -290,58 +329,19 @@ enddo
 
 ! --- Correction des vitesses en norme
 
-iok = 0
-do ii = 1, nzfppp
-  izone = ilzppp(ii)
-  if ( iqimp(izone).eq.1 ) then
-    if(qcalc(izone).lt.epzero) then
-      write(nfecra,2001)izone,iqimp(izone),qcalc(izone)
-      iok = iok + 1
-    endif
-  endif
-enddo
-if(iok.ne.0) then
-  call csexit (1)
-  !==========
-endif
 do ifac = 1, nfabor
   izone = izfppp(ifac)
-  if ( iqimp(izone).eq.1 ) then
-    qisqc = qimp(izone)/qcalc(izone)
+  if (iqimp(izone).eq.1) then
+    if (abs(qcalc(izone)).gt.epzero) then
+      qisqc = qimp(izone)/qcalc(izone)
+    else
+      qisqc = 0.d0
+    endif
     rcodcl(ifac,iu,1) = rcodcl(ifac,iu,1)*qisqc
     rcodcl(ifac,iv,1) = rcodcl(ifac,iv,1)*qisqc
     rcodcl(ifac,iw,1) = rcodcl(ifac,iw,1)*qisqc
   endif
 enddo
-
- 2001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : MODULE PHYSIQUES PARTICULIERES              ',/,&
-'@    =========                                               ',/,&
-'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,&
-'@                                                            ',/,&
-'@  Le debit est impose sur la zone IZONE = ', I10             ,/,&
-'@    puisque                IQIMP(IZONE) = ', I10             ,/,&
-'@  Or, sur cette zone, le produit RHO D S integre est nul :  ',/,&
-'@    il vaut                             = ',E14.5            ,/,&
-'@    (D est la direction selon laquelle est impose le debit).',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier usd3pc, et en particulier                        ',/,&
-'@    - que le vecteur  RCODCL(IFAC,IU,1),             ',/,&
-'@                      RCODCL(IFAC,IV,1),             ',/,&
-'@                      RCODCL(IFAC,IW,1) qui determine',/,&
-'@      la direction de la vitesse est non nul et n''est pas  ',/,&
-'@      uniformement perpendiculaire aux face d''entree       ',/,&
-'@    - que la surface de l''entree n''est pas nulle (ou que  ',/,&
-'@      le nombre de faces de bord dans la zone est non nul)  ',/,&
-'@    - que la masse volumique n''est pas nulle               ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 
 !===============================================================================
 ! 4.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES POUR LA TURBULENCE
@@ -358,71 +358,128 @@ do ifac = 1, nfabor
 
   if (itypfb(ifac).eq.ientre.or.itypfb(ifac).eq.i_convective_inlet) then
 
-    ! La turbulence est calculee par defaut si ICALKE different de 0
-    !    - soit a partir du diametre hydraulique, d'une vitesse
-    !      de reference adaptes a l'entree courante si ICALKE = 1
-    !    - soit a partir du diametre hydraulique, d'une vitesse
-    !      de reference et de l'intensite turvulente
-    !      adaptes a l'entree courante si ICALKE = 2
-
-    if ( icalke(izone).ne.0 ) then
-
-      uref2 = rcodcl(ifac,iu,1)**2                         &
-            + rcodcl(ifac,iv,1)**2                         &
-            + rcodcl(ifac,iw,1)**2
-      uref2 = max(uref2,epzero)
-      rhomoy = brom(ifac)
-      iel    = ifabor(ifac)
-      viscla = viscl(iel)
-      icke   = icalke(izone)
-      dhy    = dh(izone)
-      xiturb = xintur(izone)
-      ustar2 = 0.d0
-      xkent = epzero
-      xeent = epzero
-      if (icke.eq.1) then
-        call keendb ( uref2, dhy, rhomoy, viscla, cmu, xkappa, &
-          ustar2, xkent, xeent )
-      else if (icke.eq.2) then
-        call keenin ( uref2, xiturb, dhy, cmu, xkappa, xkent, xeent )
-      endif
+    ! Neumann for outflow
+    if (qimp(izone).lt.0.d0) then
 
       if (itytur.eq.2) then
 
-        rcodcl(ifac,ik,1)  = xkent
-        rcodcl(ifac,iep,1) = xeent
+        icodcl(ifac,ik ) = 3
+        icodcl(ifac,iep) = 3
+        rcodcl(ifac,ik ,3) = 0.d0
+        rcodcl(ifac,iep,3) = 0.d0
 
       elseif (itytur.eq.3) then
 
-        rcodcl(ifac,ir11,1) = d2s3*xkent
-        rcodcl(ifac,ir22,1) = d2s3*xkent
-        rcodcl(ifac,ir33,1) = d2s3*xkent
-        rcodcl(ifac,ir12,1) = 0.d0
-        rcodcl(ifac,ir13,1) = 0.d0
-        rcodcl(ifac,ir23,1) = 0.d0
-        rcodcl(ifac,iep,1)  = xeent
+        icodcl(ifac,ir11) = 3
+        icodcl(ifac,ir22) = 3
+        icodcl(ifac,ir33) = 3
+        icodcl(ifac,ir12) = 3
+        icodcl(ifac,ir13) = 3
+        icodcl(ifac,ir23) = 3
+        icodcl(ifac,iep ) = 3
+        rcodcl(ifac,ir11,3) = 0.d0
+        rcodcl(ifac,ir22,3) = 0.d0
+        rcodcl(ifac,ir33,3) = 0.d0
+        rcodcl(ifac,ir12,3) = 0.d0
+        rcodcl(ifac,ir13,3) = 0.d0
+        rcodcl(ifac,ir23,3) = 0.d0
+        rcodcl(ifac,iep, 3) = 0.d0
 
       elseif (iturb.eq.50) then
 
-        rcodcl(ifac,ik,1)   = xkent
-        rcodcl(ifac,iep,1)  = xeent
-        rcodcl(ifac,iphi,1) = d2s3
-        rcodcl(ifac,ifb,1)  = 0.d0
+        icodcl(ifac,ik  ) = 3
+        icodcl(ifac,iep ) = 3
+        icodcl(ifac,iphi) = 3
+        icodcl(ifac,ifb ) = 3
+        rcodcl(ifac,ik,  3) = 0.d0
+        rcodcl(ifac,iep, 3) = 0.d0
+        rcodcl(ifac,iphi,3) = 0.d0
+        rcodcl(ifac,ifb, 3) = 0.d0
 
       elseif (iturb.eq.60) then
 
-        rcodcl(ifac,ik,1)   = xkent
-        rcodcl(ifac,iomg,1) = xeent/cmu/xkent
+        icodcl(ifac,ik  ) = 3
+        icodcl(ifac,iomg) = 3
+        rcodcl(ifac,ik,  3) = 0.d0
+        rcodcl(ifac,iomg,3) = 0.d0
 
       elseif(iturb.eq.70) then
 
-        rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
+        icodcl(ifac,inusa) = 3
+        rcodcl(ifac,inusa,3) = 0.d0
 
       endif
 
-    endif
+    ! Dirichlet for inflow
+    else
 
-  endif
+      ! La turbulence est calculee par defaut si ICALKE different de 0
+      !    - soit a partir du diametre hydraulique, d'une vitesse
+      !      de reference adaptes a l'entree courante si ICALKE = 1
+      !    - soit a partir du diametre hydraulique, d'une vitesse
+      !      de reference et de l'intensite turvulente
+      !      adaptes a l'entree courante si ICALKE = 2
+
+      if ( icalke(izone).ne.0 ) then
+
+        uref2 = rcodcl(ifac,iu,1)**2                         &
+              + rcodcl(ifac,iv,1)**2                         &
+              + rcodcl(ifac,iw,1)**2
+        uref2 = max(uref2,epzero)
+        rhomoy = brom(ifac)
+        iel    = ifabor(ifac)
+        viscla = viscl(iel)
+        icke   = icalke(izone)
+        dhy    = dh(izone)
+        xiturb = xintur(izone)
+        ustar2 = 0.d0
+        xkent = epzero
+        xeent = epzero
+        if (icke.eq.1) then
+          call keendb ( uref2, dhy, rhomoy, viscla, cmu, xkappa, &
+            ustar2, xkent, xeent )
+        else if (icke.eq.2) then
+          call keenin ( uref2, xiturb, dhy, cmu, xkappa, xkent, xeent )
+        endif
+
+        if (itytur.eq.2) then
+
+          rcodcl(ifac,ik,1)  = xkent
+          rcodcl(ifac,iep,1) = xeent
+
+        elseif (itytur.eq.3) then
+
+          rcodcl(ifac,ir11,1) = d2s3*xkent
+          rcodcl(ifac,ir22,1) = d2s3*xkent
+          rcodcl(ifac,ir33,1) = d2s3*xkent
+          rcodcl(ifac,ir12,1) = 0.d0
+          rcodcl(ifac,ir13,1) = 0.d0
+          rcodcl(ifac,ir23,1) = 0.d0
+          rcodcl(ifac,iep,1)  = xeent
+
+        elseif (iturb.eq.50) then
+
+          rcodcl(ifac,ik,1)   = xkent
+          rcodcl(ifac,iep,1)  = xeent
+          rcodcl(ifac,iphi,1) = d2s3
+          rcodcl(ifac,ifb,1)  = 0.d0
+
+        elseif (iturb.eq.60) then
+
+          rcodcl(ifac,ik,1)   = xkent
+          rcodcl(ifac,iomg,1) = xeent/cmu/xkent
+
+        elseif(iturb.eq.70) then
+
+          rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
+
+        endif ! itytur
+
+      endif ! icalke
+
+    endif ! qimp
+
+  endif ! itypfb
 
 enddo
 

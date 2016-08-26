@@ -120,11 +120,13 @@ double precision rcodcl(nfabor,nvarcl,3)
 ! Local variables
 
 !< [loc_var_dec]
-integer          ifac, izone, ii
+integer          iel, ifac, izone, ii
 integer          ilelt, nlelt
 
 double precision uref2, d2s3
 double precision xkent, xeent
+double precision dp, rho, S0, Kadm, radm, madm, Qadm, Padm, Ploc
+double precision, dimension(:), pointer :: crom
 
 integer, allocatable, dimension(:) :: lstelt
 !< [loc_var_dec]
@@ -427,6 +429,139 @@ do ilelt = 1, nlelt
 
 enddo
 !< [example_5]
+
+! Definition of an air supply for each face of color 61
+
+!< [example_6]
+call getfbr('61', nlelt, lstelt)
+!==========
+
+call field_get_val_s(icrom, crom)
+
+! Head losses in the ventilation pipe (often from exp data)
+
+! nominal room pressure
+Ploc= 51.d0 ! Pa
+! vent surface
+S0 = acos(-1.d0) * (75.d-3)**2 ! m2
+! density
+radm = (P0+ploc)/(cs_physical_constants_r*tinoxy/wmolg(2))
+! nominal vent pressure
+Padm = 119.d0 ! Pa
+! nominal flow rate
+Qadm = 504.d0 ! m3/h
+madm = Qadm*radm/3600.d0
+! head loss
+Kadm = 2.d0*radm*(S0/madm)**2 * abs(Ploc-Padm)
+
+! pressure gradient (Pther computed if ipthrm = 1)
+dp   = (Pther - P0) - Padm
+
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+  iel  = ifabor(ifac)
+
+  ! Density
+  if (dp.gt.0.d0) then
+    rho = crom(iel)
+  else
+    rho = radm
+  endif
+
+  ! Mass flow rate (opposed to the boundary face normal vector)
+  madm = - sign(1.d0,dp) * s0 * sqrt(2.d0*rho/kadm*abs(dp))
+
+  ! Type of pre-defined boundary condidition (see above)
+  itypfb(ifac) = i_convective_inlet
+
+  ! Zone number (arbitrary number between 1 and n)
+  izone = 6
+
+  ! Allocation of the actual face to the zone
+  izfppp(ifac) = izone
+
+  ! Indicating the inlet as a air flow inlet
+  ientox(izone) = 1
+
+  ! Inlet Temperature in K
+  tinoxy = t0
+
+  ! The inflowing fuel flow refers to:
+  ! a) a massflow rate   -> iqimp()  = 1
+  iqimp(izone)  = 1
+  qimp(izone)   = madm
+
+  ! b) an inlet velocity -> iqimp()  = 0
+  rcodcl(ifac,iu,1) = 1.d0
+  rcodcl(ifac,iv,1) = 0.d0
+  rcodcl(ifac,iw,1) = 0.d0
+
+  ! Boundary conditions of turbulence
+  icalke(izone) = 1
+
+  ! - If ICALKE = 0 the boundary conditions of turbulence at
+  !   the inlet are calculated as follows:
+  if(icalke(izone).eq.0) then
+
+    uref2 = rcodcl(ifac,iu,1)**2                           &
+           +rcodcl(ifac,iv,1)**2                           &
+           +rcodcl(ifac,iw,1)**2
+    uref2 = max(uref2,1.d-12)
+    xkent  = epzero
+    xeent  = epzero
+
+    call keenin                                                   &
+    !==========
+      ( uref2, xintur(izone), dh(izone), cmu, xkappa,             &
+        xkent, xeent )
+
+    if    (itytur.eq.2) then
+
+      rcodcl(ifac,ik,1)  = xkent
+      rcodcl(ifac,iep,1) = xeent
+
+    elseif(itytur.eq.3) then
+
+      rcodcl(ifac,ir11,1) = d2s3*xkent
+      rcodcl(ifac,ir22,1) = d2s3*xkent
+      rcodcl(ifac,ir33,1) = d2s3*xkent
+      rcodcl(ifac,ir12,1) = 0.d0
+      rcodcl(ifac,ir13,1) = 0.d0
+      rcodcl(ifac,ir23,1) = 0.d0
+      rcodcl(ifac,iep,1)  = xeent
+
+    elseif (iturb.eq.50) then
+
+      rcodcl(ifac,ik,1)   = xkent
+      rcodcl(ifac,iep,1)  = xeent
+      rcodcl(ifac,iphi,1) = d2s3
+      rcodcl(ifac,ifb,1)  = 0.d0
+
+    elseif (iturb.eq.60) then
+
+      rcodcl(ifac,ik,1)   = xkent
+      rcodcl(ifac,iomg,1) = xeent/cmu/xkent
+
+    elseif (iturb.eq.70) then
+
+      rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
+
+    endif
+
+  endif
+
+  ! - If ICALKE = 1 the boundary conditions of turbulence at
+  !   the inlet refer to both, a hydraulic diameter and a
+  !   reference velocity.
+  dh(izone)     = 0.218d0
+
+  ! - If ICALKE = 2 the boundary conditions of turbulence at
+  !   the inlet refer to a turbulence intensity.
+  xintur(izone) = 0.d0
+
+enddo
+!< [example_6]
 
 !--------
 ! Formats

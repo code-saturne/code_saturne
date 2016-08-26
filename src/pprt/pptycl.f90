@@ -241,7 +241,7 @@ nozapm = izonem
 
 if (ippmod(icod3p).ge.0) then
 
-  call d3ptcl(itypfb, izfppp, rcodcl)
+  call d3ptcl(itypfb, izfppp, icodcl, rcodcl)
   !==========
 
 ! ---> Combustion gaz USEBUC
