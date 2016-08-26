@@ -243,7 +243,7 @@ ipass = ipass + 1
 !     ISVHB donne le numero du scalaire (on suppose qu'il n'y en a qu'un).
 !     Dans le cas ou on a un couplage avec le module thermique 1D en paroi,
 !     on utilise le meme scalaire que celui qui sert a Syrthes (s'il y a
-!     couplage Syrthes), sinon on stocke le scalaire thermique de la phase 1.
+!     couplage Syrthes), sinon on stocke le scalaire thermique.
 
 call nbcsyr (nbccou)
 isvhb = 0
@@ -864,7 +864,7 @@ endif
 
 
 ! --- Boucle sur navstv pour couplage vitesse/pression
-!     on s'arrete a NTERUP ou quand TOUTES les phases on converge
+!     on s'arrete a NTERUP ou quand on a converge
 !     ITRFUP=0 indique qu'on a besoin de refaire une iteration
 !     pour Syrthes, T1D ou rayonnement.
 itrfup = 1
@@ -1592,8 +1592,7 @@ if (iccvfg.eq.0) then
   endif
 
   !     On ne passe dans SCHTMP que si ISTMPF.EQ.0 (explicite)
-  !     On teste le flux de masse de la phase 1 (toutes les phases sont
-  !     necessairement traitees de la meme facon, cf. VERINI)
+  !     On teste le flux de masse
   !     pour conserver
   if (istmpf.eq.0) then
     iappel = 4
