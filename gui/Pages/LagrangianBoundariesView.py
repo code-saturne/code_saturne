@@ -559,7 +559,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IJNBP.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIJNBP.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, int)
             self.model.setNumberOfParticulesInClassValue(self.label, self.iclass, value)
 
@@ -569,7 +569,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IJFRE.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIJFRE.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, int)
             self.model.setInjectionFrequencyValue(self.label, self.iclass, value)
 
@@ -579,7 +579,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input ICLST.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditICLST.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, int)
             self.model.setParticleGroupNumberValue(self.label, self.iclass, value)
 
@@ -589,7 +589,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IDEBT.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIDEBT.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setMassFlowRateValue(self.label, self.iclass, value)
 
@@ -621,7 +621,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IPOIT.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIPOIT.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setStatisticalWeightValue(self.label, self.iclass, value)
 
@@ -631,7 +631,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IROPT.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIROPT.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setDensityValue(self.label, self.iclass, value)
 
@@ -640,7 +640,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IRCOLM.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIRCOLM.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setFoulingIndexValue(self.label, self.iclass, value)
 
@@ -673,7 +673,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IUNO.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIUNO.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setVelocityNormValue(self.label, self.iclass, value)
 
@@ -683,7 +683,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IUPT.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIUPT.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setVelocityDirectionValue(self.label, self.iclass, "u", value)
 
@@ -693,7 +693,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IVPT.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIVPT.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setVelocityDirectionValue(self.label, self.iclass, "v", value)
 
@@ -703,7 +703,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IWPT.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIWPT.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setVelocityDirectionValue(self.label, self.iclass, "w", value)
 
@@ -728,7 +728,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input ITPT.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditITPT.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setTemperatureValue(self.label, self.iclass, value)
 
@@ -738,7 +738,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input ICPT.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditICPT.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setSpecificHeatValue(self.label, self.iclass, value)
 
@@ -748,7 +748,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IEPSI.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIEPSI.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setEmissivityValue(self.label, self.iclass, value)
 
@@ -775,7 +775,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IDPT.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIDPT.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setDiameterValue(self.label, self.iclass, value)
 
@@ -785,7 +785,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IVDPT.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIVDPT.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setDiameterVarianceValue(self.label, self.iclass, value)
 
@@ -795,7 +795,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IHPT.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditINUCHL.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, int)
             self.model.setCoalNumberValue(self.label, self.iclass, value)
 
@@ -805,7 +805,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         Input IHPT.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self.lineEditIHPT.validator().state == QValidator.Acceptable:
             value = from_qvariant(text, float)
             self.model.setCoalTemperatureValue(self.label, self.iclass, value)
 
