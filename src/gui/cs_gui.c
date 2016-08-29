@@ -2892,9 +2892,9 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
 
 #if _XML_DEBUG_
   bft_printf("==>CSPHYS\n");
-  bft_printf("--gx = %f \n",*gx);
-  bft_printf("--gy = %f \n",*gy);
-  bft_printf("--gz = %f \n",*gz);
+  bft_printf("--gx = %f \n",phys_cst->gx);
+  bft_printf("--gy = %f \n",phys_cst->gy);
+  bft_printf("--gz = %f \n",phys_cst->gz);
   //bft_printf("--omegax = %f \n",*omegax);
   //bft_printf("--omegay = %f \n",*omegay);
   //bft_printf("--omegaz = %f \n",*omegaz);
