@@ -41,6 +41,7 @@ class master_script:
                          'config':self.config,
                          'create':self.create,
                          'gui':self.gui,
+                         'autovnvgui':self.autovnvgui,
                          'info':self.info,
                          'run':self.run,
                          'salome':self.salome,
@@ -105,6 +106,7 @@ Topics:
   config
   create
   gui
+  autovnvgui
   info
   run
   salome
@@ -142,6 +144,10 @@ Options:
     def gui(self, options = None):
         import cs_gui
         return cs_gui.main(options, self.package)
+
+    def autovnvgui(self, options = None):
+        import cs_autovnvgui
+        return cs_autovnvgui.main(options, self.package)
 
     def info(self, options = None):
         import cs_info

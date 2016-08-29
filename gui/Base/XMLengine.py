@@ -1202,7 +1202,7 @@ class XMLDocument(XMLElement):
 class Case(Dico, XMLDocument, QObject):
     undo_signal = pyqtSignal()
 
-    def __init__(self, package=None, file_name=""):
+    def __init__(self, package=None, file_name="", autovnv=False):
         """
         Instantiate a new dico and a new xml doc
         """
@@ -1215,6 +1215,8 @@ class Case(Dico, XMLDocument, QObject):
             rootNode = '<' + self['package'].code_name +'_GUI study="" case="" version="2.0"/>'
         else:
             rootNode = '<' + '_GUI study="" case="" version="2.0"/>'
+        if autovnv:
+            rootNode = '<' + 'autovnv version="2.0"/>'
 
         if file_name:
             self.parse(file_name)

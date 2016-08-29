@@ -1096,7 +1096,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
                  src/turb/Makefile src/alge/Makefile src/mesh/Makefile
                  src/user/Makefile src/user_examples/Makefile
-                 gui/Makefile gui/Base/Makefile gui/Pages/Makefile
+                 gui/Makefile gui/Base/Makefile gui/Pages/Makefile gui/Autovnv/Makefile
                  salome/fsi_coupling/Makefile
                  salome/fsi_coupling/idl/Makefile
                  salome/fsi_coupling/libmilieu/Makefile

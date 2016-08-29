@@ -1,0 +1,534 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <author>A. DOUCE</author>
+ <class>MainForm</class>
+ <widget class="QMainWindow" name="MainForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>527</width>
+    <height>258</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Interface Code_Saturne</string>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks</set>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout">
+    <item row="0" column="0">
+     <widget class="QFrame" name="frame">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Sunken</enum>
+      </property>
+      <layout class="QGridLayout"/>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>527</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_Help">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <widget class="QMenu" name="menu_User_manuals">
+     <property name="title">
+      <string>&amp;User manuals</string>
+     </property>
+     <property name="icon">
+      <iconset resource="resource_base.qrc">
+       <normaloff>:/icons/22x22/x-office-address-book.png</normaloff>:/icons/22x22/x-office-address-book.png</iconset>
+     </property>
+     <addaction name="displayCSManualAction"/>
+     <addaction name="displayNCManualAction"/>
+     <addaction name="displayCSTutorialAction"/>
+     <addaction name="displayCSKernelAction"/>
+     <addaction name="displayCSRefcardAction"/>
+     <addaction name="displayCSDoxygenAction"/>
+    </widget>
+    <addaction name="displayAboutAction"/>
+    <addaction name="displayLicenceAction"/>
+    <addaction name="separator"/>
+    <addaction name="menu_User_manuals"/>
+   </widget>
+   <widget class="QMenu" name="menu_Window">
+    <property name="title">
+     <string>&amp;Window</string>
+    </property>
+    <addaction name="BrowserAction"/>
+    <addaction name="separator"/>
+    <addaction name="backgroundColorAction"/>
+    <addaction name="actionFont"/>
+    <addaction name="RestoreStyleDefaults"/>
+   </widget>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <widget class="QMenu" name="menuRecent">
+     <property name="title">
+      <string>Recent file</string>
+     </property>
+     <property name="icon">
+      <iconset resource="resource_base.qrc">
+       <normaloff>:/icons/22x22/format-justify-fill.png</normaloff>:/icons/22x22/format-justify-fill.png</iconset>
+     </property>
+    </widget>
+    <addaction name="fileNewAction"/>
+    <addaction name="fileOpenAction"/>
+    <addaction name="menuRecent"/>
+    <addaction name="separator"/>
+    <addaction name="fileSaveAction"/>
+    <addaction name="fileSaveAsAction"/>
+    <addaction name="separator"/>
+    <addaction name="fileCloseAction"/>
+    <addaction name="fileQuitAction"/>
+   </widget>
+   <addaction name="menu_File"/>
+   <addaction name="menu_Window"/>
+   <addaction name="menu_Help"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="fileNewAction"/>
+   <addaction name="fileOpenAction"/>
+   <addaction name="fileSaveAction"/>
+   <addaction name="fileCloseAction"/>
+   <addaction name="fileQuitAction"/>
+  </widget>
+  <widget class="QToolBar" name="toolBar_4">
+   <property name="windowTitle">
+    <string>toolBar_4</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <widget class="QToolBar" name="toolBar_5">
+   <property name="windowTitle">
+    <string>toolBar_5</string>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::RightToLeft</enum>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="displayLogo"/>
+  </widget>
+  <widget class="QDockWidget" name="dockWidgetBrowser">
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetBrowserContents"/>
+  </widget>
+  <action name="fileOpenAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/document-open.png</normaloff>:/icons/22x22/document-open.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Open</string>
+   </property>
+   <property name="toolTip">
+    <string>Open an existing case</string>
+   </property>
+   <property name="statusTip">
+    <string>Open an existing case.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="fileNewAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/document-new.png</normaloff>:/icons/22x22/document-new.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;New file</string>
+   </property>
+   <property name="statusTip">
+    <string>Open a new case.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="fileSaveAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/document-save.png</normaloff>:/icons/22x22/document-save.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Save</string>
+   </property>
+   <property name="statusTip">
+    <string>Save the current case.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="filePythonAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/document-save.png</normaloff>:/icons/22x22/document-save.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Dump python</string>
+   </property>
+   <property name="statusTip">
+    <string>Dump python file.</string>
+   </property>
+  </action>
+  <action name="fileSaveAsAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/document-save-as.png</normaloff>:/icons/22x22/document-save-as.png</iconset>
+   </property>
+   <property name="text">
+    <string>Sa&amp;ve as ...</string>
+   </property>
+   <property name="statusTip">
+    <string>Save as.</string>
+   </property>
+  </action>
+  <action name="fileCloseAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/process-stop.png</normaloff>:/icons/22x22/process-stop.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Close</string>
+   </property>
+   <property name="statusTip">
+    <string>Close</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+W</string>
+   </property>
+  </action>
+  <action name="openXtermAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/utilities-terminal.png</normaloff>:/icons/22x22/utilities-terminal.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Open shell</string>
+   </property>
+   <property name="statusTip">
+    <string>Open shell</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
+   </property>
+  </action>
+  <action name="displayCaseAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/document-properties.png</normaloff>:/icons/22x22/document-properties.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Show current case</string>
+   </property>
+   <property name="statusTip">
+    <string>Show current case.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="displayLogo">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/MONO-bulle-HD.png</normaloff>:/icons/22x22/MONO-bulle-HD.png</iconset>
+   </property>
+  </action>
+  <action name="reload_modulesAction">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/icons/22x22/view-refresh.png</normaloff>:/icons/22x22/view-refresh.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Reload all loaded modules</string>
+   </property>
+   <property name="statusTip">
+    <string>Reload all loaded modules.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
+  </action>
+  <action name="reload_pageAction">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/icons/22x22/view-refresh.png</normaloff>:/icons/22x22/view-refresh.png</iconset>
+   </property>
+   <property name="text">
+    <string>R&amp;eload the loaded page</string>
+   </property>
+   <property name="statusTip">
+    <string>Reload the loaded page.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="displayAboutAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/help-browser.png</normaloff>:/icons/22x22/help-browser.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;About</string>
+   </property>
+   <property name="statusTip">
+    <string>About.</string>
+   </property>
+  </action>
+  <action name="displayLicenceAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/application-certificate.png</normaloff>:/icons/22x22/application-certificate.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Licence</string>
+   </property>
+   <property name="statusTip">
+    <string>Licence.</string>
+   </property>
+  </action>
+  <action name="displayCSManualAction">
+   <property name="text">
+    <string>&amp;Code_Saturne</string>
+   </property>
+   <property name="statusTip">
+    <string>Code_Saturne user manual.</string>
+   </property>
+   <property name="shortcut">
+    <string>F1</string>
+   </property>
+  </action>
+  <action name="displayNCManualAction">
+   <property name="text">
+    <string>&amp;NEPTUNE_CFD</string>
+   </property>
+   <property name="statusTip">
+    <string>NEPTUNE_CFD user manual.</string>
+   </property>
+  </action>
+  <action name="displayCSTutorialAction">
+   <property name="text">
+    <string>&amp;Code_Saturne tutorial</string>
+   </property>
+   <property name="statusTip">
+    <string>Code_Saturne tutorial.</string>
+   </property>
+   <property name="shortcut">
+    <string>F2</string>
+   </property>
+  </action>
+  <action name="displayCSKernelAction">
+   <property name="text">
+    <string>&amp;Code_Saturne Kernel</string>
+   </property>
+   <property name="statusTip">
+    <string>Code_Saturne theory and programmer's guide.</string>
+   </property>
+   <property name="shortcut">
+    <string>F3</string>
+   </property>
+  </action>
+  <action name="displayCSRefcardAction">
+   <property name="text">
+    <string>&amp;Code_Saturne reference card</string>
+   </property>
+   <property name="statusTip">
+    <string>Code_Saturne quick reference card.</string>
+   </property>
+   <property name="shortcut">
+    <string>F4</string>
+   </property>
+  </action>
+  <action name="displayCSDoxygenAction">
+   <property name="text">
+    <string>&amp;Code_Saturne doxygen</string>
+   </property>
+   <property name="statusTip">
+    <string>Code_Saturne quick doxygen.</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
+  </action>
+  <action name="IdentityAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Identity</string>
+   </property>
+   <property name="statusTip">
+    <string>Show/Hide the identity window.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+I</string>
+   </property>
+  </action>
+  <action name="BrowserAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Browser</string>
+   </property>
+   <property name="statusTip">
+    <string>Show/Hide the browser window.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+B</string>
+   </property>
+  </action>
+  <action name="fileQuitAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/system-log-out.png</normaloff>:/icons/22x22/system-log-out.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+   <property name="statusTip">
+    <string>Quit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="backgroundColorAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/preferences-desktop-wallpaper.png</normaloff>:/icons/22x22/preferences-desktop-wallpaper.png</iconset>
+   </property>
+   <property name="text">
+    <string>Background color</string>
+   </property>
+  </action>
+  <action name="actionFont">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/preferences-desktop-font.png</normaloff>:/icons/22x22/preferences-desktop-font.png</iconset>
+   </property>
+   <property name="text">
+    <string>Font</string>
+   </property>
+  </action>
+  <action name="actionUndo">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/edit-undo.png</normaloff>:/icons/22x22/edit-undo.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Undo</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Z</string>
+   </property>
+  </action>
+  <action name="actionRedo">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/edit-redo.png</normaloff>:/icons/22x22/edit-redo.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Redo</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+Z</string>
+   </property>
+  </action>
+  <action name="actionPrepro">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/prepro-mode.png</normaloff>:/icons/22x22/prepro-mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Preprocessing Mode</string>
+   </property>
+  </action>
+  <action name="actionCalculation">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/calc-mode.png</normaloff>:/icons/22x22/calc-mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Calculation Mode</string>
+   </property>
+  </action>
+  <action name="caseNewAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/document-new.png</normaloff>:/icons/22x22/document-new.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;New case</string>
+   </property>
+   <property name="toolTip">
+    <string>New case</string>
+   </property>
+   <property name="statusTip">
+    <string>Open a new case.</string>
+   </property>
+  </action>
+  <action name="RestoreStyleDefaults">
+   <property name="text">
+    <string>Restore Defaults</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="resource_base.qrc"/>
+ </resources>
+ <connections/>
+</ui>

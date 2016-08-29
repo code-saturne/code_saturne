@@ -526,7 +526,6 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
 
 
     def setData(self, index, value, role=None):
-        row = index.row()
         item = index.internalPointer()
 
         if index.column() == 0:
