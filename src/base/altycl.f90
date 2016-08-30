@@ -269,7 +269,7 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 4. CHeck ICODCL consistency
+! 4. Check ICODCL consistency
 !===============================================================================
 
 do ifac = 1, nfabor
@@ -349,7 +349,7 @@ if (ierror(1).gt.0) then
 endif
 
 !===============================================================================
-! 5. Fluid velocity BCs for walls and symmeties (due to mesh movment)
+! 5. Fluid velocity BCs for walls and symmetries (due to mesh movment)
 !===============================================================================
 
 ! Pour les symetries on rajoute toujours la vitesse de maillage, car on
@@ -364,6 +364,7 @@ do ifac = 1, nfabor
 
   if (ialtyb(ifac).eq.ivimpo) then
 
+    !Warning: only the normal component is kept in clsyvt
     if (itypfb(ifac).eq.isymet) then
       rcodcl(ifac,iu,1) = rcodcl(ifac,iuma,1)
       rcodcl(ifac,iv,1) = rcodcl(ifac,ivma,1)
@@ -372,9 +373,9 @@ do ifac = 1, nfabor
 
     if (itypfb(ifac).eq.iparoi .or.                        &
         itypfb(ifac).eq.iparug) then
-! Si une des composantes de vitesse de glissement a ete
-!    modifiee par l'utilisateur, on ne fixe que la vitesse
-!    normale
+      ! WARNING
+      ! If nothing is set by the user, then the wall is supposed
+      ! to move with the sliding wall!
       if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0 .and.              &
           rcodcl(ifac,iv,1).gt.rinfin*0.5d0 .and.              &
           rcodcl(ifac,iw,1).gt.rinfin*0.5d0) then
@@ -382,7 +383,10 @@ do ifac = 1, nfabor
         rcodcl(ifac,iv,1) = rcodcl(ifac,ivma,1)
         rcodcl(ifac,iw,1) = rcodcl(ifac,iwma,1)
       else
-! On met a 0 les composantes de RCODCL non specifiees
+        ! Otherwise, if the user has set the fluid velocity
+        ! Then the normal part is the one of the mesh velocity
+        ! and the tangential part is the one of the user (completed with 0
+        ! for non set values)
         if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0)                 &
              rcodcl(ifac,iu,1) = 0.d0
         if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0)                 &
