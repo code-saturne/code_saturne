@@ -3553,9 +3553,11 @@ integer          isou  , jsou
 do isou = 1, 3
 
   ! Gradient BCs
-  coefa(isou) = pimpv(isou)*normal(isou)                                 &
-              - (1.d0-normal(isou)*normal(isou))*qimpv(isou)/hint
+  coefa(isou) = pimpv(isou)*normal(isou)                    &
+    ! "[1 -n(x)n] Qimp / hint" is divided into two
+              - qimpv(isou)/hint
   do jsou = 1, 3
+    coefa(isou) = coefa(isou) + normal(isou)*normal(jsou)*qimpv(jsou)/hint
     if (jsou.eq.isou) then
       coefb(isou,jsou) = 1.d0 - normal(isou)*normal(jsou)
     else
@@ -3564,9 +3566,11 @@ do isou = 1, 3
   enddo
 
   ! Flux BCs
-  cofaf(isou) = -hint*pimpv(isou)*normal(isou)                           &
-              + (1.d0-normal(isou)*normal(isou))*qimpv(isou)
+  cofaf(isou) = -hint*pimpv(isou)*normal(isou)              &
+    ! "[1 -n(x)n] Qimp" is divided into two
+              + qimpv(isou)
   do jsou = 1, 3
+    cofaf(isou) = cofaf(isou) - normal(isou)*normal(jsou)*qimpv(jsou)
     cofbf(isou,jsou) = hint*normal(isou)*normal(jsou)
   enddo
 
