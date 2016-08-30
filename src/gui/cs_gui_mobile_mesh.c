@@ -87,6 +87,7 @@ BEGIN_C_DECLS
 
 enum ale_boundary_nature
 {
+  ale_boundary_nature_none,
   ale_boundary_nature_fixed_wall,
   ale_boundary_nature_sliding_wall,
   ale_boundary_nature_internal_coupling,
@@ -426,9 +427,9 @@ uialcl_fixed_velocity(const char*   label,
 static enum ale_boundary_nature
 _get_ale_boundary_nature(const char *const label)
 {
-  char *ale_boundary_nature;
+  char *nat;
 
-  enum ale_boundary_nature nature = ale_boundary_nature_fixed_wall;
+  enum ale_boundary_nature nature = ale_boundary_nature_none;
 
   char *path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "boundary_conditions",  "wall");
@@ -436,23 +437,23 @@ _get_ale_boundary_nature(const char *const label)
   cs_xpath_add_test_attribute(&path, "label", label);
   cs_xpath_add_element(&path, "ale");
   cs_xpath_add_attribute(&path, "choice");
-  ale_boundary_nature = cs_gui_get_attribute_value(path);
+  nat = cs_gui_get_attribute_value(path);
 
-  if (cs_gui_strcmp(ale_boundary_nature, "fixed_boundary"))
+  if (cs_gui_strcmp(nat, "fixed_boundary"))
     nature = ale_boundary_nature_fixed_wall;
-  if (cs_gui_strcmp(ale_boundary_nature, "sliding_boundary"))
+  if (cs_gui_strcmp(nat, "sliding_boundary"))
     nature = ale_boundary_nature_sliding_wall;
-  else if (cs_gui_strcmp(ale_boundary_nature, "internal_coupling"))
+  else if (cs_gui_strcmp(nat, "internal_coupling"))
     nature = ale_boundary_nature_internal_coupling;
-  else if (cs_gui_strcmp(ale_boundary_nature, "external_coupling"))
+  else if (cs_gui_strcmp(nat, "external_coupling"))
     nature = ale_boundary_nature_external_coupling;
-  else if (cs_gui_strcmp(ale_boundary_nature, "fixed_velocity"))
+  else if (cs_gui_strcmp(nat, "fixed_velocity"))
     nature = ale_boundary_nature_fixed_velocity;
-  else if (cs_gui_strcmp(ale_boundary_nature, "fixed_displacement"))
+  else if (cs_gui_strcmp(nat, "fixed_displacement"))
     nature = ale_boundary_nature_fixed_displacement;
 
   BFT_FREE(path);
-  BFT_FREE(ale_boundary_nature);
+  BFT_FREE(nat);
 
   return nature;
 }
@@ -929,7 +930,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
   int zones = cs_gui_boundary_zones_number();
 
   /* At each time-step, loop on boundary faces: */
-  for (izone=0 ; izone < zones ; izone++) {
+  for (izone = 0; izone < zones; izone++) {
     cs_lnum_t* faces_list = cs_gui_get_faces_list(izone,
                                                   boundaries->label[izone],
                                                   m->n_b_faces,
@@ -976,7 +977,8 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
       cs_gui_add_mei_time(cs_timer_wtime() - t0);
     }
     else {
-      char *nat = cs_gui_boundary_zone_nature(izone);
+      int ith_zone = izone + 1;
+      char *nat = cs_gui_boundary_zone_nature(ith_zone);
       if (cs_gui_strcmp(nat, "free_surface")) {
         for (ifac = 0; ifac < faces; ifac++) {
           cs_lnum_t ifbr = faces_list[ifac];
