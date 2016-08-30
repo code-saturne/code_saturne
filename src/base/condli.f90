@@ -978,6 +978,34 @@ do ifac = 1, nfabor
          coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          pimpv           , qimpv            , hint , normal )
 
+  ! Neumann on the normal component, Dirichlet on tangential components
+  !--------------------------------------------------------------------
+
+  elseif (icodcl(ifac,iu).eq.11) then
+
+    ! Dirichlet to impose on the tangential components
+    pimpv(1) = rcodcl(ifac,iu,1)
+    pimpv(2) = rcodcl(ifac,iv,1)
+    pimpv(3) = rcodcl(ifac,iw,1)
+
+    ! Flux to impose on the normal component
+    qimpv(1) = rcodcl(ifac,iu,3)
+    qimpv(2) = rcodcl(ifac,iv,3)
+    qimpv(3) = rcodcl(ifac,iw,3)
+
+    normal(1) = surfbo(1,ifac)/surfbn(ifac)
+    normal(2) = surfbo(2,ifac)/surfbn(ifac)
+    normal(3) = surfbo(3,ifac)/surfbn(ifac)
+
+
+    ! coupled solving of the velocity components
+
+    call set_generalized_dirichlet_vector &
+       ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
+         coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
+         pimpv           , qimpv            , hint , normal )
+
+
   endif
 
 enddo
@@ -3578,6 +3606,78 @@ enddo
 
 return
 end subroutine set_generalized_sym_vector
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     pimpv         Dirichlet value to impose on the normal
+!>                              component
+!> \param[in]     qimpv         Flux value to impose on the
+!>                              tangential components
+!> \param[in]     hint          Internal exchange coefficient
+!> \param[in]     normal        normal
+!_______________________________________________________________________________
+
+subroutine set_generalized_dirichlet_vector &
+ ( coefa , cofaf, coefb , cofbf, pimpv, qimpv, hint, normal)
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa(3), cofaf(3)
+double precision coefb(3,3), cofbf(3,3)
+double precision hint
+double precision normal(3)
+double precision pimpv(3), qimpv(3)
+
+! Local variables
+
+integer          isou  , jsou
+
+!===============================================================================
+
+do isou = 1, 3
+
+  ! Gradient BCs
+  ! "[1 -n(x)n] Pimp" is divided into two
+  coefa(isou) = pimpv(isou)                                    &
+              - normal(isou)*qimpv(isou)/hint
+  do jsou = 1, 3
+    coefa(isou) = coefa(isou) - normal(isou)*normal(jsou)*pimpv(jsou)
+    coefb(isou,jsou) = normal(isou)*normal(jsou)
+  enddo
+
+  ! Flux BCs
+  ! "[1 -n(x)n] Pimp" is divided into two
+  cofaf(isou) = -hint*pimpv(isou)            &
+              + normal(isou)*qimpv(isou)
+  do jsou = 1, 3
+    cofaf(isou) = cofaf(isou) + normal(isou)*normal(jsou)*pimpv(jsou)*hint
+    if (jsou.eq.isou) then
+      cofbf(isou,jsou) = hint*normal(isou)*normal(jsou)
+    else
+    endif
+  enddo
+
+enddo
+
+return
+end subroutine set_generalized_dirichlet_vector
 
 !===============================================================================
 

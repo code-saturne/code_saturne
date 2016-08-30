@@ -238,6 +238,7 @@ do ifac = 1, nfabor
 
   if(icodcu.ne. 1.and.icodcu.ne. 2.and.icodcu.ne. 3.and.        &
      icodcu.ne. 4.and.icodcu.ne. 5.and.icodcu.ne. 6.and.        &
+     icodcu.ne.11.and.                                          &
      icodcu.ne. 9.and.icodcu.ne.13.and.icodcu.ne.14) then
     if (itypfb(ifac).gt.0) then
       itypfb(ifac) = -itypfb(ifac)
@@ -249,6 +250,7 @@ do ifac = 1, nfabor
   endif
   if(icodcv.ne. 1.and.icodcv.ne. 2.and.icodcv.ne. 3.and.        &
      icodcv.ne. 4.and.icodcv.ne. 5.and.icodcv.ne. 6.and.        &
+     icodcv.ne.11.and.                                          &
      icodcv.ne. 9.and.icodcv.ne.13.and.icodcv.ne.14) then
     if (itypfb(ifac).gt.0) then
       itypfb(ifac) = -itypfb(ifac)
@@ -259,7 +261,8 @@ do ifac = 1, nfabor
     nstvit = nstvit + 1
   endif
   if(icodcw.ne. 1.and.icodcw.ne. 2.and.icodcw.ne. 3.and.        &
-     icodcw.ne. 4.and.icodcw.ne. 5.and.icodcv.ne. 6.and.        &
+     icodcw.ne. 4.and.icodcw.ne. 5.and.icodcw.ne. 6.and.        &
+     icodcw.ne.11.and.                                          &
      icodcw.ne. 9.and.icodcw.ne.13.and.icodcw.ne.14) then
     if (itypfb(ifac).gt.0) then
       itypfb(ifac) = -itypfb(ifac)
