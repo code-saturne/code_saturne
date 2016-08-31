@@ -117,7 +117,6 @@ double precision, dimension(:), pointer :: viscl
 ! 0.  INITIALISATIONS
 !===============================================================================
 
-
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(iviscl, viscl)
 
@@ -126,7 +125,6 @@ d2s3 = 2.d0/3.d0
 do igg = 1, ngazgm
   coefg(igg) = zero
 enddo
-
 
 !===============================================================================
 ! 1.  ECHANGES EN PARALLELE POUR LES DONNEES UTILISATEUR
@@ -151,7 +149,7 @@ if(irangp.ge.0) then
     qimabs = abs(qimp(ii))
     ! the rank owning the max of qimabs, meaning |qimp|, share
     ! qimp with the others
-    call parmxl(1,qimabs,qimp(ii))    
+    call parmxl(1,qimabs,qimp(ii))
   enddo
   call parimx(nozapm,iqimp )
   call parimx(nozapm,ientox)
@@ -265,7 +263,7 @@ do ifac = 1, nfabor
 
       ! Dirichlet for inflow
       else
- 
+
         ! Mean mixture fraction
         rcodcl(ifac,isca(ifm),1)   = 0.d0
 
@@ -325,7 +323,6 @@ do izone = 1, nozapm
     qimp(izone) = qcalc(izone)
   endif
 enddo
-
 
 ! --- Correction des vitesses en norme
 
