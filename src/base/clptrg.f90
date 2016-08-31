@@ -132,6 +132,7 @@ use mesh
 use field
 use lagran
 use turbomachinery
+use cs_c_bindings
 
 !===============================================================================
 
@@ -219,6 +220,8 @@ double precision, dimension(:), pointer :: coefb_nu, coefbf_nu
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
 save             ntlast , iaff
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -459,6 +462,7 @@ if (inusa.gt.0) then
   call field_get_coefaf_s(ivarfl(inusa), coefaf_nu)
   call field_get_coefb_s(ivarfl(inusa), coefb_nu)
   call field_get_coefbf_s(ivarfl(inusa), coefbf_nu)
+  call field_get_key_struct_var_cal_opt(ivarfl(inusa), vcopt)
 else
   cvara_nusa => null()
   coefa_nu => null()
@@ -1245,7 +1249,8 @@ do ifac = 1, nfabor
     elseif (iturb.eq.70) then
 
       dsa0 = rugd
-      hint = (visclc + idifft(inusa)*cvara_nusa(iel)*romc*dsa0/(distbf+dsa0) ) / distbf / csasig
+      hint = (visclc + vcopt%idifft*cvara_nusa(iel)*romc*dsa0/(distbf+dsa0) ) &
+            / distbf / csasig
 
       ! If we have a rough wall then:
       ! nusa_wall*(1- I'F/d0)=nusa_I'
@@ -1325,7 +1330,9 @@ deallocate(bcfnns)
 !       On indique aussi le numero du dernier pas de temps auquel on
 !       a rencontre des yplus hors bornes admissibles
 
-if (iwarni(iu).ge.0) then
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+
+if (vcopt%iwarni.ge.0) then
   if (ntlist.gt.0) then
     modntl = mod(ntcabs,ntlist)
   elseif (ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
@@ -1334,11 +1341,11 @@ if (iwarni(iu).ge.0) then
     modntl = 1
   endif
 
-  if ((modntl.eq.0 .or. iwarni(iu).ge.2).and.iscalt.gt.0) then
+  if ((modntl.eq.0 .or. vcopt%iwarni.ge.2).and.iscalt.gt.0) then
     write(nfecra,2011) &
          uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
          tetmin, tetmax, tplumn, tplumx, iuiptn
-  elseif (modntl.eq.0 .or. iwarni(iu).ge.2) then
+  elseif (modntl.eq.0 .or. vcopt%iwarni.ge.2) then
     write(nfecra,2010) &
          uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
          iuiptn
@@ -1513,6 +1520,7 @@ use mesh
 use field
 use lagran
 use turbomachinery
+use cs_c_bindings
 
 !===============================================================================
 
@@ -1557,6 +1565,8 @@ double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 
 integer, save :: kbfid = -1
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 ivar = isca(iscal)
@@ -1573,7 +1583,9 @@ if (ifcvsl .ge. 0) then
   call field_get_val_s(ifcvsl, viscls)
 endif
 
-if (idften(ivar).eq.6.or.ityturt(iscal).eq.3) then
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+if (vcopt%idften.eq.6.or.ityturt(iscal).eq.3) then
   if (iturb.ne.32.or.ityturt(iscal).eq.3) then
     call field_get_val_v(ivsten, visten)
   else ! EBRSM and (GGDH or AFM)
@@ -1727,7 +1739,7 @@ do ifac = 1, nfabor
     endif
 
     ! Scalar diffusivity
-    if (idften(ivar).eq.1) then
+    if (vcopt%idften.eq.1) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (ippmod(icompf) .ge. 0) then
         if (icp.ge.0) then
@@ -1740,13 +1752,13 @@ do ifac = 1, nfabor
         else
           cpscv = cpscv/cv0
         endif
-        hint = (rkl+idifft(ivar)*cpp*cpscv*visctc/sigmas(iscal))/distbf
+        hint = (rkl+vcopt%idifft*cpp*cpscv*visctc/sigmas(iscal))/distbf
       else
-        hint = (rkl+idifft(ivar)*cpp*visctc/sigmas(iscal))/distbf
+        hint = (rkl+vcopt%idifft*cpp*visctc/sigmas(iscal))/distbf
       endif
 
       ! Symmetric tensor diffusivity (GGDH or AFM)
-    elseif (idften(ivar).eq.6) then
+    elseif (vcopt%idften.eq.6) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (ippmod(icompf) .ge. 0) then
         if (icp.ge.0) then
@@ -1759,9 +1771,9 @@ do ifac = 1, nfabor
         else
           cpscv = cpscv/cv0
         endif
-        temp = idifft(ivar)*cpp*cpscv*ctheta(iscal)
+        temp = vcopt%idifft*cpp*cpscv*ctheta(iscal)
       else
-        temp = idifft(ivar)*cpp*ctheta(iscal)
+        temp = vcopt%idifft*cpp*ctheta(iscal)
       endif
       visci(1,1) = temp*visten(1,iel) + rkl
       visci(2,2) = temp*visten(2,iel) + rkl

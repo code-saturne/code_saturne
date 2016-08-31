@@ -131,6 +131,7 @@ use parall
 use period
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -157,6 +158,8 @@ double precision ckp, qdm
 
 double precision, dimension(:), pointer :: cpro_rom
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 
@@ -164,7 +167,9 @@ double precision, dimension(:), pointer :: cpro_rom
 ! 1. Initialization
 !===============================================================================
 
-if (iwarni(ivar).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+if (vcopt%iwarni.ge.1) then
   call field_get_label(ivarfl(ivar), chaine)
   write(nfecra,1000) chaine(1:8)
 endif

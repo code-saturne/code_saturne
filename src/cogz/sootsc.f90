@@ -85,6 +85,7 @@ use cpincl
 use ppincl
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -113,6 +114,8 @@ double precision, dimension(:), pointer :: cvara_fsm, cvara_npm
 double precision, dimension(:), pointer :: cpro_temp
 double precision, dimension(:), pointer :: cpro_ym1, cpro_ym2, cpro_ym3
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -134,11 +137,13 @@ if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
   call field_get_val_prev_s(ivarfl(isca(inpm)), cvara_npm)
 endif
 
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
 !===============================================================================
 ! 2. Writings
 !===============================================================================
 
-if (iwarni(ivar).ge.1) then
+if (vcopt%iwarni.ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
 

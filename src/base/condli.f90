@@ -226,6 +226,8 @@ double precision, dimension(:,:), pointer :: cvar_ts, cvara_ts, cpro_visma_v
 double precision, dimension(:), pointer :: permeability
 double precision, dimension(:,:), pointer :: tensor_permeability
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -475,7 +477,9 @@ do ii = 1, nscal
     cycle ! nothing to do for this scalar
   endif
 
-  if (itbrrb.eq.1 .and. ircflu(ivar).eq.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+  if (itbrrb.eq.1 .and. vcopt%ircflu.eq.1) then
 
     call field_get_val_s(ivarfl(ivar), cvar_s)
 
@@ -850,14 +854,16 @@ do ifac = 1, nfabor
 
 enddo
 
-if (mod(ntcabs,ntlist).eq.0 .or. iwarni(iu).ge. 0) then
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+
+if (mod(ntcabs,ntlist).eq.0 .or. vcopt%iwarni.ge. 0) then
   isocpt(1) = isoent
   isocpt(2) = isorti
   if (irangp.ge.0) then
     ncpt = 2
     call parism(ncpt, isocpt)
   endif
-  if (isocpt(2).gt.0 .and. (iwarni(iu).ge.2.or.isocpt(1).gt.0)) then
+  if (isocpt(2).gt.0 .and. (vcopt%iwarni.ge.2.or.isocpt(1).gt.0)) then
     write(nfecra,3010) isocpt(1), isocpt(2)
   endif
 endif
@@ -1018,6 +1024,9 @@ call field_get_coefa_s(ivarfl(ipr), coefap)
 call field_get_coefb_s(ivarfl(ipr), coefbp)
 call field_get_coefaf_s(ivarfl(ipr), cofafp)
 call field_get_coefbf_s(ivarfl(ipr), cofbfp)
+
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+
 if (icavit.ge.0)  call field_get_val_s(icrom, crom)
 
 do ifac = 1, nfabor
@@ -1028,18 +1037,18 @@ do ifac = 1, nfabor
   distbf = distb(ifac)
 
   ! if a flux dt.grad p (w/m2) is set in cs_user_boundary
-  if (idften(ipr).eq.1) then
+  if (vcopt%idften.eq.1) then
     hint = dt(iel)/distbf
     if (icavit.ge.0)  hint = hint/crom(iel)
     if (ippmod(idarcy).eq.1) hint = permeability(iel)/distbf
-  else if (idften(ipr).eq.3) then
+  else if (vcopt%idften.eq.3) then
     hint = ( dttens(1, iel)*surfbo(1,ifac)**2              &
            + dttens(2, iel)*surfbo(2,ifac)**2              &
            + dttens(3, iel)*surfbo(3,ifac)**2              &
            ) / (surfbn(ifac)**2 * distbf)
     if (icavit.ge.0)  hint = hint/crom(iel)
   ! symmetric tensor diffusivity
-  elseif (idften(ipr).eq.6) then
+  elseif (vcopt%idften.eq.6) then
     if (ippmod(idarcy).eq.-1) then
       visci(1,1) = dttens(1,iel)
       visci(2,2) = dttens(2,iel)
@@ -1361,7 +1370,9 @@ elseif (itytur.eq.3) then
     call field_get_coefad_v(ivarfl(irij), cofadts)
     call field_get_coefbd_v(ivarfl(irij), cofbdts)
 
-    if (idften(irij).eq.6) call field_get_val_v(ivsten, visten)
+    call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
+
+    if (vcopt%idften.eq.6) call field_get_val_v(ivsten, visten)
 
     do ifac = 1, nfabor
 
@@ -1374,7 +1385,7 @@ elseif (itytur.eq.3) then
       distbf = distb(ifac)
 
       ! symmetric tensor diffusivity (daly harlow -- ggdh)\todo
-      if (idften(ivar).eq.6) then
+      if (vcopt%idften.eq.6) then
 
         visci(1,1) = visclc + visten(1,iel)
         visci(2,2) = visclc + visten(2,iel)
@@ -1526,7 +1537,9 @@ elseif (itytur.eq.3) then
       call field_get_coefad_s(ivarfl(ivar), cofadp)
       call field_get_coefbd_s(ivarfl(ivar), cofbdp)
 
-      if (idften(ivar).eq.6) call field_get_val_v(ivsten, visten)
+      call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+      if (vcopt%idften.eq.6) call field_get_val_v(ivsten, visten)
 
       do ifac = 1, nfabor
 
@@ -1539,7 +1552,7 @@ elseif (itytur.eq.3) then
         distbf = distb(ifac)
 
         ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
-        if (idften(ivar).eq.6) then
+        if (vcopt%idften.eq.6) then
 
           visci(1,1) = visclc + visten(1,iel)
           visci(2,2) = visclc + visten(2,iel)
@@ -1670,7 +1683,9 @@ elseif (itytur.eq.3) then
   call field_get_coefaf_s(ivarfl(ivar), cofafp)
   call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-  if (idften(ivar).eq.6) call field_get_val_v(ivsten, visten)
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+  if (vcopt%idften.eq.6) call field_get_val_v(ivsten, visten)
 
   do ifac = 1, nfabor
 
@@ -1684,7 +1699,7 @@ elseif (itytur.eq.3) then
     distbf = distb(ifac)
 
     ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
-    if (idften(ivar).eq.6) then
+    if (vcopt%idften.eq.6) then
 
       visci(1,1) = visclc + visten(1,iel)/sigmae
       visci(2,2) = visclc + visten(2,iel)/sigmae
@@ -2263,7 +2278,9 @@ if (nscal.ge.1) then
     call field_get_coefaf_s(ivarfl(ivar), cofafp)
     call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-    if (idften(ivar).eq.6.or.ityturt(ii).eq.3) then
+    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+    if (vcopt%idften.eq.6.or.ityturt(ii).eq.3) then
       if (iturb.ne.32.or.ityturt(ii).eq.3) then
         call field_get_val_v(ivsten, visten)
       else ! EBRSM and (GGDH or AFM)
@@ -2301,17 +2318,17 @@ if (nscal.ge.1) then
       endif
 
       ! Scalar diffusivity
-      if (idften(ivar).eq.1) then
+      if (vcopt%idften.eq.1) then
         if (ippmod(idarcy).eq.-1) then !FIXME
-          hint = (rkl+idifft(ivar)*cpp*visctc/sigmas(ii))/distbf
+          hint = (rkl+vcopt%idifft*cpp*visctc/sigmas(ii))/distbf
         else ! idarcy = 1
           hint = rkl/distbf
         endif
 
       ! Symmetric tensor diffusivity
-      elseif (idften(ivar).eq.6) then
+      elseif (vcopt%idften.eq.6) then
 
-        temp = idifft(ivar)*cpp*ctheta(ii)/csrij
+        temp = vcopt%idifft*cpp*ctheta(ii)/csrij
         visci(1,1) = rkl + temp*visten(1,iel)
         visci(2,2) = rkl + temp*visten(2,iel)
         visci(3,3) = rkl + temp*visten(3,iel)

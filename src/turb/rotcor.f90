@@ -115,6 +115,8 @@ integer          ipass
 data             ipass /0/
 save             ipass
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -285,12 +287,14 @@ do ii = 1, 3
       ivar = inusa
     endif
 
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
+    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+    nswrgp = vcopt%nswrgr
+    imligp = vcopt%imligr
+    iwarnp = vcopt%iwarni
+    epsrgp = vcopt%epsrgr
+    climgp = vcopt%climgr
+    extrap = vcopt%extrag
 
     f_id = -1
 

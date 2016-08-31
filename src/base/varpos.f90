@@ -78,6 +78,8 @@ double precision gravn2
 
 character(len=80) :: f_name, f_label, s_label, s_name
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 ! Interfaces
 !===============================================================================
@@ -492,7 +494,8 @@ if (nscal.ge.1) then
       call add_source_term_prev_field(ivarfl(isca(ii)))
     endif
     ! Only usefull for Min/Max limiter
-    if (isstpc(isca(ii)).eq.2) then
+    call field_get_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
+    if (vcopt%isstpc.eq.2) then
       call add_source_term_field(ivarfl(isca(ii)))
     endif
     call field_get_key_int (ivarfl(isca(ii)), kivisl, ifcvsl)

@@ -146,6 +146,19 @@ cs_user_parameters(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define or modify log user parameters.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_logs(void)
+{
+}
+
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define linear solver options.
  *
  * This function is called at the setup stage, once user and most model-based

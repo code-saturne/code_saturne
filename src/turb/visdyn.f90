@@ -123,6 +123,8 @@ double precision, dimension(:), pointer :: crom
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: visct, cpro_smago
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -403,8 +405,10 @@ do iel = 1, ncel
   visct(iel) = crom(iel) * coef * delta**2 * visct(iel)
 enddo
 
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+
 !     Some printings
-if (iwarni(iu).ge.1) then
+if (vcopt%iwarni.ge.1) then
 
   smagma = -1.0d12
   smagmn =  1.0d12

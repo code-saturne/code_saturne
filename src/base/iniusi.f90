@@ -90,6 +90,8 @@ integer          nscmax, nscusi
 integer          iihmpu, l_size
 double precision relaxp, extrap, l_cp(1), l_xmasm(1), l_cv(1)
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 interface
@@ -278,16 +280,18 @@ if (iihmpr.eq.1) then
 
 !      Options numériques locales
 
-  call uinum1                                                     &
-        (blencv, ischcv, isstpc, ircflu,                          &
-         cdtvar, epsilo, nswrsm)
+  call uinum1(cdtvar)
+
+  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 !     Options numériques globales
   relaxp = -999.d0
   extrap = 0.d0
   call csnum2 (relaxp, extrap, imrgra)
-  extrag(ipr) = extrap
-  if (idtvar.ge.0) relaxv(ipr) = relaxp
+  vcopt%extrag = extrap
+  if (idtvar.ge.0) vcopt%relaxv = relaxp
+
+  call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 !     Gravite, prop. phys
   call csphys(nmodpp, viscv0, visls0, itempk)

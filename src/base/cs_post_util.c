@@ -47,6 +47,7 @@
 #include "cs_base.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_field_operator.h"
 #include "cs_gradient.h"
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
@@ -69,6 +70,7 @@
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
 #include "cs_turbomachinery.h"
+#include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -272,6 +274,114 @@ cs_post_moment_of_force(cs_lnum_t     n_b_faces,
   cs_parall_sum(3, CS_DOUBLE, moment);
 
   return cs_math_3_dot_product(moment, axis);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute tangential stress on a specific boundary.
+ *
+ * \param[in]   n_b_faces    number of faces
+ * \param[in]   b_face_list  face list
+ * \param[out]  stress       tangential stress on the specific
+ *                           boundary
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_stress_tangential(cs_lnum_t   n_b_faces,
+                          cs_lnum_t   b_face_list[],
+                          cs_real_3_t stress[])
+{
+  const cs_real_3_t *surfbo =
+    (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+  const cs_real_t *surfbn = cs_glob_mesh_quantities->b_face_surf;
+  const cs_real_3_t *forbr =
+    (const cs_real_3_t *)cs_field_by_name("boundary_forces")->val;
+  cs_lnum_t ifac;
+  cs_real_t srfbn, srfnor[3], fornor;
+
+  for (cs_lnum_t iloc = 0 ; iloc < n_b_faces ; iloc++) {
+    ifac = b_face_list[iloc];
+    srfbn = surfbn[ifac];
+    srfnor[0] = surfbo[ifac][0] / srfbn;
+    srfnor[1] = surfbo[ifac][1] / srfbn;
+    srfnor[2] = surfbo[ifac][2] / srfbn;
+    fornor = forbr[ifac][0]*srfnor[0]
+           + forbr[ifac][1]*srfnor[1]
+           + forbr[ifac][2]*srfnor[2];
+    stress[iloc][0] = (forbr[ifac][0] - fornor*srfnor[0]) / srfbn;
+    stress[iloc][1] = (forbr[ifac][1] - fornor*srfnor[1]) / srfbn;
+    stress[iloc][2] = (forbr[ifac][2] - fornor*srfnor[2]) / srfbn;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute Reynolds stresses in case of Eddy Viscosity Models
+ *
+ * \param[in]  n_loc_cells   number of cells
+ * \param[in]  cells_list    cells list
+ * \param[out] rst           Reynolds stresses stored as vector
+ *                           [r11,r22,r33,r12,r23,r13]
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_evm_reynolds_stresses(cs_lnum_t   n_loc_cells,
+                              cs_lnum_t   cells_list[],
+                              cs_real_6_t rst[])
+{
+  const cs_turb_model_t *turb_model = cs_glob_turb_model;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  cs_var_cal_opt_t var_cal_opt;
+  cs_halo_type_t halo_type;
+  cs_gradient_type_t gradient_type;
+  cs_real_33_t *gradv;
+
+  if (   turb_model->itytur != 2
+      && turb_model->itytur != 6
+      && turb_model->itytur != 5)
+    bft_error(__FILE__, __LINE__, 0,
+              _("This post-processing utility function is only available for "
+                "Eddy Viscosity Models."));
+
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
+
+  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
+  bool use_previous_t = false;
+  int inc = 1;
+  cs_field_gradient_vector(CS_F_(u),
+                           use_previous_t,
+                           gradient_type,
+                           halo_type,
+                           inc,
+                           gradv);
+
+  /* Compute Reynolds stresses */
+  const cs_real_t d2s3 = 2./3.;
+  for (cs_lnum_t iloc = 0; iloc < n_loc_cells ; iloc++) {
+    cs_lnum_t iel = cells_list[iloc];
+
+    cs_real_t divu = gradv[iel][0][0] + gradv[iel][1][1] + gradv[iel][2][2];
+    cs_real_t nut = CS_F_(mu_t)->val[iel]/CS_F_(rho)->val[iel];
+    cs_real_t xdiag = d2s3*(CS_F_(k)->val[iel] + nut*divu);
+
+    rst[iloc][0] =  xdiag - 2.*nut*gradv[iel][0][0];
+    rst[iloc][1] =  xdiag - 2.*nut*gradv[iel][1][1];
+    rst[iloc][2] =  xdiag - 2.*nut*gradv[iel][2][2];
+    rst[iloc][3] = -nut*(gradv[iel][1][0]+gradv[iel][0][1]);
+    rst[iloc][4] = -nut*(gradv[iel][2][1]+gradv[iel][1][2]);
+    rst[iloc][5] = -nut*(gradv[iel][2][0]+gradv[iel][0][2]);
+  }
+
+  BFT_FREE(gradv);
 }
 
 /*----------------------------------------------------------------------------*/

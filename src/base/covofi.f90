@@ -201,6 +201,8 @@ double precision, dimension(:), pointer :: cvar_var, cvara_var, cvara_varsca
 double precision, dimension(:), pointer :: cpro_tsre1, cpro_tsre, cpro_tsri1
 character(len=80) :: f_name
 
+type(var_cal_opt) :: vcopt, vcopt_varsc
+
 !===============================================================================
 
 !===============================================================================
@@ -229,7 +231,9 @@ call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
 ! Pointer to the Boundary mass flux
 call field_get_val_s(iflmab, bmasfl)
 
-if (iwgrec(ivar).eq.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+if (vcopt%iwgrec.eq.1) then
   ! Id weighting field for gradient
   call field_get_key_int(iflid, kwgrec, iflwgr)
   call field_get_dim(iflwgr, f_dim)
@@ -290,11 +294,11 @@ endif
 
 ! S pour Source, V pour Variable
 thets  = thetss(iscal)
-thetv  = thetav(ivar)
+thetv  = vcopt%thetav
 
 call field_get_name(ivarfl(ivar), chaine)
 
-if(iwarni(ivar).ge.1) then
+if(vcopt%iwarni.ge.1) then
   write(nfecra,1000) chaine(1:16)
 endif
 
@@ -381,7 +385,7 @@ if (st_id .ge.0) then
   endif
 end if
 
-if (ibdtso(ivar).gt.ntinit.and.ntcabs.gt.1 &
+if (vcopt%ibdtso.gt.ntinit.and.ntcabs.gt.1 &
     .and.(idtvar.eq.0.or.idtvar.eq.1)) then
   ! TODO: remove test on ntcabs and implemente a "proper" condition for
   ! initialization.
@@ -389,7 +393,10 @@ if (ibdtso(ivar).gt.ntinit.and.ntcabs.gt.1 &
   call cs_backward_differentiation_in_time(f_id, smbrs, rovsdt)
 endif
 ! Skip first time step after restart if previous values have not been read.
-if (ibdtso(ivar).lt.0) ibdtso(ivar) = iabs(ibdtso(ivar))
+if (vcopt%ibdtso.lt.0) vcopt%ibdtso = iabs(vcopt%ibdtso)
+
+! Set ibdtso value
+call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
 ! Atmospheric chemistry
 ! In case of a semi-coupled resolution, computation of the explicit
@@ -674,9 +681,7 @@ if (itspdv.eq.1) then
     ! Remarque : on a prevu la possibilite de scalaire associe non
     !  variable de calcul, mais des adaptations sont requises
 
-    if (ivarsc.gt.0) then
-      iii = ivarsc
-    else
+    if (ivarsc.le.0) then
       write(nfecra,9000)ivarsc
       call csexit(1)
     endif
@@ -687,9 +692,9 @@ if (itspdv.eq.1) then
 
     ! Homogeneous Neumann on convective inlet on the production term for the
     ! variance
-    call field_get_val_prev_s(ivarfl(iii), cvara_varsca)
-    call field_get_coefa_s (ivarfl(iii), coefap)
-    call field_get_coefb_s (ivarfl(iii), coefbp)
+    call field_get_val_prev_s(ivarfl(ivarsc), cvara_varsca)
+    call field_get_coefa_s (ivarfl(ivarsc), coefap)
+    call field_get_coefb_s (ivarfl(ivarsc), coefbp)
 
     ! pas de diffusion en entree
     do ifac = 1, nfabor
@@ -701,17 +706,19 @@ if (itspdv.eq.1) then
       endif
     enddo
 
-    nswrgp = nswrgr(iii)
-    imligp = imligr(iii)
-    iwarnp = iwarni(iii)
-    epsrgp = epsrgr(iii)
-    climgp = climgr(iii)
-    extrap = extrag(iii)
+    call field_get_key_struct_var_cal_opt(ivarfl(ivarsc), vcopt_varsc)
 
-    call gradient_s                                                   &
-     ( ivarfl(iii)     , imrgra , inc    , iccocg , nswrgp , imligp , &
-       iwarnp          , epsrgp , climgp , extrap ,                   &
-       cvara_varsca    , coefa_p, coefb_p,                            &
+    nswrgp = vcopt_varsc%nswrgr
+    imligp = vcopt_varsc%imligr
+    iwarnp = vcopt_varsc%iwarni
+    epsrgp = vcopt_varsc%epsrgr
+    climgp = vcopt_varsc%climgr
+    extrap = vcopt_varsc%extrag
+
+    call gradient_s                                                          &
+     ( ivarfl(ivarsc)  , imrgra , inc    , iccocg , nswrgp , imligp ,        &
+       iwarnp          , epsrgp , climgp , extrap ,                          &
+       cvara_varsca    , coefa_p, coefb_p,                                   &
        grad )
 
     deallocate (coefa_p, coefb_p)
@@ -886,20 +893,17 @@ else
   call field_get_val_s(icrom, pcrom)
 endif
 
-! Get the the order of the diffusivity tensor of the variable
-call field_get_key_int_by_name(ivarfl(ivar), "diffusivity_tensor", idftnp)
-
 ! "VITESSE" DE DIFFUSION FACETTE
 
 ! On prend le MAX(mu_t,0) car en LES dynamique mu_t peut etre negatif
 ! (clipping sur (mu + mu_t)). On aurait pu prendre
 ! MAX(K + K_t,0) mais cela autoriserait des K_t negatif, ce qui est
 ! considere ici comme non physique.
-if (idiff(ivar).ge.1) then
+if (vcopt%idiff.ge.1) then
   ! Scalar diffusivity
-  if (idftnp.eq.1) then
+  if (vcopt%idften.eq.1) then
 
-    idifftp = idifft(ivar)
+    idifftp = vcopt%idifft
     if (ityturt(iscal).eq.3) then
       idifftp = 0
     endif
@@ -915,7 +919,7 @@ if (idiff(ivar).ge.1) then
       enddo
     endif
 
-    if (iwgrec(ivar).eq.1) then
+    if (vcopt%iwgrec.eq.1) then
       ! Weighting for gradient
       do iel = 1, ncel
         cpro_wgrec_s(iel) = w1(iel)
@@ -930,7 +934,7 @@ if (idiff(ivar).ge.1) then
      viscf  , viscb  )
 
   ! Symmetric tensor diffusivity (GGDH)
-  elseif (idftnp.eq.6) then
+  elseif (vcopt%idften.eq.6) then
 
     ! Allocate temporary arrays
     allocate(viscce(6,ncelet))
@@ -946,7 +950,7 @@ if (idiff(ivar).ge.1) then
     if (ifcvsl.lt.0) then
       do iel = 1, ncel
 
-        temp = idifft(ivar)*xcpp(iel)*ctheta(iscal)/csrij
+        temp = vcopt%idifft*xcpp(iel)*ctheta(iscal)/csrij
         viscce(1,iel) = temp*visten(1,iel) + visls0(iscal)
         viscce(2,iel) = temp*visten(2,iel) + visls0(iscal)
         viscce(3,iel) = temp*visten(3,iel) + visls0(iscal)
@@ -958,7 +962,7 @@ if (idiff(ivar).ge.1) then
     else
       do iel = 1, ncel
 
-        temp = idifft(ivar)*xcpp(iel)*ctheta(iscal)/csrij
+        temp = vcopt%idifft*xcpp(iel)*ctheta(iscal)/csrij
         viscce(1,iel) = temp*visten(1,iel) + cpro_viscls(iel)
         viscce(2,iel) = temp*visten(2,iel) + cpro_viscls(iel)
         viscce(3,iel) = temp*visten(3,iel) + cpro_viscls(iel)
@@ -969,9 +973,9 @@ if (idiff(ivar).ge.1) then
       enddo
     endif
 
-    iwarnp = iwarni(ivar)
+    iwarnp = vcopt%iwarni
 
-    if (iwgrec(ivar).eq.1) then
+    if (vcopt%iwgrec.eq.1) then
       ! Weighting for gradient
       do iel = 1, ncel
         do isou = 1, 6
@@ -1029,7 +1033,7 @@ if (ippmod(idarcy).eq.-1) then
   ! --> Unsteady term and mass aggregation term
   do iel = 1, ncel
     rovsdt(iel) = rovsdt(iel)                                                 &
-                + istat(ivar)*xcpp(iel)*pcrom(iel)*cell_f_vol(iel)/dt(iel)
+                + vcopt%istat*xcpp(iel)*pcrom(iel)*cell_f_vol(iel)/dt(iel)
   enddo
 ! Darcy : we take into account the porosity and delay for underground transport
 else
@@ -1037,8 +1041,8 @@ else
     smbrs(iel) = smbrs(iel)*cpro_delay(iel)*cpro_sat(iel)
   enddo
   do iel = 1, ncel
-    rovsdt(iel) = (rovsdt(iel)                                                &
-                + istat(ivar)*xcpp(iel)*pcrom(iel)*volume(iel)/dt(iel) )      &
+    rovsdt(iel) = (rovsdt(iel)                                                 &
+                + vcopt%istat*xcpp(iel)*pcrom(iel)*volume(iel)/dt(iel) )      &
                 * cpro_delay(iel)*cpro_sat(iel)
   enddo
 endif
@@ -1090,25 +1094,26 @@ endif
 ! 3. Solving
 !===============================================================================
 
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
+iconvp = vcopt%iconv
+idiffp = vcopt%idiff
+idftnp = vcopt%idften
 ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
+nswrsp = vcopt%nswrsm
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+ircflp = vcopt%ircflu
+ischcp = vcopt%ischcv
+isstpp = vcopt%isstpc
 iescap = 0
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
+iswdyp = vcopt%iswdyn
+iwarnp = vcopt%iwarni
+blencp = vcopt%blencv
+epsilp = vcopt%epsilo
+epsrsp = vcopt%epsrsm
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+extrap = vcopt%extrag
+relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
 
@@ -1182,15 +1187,15 @@ endif
 ! BILAN EXPLICITE (VOIR CODITS : ON ENLEVE L'INCREMENT)
 ! Ceci devrait etre valable avec le theta schema sur les Termes source
 
-if (iwarni(ivar).ge.2) then
-  if (nswrsm(ivar).gt.1) then
+if (vcopt%iwarni.ge.2) then
+  if (vcopt%nswrsm.gt.1) then
     ibcl = 1
   else
     ibcl = 0
   endif
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                 &
-            - istat(ivar)*xcpp(iel)*(pcrom(iel)/dt(iel))*cell_f_vol(iel)        &
+            - vcopt%istat*xcpp(iel)*(pcrom(iel)/dt(iel))*cell_f_vol(iel)        &
                 *(cvar_var(iel)-cvara_var(iel))*ibcl
   enddo
   sclnor = sqrt(cs_gdot(ncel,smbrs,smbrs))

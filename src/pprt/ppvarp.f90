@@ -61,6 +61,7 @@ use ppcpfu
 use atincl
 use ihmpre
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -192,51 +193,50 @@ if (ippmod(igmix).ge.0) then
   if (ippmod(igmix).lt.5) then
     call add_model_scalar_field('y_o2', 'Y_O2', iscasp(1))
     f_id = ivarfl(isca(iscasp(1)))
+    call gas_mix_add_species(f_id)
     call field_set_key_int(f_id, kivisl, 0)
     call field_set_key_double(f_id, kscmin, scminp)
     call field_set_key_double(f_id, kscmax, scmaxp)
 
     call add_model_scalar_field('y_n2', 'Y_N2', iscasp(2))
     f_id = ivarfl(isca(iscasp(2)))
+    call gas_mix_add_species(f_id)
     call field_set_key_int(f_id, kivisl, 0)
     call field_set_key_double(f_id, kscmin, scminp)
     call field_set_key_double(f_id, kscmax, scmaxp)
 
-    nscasp = 2
-
     if (ippmod(igmix).eq.3) then
       call add_model_scalar_field('y_he', 'Y_He', iscasp(3))
       f_id = ivarfl(isca(iscasp(3)))
+      call gas_mix_add_species(f_id)
       call field_set_key_int(f_id, kivisl, 0)
       call field_set_key_double(f_id, kscmin, scminp)
       call field_set_key_double(f_id, kscmax, scmaxp)
-
-      nscasp = 3
 
     elseif (ippmod(igmix).eq.4) then
       call add_model_scalar_field('y_h2', 'Y_H2', iscasp(3))
       f_id = ivarfl(isca(iscasp(3)))
+      call gas_mix_add_species(f_id)
       call field_set_key_int(f_id, kivisl, 0)
       call field_set_key_double(f_id, kscmin, scminp)
       call field_set_key_double(f_id, kscmax, scmaxp)
 
-      nscasp = 3
     endif
   else ! ippmod(igmix).eq.5
 
     call add_model_scalar_field('y_n2', 'Y_N2', iscasp(1))
     f_id = ivarfl(isca(iscasp(1)))
+    call gas_mix_add_species(f_id)
     call field_set_key_int(f_id, kivisl, 0)
     call field_set_key_double(f_id, kscmin, scminp)
     call field_set_key_double(f_id, kscmax, scmaxp)
 
     call add_model_scalar_field('y_he', 'Y_He', iscasp(2))
     f_id = ivarfl(isca(iscasp(2)))
+    call gas_mix_add_species(f_id)
     call field_set_key_int(f_id, kivisl, 0)
     call field_set_key_double(f_id, kscmin, scminp)
     call field_set_key_double(f_id, kscmax, scmaxp)
-
-    nscasp = 2
 
   endif
 

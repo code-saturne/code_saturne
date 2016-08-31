@@ -101,6 +101,7 @@ use coincl
 use cpincl
 use field
 use cavitation
+use cs_c_bindings
 
 !===============================================================================
 
@@ -217,13 +218,13 @@ use ihmpre
 use ppppar
 use ppthch
 use ppincl
-
 use coincl
 use cs_coal_incl
 use cs_fuel_incl
 use cpincl
 use ppcpfu
 use radiat
+use cs_c_bindings
 
 !===============================================================================
 
@@ -237,6 +238,8 @@ integer nmodpp
 
 integer ii
 integer f_id, idim1, ipp, iflpst, ifllog
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -275,13 +278,18 @@ ntlist = 1
 
 !< [usipes_ex_02]
 do ii = 1, nvar
-  iwarni(ii) = 1
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  vcopt%iwarni = 1
+  call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 enddo
 
-iwarni(ipr) = 2
-iwarni(iu) = 2
-iwarni(iv) = 2
-iwarni(iw) = 2
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+vcopt%iwarni = 2
+call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+vcopt%iwarni = 2
+call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 !< [usipes_ex_02]
 
 ! Logging of variables and properties

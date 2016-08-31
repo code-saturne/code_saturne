@@ -64,6 +64,7 @@ use cpincl
 use ppincl
 use radiat
 use ihmpre
+use cs_c_bindings
 
 !===============================================================================
 
@@ -74,6 +75,8 @@ implicit none
 integer          ii , jj, iok
 integer          isc
 double precision wmolme
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
@@ -128,12 +131,7 @@ do isc = 1, nscapp
 
   ii = isca(iscapp(isc))
 
-! ------ Niveau de detail des impressions pour les variables et
-!          donc les scalaires (valeurs 0 ou 1)
-!          Si = -10000 non modifie par l'utilisateur -> niveau 1
-  if(iwarni(ii).eq.-10000) then
-    iwarni(ii) = 1
-  endif
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 
 ! ---- Informations relatives a la resolution des scalaires
 
@@ -143,21 +141,23 @@ do isc = 1, nscapp
 !         - Schema convectif % schema 2ieme ordre
 !           = 0 : upwind
 !           = 1 : second ordre
-  blencv(ii) = 1.d0
+  vcopt%blencv = 1.d0
 
 !         - Type de schema convetif second ordre (utile si BLENCV > 0)
 !           = 0 : Second Order Linear Upwind
 !           = 1 : Centre
-  ischcv(ii) = 1
+  vcopt%ischcv = 1
 
 !         - Test de pente pour basculer d'un schema centre vers l'upwind
 !           = 0 : utilisation automatique du test de pente
 !           = 1 : calcul sans test de pente
-  isstpc(ii) = 0
+  vcopt%isstpc = 0
 
 !         - Reconstruction des flux de convetion et de diffusion aux faces
 !           = 0 : pas de reconstruction
-  ircflu(ii) = 1
+  vcopt%ircflu = 1
+
+  call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 
 enddo
 

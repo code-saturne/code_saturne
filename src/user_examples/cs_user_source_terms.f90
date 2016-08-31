@@ -130,6 +130,7 @@ use parall
 use period
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -157,6 +158,9 @@ double precision ckp, qdm
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer ::  cpro_rom
+
+type(var_cal_opt) :: vcopt
+
 !< [loc_var_dec_1]
 
 !===============================================================================
@@ -167,7 +171,10 @@ double precision, dimension(:), pointer ::  cpro_rom
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
-if (iwarni(ivar).ge.1) then
+! --- Get variable calculation options
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+if (vcopt%iwarni.ge.1) then
   call field_get_label(ivarfl(ivar), chaine)
   write(nfecra,1000) chaine(1:8)
 endif
@@ -362,6 +369,7 @@ use parall
 use period
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -393,6 +401,8 @@ double precision tauf, prodf, voltf, pwatt
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer ::  cpro_rom
+
+type(var_cal_opt) :: vcopt
 
 !< [loc_var_dec_2]
 
@@ -428,9 +438,12 @@ iiscvr = iscavr(iscal)
 !< [density_2]
 call field_get_val_s(icrom, cpro_rom)
 
-if (iwarni(ivar).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+if (vcopt%iwarni.ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
+
 !< [density_2]
 
 !===============================================================================
@@ -668,7 +681,7 @@ double precision crvexp(ncelet), crvimp(ncelet)
 integer          iel
 double precision ff, tau
 
-type(var_cal_opt) vcopt
+type(var_cal_opt) :: vcopt
 
 character(len=80) :: fname
 

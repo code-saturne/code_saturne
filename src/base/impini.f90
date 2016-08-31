@@ -65,6 +65,7 @@ use lagran
 use mesh
 use field
 use cavitation
+use cs_c_bindings
 
 !===============================================================================
 
@@ -87,6 +88,8 @@ double precision scmaxp, scminp
 
 character(len=3), dimension(3) :: nomext3
 character(len=4), dimension(3) :: nomext63
+
+type(var_cal_opt) :: vcopt, vcopt1
 
 !===============================================================================
 
@@ -472,14 +475,18 @@ elseif(iturb.eq.20) then
        almax, uref,                                             &
        iclkep,ikecou,igrake
   if (ikecou.eq.0 .and. idtvar.ge.0) then
-    write(nfecra,2527) relaxv(ik),relaxv(iep)
+    call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+    call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
+    write(nfecra,2527) vcopt%relaxv,vcopt1%relaxv
   else
     write(nfecra,2550)
   endif
 elseif(iturb.eq.21) then
   write(nfecra,2518) almax, uref, iclkep,ikecou,igrake
   if (ikecou.eq.0.and. idtvar.ge.0) then
-    write(nfecra,2527) relaxv(ik),relaxv(iep)
+    call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+    call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
+    write(nfecra,2527) vcopt%relaxv,vcopt1%relaxv
   else
     write(nfecra,2550)
   endif
@@ -503,26 +510,33 @@ elseif(itytur.eq.4) then
 elseif(iturb.eq.50) then
   write(nfecra,2522) almax, uref, iclkep,ikecou,igrake
   if (ikecou.eq.0 .and. idtvar.ge.0) then
-    write(nfecra,2527) relaxv(ik),relaxv(iep)
+    call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+    call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
+    write(nfecra,2527) vcopt%relaxv,vcopt1%relaxv
   else
     write(nfecra,2550)
   endif
 elseif(iturb.eq.51) then
   write(nfecra,2524) almax, uref, iclkep,ikecou,igrake
   if (ikecou.eq.0 .and. idtvar.ge.0) then
-    write(nfecra,2527) relaxv(ik),relaxv(iep)
+    call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+    call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
+    write(nfecra,2527) vcopt%relaxv,vcopt1%relaxv
   else
     write(nfecra,2529)
   endif
 elseif(iturb.eq.60) then
   write(nfecra,2523) almax, uref, ikecou,igrake
   if (ikecou.eq.0 .and. idtvar.ge.0) then
-    write(nfecra,2528) relaxv(ik),relaxv(iomg)
+    call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+    call field_get_key_struct_var_cal_opt(ivarfl(iomg), vcopt1)
+    write(nfecra,2528) vcopt%relaxv,vcopt1%relaxv
   else
     write(nfecra,2550)
   endif
 elseif(iturb.eq.70) then
-  write(nfecra,2529) almax,  uref,  relaxv(inusa)
+  call field_get_key_struct_var_cal_opt(ivarfl(inusa), vcopt)
+  write(nfecra,2529) almax,  uref,  vcopt%relaxv
 endif
 if (itytur.eq.2.or.itytur.eq.5.or.iturb.eq.60.or.iturb.eq.70) then
   write(nfecra,2540) irccor
@@ -1217,7 +1231,8 @@ if (idtvar.lt.0) then
     call field_get_key_int(f_id, keyvar, ii)
     if (ii.lt.0) cycle
     call field_get_label(f_id, chaine)
-    write(nfecra,3012) chaine(1:16),relaxv(ii)
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    write(nfecra,3012) chaine(1:16),vcopt%relaxv
   enddo
 
   write(nfecra,3013)
@@ -1241,7 +1256,8 @@ else
     call field_get_key_int(f_id, keyvar, ii)
     if (ii.lt.0) cycle
     call field_get_label(f_id, chaine)
-    write(nfecra,3041) chaine(1:16),istat(ii),cdtvar(ii)
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    write(nfecra,3041) chaine(1:16),vcopt%istat,cdtvar(ii)
   enddo
   write(nfecra,3042)
 
@@ -1421,10 +1437,11 @@ do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.lt.0) cycle
   call field_get_label(f_id, chaine)
+  call field_get_key_struct_var_cal_opt(f_id, vcopt)
   write(nfecra,4020) chaine(1:16),                                &
-                     iconv(ii),idiff(ii),idifft(ii),              &
-                     ischcv(ii),isstpc(ii),                       &
-                     blencv(ii),thetav(ii)
+                     vcopt%iconv,vcopt%idiff,vcopt%idifft,        &
+                     vcopt%ischcv,vcopt%isstpc,                   &
+                     vcopt%blencv,vcopt%thetav
 enddo
 write(nfecra,4030)
 
@@ -1435,9 +1452,11 @@ write(nfecra,9900)
 write(nfecra,4110) idilat,iporos,iphydr,icalhy,iprco,ipucou,nterup
 write(nfecra,4111) irevmc
 if (idtvar.ge.0) then
-  write(nfecra,4112) relaxv(ipr),arak
+  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+  write(nfecra,4112) vcopt%relaxv,arak
 else
-  write(nfecra,4113) arak*relaxv(iu)
+  call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+  write(nfecra,4113) arak*vcopt%relaxv
 endif
 write(nfecra,4114)istmpf,thetfl,     &
      iroext,thetro,                  &
@@ -1650,16 +1669,19 @@ do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.lt.0) cycle
   call field_get_label(f_id, chaine)
+  call field_get_key_struct_var_cal_opt(f_id, vcopt)
   write(nfecra,4520) chaine(1:16),                                 &
-    nswrgr(ii),nswrsm(ii),epsrgr(ii),epsrsm(ii),extrag(ii)
+    vcopt%nswrgr,vcopt%nswrsm,vcopt%epsrgr,                        &
+    vcopt%epsrsm,vcopt%extrag
 enddo
 write(nfecra,4511)
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.lt.0) cycle
   call field_get_label(f_id, chaine)
+  call field_get_key_struct_var_cal_opt(f_id, vcopt)
   write(nfecra,4521) chaine(1:16),                                 &
-    ircflu(ii),imligr(ii),climgr(ii)
+    vcopt%ircflu,vcopt%imligr,vcopt%climgr
 enddo
 write(nfecra,4530)
 
@@ -1981,7 +2003,8 @@ do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.lt.0) cycle
   call field_get_label(f_id, chaine)
-  write(nfecra,5020) chaine(1:16), epsilo(ii), idircl(ii)
+  call field_get_key_struct_var_cal_opt(f_id, vcopt)
+  write(nfecra,5020) chaine(1:16), vcopt%epsilo, idircl(ii)
 enddo
 write(nfecra,5030)
 
@@ -2329,7 +2352,8 @@ do f_id = 0, n_fields-1
   if (ipp.lt.1) cycle
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
-    iwar = iwarni(ii)
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    iwar = vcopt%iwarni
   else
     iwar = -999
   endif

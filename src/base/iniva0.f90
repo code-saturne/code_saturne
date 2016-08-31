@@ -62,6 +62,7 @@ use field
 use mesh
 use cavitation
 use cs_cf_bindings
+use cs_c_bindings
 use darcy_module
 
 !===============================================================================
@@ -351,8 +352,7 @@ if(itytur.eq.2 .or. itytur.eq.5) then
     enddo
 
     iclip = 1
-    call clipke(ncelet , ncel   , nvar    ,     &
-         iclip  , iwarni(ik))
+    call clipke(ncelet, ncel, iclip)
 
   else
     do iel = 1, ncel

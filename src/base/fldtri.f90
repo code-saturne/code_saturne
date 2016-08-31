@@ -68,7 +68,7 @@ use ihmpre
 use cplsat
 use mesh
 use field
-use numvar
+use cs_c_bindings
 
 !===============================================================================
 
@@ -89,6 +89,8 @@ integer          ifvar(nvarmx)
 character(len=80) :: fname
 
 integer, save :: ipass = 0
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -280,8 +282,9 @@ enddo
 do ivar = 1, nvar
   ! Here there is no problem if there are multiple
   ! set on non scalar fields.
-  if (ibdtso(ivar).gt.1) then
-    call field_set_n_previous(ivarfl(ivar), ibdtso(ivar))
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  if (vcopt%ibdtso.gt.1) then
+    call field_set_n_previous(ivarfl(ivar), vcopt%ibdtso)
   endif
 enddo
 

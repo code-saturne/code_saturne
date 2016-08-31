@@ -60,6 +60,7 @@ use ppthch
 use ppincl
 use ihmpre
 use darcy_module
+use cs_c_bindings
 
 !===============================================================================
 
@@ -67,14 +68,21 @@ implicit none
 
 ! Local variables
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
 ! 1. Set options
 !===============================================================================
 
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+
 ! Standard gradient calculation option
-iwgrec(ipr) = 0
+vcopt%iwgrec = 0
+
+call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+
 imrgra = 1
 imvisf = 1
 

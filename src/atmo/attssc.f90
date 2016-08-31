@@ -51,6 +51,7 @@ use period
 use mesh
 use atincl
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -362,6 +363,8 @@ double precision,dimension(:),allocatable :: local_coefa
 double precision,dimension(:),allocatable :: local_coefb
 double precision,dimension(:),allocatable :: local_field
 
+type(var_cal_opt) :: vcopt
+
 if (r3max.lt.1.d-10) then
   do iel = 1, ncel
     do i = 1, 3
@@ -403,12 +406,14 @@ iqpp = isca(iscapp(2))
 iccocg = 1
 inc = 1
 
-nswrgp = nswrgr(iqpp)
-epsrgp = epsrgr(iqpp)
-imligp = imligr(iqpp)
-iwarnp = iwarni(iqpp)
-climgp = climgr(iqpp)
-extrap = extrag(iqpp)
+call field_get_key_struct_var_cal_opt(ivarfl(iqpp), vcopt)
+
+nswrgp = vcopt%nswrgr
+epsrgp = vcopt%epsrgr
+imligp = vcopt%imligr
+iwarnp = vcopt%iwarni
+climgp = vcopt%climgr
+extrap = vcopt%extrag
 
 iifld = -1
 
@@ -459,6 +464,8 @@ double precision,dimension(:),allocatable :: local_coefa
 double precision,dimension(:),allocatable :: local_coefb
 double precision,dimension(:),allocatable :: local_field
 
+type(var_cal_opt) :: vcopt
+
 if(r3max.lt.1.d-10) then
   do iel = 1, ncel
     do i = 1, 3
@@ -499,12 +506,14 @@ iqpp = isca(iscapp(2))
 iccocg = 1
 inc = 1
 
-nswrgp = nswrgr(iqpp)
-epsrgp = epsrgr(iqpp)
-imligp = imligr(iqpp)
-iwarnp = iwarni(iqpp)
-climgp = climgr(iqpp)
-extrap = extrag(iqpp)
+call field_get_key_struct_var_cal_opt(ivarfl(iqpp), vcopt)
+
+nswrgp = vcopt%nswrgr
+epsrgp = vcopt%epsrgr
+imligp = vcopt%imligr
+iwarnp = vcopt%iwarni
+climgp = vcopt%climgr
+extrap = vcopt%extrag
 
 iifld = -1
 

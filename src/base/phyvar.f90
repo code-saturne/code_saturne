@@ -73,6 +73,7 @@ use mesh
 use field
 use cavitation
 use darcy_module
+use cs_c_bindings
 
 !===============================================================================
 
@@ -112,6 +113,8 @@ integer          ipass
 data             ipass /0/
 save             ipass
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -125,7 +128,8 @@ ipass = ipass + 1
 !===============================================================================
 
 if (iperot.gt.0 .and. itytur.eq.3) then
-  call perinr(imrgra, iwarni(ir11), epsrgr(ir11), extrag(ir11))
+  call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt)
+  call perinr(imrgra, vcopt%iwarni, vcopt%epsrgr, vcopt%extrag)
 endif
 
 !===============================================================================
@@ -567,6 +571,8 @@ call usvist &
 ! La diffusivite turbulente des scalaires (mu_t/sigma), elle, sera clippee a 0
 ! dans covofi
 
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+
 if (iturb.eq.41) then
   call field_get_val_s(iviscl, viscl)
   call field_get_val_s(ivisct, visct)
@@ -578,7 +584,7 @@ if (iturb.eq.41) then
       iclipc = iclipc + 1
     endif
   enddo
-  if (iwarni(iu).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     if (irangp.ge.0) then
       call parcpt(iclipc)
     endif
@@ -674,7 +680,7 @@ do ii = 1, nn
   if (ii.eq.2) call field_get_name(iviscl, chaine)
   if (ii.eq.3) call field_get_name(ivisct, chaine)
   if (ii.eq.4) call field_get_name(icp, chaine)
-  if (iwarni(iu).ge.1.or.ipass.eq.1.or.varmn(ii).lt.0.d0) then
+  if (vcopt%iwarni.ge.1.or.ipass.eq.1.or.varmn(ii).lt.0.d0) then
     if (iok1.eq.0) then
       write(nfecra,3010)
       iok1 = 1
@@ -761,7 +767,8 @@ if (nscal.ge.1) then
     endif
 
     ivar = isca(iscal)
-    if (iwarni(ivar).ge.1.or.ipass.eq.1.or.vismin(iscal).le.0.d0) then
+    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+    if (vcopt%iwarni.ge.1.or.ipass.eq.1.or.vismin(iscal).le.0.d0) then
       call field_get_label(ivarfl(ivar), chaine)
       if (iok1.eq.0) then
         write(nfecra,3110)
@@ -803,6 +810,7 @@ endif
 
 if (iale.eq.1.and.ntcabs.eq.0) then
 
+  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
   iok1 = 0
   if (iortvm.eq.1) then
     call field_get_val_v(ivisma, cpro_visma_v)
@@ -821,7 +829,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
 
       ! Writings
       call field_get_name(ivisma, chaine)
-      if (iwarni(iuma).ge.1.or.ipass.eq.1.or.varmn(1).lt.0.d0) then
+      if (vcopt%iwarni.ge.1.or.ipass.eq.1.or.varmn(1).lt.0.d0) then
         if (iok1.eq.0) then
           write(nfecra,3210)
           iok1 = 1
@@ -855,7 +863,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
 
     ! Writings
     call field_get_name(ivisma, chaine)
-    if (iwarni(iuma).ge.1.or.ipass.eq.1.or.varmn(1).lt.0.d0) then
+    if (vcopt%iwarni.ge.1.or.ipass.eq.1.or.varmn(1).lt.0.d0) then
       if (iok1.eq.0) then
         write(nfecra,3210)
         iok1 = 1

@@ -61,6 +61,7 @@ use ppthch
 use ppincl
 use ihmpre
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -71,6 +72,8 @@ implicit none
 integer          ii
 integer          iok, kscmin, kscmax
 double precision  scaclp(4)
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
@@ -108,8 +111,10 @@ iscacp(itempk) = 0
 !         - Schema convectif % schema 2ieme ordre
 !           = 0 : upwind
 !           = 1 : second ordre
-do ii = 1, nvarmx
-  blencv(ii) = 0.d0
+do ii = 1, nvar
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  vcopt%blencv = 0.d0
+  call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 enddo
 
 !===============================================================================

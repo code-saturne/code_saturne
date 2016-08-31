@@ -116,6 +116,8 @@ double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: w1, w7, w10
 
+type(var_cal_opt) :: vcopt_u, vcopt_pr
+
 !===============================================================================
 
 !===============================================================================
@@ -125,13 +127,18 @@ double precision, allocatable, dimension(:) :: w1, w7, w10
 ! Allocate temporary arrays
 allocate(w1(ncelet), w7(ncelet), w10(ncelet))
 
-! --- Variable name
+! Get variables calculation options
+
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_pr)
+
+! Variable name
 
 f_id = -1
 chaine = 'hydrostatic_p'
 lchain = 16
 
-! --- Symetrique
+! Symetric
 isym  = 1
 
 ! Matrix block size
@@ -166,8 +173,7 @@ if (ical.eq.0) then
   return
 endif
 
-if ( mod(ntcabs,ntlist).eq.0 .or. iwarni(iu) .ge.0 )           &
-     write(nfecra,1000)
+if (mod(ntcabs,ntlist).eq.0.or.vcopt_u%iwarni.ge.0) write(nfecra,1000)
 
 #if defined(_CS_LANG_FR)
 
@@ -232,14 +238,15 @@ call matrix &
 
 
 !     PROJECTION AUX FACES DES TERMES SOURCES
+
 init   = 1
 inc    = 0
 iccocg = 1
-nswrgp = nswrgr(ipr)
-imligp = imligr(ipr)
-iwarnp = iwarni(ipr)
-epsrgp = epsrgr(ipr)
-climgp = climgr(ipr)
+nswrgp = vcopt_pr%nswrgr
+imligp = vcopt_pr%imligr
+iwarnp = vcopt_pr%iwarni
+epsrgp = vcopt_pr%epsrgr
+climgp = vcopt_pr%climgr
 
 call projts                                                       &
 !==========
@@ -259,7 +266,7 @@ rnorm = sqrt(cs_gdot(ncel,w7,w7))
 !===============================================================================
 
 ! --- Nombre de sweeps
-nswmpr = nswrsm(ipr)
+nswmpr = vcopt_pr%nswrsm
 
 ! --- Mise a zero des variables
 !       RTP(.,IPR) sera l'increment de pression cumule
@@ -284,13 +291,13 @@ do isweep = 1, nswmpr
 ! --- Test de convergence du calcul
 
   residu = sqrt(cs_gdot(ncel,smbr,smbr))
-  if (iwarni(ipr).ge.2) then
-     write(nfecra,1400)chaine(1:16),isweep,residu
+  if (vcopt_pr%iwarni.ge.2) then
+    write(nfecra,1400)chaine(1:16),isweep,residu
   endif
 
 !MO IL FAUDRA VERIFIER LA PERTINENCE DU TEST
 
-  if( residu .le. 10.d0*epsrsm(ipr)*rnorm ) then
+  if (residu.le.10.d0*vcopt_pr%epsrsm*rnorm) then
 !     Si convergence,  sortie
 
     goto 101
@@ -302,8 +309,8 @@ do isweep = 1, nswmpr
     dpvar(iel) = 0.d0
   enddo
 
-  iwarnp = iwarni(ipr)
-  epsilp = epsilo(ipr)
+  iwarnp = vcopt_pr%iwarni
+  epsilp = vcopt_pr%epsilo
   iinvpe = 1
   ibsize = 1
   iesize = 1
@@ -333,11 +340,11 @@ do isweep = 1, nswmpr
     iccocg = 1
     init = 1
     inc  = 1
-    nswrgp = nswrgr(ipr)
-    imligp = imligr(ipr)
-    iwarnp = iwarni(ipr)
-    epsrgp = epsrgr(ipr)
-    climgp = climgr(ipr)
+    nswrgp = vcopt_pr%nswrgr
+    imligp = vcopt_pr%imligr
+    iwarnp = vcopt_pr%iwarni
+    epsrgp = vcopt_pr%epsrgr
+    climgp = vcopt_pr%climgr
     extrap = 0.d0
     iphydp = 1
 
@@ -359,7 +366,7 @@ do isweep = 1, nswmpr
 enddo
 ! --- Boucle de reconstruction : fin
 
-if(iwarni(ipr).ge.2) then
+if(vcopt_pr%iwarni.ge.2) then
    write( nfecra,1600)chaine(1:16),nswmpr
 endif
 

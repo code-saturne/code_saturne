@@ -73,6 +73,8 @@ integer       nmodpp
 integer       ipp
 integer       iok   , ippok,  keycpl
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 ! Interfaces
 !===============================================================================
@@ -183,18 +185,22 @@ iw = iv + 1
 
 call add_variable_field('pressure', 'Pressure', 1, ipr)
 
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 if (ippmod(icompf).ge.0) then
-  istat(ipr) = 1
+  vcopt%istat = 1
 else
-  istat (ipr) = 0
+  vcopt%istat = 0
 endif
-iconv (ipr) = 0
+vcopt%iconv = 0
+call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 ! Void fraction (cavitating flows)
 
 if (icavit.ge.0) then
   call add_variable_field('void_fraction', 'Void Fraction', 1, ivoidf)
-  idiff(ivoidf) = 0
+  call field_get_key_struct_var_cal_opt(ivarfl(ivoidf), vcopt)
+  vcopt%idiff = 0
+  call field_set_key_struct_var_cal_opt(ivarfl(ivoidf), vcopt)
 endif
 
 ! --- Turbulence
@@ -226,8 +232,10 @@ else if (itytur.eq.3) then
   call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
   if (iturb.eq.32) then
     call add_variable_field('alpha', 'Alphap', 1, ial)
-    istat(ial)  = 0
-    iconv(ial)  = 0
+    call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt)
+    vcopt%istat = 0
+    vcopt%iconv = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
     ! For alpha, we always have a diagonal term, so do not shift the diagonal
     idircl(ial) = 0
   endif
@@ -237,14 +245,18 @@ else if (itytur.eq.5) then
   call add_variable_field('phi', 'Phi', 1, iphi)
   if (iturb.eq.50) then
     call add_variable_field('f_bar', 'f_bar', 1, ifb)
-    istat(ifb)  = 0
-    iconv(ifb)  = 0
+    call field_get_key_struct_var_cal_opt(ivarfl(ifb), vcopt)
+    vcopt%istat = 0
+    vcopt%iconv = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ifb), vcopt)
     ! For fb, we always have a diagonal term, so do not shift the diagonal
     idircl(ifb) = 0
   else if (iturb.eq.51) then
     call add_variable_field('alpha', 'Alpha', 1, ial)
-    istat(ial)  = 0
-    iconv(ial)  = 0
+    call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt)
+    vcopt%istat = 0
+    vcopt%iconv = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
     ! For alpha, we always have a diagonal term, so do not shift the diagonal
     idircl(ial) = 0
   endif
@@ -262,16 +274,13 @@ if (iale.eq.1) then
   call add_variable_field('mesh_velocity', 'Mesh Velocity', 3, iuma)
   call field_set_key_int(ivarfl(iuma), keycpl, 1)
 
-  istat(iuma) = 0
-  iconv(iuma) = 0
-
-  ! All components point to same field
   ivma = iuma + 1
   iwma = ivma + 1
-  istat(ivma) = istat(iuma)
-  iconv(ivma) = iconv(iuma)
-  istat(iwma) = istat(iuma)
-  iconv(iwma) = iconv(iuma)
+
+  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+  vcopt%istat = 0
+  vcopt%iconv = 0
+  call field_set_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
 
 endif
 
@@ -679,6 +688,8 @@ ipp = field_post_id(id)
 
 call field_set_key_int(id, keyvar, ivar)
 
+call init_var_cal_opt(id)
+
 if (dim .gt. 1) then
   do ii = 2, dim
     ivarfl(ivar + ii - 1) = id
@@ -779,6 +790,8 @@ do id = nfld1, nfld2 - 1
 
   call field_set_key_int(id, keyvar, nvar)
   call field_set_key_int(id, keysca, iscal)
+
+  call init_var_cal_opt(id)
 
 enddo
 
@@ -977,6 +990,8 @@ ipp = field_post_id(f_id)
 call field_set_key_int(f_id, keyvar, nvar)
 call field_set_key_int(f_id, keysca, iscal)
 
+call init_var_cal_opt(f_id)
+
 return
 
 end subroutine add_model_field_indexes
@@ -1073,6 +1088,73 @@ return
 #endif
 
 end subroutine fldvar_check_nvar
+
+!===============================================================================
+
+!> \brief Initialize the given variable calculation option structure with
+!>        legacy values (iniini) allowing to later test user modification.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!_______________________________________________________________________________
+
+subroutine init_var_cal_opt &
+ ( id )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+use cs_c_bindings
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+integer id
+
+! Local variables
+type(var_cal_opt) :: vcopt
+
+call field_get_key_struct_var_cal_opt(id, vcopt)
+vcopt%iwarni = 0
+vcopt%iconv  = 1
+vcopt%istat  = 1
+vcopt%idiff  = 1
+vcopt%idifft = 1
+vcopt%idften = 1
+vcopt%iswdyn = 0
+vcopt%ischcv = 1
+vcopt%ibdtso = 1
+vcopt%isstpc = -999
+vcopt%nswrgr = 100
+vcopt%nswrsm = -999
+vcopt%imrgra = 0
+vcopt%imligr = -999
+vcopt%ircflu = 1
+vcopt%iwgrec = 0
+vcopt%thetav = -999.d0
+vcopt%blencv = -999.d0
+vcopt%epsilo = -999.d0
+vcopt%epsrsm = -999.d0
+vcopt%epsrgr = 1.d-5
+vcopt%climgr = 1.5d0
+vcopt%extrag = 0.d0
+vcopt%relaxv = -999.d0
+call field_set_key_struct_var_cal_opt(id, vcopt)
+
+return
+
+end subroutine init_var_cal_opt
 
 !===============================================================================
 
@@ -1209,4 +1291,3 @@ function cs_c_add_model_field_indexes(f_id) result(iscal) &
 end function cs_c_add_model_field_indexes
 
 !---------------------------------------------------------------------------
-

@@ -76,6 +76,7 @@ use cstnum
 use parall
 use period
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -110,6 +111,9 @@ double precision flucel
 double precision vtot  , gamma
 
 integer, allocatable, dimension(:) :: lstelt
+
+type(var_cal_opt) :: vcopt
+
 !< [loc_var]
 
 !===============================================================================
@@ -316,7 +320,9 @@ elseif (iappel.eq.3) then
     call parsom (flucel)
   endif
 
-  if (iwarni(ipr).ge.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) flucel
   endif
 !< [inlet_cal]
@@ -365,7 +371,9 @@ elseif (iappel.eq.3) then
     call parsom (flucel)
   endif
 
-  if (iwarni(ipr).ge.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,2000) flucel, vtot
   endif
 !< [mass_suction]

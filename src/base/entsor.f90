@@ -41,14 +41,6 @@ module entsor
   !> standard output
   integer, save :: nfecra
 
-  !> characterizes the level of detail of the outputs for the
-  !> variable \c ivar (from 1 to \ref dimens::nvar "nvar").
-  !> The quantity of information increases with its value.
-  !> Impose the value 0 or 1 for a reasonable listing size. Impose the value 2
-  !> to get a maximum quantity of information, in case of problem during the
-  !> execution.  Always useful.
-  integer, save :: iwarni(nvarmx)
-
   !> unit of the upstream restart file for the vortex method.
   !> Useful if and only if isuivo=1 and  ivrtex=1.
   integer, save :: impmvo

@@ -68,6 +68,7 @@ use mesh
 use albase, only:fdiale
 use field
 use field_operator
+use cs_c_bindings
 
 !===============================================================================
 
@@ -97,13 +98,17 @@ double precision, allocatable, dimension(:,:,:) :: gradm
 double precision, dimension(:,:), pointer :: mshvel, mshvela
 double precision, dimension(:,:), pointer :: disale, disala
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
 
-if (iwarni(iuma).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+
+if (vcopt%iwarni.ge.1) then
   write(nfecra,1000)
 endif
 

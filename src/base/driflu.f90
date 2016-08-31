@@ -139,6 +139,8 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: visct, cpro_viscls
 double precision, dimension(:), pointer :: cvara_var
 
+type(var_cal_opt) :: vcopt, vcopt_u
+
 !===============================================================================
 
 !===============================================================================
@@ -187,6 +189,9 @@ if (id_x1.ne.-1) then
   call field_get_val_s(iflmab, bmasfl_gas)
 
 endif
+
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 
 ! Pointers to the mass fluxes of the mix (based on mix velocity)
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
@@ -378,12 +383,12 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     iphydp = 0
     inc    = 1
     iccocg = 1
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
+    nswrgp = vcopt%nswrgr
+    imligp = vcopt%imligr
+    iwarnp = vcopt%iwarni
+    epsrgp = vcopt%epsrgr
+    climgp = vcopt%climgr
+    extrap = vcopt%extrag
 
     ! Face diffusivity of rho to compute rho*(Grad K . n)_face
     do iel = 1, ncel
@@ -444,20 +449,20 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     iconvp = 1
     idiffp = 0
-    nswrgp = nswrgr(iu)
-    imligp = imligr(iu)
-    ircflp = ircflu(iu)
-    ischcp = ischcv(iu)
-    isstpp = isstpc(iu)
+    nswrgp = vcopt_u%nswrgr
+    imligp = vcopt_u%imligr
+    ircflp = vcopt_u%ircflu
+    ischcp = vcopt_u%ischcv
+    isstpp = vcopt_u%isstpc
     inc    = 1
     ivisep = 0
-    iwarnp = iwarni(iu)
-    idftnp = idften(iu)
-    blencp = blencv(iu)
-    epsrgp = epsrgr(iu)
-    climgp = climgr(iu)
-    thetap = thetav(iu)
-    relaxp = relaxv(iu)
+    iwarnp = vcopt_u%iwarni
+    idftnp = vcopt_u%idften
+    blencp = vcopt_u%blencv
+    epsrgp = vcopt_u%epsrgr
+    climgp = vcopt_u%climgr
+    thetap = vcopt_u%thetav
+    relaxp = vcopt_u%relaxv
     icvflb = 0
 
     ! Reset viscf and viscb
@@ -539,12 +544,12 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     inc    = 1
     iflmb0 = 0
     itypfl = 0 ! drift has already been multiplied by rho
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
+    nswrgp = vcopt%nswrgr
+    imligp = vcopt%imligr
+    iwarnp = vcopt%iwarni
+    epsrgp = vcopt%epsrgr
+    climgp = vcopt%climgr
+    extrap = vcopt%extrag
 
     call inimav &
      ( f_id0  , itypfl ,                                              &
@@ -631,8 +636,8 @@ endif
 !===============================================================================
 
 init = 1
-iconvp = iconv(ivar)
-thetap = thetav(ivar)
+iconvp = vcopt%iconv
+thetap = vcopt%thetav
 
 ! recompute the difference between mixture and the class
 do ifac = 1, nfac

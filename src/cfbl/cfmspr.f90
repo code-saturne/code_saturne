@@ -98,7 +98,6 @@ double precision vela  (3  ,ncelet)
 ! Local variables
 
 character(len=80) :: chaine
-integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg, ii, jj
 integer          iflmas, iflmab
@@ -134,6 +133,8 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: rhopre, crom
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr, cpro_cp, cpro_cv
 
+type(var_cal_opt) :: vcopt_p
+
 !===============================================================================
 !===============================================================================
 ! 1. INITIALISATION
@@ -154,7 +155,6 @@ allocate(dpvar(ncelet))
 
 ! --- Number of computational variable and post for pressure
 
-ivar   = ipr
 f_id0 = -1
 
 ! --- Mass flux associated to energy
@@ -171,7 +171,9 @@ call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 call field_get_label(ivarfl(ipr), chaine)
 
-if(iwarni(ivar).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
+
+if(vcopt_p%iwarni.ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
 
@@ -239,7 +241,7 @@ call cs_cf_thermo_c_square(cpro_cp, cpro_cv, cvar_pr, crom, c2, ncel)
 !=========================
 
 do iel = 1, ncel
-  rovsdt(iel) = rovsdt(iel) + istat(ivar)*(cell_f_vol(iel)/(dt(iel)*c2(iel)))
+  rovsdt(iel) = rovsdt(iel) + vcopt_p%istat*(cell_f_vol(iel)/(dt(iel)*c2(iel)))
 enddo
 
 !===============================================================================
@@ -305,34 +307,34 @@ call viscfa                                                                    &
 ! 4. SOLVING
 !===============================================================================
 
-istatp = istat (ivar)
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
-ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
+istatp = vcopt_p%istat
+iconvp = vcopt_p%iconv
+idiffp = vcopt_p%idiff
+ndircp = ndircl(ipr)
+nswrsp = vcopt_p%nswrsm
+nswrgp = vcopt_p%nswrgr
+imligp = vcopt_p%imligr
+ircflp = vcopt_p%ircflu
+ischcp = vcopt_p%ischcv
+isstpp = vcopt_p%isstpc
 iescap = 0
 imucpp = 0
-idftnp = idften(ivar)
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
-thetv  = thetav(ivar)
+idftnp = vcopt_p%idften
+iswdyp = vcopt_p%iswdyn
+iwarnp = vcopt_p%iwarni
+blencp = vcopt_p%blencv
+epsilp = vcopt_p%epsilo
+epsrsp = vcopt_p%epsrsm
+epsrgp = vcopt_p%epsrgr
+climgp = vcopt_p%climgr
+extrap = vcopt_p%extrag
+relaxp = vcopt_p%relaxv
+thetv  = vcopt_p%thetav
 icvflb = 0
 
 call codits                                                                    &
 !==========
-( idtvar , ivar   , iconvp , idiffp , ndircp ,                                 &
+( idtvar , ipr   , iconvp , idiffp , ndircp ,                                  &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                                 &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,                        &
   iwarnp ,                                                                     &
@@ -360,12 +362,12 @@ call cs_cf_check_pressure(cvar_pr, ncel)
 
 ! --- Explicit balance (see codits : the increment is withdrawn)
 
-if (iwarni(ivar).ge.2) then
+if (vcopt_p%iwarni.ge.2) then
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                    &
-                 - istat(ivar)*(cell_f_vol(iel)/dt(iel))                       &
+                 - vcopt_p%istat*(cell_f_vol(iel)/dt(iel))                     &
                    *(cvar_pr(iel)-cvara_pr(iel))                               &
-                   * max(0,min(nswrsm(ivar)-2,1))
+                   * max(0,min(vcopt_p%nswrsm-2,1))
   enddo
   sclnor = sqrt(cs_gdot(ncel,smbrs,smbrs))
   write(nfecra,1200) chaine(1:8) ,sclnor

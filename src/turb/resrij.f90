@@ -164,6 +164,8 @@ double precision, dimension(:), pointer :: cvar_var, cvara_var
 double precision, dimension(:), pointer :: cvara_rik, cvara_rjk
 double precision, dimension(:), pointer :: viscl, c_st_prv
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -178,7 +180,9 @@ allocate(viscce(6,ncelet))
 allocate(weighf(2,nfac))
 allocate(weighb(nfabor))
 
-if (iwarni(ivar).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+if (vcopt%iwarni.ge.1) then
   call field_get_label(ivarfl(ivar), label)
   write(nfecra,1000) label
 endif
@@ -213,7 +217,7 @@ d2s3 = 2.d0/3.d0
 
 !     S as Source, V as Variable
 thets  = thetst
-thetv  = thetav(ivar)
+thetv  = vcopt%thetav
 
 call field_get_key_int(ivarfl(ivar), kstprv, st_prv_id)
 if (st_prv_id.ge.0) then
@@ -327,7 +331,7 @@ endif
 
 do iel=1,ncel
   rovsdt(iel) = rovsdt(iel)                                          &
-              + istat(ivar)*(crom(iel)/dt(iel))*cell_f_vol(iel)
+              + vcopt%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
 enddo
 
 
@@ -578,7 +582,7 @@ endif
 !===============================================================================
 
 ! Symmetric tensor diffusivity (GGDH)
-if (idften(ivar).eq.6) then
+if (vcopt%idften.eq.6) then
 
   call field_get_val_v(ivsten, visten)
 
@@ -591,7 +595,7 @@ if (idften(ivar).eq.6) then
     viscce(6,iel) = visten(6,iel)
   enddo
 
-  iwarnp = iwarni(ivar)
+  iwarnp = vcopt%iwarni
 
   call vitens &
  ( viscce , iwarnp ,             &
@@ -604,7 +608,7 @@ else
   do iel = 1, ncel
     trrij = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
     rctse = crom(iel) * csrij * trrij**2 / cvara_ep(iel)
-    w1(iel) = viscl(iel) + idifft(ivar)*rctse
+    w1(iel) = viscl(iel) + vcopt%idifft*rctse
   enddo
 
   call viscfa                    &
@@ -625,27 +629,27 @@ if (st_prv_id.ge.0) then
   enddo
 endif
 
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
+iconvp = vcopt%iconv
+idiffp = vcopt%idiff
 ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
+nswrsp = vcopt%nswrsm
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+ircflp = vcopt%ircflu
+ischcp = vcopt%ischcv
+isstpp = vcopt%isstpc
 iescap = 0
 imucpp = 0
-idftnp = idften(ivar)
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
+idftnp = vcopt%idften
+iswdyp = vcopt%iswdyn
+iwarnp = vcopt%iwarni
+blencp = vcopt%blencv
+epsilp = vcopt%epsilo
+epsrsp = vcopt%epsrsm
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+extrap = vcopt%extrag
+relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
 

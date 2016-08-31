@@ -193,13 +193,7 @@ void CS_PROCF (cstime, CSTIME) (void);
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uinum1, UINUM1) (double *blencv,
-                                   int *ischcv,
-                                   int *isstpc,
-                                   int *ircflu,
-                                double *cdtvar,
-                                double *epsilo,
-                                   int *nswrsm);
+void CS_PROCF (uinum1, UINUM1) (double *cdtvar);
 
 /*----------------------------------------------------------------------------
  * Global numerical parameters.

@@ -104,7 +104,8 @@ double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_scal
 double precision, dimension(:), pointer :: cvar_fvap
-!double precision, dimension(:), pointer :: cvar_yfolcl
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 ! 1. Initialization
@@ -155,12 +156,15 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
   inc = 1
   iccocg = 1
 !
-  nswrgp = nswrgr(isca(ifvap))
-  imligp = imligr(isca(ifvap))
-  iwarnp = iwarni(isca(ifvap))
-  epsrgp = epsrgr(isca(ifvap))
-  climgp = climgr(isca(ifvap))
-  extrap = extrag(isca(ifvap))
+
+  call field_get_key_struct_var_cal_opt(ivarfl(isca(ifvap)), vcopt)
+  nswrgp = vcopt%nswrgr
+  imligp = vcopt%imligr
+  iwarnp = vcopt%iwarni
+  epsrgp = vcopt%epsrgr
+  climgp = vcopt%climgr
+  extrap = vcopt%extrag
+  call field_set_key_struct_var_cal_opt(ivarfl(isca(ifvap)), vcopt)
 
 ! --> calcul de X1
 

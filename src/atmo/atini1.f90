@@ -47,6 +47,7 @@ use atchem
 use atimbr
 use siream
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -55,6 +56,8 @@ implicit none
 ! Local variables
 
 integer          ii, isc, jj
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -112,11 +115,15 @@ if (ippmod(iatmos).eq.1) then
 
     jj = iscapp(isc)
 
+    call field_get_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)
+
     if (iscavr(jj).le.0) then
       visls0(jj) = viscl0
     endif
 
-    blencv(isca(jj)) = 1.d0
+    vcopt%blencv = 1.d0
+
+    call field_set_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)
 
   enddo
 
@@ -136,11 +143,15 @@ if (ippmod(iatmos).eq.2) then
 
     jj = iscapp(isc)
 
+    call field_get_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)
+
     if (iscavr(jj).le.0) then
       visls0(jj) = viscl0
     endif
 
-    blencv(isca(jj)) = 1.d0
+    vcopt%blencv = 1.d0
+
+    call field_set_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)
 
   enddo
 

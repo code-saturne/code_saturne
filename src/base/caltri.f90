@@ -97,7 +97,7 @@ implicit none
 
 integer          iiii
 
-integer          modhis, iappel, modntl, iisuit, iwarn0
+integer          modhis, iappel, modntl, iisuit
 integer          ivar
 integer          iel
 
@@ -763,14 +763,7 @@ ttcabs = ttpabs
 
 if (imobil.eq.1 .or. iturbo.eq.2)  ttcmob = ttpmob
 
-iwarn0 = 1
-do ivar = 1, nvar
-  iwarn0 = max(iwarn0,iwarni(ivar))
-enddo
-
-if(iwarn0.gt.0) then
-  write(nfecra,3000)
-endif
+write(nfecra,3000)
 
 if(inpdt0.eq.1) then
   ntmabs = ntcabs
@@ -816,9 +809,7 @@ if (inpdt0.eq.0 .and. itrale.gt.0) then
   else
     ttcabs = ttcabs + dtref
   endif
-  if (iwarn0.gt.0) then
-    write(nfecra,3001) ttcabs,ntcabs
-  endif
+  write(nfecra,3001) ttcabs,ntcabs
   if (imobil.eq.1 .or. iturbo.eq.2) then
     if(idtvar.eq.0.or.idtvar.eq.1) then
       ttcmob = ttcmob + dt(1)
@@ -943,9 +934,9 @@ if (iisuit.eq.1) then
   call timer_stats_start(restart_stats_id)
 
   if(ntcabs.lt.ntmabs) then
-    if (iwarn0.gt.0) write(nfecra,3020) ntcabs, ttcabs
+    write(nfecra,3020) ntcabs, ttcabs
   else if(ntcabs.eq.ntmabs) then
-    if(iwarn0.gt.0) write(nfecra,3021)ntcabs,ttcabs
+    write(nfecra,3021)ntcabs,ttcabs
   endif
 
   call ecrava
@@ -1069,7 +1060,7 @@ call timer_stats_stop(post_stats_id)
 
 call dmtmps(titer2)
 
-if (iwarn0.gt.0 .and. itrale.le.0) then
+if (itrale.le.0) then
   write(nfecra,3012)titer2-titer1
 endif
 
@@ -1093,9 +1084,7 @@ endif
 ! Finalize probes
 !===============================================================================
 
-if(iwarn0.gt.0) then
-  write(nfecra,4000)
-endif
+write(nfecra,4000)
 
 ! Ici on sauve les historiques (si on en a stocke)
 
@@ -1151,6 +1140,10 @@ endif
 
 if (ippmod(icompf).ge.0) then
   call finalize_compf
+endif
+
+if (ippmod(igmix).ge.0) then
+  call finalize_gas_mix
 endif
 
 if (iale.eq.1.or.imobil.eq.1) then

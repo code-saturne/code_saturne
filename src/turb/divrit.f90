@@ -112,6 +112,8 @@ double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
 double precision, dimension(:), pointer :: cvara_scal, cvara_tt
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -148,12 +150,14 @@ call field_get_id(trim(fname)//'_turbulent_flux', f_id)
 
 call field_get_val_v(f_id, xut)
 
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-iwarnp = iwarni(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+iwarnp = vcopt%iwarni
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+extrap = vcopt%extrag
 
 ! Boundary condition pointers for gradients and advection
 call field_get_coefa_s(ivarfl(ivar), coefap)
@@ -357,12 +361,12 @@ if (ityturt(iscal).ne.3) then
   iflmb0 = 1
   init   = 1
   inc    = 1
-  nswrgp = nswrgr(ivar)
-  imligp = imligr(ivar)
-  iwarnp = iwarni(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
+  nswrgp = vcopt%nswrgr
+  imligp = vcopt%imligr
+  iwarnp = vcopt%iwarni
+  epsrgp = vcopt%epsrgr
+  climgp = vcopt%climgr
+  extrap = vcopt%extrag
 
   ! Local gradient boundaray conditions: homogenous Neumann
   allocate(coefat(3,ndimfb))
@@ -411,12 +415,12 @@ else
   iflmb0 = 1
   init   = 1
   inc    = 1
-  nswrgp = nswrgr(ivar)
-  imligp = imligr(ivar)
-  iwarnp = iwarni(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
+  nswrgp = vcopt%nswrgr
+  imligp = vcopt%imligr
+  iwarnp = vcopt%iwarni
+  epsrgp = vcopt%epsrgr
+  climgp = vcopt%climgr
+  extrap = vcopt%extrag
 
   do iel = 1, ncelet
     xuta(1,iel) = xut(1,iel)

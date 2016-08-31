@@ -88,6 +88,7 @@ use mesh
 use pointe
 use field
 use radiat
+use cs_c_bindings
 
 !===============================================================================
 
@@ -193,6 +194,9 @@ double precision ychx
 double precision mckcl1, mckcl2
 !
 double precision, dimension(:), pointer :: dt
+
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 !
 !===============================================================================
@@ -219,6 +223,7 @@ call field_get_val_s(iym1(ico), cpro_yco)
 call field_get_val_s(iym1(ih2o), cpro_yh2o)
 call field_get_val_s(immel, cpro_mmel)
 
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
 call field_get_val_v(ivarfl(iu), vel)
 
@@ -263,7 +268,7 @@ call field_get_val_s_by_name('dt', dt)
 
 if ( ivar.ge.isca(ixch(1)) .and. ivar.le.isca(ixch(nclacp)) ) then
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -293,7 +298,7 @@ endif
 
 if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -359,7 +364,7 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
   if (ivar.ge.isca(ixwt(1)) .and. ivar.le.isca(ixwt(nclacp))) then
 
-    if (iwarni(ivar).ge.1) then
+    if (vcopt%iwarni.ge.1) then
       write(nfecra,1000) chaine(1:8)
     endif
 
@@ -570,7 +575,7 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
     enddo
   endif
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -1006,7 +1011,7 @@ endif
 
 if ( ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb)) ) then
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -1040,7 +1045,7 @@ endif
 
 if ( ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb)) ) then
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -1077,7 +1082,7 @@ if ( ivar.eq.isca(if7m) ) then
   ! Remark: We take the same source term than for Xck
   !                  to be conservative
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -1117,7 +1122,7 @@ if ( ihtco2 .eq. 1 ) then
     ! Remark: We take the same source term than for Xck
     !                  to be conservative
 
-    if (iwarni(ivar).ge.1) then
+    if (vcopt%iwarni.ge.1) then
       write(nfecra,1000) chaine(1:8)
     endif
 
@@ -1158,7 +1163,7 @@ if ( ihth2o .eq. 1 ) then
     ! Remark: We take the same source term than for Xck
     !                  to be conservative
 
-    if (iwarni(ivar).ge.1) then
+    if (vcopt%iwarni.ge.1) then
       write(nfecra,1000) chaine(1:8)
     endif
 
@@ -1196,7 +1201,7 @@ endif
 
 if ( ivar.eq.isca(ifvp2m) ) then
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -1214,7 +1219,7 @@ if ( ippmod(iccoal) .eq. 1 ) then
   if ( ivar.eq.isca(if6m) ) then
 
 
-    if (iwarni(ivar).ge.1) then
+    if (vcopt%iwarni.ge.1) then
       write(nfecra,1000) chaine(1:8)
     endif
 
@@ -1264,7 +1269,7 @@ if ( ieqco2 .eq. 1 ) then
 
   if ( ivar.eq.isca(iyco2) ) then
 
-    if (iwarni(ivar).ge.1) then
+    if (vcopt%iwarni.ge.1) then
       write(nfecra,1000) chaine(1:8)
     endif
 
@@ -1899,7 +1904,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
 
     !  Source term HCN
 
-      if (iwarni(ivar).ge.1) then
+      if (vcopt%iwarni.ge.1) then
         write(nfecra,1000) chaine(1:8)
       endif
 
@@ -1982,7 +1987,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
 
       call field_get_val_s(iym1(in2),cpro_yn2)
 
-      if (iwarni(ivar).ge.1) then
+      if (vcopt%iwarni.ge.1) then
         write(nfecra,1000) chaine(1:8)
       endif
 
@@ -2077,7 +2082,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
       !  Source term HCN
 
-      if (iwarni(ivar).ge.1) then
+      if (vcopt%iwarni.ge.1) then
         write(nfecra,1000) chaine(1:8)
       endif
 
@@ -2352,7 +2357,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
       !  Source term NH3
 
-      if (iwarni(ivar).ge.1) then
+      if (vcopt%iwarni.ge.1) then
         write(nfecra,1000) chaine(1:8)
       endif
 
@@ -2427,7 +2432,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
       !  Source term NO
 
-      if (iwarni(ivar).ge.1) then
+      if (vcopt%iwarni.ge.1) then
         write(nfecra,1000) chaine(1:8)
       endif
 

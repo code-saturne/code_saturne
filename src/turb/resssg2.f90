@@ -175,6 +175,8 @@ double precision, dimension(:,:), pointer:: c_st_prv
 
 double precision, allocatable, dimension(:,:) :: cvara_r
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -192,7 +194,9 @@ allocate(weighb(nfabor))
 iii = 0
 jjj = 0
 
-if (iwarni(ivar).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+if (vcopt%iwarni.ge.1) then
   call field_get_label(ivarfl(ivar), label)
   write(nfecra,1000) label
 endif
@@ -225,7 +229,7 @@ do isou = 1, 6
 enddo
 !     S as Source, V as Variable
 thets  = thetst
-thetv  = thetav(ivar)
+thetv  = vcopt%thetav
 
 call field_get_key_int(ivarfl(ivar), kstprv, st_prv_id)
 if (st_prv_id .ge. 0) then
@@ -355,9 +359,10 @@ enddo
 ! ---> Added in the matrix diagonal
 
 do isou = 1, dimrij
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar+isou-1), vcopt)
   do iel=1,ncel
     rovsdt(isou,isou,iel) = rovsdt(isou, isou,iel)                                       &
-              + istat(ivar+isou-1)*(crom(iel)/dt(iel))*cell_f_vol(iel)
+              + vcopt%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
   enddo
 enddo
 
@@ -372,6 +377,7 @@ enddo
 !     +Cr5*rho*k*(aik*rjk + ajk*rik)
 !     -2/3*epsilon*deltaij
 
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
 ! EBRSM
 if (iturb.eq.32) then
@@ -713,7 +719,7 @@ endif
 !===============================================================================
 
 ! Symmetric tensor diffusivity (GGDH)
-if (idften(ivar).eq.6) then
+if (vcopt%idften.eq.6) then
 
   call field_get_val_v(ivsten, visten)
 
@@ -726,7 +732,7 @@ if (idften(ivar).eq.6) then
     viscce(6,iel) = visten(6,iel)
   enddo
 
-  iwarnp = iwarni(ivar)
+  iwarnp = vcopt%iwarni
 
   call vitens &
   !==========
@@ -740,7 +746,7 @@ else
   do iel = 1, ncel
     trrij = 0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
     rctse = crom(iel) * csrij * trrij**2 / cvara_ep(iel)
-    w1(iel) = viscl(iel) + idifft(ivar)*rctse
+    w1(iel) = viscl(iel) + vcopt%idifft*rctse
   enddo
 
   call viscfa                    &
@@ -764,25 +770,25 @@ if (st_prv_id.ge.0) then
   enddo
 endif
 
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
+iconvp = vcopt%iconv
+idiffp = vcopt%idiff
 ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
-idftnp = idften(ivar)
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
+nswrsp = vcopt%nswrsm
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+ircflp = vcopt%ircflu
+ischcp = vcopt%ischcv
+isstpp = vcopt%isstpc
+idftnp = vcopt%idften
+iswdyp = vcopt%iswdyn
+iwarnp = vcopt%iwarni
+blencp = vcopt%blencv
+epsilp = vcopt%epsilo
+epsrsp = vcopt%epsrsm
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+extrap = vcopt%extrag
+relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
 

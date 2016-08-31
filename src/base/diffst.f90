@@ -99,6 +99,8 @@ double precision, dimension(:), pointer :: visct, cpro_cp, cpro_viscls
 double precision, dimension(:), pointer :: cvar_scal
 double precision, dimension(:), pointer :: cpro_tsscal
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 ! Memory allocation
@@ -147,24 +149,26 @@ do iscal = 1, nscal
     call synsca(xcpp)
   endif
 
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
   ivar0  = 0
   iconvp = 0
   imasac = 0
   idiffp = 1
-  nswrgp = nswrgr(ivar)
-  imligp = imligr(ivar)
-  ircflp = ircflu(ivar)
-  ischcp = ischcv(ivar)
-  isstpp = isstpc(ivar)
+  nswrgp = vcopt%nswrgr
+  imligp = vcopt%imligr
+  ircflp = vcopt%ircflu
+  ischcp = vcopt%ischcv
+  isstpp = vcopt%isstpc
   inc    = 1
   iccocg = 1
-  idftnp = 1 !idften(ivar)!FIXME when activating GGDH
-  iwarnp = iwarni(ivar)
-  blencp = blencv(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
-  relaxp = relaxv(ivar)
+  idftnp = 1 !vcopt%idften !FIXME when activating GGDH
+  iwarnp = vcopt%iwarni
+  blencp = vcopt%blencv
+  epsrgp = vcopt%epsrgr
+  climgp = vcopt%climgr
+  extrap = vcopt%extrag
+  relaxp = vcopt%relaxv
   thetex = 1.d0
   ! all boundary convective flux with upwind
   icvflb = 0
@@ -186,7 +190,7 @@ do iscal = 1, nscal
   ! Index for turbulent diffusivity
   call field_get_val_s(ivisct, visct)
 
-  if (idiff(ivar).ge.1) then
+  if (vcopt%idiff.ge.1) then
 
     ! Only the positive part of mu_t is considered (MAX(mu_t,0)),
     ! Dynamic LES can cause negative mu_t (clipping on (mu+mu_t))
@@ -196,12 +200,12 @@ do iscal = 1, nscal
     if(ifcvsl.lt.0)then
       do iel = 1, ncel
         vistot(iel) = visls0(iscal)                                     &
-           + idifft(ivar)*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
+           + vcopt%idifft*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
       enddo
     else
       do iel = 1, ncel
         vistot(iel) = cpro_viscls(iel)                                  &
-           + idifft(ivar)*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
+           + vcopt%idifft*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
       enddo
     endif
 

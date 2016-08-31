@@ -90,6 +90,7 @@ use entsor
 use albase
 use field
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -143,6 +144,8 @@ double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:), pointer :: cpro_visma_s
 double precision, dimension(:,:), pointer :: cpro_visma_v
 
+type(var_cal_opt) :: vcopt_rij
+
 !===============================================================================
 
 !===============================================================================
@@ -164,6 +167,7 @@ call field_get_coefaf_v(ivarfl(iu), cofafu)
 call field_get_coefbf_v(ivarfl(iu), cofbfu)
 
 if (itytur.eq.3) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt_rij)
   if (irijco.eq.1) then
     call field_get_coefa_v(ivarfl(irij), coefa_rij)
     call field_get_coefb_v(ivarfl(irij), coefb_rij)
@@ -508,7 +512,7 @@ do ifac = 1, nfabor
         fcofbd(isou) = fcoefb(isou)
 
         ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
-        if (idften(ivar).eq.6) then
+        if (vcopt_rij%idften.eq.6) then
 
           visci(1,1) = visclc + visten(1,iel)
           visci(2,2) = visclc + visten(2,iel)

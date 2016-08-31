@@ -634,6 +634,7 @@ use cpincl
 use field
 use cavitation
 use rotation
+use cs_c_bindings
 
 !===============================================================================
 
@@ -649,6 +650,8 @@ logical       inoprv
 integer       ii, jj, ivar, kscmin, kscmax, keydri, kbfid, kccmin, kccmax
 integer       klimiter
 integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ifcvsl, b_f_id
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -831,23 +834,28 @@ ipucou = 0
 !       if we suspect an excessive level of numerical diffusion on
 !         a variable ivar representing a user scalar
 !         iscal (with ivar=isca(iscal)), it may be useful to set
-!         blencv(ivar) = 1.0d0 to use a second-order scheme in space for
+!         blencv = 1.0d0 to use a second-order scheme in space for
 !         convection. For temperature or enthalpy in particular, we
 !         may thus choose in this case:
-!          blencv(isca(iscalt)) = 1.0d0
+!
+!         call field_get_key_struct_var_cal_opt(ivarfl(isca(iscalt)), vcopt)
+!         vcopt%blencv = 1.0d0
+!         call field_set_key_struct_var_cal_opt(ivarfl(isca(iscalt)), vcopt)
 
 !       For non-user scalars relative to specific physics (coal, combustion,
 !         electric arcs: see usppmo) implicitly defined by the model,
 !         the corresponding information is set automatically elsewhere:
 !         we do not modify blencv here.
 
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+vcopt%blencv = 1.0d0
+call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 
-blencv(iu) = 1.0d0
-blencv(iv) = 1.0d0
-blencv(iw) = 1.0d0
 if (nscaus.ge.1) then
   do ii = 1, nscaus
-    blencv(isca(ii)) = 1.0d0
+    call field_get_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
+    vcopt%blencv = 1.0d0
+    call field_set_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
   enddo
 endif
 
@@ -859,7 +867,9 @@ endif
 
 if (nscaus.ge.1) then
   do ii = 1, nscaus
-    epsilo(isca(ii)) = 1.d-6
+    call field_get_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
+    vcopt%epsilo = 1.d-6
+    call field_set_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
   enddo
 endif
 
@@ -867,14 +877,15 @@ endif
 ! --- Dynamic reconstruction sweeps to handle non-orthogonlaities
 !     This parameter computes automatically a dynamic relax factor,
 !     and can be activated for any variable.
-!      - iswdyn(ipr) = 1: means that the last increment is relaxed
-!      - iswdyn(ipr) = 2: means that the last two increments are used to
+!      - iswdyn = 1: means that the last increment is relaxed
+!      - iswdyn = 2: means that the last two increments are used to
 !                         relax
 !     NB: when iswdyn is greater than 1, then the number of
 !         non-orthogonality sweeps is increased to 20.
 
-iswdyn(ipr) = 1
-
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+vcopt%iswdyn = 1
+call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 ! --- Rotation/curvature correction for eddy-viscosity turbulence models
 !      0: deactivated
@@ -901,8 +912,13 @@ irccor = 1
 
 
 if (itytur.eq.2) then
-  ircflu(ik)   = 0
-  ircflu(iep)  = 0
+  call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  vcopt%ircflu = 0
+  call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+
+  call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+  vcopt%ircflu = 0
+  call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
 endif
 
 
@@ -1136,12 +1152,12 @@ enddo
 
 ! --- Convective scheme for user (and non-user) scalars
 
-! ischcv(ivar) is the type of convective scheme:
+! ischcv is the type of convective scheme:
 !   - 0: second order linear upwind
 !   - 1: centered
 !   - 2: pure upwind gradient in SOLU
 
-! isstpc(ivar) is the slope test, Min/MAx limiter or Roe and Sweby limiters
+! isstpc is the slope test, Min/Max limiter or Roe and Sweby limiters
 !   - 0: swich on the slope test
 !   - 1: swich off the slope test (default)
 !   - 2: continuous limiter ensuring positivness
@@ -1160,10 +1176,12 @@ call field_get_key_id("max_scalar", kccmax)
 
 ! Thermal model:
 if (iscalt.gt.0) then
-
   ivar = isca(iscalt)
-  ischcv(ivar) = 0
-  isstpc(ivar) = 3
+
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  vcopt%ischcv = 0
+  vcopt%isstpc = 3
+  call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
   ! Get the Key for the limiter choice of the studied scalar
   call field_get_key_id("limiter_choice", klimiter)
@@ -1177,10 +1195,12 @@ endif
 
 ! We loop on user scalars:
 do jj = 1, nscaus
-
   ivar = isca(jj)
-  ischcv(ivar) = 0
-  isstpc(ivar) = 2
+
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  vcopt%ischcv = 0
+  vcopt%isstpc = 2
+  call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
   ! Set the Value for the Sup and Inf of the studied scalar
   call field_set_key_double(ivarfl(ivar), kccmin, 0.d0)
@@ -1438,6 +1458,7 @@ use ihmpre
 use ppppar
 use ppthch
 use ppincl
+use cs_c_bindings
 
 !===============================================================================
 
@@ -1450,6 +1471,8 @@ integer nmodpp
 ! Local variables
 
 integer ii, ipp, f_id
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -1473,13 +1496,18 @@ ntlist = 1
 ! Log (listing) verbosity
 
 do ii = 1, nvar
-  iwarni(ii) = 1
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  vcopt%iwarni = 1
+  call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 enddo
 
-iwarni(ipr) = 2
-iwarni(iu) = 2
-iwarni(iv) = 2
-iwarni(iw) = 2
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+vcopt%iwarni = 2
+call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+vcopt%iwarni = 2
+call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 
 !===============================================================================
 ! 2. Definition of probes

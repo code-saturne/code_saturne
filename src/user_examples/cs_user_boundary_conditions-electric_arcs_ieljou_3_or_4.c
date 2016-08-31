@@ -53,6 +53,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_selector.h"
+#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -289,7 +290,6 @@ cs_user_boundary_conditions(int         nvarcl,
 
     for (cs_lnum_t ilelt = 0; ilelt < nelts; ilelt++) {
       cs_lnum_t face_id = lstelt[ilelt];
-      cs_lnum_t cell_id = b_face_cells[face_id];
 
       bc_type[face_id] = CS_SMOOTHWALL;
       izfrdp[face_id] = i;
@@ -370,4 +370,3 @@ cs_user_boundary_conditions(int         nvarcl,
 
 
 END_C_DECLS
-

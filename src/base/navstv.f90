@@ -166,6 +166,8 @@ double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:), pointer :: cpro_prtot, c_estim
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 
+type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
+
 !===============================================================================
 ! Interfaces
 !===============================================================================
@@ -225,10 +227,13 @@ end interface
 ! 0. Initialization
 !===============================================================================
 
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
+
 ! Allocate temporary arrays for the velocity-pressure resolution
-if (idften(iu).eq.1) then
+if (vcopt_u%idften.eq.1) then
   allocate(viscf(1, 1, nfac), viscb(ndimfb))
-else if (idften(iu).eq.6) then
+else if (vcopt_u%idften.eq.6) then
   allocate(viscf(3, 3, nfac), viscb(ndimfb))
 endif
 
@@ -245,7 +250,7 @@ if (iphydr.eq.2) then
 else
   grdphd => rvoid2
 endif
-if (idften(iu).eq.1) then
+if (vcopt_u%idften.eq.1) then
   if (itytur.eq.3.and.irijnu.eq.1) then
     allocate(wvisfi(1,1,nfac), wvisbi(ndimfb))
     viscfi => wvisfi(:,:,1:nfac)
@@ -254,7 +259,7 @@ if (idften(iu).eq.1) then
     viscfi => viscf(:,:,1:nfac)
     viscbi => viscb(1:ndimfb)
   endif
-else if(idften(iu).eq.6) then
+else if(vcopt_u%idften.eq.6) then
   if (itytur.eq.3.and.irijnu.eq.1) then
     allocate(wvisfi(3,3,nfac), wvisbi(ndimfb))
     viscfi => wvisfi(1:3,1:3,1:nfac)
@@ -292,7 +297,7 @@ endif
 allocate(w1(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
-if (iwarni(iu).ge.1) then
+if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1000)
 endif
 
@@ -388,7 +393,7 @@ endif
 
 if ( ippmod(icompf).ge.0 ) then
 
-  if(iwarni(iu).ge.1) then
+  if(vcopt_u%iwarni.ge.1) then
     write(nfecra,1080)
   endif
 
@@ -460,11 +465,11 @@ if (iprco.le.0) then
   inc    = 1
   iflmb0 = 1
   if (iale.eq.1) iflmb0 = 0
-  nswrgp = nswrgr(iu)
-  imligp = imligr(iu)
-  iwarnp = iwarni(iu)
-  epsrgp = epsrgr(iu)
-  climgp = climgr(iu)
+  nswrgp = vcopt_u%nswrgr
+  imligp = vcopt_u%imligr
+  iwarnp = vcopt_u%iwarni
+  epsrgp = vcopt_u%epsrgr
+  climgp = vcopt_u%climgr
 
   call inimav                                                     &
  ( ivarfl(iu)      , itypfl ,                                     &
@@ -491,11 +496,12 @@ if (iprco.le.0) then
     init   = 1
     inc    = 1
     iflmb0 = 1
-    nswrgp = nswrgr(iuma)
-    imligp = imligr(iuma)
-    iwarnp = iwarni(iuma)
-    epsrgp = epsrgr(iuma)
-    climgp = climgr(iuma)
+    call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+    nswrgp = vcopt%nswrgr
+    imligp = vcopt%imligr
+    iwarnp = vcopt%iwarni
+    epsrgp = vcopt%epsrgr
+    climgp = vcopt%climgr
 
     call field_get_coefa_v(ivarfl(iuma), claale)
     call field_get_coefb_v(ivarfl(iuma), clbale)
@@ -615,23 +621,23 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
   ! Scratch and resize temporary internal faces arrays
 
   deallocate(viscf)
-  if (idften(iu).eq.1) then
+  if (vcopt_u%idften.eq.1) then
     allocate(viscf(1, 1, nfac))
-  else if (idften(iu).eq.6) then
+  else if (vcopt_u%idften.eq.6) then
     allocate(viscf(3, 3, nfac))
   endif
 
   if (allocated(wvisfi)) then
     deallocate(viscfi)
 
-    if (idften(iu).eq.1) then
+    if (vcopt_u%idften.eq.1) then
       if (itytur.eq.3.and.irijnu.eq.1) then
         allocate(wvisfi(1,1,nfac))
         viscfi => wvisfi(:,:,1:nfac)
       else
         viscfi => viscf(:,:,1:nfac)
       endif
-    else if(idften(iu).eq.6) then
+    else if(vcopt_u%idften.eq.6) then
       if (itytur.eq.3.and.irijnu.eq.1) then
         allocate(wvisfi(3,3,nfac))
         viscfi => wvisfi(1:3,1:3,1:nfac)
@@ -783,7 +789,7 @@ endif
 ! 7. Pressure correction step
 !===============================================================================
 
-if (iwarni(iu).ge.1) then
+if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1200)
 endif
 
@@ -846,7 +852,7 @@ if (ippmod(icompf).lt.0) then
     if (idtvar.lt.0) then
       !$omp parallel do
       do iel = 1, ncel
-        dpvar(iel) = (cvar_pr(iel) -cvara_pr(iel)) / relaxv(ipr)
+        dpvar(iel) = (cvar_pr(iel) -cvara_pr(iel)) / vcopt_p%relaxv
       enddo
     else
       !$omp parallel do
@@ -864,12 +870,12 @@ if (ippmod(icompf).lt.0) then
     iccocg = 1
     inc = 0
     if (iphydr.eq.1.or.iifren.eq.1) inc = 1
-    nswrgp = nswrgr(ipr)
-    imligp = imligr(ipr)
-    iwarnp = iwarni(ipr)
-    epsrgp = epsrgr(ipr)
-    climgp = climgr(ipr)
-    extrap = extrag(ipr)
+    nswrgp = vcopt_p%nswrgr
+    imligp = vcopt_p%imligr
+    iwarnp = vcopt_p%iwarni
+    epsrgp = vcopt_p%epsrgr
+    climgp = vcopt_p%climgr
+    extrap = vcopt_p%extrag
 
     !Allocation
     allocate(gradp(3, ncelet))
@@ -896,7 +902,6 @@ if (ippmod(icompf).lt.0) then
       deallocate(xinvro)
     endif
 
-    thetap = thetav(ipr)
     !$omp parallel do private(isou)
     do iel = 1, ncelet
       do isou = 1, 3
@@ -909,14 +914,14 @@ if (ippmod(icompf).lt.0) then
 
     ! Update the velocity field
     !--------------------------
-    thetap = thetav(ipr)
+    thetap = vcopt_p%thetav
 
     ! Specific handling of hydrostatic pressure
     !------------------------------------------
     if (iphydr.eq.1) then
 
       ! Scalar diffusion for the pressure
-      if (idften(ipr).eq.1) then
+      if (vcopt_p%idften.eq.1) then
         !$omp parallel do private(dtsrom, isou)
         do iel = 1, ncel
           dtsrom = thetap*dt(iel)/crom(iel)
@@ -927,7 +932,7 @@ if (ippmod(icompf).lt.0) then
         enddo
 
       ! Tensorial diffusion for the pressure
-      else if (idften(ipr).eq.6) then
+      else if (vcopt_p%idften.eq.6) then
         !$omp parallel do private(unsrom)
         do iel = 1, ncel
           unsrom = thetap/crom(iel)
@@ -979,7 +984,7 @@ if (ippmod(icompf).lt.0) then
     else
 
       ! Scalar diffusion for the pressure
-      if (idften(ipr).eq.1) then
+      if (vcopt_p%idften.eq.1) then
 
       !$omp parallel do private(dtsrom, isou)
       do iel = 1, ncel
@@ -990,7 +995,7 @@ if (ippmod(icompf).lt.0) then
        enddo
 
       ! Tensorial diffusion for the pressure
-      else if (idften(ipr).eq.6) then
+      else if (vcopt_p%idften.eq.6) then
 
         !$omp parallel do private(unsrom)
         do iel = 1, ncel
@@ -1037,11 +1042,12 @@ if (iale.eq.1) then
   init   = 1
   inc    = 1
   iflmb0 = 1
-  nswrgp = nswrgr(iuma)
-  imligp = imligr(iuma)
-  iwarnp = iwarni(iuma)
-  epsrgp = epsrgr(iuma)
-  climgp = climgr(iuma)
+  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+  nswrgp = vcopt%nswrgr
+  imligp = vcopt%imligr
+  iwarnp = vcopt%iwarni
+  epsrgp = vcopt%epsrgr
+  climgp = vcopt%climgr
 
   call field_get_coefa_v(ivarfl(iuma), claale)
   call field_get_coefb_v(ivarfl(iuma), clbale)
@@ -1230,11 +1236,11 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
   inc    = 1
   iflmb0 = 1
   if (iale.eq.1) iflmb0 = 0
-  nswrgp = nswrgr(iu)
-  imligp = imligr(iu)
-  iwarnp = iwarni(iu)
-  epsrgp = epsrgr(iu)
-  climgp = climgr(iu)
+  nswrgp = vcopt_u%nswrgr
+  imligp = vcopt_u%imligr
+  iwarnp = vcopt_u%iwarni
+  epsrgp = vcopt_u%epsrgr
+  climgp = vcopt_u%climgr
 
   call inimav                                                     &
  ( ivarfl(iu)      , itypfl ,                                     &
@@ -1384,7 +1390,7 @@ endif
 ! 13. Printing
 !===============================================================================
 
-if (iwarni(iu).ge.1) then
+if (vcopt_u%iwarni.ge.1) then
 
   write(nfecra,2000)
 

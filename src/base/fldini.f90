@@ -82,7 +82,7 @@ implicit none
 
 integer          ii, ivar
 integer          keycpl, iflid, kcvlim, ifctsl
-integer          kdiftn, kturt, kfturt, kislts, keyvar
+integer          kturt, kfturt, kislts, keyvar
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          iprev, inoprv
 integer          f_id, kscavr, f_vis, f_log, f_dften, f_type
@@ -95,8 +95,7 @@ integer          iflidp, idimf, n_fans
 character(len=80) :: name, f_name
 
 type(gas_mix_species_prop) sasp
-
-type(var_cal_opt) vcopt
+type(var_cal_opt) :: vcopt, vcopt_dfm
 
 !===============================================================================
 
@@ -125,11 +124,7 @@ call field_get_key_id("variable_id", keyvar)
 ! If a scalar is a variance, store the id of the parent scalar
 call field_get_key_id("first_moment_id", kscavr)
 
-! Key id for diffusivity tensor
-call field_get_key_id("diffusivity_tensor", kdiftn)
-
 ! Keys not stored globally
-
 call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_id('turbulent_flux_id', kfturt)
 
@@ -146,55 +141,8 @@ call field_get_n_fields(nfld)
 ! 2. Set keywords and add some additional fields
 !===============================================================================
 
-! Copy field calculation options into the field structure
-
-do f_id = 0, nfld - 1
-
-  call field_get_type(f_id, f_type)
-
-  ! Is the field of type FIELD_VARIABLE?
-  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-
-    call field_get_key_int(f_id, keyvar, ivar)
-
-    vcopt%iwarni= iwarni(ivar)
-    vcopt%iconv = iconv (ivar)
-    vcopt%istat = istat (ivar)
-    vcopt%idiff = idiff (ivar)
-    vcopt%idifft= idifft(ivar)
-    vcopt%idften= idften(ivar)
-    vcopt%iswdyn= iswdyn(ivar)
-    vcopt%ischcv= ischcv(ivar)
-    vcopt%ibdtso= ibdtso(ivar)
-    vcopt%isstpc= isstpc(ivar)
-    vcopt%nswrgr= nswrgr(ivar)
-    vcopt%nswrsm= nswrsm(ivar)
-    vcopt%imrgra= imrgra
-    vcopt%imligr= imligr(ivar)
-    vcopt%ircflu= ircflu(ivar)
-    vcopt%iwgrec= iwgrec(ivar)
-    vcopt%thetav= thetav(ivar)
-    vcopt%blencv= blencv(ivar)
-    vcopt%epsilo= epsilo(ivar)
-    vcopt%epsrsm= epsrsm(ivar)
-    vcopt%epsrgr= epsrgr(ivar)
-    vcopt%climgr= climgr(ivar)
-    vcopt%extrag= extrag(ivar)
-    vcopt%relaxv= relaxv(ivar)
-
-    call field_set_key_struct_var_cal_opt(f_id, vcopt)
-  endif
-enddo
-
-
 ! User variables
 !---------------
-
-do ivar = 1, nvar
-  ! Init key word: tensorial diffusivity
-  call field_set_key_int(ivarfl(ivar), kdiftn, idften(ivar))
-enddo
 
 idfm = 0
 iggafm = 0
@@ -209,7 +157,7 @@ do ii = 1, nscal
     call field_get_key_int(ivarfl(ivar), keyvis, f_vis)
     call field_get_key_int(ivarfl(ivar), keylog, f_log)
 
-    call field_get_key_int(ivarfl(ivar), kdiftn, f_dften)
+    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
     if (ityturt(ii).gt.0) then
       call field_get_name (f_id, name)
@@ -229,7 +177,9 @@ do ii = 1, nscal
       if (ityturt(ii).eq.3) then
         call field_set_key_int(iflid, keycpl, 1)
         ! Tensorial diffusivity
-        call field_set_key_int(iflid, kdiftn, 6)
+        call field_get_key_struct_var_cal_opt(iflid, vcopt_dfm)
+        vcopt%idften = 6
+        call field_set_key_struct_var_cal_opt(iflid, vcopt_dfm)
         idfm = 1
       endif
       call field_set_key_int(iflid, keyvis, f_vis)
@@ -239,7 +189,7 @@ do ii = 1, nscal
       call field_set_key_int(ivarfl(ivar), kfturt, iflid)
 
     ! If the user has chosen a tensorial diffusivity
-    else if (f_dften.eq.6) then
+    else if (vcopt%idften.eq.6) then
       idfm = 1
     endif
 
@@ -424,17 +374,18 @@ ityloc = 1         ! variables defined on cells
 idimf  = -1        ! Field dimension
 
 do ivar = 1, nvar
-  if (iwgrec(ivar).eq.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  if (vcopt%iwgrec.eq.1) then
 
-    if (idiff(ivar).lt.1) cycle
+    if (vcopt%idiff.lt.1) cycle
     iflid = ivarfl(ivar)
     if (iflid.eq.iflidp) cycle
     iflidp = iflid
     call field_get_name(iflid, name)
     f_name = 'gradient_weighting_'//trim(name)
-    if (idften(ivar).eq.1) then
+    if (vcopt%idften.eq.1) then
       idimf = 1
-    elseif (idften(ivar).eq.6) then
+    elseif (vcopt%idften.eq.6) then
       idimf = 6
     endif
     call field_create(f_name, itycat, ityloc, idimf, inoprv, f_id)
@@ -592,6 +543,18 @@ endif
 !===============================================================================
 ! 3. Set some field keys
 !===============================================================================
+
+! Copy imrgra into the field structure
+do f_id = 0, nfld - 1
+  call field_get_type(f_id, f_type)
+
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    vcopt%imrgra= imrgra
+    call field_set_key_struct_var_cal_opt(f_id, vcopt)
+  endif
+enddo
 
 ! Copy field physical properties of species into the field structure
 

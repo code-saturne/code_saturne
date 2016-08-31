@@ -2649,13 +2649,7 @@ void CS_PROCF (cstime, CSTIME) (void)
  *     BLENCV, ISCHCV, ISSTPC, IRCFLU, CDTVAR, NITMAX, EPSILO
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uinum1, UINUM1) (double  *blencv,
-                                int     *ischcv,
-                                int     *isstpc,
-                                int     *ircflu,
-                                double  *cdtvar,
-                                double  *epsilo,
-                                int     *nswrsm)
+void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
 {
   double tmp;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -2668,15 +2662,13 @@ void CS_PROCF (uinum1, UINUM1) (double  *blencv,
   cs_field_get_key_struct(c_pres, key_cal_opt_id, &var_cal_opt);
   int j = cs_field_get_key_int(c_pres, var_key_id) -1;
 
-  _variable_value(c_pres->name, "solver_precision", &epsilo[j]);
+  _variable_value(c_pres->name, "solver_precision", &var_cal_opt.epsilo);
 
-  tmp = (double) nswrsm[j];
+  tmp = (double) var_cal_opt.nswrsm;
   _variable_value(c_pres->name, "rhs_reconstruction", &tmp);
-  nswrsm[j] = (int) tmp;
+  var_cal_opt.nswrsm = (int) tmp;
 
   /* Set Field calculation options in the field structure */
-  var_cal_opt.epsilo = epsilo[j];
-  var_cal_opt.nswrsm = nswrsm[j];
   cs_field_set_key_struct(c_pres, key_cal_opt_id, &var_cal_opt);
 
   /* 1-b) for the other variables */
@@ -2687,24 +2679,21 @@ void CS_PROCF (uinum1, UINUM1) (double  *blencv,
       j = cs_field_get_key_int(f, var_key_id) -1;
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
-      _variable_value(f->name, "blending_factor", &blencv[j]);
-      _variable_value(f->name, "solver_precision", &epsilo[j]);
+      _variable_value(f->name, "blending_factor", &var_cal_opt.blencv);
+      _variable_value(f->name, "solver_precision", &var_cal_opt.epsilo);
 
       // only for nscaus and model scalar
       _variable_value(f->name, "time_step_factor", &cdtvar[j]);
 
-      _variable_attribute(f->name, "order_scheme", &ischcv[j]);
-      _variable_attribute(f->name, "slope_test", &isstpc[j]);
-      _variable_attribute(f->name, "flux_reconstruction", &ircflu[j]);
-      tmp = (double) nswrsm[j];
+      _variable_attribute(f->name, "order_scheme", &var_cal_opt.ischcv);
+      _variable_attribute(f->name, "slope_test", &var_cal_opt.isstpc);
+      _variable_attribute(f->name, "flux_reconstruction", &var_cal_opt.ircflu);
+      tmp = (double) var_cal_opt.nswrsm;
       _variable_value(f->name, "rhs_reconstruction", &tmp);
-      nswrsm[j] = (int) tmp;
+      var_cal_opt.nswrsm = (int) tmp;
 
       // Set Field calculation options in the field structure
-      var_cal_opt.blencv = blencv[j];
-      var_cal_opt.epsilo = epsilo[j];
       // TODO add nitmax, imgr, iresol, cdtvar
-      var_cal_opt.nswrsm = nswrsm[j];
       cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
     }
   }
@@ -2716,14 +2705,14 @@ void CS_PROCF (uinum1, UINUM1) (double  *blencv,
     if (f->type & CS_FIELD_VARIABLE) {
       j = cs_field_get_key_int(f, var_key_id) -1;
       bft_printf("-->variable[%i] = %s\n", j, f->name);
-      bft_printf("--blencv = %f\n", blencv[j]);
-      bft_printf("--epsilo = %g\n", epsilo[j]);
+      bft_printf("--blencv = %f\n", var_cal_opt.blencv);
+      bft_printf("--epsilo = %g\n", var_cal_opt.epsilo);
       bft_printf("--cdtvar = %g\n", cdtvar[j]);
       //bft_printf("--nitmax = %i\n", nitmax[j]);
-      bft_printf("--ischcv = %i\n", ischcv[j]);
-      bft_printf("--isstpc = %i\n", isstpc[j]);
-      bft_printf("--ircflu = %i\n", ircflu[j]);
-      bft_printf("--nswrsm = %i\n", nswrsm[j]);
+      bft_printf("--ischcv = %i\n", var_cal_opt.ischcv);
+      bft_printf("--isstpc = %i\n", var_cal_opt.isstpc);
+      bft_printf("--ircflu = %i\n", var_cal_opt.ircflu);
+      bft_printf("--nswrsm = %i\n", var_cal_opt.nswrsm);
       //bft_printf("--imgr = %i\n"  , imgr[j]);
       //bft_printf("--iresol = %i\n", iresol[j]);
     }

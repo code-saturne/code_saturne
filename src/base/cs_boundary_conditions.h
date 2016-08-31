@@ -64,6 +64,10 @@ BEGIN_C_DECLS
 
 extern const int  *cs_glob_bc_type;
 
+/*! boundary zone number associated with each boundary face (specific physics)*/
+
+extern const int  *cs_glob_bc_face_zone;
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -173,18 +177,18 @@ cs_boundary_conditions_mapped_set(cs_field_t                *f,
                                   cs_real_t                  rcodcl[]);
 
 /*----------------------------------------------------------------------------
- * Create the boundary conditions type array bc_type
+ * Create the boundary conditions face type and face zone arrays
  *----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_type_create(void);
+cs_boundary_conditions_create(void);
 
 /*----------------------------------------------------------------------------
- * Free the boundary conditions type array bc_type
+ * Free the boundary conditions face type and face zone arrays
  *----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_type_free(void);
+cs_boundary_conditions_free(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

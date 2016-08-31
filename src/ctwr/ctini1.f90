@@ -57,6 +57,7 @@ use ppppar
 use ppthch
 use ppincl
 use ctincl
+use cs_c_bindings
 
 !===============================================================================
 
@@ -66,6 +67,8 @@ implicit none
 
 integer jj, isc
 double precision cpa,cpe,cpv,hv0,rhoe,visc,conduc
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -86,7 +89,11 @@ do isc = 1, nscapp
     visls0(jj) = viscl0
   endif
 
-  blencv(isca(jj)) = 1.d0
+  call field_get_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)
+
+  vcopt%blencv = 1.d0
+
+  call field_set_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)
 
 enddo
 

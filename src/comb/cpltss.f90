@@ -106,6 +106,7 @@ use ppincl
 use lagran
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -126,6 +127,8 @@ character(len=80) :: chaine
 integer          ivar   , iel
 integer          iscala , icha
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -136,6 +139,8 @@ integer          iscala , icha
 
 ! --- Numero de la variable associee au scalaire a traiter ISCAL
 ivar = isca(iscal)
+
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
 ! --- Nom de la variable associee au scalaire a traiter ISCAL
 call field_get_label(ivarfl(ivar), chaine)
@@ -148,7 +153,7 @@ call field_get_label(ivarfl(ivar), chaine)
 
 if ( ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb)) ) then
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -166,7 +171,7 @@ endif
 
 if ( ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb)) ) then
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -184,7 +189,7 @@ endif
 
 if ( ivar.eq.isca(if3m) ) then
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -201,7 +206,7 @@ endif
 
 if ( ivar.eq.isca(if4p2m) ) then
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 

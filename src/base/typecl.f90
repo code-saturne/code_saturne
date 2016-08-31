@@ -136,6 +136,8 @@ integer          ipass
 data             ipass /0/
 save             ipass
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -154,6 +156,8 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
 
 call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
+
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 
 !===============================================================================
 ! 2.  Check consistency of types given in cs_user_boundary_conditions
@@ -257,7 +261,7 @@ endif
 ! ---> On ecrit les types de faces avec la borne inf et sup et le nb
 !       pour chaque type de face trouve (tjrs pour les types par defaut)
 
-if(ipass.eq.0.or.iwarni(iu).ge.2) then
+if(ipass.eq.0.or.vcopt%iwarni.ge.2) then
 
   ipass = 1
 
@@ -1433,7 +1437,8 @@ enddo
 
 do ivar = 1, nvar
   ndircl(ivar) = 0
-  if ( istat(ivar).gt.0 .or. idircl(ivar).eq.0 ) ndircl(ivar) = 1
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  if ( vcopt%istat.gt.0 .or. idircl(ivar).eq.0 ) ndircl(ivar) = 1
 enddo
 
 do ivar = 1, nvar
@@ -1458,8 +1463,10 @@ enddo
 
 !===============================================================================
 
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+
 iwaru = -1
-iwaru = max(iwarni(iu),iwaru)
+iwaru = max(vcopt%iwarni,iwaru)
 if (irangp.ge.0) call parcmx(iwaru)
 
 if(iwaru.ge.1 .or. mod(ntcabs,ntlist).eq.0                        &
@@ -1467,7 +1474,7 @@ if(iwaru.ge.1 .or. mod(ntcabs,ntlist).eq.0                        &
   write(nfecra,7010)
 endif
 
-iwrnp = iwarni(iu)
+iwrnp = vcopt%iwarni
 if (irangp.ge.0) call parcmx (iwrnp)
 !==========
 

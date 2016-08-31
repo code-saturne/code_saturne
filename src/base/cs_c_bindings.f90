@@ -692,34 +692,34 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function creating the bc type array
+    ! Interface to C function creating the bc type and face zone arrays
 
-    subroutine cs_f_boundary_conditions_type_create() &
-      bind(C, name='cs_boundary_conditions_type_create')
+    subroutine cs_f_boundary_conditions_create() &
+      bind(C, name='cs_boundary_conditions_create')
       use, intrinsic :: iso_c_binding
       implicit none
-    end subroutine cs_f_boundary_conditions_type_create
+    end subroutine cs_f_boundary_conditions_create
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function freeing the bc type array
+    ! Interface to C function freeing the bc type and face zone arrays
 
-    subroutine cs_f_boundary_conditions_type_free() &
-      bind(C, name='cs_boundary_conditions_type_free')
+    subroutine cs_f_boundary_conditions_free() &
+      bind(C, name='cs_boundary_conditions_free')
       use, intrinsic :: iso_c_binding
       implicit none
-    end subroutine cs_f_boundary_conditions_type_free
+    end subroutine cs_f_boundary_conditions_free
 
     !---------------------------------------------------------------------------
 
     ! Interface to C function to get the bc type array pointer
 
-    subroutine cs_f_boundary_conditions_type_get_pointer(bc_type) &
-      bind(C, name='cs_f_boundary_conditions_type_get_pointer')
+    subroutine cs_f_boundary_conditions_get_pointer(itypfb, izfppp) &
+      bind(C, name='cs_f_boundary_conditions_get_pointer')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: bc_type
-    end subroutine cs_f_boundary_conditions_type_get_pointer
+      type(c_ptr), intent(out) :: itypfb, izfppp
+    end subroutine cs_f_boundary_conditions_get_pointer
 
     !---------------------------------------------------------------------------
 
@@ -1522,6 +1522,27 @@ module cs_c_bindings
       implicit none
       type(c_ptr), value :: r
     end subroutine lagr_moment_restart_read
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Add a species field to the gas mix (set of fields).
+
+    subroutine gas_mix_add_species(f_id)  &
+      bind(C, name='cs_gas_mix_add_species')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+    end subroutine gas_mix_add_species
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Free array mapping gas mix species ids to field ids.
+
+    subroutine finalize_gas_mix()  &
+      bind(C, name='cs_gas_mix_finalize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine finalize_gas_mix
 
     !---------------------------------------------------------------------------
 

@@ -27,6 +27,8 @@ module numvar
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
+
   use paramx
 
   implicit none
@@ -142,7 +144,7 @@ module numvar
 
   !> \anchor nscasp
   !> number of species scalars
-  integer, save :: nscasp
+  integer(c_int), pointer, save :: nscasp
 
   !> \anchor iuma
   !> mesh velocity component \f$ w_x \f$
@@ -287,11 +289,44 @@ module numvar
   !> Field id for the dttens tensor
   integer, save :: idtten
 
+  !> \}
+
+  !=============================================================================
+
+  interface
+
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving the number of species in the gas mix
+    ! if gas mix model is enabled (igmix)
+
+    subroutine cs_f_gas_mix_get_pointers(nscasp) &
+      bind(C, name='cs_f_gas_mix_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: nscasp
+    end subroutine cs_f_gas_mix_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
+
+    !---------------------------------------------------------------------------
+
+  end interface
+
   !=============================================================================
 
 contains
 
   !=============================================================================
+
+  !> \addtogroup field_map
+  !> \{
 
   !> \anchor iprpfl
   !> Identity function for compatibility with deprecated iprpfl array
@@ -312,6 +347,24 @@ contains
   end function iprpfl
 
   !> \}
+
+  !> \brief Initialize Fortran gas mix API.
+  !> This maps Fortran pointers to global C variables.
+
+  subroutine gas_mix_options_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_nscasp
+
+    call cs_f_gas_mix_get_pointers(c_nscasp)
+
+    call c_f_pointer(c_nscasp, nscasp)
+
+  end subroutine gas_mix_options_init
 
   !=============================================================================
 

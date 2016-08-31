@@ -199,6 +199,7 @@ double precision visci(3,3), fikis, viscis, distfi
 double precision cfl, kpdc, rho, pimp, bpmasf
 
 type(solving_info) sinfo
+type(var_cal_opt) :: vcopt_p, vcopt_u
 
 double precision rvoid(1)
 
@@ -245,12 +246,15 @@ double precision, allocatable, dimension(:) :: surfbm
 rnorm2 = 0.d0
 niterf = 0
 
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
+
 ! Allocate temporary arrays
 allocate(dam(ncelet), xam(nfac))
 allocate(res(ncelet), presa(ncelet), divu(ncelet))
 allocate(rhs(ncelet), rovsdt(ncelet))
 allocate(iflux(nfac), bflux(ndimfb))
-iswdyp = iswdyn(ipr)
+iswdyp = vcopt_p%iswdyn
 if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
                           dpvarm1(ncelet), rhs0(ncelet))
 if (icalhy.eq.1) allocate(frchy(ndim,ncelet),             &
@@ -261,13 +265,13 @@ allocate(coefaf_dp(ndimfb), coefbf_dp(ndimfb))
 
 ! Associate pointers to pressure diffusion coefficient
 viscap => dt(:)
-if (idften(ipr).eq.6)  vitenp => tpucou(:,:)
+if (vcopt_p%idften.eq.6)  vitenp => tpucou(:,:)
 
 ! Index of the field
 iflid = ivarfl(ipr)
 call field_get_key_struct_solving_info(iflid, sinfo)
 
-if (iwgrec(ipr).eq.1) then
+if (vcopt_p%iwgrec.eq.1) then
   ! Id weighting field for gradient
   call field_get_key_int(iflid, kwgrec, iflwgr)
   call field_get_dim(iflwgr, f_dim)
@@ -308,7 +312,7 @@ call field_get_val_s(iflmab, bmasfl)
 
 ! --- Solving options
 isym  = 1
-if( iconv (ipr).gt.0 ) then
+if(vcopt_p%iconv.gt.0 ) then
   isym  = 2
 endif
 
@@ -335,12 +339,12 @@ if (icavit.ge.0.or.idilat.eq.4) then
   do iel = 1, ncelet
     xunsro(iel) = 1.d0/crom(iel)
   enddo
-  if (idften(ipr).eq.1) then
+  if (vcopt_p%idften.eq.1) then
     allocate(xdtsro(ncelet))
     do iel = 1, ncelet
       xdtsro(iel) = dt(iel)/crom(iel)
     enddo
-  elseif (idften(ipr).eq.6) then
+  elseif (vcopt_p%idften.eq.6) then
     allocate(tpusro(6,ncelet))
     do iel = 1, ncelet
       tpusro(1,iel) = tpucou(1,iel)*xunsro(iel)
@@ -354,7 +358,7 @@ if (icavit.ge.0.or.idilat.eq.4) then
 
   ! Associate pointers to pressure diffusion coefficient
   viscap => xdtsro(:)
-  if (idften(ipr).eq.6)  vitenp => tpusro(:,:)
+  if (vcopt_p%idften.eq.6)  vitenp => tpusro(:,:)
 
 endif
 
@@ -413,10 +417,10 @@ if (irnpnw.ne.1) then
   iflmb0 = 1
   if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
   nswrgp = 1
-  imligp = imligr(iu )
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(iu )
-  climgp = climgr(iu )
+  imligp = vcopt_u%imligr
+  iwarnp = vcopt_p%iwarni
+  epsrgp = vcopt_u%epsrgr
+  climgp = vcopt_u%climgr
   itypfl = 1
   if (idilat.ge.4.or.icavit.ge.0) itypfl = 0
 
@@ -492,14 +496,14 @@ if (irnpnw.ne.1) then
 
   rnormp = sqrt(cs_gdot(ncel,res,res))
 
-  if(iwarni(ipr).ge.2) then
+  if(vcopt_p%iwarni.ge.2) then
     write(nfecra,1300)chaine(1:16) ,rnormp
   endif
   sinfo%nbivar = 0
 
 else
 
-  if(iwarni(ipr).ge.2) then
+  if(vcopt_p%iwarni.ge.2) then
     write(nfecra,1300)chaine(1:16) ,rnormp
   endif
   sinfo%nbivar = 0
@@ -547,10 +551,10 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
 
       iel = ifabor(ifac)
 
-      if (idften(ipr).eq.1) then
+      if (vcopt_p%idften.eq.1) then
         hint = dt(iel)/distb(ifac)
       ! Symmetric tensor diffusivity
-      elseif (idften(ipr).eq.6) then
+      elseif (vcopt_p%idften.eq.6) then
 
         visci(1,1) = tpucou(1,iel)
         visci(2,2) = tpucou(2,iel)
@@ -693,11 +697,11 @@ if (iphydr.eq.1.or.iifren.eq.1) then
         endif
 
         ! Diffusive flux BCs
-        if (idften(ipr).eq.1) then
+        if (vcopt_p%idften.eq.1) then
           hint = dt(iel)/distb(ifac)
 
         ! Symmetric tensor diffusivity
-        elseif (idften(ipr).eq.6) then
+        elseif (vcopt_p%idften.eq.6) then
 
           visci(1,1) = tpucou(1,iel)
           visci(2,2) = tpucou(2,iel)
@@ -809,10 +813,10 @@ if (idilat.eq.3) then
 endif
 
 ! ---> Face diffusivity
-if (idiff(ipr).ge.1) then
+if (vcopt_p%idiff.ge.1) then
 
   ! Scalar diffusivity
-  if (idften(ipr).eq.1) then
+  if (vcopt_p%idften.eq.1) then
 
     if (icavit.ge.0) then
       imvisp = 1  ! Cavitation: continuity of the flux across internal faces
@@ -826,7 +830,7 @@ if (idiff(ipr).ge.1) then
      viscap ,            &
      viscf  , viscb  )
 
-    if (iwgrec(ipr).eq.1) then
+    if (vcopt_p%iwgrec.eq.1) then
       ! Weighting for gradient
       do iel = 1, ncel
         cpro_wgrec_s(iel) = viscap(iel)
@@ -835,13 +839,13 @@ if (idiff(ipr).ge.1) then
     endif
 
   ! Tensor diffusivity
-  else if (idften(ipr).eq.6) then
+  else if (vcopt_p%idften.eq.6) then
 
     ! Allocate temporary arrays
     allocate(weighf(2,nfac))
     allocate(weighb(ndimfb))
 
-    iwarnp = iwarni(ipr)
+    iwarnp = vcopt_p%iwarni
 
     call vitens &
     !==========
@@ -849,7 +853,7 @@ if (idiff(ipr).ge.1) then
      weighf , weighb ,             &
      viscf  , viscb  )
 
-    if (iwgrec(ipr).eq.1) then
+    if (vcopt_p%iwgrec.eq.1) then
       ! Weighting for gradient
       do iel = 1, ncel
         do isou = 1, 6
@@ -872,8 +876,8 @@ else
 
 endif
 
-iconvp = iconv (ipr)
-idiffp = idiff (ipr)
+iconvp = vcopt_p%iconv
+idiffp = vcopt_p%idiff
 ndircp = ndircl(ipr)
 
 thetap = 1.d0
@@ -910,12 +914,12 @@ if (icavit.lt.0) then
 else
   ! Cavitating flows: continuity of the diffusive flux across internal faces
 
-  nswrgp = nswrgr(ipr)
-  imligp = imligr(ipr)
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(ipr)
-  climgp = climgr(ipr)
-  extrap = extrag(ipr)
+  nswrgp = vcopt_p%nswrgr
+  imligp = vcopt_p%imligr
+  iwarnp = vcopt_p%iwarni
+  epsrgp = vcopt_p%epsrgr
+  climgp = vcopt_p%climgr
+  extrap = vcopt_p%extrag
 
   call gradient_weighted_s(ivarfl(ipr), imrgra, inc, iccocg, nswrgp, imligp,  &
                            iwarnp, epsrgp, climgp, extrap,                    &
@@ -942,14 +946,14 @@ endif
 !     The RHS contains rho div(u*) and not div(rho u*)
 !     so this term will be add afterwards
 if (idilat.ge.4) then
-  if (idften(ipr).eq.1) then
+  if (vcopt_p%idften.eq.1) then
     do iel = 1, ncel
       ardtsr  = arak*(dt(iel)/crom(iel))
       do isou = 1, 3
         trav(isou,iel) = ardtsr*trav(isou,iel)
       enddo
     enddo
-  else if (idften(ipr).eq.6) then
+  else if (vcopt_p%idften.eq.6) then
     do iel = 1, ncel
       arsr  = arak/crom(iel)
 
@@ -974,14 +978,14 @@ if (idilat.ge.4) then
 
 ! Standard algorithm
 else
-  if (idften(ipr).eq.1) then
+  if (vcopt_p%idften.eq.1) then
     do iel = 1, ncel
       ardtsr  = arak*(dt(iel)/crom(iel))
       do isou = 1, 3
         trav(isou,iel) = vel(isou,iel) + ardtsr*trav(isou,iel)
       enddo
     enddo
-  else if (idften(ipr).eq.6) then
+  else if (vcopt_p%idften.eq.6) then
     do iel = 1, ncel
       arsr  = arak/crom(iel)
 
@@ -1020,11 +1024,11 @@ inc    = 1
 if (idilat.ge.4) inc = 0
 iflmb0 = 1
 if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
-nswrgp = nswrgr(iu )
-imligp = imligr(iu )
-iwarnp = iwarni(ipr)
-epsrgp = epsrgr(iu )
-climgp = climgr(iu )
+nswrgp = vcopt_u%nswrgr
+imligp = vcopt_u%imligr
+iwarnp = vcopt_p%iwarni
+epsrgp = vcopt_u%epsrgr
+climgp = vcopt_u%climgr
 itypfl = 1
 if (icavit.ge.0.or.idilat.eq.4) itypfl = 0
 
@@ -1046,15 +1050,15 @@ if (iphydr.eq.1) then
   init   = 0
   inc    = 0
   iccocg = 1
-  nswrgp = nswrgr(ipr)
-  imligp = imligr(ipr)
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(ipr)
-  climgp = climgr(ipr)
-  ircflp = ircflu(ipr)
+  nswrgp = vcopt_p%nswrgr
+  imligp = vcopt_p%imligr
+  iwarnp = vcopt_p%iwarni
+  epsrgp = vcopt_p%epsrgr
+  climgp = vcopt_p%climgr
+  ircflp = vcopt_p%ircflu
 
   ! Scalar diffusivity
-  if (idften(ipr).eq.1) then
+  if (vcopt_p%idften.eq.1) then
     call projts &
     !==========
  ( init   , nswrgp ,                                              &
@@ -1065,7 +1069,7 @@ if (iphydr.eq.1) then
    dt     , dt     , dt     )
 
   ! Tensor diffusivity
-  else if (idften(ipr).eq.6) then
+  else if (vcopt_p%idften.eq.6) then
 
     call projtv &
     !==========
@@ -1111,17 +1115,17 @@ if (arak.gt.0.d0) then
 
   ! Scalar diffusivity
   !-------------------
-  if (idften(ipr).eq.1) then
+  if (vcopt_p%idften.eq.1) then
     do iel = 1, ncel
       viscap(iel) = arak*viscap(iel)
     enddo
 
-    nswrgp = nswrgr(ipr )
-    imligp = imligr(ipr )
-    iwarnp = iwarni(ipr)
-    epsrgp = epsrgr(ipr )
-    climgp = climgr(ipr )
-    extrap = extrag(ipr )
+    nswrgp = vcopt_p%nswrgr
+    imligp = vcopt_p%imligr
+    iwarnp = vcopt_p%iwarni
+    epsrgp = vcopt_p%epsrgr
+    climgp = vcopt_p%climgr
+    extrap = vcopt_p%extrag
 
     call itrmas &
     !==========
@@ -1140,11 +1144,11 @@ if (arak.gt.0.d0) then
       init   = 0
       inc    = 0
       iccocg = 1
-      nswrgp = nswrgr(ipr)
-      imligp = imligr(ipr)
-      iwarnp = iwarni(ipr)
-      epsrgp = epsrgr(ipr)
-      climgp = climgr(ipr)
+      nswrgp = vcopt_p%nswrgr
+      imligp = vcopt_p%imligr
+      iwarnp = vcopt_p%iwarni
+      epsrgp = vcopt_p%epsrgr
+      climgp = vcopt_p%climgr
 
       ! A 0 boundary coefficient coefbf_dp is passed to projts
       ! to cancel boundary terms
@@ -1174,7 +1178,7 @@ if (arak.gt.0.d0) then
 
   ! Tensor diffusivity
   !-------------------
-  else if (idften(ipr).eq.6) then
+  else if (vcopt_p%idften.eq.6) then
 
     do iel = 1, ncel
       vitenp(1,iel) = arak*vitenp(1,iel)
@@ -1185,13 +1189,13 @@ if (arak.gt.0.d0) then
       vitenp(6,iel) = arak*vitenp(6,iel)
     enddo
 
-    nswrgp = nswrgr(ipr)
-    imligp = imligr(ipr)
-    iwarnp = iwarni(ipr)
-    epsrgp = epsrgr(ipr)
-    climgp = climgr(ipr)
-    extrap = extrag(ipr)
-    ircflp = ircflu(ipr)
+    nswrgp = vcopt_p%nswrgr
+    imligp = vcopt_p%imligr
+    iwarnp = vcopt_p%iwarni
+    epsrgp = vcopt_p%epsrgr
+    climgp = vcopt_p%climgr
+    extrap = vcopt_p%extrag
+    ircflp = vcopt_p%ircflu
 
     call itrmav &
     !==========
@@ -1210,11 +1214,11 @@ if (arak.gt.0.d0) then
     if (iphydr.eq.1) then
       init   = 0
       inc    = 0
-      nswrgp = nswrgr(ipr)
-      imligp = imligr(ipr)
-      iwarnp = iwarni(ipr)
-      epsrgp = epsrgr(ipr)
-      climgp = climgr(ipr)
+      nswrgp = vcopt_p%nswrgr
+      imligp = vcopt_p%imligr
+      iwarnp = vcopt_p%iwarni
+      epsrgp = vcopt_p%epsrgr
+      climgp = vcopt_p%climgr
 
       ! A 0 boundary coefficient coefbf_dp is passed to projtv
       ! to cancel boundary terms
@@ -1261,10 +1265,10 @@ if (arak.gt.0.d0) then
   ! If Saturne/Saturne coupling, re-set the boundary face viscosity to
   ! the non-zero value
   if (nbrcpl.gt.0) then
-    if (idiff(ipr).ge.1) then
+    if (vcopt_p%idiff.ge.1) then
 
       !Scalar diffusivity
-      if (idften(ipr).eq.1) then
+      if (vcopt_p%idften.eq.1) then
 
         if (icavit.lt.0) then
           imvisp = imvisf
@@ -1279,9 +1283,9 @@ if (arak.gt.0.d0) then
         viscf  , viscb  )
 
       ! Tensor diffusivity
-      else if (idften(ipr).eq.6) then
+      else if (vcopt_p%idften.eq.6) then
 
-        iwarnp = iwarni(ipr)
+        iwarnp = vcopt_p%iwarni
 
         call vitens &
         !==========
@@ -1308,7 +1312,7 @@ endif
 !===============================================================================
 
 ! --- Number of sweeps
-nswmpr = nswrsm(ipr)
+nswmpr = vcopt_p%nswrsm
 
 ! --- Variables are set to 0
 !       cvar_pr    is the increment of the pressure
@@ -1320,7 +1324,7 @@ do iel = 1, ncel
   presa(iel) = 0.d0
 enddo
 
-relaxp = relaxv(ipr)
+relaxp = vcopt_p%relaxv
 
 ! --- Initial divergence
 init = 1
@@ -1343,11 +1347,11 @@ if (idilat.ge.4) then
   inc    = 1
   iflmb0 = 1
   if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
-  nswrgp = nswrgr(iu)
-  imligp = imligr(iu)
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(iu)
-  climgp = climgr(iu)
+  nswrgp = vcopt_u%nswrgr
+  imligp = vcopt_u%imligr
+  iwarnp = vcopt_p%iwarni
+  epsrgp = vcopt_u%epsrgr
+  climgp = vcopt_u%climgr
 
   itypfl = 0
 
@@ -1392,11 +1396,11 @@ if (idilat.ge.4) then
   inc    = 1
   iflmb0 = 1
   if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
-  nswrgp = nswrgr(iu)
-  imligp = imligr(iu)
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(iu)
-  climgp = climgr(iu)
+  nswrgp = vcopt_u%nswrgr
+  imligp = vcopt_u%imligr
+  iwarnp = vcopt_p%iwarni
+  epsrgp = vcopt_u%epsrgr
+  climgp = vcopt_u%climgr
 
   itypfl = 1
   if (idilat.eq.4) itypfl = 0
@@ -1490,7 +1494,7 @@ endif
 isweep = 1
 
 ! Writing
-if (iwarni(ipr).ge.2) then
+if (vcopt_p%iwarni.ge.2) then
   write(nfecra,1400)chaine(1:16),isweep,residu, relaxp
 endif
 
@@ -1512,15 +1516,15 @@ if (iswdyp.ge.1) then
   init = 1
   inc  = 0
   if (iphydr.eq.1.or.iifren.eq.1) inc = 1
-  nswrgp = nswrgr(ipr)
-  imligp = imligr(ipr)
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(ipr)
-  climgp = climgr(ipr)
-  extrap = extrag(ipr)
-  ircflp = ircflu(ipr)
+  nswrgp = vcopt_p%nswrgr
+  imligp = vcopt_p%imligr
+  iwarnp = vcopt_p%iwarni
+  epsrgp = vcopt_p%epsrgr
+  climgp = vcopt_p%climgr
+  extrap = vcopt_p%extrag
+  ircflp = vcopt_p%ircflu
 
-  if (idften(ipr).eq.1) then
+  if (vcopt_p%idften.eq.1) then
 
     call itrgrp &
     !==========
@@ -1535,7 +1539,7 @@ if (iswdyp.ge.1) then
    viscap , viscap , viscap ,                                                  &
    rhs0   )
 
-  else if (idften(ipr).eq.6) then
+  else if (vcopt_p%idften.eq.6) then
 
     call itrgrv &
     !==========
@@ -1558,7 +1562,7 @@ endif
 ! Reconstruction loop (beginning)
 !--------------------------------
 
-do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
+do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
 
   ! Solving on the increment dpvar
   !-------------------------------
@@ -1573,8 +1577,8 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
     enddo
   endif
 
-  iwarnp = iwarni(ipr)
-  epsilp = epsilo(ipr)
+  iwarnp = vcopt_p%iwarni
+  epsilp = vcopt_p%epsilo
 
   ! The pressure is a scalar => no problem for the periodicity of rotation
   ! (iinvpe=1)
@@ -1603,14 +1607,14 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
     init = 0
     inc  = 0
     if (iphydr.eq.1.or.iifren.eq.1) inc = 1
-    nswrgp = nswrgr(ipr)
-    imligp = imligr(ipr)
-    iwarnp = iwarni(ipr)
-    epsrgp = epsrgr(ipr)
-    climgp = climgr(ipr)
-    extrap = extrag(ipr)
+    nswrgp = vcopt_p%nswrgr
+    imligp = vcopt_p%imligr
+    iwarnp = vcopt_p%iwarni
+    epsrgp = vcopt_p%epsrgr
+    climgp = vcopt_p%climgr
+    extrap = vcopt_p%extrag
 
-    if (idften(ipr).eq.1) then
+    if (vcopt_p%idften.eq.1) then
 
       call itrgrp &
       !==========
@@ -1626,7 +1630,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
      viscap , viscap , viscap ,                                &
      adxk   )
 
-    else if (idften(ipr).eq.6) then
+    else if (vcopt_p%idften.eq.6) then
 
       call itrgrv &
       !==========
@@ -1703,10 +1707,10 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   !---------------------------------
 
   if (iswdyp.eq.0) then
-    if (idtvar.ge.0.and.isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp) then
+    if (idtvar.ge.0.and.isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) then
       do iel = 1, ncel
         presa(iel) = cvar_pr(iel)
-        cvar_pr(iel) = presa(iel) + relaxv(ipr)*dpvar(iel)
+        cvar_pr(iel) = presa(iel) + vcopt_p%relaxv*dpvar(iel)
       enddo
     ! If it is the last sweep, update with the total increment
     else
@@ -1735,14 +1739,14 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   init = 1
   inc  = 0
   if (iphydr.eq.1.or.iifren.eq.1) inc = 1
-  nswrgp = nswrgr(ipr)
-  imligp = imligr(ipr)
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(ipr)
-  climgp = climgr(ipr)
-  extrap = extrag(ipr)
+  nswrgp = vcopt_p%nswrgr
+  imligp = vcopt_p%imligr
+  iwarnp = vcopt_p%iwarni
+  epsrgp = vcopt_p%epsrgr
+  climgp = vcopt_p%climgr
+  extrap = vcopt_p%extrag
 
-  if (idften(ipr).eq.1) then
+  if (vcopt_p%idften.eq.1) then
 
     call itrgrp &
     !==========
@@ -1757,7 +1761,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    viscap , viscap , viscap ,                                                  &
    rhs    )
 
-  else if (idften(ipr).eq.6) then
+  else if (vcopt_p%idften.eq.6) then
 
     call itrgrv &
     !==========
@@ -1786,7 +1790,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   sinfo%nbivar = sinfo%nbivar + niterf
 
   ! Writing
-  if (iwarni(ipr).ge.2) then
+  if (vcopt_p%iwarni.ge.2) then
     write(nfecra,1400) chaine(1:16), isweep, residu, relaxp
     write(nfecra,1500) chaine(1:16), isweep, residu, rnormp, niterf
   endif
@@ -1805,8 +1809,8 @@ endif
 
 
 ! Writing
-if(iwarni(ipr).ge.1) then
-  if (residu.le.epsrsm(ipr)*rnormp) then
+if(vcopt_p%iwarni.ge.1) then
+  if (residu.le.vcopt_p%epsrsm*rnormp) then
     write(nfecra,1500) chaine(1:16), isweep-1, residu, rnormp, niterf
 
   ! Writing: non-convergence
@@ -1852,14 +1856,14 @@ inc  = 0
 ! In case of hydrostatic pressure, inc is set to 1 to take explicit
 ! boundary conditions on the pressure (coefa)
 if (iphydr.eq.1.or.iifren.eq.1) inc = 1
-nswrgp = nswrgr(ipr)
-imligp = imligr(ipr)
-iwarnp = iwarni(ipr)
-epsrgp = epsrgr(ipr)
-climgp = climgr(ipr)
-extrap = extrag(ipr)
+nswrgp = vcopt_p%nswrgr
+imligp = vcopt_p%imligr
+iwarnp = vcopt_p%iwarni
+epsrgp = vcopt_p%epsrgr
+climgp = vcopt_p%climgr
+extrap = vcopt_p%extrag
 
-if (idften(ipr).eq.1) then
+if (vcopt_p%idften.eq.1) then
 
   call itrmas &
   !==========
@@ -1893,7 +1897,7 @@ if (idften(ipr).eq.1) then
    viscap , viscap , viscap ,                                                  &
    imasfl , bmasfl )
 
-else if (idften(ipr).eq.6) then
+else if (vcopt_p%idften.eq.6) then
 
   call itrmav &
   !==========
@@ -1953,12 +1957,12 @@ if (idilat.eq.5) then
   ! --- Convective flux: dt/rho grad(rho)
   inc = 1
   iccocg = 1
-  nswrgp = nswrgr(iu)
-  imligp = imligr(iu)
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(iu)
-  climgp = climgr(iu)
-  extrap = extrag(iu)
+  nswrgp = vcopt_u%nswrgr
+  imligp = vcopt_u%imligr
+  iwarnp = vcopt_p%iwarni
+  epsrgp = vcopt_u%epsrgr
+  climgp = vcopt_u%climgr
+  extrap = vcopt_u%extrag
 
   ! Dirichlet Boundary Condition on rho
   !------------------------------------
@@ -1992,12 +1996,12 @@ if (idilat.eq.5) then
   inc    = 1
   iflmb0 = 1
   if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
-  nswrgp = nswrgr(iu)
-  imligp = imligr(iu)
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(iu)
-  climgp = climgr(iu)
-  extrap = extrag(iu)
+  nswrgp = vcopt_u%nswrgr
+  imligp = vcopt_u%imligr
+  iwarnp = vcopt_p%iwarni
+  epsrgp = vcopt_u%epsrgr
+  climgp = vcopt_u%climgr
+  extrap = vcopt_u%extrag
 
   itypfl = 0
 
@@ -2016,11 +2020,11 @@ if (idilat.eq.5) then
     qimpv(2) = 0.d0
     qimpv(3) = 0.d0
 
-    if (idften(ipr).eq.1) then
+    if (vcopt_p%idften.eq.1) then
       hint = dt(iel)/distb(ifac)
 
     ! Symmetric tensor diffusivity
-    elseif (idften(ipr).eq.6) then
+    elseif (vcopt_p%idften.eq.6) then
 
       visci(1,1) = tpucou(1,iel)
       visci(2,2) = tpucou(2,iel)
@@ -2106,20 +2110,20 @@ if (idilat.eq.5) then
   imasac = 1
   idiffp = 0
   nswrsp = 1
-  imligp = imligr(ivar)
-  ircflp = ircflu(ivar)
-  ischcp = ischcv(ivar)
-  isstpp = isstpc(ivar)
+  imligp = vcopt_p%imligr
+  ircflp = vcopt_p%ircflu
+  ischcp = vcopt_p%ischcv
+  isstpp = vcopt_p%isstpc
   inc    = 1
   iccocg = 1
-  iwarnp = iwarni(ivar)
+  iwarnp = vcopt_p%iwarni
   imucpp = 0
-  idftnp = idften(ivar)
-  blencp = blencv(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
-  relaxp = relaxv(ivar)
+  idftnp = vcopt_p%idften
+  blencp = vcopt_p%blencv
+  epsrgp = vcopt_p%epsrgr
+  climgp = vcopt_p%climgr
+  extrap = vcopt_p%extrag
+  relaxp = vcopt_p%relaxv
   thetap = 1.d0
   ! all boundary convective flux with upwind
   icvflb = 0
@@ -2150,25 +2154,25 @@ if (idilat.eq.5) then
   idiffp = 1
   ! To reinforce the diagonal
   ndircp = 0
-  nswrsp = nswrsm(ivar)
-  nswrgp = nswrgr(ivar)
-  imligp = imligr(ivar)
-  ircflp = ircflu(ivar)
-  ischcp = ischcv(ivar)
-  isstpp = isstpc(ivar)
+  nswrsp = vcopt_p%nswrsm
+  nswrgp = vcopt_p%nswrgr
+  imligp = vcopt_p%imligr
+  ircflp = vcopt_p%ircflu
+  ischcp = vcopt_p%ischcv
+  isstpp = vcopt_p%isstpc
   iescap = 0
   imucpp = 0
-  idftnp = idften(ivar)
-  iswdyp = iswdyn(ivar)
-  iwarnp = iwarni(ivar)
-  blencp = blencv(ivar)
-  epsilp = epsilo(ivar)
-  epsrsp = epsrsm(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
-  relaxp = relaxv(ivar)
-  thetap = thetav(ivar)
+  idftnp = vcopt_p%idften
+  iswdyp = vcopt_p%iswdyn
+  iwarnp = vcopt_p%iwarni
+  blencp = vcopt_p%blencv
+  epsilp = vcopt_p%epsilo
+  epsrsp = vcopt_p%epsrsm
+  epsrgp = vcopt_p%epsrgr
+  climgp = vcopt_p%climgr
+  extrap = vcopt_p%extrag
+  relaxp = vcopt_p%relaxv
+  thetap = vcopt_p%thetav
   ! all boundary convective flux with upwind
   icvflb = 0
   ! ivar = 0
@@ -2210,14 +2214,14 @@ if (idilat.eq.5) then
   init   = 0
   inc    = 1
   iccocg = 1
-  nswrgp = nswrgr(ipr)
-  imligp = imligr(ipr)
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(ipr)
-  climgp = climgr(ipr)
-  extrap = extrag(ipr)
+  nswrgp = vcopt_p%nswrgr
+  imligp = vcopt_p%imligr
+  iwarnp = vcopt_p%iwarni
+  epsrgp = vcopt_p%epsrgr
+  climgp = vcopt_p%climgr
+  extrap = vcopt_p%extrag
 
-  if (idften(ipr).eq.1) then
+  if (vcopt_p%idften.eq.1) then
     call itrmas &
     !==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
@@ -2248,7 +2252,7 @@ if (idilat.eq.5) then
    dt     , dt     , dt     ,                                                  &
    imasfl , bmasfl )
 
-  else if (idften(ipr).eq.6) then
+  else if (vcopt_p%idften.eq.6) then
 
     call itrmav &
     !==========
@@ -2299,7 +2303,7 @@ endif
 
 if (idtvar.lt.0) then
   do iel = 1, ncel
-    cvar_pr(iel) = cvara_pr(iel) + relaxv(ipr)*cvar_pr(iel)
+    cvar_pr(iel) = cvara_pr(iel) + vcopt_p%relaxv*cvar_pr(iel)
   enddo
 else
   do iel = 1, ncel

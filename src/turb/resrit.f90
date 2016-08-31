@@ -128,6 +128,8 @@ double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: cvar_tt, cvara_tt
 double precision, dimension(:), pointer :: viscl, visct, viscls, c_st_prv
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -172,14 +174,17 @@ endif
 call field_get_val_v(ivsten, visten)
 
 ivar = isca(iscal)
-if (iwarni(ivar).ge.1) then
+
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+if (vcopt%iwarni.ge.1) then
   call field_get_name(ivarfl(ivar), name)
   write(nfecra,1000) trim(name)//'_turbulent_flux'
 endif
 
 ! S pour Source, V pour Variable
 thets  = thetst
-thetv  = thetav(ivar)
+thetv  = vcopt%thetav
 
 call field_get_key_int(ivarfl(ivar), kstprv, st_prv_id)
 if (st_prv_id.ge.0) then
@@ -243,7 +248,7 @@ endif
 do iel = 1, ncel
   do isou = 1, 3
     fimp(isou,isou,iel) = fimp(isou,isou,iel)                                  &
-                        + istat(ivar)*(crom(iel)/dt(iel))*volume(iel)
+                        + vcopt%istat*(crom(iel)/dt(iel))*volume(iel)
   enddo
 enddo
 
@@ -368,25 +373,25 @@ call field_get_coefb_v(f_id,coefbv)
 call field_get_coefaf_v(f_id,cofafv)
 call field_get_coefbf_v(f_id,cofbfv)
 
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
+iconvp = vcopt%iconv
+idiffp = vcopt%idiff
 ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
+nswrsp = vcopt%nswrsm
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+ircflp = vcopt%ircflu
+ischcp = vcopt%ischcv
+isstpp = vcopt%isstpc
 iescap = 0
 idftnp = 6
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-relaxp = relaxv(ivar)
+iswdyp = vcopt%iswdyn
+iwarnp = vcopt%iwarni
+blencp = vcopt%blencv
+epsilp = vcopt%epsilo
+epsrsp = vcopt%epsrsm
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+relaxp = vcopt%relaxv
 
 ! We do not take into account transpose of grad
 ivisep = 0

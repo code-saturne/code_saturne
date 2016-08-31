@@ -124,6 +124,7 @@ double precision pr_c,t_c,dtheta
 double precision lcond
 
 type(gas_mix_species_prop) s_h2o_g, s_k
+type(var_cal_opt) :: vcopt
 
 double precision, allocatable, dimension(:) :: mix_mol_mas, mol_mas_ncond
 double precision, allocatable, dimension(:) :: x_ncond, x_h2o_g, diff_m
@@ -617,7 +618,9 @@ if (mod(ntcabs,ntlist).eq.0) then
                     ntcabs, flmin, flmax
 endif
 
-if (iwarni(ipr).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+
+if (vcopt%iwarni.ge.1) then
   write(nfecra,1061) gamma_cond
 endif
 

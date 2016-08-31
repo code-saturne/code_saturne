@@ -72,6 +72,7 @@
 #include "cs_lagr_new.h"
 #include "cs_lagr_particle.h"
 #include "cs_lagr_stat.h"
+#include "cs_lagr_sde.h"
 #include "cs_lagr_geom.h"
 
 /*----------------------------------------------------------------------------

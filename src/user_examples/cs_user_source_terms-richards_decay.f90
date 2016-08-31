@@ -100,6 +100,7 @@ use period
 use mesh
 use field
 use darcy_module
+use cs_c_bindings
 
 !===============================================================================
 
@@ -129,6 +130,8 @@ integer delay_id
 double precision, dimension(:), pointer :: delay, saturation
 character*80     fname
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 ! In groundwater module flow, the radioactive decay of solute is treated as a
@@ -140,7 +143,9 @@ call field_get_label(ivarfl(isca(iscal)), chaine)
 
 iiscvr = iscavr(iscal)
 
-if (iwarni(isca(iscal)).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
+
+if (vcopt%iwarni.ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
 

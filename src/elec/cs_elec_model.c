@@ -440,20 +440,13 @@ _field_pointer_properties_map_electric_arcs(void)
 void
 CS_PROCF (elini1, ELINI1) (      cs_real_t *visls0,
                                  cs_real_t *diftl0,
-                                 cs_int_t  *iconv,
-                                 cs_int_t  *istat,
-                                 cs_int_t  *idiff,
-                                 cs_int_t  *idifft,
                                  cs_int_t  *idircl,
                                  cs_int_t  *isca,
-                                 cs_real_t *blencv,
-                                 cs_real_t *sigmas,
-                                 cs_int_t  *iwarni)
+                                 cs_real_t *sigmas)
 {
   /* initialization */
-  cs_electrical_model_specific_initialization(visls0, diftl0, iconv, istat,
-                                              idiff, idifft, idircl, isca, blencv,
-                                              sigmas, iwarni);
+  cs_electrical_model_specific_initialization(visls0, diftl0, idircl,
+                                              isca, sigmas);
 }
 
 void
@@ -643,15 +636,9 @@ cs_electrical_model_finalize(int ielarc,
 void
 cs_electrical_model_specific_initialization(cs_real_t  *visls0,
                                             cs_real_t  *diftl0,
-                                            int        *iconv,
-                                            int        *istat,
-                                            int        *idiff,
-                                            int        *idifft,
                                             int        *idircl,
                                             int        *isca,
-                                            cs_real_t  *blencv,
-                                            cs_real_t  *sigmas,
-                                            int        *iwarni)
+                                            cs_real_t  *sigmas)
 {
   cs_field_t *f = NULL;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -662,22 +649,25 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
   f = CS_F_(potr);
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
   int id = cs_field_get_key_int(f, keysca) - 1;
-  iconv[isca[id] - 1]  = 0;
-  istat[isca[id] - 1]  = 0;
-  idiff[isca[id] - 1]  = 1;
-  idifft[isca[id] - 1] = 0;
+  var_cal_opt.iconv  = 0;
+  var_cal_opt.istat  = 0;
+  var_cal_opt.idiff  = 1;
+  var_cal_opt.idifft = 0;
   idircl[isca[id] - 1] = 1;
+
+  cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   if (cs_glob_elec_option->ieljou == 2 ||
       cs_glob_elec_option->ieljou == 4) {
     f = CS_F_(poti);
     cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(f, keysca) - 1;
-    iconv[isca[id] - 1]  = 0;
-    istat[isca[id] - 1]  = 0;
-    idiff[isca[id] - 1]  = 1;
-    idifft[isca[id] - 1] = 0;
+    var_cal_opt.iconv  = 0;
+    var_cal_opt.istat  = 0;
+    var_cal_opt.idiff  = 1;
+    var_cal_opt.idifft = 0;
     idircl[isca[id] - 1] = 1;
+    cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
   }
 
   /* TODO when vector field
@@ -702,58 +692,58 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     cs_field_t  *fp3 = cs_field_by_name_try("vec_potential_03");
     cs_field_get_key_struct(fp1, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(fp1, keysca) - 1;
-    iconv[isca[id] - 1]  = 0;
-    istat[isca[id] - 1]  = 0;
-    idiff[isca[id] - 1]  = 1;
-    idifft[isca[id] - 1] = 0;
+    var_cal_opt.iconv  = 0;
+    var_cal_opt.istat  = 0;
+    var_cal_opt.idiff  = 1;
+    var_cal_opt.idifft = 0;
     idircl[isca[id] - 1] = 1;
     visls0[id] = 1.;
+    cs_field_set_key_struct(fp1, key_cal_opt_id, &var_cal_opt);
 
     cs_field_get_key_struct(fp2, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(fp2, keysca) - 1;
-    iconv[isca[id] - 1]  = 0;
-    istat[isca[id] - 1]  = 0;
-    idiff[isca[id] - 1]  = 1;
-    idifft[isca[id] - 1] = 0;
+    var_cal_opt.iconv  = 0;
+    var_cal_opt.istat  = 0;
+    var_cal_opt.idiff  = 1;
+    var_cal_opt.idifft = 0;
     idircl[isca[id] - 1] = 1;
     visls0[id] = 1.;
+    cs_field_set_key_struct(fp2, key_cal_opt_id, &var_cal_opt);
 
     cs_field_get_key_struct(fp3, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(fp3, keysca) - 1;
-    iconv[isca[id] - 1]  = 0;
-    istat[isca[id] - 1]  = 0;
-    idiff[isca[id] - 1]  = 1;
-    idifft[isca[id] - 1] = 0;
+    var_cal_opt.iconv  = 0;
+    var_cal_opt.istat  = 0;
+    var_cal_opt.idiff  = 1;
+    var_cal_opt.idifft = 0;
     idircl[isca[id] - 1] = 1;
     visls0[id] = 1.;
+    cs_field_set_key_struct(fp3, key_cal_opt_id, &var_cal_opt);
   }
 
   /* for all specific field */
   f = CS_F_(h);
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
   id = cs_field_get_key_int(f, keysca) - 1;
-  if (iwarni[isca[id] - 1] == -10000)
-    iwarni[isca[id] - 1] = 1;
-  blencv[isca[id] - 1] = 1.;
+  var_cal_opt.blencv = 1.;
   sigmas[id] = 0.7;
+  cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   f = CS_F_(potr);
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
   id = cs_field_get_key_int(f, keysca) - 1;
-  if (iwarni[isca[id] - 1] == -10000)
-    iwarni[isca[id] - 1] = 1;
-  blencv[isca[id] - 1] = 1.;
+  var_cal_opt.blencv = 1.;
   sigmas[id] = 0.7;
+  cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   if (cs_glob_elec_option->ieljou == 2 ||
       cs_glob_elec_option->ieljou == 4) {
     f = CS_F_(poti);
     cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(f, keysca) - 1;
-    if (iwarni[isca[id] - 1] == -10000)
-      iwarni[isca[id] - 1] = 1;
-    blencv[isca[id] - 1] = 1.;
+    var_cal_opt.blencv = 1.;
     sigmas[id] = 0.7;
+    cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
   }
 
   /* TODO when vector field
@@ -761,8 +751,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     for (int i = 0; i < 3; i++) {
       f = CS_FI_(potva, i);
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-      if (var_cal_opt.iwarni == -10000)
-        var_cal_opt.iwarni = 1;
       var_cal_opt.blencv = 1.;
       var_cal_opt.ischcv = 1;
       var_cal_opt.isstpc = 0;
@@ -776,24 +764,21 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     cs_field_t  *fp3 = cs_field_by_name_try("vec_potential_03");
     cs_field_get_key_struct(fp1, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(fp1, keysca) - 1;
-    if (iwarni[isca[id] - 1] == -10000)
-      iwarni[isca[id] - 1] = 1;
-    blencv[isca[id] - 1] = 1.;
+    var_cal_opt.blencv = 1.;
     sigmas[id] = 0.7;
+    cs_field_set_key_struct(fp1, key_cal_opt_id, &var_cal_opt);
 
     cs_field_get_key_struct(fp2, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(fp2, keysca) - 1;
-    if (iwarni[isca[id] - 1] == -10000)
-      iwarni[isca[id] - 1] = 1;
-    blencv[isca[id] - 1] = 1.;
+    var_cal_opt.blencv = 1.;
     sigmas[id] = 0.7;
+    cs_field_set_key_struct(fp2, key_cal_opt_id, &var_cal_opt);
 
     cs_field_get_key_struct(fp3, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(fp3, keysca) - 1;
-    if (iwarni[isca[id] - 1] == -10000)
-      iwarni[isca[id] - 1] = 1;
-    blencv[isca[id] - 1] = 1.;
+    var_cal_opt.blencv = 1.;
     sigmas[id] = 0.7;
+    cs_field_set_key_struct(fp3, key_cal_opt_id, &var_cal_opt);
   }
 
   if (cs_glob_elec_properties->ngaz > 1) {
@@ -801,10 +786,9 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
       f = CS_FI_(ycoel, igaz);
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
       id = cs_field_get_key_int(f, keysca) - 1;
-      if (iwarni[isca[id] - 1] == -10000)
-        iwarni[isca[id] - 1] = 1;
-      blencv[isca[id] - 1] = 1.;
+      var_cal_opt.blencv = 1.;
       sigmas[id] = 0.7;
+      cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
     }
   }
 
@@ -1814,7 +1798,7 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         smbrs[iel] += w1[iel];
 
-      if (var_cal_opt.iwarni > 1) {
+      if (var_cal_opt.iwarni > 0) {
         double valmin = w1[0];
         double valmax = w1[0];
 

@@ -88,6 +88,8 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, cpro_vism_s
 double precision, dimension(:,:), pointer :: mshvel, mshvela, cpro_vism_v
 
+type(var_cal_opt)  vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -119,7 +121,9 @@ call field_get_val_s(iflmab, bmasfl)
 call field_get_val_v(ivarfl(iuma), mshvel)
 call field_get_val_prev_v(ivarfl(iuma), mshvela)
 
-if(iwarni(iuma).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+
+if(vcopt%iwarni.ge.1) then
   write(nfecra,1000)
 endif
 
@@ -167,7 +171,7 @@ enddo
 ! 2. SOLVING OF THE MESH VELOCITY EQUATION
 !===============================================================================
 
-if (iwarni(iuma).ge.1) then
+if (vcopt%iwarni.ge.1) then
   call field_get_name(ivarfl(iuma), chaine)
   write(nfecra,1100) chaine(1:16)
 endif
@@ -195,24 +199,24 @@ else
   viscf  , viscb  )
 endif
 
-iconvp = iconv (iuma)
-idiffp = idiff (iuma)
+iconvp = vcopt%iconv
+idiffp = vcopt%idiff
 ndircp = ndircl(iuma)
-nswrsp = nswrsm(iuma)
-nswrgp = nswrgr(iuma)
-imligp = imligr(iuma)
-ircflp = ircflu(iuma)
-ischcp = ischcv(iuma)
-isstpp = isstpc(iuma)
+nswrsp = vcopt%nswrsm
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+ircflp = vcopt%ircflu
+ischcp = vcopt%ischcv
+isstpp = vcopt%isstpc
 iescap = 0
-idftnp = idften(iuma)
-iswdyp = iswdyn(iuma)
-iwarnp = iwarni(iuma)
-blencp = blencv(iuma)
-epsilp = epsilo(iuma)
-epsrsp = epsrsm(iuma)
-epsrgp = epsrgr(iuma)
-climgp = climgr(iuma)
+idftnp = vcopt%idften
+iswdyp = vcopt%iswdyn
+iwarnp = vcopt%iwarni
+blencp = vcopt%blencv
+epsilp = vcopt%epsilo
+epsrsp = vcopt%epsrsm
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
 relaxp = 1.d0
 thetv  = 1.d0
 ! all boundary convective flux with upwind

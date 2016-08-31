@@ -132,6 +132,8 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cour, cpro_four
 
+type(var_cal_opt) :: vcopt_u, vcopt_p
+
 !===============================================================================
 
 !===============================================================================
@@ -172,17 +174,19 @@ else
   modntl = 1
 endif
 
-if (                                                             &
-   .not. (iconv(iu).ge.1 .and. icour.ge.1) .and.                &
-   .not. (idiff(iu).ge.1 .and. ifour.ge.1) .and.                &
-   .not. ((iconv(iu).ge.1 .or.idiff(iu).ge.1).and.               &
-           (iwarnp.ge.2.or.modntl.eq.0)) .and.                   &
-   .not. (ippmod(icompf).ge.0.and.                               &
-           (iwarnp.ge.2.or.modntl.eq.0)) .and.                   &
-   .not. (idtvar.eq.-1.or.idtvar.eq.1.or.idtvar.eq.2.or.         &
-           ((iwarnp.ge.2.or.modntl.eq.0).and.                    &
-             (idiff(iu).ge.1.or.iconv(iu).ge.1                   &
-                               .or.ippmod(icompf).ge.0)))        &
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
+
+if (.not. (vcopt_u%iconv.ge.1 .and. icour.ge.1) .and.              &
+    .not. (vcopt_u%idiff.ge.1 .and. ifour.ge.1) .and.              &
+    .not. ((vcopt_u%iconv.ge.1 .or.vcopt_u%idiff.ge.1).and.        &
+           (iwarnp.ge.2.or.modntl.eq.0)) .and.                     &
+    .not. (ippmod(icompf).ge.0.and.                                &
+           (iwarnp.ge.2.or.modntl.eq.0)) .and.                     &
+    .not. (idtvar.eq.-1.or.idtvar.eq.1.or.idtvar.eq.2.or.          &
+           ((iwarnp.ge.2.or.modntl.eq.0).and.                      &
+            (vcopt_u%idiff.ge.1.or.vcopt_u%iconv.ge.1.or.          &
+             ippmod(icompf).ge.0)))                                &
    ) then
 
   return
@@ -211,9 +215,9 @@ endif
 ! 2. Compute the diffusivity at the faces
 !===============================================================================
 
-if (idiff(iu).ge. 1) then
+if (vcopt_u%idiff.ge.1) then
   do iel = 1, ncel
-    w1(iel) = viscl(iel) + idifft(iu)*visct(iel)
+    w1(iel) = viscl(iel) + vcopt_u%idifft*visct(iel)
   enddo
   call viscfa(imvisf, w1, viscf, viscb)
 
@@ -236,8 +240,8 @@ if (idtvar.ge.0) then
 
     if (bmasfl(ifac).lt.0.d0) then
       iel = ifabor(ifac)
-      hint = idiff(iu)*(  viscl(iel)                         &
-                        + idifft(iu)*visct(iel))/distb(ifac)
+      hint = vcopt_u%idiff*(  viscl(iel)                         &
+                        + vcopt_u%idifft*visct(iel))/distb(ifac)
       coefbt(ifac) = 0.d0
       cofbft(ifac) = hint
     else
@@ -288,11 +292,11 @@ if (idtvar.ge.0) then
       coefbr(ifac) = 0.d0
     enddo
 
-    nswrgp = nswrgr(ipr)
-    imligp = imligr(ipr)
-    iwarnp = iwarni(ipr)
-    epsrgp = epsrgr(ipr)
-    climgp = climgr(ipr)
+    nswrgp = vcopt_p%nswrgr
+    imligp = vcopt_p%imligr
+    iwarnp = vcopt_p%iwarni
+    epsrgp = vcopt_p%epsrgr
+    climgp = vcopt_p%climgr
     extrap = 0.d0
 
     f_id = -1
@@ -326,7 +330,7 @@ if (idtvar.ge.0) then
     ! 4.1.1 Courant limitation
     ! ========================
 
-    if (coumax.gt.0.d0.and.iconv(iu).ge.1) then
+    if (coumax.gt.0.d0.and.vcopt_u%iconv.ge.1) then
 
       ! ICOU = 1 marque l'existence d'une limitation par le COURANT
       icou = 1
@@ -339,7 +343,8 @@ if (idtvar.ge.0) then
       isym = 2
 
       call matrdt &
-     ( iconv(iu), idiff0, isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
+     ( vcopt_u%iconv, idiff0, isym, coefbt, cofbft, imasfl, bmasfl, viscf, &
+       viscb, dam)
 
       do iel = 1, ncel
         w1(iel) = dam(iel)/(crom(iel)*volume(iel))
@@ -372,7 +377,7 @@ if (idtvar.ge.0) then
     ! 4.1.2 Fourier limitation
     ! ========================
 
-    if (foumax.gt.0.d0.and.idiff(iu).ge.1) then
+    if (foumax.gt.0.d0.and.vcopt_u%idiff.ge.1) then
 
       ! IFOU = 1 marque l'existence d'une limitation par le FOURIER
       ifou = 1
@@ -385,7 +390,8 @@ if (idtvar.ge.0) then
 
       call matrdt &
       !==========
- (iconv0, idiff(iu), isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
+ (iconv0, vcopt_u%idiff, isym, coefbt, cofbft, imasfl, bmasfl, &
+  viscf, viscb, dam)
 
       do iel = 1, ncel
         w2(iel) = dam(iel)/(crom(iel)*volume(iel))
@@ -636,7 +642,7 @@ if (idtvar.ge.0) then
 ! 4.2  CALCUL DU NOMBRE DE COURANT POUR AFFICHAGE
 !===============================================================================
 
-  if (iconv(iu).ge.1 .and. icour.ge.1) then
+  if (vcopt_u%iconv.ge.1 .and. icour.ge.1) then
 
     idiff0 = 0
     cnom   =' COURANT'
@@ -649,7 +655,8 @@ if (idtvar.ge.0) then
 
     call matrdt &
     !==========
- (iconv(iu), idiff0, isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
+ (vcopt_u%iconv, idiff0, isym, coefbt, cofbft, imasfl, bmasfl, &
+  viscf, viscb, dam)
 
     do iel = 1, ncel
       w1(iel) = dam(iel)/(crom(iel)*volume(iel))
@@ -705,7 +712,7 @@ if (idtvar.ge.0) then
 ! 4.3  CALCUL DU NOMBRE DE FOURIER POUR AFFICHAGE
 !===============================================================================
 
-  if (idiff(iu).ge.1 .and. ifour.ge.1) then
+  if (vcopt_u%idiff.ge.1 .and. ifour.ge.1) then
 
     iconv0 = 0
     CNOM   =' FOURIER'
@@ -719,7 +726,8 @@ if (idtvar.ge.0) then
 
     call matrdt &
     !==========
- (iconv0, idiff(iu), isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
+ (iconv0, vcopt_u%idiff, isym, coefbt, cofbft, imasfl, bmasfl, &
+  viscf, viscb, dam)
 
     do iel = 1, ncel
       w1(iel) = dam(iel)/(crom(iel)*volume(iel))
@@ -778,7 +786,8 @@ if (idtvar.ge.0) then
 !     En incompressible uniquement (en compressible, on preferera
 !       afficher la contrainte liee a la masse volumique)
 
-  if ((idiff(iu).ge.1.or.iconv(iu).ge.1) .and. (ippmod(icompf).lt.0)) then
+  if (      (vcopt_u%idiff.ge.1.or.vcopt_u%iconv.ge.1) &
+      .and. (ippmod(icompf).lt.0)) then
 
     cnom   =' COU/FOU'
 
@@ -788,11 +797,12 @@ if (idtvar.ge.0) then
     ! MATRICE A PRIORI NON SYMETRIQUE
 
     isym = 1
-    if (iconv(iu).gt.0) isym = 2
+    if (vcopt_u%iconv.gt.0) isym = 2
 
     call matrdt &
     !==========
- (iconv(iu), idiff(iu), isym, coefbt, cofbft, imasfl, bmasfl, viscf, viscb, dam)
+ (vcopt_u%iconv, vcopt_u%idiff, isym, coefbt, cofbft, imasfl, bmasfl, &
+  viscf, viscb, dam)
 
     do iel = 1, ncel
       w1(iel) = dam(iel)/(crom(iel)*volume(iel))
@@ -914,17 +924,17 @@ if (idtvar.ge.0) then
 else
 
   isym = 1
-  if (iconv(iu).gt.0) isym = 2
+  if (vcopt_u%iconv.gt.0) isym = 2
 
   call matrdt &
   !==========
- ( iconv(iu), idiff(iu), isym,                                  &
+ ( vcopt_u%iconv, vcopt_u%idiff, isym,                          &
    coefbt, cofbft,                                              &
    imasfl, bmasfl,                                              &
    viscf, viscb, dt )
 
   do iel = 1, ncel
-    dt(iel) =  relaxv(iu)*crom(iel)*volume(iel)/max(dt(iel),epzero)
+    dt(iel) =  vcopt_u%relaxv*crom(iel)*volume(iel)/max(dt(iel),epzero)
   enddo
 
 endif

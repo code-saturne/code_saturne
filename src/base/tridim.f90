@@ -170,6 +170,8 @@ character(len=80) :: fname
 
 double precision, dimension(:), pointer :: coefap, cofafp, cofbfp
 
+type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
+
 !===============================================================================
 ! Interfaces
 !===============================================================================
@@ -223,6 +225,9 @@ call field_get_val_v(ivarfl(iu), vel)
 ! Number of fields
 call field_get_n_fields(nfld)
 
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
+
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
@@ -231,7 +236,7 @@ allocate(isostd(nfabor+1))
 
 must_return = .false.
 
-if (iwarni(iu).ge.1) then
+if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1000)
 endif
 
@@ -294,7 +299,7 @@ if (ippmod(idarcy).eq.-1) then
                   .and. ippmod(icompf).lt.0                               &
                   .and. idilat .le.1                 ) then
 
-    if(iwarni(ipr).ge.2) then
+    if(vcopt_p%iwarni.ge.2) then
       write(nfecra,2000) ntcabs
     endif
     call field_get_val_s(iprtot, cpro_prtot)
@@ -533,7 +538,7 @@ if (nbrcpl.gt.0) call cscloc
 !        (VISCOSITES ET MASSE VOLUMIQUE)
 !===============================================================================
 
-if (iwarni(iu).ge.1) then
+if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1010)
 endif
 
@@ -739,13 +744,13 @@ endif
 !     CALCUL DU PAS DE TEMPS SI VARIABLE
 !===============================================================================
 
-if(iwarni(iu).ge.1) then
+if(vcopt_u%iwarni.ge.1) then
   write(nfecra,1020)
 endif
 
 call dttvar &
  ( nvar   , nscal  , ncepdc , ncetsm ,                            &
-   iwarni(iu)   ,                                                 &
+   vcopt_u%iwarni   ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
    ckupdc , smacel )
@@ -757,7 +762,7 @@ endif
 
 ! Compute the pseudo tensorial time step if needed for the pressure solving
 
-if ((idften(ipr).eq.6).and.(ippmod(idarcy).eq.-1)) then
+if ((vcopt_p%idften.eq.6).and.(ippmod(idarcy).eq.-1)) then
 
   call field_get_val_v(idtten, dttens)
 
@@ -802,7 +807,7 @@ endif
 ! 9.  CHARGEMENT ET TRADUCTION DES CONDITIONS AUX LIMITES
 !===============================================================================
 
-if(iwarni(iu).ge.1) then
+if(vcopt_u%iwarni.ge.1) then
   write(nfecra,1030)
 endif
 
@@ -1375,7 +1380,7 @@ do while (iterns.le.nterup)
 ! 12. RESOLUTION QUANTITE DE MOUVEMENT ET MASSE
 !===============================================================================
 
-    if (iwarni(iu).ge.1) then
+    if (vcopt_u%iwarni.ge.1) then
       write(nfecra,1040)
     endif
 
@@ -1604,7 +1609,7 @@ if (iccvfg.eq.0) then
 !===============================================================================
 
   iok = 0
-  if(iwarni(iu).ge.1) then
+  if(vcopt_u%iwarni.ge.1) then
     if( itytur.eq.2 .or. itytur.eq.3              &
          .or. itytur.eq.5 .or. iturb.eq.60 ) then
       iok = 1
@@ -1653,8 +1658,10 @@ if (iccvfg.eq.0) then
 
     !  RELAXATION DE K ET EPSILON SI IKECOU=0 EN INSTATIONNAIRE
     if (ikecou.eq.0 .and. idtvar.ge.0) then
-      relaxk = relaxv(ik)
-      relaxe = relaxv(iep)
+      call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+      relaxk = vcopt%relaxv
+      call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+      relaxe = vcopt%relaxv
       do iel = 1,ncel
         cvar_k(iel) = relaxk*cvar_k(iel) + (1.d0-relaxk)*cvara_k(iel)
         cvar_ep(iel) = relaxe*cvar_ep(iel) + (1.d0-relaxe)*cvara_ep(iel)
@@ -1695,8 +1702,10 @@ if (iccvfg.eq.0) then
 
     !  RELAXATION DE K ET OMEGA SI IKECOU=0
     if (ikecou.eq.0 .and. idtvar.ge.0) then
-      relaxk = relaxv(ik )
-      relaxw = relaxv(iomg)
+      call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+      relaxk = vcopt%relaxv
+      call field_get_key_struct_var_cal_opt(ivarfl(iomg), vcopt)
+      relaxw = vcopt%relaxv
       do iel = 1,ncel
         cvar_k(iel)   = relaxk*cvar_k(iel)   + (1.d0-relaxk)*cvara_k(iel)
         cvar_omg(iel) = relaxw*cvar_omg(iel) + (1.d0-relaxw)*cvara_omg(iel)
@@ -1718,7 +1727,8 @@ if (iccvfg.eq.0) then
 
     !  RELAXATION DE NUSA
     if (idtvar.ge.0) then
-      relaxn = relaxv(inusa)
+      call field_get_key_struct_var_cal_opt(ivarfl(inusa), vcopt)
+      relaxn = vcopt%relaxv
       do iel = 1,ncel
         cvar_nusa(iel) = relaxn*cvar_nusa(iel)+(1.d0-relaxn)*cvara_nusa(iel)
       enddo
@@ -1737,7 +1747,7 @@ endif  ! Fin si calcul sur champ de vitesse fige SUITE
 
 if (nscal.ge.1 .and. iirayo.gt.0) then
 
-  if (iwarni(iu).ge.1 .and. mod(ntcabs,nfreqr).eq.0) then
+  if (vcopt_u%iwarni.ge.1 .and. mod(ntcabs,nfreqr).eq.0) then
     write(nfecra,1070)
   endif
 
@@ -1747,7 +1757,7 @@ endif
 
 if (nscal.ge.1) then
 
-  if(iwarni(iu).ge.1) then
+  if(vcopt_u%iwarni.ge.1) then
     write(nfecra,1060)
   endif
 

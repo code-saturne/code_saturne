@@ -20,35 +20,25 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine clipke &
- ( ncelet , ncel   , nvar   ,                                     &
-   iclip  , iwarnk )
+!> \file clipke.f90
+!> \brief clipping of the turbulent kinetic energy and the turbulent
+!> dissipation.
+!>
+!------------------------------------------------------------------------------
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! CLIPPING DE K ET EPSILON
-
-!-------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
 ! Arguments
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! e  ! <-- ! nombre de variables                            !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! iclip            ! e  ! <-- ! indicateur = 0 on utilise viscl0               !
-!                  !    !     !            sinon on utilise viscl              !
-! iwarnk           ! e  ! <-- ! niveau d'impression                            !
-!__________________!____!_____!________________________________________________!
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     iclip         indicator = 0 if viscl0 is used
+!>                              otherwise viscl is used.
+!______________________________________________________________________________
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+subroutine clipke &
+ ( ncelet, ncel, iclip )
 
 !===============================================================================
 ! Module files
@@ -71,12 +61,12 @@ implicit none
 ! Arguments
 
 integer          nvar, ncelet, ncel
-integer          iclip, iwarnk
+integer          iclip
 
 ! Local variables
 
-integer          iclpke,iel,iclpk2,iclpe2
-integer          ivar,ii
+integer          iclpke, iel, iclpk2, iclpe2
+integer          ivar, ii, iwarnk
 integer          iclpmn(2), iclpmx(1)
 double precision xepmin,xepm,xe,xkmin,xkm,xk,var,epz2
 double precision vmin(2), vmax(2)
@@ -85,6 +75,8 @@ double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_var
 double precision, dimension(:), pointer :: viscl
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 call field_get_val_s(icrom, crom)
@@ -92,6 +84,9 @@ call field_get_val_s(ivarfl(ik), cvar_k)
 call field_get_val_s(ivarfl(iep), cvar_ep)
 
 call field_get_val_s(iviscl, viscl)
+
+call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+iwarnk = vcopt%iwarni
 
 ! Initialization to avoid compiler warnings
 

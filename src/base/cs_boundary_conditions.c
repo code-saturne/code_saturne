@@ -54,6 +54,7 @@
 #include "cs_base.h"
 #include "cs_coupling.h"
 #include "cs_gradient.h"
+#include "cs_gui_util.h"
 #include "cs_field.h"
 #include "cs_field_operator.h"
 #include "cs_halo.h"
@@ -63,6 +64,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
+#include "cs_physical_model.h"
 #include "cs_prototypes.h"
 #include "cs_post.h"
 #include "fvm_nodal.h"
@@ -129,6 +131,10 @@ static int *_bc_type;
 
 const int *cs_glob_bc_type = NULL;
 
+static int *_bc_face_zone;
+
+const int *cs_glob_bc_face_zone = NULL;
+
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
@@ -147,7 +153,8 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
                                     cs_real_t                 *rcodcl);
 
 void
-cs_f_boundary_conditions_type_get_pointer(int  **itypfb);
+cs_f_boundary_conditions_get_pointer(int  **itypfb,
+                                     int  **izfppp);
 
 /*============================================================================
  * Private function definitions
@@ -436,13 +443,15 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
 }
 
 /*----------------------------------------------------------------------------
- * Get pointer to cs_glob_bc_type
+ * Get pointer to cs_glob_bc_type and cs_glob_bc_face_zone
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_boundary_conditions_type_get_pointer(int **itypfb)
+cs_f_boundary_conditions_get_pointer(int **itypfb,
+                                     int **izfppp)
 {
   *itypfb = _bc_type;
+  *izfppp = _bc_face_zone;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1029,30 +1038,48 @@ cs_boundary_conditions_mapped_set(cs_field_t                *f,
 }
 
 /*----------------------------------------------------------------------------
- * Create the boundary conditions type array bc_type
+ * Create the boundary conditions face type and face zone arrays
  *----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_type_create(void)
+cs_boundary_conditions_create(void)
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
+  /* boundary conditions type by boundary face */
+
   BFT_MALLOC(_bc_type, n_b_faces, int);
-
-  for (cs_lnum_t ii = 0 ; ii < n_b_faces ; ii++)
+  for (cs_lnum_t ii = 0 ; ii < n_b_faces ; ii++) {
     _bc_type[ii] = 0;
-
+  }
   cs_glob_bc_type = _bc_type;
+
+  /* boundary conditions zone by boundary face */
+  /* only for specific physics */
+
+  if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0
+      || cs_gui_file_is_loaded()) {
+    BFT_MALLOC(_bc_face_zone, n_b_faces, int);
+    for (cs_lnum_t ii = 0 ; ii < n_b_faces ; ii++) {
+      _bc_face_zone[ii] = 0;
+    }
+    cs_glob_bc_face_zone = _bc_face_zone;
+  }
 }
 
 /*----------------------------------------------------------------------------
- * Free the boundary conditions type array _bc_type
+ * Free the boundary conditions face type and face zone arrays
  *----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_type_free(void)
+cs_boundary_conditions_free(void)
 {
   BFT_FREE(_bc_type);
+
+  if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0
+      || cs_gui_file_is_loaded()) {
+    BFT_FREE(_bc_face_zone);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

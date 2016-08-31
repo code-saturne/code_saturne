@@ -92,6 +92,7 @@ double precision rval(1)
 logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
 
 type(c_ptr) :: rp
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -285,15 +286,19 @@ call restart_read_variables(rp, oflmap, 0)
 
 f_id = -1
 do ivar = 1, nvar
-  if (ibdtso(ivar).gt.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  if (vcopt%ibdtso.gt.1) then
     if (f_id.ne.ivarfl(ivar)) then
       ierror = 0
       f_id = ivarfl(ivar)
-      do t_id = 1, ibdtso(ivar) - 1
+      do t_id = 1, vcopt%ibdtso - 1
         call restart_read_field_vals(rp, f_id, t_id, ierror)
         ierror = ierror + 1
       enddo
-      if (ierror.gt.1) ibdtso(ivar) = -ibdtso(ivar)
+      if (ierror.gt.1) then
+        vcopt%ibdtso = -vcopt%ibdtso
+        call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+      endif
     endif
   endif
 enddo

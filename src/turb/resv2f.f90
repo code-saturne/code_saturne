@@ -134,6 +134,8 @@ double precision, dimension(:), pointer :: cpro_pcvlo, cpro_pcvto
 double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:), pointer :: c_st_phi_p, c_st_a_p
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -194,7 +196,9 @@ d2s3 = 2.0d0/3.0d0
 d1s4 = 1.0d0/4.0d0
 d3s2 = 3.0d0/2.0d0
 
-if (iwarni(iphi).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(iphi), vcopt)
+
+if (vcopt%iwarni.ge.1) then
   write(nfecra,1000)
 endif
 
@@ -245,14 +249,16 @@ elseif (iturb.eq.51) then
   cvara_var => cvara_al
 endif
 
-if (iwarni(ivar).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+if (vcopt%iwarni.ge.1) then
   call field_get_label(ivarfl(ivar), label)
   write(nfecra,1100) label
 endif
 
 !     S as Source, V as Variable
 thets  = thetst
-thetv  = thetav(ivar )
+thetv  = vcopt%thetav
 
 call field_get_val_s(icrom, cromo)
 call field_get_val_s(iviscl, cpro_pcvlo)
@@ -358,12 +364,14 @@ iccocg = 1
 inc = 1
 init = 1
 
-nswrgp = nswrgr(iphi)
-imligp = imligr(iphi)
-iwarnp = iwarni(iphi)
-epsrgp = epsrgr(iphi)
-climgp = climgr(iphi)
-extrap = extrag(iphi)
+call field_get_key_struct_var_cal_opt(ivarfl(iphi), vcopt)
+
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+iwarnp = vcopt%iwarni
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+extrap = vcopt%extrag
 iphydp = 0
 
 call itrgrp &
@@ -462,27 +470,29 @@ enddo
 ! 3.3 Effective resolution in the equation of f_barre / alpha
 !===============================================================================
 
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+iconvp = vcopt%iconv
+idiffp = vcopt%idiff
 ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
+nswrsp = vcopt%nswrsm
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+ircflp = vcopt%ircflu
+ischcp = vcopt%ischcv
+isstpp = vcopt%isstpc
 iescap = 0
 imucpp = 0
-idftnp = idften(ivar)
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
+idftnp = vcopt%idften
+iswdyp = vcopt%iswdyn
+iwarnp = vcopt%iwarni
+blencp = vcopt%blencv
+epsilp = vcopt%epsilo
+epsrsp = vcopt%epsrsm
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+extrap = vcopt%extrag
+relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
 
@@ -513,17 +523,19 @@ call codits &
 
 ivar = iphi
 
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
 call field_get_val_s(ivarfl(ivar), cvar_var)
 cvara_var => cvara_phi
 
-if (iwarni(ivar).ge.1) then
+if (vcopt%iwarni.ge.1) then
   call field_get_label(ivarfl(ivar), label)
   write(nfecra,1100) label
 endif
 
 !     S as Source, V as Variable
 thets  = thetst
-thetv  = thetav(ivar )
+thetv  = vcopt%thetav
 
 call field_get_val_s(ivisct, cpro_pcvto)
 if (istprv.ge.0) then
@@ -612,7 +624,7 @@ endif
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel)                                       &
-           + istat(ivar)*(crom(iel)/dt(iel))*cell_f_vol(iel)
+           + vcopt%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
 enddo
 
 !===============================================================================
@@ -724,7 +736,7 @@ call field_get_coefb_s(ivarfl(ivar), coefbp)
 call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-if (idiff(ivar).ge.1) then
+if (vcopt%idiff.ge.1) then
   do iel = 1, ncel
     if (iturb.eq.50) then
       w2(iel) = viscl(iel)      + visct(iel)/sigmak
@@ -777,27 +789,27 @@ if (istprv.ge.0) then
   enddo
 endif
 
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
+iconvp = vcopt%iconv
+idiffp = vcopt%idiff
 ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
+nswrsp = vcopt%nswrsm
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+ircflp = vcopt%ircflu
+ischcp = vcopt%ischcv
+isstpp = vcopt%isstpc
 iescap = 0
 imucpp = 0
-idftnp = idften(ivar)
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
+idftnp = vcopt%idften
+iswdyp = vcopt%iswdyn
+iwarnp = vcopt%iwarni
+blencp = vcopt%blencv
+epsilp = vcopt%epsilo
+epsrsp = vcopt%epsrsm
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+extrap = vcopt%extrag
+relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
 
@@ -826,7 +838,9 @@ call codits &
 ! 5. Clipping
 !===============================================================================
 
-call clpv2f(ncel, iwarni(iphi))
+call field_get_key_struct_var_cal_opt(ivarfl(iphi), vcopt)
+
+call clpv2f(ncel, vcopt%iwarni)
 
 ! Free memory
 deallocate(viscf, viscb)

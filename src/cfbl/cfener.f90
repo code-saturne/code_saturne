@@ -145,6 +145,7 @@ double precision, dimension(:), pointer :: cvar_tempk, cvar_yk
 double precision, dimension(:), pointer :: visct, cpro_cp, cpro_cv, cpro_viscls
 
 type(gas_mix_species_prop) :: s_k
+type(var_cal_opt) :: vcopt_u, vcopt_p, vcopt_e
 
 !===============================================================================
 
@@ -204,7 +205,11 @@ endif
 ! Prints
 call field_get_label(ivarfl(ivar), chaine)
 
-if(iwarni(ivar).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_p)
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt_e)
+
+if(vcopt_e%iwarni.ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
 
@@ -268,14 +273,14 @@ endif
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel)                                                    &
-                + istat(ivar)*(cromo(iel)/dt(iel))*cell_f_vol(iel)
+                + vcopt_e%istat*(cromo(iel)/dt(iel))*cell_f_vol(iel)
 enddo
 
 !                                       __        v
 !     VISCOUS DISSIPATION TERM        : >  ((SIGMA *U).n)  *S
 !     ========================          --               ij  ij
 
-if (idiff(iu).ge. 1) then
+if (vcopt_u%idiff.ge. 1) then
   call cfdivs(smbrs, vel)
 endif
 
@@ -303,12 +308,12 @@ if (irecpt.eq.1) then
   iii = ipr
   inc = 1
   iccocg = 1
-  nswrgp = nswrgr(iii)
-  imligp = imligr(iii)
-  iwarnp = iwarni(iii)
-  epsrgp = epsrgr(iii)
-  climgp = climgr(iii)
-  extrap = extrag(iii)
+  nswrgp = vcopt_p%nswrgr
+  imligp = vcopt_p%imligr
+  iwarnp = vcopt_p%iwarni
+  epsrgp = vcopt_p%epsrgr
+  climgp = vcopt_p%climgr
+  extrap = vcopt_p%extrag
 
   allocate(coefap(nfabor))
   allocate(coefbp(nfabor))
@@ -418,7 +423,7 @@ allocate(w1(ncelet))
 allocate(viscf(nfac))
 allocate(viscb(nfabor))
 
-if( idiff(ivar).ge. 1 ) then
+if( vcopt_e%idiff.ge. 1 ) then
 
 !     MUT/SIGMAS
   do iel = 1, ncel
@@ -496,12 +501,12 @@ if( idiff(ivar).ge. 1 ) then
   iii = iu
   inc = 1
   iccocg = 1
-  nswrgp = nswrgr(iii)
-  imligp = imligr(iii)
-  iwarnp = iwarni(iii)
-  epsrgp = epsrgr(iii)
-  climgp = climgr(iii)
-  extrap = extrag(iii)
+  nswrgp = vcopt_u%nswrgr
+  imligp = vcopt_u%imligr
+  iwarnp = vcopt_u%iwarni
+  epsrgp = vcopt_u%epsrgr
+  climgp = vcopt_u%climgr
+  extrap = vcopt_u%extrag
 
 ! Allocate temporary arrays
   allocate(coefap(nfabor))
@@ -784,24 +789,24 @@ endif
 ! 4. Solving
 !===============================================================================
 
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
+iconvp = vcopt_e%iconv
+idiffp = vcopt_e%idiff
 ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
-thetap = thetav(ivar)
+nswrsp = vcopt_e%nswrsm
+nswrgp = vcopt_e%nswrgr
+imligp = vcopt_e%imligr
+ircflp = vcopt_e%ircflu
+ischcp = vcopt_e%ischcv
+isstpp = vcopt_e%isstpc
+iwarnp = vcopt_e%iwarni
+blencp = vcopt_e%blencv
+epsilp = vcopt_e%epsilo
+epsrsp = vcopt_e%epsrsm
+epsrgp = vcopt_e%epsrgr
+climgp = vcopt_e%climgr
+extrap = vcopt_e%extrag
+relaxp = vcopt_e%relaxv
+thetap = vcopt_e%thetav
 iescap = 0
 
 !  idtvar = 1  => unsteady
@@ -849,12 +854,12 @@ call cs_cf_check_internal_energy(cvar_energ, ncel, vel)
 
 ! Explicit balance (see codits : the increment is removed)
 
-if (iwarni(ivar).ge.2) then
+if (vcopt_e%iwarni.ge.2) then
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                    &
-            - istat(ivar)*(crom(iel)/dt(iel))*cell_f_vol(iel)                  &
+            - vcopt_e%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)                  &
                 *(cvar_energ(iel)-cvara_energ(iel))                            &
-                * max(0,min(nswrsm(ivar)-2,1))
+                * max(0,min(vcopt_e%nswrsm-2,1))
   enddo
   sclnor = sqrt(cs_gdot(ncel,smbrs,smbrs))
   write(nfecra,1200)chaine(1:8) ,sclnor

@@ -64,6 +64,7 @@ use parall
 use period
 use cplsat
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -92,18 +93,22 @@ double precision dx     , dy     , dz
 
 double precision, dimension(:,:,:), allocatable :: gradv
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 ! Allocate a temporary array
 allocate(gradv(3,3,ncelet))
 
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
 inc    = 1
 iccocg = 1
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-iwarnp = iwarni(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+iwarnp = vcopt%iwarni
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
 
 if (ivar.le.0) then
   f_id = -1

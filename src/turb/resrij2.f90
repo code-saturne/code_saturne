@@ -47,7 +47,6 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in]     ivar          variable number
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for each variable
@@ -69,7 +68,6 @@
 
 subroutine resrij2 &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
    produc , gradro ,                                              &
@@ -108,7 +106,6 @@ implicit none
 
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
-integer          ivar
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
@@ -164,6 +161,8 @@ double precision, allocatable, dimension(:,:) :: cvara_r
 double precision, dimension(:,:), pointer :: c_st_prv
 double precision, dimension(:), pointer :: viscl
 
+type(var_cal_opt) :: vcopt_rij
+
 !===============================================================================
 
 !===============================================================================
@@ -179,8 +178,10 @@ allocate(viscce(6,ncelet))
 allocate(weighf(2,nfac))
 allocate(weighb(nfabor))
 
-if (iwarni(ivar).ge.1) then
-  call field_get_label(ivarfl(ivar), label)
+call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt_rij)
+
+if (vcopt_rij%iwarni.ge.1) then
+  call field_get_label(ivarfl(irij), label)
   write(nfecra,1000) label
 endif
 
@@ -194,14 +195,14 @@ call field_get_val_s(iflmab, bmasfl)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
 
-call field_get_val_v(ivarfl(ivar), cvar_var)
-call field_get_val_prev_v(ivarfl(ivar), cvara_var)
-call field_get_dim(ivarfl(ivar),dimrij)! dimension of Rij
+call field_get_val_v(ivarfl(irij), cvar_var)
+call field_get_val_prev_v(ivarfl(irij), cvara_var)
+call field_get_dim(ivarfl(irij),dimrij)! dimension of Rij
 
-call field_get_coefa_v(ivarfl(ivar), coefap)
-call field_get_coefb_v(ivarfl(ivar), coefbp)
-call field_get_coefaf_v(ivarfl(ivar), cofafp)
-call field_get_coefbf_v(ivarfl(ivar), cofbfp)
+call field_get_coefa_v(ivarfl(irij), coefap)
+call field_get_coefb_v(ivarfl(irij), coefbp)
+call field_get_coefaf_v(ivarfl(irij), cofafp)
+call field_get_coefbf_v(ivarfl(irij), cofbfp)
 
 do isou = 1, 6
   deltij(isou) = 1.0d0
@@ -214,9 +215,9 @@ d2s3 = 2.d0/3.d0
 
 !     S as Source, V as Variable
 thets  = thetst
-thetv  = thetav(ivar)
+thetv  = vcopt_rij%thetav
 
-call field_get_key_int(ivarfl(ivar), kstprv, st_prv_id)
+call field_get_key_int(ivarfl(irij), kstprv, st_prv_id)
 if (st_prv_id.ge.0) then
   call field_get_val_v(st_prv_id, c_st_prv)
 else
@@ -260,7 +261,7 @@ endif
 call cs_user_turbulence_source_terms2 &
 !===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivarfl(ivar)    ,                                              &
+   ivarfl(irij)    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ckupdc , smacel ,                                              &
    smbr   , rovsdt )
@@ -316,8 +317,8 @@ do isou = 1, dimrij
     call catsmt &
     !==========
    ( ncelet , ncel   , ncesmp , iiun     , isto2t ,                   &
-     icetsm , itypsm(:,ivar + isou - 1)  ,                            &
-     cell_f_vol , cvara_var  , smacel(:,ivar+isou-1)  , smacel(:,ipr) ,   &
+     icetsm , itypsm(:,irij + isou - 1)  ,                            &
+     cell_f_vol , cvara_var  , smacel(:,irij+isou-1)  , smacel(:,ipr) ,   &
      smbr   ,  rovsdt    , w1 )
 
     ! If we extrapolate the source terms we put Gamma Pinj in the previous st
@@ -344,7 +345,7 @@ enddo
 do isou = 1, dimrij
   do iel=1,ncel
     rovsdt(isou,isou,iel) = rovsdt(isou, isou,iel)                                       &
-              + istat(ivar+isou-1)*(crom(iel)/dt(iel))*cell_f_vol(iel)
+              + vcopt_rij%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
   enddo
 enddo
 
@@ -617,7 +618,7 @@ endif
 !===============================================================================
 
 ! Symmetric tensor diffusivity (GGDH)
-if (idften(ivar).eq.6) then
+if (vcopt_rij%idften.eq.6) then
 
   call field_get_val_v(ivsten, visten)
 
@@ -630,7 +631,7 @@ if (idften(ivar).eq.6) then
     viscce(6,iel) = visten(6,iel)
   enddo
 
-  iwarnp = iwarni(ivar)
+  iwarnp = vcopt_rij%iwarni
 
   call vitens &
  ( viscce , iwarnp ,             &
@@ -643,7 +644,7 @@ else
   do iel = 1, ncel
     trrij = 0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
     rctse = crom(iel) * csrij * trrij**2 / cvara_ep(iel)
-    w1(iel) = viscl(iel) + idifft(ivar)*rctse
+    w1(iel) = viscl(iel) + vcopt_rij%idifft*rctse
   enddo
 
   call viscfa                    &
@@ -666,31 +667,31 @@ if (st_prv_id.ge.0) then
   enddo
 endif
 
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
-ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
-idftnp = idften(ivar)
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
+iconvp = vcopt_rij%iconv
+idiffp = vcopt_rij%idiff
+ndircp = ndircl(irij)
+nswrsp = vcopt_rij%nswrsm
+nswrgp = vcopt_rij%nswrgr
+imligp = vcopt_rij%imligr
+ircflp = vcopt_rij%ircflu
+ischcp = vcopt_rij%ischcv
+isstpp = vcopt_rij%isstpc
+idftnp = vcopt_rij%idften
+iswdyp = vcopt_rij%iswdyn
+iwarnp = vcopt_rij%iwarni
+blencp = vcopt_rij%blencv
+epsilp = vcopt_rij%epsilo
+epsrsp = vcopt_rij%epsrsm
+epsrgp = vcopt_rij%epsrgr
+climgp = vcopt_rij%climgr
+extrap = vcopt_rij%extrag
+relaxp = vcopt_rij%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
 
 call coditts &
 !==========
- ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , irij   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , idftnp , iswdyp ,                            &
    iwarnp ,                                                       &

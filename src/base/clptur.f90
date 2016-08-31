@@ -132,6 +132,7 @@ use mesh
 use field
 use lagran
 use turbomachinery
+use cs_c_bindings
 
 !===============================================================================
 
@@ -223,6 +224,8 @@ double precision, dimension(:,:,:), pointer :: coefb_rij, coefbf_rij, coefbd_rij
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
 save             ntlast , iaff
+
+type(var_cal_opt) :: vcopt_u, vcopt_rij, vcopt_ep
 
 !===============================================================================
 
@@ -480,6 +483,8 @@ if ((iturb.eq.30).or.(iturb.eq.31)) then
 endif
 
 if (itytur.eq.3) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt_rij)
+  call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt_ep)
   if (irijco.eq.1) then
     call field_get_val_v(ivarfl(irij), cvar_rij)
   else
@@ -1060,7 +1065,7 @@ do ifac = 1, nfabor
         endif
 
         ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
-        if (idften(ir11).eq.6) then
+        if (vcopt_rij%idften.eq.6) then
 
           visci(1,1) = visclc + visten(1,iel)
           visci(2,2) = visclc + visten(2,iel)
@@ -1173,7 +1178,7 @@ do ifac = 1, nfabor
       !      NB: no reconstruction, possibility of partial implicitation
 
       ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
-      if (idften(iep).eq.6) then
+      if (vcopt_ep%idften.eq.6) then
 
         visci(1,1) = visclc + visten(1,iel)/sigmae
         visci(2,2) = visclc + visten(2,iel)/sigmae
@@ -1544,7 +1549,9 @@ endif
 !       On indique aussi le numero du dernier pas de temps auquel on
 !       a rencontre des yplus hors bornes admissibles
 
-if (iwarni(iu).ge.0) then
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+
+if (vcopt_u%iwarni.ge.0) then
   if (ntlist.gt.0) then
     modntl = mod(ntcabs,ntlist)
   elseif (ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
@@ -1560,7 +1567,7 @@ if (iwarni(iu).ge.0) then
 
   if ( (ntlast.eq.ntcabs.and.iaff.lt.2         ) .or.             &
        (ntlast.ge.0     .and.ntcabs.ge.ntmabs-1) .or.             &
-       (ntlast.eq.ntcabs.and.iwarni(iu).ge.2) ) then
+       (ntlast.eq.ntcabs.and.vcopt_u%iwarni.ge.2) ) then
     iaff = iaff + 1
 
     if (iscalt.gt.0) then
@@ -1578,13 +1585,13 @@ if (iwarni(iu).ge.0) then
     ! No warnings in EBRSM
     if (itytur.eq.2.or.iturb.eq.30.or.iturb.eq.31)                &
       write(nfecra,2040)  ntlast,ypluli
-    if (iwarni(iu).lt.2.and.iturb.ne.32) then
+    if (vcopt_u%iwarni.lt.2.and.iturb.ne.32) then
       write(nfecra,2050)
     elseif (iturb.ne.32) then
       write(nfecra,2060)
     endif
 
-  else if (modntl.eq.0 .or. iwarni(iu).ge.2) then
+  else if (modntl.eq.0 .or. vcopt_u%iwarni.ge.2) then
 
     if (iscalt.gt.0) then
       write(nfecra,2011) &
@@ -1924,6 +1931,7 @@ use mesh
 use field
 use lagran
 use turbomachinery
+use cs_c_bindings
 
 !===============================================================================
 
@@ -1966,6 +1974,8 @@ double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 
 integer, save :: kbfid = -1
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 ivar = isca(iscal)
@@ -1982,7 +1992,9 @@ if (ifcvsl .ge. 0) then
   call field_get_val_s(ifcvsl, viscls)
 endif
 
-if (idften(ivar).eq.6.or.ityturt(iscal).eq.3) then
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+if (vcopt%idften.eq.6.or.ityturt(iscal).eq.3) then
   if (iturb.ne.32.or.ityturt(iscal).eq.3) then
     call field_get_val_v(ivsten, visten)
   else ! EBRSM and (GGDH or AFM)
@@ -2149,7 +2161,7 @@ do ifac = 1, nfabor
     endif
 
     ! Scalar diffusivity
-    if (idften(ivar).eq.1) then
+    if (vcopt%idften.eq.1) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (ippmod(icompf) .ge. 0) then
         if (icp.ge.0) then
@@ -2162,13 +2174,13 @@ do ifac = 1, nfabor
         else
           cpscv = cpscv/cv0
         endif
-        hint = (rkl+idifft(ivar)*cpp*cpscv*visctc/sigmas(iscal))/distbf
+        hint = (rkl+vcopt%idifft*cpp*cpscv*visctc/sigmas(iscal))/distbf
       else
-        hint = (rkl+idifft(ivar)*cpp*visctc/sigmas(iscal))/distbf
+        hint = (rkl+vcopt%idifft*cpp*visctc/sigmas(iscal))/distbf
       endif
 
       ! Symmetric tensor diffusivity (GGDH or AFM)
-    elseif (idften(ivar).eq.6) then
+    elseif (vcopt%idften.eq.6) then
       ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
       if (ippmod(icompf) .ge. 0) then
         if (icp.ge.0) then
@@ -2181,9 +2193,9 @@ do ifac = 1, nfabor
         else
           cpscv = cpscv/cv0
         endif
-        temp = idifft(ivar)*cpp*cpscv*ctheta(iscal)/csrij
+        temp = vcopt%idifft*cpp*cpscv*ctheta(iscal)/csrij
       else
-        temp = idifft(ivar)*cpp*ctheta(iscal)/csrij
+        temp = vcopt%idifft*cpp*ctheta(iscal)/csrij
       endif
       visci(1,1) = temp*visten(1,iel) + rkl
       visci(2,2) = temp*visten(2,iel) + rkl

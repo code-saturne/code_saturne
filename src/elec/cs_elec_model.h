@@ -132,15 +132,9 @@ extern const cs_real_t cs_elec_epszer;
 void
 CS_PROCF (elini1, ELINI1) (cs_real_t       *visls0,
                            cs_real_t       *diftl0,
-                           cs_int_t        *iconv,
-                           cs_int_t        *istat,
-                           cs_int_t        *idiff,
-                           cs_int_t        *idifft,
                            cs_int_t        *idircl,
                            cs_int_t        *isca,
-                           cs_real_t       *blencv,
-                           cs_real_t       *sigmas,
-                           cs_int_t        *iwarni);
+                           cs_real_t       *sigmas);
 
 void
 CS_PROCF (elflux, ELFLUX) (cs_int_t *iappel);
@@ -217,15 +211,9 @@ cs_electrical_model_finalize(int  ielarc,
 void
 cs_electrical_model_specific_initialization(cs_real_t    *visls0,
                                             cs_real_t    *diftl0,
-                                            int          *iconv,
-                                            int          *istat,
-                                            int          *idiff,
-                                            int          *idifft,
                                             int          *idircl,
                                             int          *isca,
-                                            cs_real_t    *blencv,
-                                            cs_real_t    *sigmas,
-                                            int          *iwarni);
+                                            cs_real_t    *sigmas);
 
 /*----------------------------------------------------------------------------
  * Read properties file

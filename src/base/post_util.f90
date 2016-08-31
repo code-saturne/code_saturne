@@ -62,6 +62,7 @@ use period
 use mesh
 use field
 use field_operator
+use cs_c_bindings
 
 !===============================================================================
 
@@ -88,6 +89,8 @@ double precision, dimension(:), pointer :: cpro_cp
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: bmasfl, tscalp
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -120,8 +123,10 @@ if (iscalt.gt.0) then
 
   ! Compute variable values at boundary faces
 
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
   ! Reconstructed fluxes
-  if (ircflu(ivar) .gt. 0 .and. itbrrb.eq.1) then
+  if (vcopt%ircflu .gt. 0 .and. itbrrb.eq.1) then
 
     ! Compute gradient of temperature / enthalpy
 
@@ -257,6 +262,7 @@ use period
 use mesh
 use field
 use field_operator
+use cs_c_bindings
 
 !===============================================================================
 
@@ -284,6 +290,8 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: tplusp, tstarp
 double precision, dimension(:), pointer :: tscalp
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -315,8 +323,10 @@ if (itstar.ge.0 .and. itplus.ge.0) then
 
   ! Compute variable values at boundary faces
 
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
   ! Reconstructed fluxes
-  if (ircflu(ivar) .gt. 0 .and. itbrrb.eq.1) then
+  if (vcopt%ircflu .gt. 0 .and. itbrrb.eq.1) then
 
     ! Boundary condition pointers for gradients and advection
 

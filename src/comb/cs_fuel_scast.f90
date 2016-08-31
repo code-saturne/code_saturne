@@ -90,6 +90,7 @@ use mesh
 use pointe
 use field
 use radiat
+use cs_c_bindings
 
 !===============================================================================
 
@@ -148,6 +149,8 @@ double precision, dimension(:), pointer :: cpro_yco, cpro_yh2o, cpro_rom1
 double precision, dimension(:), pointer :: cpro_exp1, cpro_exp2, cpro_exp3
 double precision, dimension(:), pointer :: cpro_mmel, cpro_yn2
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
@@ -183,6 +186,8 @@ call field_get_key_id("scalar_class", keyccl)
 call field_get_val_s_by_name('x_h_c_exp_st',smbrsh1)
 call field_get_val_s_by_name('x_h_c_imp_st',rovsdth1)
 
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
 !===============================================================================
 ! 2. Taking into account the source terms for the relative particles
 !    in the particles classes
@@ -202,7 +207,7 @@ if ( ivar .ge. isca(ih2(1)) .and. ivar .le. isca(ih2(nclafu)) ) then
     enddo
   endif
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -280,7 +285,7 @@ if ( ivar .ge. isca(ih2(1)) .and. ivar .le. isca(ih2(nclafu)) ) then
 elseif ( ivar .ge. isca(iyfol(1))     .and.                       &
          ivar .le. isca(iyfol(nclafu))        ) then
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -434,7 +439,7 @@ endif
 
 if ( ivar .eq. isca(ifvap) ) then
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -465,7 +470,7 @@ if ( ivar .eq. isca(ifvap) ) then
 
 elseif ( ivar .eq. isca(if7m) ) then
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -496,7 +501,7 @@ endif
 
 if ( ivar.eq.isca(ifvp2m) ) then
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
@@ -517,7 +522,7 @@ if ( ieqco2 .ge. 1 ) then
 
   if ( ivar.eq.isca(iyco2) ) then
 
-    if (iwarni(ivar).ge.1) then
+    if (vcopt%iwarni.ge.1) then
       write(nfecra,1000) chaine(1:8)
     endif
 
@@ -778,7 +783,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
       !        Source term HCN
 
-      if (iwarni(ivar).ge.1) then
+      if (vcopt%iwarni.ge.1) then
         write(nfecra,1000) chaine(1:8)
       endif
 
@@ -834,7 +839,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
       !        Source term NO
 
-      if (iwarni(ivar).ge.1) then
+      if (vcopt%iwarni.ge.1) then
         write(nfecra,1000) chaine(1:8)
       endif
 

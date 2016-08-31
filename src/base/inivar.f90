@@ -110,6 +110,8 @@ double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvar_var
 double precision, dimension(:), pointer :: cpro_prtot
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -144,15 +146,16 @@ iusini = 1
 iflidp = -1
 
 do ivar = 1, nvar
-  if (iwgrec(ivar).eq.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  if (vcopt%iwgrec.eq.1) then
 
-    if (idiff(ivar).lt.1) cycle
+    if (vcopt%idiff.lt.1) cycle
     iflid = ivarfl(ivar)
     if (iflid.eq.iflidp) cycle
     iflidp = iflid
-    if (idften(ivar).eq.1) then
+    if (vcopt%idften.eq.1) then
       idimf = 1
-    elseif (idften(ivar).eq.6) then
+    elseif (vcopt%idften.eq.6) then
       idimf = 6
     endif
     call field_get_key_int(iflid, kwgrec, f_id)
@@ -325,7 +328,7 @@ if (iusini.eq.1.or.isuite.eq.1) then
 
     if(xekmin.ge.0.d0.and.xepmin.ge.0.d0) then
       iclip = 1
-      call clipke(ncelet, ncel, nvar, iclip, iwarni(ik))
+      call clipke(ncelet, ncel, iclip)
     else
       write(nfecra,3020) xekmin,xepmin
       iok = iok + 1

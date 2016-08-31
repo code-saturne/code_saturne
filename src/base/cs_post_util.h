@@ -88,8 +88,39 @@ cs_post_moment_of_force(cs_lnum_t     n_b_faces,
                         cs_real_3_t   axis);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute tangential stress on a specific boundary.
+ *
+ * \param[in]   n_b_faces    number of faces
+ * \param[in]   b_face_list  face list
+ * \param[out]  stress       tangential stress on the specific
+ *                           boundary
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_stress_tangential(cs_lnum_t n_b_faces,
+                          cs_lnum_t  b_face_list[],
+                          cs_real_3_t stress[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute Reynolds stresses in case of Eddy Viscosity Models
+ *
+ * \param[in]  n_loc_cells   number of cells
+ * \param[in]  cells_list    cells list
+ * \param[out] rst           Reynolds stresses stored as vector
+ *                           [r11,r22,r33,r12,r23,r13]
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_evm_reynolds_stresses(cs_lnum_t   n_loc_cells,
+                              cs_lnum_t   cells_list[],
+                              cs_real_6_t rst[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
 #endif /* __CS_POST_UTIL_H__ */
-

@@ -41,43 +41,6 @@ module optcal
   !> \{
 
   !----------------------------------------------------------------------------
-  ! Equation types
-  !----------------------------------------------------------------------------
-
-  !> \defgroup equation_types Equation types
-
-  !> \addtogroup equation_types
-  !> \{
-
-  !> take unsteady term into account:
-  !>    - 1 account for unsteady term
-  !>    - 0 ignore unsteady term
-  integer, save :: istat(nvarmx)
-
-  !> take convection into account:
-  !>    - 1 account for convection
-  !>    - 0 ignore convection
-  integer, save :: iconv(nvarmx)
-
-  !> take diffusion into account:
-  !>    - 1: true
-  !>    - 0: false
-  integer, save :: idiff(nvarmx)
-
-  !> take turbulent diffusion into account:
-  !>    - 1: true
-  !>    - 0: false
-  integer, save :: idifft(nvarmx)
-
-  !> type of diffusivity:
-  !>    - 1: scalar diffusivity
-  !>    - 3: orthotropic diffusivity
-  !>    - 6: symmetric tensor diffusivity
-  integer, save :: idften(nvarmx)
-
-  !> \}
-
-  !----------------------------------------------------------------------------
   ! Time stepping
   !----------------------------------------------------------------------------
 
@@ -145,17 +108,8 @@ module optcal
   !> initcp : =1 if specific heat read from checkpoint file
   integer, save ::          initcp
 
-  !> ibdtso : backward differential scheme in time order
-  integer, save ::          ibdtso(nvarmx)
-
   !> initvs : =1 if scalar diffusivity read from checkpoint file
   integer, save ::          initvs(nscamx)
-
-  !> \f$ \theta \f$-scheme for the main variables
-  !>    -  0 : explicit
-  !>    - 1/2: extrapolated in n+1/2
-  !>    -  1 : extrapolated in n+1
-  double precision, save :: thetav(nvarmx)
 
   !> \f$ \theta_S \f$-scheme for the source terms in the Navier-Stokes equations
   !>    -  0 : second viscosity explicit
@@ -231,25 +185,6 @@ module optcal
   !> \addtogroup conv_scheme
   !> \{
 
-  !> percentage of upwind:
-  !>    - 1: no upwind (except if the slope test is activated)
-  !>    - 0: total upwind
-  double precision, save :: blencv(nvarmx)
-
-  !> type of convective scheme
-  !>    - 0: second order linear upwind
-  !>    - 1: centered
-  !>    - 2: pure upwind gradient in SOLU
-  integer, save ::          ischcv(nvarmx)
-
-  !> Slope test, Min/MAx limiter or Roe and Sweby limiters
-  !>    - 0: swich on the slope test
-  !>    - 1: swich off the slope test (default)
-  !>    - 2: continuous limiter ensuring positivness
-  !>    - 3: Roe-Sweby limiter
-  !>         (ensuring  Decreasing Total Variation)
-  integer, save ::          isstpc(nvarmx)
-
   !> method to compute interior mass flux due to ALE mesh velocity
   !>    - 1: based on cell center mesh velocity
   !>    - 0: based on nodes displacement
@@ -274,41 +209,11 @@ module optcal
   !> de la face les cellules dont un noeud est sur la face
   real(c_double), pointer, save :: anomax
 
-  !> max number of iterations for the iterative gradient
-  integer, save ::          nswrgr(nvarmx)
-
-  !> relative precision of the iterative gradient calculation
-  double precision, save :: epsrgr(nvarmx)
-
-  !> type of gradient clipping
-  !>    - < 0: no clipping
-  !>    -   0: first order
-  !>    -   1: second order
-  integer, save ::          imligr(nvarmx)
-
-  !>   climgr : facteur de limitation (>=1, =1 : forte limitation)
-  double precision, save :: climgr(nvarmx)
-
-  !> gradient extrapolation at the boundary
-  !>    - 0: false
-  !>    - 1: true
-  double precision, save :: extrag(nvarmx)
-
-  !> gradient calculation
-  !>    - 0: standard
-  !>    - 1: weighted
-  integer, save :: iwgrec(nvarmx)
-
   !> \}
 
   !> \defgroup diffusive_scheme Diffusive scheme
   !> \addtogroup diffusive_scheme
   !> \{
-
-  !> face flux reconstruction:
-  !>    - 0: false
-  !>    - 1: true
-  integer, save ::          ircflu(nvarmx)
 
   !> face viscosity field interpolation
   !>    - 1: harmonic
@@ -317,33 +222,9 @@ module optcal
 
   !> \}
 
-  !> \defgroup iterative_process Iterative process for the convection diffusion
-  !>           equation
-  !> \addtogroup iterative_process
-  !> \{
-
-  !> max number of iteration for the iterative process used to solved
-  !> the convection diffusion equations
-  integer, save ::          nswrsm(nvarmx)
-
-  !> relative precision of the iterative process used to solved
-  !> the convection diffusion equations
-  double precision, save :: epsrsm(nvarmx)
-
-  !> dynamic relaxation type:
-  !>    - 0 no dynamic relaxation
-  !>    - 1 dynamic relaxation depending on \f$ \delta \varia^k \f$
-  !>    - 2 dynamic relaxation depending on \f$ \delta \varia^k \f$ and \f$ \delta \varia^{k-1} \f$
-  integer, save :: iswdyn(nvarmx)
-
-  !> \}
-
   !> \defgroup linear_solver Linear solver
   !> \addtogroup linear_solver
   !> \{
-
-  !> relative precision of the linear solver
-  double precision, save :: epsilo(nvarmx)
 
   !> strengthening of the diagonal part of the matrix if no Dirichlet is set
   !>    - 0: false
@@ -458,9 +339,6 @@ module optcal
   !>    - for k,e     the same value is taken (value of k)
   !>    - for Rij, e  the same value is taken (value of r11)
   double precision, save :: cdtvar(nvarmx)
-
-  !> relaxation of variables (1 stands fo no relaxation)
-  double precision, save :: relaxv(nvarmx)
 
   !> relaxation coefficient for the steady algorithm
   real(c_double), pointer, save :: relxst

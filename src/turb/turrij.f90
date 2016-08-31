@@ -64,13 +64,12 @@ subroutine turrij &
 !===============================================================================
 
 use paramx
-use lagran, only: ntersl
+use lagran
 use numvar
 use entsor
 use cstphy
 use cstnum
 use optcal
-use lagran
 use pointe, only: rvoid1
 use ppincl
 use mesh
@@ -134,6 +133,8 @@ double precision, dimension(:), pointer :: cvara_scalt
 double precision, dimension(:), pointer :: cvar_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvara_rij, cvar_rij, vel
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -176,7 +177,9 @@ if (iturb.eq.30) then
   endif
 endif
 
-if(iwarni(iep).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+
+if(vcopt%iwarni.ge.1) then
   if (iturb.eq.30) then
     write(nfecra,1000)
   elseif (iturb.eq.31) then
@@ -518,13 +521,14 @@ else if (igrari.eq.1) then
   enddo
 
 ! The choice below has the advantage to be simple
+  call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt)
 
-  nswrgp = nswrgr(ir11)
-  imligp = imligr(ir11)
-  iwarnp = iwarni(ir11)
-  epsrgp = epsrgr(ir11)
-  climgp = climgr(ir11)
-  extrap = extrag(ir11)
+  nswrgp = vcopt%nswrgr
+  imligp = vcopt%imligr
+  iwarnp = vcopt%iwarni
+  epsrgp = vcopt%epsrgr
+  climgp = vcopt%climgr
+  extrap = vcopt%extrag
 
   f_id0 = -1
 
@@ -559,7 +563,6 @@ if (irijco.eq.1) then
   if (iturb.eq.30) then !TODO
     call resrij2 &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
    produc , gradro ,                                              &

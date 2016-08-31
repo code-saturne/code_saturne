@@ -116,6 +116,8 @@ double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m, cvar_f3m
 double precision, dimension(:), pointer :: cvar_varsc, cvara_varsc
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -176,12 +178,13 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
 ! A defaut de savoir pour F4M on prend comme pour F3M
     ivarut = isca(if3m)
   endif
-  nswrgp = nswrgr(ivarut)
-  imligp = imligr(ivarut)
-  iwarnp = iwarni(ivarut)
-  epsrgp = epsrgr(ivarut)
-  climgp = climgr(ivarut)
-  extrap = extrag(ivarut)
+  call field_get_key_struct_var_cal_opt(ivarfl(ivarut), vcopt)
+  nswrgp = vcopt%nswrgr
+  imligp = vcopt%imligr
+  iwarnp = vcopt%iwarni
+  epsrgp = vcopt%epsrgr
+  climgp = vcopt%climgr
+  extrap = vcopt%extrag
 
   ! Allocate work arrays
   allocate(w7(ncelet))

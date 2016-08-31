@@ -13,6 +13,14 @@ Physical modelling
 Architectural changes
 ---------------------
 
+- Prepared for cs_user_extra_op and cs_user_parameters translation to C in VnV base:
+  * removed Fortran arrays corresponding to members of cs_var_cal_opt_t C structure
+  * deployed use of get/set var_cal_opt everywhere
+  * added cs_post_util functions (rij post-pro for EVM models on a subset of cells)
+  * moved izfppp to C (cs_glob_face_zone) and map Fortran izfppp to it
+  * added a cs_user_logs function in cs_user_parameters.c (usipes equ.)
+  * added a gas mix model structure in C
+
 - Removed all the remaining mappings between fields and propce array:
   * removed propce arrays
   * removed ipproc array

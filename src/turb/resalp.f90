@@ -95,6 +95,8 @@ double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:,:), pointer :: cvara_rij
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -129,8 +131,10 @@ d1s2 = 1.d0/2.d0
 d1s4 = 1.d0/4.d0
 d3s2 = 3.d0/2.d0
 
+call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt)
+
 !  test on alpha which must not be above 1
-if (iwarni(ial).ge.1) then
+if (vcopt%iwarni.ge.1) then
   write(nfecra,1000)
 endif
 
@@ -145,12 +149,12 @@ call field_get_coefb_s(ivarfl(ivar), coefbp)
 call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-if(iwarni(ivar).ge.1) then
+if(vcopt%iwarni.ge.1) then
   call field_get_label(ivarfl(ivar), label)
   write(nfecra,1100) label
 endif
 
-thetv  = thetav(ivar)
+thetv  = vcopt%thetav
 
 do iel = 1, ncel
   smbr(iel) = 0.d0
@@ -220,27 +224,27 @@ call viscfa                                                       &
 ! 2.3 Effective resolution of the equation of alpha
 !===============================================================================
 
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
+iconvp = vcopt%iconv
+idiffp = vcopt%idiff
 ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
+nswrsp = vcopt%nswrsm
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+ircflp = vcopt%ircflu
+ischcp = vcopt%ischcv
+isstpp = vcopt%isstpc
 iescap = 0
 imucpp = 0
-idftnp = idften(ivar)
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
+idftnp = vcopt%idften
+iswdyp = vcopt%iswdyn
+iwarnp = vcopt%iwarni
+blencp = vcopt%blencv
+epsilp = vcopt%epsilo
+epsrsp = vcopt%epsrsm
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+extrap = vcopt%extrag
+relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
 

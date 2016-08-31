@@ -108,6 +108,8 @@ double precision, dimension(:), pointer :: c_st_voidf
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -115,6 +117,8 @@ double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 !===============================================================================
 
 ivar = ivoidf
+
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
 call field_get_val_s(ivarfl(ivoidf), cvar_voidf)
 call field_get_val_prev_s(ivarfl(ivoidf), cvara_voidf)
@@ -160,7 +164,7 @@ else
 endif
 
 ! Theta related to void fraction
-thetv = thetav(ivoidf)
+thetv = vcopt%thetav
 
 ! --- Initialization
 
@@ -260,7 +264,7 @@ endif
 !-------------
 
 do iel = 1, ncel
-  rovsdt(iel) = rovsdt(iel) + istat(ivar)*cell_f_vol(iel)/dt(iel)
+  rovsdt(iel) = rovsdt(iel) + vcopt%istat*cell_f_vol(iel)/dt(iel)
 enddo
 
 !===============================================================================
@@ -268,28 +272,28 @@ enddo
 !===============================================================================
 
 ! Solving void fraction
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
+iconvp = vcopt%iconv
+idiffp = vcopt%idiff
 ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
+nswrsp = vcopt%nswrsm
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+ircflp = vcopt%ircflu
+ischcp = vcopt%ischcv
+isstpp = vcopt%isstpc
 iescap = 0
 imucpp = 0
-idftnp = idften(ivar)
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
-thetap = thetav(ivar)
+idftnp = vcopt%idften
+iswdyp = vcopt%iswdyn
+iwarnp = vcopt%iwarni
+blencp = vcopt%blencv
+epsilp = vcopt%epsilo
+epsrsp = vcopt%epsrsm
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+extrap = vcopt%extrag
+relaxp = vcopt%relaxv
+thetap = vcopt%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
 

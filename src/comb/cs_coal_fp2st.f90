@@ -109,6 +109,8 @@ double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m
 double precision, dimension(:), pointer :: cvara_scal
 double precision, dimension(:), pointer :: cpro_rom1, cpro_cgd1, cpro_cgd2
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
@@ -156,12 +158,13 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
   inc = 1
   iccocg = 1
 ! A defaut de savoir pour F1M+F2M on prend comme pour F1M(1)
-  nswrgp = nswrgr(isca(if1m(1)))
-  imligp = imligr(isca(if1m(1)))
-  iwarnp = iwarni(isca(if1m(1)))
-  epsrgp = epsrgr(isca(if1m(1)))
-  climgp = climgr(isca(if1m(1)))
-  extrap = extrag(isca(if1m(1)))
+  call field_get_key_struct_var_cal_opt(ivarfl(isca(if1m(1))), vcopt)
+  nswrgp = vcopt%nswrgr
+  imligp = vcopt%imligr
+  iwarnp = vcopt%iwarni
+  epsrgp = vcopt%epsrgr
+  climgp = vcopt%climgr
+  extrap = vcopt%extrag
 
 ! --> calcul de X1
 

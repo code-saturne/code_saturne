@@ -93,6 +93,7 @@ use cpincl
 use ppincl
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -114,6 +115,8 @@ double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_scal
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 !===============================================================================
@@ -152,6 +155,8 @@ elseif (iturb.eq.60) then
   call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
 endif
 
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
 !===============================================================================
 ! 2. PRISE EN COMPTE DES TERMES SOURCES
 !===============================================================================
@@ -160,7 +165,7 @@ if ( ivar.eq.isca(iygfm) ) then
 
 ! ---> Terme source pour la fraction massique moyenne de gaz frais
 
-  if (iwarni(ivar).ge.1) then
+  if (vcopt%iwarni.ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 

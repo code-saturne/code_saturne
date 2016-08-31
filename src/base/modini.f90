@@ -67,6 +67,9 @@ logical          is_set
 
 double precision relxsp, omgnrm
 
+type(var_cal_opt) :: vcopt , vcopt1, vcopt2, vcopt3, vcopt4
+type(var_cal_opt) :: vcopt5, vcopt6, vcopt7
+
 !===============================================================================
 
 ! Indicateur erreur (0 : pas d'erreur)
@@ -81,14 +84,6 @@ call cs_f_turb_complete_constants
 !===============================================================================
 ! 1. ENTREES SORTIES entsor
 !===============================================================================
-
-! ---> Niveau d'impression listing
-!       Non initialise -> standard
-do ii = 1, nvarmx
-  if (iwarni(ii).eq.-10000) then
-    iwarni(ii) = 0
-  endif
-enddo
 
 !---> sorties chrono?
 !     Sauf mention contraire de l'utilisateur, on sort a la fin les
@@ -320,203 +315,265 @@ do iscal = 1, nscal
 enddo
 
 ! Velocity and Pressure (thetav for the pressure is taken without worring)
-if (abs(thetav(iu)+999.d0).gt.epzero.or.                 &
-    abs(thetav(iv)+999.d0).gt.epzero.or.                 &
-    abs(thetav(iw)+999.d0).gt.epzero.or.                 &
-    abs(thetav(ipr)+999.d0).gt.epzero) then
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt1)
+
+if (abs(vcopt%thetav+999.d0).gt.epzero.or.                 &
+    abs(vcopt1%thetav+999.d0).gt.epzero) then
   write(nfecra,1131) 'VITESSE-PRESSION ','THETAV'
 elseif (ischtp.eq.1) then
-  thetav(iu) = 1.d0
-  thetav(iv) = 1.d0
-  thetav(iw) = 1.d0
-  thetav(ipr) = 1.d0
+  vcopt%thetav = 1.d0
+  vcopt1%thetav = 1.d0
 elseif (ischtp.eq.2) then
-  thetav(iu) = 0.5d0
-  thetav(iv) = 0.5d0
-  thetav(iw) = 0.5d0
-  thetav(ipr) = 1.d0
+  vcopt%thetav = 0.5d0
+  vcopt1%thetav = 1.d0
 endif
+
+call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt1)
 
 !     Taux de vide en diphasique homogene
 if (icavit.ge.0) then
-  if (abs(thetav(ivoidf)+999.d0).gt.epzero) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ivoidf), vcopt)
+  if (abs(vcopt%thetav+999.d0).gt.epzero) then
     write(nfecra,1031) 'TAUX DE VIDE','THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
-    thetav(ivoidf) = 1.d0
+    vcopt%thetav = 1.d0
   elseif (ischtp.eq.2) then
-    thetav(ivoidf) = 0.5d0
+    vcopt%thetav = 0.5d0
   endif
+  call field_set_key_struct_var_cal_opt(ivarfl(ivoidf), vcopt)
 endif
 
 !     Turbulence (en k-eps : ordre 1)
 if (itytur.eq.2) then
-  if (abs(thetav(ik )+999.d0).gt.epzero.or.               &
-      abs(thetav(iep)+999.d0).gt.epzero) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
+
+  if (abs(vcopt%thetav+999.d0).gt.epzero.or.               &
+      abs(vcopt1%thetav+999.d0).gt.epzero) then
     write(nfecra,1031) 'VARIABLES   K-EPS','THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
-    thetav(ik ) = 1.d0
-    thetav(iep) = 1.d0
+    vcopt%thetav = 1.d0
+    vcopt1%thetav = 1.d0
   elseif (ischtp.eq.2) then
     !     pour le moment, on ne peut pas passer par ici (cf varpos)
-    thetav(ik ) = 0.5d0
-    thetav(iep) = 0.5d0
+    vcopt%thetav = 0.5d0
+    vcopt1%thetav = 0.5d0
   endif
+
+  call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
 elseif (itytur.eq.3) then
-  if (abs(thetav(ir11)+999.d0).gt.epzero.or.              &
-      abs(thetav(ir22)+999.d0).gt.epzero.or.              &
-      abs(thetav(ir33)+999.d0).gt.epzero.or.              &
-      abs(thetav(ir12)+999.d0).gt.epzero.or.              &
-      abs(thetav(ir13)+999.d0).gt.epzero.or.              &
-      abs(thetav(ir23)+999.d0).gt.epzero.or.              &
-      abs(thetav(iep )+999.d0).gt.epzero) then
-    write(nfecra,1031) 'VARIABLES  RIJ-EP','THETAV'
-    iok = iok + 1
-  elseif (ischtp.eq.1) then
-    thetav(ir11) = 1.d0
-    thetav(ir22) = 1.d0
-    thetav(ir33) = 1.d0
-    thetav(ir12) = 1.d0
-    thetav(ir13) = 1.d0
-    thetav(ir23) = 1.d0
-    thetav(iep ) = 1.d0
-  elseif (ischtp.eq.2) then
-    thetav(ir11) = 0.5d0
-    thetav(ir22) = 0.5d0
-    thetav(ir33) = 0.5d0
-    thetav(ir12) = 0.5d0
-    thetav(ir13) = 0.5d0
-    thetav(ir23) = 0.5d0
-    thetav(iep ) = 0.5d0
-  endif
+  if (irijco.eq.1) then
+    call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt1)
+    call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
 
-  ! Diffusivity model:
+    if (abs(vcopt1%thetav+999.d0).gt.epzero.or.              &
+        abs(vcopt%thetav+999.d0).gt.epzero) then
+      write(nfecra,1031) 'VARIABLES  RIJ-EP','THETAV'
+      iok = iok + 1
+    elseif (ischtp.eq.1) then
+      vcopt1%thetav = 1.d0
+      vcopt%thetav  = 1.d0
+    elseif (ischtp.eq.2) then
+      vcopt1%thetav = 0.5d0
+      vcopt%thetav  = 0.5d0
+    endif
 
-  ! Daly Harlow (GGDH) on Rij and epsilon by default
-  if (idirsm.ne.0) then
-    idften(ir11) = 6
-    idften(ir22) = 6
-    idften(ir33) = 6
-    idften(ir12) = 6
-    idften(ir23) = 6
-    idften(ir13) = 6
-    idften(iep)  = 6
+    ! Diffusivity model:
+    ! Daly Harlow (GGDH) on Rij and epsilon by default
+    if (idirsm.ne.0) then
+      vcopt1%idften = 6
+      vcopt%idften  = 6
+      ! Scalar diffusivity (Shir model) elswhere (idirsm = 0)
+    else
+      vcopt1%idften = 1
+      vcopt%idften  = 1
+    endif
 
-  ! Scalar diffusivity (Shir model) elswhere (idirsm = 0)
+    call field_set_key_struct_var_cal_opt(ivarfl(irij), vcopt1)
+    call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
   else
-    idften(ir11) = 1
-    idften(ir22) = 1
-    idften(ir33) = 1
-    idften(ir12) = 1
-    idften(ir23) = 1
-    idften(ir13) = 1
-    idften(iep)  = 1
+    call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt1)
+    call field_get_key_struct_var_cal_opt(ivarfl(ir22), vcopt2)
+    call field_get_key_struct_var_cal_opt(ivarfl(ir33), vcopt3)
+    call field_get_key_struct_var_cal_opt(ivarfl(ir12), vcopt4)
+    call field_get_key_struct_var_cal_opt(ivarfl(ir13), vcopt5)
+    call field_get_key_struct_var_cal_opt(ivarfl(ir23), vcopt6)
+    call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+
+    if (abs(vcopt1%thetav+999.d0).gt.epzero.or.              &
+        abs(vcopt2%thetav+999.d0).gt.epzero.or.              &
+        abs(vcopt3%thetav+999.d0).gt.epzero.or.              &
+        abs(vcopt4%thetav+999.d0).gt.epzero.or.              &
+        abs(vcopt5%thetav+999.d0).gt.epzero.or.              &
+        abs(vcopt6%thetav+999.d0).gt.epzero.or.              &
+        abs(vcopt%thetav+999.d0).gt.epzero) then
+      write(nfecra,1031) 'VARIABLES  RIJ-EP','THETAV'
+      iok = iok + 1
+    elseif (ischtp.eq.1) then
+      vcopt1%thetav = 1.d0
+      vcopt%thetav  = 1.d0
+    elseif (ischtp.eq.2) then
+      vcopt1%thetav = 0.5d0
+      vcopt%thetav  = 0.5d0
+    endif
+
+    ! Diffusivity model:
+    ! Daly Harlow (GGDH) on Rij and epsilon by default
+    if (idirsm.ne.0) then
+      vcopt1%idften = 6
+      vcopt%idften  = 6
+      ! Scalar diffusivity (Shir model) elswhere (idirsm = 0)
+    else
+      vcopt1%idften = 1
+      vcopt%idften  = 1
+    endif
+
+    call field_set_key_struct_var_cal_opt(ivarfl(ir11), vcopt1)
+    call field_set_key_struct_var_cal_opt(ivarfl(ir22), vcopt1)
+    call field_set_key_struct_var_cal_opt(ivarfl(ir33), vcopt1)
+    call field_set_key_struct_var_cal_opt(ivarfl(ir12), vcopt1)
+    call field_set_key_struct_var_cal_opt(ivarfl(ir13), vcopt1)
+    call field_set_key_struct_var_cal_opt(ivarfl(ir23), vcopt1)
+    call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
   endif
 
   if (iturb.eq.32) then
-    if (abs(thetav(ial)+999.d0).gt.epzero) then
+    call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt7)
+    if (abs(vcopt7%thetav+999.d0).gt.epzero) then
       write(nfecra,1031) 'VARIABLES  RIJ-EB','THETAV'
       iok = iok + 1
     elseif (ischtp.eq.1) then
-      thetav(ial) = 1.d0
+      vcopt7%thetav = 1.d0
     elseif (ischtp.eq.2) then
-      thetav(ial) = 0.5d0
+      vcopt7%thetav = 0.5d0
     endif
+    call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt7)
   endif
-
 elseif (iturb.eq.50) then
-  if (abs(thetav(ik  )+999.d0).gt.epzero.or.              &
-      abs(thetav(iep )+999.d0).gt.epzero.or.              &
-      abs(thetav(iphi)+999.d0).gt.epzero.or.              &
-      abs(thetav(ifb )+999.d0).gt.epzero) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
+  call field_get_key_struct_var_cal_opt(ivarfl(iphi), vcopt2)
+  call field_get_key_struct_var_cal_opt(ivarfl(ifb), vcopt3)
+
+  if (abs(vcopt%thetav+999.d0).gt.epzero.or.              &
+      abs(vcopt1%thetav+999.d0).gt.epzero.or.              &
+      abs(vcopt2%thetav+999.d0).gt.epzero.or.              &
+      abs(vcopt3%thetav+999.d0).gt.epzero) then
     write(nfecra,1031) 'VARIABLES     V2F','THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
-    thetav(ik  ) = 1.d0
-    thetav(iep ) = 1.d0
-    thetav(iphi) = 1.d0
-    thetav(ifb ) = 1.d0
+    vcopt1%thetav = 1.d0
+    vcopt2%thetav = 1.d0
+    vcopt3%thetav = 1.d0
+    vcopt%thetav  = 1.d0
   elseif (ischtp.eq.2) then
     !     pour le moment, on ne peut pas passer par ici (cf varpos)
-    thetav(ik  ) = 0.5d0
-    thetav(iep ) = 0.5d0
-    thetav(iphi) = 0.5d0
-    thetav(ifb ) = 0.5d0
+    vcopt1%thetav = 0.5d0
+    vcopt2%thetav = 0.5d0
+    vcopt3%thetav = 0.5d0
+    vcopt%thetav  = 0.5d0
   endif
+
+  call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
+  call field_set_key_struct_var_cal_opt(ivarfl(iphi), vcopt2)
+  call field_set_key_struct_var_cal_opt(ivarfl(ifb), vcopt3)
 elseif (iturb.eq.51) then
-  if (abs(thetav(ik  )+999.d0).gt.epzero.or.              &
-      abs(thetav(iep )+999.d0).gt.epzero.or.              &
-      abs(thetav(iphi)+999.d0).gt.epzero.or.              &
-      abs(thetav(ial )+999.d0).gt.epzero) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
+  call field_get_key_struct_var_cal_opt(ivarfl(iphi), vcopt2)
+  call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt3)
+
+  if (abs(vcopt%thetav+999.d0).gt.epzero.or.              &
+      abs(vcopt1%thetav+999.d0).gt.epzero.or.              &
+      abs(vcopt2%thetav+999.d0).gt.epzero.or.              &
+      abs(vcopt3%thetav+999.d0).gt.epzero) then
     write(nfecra,1031) 'VARIABLES BL-V2/K','THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
-    thetav(ik  ) = 1.d0
-    thetav(iep ) = 1.d0
-    thetav(iphi) = 1.d0
-    thetav(ial ) = 1.d0
+    vcopt1%thetav = 1.d0
+    vcopt2%thetav = 1.d0
+    vcopt3%thetav = 1.d0
+    vcopt%thetav  = 1.d0
   elseif (ischtp.eq.2) then
     !     pour le moment, on ne peut pas passer par ici (cf varpos)
-    thetav(ik  ) = 0.5d0
-    thetav(iep ) = 0.5d0
-    thetav(iphi) = 0.5d0
-    thetav(ial ) = 0.5d0
+    vcopt1%thetav = 0.5d0
+    vcopt2%thetav = 0.5d0
+    vcopt3%thetav = 0.5d0
+    vcopt%thetav  = 0.5d0
   endif
+
+  call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
+  call field_set_key_struct_var_cal_opt(ivarfl(iphi), vcopt2)
+  call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt3)
 elseif (iturb.eq.60) then
-  if (abs(thetav(ik  )+999.d0).gt.epzero.or.              &
-      abs(thetav(iomg)+999.d0).gt.epzero ) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  call field_get_key_struct_var_cal_opt(ivarfl(iomg), vcopt1)
+
+  if (abs(vcopt%thetav+999.d0).gt.epzero.or.              &
+      abs(vcopt1%thetav+999.d0).gt.epzero ) then
     write(nfecra,1031) 'VARIABLES K-OMEGA','THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
-    thetav(ik  ) = 1.d0
-    thetav(iomg) = 1.d0
+    vcopt%thetav = 1.d0
+    vcopt1%thetav = 1.d0
   elseif (ischtp.eq.2) then
     !     pour le moment, on ne peut pas passer par ici (cf varpos)
-    thetav(ik  ) = 0.5d0
-    thetav(iomg) = 0.5d0
+    vcopt%thetav = 0.5d0
+    vcopt1%thetav = 0.5d0
   endif
+
+  call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  call field_set_key_struct_var_cal_opt(ivarfl(iomg), vcopt1)
 elseif (iturb.eq.70) then
-  if (abs(thetav(inusa)+999.d0).gt.epzero) then
+  call field_get_key_struct_var_cal_opt(ivarfl(inusa), vcopt)
+
+  if (abs(vcopt%thetav+999.d0).gt.epzero) then
     write(nfecra,1031) 'VARIABLE NU_tilde de SA','THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
-    thetav(inusa) = 1.d0
+    vcopt%thetav = 1.d0
   elseif (ischtp.eq.2) then
     !     pour le moment, on ne peut pas passer par ici (cf varpos)
-    thetav(inusa) = 0.5d0
+    vcopt%thetav = 0.5d0
   endif
+
+  call field_set_key_struct_var_cal_opt(ivarfl(inusa), vcopt)
 endif
 
-! Scalares
+! Scalars
 do iscal = 1, nscal
   ivar  = isca(iscal)
-  if (abs(thetav(ivar)+999.d0).gt.epzero) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  if (abs(vcopt%thetav+999.d0).gt.epzero) then
     write(nfecra,1041) 'SCALAIRE',ISCAL,'THETAV'
   elseif (ischtp.eq.1) then
-    thetav(ivar) = 1.d0
+    vcopt%thetav = 1.d0
   elseif (ischtp.eq.2) then
-    thetav(ivar) = 0.5d0
+    vcopt%thetav = 0.5d0
   endif
+  call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 enddo
 
 ! Mesh velocity for ALE
 if (iale.eq.1) then
-  if (abs(thetav(iuma)+999.d0).gt.epzero.or.                       &
-      abs(thetav(ivma)+999.d0).gt.epzero.or.                       &
-      abs(thetav(iwma)+999.d0).gt.epzero) then
+  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+  if (abs(vcopt%thetav+999.d0).gt.epzero) then
     write(nfecra,1032) 'THETAV'
     iok = iok + 1
   elseif (ischtp.eq.1) then
-    thetav(iuma) = 1.d0
-    thetav(ivma) = 1.d0
-    thetav(iwma) = 1.d0
+    vcopt%thetav = 1.d0
   elseif (ischtp.eq.2) then
 !     pour le moment, on ne peut pas passer par ici (cf varpos)
-    thetav(iuma) = 0.5d0
-    thetav(ivma) = 0.5d0
-    thetav(iwma) = 0.5d0
+    vcopt%thetav = 0.5d0
   endif
+  call field_set_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
 endif
 
 ! ---> ISSTPC
@@ -526,20 +583,26 @@ endif
 
 if (itytur.eq.4) then
   ii = iu
-  if (isstpc(ii).eq.-999) isstpc(ii) = 1
-  ii = iv
-  if (isstpc(ii).eq.-999) isstpc(ii) = 1
-  ii = iw
-  if (isstpc(ii).eq.-999) isstpc(ii) = 1
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  if (vcopt%isstpc.eq.-999) then
+    vcopt%isstpc = 1
+    call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  endif
   do jj = 1, nscal
     ii = isca(jj)
-    if (isstpc(ii).eq.-999) isstpc(ii) = 0
-  enddo
+    call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+    if (vcopt%isstpc.eq.-999) then
+      vcopt%isstpc = 0
+      call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+    endif
+ enddo
 endif
 
-do ii = 1, nvarmx
-  if (isstpc(ii).eq.-999) then
-    isstpc(ii) = 0
+do ii = 1, nvar
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  if (vcopt%isstpc.eq.-999) then
+    vcopt%isstpc = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   endif
 enddo
 
@@ -555,34 +618,46 @@ enddo
 !  upwind et on affiche un message si l'utilisateur avait specifie autre chose
 
 ii = iu
-if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
-ii = iv
-if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
-ii = iw
-if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
+call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+if (abs(vcopt%blencv+999.d0).lt.epzero) then
+  vcopt%blencv = 1.d0
+  call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+endif
 
 if (icavit.ge.0) then
   ii = ivoidf
-  if (abs(blencv(ii)).gt.epzero) then
-    if (abs(blencv(ii)+999.d0).gt.epzero) &
-         write(nfecra,3000) 0.d0, blencv(ii)
-    blencv(ii) = 0.d0
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  if (abs(vcopt%blencv+999.d0).lt.epzero) then
+    if (abs(vcopt%blencv+999.d0).gt.epzero) &
+         write(nfecra,3000) 0.d0, vcopt%blencv
+    vcopt%blencv = 0.d0
+    call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   endif
 endif
 
 do jj = 1, nscaus
   ii = isca(jj)
-  if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  if (abs(vcopt%blencv+999.d0).lt.epzero) then
+    vcopt%blencv = 1.d0
+    call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  endif
 enddo
 
 if (iscalt.gt.0) then
   ii = isca(iscalt)
-  if (abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  if (abs(vcopt%blencv+999.d0).lt.epzero) then
+    vcopt%blencv = 1.d0
+    call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  endif
 endif
 
-do ii = 1, nvarmx
-  if (abs(blencv(ii)+999.d0).lt.epzero) then
-    blencv(ii) = 0.d0
+do ii = 1, nvar
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  if (abs(vcopt%blencv+999.d0).lt.epzero) then
+    vcopt%blencv = 0.d0
+    call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   endif
 enddo
 
@@ -604,35 +679,37 @@ enddo
 
 if (ischtp.eq.2) then
   ii = ipr
-  if (nswrsm(ii).eq.-999) nswrsm(ii) = 5
-  if (abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
-  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 10.d0*epsilo(ii)
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  if (vcopt%nswrsm.eq.-999) vcopt%nswrsm = 5
+  if (abs(vcopt%epsilo+999.d0).lt.epzero) vcopt%epsilo = 1.d-5
+  if (abs(vcopt%epsrsm+999.d0).lt.epzero) vcopt%epsrsm = 10.d0*vcopt%epsilo
+  call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   ii = iu
-  if (nswrsm(ii).eq.-999) nswrsm(ii) = 10
-  if (abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
-  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 10.d0*epsilo(ii)
-  ii = iv
-  if (nswrsm(ii).eq.-999) nswrsm(ii) = 10
-  if (abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
-  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 10.d0*epsilo(ii)
-  ii = iw
-  if (nswrsm(ii).eq.-999) nswrsm(ii) = 10
-  if (abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
-  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 10.d0*epsilo(ii)
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  if (vcopt%nswrsm.eq.-999) vcopt%nswrsm = 10
+  if (abs(vcopt%epsilo+999.d0).lt.epzero) vcopt%epsilo = 1.d-5
+  if (abs(vcopt%epsrsm+999.d0).lt.epzero) vcopt%epsrsm = 10.d0*vcopt%epsilo
+  call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   do jj = 1, nscal
     ii = isca(jj)
-    if (nswrsm(ii).eq.-999) nswrsm(ii) = 10
-    if (abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
-    if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 10.d0*epsilo(ii)
+    call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+    if (vcopt%nswrsm.eq.-999) vcopt%nswrsm = 10
+    if (abs(vcopt%epsilo+999.d0).lt.epzero) vcopt%epsilo = 1.d-5
+    if (abs(vcopt%epsrsm+999.d0).lt.epzero) vcopt%epsrsm = 10.d0*vcopt%epsilo
+    call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   enddo
 endif
 ii = ipr
-if (nswrsm(ii).eq.-999) nswrsm(ii) = 2
+call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+if (vcopt%nswrsm.eq.-999) vcopt%nswrsm = 2
+call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 
-do ii = 1, nvarmx
-  if (nswrsm(ii).eq.-999) nswrsm(ii) = 1
-  if (abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-8
-  if (abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 10.d0*epsilo(ii)
+do ii = 1, nvar
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  if (vcopt%nswrsm.eq.-999) vcopt%nswrsm = 1
+  if (abs(vcopt%epsilo+999.d0).lt.epzero) vcopt%epsilo = 1.d-8
+  if (abs(vcopt%epsrsm+999.d0).lt.epzero) vcopt%epsrsm = 10.d0*vcopt%epsilo
+  call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 enddo
 
 ! ---> ANOMAX
@@ -653,15 +730,19 @@ imrgrp = abs(imrgra)
 if (imrgrp.ge.10) imrgrp = imrgrp - 10
 
 if (imrgrp.eq.0.or.imrgrp.ge.4) then
-  do ii = 1, nvarmx
-    if (imligr(ii).eq.-999) then
-      imligr(ii) = -1
+  do ii = 1, nvar
+    call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+    if (vcopt%imligr.eq.-999) then
+      vcopt%imligr = -1
+      call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
     endif
   enddo
 else
-  do ii = 1, nvarmx
-    if (imligr(ii).eq.-999) then
-      imligr(ii) = 1
+  do ii = 1, nvar
+    call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+    if (vcopt%imligr.eq.-999) then
+      vcopt%imligr = 1
+      call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
     endif
   enddo
 endif
@@ -913,8 +994,9 @@ else
 endif
 
 !     Warning : non initialise => comme la vitesse
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 if (iwarny.eq.-999) then
-  iwarny = iwarni(iu)
+  iwarny = vcopt%iwarni
 endif
 
 
@@ -938,37 +1020,67 @@ endif
 if (idtvar.lt.0) then
   relxsp = 1.d0-relxst
   if (relxsp.le.epzero) relxsp = relxst
-  if (abs(relaxv(ipr)+999.d0).le.epzero)                 &
-       relaxv(ipr) = relxsp
-  do ii = 1, nvarmx
-    if (abs(relaxv(ii)+999.d0).le.epzero) relaxv(ii) = relxst
+  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+  if (abs(vcopt%relaxv+999.d0).le.epzero) then
+       vcopt%relaxv = relxsp
+       call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+  endif
+  do ii = 1, nvar
+    call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+    if (abs(vcopt%relaxv+999.d0).le.epzero) then
+      vcopt%relaxv = relxst
+      call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+    endif
   enddo
 else
   if (ikecou.eq.0) then
     if (itytur.eq.5) then !FIXME
-      if (abs(relaxv(ik)+999.d0).lt.epzero)              &
-           relaxv(ik) = 0.7d0
-      if (abs(relaxv(iep)+999.d0).lt.epzero)             &
-           relaxv(iep) = 0.7d0
+      call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+      if (abs(vcopt%relaxv+999.d0).lt.epzero) then
+           vcopt%relaxv = 0.7d0
+           call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+      endif
+      call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+      if (abs(vcopt%relaxv+999.d0).lt.epzero) then
+           vcopt%relaxv = 0.7d0
+           call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+      endif
     else if (itytur.eq.2) then
-      if (abs(relaxv(ik)+999.d0).lt.epzero)              &
-           relaxv(ik) = 1.d0
-      if (abs(relaxv(iep)+999.d0).lt.epzero)             &
-           relaxv(iep) = 1.d0
+      call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+      if (abs(vcopt%relaxv+999.d0).lt.epzero) then
+           vcopt%relaxv = 1.d0
+           call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+      endif
+      call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+      if (abs(vcopt%relaxv+999.d0).lt.epzero) then
+           vcopt%relaxv = 1.d0
+           call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+      endif
     else if (itytur.eq.6) then
-      if (abs(relaxv(ik)+999.d0).lt.epzero)              &
-           relaxv(ik) = 1.d0
-      if (abs(relaxv(iomg)+999.d0).lt.epzero)            &
-           relaxv(iomg) = 1.d0
+      call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+      if (abs(vcopt%relaxv+999.d0).lt.epzero)  then
+           vcopt%relaxv = 1.d0
+           call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+      endif
+      call field_get_key_struct_var_cal_opt(ivarfl(iomg), vcopt)
+      if (abs(vcopt%relaxv+999.d0).lt.epzero) then
+           vcopt%relaxv = 1.d0
+           call field_set_key_struct_var_cal_opt(ivarfl(iomg), vcopt)
+      endif
     endif
   endif
   if (iturb.eq.70) then
-    if (abs(relaxv(inusa)+999.d0).lt.epzero) then
-      relaxv(inusa) = 1.D0
+    call field_get_key_struct_var_cal_opt(ivarfl(inusa), vcopt)
+    if (abs(vcopt%relaxv+999.d0).lt.epzero) then
+      vcopt%relaxv = 1.d0
+      call field_set_key_struct_var_cal_opt(ivarfl(inusa), vcopt)
     endif
   endif
-  if (abs(relaxv(ipr)+999.d0).lt.epzero)                 &
-       relaxv(ipr) = 1.d0
+  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+  if (abs(vcopt%relaxv+999.d0).lt.epzero) then
+     vcopt%relaxv = 1.d0
+     call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+  endif
 endif
 
 ! ---> SPECIFIQUE STATIONNAIRE
@@ -976,10 +1088,13 @@ if (idtvar.lt.0) then
   dtref = 1.d0
   dtmin = 1.d0
   dtmax = 1.d0
-  do ii = 1, nvarmx
-    istat(ii) = 0
+  do ii = 1, nvar
+    call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+    vcopt%istat = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   enddo
-  arak = arak/max(relaxv(iu),epzero)
+  call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+  arak = arak/max(vcopt%relaxv,epzero)
 endif
 
 !===============================================================================
@@ -1088,21 +1203,26 @@ if (nscal.gt.0) then
   do iscal = 1, nscal
     ! AFM and GGDH on the scalar
     if (ityturt(iscal).eq.1.or.ityturt(iscal).eq.2) then
-      idften(isca(iscal)) = 6
+      call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
+      vcopt%idften = 6
       ctheta(iscal) = cthafm
-
+      call field_set_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
     ! DFM on the scalar
     elseif (ityturt(iscal).eq.3) then
-      idifft(isca(iscal)) = 0
-      idften(isca(iscal)) = 1
+      call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
+      vcopt%idifft = 0
+      vcopt%idften = 1
       ctheta(iscal) = cthdfm
+      call field_set_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
       ! GGDH on the thermal fluxes is automatically done
 
       ! GGDH on the variance of the thermal scalar
       do ii = 1, nscal
         if (iscavr(ii).eq.iscal) then
-          idften(isca(ii)) = 6
+          call field_get_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
+          vcopt%idften = 6
           ctheta(ii) = csrij
+          call field_set_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
         endif
       enddo
     else
@@ -1115,12 +1235,16 @@ endif
 if (ippmod(idarcy).eq.1) then
 
   if (darcy_anisotropic_permeability.eq.1) then
-    idften(ipr) = 6
-  endif
+    call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+    vcopt%idften = 6
+    call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+ endif
 
   if (darcy_anisotropic_dispersion.eq.1) then
     do iscal = 1, nscal
-      idften(isca(iscal)) = 6
+      call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
+      vcopt%idften = 6
+      call field_set_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
     enddo
   endif
 

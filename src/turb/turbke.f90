@@ -152,6 +152,8 @@ double precision, dimension(:), pointer :: cpro_pcvto, cpro_pcvlo
 double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: c_st_k_p, c_st_eps_p
 
+type(var_cal_opt) :: vcopt_k, vcopt_e
+
 !===============================================================================
 
 !===============================================================================
@@ -226,7 +228,10 @@ if (istprv.ge.0) then
   endif
 endif
 
-if (iwarni(ik).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt_k)
+call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt_e)
+
+if (vcopt_k%iwarni.ge.1) then
   if (iturb.eq.20) then
     write(nfecra,1000)
   else if (iturb.eq.21) then
@@ -289,8 +294,8 @@ deallocate(gradv)
 do iel = 1, ncel
   rho = crom(iel)
   romvsd = rho*volume(iel)/dt(iel)
-  tinstk(iel) = istat(ik)*romvsd
-  tinste(iel) = istat(iep)*romvsd
+  tinstk(iel) = vcopt_k%istat*romvsd
+  tinste(iel) = vcopt_e%istat*romvsd
 enddo
 
 !===============================================================================
@@ -379,12 +384,12 @@ else if (igrake.eq.1) then
 
   iccocg = 1
   inc = 1
-  nswrgp = nswrgr(ik)
-  epsrgp = epsrgr(ik)
-  imligp = imligr(ik)
-  iwarnp = iwarni(ik)
-  climgp = climgr(ik)
-  extrap = extrag(ik)
+  nswrgp = vcopt_k%nswrgr
+  epsrgp = vcopt_k%epsrgr
+  imligp = vcopt_k%imligr
+  iwarnp = vcopt_k%iwarni
+  climgp = vcopt_k%climgr
+  extrap = vcopt_k%extrag
 
   ! Dirichlet boundary condition on the gradient of rho
   do ifac = 1, nfabor
@@ -484,12 +489,12 @@ if (iturb.eq.51) then
   inc = 1
   init = 1
 
-  nswrgp = nswrgr(ivar)
-  imligp = imligr(ivar)
-  iwarnp = iwarni(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
+  nswrgp = vcopt_k%nswrgr
+  imligp = vcopt_k%imligr
+  iwarnp = vcopt_k%iwarni
+  epsrgp = vcopt_k%epsrgr
+  climgp = vcopt_k%climgr
+  extrap = vcopt_k%extrag
   iphydp = 0
 
   call itrgrp &
@@ -720,8 +725,8 @@ call cs_user_turbulence_source_terms &
 ! If source terms are extrapolated over time
 if (istprv.ge.0) then
 
-  thetak = thetav(ik)
-  thetae = thetav(iep)
+  thetak = vcopt_k%thetav
+  thetae = vcopt_e%thetav
 
   do iel = 1, ncel
 
@@ -871,10 +876,10 @@ if (ikecou.eq.1) then
   call field_get_coefaf_s(ivarfl(ivar), cofafp)
   call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-  if (idiff(ivar).ge. 1) then
+  if (vcopt_k%idiff.ge. 1) then
 
     do iel = 1, ncel
-      w4(iel) = viscl(iel) + idifft(ivar)*cvisct(iel)/sigmak
+      w4(iel) = viscl(iel) + vcopt_k%idifft*cvisct(iel)/sigmak
     enddo
 
     call viscfa(imvisf, w4, viscf, viscb)
@@ -892,23 +897,23 @@ if (ikecou.eq.1) then
 
   iccocg = 1
   inc    = 1
-  iconvp = iconv (ivar)
+  iconvp = vcopt_k%iconv
   imasac = 1
-  idiffp = idiff (ivar)
-  nswrgp = nswrgr(ivar)
-  imligp = imligr(ivar)
-  ircflp = ircflu(ivar)
-  ischcp = ischcv(ivar)
-  isstpp = isstpc(ivar)
-  iwarnp = iwarni(ivar)
+  idiffp = vcopt_k%idiff
+  nswrgp = vcopt_k%nswrgr
+  imligp = vcopt_k%imligr
+  ircflp = vcopt_k%ircflu
+  ischcp = vcopt_k%ischcv
+  isstpp = vcopt_k%isstpc
+  iwarnp = vcopt_k%iwarni
   imucpp = 0
   idftnp = 1 ! no tensorial diffusivity
-  blencp = blencv(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
-  relaxp = relaxv(ivar)
-  thetap = thetav(ivar)
+  blencp = vcopt_k%blencv
+  epsrgp = vcopt_k%epsrgr
+  climgp = vcopt_k%climgr
+  extrap = vcopt_k%extrag
+  relaxp = vcopt_k%relaxv
+  thetap = vcopt_k%thetav
   ! all boundary convective flux with upwind
   icvflb = 0
 
@@ -925,7 +930,7 @@ if (ikecou.eq.1) then
    icvflb , ivoid  ,                                              &
    w7     )
 
-  if (iwarni(ivar).ge.2) then
+  if (vcopt_k%iwarni.ge.2) then
     rnorm = sqrt(cs_gdot(ncel,smbrk,smbrk))
     write(nfecra,1100) chaine(1:8) ,rnorm
   endif
@@ -940,10 +945,10 @@ if (ikecou.eq.1) then
   call field_get_coefaf_s(ivarfl(ivar), cofafp)
   call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-  if (idiff(ivar).ge. 1) then
+  if (vcopt_e%idiff.ge. 1) then
     do iel = 1, ncel
       w4(iel) = viscl(iel)                                        &
-              + idifft(ivar)*cvisct(iel)/sigmae
+              + vcopt_e%idifft*cvisct(iel)/sigmae
     enddo
 
     call viscfa(imvisf, w4, viscf, viscb)
@@ -961,23 +966,23 @@ if (ikecou.eq.1) then
 
   iccocg = 1
   inc    = 1
-  iconvp = iconv (ivar)
+  iconvp = vcopt_e%iconv
   imasac = 1
-  idiffp = idiff (ivar)
-  nswrgp = nswrgr(ivar)
-  imligp = imligr(ivar)
-  ircflp = ircflu(ivar)
-  ischcp = ischcv(ivar)
-  isstpp = isstpc(ivar)
-  iwarnp = iwarni(ivar)
+  idiffp = vcopt_e%idiff
+  nswrgp = vcopt_e%nswrgr
+  imligp = vcopt_e%imligr
+  ircflp = vcopt_e%ircflu
+  ischcp = vcopt_e%ischcv
+  isstpp = vcopt_e%isstpc
+  iwarnp = vcopt_e%iwarni
   imucpp = 0
   idftnp = 1 ! no tensorial diffusivity
-  blencp = blencv(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
-  relaxp = relaxv(ivar)
-  thetap = thetav(ivar)
+  blencp = vcopt_e%blencv
+  epsrgp = vcopt_e%epsrgr
+  climgp = vcopt_e%climgr
+  extrap = vcopt_e%extrag
+  relaxp = vcopt_e%relaxv
+  thetap = vcopt_e%thetav
   ! all boundary convective flux with upwind
   icvflb = 0
 
@@ -994,7 +999,7 @@ if (ikecou.eq.1) then
    icvflb , ivoid  ,                                              &
    w8     )
 
-  if (iwarni(ivar).ge.2) then
+  if (vcopt_e%iwarni.ge.2) then
     rnorm = sqrt(cs_gdot(ncel,smbre,smbre))
     write(nfecra,1100) chaine(1:8) ,rnorm
   endif
@@ -1095,15 +1100,15 @@ call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 ! Face viscosity
-if (idiff(ivar).ge.1) then
+if (vcopt_k%idiff.ge.1) then
 
   do iel = 1, ncel
     if (iturb.eq.51) then
       w1(iel) = viscl(iel)/2.d0                                   &
-              + idifft(ivar)*cvisct(iel)/sigmak
+              + vcopt_k%idifft*cvisct(iel)/sigmak
     else
       w1(iel) = viscl(iel)                                        &
-              + idifft(ivar)*cvisct(iel)/sigmak
+              + vcopt_k%idifft*cvisct(iel)/sigmak
     endif
   enddo
 
@@ -1121,28 +1126,28 @@ else
 endif
 
 ! Solving k
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
-ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
+iconvp = vcopt_k%iconv
+idiffp = vcopt_k%idiff
+ndircp = ndircl(ik)
+nswrsp = vcopt_k%nswrsm
+nswrgp = vcopt_k%nswrgr
+imligp = vcopt_k%imligr
+ircflp = vcopt_k%ircflu
+ischcp = vcopt_k%ischcv
+isstpp = vcopt_k%isstpc
 iescap = 0
 imucpp = 0
-idftnp = idften(ivar)
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
-thetap = thetav(ivar)
+idftnp = vcopt_k%idften
+iswdyp = vcopt_k%iswdyn
+iwarnp = vcopt_k%iwarni
+blencp = vcopt_k%blencv
+epsilp = vcopt_k%epsilo
+epsrsp = vcopt_k%epsrsm
+epsrgp = vcopt_k%epsrgr
+climgp = vcopt_k%climgr
+extrap = vcopt_k%extrag
+relaxp = vcopt_k%relaxv
+thetap = vcopt_k%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
 
@@ -1171,14 +1176,14 @@ call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 ! Face viscosity
-if (idiff(ivar).ge.1) then
+if (vcopt_e%idiff.ge.1) then
   do iel = 1, ncel
     if (iturb.eq.51) then
       w1(iel) = viscl(iel)/2.d0                                   &
-              + idifft(ivar)*cvisct(iel)/cpalse
+              + vcopt_e%idifft*cvisct(iel)/cpalse
     else
       w1(iel) = viscl(iel)                                        &
-              + idifft(ivar)*cvisct(iel)/sigmae
+              + vcopt_e%idifft*cvisct(iel)/sigmae
     endif
   enddo
 
@@ -1196,28 +1201,28 @@ else
 endif
 
 ! Solving epsilon
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
+iconvp = vcopt_e%iconv
+idiffp = vcopt_e%idiff
 ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
+nswrsp = vcopt_e%nswrsm
+nswrgp = vcopt_e%nswrgr
+imligp = vcopt_e%imligr
+ircflp = vcopt_e%ircflu
+ischcp = vcopt_e%ischcv
+isstpp = vcopt_e%isstpc
 iescap = 0
 imucpp = 0
-idftnp = idften(ivar)
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
-thetap = thetav(ivar)
+idftnp = vcopt_e%idften
+iswdyp = vcopt_e%iswdyn
+iwarnp = vcopt_e%iwarni
+blencp = vcopt_e%blencv
+epsilp = vcopt_e%epsilo
+epsrsp = vcopt_e%epsrsm
+epsrgp = vcopt_e%epsrgr
+climgp = vcopt_e%climgr
+extrap = vcopt_e%extrag
+relaxp = vcopt_e%relaxv
+thetap = vcopt_e%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
 
@@ -1242,8 +1247,7 @@ call codits &
 !===============================================================================
 
 iclip = 1
-iwarnp = iwarni(ik)
-call clipke(ncelet, ncel, nvar, iclip, iwarnp)
+call clipke(ncelet, ncel, iclip)
 
 ! Free memory
 deallocate(viscf, viscb)

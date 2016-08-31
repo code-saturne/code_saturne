@@ -148,16 +148,11 @@ call piso_options_init
 call turb_reference_values_init
 call listing_writing_period_init
 call radiat_init
+call gas_mix_options_init
 
 !===============================================================================
 ! 2. ENTREES SORTIES entsor.f90
 !===============================================================================
-
-! ---> Impressions standard
-!         -10000 : non initialise : voir modini
-do ii = 1, nvarmx
-  iwarni(ii) = -10000
-enddo
 
 ! ---> NFECRA vaut 6 par defaut ou 9 en parallele (CSINIT)
 
@@ -418,21 +413,6 @@ itempb = -1
 ! 6. OPTIONS DU CALCUL : TABLEAUX DE optcal.f90
 !===============================================================================
 
-! --- Definition des equations
-!       (convection-diffusion instationnaire, avec dirichlet
-!        sauf pour la pression, diffusion instationnaire)
-!        IDIFFT en particulier multiplie la diffusion turbulente
-!           (quand elle est activee par le modele)
-
-do ii = 1, nvarmx
-  iconv (ii) = 1
-  istat (ii) = 1
-  idiff (ii) = 1
-  idifft(ii) = 1
-  idften(ii) = 1
-  iswdyn(ii) = 0
-enddo
-
 ! --- Schema en temps
 
 !     NOTER BIEN que les valeurs de THETA pour
@@ -449,18 +429,6 @@ enddo
 !     Cette variable conditionne toutes les autres de maniere automatique,
 !     pour definir des schemas coherents dans modini.
 ischtp = -999
-
-!   -- Variables
-!     Pour un schema centre (en n+1/2) il faut prendre theta = 0.5
-!     On devrait pouvoir faire de l'explicite pur avec theta = 0 mais
-!       ce point reste a voir
-!     Ce theta sert aux termes de convection diffusion (partie implicitee
-!       d'ordinaire)
-!     Il est applique sous la forme (1-theta) ancien + theta nouveau
-!       (ce n'est pas une extrapolation, contrairement aux termes sources)
-do ii = 1, nvarmx
-  thetav(ii) =-999.d0
-enddo
 
 !   -- Flux de masse (-999 = non initialise)
 !     = 1 Standard d'ordre 1 (THETFL = -999 inutile)
@@ -503,11 +471,6 @@ thetsn =-999.d0
 !       (il suit bilsc2)
 isto2t = -999
 thetst = -999.d0
-
-! Backward differential time scheme order
-do ii = 1, nvarmx
-  ibdtso(ii) = 1
-enddo
 
 !    -- Proprietes physiques
 !     I..EXT definit l'extrapolation -theta ancien + (1+theta) nouveau
@@ -580,19 +543,6 @@ do iscal = 1, nscamx
 
 enddo
 
-
-
-! --- Schema convectif
-!       (a decider, centre-upwind si ordre 2,  test de pente a decider)
-
-do ii = 1, nvarmx
-  blencv(ii) = -999.d0
-enddo
-do ii = 1, nvarmx
-  ischcv(ii) = 1
-  isstpc(ii) = -999
-enddo
-
 ! Method to compute interior mass flux due to ALE mesh velocity
 ! default: based on cell center mesh velocity
 iflxmw = 0
@@ -604,21 +554,7 @@ iflxmw = 0
 !       On n'active pas l'extrapolation des gradients par defaut
 !         meme pour la pression (par securite : moins stable sur certains cas)
 
-imrgra = 0
 anomax = -grand*10.d0
-
-do ii = 1, nvarmx
-  nswrgr(ii) = 100
-  nswrsm(ii) = -999
-  imligr(ii) = -999
-  ircflu(ii) = 1
-enddo
-
-do ii = 1, nvarmx
-  epsrgr(ii) = 1.d-5
-  climgr(ii) = 1.5d0
-  extrag(ii) = 0.d0
-enddo
 
 ! --- Solveurs iteratifs
 !       La methode de resolution sera choisie selon les equations
@@ -634,8 +570,6 @@ enddo
 do ii = 1, nvarmx
   idircl(ii) = 1
   ndircl(ii) = 0
-  epsilo(ii) = -999.d0
-  epsrsm(ii) = -999.d0
 enddo
 
 ! --- Restarted calculation
@@ -693,7 +627,6 @@ dtref  = -grand*10.d0
 
 do ii = 1, nvarmx
   cdtvar(ii) = 1.d0
-  relaxv(ii) =-999.d0
 enddo
 relxst = 0.7d0
 
@@ -819,14 +752,6 @@ itagms = 0
 !     = 1 HARMONIQUE
 
 imvisf = 0
-
-! --- Gradient calculation
-!     = 0 Standard
-!     = 1 Weighted (shoulf be used with imvisf = 1)
-
-do ii = 1, nvarmx
-  iwgrec(ii) = 0
-enddo
 
 ! --- Type des CL, tables de tri
 !       Sera calcule apres cs_user_boundary_conditions.

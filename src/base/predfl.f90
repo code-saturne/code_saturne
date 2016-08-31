@@ -126,6 +126,8 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, croma
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -228,7 +230,9 @@ enddo
 
 ! ---> Face diffusibility scalar
 
-if (idiff(ipr).ge.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+
+if (vcopt%idiff.ge.1) then
 
     call viscfa &
   ( imvisf ,                                                       &
@@ -246,8 +250,8 @@ else
 
 endif
 
-iconvp = iconv(ipr)
-idiffp = idiff(ipr)
+iconvp = vcopt%iconv
+idiffp = vcopt%idiff
 ! Strengthen the diagonal
 ndircp = 0
 
@@ -267,7 +271,7 @@ call matrix &
 !===============================================================================
 
 ! --- Number of sweeps
-nswmpr = nswrsm(ipr)
+nswmpr = vcopt%nswrsm
 
 ! --- Variables are set to 0
 !       pot     is the potential
@@ -279,11 +283,11 @@ do iel = 1,ncel
   dpot(iel) = 0.d0
 enddo
 
-relaxp = relaxv(ipr)
+relaxp = vcopt%relaxv
 
 ! (Test to modify if needed: must be sctricly greater than
 ! the test in the conjugate gradient)
-tcrite = 10.d0*epsrsm(ipr)*rnorm
+tcrite = 10.d0*vcopt%epsrsm*rnorm
 
 ! Reconstruction loop (beginning)
 !--------------------------------
@@ -291,7 +295,7 @@ isweep = 1
 residu = rnorm
 
 ! Writing
-if (iwarni(ipr).ge.2) then
+if (vcopt%iwarni.ge.2) then
   write(nfecra,1400)chaine(1:16),isweep,residu, relaxp
 endif
 
@@ -302,7 +306,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
     dpot(iel) = 0.d0
   enddo
 
-  epsilp = epsilo(ipr)
+  epsilp = vcopt%epsilo
 
   ! The potential is a scalar => no problem for the periodicity of rotation
   ! (iinvpe=1)
@@ -316,7 +320,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
   if (idtvar.ge.0.and.isweep.le.nswmpr.and.residu.gt.tcrite) then
     do iel = 1, ncel
       pota(iel) = pot(iel)
-      pot(iel)  = pota(iel) + relaxv(ipr)*dpot(iel)
+      pot(iel)  = pota(iel) + vcopt%relaxv*dpot(iel)
     enddo
   ! If it is the last sweep, update with the total increment
   else
@@ -335,12 +339,12 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
     iccocg = 1
     init = 1
     inc  = 0
-    nswrgp = nswrgr(ipr)
-    imligp = imligr(ipr)
-    iwarnp = iwarni(ipr)
-    epsrgp = epsrgr(ipr)
-    climgp = climgr(ipr)
-    extrap = extrag(ipr)
+    nswrgp = vcopt%nswrgr
+    imligp = vcopt%imligr
+    iwarnp = vcopt%iwarni
+    epsrgp = vcopt%epsrgr
+    climgp = vcopt%climgr
+    extrap = vcopt%extrag
     ! This option should be adapted to iphydr = 1
     iphydp = 0
 
@@ -364,7 +368,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
     ! --- Convergence test
     residu = sqrt(cs_gdot(ncel, rhs, rhs))
 
-    if (iwarni(ipr).ge.2) then
+    if (vcopt%iwarni.ge.2) then
       if (rnorm.ge.epzero) then
         write(nfecra,1400) chaine(1:16),isweep,residu/rnorm, relaxp
       else
@@ -377,7 +381,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 enddo
 ! --- Reconstruction loop (end)
 
-if (iwarni(ipr).ge.2) then
+if (vcopt%iwarni.ge.2) then
   if (isweep.gt.nswmpr) write(nfecra,1600) chaine(1:16), nswmpr
 endif
 
@@ -388,12 +392,12 @@ iccocg = 1
 init = 0
 inc  = 0
 iphydp = 0
-nswrgp = nswrgr(ipr)
-imligp = imligr(ipr)
-iwarnp = iwarni(ipr)
-epsrgp = epsrgr(ipr)
-climgp = climgr(ipr)
-extrap = extrag(ipr)
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+iwarnp = vcopt%iwarni
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+extrap = vcopt%extrag
 
 call itrmas &
 !==========

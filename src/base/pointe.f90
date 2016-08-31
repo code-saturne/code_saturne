@@ -127,7 +127,7 @@ module pointe
 
   !> to identify boundary zones associated with boundary faces
   !> (particular physics)
-  integer, allocatable, dimension(:) :: izfppp
+  integer, dimension(:), pointer :: izfppp
 
   !> to identify boundary zones associated with boundary faces
   !> (radiative transfer)
@@ -400,6 +400,7 @@ contains
     use albase
     use ihmpre
     use field
+    use cs_c_bindings
 
     implicit none
 
@@ -409,20 +410,12 @@ contains
 
     ! Local variables
     integer                ifac
-    integer                kdiftn
 
-    ! Key id for diffusivity tensor
-    call field_get_key_id("diffusivity_tensor", kdiftn)
+    type(var_cal_opt) :: vcopt
 
     ! Boundary-face related arrays
 
     allocate(itrifb(nfabor))
-    if (ippmod(iphpar).ge.1 .or. iihmpr.eq.1) then
-      allocate(izfppp(nfabor))
-      do ifac = 1, nfabor
-        izfppp(ifac) = 0
-      enddo
-    endif
     if (iirayo.gt.0) then
       allocate(izfrad(nfabor))
       do ifac = 1, nfabor
@@ -438,14 +431,17 @@ contains
 
     ! Also tensorial diffusion for the velocity in case of tensorial porosity
     if (iporos.eq.2) then
-      idften(iu) = 6
-      ! Key word: tensorial diffusivity
-      call field_set_key_int(ivarfl(iu), kdiftn, idften(iu))
+      ! Tensorial diffusivity
+      call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+      vcopt%idften = 6
+      call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt)
     endif
 
     ! Diagonal cell tensor for the pressure solving when needed
     if (ncpdct.gt.0.or.ipucou.eq.1.or.iporos.eq.2) then
-      idften(ipr) = 6
+      call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+      vcopt%idften = 6
+      call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
     endif
 
     ! Wall-distance calculation
@@ -615,7 +611,6 @@ contains
   subroutine finalize_aux_arrays
 
     deallocate(itrifb)
-    if (allocated(izfppp)) deallocate(izfppp)
     if (allocated(izfrad)) deallocate(izfrad)
     if (allocated(idfstr)) deallocate(idfstr)
     if (allocated(izcpdc)) deallocate(izcpdc)
@@ -789,13 +784,15 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_itypfb
+    type(c_ptr) :: c_itypfb, c_izfppp
 
-    call cs_f_boundary_conditions_type_create
+    call cs_f_boundary_conditions_create
 
-    call cs_f_boundary_conditions_type_get_pointer(c_itypfb)
+    call cs_f_boundary_conditions_get_pointer(c_itypfb, c_izfppp)
 
     call c_f_pointer(c_itypfb, itypfb, [nfabor])
+
+    call c_f_pointer(c_izfppp, izfppp, [nfabor])
 
   end subroutine boundary_conditions_init
 
@@ -807,7 +804,7 @@ contains
 
     implicit none
 
-    call cs_f_boundary_conditions_type_free
+    call cs_f_boundary_conditions_free
 
   end subroutine boundary_conditions_finalize
 

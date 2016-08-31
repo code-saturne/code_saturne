@@ -64,6 +64,7 @@ use cplsat
 use mesh
 use field
 use turbomachinery
+use cs_c_bindings
 
 !===============================================================================
 
@@ -88,6 +89,8 @@ double precision arakfr, scmaxp, scminp
 
 character(len=3), dimension(3) :: nomext3
 character(len=4), dimension(3) :: nomext63
+
+type(var_cal_opt) :: vcopt, vcopt1, vcopt2, vcopt3
 
 !===============================================================================
 
@@ -226,20 +229,21 @@ endif
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
-    if ((iconv (ii).ne.0.and.iconv (ii).ne.1).or.                            &
-        (istat (ii).ne.0.and.istat (ii).ne.1).or.                            &
-        (idiff (ii).ne.0.and.idiff (ii).ne.1).or.                            &
-        (idifft(ii).ne.0.and.idifft(ii).ne.1).or.                            &
-        (thetav(ii).gt.1.d0.or.thetav(ii).lt.0.d0).or.                       &
-        (blencv(ii).gt.1.d0.or.blencv(ii).lt.0.d0).or.                       &
-        (ischcv(ii).lt.0.and.ischcv(ii).gt.3).or.                            &
-        (isstpc(ii).lt.0.and.isstpc(ii).gt.3)   ) then
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    if ((vcopt%iconv .ne.0.and.vcopt%iconv .ne.1).or.                            &
+        (vcopt%istat .ne.0.and.vcopt%istat .ne.1).or.                            &
+        (vcopt%idiff .ne.0.and.vcopt%idiff .ne.1).or.                            &
+        (vcopt%idifft.ne.0.and.vcopt%idifft.ne.1).or.                            &
+        (vcopt%thetav.gt.1.d0.or.vcopt%thetav.lt.0.d0).or.                       &
+        (vcopt%blencv.gt.1.d0.or.vcopt%blencv.lt.0.d0).or.                       &
+        (vcopt%ischcv.lt.0.and.vcopt%ischcv.gt.3).or.                            &
+        (vcopt%isstpc.lt.0.and.vcopt%isstpc.gt.3)   ) then
       call field_get_label(f_id, chaine)
       write(nfecra,2100) chaine(1:16),                            &
-                         istat(ii),iconv(ii),                     &
-                         idiff(ii),idifft(ii),                    &
-                         thetav(ii),blencv(ii),ischcv(ii),        &
-                         isstpc(ii)
+                         vcopt%istat,vcopt%iconv,                 &
+                         vcopt%idiff,vcopt%idifft,                &
+                         vcopt%thetav,vcopt%blencv,vcopt%ischcv,  &
+                         vcopt%isstpc
       iok = iok + 1
     endif
   endif
@@ -252,25 +256,15 @@ if (irovar.eq.0.and.iroext.gt.0) then
   iok = iok + 1
 endif
 
-!     Coherence des vitesses
-!       Pour le moment, theta est fixe automatiquement dans modini
-!       On conserve quand meme le test pour plus tard puisqu'il est ecrit.
-if (abs(thetav(iv)-thetav(iu)).gt.epzero.or.       &
-     abs(thetav(iw)-thetav(iu)).gt.epzero) then
-  write(nfecra,2111) thetav(iu),thetav(iv), &
-       thetav(iw)
-  iok = iok + 1
-endif
-
-
 !     Theta pression : vaut 1
 !       Pour le moment, theta est fixe automatiquement dans modini
 !         (on ne devrait donc jamais voir cet affichage)
 !       On conserve quand meme le test pour plus tard puisqu'il est ecrit.
 jj = ipr
-if (abs(thetav(jj)-1.0d0).gt.epzero) then
+call field_get_key_struct_var_cal_opt(ivarfl(jj), vcopt)
+if (abs(vcopt%thetav-1.0d0).gt.epzero) then
   call field_get_label(ivarfl(jj), chaine)
-  write(nfecra,2112) thetav(jj)
+  write(nfecra,2112) vcopt%thetav
   iok = iok + 1
 endif
 
@@ -279,66 +273,60 @@ endif
 !        mais stop si on fait plus de 5% d'upwind
 !     Schema centre sans/avec test de pente, nwsrsm
 if (itytur.eq.4) then
-  do ii = 1,3
-    if (ii.eq.1) jj = iu
-    if (ii.eq.2) jj = iv
-    if (ii.eq.3) jj = iw
-    call field_get_label(ivarfl(iu), chaine)
-    chaine = trim(chaine) // nomext3(ii)
-    if (abs(thetav(jj)-0.5d0).gt.epzero) then
-      write(nfecra,2121) chaine(1:16),thetav(jj)
-    endif
-    if (blencv(jj).lt.0.95d0) then
-      write(nfecra,2127) chaine(1:16),blencv(jj)
-      iok = iok + 1
-    elseif (abs(blencv(jj)-1.d0).gt.epzero) then
-      write(nfecra,2122) chaine(1:16),blencv(jj)
-    endif
-    if (isstpc(jj).eq.0) then
-      write(nfecra,2123) chaine(1:16),isstpc(jj)
-    endif
-  enddo
+  call field_get_label(ivarfl(iu), chaine)
+  call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+  chaine = trim(chaine)
+  if (abs(vcopt%thetav-0.5d0).gt.epzero) then
+    write(nfecra,2121) chaine(1:16),vcopt%thetav
+  endif
+  if (vcopt%blencv.lt.0.95d0) then
+    write(nfecra,2127) chaine(1:16),vcopt%blencv
+  iok = iok + 1
+  elseif (abs(vcopt%blencv-1.d0).gt.epzero) then
+    write(nfecra,2122) chaine(1:16),vcopt%blencv
+  endif
+  if (vcopt%isstpc.eq.0) then
+    write(nfecra,2123) chaine(1:16),vcopt%isstpc
+  endif
 endif
 if (itytur.eq.4.or.ischtp.eq.2) then
-  do ii = 1,3
-    if (ii.eq.1) jj = iu
-    if (ii.eq.2) jj = iv
-    if (ii.eq.3) jj = iw
-    call field_get_label(ivarfl(iu), chaine)
-    chaine = trim(chaine) // nomext3(ii)
-    iiidef = 10
-    if (nswrsm(jj).ne.iiidef) then
-      write(nfecra,2125) chaine(1:16),iiidef,nswrsm(jj)
-    endif
-  enddo
+  call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+  call field_get_label(ivarfl(iu), chaine)
+  chaine = trim(chaine)
+  iiidef = 10
+  if (vcopt%nswrsm.ne.iiidef) then
+    write(nfecra,2125) chaine(1:16),iiidef,vcopt%nswrsm
+  endif
   jj = ipr
+  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
   call field_get_label(ivarfl(jj), chaine)
   iiidef = 5
-  if (nswrsm(jj).ne.iiidef) then
-    write(nfecra,2125) chaine(1:16),iiidef,nswrsm(jj)
+  if (vcopt%nswrsm.ne.iiidef) then
+    write(nfecra,2125) chaine(1:16),iiidef,vcopt%nswrsm
   endif
 endif
 do ii = 1, nscal
   if (itytur.eq.4) then
     jj    = isca(ii)
+    call field_get_key_struct_var_cal_opt(ivarfl(jj), vcopt)
     call field_get_label(ivarfl(jj), chaine)
-    if (abs(thetav(jj)-0.5d0).gt.epzero) then
-      write(nfecra,2121) chaine(1:16),thetav(jj)
+    if (abs(vcopt%thetav-0.5d0).gt.epzero) then
+      write(nfecra,2121) chaine(1:16),vcopt%thetav
     endif
-    if (blencv(jj).lt.0.95d0) then
-      write(nfecra,2127) chaine(1:16),blencv(jj)
+    if (vcopt%blencv.lt.0.95d0) then
+      write(nfecra,2127) chaine(1:16),vcopt%blencv
       iok = iok + 1
-    elseif (abs(blencv(jj)-1.d0).gt.epzero) then
-      write(nfecra,2122) chaine(1:16),blencv(jj)
+    elseif (abs(vcopt%blencv-1.d0).gt.epzero) then
+      write(nfecra,2122) chaine(1:16),vcopt%blencv
     endif
-    if (isstpc(jj).eq.1) then
-      write(nfecra,2124) chaine(1:16),isstpc(jj)
+    if (vcopt%isstpc.eq.1) then
+      write(nfecra,2124) chaine(1:16),vcopt%isstpc
     endif
   endif
   if (itytur.eq.4.or.ischtp.eq.2) then
     iiidef = 10
-    if (nswrsm(jj).ne.iiidef) then
-      write(nfecra,2125) chaine(1:16),iiidef,nswrsm(jj)
+    if (vcopt%nswrsm.ne.iiidef) then
+      write(nfecra,2125) chaine(1:16),iiidef,vcopt%nswrsm
     endif
   endif
 enddo
@@ -346,25 +334,26 @@ enddo
 !     Test du theta de la viscosite secondaire, du flux de masse et
 !     de la viscosite par rapport a celui de la vitesse
 jj = iu
-if (abs(thetav(jj)-1.d0).lt.epzero.and.                 &
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+if (abs(vcopt%thetav-1.d0).lt.epzero.and.               &
      (istmpf.eq.2.or.                                   &
      isno2t.ne.0.or.                                    &
      isto2t.ne.0.or.                                    &
      iroext.ne.0.or.                                    &
      iviext.ne.0.or.                                    &
      icpext.ne.0   ) ) then
-  write(nfecra,2131) thetav(jj),                        &
+  write(nfecra,2131) vcopt%thetav,                      &
        istmpf,isno2t,isto2t,                            &
        iroext,iviext,icpext
 endif
-if (abs(thetav(jj)-0.5d0).lt.epzero.and.                &
+if (abs(vcopt%thetav-0.5d0).lt.epzero.and.             &
      (istmpf.ne.2.or.                                   &
      isno2t.ne.1.or.                                    &
      isto2t.ne.1.or.                                    &
      iroext.ne.1.or.                                    &
      iviext.ne.1.or.                                    &
      icpext.ne.1   ) ) then
-  write(nfecra,2132) thetav(jj),                        &
+  write(nfecra,2132) vcopt%thetav,                      &
        istmpf,isno2t,isto2t,                            &
        iroext,iviext,icpext
 endif
@@ -377,7 +366,7 @@ do iscal = 1, nscal
   endif
 enddo
 
-if (ischtp.eq.2.and.ibdtso(iu).gt.1) then
+if (ischtp.eq.2.and.vcopt%ibdtso.gt.1) then
   ! NB: this test does not prevent from incompatible user modifications of
   ! isno2t, thetav, etc.
   write(nfecra,1135)
@@ -424,9 +413,10 @@ endif
 !       - iphydr et icalhy
 !       - dt variable en espace ou en temps et stationnaire
 !     Ici on s'arrete si on n'est pas dans le cas du schema std
-if ( (abs(thetav(iu)-1.0d0).gt.1.d-3).or.                 &
-     (abs(thetav(iv)-1.0d0).gt.1.d-3).or.                 &
-     (abs(thetav(iw)-1.0d0).gt.1.d-3).or.                 &
+
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+
+if ( (abs(vcopt%thetav-1.0d0).gt.1.d-3).or.               &
      (    thetsn       .gt.0.d0 ).or.                     &
      (    isno2t       .gt.0    ).or.                     &
      (    thetro       .gt.0.d0 ).or.                     &
@@ -437,7 +427,7 @@ if ( (abs(thetav(iu)-1.0d0).gt.1.d-3).or.                 &
       iphydr.eq.1.or.iphydr.eq.2.or.icalhy.eq.1.or.       &
       idtvar.eq.1.or.idtvar.eq.2.or.idtvar.lt.0) then
     write(nfecra,2140)                                    &
-         thetav(iu),thetav(iv),thetav(iw),                &
+         vcopt%thetav,                                    &
          isno2t,thetsn,                                   &
          iroext,thetro,                                   &
          iviext,thetvi
@@ -470,60 +460,73 @@ endif
 !     A priori, pour le moment, l'ordre 2 en temps
 !       n'est pas pris en compte en k-eps, v2f ou k-omega couple : on s'arrete
 if (itytur.eq.2 .and.ikecou.eq.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
   if ((     thetst       .gt.0.d0 ).or.                    &
        (    isto2t       .gt.0    ).or.                    &
-       (abs(thetav(ik )-1.0d0).gt.epzero).or.              &
-       (abs(thetav(iep)-1.0d0).gt.epzero) ) then
+       (abs(vcopt%thetav-1.0d0).gt.epzero).or.             &
+       (abs(vcopt1%thetav-1.0d0).gt.epzero) ) then
     write(nfecra,2142)iturb,ikecou,                        &
          thetst,isto2t,                                    &
-         thetav(ik ),thetav(iep)
+         vcopt%thetav,vcopt1%thetav
     iok = iok + 1
   endif
 endif
 if (iturb.eq.50.and.ikecou.eq.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
+  call field_get_key_struct_var_cal_opt(ivarfl(iphi), vcopt2)
+  call field_get_key_struct_var_cal_opt(ivarfl(ifb), vcopt3)
   if ((     thetst       .gt.0.d0 ).or.                    &
       (    isto2t       .gt.0    ).or.                     &
-      (abs(thetav(ik  )-1.0d0).gt.epzero).or.              &
-      (abs(thetav(iep )-1.0d0).gt.epzero).or.              &
-      (abs(thetav(iphi)-1.0d0).gt.epzero).or.              &
-      (abs(thetav(ifb )-1.0d0).gt.epzero) ) then
+      (abs(vcopt%thetav-1.0d0).gt.epzero).or.              &
+      (abs(vcopt1%thetav-1.0d0).gt.epzero).or.             &
+      (abs(vcopt2%thetav-1.0d0).gt.epzero).or.             &
+      (abs(vcopt3%thetav-1.0d0).gt.epzero) ) then
     write(nfecra,2143)iturb,ikecou,                        &
          thetst,isto2t,                                    &
-         thetav(ik  ),thetav(iep ),                        &
-         thetav(iphi),thetav(ifb )
+         vcopt%thetav,vcopt1%thetav,                       &
+         vcopt2%thetav,vcopt3%thetav
     iok = iok + 1
   endif
 endif
 if (iturb.eq.51.and.ikecou.eq.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
+  call field_get_key_struct_var_cal_opt(ivarfl(iphi), vcopt2)
+  call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt3)
   if ((    thetst       .gt.0.d0 ).or.                     &
      (    isto2t       .gt.0    ).or.                      &
-     (abs(thetav(ik  )-1.0d0).gt.epzero).or.               &
-     (abs(thetav(iep )-1.0d0).gt.epzero).or.               &
-     (abs(thetav(iphi)-1.0d0).gt.epzero).or.               &
-     (abs(thetav(ial )-1.0d0).gt.epzero) ) then
+      (abs(vcopt%thetav-1.0d0).gt.epzero).or.              &
+      (abs(vcopt1%thetav-1.0d0).gt.epzero).or.             &
+      (abs(vcopt2%thetav-1.0d0).gt.epzero).or.             &
+      (abs(vcopt3%thetav-1.0d0).gt.epzero) ) then
     write(nfecra,2143)iturb,ikecou,                        &
          thetst,isto2t,                                    &
-         thetav(ik  ),thetav(iep ),                        &
-         thetav(iphi),thetav(ial )
+         vcopt%thetav,vcopt1%thetav,                       &
+         vcopt2%thetav,vcopt3%thetav
     iok = iok + 1
   endif
 endif
 if (iturb.eq.60.and.ikecou.eq.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  call field_get_key_struct_var_cal_opt(ivarfl(iomg), vcopt1)
   if ((    thetst       .gt.0.d0 ).or.                     &
        (    isto2t       .gt.0    ).or.                    &
-       (abs(thetav(ik  )-1.0d0).gt.epzero).or.             &
-       (abs(thetav(iomg)-1.0d0).gt.epzero) ) then
+       (abs(vcopt%thetav-1.0d0).gt.epzero).or.             &
+       (abs(vcopt1%thetav-1.0d0).gt.epzero) ) then
     write(nfecra,2144)iturb,ikecou,                        &
          thetst,isto2t,                                    &
-         thetav(ik  ),thetav(iomg)
+         vcopt%thetav,vcopt1%thetav
     iok = iok + 1
   endif
 endif
 if (iturb.eq.70) then
+  call field_get_key_struct_var_cal_opt(ivarfl(inusa), vcopt)
   if ((thetst .gt.0.d0).or.                                &
       (isto2t .gt. 0).or.                                  &
-      (abs(thetav(inusa)-1.0d0).gt.epzero)) then
-    write(nfecra,2145)iturb,thetst,isto2t,thetav(inusa)
+      (abs(vcopt%thetav-1.0d0).gt.epzero)) then
+    write(nfecra,2145)iturb,thetst,isto2t,vcopt%thetav
     iok = iok + 1
   endif
 endif
@@ -536,7 +539,8 @@ endif
 if (ippmod(iphpar).ge.1) then
   istop = 0
   do ivar = 1, nvar
-    if ( (abs(thetav(ivar)-1.0d0).gt.1.d-3) ) istop = 1
+    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+    if ( (abs(vcopt%thetav-1.0d0).gt.1.d-3) ) istop = 1
   enddo
   if ((thetsn .gt.0.d0).or.                                &
       (isno2t .gt.0   ).or.                                &
@@ -597,19 +601,14 @@ if (idtvar.lt.0) then
   do f_id = 0, n_fields-1
     call field_get_key_int(f_id, keyvar, ii)
     if (ii.ge.1) then
-      if (relaxv(ii).gt.1d0.or.relaxv(ii).lt.0d0) then
+      call field_get_key_struct_var_cal_opt(f_id, vcopt)
+      if (vcopt%relaxv.gt.1d0.or.vcopt%relaxv.lt.0d0) then
         call field_get_label(f_id, chaine)
-        write(nfecra,2149) chaine(1:16),relaxv(ii)
+        write(nfecra,2149) chaine(1:16),vcopt%relaxv
         iok = iok + 1
       endif
     endif
   enddo
-  if ((relaxv(iv).ne.relaxv(iu))                  &
-       .or.(relaxv(iw).ne.relaxv(iu)) ) then
-    write(nfecra,2150) relaxv(iu),relaxv(iv),     &
-         relaxv(iw)
-    iok = iok + 1
-  endif
 !       L'algorithme stationnaire n'est pas compatible avec le module Lagrangien
   if (iilagr.ne.0) then
     write(nfecra,2151) iilagr
@@ -643,10 +642,11 @@ endif
 ! Extrapolation : indetermination possible par mc,
 !     necessitant un traitement particulier dans gradmc,
 !     pour lequel on fait certaines hypotheses
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 if (imrgrl.ne.0.and.imrgrl.ne.4) then
-  if (      (abs(extrag(ipr)-1.d0).gt.epzero)             &
-      .and. (abs(extrag(ipr)     ).gt.epzero)) then
-    write(nfecra,2207) imrgra, extrag(ipr)
+  if (      (abs(vcopt%extrag-1.d0).gt.epzero)             &
+      .and. (abs(vcopt%extrag     ).gt.epzero)) then
+    write(nfecra,2207) imrgra, vcopt%extrag
     iok = iok + 1
   endif
 endif
@@ -658,9 +658,10 @@ endif
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
-    if (imligr(ii).gt.1) then
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    if (vcopt%imligr.gt.1) then
       call field_get_label(f_id, chaine)
-      write(nfecra,2300) chaine(1:16),ii,imligr(ii)
+      write(nfecra,2300) chaine(1:16),ii,vcopt%imligr
       iok = iok + 1
     endif
   endif
@@ -669,9 +670,10 @@ enddo
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
-    if (ircflu(ii).ne.1.and.ircflu(ii).ne.0) then
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    if (vcopt%ircflu.ne.1.and.vcopt%ircflu.ne.0) then
       call field_get_label(f_id, chaine)
-      write(nfecra,2310) chaine(1:16),ii,ircflu(ii)
+      write(nfecra,2310) chaine(1:16),ii,vcopt%ircflu
       iok = iok + 1
     endif
   endif
@@ -680,9 +682,10 @@ enddo
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
-    if (ircflu(ii).eq.0.and.ischcv(ii).eq.0.and.blencv(ii).ne.0.d0) then
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    if (vcopt%ircflu.eq.0.and.vcopt%ischcv.eq.0.and.vcopt%blencv.ne.0.d0) then
       call field_get_label(f_id, chaine)
-      write(nfecra,2311) chaine(1:16),ii,ircflu(ii),ii,ischcv(ii)
+      write(nfecra,2311) chaine(1:16),ii,vcopt%ircflu,ii,vcopt%ischcv
       iok = iok + 1
     endif
   endif
@@ -696,9 +699,10 @@ enddo
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
-    if (climgr(ii).lt.1.d0) then
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    if (vcopt%climgr.lt.1.d0) then
       call field_get_label(f_id, chaine)
-      write(nfecra,2320) chaine(1:16),ii,climgr(ii)
+      write(nfecra,2320) chaine(1:16),ii,vcopt%climgr
       iok = iok + 1
     endif
   endif
@@ -710,19 +714,20 @@ enddo
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
-    if (abs(extrag(ii)     ).ge.epzero) then
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    if (abs(vcopt%extrag).ge.epzero) then
       iokpre = 0
       if (ii.eq.ipr) then
         iokpre = 1
-        if (abs(extrag(ii)-1.d0).ge.epzero) then
+        if (abs(vcopt%extrag-1.d0).ge.epzero) then
           call field_get_label(f_id, chaine)
-          write(nfecra,2330) chaine(1:16),ii,extrag(ii)
+          write(nfecra,2330) chaine(1:16),ii,vcopt%extrag
           iok = iok + 1
         endif
       endif
       if (iokpre.eq.0) then
         call field_get_label(f_id, chaine)
-        write(nfecra,2331) chaine(1:16),ii,extrag(ii)
+        write(nfecra,2331) chaine(1:16),ii,vcopt%extrag
         iok = iok + 1
       endif
     endif
@@ -978,26 +983,30 @@ if (itytur.eq.2 .or. iturb.eq.50                          &
   !     Sinon on verifie que RELAXV(IK) est bien compris entre 0 et 1
   !     (en stationnaire cela a deja ete fait plus haut)
   if (itytur.eq.6) then
-    if ( (abs(relaxv(ik)+999.d0).gt.epzero .or.                 &
-          abs(relaxv(iomg)+999.d0).gt.epzero ) .and.            &
+    call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+    call field_get_key_struct_var_cal_opt(ivarfl(iomg), vcopt1)
+    if ( (abs(vcopt%relaxv+999.d0).gt.epzero .or.                 &
+          abs(vcopt1%relaxv+999.d0).gt.epzero ) .and.             &
          ikecou.ne.0) write(nfecra,2623)                        &
-         relaxv(ik),relaxv(iomg)
+         vcopt%relaxv,vcopt1%relaxv
     if (ikecou.eq.0 .and. idtvar.ge.0) then
-      if (relaxv(ik).gt.1.d0.or.relaxv(ik).lt.0.d0 .or.         &
-           relaxv(iomg).gt.1.d0.or.relaxv(iomg).lt.0.d0) then
-        write(nfecra,2624) relaxv(ik),relaxv(iomg)
+      if (vcopt%relaxv.gt.1.d0.or.vcopt%relaxv.lt.0.d0 .or.         &
+           vcopt1%relaxv.gt.1.d0.or.vcopt1%relaxv.lt.0.d0) then
+        write(nfecra,2624) vcopt%relaxv,vcopt1%relaxv
         iok = iok + 1
       endif
     endif
   else
-    if ( (abs(relaxv(ik)+999.d0).gt.epzero .or.                 &
-          abs(relaxv(iep)+999.d0).gt.epzero ) .and.             &
+    call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+    call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
+    if ( (abs(vcopt%relaxv+999.d0).gt.epzero .or.                 &
+          abs(vcopt1%relaxv+999.d0).gt.epzero ) .and.             &
          ikecou.ne.0) write(nfecra,2623)                        &
-         relaxv(ik),relaxv(iep)
+         vcopt%relaxv,vcopt1%relaxv
     if (ikecou.eq.0 .and. idtvar.ge.0) then
-      if (relaxv(ik).gt.1.d0.or.relaxv(ik).lt.0.d0 .or.         &
-           relaxv(iep).gt.1.d0.or.relaxv(iep).lt.0.d0) then
-        write(nfecra,2624) relaxv(ik),relaxv(iep)
+      if (vcopt%relaxv.gt.1.d0.or.vcopt%relaxv.lt.0.d0 .or.         &
+           vcopt1%relaxv.gt.1.d0.or.vcopt1%relaxv.lt.0.d0) then
+        write(nfecra,2624) vcopt%relaxv,vcopt1%relaxv
         iok = iok + 1
       endif
     endif
@@ -1092,13 +1101,15 @@ if (iprco.eq.1) then
     iok = iok + 1
   endif
   arakfr = arak
-  if (idtvar.lt.0) arakfr=arakfr*relaxv(iu)
+  call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+  if (idtvar.lt.0) arakfr=arakfr*vcopt%relaxv
   if (arakfr.gt.1.d0 .or. arakfr.lt.0.d0) then
     write(nfecra,2640) 'ARAK  ',arakfr
     iok = iok + 1
   endif
-  if (relaxv(ipr).gt.1d0 .or. relaxv(ipr).lt.0d0) then
-    write(nfecra,2625) relaxv(ipr)
+  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+  if (vcopt%relaxv.gt.1d0 .or. vcopt%relaxv.lt.0d0) then
+    write(nfecra,2625) vcopt%relaxv
     iok = iok + 1
   endif
 endif
@@ -1115,9 +1126,10 @@ endif
 ! pas de temps variable aussi)
 
 jj = iu
-if ((abs(thetav(jj)-1.0d0).gt.epzero).and.                       &
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+if ((abs(vcopt%thetav-1.0d0).gt.epzero).and.                       &
      ((idtvar.ne.0).or.(ipucou.eq.1))) then
-  write(nfecra,2204) thetav(jj),idtvar,ipucou
+  write(nfecra,2204) vcopt%thetav,idtvar,ipucou
 endif
 
 ! --- Champ de vitesse fige
@@ -1278,29 +1290,30 @@ endif
 ! --- Dynamic relaxation option
 
 do ivar = 1, nvar
-  if (iswdyn(ivar).ge.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  if (vcopt%iswdyn.ge.1) then
     ! The number of reconstruction sweeps is set to 20 at least
-    if (nswrsm(ivar).lt.20) then
-      nswrsm(ivar) = 20
-      write(nfecra,2742) nswrsm(ivar)
+    if (vcopt%nswrsm.lt.20) then
+      vcopt%nswrsm = 20
+      write(nfecra,2742) vcopt%nswrsm
     endif
-    if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
-      if (isstpc(iu).eq.0.or.isstpc(iv).eq.0.or.isstpc(iw).eq.0) then
-        isstpc(iu) = 1
-        isstpc(iv) = 1
-        isstpc(iw) = 1
-
+    if (ivar.eq.iu) then
+      if (vcopt%isstpc.eq.0) then
+        vcopt%isstpc = 1
         write(nfecra, 2743)
       endif
     endif
   endif
+  call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 enddo
 
 do ivar = 1, nvar
-  if (nswrsm(ivar).le.0) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  if (vcopt%nswrsm.le.0) then
     call field_get_label(ivarfl(ivar), chaine)
-    write(nfecra,2747) chaine(1:16), nswrsm(ivar), 1
-    nswrsm(ivar) = 1
+    write(nfecra,2747) chaine(1:16), vcopt%nswrsm, 1
+    vcopt%nswrsm = 1
+    call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
   endif
 enddo
 
@@ -1900,27 +1913,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2111 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@   INCOMPATIBILITE POUR LE SCHEMA EN TEMPS',                  /,&
-'@',                                                            /,&
-'@   Schema en temps pour la vitesse phase',                    /,&
-'@      THETA n''a pas la meme valeur pour les 3 composantes',  /,&
-'@',                                                            /,&
-'@ Parametre THETAV              U          V          W',      /,&
-'@ Valeurs entrees ici', e10.2,e10.2,e10.2,                     /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2112 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2239,7 +2231,7 @@ endif
 '@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
 '@  On souhaite utiliser un schema en temps d''ordre 2 :',      /,&
-'@      U,V,W : THETA = ', 3e12.4,                              /,&
+'@      U : THETA = ', e12.4,                                   /,&
 '@      Termes sources Navier-Stokes: ISNO2T = ', i10,          /,&
 '@                                    THETSN = ', e12.4,        /,&
 '@      Masse volumique             : IROEXT = ', i10,          /,&
@@ -2477,27 +2469,6 @@ endif
 '@ Il vaut ici', e14.5,                                         /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2150  format(                                                    &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@   INCOMPATIBILITE ALGORITHME STATIONNAIRE',                  /,&
-'@',                                                            /,&
-'@   Coefficient de relaxation vitesse phase', i10,             /,&
-'@      RELAXV n''a pas la meme valeur pour les 3 composantes', /,&
-'@',                                                            /,&
-'@ Parametre RELAXV              U          V          W',      /,&
-'@ Valeurs entrees ici', e10.2,e10.2,e10.2,                     /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
@@ -3510,11 +3481,11 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION :',                                             /,&
 '@    =========',                                               /,&
-'@    OPTION SWPDYN = 1  : LE TEST DE PENTE SUR U, V, W DOIT',  /,&
+'@    OPTION SWPDYN = 1  : LE TEST DE PENTE SUR U DOIT',        /,&
 '@    ETRE DESACTIVE.',                                         /,&
 '@',                                                            /,&
 '@  Le calcul continue avec :',                                 /,&
-'@  isstpc(iu) = isstpc(iu) = isstpc(iu) = 1.',                 /,&
+'@  isstpc = 1 pour la vitesse.',                                           /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -4466,27 +4437,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2111 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@   INCOMPATIBILITY FOR TIME DISCRETISATION SCHEME',           /,&
-'@',                                                            /,&
-'@   TIME DISCRETISATION SCHEME for velocity',                  /,&
-'@      THETA DOES NOT HAVE SAME VALUE FOR ALL 3 COMPONENTS',   /,&
-'@',                                                            /,&
-'@ Parameter THETAV              U          V          W',      /,&
-'@ Values  entered here',e10.2,e10.2,e10.2,                     /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2112 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -4810,7 +4760,7 @@ endif
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
 '@  A second ordre time-scheme was requested:',                 /,&
-'@      U,V,W : THETA = ', 3e12.4,                              /,&
+'@      U : THETA = ', e12.4,                                   /,&
 '@     Source terme in Navier-Stokes: ISNO2T = ', i10,          /,&
 '@                                    THETSN = ', e12.4,        /,&
 '@      Density                     : IROEXT = ', i10,          /,&
@@ -5046,27 +4996,6 @@ endif
 '@ it has here a value of', e14.5,                              /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2150  format(                                                    &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@   INCOMPATIBILITE ALGORITHME STATIONNAIRE',                  /,&
-'@',                                                            /,&
-'@   relaxation Coefficient of velocity  phase', i10,           /,&
-'@      RELAXV should have the same value for all components',  /,&
-'@',                                                            /,&
-'@ PARAMETER RELAXV              U          V          W',      /,&
-'@ Values entered here', e10.2,e10.2,e10.2,                     /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
@@ -6078,11 +6007,11 @@ endif
 '@',                                                            /,&
 '@ @@ WARNING:',                                                /,&
 '@    =========',                                               /,&
-'@    SWPDYN = 1 OPTION: THE SLOPE TEST ON U, V, W MUST BE',    /,&
+'@    SWPDYN = 1 OPTION: THE SLOPE TEST ON U MUST BE',          /,&
 '@    DEACTIVATED.',                                            /,&
 '@',                                                            /,&
-'@  The calculation continue with:',                            /,&
-'@  isstpc(iu) = isstpc(iu) = isstpc(iu) = 1.',                 /,&
+'@  The calculation is resumed with:',                          /,&
+'@  isstpc = 1 for the velocity field.',                        /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

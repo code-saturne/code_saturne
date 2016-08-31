@@ -137,6 +137,8 @@ double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: c_st_nusa_p
 
+type(var_cal_opt) :: vcopt_nusa
+
 !===============================================================================
 
 !===============================================================================
@@ -168,7 +170,10 @@ call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
 ivar   = inusa
-thetv  = thetav(ivar)
+
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt_nusa)
+
+thetv  = vcopt_nusa%thetav
 
 call field_get_key_int(ivarfl(inusa), kstprv, istprv)
 if (istprv.ge.0) then
@@ -187,7 +192,7 @@ if (istprv.ge.0) then
   endif
 endif
 
-if (iwarni(inusa).ge.1) then
+if (vcopt_nusa%iwarni.ge.1) then
   write(nfecra,1000)
 endif
 
@@ -444,7 +449,7 @@ do iel = 1, ncel
 
   ! tinssa already contains the negativ implicited source term
   tinssa(iel) = tinssa(iel)                                        &
-               +istat(inusa)*romvsd
+               +vcopt_nusa%istat*romvsd
 enddo
 
 
@@ -511,14 +516,14 @@ call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 ! Face viscosity
 
-if (idiff(ivar).ge.1) then
+if (vcopt_nusa%idiff.ge.1) then
 
   do iel = 1, ncel
     rom = crom(iel)
 
     ! diffusibility: 1/sigma*(mu_laminaire+ rho*nusa)
     w1(iel) = dsigma *( viscl(iel)                                &
-                        + idifft(ivar)*cvara_nusa(iel)*rom )
+                        + vcopt_nusa%idifft*cvara_nusa(iel)*rom )
   enddo
 
   call viscfa                                                     &
@@ -539,28 +544,28 @@ endif
 
 ! --- Solving
 
-iconvp = iconv (ivar)
-idiffp = idiff (ivar)
+iconvp = vcopt_nusa%iconv
+idiffp = vcopt_nusa%idiff
 ndircp = ndircl(ivar)
-nswrsp = nswrsm(ivar)
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
+nswrsp = vcopt_nusa%nswrsm
+nswrgp = vcopt_nusa%nswrgr
+imligp = vcopt_nusa%imligr
+ircflp = vcopt_nusa%ircflu
+ischcp = vcopt_nusa%ischcv
+isstpp = vcopt_nusa%isstpc
 iescap = 0
 imucpp = 0
-idftnp = idften(ivar)
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
-relaxp = relaxv(ivar)
-thetap = thetav(ivar)
+idftnp = vcopt_nusa%idften
+iswdyp = vcopt_nusa%iswdyn
+iwarnp = vcopt_nusa%iwarni
+blencp = vcopt_nusa%blencv
+epsilp = vcopt_nusa%epsilo
+epsrsp = vcopt_nusa%epsrsm
+epsrgp = vcopt_nusa%epsrgr
+climgp = vcopt_nusa%climgr
+extrap = vcopt_nusa%extrag
+relaxp = vcopt_nusa%relaxv
+thetap = vcopt_nusa%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
 

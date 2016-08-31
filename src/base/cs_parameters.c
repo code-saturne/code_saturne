@@ -75,7 +75,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 
-/*
+/*!
   \enum parameter_error_behavior_t
 
   \brief File acces modes
@@ -87,11 +87,16 @@ BEGIN_C_DECLS
   \var CS_FILE_MODE_APPEND
        Abort immediately
 
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*!
   \struct cs_space_disc_t
 
   \brief Space discretisation options descriptor.
 
-  Members of this space discretisation structure are publicly accessible, to
+  Members of the space discretisation structure are publicly accessible, to
   allow for concise syntax, as they are expected to be used in many places.
 
   \var  cs_space_disc_t::imvisf
@@ -118,11 +123,12 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 
-/*! \struct cs_piso_t
+/*!
+  \struct cs_piso_t
 
   \brief PISO options descriptor.
 
-  Members of this PISO structure are publicly accessible, to allow for
+  Members of the PISO structure are publicly accessible, to allow for
   concise  syntax, as they are expected to be used in many places.
 
   \var  cs_piso_t::nterup
@@ -135,6 +141,108 @@ BEGIN_C_DECLS
         iterative process on pressure-velocity coupling
   \var  cs_piso_t::xnrmu0
         norm of \f$ \vect{u}^0 \f$
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*!
+  \struct cs_var_cal_opt_t
+
+  \brief Structure of variable calculation options.
+
+  \var cs_var_cal_opt_t::iwarni
+       characterizes the level of detail of the outputs for the
+       variable \c ivar (from 1 to \ref dimens::nvar "nvar").
+       The quantity of information increases with its value.
+       Impose the value 0 or 1 for a reasonable listing size. Impose the value 2
+       to get a maximum quantity of information, in case of problem during the
+       execution.  Always useful.
+  \var cs_var_cal_opt_t::iconv
+       take convection into account:
+          - 1 account for convection
+          - 0 ignore convection
+  \var cs_var_cal_opt_t::istat
+       take unsteady term into account:
+          - 1 account for unsteady term
+          - 0 ignore unsteady term
+  \var cs_var_cal_opt_t::idiff
+       take diffusion into account:
+          - 1: true
+          - 0: false
+  \var cs_var_cal_opt_t::idifft
+       take turbulent diffusion into account:
+          - 1: true
+          - 0: false
+  \var cs_var_cal_opt_t::idften
+       type of diffusivity:
+          - 1: scalar diffusivity
+          - 3: orthotropic diffusivity
+          - 6: symmetric tensor diffusivity
+  \var cs_var_cal_opt_t::iswdyn
+       dynamic relaxation type:
+          - 0 no dynamic relaxation
+          - 1 dynamic relaxation depending on \f$ \delta \varia^k \f$
+          - 2 dynamic relaxation depending on \f$ \delta \varia^k \f$ and
+            \f$ \delta \varia^{k-1} \f$
+  \var cs_var_cal_opt_t::ischcv
+       type of convective scheme
+          - 1: centered
+          - 0: second order
+  \var cs_var_cal_opt_t::ibdtso
+       ibdtso : backward differential scheme in time order
+  \var cs_var_cal_opt_t::isstpc
+       switch off the slope test:
+          - 1: swich off the slope test
+          - 0: swich on the slope test
+  \var cs_var_cal_opt_t::nswrgr
+       max number of iterations for the iterative gradient
+  \var cs_var_cal_opt_t::nswrsm
+       max number of iteration for the iterative process used to solved
+       the convection diffusion equations
+  \var cs_var_cal_opt_t::imrgra
+       type of gradient reconstruction
+          - 0: iterative process
+          - 1: standard least squares method
+          - 2: least square method with extended neighborhood
+          - 3: least square method with reduced extended neighborhood
+          - 4: iterative precess initialized by the least squares method
+  \var cs_var_cal_opt_t::imligr
+       type of gradient clipping
+          - < 0: no clipping
+          -   0: first order
+          -   1: second order
+  \var cs_var_cal_opt_t::ircflu
+       face flux reconstruction:
+          - 0: false
+          - 1: true
+  \var cs_var_cal_opt_t::iwgrec
+       gradient calculation
+          - 1: standard
+          - 0: weighted
+  \var cs_var_cal_opt_t::thetav
+       \f$ \theta \f$-scheme for the main variables
+          -  0 : explicit
+          - 1/2: extrapolated in n+1/2
+          -  1 : extrapolated in n+1
+  \var cs_var_cal_opt_t::blencv
+       percentage of upwind:
+          - 1: no upwind (except if the slope test is activated)
+          - 0: total upwind
+  \var cs_var_cal_opt_t::epsilo
+       relative precision of the linear solver
+  \var cs_var_cal_opt_t::epsrsm
+       relative precision of the iterative process used to solved
+       the convection diffusion equations
+  \var cs_var_cal_opt_t::epsrgr
+       relative precision of the iterative gradient calculation
+  \var cs_var_cal_opt_t::climgr
+       climgr : facteur de limitation (>=1, =1 : forte limitation)
+  \var cs_var_cal_opt_t::extrag
+       gradient extrapolation at the boundary
+          - 0: false
+          - 1: true
+  \var cs_var_cal_opt_t::relaxv
+       relaxation of variables (1 stands fo no relaxation)
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

@@ -60,8 +60,6 @@ integer          keyvar, ivar
 
 double precision ttsuit, wtsuit
 
-type(var_cal_opt) vcopt
-
 !===============================================================================
 
 interface
@@ -83,6 +81,12 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine user_linear_solvers
+
+  subroutine user_logs()  &
+      bind(C, name='cs_user_logs')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine user_logs
 
 end interface
 
@@ -192,29 +196,10 @@ call fldini
 call gui_postprocess_fields
 
 call usipes(nmodpp)
+call user_logs
 
 call gui_linear_solvers
 call user_linear_solvers
-
-! Number of fields
-call field_get_n_fields(nfld)
-call field_get_key_id("variable_id", keyvar)
-
-! Copy field calculation options into the field structure
-do f_id = 0, nfld - 1
-
-  call field_get_type(f_id, f_type)
-
-  ! Is the field of type FIELD_VARIABLE?
-  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    call field_get_key_int(f_id, keyvar, ivar)
-    if (ivar.gt.0) then
-      call field_get_key_struct_var_cal_opt(f_id, vcopt)
-      vcopt%iwarni= iwarni(ivar)
-      call field_set_key_struct_var_cal_opt(f_id, vcopt)
-    endif
-  endif
-enddo
 
 !===============================================================================
 ! 6. Coherency checks

@@ -97,6 +97,7 @@ use field
 use field_operator
 use cs_c_bindings
 use darcy_module
+use cs_c_bindings
 
 !===============================================================================
 
@@ -124,6 +125,7 @@ double precision relaxp, residu, ressol, epsilp
 character(len=80) :: chaine
 
 type(solving_info) sinfo
+type(var_cal_opt) :: vcopt_p
 
 double precision rvoid(1)
 
@@ -208,7 +210,9 @@ endif
 ! Index of the field
 iflid = ivarfl(ipr)
 
-if (iwgrec(ipr).eq.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
+
+if (vcopt_p%iwgrec.eq.1) then
   ! Id weighting field for gradient
   call field_get_key_int(iflid, kwgrec, iflwgr)
   call field_get_dim(iflwgr, f_dim)
@@ -224,7 +228,7 @@ call field_get_name(ivarfl(ipr), chaine)
 lchain = 16
 
 f_id0 = -1
-if (iwgrec(ipr).eq.1) f_id0 = -2
+if (vcopt_p%iwgrec.eq.1) f_id0 = -2
 
 ! --- Boundary conditions
 call field_get_coefa_s(ivarfl(ipr), coefa_p)
@@ -274,7 +278,7 @@ if (darcy_anisotropic_permeability.eq.0) then
   ( imvisf ,                                  &
     cpro_permeability     ,                   &
     viscf  , viscb  )
-  if (iwgrec(ipr).eq.1) then
+  if (vcopt_p%iwgrec.eq.1) then
     ! Weighting for gradient
     do iel = 1, ncel
       cpro_wgrec_s(iel) = cpro_permeability(iel)
@@ -284,13 +288,13 @@ if (darcy_anisotropic_permeability.eq.0) then
 else if (darcy_anisotropic_permeability.eq.1) then
   allocate(weighf(2,nfac))
   allocate(weighb(ndimfb))
-  iwarnp = iwarni(ipr)
+  iwarnp = vcopt_p%iwarni
   call vitens &
   !==========
   ( cpro_permeability_6 , iwarnp ,       &
     weighf , weighb ,                    &
     viscf  , viscb  )
-  if (iwgrec(ipr).eq.1) then
+  if (vcopt_p%iwgrec.eq.1) then
     ! Weighting for gradient
     do iel = 1, ncel
       do isou = 1, 6
@@ -327,7 +331,7 @@ call matrix &
 ! The way used to handle non-orthogonalities is the same.
 ! The difference is the instationnary term.
 
-nswmpr = nswrsm(ipr)
+nswmpr = vcopt_p%nswrsm
 
 ! Initialization of dpvar for avoiding warnings
 do iel = 1, ncel
@@ -336,18 +340,18 @@ enddo
 
 ! We compute the first residue (rhs)
 
-relaxp = relaxv(ipr) ! relaxation for loop over isweep
+relaxp = vcopt_p%relaxv ! relaxation for loop over isweep
 isweep = 1 ! counter for non-orthogonalities
 iccocg = 1 ! no calculation of cocg. What does it mean?
 init = 1 ! it is an initialization of the residue
 inc  = 1 ! 0 increment, 1 otherwise
-nswrgp = nswrgr(ipr) ! number of sweeps for gradients reconstruction
-imligp = imligr(ipr)
-iwarnp = iwarni(ipr)
-epsrgp = epsrgr(ipr)
-climgp = climgr(ipr)
-extrap = extrag(ipr)
-ircflp = ircflu(ipr)
+nswrgp = vcopt_p%nswrgr ! number of sweeps for gradients reconstruction
+imligp = vcopt_p%imligr
+iwarnp = vcopt_p%iwarni
+epsrgp = vcopt_p%epsrgr
+climgp = vcopt_p%climgr
+extrap = vcopt_p%extrag
+ircflp = vcopt_p%ircflu
 
 if (darcy_anisotropic_permeability.eq.0) then
 
@@ -433,19 +437,19 @@ rnormp = sqrt(cs_gdot(ncel, w1, w1))
 deallocate(w1)
 
 ! Writing
-if (iwarni(ipr).ge.2) then
+if (vcopt_p%iwarni.ge.2) then
   write(nfecra,1400)chaine(1:16), isweep, residu, relaxp
 endif
 
 ! Loop for non-orthogonalities
 ! TODO: dynamic relaxation
-nswmpr = nswrsm(ipr)
-do while ( (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp) &
+nswmpr = vcopt_p%nswrsm
+do while ( (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) &
             .or. (isweep.eq.1) )
             ! We pass at least once to ensure exactness of mass flux
 
-  iwarnp = iwarni(ipr)
-  epsilp = epsilo(ipr)
+  iwarnp = vcopt_p%iwarni
+  epsilp = vcopt_p%epsilo
   iinvpe = 1
   ressol = residu
 
@@ -453,10 +457,10 @@ do while ( (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp) &
                          isym, ibsize, iesize, dam, xam, iinvpe,      &
                          epsilp, rnormp, niterf, ressol, rhs, dpvar)
 
-  if (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp) then
+  if (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) then
     do iel = 1, ncel
       presa(iel) = cvar_pr(iel)
-      cvar_pr(iel) = presa(iel) + relaxv(ipr)*dpvar(iel)
+      cvar_pr(iel) = presa(iel) + vcopt_p%relaxv*dpvar(iel)
     enddo
 
     ! If it is the last sweep, update with the total increment
@@ -519,7 +523,7 @@ do while ( (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp) &
   ! Writing
   sinfo%nbivar = sinfo%nbivar + niterf
 
-  if (iwarni(ipr).ge.2) then
+  if (vcopt_p%iwarni.ge.2) then
     write(nfecra,1400)chaine(1:16), isweep, residu, relaxp
   endif
 
@@ -541,7 +545,7 @@ else
 endif
 
 ! Writing
-if (iwarni(ipr).ge.2) then
+if (vcopt_p%iwarni.ge.2) then
   if (isweep.gt.nswmpr) then
     write(nfecra,1600) chaine(1:16), nswmpr
   endif
@@ -557,12 +561,12 @@ deallocate(dam, xam, rhs)
 iccocg = 1
 init = 1
 inc = 1
-nswrgp = nswrgr(ipr)
-imligp = imligr(ipr)
-iwarnp = iwarni(ipr)
-epsrgp = epsrgr(ipr)
-climgp = climgr(ipr)
-extrap = extrag(ipr)
+nswrgp = vcopt_p%nswrgr
+imligp = vcopt_p%imligr
+iwarnp = vcopt_p%iwarni
+epsrgp = vcopt_p%epsrgr
+climgp = vcopt_p%climgr
+extrap = vcopt_p%extrag
 
 ! We compute the new mass flux, taking care not to reconstruct
 ! the last increment of the lopp on isweep, to ensure an

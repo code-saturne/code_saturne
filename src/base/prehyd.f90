@@ -131,6 +131,8 @@ double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, dimension(:), pointer :: imasfl, bmasfl, prhyd
 double precision, dimension(:), pointer :: crom
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -153,9 +155,11 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+
 ! --- Resolution options
 isym  = 1
-if (iconv (ipr).gt.0) then
+if (vcopt%iconv.gt.0) then
   isym  = 2
 endif
 
@@ -220,29 +224,30 @@ enddo
 !--------------------------------------------------------------------------
 
 ivar   = ipr
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 ivar0  = 0
 iconvp = 0
 idiffp = 1
 ndircp = 0
 nswrsp = 1           ! no reconstruction gradient
-nswrgp = nswrgr(ivar)
-imligp = imligr(ivar)
-ircflp = ircflu(ivar)
-ischcp = ischcv(ivar)
-isstpp = isstpc(ivar)
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+ircflp = vcopt%ircflu
+ischcp = vcopt%ischcv
+isstpp = vcopt%isstpc
 iescap = 0
 imucpp = 0
 idftnp = 1
-iswdyp = iswdyn(ivar)
-iwarnp = iwarni(ivar)
-blencp = blencv(ivar)
-epsilp = epsilo(ivar)
-epsrsp = epsrsm(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
+iswdyp = vcopt%iswdyn
+iwarnp = vcopt%iwarni
+blencp = vcopt%blencv
+epsilp = vcopt%epsilo
+epsrsp = vcopt%epsrsm
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
 extrap = 0.d0
-relaxp = relaxv(ivar)
-thetap = thetav(ivar)
+relaxp = vcopt%relaxv
+thetap = vcopt%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
 

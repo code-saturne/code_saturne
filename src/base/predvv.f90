@@ -250,6 +250,8 @@ double precision, allocatable, dimension(:) :: surfbm
 double precision, dimension(:,:), pointer :: lapla
 double precision, dimension(:), pointer :: cpro_tsrho
 
+type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -261,7 +263,9 @@ allocate(smbr(3,ncelet))
 allocate(fimp(3,3,ncelet))
 allocate(tsexp(3,ncelet))
 allocate(tsimp(3,3,ncelet))
-if (idften(iu).eq.6) allocate(viscce(6,ncelet))
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
+if (vcopt_u%idften.eq.6) allocate(viscce(6,ncelet))
 
 ! Allocate a temporary array for the prediction-stage error estimator
 if (iescal(iespre).gt.0) then
@@ -385,12 +389,12 @@ else
 
   iccocg = 1
   inc    = 1
-  nswrgp = nswrgr(ipr)
-  imligp = imligr(ipr)
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(ipr)
-  climgp = climgr(ipr)
-  extrap = extrag(ipr)
+  nswrgp = vcopt_p%nswrgr
+  imligp = vcopt_p%imligr
+  iwarnp = vcopt_p%iwarni
+  epsrgp = vcopt_p%epsrgr
+  climgp = vcopt_p%climgr
+  extrap = vcopt_p%extrag
 
   call gradient_weighted_s(ivarfl(ipr), imrgra, inc, iccocg, nswrgp, imligp,  &
                            iwarnp, epsrgp, climgp, extrap,                    &
@@ -421,8 +425,8 @@ if (iforbr.ge.0 .and. iterns.eq.1) then
          +(cdgfbo(1,ifac)-xyzcen(1,iel))*grad(1,iel)              &
          +(cdgfbo(2,ifac)-xyzcen(2,iel))*grad(2,iel)              &
          +(cdgfbo(3,ifac)-xyzcen(3,iel))*grad(3,iel)
-    pfac = coefb_p(ifac)*(extrag(ipr)*pfac1                       &
-         +(1.d0-extrag(ipr))*pfac)                                &
+    pfac = coefb_p(ifac)*(vcopt_p%extrag*pfac1                       &
+         +(1.d0-vcopt_p%extrag)*pfac)                                &
          +(1.d0-coefb_p(ifac))*pfac                               &
          + ro0*(gx*(cdgfbo(1,ifac)-xyzp0(1))                      &
          + gy*(cdgfbo(2,ifac)-xyzp0(2))                           &
@@ -473,10 +477,10 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   inc    = 0
   iflmb0 = 1
   nswrp  = 1
-  imligp = imligr(iu )
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(iu )
-  climgp = climgr(iu )
+  iwarnp = vcopt_p%iwarni
+  imligp = vcopt_u%imligr
+  epsrgp = vcopt_u%epsrgr
+  climgp = vcopt_u%climgr
 
   call inimav                                                     &
  ( ivarfl(iu)      , itypfl ,                                     &
@@ -716,7 +720,7 @@ if (iappel.eq.1) then
 
   do iel = 1, ncel
     do isou = 1, 3
-      fimp(isou,isou,iel) = istat(iu)*pcrom(iel)/dt(iel)*cell_f_vol(iel)
+      fimp(isou,isou,iel) = vcopt_u%istat*pcrom(iel)/dt(iel)*cell_f_vol(iel)
       do jsou = 1, 3
         if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
       enddo
@@ -884,7 +888,7 @@ endif
 if (iappel.eq.1) then
   if (ncepdp.gt.0) then
     ! The theta-scheme for the head loss is the same as the other terms
-    thetap = thetav(iu)
+    thetap = vcopt_u%thetav
     do ielpdc = 1, ncepdp
       iel = icepdc(ielpdc)
       romvom = crom(iel)*cell_f_vol(iel)*thetap
@@ -949,7 +953,7 @@ endif
 if(iappel.eq.1) then
   if (icorio.eq.1 .or. iturbo.eq.1) then
     ! The theta-scheme for the Coriolis term is the same as the other terms
-    thetap = thetav(iu)
+    thetap = vcopt_u%thetav
 
     do iel = 1, ncel
       romvom = -ccorio*crom(iel)*cell_f_vol(iel)*thetap
@@ -1041,11 +1045,12 @@ if(itytur.eq.3.and.iterns.eq.1) then
   init = 1;
   inc  = 1;
   iflmb0 = 0;
-  nswrgp = nswrgr(ir11);
-  imligp = imligr(ir11);
-  iwarnp = iwarni(ir11);
-  epsrgp = epsrgr(ir11);
-  climgp = climgr(ir11);
+  call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt)
+  nswrgp = vcopt%nswrgr;
+  imligp = vcopt%imligr;
+  iwarnp = vcopt%iwarni;
+  epsrgp = vcopt%epsrgr;
+  climgp = vcopt%climgr;
   itypfl = 1;
 
   allocate(tflmas(3,nfac))
@@ -1118,7 +1123,7 @@ endif
 !-------------------------------------------------------------------------------
 ! ---> Face diffusivity for the velocity
 
-if (idiff(iu).ge. 1) then
+if (vcopt_u%idiff.ge. 1) then
 
   call field_get_val_s(iviscl, viscl)
   call field_get_val_s(ivisct, visct)
@@ -1129,12 +1134,12 @@ if (idiff(iu).ge. 1) then
     enddo
   else
     do iel = 1, ncel
-      w1(iel) = viscl(iel) + idifft(iu)*visct(iel)
+      w1(iel) = viscl(iel) + vcopt_u%idifft*visct(iel)
     enddo
   endif
 
   ! Scalar diffusivity (Default)
-  if (idften(iu).eq.1) then
+  if (vcopt_u%idften.eq.1) then
 
     call viscfa &
    ( imvisf ,                                                       &
@@ -1146,7 +1151,7 @@ if (idiff(iu).ge. 1) then
     if(itytur.eq.3.and.irijnu.eq.1) then
 
       do iel = 1, ncel
-        w1(iel) = viscl(iel) + idifft(iu)*visct(iel)
+        w1(iel) = viscl(iel) + vcopt_u%idifft*visct(iel)
       enddo
 
       call viscfa &
@@ -1156,7 +1161,7 @@ if (idiff(iu).ge. 1) then
     endif
 
   ! Tensorial diffusion of the velocity (in case of tensorial porosity)
-  else if (idften(iu).eq.6) then
+  else if (vcopt_u%idften.eq.6) then
 
     do iel = 1, ncel
       do isou = 1, 3
@@ -1177,7 +1182,7 @@ if (idiff(iu).ge. 1) then
     if(itytur.eq.3.and.irijnu.eq.1) then
 
       do iel = 1, ncel
-        w1(iel) = viscl(iel) + idifft(iu)*visct(iel)
+        w1(iel) = viscl(iel) + vcopt_u%idifft*visct(iel)
       enddo
 
       do iel = 1, ncel
@@ -1351,7 +1356,7 @@ if (iterns.eq.1) then
    dt     ,                                                       &
    ckupdc , smacel , tsexp  , tsimp  )
 
-  if (ibdtso(iu).gt.1.and.ntcabs.gt.ntinit &
+  if (vcopt_u%ibdtso.gt.1.and.ntcabs.gt.ntinit &
       .and.(idtvar.eq.0.or.idtvar.eq.1)) then
     ! TODO: remove test on ntcabs and implemente a "proper" condition for
     ! initialization.
@@ -1359,7 +1364,10 @@ if (iterns.eq.1) then
     call cs_backward_differentiation_in_time(f_id, tsexp, tsimp)
   endif
   ! Skip first time step after restart if previous values have not been read.
-  if (ibdtso(iu).lt.0) ibdtso(iu) = iabs(ibdtso(iu))
+  if (vcopt_u%ibdtso.lt.0) then
+    vcopt_u%ibdtso = iabs(vcopt_u%ibdtso)
+    call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+  endif
 
   ! Coupling between two Code_Saturne
   if (nbrcpl.gt.0) then
@@ -1452,7 +1460,7 @@ endif
 if (iappel.eq.1) then
   ! If source terms are time-extrapolated
   if (isno2t.gt.0) then
-    thetap = thetav(iu)
+    thetap = vcopt_u%thetav
     if (iterns.gt.1) then
       do iel = 1, ncel
         do isou = 1, 3
@@ -1631,26 +1639,26 @@ if (ippmod(ielarc).ge.1) then
 endif
 
 ! Solver parameters
-iconvp = iconv (iu)
-idiffp = idiff (iu)
+iconvp = vcopt_u%iconv
+idiffp = vcopt_u%idiff
 ndircp = ndircl(iu)
-nswrsp = nswrsm(iu)
-nswrgp = nswrgr(iu)
-imligp = imligr(iu)
-ircflp = ircflu(iu)
-ischcp = ischcv(iu)
-isstpp = isstpc(iu)
-idftnp = idften(iu)
-iswdyp = iswdyn(iu)
-iwarnp = iwarni(iu)
-blencp = blencv(iu)
-epsilp = epsilo(iu)
-epsrsp = epsrsm(iu)
-epsrgp = epsrgr(iu)
-climgp = climgr(iu)
-extrap = extrag(iu)
-relaxp = relaxv(iu)
-thetap = thetav(iu)
+nswrsp = vcopt_u%nswrsm
+nswrgp = vcopt_u%nswrgr
+imligp = vcopt_u%imligr
+ircflp = vcopt_u%ircflu
+ischcp = vcopt_u%ischcv
+isstpp = vcopt_u%isstpc
+idftnp = vcopt_u%idften
+iswdyp = vcopt_u%iswdyn
+iwarnp = vcopt_u%iwarni
+blencp = vcopt_u%blencv
+epsilp = vcopt_u%epsilo
+epsrsp = vcopt_u%epsrsm
+epsrgp = vcopt_u%epsrgr
+climgp = vcopt_u%climgr
+extrap = vcopt_u%extrag
+relaxp = vcopt_u%relaxv
+thetap = vcopt_u%thetav
 
 if (ippmod(icompf).ge.0) then
   ! impose boundary convective flux at some faces (face indicator icvfli)
@@ -1824,10 +1832,11 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   inc    = 1
   iflmb0 = 1
   nswrp  = 1
-  imligp = imligr(iu )
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(iu )
-  climgp = climgr(iu )
+
+  iwarnp = vcopt_p%iwarni
+  imligp = vcopt_u%imligr
+  epsrgp = vcopt_u%epsrgr
+  climgp = vcopt_u%climgr
 
   call inimav &
  ( ivarfl(iu)      , itypfl ,                                     &
@@ -1869,7 +1878,7 @@ if (iappel.eq.1) then
   endif
 
   ! ---> Norm printings
-  if (iwarni(iu).ge.2) then
+  if (vcopt_u%iwarni.ge.2) then
     rnorm = -1.d0
     do iel = 1, ncel
       vitnor = sqrt(vel(1,iel)**2+vel(2,iel)**2+vel(3,iel)**2)

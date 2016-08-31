@@ -77,6 +77,7 @@ use parall
 use period
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -110,6 +111,8 @@ double precision, dimension(:), pointer :: coefap, coefbp
 double precision, dimension(:), pointer :: cvar_var, cvara_var
 double precision, dimension(:,:), pointer :: cvar_varv, cvara_varv
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 
 !===============================================================================
@@ -128,6 +131,8 @@ call field_get_coefb_v(ivarfl(iu), coefbu)
 
 call field_get_coefa_s(ivarfl(ipr), coefap)
 call field_get_coefb_s(ivarfl(ipr), coefbp)
+
+call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
 
 !===============================================================================
 ! 2. Computue forces on the structures
@@ -262,13 +267,13 @@ elseif (nbaste.gt.0.and.nbstru.eq.0) then
    icved = icvext
 endif
 
-if (iwarni(iuma).ge.2) write(nfecra,1000) italim, delta
+if (vcopt%iwarni.ge.2) write(nfecra,1000) italim, delta
 
 !     si convergence
 if (icved.eq.1) then
   if (itrfin.eq.1) then
 !       si ITRFIN=1 on sort
-    if (iwarni(iuma).ge.1) write(nfecra,1001) italim, delta
+    if (vcopt%iwarni.ge.1) write(nfecra,1001) italim, delta
     itrfin = -1
   else
 !       sinon on refait une derniere iteration pour SYRTHES/T1D/rayonnement

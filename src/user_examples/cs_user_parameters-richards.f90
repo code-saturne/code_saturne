@@ -143,6 +143,7 @@ use field
 use cavitation
 use rotation
 use darcy_module
+use cs_c_bindings
 
 !===============================================================================
 
@@ -155,26 +156,38 @@ integer nmodpp
 ! Local variables
 integer       iscal, ifcvsl, ii
 
+type(var_cal_opt) :: vcopt
+
 !----------
 ! Flow part
 !----------
 
 !< [richards_iwgrec]
+
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+
 ! Set gradient computation to weighted (1) for high permeability ratio in tetrahedral meshes.
 ! Only works with isotropic permeability and the standard least square gradient reconstruction.
 if (darcy_anisotropic_permeability.eq.0) then
-  iwgrec(ipr) = 1
+  vcopt%iwgrec = 1
   imrgra = 1
+  call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 endif
 !< [richards_iwgrec]
 
 !< [richards_num_flow]
 ! Set low criteria for gradient reconstruction to obtain a smooth velocity field
-nswrsm(ipr) = 5000
-epsrsm(ipr) = 1.d-10
-nswrgr(ipr) = 5000
-epsrgr(ipr) = 1.d-10
-epsilo(ipr) = 1.d-13
+
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+
+vcopt%nswrsm = 5000
+vcopt%epsrsm = 1.d-10
+vcopt%nswrgr = 5000
+vcopt%epsrgr = 1.d-10
+vcopt%epsilo = 1.d-13
+
+call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+
 !< [richards_num_flow]
 
 ! --------------
@@ -186,9 +199,11 @@ if (darcy_anisotropic_dispersion.eq.0) then
   do ii = 1, nscal
     ! Set gradient computation to weighted (1) for high permeability ratio in tetrahedral meshes.
     ! Only works with isotropic diffusion.
-    iwgrec(isca(ii)) = 1
+    call field_get_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
+    vcopt%iwgrec = 1
     ! Set higher maximum number of iteration for reconstruction to increase the accuracy
-    nswrsm(isca(ii)) = 10
+    vcopt%nswrsm = 10
+    call field_set_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
   enddo
 endif
 !< [richards_num_trpt]

@@ -106,6 +106,8 @@ double precision, allocatable, dimension(:) :: tparbf
 double precision, pointer, dimension(:) :: dt_s
 double precision, pointer, dimension(:,:) :: disale
 
+type(var_cal_opt) :: vcopt
+
 !===============================================================================
 !     A noter :
 !        Lorsque qu'il est necessaire d'utiliser un ordre implicite
@@ -257,10 +259,11 @@ call restart_write_variables(rp, 0)
 
 f_id = -1
 do ivar = 1, nvar
-  if (ibdtso(ivar).gt.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+  if (vcopt%ibdtso.gt.1) then
     if (f_id.ne.ivarfl(ivar)) then
       f_id = ivarfl(ivar)
-      do t_id = 1, ibdtso(ivar) - 1
+      do t_id = 1, vcopt%ibdtso - 1
         call restart_write_field_vals(rp, f_id, t_id)
       enddo
     endif

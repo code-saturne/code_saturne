@@ -105,7 +105,6 @@ double precision vela  (3  ,ncelet)
 
 ! Local variables
 
-integer          ivar
 integer          ifac  , iel, ischcp, idftnp, ircflp
 integer          init  , inc   , iccocg, isstpp
 integer          nswrgp, imligp, iwarnp, iconvp, idiffp
@@ -133,6 +132,8 @@ double precision, allocatable, dimension(:,:,:) :: coefbv
 double precision, dimension(:,:), pointer :: coefau, cofafu
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
 
+type(var_cal_opt) :: vcopt_u, vcopt_p
+
 !===============================================================================
 
 !===============================================================================
@@ -153,9 +154,12 @@ allocate(tsimp(3,3,ncelet))
 allocate(coefbv(3,3,nfabor))
 allocate(vel0(3,ncelet))
 
-if (idften(iu).eq.1) then
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
+
+if (vcopt_u%idften.eq.1) then
   allocate(viscf(1, 1, nfac), viscb(nfabor))
-else if (idften(iu).eq.6) then
+else if (vcopt_u%idften.eq.6) then
   allocate(viscf(3, 3, nfac), viscb(nfabor))
   allocate(viscce(6,ncelet))
 endif
@@ -165,10 +169,6 @@ if (ivisse.eq.1) then
 endif
 
 f_id0 = -1
-
-! --- Number of the computational variable
-!     Pressure
-ivar     = ipr
 
 ! Density
 
@@ -236,20 +236,20 @@ if (itsqdm.ne.0) then
 
   ! Convective of the momentum equation
   ! in upwind and without reconstruction
-  iconvp = iconv(iu)
+  iconvp = vcopt_u%iconv
 
   init   = 1
   inc    = 1
   iccocg = 1
   iflmb0 = 1
-  nswrgp = nswrgr(iu)
-  imligp = imligr(iu)
-  iwarnp = iwarni(iu)
-  epsrgp = epsrgr(iu)
-  climgp = climgr(iu)
-  extrap = extrag(iu)
-  relaxp = relaxv(iu)
-  thetap = thetav(iu)
+  nswrgp = vcopt_u%nswrgr
+  imligp = vcopt_u%imligr
+  iwarnp = vcopt_u%iwarni
+  epsrgp = vcopt_u%epsrgr
+  climgp = vcopt_u%climgr
+  extrap = vcopt_u%extrag
+  relaxp = vcopt_u%relaxv
+  thetap = vcopt_u%thetav
 
   itypfl = 1
 
@@ -266,7 +266,7 @@ if (itsqdm.ne.0) then
   flumas , flumab )
 
   ! ---> Face diffusivity for the velocity
-  idiffp = idiff(iu)
+  idiffp = vcopt_u%idiff
   if (idiffp.ge. 1) then
 
      call field_get_val_s(iviscl, viscl)
@@ -278,12 +278,12 @@ if (itsqdm.ne.0) then
         enddo
      else
         do iel = 1, ncel
-           w1(iel) = viscl(iel) + idifft(iu)*visct(iel)
+           w1(iel) = viscl(iel) + vcopt_u%idifft*visct(iel)
         enddo
      endif
 
      ! Scalar diffusivity (Default)
-     if (idften(iu).eq.1) then
+     if (vcopt_u%idften.eq.1) then
 
         call viscfa &
         !==========
@@ -292,7 +292,7 @@ if (itsqdm.ne.0) then
        viscf  , viscb  )
 
      ! Tensorial diffusion of the velocity (in case of tensorial porosity)
-     else if (idften(iu).eq.6) then
+     else if (vcopt_u%idften.eq.6) then
 
         do iel = 1, ncel
           do isou = 1, 3
@@ -327,7 +327,7 @@ if (itsqdm.ne.0) then
 
   endif
 
-  idftnp = idften(iu)
+  idftnp = vcopt_u%idften
 
   ! no recontruction
   ircflp = 0;
@@ -423,11 +423,11 @@ iccocg = 1
 iflmb0 = 1
 ! Reconstruction is useless here
 nswrgp = 0
-imligp = imligr(ivar)
-iwarnp = iwarni(ivar)
-epsrgp = epsrgr(ivar)
-climgp = climgr(ivar)
-extrap = extrag(ivar)
+imligp = vcopt_p%imligr
+iwarnp = vcopt_p%iwarni
+epsrgp = vcopt_p%epsrgr
+climgp = vcopt_p%climgr
+extrap = vcopt_p%extrag
 
 ! Velocity flux (crom, brom not used)
 itypfl = 0
