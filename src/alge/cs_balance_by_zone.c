@@ -2002,8 +2002,8 @@ cs_pressure_drop_by_zone(const char *selection_crit)
     bi_bterms[0] = 0.;
     bi_bterms[1] = 0.;
 
-    cs_real_t rhogx_id1 = - rho[c_id1] * _CS_DOT_PRODUCT(gravity, i_face_cog[f_id_sel]);
-    cs_real_t rhogx_id2 = - rho[c_id2] * _CS_DOT_PRODUCT(gravity, i_face_cog[f_id_sel]);
+    cs_real_t gx_id1 = - _CS_DOT_PRODUCT(gravity, i_face_cog[f_id_sel]);
+    cs_real_t gx_id2 = - _CS_DOT_PRODUCT(gravity, i_face_cog[f_id_sel]);
 
     cs_i_cd_unsteady_upwind(ircflp,
                             weight[f_id],
@@ -2013,8 +2013,8 @@ cs_pressure_drop_by_zone(const char *selection_crit)
                             dijpf[f_id_sel],
                             grad,
                             grad,
-                            rhogx_id1,
-                            rhogx_id2,
+                            gx_id1,
+                            gx_id2,
                             &pif,
                             &pjf,
                             &pip,
@@ -2023,8 +2023,8 @@ cs_pressure_drop_by_zone(const char *selection_crit)
     cs_i_conv_flux(iconvp,
                    1.,
                    0, /* Conservative formulation, no mass accumulation */
-                   rhogx_id1,
-                   rhogx_id2,
+                   gx_id1,
+                   gx_id2,
                    pif,
                    pif, /* no relaxation */
                    pjf,
