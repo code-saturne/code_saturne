@@ -61,7 +61,7 @@ subroutine vissst
 
 use paramx
 use cstnum
-use pointe, only: s2kw, divukw, dispar
+use pointe, only: dispar
 use numvar
 use optcal
 use cstphy
@@ -91,6 +91,7 @@ double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:), pointer :: cvara_k, cvara_omg
+double precision, dimension(:), pointer :: cpro_s2kw, cpro_divukw
 
 !===============================================================================
 
@@ -133,9 +134,12 @@ call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
 ! divukw   = trace of the velocity gradient
 !          = dudx + dvdy + dwdz
 
+call field_get_val_s(iprpfl(is2kw), cpro_s2kw)
+call field_get_val_s(iprpfl(idivukw), cpro_divukw)
+
 do iel = 1, ncel
 
-  s2kw(iel) = 2.d0                                                           &
+  cpro_s2kw(iel) = 2.d0                                                        &
     *( ( d2s3*gradv(1,1,iel) - d1s3*gradv(2,2,iel) - d1s3*gradv(3,3,iel))**2   &
      + (-d1s3*gradv(1,1,iel) + d2s3*gradv(2,2,iel) - d1s3*gradv(3,3,iel))**2   &
      + (-d1s3*gradv(1,1,iel) - d1s3*gradv(2,2,iel) + d2s3*gradv(3,3,iel))**2   &
@@ -144,7 +148,7 @@ do iel = 1, ncel
     + (gradv(3,1,iel) + gradv(1,3,iel))**2                                     &
     + (gradv(3,2,iel) + gradv(2,3,iel))**2
 
-  divukw(iel) = gradv(1,1,iel) + gradv(2,2,iel) + gradv(3,3,iel)
+  cpro_divukw(iel) = gradv(1,1,iel) + gradv(2,2,iel) + gradv(3,3,iel)
 
 enddo
 
@@ -179,7 +183,7 @@ do iel = 1, ncel
   xf2 = tanh(xarg2**2)
 
   visct(iel) = rom*ckwa1*xk                               &
-       /max( ckwa1*xw , sqrt(s2kw(iel))*xf2 )
+       /max( ckwa1*xw , sqrt(cpro_s2kw(iel))*xf2 )
 
 enddo
 

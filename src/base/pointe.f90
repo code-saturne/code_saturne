@@ -137,21 +137,6 @@ module pointe
   !> of the face), 0 if the face is not coupled to any structure.
   integer, allocatable, dimension(:) :: idfstr
 
-  !> square of the norm of the deviatoric part of the deformation
-  !> rate tensor (\f$S^2=2S_{ij}^D S_{ij}^D\f$). This array is defined only
-  !> with the \f$k-\omega\f$ (SST) turbulence model
-  double precision, allocatable, dimension(:)   :: s2kw
-
-  !> divergence of the velocity. More precisely it is the trace of the velocity
-  !> gradient (and not a finite volume divergence term). In the
-  !> cell \c iel,  \f$div(\vect{u})\f$ is given by \c divukw(iel1).
-  !> This array is defined only with the \f$k-\omega\f$ SST turbulence model
-  !> (because in this case it may be calculated at the same time as \f$S^2\f$)
-  double precision, allocatable, dimension(:)   :: divukw
-
-  !> strain rate tensor at the previous time step
-  double precision, allocatable, dimension(:,:) :: straio
-
   !> \}
 
   !=============================================================================
@@ -453,21 +438,6 @@ contains
       endif
     endif
 
-    ! Temporary storage arrays for k-omega model
-
-    if (iturb.eq.60) then
-      allocate(s2kw(ncelet))
-      allocate(divukw(ncelet))
-    endif
-
-    ! Strain rate tensor at the previous time step
-    ! if rotation curvature correction of eddy viscosity
-    if (irccor.eq.1) then
-      if (idtvar.ge.0) then
-        allocate(straio(ncelet,6))
-      endif
-    endif
-
     ! liquid-vapour mass transfer term for cavitating flows
     ! and its part implicit in pressure
     if (icavit.ge.0) then
@@ -492,9 +462,8 @@ contains
 
     ! Local variables
 
-    integer iel, isou
+    integer iel
     double precision, allocatable, dimension(:) :: buffer
-    double precision, allocatable, dimension(:,:) :: buff2
 
     ! Resize/copy arrays
 
@@ -524,53 +493,6 @@ contains
       do iel = 1, ncelet
         yplpar(iel) = buffer(iel)
       enddo
-    endif
-
-    ! Temporary storage arrays for k-omega model
-
-    if (allocated(s2kw)) then
-      do iel = 1, ncel
-        buffer(iel) = s2kw(iel)
-      enddo
-      deallocate(s2kw)
-      call synsca (buffer)
-      allocate(s2kw(ncelet))
-      do iel = 1, ncelet
-        s2kw(iel) = buffer(iel)
-      enddo
-
-      do iel = 1, ncel
-        buffer(iel) = divukw(iel)
-      enddo
-      deallocate(divukw)
-      call synsca (buffer)
-      allocate(divukw(ncelet))
-      do iel = 1, ncelet
-        divukw(iel) = buffer(iel)
-      enddo
-    endif
-
-    ! Strain rate tensor at the previous time step
-    ! for rotation-curvature correction of eddy viscosity
-
-    if (allocated(straio)) then
-      allocate(buff2(ncel,6))
-      do isou = 1, 6
-        do iel = 1, ncel
-          buff2(iel,isou) = straio(iel,isou)
-        enddo
-      enddo
-      deallocate(straio)
-      allocate(straio(ncelet,6))
-      do isou = 1, 6
-        do iel = 1, ncel
-          straio(iel,isou) = buff2(iel,isou)
-        enddo
-      enddo
-      deallocate(buff2)
-      call synten (straio(1,1), straio(1,4), straio(1,5), &
-                   straio(1,4), straio(1,2), straio(1,6), &
-                   straio(1,5), straio(1,6), straio(1,3))
     endif
 
     ! liquid-vapour mass transfer term for cavitating flows
@@ -618,8 +540,6 @@ contains
     if (allocated(izft1d)) deallocate(izft1d)
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)
-    if (allocated(s2kw)) deallocate(s2kw, divukw)
-    if (allocated(straio))  deallocate(straio)
     if (allocated(b_head_loss)) deallocate(b_head_loss)
     if (allocated(gamcav)) deallocate(gamcav, dgdpca)
 

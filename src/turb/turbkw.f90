@@ -69,7 +69,7 @@ use cstnum
 use cstphy
 use optcal
 use lagran
-use pointe, only: s2kw, divukw, dispar
+use pointe, only: dispar
 use parall
 use mesh
 use field
@@ -147,6 +147,7 @@ double precision, dimension(:), pointer :: cpro_pcvto, cpro_pcvlo
 double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: c_st_k_p, c_st_omg_p
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cpro_divukw, cpro_s2kw
 
 type(var_cal_opt) :: vcopt_w, vcopt_k
 
@@ -205,6 +206,9 @@ call field_get_key_struct_var_cal_opt(ivarfl(iomg), vcopt_w)
 call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt_k)
 
 thets  = thetst
+
+call field_get_val_s(iprpfl(is2kw), cpro_s2kw)
+call field_get_val_s(iprpfl(idivukw), cpro_divukw)
 
 call field_get_key_int(ivarfl(ik), kstprv, istprv)
 if (istprv.ge.0) then
@@ -310,22 +314,22 @@ do iel = 1, ncel
   xeps = cmu*xw*xk
   visct = cpro_pcvto(iel)
   rho = cromo(iel)
-  prodw(iel) = visct*s2kw(iel)                    &
-             - d2s3*rho*xk*divukw(iel)
+  prodw(iel) = visct*cpro_s2kw(iel)                    &
+             - d2s3*rho*xk*cpro_divukw(iel)
 
   ! The negative part is implicited
   xxf1   = xf1(iel)
   xgamma = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
   tinstw(iel) = tinstw(iel)                                         &
               + max( d2s3*rho*volume(iel)                           &
-                   *(rho*xgamma*xk/(visct*xw))*divukw(iel), 0.d0)
+                   *(rho*xgamma*xk/(visct*xw))*cpro_divukw(iel), 0.d0)
 
   ! Take the min between prodw and the low Reynold one
   if (prodw(iel).gt.ckwc1*rho*xeps) then
     prodk(iel) = ckwc1*rho*xeps
   else
     prodk(iel) = prodw(iel)
-    tinstk(iel) = tinstk(iel) + max(d2s3*volume(iel)*rho*divukw(iel), 0.d0)
+    tinstk(iel) = tinstk(iel) + max(d2s3*volume(iel)*rho*cpro_divukw(iel), 0.d0)
   endif
 enddo
 
@@ -856,8 +860,8 @@ if (ikecou.eq.1) then
     romvsd     = 1.d0/(rho*volume(iel))
     smbrk(iel) = smbrk(iel)*romvsd
     smbrw(iel) = smbrw(iel)*romvsd
-    divp23     = d2s3*max(divukw(iel),zero)
-    produc     = w1(iel)*s2kw(iel)+w2(iel)
+    divp23     = d2s3*max(cpro_divukw(iel),zero)
+    produc     = w1(iel)*cpro_s2kw(iel)+w2(iel)
     xk         = cvara_k(iel)
     xw         = cvara_omg(iel)
     xxf1       = xf1(iel)

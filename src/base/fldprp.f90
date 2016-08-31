@@ -157,6 +157,13 @@ if (iturb.eq.0) then
   call hide_property(ivisct)
 endif
 
+if  (iturb.eq.60) then
+  call add_property_field_1d('s2', 'S2', is2kw)
+  call hide_property(is2kw)
+  call add_property_field_1d('vel_gradient_trace', 'Vel. Gradient Trace', idivukw)
+  call hide_property(idivukw)
+endif
+
 call add_property_field_1d('courant_number', 'CFL', icour)
 call add_property_field_1d('fourier_number', 'Fourier Number', ifour)
 

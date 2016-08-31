@@ -72,7 +72,6 @@ use cstphy
 use cstnum
 use parall
 use period
-use pointe, only: straio
 use mesh
 use field
 use field_operator
@@ -110,6 +109,7 @@ double precision, allocatable, dimension(:) :: brtild, eta1, eta2
 double precision, dimension(:,:), pointer :: vela
 
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
+double precision, dimension(:,:), pointer :: cpro_straio
 
 integer          ipass
 data             ipass /0/
@@ -123,11 +123,13 @@ type(var_cal_opt) :: vcopt
 ! 0. Initialization
 !===============================================================================
 
+call field_get_val_v(iprpfl(istraio), cpro_straio)
+
 ipass = ipass + 1
 if(ipass.eq.1) then
   do isou = 1, 6
     do iel = 1, ncelet
-      straio(iel,isou) = 0.d0
+      cpro_straio(isou,iel) = 0.d0
     enddo
   enddo
 endif
@@ -311,7 +313,7 @@ do ii = 1, 3
         dsijdt = 0.d0
       else
         dsijdt = ((strain(iel,istrai(ii,jj))        &
-                 - straio(iel,istrai(ii,jj)))       &
+                 - cpro_straio(istrai(ii,jj),iel))  &
                 /dt(iel))
       endif
       dsijdt = dsijdt + vela(1,iel)*grdsij(1,iel)        &
@@ -417,7 +419,7 @@ endif
 if (idtvar.ge.0) then
   do isou = 1, 6
     do iel = 1, ncelet
-      straio(iel,isou) = strain(iel,isou)
+      cpro_straio(isou,iel) = strain(iel,isou)
     enddo
   enddo
 endif

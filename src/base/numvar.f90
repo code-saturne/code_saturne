@@ -260,6 +260,23 @@ module numvar
 
   !>  field id of temperature at boundary
   integer, save ::  itempb
+
+  !> field id of the square of the norm of the deviatoric
+  !> part of the deformation rate tensor (\f$S^2=2S_{ij}^D S_{ij}^D\f$).
+  !> Field defined only with the \f$k-\omega\f$ (SST) turbulence model
+  integer, save :: is2kw
+
+  !> field id of the divergence of the velocity. More precisely,
+  !> it is the trace of the velocity gradient (and not a finite volume
+  !> divergence term). In the cell \c iel,  \f$div(\vect{u})\f$ is given
+  !> by \c divukw(iel1). This array is defined only with the \f$k-\omega\f$ SST
+  !> turbulence model (because in this case it may be calculated at the same
+  !> time as \f$S^2\f$)
+  integer, save :: idivukw
+
+  !> field id of the strain rate tensor at the previous time step
+  integer, save :: istraio
+
   !> \}
   !----------------------------------------------------------------------------
   ! Numerical properties
