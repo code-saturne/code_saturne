@@ -689,15 +689,15 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
     }
     else if (reverse) {
       for (int i = 0; i < dc->n_ranks; i++)
-        dc->send_count[i] = 0;
+        dc->recv_count[i] = 0;
       for (size_t i = 0; i < d->dc->recv_size; i++) {
         int rank_id = dest_rank[i];
         size_t w_displ = i*elt_size;
         size_t r_displ = (  dc->recv_displ[rank_id]
-                          + dc->send_count[rank_id])*dc->comp_size;
+                          + dc->recv_count[rank_id])*dc->comp_size;
         for (size_t j = 0; j < elt_size; j++)
           _dest_data[w_displ + j] = sp[r_displ + j];
-        dc->send_count[rank_id] += 1;
+        dc->recv_count[rank_id] += 1;
       }
     }
     else {
