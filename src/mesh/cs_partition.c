@@ -1107,7 +1107,7 @@ _add_perio_to_face_cells_g(cs_block_dist_info_t  bi,
                                                periodic_couples,
                                                NULL);
 
-  cs_lnum_t   n_b = cs_all_to_all_n_elts_dest(d);
+  cs_lnum_t  n_b = cs_all_to_all_n_elts_dest(d);
 
   /* Receive buffer contains global cell face whose cell adjacency
      is defined on the local rank, and we replace the received value
@@ -1141,12 +1141,11 @@ _add_perio_to_face_cells_g(cs_block_dist_info_t  bi,
 
   for (cs_lnum_t i = 0; i < n_send; i++) {
 
-    cs_lnum_t j = i / 2;        /* couple id */
     cs_lnum_t k = (i + 1) % 2;  /* 1 for first value, 0 for
                                    second (permutation) */
 
-    send_adj[j*4 + k*2]     = periodic_couples[j*2 + k];
-    send_adj[j*4 + k*2 + 1] = r_data[j];
+    send_adj[i*2]     = periodic_couples[i];
+    send_adj[i*2 + 1] = r_data[i + k];
 
   }
 
