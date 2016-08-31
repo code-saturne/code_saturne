@@ -1752,7 +1752,7 @@ cs_pressure_drop_by_zone(const char *selection_crit)
     /* Pressure term FIXME rho0*gravity*(X-X0) should be added */
     cs_real_t p_rho = pressure[c_id] / rho[c_id];
     cs_real_t a_p_rho = a_p[f_id_sel] / rho[c_id];
-    cs_real_t b_p_rho = b_p[f_id_sel] / rho[c_id];
+    cs_real_t b_p_rho = b_p[f_id_sel];
 
     cs_real_3_t grad = {0, 0, 0};
 
@@ -1826,7 +1826,7 @@ cs_pressure_drop_by_zone(const char *selection_crit)
     cs_real_t rhogx = - rho[c_id] * _CS_DOT_PRODUCT(gravity, b_face_cog[f_id_sel]);
     /* Trivial BCs */
     cs_real_t a_rhogx = rhogx;
-    cs_real_t b_rhogx = 0;
+    cs_real_t b_rhogx = 0.;
 
     cs_b_cd_unsteady(ircflp,
                      diipb[f_id_sel],
