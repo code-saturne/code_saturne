@@ -72,6 +72,7 @@ EXTRA_DIST =
 # Library source files
 
 examplefiles = \
+cs_user_1d_wall_thermal.c \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions_ale-base.f90 \
 cs_user_boundary_conditions-advanced.f90 \
@@ -168,7 +169,6 @@ cs_user_turbomachinery.c \
 usatch_4spe5reac.f90 \
 usctdz.f90 \
 ushist.f90 \
-uspt1d.f90 \
 usthht.f90 \
 usvort.f90 \
 usvosy.f90

@@ -50,6 +50,7 @@
 
 #include "fvm_writer.h"
 
+#include "cs_1d_wall_thermal.h"
 #include "cs_base.h"
 #include "cs_fan.h"
 #include "cs_field.h"
@@ -66,6 +67,7 @@
 #include "cs_multigrid.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
+#include "cs_physical_properties.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_sles.h"
@@ -441,6 +443,32 @@ cs_user_radiative_transfer_bcs(int               nvarcl,
 
   }
   /*< [example_5]*/
+
+  /*< [example_6]*/
+
+  /* Example 6 :
+   * For wall boundary faces which were marked with cs_user_1d_wall_thermal.c
+   * Heat transfer solved in a gray wall exposed to a radiative and convective
+   * flux with the 1D wall thermal module */
+
+  if (cs_glob_1d_wall_thermal->nfpt1d > 0) {
+    for (cs_lnum_t ii = 0 ; ii < cs_glob_1d_wall_thermal->nfpt1d; ii++) {
+      cs_lnum_t face_id = cs_glob_1d_wall_thermal->ifpt1d[ii]-1;
+
+      /* Zone number */
+      izfrdp[face_id] = 56;
+
+      /* Type of condition : heat transfer equation solved */
+      isothp[face_id] = cs_glob_rad_transfer_params->itpt1d;
+
+      /* Emissivity */
+      epsp[face_id] = 0.9;
+
+      /* Initial temperature */
+      tintp[face_id] = cs_glob_fluid_properties->t0;
+    }
+  }
+  /*< [example_6]*/
 
   /* WARNING: for all boundary faces, even when not a wall, it is MANDATORY to
    *          assign a zone number in the array izfrdp. */

@@ -714,12 +714,12 @@ module cs_c_bindings
 
     ! Interface to C function to get the bc type array pointer
 
-    subroutine cs_f_boundary_conditions_get_pointer(itypfb, izfppp) &
-      bind(C, name='cs_f_boundary_conditions_get_pointer')
+    subroutine cs_f_boundary_conditions_get_pointers(itypfb, izfppp) &
+      bind(C, name='cs_f_boundary_conditions_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: itypfb, izfppp
-    end subroutine cs_f_boundary_conditions_get_pointer
+    end subroutine cs_f_boundary_conditions_get_pointers
 
     !---------------------------------------------------------------------------
 
@@ -1514,7 +1514,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief  Read lagrangian moments checkpoint information.
+    !> \brief Read lagrangian moments checkpoint information.
 
     subroutine lagr_moment_restart_read(r)  &
       bind(C, name='cs_lagr_moment_restart_read')
@@ -1543,6 +1543,171 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine finalize_gas_mix
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Create global 1d wall thermal model structure.
+
+    subroutine cs_1d_wall_thermal_create()  &
+      bind(C, name='cs_1d_wall_thermal_create')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_1d_wall_thermal_create
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Allocate the array of structures local_models.
+
+    subroutine init_1d_wall_thermal_local_models()  &
+      bind(C, name='cs_1d_wall_thermal_local_models_create')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine init_1d_wall_thermal_local_models
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Allocate the discretization points coordinates array and
+    !>        the temperature at each point of discretization.
+
+    subroutine init_1d_wall_thermal_local_models_arrays()  &
+      bind(C, name='cs_1d_wall_thermal_local_models_init')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine init_1d_wall_thermal_local_models_arrays
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Create the 1D mesh for each face and initialize the temperature.
+
+    subroutine cs_1d_wall_thermal_mesh_create()  &
+      bind(C, name='cs_1d_wall_thermal_mesh_create')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_1d_wall_thermal_mesh_create
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Solve the 1D equation for a given face.
+
+    !> \param[in]   ii   face number
+    !> \param[in]   tf   fluid temperature at the boundarys
+    !> \param[in]   hf   exchange coefficient for the fluid
+
+    subroutine cs_1d_wall_thermal_solve(ii, tf, hf)  &
+      bind(C, name='cs_1d_wall_thermal_solve')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: ii
+      real(kind=c_double), value :: tf, hf
+    end subroutine cs_1d_wall_thermal_solve
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Read the restart file of the 1D-wall thermal module.
+
+    subroutine cs_1d_wall_thermal_read()  &
+      bind(C, name='cs_1d_wall_thermal_read')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_1d_wall_thermal_read
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Write the restart file of the 1D-wall thermal module.
+
+    subroutine cs_1d_wall_thermal_write()  &
+      bind(C, name='cs_1d_wall_thermal_write')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_1d_wall_thermal_write
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Free members of the global 1d wall thermal structure.
+
+    subroutine cs_1d_wall_thermal_free()  &
+      bind(C, name='cs_1d_wall_thermal_free')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_1d_wall_thermal_free
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Destroy the global 1d wall thermal structure.
+
+    subroutine cs_1d_wall_thermal_finalize()  &
+      bind(C, name='cs_1d_wall_thermal_finalize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_1d_wall_thermal_finalize
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Data Entry of the 1D wall thermal module.
+
+    !> \param[in]   iappel   Call number
+    !> \param[in]   isuit1   Restart caculation or not
+
+    subroutine cs_user_1d_wall_thermal(iappel, isuit1)  &
+      bind(C, name='cs_user_1d_wall_thermal')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: iappel, isuit1
+    end subroutine cs_user_1d_wall_thermal
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Return pointers to nfpt1d and nfpt1t.
+
+    !> \param[out]   nfpt1d   Pointer to nfpt1d
+    !> \param[out]   nfpt1t   Pointer to nfpt1t
+
+    subroutine cs_f_1d_wall_thermal_get_pointers(nfpt1d, nfpt1t) &
+      bind(C, name='cs_f_1d_wall_thermal_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: nfpt1d, nfpt1t
+    end subroutine cs_f_1d_wall_thermal_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Data checking for the 1D thermal wall module.
+
+    !> \param[in]   iappel   Call number
+    !> \param[in]   isuit1   Restart caculation or not
+
+    subroutine cs_1d_wall_thermal_check(iappel, isuit1) &
+      bind(C, name='cs_1d_wall_thermal_check')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: iappel, isuit1
+    end subroutine cs_1d_wall_thermal_check
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Return a pointer to the ifpt1d array.
+
+    !> \param[out]   ifpt1d   Pointer to ifpt1d
+
+    subroutine cs_f_1d_wall_thermal_get_faces(ifpt1d)  &
+      bind(C, name='cs_f_1d_wall_thermal_get_faces')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: ifpt1d
+    end subroutine cs_f_1d_wall_thermal_get_faces
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Return a pointer to the tppt1d array.
+
+    !> \param[out]   tppt1d   Pointer to tppt1d
+
+    subroutine cs_f_1d_wall_thermal_get_temp(tppt1d)  &
+      bind(C, name='cs_f_1d_wall_thermal_get_temp')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: tppt1d
+    end subroutine cs_f_1d_wall_thermal_get_temp
 
     !---------------------------------------------------------------------------
 

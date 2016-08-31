@@ -27,6 +27,7 @@ module pointe
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
   use paramx
 
   implicit none
@@ -119,7 +120,7 @@ module pointe
   !> \anchor itypfb
   !> boundary condition type at the boundary face \c ifac
   !> (see user subroutine \ref cs\_user\_boundary\_conditions)
-  integer, dimension(:), pointer :: itypfb(:)
+  integer, dimension(:), pointer, save :: itypfb
 
   !> indirection array allowing to sort the boundary faces
   !> according to their boundary condition type \c itypfb
@@ -147,73 +148,13 @@ module pointe
   !> \addtogroup thermal_1D
   !> \{
 
-
   !> number of boundary faces which are coupled
   !> with a wall 1D thermal module. See the user subroutine \ref uspt1d
-  integer, save :: nfpt1d
+  integer(c_int), pointer, save :: nfpt1d
 
-  ! TODO
-  integer, save :: nmxt1d
-
-  !> zones of t1d, dimensioned with nfabor (TODO)
-  integer, allocatable, dimension(:) :: izft1d
-
-  !> number of discretisation cells in the 1D wall for the
-  !> \c nfpt1d boundary faces which are coupled with a wall 1D thermal module.
-  !> The number of cells for these boundary faces is given by
-  !> \c nppt1d(ii), with 1 <= ii <= nfpt1d.
-  !> See the user subroutine \ref uspt1d
-  integer, allocatable, dimension(:) :: nppt1d
-
-  !> array allowing to mark out the numbers of
-  !> the \c nfpt1d boundary faces which are coupled with a wall 1D
-  !> thermal module. The numbers of these boundary faces are
-  !> given by \c ifpt1d(ii), with 1 <= ii <= \c nfpt1d.
-  !> See the user subroutine \ref uspt1d
-  integer, allocatable, dimension(:) :: ifpt1d
-
-  !> typical boundary condition at the external (pseudo) wall:
-  !> Dirichlet condition (\c iclt1d=1) or flux condition (\c iclt1d=3)
-  integer, allocatable, dimension(:) :: iclt1d
-
-  !> thickness of the 1D wall for the \c nfpt1d boundary faces
-  !> which are coupled with a wall 1D thermal module.
-  !> The wall thickness for these boundary faces is therefore given by
-  !> \c eppt1d(ii), with 1 <= ii <= \c nfpt1d.
-  !> See the user subroutine \ref uspt1d
-  double precision, allocatable, dimension(:) :: eppt1d
-
-  !> geometry of the pseudo wall mesh (refined as a fluid
-  !> if \c rgt1d is smaller than 1
-  double precision, allocatable, dimension(:) :: rgpt1d
-
-  !> initialisation temperature of the wall (uniform in thickness).
-  !> In the course of the calculation, the array stores the temperature
-  !> of the solid at the fluid/solid interface.
-  double precision, allocatable, dimension(:) :: tppt1d
-
-  !> external temperature of the pseudo wall in the Dirichlet case.
-  double precision, allocatable, dimension(:) :: tept1d
-
-  !> external coefficient of transfer in the pseudo wall under Dirichlet conditions
-  !> (in \f$W.m^{-2}.K^.\f$).
-  double precision, allocatable, dimension(:) :: hept1d
-
-  ! fept1d ! nfpt1d                  ! flux thermique exterieur
-  !> external heat flux in the pseudo wall under the flux conditions
-  !> (in \f$W.m^{-2}\f$, negative value for energy entering the wall).
-  double precision, allocatable, dimension(:) :: fept1d
-
-  !> thermal diffusivity
-  double precision, allocatable, dimension(:) :: xlmbt1
-
-  !> volumetric heat capacity \f$\rho C_p\f$ of the wall uniform in thickness
-  !> (in \f$J.m^{-3}.K^{-1}\f$).
-  double precision, allocatable, dimension(:) :: rcpt1d
-
-  !> physical time step associated with the solved 1D equation of the pseudo wall
-  !> (which can be different from the time step in the calculation).
-  double precision, allocatable, dimension(:) :: dtpt1d
+  !> global number of boundary faces which are coupled with
+  !> a wall 1D thermal module. (ie sum over all ranks of nfpt1d)
+  integer(c_int), pointer, save :: nfpt1t
 
   !> \}
 
@@ -537,7 +478,6 @@ contains
     if (allocated(idfstr)) deallocate(idfstr)
     if (allocated(izcpdc)) deallocate(izcpdc)
     if (allocated(izctsm)) deallocate(izctsm)
-    if (allocated(izft1d)) deallocate(izft1d)
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)
     if (allocated(b_head_loss)) deallocate(b_head_loss)
@@ -651,49 +591,6 @@ contains
 
   !=============================================================================
 
-  subroutine init_pt1d
-
-    use cstnum
-
-    allocate(nppt1d(nfpt1d), ifpt1d(nfpt1d), iclt1d(nfpt1d))
-    allocate(eppt1d(nfpt1d), rgpt1d(nfpt1d), tppt1d(nfpt1d))
-    allocate(tept1d(nfpt1d), hept1d(nfpt1d), fept1d(nfpt1d))
-    allocate(xlmbt1(nfpt1d), rcpt1d(nfpt1d), dtpt1d(nfpt1d))
-
-    !---> INITIALISATION DES TABLEAUX
-    !     a des valeurs sortant en erreur dans vert1d
-    !     sauf pour les variables de conditions aux limites
-    !     qui sont initialisees a des valeurs standard
-    !     (flux nul, Timpose=0, coef d'echange infini)
-
-    ifpt1d(:) = -999
-    nppt1d(:) = -999
-    iclt1d(:) = 3
-    eppt1d(:) = -999.d0
-    rgpt1d(:) = -999.d0
-    tppt1d(:) = 0.d0
-    tept1d(:) = 0.d0
-    hept1d(:) = rinfin
-    fept1d(:) = 0.d0
-    xlmbt1(:) = -999.d0
-    rcpt1d(:) = -999.d0
-    dtpt1d(:) = -999.d0
-
-  end subroutine init_pt1d
-
-  !=============================================================================
-
-  subroutine finalize_pt1d
-
-    deallocate(nppt1d, ifpt1d, iclt1d)
-    deallocate(eppt1d, rgpt1d, tppt1d)
-    deallocate(tept1d, hept1d, fept1d)
-    deallocate(xlmbt1, rcpt1d, dtpt1d)
-
-  end subroutine finalize_pt1d
-
-  !=============================================================================
-
   subroutine boundary_conditions_init
 
     use, intrinsic :: iso_c_binding
@@ -708,10 +605,9 @@ contains
 
     call cs_f_boundary_conditions_create
 
-    call cs_f_boundary_conditions_get_pointer(c_itypfb, c_izfppp)
+    call cs_f_boundary_conditions_get_pointers(c_itypfb, c_izfppp)
 
     call c_f_pointer(c_itypfb, itypfb, [nfabor])
-
     call c_f_pointer(c_izfppp, izfppp, [nfabor])
 
   end subroutine boundary_conditions_init
@@ -727,5 +623,80 @@ contains
     call cs_f_boundary_conditions_free
 
   end subroutine boundary_conditions_finalize
+
+  !=============================================================================
+
+  !> \brief Allocate the cs_glob_1d_wall_thermal structure.
+
+  subroutine init_1d_wall_thermal
+
+    use, intrinsic :: iso_c_binding
+    use cs_c_bindings
+
+    implicit none
+
+    ! Local variables
+    type(c_ptr) :: c_nfpt1d, c_nfpt1t
+
+    call cs_1d_wall_thermal_create
+
+    call cs_f_1d_wall_thermal_get_pointers(c_nfpt1d, c_nfpt1t)
+
+    call c_f_pointer(c_nfpt1d, nfpt1d)
+    call c_f_pointer(c_nfpt1t, nfpt1t)
+
+    return
+
+  end subroutine init_1d_wall_thermal
+
+  !=============================================================================
+
+  !> \brief Return pointer to the ifpt1d array for the 1D wall thermal module.
+
+  !> \param[out]    ifpt1d         pointer to ifpt1d
+
+  subroutine cs_1d_wall_thermal_get_faces(ifpt1d)
+
+    use, intrinsic :: iso_c_binding
+    use cs_c_bindings
+
+    implicit none
+
+    integer, dimension(:), pointer, intent(out) :: ifpt1d
+
+    ! Local variables
+
+    type(c_ptr) :: c_ifpt1d
+
+    call cs_f_1d_wall_thermal_get_faces(c_ifpt1d)
+    call c_f_pointer(c_ifpt1d, ifpt1d, [nfpt1d])
+
+  end subroutine cs_1d_wall_thermal_get_faces
+
+  !=============================================================================
+
+  !> \brief Return pointer to the tppt1d array for the 1D wall thermal module.
+
+  !> \param[out]    tppt1d         pointer to tppt1d
+
+  subroutine cs_1d_wall_thermal_get_temp(tppt1d)
+
+    use, intrinsic :: iso_c_binding
+    use cs_c_bindings
+
+    implicit none
+
+    double precision, dimension(:), pointer, intent(out) :: tppt1d
+
+    ! Local variables
+
+    type(c_ptr) :: c_tppt1d
+
+    call cs_f_1d_wall_thermal_get_temp(c_tppt1d)
+    call c_f_pointer(c_tppt1d, tppt1d, [nfpt1d])
+
+  end subroutine cs_1d_wall_thermal_get_temp
+
+  !=============================================================================
 
 end module pointe

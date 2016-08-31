@@ -95,8 +95,6 @@ implicit none
 
 ! Local variables
 
-integer          iiii
-
 integer          modhis, iappel, modntl, iisuit
 integer          ivar
 integer          iel
@@ -114,8 +112,6 @@ integer          ivoid(1)
 double precision rvoid(1)
 
 double precision, save :: ttchis
-
-character        ficsui*32
 
 double precision, pointer, dimension(:)   :: dt => null()
 double precision, pointer, dimension(:)   :: porosi => null()
@@ -201,7 +197,6 @@ iappel = 1
 allocate(izcpdc(ncel))
 allocate(izctsm(ncel))
 allocate(izftcd(ncel)) ! should be in init_pcond only
-allocate(izft1d(nfabor))
 
 ! ---------
 ! Head-loss
@@ -298,13 +293,9 @@ endif
 ! 1D-wall module
 ! --------------
 
-call uspt1d &
- ( nvar   , nscal  , nfpt1d , iappel ,                            &
-   ivoid  , izft1d , ivoid  , ivoid  ,                            &
-   rvoid  , rvoid  , rvoid  ,                                     &
-   rvoid  , rvoid  , rvoid  ,                                     &
-   rvoid  , rvoid  , rvoid  ,                                     &
-   rvoid  )
+call init_1d_wall_thermal
+
+call cs_user_1d_wall_thermal(iappel, isuit1)
 
 nfpt1t = nfpt1d
 if (irangp.ge.0) then
@@ -316,17 +307,13 @@ if (nfpt1t.gt.0) then
   write(nfecra,3000)
 endif
 
-call vert1d &
-( nfabor , nfpt1d , iappel ,                                      &
-  ivoid  , ivoid  , ivoid  ,                                      &
-  rvoid  , rvoid  ,                                               &
-  rvoid  , rvoid  , rvoid  )
+call cs_1d_wall_thermal_check(iappel, isuit1)
 
 ! Free memory if relevant
 if (ncpdct.eq.0) deallocate(izcpdc)
 if (nctsmt.eq.0) deallocate(izctsm)
 if (nftcdt.eq.0) deallocate(izftcd)
-if (nfpt1t.eq.0) deallocate(izft1d)
+if (nfpt1t.eq.0) call cs_1d_wall_thermal_finalize
 
 ! Formats
 #if defined(_CS_LANG_FR)
@@ -414,7 +401,7 @@ if (icond.eq.1) then
 endif
 
 if (nfpt1t.gt.0) then
-  call init_pt1d
+  call init_1d_wall_thermal_local_models
 endif
 
 ! Map arrays from Lagrangian module
@@ -599,41 +586,19 @@ if (nfpt1t.gt.0) then
 ! Deuxieme appel : remplissage des tableaux de definition de la geometrie
 !            et de l'initialisation (IFPT1D,NPPT1D,EPPT1D,RGPT1D,TPPT1D)
   iappel = 2
-  call  uspt1d &
- ( nvar   , nscal  , nfpt1d , iappel ,                            &
-   ifpt1d , izft1d , nppt1d , iclt1d ,                            &
-   tppt1d , rgpt1d , eppt1d ,                                     &
-   tept1d , hept1d , fept1d ,                                     &
-   xlmbt1 , rcpt1d , dtpt1d ,                                     &
-   dt     )
+  call cs_user_1d_wall_thermal(iappel, isuit1)
 
   iappel = 2
-  call vert1d &
-( nfabor , nfpt1d , iappel ,                                      &
-  ifpt1d , nppt1d , iclt1d ,                                      &
-  rgpt1d , eppt1d ,                                               &
-  xlmbt1 , rcpt1d , dtpt1d )
-
-!     Calcul du max des NPPT1D (pour les fichiers suite)
-  nmxt1d = 0
-  do iiii = 1, nfpt1d
-    nmxt1d = max(nppt1d(iiii),nmxt1d)
-  enddo
-  if (irangp.ge.0) call parcmx(nmxt1d)
+  call cs_1d_wall_thermal_check(iappel, isuit1)
 
   if (isuit1.eq.1) then
 
-    ficsui = '1dwall_module'
-    call lect1d &
- ( ficsui , len(ficsui), nfpt1d , nfpt1t ,           &
-   nmxt1d , nfabor     , nppt1d , ifpt1d , eppt1d , &
-   rgpt1d , tppt1d )
+    call cs_1d_wall_thermal_read
 
   else
-!     Creation du maillage, initialisation de la temperature.
 
-    call mait1d &
- ( nfpt1d, nppt1d, eppt1d, rgpt1d, tppt1d )
+!     Creation du maillage, initialisation de la temperature.
+    call cs_1d_wall_thermal_mesh_create
 
   endif
 
@@ -946,10 +911,7 @@ if (iisuit.eq.1) then
   endif
 
   if (nfpt1t.gt.0) then
-    ficsui = '1dwall_module'
-    call ecrt1d                                                   &
- ( ficsui   , len(ficsui), nfpt1d   ,  nmxt1d  ,                  &
-   nfabor   , tppt1d     , ifpt1d )
+    call cs_1d_wall_thermal_write
   endif
 
   if (nent.gt.0) then
@@ -1107,7 +1069,7 @@ call timer_stats_stop(post_stats_id)
 !     ET/OU ON FERME LE LISTING LAGRANGIEN
 
 if (nfpt1d.gt.0) then
-  call lbrt1d
+  call cs_1d_wall_thermal_free
 endif
 
 ! Free main arrays
@@ -1176,7 +1138,7 @@ if (icond.eq.1) then
 endif
 
 if (nfpt1d.gt.0) then
-  call finalize_pt1d
+  call cs_1d_wall_thermal_finalize
 endif
 
 if (ivrtex.eq.1) then

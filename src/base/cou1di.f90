@@ -82,6 +82,7 @@ use entsor
 use pointe
 use field
 use radiat
+use cs_c_bindings
 
 !===============================================================================
 
@@ -102,6 +103,9 @@ integer          icldef
 double precision, dimension(:), allocatable :: h_b
 double precision, dimension(:), pointer :: b_temp
 
+integer, dimension(:), pointer :: ifpt1d
+double precision, dimension(:), pointer :: tppt1d
+
 !===============================================================================
 
 interface
@@ -121,6 +125,10 @@ interface
  end interface
 
 !===============================================================================
+
+! Get the 1D wall thermal module arrays
+call cs_1d_wall_thermal_get_faces(ifpt1d)
+call cs_1d_wall_thermal_get_temp(tppt1d)
 
 ! Update boundary temperature field for radiative transfer
 

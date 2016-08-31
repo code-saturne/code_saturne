@@ -828,10 +828,6 @@ nctsmt = 0
 
 nftcdt= 0
 
-! --- Somme de NFPT1D (pour les calculs paralleles)
-
-nfpt1t = 0
-
 !     Non utilisateur
 
 ! --- Calcul de la distance a la paroi

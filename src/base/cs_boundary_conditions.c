@@ -153,8 +153,8 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
                                     cs_real_t                 *rcodcl);
 
 void
-cs_f_boundary_conditions_get_pointer(int  **itypfb,
-                                     int  **izfppp);
+cs_f_boundary_conditions_get_pointers(int  **itypfb,
+                                      int  **izfppp);
 
 /*============================================================================
  * Private function definitions
@@ -447,8 +447,8 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_boundary_conditions_get_pointer(int **itypfb,
-                                     int **izfppp)
+cs_f_boundary_conditions_get_pointers(int **itypfb,
+                                      int **izfppp)
 {
   *itypfb = _bc_type;
   *izfppp = _bc_face_zone;

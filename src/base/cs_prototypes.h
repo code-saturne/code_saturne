@@ -294,6 +294,14 @@ cs_lagr_status(int  *model_flag,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Data Entry of the 1D wall thermal module.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_1d_wall_thermal(int iappel,
+                        int isuit1);
+
+/*----------------------------------------------------------------------------
  * Define global options for couplings.
  *
  * These options allow defining the time step synchronization policy,

@@ -25,41 +25,37 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page us_pt1d Data setting for the 1D-wall thermal module (uspt1d.f90)
+  \page us_pt1d Data setting for the 1D-wall thermal module (cs_user_1d_wall_thermal.c)
 
-  The \ref uspt1d subroutine is used to set the 1D-wall thermal
+  The \ref cs_user_1d_wall_thermal subroutine is used to set the 1D-wall thermal
   module parameters.
-
-  \section uspt1d_h_arg Arguments of uspt1d
-
-  \snippet uspt1d.f90 arg
 
   \section uspt1d_h_loc_var Local variables declaration
 
-  \snippet uspt1d.f90 loc_var_dec
+  \snippet cs_user_1d_wall_thermal.c loc_var_dec
 
   \section uspt1d_h_allocate Allocation
 
-  \snippet uspt1d.f90 allocate
+  \snippet cs_user_1d_wall_thermal.c allocate
 
   \section uspt1d_h_restart Rereading of the restart file
 
-  \snippet uspt1d.f90 restart
+  \snippet cs_user_1d_wall_thermal.c restart
 
   \section uspt1d_h_iappel_12 iappel = 1 or 2
 
-  \snippet uspt1d.f90 iappel_12
+  \snippet cs_user_1d_wall_thermal.c iappel_12
 
   \section uspt1d_h_iappel_2 iappel = 2
 
-  \snippet uspt1d.f90 iappel_2
+  \snippet cs_user_1d_wall_thermal.c iappel_2
 
   \section uspt1d_h_iappel_3 iappel = 3
 
-  \snippet uspt1d.f90 iappel_3
+  \snippet cs_user_1d_wall_thermal.c iappel_3
 
   \section uspt1d_h_deallocate Deallocation
 
-  \snippet uspt1d.f90 deallocate
+  \snippet cs_user_1d_wall_thermal.c deallocate
 
 */

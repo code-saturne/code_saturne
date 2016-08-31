@@ -110,6 +110,8 @@ extern const double cs_physical_constants_r; /* Ideal gas constant (J/mol/K) */
 extern const double cs_physical_constants_kb; /* Boltzmann constant (J/K) */
 extern const double cs_physical_constants_celsius_to_kelvin; /* Celsius to
                                                                 Kelvin*/
+extern const double cs_physical_constants_stephn; /* Stephan constant
+                                                     (W/m2/K4)*/
 
 /* Pointer to main physical constants structure */
 

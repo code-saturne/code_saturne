@@ -74,6 +74,8 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_1d_wall_thermal.h \
+cs_1d_wall_thermal_check.h \
 cs_ale.h \
 cs_all_to_all.h \
 cs_array_reduce.h \
@@ -147,7 +149,6 @@ cs_time_plot.h \
 cs_time_step.h \
 cs_timer.h \
 cs_timer_stats.h \
-cs_tpar1d.h \
 cs_turbomachinery.h \
 cs_wall_functions.h
 
@@ -221,6 +222,8 @@ covofi.f90 \
 cptssy.f90 \
 cpvosy.f90 \
 cregeo.f90 \
+cs_1d_wall_thermal.c \
+cs_1d_wall_thermal_check.c \
 cs_ale.c \
 cs_array_reduce.c \
 cs_ast_coupling.c \
@@ -291,7 +294,6 @@ cs_time_moment.c \
 cs_time_plot.c \
 cs_time_step.c \
 cs_timer_stats.c \
-cs_tpar1d.c \
 cs_turbomachinery.c \
 cs_wall_functions.c \
 csprnt.f90 \
@@ -356,7 +358,6 @@ varpos.f90 \
 vericl.f90 \
 verini.f90 \
 verlon.f90 \
-vert1d.f90 \
 visecv.f90
 libcsbase_la_LDFLAGS = -no-undefined
 libcsbase_la_LIBADD =

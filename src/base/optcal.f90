@@ -719,10 +719,6 @@ module optcal
   !>   de ncepdc)
   integer, save :: ncpdct
 
-  !> Indicateur module thermique 1d global (ie somme sur les processeurs
-  !>   de nfpt1d)
-  integer, save :: nfpt1t
-
   !> Indicateur termes sources de masse global (ie somme sur les processeurs
   !>   de ncetsm)
   integer, save :: nctsmt

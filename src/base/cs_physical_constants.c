@@ -331,7 +331,13 @@ const double cs_physical_constants_kb = 1.38e-23;
 
 const double cs_physical_constants_celsius_to_kelvin = 273.15;
 
-const cs_physical_constants_t  *cs_glob_physical_constants = &_physical_constants;
+/* !Stephan constant for the radiative module \f$\sigma\f$
+   in \f$W.m^{-2}.K^{-4}\f$ */
+
+const double cs_physical_constants_stephn = 5.6703e-8;
+
+const cs_physical_constants_t  *cs_glob_physical_constants =
+                                  &_physical_constants;
 
 const cs_fluid_properties_t  *cs_glob_fluid_properties = &_fluid_properties;
 

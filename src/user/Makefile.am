@@ -76,6 +76,7 @@ cs_user_initialization.f90 cs_user_boundary_conditions.f90
 # Library source files
 
 userfiles = \
+cs_user_1d_wall_thermal.c \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions.c \
 cs_user_boundary_mass_source_terms.f90 \
@@ -110,7 +111,6 @@ ushist.f90 \
 cs_user_lagr_model.c \
 cs_user_lagr_bcs.c \
 cs_user_lagr_particle.c \
-uspt1d.f90 \
 usthht.f90 \
 usvort.f90 \
 usvosy.f90
