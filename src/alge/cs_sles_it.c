@@ -4419,7 +4419,7 @@ cs_sles_it_solve(void                *context,
       else
         bft_error
           (__FILE__, __LINE__, 0,
-           _("GMRES not supported with block_size > 1 (velocity coupling)."));
+           _("GMRES not supported with block_size > 1 (%s)."), name);
       break;
     case CS_SLES_P_GAUSS_SEIDEL:
       cvg = _p_gauss_seidel(c,
