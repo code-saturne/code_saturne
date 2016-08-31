@@ -261,7 +261,7 @@ static void
 _diag_dom_native(const cs_matrix_t  *matrix,
                  cs_real_t          *restrict dd)
 {
-  cs_lnum_t  ii, jj, face_id;
+  cs_lnum_t  ii, jj, edge_id;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
@@ -280,21 +280,21 @@ _diag_dom_native(const cs_matrix_t  *matrix,
 
     if (mc->symmetric) {
 
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        dd[ii] -= fabs(xa[face_id]);
-        dd[jj] -= fabs(xa[face_id]);
+      for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
+        ii = face_cel_p[edge_id][0];
+        jj = face_cel_p[edge_id][1];
+        dd[ii] -= fabs(xa[edge_id]);
+        dd[jj] -= fabs(xa[edge_id]);
       }
 
     }
     else {
 
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        dd[ii] -= fabs(xa[2*face_id]);
-        dd[jj] -= fabs(xa[2*face_id + 1]);
+      for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
+        ii = face_cel_p[edge_id][0];
+        jj = face_cel_p[edge_id][1];
+        dd[ii] -= fabs(xa[2*edge_id]);
+        dd[jj] -= fabs(xa[2*edge_id + 1]);
       }
 
     }
@@ -316,7 +316,7 @@ static void
 _b_diag_dom_native(const cs_matrix_t  *matrix,
                    cs_real_t          *restrict dd)
 {
-  cs_lnum_t  ii, jj, kk, face_id;
+  cs_lnum_t  ii, jj, kk, edge_id;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
@@ -336,23 +336,23 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
 
     if (mc->symmetric) {
 
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
+      for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
+        ii = face_cel_p[edge_id][0];
+        jj = face_cel_p[edge_id][1];
         for (kk = 0; kk < db_size[0]; kk++) {
-          dd[ii*db_size[1] + kk] -= fabs(xa[face_id]);
-          dd[jj*db_size[1] + kk] -= fabs(xa[face_id]);
+          dd[ii*db_size[1] + kk] -= fabs(xa[edge_id]);
+          dd[jj*db_size[1] + kk] -= fabs(xa[edge_id]);
         }
       }
     }
     else {
 
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
+      for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
+        ii = face_cel_p[edge_id][0];
+        jj = face_cel_p[edge_id][1];
         for (kk = 0; kk < db_size[0]; kk++) {
-          dd[ii*db_size[1] + kk] -= fabs(xa[2*face_id]);
-          dd[jj*db_size[1] + kk] -= fabs(xa[2*face_id + 1]);
+          dd[ii*db_size[1] + kk] -= fabs(xa[2*edge_id]);
+          dd[jj*db_size[1] + kk] -= fabs(xa[2*edge_id + 1]);
         }
       }
 
@@ -375,7 +375,7 @@ static void
 _bb_diag_dom_native(const cs_matrix_t  *matrix,
                     cs_real_t          *restrict dd)
 {
-  cs_lnum_t  ii, jj, kk, ll, face_id;
+  cs_lnum_t  ii, jj, kk, ll, edge_id;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
@@ -396,12 +396,12 @@ _bb_diag_dom_native(const cs_matrix_t  *matrix,
 
     if (mc->symmetric) {
 
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
+      for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
+        ii = face_cel_p[edge_id][0];
+        jj = face_cel_p[edge_id][1];
         for (kk = 0; kk < eb_size[0]; kk++) {
           for (ll = 0; ll < eb_size[0]; ll++) {
-            cs_lnum_t si = face_id*eb_size[3] + kk*eb_size[2] + ll;
+            cs_lnum_t si = edge_id*eb_size[3] + kk*eb_size[2] + ll;
             dd[ii*db_size[1] + kk] -= fabs(xa[si]);
             dd[jj*db_size[1] + kk] -= fabs(xa[si]);
           }
@@ -410,13 +410,13 @@ _bb_diag_dom_native(const cs_matrix_t  *matrix,
     }
     else {
 
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
+      for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
+        ii = face_cel_p[edge_id][0];
+        jj = face_cel_p[edge_id][1];
         for (kk = 0; kk < db_size[0]; kk++) {
           for (ll = 0; ll < eb_size[0]; ll++) {
-            cs_lnum_t si0 = 2*face_id*eb_size[3] + kk*eb_size[2] + ll;
-            cs_lnum_t si1 = (2*face_id+1)*eb_size[3] + kk*eb_size[2] + ll;
+            cs_lnum_t si0 = 2*edge_id*eb_size[3] + kk*eb_size[2] + ll;
+            cs_lnum_t si1 = (2*edge_id+1)*eb_size[3] + kk*eb_size[2] + ll;
             dd[ii*db_size[1] + kk] -= fabs(xa[si0]);
             dd[jj*db_size[1] + kk] -= fabs(xa[si1]);
           }
@@ -750,7 +750,7 @@ _pre_dump_native(const cs_matrix_t   *matrix,
                  cs_gnum_t          **m_coo,
                  cs_real_t          **m_val)
 {
-  cs_lnum_t  ii, jj, face_id, dump_id;
+  cs_lnum_t  ii, jj, edge_id, dump_id;
 
   cs_gnum_t   *restrict _m_coo;
   cs_real_t   *restrict _m_val;
@@ -785,30 +785,30 @@ _pre_dump_native(const cs_matrix_t   *matrix,
 
     if (mc->symmetric) {
 
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
+      for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
+        ii = face_cel_p[edge_id][0];
+        jj = face_cel_p[edge_id][1];
         _m_coo[dump_id*2] = g_coo_num[ii];
         _m_coo[dump_id*2 + 1] = g_coo_num[jj];
-        _m_val[dump_id] = xa[face_id];
+        _m_val[dump_id] = xa[edge_id];
         _m_coo[dump_id*2 + 2] = g_coo_num[jj];
         _m_coo[dump_id*2 + 3] = g_coo_num[ii];
-        _m_val[dump_id + 1] = xa[face_id];
+        _m_val[dump_id + 1] = xa[edge_id];
         dump_id += 2;
       }
 
     }
     else {
 
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
+      for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
+        ii = face_cel_p[edge_id][0];
+        jj = face_cel_p[edge_id][1];
         _m_coo[dump_id*2] = g_coo_num[ii];
         _m_coo[dump_id*2 + 1] = g_coo_num[jj];
-        _m_val[dump_id] = xa[2*face_id];
+        _m_val[dump_id] = xa[2*edge_id];
         _m_coo[dump_id*2 + 2] = g_coo_num[jj];
         _m_coo[dump_id*2 + 3] = g_coo_num[ii];
-        _m_val[dump_id + 1] = xa[2*face_id + 1];
+        _m_val[dump_id + 1] = xa[2*edge_id + 1];
         dump_id += 2;
       }
 
@@ -838,7 +838,7 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
                    cs_gnum_t          **m_coo,
                    cs_real_t          **m_val)
 {
-  cs_lnum_t  ii, jj, kk, face_id, dump_id;
+  cs_lnum_t  ii, jj, kk, edge_id, dump_id;
 
   cs_gnum_t   *restrict _m_coo;
   cs_real_t   *restrict _m_val;
@@ -875,32 +875,32 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
 
     if (mc->symmetric) {
 
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
+      for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
+        ii = face_cel_p[edge_id][0];
+        jj = face_cel_p[edge_id][1];
         for (kk = 0; kk < db_size[0]; kk++) {
           _m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
           _m_coo[dump_id*2 + 1] = g_coo_num[jj]*db_size[0] + kk;
-          _m_val[dump_id] = xa[face_id];
+          _m_val[dump_id] = xa[edge_id];
           _m_coo[dump_id*2 + 2] = g_coo_num[jj]*db_size[0] + kk;
           _m_coo[dump_id*2 + 3] = g_coo_num[ii]*db_size[0] + kk;
-          _m_val[dump_id + 1] = xa[face_id];
+          _m_val[dump_id + 1] = xa[edge_id];
           dump_id += 2;
         }
       }
     }
     else {
 
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
+      for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
+        ii = face_cel_p[edge_id][0];
+        jj = face_cel_p[edge_id][1];
         for (kk = 0; kk < db_size[0]; kk++) {
           _m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
           _m_coo[dump_id*2 + 1] = g_coo_num[jj]*db_size[0] + kk;
-          _m_val[dump_id] = xa[face_id*2];
+          _m_val[dump_id] = xa[edge_id*2];
           _m_coo[dump_id*2 + 2] = g_coo_num[jj]*db_size[0] + kk;
           _m_coo[dump_id*2 + 3] = g_coo_num[ii]*db_size[0] + kk;
-          _m_val[dump_id + 1] = xa[face_id*2 + 1];
+          _m_val[dump_id + 1] = xa[edge_id*2 + 1];
           dump_id += 2;
         }
       }
@@ -1802,6 +1802,8 @@ _frobenius_norm(const cs_matrix_t  *m)
         double e_mult = (m->eb_size[3] == 1) ? m->db_size[0] : 1;
         if (mc->symmetric)
           e_mult *= 2;
+        else
+          e_stride *= 2;
 
         retval = cs_dot_xx(d_stride*m->n_rows, mc->da);
 
@@ -1813,13 +1815,13 @@ _frobenius_norm(const cs_matrix_t  *m)
                            sum of block contributions (but not for local
                            block sums, for simplicity and performance) */
 #         pragma omp for
-          for (cs_lnum_t face_id = 0; face_id < ms->n_edges; face_id++) {
-            cs_lnum_t ii = ms->edges[face_id][0];
+          for (cs_lnum_t edge_id = 0; edge_id < ms->n_edges; edge_id++) {
+            cs_lnum_t ii = ms->edges[edge_id][0];
             if (ii < ms->n_rows) {
               double bsum = 0;
               for (cs_lnum_t kk = 0; kk < e_stride; kk++) {
-                bsum  += (  xa[face_id*e_stride + kk]
-                          * xa[face_id*e_stride + kk]);
+                bsum  += (  xa[edge_id*e_stride + kk]
+                          * xa[edge_id*e_stride + kk]);
               }
               double z = bsum - c;
               double t = ed_contrib + z;
