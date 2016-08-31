@@ -62,7 +62,10 @@ def parse_wall_time_slurm(s):
         if len(wt0) == 2:
             t = th + int(wt[0])*3600
         else:
-            t = th + int(wt[0])*60
+            try:
+                t = th + int(wt[0])*60
+            except Exception:
+                pass
 
     return t
 
