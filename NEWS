@@ -5,6 +5,8 @@ Release 4.3.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fixes in automatic head losses computations.
+
 - Radiative module: fixed regresion using the Modak absorption model.
 
 - Work around an ISO-C bindings bug with XL compiler for Blue Gene
