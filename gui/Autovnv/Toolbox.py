@@ -66,7 +66,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
 
     else:
         msg = tr("Warning: the corresponding Page %s doesn't exist!") % page_name
-        print msg
+        print(msg)
         import code_saturne.Pages.WelcomeView as Page
         thisPage = Page.WelcomeView()
 
