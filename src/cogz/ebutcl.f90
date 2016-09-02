@@ -76,6 +76,8 @@ use cpincl
 use ppincl
 use mesh
 use field
+use cs_c_bindings
+
 !===============================================================================
 
 implicit none
@@ -268,50 +270,22 @@ do ifac = 1, nfabor
       icke   = icalke(izone)
       dhy    = dh(izone)
       xiturb = xintur(izone)
-      ustar2 = 0.d0
-      xkent = epzero
-      xeent = epzero
+
       if (icke.eq.1) then
-        call keendb                                               &
-        !==========
-        ( uref2, dhy, rhomoy, viscla, cmu, xkappa,                &
-          ustar2, xkent, xeent )
+        !   Calculation of turbulent inlet conditions using
+        !     standard laws for a circular pipe
+        !     (their initialization is not needed here but is good practice).
+        call turbulence_bc_inlet_hyd_diam(ifac, uref2, dhy, rhomoy, viscla,  &
+                                          rcodcl)
       else if (icke.eq.2) then
-        call keenin                                               &
-        !==========
-        ( uref2, xiturb, dhy, cmu, xkappa, xkent, xeent )
-      endif
 
-      if (itytur.eq.2) then
+        ! Calculation of turbulent inlet conditions using
+        !   the turbulence intensity and standard laws for a circular pipe
+        !   (their initialization is not needed here but is good practice)
 
-        rcodcl(ifac,ik,1)  = xkent
-        rcodcl(ifac,iep,1) = xeent
+        call turbulence_bc_inlet_turb_intensity(ifac, uref2, xiturb, dhy,  &
+                                                rcodcl)
 
-      elseif (itytur.eq.3) then
-
-        rcodcl(ifac,ir11,1) = d2s3*xkent
-        rcodcl(ifac,ir22,1) = d2s3*xkent
-        rcodcl(ifac,ir33,1) = d2s3*xkent
-        rcodcl(ifac,ir12,1) = 0.d0
-        rcodcl(ifac,ir13,1) = 0.d0
-        rcodcl(ifac,ir23,1) = 0.d0
-        rcodcl(ifac,iep,1)  = xeent
-
-      elseif (iturb.eq.50) then
-
-        rcodcl(ifac,ik,1)   = xkent
-        rcodcl(ifac,iep,1)  = xeent
-        rcodcl(ifac,iphi,1) = d2s3
-        rcodcl(ifac,ifb,1)  = 0.d0
-
-      elseif (iturb.eq.60) then
-
-        rcodcl(ifac,ik,1)   = xkent
-        rcodcl(ifac,iomg,1) = xeent/cmu/xkent
-
-      elseif(iturb.eq.70) then
-
-        rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
 
       endif
 
