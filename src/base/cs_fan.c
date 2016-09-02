@@ -934,9 +934,9 @@ cs_fan_flag_cells(const cs_mesh_t  *mesh,
 
   /* Store the cell_fan_id in the postprocessing field */
 
-  cs_field_t *fans_ids = cs_field_by_name("fans_ids");
+  cs_field_t *c_fan_id = cs_field_by_name("fan_id");
   for (cs_lnum_t cell_id = 0; cell_id < n_ext_cells; cell_id++)
-    fans_ids->val[cell_id] = (cs_real_t)cell_fan_id[cell_id];
+    c_fan_id->val[cell_id] = (cs_real_t)cell_fan_id[cell_id];
 
 }
 
