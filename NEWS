@@ -5,6 +5,8 @@ Release 4.3.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fan model: fix crash due to bad access to fan id field.
+
 - Fixes in automatic head losses computations.
 
 - Radiative module: fixed regresion using the Modak absorption model.
