@@ -153,15 +153,15 @@ double precision svcond(ncelet,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision, dimension (1:6,1:ncelet), target :: tpucou
 double precision trav(3,ncelet)
-double precision viscf(nfac), viscb(ndimfb)
+double precision viscf(nfac), viscb(nfabor)
 double precision dpvar(ncelet)
 double precision tslagr(ncelet,*)
 double precision trava(ndim,ncelet)
-double precision coefav(3  ,ndimfb)
-double precision coefbv(3,3,ndimfb)
+double precision coefav(3  ,nfabor)
+double precision coefbv(3,3,nfabor)
 double precision vel   (3  ,ncelet)
-double precision coefa_dp(ndimfb)
-double precision coefb_dp(ndimfb)
+double precision coefa_dp(nfabor)
+double precision coefb_dp(nfabor)
 
 ! Local variables
 

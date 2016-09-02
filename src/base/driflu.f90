@@ -54,7 +54,7 @@ subroutine driflu &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb, nvar
+use dimens, only: nvar, ndimfb
 use numvar
 use entsor
 use optcal
@@ -81,7 +81,7 @@ implicit none
 integer          iflid
 
 double precision dt(ncelet)
-double precision imasfl(nfac), bmasfl(ndimfb)
+double precision imasfl(nfac), bmasfl(nfabor)
 double precision rovsdt(ncelet), smbrs(ncelet)
 
 ! Local variables

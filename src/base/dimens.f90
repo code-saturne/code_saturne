@@ -54,10 +54,7 @@ implicit none
   !> must be inferior or equal to \ref paramx::nscamx "nscamx".
   integer, save :: nscal
 
-  !> Number of scalars with variable diffusivity
-  integer, save :: nvisls
-
-  !> fake dimension for arrays coefa and coefb
+  !> fake dimension for some boundary face arrays
   !> where \ref nfabor = 0 (to avoid issues with array bounds when
   !> multidimensional arrays have size nfabor in one dimension)
   integer, save :: ndimfb

@@ -1630,7 +1630,7 @@ There are currently {\tt nestmx\index{nestmx}}=4 types of local estimators
 provided at every time step, with two possible definitions for
 each\footnote{Choice made by the user}. These scalars indicate the areas
 (cells) in which some error types may be important. They are
-stored in the array {\tt propce} containing the properties at the cells (see
+stored as fields containing the properties at the cells (see
 {\tt iestim\index{iestim}}). For each estimator, the code writes the minimum and
 maximum values in the listing and generates post-processing outputs along with
 the other variables.
@@ -2209,16 +2209,15 @@ there is no user scalar}
 
 \motcleb{icp}{ia}{0 or 1}{0}{O}{L1}
 {indicates if the specific heat $C_p$ is variable
-({\tt icp}=1) or not (0)\\
+({\tt icp}=1) or not (-1)\\
 When gas or coal combustion is activated, {\tt icp} is automatically set to 0
 (constant $C_p$). With the electric module, it is automatically set to 1.
 The user is not allowed to modify these default choices.\\
 When {\tt icp}=1 is specified, the code automatically modifies this value to
-make {\tt icp} designate the effective index-number of the property
+make {\tt icp} designate the field id of the property
 ``specific heat''. For each cell {\tt iel}, the value of
 $C_p$ is then specified by the user in the appropriate subroutine
-(\texttt{usphyv} for the standard physics) and stored in the array\\
-{\tt propce(iel,ipproc(icp))}
+(\texttt{usphyv} for the standard physics)\\
 ({\em see p.~\pageref{sec:prg_propvar} for specific conditions of use})
 useful if there is 1$\leqslant$N$\leqslant${\tt nscal} so that {\tt iscsth(n)}=1
 (there is a scalar ``temperature'') or with the compressible module for non

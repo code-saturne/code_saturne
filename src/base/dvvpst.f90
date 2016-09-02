@@ -86,7 +86,7 @@ implicit none
 ! Arguments
 
 integer          nummai , numtyp
-integer          nvar   , nscal
+integer          nvar
 integer          ncelps , nfbrps
 
 integer          lstcel(ncelps), lstfbr(nfbrps)

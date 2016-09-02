@@ -36,15 +36,7 @@ module paramx
 
   !=============================================================================
 
-  ! npromx : nombre max de proprietes physiques aux cellules (total) =
-  !          nscamx (Lambda) + 7 (rho,Cp,viscl,visct,cou,fou,iprtot)
-  !                          + 4 (estim)
-  ! ngrdmx : nombre max de grandeurs =
-  !          nvarmx + npromx
-  ! nsmamx : nombre max de cases pour les tableaux termes source de masse
-  !          nvarmx + 1 pour smacel
   ! nvppmx : nombre de variables pour affichages
-  !          ngrdmx + 20 (20 couvre dt, tpucou, et une marge de 16 ...)
 
   !> maximum number of scalars solutions of an
   !> advection equation, apart from the variables of the turbulence model
@@ -56,28 +48,12 @@ module paramx
   !> maximal number of variables = nscamx + 12 (u,v,w,P,Rij,e,alp)
   integer   nvarmx
 
-  !> maximal number of physical properties at cells.
-  !> = nscamx (Lambda) + 100 (margin for most specific physics)
-  integer   npromx
-
-  !> maximal number of physical quantities
-  !> = nvarmx + npromx
-  integer   ngrdmx
-
-  !> maximal size of mass source terms arrays.
-  !> (= nvarmx + 1 for smacel)
-  integer   nsmamx
-
-  !> number of displayed variables.
-  !> = ngrdmx + 20 (20 > dt, tpucou, increased by 16 ...)
+  !> number of variables for probes
   integer   nvppmx
 
   parameter(nscamx=200)
   parameter(nvarmx=nscamx+12)
-  parameter(npromx=nscamx+100)
-  parameter(ngrdmx=nvarmx+npromx)
-  parameter(nsmamx=nvarmx+1)
-  parameter(nvppmx=ngrdmx+20)
+  parameter(nvppmx=512)
 
   !> Maximal possible boundary condition types
   integer    ntypmx
@@ -367,6 +343,7 @@ module paramx
   !> maximum number of structures in ALE
   integer    nstrmx
   parameter (nstrmx=200)
+
   !=============================================================================
 
   !> \}
@@ -376,8 +353,5 @@ module paramx
   integer cs_user_boundary_conditions, cs_user_parameters,     &
           cs_user_initialization, cs_user_physical_properties, &
           cs_user_extra_operations
-
-
-
 
 end module paramx

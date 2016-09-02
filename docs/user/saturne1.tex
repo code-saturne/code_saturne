@@ -1909,17 +1909,6 @@ Navier-Stokes}
 
 \bigskip
 
-\variabsize{npromx}{Maximum number of physical properties. These will
-be stored in the arrays \texttt{propce}}
-
-\variabsize{nproce}{Number of properties defined at the
-cells. These will be stored in the array \texttt{propce}}
-
-\variabsize{nvisls}{Number of scalars with variable diffusivity}
-
-
-\bigskip
-
 \variabsize{nushmx}{Maximum number of user chronological files
 (in the case where \texttt{ushist} is used)}
 
@@ -2086,9 +2075,6 @@ still on-going only for the properties defined at cell centers. These
 properties are therefore the last ones to be additionally accessible through a
 deprecated multidimensional array:
 
-\variab{propce}{propce(ncelet,nproce)}{ra}{Properties defined at the
-cell centres. For instance: viscosity, ...}
-
 For a thorough description of the user management of all physical
 variables as well as the corresponding syntaxes between the \texttt{cs\_field}
 API (both in C and Fortran) and the previous system, please refer to
@@ -2196,46 +2182,15 @@ $\overline{f}$, $\alpha$, $\nu_t$), the following is very important:
 \bigskip
 
 \underline{About the physical properties at the cell centers}\\
-In \CS, the physical properties\footnote{Other variables are stored in the
-arrays \texttt{propce}. They are not, strictly speaking,
-``physical properties'' but it is convenient to have them
-in the same array as the proper physical properties} are stored in the
-\texttt{propce} arrays.
-Some properties, like the density, are only stored for cells and boundary
-faces. To avoid having different index numbers for a physical property,
-depending on the array it is used in, the following structure is used in \CS:
+In \CS, the physical properties and some auxiliary numerical value arrays
+are stored as fields. The most commonly used field ids are saved as
+global variables.
 
-\begin{list}{-}{}
-
-\item All the properties (used or not) have a unique and distinct index-number,
-given automatically by the code and stored in an integer or an integer array
-(its size may be the maximum number of scalars
-or the maximum number of variables).
-
-\item The indexes referring to the different properties stored in the
-\texttt{prop{\bf xx}} arrays are given respectively by the following integer arrays:
-
-\variab{ipproc}{ipproc(npromx)}{ia}{Rank \texttt{i} in \texttt{propce(.,i)} of the
-properties defined at the cell centres}
-
-\end{list}
-
-For instance, the index number corresponding to the density is \texttt{irom}.\\
-In the list of the properties defined at the cell center, the density
-is therefore the \texttt{ipproc(irom)}$^{\text{th}}$
-property: its value at the center of the cell \texttt{iel} is given by \texttt{prop{\bf ce}(iel,ippro{\bf c}(irom))}.
-}
-
-The list of properties accessible in the \texttt{propxx} arrays is given below (this does
+The list of the most commonly used property field ids is given below (this does
 not include the properties linked to the specific physics modules):
 
 \variab{irom}{irom}{ia}{Property number
 corresponding to the density ({\em i.e.} $\rho$ in $kg.m^{-3}$).\\
-Stored at the cells and the boundary faces}
-
-\variab{iroma}{iroma}{ia}{Property number
-corresponding to the density ({\em i.e.} $\rho$ in $kg.m^{-3}$) at the
-previous time step, in the case of a second-order extrapolation in time.\\
 Stored at the cells and the boundary faces}
 
 \variab{iviscl}{iviscl}{ia}{Property number
@@ -2243,32 +2198,14 @@ corresponding to the fluid molecular dynamic viscosity ({\em i.e.} $\mu$ in
 $kg.m^{-1}.s^{-1}$).\\
 Stored at the cells}
 
-\variab{ivisla}{ivisla}{ia}{Property number
-corresponding to the fluid molecular dynamic viscosity ({\em i.e.} $\mu$
-in $kg.m^{-1}.s^{-1}$) at the previous time step, in the case of a
-second-order extrapolation in time.\\
-Stored at the cells}
-
 \variab{ivisct}{ivisct}{ia}{Property number
 corresponding to the fluid turbulent dynamic viscosity ({\em i.e.}
 $\mu_t$ in $kg.m^{-1}.s^{-1}$).\\
 Stored at the cells}
 
-\variab{ivista}{ivista}{ia}{Property number
-corresponding to the fluid turbulent dynamic viscosity ({\em i.e.}
-$\mu_t$ in $kg.m^{-1}.s^{-1}$) at the previous time step, in the case of a
-second-order extrapolation in time.\\
-Stored at the cells}
-
 \variab{icp}{icp}{ia}{Property number
 corresponding to the specific heat, when it is variable
 ({\em i.e.} $C_p$ in $m^2.s^{-2}.K^{-1}$). See note below.\\
-Stored at the cells}
-
-\variab{icpa}{icpa}{ia}{Property number
-corresponding to the specific heat, when it is variable
-({\em i.e.} $C_p$ in $m^2.s^{-2}.K^{-1}$), at the previous time step,
-in the case of a second-order extrapolation in time. See note below.\\
 Stored at the cells}
 
 \variab{iestim}{iestim(nestmx)}{ia}{Property
@@ -2278,11 +2215,6 @@ currently available are \texttt{iestim(iespre\index{iespre})},\\
 \texttt{iestim(iescor\index{iescor})},
 \texttt{iestim(iestot\index{iestot})}
 stored at the cells}
-
-\variab{ifluaa}{ifluaa(nvarmx)}{ia}{Property number corresponding to the
-mass flow associated with each variable at
-the previous time step, in the case of a second-order extrapolation in time.\\
-Stored at the internal faces and boundary faces}
 
 \variab{ismago}{ismago}{i}{Property number
 corresponding to the variable $C$ of the dynamic model, {\em i.e}
@@ -2326,10 +2258,10 @@ array of reals.
       indicating \texttt{icp=1} in \\
       \texttt{cs\_user\_parameters.f90}. The code will then
       modify this value to make \texttt{icp} refer to the effective
-      property number corresponding to the specific heat,
+      property field id corresponding to the specific heat,
       in a way which is transparent for the user. For each cell
-      \texttt{iel}, the value of $C_p$ is then given in \texttt{usphyv} and
-      stored in the array \texttt{propce(iel,ipproc(icp))}.
+      \texttt{iel}, the value of $C_p$ is then defined in \texttt{usphyv} and
+      stored in the field with idarray \texttt{icp}.
 \end{list}
 \item This is the same for the diffusivity $K$ of each scalar \texttt{iscal}.
 \begin{list}{-}{}
@@ -5102,10 +5034,8 @@ may produce negative density values).
       specified in the interface or in \texttt{cs\_user\_parameters.f90}.\\
 To assign a variable value to $C_p$, the user \textbf{must} specify it in the
       interface (with a user law) or assign the value 1 to \texttt{icp} in \texttt{cs\_user\_parameters.f90},
-      and fill for each cell \texttt{iel} the array
-      \texttt{propce(iel,ipccp)} in \texttt{cs\_user\_physical\_properties}. NB: completing the array
-      \\\texttt{propce(iel,ipccp)} while \texttt{icp=0} induces array
-      overwriting problems and produces wrong results.
+      and define cell values for field \texttt{icp}
+      in \texttt{cs\_user\_physical\_properties}.
 
 \item In the same way, to have variable diffusivities for the scalars
       \texttt{iscal}, the user \textbf{must} specify it in the interface (with a user law) or calling \texttt{field\_set\_key\_id(ivarfl(isca(iscal)), kivisl, 0)}

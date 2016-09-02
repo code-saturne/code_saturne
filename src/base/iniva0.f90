@@ -33,12 +33,11 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !______________________________________________________________________________
 
 subroutine iniva0 &
- ( nvar   , nscal  )
+ ( nscal  )
 
 !===============================================================================
 ! Module files
@@ -71,7 +70,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nscal
 
 ! Local variables
 

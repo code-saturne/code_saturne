@@ -173,7 +173,6 @@ module cs_f_interfaces
       (nvar, nscal, ncepdp, ncesmp, icepdc, icetsm, itypsm,                    &
       dt, tslagr,                                                              &
       ckupdc, smacel)
-      use dimens, only: ndimfb
       use lagran, only: ntersl
       use mesh
       integer :: nvar, nscal, ncepdp, ncesmp

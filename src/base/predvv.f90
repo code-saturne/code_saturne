@@ -126,7 +126,6 @@ subroutine predvv &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use entsor
 use cstphy
@@ -183,10 +182,10 @@ double precision viscfi(*), viscbi(nfabor)
 double precision secvif(nfac), secvib(nfabor)
 double precision w1(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision coefav(3  ,ndimfb)
-double precision cofafv(3  ,ndimfb)
-double precision coefbv(3,3,ndimfb)
-double precision cofbfv(3,3,ndimfb)
+double precision coefav(3  ,nfabor)
+double precision cofafv(3  ,nfabor)
+double precision coefbv(3,3,nfabor)
+double precision cofbfv(3,3,nfabor)
 
 double precision vel   (3  ,ncelet)
 double precision vela  (3  ,ncelet)

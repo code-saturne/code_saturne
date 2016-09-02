@@ -599,43 +599,27 @@ _cs_rad_transfer_sol(cs_real_t    *restrict coefap,
  * and the radiative absorbing part.
  *
  * \param[in]   bc_type   boundary face types
- * \param[in]   izfrdp    boundary faces -> zone number
- * \param[in]   dt        time step (per cell)
  * \param[in]   coefap    boundary condition work array for the luminance
  *                        (explicit part)
- * \param[in]   coefbp    boundary condition work array for the luminance
- *                       (implicit part)
  * \param[in]   twall     inside current wall temperature (K)
  * \param[in]   qincid    radiative incident flux  (W/m2)
- * \param[in]   xlamp     conductivity (W/m/K)
- * \param[in]   epap      thickness (m)
- * \param[in]   epsp      emissivity (>0)
- * \param[in]   ck        absorption coefficient
+ * \param[in]   eps       emissivity (>0)
  * \param[out]  net_flux  net flux (W/m2)
  */
 /*-------------------------------------------------------------------------------*/
 
 static void
 _compute_net_flux(const int        itypfb[],
-                  const int        izfrdp[],
-                  const cs_real_t  dt[],
                   const cs_real_t  coefap[],
-                  const cs_real_t  coefbp[],
                   const cs_real_t  twall[],
                   const cs_real_t  qincid[],
-                  const cs_real_t  xlam[],
-                  const cs_real_t  epa[],
                   const cs_real_t  eps[],
-                  const cs_real_t  ck[],
                   cs_real_t        net_flux[])
 {
   cs_real_t  stephn = 5.6703e-8;
   cs_real_t  xmissing = -cs_math_big_r * 0.2;
 
   /* Initializations */
-
-  /* Stop indicator (forgotten boundary faces)     */
-  int iok = 0;
 
   /* Net flux dendity for the boundary faces
    * The provided examples are sufficient in most of cases.*/
@@ -1609,16 +1593,10 @@ cs_rad_transfer_solve(int               bc_type[],
   /* Basic definition for net flux */
 
   _compute_net_flux(bc_type,
-                    izfrad,
-                    dt,
                     coefap,
-                    coefbp,
                     tparo,
                     f_qinci->val,
-                    f_xlam->val,
-                    f_epa->val,
                     f_eps->val,
-                    cpro_cak0,
                     f_fnet->val);
 
   /*---> Reading of User data

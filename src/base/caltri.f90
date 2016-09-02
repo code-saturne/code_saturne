@@ -127,9 +127,6 @@ interface
   ( itrale , nvar   , nscal  ,                                     &
     dt     )
 
-    use dimens, only: ndimfb
-    use mesh, only: nfabor
-
     implicit none
 
     integer                                   :: itrale, nvar, nscal
@@ -419,7 +416,7 @@ call field_allocate_or_map_all
 
 call field_get_val_s_by_name('dt', dt)
 
-call iniva0(nvar, nscal)
+call iniva0(nscal)
 
 ! Compute the porosity if needed
 if (iporos.ge.1) then

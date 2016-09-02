@@ -43,7 +43,6 @@ use lagran
 use ppincl
 use cpincl
 use dimens
-use numvar, only: itempb
 use radiat
 use cs_fuel_incl
 
@@ -55,8 +54,7 @@ implicit none
 
 ! Local variables
 
-integer          iok, ipp, nmodpp, imom, n_moments, f_id, f_type, nfld
-integer          keyvar, ivar
+integer          iok, ipp, nmodpp, imom, n_moments, f_id, nfld
 
 double precision ttsuit, wtsuit
 

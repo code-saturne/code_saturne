@@ -250,7 +250,6 @@ _matrix_vector_test(double                 t_measure,
                     cs_int_t               n_cells,
                     cs_int_t               n_cells_ext,
                     cs_int_t               n_faces,
-                    const cs_gnum_t       *cell_num,
                     const cs_lnum_2_t     *face_cell,
                     const cs_halo_t       *halo,
                     const cs_numbering_t  *numbering,
@@ -1267,7 +1266,7 @@ cs_benchmark(int  mpi_trace_mode)
   _matrix_vector_test(t_measure,
                       mv, false,
                       n_cells, n_cells_ext, n_faces,
-                      mesh->global_cell_num, i_face_cells, mesh->halo,
+                      i_face_cells, mesh->halo,
                       mesh->i_face_numbering, da, xa, x, y);
 
   cs_matrix_variant_destroy(&mv);
@@ -1294,7 +1293,7 @@ cs_benchmark(int  mpi_trace_mode)
   _matrix_vector_test(t_measure,
                       mv, true,
                       n_cells, n_cells_ext, n_faces,
-                      mesh->global_cell_num, i_face_cells, mesh->halo,
+                      i_face_cells, mesh->halo,
                       mesh->i_face_numbering, da, xa, x, y);
 
   cs_matrix_variant_destroy(&mv);

@@ -89,11 +89,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
 integer          mbrom
-
-double precision dt(ncelet)
 
 ! Local variables
 

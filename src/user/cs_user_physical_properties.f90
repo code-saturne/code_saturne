@@ -211,7 +211,6 @@ subroutine usvist &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use numvar
 use optcal
 use cstphy
@@ -400,7 +399,6 @@ subroutine usvima &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use pointe
 use numvar
 use optcal
@@ -473,7 +471,6 @@ subroutine usatph
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use pointe
 use numvar
 use optcal

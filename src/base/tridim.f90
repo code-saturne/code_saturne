@@ -324,32 +324,7 @@ endif
 ! 3.  COMMUNICATIONS
 !===============================================================================
 
-! ---> On echange ici les variables RTP en debut de pas de temps.
-!         Ce n'est pas fait dans caltri pour faciliter la lecture
-!         (manipulation des tableaux)
-!      Ceci a l'avantage d'echanger egalement ce qui provient de
-!         inivar et lecamo (et par rapport a une solution d'echange
-!         en fin de pas de temps, on evite une communication)
-!      L'inconvenient est que l'on ne dispose pas des halos sitot les
-!         RTP calcules (fin de navstv, turbke, turrij, boucle dans scalai)
-!      On pourrait penser a echanger aussi les PROPCE et le DT
-!         Pour le moment ca ne s'impose pas : on a besoin d'avoir
-!         echange RHO dans navstv pour un affichage et les viscosites
-!         dans visecv. On fera les transferts localement quand necessaire.
-!      Par principe, on suppose que
-!         c'est a la charge de celui qui utilise des valeurs voisines de
-!           s'assurer qu'elles existent (ss pgm utilisateurs en
-!           particulier)
-!         seules les RTPA sont echangees de maniere systematique
-!           (eviter donc d'utiliser RTP)
-!         le calcul du gradient fournit aussi les valeurs sur le halo
-!           (utile pour les reconstructions)
-!         les seules boucles sur NCELET sont des boucles d'initialisation
-!           (on n'a pas a faire de calcul sur les cellules halo, elles
-!            elles sont remplies par les routines de communication et
-!            on y preleve seulement de l'information)
-
-! ---> Halo synchronization
+! Halo synchronization (only variables require this)
 
 if (irangp.ge.0 .or. iperio.eq.1) then
 

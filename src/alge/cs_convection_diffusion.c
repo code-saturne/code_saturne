@@ -1816,10 +1816,11 @@ cs_convection_diffusion_scalar(int                       idtvar,
       limiter = f_limiter->val;
     }
 
-    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+    snprintf(var_name, 31, "%s", f->name);;
   }
   else
-    strcpy(var_name, "Work array"); var_name[31] = '\0';
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
 
   if (iwarnp >= 2) {
     if (ischcp == 1) {
@@ -2997,10 +2998,11 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+    snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array"); var_name[31] = '\0';
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
 
   if (iwarnp >= 2 && iconvp == 1) {
     if (ischcp == 1) {
@@ -4113,10 +4115,11 @@ cs_convection_diffusion_tensor(int                         idtvar,
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
     cs_gradient_perio_init_rij_tensor(&tr_dim, grad);
-    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+    snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array"); var_name[31] = '\0';
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
 
   if (iwarnp >= 2 && iconvp == 1) {
     if (ischcp == 1) {
@@ -5027,10 +5030,11 @@ cs_convection_diffusion_thermal(int                       idtvar,
       limiter = f_limiter->val;
     }
 
-    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+    snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array"); var_name[31] = '\0';
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
 
   if (iwarnp >= 2) {
     if (ischcp == 1) {
@@ -6054,10 +6058,11 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+    snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array"); var_name[31] = '\0';
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
@@ -7141,10 +7146,11 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+    snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array"); var_name[31] = '\0';
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
@@ -8569,10 +8575,11 @@ cs_diffusion_potential(const int                 f_id,
                              &halo_type);
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+    snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array"); var_name[31] = '\0';
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
 
   /* Handle parallelism and periodicity */
 
