@@ -395,7 +395,7 @@ elseif (itytur.eq.3) then
     endif
 
     call field_set_key_struct_var_cal_opt(ivarfl(irij), vcopt1)
-    call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+    call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
   else
     call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt1)
     call field_get_key_struct_var_cal_opt(ivarfl(ir22), vcopt2)

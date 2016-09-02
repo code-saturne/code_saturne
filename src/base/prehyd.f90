@@ -155,7 +155,7 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 ! --- Resolution options
 isym  = 1

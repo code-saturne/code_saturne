@@ -206,7 +206,7 @@ endif
 call field_get_label(ivarfl(ivar), chaine)
 
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
-call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_p)
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt_e)
 
 if(vcopt_e%iwarni.ge.1) then
