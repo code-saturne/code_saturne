@@ -543,7 +543,7 @@ module cs_c_bindings
 
     subroutine turbulence_bc_ke_hyd_diam(uref2, dh, rho, mu,                   &
                                          ustar2, k, eps)                       &
-      bind(C, name='cs_f_turbulence_bc_ke_hyd_diam')
+      bind(C, name='cs_turbulence_bc_ke_hyd_diam')
       use, intrinsic :: iso_c_binding
       implicit none
       real(c_double), value :: uref2, dh, rho, mu
@@ -567,7 +567,7 @@ module cs_c_bindings
 
     subroutine turbulence_bc_ke_turb_intensity(uref2, t_intensity, dh,         &
                                                k, eps)                         &
-      bind(C, name='cs_f_turbulence_bc_ke_turb_intensity')
+      bind(C, name='cs_turbulence_bc_ke_turb_intensity')
       use, intrinsic :: iso_c_binding
       implicit none
       real(c_double), value :: uref2, t_intensity, dh
