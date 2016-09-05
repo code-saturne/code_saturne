@@ -262,10 +262,8 @@ elseif (iappel.eq.3) then
   xkent  = epzero
   xeent  = epzero
 
-  call keendb &
-  !==========
-( wind2, dh, ro0, viscl0, cmu, xkappa,        &
-  ustar2, xkent, xeent )
+  call turbulence_bc_ke_hyd_diam(wind2, dh, ro0, viscl0,  &
+                                 ustar2, xkent, xeent )
 
   flucel = 0.d0
   do ieltsm = 1, ncesmp

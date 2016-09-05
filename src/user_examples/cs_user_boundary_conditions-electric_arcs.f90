@@ -101,6 +101,7 @@ use ctincl
 use cs_fuel_incl
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -126,8 +127,7 @@ integer          izone,iesp
 integer          ilelt, nlelt
 
 double precision uref2, d2s3
-double precision rhomoy, dhy, ustar2
-double precision xkent, xeent
+double precision rhomoy, dhy
 double precision z1   , z2
 integer          ipotr, ipoti, f_id, ipotva1, ipotva2, ipotva3
 character(len=80) :: f_name
@@ -232,53 +232,10 @@ do ilelt = 1, nlelt
     ! Hydraulic diameter
     dhy     = 0.075d0
 
-    ! Calculation of friction velocity squared (ustar2)
-    ! and of k and epsilon at the inlet (xkent and xeent) using
-    ! standard laws for a circular pipe
-    ! (their initialization is not needed here but is good practice).
-
     rhomoy = bfpro_rom(ifac)
-    ustar2 = 0.d0
-    xkent  = epzero
-    xeent  = epzero
 
-    call keendb                                            &
-    !==========
-     ( uref2, dhy, rhomoy, viscl0, cmu, xkappa,            &
-       ustar2, xkent, xeent)
-
-    if (itytur.eq.2) then
-
-      rcodcl(ifac,ik,1)  = xkent
-      rcodcl(ifac,iep,1) = xeent
-
-    elseif (itytur.eq.3) then
-
-      rcodcl(ifac,ir11,1) = d2s3*xkent
-      rcodcl(ifac,ir22,1) = d2s3*xkent
-      rcodcl(ifac,ir33,1) = d2s3*xkent
-      rcodcl(ifac,ir12,1) = 0.d0
-      rcodcl(ifac,ir13,1) = 0.d0
-      rcodcl(ifac,ir23,1) = 0.d0
-      rcodcl(ifac,iep,1)  = xeent
-
-    elseif (iturb.eq.50) then
-
-      rcodcl(ifac,ik,1)   = xkent
-      rcodcl(ifac,iep,1)  = xeent
-      rcodcl(ifac,iphi,1) = d2s3
-      rcodcl(ifac,ifb,1)  = 0.d0
-
-    elseif (iturb.eq.60) then
-
-      rcodcl(ifac,ik,1)   = xkent
-      rcodcl(ifac,iomg,1) = xeent/cmu/xkent
-
-    elseif (iturb.eq.70) then
-
-      rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
-
-    endif
+    call turbulence_bc_inlet_hyd_diam &
+  ( ifac, uref2, dhy, rhomoy, viscl0, rcodcl )
 
   endif
 
