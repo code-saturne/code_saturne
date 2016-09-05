@@ -329,26 +329,31 @@ do iflid = 0, nfld-1
 
     ityloc = 1 ! variables defined on cells
 
-    ! Relaxation time
-    f_name = 'drift_tau_'//trim(name)
-    call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
-    call field_set_key_str(f_id, keylbl, f_name)
+    ! If the mass flux is imposed, no need of drift_tau nor drift_vel
+    if (.not.(btest(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX))) then
 
-    ! Set the same visualization options as the scalar
-    call field_get_key_int(iflid, keyvis, iopchr)
-    if (iopchr.eq.1) then
-      call field_set_key_int(f_id, keyvis, iopchr)
-    endif
+      ! Relaxation time
+      f_name = 'drift_tau_'//trim(name)
+      call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
+      call field_set_key_str(f_id, keylbl, f_name)
 
-    ! Store the drift velocity
-    f_name = 'drift_vel_'//trim(name)
-    call field_create(f_name, itycat, ityloc, idim3, inoprv, f_id)
-    call field_set_key_str(f_id, keylbl, f_name)
+      ! Set the same visualization options as the scalar
+      call field_get_key_int(iflid, keyvis, iopchr)
+      if (iopchr.eq.1) then
+        call field_set_key_int(f_id, keyvis, iopchr)
+      endif
 
-    ! Set the same visualization options as the scalar
-    call field_get_key_int(iflid, keyvis, iopchr)
-    if (iopchr.eq.1) then
-      call field_set_key_int(f_id, keyvis, iopchr)
+      ! Store the drift velocity
+      f_name = 'drift_vel_'//trim(name)
+      call field_create(f_name, itycat, ityloc, idim3, inoprv, f_id)
+      call field_set_key_str(f_id, keylbl, f_name)
+
+      ! Set the same visualization options as the scalar
+      call field_get_key_int(iflid, keyvis, iopchr)
+      if (iopchr.eq.1) then
+        call field_set_key_int(f_id, keyvis, iopchr)
+      endif
+
     endif
 
     ! Interaction time particle--eddies
@@ -356,12 +361,12 @@ do iflid = 0, nfld-1
       f_name = 'drift_turb_tau_'//trim(name)
       call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
       call field_set_key_str(f_id, keylbl, f_name)
-    endif
 
-    ! Set the same visualization options as the scalar
-    call field_get_key_int(iflid, keyvis, iopchr)
-    if (iopchr.eq.1) then
-      call field_set_key_int(f_id, keyvis, iopchr)
+      ! Set the same visualization options as the scalar
+      call field_get_key_int(iflid, keyvis, iopchr)
+      if (iopchr.eq.1) then
+        call field_set_key_int(f_id, keyvis, iopchr)
+      endif
     endif
 
   endif

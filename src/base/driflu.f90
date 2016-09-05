@@ -100,7 +100,7 @@ integer          keysca, iscal, keydri, iscdri, icvflb
 integer          keyccl
 integer          icla, jcla, jvar
 integer          ivoid(1)
-integer          ielup, id_x1, id_vdp_i, imasac
+integer          ielup, id_x1, id_vdp_i, imasac, id_pro, id_drift
 
 double precision epsrgp, climgp, extrap, blencp
 double precision thetap
@@ -240,12 +240,12 @@ allocate(flumas(nfac), flumab(nfabor))
 
 if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
   ! Index of the corresponding relaxation time (cpro_taup)
-  call field_get_id('drift_tau_'//trim(fname), f_id)
-  call field_get_val_s(f_id, cpro_taup)
+  call field_get_id_try('drift_tau_'//trim(fname), id_pro)
+  if (id_pro.ne.-1) call field_get_val_s(id_pro, cpro_taup)
 
   ! Index of the corresponding relaxation time (cpro_taup)
-  call field_get_id('drift_vel_'//trim(fname), f_id)
-  call field_get_val_v(f_id, cpro_drift)
+  call field_get_id_try('drift_vel_'//trim(fname), id_drift)
+  if (id_drift.ne.-1) call field_get_val_v(id_drift, cpro_drift)
 
   ! Index of the corresponding interaction time particle--eddies (cpro_taufpt)
   if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS)) then
@@ -267,7 +267,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
   ! Initialization of the gas "class" convective flux by the
   ! first particle "class":
   !  it is initialized by the mass flux of the bulk
-  if (icla.eq.1) then
+  if (icla.eq.1.and.id_x1.ne.-1) then
     do ifac = 1, nfac
       imasfl_gas(ifac) = imasfl_mix(ifac)
     enddo
@@ -298,7 +298,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     enddo
 
-  else if (icla.ge.0) then
+  else if (icla.ge.0.and.id_pro.ne.-1.and.id_drift.ne.-1) then
 
     do iel = 1, ncel
 
@@ -526,7 +526,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 !===============================================================================
 
   ! For all scalar with a drift excpted the gas phase which is deduced
-  if (icla.ge.0) then
+  if (icla.ge.0.and.id_drift.ne.-1) then
 
     ! Zero additional flux at the boundary
     do ifac = 1, nfabor
@@ -580,32 +580,36 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     if (icla.ge.1) then
 
       write(fname,'(a,i2.2)')'x_p_' ,icla
-      call field_get_val_s_by_name(fname, x2)
+      call field_get_id_try(fname, f_id)
 
-      do ifac = 1, nfac
+      if (f_id.ne.-1) then
+        call field_get_val_s(f_id, x2)
 
-        ! Upwind value of x2 at the face, consistent with the
-        !  other transport equations
-        ielup = ifacel(2,ifac)
-        if (imasfl(ifac).ge.0.d0) ielup = ifacel(1,ifac)
+        do ifac = 1, nfac
 
-        imasfl_gas(ifac) = imasfl_gas(ifac) - x2(ielup)*imasfl(ifac)
-      enddo
+          ! Upwind value of x2 at the face, consistent with the
+          !  other transport equations
+          ielup = ifacel(2,ifac)
+          if (imasfl(ifac).ge.0.d0) ielup = ifacel(1,ifac)
 
-      do ifac = 1, nfabor
-        ! TODO Upwind value of x2 at the face, consistent with the
-        !  other transport equations
-        !if (bmasfl(ifac).ge.0.d0)
-        ielup = ifabor(ifac)
-        bmasfl_gas(ifac) = bmasfl_gas(ifac) - x2(ielup)*bmasfl(ifac)
-      enddo
+          imasfl_gas(ifac) = imasfl_gas(ifac) - x2(ielup)*imasfl(ifac)
+        enddo
+
+        do ifac = 1, nfabor
+          ! TODO Upwind value of x2 at the face, consistent with the
+          !  other transport equations
+          !if (bmasfl(ifac).ge.0.d0)
+          ielup = ifabor(ifac)
+          bmasfl_gas(ifac) = bmasfl_gas(ifac) - x2(ielup)*bmasfl(ifac)
+        enddo
+      endif
     endif
 
   ! Finalize the convective flux of the gas "class" by scaling by x1
   !  (rho x1 V1)_ij = (rho Vs)_ij - sum_classes (rho x2 V2)_ij
   ! Warning, x1 at the face must be computed so that it is consistent
   ! with an upwind scheme on (rho V1)
-  else if (icla.eq.-1) then
+  else if (icla.eq.-1.and.id_x1.ne.-1) then
 
     do ifac = 1, nfac
 
@@ -637,16 +641,26 @@ endif
 
 init = 1
 iconvp = vcopt%iconv
-thetap = vcopt%thetav
+thetap = vcopt%thetav!FIXME not multiplied by theta?
 
 ! recompute the difference between mixture and the class
-do ifac = 1, nfac
-  flumas(ifac) = imasfl(ifac) - imasfl_mix(ifac)
-enddo
+if (btest(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX)) then
+  do ifac = 1, nfac
+    flumas(ifac) = - imasfl_mix(ifac)
+  enddo
 
-do ifac = 1, nfabor
-  flumab(ifac) = bmasfl(ifac) - bmasfl_mix(ifac)
-enddo
+  do ifac = 1, nfabor
+    flumab(ifac) = - bmasfl_mix(ifac)
+  enddo
+else
+  do ifac = 1, nfac
+    flumas(ifac) = imasfl(ifac) - imasfl_mix(ifac)
+  enddo
+
+  do ifac = 1, nfabor
+    flumab(ifac) = bmasfl(ifac) - bmasfl_mix(ifac)
+  enddo
+endif
 
 call divmas(init, flumas, flumab, w1)
 
