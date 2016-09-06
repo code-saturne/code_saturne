@@ -72,7 +72,6 @@ implicit none
 
 character(len=80) :: f_label, f_name, s_name
 integer           :: ii
-integer           :: ippok
 integer           :: idim1, idim3, idim6, iflid
 integer           :: type_flag, post_flag, location_id, ipp
 logical           :: has_previous
@@ -103,13 +102,6 @@ interface
   !=============================================================================
 
 end interface
-
-!===============================================================================
-! 0. INITIALISATIONS
-!===============================================================================
-
-! Initialize variables to avoid compiler warnings
-ippok = 0
 
 !===============================================================================
 ! 1. PROPRIETES PRINCIPALES
@@ -239,7 +231,7 @@ if (iale.eq.1) then
   f_name = 'disale'
   f_label = 'Mesh displacement'
   type_flag = FIELD_PROPERTY
-  post_flag = POST_ON_LOCATION + POST_MONITOR
+  post_flag = POST_ON_LOCATION
   location_id = 4 ! variables defined on vertices
 
   call field_create(f_name, type_flag, location_id, idim3, &
@@ -373,10 +365,6 @@ integer, intent(in) :: f_id
 
 ! Local variables
 
-integer  ipp, j
-
-integer :: f_dim
-
 !===============================================================================
 
 call field_set_key_int(f_id, keyvis, 0)
@@ -435,12 +423,12 @@ integer, intent(out)         :: f_id
 
 ! Local variables
 
-integer  type_flag, post_flag, location_id, ipp
+integer  type_flag, post_flag, location_id
 
 !===============================================================================
 
 type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
-post_flag = POST_ON_LOCATION + POST_MONITOR
+post_flag = POST_ON_LOCATION
 location_id = 1 ! variables defined on cells
 
 ! Test if the field has already been defined
