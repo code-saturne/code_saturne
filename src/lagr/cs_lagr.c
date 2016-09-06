@@ -92,6 +92,8 @@
 #include "cs_lagr_sde_model.h"
 #include "cs_lagr_prototypes.h"
 
+#include "cs_random.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -2071,7 +2073,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
     /* 5. PROGRESSION DES PARTICULES  */
     /* ====================================================================   */
 
-    cs_lnum_t one = 1;
     /* Allocate temporay arrays  */
     cs_real_33_t *vagaus;
     BFT_MALLOC(vagaus, p_set->n_particles, cs_real_33_t);

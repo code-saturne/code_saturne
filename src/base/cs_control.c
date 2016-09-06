@@ -1182,8 +1182,8 @@ _parse_control_buffer(const char         *name,
 
 #if defined(HAVE_SOCKET)
       if (control_comm != NULL) {
-        char retval[5] = "0\0";
-        _comm_write_sock(control_comm, retval, 1, 2);
+        char reply[5] = "0\0";
+        _comm_write_sock(control_comm, reply, 1, 2);
       }
 #endif
 
@@ -1203,10 +1203,10 @@ _parse_control_buffer(const char         *name,
 
 #if defined(HAVE_SOCKET)
     if (control_comm != NULL) {
-      char retval[5];
-      sprintf(retval, "%d", retcode);
-      retval[4] = '\0';
-      _comm_write_sock(control_comm, retval, 1, strlen(retval) + 1);
+      char reply[5];
+      sprintf(reply, "%d", retcode);
+      reply[4] = '\0';
+      _comm_write_sock(control_comm, reply, 1, strlen(reply) + 1);
     }
 #endif
 

@@ -420,12 +420,12 @@ _lages2(cs_real_t     dtp,
         cs_real_3_t  *fextla)
 {
   cs_real_t  aux0, aux1, aux2, aux3, aux4, aux5, aux6, aux7, aux8, aux9;
-  cs_real_t  aux10, aux11, aux12, aux14, aux15, aux16, aux17, aux18, aux19;
+  cs_real_t  aux10, aux11, aux12, aux17, aux18, aux19;
   cs_real_t  aux20;
   cs_real_t  ter1, ter2, ter3, ter4, ter5;
   cs_real_t  sige, tapn, gamma2, omegam;
-  cs_real_t  omega2, grgam2, gagam, gaome;
-  cs_real_t  p11, p21, p22, p31, p32, p33;
+  cs_real_t  grgam2, gagam;
+  cs_real_t  p11, p21, p22;
   cs_real_t  tbriu;
 
 

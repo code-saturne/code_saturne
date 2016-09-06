@@ -828,8 +828,6 @@ if (iale.eq.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
 !       - la pression initiale (car RTPA est aussi ecrase dans le cas
 !         ou NTERUP>1) -> on pourrait optimiser en ne reservant que si
 !         necessaire ...
-!       Pas la peine de tester les depassements car on passe dans
-!       memcli juste apres.
   allocate(flmalf(nfac))
   allocate(flmalb(nfabor))
   allocate(cofale(nfabor,11))

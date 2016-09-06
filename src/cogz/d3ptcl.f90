@@ -105,7 +105,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 ! Local variables
 
 integer          igg, ifac, izone, mode, iscal
-integer          ii, iel, ifue, ioxy, iok
+integer          ii, iel, ifue, ioxy
 integer          icke
 double precision qimabs, qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision ustar2, xkent, xeent

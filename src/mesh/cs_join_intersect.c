@@ -544,7 +544,7 @@ _break_equivalence(cs_lnum_t         n_elts,
                    const cs_coord_t  abs_lst[],
                    const double      tol_lst[])
 {
-  int  i1, i2, i2_save;
+  int  i1, i2;
   double  range, _rtf, rtf12, rtf21;
 
   int  k = 0, i1_save = 0;
@@ -572,18 +572,12 @@ _break_equivalence(cs_lnum_t         n_elts,
       _rtf = CS_MAX(rtf12, rtf21);
       if (_rtf > rtf) {
         i1_save = i1;
-        i2_save = i2;
         rtf = _rtf;
       }
 
     }
 
   } /* End of loop on i1 */
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  fprintf(cs_glob_join_log,
-          " Break equivalence between [%d, %d]\n", i1_save, i2_save);
-#endif
 
   if (rtf > 0.0) { /* We have find an equivalence to break */
 
@@ -600,6 +594,10 @@ _break_equivalence(cs_lnum_t         n_elts,
         k += n_elts - i1;
 
       if (i1 == i1_save) {
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+        fprintf(cs_glob_join_log,
+                " Break equivalence between [%d, %d]\n", i1, i1_save);
+#endif
         for (i2 = i1 + 1; i2 < n_elts; i2++, k++)
           equiv_lst[k] = false;
       }

@@ -83,6 +83,7 @@ use cavitation
 use cs_c_bindings
 use cs_nz_condensation, only: izzftcd, nztag1d, ztpar
 use cs_nz_tagmr, only: znmurx, znmur, ztmur
+
 !===============================================================================
 
 implicit none
@@ -99,7 +100,6 @@ character        cindfp*2,cindfs*4,cindff*4,cindfm*4
 character        cindfc*2,cindfl*4
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
-character*80     fname
 logical          lprev
 integer          iel   , ifac, ii, istr, nlfld, iscal
 integer          iz, kk
@@ -115,6 +115,8 @@ integer          jale, jcavit
 integer          f_id, iflmas, iflmab, iflvoi, iflvob
 integer          ival(1), ngbstr(2)
 double precision rval(1), tmpstr(27)
+
+character(len=80) :: fname
 
 logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
 

@@ -274,7 +274,6 @@ _batten_method(const cs_int_t       n_points,
 
   if (initialize == 1) {
 
-    const int     three           = 3;
     const int     three_n_modes   = 3*inflow->n_modes;
     const double  one_by_sqrt_two = sqrt(0.5);
 
