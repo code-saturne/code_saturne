@@ -684,7 +684,6 @@ nvar = nvar + dim
 call fldvar_check_nvar
 
 ivarfl(ivar) = id
-ipp = field_post_id(id)
 
 call field_set_key_int(id, keyvar, ivar)
 
@@ -786,7 +785,6 @@ do id = nfld1, nfld2 - 1
 
   isca(iscal) = nvar
   ivarfl(nvar) = id
-  ipp = field_post_id(id)
 
   call field_set_key_int(id, keyvar, nvar)
   call field_set_key_int(id, keysca, iscal)
@@ -984,8 +982,6 @@ do ii = 1, dim
   ivarfl(isca(iscal + ii - 1)) = f_id
   iscapp(nscapp - dim + ii) = iscal + ii - 1
 enddo
-
-ipp = field_post_id(f_id)
 
 call field_set_key_int(f_id, keyvar, nvar)
 call field_set_key_int(f_id, keysca, iscal)

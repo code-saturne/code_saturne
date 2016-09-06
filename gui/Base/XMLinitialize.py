@@ -1091,12 +1091,6 @@ class XMLinit(Variables):
                 if nn:
                     nn.xmlRemoveNode()
 
-
-    def __backwardCompatibilityCurrentVersion(self):
-        """
-        Change XML in order to ensure backward compatibility.
-        """
-
         # darcy_model -> groundwater
         XMLThermoPhysicalModelNode = self.case.xmlInitNode('thermophysical_models')
         oldnode = XMLThermoPhysicalModelNode.xmlGetNode('darcy_model')
@@ -1181,6 +1175,22 @@ class XMLinit(Variables):
         for nature in ('inlet', 'outlet', 'wall', 'symmetry'):
             for node in XMLBoundaryNode.xmlGetNodeList(nature):
                 node['field_id'] = 'none'
+
+
+    def __backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+
+        for f_type in ['variable', 'property']:
+            for node in self.case.xmlGetNodeList(f_type):
+                n = node.xmlGetChildNode('probes')
+                if n:
+                    if node.xmlGetChildNode('probes_recording'):
+                        node.xmlRemoveChild('probes_recording')
+                    if n['choice'] == '0':
+                        node.xmlInitChildNode('probes_recording')['status'] = "off"
+                    n.xmlRemoveNode()
 
 
 #-------------------------------------------------------------------------------

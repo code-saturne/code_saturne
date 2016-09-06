@@ -68,6 +68,7 @@ use lagran
 use ihmpre
 use cplsat
 use mesh
+use post
 use field
 use cs_f_interfaces
 use cs_c_bindings
@@ -85,7 +86,7 @@ integer          ifcvsl, kbfid
 integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
 logical          iprev, inoprv, is_set
-integer          f_id, potr, poti
+integer          f_id, potr, poti, flag
 
 character(len=80) :: f_name, f_label, s_label, s_name
 
@@ -114,7 +115,6 @@ iopchr = 1         ! Postprocessing level for variables
 call field_get_key_id("boundary_value_id", kbfid)
 
 call field_get_key_id('log', keylog)
-call field_get_key_id('post_vis', keyvis)
 call field_get_key_id('label', keylbl)
 
 !===============================================================================
@@ -231,7 +231,8 @@ if (icond.ge.0 .or. ipstdv(ipstyp).ne.0) then
     call field_set_key_int(iyplbr, keylog, 1)
   endif
   ! yplus postprocessed if required
-  if (ipstdv(ipstyp).ne.0) call field_set_key_int(iyplbr, keyvis, 1)
+  flag = POST_ON_LOCATION + POST_MONITOR
+  if (ipstdv(ipstyp).ne.0) call field_set_key_int(iyplbr, keyvis, flag)
 endif
 
 ! Some mappings

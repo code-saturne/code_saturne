@@ -215,6 +215,7 @@ use field
 use parall
 use period
 use ihmpre
+use post
 use ppppar
 use ppthch
 use ppincl
@@ -222,6 +223,7 @@ use coincl
 use cs_coal_incl
 use cs_fuel_incl
 use cpincl
+use post
 use ppcpfu
 use radiat
 use cs_c_bindings
@@ -237,7 +239,7 @@ integer nmodpp
 ! Local variables
 
 integer ii
-integer f_id, idim1, ipp, iflpst, ifllog
+integer f_id, idim1, ifllog
 
 type(var_cal_opt) :: vcopt
 
@@ -346,19 +348,15 @@ xyzcap(3,4) = 0.01d0
 
 !< [usipes_ex_07]
 f_id = ivarfl(iu)
-iflpst = 0
-call field_set_key_int(f_id, keyvis, iflpst)
+call field_set_key_int(f_id, keyvis, 0)
 !< [usipes_ex_07]
 
 ! Probes for variables and properties
-! (example for velocity, probes on u component only)
+! (example for velocity)
 
 !< [usipes_ex_08]
 f_id = ivarfl(iu)
-ipp = field_post_id(f_id)
-ihisvr(ipp,1) = -1
-ihisvr(ipp+1,1) = 0
-ihisvr(ipp+2,1) = 0
+call field_set_key_int_bits(f_id, keyvis, POST_MONITOR)
 !< [usipes_ex_08]
 
 ! Force postprocessing of projection of some variables at boundary
@@ -369,36 +367,20 @@ ihisvr(ipp+2,1) = 0
 
 !< [usipes_ex_09]
 f_id = ivarfl(iu)
-if (iand(iflpst, 2) .eq. 0) then
-  call field_get_key_int(f_id, keyvis, iflpst)
-  iflpst = ior(iflpst, 2)
-  call field_set_key_int(f_id, keyvis, iflpst)
-endif
+call field_set_key_int_bits(f_id, keyvis, POST_BOUNDARY_NR)
 
 f_id = ivarfl(ipr)
-if (iand(iflpst, 2) .eq. 0) then
-  call field_get_key_int(f_id, keyvis, iflpst)
-  iflpst = ior(iflpst, 2)
-  call field_set_key_int(f_id, keyvis, iflpst)
-endif
+call field_set_key_int_bits(f_id, keyvis, POST_BOUNDARY_NR)
 !< [usipes_ex_09]
 
 ! Probes for Radiative Transfer (Luminance and radiative density flux vector)
-! for all probes (ihisvr = -1)
 
 !< [usipes_ex_10]
 call field_get_id_try('luminance', f_id)
-ipp = field_post_id(f_id)
-ihisvr(ipp,1) = -1
+call field_set_key_int_bits(f_id, keyvis, POST_MONITOR)
 
 call field_get_id_try('radiative_flux', f_id)
-! X component
-ipp = field_post_id(f_id)
-ihisvr(ipp,1) = -1
-! Y component
-ihisvr(ipp+1,1) = -1
-! Z component
-ihisvr(ipp+2,1) = -1
+call field_set_key_int_bits(f_id, keyvis, POST_MONITOR)
 !< [usipes_ex_10]
 
 !--------

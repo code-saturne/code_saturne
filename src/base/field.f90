@@ -95,6 +95,46 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function assigning integer bit values to a key
+
+    !> \brief Set integer bits matching a mask to 1 for a given key for a field.
+
+    !> If the key id is not valid, or the value type or field category is not
+    !> compatible, a fatal error is provoked.
+
+    !> \param[in]   f_id  field id
+    !> \param[in]   k_id  id of associated key
+    !> \param[in]   mask  associated mask
+
+    subroutine field_set_key_int_bits(f_id, k_id, k_value)  &
+      bind(C, name='cs_f_field_set_key_int_bits')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id, k_id, k_value
+    end subroutine field_set_key_int_bits
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function assigning integer bit values to a key
+
+    !> \brief Set integer bits matching a mask to 0 for a given key for a field.
+
+    !> If the key id is not valid, or the value type or field category is not
+    !> compatible, a fatal error is provoked.
+
+    !> \param[in]   f_id  field id
+    !> \param[in]   k_id  id of associated key
+    !> \param[in]   mask  associated mask
+
+    subroutine field_clear_key_int_bits(f_id, k_id, k_value)  &
+      bind(C, name='cs_f_field_clear_key_int_bits')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id, k_id, k_value
+    end subroutine field_clear_key_int_bits
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function assigning floating-point value to a key
 
     !> \brief Assign a floating point value for a given key to a field.

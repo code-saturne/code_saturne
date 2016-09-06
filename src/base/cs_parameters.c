@@ -49,6 +49,7 @@
 #include "cs_field.h"
 #include "cs_log.h"
 #include "cs_map.h"
+#include "cs_post.h"
 #include "cs_parall.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
@@ -540,7 +541,6 @@ cs_parameters_define_field_keys(void)
 
   cs_field_define_key_int("variable_id", -1, 0); /* inverse of ivarfl(ivar) */
   cs_field_define_key_int("scalar_id", -1, 0);   /* inverse of isca(iscal) */
-  cs_field_define_key_int("post_id", -1, 0);     /* inverse of the ipp array */
 
   cs_field_define_key_int("scalar_diffusivity_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_double("scalar_diffusivity_ref",
@@ -831,8 +831,10 @@ cs_parameters_create_added_variables(void)
 
     BFT_FREE((_user_variable_defs + i)->name);
 
+    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+
     cs_field_set_key_int(f, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(f, cs_field_key_id("post_vis"), 1);
+    cs_field_set_key_int(f, cs_field_key_id("post_vis"), post_flag);
 
   }
 
@@ -873,8 +875,10 @@ cs_parameters_create_added_properties(void)
                       (_user_property_defs + i)->dim,
                       false);
 
+    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+
     cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
+    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
 
     BFT_FREE((_user_property_defs + i)->name);
 
@@ -961,7 +965,7 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
 
     int k_vis = cs_field_key_id("post_vis");
     int f_vis = cs_field_get_key_int(f, k_vis);
-    f_vis = CS_MAX(f_vis, 1);
+    f_vis = f_vis | CS_POST_ON_LOCATION;
     cs_field_set_key_int(bf, k_vis, f_vis);
 
   }

@@ -113,7 +113,6 @@ if (icv.ge.0) then
                           'Specific_Heat_Const_Vol', &
                           icv)
   call hide_property(icv)
-  ihisvr(field_post_id(icv),1) = 0
 endif
 
 if (iviscv.ge.0) then
@@ -121,7 +120,6 @@ if (iviscv.ge.0) then
                           'Volume_Viscosity', &
                           iviscv)
   call hide_property(iviscv)
-  ihisvr(field_post_id(iviscv),1) = 0
 endif
 
 ! MAP to C API

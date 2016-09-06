@@ -309,6 +309,16 @@ cs_f_field_set_key_int(int  f_id,
                        int  value);
 
 void
+cs_f_field_set_key_int_bits(int  f_id,
+                            int  k_id,
+                            int  mask);
+
+void
+cs_f_field_clear_key_int_bits(int  f_id,
+                              int  k_id,
+                              int  mask);
+
+void
 cs_f_field_set_key_double(int     f_id,
                           int     k_id,
                           double  value);
@@ -1141,6 +1151,58 @@ cs_f_field_set_key_int(int  f_id,
                 "type flag %d with key %d (\"%s\")."),
               retval, f->name, f->type, k_id, key);
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Set integer bits matching a mask to 1 for a given key for a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   f_id <-- field id
+ *   k_id <-- key id
+ *   mask <-- associated mask
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_set_key_int_bits(int  f_id,
+                            int  k_id,
+                            int  mask)
+{
+  int retval = 0;
+
+  cs_field_t *f = cs_field_by_id(f_id);
+
+  retval = cs_field_set_key_int_bits(f, k_id, mask);
+}
+
+/*----------------------------------------------------------------------------
+ * Set integer bits matching a mask to 0 for a given key for a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   f_id <-- field id
+ *   k_id <-- key id
+ *   mask <-- associated mask
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_clear_key_int_bits(int  f_id,
+                              int  k_id,
+                              int  mask)
+{
+  int retval = 0;
+
+  cs_field_t *f = cs_field_by_id(f_id);
+
+  retval = cs_field_clear_key_int_bits(f, k_id, mask);
 }
 
 /*----------------------------------------------------------------------------
@@ -2807,6 +2869,69 @@ cs_field_get_key_int(const cs_field_t  *f,
   }
 
   return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set integer bits matching a mask to 1 for a given key for a field.
+ *
+ * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
+ * If the field category is not compatible with the key (as defined
+ * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
+ *
+ * \param[in]  f       pointer to field structure
+ * \param[in]  key_id  id of associated key
+ * \param[in]  mask    mask associated with key
+ *
+ * \return  0 in case of success, > 1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_set_key_int_bits(cs_field_t  *f,
+                          int          key_id,
+                          int          mask)
+{
+  int value = cs_field_get_key_int(f, key_id);
+
+  value |= mask;
+
+  int retval = cs_field_set_key_int(f, key_id, value);
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set integer bits matching a mask to 0 for a given key for a field.
+ *
+ * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
+ * If the field category is not compatible with the key (as defined
+ * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
+ *
+ * \param[in]  f       pointer to field structure
+ * \param[in]  key_id  id of associated key
+ * \param[in]  mask    mask associated with key
+ *
+ * \return  0 in case of success, > 1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_clear_key_int_bits(cs_field_t  *f,
+                            int          key_id,
+                            int          mask)
+{
+  int value = cs_field_get_key_int(f, key_id);
+
+  value |= mask;
+  value -= mask;
+
+  int retval = cs_field_set_key_int(f, key_id, value);
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

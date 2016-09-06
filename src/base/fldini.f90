@@ -68,6 +68,7 @@ use ihmpre
 use radiat
 use cplsat
 use mesh
+use post
 use field
 use cs_c_bindings
 use darcy_module
@@ -283,7 +284,7 @@ do iflid = 0, nfld-1
     ! Index of the class, all member of the class share the same mass flux
     call field_get_key_int(iflid, keyccl, icla)
 
-    ! The comming field are not solved, they are properties
+    ! The following fields are not solved, they are properties
     itycat = FIELD_PROPERTY
     ityloc = 2 ! variables defined on interior faces
 
@@ -329,6 +330,11 @@ do iflid = 0, nfld-1
 
     ityloc = 1 ! variables defined on cells
 
+    ! Get the scalar's output options
+    ! (except non-reconstructed boundary output)
+    call field_get_key_int(iflid, keyvis, iopchr)
+    if (iand(iopchr, POST_BOUNDARY_NR) .ne. 0) iopchr = iopchr - POST_BOUNDARY_NR
+
     ! If the mass flux is imposed, no need of drift_tau nor drift_vel
     if (.not.(btest(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX))) then
 
@@ -337,11 +343,8 @@ do iflid = 0, nfld-1
       call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
       call field_set_key_str(f_id, keylbl, f_name)
 
-      ! Set the same visualization options as the scalar
-      call field_get_key_int(iflid, keyvis, iopchr)
-      if (iopchr.eq.1) then
-        call field_set_key_int(f_id, keyvis, iopchr)
-      endif
+      ! Set the same visualization options as the scalar,
+      call field_set_key_int(f_id, keyvis, iopchr)
 
       ! Store the drift velocity
       f_name = 'drift_vel_'//trim(name)
@@ -349,10 +352,7 @@ do iflid = 0, nfld-1
       call field_set_key_str(f_id, keylbl, f_name)
 
       ! Set the same visualization options as the scalar
-      call field_get_key_int(iflid, keyvis, iopchr)
-      if (iopchr.eq.1) then
-        call field_set_key_int(f_id, keyvis, iopchr)
-      endif
+      call field_set_key_int(f_id, keyvis, iopchr)
 
     endif
 
@@ -363,10 +363,7 @@ do iflid = 0, nfld-1
       call field_set_key_str(f_id, keylbl, f_name)
 
       ! Set the same visualization options as the scalar
-      call field_get_key_int(iflid, keyvis, iopchr)
-      if (iopchr.eq.1) then
-        call field_set_key_int(f_id, keyvis, iopchr)
-      endif
+      call field_set_key_int(f_id, keyvis, iopchr)
     endif
 
   endif
@@ -418,7 +415,7 @@ do ii = 1, nvar
       call field_get_name(f_id, f_name)
       name  = trim(f_name) // '_slope_upwind'
       call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
-      call field_set_key_int(ifctsl, keyvis, 1)
+      call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
     else
       ifctsl = -1
     endif
@@ -437,7 +434,7 @@ if (n_fans .gt. 0) then
   ityloc = 1 ! cells
 
   call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
-  call field_set_key_int(ifctsl, keyvis, 1)
+  call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
   call field_set_key_int(ifctsl, keylog, 1)
 
 endif
@@ -463,7 +460,7 @@ do ii = 1, nvar
     ityloc = 1 ! cells
 
     call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
-    call field_set_key_int(ifctsl, keyvis, 1)
+    call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
     call field_set_key_int(ifctsl, keylog, 1)
 
     call field_set_key_int(f_id, kcvlim, ifctsl)
@@ -477,7 +474,7 @@ do ii = 1, nvar
     ityloc = 2 ! Interior faces
 
     call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
-    call field_set_key_int(ifctsl, keyvis, 1)
+    call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
     call field_set_key_int(ifctsl, keylog, 1)
 
     call field_set_key_int(f_id, kcvlim, ifctsl)

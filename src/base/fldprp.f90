@@ -57,6 +57,7 @@ use ppincl
 use radiat
 use ihmpre
 use mesh
+use post
 use field
 use cs_c_bindings
 use darcy_module
@@ -73,7 +74,7 @@ character(len=80) :: f_label, f_name, s_name
 integer           :: ii
 integer           :: ippok
 integer           :: idim1, idim3, idim6, iflid
-integer           :: type_flag, location_id, ipp
+integer           :: type_flag, post_flag, location_id, ipp
 logical           :: has_previous
 
 !===============================================================================
@@ -238,15 +239,13 @@ if (iale.eq.1) then
   f_name = 'disale'
   f_label = 'Mesh displacement'
   type_flag = FIELD_PROPERTY
+  post_flag = POST_ON_LOCATION + POST_MONITOR
   location_id = 4 ! variables defined on vertices
 
   call field_create(f_name, type_flag, location_id, idim3, &
                     has_previous, fdiale)
-  call field_set_key_int(fdiale, keyvis, 1)
+  call field_set_key_int(fdiale, keyvis, post_flag)
   call field_set_key_int(fdiale, keylog, 1)
-
-  ipp = field_post_id(fdiale)
-  call field_set_key_int(fdiale, keyipp, ipp)
 
   call field_set_key_str(fdiale, keylbl, trim(f_label))
 
@@ -383,15 +382,6 @@ integer :: f_dim
 call field_set_key_int(f_id, keyvis, 0)
 call field_set_key_int(f_id, keylog, 0)
 
-ipp = field_post_id(f_id)
-
-if (ipp .gt. 1) then
-  call field_get_dim(f_id, f_dim)
-  do j = 1, f_dim
-    ihisvr(ipp+j-1,1) = 0
-  enddo
-endif
-
 return
 
 end subroutine hide_property
@@ -429,6 +419,7 @@ use paramx
 use dimens
 use entsor
 use numvar
+use post
 use field
 
 !===============================================================================
@@ -444,11 +435,12 @@ integer, intent(out)         :: f_id
 
 ! Local variables
 
-integer  type_flag, location_id, ipp
+integer  type_flag, post_flag, location_id, ipp
 
 !===============================================================================
 
 type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
+post_flag = POST_ON_LOCATION + POST_MONITOR
 location_id = 1 ! variables defined on cells
 
 ! Test if the field has already been defined
@@ -462,17 +454,12 @@ endif
 
 call field_create(name, type_flag, location_id, dim, has_previous, f_id)
 
-call field_set_key_int(f_id, keyvis, 1)
+call field_set_key_int(f_id, keyvis, post_flag)
 call field_set_key_int(f_id, keylog, 1)
 
 if (len(trim(label)).gt.0) then
   call field_set_key_str(f_id, keylbl, trim(label))
 endif
-
-! Postprocessing slots
-
-ipp = field_post_id(f_id)
-call field_set_key_int(f_id, keyipp, ipp)
 
 return
 

@@ -71,12 +71,10 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv);
  * Determine output options
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
-                                cs_int_t        *ncapt,
+void CS_PROCF (csenso, CSENSO) (cs_int_t        *ncapt,
                                 cs_int_t        *nthist,
                                 cs_real_t       *frhist,
                                 cs_int_t        *iecaux,
-                                cs_int_t        *ihisvr,
                                 cs_int_t        *tplfmt,
                                 cs_real_t       *xyzcap);
 

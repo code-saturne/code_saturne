@@ -31,6 +31,14 @@ module post
 
   !=============================================================================
 
+  integer :: POST_ON_LOCATION, POST_BOUNDARY_NR, POST_MONITOR
+
+  parameter (POST_ON_LOCATION=1)
+  parameter (POST_BOUNDARY_NR=2)
+  parameter (POST_MONITOR=4)
+
+  !=============================================================================
+
   interface
 
     !---------------------------------------------------------------------------

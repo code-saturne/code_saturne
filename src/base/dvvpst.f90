@@ -277,12 +277,11 @@ else if (numtyp .eq. -2) then
 
     call field_get_key_int(fldid, keyvis, iflpst)
 
-    if (iand(iflpst, 2) .eq. 0) cycle ! nothing to do for this field
+    if (iand(iflpst, POST_BOUNDARY_NR) .eq. 0) cycle ! nothing to do
 
     call field_get_dim (fldid, idimt)
     call field_get_name(fldid, name80(4:80))
     name80(1:3) = 'bc_'
-
 
     !  Compute non-reconstructed values at boundary faces
 

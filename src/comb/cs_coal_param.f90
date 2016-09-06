@@ -124,8 +124,6 @@ do isc = 1, nscapp
 !   - Interface Code_Saturne:
 !     ======================
 
-!   ihisvr is already filled in UINUM1 routine
-
   if (iihmpr.ne.1) then
 
     ii = isca(iscapp(isc))

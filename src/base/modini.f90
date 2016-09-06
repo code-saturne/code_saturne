@@ -57,9 +57,9 @@ implicit none
 
 ! Local variables
 
-integer          n_fields, f_id, f_dim, n_moments
+integer          n_fields, f_id, n_moments
 integer          ii, jj, ivar, imom, iok, ikw
-integer          icompt, ipp, nbccou, keyvar
+integer          icompt, nbccou, keyvar, flag
 integer          nscacp, iscal
 integer          imrgrp
 
@@ -104,39 +104,11 @@ endif
 !      Si une valeur non modifiee par l'utilisateur (=-999)
 !        on la met a sa valeur par defaut
 !      On sort toutes les variables a tous les pas de temps par defaut
-!      IHISVR nb de sonde et numero par variable (-999 non initialise)
-!             -1 : toutes les sondes
 !      NTHIST = -1 : on ne sort pas d'historiques
 !      NTHIST =  n : on sort des historiques tous les n pas de temps
 !      NTHSAV = -1 : on sauvegarde a la fin uniquement
 !      NTHSAV =  0 : periode par defaut (voir caltri)
 !             > 0  : periode
-
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ivar)
-  if (ivar.ge.1) then
-    call field_get_key_int(f_id, keyipp, ipp)
-    call field_get_dim(f_id, f_dim)
-    do ii = 1, f_dim
-      if (ihisvr(ipp + ii-1,1).eq.-999) ihisvr(ipp + ii-1,1) = -1
-    enddo
-  endif
-enddo
-if (ihisvr(ippdt, 1).eq.-999) ihisvr(ippdt, 1) = -1
-if (ipucou.ne.1) then
-  ihisvr(ipptx,1) = 0
-  ihisvr(ippty,1) = 0
-  ihisvr(ipptz,1) = 0
-endif
-ipp = field_post_id(ivisct)
-if ((iturb.eq.10 .or. itytur.eq.2                        &
-     .or. itytur.eq.5 .or. iturb.eq.60                   &
-     .or. iturb.eq.70)                                   &
-     .and.ihisvr(ipp,1).eq.-999) ihisvr(ipp,1) = -1
-if (idtvar.lt.0) then
-  ihisvr(field_post_id(icour),1) = 0
-  ihisvr(field_post_id(ifour),1) = 0
-endif
 
 n_moments = cs_time_moment_n_moments()
 
@@ -144,29 +116,21 @@ do imom = 1, n_moments
   f_id = time_moment_field_id(imom)
   if (f_id.lt.0) cycle
   call field_is_key_set(f_id, keyvis, is_set)
-  if (.not. is_set) call field_set_key_int(f_id, keyvis, 1)
+  if (.not. is_set) then
+    flag = POST_ON_LOCATION + POST_MONITOR
+    call field_set_key_int(f_id, keyvis, flag)
+  endif
   call field_is_key_set(f_id, keylog, is_set)
   if (.not. is_set) call field_set_key_int(f_id, keylog, 1)
-  ipp = field_post_id(f_id)
-  call field_get_dim(f_id, f_dim)
-  do ii = 1, f_dim
-    if (ihisvr(ipp + ii-1,1).eq.-999) ihisvr(ipp + ii-1,1) = -1
-  enddo
-enddo
-
-do ii = 1, nvppmx
-  if (ihisvr(ii,1).eq.-999) then
-    ihisvr(ii,1) = 0
-  endif
 enddo
 
 !     Si on est en ALE, on a un test equivalent dans strini.F
 if (iale.eq.0) then
   icompt = 0
-  do ii = 2, nvppmx
-    if (ihisvr(ii,1).ne.0) icompt = icompt+1
+  do f_id = 0, n_fields - 1
+    call field_get_key_int(f_id, keyvis, flag)
+    if (iand(flag, POST_MONITOR).ne.0) icompt = icompt+1
   enddo
-
   if (icompt.eq.0.or.ncapt.eq.0) then
     nthist = -1
     frhist = -1.d0

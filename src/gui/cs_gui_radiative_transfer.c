@@ -55,6 +55,7 @@
 #include "cs_gui_specific_physics.h"
 #include "cs_gui.h"
 #include "cs_mesh.h"
+#include "cs_post.h"
 #include "cs_parameters.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -605,7 +606,7 @@ cs_gui_radiative_transfer_postprocess(void)
       int f_post_vis =  0;
       int f_log =  1;
       if (i == 0)
-        f_post_vis = 1;
+        f_post_vis = CS_POST_ON_LOCATION;
       char *label = _radiative_transfer_char_post(b_rad_names[i],
                                                   &f_log,
                                                   &f_post_vis);

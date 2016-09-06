@@ -110,7 +110,6 @@ write(nfecra, 900)
 call field_get_key_id("label", keylbl)
 call field_get_key_id('log', keylog)
 call field_get_key_id('post_vis', keyvis)
-call field_get_key_id("post_id", keyipp)
 
 call field_get_key_id("inner_mass_flux_id", kimasf)
 call field_get_key_id("boundary_mass_flux_id", kbmasf)
@@ -224,7 +223,6 @@ enddo
 ! ncapt  : nombre de sondes total (limite a ncaptm)
 ! nthist : periode de sortie (> 0 ou -1 (jamais))
 ! frhist : frequence de sortie, en secondes (prioritaire sur nthist si > 0)
-! ihisvr : nb de sonde et numero par variable (-999 non initialise)
 ! ihistr : indicateur d'ecriture des historiques des structures
 !          mobiles internes (=0 ou 1)
 ! ncapt  : nombre de sondes total (limite a ncaptm)
@@ -237,12 +235,6 @@ ncapt = 0
 
 nthist = 1
 frhist = -1.d0
-
-do ii = 1, nvppmx
-  do jj = 1, ncaptm+1
-    ihisvr(ii ,jj) = -999
-  enddo
-enddo
 
 ihistr = 0
 

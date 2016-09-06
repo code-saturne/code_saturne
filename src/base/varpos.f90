@@ -57,6 +57,7 @@ use ppincl
 use radiat
 use ihmpre
 use mesh
+use post
 use field
 use cs_c_bindings
 
@@ -68,9 +69,9 @@ implicit none
 
 ! Local variables
 
-integer       iscal , id, ityloc, itycat, ifcvsl
+integer       iscal , id, ityloc, itycat, ifcvsl, pflag
 integer       ii
-integer       iok   , ippok
+integer       iok
 integer       ivisph, iest
 integer       idttur
 
@@ -110,9 +111,6 @@ endif
 ! Initialization
 !===============================================================================
 
-! Initialize variables to avoid compiler warnings
-ippok = 0
-
 ! Determine itycor now that irccor is known (iturb/itytur known much earlier)
 ! type of rotation/curvature correction for turbulent viscosity models
 if (irccor.eq.1.and.(itytur.eq.2.or.itytur.eq.5)) then
@@ -120,6 +118,8 @@ if (irccor.eq.1.and.(itytur.eq.2.or.itytur.eq.5)) then
 else if (irccor.eq.1.and.(iturb.eq.60.or.iturb.eq.70)) then
   itycor = 2
 endif
+
+pflag = POST_ON_LOCATION + POST_MONITOR
 
 !===============================================================================
 ! Additional physical properties
@@ -418,13 +418,11 @@ if (idilat.ge.4) then
     f_name  = trim(s_name) // '_dila_st'
     call add_property_field_1d(f_name, '', iustdy(iscal))
     id = iustdy(iscal)
-    call field_set_key_int(id, keyipp, -1)
     call field_set_key_int(id, keyvis, 0)
   enddo
   itsrho = nscal + 1
   call add_property_field_1d('dila_st', '', iustdy(itsrho))
   id = iustdy(iscal)
-  call field_set_key_int(id, keyipp, -1)
   call field_set_key_int(id, keyvis, 0)
 endif
 
@@ -523,7 +521,7 @@ if (iporos.ge.1) then
   f_name = 'porosity'
   call field_create(f_name, itycat, ityloc, 1, .false., ipori)
   call field_set_key_int(ipori, keylog, 1)
-  call field_set_key_int(ipori, keyvis, 1)
+  call field_set_key_int(ipori, keyvis, pflag)
   if (iporos.eq.2) then
     f_name = 'tensorial_porosity'
     call field_create(f_name, itycat, ityloc, 6, .false., iporf)
@@ -544,9 +542,8 @@ call field_set_key_str(id, keylbl, 'Local Time Step')
 if (idtvar.gt.0) then
   if (idtvar.eq.2) then
     call field_set_key_int(id, keylog, 1)
-    call field_set_key_int(id, keyvis, 1)
+    call field_set_key_int(id, keyvis, pflag)
   endif
-  ippdt = field_post_id(id)
 endif
 
 itycat = FIELD_INTENSIVE
@@ -556,11 +553,8 @@ itycat = FIELD_INTENSIVE
 
 if (ipucou.ne.0 .or. ncpdct.gt.0) then
   call field_create('dttens', itycat, ityloc, 6, .false., idtten)
-  call field_set_key_int(idtten, keyvis, 1)
+  call field_set_key_int(idtten, keyvis, POST_ON_LOCATION)
   call field_set_key_int(idtten, keylog, 1)
-  ipptx = field_post_id(id)
-  ippty = ipptx + 1
-  ipptz = ippty + 1
 endif
 
 ! Error estimators

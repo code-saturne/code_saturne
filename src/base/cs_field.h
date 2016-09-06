@@ -715,6 +715,52 @@ cs_field_get_key_int(const cs_field_t  *f,
                      int                key_id);
 
 /*----------------------------------------------------------------------------
+ * Set integer bits matching a mask to 1 for a given key for a field.
+ *
+ * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
+ * If the field category is not compatible with the key (as defined
+ * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
+ *
+ * parameters:
+ *   f             <-- pointer to field structure
+ *   key_id        <-- id of associated key
+ *   mask          <-- mask associated with key
+ *
+ * returns:
+ *   0 in case of success, > 1 in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_field_set_key_int_bits(cs_field_t  *f,
+                          int          key_id,
+                          int          mask);
+
+/*----------------------------------------------------------------------------
+ * Set integer bits matching a mask to 0 for a given key for a field.
+ *
+ * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
+ * If the field category is not compatible with the key (as defined
+ * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
+ *
+ * parameters:
+ *   f             <-- pointer to field structure
+ *   key_id        <-- id of associated key
+ *   mask          <-- mask associated with key
+ *
+ * returns:
+ *   0 in case of success, > 1 in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_field_clear_key_int_bits(cs_field_t  *f,
+                            int          key_id,
+                            int          mask);
+
+/*----------------------------------------------------------------------------
  * Assign a floating point value for a given key to a field.
  *
  * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.

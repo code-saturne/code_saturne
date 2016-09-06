@@ -259,9 +259,6 @@ _attribute_value(char               **path,
 
   cs_xpath_add_attribute(path, "status");
 
-  if (   cs_gui_strcmp(child, "postprocessing_recording")
-      || cs_gui_strcmp(child, "listing_printing")) *keyword = -999;
-
   if (cs_gui_get_status(*path, &result))
     *keyword = result;
 
@@ -289,71 +286,6 @@ _variable_attribute(const char  *name,
   cs_xpath_add_test_attribute(&path, "name", name);
   cs_xpath_add_element(&path, child);
   _attribute_value(&path, child, keyword);
-}
-
-/*-----------------------------------------------------------------------------
- * Return number of <probe recording> tags in the <variable> tag.
- *----------------------------------------------------------------------------*/
-
-static int
-_variable_number_probes(const char  *variable)
-{
-  char *path = NULL;
-  char *choice = NULL;
-  int   nb_probes;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "variable");
-  cs_xpath_add_test_attribute(&path, "name", variable);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_attribute(&path, "choice");
-  choice = cs_gui_get_attribute_value(path);
-
-  if (choice)
-    nb_probes = atoi(choice);
-  else
-    nb_probes = -1;
-
-  BFT_FREE(choice);
-  BFT_FREE(path);
-
-  return nb_probes;
-}
-
-/*-----------------------------------------------------------------------------
- * Return probe number for <probe_recording> tag for variable.
- *
- * parameters:
- *   variable   <--  name of variable
- *   num_probe  <--  number of <probe_recording> tags
- *----------------------------------------------------------------------------*/
-
-static int
-_variable_probe_name(const char *variable,
-                     int         num_probe)
-{
-  char *path = NULL;
-  char *strvalue = NULL;
-  int   intvalue;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "variable");
-  cs_xpath_add_test_attribute(&path, "name", variable);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
-  cs_xpath_add_attribute(&path, "name");
-
-  strvalue = cs_gui_get_attribute_value(path);
-
-  if (strvalue == NULL)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  intvalue = atoi(strvalue);
-
-  BFT_FREE(strvalue);
-  BFT_FREE(path);
-
-  return intvalue;
 }
 
 /*-----------------------------------------------------------------------------
@@ -385,37 +317,22 @@ _variable_label(const char *variable)
  * Post-processing options for all variables (velocity, pressure, ...)
  *
  * parameters:
- *   f_id               <-- field id
- *   ihisvr             --> histo output
- *   nvppmx             <-- number of printed variables
+ *   f_id <-- field id
  *----------------------------------------------------------------------------*/
 
 static void
-_variable_post(int         f_id,
-               int        *ihisvr,
-               const int  *nvppmx)
+_variable_post(int  f_id)
 {
-  int   nb_probes;
-  int   iprob;
   char *label = NULL;
-  int   num_probe;
 
   cs_field_t  *f = cs_field_by_id(f_id);
-  const int var_key_id = cs_field_key_id("post_id");
-  int ipp = cs_field_get_key_int(f, var_key_id);
 
-  if (ipp == -1) return;
-
-  int f_post = 0, f_log = 0;
-  const int k_post = cs_field_key_id("post_vis");
+  int f_post = -999, f_log = -999, f_monitor = -999;
   const int k_log  = cs_field_key_id("log");
   const int k_lbl = cs_field_key_id("label");
+  const int k_post = cs_field_key_id("post_vis");
 
-  _variable_attribute(f->name,
-                      "postprocessing_recording",
-                      &f_post);
-  if (f_post != -999)
-    cs_field_set_key_int(f, k_post, f_post);
+  /* Listing output */
 
   _variable_attribute(f->name,
                       "listing_printing",
@@ -423,23 +340,23 @@ _variable_post(int         f_id,
   if (f_log != -999)
     cs_field_set_key_int(f, k_log, f_log);
 
-  nb_probes = _variable_number_probes(f->name);
+  /* Postprocessing outputs */
 
-  ihisvr[0 + (ipp - 1)] = nb_probes;
+  _variable_attribute(f->name,
+                      "postprocessing_recording",
+                      &f_post);
+  if (f_post == 1)
+    cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
+  else if (f_post == 0)
+    cs_field_clear_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
 
-  if (f->dim > 1)
-    for (int idim = 1; idim < f->dim; idim++)
-      ihisvr[0 + (ipp - 1) + idim] = nb_probes;
-
-  if (nb_probes > 0) {
-    for (iprob = 0; iprob < nb_probes; iprob++) {
-      num_probe = _variable_probe_name(f->name, iprob+1);
-      ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1)] = num_probe;
-      if (f->dim > 1)
-        for (int idim = 1; idim < f->dim; idim++)
-          ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1) + idim] = num_probe;
-    }
-  }
+  _variable_attribute(f->name,
+                      "probes_recording",
+                      &f_monitor);
+  if (f_monitor == 1)
+    cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
+  else if (f_monitor == 0)
+    cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
 
   label = _variable_label(f->name);
   if (label != NULL)
@@ -472,72 +389,6 @@ _property_output_status(const char  *name,
 }
 
 /*-----------------------------------------------------------------------------
- * Return probe number for sub tag "probe_recording" for property.
- *
- * parameters:
- *   property   <--  name of property
- *   num_probe  <-- number of <probe_recording> tags
- *----------------------------------------------------------------------------*/
-
-static int
-_property_probe_name(const char  *property,
-                     int          num_probe)
-{
-  char *path = NULL;
-  char *strvalue = NULL;
-  int   value;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", property);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
-  cs_xpath_add_attribute(&path, "name");
-
-  strvalue = cs_gui_get_attribute_value(path);
-
-  if (strvalue == NULL)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  value = atoi(strvalue);
-
-  BFT_FREE(path);
-  BFT_FREE(strvalue);
-
-  return value;
-}
-
-/*-----------------------------------------------------------------------------
- * Return number of sub tags <probe_recording> for property.
- *----------------------------------------------------------------------------*/
-
-static int
-_property_number_probes(const char  *property)
-{
-  char *path = NULL;
-  char *choice = NULL;
-  int   nb_probes;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "property");
-  cs_xpath_add_test_attribute(&path, "name", property);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_attribute(&path, "choice");
-  choice = cs_gui_get_attribute_value(path);
-
-  if (choice) {
-    nb_probes = atoi(choice);
-    BFT_FREE(choice);
-  }
-  else
-    nb_probes = -1;
-
-  BFT_FREE(path);
-
-  return nb_probes;
-}
-
-/*-----------------------------------------------------------------------------
  * Return the label model's property.
  *
  * parameters:
@@ -566,61 +417,45 @@ _get_property_label(const char  *property)
  * Post-processing options for properties
  *
  * parameters:
- *   f_id               <-- field id
- *   ihisvr             --> histo output
- *   nvppmx             <-- number of printed variables
+ *   f_id <-- field id
  *----------------------------------------------------------------------------*/
 
 static void
-_property_post(int         f_id,
-               int        *ihisvr,
-               const int  *nvppmx)
+_property_post(int  f_id)
 {
-  int nb_probes;
-  int iprob;
   char *label = NULL;
-  int num_probe;
 
   cs_field_t  *f = cs_field_by_id(f_id);
-  const int var_key_id = cs_field_key_id("post_id");
-  int ipp = cs_field_get_key_int(f, var_key_id);
 
-  if (ipp == -1) return;
-
-  int f_post = 0, f_log = 0;
-  const int k_post = cs_field_key_id("post_vis");
+  int f_post = -999, f_log = -999, f_monitor = -999;
   const int k_log  = cs_field_key_id("log");
   const int k_lbl = cs_field_key_id("label");
+  const int k_post = cs_field_key_id("post_vis");
 
-  /* Visualization outputs frequency */
-  _property_output_status(f->name,
-                          "postprocessing_recording",
-                          &f_post);
-  if (f_post != -999)
-    cs_field_set_key_int(f, k_post, f_post);
-
-  /* Listing output frequency */
+  /* Listing output */
   _property_output_status(f->name,
                           "listing_printing",
                           &f_log);
   if (f_log != -999)
     cs_field_set_key_int(f, k_log, f_log);
 
-  /* Activated probes */
-  nb_probes = _property_number_probes(f->name);
+  /* Postprocessing outputs */
 
-  ihisvr[0 + (ipp - 1)] = nb_probes;
+  _property_output_status(f->name,
+                          "postprocessing_recording",
+                          &f_post);
+  if (f_post == 1)
+    cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
+  else if (f_post == 0)
+    cs_field_clear_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
 
-  if (nb_probes > 0) {
-    for (iprob=0; iprob<nb_probes; iprob++){
-      num_probe = _property_probe_name(f->name, iprob+1);
-      ihisvr[(iprob + 1)*(*nvppmx) + (ipp - 1)] = num_probe;
-      if (f->dim > 1)
-        for (int idim = 1; idim < f->dim; idim++)
-          ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1) + idim] = num_probe;
-    }
-  }
-
+  _property_output_status(f->name,
+                          "probes_recording",
+                          &f_monitor);
+  if (f_monitor == 1)
+    cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
+  else if (f_monitor == 0)
+    cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
   /* Take into account labels */
 
   label = _get_property_label(f->name);
@@ -653,130 +488,49 @@ _time_moment_output_status(int          moment_id,
 }
 
 /*-----------------------------------------------------------------------------
- * Return probe number for sub tag "probe_recording" for moment.
- *
- * parameters:
- *   moment_id  <-- id of moment
- *   num_probe  <-- number of <probe_recording> tags
- *----------------------------------------------------------------------------*/
-
-static int
-_time_moment_probe_name(int  moment_id,
-                        int  num_probe)
-{
-  char *path = NULL;
-  char *strvalue = NULL;
-  int   value;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element_num(&path, "time_average", moment_id+1);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_element_num(&path, "probe_recording", num_probe);
-  cs_xpath_add_attribute(&path, "name");
-
-  strvalue = cs_gui_get_attribute_value(path);
-
-  if (strvalue == NULL)
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
-  value = atoi(strvalue);
-
-  BFT_FREE(path);
-  BFT_FREE(strvalue);
-
-  return value;
-}
-
-/*-----------------------------------------------------------------------------
- * Return number of sub tags <probe_recording> for moment.
- *
- * parameters:
- *   moment_id  <-- id of moment
- *----------------------------------------------------------------------------*/
-
-static int
-_time_moment_number_probes(int moment_id)
-{
-  char *path = NULL;
-  char *choice = NULL;
-  int   nb_probes;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_element_num(&path, "time_average", moment_id+1);
-  cs_xpath_add_element(&path, "probes");
-  cs_xpath_add_attribute(&path, "choice");
-  choice = cs_gui_get_attribute_value(path);
-
-  if (choice) {
-    nb_probes = atoi(choice);
-    BFT_FREE(choice);
-  }
-  else
-    nb_probes = -1;
-
-  BFT_FREE(path);
-
-  return nb_probes;
-}
-
-/*-----------------------------------------------------------------------------
  * Post-processing options for time moments
  *
  * parameters:
- *   f_id               <-- field id
- *   ihisvr             --> histo output
- *   nvppmx             <-- number of printed variables
+ *   f_id <-- field id
  *----------------------------------------------------------------------------*/
 
 static void
-_time_moment_post(int         f_id,
-                  int         moment_id,
-                  int        *ihisvr,
-                  const int  *nvppmx)
+_time_moment_post(int  f_id,
+                  int  moment_id)
 {
-  int nb_probes;
-  int iprob;
   char *label = NULL;
-  int num_probe;
 
   cs_field_t  *f = cs_field_by_id(f_id);
-  const int var_key_id = cs_field_key_id("post_id");
-  int ipp = cs_field_get_key_int(f, var_key_id);
 
-  if (ipp == -1) return;
-
-  int f_post = 0, f_log = 0;
-  const int k_post = cs_field_key_id("post_vis");
+  int f_post = -999, f_log = -999, f_monitor = -999;
   const int k_log  = cs_field_key_id("log");
+  const int k_post = cs_field_key_id("post_vis");
 
-  /* Visualization outputs frequency */
-  _time_moment_output_status(moment_id,
-                             "postprocessing_recording",
-                             &f_post);
-  if (f_post != -999)
-    cs_field_set_key_int(f, k_post, f_post);
-
-  /* Listing output frequency */
+  /* Listing output */
   _time_moment_output_status(moment_id,
                              "listing_printing",
                              &f_log);
   if (f_log != -999)
     cs_field_set_key_int(f, k_log, f_log);
 
-  /* Activated probes */
-  nb_probes = _time_moment_number_probes(moment_id);
+  /* Postprocessing outputs */
 
-  ihisvr[0 + (ipp - 1)] = nb_probes;
+  _time_moment_output_status(moment_id,
+                             "postprocessing_recording",
+                             &f_post);
+  if (f_post == 1)
+    cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
+  else if (f_post == 0)
+    cs_field_clear_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
 
-  if (nb_probes > 0) {
-    for (iprob=0; iprob<nb_probes; iprob++){
-      num_probe = _time_moment_probe_name(moment_id, iprob+1);
-      ihisvr[(iprob + 1)*(*nvppmx) + (ipp - 1)] = num_probe;
-      if (f->dim > 1)
-        for (int idim = 1; idim < f->dim; idim++)
-          ihisvr[(iprob+1)*(*nvppmx) + (ipp - 1) + idim] = num_probe;
-    }
-  }
+  _time_moment_output_status(moment_id,
+                             "probes_recording",
+                             &f_monitor);
+
+  if (f_monitor == 1)
+    cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
+  else if (f_monitor == 0)
+    cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
 
   BFT_FREE(label);
 }
@@ -1137,43 +891,18 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
  * Determine output options.
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
-                                cs_int_t        *ncapt,
+void CS_PROCF (csenso, CSENSO) (cs_int_t        *ncapt,
                                 cs_int_t        *nthist,
                                 cs_real_t       *frhist,
                                 cs_int_t        *iecaux,
-                                cs_int_t        *ihisvr,
                                 cs_int_t        *tplfmt,
                                 cs_real_t       *xyzcap)
 {
   int i;
-  int ipp;
-  int *ippfld;
   char fmtprb[16];
 
   if (!cs_gui_file_is_loaded())
     return;
-
-  {
-    int n_fields = cs_field_n_fields();
-    int ipp_max = 1;
-    const int k_pp = cs_field_key_id("post_id");
-    for (int f_id = 0; f_id < n_fields; f_id++) {
-      const cs_field_t *f = cs_field_by_id(f_id);
-      int ipp1 = cs_field_get_key_int(f, k_pp);
-      int ipp2 = ipp1 + f->dim - 1;
-      ipp_max = CS_MAX(ipp_max, ipp2);
-    }
-    BFT_MALLOC(ippfld, ipp_max, int);
-    for (ipp = 0; ipp < ipp_max; ipp++)
-      ippfld[ipp] = -1;
-    for (int f_id = 0; f_id < n_fields; f_id++) {
-      const cs_field_t *f = cs_field_by_id(f_id);
-      ipp = cs_field_get_key_int(f, k_pp);
-      if (ipp > 1)
-        ippfld[ipp - 1] = f_id;
-    }
-  }
 
   _output_value("auxiliary_restart_file_writing", iecaux);
   _output_value("listing_printing_frequency", &cs_glob_log_frequency);
@@ -1215,12 +944,12 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE)
-      _variable_post(f->id, ihisvr, nvppmx);
+      _variable_post(f->id);
     else if (f->type & CS_FIELD_PROPERTY)
-      _property_post(f->id, ihisvr, nvppmx);
+      _property_post(f->id);
     else if (moment_id != NULL) {
       if (moment_id[f_id] > -1)
-        _time_moment_post(f->id, moment_id[f_id], ihisvr, nvppmx);
+        _time_moment_post(f->id, moment_id[f_id]);
     }
   }
 
@@ -1239,20 +968,7 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
     bft_printf("--xyzcap[%i][1] = %f\n", i, xyzcap[1 +i*3]);
     bft_printf("--xyzcap[%i][2] = %f\n", i, xyzcap[2 +i*3]);
   }
-  const int k_post = cs_field_key_id("post_id");
-  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    const cs_field_t *f = cs_field_by_id(f_id);
-    const int ipp = cs_field_get_key_int(f, k_post);
-    bft_printf("-->variable post_id[%i] = %s\n", ipp, f->name);
-    bft_printf("--ihisvr[0][%i]= %i \n", ipp, ihisvr[0 + (ipp-1)]);
-    if (ihisvr[0 + (ipp-1)]>0)
-      for (j=0; j<ihisvr[0 + (ipp-1)]; j++)
-        bft_printf("--ihisvr[%i][%i]= %i \n", j+1, ipp,
-                   ihisvr[(j+1)*(*nvppmx) + (ipp-1)]);
-  }
 #endif
-
-  BFT_FREE(ippfld);
 }
 
 /*============================================================================

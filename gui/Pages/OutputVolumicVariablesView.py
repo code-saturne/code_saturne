@@ -66,94 +66,6 @@ log.setLevel(GuiParam.DEBUG)
 #
 #-------------------------------------------------------------------------------
 
-class ProbesValidator(QRegExpValidator):
-    """
-    Validator for real data.
-    """
-    def __init__(self, parent, xml_model):
-        """
-        Initialization for validator
-        """
-        regExp = QRegExp("^[0-9 ]*$")
-        super(ProbesValidator, self).__init__(regExp, parent)
-        self.parent = parent
-        self.mdl = xml_model
-        self.state = QValidator.Invalid
-
-
-    def validate(self, stri, pos):
-        """
-        Validation method.
-
-        QValidator.Invalid       0  The string is clearly invalid.
-        QValidator.Intermediate  1  The string is a plausible intermediate value during editing.
-        QValidator.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
-        """
-        state = QRegExpValidator.validate(self, stri, pos)[0]
-
-        valid = True
-        for probe in str(stri).split():
-            if probe not in self.mdl.getVariableProbeList():
-                valid = False
-
-        if state == QValidator.Acceptable:
-            if not valid:
-                state = QValidator.Intermediate
-
-        palette = self.parent.palette()
-
-        if state == QValidator.Intermediate:
-            palette.setColor(QPalette.Text, QColor("red"))
-            self.parent.setPalette(palette)
-        else:
-            palette.setColor(QPalette.Text, QColor("black"))
-            self.parent.setPalette(palette)
-
-        self.state = state
-
-        if PYQT_API_1:
-            return (state, pos)
-        else:
-            return (state, stri, pos)
-
-#-------------------------------------------------------------------------------
-#
-#-------------------------------------------------------------------------------
-
-class ProbesDelegate(QItemDelegate):
-    """
-    """
-    def __init__(self, parent=None, xml_model=None):
-        super(ProbesDelegate, self).__init__(parent)
-        self.parent = parent
-        self.mdl = xml_model
-
-
-    def createEditor(self, parent, option, index):
-        editor = QLineEdit(parent)
-        validator = ProbesValidator(editor, self.mdl)
-        editor.setValidator(validator)
-        return editor
-
-
-    def setEditorData(self, editor, index):
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        editor.setText(value)
-
-
-    def setModelData(self, editor, model, index):
-        value = editor.text()
-        if editor.validator().state == QValidator.Acceptable:
-            selectionModel = self.parent.selectionModel()
-            for idx in selectionModel.selectedIndexes():
-                if idx.column() == index.column():
-                    model.setData(idx, to_qvariant(value), Qt.DisplayRole)
-
-
-#-------------------------------------------------------------------------------
-#
-#-------------------------------------------------------------------------------
-
 class LabelDelegate(QItemDelegate):
     """
     """
@@ -206,24 +118,26 @@ class LabelDelegate(QItemDelegate):
 #-------------------------------------------------------------------------------
 # item class
 #-------------------------------------------------------------------------------
+
 class item_class(object):
     '''
     custom data object
     '''
-    def __init__(self, name, label, listing, post, probes):
+    def __init__(self, name, label, listing, post, monitor):
         self.name    = name
         self.label   = label
-        self.listing = listing
-        self.post    = post
-        self.probes  = probes
+        self.status  = [listing, post, monitor]
 
     def __repr__(self):
-        return "variable - %s %s // listing %s // post %s // probes %s"\
-               % (self.name, self.label, self.listing, self.post, self.probes)
+        return "variable - %s %s // log %s // post %s // monitor %s"\
+               % (self.name, self.label,
+                  self.status[0], self.status[1], self.status[2])
+
 
 #-------------------------------------------------------------------------------
 # Treeitem class
 #-------------------------------------------------------------------------------
+
 class TreeItem(object):
     '''
     a python object used to return row/column data, and keep note of
@@ -235,22 +149,17 @@ class TreeItem(object):
         self.header = header
         self.childItems = []
 
-
     def appendChild(self, item):
         self.childItems.append(item)
-
 
     def child(self, row):
         return self.childItems[row]
 
-
     def childCount(self):
         return len(self.childItems)
 
-
     def columnCount(self):
         return 5
-
 
     def data(self, column, role):
         if self.item == None:
@@ -263,30 +172,18 @@ class TreeItem(object):
                 return to_qvariant(self.item.label)
             elif column == 1 and role == Qt.DisplayRole:
                 return to_qvariant(self.item.name)
-            elif column == 2 and role == Qt.CheckStateRole:
-                value = self.item.listing
+            elif column >= 2 and role == Qt.CheckStateRole:
+                value = self.item.status[column - 2]
                 if value == 'on':
                     return to_qvariant(Qt.Checked)
                 elif value == 'onoff':
                     return to_qvariant(Qt.PartiallyChecked)
                 else:
                     return to_qvariant(Qt.Unchecked)
-            elif column == 3 and role == Qt.CheckStateRole:
-                value = self.item.post
-                if value == 'on':
-                    return to_qvariant(Qt.Checked)
-                elif value == 'onoff':
-                    return to_qvariant(Qt.PartiallyChecked)
-                else:
-                    return to_qvariant(Qt.Unchecked)
-            elif column == 4 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.probes)
         return to_qvariant()
-
 
     def parent(self):
         return self.parentItem
-
 
     def row(self):
         if self.parentItem:
@@ -335,10 +232,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            if index.column() == 4:
-                return to_qvariant(self.tr("Code_Saturne key word: IHISVR"))
-            else:
-                return to_qvariant()
+            return to_qvariant()
 
         # StatusTips
         if role == Qt.StatusTipRole:
@@ -349,7 +243,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             elif index.column() == 3:
                 return to_qvariant(self.tr("Post-processing"))
             elif index.column() == 4:
-                return to_qvariant(self.tr("Enter Probes number"))
+                return to_qvariant(self.tr("Monitoring"))
 
         # Display
         if role == Qt.DisplayRole:
@@ -373,14 +267,12 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
         itm = index.internalPointer()
         if itm in self.noderoot.values():
             # traitement des categories
-            if index.column() == 2 or index.column() == 3:
+            if index.column() >= 2:
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable | Qt.ItemIsTristate
-            elif index.column() == 4:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
             else:
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         else:
-            if index.column() == 2 or index.column() == 3:
+            if index.column() >= 2:
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
             elif index.column() == 1:
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable
@@ -399,7 +291,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             elif section == 3:
                 return to_qvariant(self.tr("Post-\nprocessing"))
             elif section == 4:
-                return to_qvariant(self.tr("Probes"))
+                return to_qvariant(self.tr("Monitoring"))
         return to_qvariant()
 
 
@@ -451,7 +343,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
 
     def populateModel(self):
         for bs in self.prtlist:
-            item = item_class("", bs, "off", "off", "")
+            item = item_class("", bs, "off", "off", "off")
             newparent = TreeItem(item, bs, self.rootItem)
             self.rootItem.appendChild(newparent)
             self.noderoot[bs] = newparent
@@ -465,7 +357,6 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
                 post = "off"
                 self.mdl.setPostStatus(name, post)
-                self.disabledItem.append((row, 3))
             else:
                  post = self.mdl.getPostStatus(name)
 
@@ -474,17 +365,14 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                     self.disabledItem.append((row, 3))
                     self.disabledItem.append((row, 4))
 
-            if not self.mdl.getVariableProbeList():
-                self.disabledItem.append((row, 4))
-
-            listProbe = self.mdl.getProbesList(name)
-            if listProbe:
-                probes = " ".join(listProbe)
+            if self.mdl.getProbeList() == []:
+                monitor = "off"
+                self.mdl.setMonitorStatus(name, monitor)
             else:
-                probes = ""
+                monitor = self.mdl.getMonitorStatus(name)
 
             # StandardItemModel data
-            item = item_class(name, label, printing, post, probes)
+            item = item_class(name, label, printing, post, monitor)
             newItem = TreeItem(item, "", parentItem)
             parentItem.appendChild(newItem)
 
@@ -493,36 +381,36 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             size = len(item.childItems)
             listing = 0
             post    = 0
-            probes  = 0
+            monitor = 0
 
             for itm in item.childItems:
-                if itm.item.listing == "on":
+                if itm.item.status[0] == "on":
                     listing = listing + 1
-                if itm.item.post == "on":
+                if itm.item.status[1] == "on":
                     post = post + 1
-                if itm.item.probes == "on":
-                    probes = probes + 1
+                if itm.item.status[2] == "on":
+                    monitor = monitor + 1
 
             if listing == 0:
-                item.item.listing = "off"
+                item.item.status[0] = "off"
             elif listing == size:
-                item.item.listing = "on"
+                item.item.status[0] = "on"
             else:
-                item.item.listing = "onoff"
+                item.item.status[0] = "onoff"
 
             if post == 0:
-                item.item.post = "off"
+                item.item.status[1] = "off"
             elif post == size:
-                item.item.post = "on"
+                item.item.status[1] = "on"
             else:
-                item.item.post = "onoff"
+                item.item.status[1] = "onoff"
 
-#            if probes == 0:
-#                item.item.probes = "off"
-#            elif probes == size:
-#                item.item.probes = "on"
-#            else:
-#                item.item.probes = "onoff"
+            if monitor == 0:
+                item.item.status[2] = "off"
+            elif monitor == size:
+                item.item.status[2] = "on"
+            else:
+                item.item.status[2] = "onoff"
 
 
     def setData(self, index, value, role=None):
@@ -536,67 +424,48 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                 self.mdl.setVariableLabel(item.item.label, label)
             item.item.label = label
 
-        elif index.column() == 2:
+        elif index.column() >= 2:
+            c_id = index.column() - 2
             v = from_qvariant(value, int)
             if v == Qt.Checked:
-                item.item.listing = "on"
+                item.item.status[c_id] = "on"
             else:
-                item.item.listing = "off"
+                item.item.status[c_id] = "off"
+            if c_id == 1:
+                if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
+                    item.item.status[1] = "off"
+            elif c_id == 2:
+                if self.mdl.getProbeList() == []:
+                    item.item.status[2] = "off"
             if item not in self.noderoot.values():
-                self.mdl.setPrintingStatus(item.item.name, item.item.listing)
+                if c_id == 0:
+                    self.mdl.setPrintingStatus(item.item.name, item.item.status[0])
+                elif c_id == 1:
+                    self.mdl.setPostStatus(item.item.name, item.item.status[1])
+                elif c_id == 2:
+                    self.mdl.setMonitorStatus(item.item.name, item.item.status[2])
                 # count for parent item
                 size = len(item.parentItem.childItems)
-                listing = 0
+                active = 0
                 for itm in item.parentItem.childItems:
-                    if itm.item.listing == "on":
-                        listing = listing + 1
-                if listing == 0:
-                    item.parentItem.item.listing = "off"
-                elif listing == size:
-                    item.parentItem.item.listing = "on"
+                    if itm.item.status[c_id] == "on":
+                        active = active + 1
+                if active == 0:
+                    item.parentItem.item.status[c_id] = "off"
+                elif active == size:
+                    item.parentItem.item.status[c_id] = "on"
                 else:
-                    item.parentItem.item.listing = "onoff"
+                    item.parentItem.item.status[c_id] = "onoff"
 
             else:
                 for itm in item.childItems:
-                    self.mdl.setPrintingStatus(itm.item.name, item.item.listing)
-                    itm.item.listing = item.item.listing
-
-        elif index.column() == 3:
-            v = from_qvariant(value, int)
-            if v == Qt.Checked:
-                item.item.post = "on"
-            else:
-                item.item.post = "off"
-
-            if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
-                item.item.post = "off"
-
-            if item not in self.noderoot.values():
-                self.mdl.setPostStatus(item.item.name, item.item.post)
-                # count for parent item
-                size = len(item.parentItem.childItems)
-                post = 0
-                for itm in item.parentItem.childItems:
-                    if itm.item.post == "on":
-                        post = post + 1
-                if post == 0:
-                    item.parentItem.item.post = "off"
-                elif post == size:
-                    item.parentItem.item.post = "on"
-                else:
-                    item.parentItem.item.post = "onoff"
-            else:
-                # set for each variable
-                for itm in item.childItems:
-                    self.mdl.setPrintingStatus(itm.item.name, item.item.post)
-                    itm.item.post = item.item.post
-
-        elif index.column() == 4:
-            probes = str(from_qvariant(value, to_text_string))
-            item.item.probes = probes
-            if item not in self.noderoot.values():
-                self.mdl.updateProbes(item.item.name, item.item.probes)
+                    if c_id == 0:
+                        self.mdl.setPrintingStatus(itm.item.name, item.item.status[0])
+                    elif c_id == 1:
+                        self.mdl.setPostStatus(itm.item.name, item.item.status[1])
+                    elif c_id == 2:
+                        self.mdl.setMonitorStatus(itm.item.name, item.item.status[2])
+                    itm.item.status[c_id] = item.item.status[c_id]
 
         self.dataChanged.emit(QModelIndex(), QModelIndex())
 
@@ -636,8 +505,6 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         labelDelegate = LabelDelegate(self.treeViewOutput, self.mdl)
         self.treeViewOutput.setItemDelegateForColumn(0, labelDelegate)
 
-        probesDelegate = ProbesDelegate(self.treeViewOutput, self.mdl)
-        self.treeViewOutput.setItemDelegateForColumn(4, probesDelegate)
         self.treeViewOutput.resizeColumnToContents(0)
         self.treeViewOutput.resizeColumnToContents(1)
 

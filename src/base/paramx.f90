@@ -36,8 +36,6 @@ module paramx
 
   !=============================================================================
 
-  ! nvppmx : nombre de variables pour affichages
-
   !> maximum number of scalars solutions of an
   !> advection equation, apart from the variables of the turbulence model
   !> \f$ (k, \varepsilon, R_{ij}, \omega, \varphi, \overline{f}, \alpha, \nu_t\f$)
@@ -48,12 +46,8 @@ module paramx
   !> maximal number of variables = nscamx + 12 (u,v,w,P,Rij,e,alp)
   integer   nvarmx
 
-  !> number of variables for probes
-  integer   nvppmx
-
   parameter(nscamx=200)
   parameter(nvarmx=nscamx+12)
-  parameter(nvppmx=512)
 
   !> Maximal possible boundary condition types
   integer    ntypmx

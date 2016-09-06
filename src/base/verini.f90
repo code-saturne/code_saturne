@@ -77,11 +77,11 @@ integer          iok
 ! Local variables
 
 character        chaine*80, chain2*80
-integer          ii    , iis   , jj    , iisct, kval
+integer          ii    , iis   , jj    , iisct
 integer          iscal , iest  , iiesca, ivar
 integer          nbsccp
-integer          c_id, f_id, f_dim, n_fields, ippf
-integer          ipp   , nbccou, imrgrl
+integer          f_id, n_fields
+integer          nbccou, imrgrl
 integer          iokpre, indest, iiidef, istop
 integer          kscmin, kscmax, ifcvsl
 integer          keyvar, keysca
@@ -125,58 +125,6 @@ if (nthist.le.0.and.nthist.ne.-1) then
   write(nfecra,1210) 'NTHIST (Periode   Sortie Histo. )',nthist
   iok = iok + 1
 endif
-
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyipp, ippf)
-  if (ippf.le.1) cycle
-  call field_get_dim (f_id, f_dim)
-  do c_id = 1, min(f_dim, 3)
-    ipp = ippf + c_id - 1
-    if (ihisvr(ipp,1).gt.ncapt.or.                                  &
-      (ihisvr(ipp,1).lt.0.and.ihisvr(ipp,1).ne.-1) ) then
-      call field_get_label(f_id, chaine)
-      if (f_dim .eq. 3) then
-        chaine = trim(chaine) // nomext3(c_id)
-      else if (f_dim .eq. 6) then
-        chaine = trim(chaine) // nomext63(c_id)
-      endif
-      write(nfecra,1240)chaine(1:16),ipp,ncapt,ihisvr(ipp,1)
-      iok = iok + 1
-    endif
-  enddo
-enddo
-
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyipp, ippf)
-  if (ippf.le.1) cycle
-  call field_get_dim (f_id, f_dim)
-  do c_id = 1, min(f_dim, 3)
-    ipp = ippf + c_id - 1
-    if ((ihisvr(ipp,1).gt.0.and.ihisvr(ipp,1).lt.ncapt)) then
-      do jj = 1, ihisvr(ipp,1)
-        if (ihisvr(ipp,jj+1).le.0.or.ihisvr(ipp,jj+1).gt.ncapt) then
-          call field_get_label(f_id, chaine)
-          if (f_dim .eq. 3) then
-            chaine = trim(chaine) // nomext3(c_id)
-          else if (f_dim .eq. 6) then
-            chaine = trim(chaine) // nomext63(c_id)
-          endif
-          write(nfecra,1250) chaine(1:16),ipp,jj+1,ncapt,ihisvr(ipp,jj+1)
-          iok = iok + 1
-        endif
-      enddo
-    endif
-  enddo
-enddo
-
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keylog, kval)
-  if (kval.ne.0 .and. kval.ne.1) then
-    call field_get_label(f_id, chaine)
-    write(nfecra,1260)chaine(1:16),kval
-    iok = iok + 1
-  endif
-enddo
 
 if (ntlist.ne.-1.and.ntlist.le.0) then
   write(nfecra,1210) 'NTLIST (Periode   Sortie Listing)',ntlist
@@ -1753,66 +1701,6 @@ endif
 '@',                                                            /,&
 '@  NCAPT  est le nombre de sondes utilisees pour les',         /,&
 '@    historiques.',                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1240 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IHISVR(',i10,   ',1) DOIT ETRE UN ENTIER EGAL A -1',      /,&
-'@      POSITIF OU NUL ET INFERIEUR OU EGAL A NCAPT = ',i10,    /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  IHISVR(I,1) indique les sondes a utiliser pour la variable',/,&
-'@    I (-1 signifiant que toutes sont utilisees)',             /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1250 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IHISVR(',i10,   ',',i10,   ') DOIT ETRE UN ENTIER',       /,&
-'@      STRICTEMENT POSITIF ET',                                /,&
-'@      INFERIEUR OU EGAL A NCAPT = ', i10,                     /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute',                            /,&
-'@',                                                            /,&
-'@  IHISVR(I,j+1) indique le numero de la jieme sonde a',       /,&
-'@    utiliser pour la variable a post-traiter numero I',       /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1260 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    CHAMP', a16,                                              /,&
-'@      MOT CLE ''log'' DOIT ETRE UN ENTIER EGAL A 0 OU 1',    /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute',                            /,&
-'@',                                                            /,&
-'@  ILISVR(I) indique si la variable I sera suivie lors des',   /,&
-'@    impressions dans le listing',                             /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
 '@',                                                            /,&
@@ -4277,66 +4165,6 @@ endif
 '@',                                                            /,&
 '@  NCAPT  is the number of probes for history/ time series',   /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1240 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IHISVR(',i10,   ',1) MUST BE AN INTEGER EGAL to -1',      /,&
-'@      or Zero,    or positive but less than NCAPT = ',i10,    /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@    The calculation could NOT run.',                          /,&
-'@',                                                            /,&
-'@  IHISVR(I,1) is the number of probes for variable  I',       /,&
-'@      (-1 means all probes are used)',                        /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1250 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IHISVR(',i10,   ',',i10,   ') MUST BE AN INTEGER',        /,&
-'@    LARGER OR EQUAL TO 1 AND',                                /,&
-'@      LESS OR EQUAL TO NCAPT = ', i10,                        /,&
-'@   IT HAS VALUE = ',i10,                                      /,&
-'@',                                                            /,&
-'@  The calculation could NOT run.',                            /,&
-'@',                                                            /,&
-'@  IHISVR(I,j+1) gives the number of the j-ieth probe',        /,&
-'@    to be used with variable number I to post-process',       /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1260 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    FIELD', a16,                                              /,&
-'@      KEY WORD ''log'' MUST BE AN INTEGER EQUAL  0 OR  1',    /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@  The calculation could NOT run.',                            /,&
-'@',                                                            /,&
-'@  ILISVR(I) tells if variable (I)should be included',         /,&
-'@    in the printed listing',                                  /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&

@@ -52,6 +52,8 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 
+#include "cs_post.h"
+
 #include "cs_rad_transfer.h"
 
 /*----------------------------------------------------------------------------
@@ -259,7 +261,7 @@ cs_rad_transfer_prp(void)
       if (!cs_field_is_key_set(f, keylog))
         cs_field_set_key_int(f, keylog, 1);
       if (!cs_field_is_key_set(f, keyvis))
-        cs_field_set_key_int(f, keyvis, 1);
+        cs_field_set_key_int(f, keyvis, CS_POST_ON_LOCATION);
     }
 
     {

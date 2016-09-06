@@ -63,6 +63,8 @@ use ihmpre
 use parall
 use period
 use mesh
+use post
+use field
 
 !===============================================================================
 
@@ -74,6 +76,7 @@ double precision dt(ncelet)
 
 ! Local variables
 
+integer          n_fields, f_id, flag
 integer          ifac  , istr, icompt, ii
 integer          mbstru, mbaste
 
@@ -285,9 +288,12 @@ endif
 !     Valeur par defaut et verifiction de IHISTR
 if (nbstru.eq.0) ihistr = 0
 
+call field_get_n_fields(n_fields)
+
 icompt = 0
-do ii = 2, nvppmx
-  if(ihisvr(ii,1).ne.0) icompt = icompt+1
+do f_id = 0, n_fields - 1
+  call field_get_key_int(f_id, keyvis, flag)
+  if (iand(flag, POST_MONITOR).ne.0) icompt = icompt+1
 enddo
 if( (icompt.eq.0.or.ncapt.eq.0) .and. ihistr.eq.0 ) then
   nthist = -1

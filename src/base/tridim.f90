@@ -895,7 +895,7 @@ endif
 
 do while (iterns.le.nterup)
 
-  call precli(nvar, nscal, icodcl, rcodcl)
+  call precli(nvar, icodcl, rcodcl)
 
   !     - Interface Code_Saturne
   !       ======================
@@ -1462,7 +1462,7 @@ enddo
 
 if (ippmod(idarcy).eq.1) then
 
-  call precli(nvar, nscal, icodcl, rcodcl)
+  call precli(nvar, icodcl, rcodcl)
 
   if (iihmpr.eq.1) then
 

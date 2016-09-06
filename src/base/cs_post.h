@@ -60,6 +60,8 @@ BEGIN_C_DECLS
 #define CS_POST_BOUNDARY_NR          (1 << 1)  /* postprocess boundary
                                                   without reconstruction */
 
+#define CS_POST_MONITOR              (1 << 2)  /* monitor variables */
+
 /*============================================================================
  * Local type definitions
  *============================================================================*/

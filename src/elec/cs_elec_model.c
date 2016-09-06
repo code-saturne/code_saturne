@@ -63,6 +63,7 @@
 #include "cs_turbulence_model.h"
 #include "cs_gui_specific_physics.h"
 #include "cs_gui_util.h"
+#include "cs_post.h"
 #include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
@@ -1978,6 +1979,7 @@ cs_elec_add_property_fields(const int  *ielarc,
   const int klbl   = cs_field_key_id("label");
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
+  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
   {
     f = cs_field_create("temperature",
@@ -1985,12 +1987,9 @@ cs_elec_add_property_fields(const int  *ielarc,
                         CS_MESH_LOCATION_CELLS,
                         1, /* dim */
                         has_previous);
-    cs_field_set_key_int(f, keyvis, 1);
+    cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Temperature");
-
-    /* Mapping to field and postprocessing */
-    cs_field_post_id(f->id);
   }
 
   {
@@ -1999,12 +1998,9 @@ cs_elec_add_property_fields(const int  *ielarc,
                         CS_MESH_LOCATION_CELLS,
                         1, /* dim */
                         has_previous);
-    cs_field_set_key_int(f, keyvis, 1);
+    cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "PuisJoul");
-
-    /* Mapping to field and postprocessing */
-    cs_field_post_id(f->id);
   }
 
   {
@@ -2013,12 +2009,9 @@ cs_elec_add_property_fields(const int  *ielarc,
                         CS_MESH_LOCATION_CELLS,
                         3, /* dim */
                         has_previous);
-    cs_field_set_key_int(f, keyvis, 1);
+    cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Current_Real");
-
-    /* Mapping to field and postprocessing */
-    cs_field_post_id(f->id);
   }
 
   /* specific for joule effect */
@@ -2029,12 +2022,9 @@ cs_elec_add_property_fields(const int  *ielarc,
                           CS_MESH_LOCATION_CELLS,
                           3, /* dim */
                           has_previous);
-      cs_field_set_key_int(f, keyvis, 1);
+      cs_field_set_key_int(f, keyvis, post_flag);
       cs_field_set_key_int(f, keylog, 1);
       cs_field_set_key_str(f, klbl, "Curent_Imag");
-
-      /* Mapping to field and postprocessing */
-      cs_field_post_id(f->id);
     }
   }
 
@@ -2046,25 +2036,18 @@ cs_elec_add_property_fields(const int  *ielarc,
                           CS_MESH_LOCATION_CELLS,
                           3,    /* dim */
                           has_previous);
-      cs_field_set_key_int(f, keyvis, 1);
+      cs_field_set_key_int(f, keyvis, post_flag);
       cs_field_set_key_int(f, keylog, 1);
       cs_field_set_key_str(f, klbl, "For_Lap");
-
-      /* Mapping to field and postprocessing */
-      cs_field_post_id(f->id);
 
       f = cs_field_create("magnetic_field",
                           field_type,
                           CS_MESH_LOCATION_CELLS,
                           3,    /* dim */
                           has_previous);
-      cs_field_set_key_int(f, keyvis, 1);
+      cs_field_set_key_int(f, keyvis, post_flag);
       cs_field_set_key_int(f, keylog, 1);
       cs_field_set_key_str(f, klbl, "Mag_Field");
-
-      /* Mapping to field and postprocessing */
-      cs_field_post_id(f->id);
-
     }
 
     if (cs_glob_elec_option->ixkabe == 1) {
@@ -2073,12 +2056,9 @@ cs_elec_add_property_fields(const int  *ielarc,
                           CS_MESH_LOCATION_CELLS,
                           1, /* dim */
                           has_previous);
-      cs_field_set_key_int(f, keyvis, 1);
+      cs_field_set_key_int(f, keyvis, post_flag);
       cs_field_set_key_int(f, keylog, 1);
       cs_field_set_key_str(f, klbl, "Coef_Abso");
-
-      /* Mapping to field and postprocessing */
-      cs_field_post_id(f->id);
     }
     else if (cs_glob_elec_option->ixkabe == 2) {
       f = cs_field_create("radiation_source",
@@ -2086,12 +2066,9 @@ cs_elec_add_property_fields(const int  *ielarc,
                           CS_MESH_LOCATION_CELLS,
                           1, /* dim */
                           has_previous);
-      cs_field_set_key_int(f, keyvis, 1);
+      cs_field_set_key_int(f, keyvis, post_flag);
       cs_field_set_key_int(f, keylog, 1);
       cs_field_set_key_str(f, klbl, "TS_radia");
-
-      /* Property number and mapping to field and postprocessing */
-      cs_field_post_id(f->id);
     }
   }
 

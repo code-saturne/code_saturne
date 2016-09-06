@@ -1696,8 +1696,9 @@ cs_equation_create_field(cs_equation_t     *eq)
                                      has_previous);
 
   /* Set default value for default keys */
+  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
   cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
+  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
 
   /* Store the related field id */
   eq->field_id = cs_field_id_by_name(eq->varname);

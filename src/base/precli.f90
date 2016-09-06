@@ -66,7 +66,7 @@
 !______________________________________________________________________________
 
 subroutine precli &
- ( nvar   , nscal  ,                                              &
+ ( nvar   ,                                                       &
    icodcl ,                                                       &
    rcodcl )
 
@@ -93,7 +93,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar
 
 integer          icodcl(nfabor,nvarcl)
 
@@ -101,16 +101,12 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
-integer          ifac, ivar, iscal
+integer          ifac, ivar
 
 !===============================================================================
-!===============================================================================
-! 1.  INITIALISATIONS
-!===============================================================================
-
 
 !===============================================================================
-! 2.  INITIALISATION DES CONDITIONS LIMITES ET TYPE DE FACES DE BORD
+! INITIALISATION DES CONDITIONS LIMITES ET TYPE DE FACES DE BORD
 !===============================================================================
 
 !      ICODCL = 0 INDIQUE QUE LA CL N'A PAS ETE RENSEIGNEE

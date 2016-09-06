@@ -54,7 +54,7 @@ implicit none
 
 ! Local variables
 
-integer          iok, ipp, nmodpp, imom, n_moments, f_id, nfld
+integer          iok, ipp, nmodpp, imom, n_moments, f_id
 
 double precision ttsuit, wtsuit
 
@@ -134,19 +134,10 @@ call addfld
 call cs_gui_time_moments
 call cs_user_time_moments
 
-n_moments = cs_time_moment_n_moments()
-do imom = 1, n_moments
-  f_id = time_moment_field_id(imom)
-  if (f_id.lt.0) cycle
-  ipp = field_post_id(f_id)
-enddo
-
 ! Postprocessing and logging
 
 if (iihmpr.eq.1) then
-  call csenso                                                   &
-     ( nvppmx, ncapt,  nthist, frhist, iecaux,          &
-       ihisvr, tplfmt, xyzcap )
+  call csenso(ncapt, nthist, frhist, iecaux, tplfmt, xyzcap)
 endif
 
 ! Restart

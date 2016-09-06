@@ -58,6 +58,7 @@ use ppincl
 use ihmpre
 use cs_coal_incl
 use field
+use post
 
 !===============================================================================
 
@@ -82,7 +83,7 @@ idim1  = 1
 idim3  = 3
 iprev  = .true.    ! variables have previous value
 inoprv = .false.   ! variables have no previous value
-iopchr = 1         ! postprocessing level for variables
+iopchr = POST_ON_LOCATION + POST_MONITOR ! postprocessing level for variables
 
 ! Key id of the coal scalar class
 call field_get_key_id("scalar_class", keyccl)

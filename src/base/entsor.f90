@@ -76,9 +76,6 @@ module entsor
   integer, save :: keylog = -1
   integer, save :: keyvis = -1
 
-  !> field key for start position in global postprocessing (ipp index) arrays
-  integer, save :: keyipp = -1
-
   !> \}
 
   !> \defgroup userfile Additional user files
@@ -124,7 +121,6 @@ module entsor
   !> - it is recommended to keep the default value and, if necessary, to modify
   !> the launch script to copy the files in the alternate destination directory
   !> - useful if and only if chronological record files are generated
-  !> (i.e. there is \c n for which \ref ihisvr "ihisvr"(n, 1) \f$\ne\f$ 0)
   character(len=80), save :: emphis
 
   !> prefix of history files
@@ -167,51 +163,15 @@ module entsor
   !> - \>0: period  (every \ref nthist time step)
   !>
   !> The default value is -1 if there is no chronological record file to
-  !> generate (if there is no probe, \ref ncapt = 0, or if
-  !> \ref ihisvr "ihisvr"(n, 1)=0 for all the variables) and 1 otherwise.
+  !> generate (if there is no probe, or no active probe output) and 1 otherwise.
   !> If chronological records are generated, it is usually wise to keep the
   !> default value \ref nthist=1, in order to avoid missing any high frequency
   !> evolution (unless the total number of time steps is much too big).
-  !> Useful if and only if chronological record files are generated (
-  !> i.e. there are probes (\ref ncapt>0) there is \c n for which
-  !> \ref ihisvr "ihisvr"(n, 1) \f$\ne\f$ 0)
+  !> Useful if and only if chronological record files are generated
   integer, save :: nthist
 
   !> frhist : output frequency in seconds
   double precision, save :: frhist
-
-  !> number \ref ihisvr "ihisvr(n, 1)" and index-numbers \ref ihisvr
-  !> "ihisvr"(n, j>1)
-  !> of the record probes to be used for each variable, em i.e. calculation
-  !> variable
-  !> or physical property defined at the cell centers.
-  !> With \ref ihisvr "ihisvr"(n, 1)=-999 or -1, \ref ihisvr "ihisvr"(n, j>1)
-  !> is useless.
-  !>  - \ref ihisvr "ihisvr"(n, 1): number of record probes to use
-  !> for the variable N.
-  !>     * = -999: by default: chronogical records are generated on
-  !> all the probes if N is one of the main variables (pressure, velocity,
-  !> turbulence, scalars), the local time step or the turbulent
-  !> viscosity. For the other quantities, no chronological record is generated.
-  !>     * = -1: chronological records are produced on all the probes.
-  !>     * = 0: no chronological record on any probe.
-  !>     * > 0: chronological record on \ref ihisvr "ihisvr"(n, 1) probes to be
-  !> specified with  \ref ihisvr "ihisvr"(n, j>1).
-  !> always useful, must be inferior or equal to \ref ncapt.
-  !>  - \ref ihisvr "ihisvr"(n, j>1): index-numbers of the probes
-  !> used for the variable n.
-  !> (with j <= \ref ihisvr "ihisvr"(n,1)+1).
-  !>     * = -999: by default: if \ref ihisvr "ihisvr"(n, 1) \f$\ne\f$ -999
-  !> the  code stops. Otherwise, refer to the description of the case
-  !> \ref ihisvr "ihisvr"(n, 1)=-999.
-  !>
-  !> Useful if and only if \ref ihisvr "ihisvr"(n, 1) > 0 .
-  !>
-  !> The condition \ref ihisvr "ihisvr"(n, j) <= \ref ncapt must be respected.
-  !> For an easier use, it is recommended to simply specify
-  !> \ref ihisvr "ihisvr"(n,1)=-1 for
-  !> all the interesting variables.
-  integer, save :: ihisvr(nvppmx,ncaptm+1)
 
   !> write indicator (O or 1) for history of internal mobile structures
   integer, save :: ihistr
@@ -378,89 +338,6 @@ contains
     call c_f_pointer(c_ntlist, ntlist)
 
   end subroutine listing_writing_period_init
-
-  !=============================================================================
-
-  !> \brief Map a field to time plot (probes) activation array.
-  !> This will set the "post_id" keyword for the given field, if not
-  !> already set.
-
-  !> \param[in]  f_id  id of given field
-
-  !> \return  starting position of this field in the \ref ihisvr array.
-
-  function field_post_id(f_id) result(ipp) &
-    bind(C, name='cs_field_post_id')
-
-    use, intrinsic :: iso_c_binding
-    use field
-    implicit none
-
-    ! Arguments
-
-    integer(c_int), value :: f_id
-    integer(c_int)        :: ipp
-
-    ! Local variables
-
-    integer :: f_dim
-    integer, save :: keypp = -1
-    integer, save :: nvpp = 1
-
-    if (keypp.lt.0) then
-      call field_get_key_id("post_id", keypp)
-    endif
-
-    call field_get_key_int(f_id, keypp, ipp)
-
-    ! Define if not already done
-
-    if (ipp.le.1) then
-
-      call field_get_dim(f_id, f_dim)
-
-      ipp = nvpp + 1
-
-      nvpp = nvpp + f_dim
-
-      ! Check limit on NVPP
-
-      if (nvpp.gt.nvppmx) then
-        write(nfecra,1000) nvpp, nvppmx
-        call csexit (1)
-        !==========
-      endif
-
-      call field_set_key_int(f_id, keypp, ipp)
-
-    endif
-
-    !--------
-    ! Formats
-    !--------
-
- 1000 format(                                                     &
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ WARNING: STOP AT THE INITIAL DATA VERIFICATION'          ,/,&
-'@    ======='                                                 ,/,&
-'@     Number of possible time plots too large'                ,/,&
-'@'                                                            ,/,&
-'@  The type of calculation defined'                           ,/,&
-'@    leads to a number of potential time plots'               ,/,&
-'@    for active fields equal to ', i10                        ,/,&
-'@  The maximum number of time plots defined'                  ,/,&
-'@    in paramx.f90 is NVPPMX = ', i10                         ,/,&
-'@'                                                            ,/,&
-'@  The calculation will not be run.'                          ,/,&
-'@'                                                            ,/,&
-'@  Contact support, or rebuild code with increased NVPPMX.'   ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
-
-  end function field_post_id
 
   !=============================================================================
 

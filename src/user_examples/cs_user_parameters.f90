@@ -633,6 +633,7 @@ use coincl
 use cpincl
 use field
 use cavitation
+use post
 use rotation
 use cs_c_bindings
 
@@ -1344,8 +1345,8 @@ inoprv = .false. ! no previous time step values needed
 call field_get_id_try('yplus', f_id)
 if (f_id.lt.0) then
   call field_create('yplus', itycat, ityloc, idim1, inoprv, f_id)
-  ! yplus postreated and in the log
-  call field_set_key_int(f_id, keyvis, 1)
+  ! yplus postprocessed and in the log
+  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION + POST_MONITOR)
   call field_set_key_int(f_id, keylog, 1)
 endif
 
@@ -1353,7 +1354,7 @@ call field_get_id_try('tplus', f_id)
 if (f_id.lt.0) then
   call field_create('tplus', itycat, ityloc, idim1, inoprv, f_id)
   ! tplus postreated and in the log
-  call field_set_key_int(f_id, keyvis, 1)
+  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION + POST_MONITOR)
   call field_set_key_int(f_id, keylog, 1)
 endif
 
@@ -1361,7 +1362,7 @@ call field_get_id_try('tstar', f_id)
 if (f_id.lt.0) then
   call field_create('tstar', itycat, ityloc, idim1, inoprv, f_id)
   ! tstar postreated and in the log
-  call field_set_key_int(f_id, keyvis, 1)
+  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION + POST_MONITOR)
   call field_set_key_int(f_id, keylog, 1)
 endif
 
@@ -1455,6 +1456,7 @@ use field
 use parall
 use period
 use ihmpre
+use post
 use ppppar
 use ppthch
 use ppincl
@@ -1554,19 +1556,15 @@ xyzcap(3,4) = 0.01d0
 if (isca(1).gt.0.and.nscaus.ge.1) then
   f_id = ivarfl(isca(1))
   call field_set_key_str(f_id, keylbl, 'Scalar 1')
-  call field_set_key_int(f_id, keyvis, 1)
+  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION + POST_MONITOR)
   call field_set_key_int(f_id, keylog, 1)
-  ipp = field_post_id(f_id)
-  ihisvr(ipp,1)= -1
 endif
 
 if (isca(2).gt.0.and.nscaus.ge.2) then
   f_id = ivarfl(isca(2))
   call field_set_key_str(f_id, keylbl, 'Scalar 2')
-  call field_set_key_int(f_id, keyvis, 1)
+  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION + POST_MONITOR)
   call field_set_key_int(f_id, keylog, 1)
-  ipp = field_post_id(f_id)
-  ihisvr(ipp,1)= -1
 endif
 
 

@@ -1142,29 +1142,13 @@ class OutputControlModel(Model):
             node.xmlRemoveNode()
             self.case.xmlRemoveChild('probe_recording', name=num)
 
-            # renumerotation of all monitoring points
+            # renumbering of all monitoring points
 
             for p in range(int(num)+1, self.getNumberOfMonitoringPoints()+2):
                 probe = self.node_out.xmlGetNode('probe', name=p)
                 probe['name'] = p - 1
                 for probe_recording in self.case.xmlGetNodeList('probe_recording', name=p):
                     probe_recording['name'] = p - 1
-
-            # update the attribute "choice" of the probes markup for variables
-
-            from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
-            listNodeVolum = OutputVolumicVariablesModel(self.case).listNodeVolum
-            del OutputVolumicVariablesModel
-            for nodeList in listNodeVolum:
-                for node in nodeList:
-                    n = node.xmlGetChildNode('probes')
-                    if n:
-                        nlist = n.xmlGetChildNodeList('probe_recording')
-                        if not nlist:
-                            n.xmlRemoveNode()
-                        else:
-                            n['choice']= str(len(nlist))
-
 
     @Variables.noUndo
     def getMonitoringPointCoordinates(self, name):

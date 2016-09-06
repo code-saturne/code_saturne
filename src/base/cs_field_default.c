@@ -48,6 +48,7 @@
 
 #include "cs_log.h"
 #include "cs_mesh_location.h"
+#include "cs_post.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -141,8 +142,9 @@ cs_variable_field_create(const char  *name,
                                   dim,
                                   true);  /* has_previous */
 
+  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
   cs_field_set_key_int(f, cs_field_key_id("log"), 1);
-  cs_field_set_key_int(f, cs_field_key_id("post_vis"), 1);
+  cs_field_set_key_int(f, cs_field_key_id("post_vis"), post_flag);
 
   if (label != NULL) {
     if (strlen(label) > 0)

@@ -108,7 +108,6 @@ call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
 
 call field_get_key_id("variable_id", keyvar)
-call field_get_key_id("post_id", keypp)
 
 write(nfecra,1000)
 
@@ -2325,31 +2324,12 @@ write(nfecra,7510) ntsuit
 
 !   - Fichiers historiques
 write(nfecra,7530) nthist,frhist,ncapt
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keypp, ipp)
-  if (ipp.le.1) cycle
-  call field_get_dim (f_id, f_dim)
-  do c_id = 1, min(f_dim, 3)
-    ii = ipp + c_id - 1
-    if (ihisvr(ii,1).ne.0) then
-      call field_get_label(f_id, name)
-      if (f_dim .eq. 3) then
-        name = trim(name) // nomext3(c_id)
-      else if (f_dim .eq. 6) then
-        name = trim(name) // nomext63(c_id)
-      endif
-      write(nfecra,7531) ii,name  (1:16),ihisvr(ii,1)
-    endif
-  enddo
-enddo
 write(nfecra,7532)
 
 !   - Fichiers listing
 
 write(nfecra,7540) ntlist
 do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keypp, ipp)
-  if (ipp.lt.1) cycle
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
     call field_get_key_struct_var_cal_opt(f_id, vcopt)
@@ -2360,7 +2340,7 @@ do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keylog, kval)
   if (kval.eq.1) then
     call field_get_label(f_id, name)
-    write(nfecra,7531) ipp,name  (1:16),iwar
+    write(nfecra,7531) name(1:16), iwar
   endif
 enddo
 write(nfecra,7532)
@@ -2389,10 +2369,8 @@ write(nfecra,9900)
 ' --- Fichiers historiques',                                    /,&
 '       NTHIST = ',4x,i10,    ' (Periode de sortie    )',       /,&
 '       FRHIST = ',4x,e11.5,  ' (Periode de sortie (s))',       /,&
-'       NCAPT  = ',4x,i10,    ' (Nombre de capteurs   )',       /,&
-                                                                /,&
-'       Numero Nom                   Nb. sondes (-1 : toutes)'   )
- 7531 format(i10,1X,          A16,6X,         i10                )
+'       NCAPT  = ',4x,i10,    ' (Nombre de capteurs   )')
+ 7531 format(1X,          A16,6X,         i10                )
  7532 format(                                                     &
 '         --           --                --',                   /)
  7540 format(                                                     &
@@ -2424,10 +2402,8 @@ write(nfecra,9900)
 ' --- Probe history files',                                     /,&
 '       NTHIST = ',4x,i10,    ' (Output frequency     )',       /,&
 '       FRHIST = ',4x,e11.5,  ' (Output frequency (s) )',       /,&
-'       NCAPT  = ',4x,i10,    ' (Number of probes     )',       /,&
-                                                                /,&
-'       Number Name                  Nb. probes (-1: all)'       )
- 7531 format(i10,1X,          A16,6X,         i10                )
+'       NCAPT  = ',4x,i10,    ' (Number of probes     )')
+ 7531 format(1X,          A16,6X,         i10                )
  7532 format(                                                     &
 '         --           --                --',                   /)
  7540 format(                                                     &

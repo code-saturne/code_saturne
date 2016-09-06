@@ -134,14 +134,10 @@
   \snippet cs_user_parameters-output.f90 usipes_ex_07
 
   Activate or deactivate probes output.
-  If \ref entsor::ihisvr "ihisvr"(.,1) = -1, output is done for all probes.
-  In the following example, probes output for the velocity is restricted
-  to the first component.
 
   \snippet cs_user_parameters-output.f90 usipes_ex_08
 
-  Probes for Radiative Transfer (Luminance and radiative density flux vector)
-  for all probes (ihisvr = -1)
+  Probes for Radiative Transfer (Luminance and radiative density flux vector).
 
   \snippet cs_user_parameters-output.f90 usipes_ex_10
 

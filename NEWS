@@ -13,6 +13,10 @@ Physical modelling
 Architectural changes
 ---------------------
 
+- Probes output activation is now based on field "post_vis" keyword, and does
+  not allow fine-grained per-variable probes selection anymore (this being little-used,
+  and feasible through use of additional probe sets).
+
 - Prepared for cs_user_extra_op and cs_user_parameters translation to C in VnV base:
   * removed Fortran arrays corresponding to members of cs_var_cal_opt_t C structure
   * deployed use of get/set var_cal_opt everywhere

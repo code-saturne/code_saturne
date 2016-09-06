@@ -47,6 +47,7 @@ use cstnum
 use optcal
 use parall
 use mesh
+use post
 use field
 
 !===============================================================================
@@ -61,8 +62,8 @@ integer          modhis
 
 character        nompre*300, nomhis*300
 integer          tplnum, ii, lpre, lnom, lng
-integer          icap, ncap, ipp, ippf
-integer          c_id, f_id, f_dim, f_type, n_fields
+integer          icap, ipp, pflag
+integer          c_id, f_id, f_dim, n_fields
 double precision varcap(ncaptm)
 
 integer, dimension(:), allocatable :: lsttmp
@@ -76,7 +77,6 @@ character(len=4), dimension(6), save :: nomext6 &
   = (/'[XX]', '[YY]', '[ZZ]', '[XY]', '[YZ]', '[XZ]'/)
 character(len=4), dimension(9), save :: nomext9 &
   = (/'[XX]', '[XY]', '[XZ]', '[YX]', '[YY]', '[YZ]', '[ZX]', '[ZY]', '[ZZ]'/)
-integer, save :: keypp = -1
 
 ! Time plot number shift (in case multiple routines define plots)
 
@@ -103,9 +103,7 @@ if (ipass.eq.1) then
   call tplnbr(nptpl)
 endif
 
-if (keypp.lt.0) then
-  call field_get_key_id("post_id", keypp)
-endif
+if (keyvis.lt.0) call field_get_key_id('post_vis', keyvis)
 
 !===============================================================================
 ! 1. Search for neighboring nodes -> nodcap
@@ -141,71 +139,50 @@ if (ipass.eq.1) then
 
   call field_get_n_fields(n_fields)
 
+  ipp = 0
+
   do f_id = 0, n_fields - 1
 
-    call field_get_key_int(f_id, keypp, ippf)
-    if (ippf.le.1) cycle
+    call field_get_key_int(f_id, keyvis, pflag)
+    if (iand(pflag, POST_MONITOR) .eq. 0) cycle
 
     call field_get_dim (f_id, f_dim)
 
     do c_id = 1, min(f_dim, 9)
 
-      ipp = ippf + c_id - 1
+      ipp = ipp + 1
 
-      if (ihisvr(ipp,1) .gt. 0) then
-        ncap = ihisvr(ipp,1)
-        do ii=1, ncap
-          lsttmp(ii) = ihisvr(ipp,ii+1)
-          if (irangp.lt.0 .or. irangp.eq.ndrcap(ihisvr(ipp, ii+1))) then
-            xyztmp(1, ii) = xyzcen(1, nodcap(ihisvr(ipp, ii+1)))
-            xyztmp(2, ii) = xyzcen(2, nodcap(ihisvr(ipp, ii+1)))
-            xyztmp(3, ii) = xyzcen(3, nodcap(ihisvr(ipp, ii+1)))
-          endif
-          if (irangp.ge.0) then
-            lng = 3
-            call parbcr(ndrcap(ihisvr(ipp,ii+1)), lng , xyztmp(1, ii))
-          endif
-        enddo
-      else if (ihisvr(ipp,1) .lt. 0) then
-        ncap = ncapt
-        do ii = 1, ncap
-          lsttmp(ii) = ii
-          if (irangp.lt.0 .or. irangp.eq.ndrcap(ii)) then
-            xyztmp(1, ii) = xyzcen(1, nodcap(ii))
-            xyztmp(2, ii) = xyzcen(2, nodcap(ii))
-            xyztmp(3, ii) = xyzcen(3, nodcap(ii))
-          endif
-          if (irangp.ge.0) then
-            lng = 3
-            call parbcr(ndrcap(ii), lng , xyztmp(1, ii))
-          endif
-        enddo
-      else
-        ncap = 0
-      endif
+      do ii = 1, ncapt
+        lsttmp(ii) = ii
+        if (irangp.lt.0 .or. irangp.eq.ndrcap(ii)) then
+          xyztmp(1, ii) = xyzcen(1, nodcap(ii))
+          xyztmp(2, ii) = xyzcen(2, nodcap(ii))
+          xyztmp(3, ii) = xyzcen(3, nodcap(ii))
+        endif
+        if (irangp.ge.0) then
+          lng = 3
+          call parbcr(ndrcap(ii), lng , xyztmp(1, ii))
+        endif
+      enddo
 
-      if (ncap .gt. 0) then
+      if (irangp.le.0) then
 
-        if (irangp.le.0) then
+        call field_get_label(f_id, nomhis)
+        nomhis = adjustl(nomhis)
+        if (f_dim .eq. 3) then
+          nomhis = trim(nomhis) // nomext3(c_id)
+        else if (f_dim .eq. 6) then
+          nomhis = trim(nomhis) // nomext6(c_id)
+        else if (f_dim .eq. 9) then
+          nomhis = trim(nomhis) // nomext9(c_id)
+        endif
+        lnom = len_trim(nomhis)
 
-          call field_get_label(f_id, nomhis)
-          nomhis = adjustl(nomhis)
-          if (f_dim .eq. 3) then
-            nomhis = trim(nomhis) // nomext3(c_id)
-          else if (f_dim .eq. 6) then
-            nomhis = trim(nomhis) // nomext6(c_id)
-          else if (f_dim .eq. 9) then
-            nomhis = trim(nomhis) // nomext9(c_id)
-          endif
-          lnom = len_trim(nomhis)
+        tplnum = nptpl + ipp
+        call tppini(tplnum, nomhis, nompre, tplfmt, idtvar, &
+                    ncapt, lsttmp(1), xyzcap(1,1), lnom, lpre)
 
-          tplnum = nptpl + ipp
-          call tppini(tplnum, nomhis, nompre, tplfmt, idtvar, &
-                      ncap, lsttmp(1), xyzcap(1,1), lnom, lpre)
-
-        endif ! (irangp.le.0)
-
-      endif
+      endif ! (irangp.le.0)
 
     enddo
 
@@ -224,99 +201,66 @@ if (modhis.eq.0 .or. modhis.eq.1) then
 
   call field_get_n_fields(n_fields)
 
+  ipp = 0
+
   ! Loop on fields
 
   do f_id = 0, n_fields - 1
 
-    call field_get_key_int(f_id, keypp, ippf)
-    if (ippf.lt.2) cycle
+    call field_get_key_int(f_id, keyvis, pflag)
+    if (iand(pflag, POST_MONITOR) .eq. 0) cycle
 
     call field_get_dim (f_id, f_dim)
-    call field_get_type(f_id, f_type)
 
     do c_id = 1, min(f_dim, 9)
 
-      ipp = ippf + c_id - 1
+      ipp = ipp + 1
 
-      if (ihisvr(ipp,1).ne.0) then
+      ! Case of 1D fields, including moments
 
-        ! Case of 1D fields, including moments
+      if (f_dim .eq. 1) then
 
-        if (f_dim .eq. 1) then
+        call field_get_val_s(f_id, val_s)
 
-          call field_get_val_s(f_id, val_s)
-
-          if (ihisvr(ipp,1).lt.0) then
-            do icap = 1, ncapt
-              if (irangp.lt.0) then
-                varcap(icap) = val_s(nodcap(icap))
-              else
-                call parhis(nodcap(icap), ndrcap(icap), val_s, varcap(icap))
-              endif
-            enddo
-            ncap = ncapt
+        do icap = 1, ncapt
+          if (irangp.lt.0) then
+            varcap(icap) = val_s(nodcap(icap))
           else
-            do icap = 1, ihisvr(ipp,1)
-              if (irangp.lt.0) then
-                varcap(icap) = val_s(nodcap(ihisvr(ipp,icap+1)))
-              else
-                call parhis(nodcap(ihisvr(ipp,icap+1)), &
-                           ndrcap(ihisvr(ipp,icap+1)), &
-                           val_s, varcap(icap))
-              endif
-            enddo
-            ncap = ihisvr(ipp,1)
+            call parhis(nodcap(icap), ndrcap(icap), val_s, varcap(icap))
           endif
+        enddo
 
-          if (irangp.le.0 .and. ncap.gt.0) then
-            tplnum = nptpl + ipp
-            call tplwri(tplnum, tplfmt, ncap, ntcabs, ttcabs, varcap)
+        if (irangp.le.0) then
+          tplnum = nptpl + ipp
+          call tplwri(tplnum, tplfmt, ncapt, ntcabs, ttcabs, varcap)
+        endif
+
+      else ! For vector field
+
+        call field_get_val_v(f_id, val_v)
+
+        do icap = 1, ncapt
+          if (irangp.lt.0 .or. ndrcap(icap).eq.irangp) then
+            varcap(icap) = val_v(c_id, nodcap(icap))
           endif
-
-        else ! For vector field
-
-          call field_get_val_v(f_id, val_v)
-
-          if (ihisvr(ipp,1).lt.0) then
-            do icap = 1, ncapt
-              if (irangp.lt.0 .or. ndrcap(icap).eq.irangp) then
-                varcap(icap) = val_v(c_id, nodcap(icap))
-              endif
-              if (irangp.ge.0) then
-                lng = 1
-                call parbcr(ndrcap(icap), lng, varcap(icap))
-              endif
-            enddo
-            ncap = ncapt
-          else if (ihisvr(ipp,1).gt.0) then
-            do icap = 1, ihisvr(ipp,1)
-              if (irangp.lt.0 .or. ndrcap(icap).eq.irangp) then
-                varcap(icap) = val_v(c_id, nodcap(ihisvr(ipp,icap+1)))
-              endif
-              if (irangp.ge.0) then
-                lng = 1
-                call parbcr(ndrcap(icap), lng, varcap(icap))
-              endif
-            enddo
-            ncap = ihisvr(ipp,1)
-          else
-            ncap = 0
+          if (irangp.ge.0) then
+            lng = 1
+            call parbcr(ndrcap(icap), lng, varcap(icap))
           endif
+        enddo
 
-          if (irangp.le.0 .and. ncap.gt.0) then
-            tplnum = nptpl + ipp
-            call tplwri(tplnum, tplfmt, ncap, ntcabs, ttcabs, varcap)
-          endif
+        if (irangp.le.0) then
+          tplnum = nptpl + ipp
+          call tplwri(tplnum, tplfmt, ncapt, ntcabs, ttcabs, varcap)
+        endif
 
-        endif ! Scalar or  vector field
-
-      endif ! Output for this component
+      endif ! Scalar or  vector field
 
     enddo ! loop on components
 
   enddo ! loop on fields
 
- endif
+endif
 
 !===============================================================================
 ! 4. Close output
@@ -326,21 +270,20 @@ if (modhis.eq.2) then
 
   call field_get_n_fields(n_fields)
 
+  ipp = 0
+
   do f_id = 0, n_fields - 1
 
-    call field_get_key_int(f_id, keypp, ippf)
-    if (ippf.le.1) cycle
+    call field_get_key_int(f_id, keyvis, pflag)
+    if (iand(pflag, POST_MONITOR) .eq. 0) cycle
 
     call field_get_dim (f_id, f_dim)
 
-    do c_id = 1, min(f_dim, 3)
+    do c_id = 1, min(f_dim, 9)
 
-      ipp = ippf + c_id - 1
+      ipp = ipp + 1
 
-      ncap = ihisvr(ipp,1)
-      if (ncap.lt.0) ncap = ncapt
-
-      if (ncap.gt.0 .and. irangp.le.0) then
+      if (irangp.le.0) then
         tplnum = nptpl + ipp
         call tplend(tplnum, tplfmt)
       endif

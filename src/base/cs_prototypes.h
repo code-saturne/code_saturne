@@ -260,22 +260,6 @@ int
 cs_add_model_field_indexes(int f_id);
 
 /*----------------------------------------------------------------------------
- * Map a field to time plot (probes) activation array.
- *
- * This will set the "post_id" keyword for the given field, if not
- * already set.
-
- * parameters:
- *   f_id <--   field id
- *
- * returns:
- *   starting position of this field in the \ref ihisvr array.
- *----------------------------------------------------------------------------*/
-
-int
-cs_field_post_id(int f_id);
-
-/*----------------------------------------------------------------------------
  * Return Lagrangian model status.
  *
  * parameters:

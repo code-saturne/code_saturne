@@ -112,7 +112,7 @@ class OutputVolumicVariablesModel(Model):
 
         self.dicoLabelName = {}
         self.list_name = []
-        self._updateDicoLabelName()
+        self._updateDictLabelName()
 
 
 # Following private methods: (to see for gathering eventually)
@@ -127,7 +127,7 @@ class OutputVolumicVariablesModel(Model):
         return default
 
 
-    def _updateDicoLabelName(self):
+    def _updateDictLabelName(self):
         """
         Update dictionaries of labels for all variables, properties .....
         """
@@ -391,34 +391,12 @@ class OutputVolumicVariablesModel(Model):
 
 
     @Variables.noUndo
-    def getVariableProbeList(self):
+    def getProbeList(self):
         """ Return list of node for probes """
         probeList = []
         for node in self.node_probe:
             probeList.append(node['name'])
         return probeList
-
-
-    @Variables.noUndo
-    def getProbesList(self, name):
-        """
-        Return list of probes if it exists for node['name'] = name. Only for the View
-        """
-        self.isInList(name, self.getNamesList())
-        lst = self.getVariableProbeList()
-        for nodeList in self.listNodeVolum:
-            for node in nodeList:
-                if node['name'] == name:
-                    node_probes = node.xmlGetChildNode('probes')
-                    if node_probes:
-                        nb_probes = node_probes['choice']
-                        if nb_probes == '0':
-                            lst = []
-                        elif nb_probes > '0':
-                            lst = []
-                            for n in node_probes.xmlGetChildNodeList('probe_recording'):
-                                lst.append(n['name'])
-        return lst
 
 
     @Variables.noUndo
@@ -453,6 +431,22 @@ class OutputVolumicVariablesModel(Model):
         return status
 
 
+    @Variables.noUndo
+    def getMonitorStatus(self, name):
+        """
+        Return status of markup monitoring from node with name. Only for the View
+        """
+        self.isInList(name, self.getNamesList())
+        status = self._defaultValues()['status']
+        for nodeList in self.listNodeVolum:
+            for node in nodeList:
+                if node['name'] == name:
+                    node_post = node.xmlGetChildNode('probes_recording', 'status')
+                    if node_post:
+                        status = node_post['status']
+        return status
+
+
     @Variables.undoLocal
     def setVariableLabel(self, old_label, new_label):
         """
@@ -469,7 +463,7 @@ class OutputVolumicVariablesModel(Model):
                 if node['label'] == old_label:
                     node['label'] = new_label
 
-        self._updateDicoLabelName()
+        self._updateDictLabelName()
         self._updateBoundariesNodes(old_label, new_label)
 
         for node in self.case.xmlGetNodeList('formula'):
@@ -494,7 +488,7 @@ class OutputVolumicVariablesModel(Model):
     @Variables.undoLocal
     def setPrintingStatus(self, name, status):
         """
-        Put status for balise printing from node with name and label
+        Put status for printing from node with name and label
         """
         self.isOnOff(status)
         self.isInList(name, self.getNamesList())
@@ -529,7 +523,7 @@ class OutputVolumicVariablesModel(Model):
     @Variables.undoLocal
     def setPostStatus(self, name, status):
         """
-        Put status for balise postprocessing from node with name and label
+        Put status for postprocessing from node with name and label
         """
         self.isOnOff(status)
         self.isInList(name, self.getNamesList())
@@ -543,32 +537,22 @@ class OutputVolumicVariablesModel(Model):
                             node.xmlRemoveChild('postprocessing_recording')
 
 
-    def updateProbes(self, name, lst):
+    @Variables.undoLocal
+    def setMonitorStatus(self, name, status):
         """
-        Update probe_recording markups if it exists
+        Put status for postprocessing from node with name and label
         """
+        self.isOnOff(status)
         self.isInList(name, self.getNamesList())
-        nb = len(lst.split())
-        if nb == len(self.getVariableProbeList()):
-            for nodeList in self.listNodeVolum:
-                for node in nodeList:
-                    if node['name'] == name:
-                        try:
-                            node.xmlRemoveChild('probes')
-                        except:
-                            pass
-        else:
-            for nodeList in self.listNodeVolum:
-                for node in nodeList:
-                    if node['name'] == name:
-                        try:
-                            node.xmlRemoveChild('probes')
-                        except:
-                            pass
-                        n = node.xmlInitNode('probes', choice=str(nb))
-                        if nb > 0:
-                            for i in lst.split():
-                                n.xmlInitChildNodeList('probe_recording',name=i)
+        for nodeList in self.listNodeVolum:
+            for node in nodeList:
+                if node['name'] == name:
+                    if status == 'off':
+                        node.xmlInitChildNode('probes_recording')['status'] = status
+                    else:
+                        if node.xmlGetChildNode('probes_recording'):
+                            node.xmlRemoveChild('probes_recording')
+
 
 #-------------------------------------------------------------------------------
 # OutputVolumicVariablesModel Test Class
