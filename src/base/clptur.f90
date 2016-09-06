@@ -2436,12 +2436,20 @@ do ifac = 1, nfabor
 
       ! Wall function
       if (icodcl(ifac,ivar).eq.5) then
-        phit = cofafp(ifac)+cofbfp(ifac)*theipb(ifac)
+        if (iscal.eq.iscalt) then
+          phit = cofafp(ifac)+cofbfp(ifac)*theipb(ifac)
+        else
+          phit = cofafp(ifac)+cofbfp(ifac)*bval_s(ifac)
+        endif
         ! Imposed flux with wall function for post-processing
       elseif (icodcl(ifac,ivar).eq.3) then
         phit = rcodcl(ifac,ivar,3)
       elseif (icodcl(ifac,ivar).eq.1) then
-        phit = heq *(theipb(ifac) - pimp)
+        if (iscal.eq.iscalt) then
+          phit = heq *(theipb(ifac) - pimp)
+        else
+          phit = heq *(bval_s(ifac) - pimp)
+        endif
       else
         phit = 0.d0
       endif
