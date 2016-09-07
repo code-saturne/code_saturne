@@ -226,26 +226,32 @@ class XMLinit(Variables):
         """
         Change XML in order to ensure backward compatibility for old version
         """
-        if from_vers == "-1":
+        # Add "-zero" extension to non alpha or beta versions
+        # for correct handling of those variants.
+        pf = ".0"
+        for e in ("-alpha", "-beta"):
+            if from_vers.find(e) > -1:
+                pf = ""
+        from_vers += pf
+        if from_vers <= "-1.0":
             self.__backwardCompatibilityBefore_3_0()
 
-        if from_vers[:3] <= "3.0":
-            self.__backwardCompatibilityFrom_3_0()
-
-        if from_vers[:3] <= "4.0":
-            if from_vers[:3] <= "3.1":
+        if from_vers[:3] < "4.0.0":
+            if from_vers[:3] < "3.1.0":
+                self.__backwardCompatibilityFrom_3_0()
+            if from_vers[:3] < "3.2.0":
                 self.__backwardCompatibilityFrom_3_1()
-            if from_vers[:3] <= "3.2":
+            if from_vers[:3] < "3.3.0":
                 self.__backwardCompatibilityFrom_3_2()
-            if from_vers[:3] <= "3.3":
+            if from_vers[:3] < "4.0.0":
                 self.__backwardCompatibilityFrom_3_3()
-            if from_vers[:3] <= "4.0":
-                self.__backwardCompatibilityFrom_4_0()
 
-        if from_vers[:3] <= "5.0":
-            if from_vers[:3] <= "4.1":
+        if from_vers[:3] < "5.0.0":
+            if from_vers[:3] < "4.1.0":
+                self.__backwardCompatibilityFrom_4_0()
+            if from_vers[:3] < "4.2.0":
                 self.__backwardCompatibilityFrom_4_1()
-            if from_vers[:3] <= "4.2":
+            if from_vers[:3] < "4.3.0":
                 self.__backwardCompatibilityFrom_4_2()
 
 
