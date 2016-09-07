@@ -659,7 +659,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
 {
   cs_real_t vagaus[3], vagausbr[2];
   cs_random_normal(3, vagaus);
-  cs_random_normal(2, vagaus);
+  cs_random_normal(2, vagausbr);
 
   cs_real_t force  = *gnorm * *taup;
   cs_real_t vvue0  = *vvue;
