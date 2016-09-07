@@ -235,6 +235,7 @@ use cpincl
 use field
 use cavitation
 use rotation
+use cs_c_bindings
 
 !===============================================================================
 
