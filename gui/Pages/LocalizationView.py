@@ -24,6 +24,7 @@
 
 """
 This module contains the following classes:
+- VolumicZoneAdvancedView
 - LabelDelegate
 - CodeNumberDelegate
 - BoundaryNatureDelegate
@@ -60,6 +61,7 @@ from code_saturne.Base.Common import LABEL_LENGTH_MAX
 from code_saturne.Base.QtPage import IntValidator, RegExpValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.LocalizationForm import Ui_LocalizationForm
+from code_saturne.Pages.VolumicZoneAdvancedDialogForm import Ui_VolumicZoneAdvancedDialogForm
 from code_saturne.Pages.PreProcessingInformationsView import Informations, preprocessorFile
 from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 
@@ -70,6 +72,181 @@ from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 logging.basicConfig()
 log = logging.getLogger("LocalizationView")
 log.setLevel(GuiParam.DEBUG)
+
+#-------------------------------------------------------------------------------
+# Advanced dialog
+#-------------------------------------------------------------------------------
+
+class VolumicZoneAdvancedView(QDialog, Ui_VolumicZoneAdvancedDialogForm):
+    """
+    Advanced dialog
+    """
+    def __init__(self, parent, case, keys, default):
+        """
+        Constructor
+        """
+        QDialog.__init__(self, parent)
+
+        Ui_VolumicZoneAdvancedDialogForm.__init__(self)
+        self.setupUi(self)
+
+        self.case = case
+        self.case.undoStopGlobal()
+
+        self.default = default
+        self.keys    = keys
+        self.result  = self.default.copy()
+
+        if 'initialization' not in self.keys:
+            self.labelInitialization.hide()
+            self.checkBoxInitialization.hide()
+        else:
+            if self.default['initialization'] == 'on':
+                self.checkBoxInitialization.setChecked(True)
+            else:
+                self.checkBoxInitialization.setChecked(False)
+
+        if 'head_losses' not in self.keys:
+            self.labelHeadLosses.hide()
+            self.checkBoxHeadLosses.hide()
+        else:
+            if self.default['head_losses'] == 'on':
+                self.checkBoxHeadLosses.setChecked(True)
+            else:
+                self.checkBoxHeadLosses.setChecked(False)
+
+        if 'porosity' not in self.keys:
+            self.labelPorosity.hide()
+            self.checkBoxPorosity.hide()
+        else:
+            if self.default['porosity'] == 'on':
+                self.checkBoxPorosity.setChecked(True)
+            else:
+                self.checkBoxPorosity.setChecked(False)
+
+        if 'momentum_source_term' not in self.keys:
+            self.labelMomentum.hide()
+            self.checkBoxMomentum.hide()
+        else:
+            if self.default['momentum_source_term'] == 'on':
+                self.checkBoxMomentum.setChecked(True)
+            else:
+                self.checkBoxMomentum.setChecked(False)
+
+        if 'mass_source_term' not in self.keys:
+            self.labelMass.hide()
+            self.checkBoxMass.hide()
+        else:
+            if self.default['mass_source_term'] == 'on':
+                self.checkBoxMass.setChecked(True)
+            else:
+                self.checkBoxMass.setChecked(False)
+
+        if 'thermal_source_term' not in self.keys:
+            self.labelThermal.hide()
+            self.checkBoxThermal.hide()
+        else:
+            if self.default['thermal_source_term'] == 'on':
+                self.checkBoxThermal.setChecked(True)
+            else:
+                self.checkBoxThermal.setChecked(False)
+
+        if 'scalar_source_term' not in self.keys:
+            self.labelScalar.hide()
+            self.checkBoxScalar.hide()
+        else:
+            if self.default['scalar_source_term'] == 'on':
+                self.checkBoxScalar.setChecked(True)
+            else:
+                self.checkBoxScalar.setChecked(False)
+
+        if 'groundwater_law' not in self.keys:
+            self.labelGroundWater.hide()
+            self.checkBoxGroundWater.hide()
+        else:
+            if self.default['groundwater_law'] == 'on':
+                self.checkBoxGroundWater.setChecked(True)
+            else:
+                self.checkBoxGroundWater.setChecked(False)
+
+        self.case.undoStartGlobal()
+
+
+    def get_result(self):
+        """
+        Method to get the result
+        """
+        return self.result
+
+
+    def accept(self):
+        """
+        Method called when user clicks 'OK'
+        """
+        if 'initialization' in self.keys:
+            if self.checkBoxInitialization.isChecked():
+                self.result['initialization'] = 'on'
+            else:
+                self.result['initialization'] = 'off'
+
+        if 'head_losses' in self.keys:
+            if self.checkBoxHeadLosses.isChecked():
+                self.result['head_losses'] = 'on'
+            else:
+                self.result['head_losses'] = 'off'
+
+        if 'porosity' in self.keys:
+            if self.checkBoxPorosity.isChecked():
+                self.result['porosity'] = 'on'
+            else:
+                self.result['porosity'] = 'off'
+
+        if 'momentum_source_term' in self.keys:
+            if self.checkBoxMomentum.isChecked():
+                self.result['momentum_source_term'] = 'on'
+            else:
+                self.result['momentum_source_term'] = 'off'
+
+        if 'mass_source_term' in self.keys:
+            if self.checkBoxMass.isChecked():
+                self.result['mass_source_term'] = 'on'
+            else:
+                self.result['mass_source_term'] = 'off'
+
+        if 'thermal_source_term' in self.keys:
+            if self.checkBoxThermal.isChecked():
+                self.result['thermal_source_term'] = 'on'
+            else:
+                self.result['thermal_source_term'] = 'off'
+
+        if 'scalar_source_term' in self.keys:
+            if self.checkBoxScalar.isChecked():
+                self.result['scalar_source_term'] = 'on'
+            else:
+                self.result['scalar_source_term'] = 'off'
+
+        if 'groundwater_law' in self.keys:
+            if self.checkBoxGroundWater.isChecked():
+                self.result['groundwater_law'] = 'on'
+            else:
+                self.result['groundwater_law'] = 'off'
+
+        QDialog.accept(self)
+
+
+    def reject(self):
+        """
+        Method called when user clicks 'Cancel'
+        """
+        QDialog.reject(self)
+
+
+    def tr(self, text):
+        """
+        Translation
+        """
+        return text
+
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for the label
@@ -547,8 +724,10 @@ class StandardItemModelLocalization(QStandardItemModel):
             if zone.getLabel() == "all_cells":
                 for c in range(self.columnCount()):
                     self._disable.append((row, c))
+            self._disable.append((row, 2))
         self._disable.append((row, 1))
         self.browser.configureTree(self.case)
+        return zone
 
 
     def getItem(self, row):
@@ -559,6 +738,11 @@ class StandardItemModelLocalization(QStandardItemModel):
         # update zone Id
         for id in range(0, len(self.mdl.getCodeNumbersList())):
             self._data[id][1] = id + 1
+
+
+    def updateZone(self, index, nature):
+        self._data[index.row()][2] = nature
+        self.dataChanged.emit(index, index)
 
 
     def deleteItem(self, irow):
@@ -633,10 +817,13 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         # Connections
         self.pushButtonNew.clicked.connect(self.slotAddZone)
         self.pushButtonDelete.clicked.connect(self.slotDeleteZone)
+        self.pushButtonModify.clicked.connect(self.slotModifyZone)
         self.toolButtonCreation.clicked.connect(self.slotAddFromPrePro)
         self.modelLocalization.dataChanged.connect(self.dataChanged)
+        self.tableView.clicked.connect(self.slotChangeSelection)
 
         self.pushButtonSalome.hide()
+        self.pushButtonModify.setEnabled(False)
         if case['salome']:
             self.pushButtonSalome.show()
             self.pushButtonSalome.clicked.connect(self.slotAddFromSalome)
@@ -648,12 +835,90 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         self.case.undoStartGlobal()
 
 
+    def slotChangeSelection(self):
+        """
+        """
+        self.pushButtonModify.setEnabled(False)
+        current = self.tableView.currentIndex()
+        if current != self.tableView.rootIndex():
+            self.pushButtonModify.setEnabled(True)
+
+
     @pyqtSlot()
     def slotAddZone(self):
         """
         Insert a new item in the table view.
         """
-        self.modelLocalization.addItem()
+        zone = self.modelLocalization.addItem()
+
+        if self.zoneType == 'VolumicZone':
+            label  = zone.getLabel()
+            code   = zone.getCodeNumber()
+            nature = zone.getNature()
+            local  = zone.getLocalization()
+
+            self.keys = Zone('VolumicZone', case = self.case).getNatureList()
+
+            log.debug("slotAddZone -> %s" % str(nature))
+
+            dialog = VolumicZoneAdvancedView(self, self.case, self.keys, nature)
+
+            if dialog.exec_():
+                result = dialog.get_result()
+                log.debug("slotAddZone -> %s" % str(result))
+
+                new_zone = Zone(self.zoneType,
+                                case         = self.case,
+                                label        = label,
+                                codeNumber   = code,
+                                localization = local,
+                                nature       = result)
+
+                self.mdl.replaceZone(zone, new_zone)
+                index = self.tableView.model().index(code - 1, 2)
+                self.modelLocalization.updateZone(index, result)
+            self.browser.configureTree(self.case)
+        self.slotChangeSelection()
+
+
+    @pyqtSlot()
+    def slotModifyZone(self):
+        """
+        Modify volumic zone nature
+        """
+        index = self.tableView.selectionModel().selectedRows()[0]
+
+        [label, code, nature, local] = self.modelLocalization.getItem(index.row())
+
+        self.keys = Zone('VolumicZone', case = self.case).getNatureList()
+
+        zone = Zone(self.zoneType,
+                    case         = self.case,
+                    label        = label,
+                    codeNumber   = code,
+                    localization = local,
+                    nature       = nature)
+
+        log.debug("slotAddZone -> %s" % str(nature))
+
+        dialog = VolumicZoneAdvancedView(self, self.case, self.keys, nature)
+
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotAddZone -> %s" % str(result))
+
+            new_zone = Zone(self.zoneType,
+                            case         = self.case,
+                            label        = label,
+                            codeNumber   = code,
+                            localization = local,
+                            nature       = result)
+
+            self.mdl.replaceZone(zone, new_zone)
+            index = self.tableView.model().index(code - 1, 2)
+            self.modelLocalization.updateZone(index, result)
+        self.browser.configureTree(self.case)
+        self.slotChangeSelection()
 
 
     @pyqtSlot()
@@ -675,6 +940,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
             if not (label == "all_cells" and self.zoneType == 'VolumicZone'):
                 self.mdl.deleteZone(label)
                 self.modelLocalization.deleteItem(row)
+        self.slotChangeSelection()
 
 
     @pyqtSlot()
@@ -846,6 +1112,8 @@ class BoundaryLocalizationView(LocalizationView):
         # Delegates
         delegateNature = BoundaryNatureDelegate(self.tableView, dicoM2V)
         self.tableView.setItemDelegateForColumn(2, delegateNature)
+
+        self.pushButtonModify.hide()
 
 
     @pyqtSlot()

@@ -206,6 +206,7 @@ TurboMachineryForm.ui \
 TurbulenceAdvancedOptionsDialogForm.ui \
 TurbulenceForm.ui \
 VerifyExistenceLabelDialogForm.ui \
+VolumicZoneAdvancedDialogForm.ui \
 WelcomeForm.ui \
 XMLEditorForm.ui
 
