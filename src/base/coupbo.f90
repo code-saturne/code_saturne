@@ -215,20 +215,6 @@ do inbcou = 1, nbccou
       do iloc = 1, nbfcou
 
         ifac = lfcou(iloc)
-
-        ! Saved fluid temperatures and exchange coefficients
-        tfluid(iloc) = tbord(ifac)
-        hparoi(iloc) = hbord(ifac)
-
-      enddo
-
-      allocate(wa(nfabor))
-
-      call b_h_to_t(tbord, wa)
-
-      do iloc = 1, nbfcou
-
-        ifac = lfcou(iloc)
         iel  = ifabor(ifac)
         tfluid(iloc) = wa(ifac)
         if (icp.ge.0) then
