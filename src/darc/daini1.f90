@@ -70,6 +70,24 @@ implicit none
 
 type(var_cal_opt) :: vcopt
 
+!=============================================================================
+
+interface
+
+  !---------------------------------------------------------------------------
+
+  ! Interface to C function initializing sorption modelling field key.
+
+  subroutine cs_gwf_parameters_define_field_key_sorption()  &
+    bind(C, name='cs_gwf_parameters_define_field_key_sorption')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gwf_parameters_define_field_key_sorption
+
+  !---------------------------------------------------------------------------
+
+end interface
+
 !===============================================================================
 
 !===============================================================================
@@ -110,6 +128,9 @@ darcy_gravity = 0
 darcy_gravity_x = 0.d0
 darcy_gravity_y = 0.d0
 darcy_gravity_z = 1.d0
+
+! Definition of sorption parameters
+call cs_gwf_parameters_define_field_key_sorption
 
 if (iihmpr.eq.1) then
   call uidai1(darcy_anisotropic_permeability,     &

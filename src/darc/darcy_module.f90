@@ -81,7 +81,7 @@ module darcy_module
   !> Gravity direction must be a unit vector.
   double precision :: darcy_gravity_y
 
-  !> \anchor darcy_gravity_
+  !> \anchor darcy_gravity_z
   !> Darcy gravity direction z component.
   !> Gravity direction must be a unit vector.
   double precision :: darcy_gravity_z

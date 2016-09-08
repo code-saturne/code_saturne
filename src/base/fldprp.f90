@@ -70,11 +70,13 @@ implicit none
 
 ! Local variables
 
-character(len=80) :: f_label, f_name, s_name
-integer           :: ii
+character(len=80) :: f_label, f_name, s_name, s_label
+integer           :: ii, skinet, ivar
 integer           :: idim1, idim3, idim6, iflid
 integer           :: type_flag, post_flag, location_id, ipp
 logical           :: has_previous
+
+type(gwf_sorption_model) :: sorption_scal
 
 !===============================================================================
 ! Interfaces
@@ -206,19 +208,31 @@ if (ippmod(idarcy).eq.1) then
   else
     call add_property_field(f_name, f_label, idim6, has_previous, iflid)
   endif
+
+  skinet = 0
   do ii = 1, nscal
+    ivar = isca(ii)
 
-    if (isca(ii) .gt. 0) then
+    call field_get_name(ivarfl(ivar), s_name)
+    f_name = trim(s_name)//'_delay'
+    call field_get_name(ivarfl(ivar), s_label)
+    f_label = trim(s_label)//' delay'
+    call add_property_field(f_name, f_label, idim1, has_previous, iflid)
 
-      call field_get_name(ivarfl(isca(ii)), s_name)
-
-      f_name = trim(s_name)//'_delay'
-      f_label = trim(s_name)//'_delay'
+    call field_get_key_struct_gwf_sorption_model(ivarfl(ivar), sorption_scal)
+    if (sorption_scal%kinetic.eq.1) then
+      f_name = trim(s_name)//'_sorb_conc'
+      f_label = trim(s_label)//' sorb conc'
       call add_property_field(f_name, f_label, idim1, has_previous, iflid)
-
+      skinet = 1
     endif
-
   enddo
+
+  if (skinet.eq.1) then
+    f_name = 'soil_density'
+    f_label = 'Soil density'
+    call add_property_field(f_name, f_label, idim1, has_previous, iflid)
+  endif
 
 endif
 

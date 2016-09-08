@@ -24,6 +24,15 @@
 
 # Main part
 
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+$(MPI_CPPFLAGS)
+
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCMODINCLUDE)$(top_builddir)/src/alge \
@@ -46,14 +55,16 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS =
+pkginclude_HEADERS = \
+cs_gwf_parameters.h
 
 # Library source files
 
 noinst_LTLIBRARIES = libcsdarc.la
 libcsdarc_la_SOURCES = \
 daini1.f90 \
-richards.f90
+richards.f90 \
+cs_gwf_parameters.c
 libcsdarc_la_LDFLAGS = -no-undefined
 
 clean-local:

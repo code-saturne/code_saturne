@@ -52,6 +52,7 @@ use ppthch
 use ppincl
 use field
 use mesh
+use cs_c_bindings
 use darcy_module
 
 !===============================================================================
@@ -74,7 +75,7 @@ double precision kr_param, m_param, n_param, se_param
 double precision alpha_param, l_param, tmp_1, tmp_2
 double precision darcy_anisotropic_dispersion_l, darcy_anisotropic_dispersion_t
 double precision darcy_isotropic_dispersion, molecular_diffusion
-double precision velocity_norm, rho, Kd
+double precision velocity_norm, rho
 double precision ki, ki_xx, ki_yy, ki_zz, tmp_lt
 integer          iel, ii, fid
 integer          ncelt, icelt, ifcvsl
@@ -87,6 +88,8 @@ double precision, dimension(:,:), pointer :: tensor_permeability, visten
 double precision, dimension(:), pointer :: cpro_vscalt
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_pr
+
+type(gwf_sorption_model) :: sorption_scal
 
 !===============================================================================
 
@@ -253,10 +256,12 @@ enddo
 !< [richards_unsat_sorp]
 ! Computation of the sorption as a delay term (K_d hypothesis)
 rho = 1.5d0
-Kd  = 1.d-1
+call field_get_key_struct_gwf_sorption_model(ivarfl(isca(1)), sorption_scal)
+sorption_scal%kd = 0.1d0
 do iel = 1, ncel
-  delay(iel) = 1.d0+rho*Kd/saturation(iel)
+  delay(iel) = 1.d0 + rho * sorption_scal%kd / saturation(iel)
 enddo
+call field_set_key_struct_gwf_sorption_model(ivarfl(isca(1)), sorption_scal)
 !< [richards_unsat_sorp]
 
 deallocate(delay_id)

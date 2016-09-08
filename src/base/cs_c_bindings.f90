@@ -94,6 +94,15 @@ module cs_c_bindings
 
   !---------------------------------------------------------------------------
 
+  type, bind(c)  :: gwf_sorption_model
+    integer(c_int) :: kinetic
+    real(c_double) :: kd
+    real(c_double) :: kminus
+    real(c_double) :: kplus
+  end type gwf_sorption_model
+
+  !---------------------------------------------------------------------------
+
   type, bind(c)  :: gas_mix_species_prop
     real(c_double) :: mol_mas
     real(c_double) :: cp
@@ -1961,6 +1970,51 @@ contains
 
   !=============================================================================
 
+  !> \brief Assign a gwf_parameters_sorption_model for a
+  !> cs_gwf_sorption_model_t key to a field.
+
+  !> If the field category is not compatible, a fatal error is provoked.
+
+  !> \param[in]   f_id     field id
+  !> \param[in]   k_value  structure associated with key
+
+  subroutine field_set_key_struct_gwf_sorption_model(f_id, k_value)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)                          :: f_id
+    type(gwf_sorption_model), intent(in), target :: k_value
+
+    ! Local variables
+
+    integer(c_int)                        :: c_f_id
+    type(gwf_sorption_model),pointer      :: p_k_value
+    type(c_ptr)                           :: c_k_value
+    character(len=23+1, kind=c_char)      :: c_name
+
+    integer(c_int), save           :: c_k_id = -1
+
+    if (c_k_id .eq. -1) then
+      c_name = "gwf_sorption_model"//c_null_char
+      c_k_id = cs_f_field_key_id(c_name)
+    endif
+
+    c_f_id = f_id
+
+    p_k_value => k_value
+    c_k_value = c_loc(p_k_value)
+
+    call cs_f_field_set_key_struct(c_f_id, c_k_id, c_k_value)
+
+    return
+
+  end subroutine field_set_key_struct_gwf_sorption_model
+
+  !=============================================================================
+
   !> \brief Assign a gas_mix_species_prop for a cs_gas_mix_species_prop_t
   !> key to a field.
 
@@ -2089,6 +2143,47 @@ contains
     return
 
   end subroutine field_get_key_struct_solving_info
+
+  !=============================================================================
+
+  !> \brief Return a pointer to the gwf_sorption_model structure for
+  !>        cs_gwf_sorption_model_t key associated with a field.
+
+  !> If the field category is not compatible, a fatal error is provoked.
+
+  !> \param[in]   f_id     field id
+  !> \param[out]  k_value  integer value associated with key id for this field
+
+  subroutine field_get_key_struct_gwf_sorption_model (f_id, k_value)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)                             :: f_id
+    type(gwf_sorption_model), intent(inout), target :: k_value
+
+    ! Local variables
+
+    integer(c_int)                        :: c_f_id, c_k_id
+    type(gwf_sorption_model),pointer      :: p_k_value
+    type(c_ptr)                           :: c_k_value
+    character(len=23+1, kind=c_char)      :: c_name
+
+    c_name = "gwf_sorption_model"//c_null_char
+    c_k_id = cs_f_field_key_id(c_name)
+
+    c_f_id = f_id
+
+    p_k_value => k_value
+    c_k_value = c_loc(p_k_value)
+
+    call cs_f_field_get_key_struct(c_f_id, c_k_id, c_k_value)
+
+    return
+
+  end subroutine field_get_key_struct_gwf_sorption_model
 
   !=============================================================================
 

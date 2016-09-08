@@ -235,12 +235,18 @@ subroutine user_darcy_ini1
 use ihmpre, only: iihmpr
 use entsor
 use darcy_module
+use cs_c_bindings
+use numvar
 
 !===============================================================================
 
 implicit none
 
 !===============================================================================
+
+! Local variables
+
+type(gwf_sorption_model) :: sorption_sca1
 
 !----------
 ! Flow part
@@ -275,6 +281,17 @@ darcy_anisotropic_dispersion = 0
 ! Set if the transport part is based on a steady (0) or unsteady (1) flow field
 darcy_unsteady = 0
 !< [richards_steady]
+
+!---------------
+! Sorption model
+!---------------
+
+!< [sorption_kd]
+! Set sorption kd
+call field_get_key_struct_gwf_sorption_model(ivarfl(isca(1)), sorption_sca1)
+sorption_sca1%kd = 0.1d0
+call field_set_key_struct_gwf_sorption_model(ivarfl(isca(1)), sorption_sca1)
+!< [sorption_kd]
 
 return
 
