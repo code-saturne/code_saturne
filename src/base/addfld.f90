@@ -231,7 +231,7 @@ if (icond.ge.0 .or. ipstdv(ipstyp).ne.0) then
     call field_set_key_int(iyplbr, keylog, 1)
   endif
   ! yplus postprocessed if required
-  flag = POST_ON_LOCATION + POST_MONITOR
+  flag = POST_ON_LOCATION
   if (ipstdv(ipstyp).ne.0) call field_set_key_int(iyplbr, keyvis, flag)
 endif
 

@@ -16,7 +16,7 @@
 !
 ! You should have received a copy of the GNU General Public License along with
 ! this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
-! Street, Fifth Floor6b1e433ea7e612c18f94b936f94db2eba9e887f2, Boston, MA 02110-1301, USA.
+! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
 
