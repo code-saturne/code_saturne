@@ -6,7 +6,7 @@ Bug fixes:
 ----------
 
 - Fix for handling of paths for Code_Aster coupling
-  (note that the coupling was recently tested only with SALOME_MECA 215.1
+  (note that the coupling was recently tested only with SALOME_MECA 2015.1
   and Code_Aster version 12.3, which requires some patches).
 
 - Fan model: fix crash due to bad access to fan id field.
