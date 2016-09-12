@@ -5,6 +5,10 @@ Release 4.3.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix for handling of paths for Code_Aster coupling
+  (note that the coupling was recently tested only with SALOME_MECA 215.1
+  and Code_Aster version 12.3, which requires some patches).
+
 - Fan model: fix crash due to bad access to fan id field.
 
 - Fixes in automatic head losses computations.
