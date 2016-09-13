@@ -196,7 +196,7 @@ cs_sles_free_native(int          f_id,
  * sparse linear equation solver.
  *
  * In case of divergence with an iterative solver, this error handler
- * switches to a default preconditionner, then resets the solution vector.
+ * switches to a default preconditioner, then resets the solution vector.
  *
  * The default error for the solver type handler is then  set, in case
  * the solution fails again.

@@ -85,6 +85,10 @@ typedef struct {
   int     iwgrec;       /* gradient calculation
                            - 0: standard (default)
                            - 1: weighted (could be used with imvisf = 1) */
+  int     icoupl;       /* internal coupling
+                           - -1: not coupled (default)
+                           -  1: coupled                                 */
+
   double  thetav;
   double  blencv;
   double  epsilo;

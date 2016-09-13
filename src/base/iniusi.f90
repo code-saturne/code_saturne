@@ -356,6 +356,9 @@ call compor(iporos)
 ! --- Varpos
 call varpos
 
+! --- Internal coupling
+call cs_user_internal_coupling
+
 !----
 ! Formats
 !----

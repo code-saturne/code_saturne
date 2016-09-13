@@ -4646,6 +4646,16 @@ cs_b_cd_unsteady_tensor(const int          ircflp,
     pip[isou] = pi[isou] + recoi[isou];
 }
 
+inline static void
+cs_b_diff_flux_coupling(const int        idiffp,
+                        const cs_real_t  pi,
+                        const cs_real_t  pj,
+                        const cs_real_t  b_visc,
+                        cs_real_t       *fluxi)
+{
+  *fluxi += idiffp*b_visc*(pi - pj);
+}
+
 /*============================================================================
  * Public function prototypes for Fortran API
  *============================================================================*/

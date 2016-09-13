@@ -5,6 +5,10 @@ Trunk (unreleased)
 Physical modelling
 ------------------
 
+- Add internal coupling for scalars of two domains (for instance temperature
+  between solid and liquid, or enthalpy for electric arcs between plasma and
+  weldpool)
+
 - Lagrangian module: add deposition and resuspension models on internal faces.
   The user can the impose the motion of deposited particles. If integral
   approach for porous modelling is set up (iporos=3), then the internal fluid

@@ -111,11 +111,13 @@ static int _n_computations = 0;
  * parameters:
  *   m    <--  mesh
  *   fvq  <->  mesh quantities
+ *   ce   <->  coupling entity
  *----------------------------------------------------------------------------*/
 
 static void
 _compute_cell_cocg_s_it(const cs_mesh_t      *m,
-                        cs_mesh_quantities_t *fvq)
+                        cs_mesh_quantities_t *fvq,
+                        cs_internal_coupling_t *ce)
 {
   const int n_cells = m->n_cells;
   const int n_cells_ext = m->n_cells_with_ghosts;
@@ -132,8 +134,15 @@ _compute_cell_cocg_s_it(const cs_mesh_t      *m,
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *restrict)fvq->dofij;
 
-  cs_real_33_t   *restrict cocgb = fvq->cocgb_s_it;
-  cs_real_33_t   *restrict cocg = fvq->cocg_s_it;
+  cs_real_33_t   *restrict cocgb;
+  cs_real_33_t   *restrict cocg;
+  if (ce == NULL) {
+    cocg = fvq->cocg_s_it;
+    cocgb = fvq->cocgb_s_it;
+  } else {
+    cocg = ce->cocg_s_it;
+    cocgb = ce->cocgb_s_it;
+  }
 
   cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
   int        g_id, t_id;
@@ -144,10 +153,15 @@ _compute_cell_cocg_s_it(const cs_mesh_t      *m,
   cs_real_4_t  fctb;
 
   if (cocg == NULL) {
-    BFT_MALLOC(cocgb, m->n_b_cells, cs_real_33_t);
     BFT_MALLOC(cocg, n_cells_ext, cs_real_33_t);
-    fvq->cocgb_s_it = cocgb;
-    fvq->cocg_s_it = cocg;
+    BFT_MALLOC(cocgb, m->n_b_cells, cs_real_33_t);
+    if (ce == NULL) {
+      fvq->cocgb_s_it = cocgb;
+      fvq->cocg_s_it = cocg;
+    } else {
+      ce->cocg_s_it = cocg;
+      ce->cocgb_s_it = cocgb;
+    }
   }
 
   /* Compute cocg */
@@ -169,7 +183,7 @@ _compute_cell_cocg_s_it(const cs_mesh_t      *m,
 
   for (g_id = 0; g_id < n_i_groups; g_id++) {
 
-#   pragma omp parallel for private(face_id, ii, jj, ll, fctb)
+#   pragma omp parallel for private(face_id, ii, jj, ll, mm, fctb)
     for (t_id = 0; t_id < n_i_threads; t_id++) {
 
       for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -180,15 +194,11 @@ _compute_cell_cocg_s_it(const cs_mesh_t      *m,
         jj = i_face_cells[face_id][1];
 
         for (ll = 0; ll < 3; ll++) {
-          fctb[0] = -dofij[face_id][0] * 0.5 * i_face_normal[face_id][ll];
-          fctb[1] = -dofij[face_id][1] * 0.5 * i_face_normal[face_id][ll];
-          fctb[2] = -dofij[face_id][2] * 0.5 * i_face_normal[face_id][ll];
-          cocg[ii][ll][0] += fctb[0];
-          cocg[ii][ll][1] += fctb[1];
-          cocg[ii][ll][2] += fctb[2];
-          cocg[jj][ll][0] -= fctb[0];
-          cocg[jj][ll][1] -= fctb[1];
-          cocg[jj][ll][2] -= fctb[2];
+          for (mm = 0; mm < 3; mm++) {
+            fctb[mm] = -dofij[face_id][mm] * 0.5 * i_face_normal[face_id][ll];
+            cocg[ii][ll][mm] += fctb[mm];
+            cocg[jj][ll][mm] -= fctb[mm];
+          }
         }
 
       } /* loop on faces */
@@ -196,6 +206,11 @@ _compute_cell_cocg_s_it(const cs_mesh_t      *m,
     } /* loop on threads */
 
   } /* loop on thread groups */
+
+  /* Contribution for internal coupling */
+  if (ce != NULL) {
+    cs_internal_coupling_it_cocg_contribution(ce, cocg);
+  }
 
   /* Save partial cocg at interior faces of boundary cells */
 
@@ -260,11 +275,13 @@ _compute_cell_cocg_s_it(const cs_mesh_t      *m,
  * parameters:
  *   m    <--  mesh
  *   fvq  <->  mesh quantities
+ *   ce   <->  coupling entity
  *----------------------------------------------------------------------------*/
 
 static void
 _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
-                         cs_mesh_quantities_t *fvq)
+                         cs_mesh_quantities_t *fvq,
+                         cs_internal_coupling_t *ce)
 {
   const int n_cells = m->n_cells;
   const int n_cells_ext = m->n_cells_with_ghosts;
@@ -291,8 +308,18 @@ _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
   const cs_real_t *restrict b_face_surf
     = (const cs_real_t *restrict)fvq->b_face_surf;
 
-  cs_real_33_t   *restrict cocgb = fvq->cocgb_s_lsq;
+  cs_real_33_t   *restrict cocgb;
+  if (ce == NULL) {
+    cocgb = fvq->cocgb_s_lsq;
+  } else {
+    cocgb = ce->cocgb_s_lsq;
+  }
   cs_real_33_t   *restrict cocg = fvq->cocg_s_lsq;
+
+  const bool* coupled_faces;
+  if (ce != NULL) {
+    coupled_faces = ce->coupled_faces;
+  }
 
   cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
   int        g_id, t_id;
@@ -306,6 +333,9 @@ _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
     BFT_MALLOC(cocg, n_cells_ext, cs_real_33_t);
     fvq->cocgb_s_lsq = cocgb;
     fvq->cocg_s_lsq = cocg;
+  } else if (ce != NULL) {
+    BFT_MALLOC(cocgb, m->n_b_cells, cs_real_33_t);
+    ce->cocgb_s_lsq = cocgb;
   }
 
   /* Initialization */
@@ -351,9 +381,22 @@ _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
 
   } /* loop on thread groups */
 
+
+  /* Contribution for internal coupling */
+  if (ce != NULL) {
+    cs_internal_coupling_lsq_cocg_contribution(ce, cocg);
+  }
+
   /* Contribution from extended neighborhood */
 
   if (m->halo_type == CS_HALO_EXTENDED) {
+
+    /* Not compatible with internal coupling */
+    if (ce != NULL) {
+      bft_error(__FILE__, __LINE__, 0,
+                "Extended least-square gradient reconstruction \
+                 is not supported with internal coupling");
+    }
 
 #   pragma omp parallel for private(jj, ll, mm, uddij2, dc)
     for (ii = 0; ii < n_cells; ii++) {
@@ -400,17 +443,21 @@ _compute_cell_cocg_s_lsq(const cs_mesh_t      *m,
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
 
-        ii = b_face_cells[face_id];
+        if (ce==NULL || !coupled_faces[face_id]) {
 
-        udbfs = 1. / b_face_surf[face_id];
+          ii = b_face_cells[face_id];
 
-        for (ll = 0; ll < 3; ll++)
-          dddij[ll] =   udbfs * b_face_normal[face_id][ll];
+          udbfs = 1. / b_face_surf[face_id];
 
-        for (ll = 0; ll < 3; ll++) {
-          for (mm = 0; mm < 3; mm++)
-            cocg[ii][ll][mm] += dddij[ll]*dddij[mm];
-        }
+          for (ll = 0; ll < 3; ll++)
+            dddij[ll] =   udbfs * b_face_normal[face_id][ll];
+
+          for (ll = 0; ll < 3; ll++) {
+            for (mm = 0; mm < 3; mm++)
+              cocg[ii][ll][mm] += dddij[ll]*dddij[mm];
+          }
+
+        } /* face without internal coupling */
 
       } /* loop on faces */
 
@@ -497,7 +544,6 @@ _compute_cell_cocg_it(const cs_mesh_t      *m,
   /* compute the dimensionless matrix COCG for each cell*/
 
   for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
-    dvol1 = cell_vol[cell_id];
     cocg[cell_id][0][0]= 1.0;
     cocg[cell_id][0][1]= 0.0;
     cocg[cell_id][0][2]= 0.0;
@@ -1906,7 +1952,7 @@ _compute_face_sup_vectors(int                dim,
 /*----------------------------------------------------------------------------
  * Query or modification of the option for computing cell centers.
  *
- * This function returns 1 or 2 according to the selected algorithm.
+ * This function returns 0 or 1 according to the selected algorithm.
  *
  * Fortran interface :
  *
@@ -2433,10 +2479,10 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   /* Compute 3x3 cocg matrixes */
 
   if (_compute_cocg_s_it == 1)
-    _compute_cell_cocg_s_it(mesh, mesh_quantities);
+    _compute_cell_cocg_s_it(mesh, mesh_quantities, NULL);
 
   if (_compute_cocg_s_lsq == 1)
-    _compute_cell_cocg_s_lsq(mesh, mesh_quantities);
+    _compute_cell_cocg_s_lsq(mesh, mesh_quantities, NULL);
 
   if (_compute_cocg_it == 1)
     _compute_cell_cocg_it(mesh, mesh_quantities);
@@ -2785,7 +2831,7 @@ cs_mesh_quantities_reduce_extended(const cs_mesh_t       *mesh,
   if (_compute_cocg_lsq == 1)
     _compute_cell_cocg_lsq(mesh, mesh_quantities);
   if (_compute_cocg_s_lsq == 1)
-    _compute_cell_cocg_s_lsq(mesh, mesh_quantities);
+    _compute_cell_cocg_s_lsq(mesh, mesh_quantities, NULL);
 }
 
 /*----------------------------------------------------------------------------
@@ -2894,6 +2940,46 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
 
   bft_printf("\n\nEND OF DUMP OF MESH QUANTITIES STRUCTURE\n\n");
   bft_printf_flush();
+
+}
+
+/*----------------------------------------------------------------------------
+ * Compute 3x3 matrix cocg for the scalar gradient least squares algorithm
+ * adapted for internal coupling.
+ *
+ * parameters:
+ *   m    <--  mesh
+ *   fvq  <->  mesh quantities
+ *   ce   <->  coupling_entity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_compute_cell_cocg_s_lsq_coupling(const cs_mesh_t        *m,
+                                    cs_mesh_quantities_t   *fvq,
+                                    cs_internal_coupling_t *ce)
+{
+
+  _compute_cell_cocg_s_lsq(m, fvq, ce);
+
+}
+
+/*----------------------------------------------------------------------------
+ * Compute 3x3 matrix cocg for the scalar gradient iterative algorithm
+ * adapted for internal coupling.
+ *
+ * parameters:
+ *   m    <--  mesh
+ *   fvq  <->  mesh quantities
+ *   ce   <->  coupling_entity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_compute_cell_cocg_s_it_coupling(const cs_mesh_t        *m,
+                                   cs_mesh_quantities_t   *fvq,
+                                   cs_internal_coupling_t *ce)
+{
+
+  _compute_cell_cocg_s_it(m, fvq, ce);
 
 }
 

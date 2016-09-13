@@ -53,6 +53,7 @@
 #include "cs_blas.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
+#include "cs_internal_coupling.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_adjacencies.h"
@@ -222,6 +223,7 @@ cs_matrix_vector_native_multiply(int               isym,
                                  int               ibsize,
                                  int               iesize,
                                  int               iinvpe,
+                                 int               f_id,
                                  const cs_real_t  *dam,
                                  const cs_real_t  *xam,
                                  cs_real_t        *vx,
@@ -267,6 +269,21 @@ cs_matrix_vector_native_multiply(int               isym,
                                (const cs_lnum_2_t *)m->i_face_cells,
                                dam,
                                xam);
+
+    /* Set extended contribution for domain coupling */
+    if (f_id != -1) {
+      const cs_field_t* f = cs_field_by_id(f_id);
+      int coupling_id = cs_field_get_key_int(f,
+                                             cs_field_key_id("coupling_entity"));
+
+      if (coupling_id > -1) {
+        cs_matrix_set_extend
+          (a,
+           cs_internal_coupling_matrix_vector_multiply_contribution,
+           cs_matrix_preconditionning_add_coupling_contribution,
+           cs_internal_coupling_get_entity(coupling_id));
+      }
+    }
   }
   else {
 

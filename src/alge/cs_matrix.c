@@ -79,6 +79,8 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_field.h"
+#include "cs_parameters.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
@@ -86,6 +88,7 @@
 #include "cs_prototypes.h"
 #include "cs_sort.h"
 #include "cs_timer.h"
+#include "cs_convection_diffusion.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -5782,6 +5785,12 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
       m->vector_multiply[i][1] = m->vector_multiply[i][0];
   }
 
+  /* Extended structure */
+
+  m->vector_multiply_extend = NULL;
+  m->preconditioner_extend = NULL;
+  m->input_extend = NULL;
+
   return m;
 }
 
@@ -6172,6 +6181,55 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
        "coefficient assignment from native (graph-edge) coefficients.",
        cs_matrix_type_name[matrix->type],
        cs_matrix_fill_type_name[matrix->fill_type]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Get coupling entity associated to matrix, or NULL if no coupling
+ * entity has been set before.
+ *
+ * parameters:
+ * \param[in]      m                      pointer to matrix structure
+ * \param[out]     vector_multiply_extend pointer to SpMV extension function
+ * \param[out]     preconditioner_extend  pointer to preconditioner extension
+ *                                        function
+ * \param[out]     input_extend           pointer to associated data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_extend(const cs_matrix_t                 *m,
+                     cs_matrix_vector_product_extend_t **vector_multiply_extend,
+                     cs_matrix_preconditioner_extend_t **preconditioner_extend,
+                     void                              **input_extend)
+{
+  if (vector_multiply_extend != NULL)
+    *vector_multiply_extend = m->vector_multiply_extend;
+  if (preconditioner_extend != NULL)
+    *preconditioner_extend = m->preconditioner_extend;
+  if (input_extend != NULL)
+    *input_extend = m->input_extend;
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Set coupling entity associated to matrix, or NULL if no coupling
+ * entity has been set before.
+ *
+ * parameters:
+ * \param[in]      m                      pointer to matrix structure
+ * \param[in]      vector_multiply_extend pointer to SpMV extension function
+ * \param[in, out] input_extend           pointer to associated data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_set_extend(cs_matrix_t                        *m,
+                     cs_matrix_vector_product_extend_t  *vector_multiply_extend,
+                     cs_matrix_preconditioner_extend_t *preconditioner_extend,
+                     void                               *input_extend)
+{
+  m->vector_multiply_extend = vector_multiply_extend;
+  m->preconditioner_extend = preconditioner_extend;
+  m->input_extend = input_extend;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6946,8 +7004,17 @@ cs_matrix_vector_multiply(cs_halo_rotation_t   rotation_mode,
                               x,
                               y);
 
-  if (matrix->vector_multiply[matrix->fill_type][0] != NULL)
+  if (matrix->vector_multiply[matrix->fill_type][0] != NULL) {
     matrix->vector_multiply[matrix->fill_type][0](false, matrix, x, y);
+
+    /* Extended contribution */
+    if (matrix->vector_multiply_extend != NULL)
+      matrix->vector_multiply_extend(false, /* Exclude diag */
+                                     matrix->input_extend,
+                                     x,
+                                     y);
+
+  }
   else
     bft_error
       (__FILE__, __LINE__, 0,
@@ -6977,8 +7044,17 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
 {
   assert(matrix != NULL);
 
-  if (matrix->vector_multiply[matrix->fill_type][0] != NULL)
+  if (matrix->vector_multiply[matrix->fill_type][0] != NULL) {
     matrix->vector_multiply[matrix->fill_type][0](false, matrix, x, y);
+
+    /* Extended contribution */
+    if (matrix->vector_multiply_extend != NULL)
+      matrix->vector_multiply_extend(false, /* Exclude diag */
+                                     matrix->input_extend,
+                                     x,
+                                     y);
+
+  }
   else
     bft_error
       (__FILE__, __LINE__, 0,
@@ -7015,8 +7091,17 @@ cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
                               x,
                               y);
 
-  if (matrix->vector_multiply[matrix->fill_type][1] != NULL)
+  if (matrix->vector_multiply[matrix->fill_type][1] != NULL) {
     matrix->vector_multiply[matrix->fill_type][1](true, matrix, x, y);
+
+    /* Extended contribution */
+    if (matrix->vector_multiply_extend != NULL)
+      matrix->vector_multiply_extend(true, /* Exclude diag */
+                                     matrix->input_extend,
+                                     x,
+                                     y);
+
+  }
   else
     bft_error
       (__FILE__, __LINE__, 0,

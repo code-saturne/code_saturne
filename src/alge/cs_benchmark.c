@@ -948,6 +948,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
                                      stride, /* ibsize */
                                      1,      /* iesize */
                                      0,
+                                     -1,     /* field id or -1 */
                                      da,
                                      xa,
                                      x,

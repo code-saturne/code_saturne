@@ -33,6 +33,7 @@
 
 #include "cs_base.h"
 #include "cs_halo.h"
+#include "cs_internal_coupling.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -170,28 +171,30 @@ cs_gradient_finalize(void);
  * tensor field.
  *
  * parameters:
- *   var_name       <-- variable name
- *   gradient_type  <-- gradient type
- *   halo_type      <-- halo type
- *   inc            <-- if 0, solve on increment; 1 otherwise
- *   recompute_cocg <-- should COCG FV quantities be recomputed ?
- *   n_r_sweeps     <-- if > 1, number of reconstruction sweeps
- *   tr_dim         <-- 2 for tensor with periodicity of rotation,
- *                      0 otherwise
- *   hyd_p_flag     <-- flag for hydrostatic pressure
- *   w_stride       <-- stride for weighting coefficient
- *   verbosity      <-- verbosity level
- *   clip_mode      <-- clipping mode
- *   epsilon        <-- precision for iterative gradient calculation
- *   extrap         <-- boundary gradient extrapolation coefficient
- *   clip_coeff     <-- clipping coefficient
- *   f_ext          <-- exterior force generating the hydrostatic pressure
- *   bc_coeff_a     <-- boundary condition term a
- *   bc_coeff_b     <-- boundary condition term b
- *   var            <-> gradient's base variable
- *   c_weight       <-- weighted gradient coefficient variable,
- *                      or NULL
- *   grad           --> gradient
+ *   var_name        <-- variable name
+ *   gradient_type   <-- gradient type
+ *   halo_type       <-- halo type
+ *   inc             <-- if 0, solve on increment; 1 otherwise
+ *   recompute_cocg  <-- should COCG FV quantities be recomputed ?
+ *   n_r_sweeps      <-- if > 1, number of reconstruction sweeps
+ *   tr_dim          <-- 2 for tensor with periodicity of rotation,
+ *                       0 otherwise
+ *   hyd_p_flag      <-- flag for hydrostatic pressure
+ *   w_stride        <-- stride for weighting coefficient
+ *   verbosity       <-- verbosity level
+ *   clip_mode       <-- clipping mode
+ *   epsilon         <-- precision for iterative gradient calculation
+ *   extrap          <-- boundary gradient extrapolation coefficient
+ *   clip_coeff      <-- clipping coefficient
+ *   f_ext           <-- exterior force generating the hydrostatic pressure
+ *   bc_coeff_a      <-- boundary condition term a
+ *   bc_coeff_b      <-- boundary condition term b
+ *   var             <-> gradient's base variable
+ *   c_weight        <-> weighted gradient coefficient variable,
+ *                       or NULL
+ *   coupling_entity <-> structure associated with internal coupling,
+                         or NULL
+ *   grad            --> gradient
  *----------------------------------------------------------------------------*/
 
 void
@@ -214,6 +217,7 @@ cs_gradient_scalar(const char                *var_name,
                    const cs_real_t            bc_coeff_b[],
                    cs_real_t        *restrict var,
                    cs_real_t        *restrict c_weight,
+                   cs_internal_coupling_t    *coupling_entity,
                    cs_real_3_t      *restrict grad);
 
 /*----------------------------------------------------------------------------

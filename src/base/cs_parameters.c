@@ -220,6 +220,10 @@ BEGIN_C_DECLS
        gradient calculation
           - 1: standard
           - 0: weighted
+  \var cs_var_cal_opt_t::icoupl
+       Internel coupling
+          - -1: not coupled (default)
+          -  1: coupled
   \var cs_var_cal_opt_t::thetav
        \f$ \theta \f$-scheme for the main variables
           -  0 : explicit
@@ -305,6 +309,7 @@ static cs_var_cal_opt_t _var_cal_opt =
   .imligr = -1,
   .ircflu = 1,
   .iwgrec = 0,
+  .icoupl = -1,
   .thetav = 1.,
   .blencv = 1.,
   .epsilo = 1.e-8,
@@ -405,6 +410,7 @@ _log_func_var_opt_cal(const void *t)
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imligr", _t->imligr);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ircflu", _t->ircflu);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iwgrec", _t->iwgrec);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "icoupl", _t->icoupl);
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "thetav", _t->thetav);
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "blencv", _t->blencv);
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsilo", _t->epsilo);
@@ -565,6 +571,8 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("boundary_value_id", -1, 0);
 
   cs_field_define_key_int("convection_limiter_id", -1, 0);
+
+  cs_field_define_key_int("coupling_entity", -1, 0);
 
   cs_field_define_key_double("min_scalar_clipping", -1.e12, 0);
   cs_field_define_key_double("max_scalar_clipping", 1.e12, 0);

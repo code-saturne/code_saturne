@@ -68,6 +68,7 @@
 #include "cs_timer.h"
 #include "cs_stokes_model.h"
 #include "cs_boundary_conditions.h"
+#include "cs_internal_coupling.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1721,6 +1722,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   const int ischcp = var_cal_opt.ischcv;
   const int isstpp = var_cal_opt.isstpc;
   const int iwarnp = var_cal_opt.iwarni;
+  const int icoupl = var_cal_opt.icoupl;
   int limiter_choice = -1;
   const double blencp = var_cal_opt.blencv;
   const double epsrgp = var_cal_opt.epsrgr;
@@ -1786,6 +1788,18 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   cs_real_t  *v_slope_test = _get_v_slope_test(f_id,  var_cal_opt);
 
+  /* Internal coupling variables */
+  cs_real_t *pvar_1 = NULL, *pvar_2 = NULL;
+  cs_real_t *pvar_distant_1 = NULL, *pvar_distant_2 = NULL;
+  cs_real_t hint, hext, heq;
+  cs_lnum_t *faces_1 = NULL, *faces_2 = NULL;
+  cs_int_t n_1, n_2;
+  cs_lnum_t n_dist_1, n_dist_2;
+  cs_lnum_t *dist_loc_1, *dist_loc_2;
+  int coupling_id;
+  cs_internal_coupling_t* coupling_entity = NULL;
+
+
   /* 1. Initialization */
 
   /* Allocate work arrays */
@@ -1835,6 +1849,21 @@ cs_convection_diffusion_scalar(int                       idtvar,
   }
 
   iupwin = (blencp > 0.) ? 0 : 1;
+
+  if (icoupl > 0) {
+    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    coupling_id = cs_field_get_key_int(f, coupling_key_id);
+    coupling_entity = cs_internal_coupling_get_entity(coupling_id);
+    cs_internal_coupling_coupled_faces(coupling_entity,
+                                       &n_1,
+                                       &n_2,
+                                       &faces_1,
+                                       &faces_2,
+                                       &n_dist_1,
+                                       &n_dist_2,
+                                       &dist_loc_1,
+                                       &dist_loc_2);
+  }
 
   /* 2. Compute the balance with reconstruction */
 
@@ -1887,6 +1916,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                        coefbp,
                        pvar,
                        gweight, /* Weighted gradient */
+                       coupling_entity,
                        grad);
 
   } else {
@@ -2687,6 +2717,111 @@ cs_convection_diffusion_scalar(int                       idtvar,
         }
       }
 
+      /* The scalar is internal_coupled and an implicit contribution
+       * is required */
+      if (icoupl > 0) {
+        /* Prepare data for sending */
+        BFT_MALLOC(pvar_distant_1, n_dist_1, cs_real_t);
+        BFT_MALLOC(pvar_distant_2, n_dist_2, cs_real_t);
+
+        for (cs_lnum_t ii = 0; ii < n_dist_1; ii++) {
+          cs_lnum_t face_id = dist_loc_1[ii] - 1;
+          cs_lnum_t jj = b_face_cells[face_id];
+          cs_real_t pip;
+          cs_b_cd_unsteady(ircflp,
+                           diipb[face_id],
+                           grad[jj],
+                           pvar[jj],
+                           &pip);
+          pvar_distant_1[ii] = pip;
+        }
+
+        for (cs_lnum_t ii = 0; ii < n_dist_2; ii++) {
+          cs_lnum_t face_id = dist_loc_2[ii] - 1;
+          cs_lnum_t jj = b_face_cells[face_id];
+          cs_real_t pip;
+          cs_b_cd_unsteady(ircflp,
+                           diipb[face_id],
+                           grad[jj],
+                           pvar[jj],
+                           &pip);
+          pvar_distant_2[ii] = pip;
+        }
+
+        /* Receive data */
+        BFT_MALLOC(pvar_1, n_1, cs_real_t);
+        BFT_MALLOC(pvar_2, n_2, cs_real_t);
+
+        cs_internal_coupling_exchange_var(coupling_entity,
+                                          1,
+                                          pvar_distant_1,
+                                          pvar_distant_2,
+                                          pvar_1,
+                                          pvar_2);
+
+        /* Sending structures are no longer needed */
+        BFT_FREE(pvar_distant_1);
+        BFT_FREE(pvar_distant_2);
+
+        /* Flux contribution 1->2 */
+        for (cs_lnum_t ii = 0; ii < n_1; ii++) {
+          cs_lnum_t face_id = faces_1[ii] - 1;
+          cs_lnum_t jj = b_face_cells[face_id];
+          cs_real_t pip, pjp;
+          cs_real_t fluxi = 0.;
+
+          cs_b_cd_unsteady(ircflp,
+                           diipb[face_id],
+                           grad[jj],
+                           pvar[jj],
+                           &pip);
+
+          pjp = pvar_1[ii];
+
+          hint = coupling_entity->hint_1[ii];
+          hext = coupling_entity->hext_1[ii];
+          heq = hint * hext / (hint + hext);
+
+          cs_b_diff_flux_coupling(idiffp,
+                                  pip,
+                                  pjp,
+                                  heq,
+                                  &fluxi);
+
+          rhs[jj] -= thetap * fluxi;
+        }
+
+        /* Flux contribution 2->1 */
+        for (cs_lnum_t ii = 0; ii < n_2; ii++) {
+          cs_lnum_t face_id = faces_2[ii] - 1;
+          cs_lnum_t jj = b_face_cells[face_id];
+          cs_real_t pip, pjp;
+          cs_real_t fluxi = 0.;
+
+          cs_b_cd_unsteady(ircflp,
+                           diipb[face_id],
+                           grad[jj],
+                           pvar[jj],
+                           &pip);
+
+          pjp = pvar_2[ii];
+
+          hint = coupling_entity->hint_2[ii];
+          hext = coupling_entity->hext_2[ii];
+          heq = hint * hext / (hint + hext);
+
+          cs_b_diff_flux_coupling(idiffp,
+                                  pip,
+                                  pjp,
+                                  heq,
+                                  &fluxi);
+
+          rhs[jj] -= thetap * fluxi;
+        }
+
+        BFT_FREE(pvar_1);
+        BFT_FREE(pvar_2);
+      }
     }
 
   /* Boundary convective flux is imposed at some faces
@@ -5103,6 +5238,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
                        coefbp,
                        pvar,
                        gweight, /* Weighted gradient */
+                       NULL, /* internal coupling */
                        grad);
 
   } else {
@@ -6152,6 +6288,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
                        coefbp,
                        pvar,
                        gweight, /* Weighted gradient */
+                       NULL, /* internal coupling */
                        grad);
 
   } else {
@@ -7852,6 +7989,7 @@ cs_face_diffusion_potential(const int                 f_id,
                        coefbp,
                        pvar,
                        gweight, /* Weighted gradient */
+                       NULL, /* internal coupling */
                        grad);
 
     /* Handle parallelism and periodicity */
@@ -8263,6 +8401,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
                        coefbp,
                        pvar,
                        gweight, /* Weighted gradient */
+                       NULL, /* internal coupling */
                        grad);
 
     /* Mass flow through interior faces */
@@ -8681,6 +8820,7 @@ cs_diffusion_potential(const int                 f_id,
                        coefbp,
                        pvar,
                        gweight, /* Weighted gradient */
+                       NULL, /* internal coupling */
                        grad);
 
     /* Handle parallelism and periodicity */
@@ -9131,6 +9271,7 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
                        coefbp,
                        pvar,
                        gweight, /* Weighted gradient */
+                       NULL, /* internal coupling */
                        grad);
 
     /* Mass flow through interior faces */

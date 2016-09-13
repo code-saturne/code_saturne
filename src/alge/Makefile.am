@@ -22,6 +22,8 @@
 
 #-------------------------------------------------------------------------------
 
+# PLE dependency
+
 if HAVE_INTERNAL_PLE
   CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
 else

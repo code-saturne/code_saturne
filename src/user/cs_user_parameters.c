@@ -194,5 +194,20 @@ cs_user_time_moments(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define internal coupling options.
+ *
+ * Options are usually defined using cs_internal_coupling_add_entity.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_internal_coupling(void)
+{
+
+}
+
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

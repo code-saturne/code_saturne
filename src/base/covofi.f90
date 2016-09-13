@@ -927,6 +927,9 @@ if (vcopt%idiff.ge.1) then
         cpro_wgrec_s(iel) = w1(iel)
       enddo
       call synsca(cpro_wgrec_s)
+      if (irangp.ge.0.or.iperio.eq.1) then
+         call synsca(cpro_wgrec_s)
+      endif
     endif
 
     call viscfa &

@@ -33,6 +33,7 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
+-I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/base \

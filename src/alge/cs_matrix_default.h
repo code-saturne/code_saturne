@@ -69,6 +69,7 @@ BEGIN_C_DECLS
  *   iinvpe     <-- Indicator to cancel increments
  *                  in rotational periodicty (2) or
  *                  to exchange them as scalars (1)
+ *   f_id       <-- field id
  *   dam        <-- Matrix diagonal
  *   xam        <-- Matrix extra-diagonal terms
  *   vx         <-- A*vx
@@ -80,6 +81,7 @@ cs_matrix_vector_native_multiply(int               isym,
                                  int               ibsize,
                                  int               iesize,
                                  int               iinvpe,
+                                 int               f_id,
                                  const cs_real_t  *dam,
                                  const cs_real_t  *xam,
                                  cs_real_t        *vx,

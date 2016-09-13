@@ -50,10 +50,11 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
-#include "cs_log.h"
-#include "cs_halo.h"
 #include "cs_field.h"
 #include "cs_grid.h"
+#include "cs_halo.h"
+#include "cs_internal_coupling.h"
+#include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
@@ -186,7 +187,7 @@ _sles_default_native(int                f_id,
 
   if (multigrid) {
 
-    /* Multigrid used as preconditionner if possible, as solver otherwise */
+    /* Multigrid used as preconditioner if possible, as solver otherwise */
 
     if ((matrix_type == CS_MATRIX_MSR) || (matrix_type == CS_MATRIX_N_TYPES)) {
       cs_sles_it_t *c = cs_sles_it_define(f_id,
@@ -443,6 +444,21 @@ cs_sles_setup_native_conv_diff(int                  f_id,
                                da,
                                xa);
 
+    /* Set extended contribution for domain coupling */
+    if (f_id != -1) {
+      const cs_field_t* f = cs_field_by_id(f_id);
+      int coupling_id = cs_field_get_key_int(f,
+                                             cs_field_key_id("coupling_entity"));
+
+      if (coupling_id > -1) {
+        cs_matrix_set_extend
+          (a,
+           cs_internal_coupling_matrix_vector_multiply_contribution,
+           cs_matrix_preconditionning_add_coupling_contribution,
+           cs_internal_coupling_get_entity(coupling_id));
+      }
+    }
+
     cs_matrix_t *a_ref = cs_matrix_default(false,
                                            diag_block_size,
                                            extra_diag_block_size);
@@ -458,6 +474,21 @@ cs_sles_setup_native_conv_diff(int                  f_id,
                                da_conv,
                                xa_conv);
 
+    /* Set extended contribution for domain coupling */
+    if (f_id != -1) {
+      const cs_field_t* f = cs_field_by_id(f_id);
+      int coupling_id = cs_field_get_key_int(f,
+                                             cs_field_key_id("coupling_entity"));
+
+      if (coupling_id > -1) {
+        cs_matrix_set_extend
+          (a_conv,
+           cs_internal_coupling_matrix_vector_multiply_contribution,
+           cs_matrix_preconditionning_add_coupling_contribution,
+           cs_internal_coupling_get_entity(coupling_id));
+      }
+    }
+
     if (a_diff == NULL)
       a_diff = cs_matrix_create_by_copy(a_ref);
 
@@ -469,6 +500,21 @@ cs_sles_setup_native_conv_diff(int                  f_id,
                                (const cs_lnum_2_t *)(m->i_face_cells),
                                da_diff,
                                xa_diff);
+
+    /* Set extended contribution for domain coupling */
+    if (f_id != -1) {
+      const cs_field_t* f = cs_field_by_id(f_id);
+      int coupling_id = cs_field_get_key_int(f,
+                                             cs_field_key_id("coupling_entity"));
+
+      if (coupling_id > -1) {
+        cs_matrix_set_extend
+          (a_diff,
+           cs_internal_coupling_matrix_vector_multiply_contribution,
+           cs_matrix_preconditionning_add_coupling_contribution,
+           cs_internal_coupling_get_entity(coupling_id));
+      }
+    }
 
     _sles_setup[setup_id] = sc;
     _matrix_setup[setup_id][0] = a;
@@ -580,6 +626,7 @@ cs_sles_solve_native(int                  f_id,
       a = cs_matrix_native(symmetric,
                            diag_block_size,
                            extra_diag_block_size);
+
       cs_matrix_set_coefficients(a,
                                  symmetric,
                                  diag_block_size,
@@ -588,6 +635,22 @@ cs_sles_solve_native(int                  f_id,
                                  (const cs_lnum_2_t *)(m->i_face_cells),
                                  da,
                                  xa);
+
+      /* Set extended contribution for domain coupling */
+      if (f_id != -1) {
+        const cs_field_t* f = cs_field_by_id(f_id);
+        int coupling_id = cs_field_get_key_int(f,
+            cs_field_key_id("coupling_entity"));
+
+        if (coupling_id > -1) {
+          cs_matrix_set_extend
+            (a,
+             cs_internal_coupling_matrix_vector_multiply_contribution,
+             cs_matrix_preconditionning_add_coupling_contribution,
+             cs_internal_coupling_get_entity(coupling_id));
+        }
+      }
+
       cs_sles_define_t  *sles_default_func = cs_sles_get_default_define();
       sles_default_func(f_id, name, a);
       cs_matrix_release_coefficients(a);
@@ -635,6 +698,22 @@ cs_sles_solve_native(int                  f_id,
                                (const cs_lnum_2_t *)(m->i_face_cells),
                                da,
                                xa);
+
+    /* Set extended contribution for domain coupling */
+    if (f_id != -1) {
+      const cs_field_t* f = cs_field_by_id(f_id);
+      int coupling_id = cs_field_get_key_int(f,
+          cs_field_key_id("coupling_entity"));
+
+      if (coupling_id > -1) {
+        cs_matrix_set_extend
+          (a,
+           cs_internal_coupling_matrix_vector_multiply_contribution,
+           cs_matrix_preconditionning_add_coupling_contribution,
+           cs_internal_coupling_get_entity(coupling_id));
+      }
+    }
+
 
     _sles_setup[setup_id] = sc;
     _matrix_setup[setup_id][0] = a;
@@ -714,7 +793,7 @@ cs_sles_free_native(int          f_id,
  *        for sparse linear equation solver.
  *
  * In case of divergence with an iterative solver, this error handler
- * switches to a default preconditionner, then resets the solution vector.
+ * switches to a default preconditioner, then resets the solution vector.
  *
  * The default error for the solver type handler is then  set, in case
  * the solution fails again.

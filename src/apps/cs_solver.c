@@ -278,6 +278,10 @@ cs_run(void)
 
   cs_turbomachinery_initialize();
 
+  /* Initialization of internal coupling */
+
+  cs_internal_coupling_initialize();
+
   /* Initialize meshes for the main post-processing */
 
   check_mask = ((opts.preprocess | opts.verif) == true) ? 2 + 1 : 0;
@@ -418,6 +422,10 @@ cs_run(void)
 
   cs_ctwr_all_destroy();
   cs_fan_destroy_all();
+
+  /* Free internal coupling */
+
+  cs_internal_coupling_finalize();
 
   /* Free thermal physical properties */
 

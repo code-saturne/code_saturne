@@ -287,6 +287,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
                      coefbp,
                      f_theta4->val,
                      NULL,
+                     NULL, /* internal coupling */
                      q);
 
   cs_real_t aa = - stephn * 4.0 / 3.0;

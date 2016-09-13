@@ -388,6 +388,7 @@ void CS_PROCF (perinr, PERINR)
                        f->bc_coeffs->b,
                        f->val,
                        NULL,            /* weight_var */
+                       NULL,            /* internal coupling */
                        grad);
 
     if (_drdxyz == NULL) {

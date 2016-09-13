@@ -465,6 +465,7 @@ cs_lagr_poisson(const int  itypfb[])
                      coefbp,
                      phil,
                      NULL,            /* c_weight */
+                     NULL, /* internal coupling */
                      grad);
 
   BFT_FREE(coefap);

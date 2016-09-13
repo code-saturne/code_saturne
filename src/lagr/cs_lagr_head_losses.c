@@ -208,6 +208,7 @@ _porcel(cs_real_t   mdiam[],
                      coefbp,
                      distpw,
                      NULL,
+                     NULL, /* internal coupling */
                      q);
 
   /* Normalisation (attention, le gradient peut etre nul, parfois) */

@@ -22,6 +22,14 @@
 
 #-------------------------------------------------------------------------------
 
+# PLE dependency
+
+if HAVE_INTERNAL_PLE
+  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
+else
+  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
+endif
+
 # Main part
 
 AM_CPPFLAGS = \
@@ -30,6 +38,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
+$(CPPFLAGS_PLE) \
 $(PETSC_CPPFLAGS) $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)

@@ -320,6 +320,12 @@ struct _cs_matrix_t {
 
   cs_matrix_vector_product_t        *vector_multiply[CS_MATRIX_N_FILL_TYPES][2];
 
+  /* Additional contributions */
+
+  cs_matrix_vector_product_extend_t *vector_multiply_extend;  /* SpMV add */
+  cs_matrix_preconditioner_extend_t *preconditioner_extend;   /* Diag add */
+  void                              *input_extend;            /* Associated
+                                                                  data */
 };
 
 /* Structure used for tuning variants */

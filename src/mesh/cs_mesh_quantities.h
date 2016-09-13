@@ -33,6 +33,7 @@
 
 #include "cs_base.h"
 #include "cs_mesh.h"
+#include "cs_internal_coupling.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -384,7 +385,36 @@ void
 cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
                         const cs_mesh_quantities_t  *mesh_quantities);
 
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Compute 3x3 matrix cocg for the scalar gradient least squares algorithm
+ * adapted for internal coupling.
+ *
+ * parameters:
+ *   m    <--  mesh
+ *   fvq  <->  mesh quantities
+ *   ce   <->  coupling_entity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_compute_cell_cocg_s_lsq_coupling(const cs_mesh_t        *m,
+                                    cs_mesh_quantities_t   *fvq,
+                                    cs_internal_coupling_t *ce);
+
+/*----------------------------------------------------------------------------
+ * Compute 3x3 matrix cocg for the scalar gradient iterative algorithm
+ * adapted for internal coupling.
+ *
+ * parameters:
+ *   m    <--  mesh
+ *   fvq  <->  mesh quantities
+ *   ce   <->  coupling_entity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_compute_cell_cocg_s_it_coupling(const cs_mesh_t        *m,
+                                   cs_mesh_quantities_t   *fvq,
+                                   cs_internal_coupling_t *ce);
+
 
 END_C_DECLS
 

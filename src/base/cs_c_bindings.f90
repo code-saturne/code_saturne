@@ -72,6 +72,7 @@ module cs_c_bindings
     integer(c_int) :: imligr
     integer(c_int) :: ircflu
     integer(c_int) :: iwgrec
+    integer(c_int) :: icoupl
     real(c_double) :: thetav
     real(c_double) :: blencv
     real(c_double) :: epsilo
@@ -766,11 +767,11 @@ module cs_c_bindings
     ! Interface to C function returning the product of a matrix (native format)
     ! by a vector
 
-    subroutine promav(isym, ibsize, iesize, iinvpe, dam, xam, vx, vy)  &
+    subroutine promav(isym, ibsize, iesize, iinvpe, f_id, dam, xam, vx, vy)  &
       bind(C, name='cs_matrix_vector_native_multiply')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: isym, ibsize, iesize, iinvpe
+      integer(c_int), value :: isym, ibsize, iesize, iinvpe, f_id
       real(kind=c_double), dimension(*), intent(in) :: dam, xam, vx
       real(kind=c_double), dimension(*), intent(out) :: vy
     end subroutine promav
@@ -1717,6 +1718,39 @@ module cs_c_bindings
       implicit none
       type(c_ptr), intent(out) :: tppt1d
     end subroutine cs_f_1d_wall_thermal_get_temp
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Binding to cs_user_internal_coupling
+
+    subroutine cs_user_internal_coupling()  &
+      bind(C, name='cs_user_internal_coupling')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_user_internal_coupling
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Binding to cs_ic_set_exchcoeff
+
+    subroutine cs_ic_set_exchcoeff(field_id,               &
+                                   hbord)                  &
+      bind(C, name='cs_ic_set_exchcoeff')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int), value :: field_id
+      real(kind=c_double), dimension(*), intent(in) :: hbord
+    end subroutine cs_ic_set_exchcoeff
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Binding to cs_internal_coupling_dump
+
+    subroutine cs_internal_coupling_dump()  &
+      bind(C, name='cs_internal_coupling_dump')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_internal_coupling_dump
 
     !---------------------------------------------------------------------------
 

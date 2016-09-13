@@ -180,6 +180,7 @@ double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
 double precision roughness
+double precision hbord2(nfabor)
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, uetbor
@@ -226,6 +227,7 @@ data             ntlast , iaff /-1 , 0/
 save             ntlast , iaff
 
 type(var_cal_opt) :: vcopt_u, vcopt_rij, vcopt_ep
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -1511,8 +1513,16 @@ do iscal = 1, nscal
  ( iscal  , isvhb  , icodcl ,                                     &
    rcodcl ,                                                       &
    byplus , bdplus , buk    ,                                     &
-   hbord  , theipb ,                                              &
+   hbord  , theipb , hbord2 ,                                     &
    tetmax , tetmin , tplumx , tplumn )
+
+
+    f_id = ivarfl(isca(iscal))
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+
+    if (vcopt%icoupl.gt.0) then
+       call cs_ic_set_exchcoeff( f_id, hbord2 )
+    endif
 
   endif
 
@@ -1896,6 +1906,7 @@ end subroutine
 !> \param[in,out] hbord         exchange coefficient at boundary
 !> \param[in]     theipb        boundary temperature in \f$ \centip \f$
 !>                               (more exaclty the energetic variable)
+!> \param[in,out] hbord2        exchange coefficient for internal coupling
 !> \param[out]    tetmax        maximum local ustar value
 !> \param[out]    tetmin        minimum local ustar value
 !> \param[out]    tplumx        maximum local tplus value
@@ -1906,7 +1917,7 @@ subroutine clptur_scalar &
  ( iscal  , isvhb  , icodcl ,                                     &
    rcodcl ,                                                       &
    byplus , bdplus , buk    ,                                     &
-   hbord  , theipb ,                                              &
+   hbord  , theipb , hbord2 ,                                     &
    tetmax , tetmin , tplumx , tplumn )
 
 !===============================================================================
@@ -1945,7 +1956,7 @@ integer          icodcl(nfabor,nvarcl)
 
 double precision rcodcl(nfabor,nvarcl,3)
 double precision byplus(nfabor), bdplus(nfabor)
-double precision hbord(nfabor), theipb(nfabor), buk(nfabor)
+double precision hbord(nfabor), theipb(nfabor), hbord2(nfabor), buk(nfabor)
 double precision tetmax, tetmin, tplumx, tplumn
 
 ! Local variables
@@ -2250,10 +2261,12 @@ do ifac = 1, nfabor
       yptp = hflui/prdtl
       ! Compute lambda/y * (y+-d+)/T+
       hflui = rkl/distbf *hflui
+      hbord2(ifac) = hflui
 
       ! Neumann on the scalar, with wall function (for post-processing)
     elseif (iturb.ne.0.and.icodcl(ifac,ivar).eq.3) then
       call hturbp(iwalfs,prdtl,sigmas(iscal),yplus,dplus,hflui,ypth)
+      hbord2(ifac) = rkl/distbf * hflui
       ! y+/T+ *PrT
       yptp = hflui/prdtl
       hflui = hint
@@ -2262,6 +2275,7 @@ do ifac = 1, nfabor
       ! y+/T+ *PrT
       yptp = 1.d0/prdtl
       hflui = hint
+      hbord2(ifac) = hflui
     endif
 
     if (isvhbl.gt.0) hbord(ifac) = hflui

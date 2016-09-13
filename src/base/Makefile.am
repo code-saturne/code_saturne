@@ -104,6 +104,7 @@ cs_gas_mix.h \
 cs_halo.h \
 cs_halo_perio.h \
 cs_interface.h \
+cs_internal_coupling.h \
 cs_io.h \
 cs_log.h \
 cs_log_iteration.h \
@@ -296,6 +297,7 @@ cs_time_step.c \
 cs_timer_stats.c \
 cs_turbomachinery.c \
 cs_wall_functions.c \
+cs_internal_coupling.c \
 csprnt.f90 \
 diffst.f90 \
 distpr.f90 \

@@ -228,6 +228,7 @@ cs_search_binary(size_t           size,
                  cs_lnum_t        num,
                  const cs_lnum_t  lst[])
 {
+  if (size == 0) return -1;
   return _binary_search(0, size - 1, num, lst);
 }
 

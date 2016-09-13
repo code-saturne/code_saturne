@@ -223,6 +223,7 @@ cs_balance_scalar(int                idtvar,
     var_cal_opt_loc.imligr = var_cal_opt->imligr;
     var_cal_opt_loc.ircflu = var_cal_opt->ircflu;
     var_cal_opt_loc.iwgrec = 0;
+    var_cal_opt_loc.icoupl = -1;
     var_cal_opt_loc.thetav = var_cal_opt->thetav;
     var_cal_opt_loc.blencv = var_cal_opt->blencv;
     var_cal_opt_loc.epsilo = -1.;
