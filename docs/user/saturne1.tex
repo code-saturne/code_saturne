@@ -2266,18 +2266,18 @@ array of reals.
 \item This is the same for the diffusivity $K$ of each scalar \texttt{iscal}.
 \begin{list}{-}{}
 \item If $k$ is constant, it can be specified in the interface or by
-      calling \texttt{field\_set\_key\_id(ivarfl(isca(iscal)), kivisl, -1)}
+      calling \texttt{field\_set\_key\_int(ivarfl(isca(iscal)), kivisl, -1)}
       in \texttt{cs\_user\_parameters.f90}, (in \texttt{usipsu}) and the property
       will be stored in the real number \texttt{visls0(iscal)}.
 \item If $k$ is variable, it can be specified in the interface or by
-      calling \texttt{field\_set\_key\_id(ivarfl(isca(iscal)), kivisl, 0)}
+      calling \texttt{field\_set\_key\_int(ivarfl(isca(iscal)), kivisl, 0)}
       in \texttt{cs\_user\_parameters.f90}, (in \texttt{usipsu}). The code will then
       modify this key value to make it refer to the effective
       field id corresponding to the diffusivity of the scalar
       \texttt{iscal}, in a way which is transparent for the user. For each cell
       \texttt{iel}, the value of $k$ is then given in \texttt{usphyv} and stored
       in the field whose id is given by calling
-      \texttt{field\_set\_key\_id(ivarfl(isca(iscal)), kivisl, ...)}.
+      \texttt{field\_set\_key\_int(ivarfl(isca(iscal)), kivisl, ...)}.
 \end{list}
 \end{list}
 
@@ -5038,7 +5038,7 @@ To assign a variable value to $C_p$, the user \textbf{must} specify it in the
       in \texttt{cs\_user\_physical\_properties}.
 
 \item In the same way, to have variable diffusivities for the scalars
-      \texttt{iscal}, the user \textbf{must} specify it in the interface (with a user law) or calling \texttt{field\_set\_key\_id(ivarfl(isca(iscal)), kivisl, 0)}
+      \texttt{iscal}, the user \textbf{must} specify it in the interface (with a user law) or calling \texttt{field\_set\_key\_int(ivarfl(isca(iscal)), kivisl, 0)}
       in \texttt{cs\_user\_parameters.f90} (in \texttt{usipsu}), and complete for each cell
       \texttt{iel} the values array of the field id \texttt{ifcvsl} returned by calling
       \texttt{field\_get\_key\_id(ivarfl(isca(iscal)), kivisl, ifcvsl)}
@@ -7605,7 +7605,7 @@ must be completed by the user.
 \item \texttt{ieos}: equation of state (only perfect gas with a constant adiabatic coefficient,
                       \texttt{ieos=1} is available, but the user can complete the subroutine
                       \texttt{cfther}, which is not a user subroutine, to add new equations of state).
-\item \texttt{call field\_set\_key\_id(ivarfl(isca(itempk)), kivisl, ...)}: molecular thermal conductivity, constant (\texttt{-1}) or variable (\texttt{0}).
+\item \texttt{call field\_set\_key\_int(ivarfl(isca(itempk)), kivisl, ...)}: molecular thermal conductivity, constant (\texttt{-1}) or variable (\texttt{0}).
 \item  \texttt{iviscv}: volumetric molecular viscosity, constant (\texttt{0}) or variable (\texttt{1}).
 \end{list}
 
