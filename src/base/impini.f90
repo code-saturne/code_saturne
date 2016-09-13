@@ -79,10 +79,10 @@ implicit none
 character        name*300, chaine*80
 integer          iokss , iokcaz
 integer          ii    , iiesca, iest
-integer          ipp   , iwar  , kval
+integer          iwar  , kval
 integer          nbccou, nbsucp, nbvocp, issurf, isvol
-integer          kscmin, kscmax, keypp, keyvar
-integer          c_id, f_id, f_dim, n_fields
+integer          kscmin, kscmax, keyvar
+integer          f_id, n_fields
 integer          igg, ige
 double precision scmaxp, scminp
 

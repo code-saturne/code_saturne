@@ -544,8 +544,9 @@ if (icavit.ge.0 .and. icvevm.eq.1) then
 
     call field_get_val_s(icrom, crom)
     call field_get_val_s(ivarfl(ivoidf), cvar_voidf)
+    call field_get_val_s(ivisct, visct)
 
-    call cavitation_correct_visc_turb (crom, cvar_voidf)
+    call cavitation_correct_visc_turb (crom, cvar_voidf, visct)
 
   endif
 endif

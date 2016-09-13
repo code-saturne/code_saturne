@@ -94,7 +94,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 integer          igg, ifac, izone, mode
 integer          icke, ii, iel, iok
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
-double precision ustar2, xkent, xeent, hgazf , tgazf, hgazb, tgazb
+double precision hgazf , tgazf, hgazb, tgazb
 double precision qcalc(nozppm), hgent(nozppm)
 double precision coefg(ngazgm)
 double precision, dimension(:), pointer ::  brom

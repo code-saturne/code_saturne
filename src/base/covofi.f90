@@ -143,7 +143,7 @@ logical          lprev
 character(len=80) :: chaine, fname
 integer          ivar
 integer          ii, ifac , iel, isou
-integer          iprev , inc   , iccocg, iii, iiun, ibcl
+integer          iprev , inc   , iccocg, iiun, ibcl
 integer          ivarsc
 integer          iiscav
 integer          ifcvsl, iflmas, iflmab

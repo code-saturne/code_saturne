@@ -379,8 +379,9 @@ contains
 
   !> \param[in]      crom   Density array
   !> \param[in]      voidf  Void fraction array
+  !> \param[in,out]  voidf  turbulent viscosity
 
-  subroutine cavitation_correct_visc_turb (crom, voidf)
+  subroutine cavitation_correct_visc_turb (crom, voidf, visct)
 
     use mesh
     use numvar
@@ -395,13 +396,10 @@ contains
 
     integer iel
     double precision frho
-    double precision, dimension(:), pointer :: cpro_visct
-
-    call field_get_val_s(ivisct, cpro_visct)
 
     do iel = 1, ncel
       frho = ( rov + (1.d0-voidf(iel))**mcav*(rol - rov) )/max(crom(iel),1.d-12)
-      cpro_visct(iel) = frho*cpro_visct(iel)
+      visct(iel) = frho*visct(iel)
     enddo
 
   end subroutine cavitation_correct_visc_turb

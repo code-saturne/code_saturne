@@ -666,7 +666,7 @@ integer, intent(out)         :: ivar
 
 ! Local variables
 
-integer  id, ii, ipp
+integer  id, ii
 integer  location_id
 
 integer, save :: keyvar = -1
@@ -736,7 +736,7 @@ implicit none
 ! Local variables
 
 integer  iscal, nfld1, nfld2
-integer  dim, id, ipp
+integer  dim, id
 
 integer :: keyvar, keysca
 
@@ -957,7 +957,7 @@ integer, intent(out) :: iscal
 
 ! Local variables
 
-integer  dim, ivar, ii, ipp
+integer  dim, ivar, ii
 
 integer, save :: keyvar = -1
 integer, save :: keysca = -1

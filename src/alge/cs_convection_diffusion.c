@@ -1851,6 +1851,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   iupwin = (blencp > 0.) ? 0 : 1;
 
   if (icoupl > 0) {
+    assert(f_id != -1);
     const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
     coupling_id = cs_field_get_key_int(f, coupling_key_id);
     coupling_entity = cs_internal_coupling_get_entity(coupling_id);

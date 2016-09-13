@@ -73,7 +73,7 @@ implicit none
 character(len=80) :: f_label, f_name, s_name, s_label
 integer           :: ii, skinet, ivar
 integer           :: idim1, idim3, idim6, iflid
-integer           :: type_flag, post_flag, location_id, ipp
+integer           :: type_flag, post_flag, location_id
 logical           :: has_previous
 
 type(gwf_sorption_model) :: sorption_scal

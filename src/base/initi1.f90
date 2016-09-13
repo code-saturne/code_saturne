@@ -54,7 +54,7 @@ implicit none
 
 ! Local variables
 
-integer          iok, ipp, nmodpp, imom, n_moments, f_id
+integer          iok, ipp, nmodpp
 
 double precision ttsuit, wtsuit
 
