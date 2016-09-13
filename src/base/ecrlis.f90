@@ -156,7 +156,7 @@ do f_id = 0, nfld - 1
       if (irangp.ge.0) call parsom (dervar(1))
       dervar(1) = dervar(1) / voltot
 
-    ! Pressure ime drift (computed in resopv.f90)
+    ! Pressure time drift (computed in resopv.f90)
     else if (f_dim.eq.1) then
       dervar(1) = sinfo%dervar
 

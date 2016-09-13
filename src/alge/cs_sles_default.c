@@ -165,6 +165,10 @@ _sles_default_native(int                f_id,
       sles_it_type = CS_SLES_PCG;
       multigrid = true;
     }
+    else if (!strcmp(name, "hydraulic_head")) { /* raypun.f90 */
+      sles_it_type = CS_SLES_PCG;
+      multigrid = true;
+    }
 
   }
 

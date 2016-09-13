@@ -181,6 +181,8 @@ typedef enum {
 
   CS_ENUMF_(mol_mass),     /*!< gas mix molar max */
 
+  CS_ENUMF_(head),         /*!< hydraulic head */
+
   /* End of attributes */
 
   CS_FIELD_N_POINTERS
@@ -311,6 +313,14 @@ cs_field_pointer_map_gas_mix(void);
 
 void
 cs_field_pointer_map_gas_combustion(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * Map base fields to enumerated pointers for groundwater flows
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_groundwater(void);
 
 /*----------------------------------------------------------------------------*/
 

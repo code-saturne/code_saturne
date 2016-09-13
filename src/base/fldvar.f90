@@ -181,9 +181,13 @@ call field_set_key_int(ivarfl(iu), keycpl, 1)
 iv = iu + 1
 iw = iv + 1
 
-! Pressure
+! Pressure or hydraulic head for groundwater flow module
 
-call add_variable_field('pressure', 'Pressure', 1, ipr)
+if (ippmod(idarcy).eq.-1) then
+  call add_variable_field('pressure', 'Pressure', 1, ipr)
+else
+  call add_variable_field('hydraulic_head', 'Hydraulic head', 1, ipr)
+endif
 
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 if (ippmod(icompf).ge.0) then

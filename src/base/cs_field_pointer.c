@@ -213,7 +213,7 @@ cs_field_pointer_map(cs_field_pointer_id_t   e,
  * This sort of mapping may be used for sets of fields whose size
  * is not known in advance.
  *
- * The associated field pointer may then be retreived using \ref CS_F_(e, i).
+ * The associated field pointer may then be retreived using \ref CS_FI_(e, i).
  *
  * \param[in]  e      field enumerator value
  * \param[in]  index  field enumerator index
@@ -530,6 +530,20 @@ cs_field_pointer_map_gas_combustion(void)
   cs_field_pointer_map(CS_ENUMF_(coyfp),
                        cs_field_by_name_try("mass_fraction_covariance"));
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map base fields to enumerated pointers for groundwater flows
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_groundwater(void)
+{
+  cs_field_pointer_map(CS_ENUMF_(head),
+                       cs_field_by_name_try("hydraulic_head"));
+}
+
 
 /*----------------------------------------------------------------------------*/
 

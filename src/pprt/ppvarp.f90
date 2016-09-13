@@ -92,6 +92,16 @@ interface
 
 end interface
 
+interface
+
+  subroutine cs_field_pointer_map_groundwater()  &
+    bind(C, name='cs_field_pointer_map_groundwater')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_field_pointer_map_groundwater
+
+end interface
+
 !===============================================================================
 
 ! Key ids for clipping
@@ -242,6 +252,14 @@ if (ippmod(igmix).ge.0) then
 
   ! MAP to C API
   call cs_field_pointer_map_gas_mix
+endif
+
+! 9. Groundwater flows
+!---------------------
+
+if (ippmod(idarcy).ge.0) then
+  ! MAP to C API
+  call cs_field_pointer_map_groundwater
 endif
 
 return
