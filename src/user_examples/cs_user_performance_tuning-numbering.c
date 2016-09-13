@@ -89,8 +89,6 @@ BEGIN_C_DECLS
 void
 cs_user_numbering(void)
 {
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [performance_tuning_numbering] */
 
   /* Force the target number of threads for mesh renumbering
@@ -144,8 +142,6 @@ cs_user_numbering(void)
      CS_RENUMBER_B_FACES_THREAD);     /* boundary faces numbering */
 
   /*! [performance_tuning_numbering] */
-
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/

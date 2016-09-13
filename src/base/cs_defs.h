@@ -450,16 +450,6 @@ typedef enum {
 #endif
 
 /*----------------------------------------------------------------------------
- * Macros for scoping of examples
- *----------------------------------------------------------------------------*/
-
-#undef BEGIN_EXAMPLE_SCOPE
-#undef END_EXAMPLE_SCOPE
-
-#define BEGIN_EXAMPLE_SCOPE  {
-#define   END_EXAMPLE_SCOPE  }
-
-/*----------------------------------------------------------------------------
  * Macros for Fortran interoperability
  *----------------------------------------------------------------------------*/
 

@@ -125,7 +125,6 @@ BEGIN_C_DECLS
 void
 cs_user_join(void)
 {
-  BEGIN_EXAMPLE_SCOPE
 
   /*! [mesh_add_simple_joining] */
 
@@ -238,7 +237,6 @@ cs_user_join(void)
 
   /*! [mesh_add_advanced_joining] */
 
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/

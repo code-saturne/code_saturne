@@ -89,8 +89,6 @@ BEGIN_C_DECLS
 void
 cs_user_parallel_io(void)
 {
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [perfomance_tuning_parallel_io] */
 
 #if defined(HAVE_MPI_IO) && MPI_VERSION > 1
@@ -156,8 +154,6 @@ cs_user_parallel_io(void)
 #endif /* defined(HAVE_MPI_IO) && MPI_VERSION > 1 */
 
   /*! [perfomance_tuning_parallel_io] */
-
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/

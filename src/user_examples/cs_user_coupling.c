@@ -86,27 +86,24 @@ BEGIN_C_DECLS
 void
 cs_user_coupling(void)
 {
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [coupling_1] */
+  {
+    /*-------------------------------------------------------------------------
+     * Example for time step multiplier for external couplings.
+     *
+     * The apparent time step for the current instance times (as viewed by
+     * coupled codes) is equal to the true time step times this multiplier.
+     *
+     * When coupling with SYRTHES, it is recommended to use the same multiplier
+     * here as for the thermal variable time step (this is not automated,
+     * to allow for more advanced combinations if necessary, so the user
+     * should ensure this when using a time step multiplier).
+     *-------------------------------------------------------------------------*/
 
-  /*-------------------------------------------------------------------------
-   * Example for time step multiplier for external couplings.
-   *
-   * The apparent time step for the current instance times (as viewed by
-   * coupled codes) is equal to the true time step times this multiplier.
-   *
-   * When coupling with SYRTHES, it is recommended to use the same multiplier
-   * here as for the thermal variable time step (this is not automated,
-   * to allow for more advanced combinations if necessary, so the user
-   * should ensure this when using a time step multiplier).
-   *-------------------------------------------------------------------------*/
+    cs_coupling_set_ts_multiplier(10.);
 
-  cs_coupling_set_ts_multiplier(10.);
-
+  }
   /*! [coupling_1] */
-
-  END_EXAMPLE_SCOPE
 }
 
 END_C_DECLS

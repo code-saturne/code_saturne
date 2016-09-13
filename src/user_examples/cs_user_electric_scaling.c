@@ -89,9 +89,6 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
                      const cs_mesh_quantities_t  *mesh_quantities,
                            cs_real_t             *dt)
 {
-
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [electric_scaling] */
 
   cs_lnum_t  ncel   = mesh->n_cells;
@@ -301,10 +298,8 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
     for (int iel = 0; iel < 3 ; iel++)
       CS_F_(joulp)->val[iel] *= coepot * coepot;
   }
-
   /*! [electric_scaling] */
 
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/

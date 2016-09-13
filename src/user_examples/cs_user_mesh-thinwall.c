@@ -101,8 +101,6 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
   /* Example: thin wall along a plane */
   /*----------------------------------*/
 
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [mesh_thinwall] */
 
   cs_lnum_t   n_selected_faces = 0;
@@ -126,8 +124,6 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
   BFT_FREE(selected_faces);
 
   /*! [mesh_thinwall] */
-
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/

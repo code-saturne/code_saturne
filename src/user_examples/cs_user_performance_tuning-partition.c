@@ -89,90 +89,79 @@ BEGIN_C_DECLS
 void
 cs_user_partition(void)
 {
-  BEGIN_EXAMPLE_SCOPE
+  /*! [performance_tuning_partition_1] */
+  {
+    /* Example:
 
+       Force PT-SCOTCH or SCOTCH for preprocessing partitioning,
+       and Hilbert SFC for main partitioning;
+
+       Available algorithms (subject to build with external libraries for
+       SCOTCH and METIS) are:
+
+       CS_PARTITION_DEFAULT           Default partitioning, based on stage
+       CS_PARTITION_SFC_MORTON_BOX    Morton (Z) curve in bounding box
+       CS_PARTITION_SFC_MORTON_CUBE   Morton (Z) curve in bounding cube
+       CS_PARTITION_SFC_HILBERT_BOX   Peano-Hilbert curve in bounding box
+       CS_PARTITION_SFC_HILBERT_CUBE  Peano-Hilbert curve in bounding cube
+       CS_PARTITION_SCOTCH            PT-SCOTCH or SCOTCH
+       CS_PARTITION_METIS             ParMETIS or METIS
+       CS_PARTITION_BLOCK             Unoptimized (naive) block partitioning */
+
+    cs_partition_set_algorithm(CS_PARTITION_FOR_PREPROCESS,
+                               CS_PARTITION_SCOTCH,
+                               1,       /* rank_step */
+                               false);  /* ignore periodicity in graph */
+    cs_partition_set_algorithm(CS_PARTITION_MAIN,
+                               CS_PARTITION_SFC_HILBERT_BOX,
+                               1,       /* rank_step */
+                               false);  /* ignore periodicity in graph */
+
+  }
   /*! [performance_tuning_partition_1] */
 
-  /* Example:
+  /*! [performance_tuning_partition_2] */
+  {
+    /* Example: set partitioning write to file option.
+     *
+     * value of write flag:  0: never
+     *                       1: for graph-based partitioning only (default)
+     *                       2: always */
 
-     Force PT-SCOTCH or SCOTCH for preprocessing partitioning,
-     and Hilbert SFC for main partitioning;
+    cs_partition_set_write_level(0);
 
-     Available algorithms (subject to build with external libraries for
-     SCOTCH and METIS) are:
-
-     CS_PARTITION_DEFAULT           Default partitioning, based on stage
-     CS_PARTITION_SFC_MORTON_BOX    Morton (Z) curve in bounding box
-     CS_PARTITION_SFC_MORTON_CUBE   Morton (Z) curve in bounding cube
-     CS_PARTITION_SFC_HILBERT_BOX   Peano-Hilbert curve in bounding box
-     CS_PARTITION_SFC_HILBERT_CUBE  Peano-Hilbert curve in bounding cube
-     CS_PARTITION_SCOTCH            PT-SCOTCH or SCOTCH
-     CS_PARTITION_METIS             ParMETIS or METIS
-     CS_PARTITION_BLOCK             Unoptimized (naive) block partitioning */
-
-  cs_partition_set_algorithm(CS_PARTITION_FOR_PREPROCESS,
-                             CS_PARTITION_SCOTCH,
-                             1,       /* rank_step */
-                             false);  /* ignore periodicity in graph */
-  cs_partition_set_algorithm(CS_PARTITION_MAIN,
-                             CS_PARTITION_SFC_HILBERT_BOX,
-                             1,       /* rank_step */
-                             false);  /* ignore periodicity in graph */
-
-  /*! [performance_tuning_partition_1] */
-
-  END_EXAMPLE_SCOPE
-
-  BEGIN_EXAMPLE_SCOPE
-
+  }
   /*! [performance_tuning_partition_2] */
 
-  /* Example: set partitioning write to file option.
-   *
-   * value of write flag:  0: never
-   *                       1: for graph-based partitioning only (default)
-   *                       2: always */
-
-  cs_partition_set_write_level(0);
-
-  /*! [performance_tuning_partition_2] */
-
-  END_EXAMPLE_SCOPE
-
-  BEGIN_EXAMPLE_SCOPE
 
   /*! [performance_tuning_partition_3] */
+  {
+    /* Example: force activation/deactivation of initial partitioning
+     *          for preprocessing. */
 
-  /* Example: force activation/deactivation of initial partitioning
-   *          for preprocessing. */
-
-  cs_partition_set_preprocess(false);
-
+    cs_partition_set_preprocess(false);
+  }
   /*! [performance_tuning_partition_3] */
 
-  END_EXAMPLE_SCOPE
-
-  BEGIN_EXAMPLE_SCOPE
 
   /*! [performance_tuning_partition_4] */
+  {
+    /* Example: define list of extra partitionings to build.
+     *
+     * Partitionings in this list will be output to file, and may be used for
+     * subsequent calculations.
+     *
+     * When partitioning for both preprocessing and calculation stages, output to
+     * file of partioning data or generation of additional partitionings
+     * (see \ref cs_partition_add_partitions) will only be done for the
+     * second stage. */
 
-  /* Example: define list of extra partitionings to build.
-   *
-   * Partitionings in this list will be output to file, and may be used for
-   * subsequent calculations.
-   *
-   * When partitioning for both preprocessing and calculation stages, output to
-   * file of partioning data or generation of additional partitionings
-   * (see \ref cs_partition_add_partitions) will only be done for the
-   * second stage. */
-
-  int  n_extra_partitions = 3;
-  int  extra_partitions_list[] = {12, 24, 48};
-  cs_partition_add_partitions(n_extra_partitions, extra_partitions_list);
-
+    int  n_extra_partitions = 3;
+    int  extra_partitions_list[] = {12, 24, 48};
+    cs_partition_add_partitions(n_extra_partitions, extra_partitions_list);
+  }
   /*! [performance_tuning_partition_4] */
 
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/

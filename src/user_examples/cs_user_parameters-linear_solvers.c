@@ -306,51 +306,50 @@ cs_user_linear_solvers(void)
   /* Example: increase verbosity parameters for pressure */
   /*-----------------------------------------------------*/
 
-  BEGIN_EXAMPLE_SCOPE
+  /*! [sles_verbosity_1] */
+  {
 
+    cs_sles_t *sles_p = cs_sles_find_or_add(CS_F_(p)->id, NULL);
+    cs_sles_set_verbosity(sles_p, 4);
+
+  }
   /*! [sles_verbosity_1] */
 
-  cs_sles_t *sles_p = cs_sles_find_or_add(CS_F_(p)->id, NULL);
-  cs_sles_set_verbosity(sles_p, 4);
-
-  /*! [sles_verbosity_1] */
-
-  END_EXAMPLE_SCOPE
 
   /* Example: change multigrid parameters for pressure */
   /*---------------------------------------------------*/
 
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [sles_mgp_1] */
-  cs_multigrid_t *mg = cs_multigrid_define(CS_F_(p)->id, NULL);
+  {
+    cs_multigrid_t *mg = cs_multigrid_define(CS_F_(p)->id, NULL);
 
-  cs_multigrid_set_coarsening_options(mg,
-                                      3,    /* aggregation_limit (default 3) */
-                                      0,    /* coarsening_type (default 0) */
-                                      10,   /* n_max_levels (default 25) */
-                                      30,   /* min_g_cells (default 30) */
-                                      0.95, /* P0P1 relaxation (default 0.95) */
-                                      20);  /* postprocessing (default 0) */
+    cs_multigrid_set_coarsening_options(mg,
+                                        3,    /* aggregation_limit (default 3) */
+                                        0,    /* coarsening_type (default 0) */
+                                        10,   /* n_max_levels (default 25) */
+                                        30,   /* min_g_cells (default 30) */
+                                        0.95, /* P0P1 relaxation (default 0.95) */
+                                        20);  /* postprocessing (default 0) */
 
-  cs_multigrid_set_solver_options
-    (mg,
-     CS_SLES_JACOBI, /* descent smoother type (default: CS_SLES_PCG) */
-     CS_SLES_JACOBI, /* ascent smoother type (default: CS_SLES_PCG) */
-     CS_SLES_PCG,    /* coarse solver type (default: CS_SLES_PCG) */
-     50,             /* n max cycles (default 100) */
-     5,              /* n max iter for descent (default 2) */
-     5,              /* n max iter for asscent (default 10) */
-     1000,           /* n max iter coarse solver (default 10000) */
-     0,              /* polynomial precond. degree descent (default 0) */
-     0,              /* polynomial precond. degree ascent (default 0) */
-     1,              /* polynomial precond. degree coarse (default 0) */
-     -1.0,           /* precision multiplier descent (< 0 forces max iters) */
-     -1.0,           /* precision multiplier ascent (< 0 forces max iters) */
-     0.1);           /* requested precision multiplier coarse (default 1) */
+    cs_multigrid_set_solver_options
+      (mg,
+       CS_SLES_JACOBI, /* descent smoother type (default: CS_SLES_PCG) */
+       CS_SLES_JACOBI, /* ascent smoother type (default: CS_SLES_PCG) */
+       CS_SLES_PCG,    /* coarse solver type (default: CS_SLES_PCG) */
+       50,             /* n max cycles (default 100) */
+       5,              /* n max iter for descent (default 2) */
+       5,              /* n max iter for asscent (default 10) */
+       1000,           /* n max iter coarse solver (default 10000) */
+       0,              /* polynomial precond. degree descent (default 0) */
+       0,              /* polynomial precond. degree ascent (default 0) */
+       1,              /* polynomial precond. degree coarse (default 0) */
+       -1.0,           /* precision multiplier descent (< 0 forces max iters) */
+       -1.0,           /* precision multiplier ascent (< 0 forces max iters) */
+       0.1);           /* requested precision multiplier coarse (default 1) */
+
+  }
   /*! [sles_mgp_1] */
 
-  END_EXAMPLE_SCOPE
 
   /* Set parallel grid merging options for all multigrid solvers */
   /*-------------------------------------------------------------*/
@@ -365,38 +364,38 @@ cs_user_linear_solvers(void)
   /* Example: conjugate gradient preconditioned by multigrid for pressure */
   /*----------------------------------------------------------------------*/
 
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [sles_mgp_2] */
-  cs_sles_it_t *c = cs_sles_it_define(CS_F_(p)->id,
-                                      NULL,
-                                      CS_SLES_PCG,
-                                      -1,
-                                      10000);
-  cs_sles_pc_t *pc = cs_multigrid_pc_create();
-  cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
-  cs_sles_it_transfer_pc(c, &pc);
+  {
+    cs_sles_it_t *c = cs_sles_it_define(CS_F_(p)->id,
+                                        NULL,
+                                        CS_SLES_PCG,
+                                        -1,
+                                        10000);
+    cs_sles_pc_t *pc = cs_multigrid_pc_create();
+    cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
+    cs_sles_it_transfer_pc(c, &pc);
 
-  assert(strcmp(cs_sles_pc_get_type(cs_sles_it_get_pc(c)), "multigrid") == 0);
+    assert(strcmp(cs_sles_pc_get_type(cs_sles_it_get_pc(c)), "multigrid") == 0);
 
-  cs_multigrid_set_solver_options
-    (mg,
-     CS_SLES_P_GAUSS_SEIDEL, /* descent smoother (CS_SLES_P_GAUSS_SEIDEL) */
-     CS_SLES_P_GAUSS_SEIDEL, /* ascent smoother (CS_SLES_P_GAUSS_SEIDEL) */
-     CS_SLES_PCG,            /* coarse solver (CS_SLES_P_GAUSS_SEIDEL) */
-     1,              /* n max cycles (default 1) */
-     1,              /* n max iter for descent (default 1) */
-     1,              /* n max iter for asscent (default 1) */
-     500,            /* n max iter coarse solver (default 1) */
-     0,              /* polynomial precond. degree descent (default) */
-     0,              /* polynomial precond. degree ascent (default) */
-     0,              /* polynomial precond. degree coarse (default 0) */
-     -1.0,           /* precision multiplier descent (< 0 forces max iters) */
-     -1.0,           /* precision multiplier ascent (< 0 forces max iters) */
-     1.0);           /* requested precision multiplier coarse (default 1) */
+    cs_multigrid_set_solver_options
+      (mg,
+       CS_SLES_P_GAUSS_SEIDEL, /* descent smoother (CS_SLES_P_GAUSS_SEIDEL) */
+       CS_SLES_P_GAUSS_SEIDEL, /* ascent smoother (CS_SLES_P_GAUSS_SEIDEL) */
+       CS_SLES_PCG,            /* coarse solver (CS_SLES_P_GAUSS_SEIDEL) */
+       1,              /* n max cycles (default 1) */
+       1,              /* n max iter for descent (default 1) */
+       1,              /* n max iter for asscent (default 1) */
+       500,            /* n max iter coarse solver (default 1) */
+       0,              /* polynomial precond. degree descent (default) */
+       0,              /* polynomial precond. degree ascent (default) */
+       0,              /* polynomial precond. degree coarse (default 0) */
+       -1.0,           /* precision multiplier descent (< 0 forces max iters) */
+       -1.0,           /* precision multiplier ascent (< 0 forces max iters) */
+       1.0);           /* requested precision multiplier coarse (default 1) */
+
+  }
   /*! [sles_mgp_2] */
 
-  END_EXAMPLE_SCOPE
 
   /* Set a non-default linear solver for DOM radiation. */
   /*----------------------------------------------------*/
@@ -404,92 +403,85 @@ cs_user_linear_solvers(void)
   /* The solver must be set for each direction; here, we assume
      a quadrature with 32 directions is used */
 
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [sles_rad_dom_1] */
-  for (int i = 0; i < 32; i++) {
-    char name[16];
-    sprintf(name, "radiation_%03d", i+1);
-    cs_sles_it_define(-1,
-                      name,
-                      CS_SLES_JACOBI,
-                      0,      /* poly_degree */
-                      1000);  /* n_max_iter */
+  {
+    for (int i = 0; i < 32; i++) {
+      char name[16];
+      sprintf(name, "radiation_%03d", i+1);
+      cs_sles_it_define(-1,
+                        name,
+                        CS_SLES_JACOBI,
+                        0,      /* poly_degree */
+                        1000);  /* n_max_iter */
 
+    }
   }
   /*! [sles_rad_dom_1] */
 
-  END_EXAMPLE_SCOPE
 
   /* Example: activate convergence plot for pressure */
   /*-------------------------------------------------*/
 
-  BEGIN_EXAMPLE_SCOPE
 
   /*! [sles_plot_1] */
+  {
+    const cs_field_t *f = CS_F_(p);
+    cs_sles_t *sles_p = cs_sles_find_or_add(f->id, NULL);
 
-  const cs_field_t *f = CS_F_(p);
-  cs_sles_t *sles_p = cs_sles_find_or_add(f->id, NULL);
+    bool use_iteration = true; /* use iteration or wall clock time for axis */
 
-  bool use_iteration = true; /* use iteration or wall clock time for axis */
+    if (strcmp(cs_sles_get_type(sles_p), "cs_sles_it_t") == 0) {
+      cs_sles_it_t *c = cs_sles_get_context(sles_p);
+      cs_sles_it_set_plot_options(c, f->name, use_iteration);
+    }
+    else if (strcmp(cs_sles_get_type(sles_p), "cs_multigrid_t") == 0) {
+      cs_multigrid_t *c = cs_sles_get_context(sles_p);
+      cs_multigrid_set_plot_options(c, f->name, use_iteration);
+    }
 
-  if (strcmp(cs_sles_get_type(sles_p), "cs_sles_it_t") == 0) {
-    cs_sles_it_t *c = cs_sles_get_context(sles_p);
-    cs_sles_it_set_plot_options(c, f->name, use_iteration);
   }
-  else if (strcmp(cs_sles_get_type(sles_p), "cs_multigrid_t") == 0) {
-    cs_multigrid_t *c = cs_sles_get_context(sles_p);
-    cs_multigrid_set_plot_options(c, f->name, use_iteration);
-  }
-
   /*! [sles_plot_1] */
-
-  END_EXAMPLE_SCOPE
 
 #if defined(HAVE_PETSC)
 
   /* Setting global options for PETSc */
   /*----------------------------------*/
 
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [sles_petsc_1] */
+  {
+    /* Initialization must be called before setting options;
+       it does not need to be called before calling
+       cs_sles_petsc_define(), as this is handled automatically. */
 
-  /* Initialization must be called before setting options;
-     it does not need to be called before calling
-     cs_sles_petsc_define(), as this is handled automatically. */
+    PETSC_COMM_WORLD = cs_glob_mpi_comm;
+    PetscInitializeNoArguments();
 
-  PETSC_COMM_WORLD = cs_glob_mpi_comm;
-  PetscInitializeNoArguments();
-
-  /* See the PETSc documentation for the options database */
+    /* See the PETSc documentation for the options database */
 #if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL, "-ksp_type", "cg");
-  PetscOptionsSetValue(NULL, "-pc_type", "jacobi");
+    PetscOptionsSetValue(NULL, "-ksp_type", "cg");
+    PetscOptionsSetValue(NULL, "-pc_type", "jacobi");
 #else
-  PetscOptionsSetValue("-ksp_type", "cg");
-  PetscOptionsSetValue("-pc_type", "jacobi");
+    PetscOptionsSetValue("-ksp_type", "cg");
+    PetscOptionsSetValue("-pc_type", "jacobi");
 #endif
+  }
   /*! [sles_petsc_1] */
 
-  END_EXAMPLE_SCOPE
 
   /* Setting pressure solver with PETSc */
   /*------------------------------------*/
 
-  BEGIN_EXAMPLE_SCOPE
+  /*! [sles_petsc_2] */
+  {
+    cs_sles_petsc_define(CS_F_(p)->id,
+                         NULL,
+                         MATSHELL,
+                         _petsc_p_setup_hook,
+                         NULL);
 
+  }
   /*! [sles_petsc_2] */
 
-  cs_sles_petsc_define(CS_F_(p)->id,
-                       NULL,
-                       MATSHELL,
-                       _petsc_p_setup_hook,
-                       NULL);
-
-  /*! [sles_petsc_2] */
-
-  END_EXAMPLE_SCOPE
 
   /* Setting global options for PETSc with GAMG preconditioner */
   /*-----------------------------------------------------------*/
@@ -497,113 +489,107 @@ cs_user_linear_solvers(void)
   BEGIN_EXAMPLE_SCOPE
 
   /*! [sles_petsc_gamg_1] */
+  {
+    /* Initialization must be called before setting options;
+       it does not need to be called before calling
+       cs_sles_petsc_define(), as this is handled automatically. */
 
-  /* Initialization must be called before setting options;
-     it does not need to be called before calling
-     cs_sles_petsc_define(), as this is handled automatically. */
+    PETSC_COMM_WORLD = cs_glob_mpi_comm;
+    PetscInitializeNoArguments();
 
-  PETSC_COMM_WORLD = cs_glob_mpi_comm;
-  PetscInitializeNoArguments();
-
-  /* See the PETSc documentation for the options database */
+    /* See the PETSc documentation for the options database */
 #if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL, "-ksp_type", "cg");
-  PetscOptionsSetValue(NULL, "-pc_type", "gamg");
-  PetscOptionsSetValue(NULL, "-pc_gamg_agg_nsmooths", "1");
-  PetscOptionsSetValue(NULL, "-mg_levels_ksp_type", "richardson");
-  PetscOptionsSetValue(NULL, "-mg_levels_pc_type", "sor");
-  PetscOptionsSetValue(NULL, "-mg_levels_ksp_max_it", "1");
-  PetscOptionsSetValue(NULL, "-pc_gamg_threshold", "0.02");
-  PetscOptionsSetValue(NULL, "-pc_gamg_reuse_interpolation", "TRUE");
-  PetscOptionsSetValue(NULL, "-pc_gamg_square_graph", "4");
+    PetscOptionsSetValue(NULL, "-ksp_type", "cg");
+    PetscOptionsSetValue(NULL, "-pc_type", "gamg");
+    PetscOptionsSetValue(NULL, "-pc_gamg_agg_nsmooths", "1");
+    PetscOptionsSetValue(NULL, "-mg_levels_ksp_type", "richardson");
+    PetscOptionsSetValue(NULL, "-mg_levels_pc_type", "sor");
+    PetscOptionsSetValue(NULL, "-mg_levels_ksp_max_it", "1");
+    PetscOptionsSetValue(NULL, "-pc_gamg_threshold", "0.02");
+    PetscOptionsSetValue(NULL, "-pc_gamg_reuse_interpolation", "TRUE");
+    PetscOptionsSetValue(NULL, "-pc_gamg_square_graph", "4");
 #else
-  PetscOptionsSetValue("-ksp_type", "cg");
-  PetscOptionsSetValue("-pc_type", "gamg");
-  PetscOptionsSetValue("-pc_gamg_agg_nsmooths", "1");
-  PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
-  PetscOptionsSetValue("-mg_levels_pc_type", "sor");
-  PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
-  PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
-  PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
-  PetscOptionsSetValue("-pc_gamg_square_graph", "4");
+    PetscOptionsSetValue("-ksp_type", "cg");
+    PetscOptionsSetValue("-pc_type", "gamg");
+    PetscOptionsSetValue("-pc_gamg_agg_nsmooths", "1");
+    PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
+    PetscOptionsSetValue("-mg_levels_pc_type", "sor");
+    PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
+    PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
+    PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
+    PetscOptionsSetValue("-pc_gamg_square_graph", "4");
 #endif
+  }
   /*! [sles_petsc_gamg_1] */
 
-  END_EXAMPLE_SCOPE
 
   /* Setting pressure solver with PETSc and GAMG preconditioner */
   /*------------------------------------------------------------*/
 
-  BEGIN_EXAMPLE_SCOPE
+  /*! [sles_petsc_gamg_2] */
+  {
+    cs_sles_petsc_define(CS_F_(p)->id,
+                         NULL,
+                         MATMPIAIJ,
+                         _petsc_p_setup_hook_gamg,
+                         NULL);
 
+  }
   /*! [sles_petsc_gamg_2] */
 
-  cs_sles_petsc_define(CS_F_(p)->id,
-                       NULL,
-                       MATMPIAIJ,
-                       _petsc_p_setup_hook_gamg,
-                       NULL);
-
-  /*! [sles_petsc_gamg_2] */
-
-  END_EXAMPLE_SCOPE
 
   /* Setting global options for PETSc with HYPRE BoomerAMG preconditioner */
   /*----------------------------------------------------------------------*/
 
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [sles_petsc_bamg_1] */
+  {
 
-  /* Initialization must be called before setting options;
-     it does not need to be called before calling
-     cs_sles_petsc_define(), as this is handled automatically. */
+    /* Initialization must be called before setting options;
+       it does not need to be called before calling
+       cs_sles_petsc_define(), as this is handled automatically. */
 
-  PETSC_COMM_WORLD = cs_glob_mpi_comm;
-  PetscInitializeNoArguments();
+    PETSC_COMM_WORLD = cs_glob_mpi_comm;
+    PetscInitializeNoArguments();
 
-  /* See the PETSc documentation for the options database */
+    /* See the PETSc documentation for the options database */
 #if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL, "-ksp_type", "cg");
-  PetscOptionsSetValue(NULL, "-pc_type", "hypre");
-  PetscOptionsSetValue(NULL, "-pc_hypre_type","boomeramg");
-  PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_coarsen_type","HMIS");
-  PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_interp_type","ext+i-cc");
-  PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_agg_nl","2");
-  PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_P_max","4");
-  PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_strong_threshold","0.5");
-  PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_no_CF","");
+    PetscOptionsSetValue(NULL, "-ksp_type", "cg");
+    PetscOptionsSetValue(NULL, "-pc_type", "hypre");
+    PetscOptionsSetValue(NULL, "-pc_hypre_type","boomeramg");
+    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_coarsen_type","HMIS");
+    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_interp_type","ext+i-cc");
+    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_agg_nl","2");
+    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_P_max","4");
+    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_strong_threshold","0.5");
+    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_no_CF","");
 #else
-  PetscOptionsSetValue("-ksp_type", "cg");
-  PetscOptionsSetValue("-pc_type", "hypre");
-  PetscOptionsSetValue("-pc_hypre_type","boomeramg");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type","ext+i-cc");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl","2");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_P_max","4");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
-  PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
+    PetscOptionsSetValue("-ksp_type", "cg");
+    PetscOptionsSetValue("-pc_type", "hypre");
+    PetscOptionsSetValue("-pc_hypre_type","boomeramg");
+    PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
+    PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type","ext+i-cc");
+    PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl","2");
+    PetscOptionsSetValue("-pc_hypre_boomeramg_P_max","4");
+    PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
+    PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
 #endif
+  }
   /*! [sles_petsc_bamg_1] */
 
-  END_EXAMPLE_SCOPE
 
   /* Setting pressure solver with PETSc and BoomerAMG preconditioner */
   /*-----------------------------------------------------------------*/
 
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [sles_petsc_bamg_2] */
+  {
+    cs_sles_petsc_define(CS_F_(p)->id,
+                         NULL,
+                         MATMPIAIJ,
+                         _petsc_p_setup_hook_bamg,
+                         NULL);
 
-  cs_sles_petsc_define(CS_F_(p)->id,
-                       NULL,
-                       MATMPIAIJ,
-                       _petsc_p_setup_hook_bamg,
-                       NULL);
-
+  }
   /*! [sles_petsc_bamg_2] */
-
-  END_EXAMPLE_SCOPE
 
 #endif /* defined(HAVE_PETSC) */
 

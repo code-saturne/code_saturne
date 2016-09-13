@@ -89,8 +89,6 @@ BEGIN_C_DECLS
 void
 cs_user_matrix_tuning(void)
 {
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [performance_tuning_matrix] */
 
   /* Activate tuning of matrix-vector operations */
@@ -127,8 +125,6 @@ cs_user_matrix_tuning(void)
   cs_grid_set_matrix_tuning(CS_MATRIX_SCALAR_SYM, 12);
 
   /*! [performance_tuning_matrix] */
-
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/

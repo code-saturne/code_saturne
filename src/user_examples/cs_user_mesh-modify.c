@@ -115,68 +115,62 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
    *   With periodicity, using a coordinate transformation matrix
    *   in cs_user_mesh_input is preferred. */
 
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [mesh_modify_coords] */
+  {
+    cs_lnum_t  vtx_id;
+    const double  coo_mult = 1. / 1000.;
 
-  cs_lnum_t  vtx_id;
-  const double  coo_mult = 1. / 1000.;
+    for (vtx_id = 0; vtx_id < mesh->n_vertices; vtx_id++) {
+      mesh->vtx_coord[vtx_id*3]     *= coo_mult;
+      mesh->vtx_coord[vtx_id*3 + 1] *= coo_mult;
+      mesh->vtx_coord[vtx_id*3 + 2] *= coo_mult;
+    }
 
-  for (vtx_id = 0; vtx_id < mesh->n_vertices; vtx_id++) {
-    mesh->vtx_coord[vtx_id*3]     *= coo_mult;
-    mesh->vtx_coord[vtx_id*3 + 1] *= coo_mult;
-    mesh->vtx_coord[vtx_id*3 + 2] *= coo_mult;
+    /* Set mesh modification flag if it should be saved for future re-use. */
+
+    mesh->modified = 1;
   }
-
-  /* Set mesh modification flag if it should be saved for future re-use. */
-
-  mesh->modified = 1;
-
   /*! [mesh_modify_coords] */
-
-  END_EXAMPLE_SCOPE
 
   /* Extrude mesh at boundary faces of group "outlet".
      We use a regular extrusion here */
 
-  BEGIN_EXAMPLE_SCOPE
+  /*! [mesh_modify_extrude_1] */
+  {
+    int n_layers = 2;
+    double thickness = 1.0;
+    double reason = 1.5;
 
+    const char criteria[] = "outlet";
+
+    /* Select boudary faces */
+
+    cs_lnum_t   n_selected_faces = 0;
+    cs_lnum_t  *selected_faces = NULL;
+
+    BFT_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
+
+    cs_selector_get_b_face_list(criteria,
+                                &n_selected_faces,
+                                selected_faces);
+
+    /* Extrude selected boundary */
+
+    cs_mesh_extrude_constant(mesh,
+                             false,
+                             n_layers,
+                             thickness,
+                             reason,
+                             n_selected_faces,
+                             selected_faces);
+
+    /* Free temporary memory */
+
+    BFT_FREE(selected_faces);
+
+  }
   /*! [mesh_modify_extrude_1] */
 
-  int n_layers = 2;
-  double thickness = 1.0;
-  double reason = 1.5;
-
-  const char criteria[] = "outlet";
-
-  /* Select boudary faces */
-
-  cs_lnum_t   n_selected_faces = 0;
-  cs_lnum_t  *selected_faces = NULL;
-
-  BFT_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
-
-  cs_selector_get_b_face_list(criteria,
-                              &n_selected_faces,
-                              selected_faces);
-
-  /* Extrude selected boundary */
-
-  cs_mesh_extrude_constant(mesh,
-                           false,
-                           n_layers,
-                           thickness,
-                           reason,
-                           n_selected_faces,
-                           selected_faces);
-
-  /* Free temporary memory */
-
-  BFT_FREE(selected_faces);
-
-  /*! [mesh_modify_extrude_1] */
-
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/

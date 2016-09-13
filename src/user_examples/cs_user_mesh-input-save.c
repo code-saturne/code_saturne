@@ -101,38 +101,32 @@ BEGIN_C_DECLS
 void
 cs_user_mesh_input(void)
 {
-  BEGIN_EXAMPLE_SCOPE
+  /*! [mesh_input_1] */
+  {
+    /* Determine list of files to add */
+    /*--------------------------------*/
 
+    /* Read input mesh with no modification */
+
+    cs_preprocessor_data_add_file("mesh_input/mesh_01", 0, NULL, NULL);
+  }
   /*! [mesh_input_1] */
 
-  /* Determine list of files to add */
-  /*--------------------------------*/
+  /*! [mesh_input_2] */
+  {
+    /* Add same mesh with transformations */
+    const char *renames[] = {"Inlet", "Injection_2",
+                             "Group_to_remove", NULL};
+    const double transf_matrix[3][4] = {{1., 0., 0., 5.},
+                                        {0., 1., 0., 0.},
+                                        {0., 0., 1., 0.}};
 
-  /* Read input mesh with no modification */
-
-  cs_preprocessor_data_add_file("mesh_input/mesh_01", 0, NULL, NULL);
-
-  /*! [mesh_input_1] */
-
-  END_EXAMPLE_SCOPE
-
-  BEGIN_EXAMPLE_SCOPE
-
+    cs_preprocessor_data_add_file("mesh_input/mesh_02",
+                                  2, renames,
+                                  transf_matrix);
+  }
   /*! [mesh_input_2] */
 
-  /* Add same mesh with transformations */
-  const char *renames[] = {"Inlet", "Injection_2",
-                           "Group_to_remove", NULL};
-  const double transf_matrix[3][4] = {{1., 0., 0., 5.},
-                                      {0., 1., 0., 0.},
-                                      {0., 0., 1., 0.}};
-
-  cs_preprocessor_data_add_file("mesh_input/mesh_02",
-                                2, renames,
-                                transf_matrix);
-  /*! [mesh_input_2] */
-
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/
@@ -148,18 +142,16 @@ cs_user_mesh_input(void)
 void
 cs_user_mesh_save(cs_mesh_t  *mesh)
 {
-  BEGIN_EXAMPLE_SCOPE
+  /*! [mesh_save] */
+  {
+    /* Mark mesh as not modified (0) to disable saving;
+       Mark it as modified (> 0) to force saving */
 
+    mesh->modified = 0;
+
+  }
   /*! [mesh_save] */
 
-  /* Mark mesh as not modified (0) to disable saving;
-     Mark it as modified (> 0) to force saving */
-
-  mesh->modified = 0;
-
-  /*! [mesh_save] */
-
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/

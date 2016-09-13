@@ -131,96 +131,90 @@ cs_user_periodicity(void)
   /* Example 1: define a periodicity of translation */
   /* ---------------------------------------------- */
 
-  BEGIN_EXAMPLE_SCOPE
+  /*! [mesh_periodicity_1] */
+  {
+    int    join_num;
+    int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
+    int    visualization = 1; /* debug level if >= 3 */
+    float  fraction = 0.10, plane = 25.;
 
+    const double translation[3] = {1.0, 0.0, 0.0}; /* Translation vector */
+
+    join_num = cs_join_perio_add_translation("98 or 99",
+                                             fraction,
+                                             plane,
+                                             verbosity,
+                                             visualization,
+                                             translation);
+  }
   /*! [mesh_periodicity_1] */
 
-  int    join_num;
-  int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
-  int    visualization = 1; /* debug level if >= 3 */
-  float  fraction = 0.10, plane = 25.;
-
-  const double translation[3] = {1.0, 0.0, 0.0}; /* Translation vector */
-
-  join_num = cs_join_perio_add_translation("98 or 99",
-                                           fraction,
-                                           plane,
-                                           verbosity,
-                                           visualization,
-                                           translation);
-
-  /*! [mesh_periodicity_1] */
-
-  END_EXAMPLE_SCOPE
 
   /* Example 2: define a periodicity of rotation */
   /* ------------------------------------------- */
 
-  BEGIN_EXAMPLE_SCOPE
+  /*! [mesh_periodicity_2] */
+  {
+    int    join_num;
+    int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
+    int    visualization = 1; /* debug level if >= 3 */
+    float  fraction = 0.10, plane = 25.;
 
+    double  theta = 20;                /* angle in degrees */
+    double  axis[3] = {1.0, 0, 0};     /* axis of rotation */
+    double  invariant[3] = {0, 0, 0};  /* invariant point */
+
+    /* change default values */
+    fraction = 0.2;
+    verbosity = 2;
+
+    join_num = cs_join_perio_add_rotation("3",
+                                          fraction,
+                                          plane,
+                                          verbosity,
+                                          visualization,
+                                          theta,
+                                          axis,
+                                          invariant);
+  }
   /*! [mesh_periodicity_2] */
 
-  int    join_num;
-  int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
-  int    visualization = 1; /* debug level if >= 3 */
-  float  fraction = 0.10, plane = 25.;
-
-  double  theta = 20;                /* angle in degrees */
-  double  axis[3] = {1.0, 0, 0};     /* axis of rotation */
-  double  invariant[3] = {0, 0, 0};  /* invariant point */
-
-  /* change default values */
-  fraction = 0.2;
-  verbosity = 2;
-
-  join_num = cs_join_perio_add_rotation("3",
-                                        fraction,
-                                        plane,
-                                        verbosity,
-                                        visualization,
-                                        theta,
-                                        axis,
-                                        invariant);
-
-  /*! [mesh_periodicity_2] */
-
-  END_EXAMPLE_SCOPE
-
-  BEGIN_EXAMPLE_SCOPE
 
   /* Example 3: define a general periodicity */
   /* --------------------------------------- */
 
   /*! [mesh_periodicity_3] */
+  {
 
-  /* We define a general transformation using a homogeneous matrix:
-   *
-   * We define the first 3 rows of a 4x4 matrix:
-   *    _               _
-   *   | r11 r12 r13 tx  |  t(x,y,z) : translation vector
-   *   | r21 r22 r23 ty  |  r(i,j)   : rotation matrix
-   *   | r31 r32 r33 tz  |
-   *   |_  0   0   0  1 _|
-   *
-   * Transformations may be combined using matrix multiplication,
-   * so this be used for helecoidal transformations for instance. */
+    /* We define a general transformation using a homogeneous matrix:
+     *
+     * We define the first 3 rows of a 4x4 matrix:
+     *    _               _
+     *   | r11 r12 r13 tx  |  t(x,y,z) : translation vector
+     *   | r21 r22 r23 ty  |  r(i,j)   : rotation matrix
+     *   | r31 r32 r33 tz  |
+     *   |_  0   0   0  1 _|
+     *
+     * Transformations may be combined using matrix multiplication,
+     * so this be used for helecoidal transformations for instance. */
 
-  int    join_num;
-  int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
-  int    visualization = 1; /* debug level if >= 3 */
-  float  fraction = 0.10, plane = 25.;
+    int    join_num;
+    int    verbosity = 1;     /* per-task dump if > 1, debug level if >= 3 */
+    int    visualization = 1; /* debug level if >= 3 */
+    float  fraction = 0.10, plane = 25.;
 
-  double matrix[3][4] = {{1., 0., 0., 0.5},
-                         {0., 1., 0., 0.},
-                         {0., 0., 1., 0.}};
+    double matrix[3][4] = {{1., 0., 0., 0.5},
+                           {0., 1., 0., 0.},
+                           {0., 0., 1., 0.}};
 
-  join_num = cs_join_perio_add_mixed("all[]",
-                                     fraction,
-                                     plane,
-                                     verbosity,
-                                     visualization,
-                                     matrix);
+    join_num = cs_join_perio_add_mixed("all[]",
+                                       fraction,
+                                       plane,
+                                       verbosity,
+                                       visualization,
+                                       matrix);
 
+  }
   /*! [mesh_periodicity_3] */
 
   /*--------------------------------------------------------------------------*/
@@ -230,92 +224,94 @@ cs_user_periodicity(void)
      joining step or to get a better mesh quality. */
 
   /*! [mesh_periodicity_4] */
+  {
+    /* Merge tolerance factor:
+     * used to locally modify the tolerance associated to each
+     * vertex BEFORE the merge step.
+     *   = 0 => no vertex merge;
+     *   < 1 => vertex merge is more strict. It may increase the number
+     *          of tolerance reduction and so define smaller subset of
+     *          vertices to merge together but it can drive to loose
+     *          intersections;
+     *   = 1 => no change;
+     *   > 1 => vertex merge is less strict. The subset of vertices able
+     *          to be merged together is greater. */
 
-  /* Merge tolerance factor:
-   * used to locally modify the tolerance associated to each
-   * vertex BEFORE the merge step.
-   *   = 0 => no vertex merge;
-   *   < 1 => vertex merge is more strict. It may increase the number
-   *          of tolerance reduction and so define smaller subset of
-   *          vertices to merge together but it can drive to loose
-   *          intersections;
-   *   = 1 => no change;
-   *   > 1 => vertex merge is less strict. The subset of vertices able
-   *          to be merged together is greater. */
+     double mtf = 1.00;
 
-   double mtf = 1.00;
+     /* Pre-merge factor:
+      * this parameter is used to define a bound under which two vertices
+      * are merged before the merge step.
+      * Tolerance limit for the pre-merge = pmf * fraction. */
 
-   /* Pre-merge factor:
-    * this parameter is used to define a bound under which two vertices
-    * are merged before the merge step.
-    * Tolerance limit for the pre-merge = pmf * fraction. */
+     double pmf = 0.10;
 
-   double pmf = 0.10;
+     /* Tolerance computation mode:
+      *
+      *   1: (default) tol = min. edge length related to a vertex * fraction
+      *   2: tolerance is computed like in mode 1 with in addition, the
+      *      multiplication by a coefficient equal to the max sin(e1, e2)
+      *      where e1 and e2 are two edges sharing the same vertex V for which
+      *      we want to compute the tolerance.
+      *  11: as 1 but taking into account only the selected faces
+      *  12: as 2 but taking into account only the selected faces */
 
-   /* Tolerance computation mode:
-    *
-    *   1: (default) tol = min. edge length related to a vertex * fraction
-    *   2: tolerance is computed like in mode 1 with in addition, the
-    *      multiplication by a coefficient equal to the max sin(e1, e2)
-    *      where e1 and e2 are two edges sharing the same vertex V for which
-    *      we want to compute the tolerance.
-    *  11: as 1 but taking into account only the selected faces
-    *  12: as 2 but taking into account only the selected faces */
+     int tcm = 1;
 
-   int tcm = 1;
+      /* Intersection computation mode:
+       *  1: (default) Original algorithm.
+       *     Try to snap intersection to extremity.
+       *  2: New intersection algorithm.
+       *     Avoid snapping intersection to extremity. */
 
-    /* Intersection computation mode:
-     *  1: (default) Original algorithm.
-     *     Try to snap intersection to extremity.
-     *  2: New intersection algorithm.
-     *     Avoid snapping intersection to extremity. */
+     int icm = 1;
 
-   int icm = 1;
+     /* Maximum number of equivalence breaks which is
+      * enabled during the merge step. */
 
-   /* Maximum number of equivalence breaks which is
-    * enabled during the merge step. */
+     int max_break = 500;
 
-   int max_break = 500;
+     /* Maximum number of sub-faces when splitting a selected face. */
 
-   /* Maximum number of sub-faces when splitting a selected face. */
+     int max_sub_face = 100;
 
-   int max_sub_face = 100;
+     /* tml, tmb and tmr are parameters of the searching algorithm for
+      * face intersections between selected faces (octree structure).
+      * Useful to adjust speed vs. memory consumption. */
 
-   /* tml, tmb and tmr are parameters of the searching algorithm for
-    * face intersections between selected faces (octree structure).
-    * Useful to adjust speed vs. memory consumption. */
+     /* Tree Max Level:
+      * deepest level reachable when building the tree */
 
-   /* Tree Max Level:
-    * deepest level reachable when building the tree */
+     int tml = 30;
 
-   int tml = 30;
+     /* Tree Max Boxes:
+      * max. number of bounding boxes which can be linked to a leaf of the tree
+      * (not necessary true for the deepest level) */
 
-   /* Tree Max Boxes:
-    * max. number of bounding boxes which can be linked to a leaf of the tree
-    * (not necessary true for the deepest level) */
+     int tmb = 25;
 
-   int tmb = 25;
+     /* Tree Max. Ratio:
+      * stop refining the tree structure when
+      * number of bounding boxes > tmr * number of faces to locate.
+      * In parallel, a separate (usually lower) value may be set for
+      * the initial coarse tree used to determine distribution.
+      * Reducing this will help reduce memory consumption. */
 
-   /* Tree Max. Ratio:
-    * stop refining the tree structure when
-    * number of bounding boxes > tmr * number of faces to locate.
-    * In parallel, a separate (usually lower) value may be set for
-    * the initial coarse tree used to determine distribution.
-    * Reducing this will help reduce memory consumption. */
+     double tmr = 5.0;
+     double tmr_distrib = 2.0;
 
-   double tmr = 5.0;
-   double tmr_distrib = 2.0;
+     /* Set advanced parameters */
 
-   /* Set advanced parameters */
+     int    join_num;
 
-   cs_join_set_advanced_param(join_num,
-                              mtf, pmf, tcm, icm,
-                              max_break, max_sub_face,
-                              tml, tmb, tmr, tmr_distrib);
+     cs_join_set_advanced_param(join_num,
+                                mtf, pmf, tcm, icm,
+                                max_break, max_sub_face,
+                                tml, tmb, tmr, tmr_distrib);
 
+  }
   /*! [mesh_periodicity_4] */
 
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/

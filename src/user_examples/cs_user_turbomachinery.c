@@ -110,55 +110,51 @@ cs_user_turbomachinery_rotor(void)
   /* Define rotor axis and cells, with rotor/stator interface face joining */
   /* --------------------------------------------------------------------- */
 
-  BEGIN_EXAMPLE_SCOPE
+  /*! [user_tbm_set_rotor] */
+  {
+    /* Define cells belonging to rotor and associated axis */
 
+    double rotation_velocity = 2.;
+    double rotation_axis[3] = {0., 0., 1.};
+
+    double rotation_invariant[3] = {0., 0., 0.};
+
+    const char cell_criteria[]  = "cylinder[0.0, 0.0, 0.0,"
+                                          " 0.0, 0.0, 1.0,"
+                                          " 2.0]";
+
+    cs_turbomachinery_add_rotor(cell_criteria,
+                                rotation_velocity,
+                                rotation_axis,
+                                rotation_invariant);
+
+  }
   /*! [user_tbm_set_rotor] */
 
-  /* Define cells belonging to rotor and associated axis */
-
-  double rotation_velocity = 2.;
-  double rotation_axis[3] = {0., 0., 1.};
-
-  double rotation_invariant[3] = {0., 0., 0.};
-
-  const char cell_criteria[]  = "cylinder[0.0, 0.0, 0.0,"
-                                        " 0.0, 0.0, 1.0,"
-                                        " 2.0]";
-
-  cs_turbomachinery_add_rotor(cell_criteria,
-                              rotation_velocity,
-                              rotation_axis,
-                              rotation_invariant);
-
-  /*! [user_tbm_set_rotor] */
-
-  END_EXAMPLE_SCOPE
-
-  BEGIN_EXAMPLE_SCOPE
 
   /*! [user_tbm_set_interface] */
+  {
+    /* Define joining associated with rotor/stator interface */
 
-  /* Define joining associated with rotor/stator interface */
+    const char faces_criteria[] = "rotor_interface or stator_interface";
 
-  const char faces_criteria[] = "rotor_interface or stator_interface";
+    int    verbosity = 0;     /* per-task dump if > 1, debug level if >= 3 */
+    int    visualization = 0; /* debug level if >= 3 */
+    float  fraction = 0.10, plane = 25.;
 
-  int    verbosity = 0;     /* per-task dump if > 1, debug level if >= 3 */
-  int    visualization = 0; /* debug level if >= 3 */
-  float  fraction = 0.10, plane = 25.;
+    int join_num = cs_turbomachinery_join_add(faces_criteria,
+                                              fraction,
+                                              plane,
+                                              verbosity,
+                                              visualization);
 
-  int join_num = cs_turbomachinery_join_add(faces_criteria,
-                                            fraction,
-                                            plane,
-                                            verbosity,
-                                            visualization);
+    /* Note that advanced parameters may be defined
+       using cs_join_set_advanced_param(),
+       just as for regular joinings or periodicities. */
 
-  /* Note that advanced parameters may be defined
-     using cs_join_set_advanced_param(),
-     just as for regular joinings or periodicities. */
-
+  }
   /*! [user_tbm_set_interface] */
 
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/

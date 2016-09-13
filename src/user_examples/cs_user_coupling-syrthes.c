@@ -86,88 +86,78 @@ BEGIN_C_DECLS
 void
 cs_user_syrthes_coupling(void)
 {
-  BEGIN_EXAMPLE_SCOPE
+  /*! [coupling_syrthes_1] */
+  {
+    int  verbosity = 1, plot = 1;
+    float tolerance = 0.1;
+    bool allow_nonmatching = false;
 
+    /*-------------------------------------------------------------------------
+     * Example 1:
+     *
+     * Boundary faces of group '3' coupled with instance named 'SYRTHES_01'.
+     *-------------------------------------------------------------------------*/
+
+    cs_syr_coupling_define("SYRTHES_01",
+                           "3",               /* boundary criteria */
+                           NULL,              /* volume_criteria */
+                           ' ',               /* projection_axis */
+                           allow_nonmatching,
+                           tolerance,
+                           verbosity,
+                           plot);
+
+  }
   /*! [coupling_syrthes_1] */
 
-  int  verbosity = 1, plot = 1;
-  float tolerance = 0.1;
-  bool allow_nonmatching = false;
+  /*! [coupling_syrthes_2] */
+  {
+    int  verbosity = 1, plot = 1;
+    float tolerance = 0.1;
+    bool allow_nonmatching = false;
 
-  /*-------------------------------------------------------------------------
-   * Example 1:
-   *
-   * Boundary faces of group '3' coupled with instance named 'SYRTHES_01'.
-   *-------------------------------------------------------------------------*/
+    /*-------------------------------------------------------------------------
+     * Example 2:
+     *
+     * Boundary faces of group 'Wall' coupled with 2D SYRTHES instance
+     * named 'SYRTHES_02'.
+     *-------------------------------------------------------------------------*/
 
-  cs_syr_coupling_define("SYRTHES_01",
-                         "3",               /* boundary criteria */
-                         NULL,              /* volume_criteria */
-                         ' ',               /* projection_axis */
-                         allow_nonmatching,
-                         tolerance,
-                         verbosity,
-                         plot);
+    cs_syr_coupling_define("SYRTHES_02",
+                           "Wall",            /* boundary criteria */
+                           NULL,              /* volume_criteria */
+                           'z',               /* projection_axis */
+                           allow_nonmatching,
+                           tolerance,
+                           verbosity,
+                           plot);
 
-  /*! [coupling_syrthes_1] */
-
-  END_EXAMPLE_SCOPE
-
-  BEGIN_EXAMPLE_SCOPE
-
+  }
   /*! [coupling_syrthes_2] */
 
-  int  verbosity = 1, plot = 1;
-  float tolerance = 0.1;
-  bool allow_nonmatching = false;
-
-  /*-------------------------------------------------------------------------
-   * Example 2:
-   *
-   * Boundary faces of group 'Wall' coupled with 2D SYRTHES instance
-   * named 'SYRTHES_02'.
-   *-------------------------------------------------------------------------*/
-
-  cs_syr_coupling_define("SYRTHES_02",
-                         "Wall",            /* boundary criteria */
-                         NULL,              /* volume_criteria */
-                         'z',               /* projection_axis */
-                         allow_nonmatching,
-                         tolerance,
-                         verbosity,
-                         plot);
-
-  /*! [coupling_syrthes_2] */
-
-  END_EXAMPLE_SCOPE
-
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [coupling_syrthes_3] */
+  {
+    int  verbosity = 1, plot = 1;
+    float tolerance = 0.1;
+    bool allow_nonmatching = false;
 
-  int  verbosity = 1, plot = 1;
-  float tolerance = 0.1;
-  bool allow_nonmatching = false;
+    /*-------------------------------------------------------------------------
+     * Example 3:
+     *
+     * Cells in box with corners (0, 0, 0) and (1, 1, 1) coupled with
+     * SYRTHES instance named 'Solid' (volume coupling).
+     *-------------------------------------------------------------------------*/
 
-  /*-------------------------------------------------------------------------
-   * Example 3:
-   *
-   * Cells in box with corners (0, 0, 0) and (1, 1, 1) coupled with
-   * SYRTHES instance named 'Solid' (volume coupling).
-   *-------------------------------------------------------------------------*/
-
-  cs_syr_coupling_define("Solid",
-                         NULL,                          /* boundary */
-                         "box[0., 0., 0., 1., 1., 1.]", /* volume */
-                         ' ',                           /* projection */
-                         allow_nonmatching,
-                         tolerance,
-                         verbosity,
-                         plot);
-
+    cs_syr_coupling_define("Solid",
+                           NULL,                          /* boundary */
+                           "box[0., 0., 0., 1., 1., 1.]", /* volume */
+                           ' ',                           /* projection */
+                           allow_nonmatching,
+                           tolerance,
+                           verbosity,
+                           plot);
+  }
   /*! [coupling_syrthes_3] */
-
-  END_EXAMPLE_SCOPE
 
   /* By default, conservativity forcing flag is switched off (value 0)
      If one wants to switch on the conservativity forcing flag:

@@ -108,8 +108,6 @@ BEGIN_C_DECLS
 void
 cs_user_mesh_warping(void)
 {
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [mesh_warping] */
 
   double max_warp_angle = 3; /* bounded between 0 and 90 degrees */
@@ -119,8 +117,6 @@ cs_user_mesh_warping(void)
                                postprocess);
 
   /*! [mesh_warping] */
-
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/
@@ -134,8 +130,6 @@ cs_user_mesh_warping(void)
 void
 cs_user_mesh_smoothe(cs_mesh_t  *mesh)
 {
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [mesh_smoothing] */
 
   double feature_angle = 25; /* bounded between 0 and 90 degrees */
@@ -158,8 +152,6 @@ cs_user_mesh_smoothe(cs_mesh_t  *mesh)
   BFT_FREE(vtx_is_fixed);
 
   /*! [mesh_smoothing] */
-
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/
@@ -178,8 +170,6 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
   /* Example: tag cells having a volume below 0.01 m^3 */
   /*          and post-process the tagged cells        */
   /*---------------------------------------------------*/
-
-  BEGIN_EXAMPLE_SCOPE
 
   /*! [mesh_tag_bad_cells] */
 
@@ -259,8 +249,6 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
   BFT_FREE(bad_vol_cells);
 
   /*! [mesh_tag_bad_cells] */
-
-  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/

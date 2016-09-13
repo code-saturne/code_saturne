@@ -86,54 +86,50 @@ BEGIN_C_DECLS
 void
 cs_user_saturne_coupling(void)
 {
-  BEGIN_EXAMPLE_SCOPE
+  /*! [coupling_saturne_1] */
+  {
+    int  verbosity = 1;
 
+    /*-------------------------------------------------------------------------
+     * Example 1: coupling with instance "SATURNE_01".
+     *
+     * - coupled faces of groups "3" or "4"
+     * - all cells available as location support
+     *-------------------------------------------------------------------------*/
+
+    cs_sat_coupling_define("SATURNE_01",
+                           "3 or 4",
+                           NULL,
+                           NULL,
+                           "all[]",
+                           verbosity);
+
+  }
   /*! [coupling_saturne_1] */
 
-  int  verbosity = 1;
+  /*! [coupling_saturne_2] */
+  {
 
-  /*-------------------------------------------------------------------------
-   * Example 1: coupling with instance "SATURNE_01".
-   *
-   * - coupled faces of groups "3" or "4"
-   * - all cells available as location support
-   *-------------------------------------------------------------------------*/
+    int  verbosity = 1;
 
-  cs_sat_coupling_define("SATURNE_01",
-                         "3 or 4",
-                         NULL,
-                         NULL,
-                         "all[]",
-                         verbosity);
+    /*-------------------------------------------------------------------------
+     * Example 2: coupling with instance "SATURNE_03".
+     *
+     * - coupled faces of groups "coupled_faces"
+     * - coupled cells (every cell overlapping the distant mesh)
+     * - all cells available as location support
+     *-------------------------------------------------------------------------*/
 
-  /*! [coupling_saturne_1] */
+    cs_sat_coupling_define("SATURNE_03",
+                           "coupled_faces",
+                           "all[]",
+                           NULL,
+                           "all[]",
+                           verbosity);
 
-  END_EXAMPLE_SCOPE
-
-  BEGIN_EXAMPLE_SCOPE
-
+  }
   /*! [coupling_saturne_2] */
 
-  int  verbosity = 1;
-
-  /*-------------------------------------------------------------------------
-   * Example 2: coupling with instance "SATURNE_03".
-   *
-   * - coupled faces of groups "coupled_faces"
-   * - coupled cells (every cell overlapping the distant mesh)
-   * - all cells available as location support
-   *-------------------------------------------------------------------------*/
-
-  cs_sat_coupling_define("SATURNE_03",
-                         "coupled_faces",
-                         "all[]",
-                         NULL,
-                         "all[]",
-                         verbosity);
-
-  /*! [coupling_saturne_2] */
-
-  END_EXAMPLE_SCOPE
 }
 
 END_C_DECLS

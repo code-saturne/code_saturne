@@ -193,8 +193,6 @@ cs_user_parameters(void)
   /* Example: add boundary values for all scalars */
   /*----------------------------------------------*/
 
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [param_var_boundary_vals_1] */
 
   int n_fields = cs_field_n_fields();
@@ -209,8 +207,6 @@ cs_user_parameters(void)
   }
 
   /*! [param_var_boundary_vals_1] */
-
-  END_EXAMPLE_SCOPE
 
 }
 
