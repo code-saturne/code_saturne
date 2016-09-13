@@ -48,6 +48,7 @@ typedef struct {
   cs_real_t   ionic_strength;
   cs_real_t   jamming_limit;
   cs_real_t   min_porosity;
+  cs_real_t   diam_mean;
   cs_real_t   valen;
   cs_real_t   phi_p;
   cs_real_t   phi_s;
@@ -76,6 +77,7 @@ cloginit(const cs_real_t   *water_permit,
          const cs_real_t   *ionic_strength,
          const cs_real_t   *jamming_limit,
          const cs_real_t   *min_porosity,
+         const cs_real_t   *diam_mean,
          const cs_real_t    temperature[],
          const cs_real_t   *valen,
          const cs_real_t   *phi_p,

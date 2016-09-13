@@ -742,7 +742,8 @@ _lagesd(cs_real_t     dtp,
         cs_real_t    *ustar,
         cs_real_t    *lvisq,
         cs_real_t    *tvisq,
-        cs_real_t    *depint)
+        cs_real_t    *depint,
+        cs_lnum_t    *nresnew)
 {
   /* mesh and mesh quantities */
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -753,11 +754,20 @@ _lagesd(cs_real_t     dtp,
 
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
-  /* Hydrodynamic drag on a deposited particle     */
-  cs_real_t drag[3];
+  /* Hydrodynamic drag and torque on a deposited particle     */
+  cs_real_t drag_force[3];
+  cs_real_t drag_torque[3], drag_tor_norm;
 
-  /* Hydrodynamic torque on a deposited particle   */
-  cs_real_t tordrg[3], tordrg_norm;
+  /* Lift force and torque on a deposited particle   */
+  cs_real_t lift_force[1];
+  cs_real_t lift_torque[3];
+
+  /* Gravity force and torque on a deposited particle   */
+  cs_real_t grav_force[3];
+  cs_real_t grav_torque[3];
+
+  /* Adhesion force and torque on a deposited particle   */
+  cs_real_t adhes_force, adhes_torque[3];
 
   /* Map field arrays     */
   cs_real_t *vela = extra->vel->vals[1];
@@ -777,6 +787,8 @@ _lagesd(cs_real_t     dtp,
                                                CS_LAGR_MASS);
   cs_real_t p_diam = cs_lagr_particle_get_real(particle, p_am,
                                                CS_LAGR_DIAMETER);
+  cs_real_t p_height = cs_lagr_particle_get_real(particle, p_am,
+                                               CS_LAGR_HEIGHT);
   cs_real_t p_stat_w = cs_lagr_particle_get_real(particle, p_am,
                                                  CS_LAGR_STAT_WEIGHT);
 
@@ -1102,157 +1114,843 @@ _lagesd(cs_real_t     dtp,
 
   if (cs_glob_lagr_reentrained_model->ireent == 1) {
 
+    cs_lnum_t iresusp = 0;
+
     if (cs_lagr_particle_get_real(particle, p_am,
                                   CS_LAGR_DEPOSITION_FLAG) != CS_LAGR_PART_IN_FLOW) {
 
+      cs_lnum_t n_f_id
+        = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
+
+      cs_lnum_t nfabor = cs_glob_mesh->n_b_faces;
+
       /* Resuspension model
-       * Calculation of the hydrodynamic drag and torque
-       * applied on the deposited particle   */
+       * differentiation between monolayer and multilayer resuspension
+       * based on the mean deposit height
+       * (another possibility is to use the jamming limit...) */
+      cs_real_t diam_mean = cs_glob_lagr_clogging_model->diam_mean;
 
-      drag[0] =  3.0 * cs_math_pi * p_diam
-               * (vvue[0] - vpart[0]) * visccf * *romf * 3.39;
-      tordrg[0] = 0.0;
+      if (bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] <
+          diam_mean && iresusp ==0 ) {
+        /* Monolayer resuspension */
 
-      for (cs_lnum_t id = 1; id < 3; id++) {
+        /* Calculation of the hydrodynamic drag and torque
+         * applied on the deposited particle   */
 
-        drag[id]   =  3.0 * cs_math_pi * p_diam
-                    * (vvue[id] - vpart[id]) * visccf * *romf * 1.7;
-        tordrg[id] = 1.4 * drag[id] * p_diam * 0.5;
-
-      }
-
-      /* Is there direct wall-normal lift-off of the particle ?  */
-      if (   CS_ABS (drag[0]) > cs_lagr_particle_get_real(particle, p_am,
-                                                       CS_LAGR_ADHESION_FORCE)
-          && drag[0] < 0.0) {
-
-        /* The particle is resuspended    */
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG, CS_LAGR_PART_IN_FLOW);
-        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
-        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
-
-        if (p_am->count[0][CS_LAGR_N_LARGE_ASPERITIES] > 0)
-          cs_lagr_particle_set_lnum(particle, p_am,
-                                    CS_LAGR_N_LARGE_ASPERITIES, 0);
-
-        if (p_am->count[0][CS_LAGR_N_SMALL_ASPERITIES] > 0)
-          cs_lagr_particle_set_lnum(particle, p_am,
-                                    CS_LAGR_N_SMALL_ASPERITIES, 0);
-
-        if (p_am->count[0][CS_LAGR_DISPLACEMENT_NORM] > 0)
-          cs_lagr_particle_set_real(particle, p_am,
-                                    CS_LAGR_DISPLACEMENT_NORM, 0.0);
-
-        cs_real_t adhesion_force =
-          cs_lagr_particle_get_real(particle, p_am, CS_LAGR_ADHESION_FORCE);
-        vpart[0] = CS_MIN(-1.0 / p_mass * CS_ABS(drag[0] - adhesion_force) * dtp,
-                          0.001);
-        vpart[1] = 0.0;
-        vpart[2] = 0.0;
-
-        /* Update of the number and weight of resuspended particles     */
-        p_set->n_part_resusp += 1;
-        p_set->weight_resusp += p_stat_w;
-
-        if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
-
-          cs_lnum_t n_f_id
-            = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
-
-          cs_lnum_t nfabor = cs_glob_mesh->n_b_faces;
-
-          bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ires] += p_stat_w;
-
-          bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflres] +=
-            p_stat_w + (  p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
-
-          bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflm]  +=
-            - (  p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
-
-        }
-
-      }
-      /* No direct normal lift-off */
-      else {
-
-        /* Calculation of the norm of the hydrodynamic
-         * torque and drag (tangential) */
-
-        tordrg_norm  = sqrt (pow (tordrg[1], 2) + pow (tordrg[2], 2));
-
-        cs_real_t adh_tor[3];
-        adh_tor[1]  = - cs_lagr_particle_get_real(particle, p_am,
-                                                  CS_LAGR_ADHESION_TORQUE)
-                      / tordrg_norm * tordrg[1];
-
-        adh_tor[2]  = - cs_lagr_particle_get_real(particle, p_am,
-                                                  CS_LAGR_ADHESION_TORQUE)
-                      / tordrg_norm * tordrg[2];
-
-        cs_real_t cst_1, cst_4;
+        drag_force[0] =  3.0 * cs_math_pi * p_diam
+          * (vvue[0] - vpart[0]) * visccf * *romf * 3.39;
+        drag_torque[0] = 0.0;
 
         for (cs_lnum_t id = 1; id < 3; id++) {
 
+          drag_force[id]   =  3.0 * cs_math_pi * p_diam
+            * (vvue[id] - vpart[id]) * visccf * *romf * 1.7;
+          drag_torque[id] = 1.4 * drag_force[id] * p_diam * 0.5;
+
+        }
+
+        /* Calculation of lift force and torque */
+        lift_force[0] = - 20.0 * pow(visccf,2) * *romf *
+          pow(*ustar * p_diam * 0.5 / visccf, 2.31);
+
+        for (cs_lnum_t id = 1; id < 3; id++) {
+
+          lift_torque[id] = -lift_force[0] * p_diam * 0.5
+            * vvue[id] / sqrt( pow(vvue[1], 2) + pow(vvue[2], 2) );
+
+        }
+
+        /* Calculation of gravity force and torque */
+        for (cs_lnum_t id = 1; id < 3; id++) {
+          grav_force[id] = p_diam * ggp[id];
+        }
+
+        for (cs_lnum_t id = 1; id < 3; id++) {
+
+          cs_real_t sign11, sign22;
+          if ( grav_force[1]*vvue[1] < 0 )
+            sign11 = -1.0;
+          else
+            sign11 = 1.0;
+          if ( grav_force[2]*vvue[2] < 0 )
+            sign22 = -1.0;
+          else
+            sign22 = 1.0;
+
+          grav_torque[id] = ( -grav_force[0] +
+                              grav_force[1]*sign11 +
+                              grav_force[2]*sign22 ) * p_diam * 0.5
+            * vvue[id] / sqrt( pow(vvue[1], 2) + pow(vvue[2], 2) );
+
+        }
+
+        /* Case with consolidation */
+        if (cs_glob_lagr_consolidation_model->iconsol > 0 &&
+            cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT) > 0.01 * diam_mean) {
+
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_FORCE,
+                                    cs_glob_lagr_consolidation_model->force_consol);
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE,
+                                    cs_glob_lagr_consolidation_model->force_consol
+                                    * p_diam * 0.5);
+
+        }
+
+        cs_real_t adhes_force = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_ADHESION_FORCE);
+        /* Is there direct wall-normal lift-off of the particle ?  */
+        if ( (adhes_force + grav_force[0] + lift_force[0] + drag_force[0]) < 0
+             && iresusp == 0 ) {
+
+          /* Update of the number and weight of resuspended particles     */
+          p_set->n_part_resusp += 1;
+          p_set->weight_resusp += p_stat_w;
+
+          if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
+
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ires] += p_stat_w;
+
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflres] +=
+              p_stat_w + (  p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
+
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflm]  +=
+              - (  p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
+
+          }
+
+          /* Update of surface covered and deposit height
+           * (for non-rolling particles) */
+          if ( cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) ==
+               CS_LAGR_PART_DEPOSITED ) {
+
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc] -=
+              cs_math_pi * pow(p_diam, 2) * p_stat_w
+              * 0.25 / mq->b_f_face_surf[n_f_id];
+
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
+              cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+              * 0.25 / mq->b_f_face_surf[n_f_id];
+
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
+              pow (cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+                   * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg] -=
+              p_stat_w;
+
+          }
+
+          /* The particle is resuspended    */
+          vpart[0] = CS_MIN(-1.0 / p_mass * dtp
+                            * CS_ABS(-lift_force[0] - drag_force[0]
+                                     - adhes_force -grav_force[0] ),
+                            0.001);
+          if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) ==
+               CS_LAGR_PART_DEPOSITED ){
+            vpart[1] = 0.0;
+            vpart[2] = 0.0;
+          }
+
+          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG, 0);
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
+
+          if ( CS_ABS(p_height-p_diam)/p_diam > 1.0e-6) {
+            cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
+            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, d_resusp);
+            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_resusp);
+          }
+
+          if (p_am->count[0][CS_LAGR_N_LARGE_ASPERITIES] > 0)
+            cs_lagr_particle_set_lnum(particle, p_am,
+                                      CS_LAGR_N_LARGE_ASPERITIES, 0);
+
+          if (p_am->count[0][CS_LAGR_N_SMALL_ASPERITIES] > 0)
+            cs_lagr_particle_set_lnum(particle, p_am,
+                                      CS_LAGR_N_SMALL_ASPERITIES, 0);
+
+          if (p_am->count[0][CS_LAGR_DISPLACEMENT_NORM] > 0)
+            cs_lagr_particle_set_real(particle, p_am,
+                                      CS_LAGR_DISPLACEMENT_NORM, 0.0);
+
+          iresusp = 1;
+        }
+        /* No direct normal lift-off */
+        else if (iresusp == 0) {
+
+          /* Calculation of the norm of the hydrodynamic
+           * torque and drag (tangential) */
+
+          drag_tor_norm  = sqrt (pow (drag_torque[1], 2) + pow (drag_torque[2], 2));
+
+          for (cs_lnum_t id = 1; id < 3; id++) {
+
+            adhes_torque[id]  = - cs_lagr_particle_get_real(particle, p_am,
+                                                       CS_LAGR_ADHESION_TORQUE)
+              * vvue[id] / sqrt( pow(vvue[1], 2) + pow(vvue[2], 2) ) ;
+          }
+
           cs_real_t iner_tor = (7.0 / 5.0) * p_mass * pow ((p_diam * 0.5), 2);
-
+          cs_real_t cst_1, cst_4;
           cst_4 =   6 * cs_math_pi * visccf
-                  * *romf * 1.7 * 1.4
-                  * pow(p_diam * 0.5, 2);
-
+            * *romf * 1.7 * 1.4
+            * pow(p_diam * 0.5, 2);
           cst_1 = cst_4 * (p_diam * 0.5) / iner_tor;
 
-          vpart0[id] = vpart[id];
-          vpart[id]  =  (vpart0[id] - vvue[id] - adh_tor[id] / cst_4)
-                      * exp ( -cst_1 * dtp)
-                      + vvue[id] + adh_tor[id] / cst_4 ;
+          for (cs_lnum_t id = 1; id < 3; id++) {
+
+            vpart0[id] = vpart[id];
+            vpart[id]  =  vpart0[id] * exp ( -cst_1 * dtp)
+              + (vvue[id] + (adhes_torque[id] + lift_torque[id] + grav_torque[id]) / cst_4)
+              * ( 1.0 - exp ( -cst_1 * dtp) );
+
+          }
+
+          cs_real_t scalax  = vpart[1] * vvue[1] + vpart[2] * vvue[2];
+
+          if (scalax > 0.0) {
+
+            /* The calculated particle velocity is aligned   */
+            /* with the flow seen   */
+            /* --> The particle starts or keep on rolling    */
+
+            /* If the particle stars rolling:
+             * update of the surface covered and deposit height */
+
+            if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) ==
+                CS_LAGR_PART_DEPOSITED ) {
+
+              bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc] -=
+                cs_math_pi * pow(p_diam, 2) * p_stat_w
+                * 0.25 / mq->b_f_face_surf[n_f_id];
+
+              bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
+                cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+                * 0.25 / mq->b_f_face_surf[n_f_id];
+
+              bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
+                pow (cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+                     * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+
+              bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg] -=
+                p_stat_w;
+
+            }
+
+            cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_DEPOSITION_FLAG, CS_LAGR_PART_ROLLING);
+
+            vpart[0] = 0.0;
+
+            for (cs_lnum_t id = 1; id < 3; id++) {
+
+              if (CS_ABS (vpart[id]) > CS_ABS (vvue[id]))
+                /* The velocity of the rolling particle cannot   */
+                /* exceed the surrounding fluid velocity    */
+                vpart[id] = vvue[id];
+
+              cs_real_t kkk = vvue[id] + adhes_torque[id] / cst_4;
+              cs_real_t kk  = vpart0[id] - kkk;
+
+              depl[id] =   ( kkk * dtp + kk / cst_1 * (1. - exp ( -cst_1 * dtp)));
+
+            }
+
+            iresusp = 1;
+
+          }
+          /* if (scalax..) */
+          else {
+
+            /* The particle is not set into motion or stops
+             * the flag is set to 1 and velocity and displacement are null */
+
+            /* Simplified treatment:
+             * no update of iscovc, ihdepm for particles that stop */
+            if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) ==
+                CS_LAGR_PART_ROLLING)
+              iresusp = 1;
+
+            for (cs_lnum_t id = 1; id < 3; id++) {
+
+              depl[id]     = 0.0;
+              vpart[id]    = 0.0;
+
+            }
+
+          } /* if (scalax..)   */
 
         }
 
-        cs_real_t scalax  = vpart[1] * vvue[1] + vpart[2] * vvue[2];
+      } /* End of monolayer resuspension*/
 
-        if (scalax > 0.0) {
+      else if (bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
+          >= diam_mean && iresusp ==0 ) {
+        /* Multilayer resuspension model */
 
-          /* The calculated particle velocity is aligned   */
-          /* with the flow seen   */
-          /* --> The particle starts or keep on rolling    */
+        cs_real_t mean_depo_height =
+          bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm];
+        /* Calculation of the hydrodynamic forces and torques
+         * applied on the deposited cluster :
+         * Principle: drag>0 for protruding clusters, 0 otherwise */
 
-          cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_DEPOSITION_FLAG, CS_LAGR_PART_ROLLING);
+        if (p_height > mean_depo_height &&
+            cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) ==
+            CS_LAGR_PART_DEPOSITED ) {
 
-          vpart[0] = 0.0;
+          /* Calculation of drag force and torque*/
+          drag_force[0] =  3.0 * cs_math_pi *
+            (p_height - mean_depo_height)
+            * (vvue[0] - vpart[0]) * visccf * *romf * 3.39;
+          drag_torque[0] = 0.0;
 
           for (cs_lnum_t id = 1; id < 3; id++) {
 
-            if (CS_ABS (vpart[id]) > CS_ABS (vvue[id]))
-              /* The velocity of the rolling particle cannot   */
-              /* exceed the surrounding fluid velocity    */
-              vpart[id] = vvue[id];
+            drag_force[id]   =  3.0 * cs_math_pi *
+              (p_height - mean_depo_height)
+              * (vvue[id] - vpart[id]) * visccf * *romf * 1.7;
+            drag_torque[id] = 1.4 * drag_force[id] * p_diam * 0.5;
 
-            cs_real_t kk  = vpart0[id] - vvue[id] - adh_tor[id] / cst_4;
-            cs_real_t kkk = vvue[id] + adh_tor[id] / cst_4;
+          }
 
-            depl[id] =   ( kkk * dtp + kk / cst_1 * (1. - exp ( -cst_1 * dtp)));
+          /* Calculation of lift force and torque */
+          lift_force[0] = - 20.0 * pow(visccf,2) * *romf *
+            pow(*ustar * (p_height - mean_depo_height) * 0.5 / visccf, 2.31);
+
+          for (cs_lnum_t id = 1; id < 3; id++) {
+
+            lift_torque[id] = -lift_force[0] * p_diam * 0.5
+              * vvue[id] / sqrt( pow(vvue[1], 2) + pow(vvue[2], 2) );
+
+          }
+
+          /* Calculation of gravity force and torque */
+          for (cs_lnum_t id = 0; id < 3; id++) {
+            grav_force[id] = p_diam * ggp[id]
+              *(p_height - mean_depo_height) / p_height;
+          }
+
+          for (cs_lnum_t id = 1; id < 3; id++) {
+
+            cs_real_t sign11, sign22;
+            if ( grav_force[1]*vvue[1] < 0 )
+              sign11 = -1.0;
+            else
+              sign11 = 1.0;
+            if ( grav_force[2]*vvue[2] < 0 )
+              sign22 = -1.0;
+            else
+              sign22 = 1.0;
+
+            grav_torque[id] = ( -grav_force[0] +
+                                grav_force[1]*sign11 +
+                                grav_force[2]*sign22 ) * p_diam * 0.5
+              * vvue[id] / sqrt( pow(vvue[1], 2) + pow(vvue[2], 2) );
 
           }
 
         }
-        /* if (scalax..) */
+        else if (p_height <= mean_depo_height &&
+            cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) ==
+            CS_LAGR_PART_DEPOSITED ) {
+
+          /* Calculation of drag force and torque*/
+          for (cs_lnum_t id = 0; id < 3; id++) {
+
+            drag_force[id]  = 0.0;
+            drag_torque[id] = 0.0;
+
+          }
+
+          /* Calculation of lift force and torque */
+          lift_force[0] = 0.0;
+
+          for (cs_lnum_t id = 1; id < 3; id++) {
+
+            lift_torque[id] = 0.0;
+
+          }
+
+          /* Calculation of gravity force and torque */
+          for (cs_lnum_t id = 0; id < 3; id++) {
+            grav_force[id] = p_diam * ggp[id];
+          }
+
+          for (cs_lnum_t id = 1; id < 3; id++) {
+
+            cs_real_t sign11, sign22;
+            if ( grav_force[1]*vvue[1] < 0 )
+              sign11 = -1.0;
+            else
+              sign11 = 1.0;
+            if ( grav_force[2]*vvue[2] < 0 )
+              sign22 = -1.0;
+            else
+              sign22 = 1.0;
+
+            grav_torque[id] = ( -grav_force[0] +
+                                grav_force[1]*sign11 +
+                                grav_force[2]*sign22 ) * p_diam * 0.5
+              * vvue[id] / sqrt( pow(vvue[1], 2) + pow(vvue[2], 2) );
+
+          }
+
+        }
+        else if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) ==
+                 CS_LAGR_PART_ROLLING ) {
+
+          /* Calculation of drag force and torque*/
+          drag_force[0] =  3.0 * cs_math_pi * p_diam
+            * (vvue[0] - vpart[0]) * visccf * *romf * 3.39;
+          drag_torque[0] = 0.0;
+
+          for (cs_lnum_t id = 1; id < 3; id++) {
+
+            drag_force[id]   =  3.0 * cs_math_pi * p_diam
+              * (vvue[id] - vpart[id]) * visccf * *romf * 1.7;
+            drag_torque[id] = 1.4 * drag_force[id] * p_diam * 0.5;
+
+          }
+
+          /* Calculation of lift force and torque */
+          lift_force[0] = - 20.0 * pow(visccf,2) * *romf *
+            pow(*ustar * p_diam * 0.5 / visccf, 2.31);
+
+          for (cs_lnum_t id = 1; id < 3; id++) {
+
+            lift_torque[id] = -lift_force[0] * p_diam * 0.5
+              * vvue[id] / sqrt( pow(vvue[1], 2) + pow(vvue[2], 2) );
+
+          }
+
+          /* Calculation of gravity force and torque */
+          for (cs_lnum_t id = 0; id < 3; id++) {
+            grav_force[id] = p_diam * ggp[id];
+          }
+
+          for (cs_lnum_t id = 1; id < 3; id++) {
+
+            cs_real_t sign11, sign22;
+            if ( grav_force[1]*vvue[1] < 0 )
+              sign11 = -1.0;
+            else
+              sign11 = 1.0;
+            if ( grav_force[2]*vvue[2] < 0 )
+              sign22 = -1.0;
+            else
+              sign22 = 1.0;
+
+            grav_torque[id] = ( -grav_force[0] +
+                                grav_force[1]*sign11 +
+                                grav_force[2]*sign22 ) * p_diam * 0.5
+              * vvue[id] / sqrt( pow(vvue[1], 2) + pow(vvue[2], 2) );
+
+          }
+        }
+
+        /* Adhesion force and torque for multilayered structures:
+         * equal to adhesion force between single particles
+         * times the number of particle-particle contacts  */
+
+        cs_real_t adhes_energ, adhes_force, adhes_force_ps;
+        cs_lagr_adh_pp(p_diam, tempf, &adhes_energ, &adhes_force);
+        /* Average number of contact in a cluster */
+        cs_real_t ncont_pp = pow(p_diam/diam_mean, 2);
+
+        /* Case with consolidation */
+        if (cs_glob_lagr_consolidation_model->iconsol > 0 &&
+            cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) == 1) {
+
+          if (cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT) > 0.01 * diam_mean) {
+            adhes_force = cs_glob_lagr_consolidation_model->force_consol +
+            (adhes_force - cs_glob_lagr_consolidation_model->force_consol) * 0.5
+            * (1.0 + tanh((mean_depo_height-
+                           cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT))
+                          /(0.1 * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT))));
+            adhes_force_ps = cs_glob_lagr_consolidation_model->force_consol;
+          }
+          else {
+            adhes_force *= ncont_pp;
+            adhes_force_ps = adhes_force;
+          }
+          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_N_SMALL_ASPERITIES, ncont_pp);
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_FORCE, adhes_force);
+          cs_real_t adhes_tor = adhes_force * p_diam * 0.5;
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE, adhes_tor);
+        }
         else {
+          /* Case without consolidation */
 
-          /* The particle is not set into motion or stops
-           * the flag is set to 10 and velocity and displacement are null */
+          cs_lnum_t ncont = 1;
 
-          cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_DEPOSITION_FLAG, CS_LAGR_PART_NO_MOTION);
+          if (ncont_pp > 600.0) {
 
-          for (cs_lnum_t id = 1; id < 3; id++) {
+            cs_real_t rtmp;
 
-            depl[id]     = 0.0;
-            vpart[id]    = 0.0;
+            cs_random_normal(1, &rtmp);
+
+            ncont = (int)ncont_pp + sqrt(ncont_pp) * rtmp;
+
+          }
+          else {
+
+            cs_random_poisson(1, ncont_pp, &ncont);
+
+          }
+          ncont = CS_MAX(1, ncont);
+          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_N_SMALL_ASPERITIES, ncont);
+
+          adhes_energ *= ncont;
+          adhes_force *= ncont ;
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_FORCE, adhes_force);
+          adhes_force_ps = adhes_force;
+
+          cs_real_t adhes_tor = adhes_force * p_diam * 0.5;
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE, adhes_tor);
+
+        }
+
+        for (cs_lnum_t id = 1; id < 3; id++) {
+          adhes_torque[id] =
+            - cs_lagr_particle_get_real(particle, p_am, CS_LAGR_ADHESION_TORQUE)
+            * vvue[id] / sqrt( pow(vvue[1], 2) + pow(vvue[2], 2) );
+        }
+
+
+        /* Is there direct wall-normal lift-off of the cluster ?  */
+        if ( (adhes_force + grav_force[0] + lift_force[0] + drag_force[0]) < 0
+             && iresusp == 0 ) {
+
+          /* Update of the number and weight of resuspended particles     */
+          p_set->n_part_resusp += 1;
+          p_set->weight_resusp += p_stat_w;
+
+          if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
+
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ires] += p_stat_w;
+
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflres] +=
+              p_stat_w + (  p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
+
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflm]  +=
+              - (  p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
 
           }
 
-        } /* if (scalax..)   */
+          /* Update of surface covered and deposit height
+           * (for non-rolling particles) */
+          if ( cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) ==1 ) {
 
-      }
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc] -=
+              cs_math_pi * pow(p_diam, 2) * p_stat_w
+              * 0.25 / mq->b_f_face_surf[n_f_id];
+
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
+              cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+              * 0.25 / mq->b_f_face_surf[n_f_id];
+
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
+              pow (cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+                   * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+
+            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg] -=
+              p_stat_w;
+
+          }
+
+          /* The particle is resuspended    */
+          vpart[0] = CS_MIN(-1.0 / p_mass * dtp
+                            * CS_ABS(-lift_force[0] - drag_force[0]
+                                     - adhes_force -grav_force[0] ),
+                            0.001);
+          if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) == 1 ){
+            vpart[1] = 0.0;
+            vpart[2] = 0.0;
+          }
+
+          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG, 0);
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
+
+          if ( CS_ABS(p_height-p_diam)/p_diam > 1.0e-6) {
+            cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
+            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, d_resusp);
+            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_resusp);
+          }
+
+          if (p_am->count[0][CS_LAGR_N_LARGE_ASPERITIES] > 0)
+            cs_lagr_particle_set_lnum(particle, p_am,
+                                      CS_LAGR_N_LARGE_ASPERITIES, 0);
+
+          if (p_am->count[0][CS_LAGR_N_SMALL_ASPERITIES] > 0)
+            cs_lagr_particle_set_lnum(particle, p_am,
+                                      CS_LAGR_N_SMALL_ASPERITIES, 0);
+
+          if (p_am->count[0][CS_LAGR_DISPLACEMENT_NORM] > 0)
+            cs_lagr_particle_set_real(particle, p_am,
+                                      CS_LAGR_DISPLACEMENT_NORM, 0.0);
+
+          iresusp = 1;
+        }
+
+        /* No direct normal lift-off */
+        else if (iresusp == 0) {
+
+          /* Calculation of the norm of the hydrodynamic
+           * torque and drag (tangential) */
+
+          cs_real_t drag_tor_norm  = sqrt (pow (drag_torque[1], 2) + pow (drag_torque[2], 2));
+          cs_real_t lift_tor_norm  = sqrt (pow (lift_torque[1], 2) + pow (lift_torque[2], 2));
+          cs_real_t grav_tor_norm  = sqrt (pow (grav_torque[1], 2) + pow (grav_torque[2], 2));
+
+          /* Differentiation between two cases:
+           *  a) Already rolling clusters
+           *  b) Deposited clusters being broken */
+
+          if ( cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) == 2 ) {
+
+            cs_real_t iner_tor = (7.0 / 5.0) * p_mass * pow ((p_diam * 0.5), 2);
+            cs_real_t cst_1, cst_4;
+            cst_4 =   6 * cs_math_pi * visccf
+              * *romf * 1.7 * 1.4
+              * pow(p_diam * 0.5, 2);
+            cst_1 = cst_4 * (p_diam * 0.5) / iner_tor;
+
+            for (cs_lnum_t id = 1; id < 3; id++) {
+
+              vpart0[id] = vpart[id];
+              vpart[id]  =  vpart0[id] * exp ( -cst_1 * dtp)
+                + (vvue[id] + (adhes_torque[id] + lift_torque[id] + grav_torque[id]) / cst_4)
+                * ( 1.0 - exp ( -cst_1 * dtp) );
+
+            }
+
+            cs_real_t scalax  = vpart[1] * vvue[1] + vpart[2] * vvue[2];
+
+            if (scalax > 0.0) {
+
+              /* The cluster continues to roll (depo_flag = 2)  */
+
+              vpart[0] = 0.0;
+
+              for (cs_lnum_t id = 1; id < 3; id++) {
+
+                if (CS_ABS (vpart[id]) > CS_ABS (vvue[id]))
+                  /* The velocity of the rolling particle cannot   */
+                  /* exceed the surrounding fluid velocity    */
+                  vpart[id] = vvue[id];
+
+                cs_real_t kkk = vvue[id] + adhes_torque[id] / cst_4;
+                cs_real_t kk  = vpart0[id] - kkk;
+
+                depl[id] =   ( kkk * dtp + kk / cst_1 * (1. - exp ( -cst_1 * dtp)));
+
+              }
+
+              iresusp = 1;
+
+            }
+            /* if (scalax..) */
+            else {
+
+              /* The cluster stops moving
+               * the flag is set to 1 and velocity and displacement are null */
+
+              /* Simplified treatment:
+               * no update of iscovc, ihdepm for particles that stop */
+              iresusp = 1;
+
+              for (cs_lnum_t id = 1; id < 3; id++) {
+
+                depl[id]     = 0.0;
+                vpart[id]    = 0.0;
+
+              }
+
+            } /* if (scalax..)   */
+
+          }
+          else if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) == 1 &&
+                   iresusp == 0 ) {
+            /* Cluster being broken:
+             * we first check if there is resuspension */
+            cs_real_t cond_resusp[2];
+            for (cs_lnum_t id = 0; id < 2; id++) {
+              cond_resusp[id] = ( adhes_torque[id] + grav_torque[id] + lift_torque[id]
+                                  + drag_torque[id] ) * vvue[id];
+            }
+
+            if (cond_resusp[0] > 0.0 || cond_resusp[1] > 0.0) {
+              iresusp = 1;
+              cs_real_t clust_resusp_height;
+              cs_real_t clust_consol_height;
+              cs_real_t height_reent;
+              cs_real_t random;
+              /* Sample of a possible break line */
+              if (cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT) < diam_mean) {
+                cs_random_uniform(1, &random);
+                clust_resusp_height = random * p_height;
+                clust_consol_height = 0.0;
+              }
+              else {
+                cs_real_t param = 1.0 - ( (drag_tor_norm + lift_tor_norm - grav_tor_norm)
+                                          /p_diam - 2.0 * adhes_force ) /
+                  ( cs_glob_lagr_consolidation_model->force_consol - adhes_force);
+                if (param >= 1.)
+                  clust_consol_height = p_height; // Very high consolidation
+                else if (param <= -1.)
+                  clust_consol_height = 0.; // Very high hydrodynamic forces
+                else
+                  clust_consol_height =
+                    cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT)
+                    * (1 + cs_glob_lagr_consolidation_model->slope_consol
+                       * 0.5 * log( (1.0+param)/(1.0-param) ) );
+
+              cs_random_uniform(1, &random);
+              height_reent = random * (p_height - clust_consol_height);
+              height_reent = CS_MIN(height_reent, p_height);
+              height_reent = CS_MAX(height_reent, 0.0);
+              }
+
+              /* Treatment of the new rolling particle */
+              cs_lnum_t itreated = 0;
+              cs_lnum_t nb_part_reent = height_reent / p_height *
+                cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART);
+
+              if (nb_part_reent < 1.0 && itreated == 0) {
+                /* No resuspension (cluster too small)*/
+                itreated = 1;
+
+                for (cs_lnum_t id = 0; id < 3; id++) {
+                  vpart[id] = 0.0;
+                  depl[id]  = 0.0;
+                }
+              }
+              else if ( (cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART)
+                         -nb_part_reent) < 1.0 && itreated == 0) {
+                /* The whole cluster starts rolling*/
+                cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG, 2);
+
+                /* Update of surface covered and deposit height */
+                bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc] -=
+                  cs_math_pi * pow(p_diam, 2) * p_stat_w
+                  * 0.25 / mq->b_f_face_surf[n_f_id];
+
+                bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
+                  cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+                  * 0.25 / mq->b_f_face_surf[n_f_id];
+
+                bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
+                  pow (cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+                       * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+
+                bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg] -=
+                  p_stat_w;
+
+                itreated = 1;
+                cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
+                cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, d_resusp);
+                cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_resusp);
+
+                /* Treatment of cluster motion */
+                cs_real_t iner_tor = (7.0 / 5.0) * p_mass * pow ((p_diam * 0.5), 2);
+                cs_real_t cst_1, cst_4;
+                cst_4 =   6 * cs_math_pi * visccf
+                  * *romf * 1.7 * 1.4
+                  * pow(p_diam * 0.5, 2);
+                cst_1 = cst_4 * (p_diam * 0.5) / iner_tor;
+
+                for (cs_lnum_t id = 1; id < 3; id++) {
+                  vpart0[id] = vpart[id];
+                  vpart[id]  =  vpart0[id] * exp ( -cst_1 * dtp)
+                    + (vvue[id] + (adhes_torque[id] + lift_torque[id] + grav_torque[id]) / cst_4)
+                    * ( 1.0 - exp ( -cst_1 * dtp) );
+                }
+
+                vpart[0] = 0.0;
+                for (cs_lnum_t id = 1; id < 3; id++) {
+                  if (CS_ABS (vpart[id]) > CS_ABS (vvue[id]))
+                    /* The velocity of the rolling particle cannot   */
+                    /* exceed the surrounding fluid velocity    */
+                    vpart[id] = vvue[id];
+                  cs_real_t kkk = vvue[id] + adhes_torque[id] / cst_4;
+                  cs_real_t kk  = vpart0[id] - kkk;
+                  depl[id] =   ( kkk * dtp + kk / cst_1 * (1. - exp ( -cst_1 * dtp)));
+                }
+
+              }
+              else if (itreated == 0) {
+                /* Duplication of the particle */
+                *nresnew = *nresnew + 1;
+                cs_lagr_part_copy(p_set->n_particles+*nresnew, *ip);
+                /* We split both particles:
+                * Part ip stays while the new one starts rolling */
+                unsigned char *new_part = p_set->p_buffer
+                  + p_am->extents * p_set->n_particles+*nresnew;
+                cs_real_t nb_resusp =  height_reent / p_height
+                  * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART);
+                cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_CLUSTER_NB_PART, nb_resusp);
+                cs_real_t m_resusp = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS)
+                  * cs_lagr_particle_get_real(new_part, p_am, CS_LAGR_CLUSTER_NB_PART)
+                  / cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART) ;
+                cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_MASS, m_resusp);
+                cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
+                cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_DIAMETER, d_resusp);
+                cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_HEIGHT, d_resusp);
+
+
+                cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG, 1);
+                vpart[0] = 0.0;
+                for (cs_lnum_t id = 1; id < 3; id++) {
+                  vpart[id] = 0.0;
+                  depl[id]  = 0.0;
+                }
+
+                /* Update of deposit height */
+                cs_real_t d_stay = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_HEIGHT);
+                cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_stay);
+
+                bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
+                  cs_math_pi * height_reent * pow(p_diam, 2) * p_stat_w
+                  * 0.25 / mq->b_f_face_surf[n_f_id];
+
+                bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
+                  pow (cs_math_pi * height_reent * pow(p_diam, 2) * p_stat_w
+                       * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+
+                cs_real_t nb_stay =
+                  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART) -
+                  cs_lagr_particle_get_real(new_part, p_am, CS_LAGR_CLUSTER_NB_PART);
+                cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART, nb_stay);
+
+                cs_real_t mp_stay = p_mass - cs_lagr_particle_get_real(new_part, p_am, CS_LAGR_MASS);
+                cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS, mp_stay);
+
+                /* The new particle starts rolling */
+                cs_lagr_particle_set_lnum(new_part, p_am, CS_LAGR_DEPOSITION_FLAG, 2);
+                cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_ADHESION_FORCE, adhes_force);
+                cs_lagr_particle_set_lnum(new_part, p_am, CS_LAGR_N_SMALL_ASPERITIES, CS_MAX(1,ncont_pp));
+                cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_ADHESION_TORQUE, adhes_force * d_resusp * 0.5);
+                cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_DEPO_TIME, 0.0);
+                cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_CONSOL_HEIGHT, 0.0);
+
+                itreated = 1;
+              }
+
+            } /* End of condition for resuspension */
+
+            else {
+              /* No rolling occurs */
+              iresusp = 1;
+              for (cs_lnum_t id = 1; id < 3; id++) {
+                vpart[id] = 0.0;
+                depl[id]  = 0.0;
+              }
+            }
+
+          }
+
+        }
+
+      } /* End of multilayer resuspension */
 
     }
 
@@ -1348,7 +2046,8 @@ _lagdep(cs_real_t     dtp,
         cs_real_3_t  *gradpr,
         cs_real_t    *romp,
         cs_real_3_t  *fextla,
-        cs_real_t    *vislen)
+        cs_real_t    *vislen,
+        cs_lnum_t    *nresnew)
 {
   /* Particles management */
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
@@ -1634,7 +2333,8 @@ _lagdep(cs_real_t     dtp,
                 &ustar,
                 &lvisq,
                 &tvisq,
-                &depint);
+                &depint,
+                &nresnew);
 
       }
 
@@ -1710,7 +2410,8 @@ cs_lagr_sde(cs_real_t      dt_p,
             cs_real_t      terbru[],
             cs_real_t      vislen[],
             cs_real_33_t  *vagaus,
-            cs_real_t     *brgaus )
+            cs_real_t     *brgaus,
+            cs_lnum_t     *nresnew )
 {
   cs_real_t *romp;
 
@@ -1776,7 +2477,7 @@ cs_lagr_sde(cs_real_t      dt_p,
     /* Management of the deposition submodel */
 
     else
-      _lagdep(dt_p, taup, tlag, piil, bx, vagaus, gradpr, romp, fextla, vislen);
+      _lagdep(dt_p, taup, tlag, piil, bx, vagaus, gradpr, romp, fextla, vislen, &nresnew);
 
   }
 

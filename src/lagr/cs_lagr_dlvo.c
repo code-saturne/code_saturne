@@ -124,6 +124,7 @@ cs_lagr_dlvo_init(const cs_real_t   water_permit,
                   const cs_real_t   phi_p,
                   const cs_real_t   phi_s,
                   const cs_real_t   cstham,
+                  const cs_real_t   csthpp,
                   const cs_real_t   lambda_vdw)
 {
   cs_lnum_t iel;
@@ -139,6 +140,7 @@ cs_lagr_dlvo_init(const cs_real_t   water_permit,
   cs_lagr_dlvo_param.phi_p = phi_p;
   cs_lagr_dlvo_param.phi_s = phi_s;
   cs_lagr_dlvo_param.cstham = cstham;
+  cs_lagr_dlvo_param.cstham = csthpp;
   cs_lagr_dlvo_param.lambda_vdw = lambda_vdw;
 
   /* Allocate memory for the temperature and Debye length arrays */
@@ -236,6 +238,62 @@ cs_lagr_barrier(const void                     *particle,
                                  cs_lagr_dlvo_param.temperature[iel],
                                  cs_lagr_dlvo_param.debye_length[iel],
                                  cs_lagr_dlvo_param.water_permit);
+
+    barr = (var1 + var2);
+
+    if (barr >  *energy_barrier)
+      *energy_barrier = barr;
+    if ( *energy_barrier < 0)
+      *energy_barrier = 0;
+   }
+
+  *energy_barrier = *energy_barrier / rpart;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the energy barrier for two particles.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_barrier_pp(cs_real_t                       dpart,
+                   cs_lnum_t                       iel,
+                   cs_real_t                      *energy_barrier)
+{
+  cs_lnum_t i;
+  cs_real_t rpart = dpart * 0.5;
+
+  *energy_barrier = 0.;
+
+  cs_real_t barr = 0.;
+  cs_real_t distcc = 0.;
+
+  /* Computation of the energy barrier */
+
+  for (i = 0; i < 1001; i++) {
+
+    cs_real_t  step = cs_lagr_dlvo_param.debye_length[iel]/30.0;
+
+    /* Interaction between two spheres */
+
+    distcc = _d_cut_off + i * step + 2.0 * rpart;
+
+    cs_real_t var1
+      = cs_lagr_van_der_waals_sphere_sphere(distcc,
+                                            rpart,
+                                            rpart,
+                                            cs_lagr_dlvo_param.lambda_vdw,
+                                            cs_lagr_dlvo_param.csthpp);
+
+    cs_real_t var2
+      = cs_lagr_edl_sphere_sphere(distcc,
+                                  rpart,
+                                  rpart,
+                                  cs_lagr_dlvo_param.valen,
+                                  cs_lagr_dlvo_param.phi_p,
+                                  cs_lagr_dlvo_param.phi_p,
+                                  cs_lagr_dlvo_param.temperature[iel],
+                                  cs_lagr_dlvo_param.debye_length[iel],
+                                  cs_lagr_dlvo_param.water_permit);
 
     barr = (var1 + var2);
 

@@ -115,6 +115,7 @@ cloginit (const cs_real_t   *water_permit,
           const cs_real_t   *ionic_strength,
           const cs_real_t   *jamming_limit,
           const cs_real_t   *min_porosity,
+          const cs_real_t   *diam_mean,
           const cs_real_t    temperature[],
           const cs_real_t   *valen,
           const cs_real_t   *phi_p,
@@ -137,6 +138,7 @@ cloginit (const cs_real_t   *water_permit,
   cs_lagr_clogging_param.ionic_strength = *ionic_strength;
   cs_lagr_clogging_param.jamming_limit = *jamming_limit;
   cs_lagr_clogging_param.min_porosity = *min_porosity;
+  cs_lagr_clogging_param.diam_mean = *diam_mean;
   cs_lagr_clogging_param.valen = *valen;
   cs_lagr_clogging_param.phi_p = *phi_p;
   cs_lagr_clogging_param.phi_s = *phi_s;

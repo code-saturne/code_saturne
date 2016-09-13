@@ -168,6 +168,7 @@ static cs_lagr_model_t  _lagr_model
      .roughness = 0,
      .resuspension = 0,
      .clogging = 0,
+     .consolidation = 0,
      .precipitation = 0,
      .fouling = 0,
      .n_stat_classes = 0,
@@ -211,8 +212,13 @@ cs_lagr_precipitation_model_t *cs_glob_lagr_precipitation_model
   = &_cs_glob_lagr_precipitation_model;
 
 /* lagr clogging model structure and associated pointer */
-static cs_lagr_clogging_model_t _cs_glob_lagr_clogging_model = {0, 0, 0};
+static cs_lagr_clogging_model_t _cs_glob_lagr_clogging_model = {0, 0, 0, 0};
 cs_lagr_clogging_model_t *cs_glob_lagr_clogging_model
+   = &_cs_glob_lagr_clogging_model;
+
+/* lagr clogging model structure and associated pointer */
+static cs_lagr_consolidation_model_t _cs_glob_lagr_consolidation_model = {0, 0, 0, 0};
+cs_lagr_consolidation_model_t *cs_glob_lagr_consolidation_model
    = &_cs_glob_lagr_clogging_model;
 
 /*! current time step status */
@@ -427,6 +433,12 @@ cs_f_lagr_clogging_model_pointers(cs_real_t **jamlim,
                                   cs_real_t **csthpp);
 
 void
+cs_f_lagr_consolidation_model_pointers(cs_lnum_t **iconsol,
+                                       cs_real_t **rate_consol,
+                                       cs_real_t **slope_consol,
+                                       cs_real_t **force_consol);
+
+void
 cs_f_lagr_source_terms_pointers(cs_int_t **p_ltsdyn,
                                 cs_int_t **p_ltsmas,
                                 cs_int_t **p_ltsthe,
@@ -552,6 +564,18 @@ cs_f_lagr_clogging_model_pointers(cs_real_t **jamlim,
   *jamlim = &cs_glob_lagr_clogging_model->jamlim;
   *mporos = &cs_glob_lagr_clogging_model->mporos;
   *csthpp = &cs_glob_lagr_clogging_model->csthpp;
+}
+
+void
+cs_f_lagr_consolidation_model_pointers(cs_lnum_t **iconsol,
+                                       cs_real_t **rate_consol,
+                                       cs_real_t **slope_consol,
+                                       cs_real_t **force_consol)
+{
+  *iconsol      = &cs_glob_lagr_consolidation_model->iconsol;
+  *rate_consol  = &cs_glob_lagr_consolidation_model->rate_consol;
+  *slope_consol = &cs_glob_lagr_consolidation_model->slope_consol;
+  *force_consol = &cs_glob_lagr_consolidation_model->force_consol;
 }
 
 void
@@ -1557,6 +1581,18 @@ cs_get_lagr_clogging_model(void)
 }
 
 /*----------------------------------------------------------------------------
+ * Provide access to cs_lagr_consolidation_model_t
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_lagr_consolidation_model_t *
+cs_get_lagr_consolidation_model(void)
+{
+  return &_cs_glob_lagr_consolidation_model;
+}
+
+/*----------------------------------------------------------------------------
  * Provide access to cs_lagr_time_step_t
  *
  * needed to initialize structure with GUI
@@ -1975,6 +2011,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
                       cs_glob_lagr_physico_chemical->phi_p,
                       cs_glob_lagr_physico_chemical->phi_s,
                       cs_glob_lagr_physico_chemical->cstham,
+                      cs_glob_lagr_clogging_model->csthpp,
                       cs_glob_lagr_physico_chemical->lambda_vdw);
 
   /* ====================================================================   */
@@ -2004,6 +2041,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
              &cs_glob_lagr_physico_chemical->fion,
              &cs_glob_lagr_clogging_model->jamlim,
              &cs_glob_lagr_clogging_model->mporos,
+             &cs_glob_lagr_clogging_model->diam_mean,
              tempp,
              &cs_glob_lagr_physico_chemical->valen,
              &cs_glob_lagr_physico_chemical->phi_p,
@@ -2139,6 +2177,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       /* Allocations     */
 
+      cs_lnum_t nresnew = 0;
+
       cs_real_t   *taup;
       cs_real_33_t *bx;
       cs_real_3_t *tlag, *piil;
@@ -2238,7 +2278,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
                   terbru,
                   vislen,
                   vagaus,
-                  brgaus );
+                  brgaus,
+                 &nresnew );
 
       /* Save bx values associated with particles for next pass */
 
@@ -2317,6 +2358,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
       if (cs_glob_lagr_brownian->lamvbr == 1)
         BFT_FREE(terbru);
 
+      p_set->n_particles += nresnew;
+
       /* ====================================================================   */
       /* 8.  Reperage des particules - Traitement des conditions aux limites    */
       /*     pour la position des particules */
@@ -2387,13 +2430,38 @@ cs_lagr_solve_time_step(const int         itypfb[],
       /* 11.  CALCUL STATISTIQUES  */
       /* ====================================================================   */
 
+      /* Calculation of consolidation:
+       * linear increase of the consolidation height with deposit time */
+      if (cs_glob_lagr_consolidation_model->iconsol > 0) {
+
+        for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+
+          if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_DEPOSITION_FLAG) > 0) {
+
+            cs_real_t p_depo_time = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
+            cs_real_t p_consol_height =
+              CS_MIN( cs_lagr_particles_get_real(p_set, npt, CS_LAGR_HEIGHT),
+                   cs_glob_lagr_consolidation_model->rate_consol * p_depo_time );
+            cs_lagr_particles_set_real(p_set, npt, CS_LAGR_CONSOL_HEIGHT, p_consol_height);
+            cs_lagr_particles_set_real(p_set, npt, CS_LAGR_DEPO_TIME,
+                                       p_depo_time + cs_glob_lagr_time_step->dtp);
+          }
+          else {
+            cs_lagr_particles_set_real(p_set, npt, CS_LAGR_CONSOL_HEIGHT, 0.0);
+          }
+
+        }
+
+      }
+
       if (   cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order
           && cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt)
         cs_lagr_stat_update();
 
       /*  STATISTICS FOR CLOGGING  */
       if (   cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order
-          && lagr_model->clogging == 1) {
+          && lagr_model->clogging == 1
+          && cs_glob_lagr_consolidation_model->iconsol == 1) {
 
         /* Height and time of deposit     */
 
@@ -2407,7 +2475,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 
-          if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_DEPOSITION_FLAG) != CS_LAGR_PART_IN_FLOW) {
+          if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_DEPOSITION_FLAG) == 1) {
 
             cs_lnum_t face_id = cs_lagr_particles_get_lnum
                                   (p_set, npt, CS_LAGR_NEIGHBOR_FACE_ID);
@@ -2419,7 +2487,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
               += cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
             bound_stat[lag_bdi->iclogh * n_b_faces + face_id]
               +=  cs_lagr_particles_get_real(p_set, npt, CS_LAGR_CONSOL_HEIGHT)
-                  * cs_math_pi * cs_math_sq(p_diam) / surfbn[face_id];
+                  * cs_math_pi * cs_math_sq(p_diam) * 0.25 / surfbn[face_id];
 
           }
 
@@ -2436,11 +2504,20 @@ cs_lagr_solve_time_step(const int         itypfb[],
                 / bound_stat[lag_bdi->inclgt * n_b_faces + ifac];
 
           }
-          else {
+          else if (bound_stat[lag_bdi->inclg * n_b_faces + ifac] == 0) {
 
             bound_stat[lag_bdi->iclogt * n_b_faces + ifac] = 0.0;
             bound_stat[lag_bdi->ihdiam * n_b_faces + ifac] = 0.0;
 
+          }
+          else {
+
+            bft_printf(_("   ** LAGRANGIAN MODULE:\n"
+                         "   ** Error in cs_lagr.c: inclg < 0 ! \n"
+                         "---------------------------------------------\n\n\n"
+                         "** Ifac = %d  and inclg = %d\n"
+                         "-------------------------------------------------\n"),
+                       ifac, bound_stat[lag_bdi->inclg * n_b_faces + ifac]);
           }
 
         }

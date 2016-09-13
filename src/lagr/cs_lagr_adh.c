@@ -61,6 +61,7 @@
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
 #include "cs_lagr_roughness.h"
+#include "cs_lagr_clogging.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -89,9 +90,6 @@ BEGIN_C_DECLS
 /* Cut-off distance for adhesion forces (assumed to be the Born distance) */
 static const cs_real_t  _d_cut_off = 1.65e-10;
 
-/* Characteristic retardation wavelength (m) for Hamaker constant */
-static const cs_real_t _lambda_wl = 1000.0e-9;
-
 /* Boltzmann constant */
 static const double _k_boltz = 1.38e-23;
 
@@ -108,46 +106,49 @@ static const cs_real_t _faraday_cst = 9.648e4;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
+/* VDW interaction between a sphere and a plate                               */
 /*----------------------------------------------------------------------------*/
 
 static void
-_vdwsp(cs_real_t *distp,
+_vdwsp(cs_real_t  cstham,
+       cs_real_t  lambda_vdw,
+       cs_real_t *distp,
        cs_real_t *rpart,
        cs_real_t *var)
 {
-  cs_lagr_physico_chemical_t *lag_pc = cs_glob_lagr_physico_chemical;
-
-  if (*distp < _lambda_wl / 2.0 / cs_math_pi)
-    *var = - lag_pc->cstham * *rpart / (6.0 * *distp)
-           * (1.0 / (1.0 + 14.0 * *distp / _lambda_wl + 5.0 * cs_math_pi / 4.9 * pow (*distp, 3.0)
-                   / _lambda_wl / pow (*rpart, 2.0)));
+  if (*distp < lambda_vdw / 2.0 / cs_math_pi)
+    *var = - cstham * *rpart / (6.0 * *distp)
+           * (1.0 / (1.0 + 14.0 * *distp / lambda_vdw + 5.0 * cs_math_pi / 4.9 * pow (*distp, 3.0)
+                   / lambda_vdw / pow (*rpart, 2.0)));
   else
-    *var = lag_pc->cstham * (2.45 / 60.0 / cs_math_pi * _lambda_wl
+    *var = cstham * (2.45 / 60.0 / cs_math_pi * lambda_vdw
                      * (  (*distp - *rpart) / pow (*distp, 2)
                         - (*distp + 3.0 * *rpart) / pow ((*distp + 2.0 * *rpart), 2.0))
-                     - 2.17 / 720.0 / pow (cs_math_pi, 2) * pow (_lambda_wl, 2.0)
+                     - 2.17 / 720.0 / pow (cs_math_pi, 2) * pow (lambda_vdw, 2.0)
                        * ((*distp - 2.0* *rpart) / pow (*distp, 3.0) - (*distp + 4.0 * *rpart) / pow ((*distp + 2.0 * *rpart), 3.0))
-                     + 0.59 / 5040.0 / pow (cs_math_pi, 3.0) * pow (_lambda_wl, 3.0)
+                     + 0.59 / 5040.0 / pow (cs_math_pi, 3.0) * pow (lambda_vdw, 3.0)
                        * ((*distp - 3.0 * *rpart) / pow (*distp, 4.0) - (*distp + 5.0 * *rpart) / pow ((*distp + 2.0 * *rpart), 4.0)));
 
 }
 
 /*----------------------------------------------------------------------------*/
+/* VDW interaction between two spheres                                        */
 /*----------------------------------------------------------------------------*/
 
 static void
-_vdwsa(cs_real_t *distcc,
+_vdwss(cs_real_t  cstham,
+       cs_real_t  lambda_vdw,
+       cs_real_t *distcc,
        cs_real_t *rpart1,
        cs_real_t *rpart2,
        cs_real_t *var)
 {
 
-  cs_lagr_physico_chemical_t *lag_pc = cs_glob_lagr_physico_chemical;
-  *var = - lag_pc->cstham * *rpart1 * *rpart2
+  *var = - cstham * *rpart1 * *rpart2
         / (6.0 * (*distcc - *rpart1 - *rpart2) * (*rpart1 + *rpart2))
         * (  1.0
-           -   5.32 * (*distcc - *rpart1 - *rpart2) / _lambda_wl
-             * log (1.0 + _lambda_wl / (*distcc - *rpart1 - *rpart2) / 5.32));
+           -   5.32 * (*distcc - *rpart1 - *rpart2) / lambda_vdw
+             * log (1.0 + lambda_vdw / (*distcc - *rpart1 - *rpart2) / 5.32));
 
 }
 
@@ -157,6 +158,8 @@ _vdwsa(cs_real_t *distcc,
 static void
 _edlsp(cs_real_t *distp,
        cs_real_t *rpart,
+       cs_real_t  phi_p,
+       cs_real_t  phi_s,
        cs_real_t  tempf,
        cs_real_t *var)
 {
@@ -167,8 +170,8 @@ _edlsp(cs_real_t *distp,
                 / (lag_pc->epseau * _free_space_permit * cs_physical_constants_r * tempf), -0.5);
 
   /* Reduced zeta potential    */
-  cs_real_t lphi1  = lag_pc->valen * charge * lag_pc->phi_p / _k_boltz / tempf;
-  cs_real_t lphi2  = lag_pc->valen * charge * lag_pc->phi_s / _k_boltz / tempf;
+  cs_real_t lphi1  = lag_pc->valen * charge * phi_p / _k_boltz / tempf;
+  cs_real_t lphi2  = lag_pc->valen * charge * phi_s / _k_boltz / tempf;
 
   /* xtended reduced zeta potential */
   /*  (following the work from Ohshima et al, 1982, JCIS, 90, 17-26)   */
@@ -203,9 +206,11 @@ _edlsp(cs_real_t *distp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_edlsa(cs_real_t *distcc,
+_edlss(cs_real_t *distcc,
        cs_real_t *rpart1,
        cs_real_t *rpart2,
+       cs_real_t  phi1,
+       cs_real_t  phi2,
        cs_real_t  tempf,
        cs_real_t *var)
 {
@@ -217,8 +222,8 @@ _edlsa(cs_real_t *distcc,
 
   /* Reduced zeta potential    */
 
-  cs_real_t lphi1  = lag_pc->valen * charge * lag_pc->phi_p / _k_boltz / tempf;
-  cs_real_t lphi2  = lag_pc->valen * charge * lag_pc->phi_s / _k_boltz / tempf;
+  cs_real_t lphi1  = lag_pc->valen * charge * phi1 / _k_boltz / tempf;
+  cs_real_t lphi2  = lag_pc->valen * charge * phi2 / _k_boltz / tempf;
 
   /* xtended reduced zeta potential */
   /*  (following the work from Ohshima et al, 1982, JCIS, 90, 17-26)   */
@@ -279,6 +284,7 @@ cs_lagr_adh(cs_lnum_t   ip,
   cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t *p_am = p_set->p_am;
   unsigned char *part = p_set->p_buffer + p_am->extents * ip;
+  cs_lagr_physico_chemical_t *lag_pc = cs_glob_lagr_physico_chemical;
 
   /*     step = step used to calculate the adhesion force following    */
   /*                         F = U(_d_cut_off+step)-U(_d_cut_off-step)/(2*step)     */
@@ -524,8 +530,8 @@ cs_lagr_adh(cs_lnum_t   ip,
     cs_real_t distp = dismin + _d_cut_off + step * (3 - 2 * (np+1));
 
     cs_real_t uvdwsp, uedlsp;
-    _vdwsp(&distp, &rpart, &uvdwsp);
-    _edlsp(&distp, &rpart, tempf, &uedlsp);
+    _vdwsp(lag_pc->cstham, lag_pc->lambda_vdw, &distp, &rpart, &uvdwsp);
+    _edlsp(&distp, &rpart, lag_pc->phi_p, lag_pc->phi_s, tempf, &uedlsp);
 
     udlvor[np] = (uvdwsp + uedlsp) * (1 - scovag - scovap);
 
@@ -544,8 +550,8 @@ cs_lagr_adh(cs_lnum_t   ip,
 
     cs_real_t uvdwss, uedlss;
 
-    _vdwsa(&distcc, &rpart, &rayasp, &uvdwss);
-    _edlsa(&distcc, &rpart, &rayasp, tempf, &uedlss);
+    _vdwss(lag_pc->cstham, lag_pc->lambda_vdw, &distcc, &rpart, &rayasp, &uvdwss);
+    _edlss(&distcc, &rpart, &rayasp, lag_pc->phi_p, lag_pc->phi_s, tempf, &uedlss);
 
     udlvor[np] = uvdwss + uedlss;
 
@@ -569,8 +575,8 @@ cs_lagr_adh(cs_lnum_t   ip,
 
     cs_real_t uvdwss, uedlss;
 
-    _vdwsa(&distcc, &rpart, &rayasg, &uvdwss);
-    _edlsa(&distcc, &rpart, &rayasg, tempf, &uedlss);
+    _vdwss(lag_pc->cstham, lag_pc->lambda_vdw, &distcc, &rpart, &rayasg, &uvdwss);
+    _edlss(&distcc, &rpart, &rayasg, lag_pc->phi_p, lag_pc->phi_s, tempf, &uedlss);
 
     udlvor[np] = uvdwss + uedlss;
 
@@ -609,7 +615,7 @@ cs_lagr_adh(cs_lnum_t   ip,
     /* In the sphere-plate case, we use the deformation given by the DMT theory,
      * which is close to our approach  */
 
-    cs_real_t omsurf = cs_glob_lagr_physico_chemical->cstham / (24.0 * cs_math_pi * pow (_d_cut_off, 2));
+    cs_real_t omsurf = lag_pc->cstham / (24.0 * cs_math_pi * pow (_d_cut_off, 2));
     dismom = pow ((4.0 * cs_math_pi * omsurf * (pow (rpart, 2.0)) / modyeq), (1.0 / 3.0));
     /* dismom = (12.0d0 * cs_math_pi * omsurf * (rpart**2)/modyeq)**(1.0d0/3.0d0) */
 
@@ -621,5 +627,68 @@ cs_lagr_adh(cs_lnum_t   ip,
 
 }
 
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the adhesion force and adhesion energy
+ *        between two particles
+ *
+ * \param[in]  dpart            particle diameter
+ * \param[in]  tempf            thermal scalar value at current time step
+ * \param[out] adhesion_energ   particle adhesion energy
+ * \param[out] adhesion_force   particle adhesion force
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_adh_pp(cs_real_t   dpart,
+               cs_real_t   tempf,
+               cs_real_t  *adhesion_energ,
+               cs_real_t  *adhesion_force)
+{
+  /* ================================================================  */
+  /* 0.    initialization */
+  /* ================================================================  */
+
+  cs_lagr_physico_chemical_t *lag_pc = cs_glob_lagr_physico_chemical;
+  cs_lagr_clogging_model_t *lag_cm = cs_glob_lagr_clogging_model;
+
+  cs_real_t step = 1e-11;
+
+  /* ================================================================  */
+  /* 1.    calculation of the adhesion force  */
+  /* ================================================================  */
+
+  cs_real_t rpart = 0.5 * dpart;
+
+  /* Sum of {particle-plane} and {particle-asperity} energies     */
+
+  cs_real_t udlvor[2];
+
+  /* Interaction between the spheres */
+
+  for (cs_lnum_t np = 0; np < 2; np++) {
+
+    udlvor[np] = 0.0;
+
+    cs_real_t distcc = _d_cut_off + step * (3 - 2 * (np + 1)) + 2.0 * rpart;
+
+    cs_real_t uvdwss, uedlss;
+
+    _vdwss(lag_cm->csthpp, lag_pc->lambda_vdw, &distcc, &rpart, &rpart, &uvdwss);
+    _edlss(&distcc, &rpart, &rpart, lag_pc->phi_p, lag_pc->phi_p, tempf, &uedlss);
+
+    udlvor[np] = uvdwss + uedlss;
+
+  }
+
+  *adhesion_force = CS_MAX( -(udlvor[1] - udlvor[0]) / (2.0 * step), 0.0);
+
+  *adhesion_energ  = CS_MAX(-udlvor[0], 0.0);
+
+}
 
 END_C_DECLS

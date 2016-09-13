@@ -766,7 +766,7 @@ cs_lagr_particle_attr_initialize(void)
 
   if (lagr_model->clogging == 1) {
 
-    attr_keys[CS_LAGR_CLUSTER_NB_PART][0] = CS_LAGR_P_IPRP;
+    attr_keys[CS_LAGR_CLUSTER_NB_PART][0] = CS_LAGR_P_RPRP;
     attr_keys[CS_LAGR_CLUSTER_NB_PART][1] = ++loc_count;
 
     attr_keys[CS_LAGR_DEPO_TIME][0] = CS_LAGR_P_RPRP;

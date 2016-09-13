@@ -453,10 +453,15 @@ cs_user_lagr_model(void)
 
   /* Parameters for the particle clogging model */
 
+  /* Mean diameter*/
+  cs_glob_lagr_clogging_model->diam_mean = 1.0e-6;
+
   /* Jamming limit */
   cs_glob_lagr_clogging_model->jamlim      = 0.74;
 
-  /* Minimal porosity */
+  /* Minimal porosity
+   * from 0.366 to 0.409 for random packings
+   * equal to 0.26 for close packings */
   cs_glob_lagr_clogging_model->mporos      = 0.366;
 
   /* Hamaker constant for the particle/fluid/particle system */
@@ -482,6 +487,35 @@ cs_user_lagr_model(void)
     cs_glob_lagr_time_scheme->isttio   = 1;
 
   }
+
+  /* ==========================================================================
+   * 14ter. Activation of the consolidation model
+   * ========================================================================== */
+
+  /* Activation of the consolidation model
+     (default off: 0 ; on: 1) */
+
+  /* Caution: valid only for multilayer deposition: */
+  if (cs_glob_lagr_model->clogging > 0)
+    cs_glob_lagr_model->consolidation = 0;
+
+  /* Parameters for the particle consolidation model */
+
+  /* Consolidated height hconsol calculated using the deposit time
+   * hconsol = t_depo * rconsol
+   * Adhesion calculated using the following formula:
+   * Fadh = F_consol + (F_DLVO - F_consol)
+   *        * (0.5+0.5*tanh((h-hconsol)/kconsol/hconsol))
+   */
+
+  /* Consolidated force (N) */
+  cs_glob_lagr_consolidation_model->force_consol = 3.0e-8;
+
+  /* Slope of consolidation (->0 for a two-layer system) */
+  cs_glob_lagr_consolidation_model->slope_consol = 0.1;
+
+  /* Consolidation rate (m/s) */
+  cs_glob_lagr_consolidation_model->rate_consol  = 4.0e-3;
 
   /*==========================================================================
    * 15. Activation of the precipitation/disolution model

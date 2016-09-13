@@ -366,7 +366,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                                 _("in Lagrangian module"),
                                 "cs_glob_lagr_time_scheme->iilagr",
                                 lagr_time_scheme->iilagr,
-                                1, 3);
+                                1, 4);
 
   /* Restart needed if computation on frozen field.
      Note that for the Lagrangian module, frozen field also includes scalars. */

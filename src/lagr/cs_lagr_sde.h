@@ -70,7 +70,8 @@ cs_lagr_sde(cs_real_t      dt_p,
             cs_real_t      terbru[],
             cs_real_t      vislen[],
             cs_real_33_t  *vagaus,
-            cs_real_t     *brgaus );
+            cs_real_t     *brgaus,
+            cs_lnum_t     *nresnew );
 
 /*----------------------------------------------------------------------------*/
 /*!

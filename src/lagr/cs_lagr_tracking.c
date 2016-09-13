@@ -1443,10 +1443,9 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
     /* Computation of the energy barrier */
     cs_real_t  energt = 0.;
 
-    cs_lagr_barrier(particle,
-                    p_am,
-                    cur_cell_id,
-                    &energt);
+    cs_lagr_barrier_pp(particle_diameter,
+                       cur_cell_id,
+                       &energt);
 
      /* Deposition criterion: E_kin > E_barr */
     if (energ > energt * 0.5 * particle_diameter) {
@@ -1792,8 +1791,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                                *  particle_stat_weight / face_area;
 
           *deposit_height_mean +=   particle_height* pi * pow(depositing_radius,2)
-                                  / face_area;
-          *deposit_height_var +=   pow(particle_height * pi / face_area, 2)
+                                 *  particle_stat_weight / face_area;
+          *deposit_height_var +=   pow(particle_height * pi
+                                 * particle_stat_weight / face_area, 2)
                                  * pow(depositing_radius,4);
 
           bound_stat[cs_glob_lagr_boundary_interactions->inclg
@@ -1839,7 +1839,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
           for (i = 0; i < particles->n_particles; i++) {
 
-            if (_get_tracking_info(particles, i)->state >= CS_LAGR_PART_OUT)
+            if (CS_LAGR_PART_TREATED
+                <= _get_tracking_info(particles, i)->state
+                <= CS_LAGR_PART_TO_SYNC)
               continue;
 
             cur_part = (void *)(particles->p_buffer + p_am->extents * i);
@@ -1858,7 +1860,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
             cs_real_t cur_part_diameter
               = cs_lagr_particle_get_real(cur_part, p_am, CS_LAGR_DIAMETER);
 
-            if ((cur_part_depo) && (cur_part_close_face_id == face_id)) {
+            if ((cur_part_depo==1) && (cur_part_close_face_id == face_id)) {
               scov_cdf +=   (pi * pow(cur_part_diameter,2) / 4.)
                           *  cur_part_stat_weight / face_area;
               if (scov_cdf >= scov_rand)
@@ -1899,13 +1901,17 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
           cs_real_t cur_part_height
             = cs_lagr_particle_get_real(cur_part, p_am, CS_LAGR_HEIGHT);
 
-          cs_lnum_t cur_part_cluster_nb_part
-            = cs_lagr_particle_get_lnum(cur_part, p_am, CS_LAGR_CLUSTER_NB_PART);
+          cs_real_t cur_part_cluster_nb_part
+            = cs_lagr_particle_get_real(cur_part, p_am, CS_LAGR_CLUSTER_NB_PART);
+
+          cs_real_t particle_cluster_nb_part
+            = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART);
 
           *deposit_height_mean -=   cur_part_height*pi*pow(cur_part_diameter, 2)
-                                  / (4.0*face_area);
+                                  * cur_part_stat_weight / (4.0*face_area);
           *deposit_height_var -=   pow(cur_part_height*pi
-                                 / (4.0*face_area),2)*pow(cur_part_diameter, 4);
+                                  * cur_part_stat_weight / (4.0*face_area),2)
+                                  * pow(cur_part_diameter, 4);
 
           if (*surface_coverage >= limit) {
 
@@ -1913,14 +1919,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                                           cur_part_height
                                       +  (  pow(particle_diameter,3)
                                           / pow(cur_part_diameter,2)
-                                          / (1. - min_porosity)));
-
-
-            cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_STAT_WEIGHT,
-                                        (   cur_part_stat_weight * cur_part_mass
-                                         +  particle_stat_weight * particle_mass)
-                                      / (cur_part_mass + particle_mass));
-
+                                            * particle_stat_weight
+                                            / cur_part_stat_weight) );
           }
           else {
             *surface_coverage -= (pi * pow(cur_part_diameter,2)/4.)
@@ -1929,17 +1929,11 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
             cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_DIAMETER,
                                       pow (  pow(cur_part_diameter,3)
                                            + pow(particle_diameter,3)
-                                           / (1. - min_porosity) , 1./3.));
-
-            cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_STAT_WEIGHT,
-                                      ( (cur_part_stat_weight * cur_part_mass
-                                       + particle_stat_weight * particle_mass))
-                                       / (cur_part_mass + particle_mass) );
+                                           * particle_stat_weight
+                                             / cur_part_stat_weight , 1./3.));
 
             cur_part_diameter    = cs_lagr_particle_get_real(cur_part, p_am,
                                                              CS_LAGR_DIAMETER);
-            cur_part_stat_weight = cs_lagr_particle_get_real(cur_part, p_am,
-                                                             CS_LAGR_STAT_WEIGHT);
 
             *surface_coverage +=   (pi * pow(cur_part_diameter,2)/4.)
                                  * cur_part_stat_weight / face_area;
@@ -1949,9 +1943,11 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
           }
 
           cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_MASS,
-                                    cur_part_mass + particle_mass);
-          cs_lagr_particle_set_lnum(cur_part, p_am, CS_LAGR_CLUSTER_NB_PART,
-                                    cur_part_cluster_nb_part+1);
+                                    cur_part_mass + particle_mass
+                                    * particle_stat_weight / cur_part_stat_weight);
+          cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_CLUSTER_NB_PART,
+                                    cur_part_cluster_nb_part+particle_cluster_nb_part
+                                    * particle_stat_weight / cur_part_stat_weight);
 
           move_particle = CS_LAGR_PART_MOVE_OFF;
           particle_state = CS_LAGR_PART_OUT;
@@ -1962,9 +1958,10 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                                                         CS_LAGR_HEIGHT);
 
           *deposit_height_mean +=   cur_part_height*pi*pow(cur_part_diameter,2)
-                                  / (4.0*face_area);
+                                  * cur_part_stat_weight / (4.0*face_area);
           *deposit_height_var +=    pow(cur_part_height*pi
-                                  / (4.0*face_area),2)*pow(cur_part_diameter,4);
+                                  * cur_part_stat_weight / (4.0*face_area),2)
+                                  * pow(cur_part_diameter,4);
         }
 
       }

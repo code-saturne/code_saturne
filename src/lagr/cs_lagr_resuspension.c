@@ -167,160 +167,339 @@ cs_lagr_resuspension(void)
       temp = cs_glob_fluid_properties->t0;
 
     cs_lnum_t flag = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG);
-    if (flag == CS_LAGR_PART_DEPOSITED)
-      /* The particle has just deposited     */
-      /* The adhesion force is calculated    */
-      cs_lagr_adh(ip, temp, &adhesion_energ);
+    cs_real_t diam_mean = cs_glob_lagr_clogging_model->diam_mean;
 
-    else if (flag == CS_LAGR_PART_ROLLING) {
+    /* Monolayer resuspension model */
+    if (face_id > 0 &&
+        bound_stat[face_id + n_faces * lag_bi->ihdepm] < diam_mean ) {
 
-      /* The particle is rolling   */
-
-      /* if the number of great asperities   */
-      /* is null it is marked for a possible collision */
-      if (cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) == 0)
-        test_colli = 1;
-
-      cs_real_t disp_norm = cs_lagr_particle_get_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM);
-
-      if (disp_norm > p_diam && disp_norm < 2.0 * p_diam) {
-
-        /* If the particle has a displacement approximately   *
-         * equal to a diameter, recalculation of the adhesion force     */
-
-        cs_lagr_particle_set_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM, 0.0);
-
+      if (flag == CS_LAGR_PART_DEPOSITED)
+        /* The particle has just deposited     */
+        /* The adhesion force is calculated    */
         cs_lagr_adh(ip, temp, &adhesion_energ);
 
-        if (test_colli == 1
-            && cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) > 0) {
+      else if (flag == CS_LAGR_PART_ROLLING) {
+
+        /* The particle is rolling   */
+
+        /* if the number of great asperities   */
+        /* is null it is marked for a possible collision */
+        if (cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) == 0)
+          test_colli = 1;
+
+        cs_real_t disp_norm = cs_lagr_particle_get_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM);
+
+        if (disp_norm > p_diam && disp_norm < 2.0 * p_diam) {
+
+          /* If the particle has a displacement approximately   *
+           * equal to a diameter, recalculation of the adhesion force     */
+
+          cs_lagr_particle_set_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM, 0.0);
+
+          cs_lagr_adh(ip, temp, &adhesion_energ);
+
+          if (   test_colli == 1
+                 && cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) > 0) {
 
           cs_real_t kinetic_energy =  0.5 * p_mass
                                    * cs_math_3_dot_product(part_vel, part_vel);
 
-          if (kinetic_energy > adhesion_energ) {
-
-            /* The particle is resuspended and its kinetic energy is totally converted
-             * along the wall-normal distance                                           */
-
-
-            cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                      CS_LAGR_PART_IN_FLOW);
-            cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
-            cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
-            cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES, 0);
-            cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, 0);
-            cs_lagr_particle_set_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM, 0.0);
-
-            cs_real_t norm_face = fvq->b_face_surf[face_id];
-
-            cs_real_t norm_velocity = sqrt(cs_math_3_dot_product(part_vel,
-                                                                 part_vel));
-
-            for (int id = 0; id < 3; id++)
-              part_vel[id] = -norm_velocity / norm_face
-                            * b_face_normal[face_id][id];
-
-            /* Update of the number and weight of resuspended particles     */
-            p_set->n_part_resusp += 1;
-            p_set->weight_resusp += p_stat_weight;
-
-            bound_stat[lag_bi->ires   * n_faces + face_id] +=   p_stat_weight;
-            bound_stat[lag_bi->iflres * n_faces + face_id] +=   p_stat_weight * p_mass / norm_face;
-            bound_stat[lag_bi->iflm   * n_faces + face_id] += - p_stat_weight * p_mass / norm_face;
-
-          }
-
-        }
-
-      }
-      else if (disp_norm >= 2.0 * p_diam) {
-
-        cs_lnum_t ndiam = (cs_lnum_t)(disp_norm / p_diam);
-
-        cs_lnum_t ii = 1;
-        while (   ii <= ndiam
-               && (cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG)
-                 == CS_LAGR_PART_ROLLING)) {
-
-          cs_lagr_adh(ip, temp, &adhesion_energ);
-
-          /* Reconstruct an estimate of the particle velocity   */
-          /* at the current sub-time-step assuming linear variation  */
-          /* (constant acceleration)   */
-
-          cs_real_t v_part_t = sqrt(cs_math_3_dot_product(prev_part_vel,
-                                                          prev_part_vel));
-          cs_real_t v_part_t_dt = sqrt(cs_math_3_dot_product(part_vel,
-                                                             part_vel));
-
-          cs_real_t sub_dt = cs_glob_lagr_time_step->dtp / ndiam;
-
-          cs_real_t v_part_inst = v_part_t + sub_dt * (v_part_t_dt + v_part_t) / cs_glob_lagr_time_step->dtp;
-
-          /* Reconstruct an estimate of the angular velocity    */
-          /* at the current sub-time-step   */
-
-          cs_real_t omep = v_part_inst / (p_diam * 0.5);
-
-          /* Variation of the angular velocity due to */
-          /* the update of the adhesion torque   */
-
-          cs_real_t domep =  cs_lagr_particle_get_real(part, p_am, CS_LAGR_ADHESION_TORQUE)
-                           / (7.0 / 5.0 * p_mass * pow(p_diam * 0.5, 2));
-
-          if ((domep * sub_dt) > omep) {
-
-            cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                      CS_LAGR_PART_NO_MOTION);
-            part_vel[0] = 0.0;
-            part_vel[1] = 0.0;
-            part_vel[2] = 0.0;
-
-          }
-
-          if (   test_colli == 1
-              && cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) > 0) {
-
-            cs_real_t kinetic_energy =  0.5 * p_mass
-                                      * (  pow(part_vel[0], 2)
-                                         + pow(part_vel[1], 2)
-                                         + pow(part_vel[2], 2));
-
             if (kinetic_energy > adhesion_energ) {
 
-              /* The particle is resuspended    */
-              /* and its kinetic energy is totally converted   */
-              /* along the wall-normal distance */
+              /* The particle is resuspended
+               * with an angle (determined using the large-scale asperity radius) */
+
+
               cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                        CS_LAGR_PART_IN_FLOW);
+                                      CS_LAGR_PART_IN_FLOW);
               cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
               cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
               cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES, 0);
               cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, 0);
               cs_lagr_particle_set_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM, 0.0);
 
-              cs_real_t norm_face = fvq->b_face_surf[face_id];
+            cs_real_t norm_face = fvq->b_face_surf[face_id];
 
-              cs_real_t norm_velocity = sqrt(cs_math_3_dot_product(part_vel,
-                                                                   part_vel));
+              cs_real_t norm_velocity = sqrt(pow(part_vel[0], 2) + pow (part_vel[1], 2) + pow (part_vel[2], 2));
 
-              for (int id = 0; id < 3; id++)
-                part_vel[id] = -norm_velocity / norm_face
-                              * b_face_normal[face_id][id];
+              cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)*2.0/p_mass);
+              cs_real_t angle_reent =
+                acos(p_diam * 0.5 /
+                     (p_diam * 0.5 + cs_glob_lagr_reentrained_model->rayasg));
+
+              for (cs_lnum_t id = 0; id < 3; id++) {
+                part_vel[id] *= norm_reent / norm_velocity * cos(angle_reent);
+                part_vel[id] -= norm_reent * sin(angle_reent) / norm_face
+                  * fvq->b_face_normal[face_id * 3 +id];
+              }
 
               /* Update of the number and weight of resuspended particles     */
               p_set->n_part_resusp += 1;
               p_set->weight_resusp += p_stat_weight;
+
+              if (lag_bi->iflmbd == 1) {
+
+                bound_stat[lag_bi->ires   * n_faces + face_id] +=   p_stat_weight;
+                bound_stat[lag_bi->iflres * n_faces + face_id] +=   p_stat_weight * p_mass / norm_face;
+                bound_stat[lag_bi->iflm   * n_faces + face_id] += - p_stat_weight * p_mass / norm_face;
+              }
+
+            }
+
+          }
+
+        }
+        else if (disp_norm >= 2.0 * p_diam) {
+
+          cs_lnum_t ndiam = (cs_lnum_t)(disp_norm / p_diam);
+
+          cs_lnum_t ii = 1;
+          while (   ii <= ndiam
+                    && (cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG) ==
+                        CS_LAGR_PART_ROLLING)) {
+
+            cs_lagr_adh(ip, temp, &adhesion_energ);
+
+            /* Reconstruct an estimate of the particle velocity   */
+            /* at the current sub-time-step assuming linear variation  */
+            /* (constant acceleration)   */
+
+            cs_real_t v_part_t    = sqrt(  pow(prev_part_vel[0], 2)
+                                           + pow(prev_part_vel[1], 2)
+                                           + pow(prev_part_vel[2], 2));
+            cs_real_t v_part_t_dt = sqrt(  pow(part_vel[0], 2)
+                                           + pow(part_vel[1], 2)
+                                           + pow(part_vel[2], 2));
+
+            cs_real_t sub_dt = cs_glob_lagr_time_step->dtp / ndiam;
+
+            cs_real_t v_part_inst = v_part_t + sub_dt * (v_part_t_dt + v_part_t) / cs_glob_lagr_time_step->dtp;
+
+            if (   test_colli == 1
+                   && cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) > 0) {
+
+              cs_real_t kinetic_energy =  0.5 * p_mass
+                * (  pow(part_vel[0], 2)
+                     + pow(part_vel[1], 2)
+                     + pow(part_vel[2], 2));
+
+              if (kinetic_energy > adhesion_energ) {
+
+                /* The particle is resuspended    */
+                /* and its kinetic energy is totally converted   */
+                /* along the wall-normal distance */
+                cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
+                                          CS_LAGR_PART_IN_FLOW);
+                cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
+                cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
+                cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES, 0);
+                cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, 0);
+                cs_lagr_particle_set_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM, 0.0);
+
+                cs_real_t norm_face = cs_glob_mesh_quantities->b_face_surf[face_id];
+
+                cs_real_t norm_velocity = sqrt(pow(part_vel[0], 2) + pow (part_vel[1], 2) + pow (part_vel[2], 2));
+
+                cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)*2.0/p_mass);
+                cs_real_t angle_reent =
+                  acos(p_diam * 0.5 /
+                       (p_diam * 0.5 + cs_glob_lagr_reentrained_model->rayasg));
+
+                for (cs_lnum_t id = 0; id < 3; id++) {
+                  part_vel[id] *= norm_reent / norm_velocity * cos(angle_reent);
+                  part_vel[id] -= norm_reent * sin(angle_reent) / norm_face
+                    * cs_glob_mesh_quantities->b_face_normal[face_id * 3 +id];
+                }
+
+                /* Update of the number and weight of resuspended particles     */
+                p_set->n_part_resusp += 1;
+                p_set->weight_resusp += p_stat_weight;
+
+                if (lag_bi->iflmbd == 1) {
+
+                  bound_stat[lag_bi->ires   * n_faces + face_id] +=   p_stat_weight;
+                  bound_stat[lag_bi->iflres * n_faces + face_id] +=   p_stat_weight * p_mass / norm_face;
+                  bound_stat[lag_bi->iflm   * n_faces + face_id] += - p_stat_weight * p_mass / norm_face;
+
+                }
+
+              }
+
+              if (cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) == 0)
+                test_colli = 1;
+
+            }
+
+            ii++;
+
+          }
+
+        }
+
+      }
+      /* Treatment of internal deposition and user imposed motion */
+      else if (flag == CS_LAGR_PART_IMPOSED_MOTION) {
+
+        /* Reorient the face so that it is the outwarding normal */
+        int reorient_face = 1;
+        if (iel == mesh->i_face_cells[face_id][1])
+          reorient_face = -1;
+
+        /* Adhesion forces not implemented */
+
+        /* Gravity forces */
+        cs_real_3_t gravity = {cs_glob_physical_constants->gx,
+                               cs_glob_physical_constants->gy,
+                               cs_glob_physical_constants->gz};
+
+        cs_real_t fgrav
+          =   p_mass * reorient_face
+            * cs_math_3_dot_product(gravity, i_face_normal[face_id]);
+
+        /* Forces due to pressure difference */
+        cs_lnum_t c_id1 = mesh->i_face_cells[face_id][0];
+        cs_lnum_t c_id2 = mesh->i_face_cells[face_id][1];
+
+        if (iel == c_id2) {
+          c_id2 = c_id1;
+          c_id1 = iel;
+        }
+
+        /* Warning: dynamic pressure, FIXME for iphydr = 1 */
+        cs_real_t press_out = cs_glob_lagr_extra_module->pressure->val[c_id1];
+        cs_real_t press_in = cs_glob_lagr_extra_module->pressure->val[c_id2];
+
+        cs_real_t fpres = (press_out - press_in) * cs_math_pi * pow(p_diam, 2) * 0.25
+          * cs_lagr_particle_get_real(part, p_am, CS_LAGR_FOULING_INDEX);
+
+        /* Resuspension criterion: Fgrav + Fpres < 0 */
+        if ((fgrav + fpres) < 0.) {
+          cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
+                                  CS_LAGR_PART_IN_FLOW);
+          /* TODO: impose particle velocity? Do some stats? */
+        }
+      }
+    } /* Enf of monolayer resuspension */
+    else {
+
+      /* Treatment of multilayer resuspension */
+
+      if (flag == CS_LAGR_PART_DEPOSITED)
+        /* The particle has just deposited     */
+        /* The adhesion force is calculated    */
+        cs_lagr_adh(ip, temp, &adhesion_energ);
+
+      else if (flag == CS_LAGR_PART_ROLLING){
+
+        /* The cluster is rolling   */
+
+        cs_real_t norm_face = cs_glob_mesh_quantities->b_face_surf[face_id];
+
+        /*  Mean distance between protruding clusters */
+        cs_real_t cluster_spacing;
+        if (bound_stat[face_id + n_faces * lag_bi->inclg] < 0 ) {
+
+          bft_error(__FILE__, __LINE__, 0,
+                    _(" Error in %s: inclg < 0 \n"
+                      "Face number: %d, Particle number %d \n"),
+                    __func__,
+                    face_id, ip);
+
+        }
+        else if (bound_stat[face_id + n_faces * lag_bi->inclg] == 0 )
+          cluster_spacing = sqrt(norm_face);
+
+        else
+          cluster_spacing = sqrt( 2.0 * norm_face /
+                                  bound_stat[face_id + n_faces * lag_bi->inclg] );
+
+        cs_real_t disp_norm = cs_lagr_particle_get_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM);
+
+        cs_lnum_t ndiam = (cs_lnum_t)(disp_norm / cluster_spacing);
+
+        cs_lnum_t ii = 1;
+        while (   ii <= ndiam
+                  && (cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG) ==
+                      CS_LAGR_PART_ROLLING)) {
+
+          /* Reconstruct an estimate of the kinetic energy   */
+          /* at the current sub-time-step assuming a linear variation  */
+
+          cs_real_t kinetic_energy_prev = 0.5 * p_mass * ( pow(prev_part_vel[0], 2) +
+                                                           pow(prev_part_vel[1], 2) +
+                                                           pow(prev_part_vel[2], 2));
+          cs_real_t kinetic_energy_cur = 0.5 * p_mass * ( pow(part_vel[0], 2) +
+                                                           pow(part_vel[1], 2) +
+                                                           pow(part_vel[2], 2));
+
+          cs_real_t kinetic_energy = kinetic_energy_prev
+            + ii / ndiam * (kinetic_energy_cur - kinetic_energy_prev);
+
+          /* Adhesion energy upon rocking */
+
+          cs_real_t adhes_energ, adhes_force, adhes_torque;
+          cs_lagr_adh_pp(p_diam, temp, &adhes_energ, &adhes_force);
+          /* Average number of contact in a cluster */
+          cs_real_t ncont_pp = pow(p_diam/diam_mean, 2);
+
+          cs_lnum_t ncont = 1;
+
+          if (ncont_pp > 600.0) {
+            cs_real_t rtmp;
+            cs_random_normal(1, &rtmp);
+            ncont = (int)ncont_pp + sqrt(ncont_pp) * rtmp;
+          }
+          else {
+            cs_random_poisson(1, ncont_pp, &ncont);
+          }
+          ncont = CS_MAX(1, ncont);
+          cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, ncont);
+
+          adhes_energ *= ncont;
+          adhes_force *= ncont ;
+          cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, adhes_force);
+
+          adhes_torque = adhes_force * p_diam * 0.5;
+          cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_TORQUE, adhes_torque);
+
+          if (kinetic_energy > adhesion_energ) {
+
+            /* The particle is resuspended    */
+            /* and its kinetic energy is totally converted   */
+            /* along the wall-normal distance */
+            cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG, CS_LAGR_PART_IN_FLOW);
+            cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
+            cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
+            cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES, 0);
+            cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, 0);
+            cs_lagr_particle_set_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM, 0.0);
+
+            cs_real_t norm_face = cs_glob_mesh_quantities->b_face_surf[face_id];
+
+            cs_real_t norm_velocity = sqrt(pow(part_vel[0], 2) + pow (part_vel[1], 2) + pow (part_vel[2], 2));
+
+            cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)*2.0/p_mass);
+            cs_real_t angle_reent =
+              acos(p_diam * 0.5 /
+                   (p_diam * 0.5 + cs_glob_lagr_reentrained_model->rayasg));
+
+            for (cs_lnum_t id = 0; id < 3; id++) {
+              part_vel[id] *= norm_reent / norm_velocity * cos(angle_reent);
+              part_vel[id] -= norm_reent * sin(angle_reent) / norm_face
+                * cs_glob_mesh_quantities->b_face_normal[face_id * 3 +id];
+            }
+
+            /* Update of the number and weight of resuspended particles     */
+            p_set->n_part_resusp += 1;
+            p_set->weight_resusp += p_stat_weight;
+
+            if (lag_bi->iflmbd == 1) {
 
               bound_stat[lag_bi->ires   * n_faces + face_id] +=   p_stat_weight;
               bound_stat[lag_bi->iflres * n_faces + face_id] +=   p_stat_weight * p_mass / norm_face;
               bound_stat[lag_bi->iflm   * n_faces + face_id] += - p_stat_weight * p_mass / norm_face;
 
             }
-
-            if (cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) == 0)
-              test_colli = 1;
 
           }
 
@@ -330,49 +509,8 @@ cs_lagr_resuspension(void)
 
       }
 
-    }
-    /* Treatment of internal deposition and user imposed motion */
-    else if (flag == CS_LAGR_PART_IMPOSED_MOTION) {
+    } /* End of multilayer resuspension */
 
-      /* Reorient the face so that it is the outwarding normal */
-      int reorient_face = 1;
-      if (iel == mesh->i_face_cells[face_id][1])
-        reorient_face = -1;
-
-      /* Adhesion forces not implemented */
-
-      /* Gravity forces */
-      cs_real_3_t gravity = {cs_glob_physical_constants->gx,
-                             cs_glob_physical_constants->gy,
-                             cs_glob_physical_constants->gz};
-
-      cs_real_t fgrav
-        =   p_mass * reorient_face
-          * cs_math_3_dot_product(gravity, i_face_normal[face_id]);
-
-      /* Forces due to pressure difference */
-      cs_lnum_t c_id1 = mesh->i_face_cells[face_id][0];
-      cs_lnum_t c_id2 = mesh->i_face_cells[face_id][1];
-
-      if (iel == c_id2) {
-        c_id2 = c_id1;
-        c_id1 = iel;
-      }
-
-      /* Warning: dynamic pressure, FIXME for iphydr = 1 */
-      cs_real_t press_out = cs_glob_lagr_extra_module->pressure->val[c_id1];
-      cs_real_t press_in = cs_glob_lagr_extra_module->pressure->val[c_id2];
-
-      cs_real_t fpres = (press_out - press_in) * cs_math_pi * pow(p_diam, 2) * 0.25
-        * cs_lagr_particle_get_real(part, p_am, CS_LAGR_FOULING_INDEX);
-
-      /* Resuspension criterion: Fgrav + Fpres < 0 */
-      if ((fgrav + fpres) < 0.) {
-        cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                  CS_LAGR_PART_IN_FLOW);
-        /* TODO: impose particle velocity? Do some stats? */
-      }
-    }
   }
 
 }

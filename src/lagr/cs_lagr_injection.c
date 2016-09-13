@@ -1271,8 +1271,12 @@ cs_lagr_injection(int        time_id,
 
           /* Other parameters */
           cs_real_t diam = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
-          if (cs_glob_lagr_model->clogging == 1)
+          cs_real_t mporos = cs_glob_lagr_clogging_model->mporos;
+          if (cs_glob_lagr_model->clogging == 1) {
+            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
+                                      diam/(1.-mporos));
             cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, diam);
+          }
 
           /* -> Autres variables : masse, ... en fonction de la physique  */
 
@@ -1289,8 +1293,13 @@ cs_lagr_injection(int        time_id,
           if (   cs_glob_lagr_model->physical_model == 0
               || cs_glob_lagr_model->physical_model == 1) {
 
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS,
-                                      userdata->density * pis6 * d3);
+            if (cs_glob_lagr_model->clogging == 0)
+              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS,
+                                        userdata->density * pis6 * d3);
+            else
+              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS,
+                                        userdata->density * pis6 * d3
+                                        * pow(1.0-mporos,3));
 
             if (   cs_glob_lagr_model->physical_model == 1
                 && cs_glob_lagr_specific_physics->itpvar == 1) {
@@ -1500,7 +1509,7 @@ cs_lagr_injection(int        time_id,
 
             cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DEPO_TIME, 0.0);
             cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT, 0.0);
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CLUSTER_NB_PART, 1);
+            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART, 1.0);
 
           }
 

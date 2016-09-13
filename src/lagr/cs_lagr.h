@@ -229,6 +229,10 @@ typedef struct {
      - 1: clogging model */
   int  clogging;
 
+  /* - 0: no consolidation model
+     - 1: consolidation model */
+  int  consolidation;
+
   int  precipitation;
   int  fouling;
 
@@ -377,8 +381,21 @@ typedef struct {
   cs_real_t          jamlim;
   cs_real_t          mporos;
   cs_real_t          csthpp;
+  cs_real_t          diam_mean;
 
 } cs_lagr_clogging_model_t;
+
+/* ========================================================================== */
+
+typedef struct {
+
+  /* Parameter of the particle consolidation model */
+  cs_lnum_t          iconsol;
+  cs_real_t          rate_consol;
+  cs_real_t          slope_consol;
+  cs_real_t          force_consol;
+
+} cs_lagr_consolidation_model_t;
 
 /* ========================================================================== */
 
@@ -1112,6 +1129,7 @@ extern cs_lagr_specific_physics_t            *cs_glob_lagr_specific_physics;
 extern cs_lagr_reentrained_model_t           *cs_glob_lagr_reentrained_model;
 extern cs_lagr_precipitation_model_t         *cs_glob_lagr_precipitation_model;
 extern cs_lagr_clogging_model_t              *cs_glob_lagr_clogging_model;
+extern cs_lagr_consolidation_model_t         *cs_glob_lagr_consolidation_model;
 extern cs_lagr_time_step_t                   *cs_glob_lagr_time_step;
 extern cs_lagr_source_terms_t                *cs_glob_lagr_source_terms;
 extern cs_lagr_encrustation_t                *cs_glob_lagr_encrustation;
@@ -1394,6 +1412,15 @@ cs_get_lagr_precipitation_model(void);
 
 cs_lagr_clogging_model_t *
 cs_get_lagr_clogging_model(void);
+
+/*----------------------------------------------------------------------------
+ * Provide access to cs_lagr_consolidation_model_t
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_lagr_consolidation_model_t *
+cs_get_lagr_consolidation_model(void);
 
 /*----------------------------------------------------------------------------
  * Provide access to cs_lagr_time_step_t

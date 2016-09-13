@@ -50,9 +50,10 @@ typedef struct {
   cs_real_t   phi_p;
   cs_real_t   phi_s;
   cs_real_t  *temperature;
-  cs_real_t  valen;
+  cs_real_t   valen;
   cs_real_t  *debye_length;
   cs_real_t   cstham;
+  cs_real_t   csthpp;
   cs_real_t   lambda_vdw;
 
 } cs_lagr_dlvo_param_t;
@@ -73,6 +74,7 @@ cs_lagr_dlvo_init(const cs_real_t   water_permit,
                   const cs_real_t   phi_p,
                   const cs_real_t   phi_s,
                   const cs_real_t   cstham,
+                  const cs_real_t   csthpp,
                   const cs_real_t   lambda_vdw);
 
 /*----------------------------------------------------------------------------
@@ -91,6 +93,15 @@ cs_lagr_barrier(const void                     *particle,
                 const cs_lagr_attribute_map_t  *attr_map,
                 cs_lnum_t                       iel,
                 cs_real_t                      *energy_barrier);
+
+/*----------------------------------------------------------------------------
+ * Compute the energy barrier for two spheres.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_barrier_pp(cs_real_t                       dpart,
+                   cs_lnum_t                       iel,
+                   cs_real_t                      *energy_barrier);
 
 /*----------------------------------------------------------------------------
  * Van der Waals interaction between a sphere and a plane
