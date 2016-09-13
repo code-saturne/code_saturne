@@ -441,13 +441,14 @@ fvm_group_class_set_add(fvm_group_class_set_t   *this_group_class_set,
 fvm_group_class_set_t *
 fvm_group_class_set_destroy(fvm_group_class_set_t  *this_group_class_set)
 {
-  int i, j;
+  if (this_group_class_set == NULL)
+    return;
 
-  for (i = 0; i < this_group_class_set->size; i++) {
+  for (int i = 0; i < this_group_class_set->size; i++) {
 
     fvm_group_class_t *_class = this_group_class_set->class + i;
 
-    for (j = 0; j < _class->n_groups; j++)
+    for (int j = 0; j < _class->n_groups; j++)
       BFT_FREE(_class->group_name[j]);
 
     _class->n_groups = 0;
