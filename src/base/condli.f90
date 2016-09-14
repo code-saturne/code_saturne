@@ -3058,15 +3058,15 @@ invh(6) = m(6) * invdet
 coefa(1) = -(invh(1)*qimpv(1) + invh(4)*qimpv(2) + invh(6)*qimpv(3))
 coefa(2) = -(invh(4)*qimpv(1) + invh(2)*qimpv(2) + invh(5)*qimpv(3))
 coefa(3) = -(invh(6)*qimpv(1) + invh(5)*qimpv(2) + invh(3)*qimpv(3))
-coefb(1,1) = invh(1)
-coefb(2,2) = invh(2)
-coefb(3,3) = invh(3)
-coefb(1,2) = invh(4)
-coefb(2,1) = invh(4)
-coefb(2,3) = invh(5)
-coefb(3,2) = invh(5)
-coefb(1,3) = invh(6)
-coefb(3,1) = invh(6)
+coefb(1,1) = 1.d0
+coefb(2,2) = 1.d0
+coefb(3,3) = 1.d0
+coefb(1,2) = 0.d0
+coefb(2,1) = 0.d0
+coefb(2,3) = 0.d0
+coefb(3,2) = 0.d0
+coefb(1,3) = 0.d0
+coefb(3,1) = 0.d0
 
 do isou = 1, 3
 
