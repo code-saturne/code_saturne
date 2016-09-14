@@ -2033,11 +2033,8 @@ _destroy_coeff_csr(cs_matrix_coeff_csr_t **coeff)
 
     cs_matrix_coeff_csr_t  *mc = *coeff;
 
-    if (mc->val != NULL)
-      BFT_FREE(mc->_val);
-
-    if (mc->_d_val != NULL)
-      BFT_FREE(mc->_d_val);
+    BFT_FREE(mc->_val);
+    BFT_FREE(mc->_d_val);
 
     BFT_FREE(*coeff);
 
@@ -2901,11 +2898,8 @@ _destroy_coeff_csr_sym(cs_matrix_coeff_csr_sym_t  **coeff)
 
     cs_matrix_coeff_csr_sym_t  *mc = *coeff;
 
-    if (mc->val != NULL)
-      BFT_FREE(mc->val);
-
-    if (mc->_d_val != NULL)
-      BFT_FREE(mc->_d_val);
+    BFT_FREE(mc->val);
+    BFT_FREE(mc->_d_val);
 
     BFT_FREE(*coeff);
 
