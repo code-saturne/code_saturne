@@ -486,8 +486,6 @@ cs_user_linear_solvers(void)
   /* Setting global options for PETSc with GAMG preconditioner */
   /*-----------------------------------------------------------*/
 
-  BEGIN_EXAMPLE_SCOPE
-
   /*! [sles_petsc_gamg_1] */
   {
     /* Initialization must be called before setting options;
