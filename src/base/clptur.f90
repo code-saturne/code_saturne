@@ -2355,7 +2355,7 @@ do ifac = 1, nfabor
           enddo
         endif
 
-        call set_dirichlet_vector_ggdh &
+        call set_dirichlet_vector_aniso &
              !========================
            ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
              coefbut(:,:,ifac), cofbfut(:,:,ifac),           &

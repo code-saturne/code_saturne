@@ -1892,7 +1892,7 @@ do ifac = 1, nfabor
           pimpv(isou) = surfbo(isou,ifac)*phit/(surfbn(ifac)*cpp*romc)
         enddo
 
-        call set_dirichlet_vector_ggdh &
+        call set_dirichlet_vector_aniso &
              !========================
            ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
              coefbut(:,:,ifac), cofbfut(:,:,ifac),           &

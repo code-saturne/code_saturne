@@ -2600,7 +2600,7 @@ if (nscal.ge.1) then
           hextv(2) = rcodcl(ifac,ivt,2)
           hextv(3) = rcodcl(ifac,iwt,2)
 
-          call set_dirichlet_vector_ggdh &
+          call set_dirichlet_vector_aniso &
              ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
                coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
                pimpv            , hintt            , hextv )
@@ -2622,7 +2622,7 @@ if (nscal.ge.1) then
           qimpv(2) = rcodcl(ifac,ivt,3)
           qimpv(3) = rcodcl(ifac,iwt,3)
 
-          call set_neumann_vector_ggdh &
+          call set_neumann_vector_aniso &
              ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
                coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
                qimpv            , hintt )
@@ -2647,7 +2647,7 @@ if (nscal.ge.1) then
           pimpv(3) = rcodcl(ifac,iwt,1)
           cflv(3) = rcodcl(ifac,iwt,2)
 
-          call set_convective_outlet_vector_ggdh &
+          call set_convective_outlet_vector_aniso &
              ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
                coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
                pimpv            , cflv             , hintt )
@@ -3127,7 +3127,7 @@ end subroutine set_dirichlet_tensor
 !> \param[in]     hextv         External exchange coefficient (10^30 by default)
 !_______________________________________________________________________________
 
-subroutine set_dirichlet_vector_ggdh &
+subroutine set_dirichlet_vector_aniso &
  ( coefa , cofaf, coefb , cofbf, pimpv  , hint , hextv)
 
 !===============================================================================
@@ -3186,7 +3186,7 @@ cofbf(1,3) = hint(6)
 cofbf(3,1) = hint(6)
 
 return
-end subroutine set_dirichlet_vector_ggdh
+end subroutine set_dirichlet_vector_aniso
 
 !===============================================================================
 
@@ -3372,7 +3372,7 @@ end subroutine set_neumann_tensor
 !> \param[in]     hint          Internal exchange coefficient
 !_______________________________________________________________________________
 
-subroutine set_neumann_vector_ggdh &
+subroutine set_neumann_vector_aniso &
  ( coefa , cofaf, coefb , cofbf, qimpv  , hint)
 
 !===============================================================================
@@ -3437,7 +3437,7 @@ do isou = 1, 3
 enddo
 
 return
-end subroutine set_neumann_vector_ggdh
+end subroutine set_neumann_vector_aniso
 
 !===============================================================================
 
@@ -3893,7 +3893,7 @@ end subroutine
 !> \param[in]     hint          Internal exchange coefficient
 !_______________________________________________________________________________
 
-subroutine set_convective_outlet_vector_ggdh &
+subroutine set_convective_outlet_vector_aniso &
  ( coefa , cofaf, coefb , cofbf, pimpv  , cflv  , hint )
 
 !===============================================================================
