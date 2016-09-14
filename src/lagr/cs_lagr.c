@@ -818,25 +818,30 @@ static cs_lagr_zone_class_data_t *
 _cs_lagr_allocate_zone_class_data(int  iclass,
                                   int  izone)
 {
-  if (izone >= cs_glob_lagr_nzone_max || iclass > cs_glob_lagr_nclass_max) {
+  if (izone >= cs_glob_lagr_nzone_max || iclass >= cs_glob_lagr_nclass_max) {
 
     int  old_lagr_nzone  = cs_glob_lagr_nzone_max;
     int  old_lagr_nclass = cs_glob_lagr_nclass_max;
 
-    cs_glob_lagr_nzone_max  = CS_MAX(izone , cs_glob_lagr_nzone_max  + 5);
-    cs_glob_lagr_nclass_max = CS_MAX(iclass, cs_glob_lagr_nclass_max + 5);
+    if (izone >= cs_glob_lagr_nzone_max)
+      cs_glob_lagr_nzone_max  = CS_MAX(izone , cs_glob_lagr_nzone_max  + 5);
+    if (iclass >= cs_glob_lagr_nclass_max)
+      cs_glob_lagr_nclass_max = CS_MAX(iclass, cs_glob_lagr_nclass_max + 5);
 
     BFT_REALLOC(_lagr_zone_class_data,
                 cs_glob_lagr_nzone_max * cs_glob_lagr_nclass_max,
                 cs_lagr_zone_class_data_t);
 
-    for (int  ii = old_lagr_nzone-1; ii >= 0; ii--) {
-
-      for (int  jj = old_lagr_nclass-1; jj >= 0; jj--) {
-        _lagr_zone_class_data[cs_glob_lagr_nclass_max * ii + jj]
-          = _lagr_zone_class_data[old_lagr_nclass * ii + jj];
+    if (cs_glob_lagr_nzone_max != old_lagr_nzone) {
+      for (int  ii = old_lagr_nclass-1; ii > 0; ii--) { /* no-op for ii = 0 */
+        for (int  jj = old_lagr_nzone-1; jj >= 0; jj--) {
+          _lagr_zone_class_data[cs_glob_lagr_nzone_max * ii + jj]
+            = _lagr_zone_class_data[old_lagr_nzone * ii + jj];
+          memset(_lagr_zone_class_data + (old_lagr_nzone * ii + jj),
+                 0,
+                 sizeof(cs_lagr_zone_class_data_t));
+        }
       }
-
     }
 
     for (int ii = old_lagr_nzone; ii < cs_glob_lagr_nzone_max; ii++) {

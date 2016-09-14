@@ -181,8 +181,8 @@ class LagrangianBoundariesModel(Model):
             node_class.xmlInitChildNode('temperature', choice=self.default['temperature_choice'])
             node_class.xmlSetData('temperature', self.default['temperature'])
 
-        node_class.xmlInitChildNode('statitical_weight', choice=self.default['statistical_weight_choice'])
-        node_class.xmlSetData('statitical_weight', self.default['statistical_weight'])
+        node_class.xmlInitChildNode('statistical_weight', choice=self.default['statistical_weight_choice'])
+        node_class.xmlSetData('statistical_weight', self.default['statistical_weight'])
 
         node_class.xmlInitChildNode('velocity', choice=self.default['velocity_choice'])
 
