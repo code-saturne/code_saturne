@@ -1862,12 +1862,12 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
         f->bc_coeffs->b[ifac*dim*dim] = 1.;
         f->bc_coeffs->b[ifac*dim*dim + 1] = 0.;
         f->bc_coeffs->b[ifac*dim*dim + 2] = 0.;
-        f->bc_coeffs->b[ifac*dim*dim + 3] = 1.;
-        f->bc_coeffs->b[ifac*dim*dim + 4] = 0.;
+        f->bc_coeffs->b[ifac*dim*dim + 3] = 0.;
+        f->bc_coeffs->b[ifac*dim*dim + 4] = 1.;
         f->bc_coeffs->b[ifac*dim*dim + 5] = 0.;
-        f->bc_coeffs->b[ifac*dim*dim + 6] = 1.;
+        f->bc_coeffs->b[ifac*dim*dim + 6] = 0.;
         f->bc_coeffs->b[ifac*dim*dim + 7] = 0.;
-        f->bc_coeffs->b[ifac*dim*dim + 8] = 0.;
+        f->bc_coeffs->b[ifac*dim*dim + 8] = 1.;
       }
 
       if (f->bc_coeffs->af != NULL)
@@ -1894,12 +1894,12 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
           f->bc_coeffs->bd[ifac*dim*dim] = 1.;
           f->bc_coeffs->bd[ifac*dim*dim + 1] = 0.;
           f->bc_coeffs->bd[ifac*dim*dim + 2] = 0.;
-          f->bc_coeffs->bd[ifac*dim*dim + 3] = 1.;
-          f->bc_coeffs->bd[ifac*dim*dim + 4] = 0.;
+          f->bc_coeffs->bd[ifac*dim*dim + 3] = 0.;
+          f->bc_coeffs->bd[ifac*dim*dim + 4] = 1.;
           f->bc_coeffs->bd[ifac*dim*dim + 5] = 0.;
-          f->bc_coeffs->bd[ifac*dim*dim + 6] = 1.;
+          f->bc_coeffs->bd[ifac*dim*dim + 6] = 0.;
           f->bc_coeffs->bd[ifac*dim*dim + 7] = 0.;
-          f->bc_coeffs->bd[ifac*dim*dim + 8] = 0.;
+          f->bc_coeffs->bd[ifac*dim*dim + 8] = 1.;
         }
 
       if (f->bc_coeffs->ac != NULL)
