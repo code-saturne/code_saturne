@@ -7,7 +7,10 @@ Physical modelling
 
 - Add internal coupling for scalars of two domains (for instance temperature
   between solid and liquid, or enthalpy for electric arcs between plasma and
-  weldpool)
+  weldpool).
+
+- Add sorption model treating non-equilibrium between solid and liquid phases
+  to the ground water flow module.
 
 - Lagrangian module: add deposition and resuspension models on internal faces.
   The user can the impose the motion of deposited particles. If integral
@@ -59,6 +62,12 @@ Architectural changes
 
 - Refactored parallel numbering for space-filling curves and added
   a numbering generation based on a 1D series of real values.
+
+Bug fixes
+---------
+
+- Fix initialisation of flux and divergence boundary coefficients for coupled
+  vector variables (field with dim=3).
 
 Release 4.3.0 (July 29 2016)
 ============================
