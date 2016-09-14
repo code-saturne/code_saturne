@@ -5,6 +5,9 @@ Release 4.3.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix Neumann boundary condition for vectors with anisotropic diffusion.
+  A priori, could be used only if the thermal turbulent flux was solved.
+
 - Lagrangian model:
   * Fix resizing bug when Lagrangian classes or zones exceed 5
   * Fix spurious addition to XML file for Lagrangian inlets
