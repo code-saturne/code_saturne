@@ -425,7 +425,7 @@ sinfo%rnsmbr = residu
 ! This part is inspired from codits (call to promav)
 allocate(w1(ncelet))
 iinvpe = 1 ! for processing communication before calculation
-call promav(isym, ibsize, iesize, iinvpe, fid, dam, xam, cvar_pr, w1)
+call promav(isym, ibsize, iesize, iinvpe, ivarfl(ipr), dam, xam, cvar_pr, w1)
 
 !$omp parallel do
 do iel = 1, ncel
