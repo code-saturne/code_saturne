@@ -121,7 +121,7 @@ _sles_default_native(int                f_id,
                      cs_matrix_type_t   matrix_type,
                      bool               symmetric)
 {
-  bool multigrid = false;
+  int multigrid = 0;
   cs_sles_it_type_t sles_it_type = CS_SLES_N_IT_TYPES;
   int n_max_iter = _n_max_iter_default;
 
@@ -129,7 +129,7 @@ _sles_default_native(int                f_id,
 
     if (!strcmp(name, "wall_distance")) { /* distpr.f90 */
       sles_it_type = CS_SLES_PCG;
-      multigrid = true;
+      multigrid = 1;
     }
     if (!strcmp(name, "yplus_wall")) { /* distyp.f90 */
       sles_it_type = CS_SLES_JACOBI;
@@ -150,7 +150,7 @@ _sles_default_native(int                f_id,
       }
       /* If copying from pressure failed, default to multigrid */
       sles_it_type = CS_SLES_PCG;
-      multigrid = true;
+      multigrid = 1;
     }
     else if (!strcmp(name, "Prhydro")) { /* prehyd.f90 */
       sles_it_type = CS_SLES_PCG;
@@ -164,13 +164,15 @@ _sles_default_native(int                f_id,
     }
     else if (!strcmp(name, "radiation_p1")) { /* raypun.f90 */
       sles_it_type = CS_SLES_PCG;
-      multigrid = true;
+      multigrid = 1;
     }
-    else if (!strcmp(name, "hydraulic_head")) { /* raypun.f90 */
+  }
+  else if (f_id > -1) {
+    const cs_field_t *f = cs_field_by_id(f_id);
+    if (!strcmp(f->name, "hydraulic_head")) {
       sles_it_type = CS_SLES_PCG;
-      multigrid = true;
+      multigrid = 2;
     }
-
   }
 
   /* Final default */
@@ -179,13 +181,13 @@ _sles_default_native(int                f_id,
     if (symmetric) {
       sles_it_type = CS_SLES_PCG;
       if (f_id > -1)
-        multigrid = true;
+        multigrid = 1;
     }
     else
       sles_it_type = CS_SLES_JACOBI;
   }
 
-  if (multigrid) {
+  if (multigrid == 1) {
 
     /* Multigrid used as preconditioner if possible, as solver otherwise */
 
@@ -215,6 +217,9 @@ _sles_default_native(int                f_id,
       cs_multigrid_define(f_id, name);
 
   }
+  else if (multigrid == 2)
+    cs_multigrid_define(f_id, name);
+
   else
     (void)cs_sles_it_define(f_id,
                             name,
