@@ -38,7 +38,7 @@
         <item>
          <widget class="QLabel" name="label">
           <property name="text">
-           <string>Calculation restart (checkpoint direcetory):</string>
+           <string>Calculation restart (checkpoint directory):</string>
           </property>
          </widget>
         </item>
