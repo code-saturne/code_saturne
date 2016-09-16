@@ -11,6 +11,7 @@ Major contributions to the Code_Saturne Kernel have been provided by
 
 Frédéric Archambeau      (EDF, Chatou, France)
 Bruno Audebert           (EDF, Chatou, France)
+Cyril Baudry             (EDF, Chatou, France)
 Céline Béchaud           (EDF, Chatou, France)
 Sofiane Benhamadouche    (EDF, Chatou, France)
 Jérôme Bonelle           (EDF, Chatou, France)
@@ -40,9 +41,10 @@ Carole Vit               (INCKA, Boulogne-Billancourt, France)
 
 Other contributors to the Code_Saturne Kernel include
 
-Cyril Baudry             (EDF, Chatou, France)
+Pierre Cantin            (EDF, Chatou, France)
 Bertrand Carissimo       (EDF, Chatou, France)
 Céline Caruyer           (EDF, Chatou, France)
+Christophe Henry         (IMP Gdańsk)
 Arnaud Cordier           (AREVA NP, Lyon, France)
 Frederic Cordier         (Ecole Centrale Paris, France)
 Alexandre Davroux        (EDF, Chatou, France)
@@ -68,17 +70,13 @@ Augustin Tibere-Inglesse (EDF, Chatou, France)
 Juan Uribe               (University of Manchester, United Kingdom)
 
 
-The Code_Saturne Kernel may contain code by Olivier Devillers
-(INRIA, Sophia-Antipolis, France) for Lagrangian particle
-trajectory tracking (cs_lagr_utils.c routine)
-
-The Code_Saturne Kernel may contain code by Wes Petersen
+Code_Saturne may contain code by Wes Petersen
 (ETHZ, Zurich, Switzerland) for random number generation
-(zufall.f90 routine)
+(cs_random.c, adapted from Netlib's zufall functions)
 
 Part of the work of the Mathematical Expression Interpreter library
 is based in part on previous work by Tom Niemann (http://epaperpress.com/)
-with the following autorization: "Source code, when part of a software
+with the following authorization: "Source code, when part of a software
 project, may be used freely without reference to the author.";
 and the hashtable implementation is based on
 http://www.liafa.jussieu.fr/~carton/Enseignement/C/Licence/LicenceInfo/Td09/hachage.c
@@ -97,6 +95,7 @@ Sandro Dal Secco         (EDF, Chatou, France)
 Matthieu Guillaud        (INCKA, Boulogne-Billancourt, France)
 Jean-Marc Hérard         (EDF, Chatou, France)
 Richard Howard           (EDF, Chatou, France)
+Frank Hülsemann          (EDF, Saclay, France)
 Nicolas Jamet            (INCKA, Boulogne-Billancourt, France)
 Nicolas Jarrin           (University of Manchester, United Kingdom)
 Dominique Laurence       (EDF, Chatou, France)
@@ -148,6 +147,7 @@ Michael Tartar           (INCKA, Boulogne-Billancourt, France)
 
 Other contributors to the Code_Saturne GUI include
 
+Yvan Fournier            (EDF, Chatou, France)
 Carole Vit               (INCKA, Boulogne-Billancourt, France)
 
 
