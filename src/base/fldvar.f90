@@ -973,21 +973,22 @@ endif
 
 ivar = nvar + 1
 nvar = nvar + dim
-nscal = nscal + dim
+nscal = nscal + 1
 iscal = nscaus + nscapp + 1
-nscapp = nscapp + dim
+nscapp = nscapp + 1
 
 ! Check we have enough slots
 call fldvar_check_nvar
 call fldvar_check_nscapp
 
+isca(iscal) = ivar
+iscapp(nscapp) = iscal
+
 do ii = 1, dim
-  isca(iscal + ii - 1) =  nvar - dim + ii
-  ivarfl(isca(iscal + ii - 1)) = f_id
-  iscapp(nscapp - dim + ii) = iscal + ii - 1
+  ivarfl(ivar + ii - 1) = f_id
 enddo
 
-call field_set_key_int(f_id, keyvar, nvar)
+call field_set_key_int(f_id, keyvar, ivar)
 call field_set_key_int(f_id, keysca, iscal)
 
 call init_var_cal_opt(f_id)

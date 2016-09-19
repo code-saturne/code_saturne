@@ -220,6 +220,7 @@ cou1do.f90 \
 coupbi.f90 \
 coupbo.f90 \
 covofi.f90 \
+covofv.f90 \
 cptssy.f90 \
 cpvosy.f90 \
 cregeo.f90 \

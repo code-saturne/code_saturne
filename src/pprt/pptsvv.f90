@@ -26,11 +26,11 @@
 
 !> \file pptssc.f90
 !>
-!> \brief This subroutine defines the source terms for scalars which are part of
+!> \brief This subroutine defines the source terms for vectors which are part of
 !> specific physics models. Source terms are defined over one time step.
 !>
-!> Warning: source terms are treated differently from the way they are in ustssc.
-!> rovsdt*d(var) = smbrs is solved. rovsdt and smbrs already hold possible user
+!> Warning: source terms are treated differently from the way they are in ustsvv.
+!> fimp*d(var) = smbrv is solved. rovsdt and smbrs already hold possible user
 !> source terms values and thus have to be incremented (and not overwritten).
 !>
 !> For stability reasons, only positive terms are added to rovsdt, while there
@@ -39,10 +39,10 @@
 !> In the case of a source term of the form cexp + cimp*var, the source term
 !> should be implemented as follows:
 !> \f[
-!>   smbrs  = smbrs  + cexp + cimp*var
+!>   smbrv(i)  = smbrv(i)  + cexp(i) + \sum_j cimp(i,j)*var(j)
 !> \f]
 !> \f[
-!>   rovsdt = rovsdt + max(-cimp,0)
+!>   fimp(i,j) = fimp(i,j) + max(-cimp(i,j),0)
 !> \f]
 !>
 !> rovsdt and smbrs are provided here respectively in kg/s and in kg/s*[scalar].
@@ -58,18 +58,18 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     iscal         scalar number
-!> \param[in,out] smbrs         explicit source term part
-!> \param[in,out] rovsdt        implicite source term part
+!> \param[in]     iscal         number in list of additional variables
+!> \param[in,out] smbrv         explicit source term part
+!> \param[in,out] fimp          implicit source term part
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !______________________________________________________________________________!
 
 
-subroutine pptssc &
+subroutine pptsvv &
 !================
 
  ( iscal  ,                                                       &
-   smbrs  , rovsdt , tslagr )
+   smbrv  , fimp , tslagr )
 
 !===============================================================================
 ! Module files
@@ -98,76 +98,21 @@ implicit none
 
 integer          iscal
 
-double precision smbrs(ncelet), rovsdt(ncelet)
+double precision smbrv(3,ncelet), fimp(3,3,ncelet)
 double precision tslagr(ncelet,*)
 
 ! Local variables
 
 !===============================================================================
 
-! Soot model
-
-if (isoot.eq.1) then
-  call sootsc(iscal, smbrs, rovsdt)
-endif
-
-! ---> Flamme de premelange : Modele EBU
-
-if (ippmod(icoebu).ge.0) then
-  call ebutss(iscal, smbrs, rovsdt)
-endif
-
-! ---> Flamme de premelange : Modele BML
-
-!      IF ( IPPMOD(ICOBML).GE.0 )
-!           CALL BMLTSS
-
-! ---> Flamme de premelange : Modele LWC
-
-if (ippmod(icolwc).ge.0) then
-  call lwctss(iscal, smbrs, rovsdt)
-endif
-
-! ---> Flamme charbon pulverise
-
-if ( ippmod(iccoal).ge.0 ) then
-  call cs_coal_scast(iscal, smbrs, rovsdt)
-endif
-
-! ---> Flamme charbon pulverise couplee Transport Lagrangien
-!      des particules de charbon
-
-if ( ippmod(icpl3c).ge.0 .and. iilagr.eq.2 ) then
-  call cpltss(iscal, itypfb, smbrs, rovsdt, tslagr)
-endif
-
-! ---> Flamme fuel
-
-if ( ippmod(icfuel).ge.0 ) then
-  call cs_fuel_scast(iscal, smbrs, rovsdt)
-endif
-
-! ---> Versions electriques :
-!             Effet Joule
-!             Arc Electrique
-!             Conduction ionique
+! MHD module
+! Joule effect
+! Electric arcs
+! Ionic conduction
 
 if (ippmod(ieljou).ge.1 .or.                                      &
     ippmod(ielarc).ge.1       ) then
-  call eltssc(iscal, smbrs)
-endif
-
-! ---> Version atmospherique :
-
-if (ippmod(iatmos).ge.0) then
-  call attssc(iscal,smbrs)
-endif
-
-
-! ---> Version aerorefrigerant :
-
-if (ippmod(iaeros).ge.0) then
-  call cttssc(iscal, smbrs, rovsdt)
+  call eltsvv(iscal, smbrv)
 endif
 
 !----

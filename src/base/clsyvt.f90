@@ -108,7 +108,7 @@ double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 ! Local variables
 
 integer          ifac, ii, isou
-integer          iel
+integer          iel, f_dim
 integer          iscal , ivar
 
 double precision rnx, rny, rnz, rxnn
@@ -630,18 +630,20 @@ enddo
 ! ---  End of loop over boundary faces
 
 !===========================================================================
-! 3.bis Boundary conditions on u'T'
+! 3.bis Boundary conditions on transported vectors
 !===========================================================================
 
 do iscal = 1, nscal
-
+  ! u'T'
   if (ityturt(iscal).eq.3) then
-
     call clsyvt_scalar(iscal, icodcl)
-    !=================
-
   endif
 
+  ! additional transported vectors
+  call field_get_dim(ivarfl(isca(iscal)), f_dim)
+  if (f_dim.gt.1) then
+    call clsyvt_vector(iscal, icodcl)
+  endif
 enddo
 
 !===============================================================================
@@ -957,6 +959,202 @@ do ifac = 1, nfabor
         cofbrut(isou,jsou,ifac) = coefbut(isou,jsou,ifac)
       enddo
     enddo
+
+  endif
+  ! Test on velocity symmetry condition: end
+
+enddo
+
+!----
+! End
+!----
+
+return
+end subroutine
+
+!===============================================================================
+! Local functions
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     iscal         scalar id
+!> \param[in,out] icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!_______________________________________________________________________________
+
+subroutine clsyvt_vector &
+ ( iscal  , icodcl )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use pointe
+use entsor
+use albase
+use parall
+use ppppar
+use ppthch
+use ppincl
+use cplsat
+use mesh
+use field
+use cs_c_bindings
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          iscal
+
+integer          icodcl(nfabor,nvarcl)
+
+! Local variables
+
+integer          ivar, f_id, f_dim
+integer          ifac, iel, isou, jsou
+integer          ifcvsl
+
+double precision rkl, visclc
+double precision distbf, srfbnf
+double precision rnx, rny, rnz, temp
+double precision hintt(6)
+
+character(len=80) :: fname
+
+double precision, dimension(:), pointer :: crom
+double precision, dimension(:,:), pointer :: coefav, cofafv
+double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
+double precision, dimension(:,:), pointer :: visten
+
+double precision, dimension(:), pointer :: viscl, visct, viscls, cpro_cp
+
+type(var_cal_opt) :: vcopt
+
+!===============================================================================
+
+ivar = isca(iscal)
+f_id = ivarfl(ivar)
+
+call field_get_key_struct_var_cal_opt(f_id, vcopt)
+
+if (vcopt%idften.eq.6) then
+  if (iturb.ne.32) then
+    call field_get_val_v(ivsten, visten)
+  else ! EBRSM and (GGDH or AFM)
+    call field_get_val_v(ivstes, visten)
+  endif
+endif
+
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
+
+call field_get_coefa_v(f_id, coefav)
+call field_get_coefb_v(f_id, coefbv)
+call field_get_coefaf_v(f_id, cofafv)
+call field_get_coefbf_v(f_id, cofbfv)
+
+call field_get_val_s(icrom, crom)
+
+call field_get_key_int (f_id, kivisl, ifcvsl)
+if (ifcvsl .ge. 0) then
+  call field_get_val_s(ifcvsl, viscls)
+endif
+
+! --- Loop on boundary faces
+do ifac = 1, nfabor
+
+  ! Test on symmetry boundary condition: start
+  if (icodcl(ifac,iu).eq.4) then
+
+    iel = ifabor(ifac)
+    ! --- Physical Propreties
+    visclc = viscl(iel)
+
+    ! --- Geometrical quantities
+    distbf = distb(ifac)
+    srfbnf = surfbn(ifac)
+
+    rnx = surfbo(1,ifac)/srfbnf
+    rny = surfbo(2,ifac)/srfbnf
+    rnz = surfbo(3,ifac)/srfbnf
+
+    if (ifcvsl .lt. 0) then
+      rkl = visls0(iscal)
+    else
+      rkl = viscls(iel)
+    endif
+
+    ! Isotropic diffusivity
+    if (vcopt%idften.eq.1) then
+      hintt(1) = (vcopt%idifft*max(visct(iel),zero)/sigmas(iscal) + rkl)/distbf
+      hintt(2) = hintt(1)
+      hintt(3) = hintt(1)
+      hintt(4) = hintt(1)
+      hintt(5) = hintt(1)
+      hintt(6) = hintt(1)
+    ! Symmetric tensor diffusivity
+    elseif (vcopt%idften.eq.6) then
+      temp = vcopt%idifft*ctheta(iscal)/csrij
+      hintt(1) = (temp*visten(1,iel) + rkl)/distbf
+      hintt(2) = (temp*visten(2,iel) + rkl)/distbf
+      hintt(3) = (temp*visten(3,iel) + rkl)/distbf
+      hintt(4) =  temp*visten(4,iel)       /distbf
+      hintt(5) =  temp*visten(5,iel)       /distbf
+      hintt(6) =  temp*visten(6,iel)       /distbf
+    endif
+
+    ! Gradient BCs
+    coefav(1,ifac) = 0.d0
+    coefav(2,ifac) = 0.d0
+    coefav(3,ifac) = 0.d0
+
+    coefbv(1,1,ifac) = 1.d0-rnx**2
+    coefbv(2,2,ifac) = 1.d0-rny**2
+    coefbv(3,3,ifac) = 1.d0-rnz**2
+
+    coefbv(1,2,ifac) = -rnx*rny
+    coefbv(1,3,ifac) = -rnx*rnz
+    coefbv(2,1,ifac) = -rny*rnx
+    coefbv(2,3,ifac) = -rny*rnz
+    coefbv(3,1,ifac) = -rnz*rnx
+    coefbv(3,2,ifac) = -rnz*rny
+
+    ! Flux BCs
+    cofafv(1,ifac) = 0.d0
+    cofafv(2,ifac) = 0.d0
+    cofafv(3,ifac) = 0.d0
+
+    cofbfv(1,1,ifac) = hintt(1)*rnx**2  + hintt(4)*rnx*rny + hintt(6)*rnx*rnz
+    cofbfv(2,2,ifac) = hintt(4)*rnx*rny + hintt(2)*rny**2  + hintt(5)*rny*rnz
+    cofbfv(3,3,ifac) = hintt(6)*rnx*rnz + hintt(5)*rny*rnz + hintt(3)*rnz**2
+
+    cofbfv(1,2,ifac) = hintt(1)*rnx*rny + hintt(4)*rny**2  + hintt(6)*rny*rnz
+    cofbfv(2,1,ifac) = hintt(1)*rnx*rny + hintt(4)*rny**2  + hintt(6)*rny*rnz
+    cofbfv(1,3,ifac) = hintt(1)*rnx*rnz + hintt(4)*rny*rnz + hintt(6)*rnz**2
+    cofbfv(3,1,ifac) = hintt(1)*rnx*rnz + hintt(4)*rny*rnz + hintt(6)*rnz**2
+    cofbfv(2,3,ifac) = hintt(4)*rnx*rnz + hintt(2)*rny*rnz + hintt(5)*rnz**2
+    cofbfv(3,2,ifac) = hintt(4)*rnx*rnz + hintt(2)*rny*rnz + hintt(5)*rnz**2
 
   endif
   ! Test on velocity symmetry condition: end

@@ -39,15 +39,14 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] imasfl        scalar mass flux at interior face centers
 !> \param[in,out] bmasfl        scalar mass flux at boundary face centers
-!> \param[in,out] rovsdt        unsteady term and mass aggregation term
-!> \param[in,out] smbrs         right hand side for the scalar iscal
+!> \param[in,out] divflu        divergence of drift flux
 !______________________________________________________________________________
 
 subroutine driflu &
 ( iflid  ,                                                       &
   dt     ,                                                       &
   imasfl , bmasfl ,                                              &
-  rovsdt , smbrs  )
+  divflu  )
 
 !===============================================================================
 ! Module files
@@ -82,7 +81,7 @@ integer          iflid
 
 double precision dt(ncelet)
 double precision imasfl(nfac), bmasfl(nfabor)
-double precision rovsdt(ncelet), smbrs(ncelet)
+double precision divflu(ncelet)
 
 ! Local variables
 
@@ -662,16 +661,7 @@ else
   enddo
 endif
 
-call divmas(init, flumas, flumab, w1)
-
-! NB: if the porosity module is swiched on, the the porosity is already
-! taken into account in w1
-
-! --> mass aggregation term
-do iel = 1, ncel
-  rovsdt(iel) = rovsdt(iel) + iconvp*thetap*w1(iel)
-  smbrs(iel) = smbrs(iel) - iconvp*w1(iel)*cvara_var(iel)
-enddo
+call divmas(init, flumas, flumab, divflu)
 
 ! Free memory
 deallocate(viscce)

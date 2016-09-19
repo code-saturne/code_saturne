@@ -1911,27 +1911,19 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           rcodcl[ivar * (*nfabor) + ifbr] = cs_glob_elec_option->pot_diff;
         }
 
-      /* TODO modify when vec_potential in vector field */
-      //const cs_field_t  *fp1 = CS_FI_(potva, 0);
-      const cs_field_t  *fp1 = cs_field_by_name_try("vec_potential_01");
-      int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
-      //const cs_field_t  *fp2 = CS_FI_(potva, 1);
-      const cs_field_t  *fp2 = cs_field_by_name_try("vec_potential_02");
-      int ivar2 = cs_field_get_key_int(fp2, var_key_id) -1;
-      //const cs_field_t  *fp3 = CS_FI_(potva, 2);
-      const cs_field_t  *fp3 = cs_field_by_name_try("vec_potential_03");
-      int ivar3 = cs_field_get_key_int(fp3, var_key_id) -1;
+      const cs_field_t  *fp = cs_field_by_name_try("vec_potential");
+      ivar = cs_field_get_key_int(fp, var_key_id) -1;
 
-      if (boundaries->type_code[fp1->id][izone] == NEUMANN_IMPLICIT)
+      if (boundaries->type_code[fp->id][izone] == NEUMANN_IMPLICIT)
         for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac];
           cs_lnum_t iel = b_face_cells[ifbr];
-          icodcl[ivar1 *(*nfabor) + ifbr] = 5;
-          icodcl[ivar2 *(*nfabor) + ifbr] = 5;
-          icodcl[ivar3 *(*nfabor) + ifbr] = 5;
-          rcodcl[ivar1 * (*nfabor) + ifbr] = fp1->val_pre[iel];
-          rcodcl[ivar2 * (*nfabor) + ifbr] = fp2->val_pre[iel];
-          rcodcl[ivar3 * (*nfabor) + ifbr] = fp3->val_pre[iel];
+          icodcl[ivar *(*nfabor) + ifbr] = 5;
+          icodcl[(ivar+1) *(*nfabor) + ifbr] = 5;
+          icodcl[(ivar+2) *(*nfabor) + ifbr] = 5;
+          rcodcl[ivar * (*nfabor) + ifbr] = fp->val_pre[3*iel];
+          rcodcl[(ivar+1) * (*nfabor) + ifbr] = fp->val_pre[3*iel+1];
+          rcodcl[(ivar+2) * (*nfabor) + ifbr] = fp->val_pre[3*iel+2];
         }
     }
 

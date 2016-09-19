@@ -109,6 +109,7 @@ double precision rbid(1)
 double precision vr(3)
 
 double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, dimension(:), pointer :: tplusp
 double precision, dimension(:), pointer :: valsp, coefap, coefbp
 double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
@@ -607,68 +608,28 @@ if (numtyp.eq.-1) then
 
     if (.true. .and. ippmod(ielarc).ge.2) then
 
-      ! Ax Component
-
-      call field_get_id('vec_potential_01', f_id)
+      call field_get_id('vec_potential', f_id)
 
       inc = 1
       iprev = 0
-      iccocg = 1
 
-      call field_gradient_scalar(f_id, iprev, imrgra, inc,                   &
-                                 iccocg,                                     &
-                                 grad)
+      allocate(gradv(3,3,ncelet))
+
+      call field_gradient_vector(f_id, iprev, imrgra, inc, gradv)
+
+      idimt  = 3
 
       ! B = rot A ( B = curl A)
 
       do iloc = 1, ncelps
         iel = lstcel(iloc)
-        tracel(1 + (iloc-1)*idimt) =  zero
-        tracel(2 + (iloc-1)*idimt) =  grad(3,iel)
-        tracel(3 + (iloc-1)*idimt) = -grad(2,iel)
+        tracel(1 + (iloc-1)*idimt) = -gradv(3,2,iel)+gradv(2,3,iel)
+        tracel(2 + (iloc-1)*idimt) =  gradv(3,1,iel)-gradv(1,3,iel)
+        tracel(3 + (iloc-1)*idimt) = -gradv(2,1,iel)+gradv(1,2,iel)
       enddo
 
-      ! Ay component
+      deallocate(gradv)
 
-      call field_get_id('vec_potential_02', f_id)
-
-      inc = 1
-      iprev = 0
-      iccocg = 1
-
-      call field_gradient_scalar(f_id, iprev, imrgra, inc,                   &
-                                 iccocg,                                     &
-                                 grad)
-
-      ! B = rot A (B = curl A)
-
-      do iloc = 1, ncelps
-        iel = lstcel(iloc)
-        tracel(1 + (iloc-1)*idimt) = tracel(1 + (iloc-1)*idimt) - grad(3,iel)
-        tracel(3 + (iloc-1)*idimt) = tracel(3 + (iloc-1)*idimt) + grad(1,iel)
-      enddo
-
-      ! Az component
-
-      call field_get_id('vec_potential_03', f_id)
-
-      inc = 1
-      iprev = 0
-      iccocg = 1
-
-      call field_gradient_scalar(f_id, iprev, imrgra, inc,                   &
-                                 iccocg,                                     &
-                                 grad)
-
-      ! B = rot A (B = curl A)
-
-      do iloc = 1, ncelps
-        iel = lstcel(iloc)
-        tracel(1 + (iloc-1)*idimt) = tracel(1 + (iloc-1)*idimt) + grad(2,iel)
-        tracel(2 + (iloc-1)*idimt) = tracel(2 + (iloc-1)*idimt) - grad(1,iel)
-      enddo
-
-      idimt  = 3
       ientla = .true.
       ivarpr = .false.
 

@@ -76,7 +76,7 @@ integer          nscal
 
 integer          iis   , iscal
 integer          iel   , ifac
-integer          iclip , ii    , jj    , idim
+integer          iclip , ii    , jj    , idim, f_dim
 integer          ifcvsl
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          kscmin, kscmax
@@ -516,7 +516,8 @@ if (nscal.gt.0) then
 
 !    Clipping des scalaires non variance
   do iis = 1, nscal
-    if(iscavr(iis).eq.0) then
+    call field_get_dim(ivarfl(isca(iis)), f_dim)
+    if(iscavr(iis).eq.0.and.f_dim.eq.1) then
       iscal = iis
       call clpsca(iscal)
       !==========

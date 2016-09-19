@@ -154,7 +154,7 @@ double precision hbord(nfabor),theipb(nfabor)
 integer          ifac, iel, isou, ii, jj, kk
 integer          iscal
 integer          modntl
-integer          iuntur
+integer          iuntur, f_dim
 integer          nlogla, nsubla, iuiptn
 integer          f_id_rough, f_id
 
@@ -1508,20 +1508,31 @@ do iscal = 1, nscal
 
   if (iscavr(iscal).le.0) then
 
-    call clptur_scalar &
-    !=================
- ( iscal  , isvhb  , icodcl ,                                     &
-   rcodcl ,                                                       &
-   byplus , bdplus , buk    ,                                     &
-   hbord  , theipb , hbord2 ,                                     &
-   tetmax , tetmin , tplumx , tplumn )
-
-
     f_id = ivarfl(isca(iscal))
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
 
-    if (vcopt%icoupl.gt.0) then
-       call cs_ic_set_exchcoeff( f_id, hbord2 )
+    call field_get_dim(f_id, f_dim)
+
+    if (f_dim.eq.1) then
+      call clptur_scalar &
+      !=================
+   ( iscal  , isvhb  , icodcl ,                                     &
+     rcodcl ,                                                       &
+     byplus , bdplus , buk    ,                                     &
+     hbord  , theipb , hbord2 ,                                     &
+     tetmax , tetmin , tplumx , tplumn )
+
+      call field_get_key_struct_var_cal_opt(f_id, vcopt)
+
+      if (vcopt%icoupl.gt.0) then
+        call cs_ic_set_exchcoeff( f_id, hbord2 )
+      endif
+    else
+      call clptur_vector &
+      !=================
+   ( iscal  , isvhb  , icodcl ,                                     &
+     rcodcl ,                                                       &
+     byplus , bdplus , buk    ,                                     &
+     hbord  )
     endif
 
   endif
@@ -2489,6 +2500,413 @@ do ifac = 1, nfabor
   endif ! smooth wall condition
 
 enddo
+
+!----
+! End
+!----
+
+return
+end subroutine
+
+!===============================================================================
+! Local functions
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     iscal         scalar id
+!> \param[in]     isvhb         indicator to save exchange coeffient
+!> \param[in,out] icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!> \param[in,out] rcodcl        boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
+!> \param[in]     byplus        dimensionless distance to the wall
+!> \param[in]     bdplus        dimensionless shift to the wall
+!>                               for scalable wall functions
+!> \param[in]     buk           dimensionless velocity
+!> \param[in,out] hbord         exchange coefficient at boundary
+!_______________________________________________________________________________
+
+subroutine clptur_vector &
+ ( iscal  , isvhb  , icodcl ,                                     &
+   rcodcl ,                                                       &
+   byplus , bdplus , buk    ,                                     &
+   hbord  )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use pointe
+use entsor
+use albase
+use parall
+use ppppar
+use ppthch
+use ppincl
+use radiat
+use cplsat
+use mesh
+use field
+use field_operator
+use lagran
+use turbomachinery
+use cs_c_bindings
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          iscal, isvhb
+
+integer          icodcl(nfabor,nvarcl)
+
+double precision rcodcl(nfabor,nvarcl,3)
+double precision byplus(nfabor), bdplus(nfabor)
+double precision hbord(nfabor), theipb(nfabor), buk(nfabor)
+double precision tetmax, tetmin, tplumx, tplumn
+
+! Local variables
+
+integer          ivar, f_id, b_f_id, isvhbl, inc, iprev
+integer          ifac, iel, isou, jsou
+integer          ifcvsl, itplus, itstar
+
+double precision cpp, rkl, prdtl, visclc, romc, tplus, cofimp, cpscv
+double precision distbf, hint, heq, yptp, hflui, hext
+double precision yplus, dplus, phit, rcprod, temp, tet, uk
+double precision viscis, visctc, xmutlm, ypth, xnuii, srfbnf
+double precision rcodcx, rcodcy, rcodcz, rcodcn, rnx, rny, rnz
+double precision upx, upy, upz, usn, tx, ty, tz, txn, txn0, utau
+
+double precision, allocatable, dimension(:,:) :: vecipb
+double precision, allocatable, dimension(:,:,:) :: gradv
+
+character(len=80) :: fname
+
+double precision, dimension(:), pointer :: crom, viscls
+double precision, dimension(:,:), pointer :: val_p_v
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp
+
+double precision, dimension(:,:), pointer :: coefav, cofafv
+double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
+double precision, dimension(:,:), pointer :: visten
+
+type(var_cal_opt) :: vcopt
+
+!===============================================================================
+
+ivar = isca(iscal)
+f_id = ivarfl(ivar)
+
+call field_get_val_prev_v(f_id, val_p_v)
+
+call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
+
+call field_get_key_int (f_id, kivisl, ifcvsl)
+
+if (ifcvsl .ge. 0) then
+  call field_get_val_s(ifcvsl, viscls)
+endif
+
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+if (vcopt%idften.eq.6.or.ityturt(iscal).eq.3) then
+  if (iturb.ne.32.or.ityturt(iscal).eq.3) then
+    call field_get_val_v(ivsten, visten)
+  else ! EBRSM and (GGDH or AFM)
+    call field_get_val_v(ivstes, visten)
+  endif
+endif
+
+call field_get_coefa_v(f_id, coefav)
+call field_get_coefb_v(f_id, coefbv)
+call field_get_coefaf_v(f_id, cofafv)
+call field_get_coefbf_v(f_id, cofbfv)
+
+call field_get_val_s(icrom, crom)
+if (icp.ge.0) then
+  call field_get_val_s(icp, cpro_cp)
+endif
+
+isvhbl = 0
+if (iscal.eq.isvhb) then
+  isvhbl = isvhb
+endif
+
+ypth = 0.d0
+
+allocate(vecipb(nfabor,3))
+
+! allocate a temporary array
+allocate(gradv(3,3,ncelet))
+inc = 1
+iprev = 1
+
+call field_gradient_vector(f_id, iprev, imrgra, inc,    &
+                           gradv)
+
+do isou = 1, 3
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    vecipb(ifac,isou) =  gradv(1,isou,iel)*diipb(1,ifac)    &
+                       + gradv(2,isou,iel)*diipb(2,ifac)    &
+                       + gradv(3,isou,iel)*diipb(3,ifac)    &
+                       + val_p_v(isou,iel)
+  enddo
+enddo
+
+deallocate(gradv)
+
+! --- Loop on boundary faces
+do ifac = 1, nfabor
+
+  yplus = byplus(ifac)
+  dplus = bdplus(ifac)
+  uk = buk(ifac)
+
+  ! Geometric quantities
+  distbf = distb(ifac)
+  srfbnf = surfbn(ifac)
+
+  ! Local framework
+
+  ! Unit normal
+
+  rnx = surfbo(1,ifac)/srfbnf
+  rny = surfbo(2,ifac)/srfbnf
+  rnz = surfbo(3,ifac)/srfbnf
+
+  ! Handle Dirichlet vector values
+
+  rcodcx = rcodcl(ifac,ivar  ,1)
+  rcodcy = rcodcl(ifac,ivar+1,1)
+  rcodcz = rcodcl(ifac,ivar+2,1)
+
+  !  Keep tangential part
+
+  rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
+  rcodcx = rcodcx -rcodcn*rnx
+  rcodcy = rcodcy -rcodcn*rny
+  rcodcz = rcodcz -rcodcn*rnz
+
+  ! Relative tangential velocity
+
+  upx = vecipb(ifac,1) - rcodcx
+  upy = vecipb(ifac,2) - rcodcy
+  upz = vecipb(ifac,3) - rcodcz
+
+  usn = upx*rnx+upy*rny+upz*rnz
+  tx  = upx -usn*rnx
+  ty  = upy -usn*rny
+  tz  = upz -usn*rnz
+  txn = sqrt(tx**2 +ty**2 +tz**2)
+  utau= txn
+
+  ! Unit tangent
+
+  if (txn.ge.epzero) then
+
+    txn0 = 1.d0
+
+    tx  = tx/txn
+    ty  = ty/txn
+    tz  = tz/txn
+
+  else
+
+    ! If the vector is zero
+    !  Tx, Ty, Tz is not used (we cancel the vector), so we assign any
+    !  value (zero for example)
+
+    txn0 = 0.d0
+
+    tx  = 0.d0
+    ty  = 0.d0
+    tz  = 0.d0
+
+  endif
+
+  ! Test on the presence of a smooth wall condition (start)
+  if (icodcl(ifac,iu).eq.5) then
+
+    iel = ifabor(ifac)
+
+    ! Physical quantities
+
+    visclc = viscl(iel)
+    visctc = visct(iel)
+    romc   = crom(iel)
+
+    xnuii = visclc / romc
+
+    cpp = 1.d0
+    if (iscacp(iscal).eq.1) then
+      if (icp.ge.0) then
+        cpp = cpro_cp(iel)
+      else
+        cpp = cp0
+      endif
+    endif
+
+    if (ifcvsl.lt.0) then
+      rkl = visls0(iscal)
+      prdtl = cpp*visclc/rkl
+    else
+      rkl = viscls(iel)
+      prdtl = cpp*visclc/rkl
+    endif
+
+    ! Scalar diffusivity
+    if (vcopt%idften.eq.1) then
+      hint = (rkl+vcopt%idifft*cpp*visctc/sigmas(iscal))/distbf
+    endif
+    ! TODO if (vcopt%idften.eq.6)
+
+    ! Dirichlet on the scalar, with wall function
+    if (iturb.ne.0.and.icodcl(ifac,ivar).eq.5) then
+
+      call hturbp(iwalfs,prdtl,sigmas(iscal),yplus,dplus,hflui,ypth)
+
+      ! Compute (y+-d+)/T+ *PrT
+      yptp = hflui/prdtl
+      ! Compute lambda/y * (y+-d+)/T+
+      hflui = rkl/distbf *hflui
+
+    ! Neumann on the scalar, with wall function (for post-processing)
+    elseif (iturb.ne.0.and.icodcl(ifac,ivar).eq.3) then
+      call hturbp(iwalfs,prdtl,sigmas(iscal),yplus,dplus,hflui,ypth)
+      ! y+/T+ *PrT
+      yptp = hflui/prdtl
+      hflui = hint
+
+    else
+      ! y+/T+ *PrT
+      yptp = 1.d0/prdtl
+      hflui = hint
+    endif
+
+    if (isvhbl.gt.0) hbord(ifac) = hflui
+
+    hext = rcodcl(ifac,ivar,2)
+
+    if (abs(hext).gt.rinfin*0.5d0) then
+      heq = hflui
+    else
+      heq = hflui*hext/(hflui+hext)
+    endif
+
+    ! ---> Dirichlet Boundary condition with a wall function correction
+    !      with or without an additional exchange coefficient hext
+
+    if (icodcl(ifac,ivar).eq.5) then
+      ! DFM: the gradient BCs are so that the production term
+      !      of u'T' is correcty computed
+      if (ityturt(iscal).ge.1) then
+        ! In the log layer
+        if (yplus.ge.ypth.and.iturb.ne.0) then
+          xmutlm = xkappa*visclc*yplus
+          rcprod = min(xkappa , max(1.0d0,sqrt(xmutlm/visctc))/yplus)
+
+          cofimp = 1.d0 - yptp*sigmas(iscal)/xkappa*                        &
+                  (2.0d0*rcprod - 1.0d0/(2.0d0*yplus-dplus))
+
+          ! In the viscous sub-layer
+        else
+          cofimp = 0.d0
+        endif
+      else
+        cofimp = 1.d0 - heq/hint
+      endif
+
+      ! To be coherent with a wall function, clip it to 0
+      cofimp = max(cofimp, 0.d0)
+
+      ! Coupled solving of the velocity components
+
+      ! Gradient boundary conditions
+      !-----------------------------
+      rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
+
+      coefav(1,ifac) = (1.d0-cofimp)*(rcodcx - rcodcn*rnx) + rcodcn*rnx
+      coefav(2,ifac) = (1.d0-cofimp)*(rcodcy - rcodcn*rny) + rcodcn*rny
+      coefav(3,ifac) = (1.d0-cofimp)*(rcodcz - rcodcn*rnz) + rcodcn*rnz
+
+      ! Projection in order to have the vector parallel to the wall
+      ! B = cofimp * ( IDENTITY - n x n )
+
+      coefbv(1,1,ifac) = cofimp*(1.d0-rnx**2)
+      coefbv(2,2,ifac) = cofimp*(1.d0-rny**2)
+      coefbv(3,3,ifac) = cofimp*(1.d0-rnz**2)
+      coefbv(1,2,ifac) = -cofimp*rnx*rny
+      coefbv(1,3,ifac) = -cofimp*rnx*rnz
+      coefbv(2,1,ifac) = -cofimp*rny*rnx
+      coefbv(2,3,ifac) = -cofimp*rny*rnz
+      coefbv(3,1,ifac) = -cofimp*rnz*rnx
+      coefbv(3,2,ifac) = -cofimp*rnz*rny
+
+      ! Flux boundary conditions
+      !-------------------------
+
+      cofafv(1,ifac)   = -heq*(rcodcx - rcodcn*rnx) - hint*rcodcn*rnx
+      cofafv(2,ifac)   = -heq*(rcodcy - rcodcn*rny) - hint*rcodcn*rny
+      cofafv(3,ifac)   = -heq*(rcodcz - rcodcn*rnz) - hint*rcodcn*rnz
+
+      ! Projection
+      !  B = heq*( IDENTITY - n x n )
+
+      cofbfv(1,1,ifac) = heq*(1.d0-rnx**2) + hint*rnx**2
+      cofbfv(2,2,ifac) = heq*(1.d0-rny**2) + hint*rny**2
+      cofbfv(3,3,ifac) = heq*(1.d0-rnz**2) + hint*rnz**2
+
+      cofbfv(1,2,ifac) = (hint - heq)*rnx*rny
+      cofbfv(1,3,ifac) = (hint - heq)*rnx*rnz
+      cofbfv(2,1,ifac) = (hint - heq)*rny*rnx
+      cofbfv(2,3,ifac) = (hint - heq)*rny*rnz
+      cofbfv(3,1,ifac) = (hint - heq)*rnz*rnx
+      cofbfv(3,2,ifac) = (hint - heq)*rnz*rny
+
+    endif ! End if icodcl.eq.5
+
+    ! TODO : postprocessing at the boundary
+
+  endif ! smooth wall condition
+
+enddo
+
+deallocate(vecipb)
 
 !----
 ! End

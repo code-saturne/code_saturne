@@ -539,10 +539,11 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 !     Scalaires non variance
 
   do ii = 1, nscal
-    if(iscavr(ii).le.0.or.iscavr(ii).gt.nscal) then
+    f_id = ivarfl(isca(ii))
+    call field_get_dim(f_id, f_dim)
+    if((iscavr(ii).le.0.or.iscavr(ii).gt.nscal).and.f_dim.eq.1) then
 
       ! Get the min clipping
-      f_id = ivarfl(isca(ii))
       call field_get_key_double(f_id, kscmin, scminp)
       call field_get_key_double(f_id, kscmax, scmaxp)
 

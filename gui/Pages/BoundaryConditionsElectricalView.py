@@ -161,11 +161,9 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.modelPotVector.addItem(self.tr("Implicit flux"), 'neumann_implicit')
         self.modelPotVector.disableItem(0)
 
-        self.potVect = 'vec_potential_01'
-        self.modelPotVectLabel = ComboModel(self.comboBoxPotVector, 3, 1)
-        self.modelPotVectLabel.addItem(self.tr('vec_potential_01'), 'vec_potential_01')
-        self.modelPotVectLabel.addItem(self.tr('vec_potential_02'), 'vec_potential_02')
-        self.modelPotVectLabel.addItem(self.tr('vec_potential_03'), 'vec_potential_03')
+        self.potVect = 'vec_potential'
+        self.modelPotVectLabel = ComboModel(self.comboBoxPotVector, 1, 1)
+        self.modelPotVectLabel.addItem(self.tr('vec_potential'), 'vec_potential')
         self.modelPotVectLabel.setItem(str_model = self.potVect)
 
         if self.__model.getElectricalModel() == 'joule':
@@ -388,4 +386,3 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------
-

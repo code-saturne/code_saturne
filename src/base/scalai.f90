@@ -74,14 +74,15 @@ double precision dt(ncelet)
 
 ! Local variables
 
-integer          iscal, ivar, iel
+integer          iscal, ivar, iel, isou
 integer          ii, iisc, itspdv, icalc, iappel
-integer          ispecf, scal_id, f_id
+integer          ispecf, scal_id, f_id, f_dim
 
 double precision, allocatable, dimension(:) :: dtr
 double precision, allocatable, dimension(:) :: viscf, viscb
 
 double precision, dimension(:), pointer :: cvar_var, cvara_var
+double precision, dimension(:,:), pointer :: cvar_vav, cvara_vav
 integer :: keyvar
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
@@ -137,11 +138,22 @@ if (nscapp.gt.0) then
         do ii = 1, nscapp
           iscal = iscapp(ii)
           ivar  = isca(iscal)
-          call field_get_val_s(ivarfl(ivar), cvar_var)
-          call field_get_val_prev_s(ivarfl(ivar), cvara_var)
-          do iel = 1, ncelet
-            cvara_var(iel) = cvar_var(iel)
-          enddo
+          call field_get_dim(ivarfl(ivar), f_dim)
+          if (f_dim.eq.1) then
+            call field_get_val_s(ivarfl(ivar), cvar_var)
+            call field_get_val_prev_s(ivarfl(ivar), cvara_var)
+            do iel = 1, ncelet
+              cvara_var(iel) = cvar_var(iel)
+            enddo
+          else
+            call field_get_val_v(ivarfl(ivar), cvar_vav)
+            call field_get_val_prev_v(ivarfl(ivar), cvara_vav)
+            do iel = 1, ncelet
+              do isou = 1, 3
+                cvara_vav(isou,iel)= cvar_vav(isou,iel)
+              enddo
+            enddo
+          endif
         enddo
       endif
     endif
@@ -274,20 +286,39 @@ if (nscapp.gt.0) then
         call csexit (1)
       endif
 
+      call field_get_dim(ivarfl(isca(iscal)), f_dim)
+
+      if (f_dim.eq.1) then
 
 ! ---> Appel a covofi pour la resolution
 
-      call covofi                                                 &
-      !==========
- ( nvar   , nscal  ,                                              &
-   ncepdc , ncetsm , nfbpcd , ncmast ,                            &
-   iisc   , itspdv ,                                              &
-   icepdc , icetsm , ifbpcd , ltmast ,                            &
-   itypsm , itypcd , itypst ,                                     &
-   dtr    , tslagr ,                                              &
-   ckupdc , smacel , spcond , svcond , flxmst ,                   &
-   viscf  , viscb  )
+        call covofi                                                 &
+        !==========
+   ( nvar   , nscal  ,                                              &
+     ncepdc , ncetsm , nfbpcd , ncmast ,                            &
+     iisc   , itspdv ,                                              &
+     icepdc , icetsm , ifbpcd , ltmast ,                            &
+     itypsm , itypcd , itypst ,                                     &
+     dtr    , tslagr ,                                              &
+     ckupdc , smacel , spcond , svcond , flxmst ,                   &
+     viscf  , viscb  )
 
+      else
+
+! ---> Appel a covofv pour la resolution
+
+        call covofv                                                 &
+        !==========
+   ( nvar   , nscal  ,                                              &
+     ncepdc , ncetsm ,                                              &
+     iisc   ,                                                       &
+     icepdc , icetsm ,                                              &
+     itypsm ,                                                       &
+     dtr    , tslagr ,                                              &
+     ckupdc , smacel ,                                              &
+     viscf  , viscb  )
+
+      endif
 
 ! ---> Versions Electriques
 !             Effet Joule
@@ -432,19 +463,39 @@ if (nscaus.gt.0) then
       call csexit (1)
     endif
 
+    call field_get_dim(ivarfl(isca(iscal)), f_dim)
+
+    if (f_dim.eq.1) then
 
 ! ---> Appel a covofi pour la resolution
 
-    call covofi                                                   &
-    !==========
- ( nvar   , nscal  ,                                              &
-   ncepdc , ncetsm , nfbpcd , ncmast ,                            &
-   iisc   , itspdv ,                                              &
-   icepdc , icetsm , ifbpcd , ltmast ,                            &
-   itypsm , itypcd , itypst ,                                     &
-   dtr    , tslagr ,                                              &
-   ckupdc , smacel , spcond , svcond , flxmst ,                   &
-   viscf  , viscb  )
+      call covofi                                                   &
+      !==========
+   ( nvar   , nscal  ,                                              &
+     ncepdc , ncetsm , nfbpcd , ncmast ,                            &
+     iisc   , itspdv ,                                              &
+     icepdc , icetsm , ifbpcd , ltmast ,                            &
+     itypsm , itypcd , itypst ,                                     &
+     dtr    , tslagr ,                                              &
+     ckupdc , smacel , spcond , svcond , flxmst ,                   &
+     viscf  , viscb  )
+
+    else
+
+! ---> Appel a covofv pour la resolution
+
+        call covofv                                                 &
+        !==========
+   ( nvar   , nscal  ,                                              &
+     ncepdc , ncetsm , nfbpcd , ncmast ,                            &
+     iisc   , itspdv ,                                              &
+     icepdc , icetsm , ifbpcd , ltmast ,                            &
+     itypsm , itypcd , itypst ,                                     &
+     dtr    , tslagr ,                                              &
+     ckupdc , smacel , spcond , svcond , flxmst ,                   &
+     viscf  , viscb  )
+
+      endif
 
 
 ! ---> Fin de la Boucle sur les scalaires utilisateurs.

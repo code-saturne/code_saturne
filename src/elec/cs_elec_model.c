@@ -497,6 +497,21 @@ CS_PROCF (eltssc, ELTSSC) (const cs_int_t  *isca,
 }
 
 void
+CS_PROCF (eltsvv, ELTSVV) (const cs_int_t  *isca,
+                                 cs_real_t *smbrv)
+{
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
+  const int keysca = cs_field_key_id("scalar_id");
+
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
+    cs_field_t  *f = cs_field_by_id(f_id);
+    if (cs_field_get_key_int(f, keysca) == *isca)
+      cs_elec_source_terms_v(mesh, mesh_quantities, f->id, (cs_real_3_t *)smbrv);
+  }
+}
+
+void
 CS_PROCF (elvarp, ELVARP) (cs_int_t *ieljou,
                            cs_int_t *ielarc)
 {
@@ -671,55 +686,17 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
   }
 
-  /* TODO when vector field
   if (cs_glob_elec_option->ielarc > 1) {
-    for (int i = 0; i < 3 ; i++) {
-      f = CS_FI_(potva, i);
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-      var_cal_opt.iconv  = 0;
-      var_cal_opt.istat  = 0;
-      var_cal_opt.idiff  = 1;
-      var_cal_opt.idifft = 0;
-      // TODO var_cal_opt.idircl = 1;
-
-      int i = cs_field_get_key_int(fp1, keysca) - 1;
-      visls0[i] = 1.;
-    }
-  }
-  */
-  if (cs_glob_elec_option->ielarc > 1) {
-    cs_field_t  *fp1 = cs_field_by_name_try("vec_potential_01");
-    cs_field_t  *fp2 = cs_field_by_name_try("vec_potential_02");
-    cs_field_t  *fp3 = cs_field_by_name_try("vec_potential_03");
-    cs_field_get_key_struct(fp1, key_cal_opt_id, &var_cal_opt);
-    id = cs_field_get_key_int(fp1, keysca) - 1;
+    cs_field_t  *fp = cs_field_by_name_try("vec_potential");
+    cs_field_get_key_struct(fp, key_cal_opt_id, &var_cal_opt);
+    id = cs_field_get_key_int(fp, keysca) - 1;
     var_cal_opt.iconv  = 0;
     var_cal_opt.istat  = 0;
     var_cal_opt.idiff  = 1;
     var_cal_opt.idifft = 0;
     idircl[isca[id] - 1] = 1;
-    visls0[id] = 1.;
-    cs_field_set_key_struct(fp1, key_cal_opt_id, &var_cal_opt);
-
-    cs_field_get_key_struct(fp2, key_cal_opt_id, &var_cal_opt);
-    id = cs_field_get_key_int(fp2, keysca) - 1;
-    var_cal_opt.iconv  = 0;
-    var_cal_opt.istat  = 0;
-    var_cal_opt.idiff  = 1;
-    var_cal_opt.idifft = 0;
-    idircl[isca[id] - 1] = 1;
-    visls0[id] = 1.;
-    cs_field_set_key_struct(fp2, key_cal_opt_id, &var_cal_opt);
-
-    cs_field_get_key_struct(fp3, key_cal_opt_id, &var_cal_opt);
-    id = cs_field_get_key_int(fp3, keysca) - 1;
-    var_cal_opt.iconv  = 0;
-    var_cal_opt.istat  = 0;
-    var_cal_opt.idiff  = 1;
-    var_cal_opt.idifft = 0;
-    idircl[isca[id] - 1] = 1;
-    visls0[id] = 1.;
-    cs_field_set_key_struct(fp3, key_cal_opt_id, &var_cal_opt);
+    visls0[id  ] = 1.;
+    cs_field_set_key_struct(fp, key_cal_opt_id, &var_cal_opt);
   }
 
   /* for all specific field */
@@ -760,26 +737,12 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
   }
   */
   if (cs_glob_elec_option->ielarc > 1) {
-    cs_field_t  *fp1 = cs_field_by_name_try("vec_potential_01");
-    cs_field_t  *fp2 = cs_field_by_name_try("vec_potential_02");
-    cs_field_t  *fp3 = cs_field_by_name_try("vec_potential_03");
-    cs_field_get_key_struct(fp1, key_cal_opt_id, &var_cal_opt);
-    id = cs_field_get_key_int(fp1, keysca) - 1;
+    cs_field_t  *fp = cs_field_by_name_try("vec_potential");
+    cs_field_get_key_struct(fp, key_cal_opt_id, &var_cal_opt);
+    id = cs_field_get_key_int(fp, keysca) - 1;
     var_cal_opt.blencv = 1.;
     sigmas[id] = 0.7;
-    cs_field_set_key_struct(fp1, key_cal_opt_id, &var_cal_opt);
-
-    cs_field_get_key_struct(fp2, key_cal_opt_id, &var_cal_opt);
-    id = cs_field_get_key_int(fp2, keysca) - 1;
-    var_cal_opt.blencv = 1.;
-    sigmas[id] = 0.7;
-    cs_field_set_key_struct(fp2, key_cal_opt_id, &var_cal_opt);
-
-    cs_field_get_key_struct(fp3, key_cal_opt_id, &var_cal_opt);
-    id = cs_field_get_key_int(fp3, keysca) - 1;
-    var_cal_opt.blencv = 1.;
-    sigmas[id] = 0.7;
-    cs_field_set_key_struct(fp3, key_cal_opt_id, &var_cal_opt);
+    cs_field_set_key_struct(fp, key_cal_opt_id, &var_cal_opt);
   }
 
   if (cs_glob_elec_properties->ngaz > 1) {
@@ -1624,63 +1587,30 @@ cs_compute_electric_field(const cs_mesh_t  *mesh,
 
     if (cs_glob_elec_option->ielarc == 2) {
       /* compute magnetic field component B */
-      //cs_field_get_key_struct(CS_FI_(potva, 0), key_cal_opt_id, &var_cal_opt);
-      cs_field_t  *fp1 = cs_field_by_name_try("vec_potential_01");
-      cs_field_t  *fp2 = cs_field_by_name_try("vec_potential_02");
-      cs_field_t  *fp3 = cs_field_by_name_try("vec_potential_03");
-      cs_field_get_key_struct(fp1, key_cal_opt_id, &var_cal_opt);
+      cs_field_t  *fp = cs_field_by_name_try("vec_potential");
+      cs_field_get_key_struct(fp, key_cal_opt_id, &var_cal_opt);
 
       cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
                                  &gradient_type,
                                  &halo_type);
 
-      /* Ax component */
-      //cs_field_gradient_scalar(CS_FI_(potva, 0),
-      cs_field_gradient_scalar(fp1,
+      cs_real_33_t *gradv = NULL;
+      BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
+      cs_field_gradient_vector(fp,
                                false, /* use_previous_t */
                                gradient_type,
                                halo_type,
                                1,    /* inc */
-                               true, /* recompute_cocg */
-                               grad);
+                               gradv);
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        Bx[iel] =  0.;
-        By[iel] =  grad[iel][2];
-        Bz[iel] = -grad[iel][1];
+        Bx[iel] = -gradv[iel][1][2]+gradv[iel][2][1];
+        By[iel] =  gradv[iel][0][2]-gradv[iel][2][0];
+        Bz[iel] = -gradv[iel][0][1]+gradv[iel][1][0];
       }
 
-      /* Ay component */
-      //cs_field_gradient_scalar(CS_FI_(potva, 1),
-      cs_field_gradient_scalar(fp2,
-                               false, /* use_previous_t */
-                               gradient_type,
-                               halo_type,
-                               1,    /* inc */
-                               true, /* recompute_cocg */
-                               grad);
-
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        Bx[iel] -=  grad[iel][2];
-        By[iel] +=  0.;
-        Bz[iel] +=  grad[iel][0];
-      }
-
-      /* Az component */
-      //cs_field_gradient_scalar(CS_FI_(potva, 2),
-      cs_field_gradient_scalar(fp3,
-                               false, /* use_previous_t */
-                               gradient_type,
-                               halo_type,
-                               1,    /* inc */
-                               true, /* recompute_cocg */
-                               grad);
-
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        Bx[iel] +=  grad[iel][1];
-        By[iel] -=  grad[iel][0];
-        Bz[iel] +=  0.;
-      }
+      BFT_FREE(gradv);
     }
     else if (cs_glob_elec_option->ielarc == 1)
       bft_error(__FILE__, __LINE__, 0,
@@ -1760,7 +1690,7 @@ cs_compute_electric_field(const cs_mesh_t  *mesh,
 
 
 /*----------------------------------------------------------------------------
- * compute source terms for energie and vector potential
+ * compute source terms for energie
  *----------------------------------------------------------------------------*/
 
 void
@@ -1816,34 +1746,39 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
     }
   }
 
+  BFT_FREE(w1);
+}
+
+/*----------------------------------------------------------------------------
+ * compute source terms for vector potential
+ *----------------------------------------------------------------------------*/
+
+void
+cs_elec_source_terms_v(const cs_mesh_t             *mesh,
+                       const cs_mesh_quantities_t  *mesh_quantities,
+                       int                          f_id,
+                       cs_real_3_t                 *smbrv)
+{
+  const cs_field_t  *f    = cs_field_by_id(f_id);
+  cs_lnum_t          n_cells     = mesh->n_cells;
+  const cs_real_t   *volume = mesh_quantities->cell_vol;
+
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_var_cal_opt_t var_cal_opt;
+  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
   /* source term for potential vector */
 
   if (cs_glob_elec_option->ielarc >= 2) {
-
     cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
 
-    if (strcmp(name, "vec_potential_01") == 0) {
-      if (var_cal_opt.iwarni > 0)
-        bft_printf("compute source terms for variable : %s\n", name);
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        smbrs[iel] += cs_elec_permvi * cpro_curre[iel][0] * volume[iel];
-    }
-    else if (strcmp(name, "vec_potential_02") == 0) {
-      if (var_cal_opt.iwarni > 0)
-        bft_printf("compute source terms for variable : %s\n", name);
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        smbrs[iel] += cs_elec_permvi * cpro_curre[iel][1] * volume[iel];
-    }
-    else if (strcmp(name, "vec_potential_03") == 0) {
-      if (var_cal_opt.iwarni > 0)
-        bft_printf("compute source terms for variable : %s\n", name);
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        smbrs[iel] += cs_elec_permvi * cpro_curre[iel][2] * volume[iel];
-    }
+    if (var_cal_opt.iwarni > 0)
+      bft_printf("compute source terms for variable : %s\n", f->name);
 
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+      for (int isou = 0; isou < 3; isou++)
+        smbrv[iel][isou] += cs_elec_permvi * cpro_curre[iel][isou] * volume[iel];
   }
-
-  BFT_FREE(w1);
 }
 
 /*----------------------------------------------------------------------------
@@ -1855,7 +1790,8 @@ cs_elec_add_variable_fields(const int  *ielarc,
                             const int  *ieljou)
 {
   cs_field_t *f;
-  int dim = 1;
+  int dim1 = 1;
+  int dim3 = 3;
   double grand = 1.e12;
 
   const int kscmin = cs_field_key_id("min_scalar_clipping");
@@ -1866,7 +1802,7 @@ cs_elec_add_variable_fields(const int  *ielarc,
 
   {
     int f_id = cs_variable_field_create("enthalpy", "Enthalpy",
-                                        CS_MESH_LOCATION_CELLS, dim);
+                                        CS_MESH_LOCATION_CELLS, dim1);
     f = cs_field_by_id(f_id);
     cs_field_set_key_double(f, kscmin, -grand);
     cs_field_set_key_int(f, kivisl, 0);
@@ -1880,7 +1816,7 @@ cs_elec_add_variable_fields(const int  *ielarc,
 
   {
     int f_id = cs_variable_field_create("elec_pot_r", "POT_EL_R",
-                                        CS_MESH_LOCATION_CELLS, dim);
+                                        CS_MESH_LOCATION_CELLS, dim1);
     f = cs_field_by_id(f_id);
     cs_field_set_key_double(f, kscmin, -grand);
     cs_field_set_key_double(f, kscmax,  grand);
@@ -1890,7 +1826,7 @@ cs_elec_add_variable_fields(const int  *ielarc,
 
   if (*ieljou == 2 || *ieljou == 4) {
     int f_id = cs_variable_field_create("elec_pot_i", "POT_EL_I",
-                                        CS_MESH_LOCATION_CELLS, dim);
+                                        CS_MESH_LOCATION_CELLS, dim1);
     f = cs_field_by_id(f_id);
     cs_field_set_key_double(f, kscmin, -grand);
     cs_field_set_key_double(f, kscmax,  grand);
@@ -1900,31 +1836,11 @@ cs_elec_add_variable_fields(const int  *ielarc,
 
   if (*ielarc > 1) {
     {
-      int f_id = cs_variable_field_create("vec_potential_01", "POT_VEC1",
-                                          CS_MESH_LOCATION_CELLS, dim);
+      int f_id = cs_variable_field_create("vec_potential", "POT_VEC",
+                                          CS_MESH_LOCATION_CELLS, dim3);
       f = cs_field_by_id(f_id);
-      cs_field_set_key_double(f, kscmin, -grand);
-      cs_field_set_key_double(f, kscmax,  grand);
-      cs_field_set_key_int(f, kivisl, -1);
-      cs_add_model_field_indexes(f->id);
-    }
-
-    {
-      int f_id = cs_variable_field_create("vec_potential_02", "POT_VEC2",
-                                          CS_MESH_LOCATION_CELLS, dim);
-      f = cs_field_by_id(f_id);
-      cs_field_set_key_double(f, kscmin, -grand);
-      cs_field_set_key_double(f, kscmax,  grand);
-      cs_field_set_key_int(f, kivisl, -1);
-      cs_add_model_field_indexes(f->id);
-    }
-
-    {
-      int f_id = cs_variable_field_create("vec_potential_03", "POT_VEC3",
-                                          CS_MESH_LOCATION_CELLS, dim);
-      f = cs_field_by_id(f_id);
-      cs_field_set_key_double(f, kscmin, -grand);
-      cs_field_set_key_double(f, kscmax,  grand);
+      //cs_field_set_key_double(f, kscmin, -grand);
+      //cs_field_set_key_double(f, kscmax,  grand);
       cs_field_set_key_int(f, kivisl, -1);
       cs_add_model_field_indexes(f->id);
     }
@@ -1945,7 +1861,7 @@ cs_elec_add_variable_fields(const int  *ielarc,
       strcat(label, suf);
 
       int f_id = cs_variable_field_create(name, label,
-                                          CS_MESH_LOCATION_CELLS, dim);
+                                          CS_MESH_LOCATION_CELLS, dim1);
       f = cs_field_by_id(f_id);
 
       cs_field_set_key_double(f, kscmin, 0.);

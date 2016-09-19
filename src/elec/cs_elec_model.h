@@ -157,6 +157,10 @@ CS_PROCF (eltssc, ELTSSC) (const cs_int_t  *isca,
                                  cs_real_t *smbrs);
 
 void
+CS_PROCF (eltsvv, ELTSVV) (const cs_int_t  *isca,
+                                 cs_real_t *smbrv);
+
+void
 CS_PROCF (elvarp, ELVARP) (cs_int_t *ieljou,
                            cs_int_t *ielarc);
 
@@ -250,7 +254,7 @@ cs_elec_physical_properties(const cs_mesh_t             *mesh,
                             const cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
- * compute source terms for energie and vector potential
+ * compute source terms for energie
  *----------------------------------------------------------------------------*/
 
 void
@@ -258,6 +262,16 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
                      const cs_mesh_quantities_t  *mesh_quantities,
                      int                          f_id,
                      cs_real_t                   *smbrs);
+
+/*----------------------------------------------------------------------------
+ * compute source terms for vector potential
+ *----------------------------------------------------------------------------*/
+
+void
+cs_elec_source_terms_v(const cs_mesh_t             *mesh,
+                       const cs_mesh_quantities_t  *mesh_quantities,
+                       int                          f_id,
+                       cs_real_3_t                 *smbrv);
 
 /*----------------------------------------------------------------------------
  * add variables fields

@@ -193,7 +193,7 @@ double precision, dimension(:), pointer :: cpro_viscls, cpro_visct
 double precision, dimension(:), pointer :: cpro_tsscal
 double precision, dimension(:), pointer :: cpro_x2icla
 ! Darcy arrays
-double precision, allocatable, dimension(:) :: diverg
+double precision, allocatable, dimension(:) :: diverg, divflu
 double precision, dimension(:), pointer :: cpro_delay, cpro_sat
 double precision, dimension(:), pointer :: cproa_delay, cproa_sat
 double precision, dimension(:), pointer :: cvar_var, cvara_var, cvara_varsca
@@ -1085,12 +1085,28 @@ endif
 call field_get_key_int(iflid, keydri, iscdri)
 
 if (iscdri.ge.1) then
- call driflu &
- !=========
- ( iflid  ,                                                       &
-   dt     ,                                                       &
-   imasfl , bmasfl ,                                              &
-   rovsdt , smbrs  )
+  allocate(divflu(ncelet))
+
+  call driflu &
+  !=========
+  ( iflid  ,                                                       &
+    dt     ,                                                       &
+    imasfl , bmasfl ,                                              &
+    divflu )
+
+  iconvp = vcopt%iconv
+  thetap = vcopt%thetav
+
+  ! NB: if the porosity module is swiched on, the the porosity is already
+  ! taken into account in divflu
+
+  ! --> mass aggregation term
+  do iel = 1, ncel
+    rovsdt(iel) = rovsdt(iel) + iconvp*thetap*divflu(iel)
+    smbrs(iel) = smbrs(iel) - iconvp*divflu(iel)*cvara_var(iel)
+  enddo
+
+  deallocate(divflu)
 endif
 
 ! Darcy:
