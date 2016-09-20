@@ -178,6 +178,7 @@ static cs_lagr_model_t  _lagr_model
 
 static cs_lagr_particle_counter_t _lagr_particle_counter
   = {.n_g_cumulative_total = 0,
+     .n_g_cumulative_failed = 0,
      .n_g_total = 0,
      .n_g_new = 0,
      .n_g_exit = 0,
@@ -190,8 +191,7 @@ static cs_lagr_particle_counter_t _lagr_particle_counter
      .w_exit = 0.,
      .w_deposited = 0.,
      .w_fouling = 0.,
-     .w_resuspended = 0.,
-     .w_failed = 0.};
+     .w_resuspended = 0.};
 
 /* lagr specific physics structure and associated pointer */
 static cs_lagr_specific_physics_t _cs_glob_lagr_specific_physics
@@ -1504,16 +1504,15 @@ cs_lagr_update_particle_counter(void)
                          p_set->n_part_resusp,
                          p_set->n_failed_part};
 
-  cs_real_t wsum[7] = {p_set->weight,
+  cs_real_t wsum[6] = {p_set->weight,
                        p_set->weight_new,
                        p_set->weight_out,
                        p_set->weight_dep,
                        p_set->weight_fou,
-                       p_set->weight_resusp,
-                       p_set->weight_failed};
+                       p_set->weight_resusp};
 
   cs_parall_counter(gcount, 7);
-  cs_parall_sum(7, CS_REAL_TYPE, wsum);
+  cs_parall_sum(6, CS_REAL_TYPE, wsum);
 
   pc->n_g_total = gcount[0];
   pc->n_g_new = gcount[1];
@@ -1521,7 +1520,7 @@ cs_lagr_update_particle_counter(void)
   pc->n_g_deposited = gcount[3];
   pc->n_g_fouling = gcount[4];
   pc->n_g_resuspended = gcount[5];
-  pc->n_g_failed += gcount[6];
+  pc->n_g_failed = gcount[6];
 
   pc->w_total = wsum[0];
   pc->w_new = wsum[1];
@@ -1529,7 +1528,6 @@ cs_lagr_update_particle_counter(void)
   pc->w_deposited = wsum[3];
   pc->w_fouling = wsum[4];
   pc->w_resuspended = wsum[5];
-  pc->w_failed += wsum[6];
 
   return pc;
 }
@@ -1951,7 +1949,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   /* Initialization  */
 
-  part_c->n_g_cumulative_total = 0;
   part_c->n_g_total = 0;
   part_c->n_g_new = 0;
   part_c->n_g_exit = 0;
@@ -1965,7 +1962,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
   part_c->w_deposited = 0;
   part_c->w_fouling = 0;
   part_c->w_resuspended = 0;
-  part_c->w_failed = 0;
 
   /* ====================================================================   */
   /* 1.bis  Initialization for the dlvo, roughness and clogging  model */
@@ -2564,6 +2560,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   part_c = cs_lagr_update_particle_counter();
   part_c->n_g_cumulative_total += part_c->n_g_new;
+  part_c->n_g_cumulative_failed += part_c->n_g_failed;
 
   /* ====================================================================
    * 18. ECRITURE SUR FICHIERS DES INFORMATIONS SUR LE NOMBRE DE PARTICULES

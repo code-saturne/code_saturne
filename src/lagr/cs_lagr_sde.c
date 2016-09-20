@@ -52,6 +52,7 @@
 #include "cs_thermal_model.h"
 
 #include "cs_lagr.h"
+#include "cs_lagr_adh.h"
 #include "cs_lagr_deposition_model.h"
 #include "cs_lagr_roughness.h"
 #include "cs_lagr_tracking.h"
@@ -423,7 +424,7 @@ _lages2(cs_real_t     dtp,
   cs_real_t  aux10, aux11, aux12, aux17, aux18, aux19;
   cs_real_t  aux20;
   cs_real_t  ter1, ter2, ter3, ter4, ter5;
-  cs_real_t  sige, tapn, gamma2, omegam;
+  cs_real_t  sige, tapn, gamma2;
   cs_real_t  grgam2, gagam;
   cs_real_t  p11, p21, p22;
   cs_real_t  tbriu;
@@ -1116,7 +1117,7 @@ _lagesd(cs_real_t     dtp,
 
     cs_lnum_t iresusp = 0;
 
-    if (cs_lagr_particle_get_real(particle, p_am,
+    if (cs_lagr_particle_get_lnum(particle, p_am,
                                   CS_LAGR_DEPOSITION_FLAG) != CS_LAGR_PART_IN_FLOW) {
 
       cs_lnum_t n_f_id
@@ -1551,7 +1552,7 @@ _lagesd(cs_real_t     dtp,
          * times the number of particle-particle contacts  */
 
         cs_real_t adhes_energ, adhes_force, adhes_force_ps;
-        cs_lagr_adh_pp(p_diam, tempf, &adhes_energ, &adhes_force);
+        cs_lagr_adh_pp(p_diam, *tempf, &adhes_energ, &adhes_force);
         /* Average number of contact in a cluster */
         cs_real_t ncont_pp = pow(p_diam/diam_mean, 2);
 
@@ -2334,7 +2335,7 @@ _lagdep(cs_real_t     dtp,
                 &lvisq,
                 &tvisq,
                 &depint,
-                &nresnew);
+                nresnew);
 
       }
 
@@ -2477,7 +2478,7 @@ cs_lagr_sde(cs_real_t      dt_p,
     /* Management of the deposition submodel */
 
     else
-      _lagdep(dt_p, taup, tlag, piil, bx, vagaus, gradpr, romp, fextla, vislen, &nresnew);
+      _lagdep(dt_p, taup, tlag, piil, bx, vagaus, gradpr, romp, fextla, vislen, nresnew);
 
   }
 

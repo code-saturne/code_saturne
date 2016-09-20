@@ -1984,7 +1984,7 @@ cs_lagr_restart_read_p(void)
     char rubriq[] = "nombre_particules_perdues";
     ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
                                      CS_TYPE_cs_int_t, tabvar);
-    pc->n_g_failed = tabvar[0];
+    pc->n_g_cumulative_failed = tabvar[0];
     BFT_FREE(tabvar);
 
     if (ierror != 0)
@@ -2010,7 +2010,7 @@ cs_lagr_restart_read_p(void)
          ficsui,
          "nombre_particules_perdues",
          "NBPERT",
-         (unsigned long long)(pc->n_g_failed));
+         (unsigned long long)(pc->n_g_cumulative_failed));
 
   }
 
@@ -2238,7 +2238,7 @@ cs_restart_lagrangian_checkpoint_write(void)
     cs_int_t   *tabvar;
     BFT_MALLOC(tabvar, nbval, cs_int_t);
 
-    tabvar[0] = cs_glob_lagr_particle_counter->n_g_failed;
+    tabvar[0] = cs_glob_lagr_particle_counter->n_g_cumulative_failed;
     char rubriq[] = "nombre_particules_perdues";
 
     cs_restart_write_section(cs_lag_stat_restart, rubriq,

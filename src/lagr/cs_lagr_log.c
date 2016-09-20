@@ -485,8 +485,7 @@ cs_lagr_log_iteration(void)
   cs_log_printf
     (CS_LOG_DEFAULT,
      _("ln  out, or deposited and eliminated         %8llu   %14.5E\n"),
-     (unsigned long long)(pc->n_g_exit - pc->n_g_failed),
-     pc->w_exit - pc->w_failed);
+     (unsigned long long)(pc->n_g_exit), pc->w_exit);
   cs_log_printf
     (CS_LOG_DEFAULT,
      _("ln  deposited                                %8llu   %14.5E\n"),
@@ -501,8 +500,8 @@ cs_lagr_log_iteration(void)
 
   cs_log_printf
     (CS_LOG_DEFAULT,
-     _("ln  lost in the location stage               %8llu   %14.5E\n"),
-     (unsigned long long)(pc->n_g_failed), pc->w_failed);
+     _("ln  lost in the location stage               %8llu\n"),
+     (unsigned long long)(pc->n_g_failed));
   cs_log_printf
     (CS_LOG_DEFAULT,
      _("ln  total number at the end of the time step %8llu   %14.5E\n"),
@@ -511,8 +510,7 @@ cs_lagr_log_iteration(void)
   if (pc->n_g_cumulative_total > 0)
     cs_log_printf(CS_LOG_DEFAULT,
                   _("%% of lost particles (restart(s) included): %13.4E\n"),
-                  pc->n_g_failed * 100.e0
-                  / pc->n_g_cumulative_total);
+                  pc->n_g_cumulative_failed * 100. / pc->n_g_cumulative_total);
       cs_log_separator(CS_LOG_DEFAULT);
 
   /* Flow rate for each zone   */

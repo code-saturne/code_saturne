@@ -3349,7 +3349,7 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
   particles->weight_out += exit_weight;
 
   particles->n_failed_part += n_failed_particles;
-  particles->weight_failed = fail_weight;
+  particles->weight_failed += fail_weight;
 
   /* Exchange particles, then update set */
 

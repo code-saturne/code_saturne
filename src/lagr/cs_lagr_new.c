@@ -562,7 +562,6 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
       /* Calculation of the normalized wall-normal particle distance (y^+)  */
 
-      cs_real_t distp  =  1e+20;
       cs_real_t yplus  = 1000.0;
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_YPLUS, yplus);
 

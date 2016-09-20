@@ -97,7 +97,6 @@ cs_lagr_print(cs_real_t ttcabs)
 
   _ipass++;
 
-  cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
 
   /* Parallelism management    */
@@ -139,27 +138,21 @@ cs_lagr_print(cs_real_t ttcabs)
         if (   lagr_model->physical_model == 2
             && lagr_model->fouling == 1)
           fprintf(flal,
-                  "# column 11: inst. number of lost particles (spotting)\n"
-                  "# column 12: inst. number of lost particles (spotting, weighted)\n"
-                  "# column 13: %% of lost particles\n"
-                  "# column 14: inst. number of fouled particles (coal)\n"
-                  "# column 15: inst. number of fouled particles (coal, weighted)\n"
+                  "# column 11: inst. number of fouled particles (coal)\n"
+                  "# column 12: inst. number of fouled particles (coal, weighted)\n"
+                  "# column 13: inst. number of lost particles\n"
                   "#\n");
 
         else if (lagr_model->resuspension > 0)
           fprintf(flal,
                   "# column 11: inst. number of resuspended particles\n"
                   "# column 12: inst. number of resuspended particles (weighted)\n"
-                  "# column 13: inst. number of lost particles (spotting)\n"
-                  "# column 14: inst. number of lost particles (spotting, weighted)\n"
-                  "# column 15: %% of lost particles\n"
+                  "# column 13: inst. number of lost particles\n"
                   "#\n");
 
         else
           fprintf(flal,
-                  "# column 11: inst. number of lost particles (spotting)\n"
-                  "# column 12: inst. number of lost particles (spotting, weighted)\n"
-                  "# column 13: %% of lost particles\n"
+                  "# column 11: inst. number of lost particles\n"
                   "#\n");
 
       }
@@ -168,51 +161,44 @@ cs_lagr_print(cs_real_t ttcabs)
        * 2 - Ecriture des INFORMATIONS
        * ====================================================================   */
 
-      cs_real_t dnbpr = 0.;
-      if (pc->n_g_cumulative_total > 0)
-        dnbpr = (p_set->n_failed_part * 100.0) / pc->n_g_cumulative_total;
-
       if (   lagr_model->physical_model == 2
           && lagr_model->fouling == 1)
-        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %11.4E %8llu %11.4E\n",
+        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu\n",
                 cs_glob_time_step->nt_cur,
                 ttcabs,
                 (unsigned long long)(pc->n_g_total), pc->w_total,
                 (unsigned long long)(pc->n_g_new), pc->w_new,
-                (unsigned long long)(pc->n_g_exit - pc->n_g_failed - pc->n_g_fouling),
-                pc->w_exit - pc->w_failed - pc->w_fouling,
+                (unsigned long long)(pc->n_g_exit - pc->n_g_fouling),
+                pc->w_exit - pc->w_fouling,
                 (unsigned long long)(pc->n_g_deposited), pc->w_deposited,
-                (unsigned long long)(pc->n_g_failed), pc->w_failed, dnbpr,
-                (unsigned long long)(pc->n_g_fouling), pc->w_fouling);
+                (unsigned long long)(pc->n_g_fouling), pc->w_fouling,
+                (unsigned long long)(pc->n_g_failed));
 
       else if (lagr_model->resuspension > 0)
-        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %11.4E\n",
+        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu\n",
                 cs_glob_time_step->nt_cur,
                 ttcabs,
                 (unsigned long long)(pc->n_g_total), pc->w_total,
                 (unsigned long long)(pc->n_g_new), pc->w_new,
-                (unsigned long long)(pc->n_g_exit-pc->n_g_failed),
-                pc->w_exit - pc->w_failed,
+                (unsigned long long)(pc->n_g_exit), pc->w_exit,
                 (unsigned long long)(pc->n_g_deposited), pc->w_deposited,
                 (unsigned long long)(pc->n_g_resuspended), pc->w_resuspended,
-                (unsigned long long)(pc->n_g_failed), pc->w_failed, dnbpr);
+                (unsigned long long)(pc->n_g_failed));
 
       else
-        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %11.4E\n",
+        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu\n",
                 cs_glob_time_step->nt_cur,
                 ttcabs,
                 (unsigned long long)(pc->n_g_total), pc->w_total,
                 (unsigned long long)(pc->n_g_new), pc->w_new,
                 (unsigned long long)(pc->n_g_exit-pc->n_g_failed),
-                pc->w_exit - pc->w_failed,
+                pc->w_exit,
                 (unsigned long long)(pc->n_g_deposited), pc->w_deposited,
-                (unsigned long long)(pc->n_g_failed), pc->w_failed, dnbpr);
+                (unsigned long long)(pc->n_g_failed));
 
     }
 
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
