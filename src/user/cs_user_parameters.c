@@ -146,12 +146,12 @@ cs_user_parameters(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define or modify log user parameters.
+ * \brief Define or modify output user parameters.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_logs(void)
+cs_user_output(void)
 {
 }
 

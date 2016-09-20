@@ -80,11 +80,11 @@ interface
     implicit none
   end subroutine user_linear_solvers
 
-  subroutine user_logs()  &
-      bind(C, name='cs_user_logs')
+  subroutine user_output()  &
+      bind(C, name='cs_user_output')
     use, intrinsic :: iso_c_binding
     implicit none
-  end subroutine user_logs
+  end subroutine user_output
 
 end interface
 
@@ -185,7 +185,7 @@ call fldini
 call gui_postprocess_fields
 
 call usipes(nmodpp)
-call user_logs
+call user_output
 
 call gui_linear_solvers
 call user_linear_solvers
