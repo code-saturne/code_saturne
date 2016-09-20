@@ -487,12 +487,12 @@ if (nscaus.gt.0) then
         call covofv                                                 &
         !==========
    ( nvar   , nscal  ,                                              &
-     ncepdc , ncetsm , nfbpcd , ncmast ,                            &
-     iisc   , itspdv ,                                              &
-     icepdc , icetsm , ifbpcd , ltmast ,                            &
-     itypsm , itypcd , itypst ,                                     &
+     ncepdc , ncetsm ,                                              &
+     iisc   ,                                                       &
+     icepdc , icetsm ,                                              &
+     itypsm ,                                                       &
      dtr    , tslagr ,                                              &
-     ckupdc , smacel , spcond , svcond , flxmst ,                   &
+     ckupdc , smacel ,                                              &
      viscf  , viscb  )
 
       endif
