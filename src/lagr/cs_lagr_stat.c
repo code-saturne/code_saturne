@@ -907,7 +907,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
   _assert_restart_success(retcode);
 
   retcode = cs_restart_read_section(r,
-                                    "lagr_stats:attributes",
+                                    "lagr_stats:stat_type",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
                                     CS_TYPE_cs_int_t,
@@ -2309,6 +2309,24 @@ _stat_define(const char                *name,
   /* Define sub moments */
 
   if (mt->m_type == CS_LAGR_MOMENT_VARIANCE) {
+
+    prev_id = -1;
+    if (_restart_info != NULL) {
+      char m_name[128];
+      snprintf(m_name, 127, "mean%s", _name+3);
+      prev_id = _check_restart(m_name,
+                               ts,
+                               _restart_info,
+                               location_id,
+                               wa_location_id,
+                               dim,
+                               CS_LAGR_MOMENT_MEAN,
+                               stat_type,
+                               class_id,
+                               &_nt_start,
+                               &_t_start,
+                               restart_mode);
+    }
 
     int l_id = _find_or_add_moment(location_id,
                                    component_id,

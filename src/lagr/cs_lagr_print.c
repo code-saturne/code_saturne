@@ -45,7 +45,7 @@
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_parall.h"
@@ -56,7 +56,7 @@
 #include "cs_lagr_tracking.h"
 
 /*----------------------------------------------------------------------------
- *  Header for the current file
+ * Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_lagr_print.h"
@@ -174,7 +174,7 @@ cs_lagr_print(cs_real_t ttcabs)
 
       if (   lagr_model->physical_model == 2
           && lagr_model->fouling == 1)
-        fprintf(flal, " %8d  %11.4E  %8llu  %11.4E%8llu  %11.4E%8llu  %11.4E%8llu  %11.4E%8llu  %11.4E  %11.4E%8llu  %11.4E\n",
+        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %11.4E %8llu %11.4E\n",
                 cs_glob_time_step->nt_cur,
                 ttcabs,
                 (unsigned long long)(pc->n_g_total), pc->w_total,
@@ -186,7 +186,7 @@ cs_lagr_print(cs_real_t ttcabs)
                 (unsigned long long)(pc->n_g_fouling), pc->w_fouling);
 
       else if (lagr_model->resuspension > 0)
-        fprintf(flal, " %8d  %11.4E  %8llu  %11.4E%8llu  %11.4E%8llu  %11.4E%8llu  %11.4E%8llu  %11.4E%8llu  %11.4E  %11.4E\n",
+        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %11.4E\n",
                 cs_glob_time_step->nt_cur,
                 ttcabs,
                 (unsigned long long)(pc->n_g_total), pc->w_total,
@@ -198,7 +198,7 @@ cs_lagr_print(cs_real_t ttcabs)
                 (unsigned long long)(pc->n_g_failed), pc->w_failed, dnbpr);
 
       else
-        fprintf(flal, " %8d  %11.4E  %8llu  %11.4E%8llu  %11.4E%8llu  %11.4E%8llu  %11.4E%8llu  %11.4E  %11.4E\n",
+        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %11.4E\n",
                 cs_glob_time_step->nt_cur,
                 ttcabs,
                 (unsigned long long)(pc->n_g_total), pc->w_total,
@@ -213,7 +213,6 @@ cs_lagr_print(cs_real_t ttcabs)
   }
 
   return;
-
 }
 
 /*----------------------------------------------------------------------------*/

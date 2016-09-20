@@ -948,7 +948,7 @@ _manage_error(cs_lnum_t                       failsafe_mode,
 static bool
 _continue_displacement(void)
 {
-  bool test = 0;
+  int test = 0;
 
   const cs_lagr_particle_set_t  *set = cs_glob_lagr_particle_set;
   const cs_lnum_t  n_particles = set->n_particles;
@@ -1984,7 +1984,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       for (k = 0; k < 3; k++) {
         vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
         p_info->start_coords[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
-    }
+      }
 
       /* Modify the ending point. */
 
@@ -2584,16 +2584,16 @@ _local_propagation(void                           *particle,
 
       if (!(restart)) {
         bft_printf("Warning in local_propagation: the particle is not in the cell:"
-            "n_in=%d, n_out=%d, jrval %e \n",
-            n_in, n_out, *particle_jrval);
+                   "n_in=%d, n_out=%d, jrval %e \n",
+                   n_in, n_out, *particle_jrval);
         bft_printf("the particle is replaced at the cell center and the"
-            "trajectory analysis continues from this new position\n");
+                   "trajectory analysis continues from this new position\n");
         restart = true;
       }
       else {
         bft_printf("Problem in local_propagation: the particle is not in the cell:"
-            "n_in=%d, n_out=%d, jrval %e \n",
-            n_in, n_out, *particle_jrval);
+                   "n_in=%d, n_out=%d, jrval %e \n",
+                   n_in, n_out, *particle_jrval);
         bft_printf("the particle has been removed from the simulation\n");
 
         _manage_error(failsafe_mode,
@@ -3825,9 +3825,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
         for (int j = 0; j < 3; j++)
           fvq->i_f_face_normal[3*ifac+j] = 0.;
       }
-      fvq->i_f_face_surf[ifac] = sqrt( pow(fvq->i_f_face_normal[3*ifac],2) +
-                                       pow(fvq->i_f_face_normal[3*ifac+1],2) +
-                                       pow(fvq->i_f_face_normal[3*ifac+2],2) );
+      fvq->i_f_face_surf[ifac] = cs_math_3_norm(fvq->i_f_face_normal + 3*ifac);
     }
   }
 
