@@ -392,13 +392,13 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
  * parameters:
  *   m    <--  mesh
  *   fvq  <->  mesh quantities
- *   ce   <->  coupling_entity
+ *   ce   <->  coupling
  *----------------------------------------------------------------------------*/
 
 void
-cs_compute_cell_cocg_s_lsq_coupling(const cs_mesh_t        *m,
-                                    cs_mesh_quantities_t   *fvq,
-                                    cs_internal_coupling_t *ce);
+cs_compute_cell_cocg_s_lsq_coupling(const cs_mesh_t         *m,
+                                    cs_mesh_quantities_t    *fvq,
+                                    cs_internal_coupling_t  *ce);
 
 /*----------------------------------------------------------------------------
  * Compute 3x3 matrix cocg for the scalar gradient iterative algorithm
@@ -407,14 +407,15 @@ cs_compute_cell_cocg_s_lsq_coupling(const cs_mesh_t        *m,
  * parameters:
  *   m    <--  mesh
  *   fvq  <->  mesh quantities
- *   ce   <->  coupling_entity
+ *   ce   <->  coupling
  *----------------------------------------------------------------------------*/
 
 void
-cs_compute_cell_cocg_s_it_coupling(const cs_mesh_t        *m,
-                                   cs_mesh_quantities_t   *fvq,
-                                   cs_internal_coupling_t *ce);
+cs_compute_cell_cocg_s_it_coupling(const cs_mesh_t         *m,
+                                   cs_mesh_quantities_t    *fvq,
+                                   cs_internal_coupling_t  *ce);
 
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

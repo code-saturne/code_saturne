@@ -1,11 +1,11 @@
 /*============================================================================
- * Internal coupling : coupling for one instance of Code_Saturne
+ * Internal coupling: coupling for one instance of Code_Saturne
  *============================================================================*/
 
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2015 EDF S.A.
+  Copyright (C) 1998-2016 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -51,6 +51,7 @@
 #include "fvm_selector.h"
 
 #include "cs_defs.h"
+#include "cs_math.h"
 #include "cs_sort.h"
 #include "cs_search.h"
 #include "cs_mesh_connect.h"
@@ -78,9 +79,6 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-#define _CS_MODULE(vect) \
-  sqrt(vect[X] * vect[X] + vect[Y] * vect[Y] + vect[Z] * vect[Z])
-
 /*============================================================================
  * Local structure definitions
  *============================================================================*/
@@ -89,8 +87,8 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-static cs_internal_coupling_t* _internal_coupling = NULL;
-static int _n_internal_coupling = 0;
+static cs_internal_coupling_t  *_internal_coupling = NULL;
+static int                      _n_internal_couplings = 0;
 
 /*=============================================================================
  * Private function definitions
@@ -100,13 +98,13 @@ static int _n_internal_coupling = 0;
  * Return the locator associated with given coupling entity and group number
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling structure
- *   pov             <-- group number
+ *   cpl  <-- pointer to coupling structure
+ *   pov  <-- group number
  *----------------------------------------------------------------------------*/
 
 static ple_locator_t*
-_cs_internal_coupling_create_locator(cs_internal_coupling_t *coupling_entity,
-                                     int                     pov)
+_cs_internal_coupling_create_locator(cs_internal_coupling_t  *cpl,
+                                     int                      pov)
 {
   cs_lnum_t ifac;
   int i, j, n_local = 0, n_distant = 0;
@@ -130,18 +128,18 @@ _cs_internal_coupling_create_locator(cs_internal_coupling_t *coupling_entity,
 #endif
 
   if (pov == 2) {
-    n_local = coupling_entity->n_1;
-    faces_local = coupling_entity->faces_1;
+    n_local = cpl->n_1;
+    faces_local = cpl->faces_1;
 
-    n_distant = coupling_entity->n_2;
-    faces_distant = coupling_entity->faces_2;
+    n_distant = cpl->n_2;
+    faces_distant = cpl->faces_2;
   }
   else if (pov == 1) {
-    n_local = coupling_entity->n_2;
-    faces_local = coupling_entity->faces_2;
+    n_local = cpl->n_2;
+    faces_local = cpl->faces_2;
 
-    n_distant = coupling_entity->n_1;
-    faces_distant = coupling_entity->faces_1;
+    n_distant = cpl->n_1;
+    faces_distant = cpl->faces_1;
   }
   else {
     bft_error(__FILE__, __LINE__, 0, "Wrong selector (pov)\n");
@@ -173,7 +171,7 @@ _cs_internal_coupling_create_locator(cs_internal_coupling_t *coupling_entity,
                        NULL,
                        0,
                        1.1, /* TODO */
-                       coupling_entity->dim,
+                       cpl->dim,
                        n_distant,
                        NULL,
                        NULL,
@@ -192,40 +190,40 @@ _cs_internal_coupling_create_locator(cs_internal_coupling_t *coupling_entity,
  * Destruction of given internal coupling structure.
  *
  * parameters:
- *   coupling_entity <-> pointer to coupling structure to destroy
+ *   cpl <-> pointer to coupling structure to destroy
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_internal_coupling_destroy_entity(cs_internal_coupling_t* coupling_entity)
+_cs_internal_coupling_destroy_entity(cs_internal_coupling_t  *cpl)
 {
-  BFT_FREE(coupling_entity->faces_1);
-  BFT_FREE(coupling_entity->faces_2);
+  BFT_FREE(cpl->faces_1);
+  BFT_FREE(cpl->faces_2);
 
-  BFT_FREE(coupling_entity->hint_1);
-  BFT_FREE(coupling_entity->hint_2);
+  BFT_FREE(cpl->hint_1);
+  BFT_FREE(cpl->hint_2);
 
-  BFT_FREE(coupling_entity->hext_1);
-  BFT_FREE(coupling_entity->hext_2);
+  BFT_FREE(cpl->hext_1);
+  BFT_FREE(cpl->hext_2);
 
-  BFT_FREE(coupling_entity->gweight_1);
-  BFT_FREE(coupling_entity->gweight_2);
+  BFT_FREE(cpl->gweight_1);
+  BFT_FREE(cpl->gweight_2);
 
-  BFT_FREE(coupling_entity->ij_1);
-  BFT_FREE(coupling_entity->ij_2);
+  BFT_FREE(cpl->ij_1);
+  BFT_FREE(cpl->ij_2);
 
-  BFT_FREE(coupling_entity->ofij_1);
-  BFT_FREE(coupling_entity->ofij_2);
+  BFT_FREE(cpl->ofij_1);
+  BFT_FREE(cpl->ofij_2);
 
-  BFT_FREE(coupling_entity->coupled_faces);
+  BFT_FREE(cpl->coupled_faces);
 
-  BFT_FREE(coupling_entity->cocgb_s_lsq);
-  BFT_FREE(coupling_entity->cocgb_s_it);
-  BFT_FREE(coupling_entity->cocg_s_it);
+  BFT_FREE(cpl->cocgb_s_lsq);
+  BFT_FREE(cpl->cocgb_s_it);
+  BFT_FREE(cpl->cocg_s_it);
 
-  BFT_FREE(coupling_entity->namesca);
+  BFT_FREE(cpl->namesca);
 
-  ple_locator_destroy(coupling_entity->locator_1);
-  ple_locator_destroy(coupling_entity->locator_2);
+  ple_locator_destroy(cpl->locator_1);
+  ple_locator_destroy(cpl->locator_2);
 }
 
 /*----------------------------------------------------------------------------
@@ -240,20 +238,21 @@ _cs_internal_coupling_destroy_entity(cs_internal_coupling_t* coupling_entity)
  *----------------------------------------------------------------------------*/
 
 static int
-_compare_int(const void* a, const void* b) {
-  return (*(const int*)a-*(const int*)b);
+_compare_int(const void* a,
+             const void* b)
+{
+  return (*(const int*)a - *(const int*)b);
 }
 
 /*----------------------------------------------------------------------------
  * Compute weights around coupling interface.
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling structure
+ *   cpl <-- pointer to coupling structure
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_internal_coupling_exchange_gweight(
-    const cs_internal_coupling_t* coupling_entity)
+_cs_internal_coupling_exchange_gweight(const cs_internal_coupling_t  *cpl)
 {
   int ii;
   cs_lnum_t face_id, cell_id;
@@ -262,13 +261,10 @@ _cs_internal_coupling_exchange_gweight(
   cs_lnum_t n_dist_1, n_dist_2;
   cs_lnum_t *dist_loc_1, *dist_loc_2;
 
-  cs_real_t cenfac_x, cenfac_y, cenfac_z;
-  cs_real_t cencel_x, cencel_y, cencel_z;
-
   cs_real_3_t *ij_1, *ij_2;
 
-  cs_real_t* gweight_1 = coupling_entity->gweight_1;
-  cs_real_t* gweight_2 = coupling_entity->gweight_2;
+  cs_real_t* gweight_1 = cpl->gweight_1;
+  cs_real_t* gweight_2 = cpl->gweight_2;
   cs_real_t *gweight_distant_1, *gweight_distant_2;
 
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -280,7 +276,7 @@ _cs_internal_coupling_exchange_gweight(
   const cs_real_t* b_face_surf = cs_glob_mesh_quantities->b_face_surf;
   const cs_real_t* b_face_normal = cs_glob_mesh_quantities->b_face_normal;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
              &n_1,
              &n_2,
              &faces_1,
@@ -290,52 +286,38 @@ _cs_internal_coupling_exchange_gweight(
              &dist_loc_1,
              &dist_loc_2);
 
-  ij_1 = coupling_entity->ij_1;
-  ij_2 = coupling_entity->ij_2;
+  ij_1 = cpl->ij_1;
+  ij_2 = cpl->ij_2;
 
   /* Store local FI' distance in gweight_distant_* */
   BFT_MALLOC(gweight_distant_1, n_dist_1, cs_real_t);
   for (ii = 0; ii < n_dist_1; ii++) {
+    cs_real_t dv[3];
     face_id = dist_loc_1[ii] - 1;
     cell_id = m->b_face_cells[face_id];
 
-    cenfac_x = b_face_cog[3*face_id  ];
-    cenfac_y = b_face_cog[3*face_id+1];
-    cenfac_z = b_face_cog[3*face_id+2];
+    for (int jj = 0; jj < 3; jj++)
+      dv[jj] =  - diipb[3*face_id + jj] - cell_cen[3*cell_id +jj]
+                + b_face_cog[3*face_id +jj];
 
-    cencel_x = cell_cen[3*cell_id  ];
-    cencel_y = cell_cen[3*cell_id+1];
-    cencel_z = cell_cen[3*cell_id+2];
-
-    gweight_distant_1[ii] = sqrt(
-           pow(-diipb[3*face_id  ] - cencel_x + cenfac_x, 2)
-         + pow(-diipb[3*face_id+1] - cencel_y + cenfac_y, 2)
-         + pow(-diipb[3*face_id+2] - cencel_z + cenfac_z, 2)
-         );
+    gweight_distant_1[ii] = cs_math_3_norm(dv);
   }
 
   BFT_MALLOC(gweight_distant_2, n_dist_2, cs_real_t);
   for (ii = 0; ii < n_dist_2; ii++) {
+    cs_real_t dv[3];
     face_id = dist_loc_2[ii] - 1;
     cell_id = m->b_face_cells[face_id];
 
-    cenfac_x = b_face_cog[3*face_id  ];
-    cenfac_y = b_face_cog[3*face_id+1];
-    cenfac_z = b_face_cog[3*face_id+2];
+    for (int jj = 0; jj < 3; jj++)
+      dv[jj] =  - diipb[3*face_id + jj] - cell_cen[3*cell_id +jj]
+                + b_face_cog[3*face_id +jj];
 
-    cencel_x = cell_cen[3*cell_id  ];
-    cencel_y = cell_cen[3*cell_id+1];
-    cencel_z = cell_cen[3*cell_id+2];
-
-    gweight_distant_2[ii] = sqrt(
-           pow(-diipb[3*face_id  ] - cencel_x + cenfac_x, 2)
-         + pow(-diipb[3*face_id+1] - cencel_y + cenfac_y, 2)
-         + pow(-diipb[3*face_id+2] - cencel_z + cenfac_z, 2)
-         );
+    gweight_distant_2[ii] = cs_math_3_norm(dv);
   }
 
   /* Groups 1 and 2 exchange FI' distances */
-  cs_internal_coupling_exchange_var(coupling_entity,
+  cs_internal_coupling_exchange_var(cpl,
                                     1,
                                     gweight_distant_1,
                                     gweight_distant_2,
@@ -367,23 +349,22 @@ _cs_internal_coupling_exchange_gweight(
  * Compute rweight_* around coupling interface based on diffusivity c_weight.
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling structure
- *   c_weight[]      <-- diffusivity
- *   rweight_1[]     --> rhs weight for group 1
- *   rweight_2[]     --> rhs weight for group 2
+ *   cpl          <-- pointer to coupling structure
+ *   c_weight[]   <-- diffusivity
+ *   rweight_1[]  -> rhs weight for group 1
+ *   rweight_2[]  -> rhs weight for group 2
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_internal_coupling_exchange_rhs_weight(
-    const cs_internal_coupling_t    *coupling_entity,
-    const cs_real_t                  c_weight[],
-    cs_real_t                        rweight_1[],
-    cs_real_t                        rweight_2[])
+_cs_internal_coupling_exchange_rhs_weight(const cs_internal_coupling_t  *cpl,
+                                          const cs_real_t        c_weight[],
+                                          cs_real_t              rweight_1[],
+                                          cs_real_t              rweight_2[])
 {
   cs_real_t ki, kj, pond;
 
-  const cs_real_t* gweight_1 = coupling_entity->gweight_1;
-  const cs_real_t* gweight_2 = coupling_entity->gweight_2;
+  const cs_real_t* gweight_1 = cpl->gweight_1;
+  const cs_real_t* gweight_2 = cpl->gweight_2;
 
   cs_real_t *kj_1, *kj_2;
 
@@ -396,7 +377,7 @@ _cs_internal_coupling_exchange_rhs_weight(
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -409,7 +390,7 @@ _cs_internal_coupling_exchange_rhs_weight(
   BFT_MALLOC(kj_1, n_1, cs_real_t);
   BFT_MALLOC(kj_2, n_2, cs_real_t);
 
-  cs_internal_coupling_exchange_by_cell_id(coupling_entity,
+  cs_internal_coupling_exchange_by_cell_id(cpl,
                                            1,
                                            c_weight,
                                            kj_1,
@@ -444,11 +425,11 @@ _cs_internal_coupling_exchange_rhs_weight(
  * Compute vector OFIJ on coupled faces
  *
  * parameters:
- *   coupling_entity <-> pointer to coupling entity
+ *   cpl <-> pointer to coupling entity
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_internal_coupling_ofij(const cs_internal_coupling_t* coupling_entity)
+_cs_internal_coupling_ofij(const cs_internal_coupling_t  *cpl)
 {
   int ii, jj;
   cs_lnum_t face_id, cell_id;
@@ -456,11 +437,11 @@ _cs_internal_coupling_ofij(const cs_internal_coupling_t* coupling_entity)
   int *faces_1, *faces_2;
   cs_lnum_t n_1, n_2;
 
-  cs_real_3_t* ofij_1 = coupling_entity->ofij_1;
-  cs_real_3_t* ofij_2 = coupling_entity->ofij_2;
+  cs_real_3_t* ofij_1 = cpl->ofij_1;
+  cs_real_3_t* ofij_2 = cpl->ofij_2;
 
-  const cs_real_t* gweight_1 = coupling_entity->gweight_1;
-  const cs_real_t* gweight_2 = coupling_entity->gweight_2;
+  const cs_real_t* gweight_1 = cpl->gweight_1;
+  const cs_real_t* gweight_2 = cpl->gweight_2;
 
   const cs_mesh_quantities_t* mq = cs_glob_mesh_quantities;
   const cs_mesh_t* m = cs_glob_mesh;
@@ -471,7 +452,7 @@ _cs_internal_coupling_ofij(const cs_internal_coupling_t* coupling_entity)
   cs_real_t *cell_cen_1, *cell_cen_2;
   cs_real_t xxd, xxl;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -484,7 +465,7 @@ _cs_internal_coupling_ofij(const cs_internal_coupling_t* coupling_entity)
   BFT_MALLOC(cell_cen_1, 3 * n_1, cs_real_t);
   BFT_MALLOC(cell_cen_2, 3 * n_2, cs_real_t);
 
-  cs_internal_coupling_exchange_by_cell_id(coupling_entity,
+  cs_internal_coupling_exchange_by_cell_id(cpl,
                                            3,
                                            mq->cell_cen,
                                            cell_cen_1,
@@ -523,7 +504,7 @@ _cs_internal_coupling_ofij(const cs_internal_coupling_t* coupling_entity)
  * Update local variable using distant one.
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling structure
+ *   cpl <-- pointer to coupling structure
  *   stride          <-- number of values (non interlaced) by entity
  *   pov             <-- number of values (non interlaced) by entity
  *   local[]         --> local variable updated
@@ -531,44 +512,44 @@ _cs_internal_coupling_ofij(const cs_internal_coupling_t* coupling_entity)
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_internal_coupling_send_var(const cs_internal_coupling_t *coupling_entity,
-                               int                           stride,
-                               int                           pov,
-                               cs_real_t                     local[],
-                               cs_real_t                     distant_var[])
+_cs_internal_coupling_send_var(const cs_internal_coupling_t  *cpl,
+                               int                            stride,
+                               int                            pov,
+                               cs_real_t                      local[],
+                               cs_real_t                      distant_var[])
 {
   ple_locator_t *locator = NULL;
 
   switch(pov) {
   case 1:
-    locator = coupling_entity->locator_1;
+    locator = cpl->locator_1;
     break;
   case 2:
-    locator = coupling_entity->locator_2;
+    locator = cpl->locator_2;
     break;
   default:
     bft_error(__FILE__, __LINE__, 0, "Wrong selector (pov=%d)", pov);
   }
 
   ple_locator_exchange_point_var(locator,
-         distant_var,
-         local,
-         NULL,
-         sizeof(cs_real_t),
-         stride,
-         0);
+                                 distant_var,
+                                 local,
+                                 NULL,
+                                 sizeof(cs_real_t),
+                                 stride,
+                                 0);
 }
 
 /*----------------------------------------------------------------------------
  * Define component coupled_faces[] of given coupling entity.
  *
  * parameters:
- *   coupling_entity <-> pointer to coupling structure to modify
+ *   cpl <-> pointer to coupling structure to modify
  *----------------------------------------------------------------------------*/
 
 static void
 _cs_internal_coupling_select_coupled_faces(
-    cs_internal_coupling_t *coupling_entity)
+    cs_internal_coupling_t *cpl)
 
 {
   int ii;
@@ -576,8 +557,8 @@ _cs_internal_coupling_select_coupled_faces(
   cs_lnum_t n_1, n_2;
   cs_lnum_t *faces_1, *faces_2;
   const cs_mesh_t* m = cs_glob_mesh;
-  bool *facoup = coupling_entity->coupled_faces;
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  bool *facoup = cpl->coupled_faces;
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -611,24 +592,23 @@ _cs_internal_coupling_select_coupled_faces(
  * for iterative scalar gradient calculation
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
- *   c_weight        <-- weighted gradient coefficient variable, or NULL
- *   pvar            <-- variable
- *   grad            <-> gradient
+ *   cpl      <-- pointer to coupling entity
+ *   c_weight <-- weighted gradient coefficient variable, or NULL
+ *   pvar     <-- variable
+ *   grad     <-> gradient
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_initial_contribution(
-    const cs_internal_coupling_t* coupling_entity,
-    const cs_real_t               c_weight[],
-    const cs_real_t               pvar[],
-    cs_real_3_t         *restrict grad)
+cs_internal_coupling_initial_contribution(const cs_internal_coupling_t  *cpl,
+                                          const cs_real_t                c_weight[],
+                                          const cs_real_t                pvar[],
+                                          cs_real_3_t          *restrict grad)
 {
   int ii;
   cs_lnum_t face_id, cell_id;
 
-  const cs_real_t* gweight_1 = coupling_entity->gweight_1;
-  const cs_real_t* gweight_2 = coupling_entity->gweight_2;
+  const cs_real_t* gweight_1 = cpl->gweight_1;
+  const cs_real_t* gweight_2 = cpl->gweight_2;
   cs_real_t *rweight_1 = NULL, *rweight_2 = NULL; /* Weight with c_weight */
 
   cs_lnum_t n_1, n_2;
@@ -647,7 +627,7 @@ cs_internal_coupling_initial_contribution(
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -672,7 +652,7 @@ cs_internal_coupling_initial_contribution(
   }
   BFT_MALLOC(pvar_local_1, n_1, cs_real_t);
   BFT_MALLOC(pvar_local_2, n_2, cs_real_t);
-  cs_internal_coupling_exchange_var(coupling_entity,
+  cs_internal_coupling_exchange_var(cpl,
                                     1,
                                     pvar_distant_1,
                                     pvar_distant_2,
@@ -685,7 +665,7 @@ cs_internal_coupling_initial_contribution(
   if (c_weight != NULL) { /* Heterogenous diffusivity */
     BFT_MALLOC(rweight_1, n_1, cs_real_t);
     BFT_MALLOC(rweight_2, n_2, cs_real_t);
-    _cs_internal_coupling_exchange_rhs_weight(coupling_entity,
+    _cs_internal_coupling_exchange_rhs_weight(cpl,
                                               c_weight, /* diffusivity */
                                               rweight_1, /* rhs weight */
                                               rweight_2); /* rhs weight */
@@ -752,26 +732,25 @@ cs_internal_coupling_initial_contribution(
  * Add internal coupling rhs contribution for iterative gradient calculation
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
- *   c_weight        <-- weighted gradient coefficient variable, or NULL
- *   grad            <-- pointer to gradient
- *   pvar            <-- pointer to variable
- *   rhs             <-> pointer to rhs contribution
+ *   cpl      <-- pointer to coupling entity
+ *   c_weight <-- weighted gradient coefficient variable, or NULL
+ *   grad     <-- pointer to gradient
+ *   pvar     <-- pointer to variable
+ *   rhs      <-> pointer to rhs contribution
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_iter_rhs(
-    const cs_internal_coupling_t* coupling_entity,
-    const cs_real_t               c_weight[], /* diffusivity */
-    cs_real_3_t         *restrict grad,
-    const cs_real_t               pvar[],
-    cs_real_3_t                   rhs[])
+cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
+                              const cs_real_t                c_weight[],
+                              cs_real_3_t          *restrict grad,
+                              const cs_real_t                pvar[],
+                              cs_real_3_t                    rhs[])
 {
   int ii, ll;
   cs_lnum_t face_id, cell_id;
 
-  const cs_real_t* gweight_1 = coupling_entity->gweight_1;
-  const cs_real_t* gweight_2 = coupling_entity->gweight_2;
+  const cs_real_t* gweight_1 = cpl->gweight_1;
+  const cs_real_t* gweight_2 = cpl->gweight_2;
   cs_real_t *rweight_1 = NULL, *rweight_2 = NULL;
 
   cs_lnum_t n_1, n_2;
@@ -793,7 +772,7 @@ cs_internal_coupling_iter_rhs(
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -803,8 +782,8 @@ cs_internal_coupling_iter_rhs(
                                      &dist_loc_1,
                                      &dist_loc_2);
 
-  ofij_1 = coupling_entity->ofij_1;
-  ofij_2 = coupling_entity->ofij_2;
+  ofij_1 = cpl->ofij_1;
+  ofij_2 = cpl->ofij_2;
 
   /* 1 & 2 exchange grad and pvar */
   BFT_MALLOC(grad_distant_1, 3*n_dist_1, cs_real_t);
@@ -835,13 +814,13 @@ cs_internal_coupling_iter_rhs(
   BFT_MALLOC(pvar_local_1, n_1, cs_real_t);
   BFT_MALLOC(pvar_local_2, n_2, cs_real_t);
 
-  cs_internal_coupling_exchange_var(coupling_entity,
+  cs_internal_coupling_exchange_var(cpl,
                                     3,
                                     grad_distant_1,
                                     grad_distant_2,
                                     grad_local_1,
                                     grad_local_2);
-  cs_internal_coupling_exchange_var(coupling_entity,
+  cs_internal_coupling_exchange_var(cpl,
                                     1,
                                     pvar_distant_1,
                                     pvar_distant_2,
@@ -857,7 +836,7 @@ cs_internal_coupling_iter_rhs(
   if (c_weight != NULL) { /* Heterogenous diffusivity */
     BFT_MALLOC(rweight_1, n_1, cs_real_t);
     BFT_MALLOC(rweight_2, n_2, cs_real_t);
-    _cs_internal_coupling_exchange_rhs_weight(coupling_entity,
+    _cs_internal_coupling_exchange_rhs_weight(cpl,
                                               c_weight, /* diffusivity */
                                               rweight_1, /* rhs weight */
                                               rweight_2); /* rhs weight */
@@ -957,16 +936,15 @@ cs_internal_coupling_iter_rhs(
  * Add internal coupling rhs contribution for LSQ gradient calculation
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
- *   c_weight        <-- weighted gradient coefficient variable, or NULL
- *   rhsv            <-> rhs contribution modified
+ *   cpl       <-- pointer to coupling entity
+ *   c_weight <-- weighted gradient coefficient variable, or NULL
+ *   rhsv     <-> rhs contribution modified
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_lsq_rhs(
-    const cs_internal_coupling_t* coupling_entity,
-    const cs_real_t               c_weight[], /* diffusivity */
-    cs_real_4_t                   rhsv[])
+cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
+                             const cs_real_t                c_weight[],
+                             cs_real_4_t                    rhsv[])
 {
   int ii, ll;
   cs_lnum_t face_id, cell_id;
@@ -984,7 +962,7 @@ cs_internal_coupling_lsq_rhs(
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -994,8 +972,8 @@ cs_internal_coupling_lsq_rhs(
                                      &dist_loc_1,
                                      &dist_loc_2);
 
-  ij_1 = coupling_entity->ij_1;
-  ij_2 = coupling_entity->ij_2;
+  ij_1 = cpl->ij_1;
+  ij_2 = cpl->ij_2;
 
   /* 1 & 2 exchange pvar stored in rhsv[][3] */
   BFT_MALLOC(pvar_distant_1, n_dist_1, cs_real_t);
@@ -1016,7 +994,7 @@ cs_internal_coupling_lsq_rhs(
   BFT_MALLOC(pvar_local_1, n_1, cs_real_t);
   BFT_MALLOC(pvar_local_2, n_2, cs_real_t);
 
-  cs_internal_coupling_exchange_var(coupling_entity,
+  cs_internal_coupling_exchange_var(cpl,
                                     1,
                                     pvar_distant_1,
                                     pvar_distant_2,
@@ -1030,7 +1008,7 @@ cs_internal_coupling_lsq_rhs(
   if (c_weight != NULL) { /* Heterogenous diffusivity */
     BFT_MALLOC(rweight_1, n_1, cs_real_t);
     BFT_MALLOC(rweight_2, n_2, cs_real_t);
-    _cs_internal_coupling_exchange_rhs_weight(coupling_entity,
+    _cs_internal_coupling_exchange_rhs_weight(cpl,
                                               c_weight, /* diffusivity */
                                               rweight_1, /* rhs weight */
                                               rweight_2); /* rhs weight */
@@ -1083,14 +1061,13 @@ cs_internal_coupling_lsq_rhs(
  * Modify LSQ COCG matrix to include internal coupling
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
+ *   coupling <-- pointer to coupling entity
  *   cocg            <-> cocg matrix modified
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_lsq_cocg_contribution(
-    const cs_internal_coupling_t  *coupling_entity,
-    cs_real_33_t                   cocg[])
+cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
+                                           cs_real_33_t                   cocg[])
 {
   int ii, ll, mm;
   cs_lnum_t face_id, cell_id;
@@ -1103,7 +1080,7 @@ cs_internal_coupling_lsq_cocg_contribution(
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -1113,8 +1090,8 @@ cs_internal_coupling_lsq_cocg_contribution(
                                      NULL,
                                      NULL);
 
-  ij_1 = coupling_entity->ij_1;
-  ij_2 = coupling_entity->ij_2;
+  ij_1 = cpl->ij_1;
+  ij_2 = cpl->ij_2;
 
   for (ii = 0; ii < n_1; ii++) {
     face_id = faces_1[ii] - 1;
@@ -1122,7 +1099,7 @@ cs_internal_coupling_lsq_cocg_contribution(
     for (ll = 0; ll < 3; ll++)
       dddij[ll] = ij_1[ii][ll];
 
-    umdddij = 1./ _CS_MODULE(dddij);
+    umdddij = 1./ cs_math_3_norm(dddij);
     for (ll = 0; ll < 3; ll++)
       dddij[ll] *= umdddij;
 
@@ -1139,7 +1116,7 @@ cs_internal_coupling_lsq_cocg_contribution(
     for (ll = 0; ll < 3; ll++)
       dddij[ll] = ij_2[ii][ll];
 
-    umdddij = 1./ _CS_MODULE(dddij);
+    umdddij = 1./ cs_math_3_norm(dddij);
     for (ll = 0; ll < 3; ll++)
       dddij[ll] *= umdddij;
 
@@ -1155,14 +1132,13 @@ cs_internal_coupling_lsq_cocg_contribution(
  * Modify iterative COCG matrix to include internal coupling
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
+ *   coupling <-- pointer to coupling entity
  *   cocg            <-> cocg matrix modified
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_it_cocg_contribution(
-    const cs_internal_coupling_t* coupling_entity,
-    cs_real_33_t                   cocg[])
+cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
+                                          cs_real_33_t                   cocg[])
 {
   int ii, ll, mm;
   cs_lnum_t cell_id, face_id;
@@ -1181,7 +1157,7 @@ cs_internal_coupling_it_cocg_contribution(
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -1191,8 +1167,8 @@ cs_internal_coupling_it_cocg_contribution(
                                      NULL,
                                      NULL);
 
-  ofij_1 = coupling_entity->ofij_1;
-  ofij_2 = coupling_entity->ofij_2;
+  ofij_1 = cpl->ofij_1;
+  ofij_2 = cpl->ofij_2;
 
   for (ii = 0; ii < n_1; ii++) {
     face_id = faces_1[ii] - 1;
@@ -1228,7 +1204,6 @@ cs_internal_coupling_it_cocg_contribution(
 
 }
 
-
 /*----------------------------------------------------------------------------
  * Initialize coupling criteria from strings.
  *
@@ -1237,42 +1212,40 @@ cs_internal_coupling_it_cocg_contribution(
  *   criteria_cells_2  <-- string criteria for the second group of cells
  *   criteria_juncture <-- string criteria for the juncture, which is a
  *                         group of faces
- *   coupling_entity   --> pointer to coupling structure to initialize
+ *   cpl               --> pointer to coupling structure to initialize
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_criteria_initialize(
-           const char              criteria_cells_1[],
-           const char              criteria_cells_2[],
-           const char              criteria_juncture[],
-           cs_internal_coupling_t* coupling_entity)
+cs_internal_coupling_criteria_initialize(const char   criteria_cells_1[],
+                                         const char   criteria_cells_2[],
+                                         const char   criteria_juncture[],
+                                         cs_internal_coupling_t  *cpl)
 {
-  BFT_MALLOC(coupling_entity->criteria_cells_1,
+  BFT_MALLOC(cpl->criteria_cells_1,
              strlen(criteria_cells_1)+1,
              char);
-  strcpy(coupling_entity->criteria_cells_1, criteria_cells_1);
+  strcpy(cpl->criteria_cells_1, criteria_cells_1);
 
-  BFT_MALLOC(coupling_entity->criteria_cells_2,
+  BFT_MALLOC(cpl->criteria_cells_2,
              strlen(criteria_cells_2)+1,
              char);
-  strcpy(coupling_entity->criteria_cells_2, criteria_cells_2);
+  strcpy(cpl->criteria_cells_2, criteria_cells_2);
 
-  BFT_MALLOC(coupling_entity->criteria_juncture,
+  BFT_MALLOC(cpl->criteria_juncture,
              strlen(criteria_juncture)+1,
              char);
-  strcpy(coupling_entity->criteria_juncture, criteria_juncture);
+  strcpy(cpl->criteria_juncture, criteria_juncture);
 }
 
 /*----------------------------------------------------------------------------
  * Initialize locators using selection criteria.
  *
  * parameters:
- *   coupling_entity <-> pointer to coupling structure to modify
+ *   cpl <-> pointer to coupling structure to modify
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_locators_initialize(
-    cs_internal_coupling_t* coupling_entity)
+cs_internal_coupling_locators_initialize(cs_internal_coupling_t  *cpl)
 {
   int k1, k2;
   cs_lnum_t   face_id, cell_id;
@@ -1292,7 +1265,7 @@ cs_internal_coupling_locators_initialize(
 
   BFT_MALLOC(selected_faces, m->n_b_faces, cs_lnum_t);
 
-  cs_selector_get_b_face_list(coupling_entity->criteria_juncture,
+  cs_selector_get_b_face_list(cpl->criteria_juncture,
                               &n_selected_faces,
                               selected_faces); /* 0..n-1 */
 
@@ -1302,7 +1275,7 @@ cs_internal_coupling_locators_initialize(
 
   BFT_MALLOC(selected_cells_1, ncel, cs_lnum_t);
 
-  cs_selector_get_cell_num_list(coupling_entity->criteria_cells_1,
+  cs_selector_get_cell_num_list(cpl->criteria_cells_1,
                                 &n_selected_cells_1,
                                 selected_cells_1);
   /* convert to 0..n-1 */
@@ -1314,7 +1287,7 @@ cs_internal_coupling_locators_initialize(
 
   BFT_MALLOC(selected_cells_2, ncel, cs_lnum_t);
 
-  cs_selector_get_cell_num_list(coupling_entity->criteria_cells_2,
+  cs_selector_get_cell_num_list(cpl->criteria_cells_2,
                                 &n_selected_cells_2,
                                 selected_cells_2);
   /* convert to 0..n-1 */
@@ -1363,60 +1336,60 @@ cs_internal_coupling_locators_initialize(
   BFT_FREE(tag_cells);
 
   /* Initialize locators */
-  coupling_entity->faces_1 = faces_1;
-  coupling_entity->n_1 = k1;
-  coupling_entity->faces_2 = faces_2;
-  coupling_entity->n_2 = k2;
+  cpl->faces_1 = faces_1;
+  cpl->n_1 = k1;
+  cpl->faces_2 = faces_2;
+  cpl->n_2 = k2;
 
-  coupling_entity->locator_1 =
-    _cs_internal_coupling_create_locator(coupling_entity, 1);
+  cpl->locator_1 =
+    _cs_internal_coupling_create_locator(cpl, 1);
 
-  coupling_entity->n_dist_1 =
-    ple_locator_get_n_dist_points(coupling_entity->locator_1);
+  cpl->n_dist_1 =
+    ple_locator_get_n_dist_points(cpl->locator_1);
 
-  BFT_MALLOC(coupling_entity->dist_loc_1,
-             coupling_entity->n_dist_1,
+  BFT_MALLOC(cpl->dist_loc_1,
+             cpl->n_dist_1,
              cs_lnum_t);
-  memcpy(coupling_entity->dist_loc_1,
-         ple_locator_get_dist_locations(coupling_entity->locator_1),
-         (coupling_entity->n_dist_1)*sizeof(cs_lnum_t));
+  memcpy(cpl->dist_loc_1,
+         ple_locator_get_dist_locations(cpl->locator_1),
+         (cpl->n_dist_1)*sizeof(cs_lnum_t));
 
-  coupling_entity->locator_2 =
-    _cs_internal_coupling_create_locator(coupling_entity, 2);
+  cpl->locator_2 =
+    _cs_internal_coupling_create_locator(cpl, 2);
 
-  coupling_entity->n_dist_2 =
-    ple_locator_get_n_dist_points(coupling_entity->locator_2);
+  cpl->n_dist_2 =
+    ple_locator_get_n_dist_points(cpl->locator_2);
 
-  BFT_MALLOC(coupling_entity->dist_loc_2,
-             coupling_entity->n_dist_2,
+  BFT_MALLOC(cpl->dist_loc_2,
+             cpl->n_dist_2,
              cs_lnum_t);
-  memcpy(coupling_entity->dist_loc_2,
-         ple_locator_get_dist_locations(coupling_entity->locator_2),
-         (coupling_entity->n_dist_2)*sizeof(cs_lnum_t));
+  memcpy(cpl->dist_loc_2,
+         ple_locator_get_dist_locations(cpl->locator_2),
+         (cpl->n_dist_2)*sizeof(cs_lnum_t));
 
   /* Geometric quantities */
-  BFT_MALLOC(coupling_entity->gweight_1, coupling_entity->n_1, cs_real_t);
-  BFT_MALLOC(coupling_entity->gweight_2, coupling_entity->n_2, cs_real_t);
-  BFT_MALLOC(coupling_entity->ij_1, coupling_entity->n_1, cs_real_3_t);
-  BFT_MALLOC(coupling_entity->ij_2, coupling_entity->n_2, cs_real_3_t);
-  BFT_MALLOC(coupling_entity->ofij_1, coupling_entity->n_1, cs_real_3_t);
-  BFT_MALLOC(coupling_entity->ofij_2, coupling_entity->n_2, cs_real_3_t);
+  BFT_MALLOC(cpl->gweight_1, cpl->n_1, cs_real_t);
+  BFT_MALLOC(cpl->gweight_2, cpl->n_2, cs_real_t);
+  BFT_MALLOC(cpl->ij_1, cpl->n_1, cs_real_3_t);
+  BFT_MALLOC(cpl->ij_2, cpl->n_2, cs_real_3_t);
+  BFT_MALLOC(cpl->ofij_1, cpl->n_1, cs_real_3_t);
+  BFT_MALLOC(cpl->ofij_2, cpl->n_2, cs_real_3_t);
 
-  cs_internal_coupling_exchange_ij(coupling_entity);
+  cs_internal_coupling_exchange_ij(cpl);
 
   /* Allocate coupling exchange coefficients */
 
-  BFT_MALLOC(coupling_entity->hint_1, coupling_entity->n_1, cs_real_t);
-  BFT_MALLOC(coupling_entity->hext_1, coupling_entity->n_1, cs_real_t);
+  BFT_MALLOC(cpl->hint_1, cpl->n_1, cs_real_t);
+  BFT_MALLOC(cpl->hext_1, cpl->n_1, cs_real_t);
 
-  BFT_MALLOC(coupling_entity->hint_2, coupling_entity->n_2, cs_real_t);
-  BFT_MALLOC(coupling_entity->hext_2, coupling_entity->n_2, cs_real_t);
+  BFT_MALLOC(cpl->hint_2, cpl->n_2, cs_real_t);
+  BFT_MALLOC(cpl->hext_2, cpl->n_2, cs_real_t);
 
-  BFT_MALLOC(coupling_entity->coupled_faces, m->n_b_faces, bool);
+  BFT_MALLOC(cpl->coupled_faces, m->n_b_faces, bool);
 
-  coupling_entity->cocgb_s_lsq = NULL;
-  coupling_entity->cocgb_s_it = NULL;
-  coupling_entity->cocg_s_it = NULL;
+  cpl->cocgb_s_lsq = NULL;
+  cpl->cocgb_s_it = NULL;
+  cpl->cocg_s_it = NULL;
 
   /* Release allocated memory */
   BFT_FREE(selected_faces);
@@ -1424,39 +1397,37 @@ cs_internal_coupling_locators_initialize(
 
 /*----------------------------------------------------------------------------
  * Destruction of all internal coupling related structures.
- *
  *----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_finalize(void)
 {
-  cs_internal_coupling_t* coupling_entity;
-  for (int ii = 0; ii < _n_internal_coupling; ii++) {
-    coupling_entity = _internal_coupling + ii;
-    _cs_internal_coupling_destroy_entity(coupling_entity);
+  cs_internal_coupling_t* cpl;
+  for (int ii = 0; ii < _n_internal_couplings; ii++) {
+    cpl = _internal_coupling + ii;
+    _cs_internal_coupling_destroy_entity(cpl);
   }
   BFT_FREE(_internal_coupling);
-  _n_internal_coupling = 0;
+  _n_internal_couplings = 0;
 }
 
 /*----------------------------------------------------------------------------
  * Exchange variable between groups using face id
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
- *   stride          <-- number of values (non interlaced) by entity
- *   tab             <-- variable exchanged
- *   local_1         --> local data for group 1
- *   local_2         --> local data for group 2
+ *   cpl     <-- pointer to coupling entity
+ *   stride  <-- number of values (non interlaced) by entity
+ *   tab     <-- variable exchanged
+ *   local_1 --> local data for group 1
+ *   local_2 --> local data for group 2
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_exchange_by_face_id(
-    const cs_internal_coupling_t* coupling_entity,
-    int                           stride,
-    const cs_real_t               tab[],
-    cs_real_t                     local_1[],
-    cs_real_t                     local_2[])
+cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
+                                         int                            stride,
+                                         const cs_real_t                tab[],
+                                         cs_real_t                      local_1[],
+                                         cs_real_t                      local_2[])
 {
   int ii, jj;
   cs_lnum_t face_id;
@@ -1466,7 +1437,7 @@ cs_internal_coupling_exchange_by_face_id(
   cs_lnum_t *dist_loc_1, *dist_loc_2;
   cs_real_t *distant_1, *distant_2;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -1494,7 +1465,7 @@ cs_internal_coupling_exchange_by_face_id(
     }
   }
 
-  cs_internal_coupling_exchange_var(coupling_entity,
+  cs_internal_coupling_exchange_var(cpl,
                                     stride,
                                     distant_1,
                                     distant_2,
@@ -1509,20 +1480,19 @@ cs_internal_coupling_exchange_by_face_id(
  * Exchange variable between groups using cell id
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
- *   stride          <-- number of values (non interlaced) by entity
- *   tab             <-- variable exchanged
- *   local_1         --> local data for group 1
- *   local_2         --> local data for group 2
+ *   cpl      <-- pointer to coupling entity
+ *   stride   <-- number of values (non interlaced) by entity
+ *   tab      <-- variable exchanged
+ *   local_1  --> local data for group 1
+ *   local_2  --> local data for group 2
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_exchange_by_cell_id(
-    const cs_internal_coupling_t* coupling_entity,
-    int                           stride,
-    const cs_real_t               tab[],
-    cs_real_t                     local_1[],
-    cs_real_t                     local_2[])
+cs_internal_coupling_exchange_by_cell_id(const cs_internal_coupling_t  *cpl,
+                                         int                            stride,
+                                         const cs_real_t                tab[],
+                                         cs_real_t                      local_1[],
+                                         cs_real_t                      local_2[])
 {
   int ii, jj;
   cs_lnum_t face_id, cell_id;
@@ -1538,7 +1508,7 @@ cs_internal_coupling_exchange_by_cell_id(
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -1568,7 +1538,7 @@ cs_internal_coupling_exchange_by_cell_id(
     }
   }
 
-  cs_internal_coupling_exchange_var(coupling_entity,
+  cs_internal_coupling_exchange_var(cpl,
                                     stride,
                                     distant_1,
                                     distant_2,
@@ -1583,30 +1553,29 @@ cs_internal_coupling_exchange_by_cell_id(
  * Exchange quantities from distant to local
  *
  * parameters:
- *   coupling_entity <-- Pointer to coupling entity
- *   stride          <-- Stride (e.g. 1 for double, 3 for interleaved coordinates)
- *   distant_1       <-- Distant values 1, size coupling_entity->n_dist_1
- *   distant_2       <-- Distant values 2, size coupling_entity->n_dist_2
- *   local_1         --> Local values 1, size coupling_entity->n_1
- *   local_2         --> Local values 2, size coupling_entity->n_2
+ *   cpl       <-- pointer to coupling entity
+ *   stride    <-- Stride (e.g. 1 for double, 3 for interleaved coordinates)
+ *   distant_1 <-- Distant values 1, size coupling->n_dist_1
+ *   distant_2 <-- Distant values 2, size coupling->n_dist_2
+ *   local_1   --> Local values 1, size coupling->n_1
+ *   local_2   --> Local values 2, size coupling->n_2
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_exchange_var(const cs_internal_coupling_t* coupling_entity,
-                                  int                           stride,
-                                  cs_real_t                     distant_1[],
-                                  cs_real_t                     distant_2[],
-                                  cs_real_t                     local_1[],
-                                  cs_real_t                     local_2[])
-
+cs_internal_coupling_exchange_var(const cs_internal_coupling_t  *cpl,
+                                  int                            stride,
+                                  cs_real_t                      distant_1[],
+                                  cs_real_t                      distant_2[],
+                                  cs_real_t                      local_1[],
+                                  cs_real_t                      local_2[])
 {
-  _cs_internal_coupling_send_var(coupling_entity,
+  _cs_internal_coupling_send_var(cpl,
                                  stride,
                                  1,
                                  local_1,
                                  distant_1);
 
-  _cs_internal_coupling_send_var(coupling_entity,
+  _cs_internal_coupling_send_var(cpl,
                                  stride,
                                  2,
                                  local_2,
@@ -1617,11 +1586,11 @@ cs_internal_coupling_exchange_var(const cs_internal_coupling_t* coupling_entity,
  * Compute and exchange ij vectors
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
+ *   cpl <-- pointer to coupling entity
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_exchange_ij(const cs_internal_coupling_t* coupling_entity)
+cs_internal_coupling_exchange_ij(const cs_internal_coupling_t  *cpl)
 {
   int ii;
   cs_lnum_t face_id, cell_id;
@@ -1629,8 +1598,8 @@ cs_internal_coupling_exchange_ij(const cs_internal_coupling_t* coupling_entity)
   int *faces_1, *faces_2;
   cs_lnum_t n_1, n_2;
 
-  cs_real_3_t* ij_1 = coupling_entity->ij_1;
-  cs_real_3_t* ij_2 = coupling_entity->ij_2;
+  cs_real_3_t* ij_1 = cpl->ij_1;
+  cs_real_3_t* ij_2 = cpl->ij_2;
 
   cs_real_t xxd, yyd, zzd, xxl, yyl, zzl;
 
@@ -1642,7 +1611,7 @@ cs_internal_coupling_exchange_ij(const cs_internal_coupling_t* coupling_entity)
 
   cs_real_t *cell_cen_1, *cell_cen_2;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -1655,7 +1624,7 @@ cs_internal_coupling_exchange_ij(const cs_internal_coupling_t* coupling_entity)
   BFT_MALLOC(cell_cen_1, 3 * n_1, cs_real_t);
   BFT_MALLOC(cell_cen_2, 3 * n_2, cs_real_t);
 
-  cs_internal_coupling_exchange_by_cell_id(coupling_entity,
+  cs_internal_coupling_exchange_by_cell_id(cpl,
                                            3,
                                            mq->cell_cen,
                                            cell_cen_1,
@@ -1699,15 +1668,15 @@ cs_internal_coupling_exchange_ij(const cs_internal_coupling_t* coupling_entity)
   BFT_FREE(cell_cen_2);
 
   /* Compute geometric weights and iterative reconstruction vector */
-  _cs_internal_coupling_exchange_gweight(coupling_entity);
-  _cs_internal_coupling_ofij(coupling_entity);
+  _cs_internal_coupling_exchange_gweight(cpl);
+  _cs_internal_coupling_ofij(cpl);
 }
 
 /*----------------------------------------------------------------------------
- * Return pointers to coupling_entity components
+ * Return pointers to coupling components
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
+ *   cpl             <-- pointer to coupling entity
  *   n1              --> NULL or pointer to component n1
  *   n2              --> NULL or pointer to component n2
  *   fac_1[]         --> NULL or pointer to component fac_1[]
@@ -1719,53 +1688,53 @@ cs_internal_coupling_exchange_ij(const cs_internal_coupling_t* coupling_entity)
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_coupled_faces(
-    const cs_internal_coupling_t* coupling_entity,
-    cs_lnum_t* n1,
-    cs_lnum_t* n2,
-    cs_lnum_t* fac_1[],
-    cs_lnum_t* fac_2[],
-    cs_lnum_t* n_dist_1,
-    cs_lnum_t* n_dist_2,
-    cs_lnum_t* dist_loc_1[],
-    cs_lnum_t* dist_loc_2[])
+cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
+                                   cs_lnum_t                     *n1,
+                                   cs_lnum_t                     *n2,
+                                   cs_lnum_t                     *fac_1[],
+                                   cs_lnum_t                     *fac_2[],
+                                   cs_lnum_t                     *n_dist_1,
+                                   cs_lnum_t                     *n_dist_2,
+                                   cs_lnum_t                     *dist_loc_1[],
+                                   cs_lnum_t                     *dist_loc_2[])
 {
   if (n1 != NULL) {
-    *n1 = coupling_entity->n_1;
+    *n1 = cpl->n_1;
   }
   if (n2 != NULL) {
-    *n2 = coupling_entity->n_2;
+    *n2 = cpl->n_2;
   }
   if (fac_1 != NULL) {
-    *fac_1 = coupling_entity->faces_1;
+    *fac_1 = cpl->faces_1;
   }
   if (fac_2 != NULL) {
-    *fac_2 = coupling_entity->faces_2;
+    *fac_2 = cpl->faces_2;
   }
   if (n_dist_1 != NULL) {
-    *n_dist_1 = coupling_entity->n_dist_1;
+    *n_dist_1 = cpl->n_dist_1;
   }
   if (n_dist_2 != NULL) {
-    *n_dist_2 = coupling_entity->n_dist_2;
+    *n_dist_2 = cpl->n_dist_2;
   }
   if (dist_loc_1 != NULL) {
-    *dist_loc_1 = coupling_entity->dist_loc_1;
+    *dist_loc_1 = cpl->dist_loc_1;
   }
   if (dist_loc_2 != NULL) {
-    *dist_loc_2 = coupling_entity->dist_loc_2;
+    *dist_loc_2 = cpl->dist_loc_2;
   }
 }
 
 /*----------------------------------------------------------------------------
- * Return the coupling_entity associated with a given coupling_id.
+ * Return the coupling associated with a given coupling_id.
  *
  * parameters:
  *   coupling_id <-> id associated with a coupling entity
  *----------------------------------------------------------------------------*/
 
-cs_internal_coupling_t*
-cs_internal_coupling_get_entity(int coupling_id) {
-  if (coupling_id > -1 && coupling_id < _n_internal_coupling) {
+cs_internal_coupling_t *
+cs_internal_coupling_by_id(int coupling_id)
+{
+  if (coupling_id > -1 && coupling_id < _n_internal_couplings) {
     return _internal_coupling + coupling_id;
   }
   else {
@@ -1786,11 +1755,10 @@ cs_internal_coupling_get_entity(int coupling_id) {
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_matrix_vector_multiply_contribution(
-    bool                   exclude_diag,
-    void                  *input,
-    const cs_real_t       *restrict x,
-    cs_real_t             *restrict y)
+cs_internal_coupling_spmv_contribution(bool              exclude_diag,
+                                       void             *input,
+                                       const cs_real_t  *restrict x,
+                                       cs_real_t        *restrict y)
 {
   cs_lnum_t face_id, cell_id;
   int ii;
@@ -1802,12 +1770,12 @@ cs_internal_coupling_matrix_vector_multiply_contribution(
 
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)cs_glob_mesh->b_face_cells;
-  const cs_internal_coupling_t* coupling_entity = (const cs_internal_coupling_t *)input;
+  const cs_internal_coupling_t* cpl = (const cs_internal_coupling_t *)input;
 
-  const cs_real_t thetap = coupling_entity->thetav;
-  const int       idiffp = coupling_entity->idiff;
+  const cs_real_t thetap = cpl->thetav;
+  const int       idiffp = cpl->idiff;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -1820,7 +1788,7 @@ cs_internal_coupling_matrix_vector_multiply_contribution(
   BFT_MALLOC(x_j_1, n_1, cs_real_t);
   BFT_MALLOC(x_j_2, n_2, cs_real_t);
 
-  cs_internal_coupling_exchange_by_cell_id(coupling_entity,
+  cs_internal_coupling_exchange_by_cell_id(cpl,
                                            1,
                                            x,
                                            x_j_1,
@@ -1834,8 +1802,8 @@ cs_internal_coupling_matrix_vector_multiply_contribution(
     pi = exclude_diag ? 0. : x[cell_id];/* If exclude_diag, no diagonal term */
     pj = x_j_1[ii];
 
-    hint = coupling_entity->hint_1[ii];
-    hext = coupling_entity->hext_1[ii];
+    hint = cpl->hint_1[ii];
+    hext = cpl->hext_1[ii];
     heq = hint * hext / (hint + hext);
 
     cs_b_diff_flux_coupling(idiffp,
@@ -1855,8 +1823,8 @@ cs_internal_coupling_matrix_vector_multiply_contribution(
     pi = exclude_diag ? 0. : x[cell_id];
     pj = x_j_2[ii];
 
-    hint = coupling_entity->hint_2[ii];
-    hext = coupling_entity->hext_2[ii];
+    hint = cpl->hint_2[ii];
+    hext = cpl->hext_2[ii];
     heq = hint * hext / (hint + hext);
 
     cs_b_diff_flux_coupling(idiffp,
@@ -1873,7 +1841,6 @@ cs_internal_coupling_matrix_vector_multiply_contribution(
 
 /*----------------------------------------------------------------------------
  * Initialize internal coupling related structures.
- *
  *----------------------------------------------------------------------------*/
 
 void
@@ -1883,7 +1850,6 @@ cs_internal_coupling_initialize(void)
   cs_field_t* f, *f_diff;
   int coupling_key_id = cs_field_key_id("coupling_entity");
   int coupling_id = 0;
-
 
   const int diffusivity_key_id = cs_field_key_id("scalar_diffusivity_id");
   int diffusivity_id;
@@ -1918,36 +1884,36 @@ cs_internal_coupling_initialize(void)
     if (f->type & CS_FIELD_VARIABLE) {
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
       if (var_cal_opt.icoupl > 0) {
-        cs_internal_coupling_t* coupling_entity =
+        cs_internal_coupling_t* cpl =
           _internal_coupling + coupling_id;
 
         /* Definition of var_cal_opt options
          * (needed for matrix.vector multiply) */
         cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-        coupling_entity->thetav = var_cal_opt.thetav;
-        coupling_entity->idiff = var_cal_opt.idiff;
-        coupling_entity->dim = cs_glob_mesh->dim;
+        cpl->thetav = var_cal_opt.thetav;
+        cpl->idiff = var_cal_opt.idiff;
+        cpl->dim = cs_glob_mesh->dim;
 
         /* Initialize locators */
-        cs_internal_coupling_locators_initialize(coupling_entity);
+        cs_internal_coupling_locators_initialize(cpl);
 
         /* Initialize coupled_faces */
-        _cs_internal_coupling_select_coupled_faces(coupling_entity);
+        _cs_internal_coupling_select_coupled_faces(cpl);
 
         /* Initialize cocg & cocgb */
         if (var_cal_opt.imrgra == 0) {
           cs_compute_cell_cocg_s_it_coupling(cs_glob_mesh,
                                               cs_glob_mesh_quantities,
-                                              coupling_entity);
+                                              cpl);
         } else if (var_cal_opt.imrgra == 1) {
           cs_compute_cell_cocg_s_lsq_coupling(cs_glob_mesh,
                                               cs_glob_mesh_quantities,
-                                              coupling_entity);
+                                              cpl);
         }
 
         /* Update user information */
-        BFT_MALLOC(coupling_entity->namesca, strlen(f->name) + 1, char);
-        strcpy(coupling_entity->namesca, f->name);
+        BFT_MALLOC(cpl->namesca, strlen(f->name) + 1, char);
+        strcpy(cpl->namesca, f->name);
 
         coupling_id++;
       }
@@ -1959,28 +1925,28 @@ cs_internal_coupling_initialize(void)
  * Print informations about the given coupling entity
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
+ *   cpl <-- pointer to coupling entity
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_print(const cs_internal_coupling_t* coupling_entity)
+cs_internal_coupling_print(const cs_internal_coupling_t  *cpl)
 {
 
-  if (coupling_entity == NULL)
+  if (cpl == NULL)
     return;
 
   int ii;
   cs_lnum_t n_1, n_2, face_id;
   cs_lnum_t *faces_1, *faces_2;
-  const cs_real_t *hint_1 = coupling_entity->hint_1,
-    *hext_1 = coupling_entity->hext_1;
-  const cs_real_t *hint_2 = coupling_entity->hint_2,
-    *hext_2 = coupling_entity->hext_2;
+  const cs_real_t *hint_1 = cpl->hint_1,
+    *hext_1 = cpl->hext_1;
+  const cs_real_t *hint_2 = cpl->hint_2,
+    *hext_2 = cpl->hext_2;
 
 
   const cs_real_t* cog = cs_glob_mesh_quantities->b_face_cog;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -1990,19 +1956,19 @@ cs_internal_coupling_print(const cs_internal_coupling_t* coupling_entity)
                                      NULL,
                                      NULL);
 
-  const cs_real_t* gweight_1 = coupling_entity->gweight_1;
-  const cs_real_t* gweight_2 = coupling_entity->gweight_2;
+  const cs_real_t* gweight_1 = cpl->gweight_1;
+  const cs_real_t* gweight_2 = cpl->gweight_2;
 
   cs_real_t *rweight_1 = NULL, *rweight_2 = NULL;
   BFT_MALLOC(rweight_1, n_1, cs_real_t);
   BFT_MALLOC(rweight_2, n_2, cs_real_t);
-  cs_field_t *f = cs_field_by_name(coupling_entity->namesca);
+  cs_field_t *f = cs_field_by_name(cpl->namesca);
   int key_id = cs_field_key_id("gradient_weighting_id");
   int diff_id = cs_field_get_key_int(f, key_id);
   cs_field_t *weight_f = cs_field_by_id(diff_id);
   cs_real_t *c_weight = weight_f->val;
   if (c_weight != NULL) {
-    _cs_internal_coupling_exchange_rhs_weight(coupling_entity,
+    _cs_internal_coupling_exchange_rhs_weight(cpl,
                                               c_weight, /* diffusivity */
                                               rweight_1, /* rhs weight */
                                               rweight_2); /* rhs weight */
@@ -2019,10 +1985,10 @@ cs_internal_coupling_print(const cs_internal_coupling_t* coupling_entity)
        "Group 1 selection criterion : %s\n"
              "Group 2 selection criterion : %s\n"
        "Juncture selection criterion : %s\n",
-       coupling_entity->namesca,
-       coupling_entity->criteria_cells_1,
-       coupling_entity->criteria_cells_2,
-       coupling_entity->criteria_juncture);
+       cpl->namesca,
+       cpl->criteria_cells_1,
+       cpl->criteria_cells_2,
+       cpl->criteria_juncture);
 
   if (n_1 > 0) {
   bft_printf("\nFaces in group 1 (%d face%s) :\n"
@@ -2044,18 +2010,19 @@ cs_internal_coupling_print(const cs_internal_coupling_t* coupling_entity)
                rweight_1[ii]);
   }
   bft_printf("-------------------------------------------------------------\n");
-  } else {
+  }
+  else {
     bft_printf("\nNo faces in group 1\n");
   }
 
 
   if (n_2 > 0) {
-  bft_printf("\nFaces in group 2 (%d face%s) :\n"
-             "--------------------------------------------------------------\n"
-             "face\tx\t\ty\t\tz\t\thint\t\thext\t\tgweight\t\trweight\t\t\n"
-             "--------------------------------------------------------------\n",
-             n_2,
-             n_2<=1 ? "" : "s");
+    bft_printf("\nFaces in group 2 (%d face%s) :\n"
+               "--------------------------------------------------------------\n"
+               "face\tx\t\ty\t\tz\t\thint\t\thext\t\tgweight\t\trweight\t\t\n"
+               "--------------------------------------------------------------\n",
+               n_2,
+               n_2<=1 ? "" : "s");
   for (ii = 0; ii < n_2; ii++) {
     face_id = faces_2[ii] - 1;
     bft_printf("%d\t%.5e\t%.5e\t%.5e\t%.5e\t%.5e\t%.5e\t%.5e\t\n",
@@ -2081,19 +2048,19 @@ cs_internal_coupling_print(const cs_internal_coupling_t* coupling_entity)
  * Print informations about all coupling entities
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
+ *   cpl <-- pointer to coupling entity
  *----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_dump(void)
 {
   int ii;
-  cs_internal_coupling_t* coupling_entity;
+  cs_internal_coupling_t* cpl;
   bft_printf("\ncs_internal_coupling_dump\n");
-  for (ii = 0; ii < _n_internal_coupling; ii++) {
-    coupling_entity = _internal_coupling + ii;
+  for (ii = 0; ii < _n_internal_couplings; ii++) {
+    cpl = _internal_coupling + ii;
     bft_printf("coupling_id = %d\n", ii);
-    cs_internal_coupling_print(coupling_entity);
+    cs_internal_coupling_print(cpl);
   }
 }
 
@@ -2115,33 +2082,35 @@ cs_internal_coupling_add_entity(int        f_id,
                                 const char juncture[])
 {
   int coupling_id;
-  cs_internal_coupling_t* coupling_entity;
+  cs_internal_coupling_t* cpl;
 
   const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_var_cal_opt_t var_cal_opt;
 
-  const cs_field_t* f = cs_field_by_id(f_id);
+  cs_field_t* f = cs_field_by_id(f_id);
 
   if (f->type & CS_FIELD_VARIABLE) {
-    BFT_REALLOC(_internal_coupling, _n_internal_coupling + 1,
+    BFT_REALLOC(_internal_coupling, _n_internal_couplings + 1,
                 cs_internal_coupling_t);
-    coupling_entity = _internal_coupling + _n_internal_coupling;
+    cpl = _internal_coupling + _n_internal_couplings;
 
     cs_internal_coupling_criteria_initialize(volume_1,
                                              volume_2,
                                              juncture,
-                                             coupling_entity);
+                                             cpl);
 
     cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
     var_cal_opt.icoupl = 1;
     cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
-    coupling_id = _n_internal_coupling;
-    _n_internal_coupling++;
+    coupling_id = _n_internal_couplings;
+    _n_internal_couplings++;
     return coupling_id;
-  } else {
+  }
+  else {
     bft_error(__FILE__, __LINE__, 0,
-              "field id = %d provided is invalid. The field must be between a variable.",
+              "field id = %d provided is invalid."
+              " The field must be a variable.",
               f_id);
     return -1;
   }
@@ -2157,8 +2126,8 @@ cs_internal_coupling_add_entity(int        f_id,
  *----------------------------------------------------------------------------*/
 
 void
-cs_ic_set_exchcoeff(const int        field_id,
-                    const cs_real_t *hbord)
+cs_ic_set_exchcoeff(const int         field_id,
+                    const cs_real_t  *hbord)
 {
   int ii;
   cs_lnum_t face_id;
@@ -2168,20 +2137,19 @@ cs_ic_set_exchcoeff(const int        field_id,
   cs_real_t surf;
   const cs_real_t* b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
-
   const cs_field_t* f = cs_field_by_id(field_id);
   const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
   int coupling_id = cs_field_get_key_int(f, coupling_key_id);
-  const cs_internal_coupling_t* coupling_entity
-    = cs_internal_coupling_get_entity(coupling_id);
+  const cs_internal_coupling_t  *cpl
+    = cs_internal_coupling_by_id(coupling_id);
 
-  cs_real_t *hint_1 = coupling_entity->hint_1;
-  cs_real_t *hext_1 = coupling_entity->hext_1;
+  cs_real_t *hint_1 = cpl->hint_1;
+  cs_real_t *hext_1 = cpl->hext_1;
 
-  cs_real_t *hint_2 = coupling_entity->hint_2;
-  cs_real_t *hext_2 = coupling_entity->hext_2;
+  cs_real_t *hint_2 = cpl->hint_2;
+  cs_real_t *hext_2 = cpl->hext_2;
 
-  cs_internal_coupling_coupled_faces(coupling_entity,
+  cs_internal_coupling_coupled_faces(cpl,
                                      &n_1,
                                      &n_2,
                                      &faces_1,
@@ -2191,7 +2159,7 @@ cs_ic_set_exchcoeff(const int        field_id,
                                      NULL,
                                      NULL);
 
-  cs_internal_coupling_exchange_by_face_id(coupling_entity,
+  cs_internal_coupling_exchange_by_face_id(cpl,
                                            1,
                                            hbord,
                                            hext_1,
@@ -2219,16 +2187,16 @@ cs_ic_set_exchcoeff(const int        field_id,
  * This function is common to most solvers
  *
  * parameters:
- *   input            <-- input
- *   ad               <-> diagonal part of linear equation matrix
+ *   input  <-- input
+ *   ad     <-> diagonal part of linear equation matrix
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_preconditionning_add_coupling_contribution(void              *input,
-                                                     cs_real_t         *ad)
+cs_matrix_preconditionning_add_coupling_contribution(void       *input,
+                                                     cs_real_t  *ad)
 {
-  const cs_internal_coupling_t* coupling_entity = (const cs_internal_coupling_t *)input;
-  if (coupling_entity != NULL) {
+  const cs_internal_coupling_t* cpl = (const cs_internal_coupling_t *)input;
+  if (cpl != NULL) {
     int ii;
     const cs_lnum_t *restrict b_face_cells
       = (const cs_lnum_t *restrict)cs_glob_mesh->b_face_cells;
@@ -2236,7 +2204,7 @@ cs_matrix_preconditionning_add_coupling_contribution(void              *input,
     int n_1, n_2;
     cs_real_t hint, hext, heq;
 
-    cs_internal_coupling_coupled_faces(coupling_entity,
+    cs_internal_coupling_coupled_faces(cpl,
                                        &n_1,
                                        &n_2,
                                        &faces_1,
@@ -2250,8 +2218,8 @@ cs_matrix_preconditionning_add_coupling_contribution(void              *input,
       face_id = faces_1[ii] - 1;
       cell_id = b_face_cells[face_id];
 
-      hint = coupling_entity->hint_1[ii];
-      hext = coupling_entity->hext_1[ii];
+      hint = cpl->hint_1[ii];
+      hext = cpl->hext_1[ii];
       heq = hint * hext / (hint + hext);
 
       ad[cell_id] += heq;
@@ -2261,8 +2229,8 @@ cs_matrix_preconditionning_add_coupling_contribution(void              *input,
       face_id = faces_2[ii] - 1;
       cell_id = b_face_cells[face_id];
 
-      hint = coupling_entity->hint_2[ii];
-      hext = coupling_entity->hext_2[ii];
+      hint = cpl->hint_2[ii];
+      hext = cpl->hext_2[ii];
       heq = hint * hext / (hint + hext);
 
       ad[cell_id] += heq;

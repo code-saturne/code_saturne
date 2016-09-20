@@ -115,9 +115,9 @@ static int _n_computations = 0;
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_cell_cocg_s_it(const cs_mesh_t      *m,
-                        cs_mesh_quantities_t *fvq,
-                        cs_internal_coupling_t *ce)
+_compute_cell_cocg_s_it(const cs_mesh_t         *m,
+                        cs_mesh_quantities_t    *fvq,
+                        cs_internal_coupling_t  *ce)
 {
   const int n_cells = m->n_cells;
   const int n_cells_ext = m->n_cells_with_ghosts;
@@ -2940,7 +2940,6 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
 
   bft_printf("\n\nEND OF DUMP OF MESH QUANTITIES STRUCTURE\n\n");
   bft_printf_flush();
-
 }
 
 /*----------------------------------------------------------------------------
@@ -2950,17 +2949,15 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
  * parameters:
  *   m    <--  mesh
  *   fvq  <->  mesh quantities
- *   ce   <->  coupling_entity
+ *   ce   <->  coupling
  *----------------------------------------------------------------------------*/
 
 void
-cs_compute_cell_cocg_s_lsq_coupling(const cs_mesh_t        *m,
-                                    cs_mesh_quantities_t   *fvq,
-                                    cs_internal_coupling_t *ce)
+cs_compute_cell_cocg_s_lsq_coupling(const cs_mesh_t         *m,
+                                    cs_mesh_quantities_t    *fvq,
+                                    cs_internal_coupling_t  *ce)
 {
-
   _compute_cell_cocg_s_lsq(m, fvq, ce);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -2970,17 +2967,15 @@ cs_compute_cell_cocg_s_lsq_coupling(const cs_mesh_t        *m,
  * parameters:
  *   m    <--  mesh
  *   fvq  <->  mesh quantities
- *   ce   <->  coupling_entity
+ *   ce   <->  coupling
  *----------------------------------------------------------------------------*/
 
 void
-cs_compute_cell_cocg_s_it_coupling(const cs_mesh_t        *m,
-                                   cs_mesh_quantities_t   *fvq,
-                                   cs_internal_coupling_t *ce)
+cs_compute_cell_cocg_s_it_coupling(const cs_mesh_t         *m,
+                                   cs_mesh_quantities_t    *fvq,
+                                   cs_internal_coupling_t  *ce)
 {
-
   _compute_cell_cocg_s_it(m, fvq, ce);
-
 }
 
 /*----------------------------------------------------------------------------*/

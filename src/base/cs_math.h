@@ -74,7 +74,7 @@ extern const cs_real_t cs_math_pi;
  * Wrapper to cs_math_sym_33_inv_cramer
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (symmetric_matrix_inverse, SYMMETRIC_MATRIX_INVERSE)
+void CS_PROCF(symmetric_matrix_inverse, SYMMETRIC_MATRIX_INVERSE)
 (
   const cs_real_6_t s,
   cs_real_6_t       sout
@@ -84,7 +84,7 @@ void CS_PROCF (symmetric_matrix_inverse, SYMMETRIC_MATRIX_INVERSE)
  * Wrapper to cs_math_sym_33_product
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (symmetric_matrix_product, SYMMETRIC_MATRIX_PRODUCT)
+void CS_PROCF(symmetric_matrix_product, SYMMETRIC_MATRIX_PRODUCT)
 (
  const cs_real_6_t s1,
  const cs_real_6_t s2,

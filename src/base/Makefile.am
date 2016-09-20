@@ -382,6 +382,7 @@ libcs_paramedmem_la_CPPFLAGS = \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
+$(CPPFLAGS_PLE) \
 $(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
 pkginclude_HEADERS += cs_paramedmem_coupling.hxx
 lib_LTLIBRARIES += libcs_paramedmem.la

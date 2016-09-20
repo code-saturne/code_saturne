@@ -1797,8 +1797,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   cs_lnum_t n_dist_1, n_dist_2;
   cs_lnum_t *dist_loc_1, *dist_loc_2;
   int coupling_id;
-  cs_internal_coupling_t* coupling_entity = NULL;
-
+  cs_internal_coupling_t  *cpl = NULL;
 
   /* 1. Initialization */
 
@@ -1854,8 +1853,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
     assert(f_id != -1);
     const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
     coupling_id = cs_field_get_key_int(f, coupling_key_id);
-    coupling_entity = cs_internal_coupling_get_entity(coupling_id);
-    cs_internal_coupling_coupled_faces(coupling_entity,
+    cpl = cs_internal_coupling_by_id(coupling_id);
+    cs_internal_coupling_coupled_faces(cpl,
                                        &n_1,
                                        &n_2,
                                        &faces_1,
@@ -1917,7 +1916,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                        coefbp,
                        pvar,
                        gweight, /* Weighted gradient */
-                       coupling_entity,
+                       cpl,
                        grad);
 
   } else {
@@ -2753,7 +2752,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
         BFT_MALLOC(pvar_1, n_1, cs_real_t);
         BFT_MALLOC(pvar_2, n_2, cs_real_t);
 
-        cs_internal_coupling_exchange_var(coupling_entity,
+        cs_internal_coupling_exchange_var(cpl,
                                           1,
                                           pvar_distant_1,
                                           pvar_distant_2,
@@ -2779,8 +2778,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
           pjp = pvar_1[ii];
 
-          hint = coupling_entity->hint_1[ii];
-          hext = coupling_entity->hext_1[ii];
+          hint = cpl->hint_1[ii];
+          hext = cpl->hext_1[ii];
           heq = hint * hext / (hint + hext);
 
           cs_b_diff_flux_coupling(idiffp,
@@ -2807,8 +2806,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
           pjp = pvar_2[ii];
 
-          hint = coupling_entity->hint_2[ii];
-          hext = coupling_entity->hext_2[ii];
+          hint = cpl->hint_2[ii];
+          hext = cpl->hext_2[ii];
           heq = hint * hext / (hint + hext);
 
           cs_b_diff_flux_coupling(idiffp,

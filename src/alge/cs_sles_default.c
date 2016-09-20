@@ -458,9 +458,9 @@ cs_sles_setup_native_conv_diff(int                  f_id,
       if (coupling_id > -1) {
         cs_matrix_set_extend
           (a,
-           cs_internal_coupling_matrix_vector_multiply_contribution,
+           cs_internal_coupling_spmv_contribution,
            cs_matrix_preconditionning_add_coupling_contribution,
-           cs_internal_coupling_get_entity(coupling_id));
+           cs_internal_coupling_by_id(coupling_id));
       }
     }
 
@@ -488,9 +488,9 @@ cs_sles_setup_native_conv_diff(int                  f_id,
       if (coupling_id > -1) {
         cs_matrix_set_extend
           (a_conv,
-           cs_internal_coupling_matrix_vector_multiply_contribution,
+           cs_internal_coupling_spmv_contribution,
            cs_matrix_preconditionning_add_coupling_contribution,
-           cs_internal_coupling_get_entity(coupling_id));
+           cs_internal_coupling_by_id(coupling_id));
       }
     }
 
@@ -515,9 +515,9 @@ cs_sles_setup_native_conv_diff(int                  f_id,
       if (coupling_id > -1) {
         cs_matrix_set_extend
           (a_diff,
-           cs_internal_coupling_matrix_vector_multiply_contribution,
+           cs_internal_coupling_spmv_contribution,
            cs_matrix_preconditionning_add_coupling_contribution,
-           cs_internal_coupling_get_entity(coupling_id));
+           cs_internal_coupling_by_id(coupling_id));
       }
     }
 
@@ -650,9 +650,9 @@ cs_sles_solve_native(int                  f_id,
         if (coupling_id > -1) {
           cs_matrix_set_extend
             (a,
-             cs_internal_coupling_matrix_vector_multiply_contribution,
+             cs_internal_coupling_spmv_contribution,
              cs_matrix_preconditionning_add_coupling_contribution,
-             cs_internal_coupling_get_entity(coupling_id));
+             cs_internal_coupling_by_id(coupling_id));
         }
       }
 
@@ -713,9 +713,9 @@ cs_sles_solve_native(int                  f_id,
       if (coupling_id > -1) {
         cs_matrix_set_extend
           (a,
-           cs_internal_coupling_matrix_vector_multiply_contribution,
+           cs_internal_coupling_spmv_contribution,
            cs_matrix_preconditionning_add_coupling_contribution,
-           cs_internal_coupling_get_entity(coupling_id));
+           cs_internal_coupling_by_id(coupling_id));
       }
     }
 

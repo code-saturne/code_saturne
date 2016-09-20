@@ -279,9 +279,9 @@ cs_matrix_vector_native_multiply(int               isym,
       if (coupling_id > -1) {
         cs_matrix_set_extend
           (a,
-           cs_internal_coupling_matrix_vector_multiply_contribution,
+           cs_internal_coupling_spmv_contribution,
            cs_matrix_preconditionning_add_coupling_contribution,
-           cs_internal_coupling_get_entity(coupling_id));
+           cs_internal_coupling_by_id(coupling_id));
       }
     }
   }

@@ -2,13 +2,13 @@
 #define __CS_INTERNAL_COUPLING_H__
 
 /*============================================================================
- * Internal coupling : coupling for one instance of Code_Saturne
+ * Internal coupling: coupling for one instance of Code_Saturne
  *============================================================================*/
 
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2015 EDF S.A.
+  Copyright (C) 1998-2016 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -28,18 +28,17 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_locator.h>
+
+/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
 #include "cs_parameters.h"
-#include "cs_matrix.h"
-
-/*----------------------------------------------------------------------------
- * PLE library headers
- *----------------------------------------------------------------------------*/
-
-#include <ple_locator.h>
 
 /*----------------------------------------------------------------------------*/
 
@@ -128,132 +127,124 @@ typedef struct {
  *   criteria_cells_2  <-- string criteria for the second group of cells
  *   criteria_juncture <-- string criteria for the juncture, which is a
  *                         group of faces
- *   coupling_entity   --> pointer to coupling structure to initialize
+ *   cpl               --> pointer to coupling structure to initialize
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_criteria_initialize(
-    const char              criteria_cells_1[],
-    const char              criteria_cells_2[],
-    const char              criteria_juncture[],
-    cs_internal_coupling_t* coupling_entity);
+cs_internal_coupling_criteria_initialize(const char   criteria_cells_1[],
+                                         const char   criteria_cells_2[],
+                                         const char   criteria_juncture[],
+                                         cs_internal_coupling_t  *cpl);
 
-ple_locator_t*
-cs_internal_coupling_create_locator(cs_internal_coupling_t* coupling_entity);
-
+ple_locator_t *
+cs_internal_coupling_create_locator(cs_internal_coupling_t  *cpl);
 
 /*----------------------------------------------------------------------------
  * Initialize locators using selection criteria.
  *
  * parameters:
- *   coupling_entity <-> pointer to coupling structure to modify
+ *   cpl <-> pointer to coupling structure to modify
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_locators_initialize(
-    cs_internal_coupling_t* coupling_entity);
+cs_internal_coupling_locators_initialize(cs_internal_coupling_t  *cpl);
 
 /*----------------------------------------------------------------------------
  * Destruction of all internal coupling related structures.
- *
  *----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_finalize(void);
 
 /*----------------------------------------------------------------------------
- * Return the coupling_entity associated with a given coupling_id.
+ * Return the coupling associated with a given coupling_id.
  *
  * parameters:
  *   coupling_id <-> id associated with a coupling entity
  *----------------------------------------------------------------------------*/
 
-cs_internal_coupling_t*
-cs_internal_coupling_get_entity(cs_int_t coupling_id);
+cs_internal_coupling_t *
+cs_internal_coupling_by_id(int coupling_id);
 
 /*----------------------------------------------------------------------------
-* Exchange quantities from distant to local
+ * Exchange quantities from distant to local
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
- *   stride          <-- Stride (e.g. 1 for double, 3 for interleaved coordinates)
- *   distant_1       <-- Distant values 1, size coupling_entity->n_dist_1
- *   distant_2       <-- Distant values 2, size coupling_entity->n_dist_2
- *   local_1         --> Local values 1, size coupling_entity->n_1
- *   local_2         --> Local values 2, size coupling_entity->n_2
+ *   cpl       <-- pointer to coupling entity
+ *   stride    <-- Stride (e.g. 1 for double, 3 for interleaved coordinates)
+ *   distant_1 <-- Distant values 1, size coupling->n_dist_1
+ *   distant_2 <-- Distant values 2, size coupling->n_dist_2
+ *   local_1   --> Local values 1, size coupling->n_1
+ *   local_2   --> Local values 2, size coupling->n_2
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_exchange_var(const cs_internal_coupling_t* coupling_entity,
-                                  int                           stride,
-                                  cs_real_t                     distant_1[],
-                                  cs_real_t                     distant_2[],
-                                  cs_real_t                     local_1[],
-                                  cs_real_t                     local_2[]);
+cs_internal_coupling_exchange_var(const cs_internal_coupling_t  *cpl,
+                                  int                            stride,
+                                  cs_real_t                      distant_1[],
+                                  cs_real_t                      distant_2[],
+                                  cs_real_t                      local_1[],
+                                  cs_real_t                      local_2[]);
 
 /*----------------------------------------------------------------------------
  * Exchange variable between groups using cell id
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
- *   stride          <-- number of values (non interlaced) by entity
- *   tab             <-- variable exchanged
- *   local_1         --> local data for group 1
- *   local_2         --> local data for group 2
+ *   cpl      <-- pointer to coupling entity
+ *   stride   <-- number of values (non interlaced) by entity
+ *   tab      <-- variable exchanged
+ *   local_1  --> local data for group 1
+ *   local_2  --> local data for group 2
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_exchange_by_cell_id(
-    const cs_internal_coupling_t* coupling_entity,
-    int                           stride,
-    const cs_real_t               tab[],
-    cs_real_t                     local_1[],
-    cs_real_t                     local_2[]);
+cs_internal_coupling_exchange_by_cell_id(const cs_internal_coupling_t  *cpl,
+                                         int                            stride,
+                                         const cs_real_t                tab[],
+                                         cs_real_t                      local_1[],
+                                         cs_real_t                      local_2[]);
 
 /*----------------------------------------------------------------------------
  * Exchange variable between groups using face id
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
- *   stride          <-- number of values (non interlaced) by entity
- *   tab             <-- variable exchanged
- *   local_1         --> local data for group 1
- *   local_2         --> local data for group 2
+ *   cpl     <-- pointer to coupling entity
+ *   stride  <-- number of values (non interlaced) by entity
+ *   tab     <-- variable exchanged
+ *   local_1 --> local data for group 1
+ *   local_2 --> local data for group 2
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_exchange_by_face_id(
-    const cs_internal_coupling_t* coupling_entity,
-    int                           stride,
-    const cs_real_t               tab[],
-    cs_real_t                     local_1[],
-    cs_real_t                     local_2[]);
+cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
+                                         int                            stride,
+                                         const cs_real_t                tab[],
+                                         cs_real_t                      local_1[],
+                                         cs_real_t                      local_2[]);
 
 /*----------------------------------------------------------------------------
  * Modify LSQ COCG matrix to include internal coupling
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
+ *   coupling <-- pointer to coupling entity
  *   cocg            <-> cocg matrix modified
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_lsq_cocg_contribution(
-    const cs_internal_coupling_t* coupling_entity,
-    cs_real_33_t                   cocg[]);
+cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
+                                           cs_real_33_t                   cocg[]);
 
 /*----------------------------------------------------------------------------
  * Modify iterative COCG matrix to include internal coupling
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
+ *   coupling <-- pointer to coupling entity
  *   cocg            <-> cocg matrix modified
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_it_cocg_contribution(
-    const cs_internal_coupling_t* coupling_entity,
-    cs_real_33_t                   cocg[]);
+cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
+                                          cs_real_33_t                   cocg[]);
 
 /*----------------------------------------------------------------------------
  * Initialize internal coupling related structures.
@@ -267,46 +258,43 @@ cs_internal_coupling_initialize(void);
  * Compute and exchange ij vectors
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
+ *   cpl <-- pointer to coupling entity
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_exchange_ij(
-    const cs_internal_coupling_t*    coupling_entity);
+cs_internal_coupling_exchange_ij(const cs_internal_coupling_t  *cpl);
 
 /*----------------------------------------------------------------------------
  * Add internal coupling rhs contribution for LSQ gradient calculation
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
- *   c_weight        <-- weighted gradient coefficient variable, or NULL
- *   rhsv            <-> rhs contribution modified
+ *   cpl       <-- pointer to coupling entity
+ *   c_weight <-- weighted gradient coefficient variable, or NULL
+ *   rhsv     <-> rhs contribution modified
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_lsq_rhs(
-    const cs_internal_coupling_t* coupling_entity,
-    const cs_real_t               c_weight[], /* diffusivity */
-    cs_real_4_t                   rhsv[]);
+cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
+                             const cs_real_t                c_weight[],
+                             cs_real_4_t                    rhsv[]);
 
 /*----------------------------------------------------------------------------
  * Add internal coupling rhs contribution for iterative gradient calculation
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
- *   c_weight        <-- weighted gradient coefficient variable, or NULL
- *   grad            <-- pointer to gradient
- *   pvar            <-- pointer to variable
- *   rhs             <-> pointer to rhs contribution
+ *   cpl      <-- pointer to coupling entity
+ *   c_weight <-- weighted gradient coefficient variable, or NULL
+ *   grad     <-- pointer to gradient
+ *   pvar     <-- pointer to variable
+ *   rhs      <-> pointer to rhs contribution
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_iter_rhs(
-    const cs_internal_coupling_t* coupling_entity,
-    const cs_real_t               c_weight[], /* diffusivity */
-    cs_real_3_t         *restrict grad,
-    const cs_real_t               pvar[],
-    cs_real_3_t                   rhs[]);
+cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
+                              const cs_real_t                c_weight[],
+                              cs_real_3_t          *restrict grad,
+                              const cs_real_t                pvar[],
+                              cs_real_3_t                    rhs[]);
 
 /*----------------------------------------------------------------------------
  * Modify matrix-vector product in case of internal coupling
@@ -319,11 +307,10 @@ cs_internal_coupling_iter_rhs(
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_matrix_vector_multiply_contribution(
-    bool                   exclude_diag,
-    void                  *input,
-    const cs_real_t       *restrict x,
-    cs_real_t             *restrict y);
+cs_internal_coupling_spmv_contribution(bool              exclude_diag,
+                                       void             *input,
+                                       const cs_real_t  *restrict x,
+                                       cs_real_t        *restrict y);
 
 /*----------------------------------------------------------------------------
  * Add contribution from coupled faces (internal coupling) to polynomial
@@ -332,19 +319,19 @@ cs_internal_coupling_matrix_vector_multiply_contribution(
  * This function is common to most solvers
  *
  * parameters:
- *   input            <-- input
- *   ad               <-> diagonal part of linear equation matrix
+ *   input  <-- input
+ *   ad     <-> diagonal part of linear equation matrix
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_preconditionning_add_coupling_contribution(void              *input,
-                                                     cs_real_t         *ad);
+cs_matrix_preconditionning_add_coupling_contribution(void       *input,
+                                                     cs_real_t  *ad);
 
 /*----------------------------------------------------------------------------
- * Return pointers to coupling_entity components
+ * Return pointers to coupling components
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
+ *   cpl             <-- pointer to coupling entity
  *   n1              --> NULL or pointer to component n1
  *   n2              --> NULL or pointer to component n2
  *   fac_1[]         --> NULL or pointer to component fac_1[]
@@ -356,32 +343,31 @@ cs_matrix_preconditionning_add_coupling_contribution(void              *input,
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_coupled_faces(
-    const cs_internal_coupling_t* coupling_entity,
-    cs_lnum_t* n1,
-    cs_lnum_t* n2,
-    cs_lnum_t* fac_1[],
-    cs_lnum_t* fac_2[],
-    cs_lnum_t* n_dist_1,
-    cs_lnum_t* n_dist_2,
-    cs_lnum_t* dist_loc_1[],
-    cs_lnum_t* dist_loc_2[]);
+cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
+                                   cs_lnum_t                     *n1,
+                                   cs_lnum_t                     *n2,
+                                   cs_lnum_t                     *fac_1[],
+                                   cs_lnum_t                     *fac_2[],
+                                   cs_lnum_t                     *n_dist_1,
+                                   cs_lnum_t                     *n_dist_2,
+                                   cs_lnum_t                     *dist_loc_1[],
+                                   cs_lnum_t                     *dist_loc_2[]);
 
 /*----------------------------------------------------------------------------
  * Print informations about the given coupling entity
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
+ *   cpl <-- pointer to coupling entity
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_print(const cs_internal_coupling_t* coupling_entity);
+cs_internal_coupling_print(const cs_internal_coupling_t  *c);
 
 /*----------------------------------------------------------------------------
  * Print informations about all coupling entities
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
+ *   cpl <-- pointer to coupling entity
  *----------------------------------------------------------------------------*/
 
 void
@@ -397,8 +383,8 @@ cs_internal_coupling_dump(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_ic_set_exchcoeff(const int        field_id,
-                    const cs_real_t *hbord);
+cs_ic_set_exchcoeff(const int         field_id,
+                    const cs_real_t  *hbord);
 
 /*----------------------------------------------------------------------------
  * Define coupling entity using given criterias
@@ -422,18 +408,17 @@ cs_internal_coupling_add_entity(int        field_id,
  * for iterative scalar gradient calculation
  *
  * parameters:
- *   coupling_entity <-- pointer to coupling entity
- *   c_weight        <-- weighted gradient coefficient variable, or NULL
- *   pvar            <-- variable
- *   grad            <-> gradient
+ *   cpl      <-- pointer to coupling entity
+ *   c_weight <-- weighted gradient coefficient variable, or NULL
+ *   pvar     <-- variable
+ *   grad     <-> gradient
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_initial_contribution(
-    const cs_internal_coupling_t* coupling_entity,
-    const cs_real_t               c_weight[],
-    const cs_real_t               pvar[],
-    cs_real_3_t         *restrict grad);
+cs_internal_coupling_initial_contribution(const cs_internal_coupling_t  *cpl,
+                                          const cs_real_t                c_weight[],
+                                          const cs_real_t                pvar[],
+                                          cs_real_3_t          *restrict grad);
 
 /*----------------------------------------------------------------------------*/
 
