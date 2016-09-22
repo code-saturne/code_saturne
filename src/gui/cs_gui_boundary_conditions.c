@@ -1003,7 +1003,7 @@ _boundary_darcy(const char *nature,
   if (cs_gui_strcmp(choice, "dirichlet") || cs_gui_strcmp(choice, "neumann"))
   {
     cs_xpath_add_element(&path, choice);
-    cs_xpath_add_test_attribute(&path, "name", "pressure");
+    cs_xpath_add_test_attribute(&path, "name", "hydraulic_head");
     cs_xpath_add_function_text(&path);
     if (cs_gui_get_double(path, &value))
       boundaries->preout[izone] = value;
@@ -2320,7 +2320,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       BFT_FREE(choice_d);
 
       if (cs_gui_strcmp(vars->model, "groundwater_model")) {
-        const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
+        const cs_field_t  *fp1 = cs_field_by_name_try("hydraulic_head");
         int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
         char *_choice_d = _boundary_choice(boundaries->nature[izone],
                                            boundaries->label[izone],
@@ -2638,7 +2638,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
         }
       }
       else if (cs_gui_strcmp(vars->model, "groundwater_model")) {
-        const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
+        const cs_field_t  *fp1 = cs_field_by_name_try("hydraulic_head");
         const int var_key_id = cs_field_key_id("variable_id");
         int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
         char *choice_d = _boundary_choice(boundaries->nature[izone],
@@ -2728,7 +2728,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       }
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "groundwater")) {
-      const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
+      const cs_field_t  *fp1 = cs_field_by_name_try("hydraulic_head");
       const int var_key_id = cs_field_key_id("variable_id");
       int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
       char *choice_d = _boundary_choice(boundaries->nature[izone], boundaries->label[izone], "hydraulicHead", "choice");

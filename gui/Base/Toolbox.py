@@ -287,6 +287,7 @@ def dicoLabel(name):
     """
     for (n, labF, labE) in [('velocity',                      "Vitesse",   "Velocity"),
                             ('pressure',                      "Pression",   "Pressure"),
+                            ('hydraulic_head',                "Charge hydraulique", "Hydraulic head"),
                             ('k',                             "EnerTurb",   "TurbEner"),
                             ('epsilon',                       "Dissip",     "Dissip"),
                             ('turbulent_viscosity',           "ViscTurb",   "TurbVisc"),

@@ -131,13 +131,13 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         if HydraulicChoice == 'dirichlet':
             self.labelValueHydraulicHead.show()
             self.lineEditValueHydraulicHead.show()
-            pressure = self.__boundary.getHydraulicHeadValue()
-            self.lineEditValueHydraulicHead.setText(str(pressure))
+            h_head = self.__boundary.getHydraulicHeadValue()
+            self.lineEditValueHydraulicHead.setText(str(h_head))
         elif HydraulicChoice == 'neumann':
             self.labelExHydraulicHead.show()
             self.lineEditExHydraulicHead.show()
-            pressure = self.__boundary.getHydraulicHeadFlux()
-            self.lineEditExHydraulicHead.setText(str(pressure))
+            h_head = self.__boundary.getHydraulicHeadFlux()
+            self.lineEditExHydraulicHead.setText(str(h_head))
         elif HydraulicChoice == 'dirichlet_formula':
             self.pushButtonHydraulicHead.setEnabled(True)
 

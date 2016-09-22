@@ -422,7 +422,6 @@ omega = k^0.5/almax;"""
         formula = node.xmlGetString('formula', zone_id=zone)
         return formula
 
-
     @Variables.undoLocal
     def setHydraulicHeadFormula(self, zone, formula):
         """
@@ -430,7 +429,7 @@ omega = k^0.5/almax;"""
         Set the formula for hydraulic head.
         """
         self.__verifyZone(zone)
-        node = self.node_veloce.xmlGetNode('variable', name = 'pressure')
+        node = self.node_veloce.xmlGetNode('variable', name = 'hydraulic_head')
 
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
@@ -446,7 +445,7 @@ omega = k^0.5/almax;"""
         Return the formula for hydraulic head.
         """
         self.__verifyZone(zone)
-        node = self.node_veloce.xmlGetNode('variable', name = 'pressure')
+        node = self.node_veloce.xmlGetNode('variable', name = 'hydraulic_head')
 
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"

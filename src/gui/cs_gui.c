@@ -81,6 +81,7 @@
 #include "cs_parameters.h"
 #include "cs_partition.h"
 #include "cs_prototypes.h"
+#include "cs_physical_model.h"
 #include "cs_rotation.h"
 #include "cs_timer.h"
 #include "cs_time_moment.h"
@@ -2657,8 +2658,14 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
   cs_var_cal_opt_t var_cal_opt;
 
   /* 1) variables from velocity_pressure and turbulence */
-  /* 1-a) for pressure */
-  cs_field_t *c_pres = cs_field_by_name("pressure");
+  /* 1-a) for pressure or hydraulic head */
+  cs_field_t *c_pres = NULL;
+  if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1) {
+    c_pres = cs_field_by_name("hydraulic_head");
+  }
+  else {
+    c_pres = cs_field_by_name("pressure");
+  }
   cs_field_get_key_struct(c_pres, key_cal_opt_id, &var_cal_opt);
   int j = cs_field_get_key_int(c_pres, var_key_id) -1;
 
@@ -2675,7 +2682,9 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
   int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->type & CS_FIELD_VARIABLE && !cs_gui_strcmp(f->name, "pressure")) {
+    if (   f->type & CS_FIELD_VARIABLE
+        && !cs_gui_strcmp(f->name, "pressure")
+        && !cs_gui_strcmp(f->name, "hydraulic_head")) {
       j = cs_field_get_key_int(f, var_key_id) -1;
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
@@ -5077,11 +5086,11 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
   cs_field_t *fsaturation   = cs_field_by_name_try("saturation");
   cs_field_t *fcapacity     = cs_field_by_name_try("capacity");
   cs_field_t *fpermeability = cs_field_by_name_try("permeability");
-  cs_field_t *fpressure     = CS_F_(p);
+  cs_field_t *fhhead     = CS_F_(head);
 
   cs_real_t   *saturation_field = fsaturation->val;
   cs_real_t   *capacity_field   = fcapacity->val;
-  cs_real_t   *pressure_field   = fpressure->val;
+  cs_real_t   *h_head_field   = fhhead->val;
 
   cs_real_t     *permeability_field = NULL;
   cs_real_6_t   *permeability_field_v = NULL;
@@ -5145,14 +5154,14 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
 
         for (cs_lnum_t icel = 0; icel < cells; icel++) {
           cs_lnum_t iel = cells_list[icel];
-          double pres = pressure_field[iel];
+          double head = h_head_field[iel];
 
           if (*gravity == 1)
-            pres -= (cell_cen[iel][0] * *gravity_x +
+            head -= (cell_cen[iel][0] * *gravity_x +
                      cell_cen[iel][1] * *gravity_y +
                      cell_cen[iel][2] * *gravity_z );
 
-          if (pres >= 0) {
+          if (head >= 0) {
             capacity_field[iel] = 0.;
             saturation_field[iel] = thetas_param;
 
@@ -5169,7 +5178,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
           }
           else {
 
-            double tmp1 = pow(fabs(alpha_param * pres), n_param);
+            double tmp1 = pow(fabs(alpha_param * head), n_param);
             double tmp2 = 1. / (1. + tmp1);
             double se_param = pow(tmp2, m_param);
             double perm = pow(se_param, l_param) *
@@ -5177,7 +5186,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
 
             capacity_field[iel] = -m_param * n_param * tmp1 *
                                   (thetas_param - thetar_param) *
-                                   se_param * tmp2 / pres;
+                                   se_param * tmp2 / head;
             saturation_field[iel] = thetar_param +
                                     se_param * (thetas_param - thetar_param);
 

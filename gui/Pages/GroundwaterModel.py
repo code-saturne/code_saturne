@@ -108,6 +108,10 @@ class GroundwaterModel(Variables, Model):
             FluidCharacteristicsModel(self.case).setInitialValue('density', 1.)
 
             node = self.node_models.xmlInitNode('velocity_pressure')
+            nn =  node.xmlGetNode('variable', name='pressure')
+            if nn:
+                nn.xmlRemoveNode()
+            self.setNewVariable(node, 'hydraulic_head')
             nn =  node.xmlGetNode('property', name='total_pressure')
             if nn:
                 nn.xmlRemoveNode()
@@ -135,6 +139,10 @@ class GroundwaterModel(Variables, Model):
         elif old_choice and old_choice != "off":
             TurbulenceModel(self.case).setTurbulenceModel("k-epsilon-PL")
             node = self.node_models.xmlInitNode('velocity_pressure')
+            nn =  node.xmlGetNode('variable', name='hydraulic_head')
+            if nn:
+                nn.xmlRemoveNode()
+            self.setNewVariable(node, 'pressure')
             self.setNewProperty(node, 'total_pressure')
             self.setNewProperty(node, 'yplus')
             n = self.setNewProperty(node, 'stress')

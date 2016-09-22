@@ -1015,47 +1015,47 @@ omega = 0.;"""
     @Variables.noUndo
     def getHydraulicHeadValue(self):
         """
-        Return value of the pressure
+        Return value of the hydraulic head
         """
-        pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
-        if pressure == None:
-            pressure = self.__defaultValues()['pressure']
-            self.setHydraulicHeadValue(pressure)
+        hydraulic_head = self.boundNode.xmlGetDouble('dirichlet', name='hydraulic_head')
+        if hydraulic_head == None:
+            hydraulic_head = self.__defaultValues()['hydraulic_head']
+            self.setHydraulicHeadValue(hydraulic_head)
 
-        return pressure
+        return hydraulic_head
 
 
     @Variables.undoLocal
     def setHydraulicHeadValue(self, value):
         """
-        Set value of the pressure
+        Set value of the hydraulic head
         """
         Model().isFloat(value)
-        node = self.boundNode.xmlInitNode('dirichlet', name='pressure')
-        self.boundNode.xmlSetData('dirichlet', value, name='pressure')
+        node = self.boundNode.xmlInitNode('dirichlet', name='hydraulic_head')
+        self.boundNode.xmlSetData('dirichlet', value, name='hydraulic_head')
 
 
     @Variables.noUndo
     def getHydraulicHeadFlux(self):
         """
-        Return value of the pressure
+        Return value of the Hydraulic head flux
         """
-        pressure = self.boundNode.xmlGetDouble('neumann', name='pressure')
-        if pressure == None:
-            pressure = self.__defaultValues()['pressure_flux']
-            self.setHydraulicHeadFlux(pressure)
+        hydraulic_head = self.boundNode.xmlGetDouble('neumann', name='hydraulic_head')
+        if hydraulic_head == None:
+            hydraulic_head = self.__defaultValues()['hydraulic_head_flux']
+            self.setHydraulicHeadFlux(hydraulic_head)
 
-        return pressure
+        return hydraulic_head
 
 
     @Variables.undoLocal
     def setHydraulicHeadFlux(self, value):
         """
-        Set value of the pressure
+        Set value of the hydraulic head
         """
         Model().isFloat(value)
-        node = self.boundNode.xmlInitNode('neumann', name='pressure')
-        self.boundNode.xmlSetData('neumann', value, name='pressure')
+        node = self.boundNode.xmlInitNode('neumann', name='hydraulic_head')
+        self.boundNode.xmlSetData('neumann', value, name='hydraulic_head')
 
 
     @Variables.noUndo
@@ -1940,8 +1940,8 @@ class OutletBoundary(Boundary) :
         dico['reference_pressure'] = ReferenceValuesModel(self.case).getPressure()
         dico['scalarChoice']  = 'neumann'
         dico['scalar']        = 0.
-        dico['pressure']      = 0.
-        dico['pressure_flux'] = 0.
+        dico['hydraulic_head']      = 0.
+        dico['hydraulic_head_flux'] = 0.
         dico['hydraulicHeadChoice'] = 'dirichlet'
 
         return dico
@@ -2130,47 +2130,47 @@ class OutletBoundary(Boundary) :
     @Variables.noUndo
     def getHydraulicHeadValue(self):
         """
-        Return value of the pressure
+        Return value of the hydraulic head
         """
-        pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
-        if pressure == None:
-            pressure = self.__defaultValues()['pressure']
-            self.setHydraulicHeadValue(pressure)
+        hydraulic_head = self.boundNode.xmlGetDouble('dirichlet', name='hydraulic_head')
+        if hydraulic_head == None:
+            hydraulic_head = self.__defaultValues()['hydraulic_head']
+            self.setHydraulicHeadValue(hydraulic_head)
 
-        return pressure
+        return hydraulic_head
 
 
     @Variables.undoLocal
     def setHydraulicHeadValue(self, value):
         """
-        Set value of the pressure
+        Set value of the hydraulic head
         """
         Model().isFloat(value)
-        node = self.boundNode.xmlInitNode('dirichlet', name='pressure')
-        self.boundNode.xmlSetData('dirichlet', value, name='pressure')
+        node = self.boundNode.xmlInitNode('dirichlet', name='hydraulic_head')
+        self.boundNode.xmlSetData('dirichlet', value, name='hydraulic_head')
 
 
     @Variables.noUndo
     def getHydraulicHeadFlux(self):
         """
-        Return value of the pressure
+        Return value of the hydraulic head
         """
-        pressure = self.boundNode.xmlGetDouble('neumann', name='pressure')
-        if pressure == None:
-            pressure = self.__defaultValues()['pressure_flux']
-            self.setHydraulicHeadFlux(pressure)
+        hydraulic_head = self.boundNode.xmlGetDouble('neumann', name='hydraulic_head')
+        if hydraulic_head == None:
+            hydraulic_head = self.__defaultValues()['hydraulic_head_flux']
+            self.setHydraulicHeadFlux(hydraulic_head)
 
-        return pressure
+        return hydraulic_head
 
 
     @Variables.undoLocal
     def setHydraulicHeadFlux(self, value):
         """
-        Set value of the pressure
+        Set value of the hydraulic head
         """
         Model().isFloat(value)
-        node = self.boundNode.xmlInitNode('neumann', name='pressure')
-        self.boundNode.xmlSetData('neumann', value, name='pressure')
+        node = self.boundNode.xmlInitNode('neumann', name='hydraulic_head')
+        self.boundNode.xmlSetData('neumann', value, name='hydraulic_head')
 
 
     @Variables.noUndo
@@ -2313,8 +2313,8 @@ class GroundwaterBoundary(Boundary) :
         Default values
         """
         dico = {}
-        dico['pressure'] = 0.
-        dico['pressure_flux'] = 0.
+        dico['hydraulic_head'] = 0.
+        dico['hydraulic_head_flux'] = 0.
         dico['hydraulicHeadChoice'] = 'dirichlet'
         dico['scalar']              = 0.0
         dico['scalarChoice']        = 'dirichlet'
@@ -2325,47 +2325,47 @@ class GroundwaterBoundary(Boundary) :
     @Variables.noUndo
     def getHydraulicHeadValue(self):
         """
-        Return value of the pressure
+        Return value of the hydraulic head
         """
-        pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
-        if pressure == None:
-            pressure = self.__defaultValues()['pressure']
-            self.setHydraulicHeadValue(pressure)
+        hydraulic_head = self.boundNode.xmlGetDouble('dirichlet', name='hydraulic_head')
+        if hydraulic_head == None:
+            hydraulic_head = self.__defaultValues()['hydraulic_head']
+            self.setHydraulicHeadValue(hydraulic_head)
 
-        return pressure
+        return hydraulic_head
 
 
     @Variables.undoLocal
     def setHydraulicHeadValue(self, value):
         """
-        Set value of the pressure
+        Set value of the hydraulic head
         """
         Model().isFloat(value)
-        node = self.boundNode.xmlInitNode('dirichlet', name='pressure')
-        self.boundNode.xmlSetData('dirichlet', value, name='pressure')
+        node = self.boundNode.xmlInitNode('dirichlet', name='hydraulic_head')
+        self.boundNode.xmlSetData('dirichlet', value, name='hydraulic_head')
 
 
     @Variables.noUndo
     def getHydraulicHeadFlux(self):
         """
-        Return value of the pressure
+        Return value of the hydraulic head
         """
-        pressure = self.boundNode.xmlGetDouble('neumann', name='pressure')
-        if pressure == None:
-            pressure = self.__defaultValues()['pressure_flux']
-            self.setHydraulicHeadFlux(pressure)
+        hydraulic_head = self.boundNode.xmlGetDouble('neumann', name='hydraulic_head')
+        if hydraulic_head == None:
+            hydraulic_head = self.__defaultValues()['hydraulic_head_flux']
+            self.setHydraulicHeadFlux(hydraulic_head)
 
-        return pressure
+        return hydraulic_head
 
 
     @Variables.undoLocal
     def setHydraulicHeadFlux(self, value):
         """
-        Set value of the pressure
+        Set value of the hydraulic head
         """
         Model().isFloat(value)
-        node = self.boundNode.xmlInitNode('neumann', name='pressure')
-        self.boundNode.xmlSetData('neumann', value, name='pressure')
+        node = self.boundNode.xmlInitNode('neumann', name='hydraulic_head')
+        self.boundNode.xmlSetData('neumann', value, name='hydraulic_head')
 
 
     @Variables.noUndo
