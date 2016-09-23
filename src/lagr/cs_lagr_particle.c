@@ -155,52 +155,52 @@ union cs_lagr_value_t {
 /* Enumerator names */
 
 const char *cs_lagr_attribute_name[] = {
-  "CS_LAGR_CELL_NUM",
-  "CS_LAGR_RANK_ID",
-  "CS_LAGR_SWITCH_ORDER_1",
-  "CS_LAGR_RANDOM_VALUE",
-  "CS_LAGR_STAT_WEIGHT",
-  "CS_LAGR_RESIDENCE_TIME",
-  "CS_LAGR_MASS",
-  "CS_LAGR_DIAMETER",
-  "CS_LAGR_TAUP_AUX",
-  "CS_LAGR_COORDS",
-  "CS_LAGR_VELOCITY",
-  "CS_LAGR_VELOCITY_SEEN",
-  "CS_LAGR_TURB_STATE_1",
-  "CS_LAGR_PRED_VELOCITY",
-  "CS_LAGR_PRED_VELOCITY_SEEN",
-  "CS_LAGR_V_GAUSS",
-  "CS_LAGR_BR_GAUSS",
-  "CS_LAGR_YPLUS",
-  "CS_LAGR_INTERF",
-  "CS_LAGR_NEIGHBOR_FACE_ID",
-  "CS_LAGR_MARKO_VALUE",
-  "CS_LAGR_DEPOSITION_FLAG",
-  "CS_LAGR_FOULING_INDEX",
-  "CS_LAGR_N_LARGE_ASPERITIES",
-  "CS_LAGR_N_SMALL_ASPERITIES",
-  "CS_LAGR_ADHESION_FORCE",
-  "CS_LAGR_ADHESION_TORQUE",
-  "CS_LAGR_DISPLACEMENT_NORM",
-  "CS_LAGR_HEIGHT",
-  "CS_LAGR_CLUSTER_NB_PART",
-  "CS_LAGR_DEPO_TIME",
-  "CS_LAGR_CONSOL_HEIGHT",
-  "CS_LAGR_TEMPERATURE",
-  "CS_LAGR_FLUID_TEMPERATURE",
-  "CS_LAGR_CP",
-  "CS_LAGR_WATER_MASS",
-  "CS_LAGR_COAL_MASS",
-  "CS_LAGR_COKE_MASS",
-  "CS_LAGR_SHRINKING_DIAMETER",
-  "CS_LAGR_INITIAL_DIAMETER",
-  "CS_LAGR_COAL_NUM",
-  "CS_LAGR_COAL_DENSITY",
-  "CS_LAGR_EMISSIVITY",
-  "CS_LAGR_STAT_CLASS",
-  "CS_LAGR_USER",
-  "CS_LAGR_N_ATTRIBUTES"};
+  "cell_num",
+  "rank_id",
+  "switch_order_1",
+  "random_value",
+  "stat_weight",
+  "residence_time",
+  "mass",
+  "diameter",
+  "taup_aux",
+  "coords",
+  "velocity",
+  "velocity_seen",
+  "turb_state_1",
+  "pred_velocity",
+  "pred_velocity_seen",
+  "v_gauss",
+  "br_gauss",
+  "yplus",
+  "interf",
+  "neighbor_face_id",
+  "marko_value",
+  "deposition_flag",
+  "fouling_index",
+  "n_large_asperities",
+  "n_small_asperities",
+  "adhesion_force",
+  "adhesion_torque",
+  "displacement_norm",
+  "height",
+  "cluster_nb_part",
+  "depo_time",
+  "consol_height",
+  "temperature",
+  "fluid_temperature",
+  "cp",
+  "water_mass",
+  "coal_mass",
+  "coke_mass",
+  "shrinking_diameter",
+  "initial_diameter",
+  "coal_num",
+  "coal_density",
+  "emissivity",
+  "stat_class",
+  "user",
+  "<none>"};
 
 /* Global particle attributes map */
 
@@ -543,11 +543,7 @@ _dump_particle(const cs_lagr_particle_set_t  *particles,
          attr < CS_LAGR_N_ATTRIBUTES;
          attr++) {
       if (am->count[time_id][attr] > 0) {
-        char attr_name[64];
-        strncpy(attr_name, cs_lagr_attribute_name[attr] + 8, 63);
-        attr_name[63] = '\0';
-        for (int i = 0; attr_name[i] != '\0'; i++)
-          attr_name[i] = tolower(attr_name[i]);
+        const char *attr_name = cs_lagr_attribute_name[attr];
         switch (am->datatype[attr]) {
         case CS_LNUM_TYPE:
           {
@@ -985,6 +981,76 @@ cs_lagr_get_attr_info(const cs_lagr_particle_set_t  *particles,
     *datatype = particles->p_am->datatype[attr];
   if (count)
     *count = particles->p_am->count[time_id][attr];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check that query for a given particle attribute is valid.
+ *
+ * \param[in]   particles             associated particle set
+ * \param[in]   attr                  attribute whose values are required
+ * \param[in]   datatype              associated value type
+ * \param[in]   stride                number of values per particle
+ * \param[in]   component_id          if -1 : extract the whole attribute
+ *                                    if >0 : id of the component to extract
+ *
+ * \return 0 in case of success, 1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_lagr_check_attr_query(const cs_lagr_particle_set_t  *particles,
+                         cs_lagr_attribute_t            attr,
+                         cs_datatype_t                  datatype,
+                         int                            stride,
+                         int                            component_id)
+{
+  int retval = 0;
+
+  assert(particles != NULL);
+
+  int _count;
+  cs_datatype_t _datatype;
+
+  cs_lagr_get_attr_info(particles, 0, attr,
+                        NULL, NULL, NULL, &_datatype, &_count);
+
+  if (   datatype != _datatype || stride != _count
+      || component_id < -1 || component_id >= stride) {
+
+    char attr_name[128];
+    attr_name[127] = '\0';
+    const char *_attr_name = attr_name;
+    if (attr < CS_LAGR_N_ATTRIBUTES) {
+      snprintf(attr_name, 127, "CS_LAGR_%s", cs_lagr_attribute_name[attr]);
+      size_t l = strlen(attr_name);
+      for (size_t i = 0; i < l; i++)
+        attr_name[i] = toupper(attr_name[i]);
+    }
+    else {
+      snprintf(attr_name, 127, "%d", (int)attr);
+    }
+
+    if (datatype != _datatype || stride != _count)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Attribute %s is of datatype %s and stride %d\n"
+                  "but %s and %d were requested."),
+                _attr_name,
+                cs_datatype_name[_datatype], _count,
+                cs_datatype_name[datatype], stride);
+
+    else if (component_id < -1 || component_id >= stride)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Attribute %s has a number of components equal to %d\n"
+                  "but component %d is requested."),
+                _attr_name,
+                stride,
+                component_id);
+
+    retval = 1;
+  }
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

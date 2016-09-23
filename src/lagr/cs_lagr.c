@@ -2300,30 +2300,26 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         /* -> Si on est en instationnaire, RAZ des statistiques aux frontieres    */
 
-        if (cs_glob_lagr_post_options->iensi3 == 1) {
+        if (   cs_glob_lagr_time_scheme->isttio == 0
+            || (   cs_glob_lagr_time_scheme->isttio == 1
+                &&    cs_glob_time_step->nt_cur
+                   <= cs_glob_lagr_stat_options->nstist)) {
 
-          if (   cs_glob_lagr_time_scheme->isttio == 0
-              || (   cs_glob_lagr_time_scheme->isttio == 1
-                  &&    cs_glob_time_step->nt_cur
-                     <= cs_glob_lagr_stat_options->nstist)) {
+          lag_bdi->tstatp = 0.0;
+          lag_bdi->npstf  = 0;
 
-            lag_bdi->tstatp = 0.0;
-            lag_bdi->npstf  = 0;
+          for (int  ii = 0; ii < cs_glob_lagr_dim->nvisbr; ii++) {
 
-            for (int  ii = 0; ii < cs_glob_lagr_dim->nvisbr; ii++) {
-
-              for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
-                bound_stat[ii * n_b_faces + ifac] = 0.0;
-
-            }
+            for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
+              bound_stat[ii * n_b_faces + ifac] = 0.0;
 
           }
 
-          lag_bdi->tstatp += cs_glob_lagr_time_step->dtp;
-          lag_bdi->npstf++;
-          lag_bdi->npstft++;
-
         }
+
+        lag_bdi->tstatp += cs_glob_lagr_time_step->dtp;
+        lag_bdi->npstf++;
+        lag_bdi->npstft++;
 
         cs_lagr_tracking_particle_movement(vislen);
 

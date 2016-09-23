@@ -398,7 +398,7 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
   /* Map field arrays */
 
   cs_real_3_t *vel;
-  cs_real_t *cvar_k, *cvar_r11, *cvar_r22, *cvar_r33, *viscl;
+  cs_real_t *cvar_k, *cvar_r11, *cvar_r22, *cvar_r33;
 
   vel = (cs_real_3_t *)extra->vel->vals[time_id];
 
@@ -418,11 +418,7 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
   }
 
-  viscl = extra->viscl->val;
-
-/* ==============================================================================
- * 1. INITIALISATION
- * ============================================================================== */
+  /* Initialization */
 
   cs_real_t d2s3 = 2.0 / 3.0;
 
@@ -430,10 +426,10 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
   cs_real_t *w1 = NULL;
   BFT_MALLOC(w1, ncelet, cs_real_t);
 
-/* ==============================================================================
- * 2. SIMULATION DES VITESSES TURBULENTES FLUIDES INSTANTANNEES VUES
- *    PAR LES PARTICULES SOLIDES LE LONG DE LEUR TRAJECTOIRE.
- * ============================================================================== */
+  /* ==============================================================================
+   * 2. SIMULATION DES VITESSES TURBULENTES FLUIDES INSTANTANNEES VUES
+   *    PAR LES PARTICULES SOLIDES LE LONG DE LEUR TRAJECTOIRE.
+   * ============================================================================== */
 
   if (cs_glob_lagr_time_scheme->idistu == 1) {
 
@@ -573,7 +569,6 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
         int zone_id = ifrlag[ifac];
 
-        cs_real_t romf;
         /* Test if the particle is located in a boundary cell */
 
         if (   _bdy_conditions->b_zone_natures[zone_id] == CS_LAGR_DEPO1
@@ -582,20 +577,6 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
             || _bdy_conditions->b_zone_natures[zone_id] == CS_LAGR_REBOUND) {
 
           /* Calculation of the wall units  */
-
-          if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
-              || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0) {
-
-            cs_field_t * rho_gas = cs_field_by_name("rho_gas");
-            romf = rho_gas->val[iel];
-
-          }
-
-          else {
-
-            romf = extra->cromf->val[iel];
-
-          }
 
           cs_lnum_t  *neighbor_face_id;
           cs_real_t  *particle_yplus;

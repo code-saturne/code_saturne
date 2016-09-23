@@ -456,10 +456,8 @@ _stat_name(int                    stat_type,
              63 - l0,
              "%s_particle_%s",
              type_name[moment_type],
-             cs_lagr_attribute_name[attr_id] + strlen("cs_lagr_"));
+             cs_lagr_attribute_name[attr_id]);
     name[63] = '\0';
-    for (int i = 0; name[i] != '\0'; i++)
-      name[i] = tolower(name[i]);
   }
   else {
     switch(stat_type) {

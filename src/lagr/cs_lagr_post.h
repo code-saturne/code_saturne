@@ -34,6 +34,7 @@
 #include "cs_field.h"
 
 #include "cs_lagr.h"
+#include "cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -47,72 +48,9 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef struct {
-
-  /*! \anchor iensi3
-    activation (=1) or not (=0) of the recording of the particle/boundary
-    interactions in  \ref bound_stat, and of the calculation of the
-    statistics at the corresponding boundaries.
-    By default, the statistics are unsteady (reset to zero at every
-    time step). They may be steady if \ref isttio=1 (i.e.
-    calculation of a cumulated value over time, and then calculation of an
-    average over time or over the number of interactions with the boundary).*/
-  int  iensi3;
-
-  /*! associates (=1) or not (=0) the variable "velocity of the locally
-    undisturbed fluid flow field" with the output of particles or
-    trajectories. */
-  int  ivisv1;
-
-  /*! associates (=1) or not (=0) the variable "particle velocity"
-    with the output of particles or trajectories. */
-  int  ivisv2;
-
-  /*! associates (=1) or not (=0) the variable "residence time"
-    with the output of particles or trajectories. */
-  int  ivistp;
-
-  /*! associates (=1) or not (=0) the variable "particle diameter"
-    with the output of particles or trajectories. */
-  int  ivisdm;
-
-  /*! associates (=1) or not (=0) the variable "particle temperature"
-     with the output of particles or trajectories. */
-  int  iviste;
-
-  /*! associates (=1) or not (=0) the variable "particle mass"
-    with the output of particles or trajectories. */
-  int  ivismp;
-
-  /*! associates (=1) or not (=0) the variable "shrinking core diameter of
-    the coal particles" with the output of particles or trajectories.
-    useful only if \ref iphyla = 2 */
-  int  ivisdk;
-
-  /*! associates (=1) or not (=0) the variable "mass of reactive coal of the
-    coal particles" with the output of particles or trajectories.
-    useful only if \ref iphyla = 2 */
-  int  ivisch;
-
-  /*! associates (=1) or not (=0) the variable "mass of coal of the
-    coal particles" with the output of particles or trajectories.
-    useful only if \ref iphyla = 2 */
-  int  ivisck;
-
-  /*! associates (=1) or not (=0) the variable "mass of water of the
-    coal particles" with the output of particles or trajectories.
-    useful only if \ref iphyla = 2 */
-  int  iviswat;
-
-} cs_lagr_post_options_t;
-
 /*============================================================================
   Global variables
   ============================================================================*/
-
-/*! read-only pointer to Lagrangian postprocessing options */
-
-extern const cs_lagr_post_options_t *cs_glob_lagr_post_options;
 
 /*============================================================================
  * Public function prototypes
@@ -129,16 +67,29 @@ cs_lagr_post_init(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return a pointer to the global cs_lagr_post_options_t structure.
+ * \brief Activate or deactive postprocessing for a given particle attribute.
  *
- * This pointer allows write access to the structure.
+ * \param[in]  attr_id  associated attribute id
  *
- * \return pointer to cs_glob_lagr_post_options
+ * \return     true if output of given attribute is active, false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-cs_lagr_post_options_t *
-cs_lagr_post_get_options(void);
+bool
+cs_lagr_post_get_attr(cs_lagr_attribute_t  attr_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Activate or deactive postprocessing for a given particle attribute.
+ *
+ * \param[in]  attr_id  associated attribute id
+ * \param[in]  active   true if postprocessing is required, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_post_set_attr(cs_lagr_attribute_t  attr_id,
+                      bool                 active);
 
 /*----------------------------------------------------------------------------*/
 

@@ -268,8 +268,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   const cs_lagr_const_dim_t *const_dim = cs_glob_lagr_const_dim;
 
-  cs_lagr_post_options_t *lagr_post_options = cs_lagr_post_get_options();
-
   cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
   cs_lagr_time_scheme_t * lagr_time_scheme = cs_glob_lagr_time_scheme;
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
@@ -2099,1342 +2097,76 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   }
 
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Lagrangian module"),
+                                "cs_glob_lagr_boundary_interactions->inbrbd",
+                                cs_glob_lagr_boundary_interactions->inbrbd,
+                                0, 2);
 
-  if (iok != 0)
-    cs_exit(1);
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Lagrangian module"),
+                                "cs_glob_lagr_boundary_interactions->iflmbd",
+                                cs_glob_lagr_boundary_interactions->iflmbd,
+                                0, 2);
 
-  /* ivisv1 ivisv2 ivistp ivisdm iviste  */
-  if (lagr_post_options->ivisv1 < 0 ||
-      lagr_post_options->ivisv1 > 1) {
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Lagrangian module"),
+                                "cs_glob_lagr_boundary_interactions->iangbd",
+                                cs_glob_lagr_boundary_interactions->iangbd,
+                                0, 2);
 
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    L'INDICATEUR DE POST-PROCESSING SUR LA VARIABLE\n"
-               "@       'VITESSE DU FLUIDE VU'\n"
-               "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-               "@\n"
-               "@    IVISV1 DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-               "@       IL VAUT ICI IVISV1 = %d\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de IVISV1 dans la subroutine USLAG1.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_post_options->ivisv1);
-    iok++;
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Lagrangian module"),
+                                "cs_glob_lagr_boundary_interactions->ivitbd",
+                                cs_glob_lagr_boundary_interactions->ivitbd,
+                                0, 2);
 
-  }
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Lagrangian module"),
+                                "cs_glob_lagr_boundary_interactions->nusbor",
+                                cs_glob_lagr_boundary_interactions->nusbor,
+                                0, cs_glob_lagr_const_dim->nusbrd + 1);
 
-  if (lagr_post_options->ivisv2 < 0 ||
-      lagr_post_options->ivisv2 > 1) {
+  if (lagr_model->physical_model == 2 &&
+      lagr_model->fouling == 1) {
 
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    L'INDICATEUR DE POST-PROCESSING SUR LA VARIABLE\n"
-               "@       'VITESSE DES PARTICULES'\n"
-               "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-               "@\n"
-               "@    IVISV2 DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-               "@       IL VAUT ICI IVISV2 = %d\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de IVISV2 dans la subroutine USLAG1.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_post_options->ivisv2);
-    iok++;
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("in Lagrangian module"),
+                                  "cs_glob_lagr_boundary_interactions->iencnbbd",
+                                  cs_glob_lagr_boundary_interactions->iencnbbd,
+                                  0, 2);
 
-  }
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("in Lagrangian module"),
+                                  "cs_glob_lagr_boundary_interactions->iencmabd",
+                                  cs_glob_lagr_boundary_interactions->iencmabd,
+                                  0, 2);
 
-  if (lagr_post_options->ivistp < 0 ||
-      lagr_post_options->ivistp > 1) {
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("in Lagrangian module"),
+                                  "cs_glob_lagr_boundary_interactions->iencdibd",
+                                  cs_glob_lagr_boundary_interactions->iencdibd,
+                                  0, 2);
 
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    L'INDICATEUR DE POST-PROCESSING SUR LA VARIABLE\n"
-               "@       'TEMPS DE SEJOUR DES PARTICULES'\n"
-               "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-               "@\n"
-               "@    IVISTP DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-               "@       IL VAUT ICI IVISTP = %d\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de IVISTP dans la subroutine USLAG1.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_post_options->ivistp);
-    iok++;
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("in Lagrangian module"),
+                                  "cs_glob_lagr_boundary_interactions->iencckbd",
+                                  cs_glob_lagr_boundary_interactions->iencckbd,
+                                  0, 2);
 
-  }
-
-  if (lagr_post_options->ivisdm < 0 ||
-      lagr_post_options->ivisdm > 1) {
-
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    L'INDICATEUR DE POST-PROCESSING SUR LA VARIABLE\n"
-               "@       'DIAMETRE DES PARTICULES'\n"
-               "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-               "@\n"
-               "@    IVISDM DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-               "@       IL VAUT ICI IVISDM = %d\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de IVISDM dans la subroutine USLAG1.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_post_options->ivisdm);
-    iok++;
-
-  }
-
-
-  if (lagr_model->physical_model == 1 &&
-      cs_glob_lagr_specific_physics->itpvar == 1) {
-
-    if (lagr_post_options->iviste < 0 ||
-        lagr_post_options->iviste > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR DE POST-PROCESSING SUR LA VARIABLE\n"
-                 "@       'TEMPERATURE DES PARTICULES'\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    IVISTE DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI IVISTE = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IVISTE dans la subroutine USLAG1.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 lagr_post_options->iviste);
-      iok++;
-
-    }
-
-  }
-
-  else if (lagr_model->physical_model == 2) {
-
-    if (lagr_post_options->iviste < 0 ||
-        lagr_post_options->iviste > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR DE POST-PROCESSING SUR LA VARIABLE\n"
-                 "@       'VITESSE DES PARTICULES'\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    IVISV2 DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI IVISV2 = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IVISV2 dans la subroutine USLAG1.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 lagr_post_options->iviste);
-      iok++;
-
-    }
-
-  }
-  else
-    lagr_post_options->iviste = 0;
-
-
-  /* ivisdk ivisch ivisck */
-  if (lagr_model->physical_model == 2){
-
-    if (lagr_post_options->ivisdk < 0 ||
-        lagr_post_options->ivisdk > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR DE POST-PROCESSING SUR LA VARIABLE\n"
-                 "@       'DIAMETRE DU COEUR RETRECISSANT DES PARTICULES\n"
-                 "@        DE CHARBON' A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    IVISDK DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI IVISDK = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IVISDK dans la subroutine USLAG1.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 lagr_post_options->ivisdk);
-      iok++;
-
-    }
-
-    if (lagr_post_options->iviswat < 0 ||
-        lagr_post_options->iviswat > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR DE POST-PROCESSING SUR LA VARIABLE\n"
-                 "@       'MASSE D'EAU DES PARTICULES DE CHARBON'\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    IVISCH DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI IVISCH = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IVISWAT dans la subroutine USLAG1.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 lagr_post_options->iviswat);
-      iok++;
-
-    }
-
-    if (lagr_post_options->ivisch < 0 ||
-        lagr_post_options->ivisch > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR DE POST-PROCESSING SUR LA VARIABLE\n"
-                 "@       'MASSE CHARBON REACTIF DES PARTICULES DE CHARBON'\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    IVISCH DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI IVISCH = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IVISCH dans la subroutine USLAG1.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 lagr_post_options->ivisch);
-      iok++;
-
-    }
-
-    if (lagr_post_options->ivisck < 0 ||
-        lagr_post_options->ivisck > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR DE POST-PROCESSING SUR LA VARIABLE\n"
-                 "@       'MASSE DE COKE DES PARTICULES DE CHARBON'\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    IVISCK DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI IVISCK = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IVISCK dans la subroutine USLAG1.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 lagr_post_options->ivisck);
-      iok++;
-
-    }
 
   }
   else{
 
-    lagr_post_options->ivisdk = 0;
-    lagr_post_options->iviswat = 0;
-    lagr_post_options->ivisch = 0;
-    lagr_post_options->ivisck = 0;
-
-  }
-
-  /* IENSI3 NSTBOR   */
-  if (lagr_post_options->iensi3 < 0 ||
-      lagr_post_options->iensi3 > 1){
-
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    L'INDICATEUR SUR L'ACTIVATION DES STATISTIQUES\n"
-               "@       SUR LES INTERACTIONS PARTICULES/FRONTIERES\n"
-               "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-               "@\n"
-               "@    IENSI3 DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-               "@       IL VAUT ICI IENSI3 = %d\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de IENSI3 dans la subroutine USLAG1.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_post_options->iensi3);
-    iok++;
-
-  }
-
-  /* INBRBD IFLMBD IANGBD IVITBD IENCNBBD IENCMABD IENCDIBD IENCCKBD NUSBOR */
-  if (lagr_post_options->iensi3 == 1) {
-
-    if (cs_glob_lagr_boundary_interactions->inbrbd < 0 ||
-        cs_glob_lagr_boundary_interactions->inbrbd > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR DE CALCUL DE LA STATISTIQUE AUX FRONTIERES\n"
-                 "@       'NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES'\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    INBRBD DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI INBRBD = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de INBRBD dans la subroutine USLAG1.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_boundary_interactions->inbrbd);
-      iok++;
-
-    }
-
-    if (cs_glob_lagr_boundary_interactions->iflmbd < 0 ||
-        cs_glob_lagr_boundary_interactions->iflmbd > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR DE CALCUL DE LA STATISTIQUE AUX FRONTIERES\n"
-                 "@       'FLUX DE MASSE PARTICULAIRE LIE AUX INTERACTIONS'\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    IFLMBD DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI IFLMBD = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IFLMBD dans la subroutine USLAG1.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_boundary_interactions->iflmbd);
-      iok++;
-
-    }
-
-    if (cs_glob_lagr_boundary_interactions->iangbd < 0 ||
-        cs_glob_lagr_boundary_interactions->iangbd > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR DE CALCUL DE LA STATISTIQUE AUX FRONTIERES\n"
-                 "@       'ANGLE ENTRE LA VITESSE DE LA PARTICULE ET LE PLAN\n"
-                 "@        DE LA FACE FRONTIERE'\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    IANGBD DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI IANGBD = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IANGBD dans la subroutine USLAG1.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_boundary_interactions->iangbd);
-      iok++;
-
-    }
-
-    if (cs_glob_lagr_boundary_interactions->ivitbd < 0 ||
-        cs_glob_lagr_boundary_interactions->ivitbd > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR DE CALCUL DE LA STATISTIQUE AUX FRONTIERES\n"
-                 "@       'VITESSE DE LA PARTICULE AU MOMENT DE L'INTERACTION'\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    IVITBD DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI IVITBD = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IVITBD dans la subroutine USLAG1.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_boundary_interactions->ivitbd);
-      iok++;
-
-    }
-
-    if (cs_glob_lagr_boundary_interactions->nusbor < 0 ||
-        cs_glob_lagr_boundary_interactions->nusbor > cs_glob_lagr_const_dim->nusbrd) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    LE NOMBRE D'INFORMATIONS SUPPLEMENTAIRES POUR LE\n"
-                 "@       CALCUL DES STATISTIQUES AUX FRONTIERES\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    NUSBOR DEVRAIT ETRE UN ENTIER SUPERIEUR OU EGAL A 0\n"
-                 "@       ET INFERIEUR OU EGAL A NUSBRD = %d\n"
-                 "@       IL VAUT ICI NUSBOR = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de NUSBOR dans la subroutine USLAG1.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_const_dim->nusbrd,
-                 cs_glob_lagr_boundary_interactions->nusbor);
-      iok++;
-
-    }
-
-    if (lagr_model->physical_model == 2 &&
-        lagr_model->fouling == 1) {
-
-      if (cs_glob_lagr_boundary_interactions->iencnbbd < 0 ||
-          cs_glob_lagr_boundary_interactions->iencnbbd > 1) {
-
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    L'INDICATEUR DE CALCUL DE LA STATISTIQUE AUX FRONTIERES\n"
-                   "@       'NBR D'INTERRACTIONS PARTICULES/FRONTIERES AVEC\n"
-                   "@        FOULING' A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                   "@\n"
-                   "@    IENCNBBD DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                   "@       IL VAUT ICI IENCNBBD = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@ Verifier la valeur de IENCNBBD dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->iencnbbd   );
-        iok++;
-
-      }
-
-      if (cs_glob_lagr_boundary_interactions->iencmabd < 0 ||
-          cs_glob_lagr_boundary_interactions->iencmabd > 1) {
-
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    L'INDICATEUR DE CALCUL DE LA STATISTIQUE AUX FRONTIERES\n"
-                   "@       'MASSE DE GRAINS DE CHARBON ENCRASSES'\n"
-                   "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                   "@\n"
-                   "@    IENCMABD DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                   "@       IL VAUT ICI IENCMABD = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@ Verifier la valeur de IENCMABD dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->iencmabd   );
-        iok++;
-
-      }
-
-      if (cs_glob_lagr_boundary_interactions->iencdibd < 0 ||
-          cs_glob_lagr_boundary_interactions->iencdibd > 1) {
-
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    L'INDICATEUR DE CALCUL DE LA STATISTIQUE AUX FRONTIERES\n"
-                   "@       'DIAMETRE DE GRAINS DE CHARBON ENCRASSES'\n"
-                   "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                   "@\n"
-                   "@    IENCDIBD DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                   "@       IL VAUT ICI IENCDIBD = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@ Verifier la valeur de IENCDIBD dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->iencdibd   );
-        iok++;
-
-      }
-
-      if (cs_glob_lagr_boundary_interactions->iencckbd < 0 ||
-          cs_glob_lagr_boundary_interactions->iencckbd > 1) {
-
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    L'INDICATEUR DE CALCUL DE LA STATISTIQUE AUX FRONTIERES\n"
-                   "@       'FRACTION DE COKE DES GRAINS DE CHARBON ENCRASSES'\n"
-                   "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                   "@\n"
-                   "@    IENCCKBD DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                   "@       IL VAUT ICI IENCCKBD = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@ Verifier la valeur de IENCCKBD dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->iencckbd   );
-        iok++;
-
-      }
-
-    }
-    else{
-
-      cs_glob_lagr_boundary_interactions->iencnbbd = 0;
-      cs_glob_lagr_boundary_interactions->iencmabd = 0;
-      cs_glob_lagr_boundary_interactions->iencdibd = 0;
-      cs_glob_lagr_boundary_interactions->iencckbd = 0;
-
-    }
-
-    if (iok != 0)
-      cs_exit (1);
-
-    int irf = 0;
-
-    /* INBRBD     */
-    if (cs_glob_lagr_boundary_interactions->inbrbd == 1) {
-
-      irf++;
-
-      if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 2){
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES\n"
-                   "@     'NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES'\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE (LAGOPT).\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       INBRBD = %d\n"
-                   "@       IMOYBR(INBR) = %d\n"
-                   "@\n"
-                   "@  Le calcul continue mais risque de donner des affichages\n"
-                   "@    et des sorties graphiques incoherentes. Une suite\n"
-                   "@    de calcul est possible sans pertes de donnees.\n"
-                   "@\n"
-                   "@  Verifier la valeur de IMOYBR(INBR) dans la  USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->inbrbd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf] );
-
-      }
-      else if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 3) {
-
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES\n"
-                   "@     'NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES'\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE QUI SE BASE SUR LE NOMBRE\n"
-                   "@     D'INTERACTIONS PARTICULES/FRONTIERES\n"
-                   "@     AVEC FOULING. IL Y A INCOHERENCE (LAGOPT).\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       INBRBD = %d\n"
-                   "@       IMOYBR(INBR) = %d\n"
-                   "@\n"
-                   "@    IMOYBR(INBR) DEVRAIT ETRE EGAL A 0 OU 2\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de IMOYBR(INBR) dans la  USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->inbrbd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf] );
-        iok++;
-
-      }
-
-    }
-
-    /* IFLMBD IANGBD IVITBD */
-    if (cs_glob_lagr_boundary_interactions->iangbd == 1) {
-
-      irf++;
-
-      if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 2 &&
-          cs_glob_lagr_boundary_interactions->inbrbd == 0) {
-
-        iok++;
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES\n"
-                   "@ %s\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE, ALORS QUE LE COMPTE DU NOMBRE\n"
-                   "@     D'INTERACTIONS PARTICULES/FRONTIERES N'EST PAS\n"
-                   "@     ENCLENCHE (LAGOPT).\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       %s = %d\n"
-                   "@             IMOYBR = %d\n"
-                   "@\n"
-                   "@    INBRBD DEVRAIT ETRE A 1, IL VAUT ICI INBRBD = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de INBRBD dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->nombrd[irf],
-                   "IANGBD",
-                   cs_glob_lagr_boundary_interactions->iangbd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf],
-                   cs_glob_lagr_boundary_interactions->inbrbd);
-
-      }
-      else if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 3) {
-
-        iok++;
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES\n"
-                   "@ %s\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE. CELLE CI EST CALCULEE A CHAQUE\n"
-                   "@     INTERRACTION  PARTICULES/FRONTIERES ET SE BASE\n"
-                   "@     SUR LE NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES\n"
-                   "@     AVEC FOULING. IL Y A INCOHERENCE (LAGOPT).\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       %s = %d\n"
-                   "@             IMOYBR = %d\n"
-                   "@\n"
-                   "@    IMOYBR DEVRAIT ETRE A 0, 1 OU 2\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de IMOYBR dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->nombrd[irf],
-                   "IANGBD",
-                   cs_glob_lagr_boundary_interactions->iangbd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf]);
-
-      }
-
-    }
-
-    if (cs_glob_lagr_boundary_interactions->ivitbd == 1) {
-
-      irf++;
-
-      if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 2 &&
-          cs_glob_lagr_boundary_interactions->inbrbd == 0) {
-
-        iok++;
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES\n"
-                   "@ %s\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE, ALORS QUE LE COMPTE DU NOMBRE\n"
-                   "@     D'INTERACTIONS PARTICULES/FRONTIERES N'EST PAS\n"
-                   "@     ENCLENCHE (LAGOPT).\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       %s = %d\n"
-                   "@             IMOYBR = %d\n"
-                   "@\n"
-                   "@    INBRBD DEVRAIT ETRE A 1, IL VAUT ICI INBRBD = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de INBRBD dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->nombrd[irf],
-                   "IVITBD",
-                   cs_glob_lagr_boundary_interactions->ivitbd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf],
-                   cs_glob_lagr_boundary_interactions->inbrbd);
-
-      }
-      else if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 3) {
-
-        iok++;
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES\n"
-                   "@ %s\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE. CELLE CI EST CALCULEE A CHAQUE\n"
-                   "@     INTERRACTION  PARTICULES/FRONTIERES ET SE BASE\n"
-                   "@     SUR LE NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES\n"
-                   "@     AVEC FOULING. IL Y A INCOHERENCE (LAGOPT).\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       %s = %d\n"
-                   "@             IMOYBR = %d\n"
-                   "@\n"
-                   "@    IMOYBR DEVRAIT ETRE A 0, 1 OU 2\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de IMOYBR dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->nombrd[irf],
-                   "IVITBD",
-                   cs_glob_lagr_boundary_interactions->ivitbd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf]);
-
-      }
-
-    }
-
-    if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
-
-      irf++;
-
-      if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 2 &&
-          cs_glob_lagr_boundary_interactions->inbrbd == 0) {
-
-        iok++;
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES\n"
-                   "@ %s\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE, ALORS QUE LE COMPTE DU NOMBRE\n"
-                   "@     D'INTERACTIONS PARTICULES/FRONTIERES N'EST PAS\n"
-                   "@     ENCLENCHE (LAGOPT).\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       %s = %d\n"
-                   "@             IMOYBR = %d\n"
-                   "@\n"
-                   "@    INBRBD DEVRAIT ETRE A 1, IL VAUT ICI INBRBD = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de INBRBD dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->nombrd[irf],
-                   "IFLMBD",
-                   cs_glob_lagr_boundary_interactions->iflmbd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf],
-                   cs_glob_lagr_boundary_interactions->inbrbd);
-
-      }
-      else if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 3) {
-
-        iok++;
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES\n"
-                   "@ %s\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE. CELLE CI EST CALCULEE A CHAQUE\n"
-                   "@     INTERRACTION  PARTICULES/FRONTIERES ET SE BASE\n"
-                   "@     SUR LE NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES\n"
-                   "@     AVEC FOULING. IL Y A INCOHERENCE (LAGOPT).\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       %s = %d\n"
-                   "@             IMOYBR = %d\n"
-                   "@\n"
-                   "@    IMOYBR DEVRAIT ETRE A 0, 1 OU 2\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de IMOYBR dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->nombrd[irf],
-                   "IFLMBD",
-                   cs_glob_lagr_boundary_interactions->iflmbd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf]);
-
-      }
-
-    }
-
-    /* IENCNBBD   */
-    if (lagr_model->physical_model == 2 &&
-        lagr_model->fouling == 1 &&
-        cs_glob_lagr_boundary_interactions->iencnbbd == 1) {
-
-      irf++;
-
-      if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 2) {
-
-        iok++;
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES\n"
-                   "@     'NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES AVEC\n"
-                   "@     FOULING' EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE SANS FOULING. IL Y A INCOHERENCE\n"
-                   "@     (LAGOPT).\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       INBRBD = %d\n"
-                   "@       IMOYBR(INBR) = %d\n"
-                   "@\n"
-                   "@    IMOYBR(INBR) DEVRAIT ETRE EGAL A 0 OU 3\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de IMOYBR(INBR) dans la  USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->inbrbd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf]  );
-
-      }
-      else if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 3)
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES\n"
-                   "@     'NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES AVEC\n"
-                   "@     FOULING' EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE QUI SE BASE SUR LE NOMBRE\n"
-                   "@     D'INTERACTIONS PARTICULES/FRONTIERES\n"
-                   "@     AVEC FOULING (LAGOPT).\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       INBRBD = %d\n"
-                   "@       IMOYBR(INBR) = %d\n"
-                   "@\n"
-                   "@    IMOYBR(INBR) DEVRAIT ETRE EGAL A 0 OU 2\n"
-                   "@\n"
-                   "@  Le calcul continue mais risque de donner des affichages\n"
-                   "@    et des sorties graphiques incoherentes. Une suite\n"
-                   "@    de calcul est possible sans pertes de donnees.\n"
-                   "@\n"
-                   "@  Verifier la valeur de IMOYBR(INBR) dans la  USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->inbrbd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf]);
-
-    }
-
-    /* IENCMABD IENCDIBD IENCCKBD  */
-    if (lagr_model->physical_model == 2 &&
-        lagr_model->fouling == 1 &&
-        cs_glob_lagr_boundary_interactions->iencmabd == 1) {
-
-      irf++;
-
-      if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 2) {
-
-        iok++;
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES LORS DU FOULING:\n"
-                   "@ %s\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE GENERALE ALORS QUE LE CALCUL DE CETTE\n"
-                   "@     STATISTIQUE EST EFFECTUE UNIQUEMENT LORSQUE IL Y A DU\n"
-                   "@     FOULING. IL FAUDRAIT FAIRE LA MOYENNE PARTICULAIRE\n"
-                   "@     SUR NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES AVEC\n"
-                   "@     FOULING\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       %s = %d\n"
-                   "@\n"
-                   "@    IMOYBR DEVRAIT ETRE A 3, IL VAUT ICI IMOYBR = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de IMOYBR dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->nombrd[irf],
-                   "IENCMABD",
-                   cs_glob_lagr_boundary_interactions->iencmabd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf]);
-
-      }
-
-      else if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 3 &&
-               cs_glob_lagr_boundary_interactions->iencnbbd == 0) {
-
-        iok++;
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES LORS DU FOULING:\n"
-                   "@ %s\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE, ALORS QUE LE COMPTE DU NOMBRE\n"
-                   "@     D'INTERACTIONS PARTICULES/FRONTIERES AVEC FOULING\n"
-                   "@     N'EST PAS ENCLENCHE (LAGOPT).\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       %s = %d\n"
-                   "@             IMOYBR = %d\n"
-                   "@\n"
-                   "@    INBRBD DEVRAIT ETRE A 1, IL VAUT ICI IENCNBBD = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de IENCNBBD dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->nombrd[irf],
-                   "IENCMABD",
-                   cs_glob_lagr_boundary_interactions->iencmabd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf],
-                   cs_glob_lagr_boundary_interactions->inbrbd);
-
-      }
-
-    }
-
-    if (lagr_model->physical_model == 2 &&
-        lagr_model->fouling == 1 &&
-        cs_glob_lagr_boundary_interactions->iencdibd == 1) {
-
-      irf++;
-
-      if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 2) {
-
-        iok++;
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES LORS DU FOULING:\n"
-                   "@ %s\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE GENERALE ALORS QUE LE CALCUL DE CETTE\n"
-                   "@     STATISTIQUE EST EFFECTUE UNIQUEMENT LORSQUE IL Y A DU\n"
-                   "@     FOULING. IL FAUDRAIT FAIRE LA MOYENNE PARTICULAIRE\n"
-                   "@     SUR NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES AVEC\n"
-                   "@     FOULING\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       %s = %d\n"
-                   "@\n"
-                   "@    IMOYBR DEVRAIT ETRE A 3, IL VAUT ICI IMOYBR = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de IMOYBR dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->nombrd[irf],
-                   "IENCDIBD",
-                   cs_glob_lagr_boundary_interactions->iencdibd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf]);
-
-      }
-
-      else if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 3 &&
-               cs_glob_lagr_boundary_interactions->iencnbbd == 0) {
-
-        iok++;
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES LORS DU FOULING:\n"
-                   "@ %s\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE, ALORS QUE LE COMPTE DU NOMBRE\n"
-                   "@     D'INTERACTIONS PARTICULES/FRONTIERES AVEC FOULING\n"
-                   "@     N'EST PAS ENCLENCHE (LAGOPT).\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       %s = %d\n"
-                   "@             IMOYBR = %d\n"
-                   "@\n"
-                   "@    INBRBD DEVRAIT ETRE A 1, IL VAUT ICI IENCNBBD = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de IENCNBBD dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->nombrd[irf],
-                   "IENCDIBD",
-                   cs_glob_lagr_boundary_interactions->imoybr[irf],
-                   cs_glob_lagr_boundary_interactions->iencdibd,
-                   cs_glob_lagr_boundary_interactions->inbrbd);
-
-      }
-
-    }
-
-    if (lagr_model->physical_model == 2 &&
-        lagr_model->fouling == 1 &&
-        cs_glob_lagr_boundary_interactions->iencckbd == 1) {
-
-      irf++;
-
-      if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 2) {
-
-        iok++;
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES LORS DU FOULING:\n"
-                   "@ %s\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE GENERALE ALORS QUE LE CALCUL DE CETTE\n"
-                   "@     STATISTIQUE EST EFFECTUE UNIQUEMENT LORSQUE IL Y A DU\n"
-                   "@     FOULING. IL FAUDRAIT FAIRE LA MOYENNE PARTICULAIRE\n"
-                   "@     SUR NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES AVEC\n"
-                   "@     FOULING\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       %s = %d\n"
-                   "@\n"
-                   "@    IMOYBR DEVRAIT ETRE A 3, IL VAUT ICI IMOYBR = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de IMOYBR dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->nombrd[irf],
-                   "IENCCKBD",
-                   cs_glob_lagr_boundary_interactions->iencckbd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf]);
-
-      }
-      else if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 3 &&
-               cs_glob_lagr_boundary_interactions->iencnbbd == 0) {
-
-        iok++;
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    LA STATISTIQUE AUX FRONTIERES LORS DU FOULING:\n"
-                   "@ %s\n"
-                   "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                   "@     PARTICULAIRE, ALORS QUE LE COMPTE DU NOMBRE\n"
-                   "@     D'INTERACTIONS PARTICULES/FRONTIERES AVEC FOULING\n"
-                   "@     N'EST PAS ENCLENCHE (LAGOPT).\n"
-                   "@\n"
-                   "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                   "@       %s = %d\n"
-                   "@             IMOYBR = %d\n"
-                   "@\n"
-                   "@    INBRBD DEVRAIT ETRE A 1, IL VAUT ICI IENCNBBD = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de IENCNBBD dans la subroutine USLAG1.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_boundary_interactions->nombrd[irf],
-                   "IENCCKBD",
-                   cs_glob_lagr_boundary_interactions->iencckbd,
-                   cs_glob_lagr_boundary_interactions->imoybr[irf],
-                   cs_glob_lagr_boundary_interactions->inbrbd);
-
-      }
-
-    }
-
-    /* NUSBOR     */
-    if (cs_glob_lagr_boundary_interactions->nusbor > 0) {
-
-      for (int ii = 0; ii<cs_glob_lagr_boundary_interactions->nusbor; ii++) {
-
-        irf++;
-
-        if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 2 &&
-            cs_glob_lagr_boundary_interactions->inbrbd == 0) {
-
-          iok++;
-          bft_printf("@\n"
-                     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n"
-                     "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                     "@    =========\n"
-                     "@    LA STATISTIQUE AUX FRONTIERES UTILISATEUR\n"
-                     "@ %s@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                     "@     PARTICULAIRE, ALORS QUE LE COMPTE DU NOMBRE\n"
-                     "@     D'INTERACTIONS PARTICULES/FRONTIERES N'EST PAS\n"
-                     "@     ENCLENCHE (LAGOPT).\n"
-                     "@\n"
-                     "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                     "@       STAT UTILISATEUR NUMERO %d\n"
-                     "@       IMOYBR = %d\n"
-                     "@\n"
-                     "@    INBRBD DEVRAIT ETRE A 1, IL VAUT ICI INBRBD = %d\n"
-                     "@\n"
-                     "@  Le calcul ne sera pas execute.\n"
-                     "@\n"
-                     "@  Verifier la valeur de INBRBD dans la subroutine USLAG1.\n"
-                     "@\n"
-                     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n",
-                     cs_glob_lagr_boundary_interactions->nombrd[irf],
-                     ii,
-                     cs_glob_lagr_boundary_interactions->imoybr[irf],
-                     cs_glob_lagr_boundary_interactions->inbrbd);
-
-        }
-        else if (cs_glob_lagr_boundary_interactions->imoybr[irf] == 3) {
-
-          iok++;
-          bft_printf("@\n"
-                     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n"
-                     "@ @@ ATTENTION : A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                     "@    =========\n"
-                     "@    LA STATISTIQUE AUX FRONTIERES UTILISATEUR\n"
-                     "@ %s\n"
-                     "@     EST ACTIVE AVEC APPLICATION DE LA MOYENNE\n"
-                     "@     PARTICULAIRE. CELLE CI EST CALCULEE A CHAQUE\n"
-                     "@     INTERRACTION  PARTICULES/FRONTIERES ET ET SE BASE\n"
-                     "@     SUR LE NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES\n"
-                     "@     AVEC FOULING. IL Y A INCOHERENCE (LAGOPT).\n"
-                     "@\n"
-                     "@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :\n"
-                     "@       STAT UTILISATEUR NUMERO %d\n"
-                     "@       IMOYBR = %d\n"
-                     "@\n"
-                     "@    IMOYBR DEVRAIT ETRE A 0, 1 OU 2\n"
-                     "@\n"
-                     "@  Le calcul ne sera pas execute.\n"
-                     "@\n"
-                     "@  Verifier la valeur de IMOYBR dans la subroutine USLAG1.\n"
-                     "@\n"
-                     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n",
-                     cs_glob_lagr_boundary_interactions->nombrd[irf],
-                     ii,
-                     cs_glob_lagr_boundary_interactions->imoybr[irf]);
-
-
-        }
-
-      }
-
-    }
-
-    /* Check of imoybr */
-    if (lagr_model->physical_model == 2 &&
-        lagr_model->fouling == 1)       {
-
-      for (int ii=0; ii<irf; ii++) {
-
-        if (cs_glob_lagr_boundary_interactions->imoybr[ii] != 0 &&
-            cs_glob_lagr_boundary_interactions->imoybr[ii] != 1 &&
-            cs_glob_lagr_boundary_interactions->imoybr[ii] != 2 &&
-            cs_glob_lagr_boundary_interactions->imoybr[ii] != 3) {
-
-          iok++;
-          bft_printf("@\n"
-                     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n"
-                     "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                     "@    =========\n"
-                     "@    L'INDICATEUR DE MOYENNE POUR LE CALCUL DES STATISTIQUES\n"
-                     "@       AUX FRONTIERES A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                     "@\n"
-                     "@    IMOYBR DEVRAIT ETRE UN ENTIER EGAL A 0, 1, 2 OU 3\n"
-                     "@       IL VAUT ICI IMOYBR = %d\n"
-                     "@       POUR LA STATISTIQUE AUX FRONTERES :\n"
-                     "@ %s\n"
-                     "@\n"
-                     "@  Le calcul ne sera pas execute.\n"
-                     "@\n"
-                     "@  Verifier la valeur de IMOYBR dans la subroutine USLAG1.\n"
-                     "@\n"
-                     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n",
-                     cs_glob_lagr_boundary_interactions->imoybr[irf],
-                     cs_glob_lagr_boundary_interactions->nombrd[irf]);
-
-        }
-
-      }
-
-    }
-    else{
-
-      for (int ii=0; ii<irf; ii++) {
-
-        if (cs_glob_lagr_boundary_interactions->imoybr[ii] != 0 &&
-            cs_glob_lagr_boundary_interactions->imoybr[ii] != 1 &&
-            cs_glob_lagr_boundary_interactions->imoybr[ii] != 2)  {
-
-          iok++;
-          bft_printf("@\n"
-                     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n"
-                     "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                     "@    =========\n"
-                     "@    L'INDICATEUR DE MOYENNE POUR LE CALCUL DES STATISTIQUES\n"
-                     "@       AUX FRONTIERES A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                     "@\n"
-                     "@    IMOYBR DEVRAIT ETRE UN ENTIER EGAL A 0, 1 OU 2\n"
-                     "@       IL VAUT ICI IMOYBR = %d\n"
-                     "@       POUR LA STATISTIQUE AUX FRONTERES :\n"
-                     "@ %s\n"
-                     "@\n"
-                     "@  Le calcul ne sera pas execute.\n"
-                     "@\n"
-                     "@  Verifier la valeur de IMOYBR dans la subroutine USLAG1.\n"
-                     "@\n"
-                     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n",
-                     cs_glob_lagr_boundary_interactions->imoybr[irf],
-                     cs_glob_lagr_boundary_interactions->nombrd[irf]);
-
-        }
-
-      }
-
-    }
+    cs_glob_lagr_boundary_interactions->iencnbbd = 0;
+    cs_glob_lagr_boundary_interactions->iencmabd = 0;
+    cs_glob_lagr_boundary_interactions->iencdibd = 0;
+    cs_glob_lagr_boundary_interactions->iencckbd = 0;
 
   }
 
   if (iok != 0)
-    cs_exit(1);
+    cs_exit (1);
 
   cs_parameters_error_barrier();
 
@@ -3487,170 +2219,164 @@ cs_lagr_option_definition(cs_int_t   *isuite,
    * NUSBOR : INFORMATIONS UTILISATEUR SUPPLEMENTAIRES
    * NVISBR : NOMBRE TOTAL D'INTERACTIONS A ENREGISTRER */
 
-  if (lagr_post_options->iensi3 == 1) {
+  int irf = -1;
 
-    int irf = -1;
+  if (cs_glob_lagr_boundary_interactions->inbrbd == 1) {
 
-    if (cs_glob_lagr_boundary_interactions->inbrbd == 1) {
-
-      irf++;
-      cs_glob_lagr_boundary_interactions->inbr = irf;
-      _copy_boundary_varname(irf, "Part_impact_number");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-
-    }
-
-    if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
-
-      irf++;
-      cs_glob_lagr_boundary_interactions->iflm = irf;
-      _copy_boundary_varname(irf, "Part_bndy_mass_flux");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 1;
-
-    }
-
-    if (cs_glob_lagr_boundary_interactions->iangbd == 1) {
-
-      irf++;
-      cs_glob_lagr_boundary_interactions->iang = irf;
-      _copy_boundary_varname(irf, "Part_impact_angle");
-      cs_glob_lagr_boundary_interactions->imoybr[cs_glob_lagr_boundary_interactions->iang] = 2;
-
-    }
-
-    if (cs_glob_lagr_boundary_interactions->ivitbd == 1) {
-
-      irf++;
-      cs_glob_lagr_boundary_interactions->ivit = irf;
-      _copy_boundary_varname(irf, "Part_impact_velocity");
-      cs_glob_lagr_boundary_interactions->imoybr[cs_glob_lagr_boundary_interactions->ivit] = 2;
-
-    }
-
-    if (lagr_model->resuspension == 1) {
-
-      irf++;
-      cs_glob_lagr_boundary_interactions->ires = irf;
-      _copy_boundary_varname(irf, "Part_resusp_number");
-      cs_glob_lagr_boundary_interactions->imoybr[cs_glob_lagr_boundary_interactions->ires] = 0;
-      irf++;
-      cs_glob_lagr_boundary_interactions->iflres = irf;
-      _copy_boundary_varname(irf, "Part_resusp_mass_flux");
-      cs_glob_lagr_boundary_interactions->imoybr[cs_glob_lagr_boundary_interactions->iflres] = 1;
-
-    }
-
-    if (lagr_model->clogging == 1) {
-
-      irf++;
-      cs_glob_lagr_boundary_interactions->inclg = irf;
-      _copy_boundary_varname(irf, "Part_deposited_number");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-      irf++;
-      cs_glob_lagr_boundary_interactions->inclgt = irf;
-      _copy_boundary_varname(irf, "Part_deposited_part");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-      irf++;
-      cs_glob_lagr_boundary_interactions->iclogt = irf;
-      _copy_boundary_varname(irf, "Part_deposited_time");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-      irf++;
-      cs_glob_lagr_boundary_interactions->iclogh = irf;
-      _copy_boundary_varname(irf, "Part_consolidation_height");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-      irf++;
-      cs_glob_lagr_boundary_interactions->iscovc = irf;
-      _copy_boundary_varname(irf, "Part_surf_coverage");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-      irf++;
-      cs_glob_lagr_boundary_interactions->ihdepm = irf;
-      _copy_boundary_varname(irf, "Part_dep_height_mean");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-      irf++;
-      cs_glob_lagr_boundary_interactions->ihdiam = irf;
-      _copy_boundary_varname(irf, "Part_dep_diameter_mean");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-      irf++;
-      cs_glob_lagr_boundary_interactions->ihsum = irf;
-      _copy_boundary_varname(irf, "Part_dep_diameter_sum");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-      irf++;
-      cs_glob_lagr_boundary_interactions->ihdepv = irf;
-      _copy_boundary_varname(irf, "Part_dep_height_variance");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-
-    }
-
-    if (lagr_model->physical_model == 2 &&
-        lagr_model->fouling == 1 &&
-        cs_glob_lagr_boundary_interactions->iencnbbd == 1) {
-
-      irf++;
-      cs_glob_lagr_boundary_interactions->iencnb = irf;
-      _copy_boundary_varname(irf, "Part_fouled_impact_number");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-
-    }
-
-    if (lagr_model->physical_model == 2 &&
-        lagr_model->fouling == 1 &&
-        cs_glob_lagr_boundary_interactions->iencmabd == 1) {
-
-      irf++;
-      cs_glob_lagr_boundary_interactions->iencma = irf;
-      _copy_boundary_varname(irf, "Part_fouled_mass_flux");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 1;
-
-    }
-
-    if (lagr_model->physical_model == 2 &&
-        lagr_model->fouling == 1 &&
-        cs_glob_lagr_boundary_interactions->iencdibd == 1) {
-
-      irf++;
-      cs_glob_lagr_boundary_interactions->iencdi = irf;
-      _copy_boundary_varname(irf, "Part_fouled_diam");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 3;
-
-    }
-
-    if (lagr_model->physical_model == 2 &&
-        lagr_model->fouling == 1 &&
-        cs_glob_lagr_boundary_interactions->iencckbd == 1) {
-
-      irf++;
-      cs_glob_lagr_boundary_interactions->iencck = irf;
-      _copy_boundary_varname(irf, "Part_fouled_Xck");
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 3;
-
-    }
-
-    if (cs_glob_lagr_boundary_interactions->nusbor > 0) {
-
-      for (int ii = 0; ii<cs_glob_lagr_boundary_interactions->nusbor; ii++) {
-
-        irf++;
-        char buf[64];
-        cs_glob_lagr_boundary_interactions->iusb[ii] = irf;
-        snprintf(buf, 64, "addRec%d", ii);
-        _copy_boundary_varname(irf, buf);
-        cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-
-      }
-
-    }
-
-    lagdim->nvisbr = irf + 1;
+    irf++;
+    cs_glob_lagr_boundary_interactions->inbr = irf;
+    _copy_boundary_varname(irf, "Part_impact_number");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
 
   }
-  else
-    lagdim->nvisbr = 0;
+
+  if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
+
+    irf++;
+    cs_glob_lagr_boundary_interactions->iflm = irf;
+    _copy_boundary_varname(irf, "Part_bndy_mass_flux");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 1;
+
+  }
+
+  if (cs_glob_lagr_boundary_interactions->iangbd == 1) {
+
+    irf++;
+    cs_glob_lagr_boundary_interactions->iang = irf;
+    _copy_boundary_varname(irf, "Part_impact_angle");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 2;
+
+  }
+
+  if (cs_glob_lagr_boundary_interactions->ivitbd == 1) {
+
+    irf++;
+    cs_glob_lagr_boundary_interactions->ivit = irf;
+    _copy_boundary_varname(irf, "Part_impact_velocity");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 2;
+
+  }
+
+  if (lagr_model->resuspension == 1) {
+
+    irf++;
+    cs_glob_lagr_boundary_interactions->ires = irf;
+    _copy_boundary_varname(irf, "Part_resusp_number");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+    irf++;
+    cs_glob_lagr_boundary_interactions->iflres = irf;
+    _copy_boundary_varname(irf, "Part_resusp_mass_flux");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 1;
+
+  }
+
+  if (lagr_model->clogging == 1) {
+
+    irf++;
+    cs_glob_lagr_boundary_interactions->inclg = irf;
+    _copy_boundary_varname(irf, "Part_deposited_number");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+    irf++;
+    cs_glob_lagr_boundary_interactions->inclgt = irf;
+    _copy_boundary_varname(irf, "Part_deposited_part");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+    irf++;
+    cs_glob_lagr_boundary_interactions->iclogt = irf;
+    _copy_boundary_varname(irf, "Part_deposited_time");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+    irf++;
+    cs_glob_lagr_boundary_interactions->iclogh = irf;
+    _copy_boundary_varname(irf, "Part_consolidation_height");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+    irf++;
+    cs_glob_lagr_boundary_interactions->iscovc = irf;
+    _copy_boundary_varname(irf, "Part_surf_coverage");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+    irf++;
+    cs_glob_lagr_boundary_interactions->ihdepm = irf;
+    _copy_boundary_varname(irf, "Part_dep_height_mean");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+    irf++;
+    cs_glob_lagr_boundary_interactions->ihdiam = irf;
+    _copy_boundary_varname(irf, "Part_dep_diameter_mean");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+    irf++;
+    cs_glob_lagr_boundary_interactions->ihsum = irf;
+    _copy_boundary_varname(irf, "Part_dep_diameter_sum");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+    irf++;
+    cs_glob_lagr_boundary_interactions->ihdepv = irf;
+    _copy_boundary_varname(irf, "Part_dep_height_variance");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+
+  }
+
+  if (lagr_model->physical_model == 2 &&
+      lagr_model->fouling == 1 &&
+      cs_glob_lagr_boundary_interactions->iencnbbd == 1) {
+
+    irf++;
+    cs_glob_lagr_boundary_interactions->iencnb = irf;
+    _copy_boundary_varname(irf, "Part_fouled_impact_number");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+
+  }
+
+  if (lagr_model->physical_model == 2 &&
+      lagr_model->fouling == 1 &&
+      cs_glob_lagr_boundary_interactions->iencmabd == 1) {
+
+    irf++;
+    cs_glob_lagr_boundary_interactions->iencma = irf;
+    _copy_boundary_varname(irf, "Part_fouled_mass_flux");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 1;
+
+  }
+
+  if (lagr_model->physical_model == 2 &&
+      lagr_model->fouling == 1 &&
+      cs_glob_lagr_boundary_interactions->iencdibd == 1) {
+
+    irf++;
+    cs_glob_lagr_boundary_interactions->iencdi = irf;
+    _copy_boundary_varname(irf, "Part_fouled_diam");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 3;
+
+  }
+
+  if (lagr_model->physical_model == 2 &&
+      lagr_model->fouling == 1 &&
+      cs_glob_lagr_boundary_interactions->iencckbd == 1) {
+
+    irf++;
+    cs_glob_lagr_boundary_interactions->iencck = irf;
+    _copy_boundary_varname(irf, "Part_fouled_Xck");
+    cs_glob_lagr_boundary_interactions->imoybr[irf] = 3;
+
+  }
+
+  if (cs_glob_lagr_boundary_interactions->nusbor > 0) {
+
+    for (int ii = 0; ii<cs_glob_lagr_boundary_interactions->nusbor; ii++) {
+
+      irf++;
+      char buf[64];
+      cs_glob_lagr_boundary_interactions->iusb[ii] = irf;
+      snprintf(buf, 64, "addRec%d", ii);
+      _copy_boundary_varname(irf, buf);
+      cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
+
+    }
+
+  }
+
+  lagdim->nvisbr = irf + 1;
 
   /* 3.8 DEFINITION DES POINTEURS LIES AUX TERMES SOURCES LAGRANGIEN
    * POUR COUPLAGE RETOUR
    * Nombre de termes sources de couplage-retour   */
 
-  int irf = 0;
+  irf = 0;
 
   lagdim->ntersl = 0;
   cs_glob_lagr_source_terms->itsvx  = 0;

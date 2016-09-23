@@ -293,49 +293,16 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
 
   /* Check consistency */
 
-  if (datatype != _datatype || stride != _count) {
-    char attr_name[32];
-    const char *_attr_name = attr_name;
-    if (attr < CS_LAGR_N_ATTRIBUTES)
-      _attr_name = cs_lagr_attribute_name[attr];
-    else {
-      snprintf(attr_name, 31, "%d", (int)attr);
-      attr_name[31] = '\0';
-    }
-    bft_error(__FILE__, __LINE__, 0,
-              _("Attribute %s is of datatype %s and stride %d\n"
-                "but %s and %d were requested."),
-              _attr_name,
-              cs_datatype_name[_datatype], _count,
-              cs_datatype_name[datatype], stride);
+  if (cs_lagr_check_attr_query(particles,
+                               attr,
+                               datatype,
+                               stride,
+                               component_id) != 0)
     return 1;
-  }
-
-  /* Check component_id */
-  if (component_id != -1) {
-    if (component_id < 0 || component_id >= stride) {
-      char attr_name[32];
-      const char *_attr_name = attr_name;
-      if (attr < CS_LAGR_N_ATTRIBUTES)
-        _attr_name = cs_lagr_attribute_name[attr];
-      else {
-        snprintf(attr_name, 31, "%d", (int)attr);
-        attr_name[31] = '\0';
-      }
-      bft_error(__FILE__, __LINE__, 0,
-                _("Attribute %s has a number of components equal to %d\n"
-                  "but component %d is requested."),
-                _attr_name,
-                stride,
-                component_id);
-      return 1;
-    }
-  }
 
   /* No offset if export of the whole attribute */
   if (component_id == -1)
     component_id = 0;
-
 
   /* Case where we have no filter */
 
@@ -412,9 +379,9 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
   int  _count;
   unsigned char *_values = segment_values;
 
-  const unsigned char *p_buffer = particles->p_buffer;
-
   assert(particles != NULL);
+
+  const unsigned char *p_buffer = particles->p_buffer;
 
   cs_lagr_get_attr_info(particles, 0, attr,
                         &extents, &size, &displ, &_datatype, &_count);
@@ -434,44 +401,12 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
 
   /* Check consistency */
 
-  if (datatype != _datatype || stride != _count) {
-    char attr_name[32];
-    const char *_attr_name = attr_name;
-    if (attr < CS_LAGR_N_ATTRIBUTES)
-      _attr_name = cs_lagr_attribute_name[attr];
-    else {
-      snprintf(attr_name, 31, "%d", (int)attr);
-      attr_name[31] = '\0';
-    }
-    bft_error(__FILE__, __LINE__, 0,
-              _("Attribute %s is of datatype %s and stride %d\n"
-                "but %s and %d were requested."),
-              _attr_name,
-              cs_datatype_name[_datatype], _count,
-              cs_datatype_name[datatype], stride);
+  if (cs_lagr_check_attr_query(particles,
+                               attr,
+                               datatype,
+                               stride,
+                               component_id) != 0)
     return 1;
-  }
-
-  /* Check component_id */
-  if (component_id != -1) {
-    if (component_id < 0 || component_id >= stride) {
-      char attr_name[32];
-      const char *_attr_name = attr_name;
-      if (attr < CS_LAGR_N_ATTRIBUTES)
-        _attr_name = cs_lagr_attribute_name[attr];
-      else {
-        snprintf(attr_name, 31, "%d", (int)attr);
-        attr_name[31] = '\0';
-      }
-      bft_error(__FILE__, __LINE__, 0,
-                _("Attribute %s has a number of components equal to %d\n"
-                  "but component %d is requested."),
-                _attr_name,
-                stride,
-                component_id);
-      return 1;
-    }
-  }
 
   /* No offset if export of the whole attribute */
   if (component_id == -1)

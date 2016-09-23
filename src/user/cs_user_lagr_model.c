@@ -145,7 +145,7 @@ cs_user_lagr_model(void)
        * In uslag2.f90, the boundary on which the fouling can occur must
        be given
 
-       * Post-processing: iensi3 = 1 and
+       * Post-processing:
        * iencnbbd = 1 / iencmabd = 1 / iencdibd = 1 /iencckbd = 1 (10.2) */
 
     cs_glob_lagr_model->fouling = 0;
@@ -536,70 +536,10 @@ cs_user_lagr_model(void)
   cs_glob_lagr_precipitation_model->nbrclas   = 2;
 
   /* ==========================================================================
-   * 16. Variables to visualize on the trajectories or the particles
-   *  See also cs_user_postprocess_mesh in cs_user_postprocess.c to define
-   * the associated visualization particle or trajectory segment meshes.
+   * 16. Boundary statistics
    * ========================================================================== */
 
-  /* For all the following variables, a value of 0 means "off", and 1 means "on"*/
-
-  cs_lagr_post_options_t *lagr_post_options = cs_lagr_post_get_options();
-
-  /* velocity of the flow seen */
-  lagr_post_options->ivisv1      = 0;
-
-  /* particle velocity */
-  lagr_post_options->ivisv2      = 0;
-
-  /* residence time */
-  lagr_post_options->ivistp      = 0;
-
-  /* diameter */
-  lagr_post_options->ivisdm      = 0;
-
-  /* temperature */
-  if (   cs_glob_lagr_model->physical_model == 1
-      && cs_glob_lagr_specific_physics->itpvar == 1)
-    lagr_post_options->iviste   = 0;
-
-  /* mass */
-  lagr_post_options->ivismp      = 0;
-
-  if (cs_glob_lagr_model->physical_model == 2) {
-
-    /* coal: diameter of the shrinking core */
-    lagr_post_options->ivisdk   = 0;
-
-    /* coal: mass of water */
-    lagr_post_options->iviswat  = 0;
-
-    /* coal: mass of reactive coal */
-    lagr_post_options->ivisch   = 0;
-
-    /* coal: mass of coke */
-    lagr_post_options->ivisck   = 0;
-
-  }
-
-  /* 16.1 Boundary statistics: visualization of the particle/boundaries
-     interactions
-     ------------------------------------------------ */
-
-  /* 16.1.1 Generic parameters
-     ~~~~~~~~~~~~~~~~~~~~~~~~~~
-     Particle/boundary interaction mode
-     (default off: 0 ; on: 1) */
-
-  lagr_post_options->iensi3      = 0;
-
-  /* 16.1.2 Information to be recorded
-     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     * To activate them, the user has to set below
-     the corresponding keyword to 1.
-     * The default selection must be validated or modified by the user.
-     * By default the asked information for all the particle/wall interactions
-     are written in the same recording.
-     * The boundary statistic 'number of particle/boundary interactions' must be
+  /* The boundary statistic 'number of particle/boundary interactions' must be
      selected to activate the particle average imoybr(...) = 2 */
 
   /* Number of particle/boundary interactions

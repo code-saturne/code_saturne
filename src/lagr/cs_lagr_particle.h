@@ -303,6 +303,28 @@ cs_lagr_get_attr_info(const cs_lagr_particle_set_t  *particles,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check that query for a given particle attribute is valid.
+ *
+ * \param[in]   particles             associated particle set
+ * \param[in]   attr                  attribute whose values are required
+ * \param[in]   datatype              associated value type
+ * \param[in]   stride                number of values per particle
+ * \param[in]   component_id          if -1 : extract the whole attribute
+ *                                    if >0 : id of the component to extract
+ *
+ * \return 0 in case of success, 1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_lagr_check_attr_query(const cs_lagr_particle_set_t  *particles,
+                         cs_lagr_attribute_t            attr,
+                         cs_datatype_t                  datatype,
+                         int                            stride,
+                         int                            component_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Check if a particle attribute is in a valid range.
  *
  * If this is not the case, a fatal error is provoked.

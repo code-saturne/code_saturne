@@ -156,7 +156,9 @@ _get_particles_model(const char *const model, int *const imodel)
  *----------------------------------------------------------------------------*/
 
 static void
-_get_status(int *const keyword, const int nbr, ...)
+_get_status(int  *keyword,
+            int   nbr,
+            ...)
 {
   va_list list;
 
@@ -337,6 +339,32 @@ _get_attr(const char *const param, const int nbr, ...)
 }
 
 /*-----------------------------------------------------------------------------
+ * Define postprocessing output status for a given particle attribute.
+ *
+ * parameters:
+ *   attr_id <-- associated attribute id
+ *   name    <-- name of attribute in XML, or NULL for automatic name
+ *----------------------------------------------------------------------------*/
+
+static void
+_attr_post_status(cs_lagr_attribute_t   attr_id,
+                  const char           *name)
+{
+  int key = 0;
+  if (name != NULL)
+    _get_status(&key, 3, "lagrangian", "output", name);
+  else {
+    cs_lagr_particle_attr_in_range(attr_id);
+    const char *_name = cs_lagr_attribute_name[attr_id];
+    _get_status(&key, 3, "lagrangian", "output", _name);
+  }
+
+  bool status = (key = 0) ? false : true;
+
+  cs_lagr_post_set_attr(attr_id, status);
+}
+
+/*-----------------------------------------------------------------------------
  * Return float parameters for coal parameters
  *
  *   parameters:
@@ -433,7 +461,7 @@ _get_char_post(const char *const type,
 void
 cs_gui_particles_model(void)
 {
-  int i, icoal, ncoals = 0;
+  int icoal, ncoals = 0;
   int flag = 0;
   char *attr = NULL;
   char *path1 = NULL;
@@ -546,30 +574,18 @@ cs_gui_particles_model(void)
 
   /* Output */
 
-  cs_lagr_post_options_t *lagr_post_options = cs_lagr_post_get_options();
-
-  _get_status(&lagr_post_options->ivisv1, 3, "lagrangian",
-              "output", "velocity_fluid_seen");
-  _get_status(&lagr_post_options->ivisv2, 3, "lagrangian",
-              "output", "velocity_particles");
-  _get_status(&lagr_post_options->ivistp, 3, "lagrangian",
-              "output", "resident_time");
-  _get_status(&lagr_post_options->ivisdm, 3, "lagrangian",
-              "output", "diameter");
-  _get_status(&lagr_post_options->iviste, 3, "lagrangian",
-              "output", "temperature");
-  _get_status(&lagr_post_options->ivismp, 3, "lagrangian",
-              "output", "mass");
+  _attr_post_status(CS_LAGR_VELOCITY, "velocity_particles");
+  _attr_post_status(CS_LAGR_VELOCITY_SEEN, "velocity_fluid_seen");
+  _attr_post_status(CS_LAGR_RESIDENCE_TIME, "resident_time");
+  _attr_post_status(CS_LAGR_DIAMETER, "diameter");
+  _attr_post_status(CS_LAGR_TEMPERATURE, "temperature");
+  _attr_post_status(CS_LAGR_MASS, "mass");
 
   if (cs_glob_lagr_model->physical_model == 2) {
-    _get_status(&lagr_post_options->ivisdk ,  3, "lagrangian",
-                "output", "shrinking_core_diameter");
-    _get_status(&lagr_post_options->iviswat, 3, "lagrangian",
-                "output", "moisture_mass_fraction");
-    _get_status(&lagr_post_options->ivisch ,  3, "lagrangian",
-                "output", "raw_coal_mass_fraction");
-    _get_status(&lagr_post_options->ivisck ,  3, "lagrangian",
-                "output", "char_mass_fraction");
+    _attr_post_status(CS_LAGR_SHRINKING_DIAMETER, "shrinking_core_diameter");
+    _attr_post_status(CS_LAGR_WATER_MASS, "moisture_mass_fraction");
+    _attr_post_status(CS_LAGR_COAL_MASS, "raw_coal_mass_fraction");
+    _attr_post_status(CS_LAGR_COKE_MASS, "char_mass_fraction");
   }
 
   _get_int(&cs_glob_lagr_log_frequency_n,
@@ -597,8 +613,6 @@ cs_gui_particles_model(void)
 
     /* labels */
 
-    i = -1;
-
     flag = 0;
     _get_char_post("volume", "Part_vol_frac", &flag);
     if (flag)
@@ -618,66 +632,29 @@ cs_gui_particles_model(void)
 
   }
 
-  _get_status(&lagr_post_options->iensi3, 3, "lagrangian",
-              "statistics", "boundary");
+  int b_key = 0;
+  _get_status(&b_key, 3, "lagrangian", "statistics", "boundary");
 
-  if (lagr_post_options->iensi3 == 1) {
-
-    i = 0;
+  if (b_key) {
 
     _get_char_post("boundary", "Part_impact_number",
                    &cs_glob_lagr_boundary_interactions->inbrbd);
-    if (cs_glob_lagr_boundary_interactions->inbrbd) {
-      cs_glob_lagr_boundary_interactions->imoybr[i] = 0;
-      i++;
-    }
-
     _get_char_post("boundary", "Part_bndy_mass_flux",
                    &cs_glob_lagr_boundary_interactions->iflmbd);
-    if (cs_glob_lagr_boundary_interactions->iflmbd) {
-      cs_glob_lagr_boundary_interactions->imoybr[i] = 1;
-      i++;
-    }
-
     _get_char_post("boundary", "Part_impact_angle",
                    &cs_glob_lagr_boundary_interactions->iangbd);
-    if (cs_glob_lagr_boundary_interactions->iangbd) {
-      cs_glob_lagr_boundary_interactions->imoybr[i] = 2;
-      i++;
-    }
-
     _get_char_post("boundary", "Part_impact_velocity",
                    &cs_glob_lagr_boundary_interactions->ivitbd);
-    if (cs_glob_lagr_boundary_interactions->ivitbd) {
-      cs_glob_lagr_boundary_interactions->imoybr[i] = 2;
-      i++;
-    }
 
     /* Coal fouling statistics*/
     _get_char_post("boundary", "Part_fouled_impact_number",
                    &cs_glob_lagr_boundary_interactions->iencnbbd);
-    if (cs_glob_lagr_boundary_interactions->iencnbbd) {
-      cs_glob_lagr_boundary_interactions->imoybr[i] = 0;
-      i++;
-    }
     _get_char_post("boundary", "Part_fouled_mass_flux",
                    &cs_glob_lagr_boundary_interactions->iencmabd);
-    if (cs_glob_lagr_boundary_interactions->iencmabd) {
-      cs_glob_lagr_boundary_interactions->imoybr[i] = 1;
-      i++;
-    }
     _get_char_post("boundary", "Part_fouled_diam",
                    &cs_glob_lagr_boundary_interactions->iencdibd);
-    if (cs_glob_lagr_boundary_interactions->iencdibd) {
-      cs_glob_lagr_boundary_interactions->imoybr[i] = 3;
-      i++;
-    }
     _get_char_post("boundary", "Part_fouled_Xck",
                    &cs_glob_lagr_boundary_interactions->iencckbd);
-    if (cs_glob_lagr_boundary_interactions->iencckbd) {
-      cs_glob_lagr_boundary_interactions->imoybr[i] = 3;
-      i++;
-    }
 
   }
 
@@ -746,8 +723,8 @@ cs_gui_particles_model(void)
   bft_printf("--nstist = %i\n", cs_glob_lagr_stat_options->nstist);
   bft_printf("--vol_stats = %i\n", vol_stats);
 
-  bft_printf("--iensi3 = %i\n", lagr_post_options->iensi3);
-  if (lagr_post_options->iensi3 == 1) {
+  bft_printf("--boundary_output = %i\n", b_key);
+  if (b_key == 1) {
     bft_printf("--inbrbd   = %i\n", cs_glob_lagr_boundary_interactions->inbrbd);
     bft_printf("--iflmbd   = %i\n", cs_glob_lagr_boundary_interactions->iflmbd);
     bft_printf("--iangbd   = %i\n", cs_glob_lagr_boundary_interactions->iangbd);

@@ -354,59 +354,37 @@ cs_lagr_log_setup(void)
 
   cs_log_printf
     (CS_LOG_SETUP,
-     _("\n  Trajectory/particle postprocessing options:\n"
-       "    fluid velocity seen:                          %s\n"
-       "    velocity:                                     %s\n"
-       "    residence time:                               %s\n"
-       "    diameter:                                     %s\n"
-       "    temperature:                                  %s\n"
-       "    mass:                                         %s\n"),
-     _status(cs_glob_lagr_post_options->ivisv1),
-     _status(cs_glob_lagr_post_options->ivisv2),
-     _status(cs_glob_lagr_post_options->ivistp),
-     _status(cs_glob_lagr_post_options->ivisdm),
-     _status(cs_glob_lagr_post_options->iviste),
-     _status(cs_glob_lagr_post_options->ivismp));
-
-  if (cs_glob_lagr_model->physical_model == 2)
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("    shrinking core diameter:                      %s\n"
-         "    moisture mass:                                %s\n"
-         "    active coal mass:                             %s\n"
-         "    coke mass:                                    %s\n"),
-       _status(cs_glob_lagr_post_options->ivisdk),
-       _status(cs_glob_lagr_post_options->iviswat),
-       _status(cs_glob_lagr_post_options->ivisch),
-       _status(cs_glob_lagr_post_options->ivisck));
+     _("\n  Trajectory/particle postprocessing options:\n"));
+     for (int attr = 0; attr < CS_LAGR_N_ATTRIBUTES; attr++) {
+       if (cs_lagr_post_get_attr(attr))
+         cs_log_printf(CS_LOG_SETUP,
+                       "    %s\n", cs_lagr_attribute_name[attr]);
+     }
 
   cs_log_printf
     (CS_LOG_SETUP,
-     _("\n  Statistics for particles/boundary interaction:\n"
-       "    compute wall statistics: %s\n"),
-     _status(cs_glob_lagr_post_options->iensi3));
+     _("\n  Statistics for particles/boundary interaction:\n"));
 
-  if (cs_glob_lagr_post_options->iensi3)
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("    number of interactions:                       %s\n"
-         "    particle mass flow:                           %s\n"
-         "    impact angle:                                 %s\n"
-         "    impact velocity:                              %s\n"
-         "    interactions with fouling:                    %s\n"
-         "    fouling coal mass flux:                       %s\n"
-         "    fouling coal diameter:                        %s\n"
-         "    fouling coal coke fraction:                   %s\n"
-         "    number of additional user statistics:         %d\n"),
-       _status(cs_glob_lagr_boundary_interactions->inbrbd),
-       _status(cs_glob_lagr_boundary_interactions->iflmbd),
-       _status(cs_glob_lagr_boundary_interactions->iangbd),
-       _status(cs_glob_lagr_boundary_interactions->ivitbd),
-       _status(cs_glob_lagr_boundary_interactions->iencnbbd),
-       _status(cs_glob_lagr_boundary_interactions->iencmabd),
-       _status(cs_glob_lagr_boundary_interactions->iencdibd),
-       _status(cs_glob_lagr_boundary_interactions->iencckbd),
-       cs_glob_lagr_boundary_interactions->nusbor);
+  if (cs_glob_lagr_boundary_interactions->inbrbd)
+    cs_log_printf(CS_LOG_SETUP, "    %s\n", "number of interactions");
+  if (cs_glob_lagr_boundary_interactions->iflmbd)
+    cs_log_printf(CS_LOG_SETUP, "    %s\n", "particle mass flow");
+  if (cs_glob_lagr_boundary_interactions->iangbd)
+    cs_log_printf(CS_LOG_SETUP, "    %s\n", "impact angle");
+  if (cs_glob_lagr_boundary_interactions->ivitbd)
+    cs_log_printf(CS_LOG_SETUP, "    %s\n", "impact velocity");
+  if (cs_glob_lagr_boundary_interactions->iencnbbd)
+    cs_log_printf(CS_LOG_SETUP, "    %s\n", "interactions with fouling");
+  if (cs_glob_lagr_boundary_interactions->iencmabd)
+    cs_log_printf(CS_LOG_SETUP, "    %s\n", "fouling coal mass flux");
+  if (cs_glob_lagr_boundary_interactions->iencdibd)
+    cs_log_printf(CS_LOG_SETUP, "    %s\n", "fouling coal diameter");
+  if (cs_glob_lagr_boundary_interactions->iencckbd)
+    cs_log_printf(CS_LOG_SETUP, "    %s\n", "fouling coal coke fraction");
+  if (cs_glob_lagr_boundary_interactions->nusbor)
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    number of additional user statistics: %d\n"),
+                  cs_glob_lagr_boundary_interactions->nusbor);
 
   /* Volumic statistics   */
 
@@ -594,7 +572,8 @@ cs_lagr_log_iteration(void)
   cs_log_separator(CS_LOG_DEFAULT);
 
   /* Boundary statistics  */
-  if (cs_glob_lagr_post_options->iensi3 == 1) {
+
+  if (cs_glob_lagr_dim->nvisbr > 0) {
 
     cs_log_printf(CS_LOG_DEFAULT,
                   _("   Boundary statistics :\n"));

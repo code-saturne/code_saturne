@@ -140,7 +140,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
   }
 
-  if (cs_glob_lagr_post_options->iensi3 == 1 && cs_glob_lagr_dim->nvisbr > 0) {
+  if (cs_glob_lagr_dim->nvisbr > 0) {
 
     for (cs_lnum_t ivar = 0; ivar < cs_glob_lagr_dim->nvisbr; ivar++) {
 
@@ -557,8 +557,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
     }
 
-    if (   cs_glob_lagr_post_options->iensi3 == 1
-        && cs_glob_lagr_dim->nvisbr > 0
+    if (   cs_glob_lagr_dim->nvisbr > 0
         && nfabok) {
 
       {
@@ -1871,8 +1870,7 @@ cs_lagr_restart_read_p(void)
        cs_glob_time_step->nt_cur +1,
        cs_glob_lagr_stat_options->idstnt);
 
-  if (   cs_glob_lagr_post_options->iensi3 == 1
-      && cs_glob_lagr_stat_options->isuist == 0
+  if (   cs_glob_lagr_stat_options->isuist == 0
       && cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->nstist)
     bft_error
       (__FILE__, __LINE__, 0,
@@ -2328,7 +2326,7 @@ cs_restart_lagrangian_checkpoint_write(void)
 
   if (   cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt
       || cs_glob_lagr_time_scheme->iilagr == 2
-      || (cs_glob_lagr_post_options->iensi3 == 1 && cs_glob_lagr_dim->nvisbr > 0)) {
+      || cs_glob_lagr_dim->nvisbr > 0) {
 
     /* ---> Ouverture (et on saute si erreur)   */
     cs_log_printf(CS_LOG_DEFAULT,
@@ -2421,7 +2419,7 @@ cs_restart_lagrangian_checkpoint_write(void)
     }
 
     /* --> En second, c'est le tour des statistiques aux frontieres */
-    if (cs_glob_lagr_post_options->iensi3 == 1 && cs_glob_lagr_dim->nvisbr > 0) {
+    if (cs_glob_lagr_dim->nvisbr > 0) {
 
       itysup = 0;
       nbval = 1;

@@ -744,13 +744,12 @@ typedef struct {
 typedef struct {
 
   /*! number of additional user data to record for the calculation
-    of additional boundary statistics in \ref bound_stat.
-    Useful if \ref iensi3=1 */
+    of additional boundary statistics in \ref bound_stat */
   int  nusbor;
 
   /*! number of iterations during which steady boundary statistics have
     been accumulated.
-    Useful if \ref iensi3=1, \ref isttio=1 and \ref nstist inferior
+    Useful if \ref isttio=1 and \ref nstist inferior
     or equal to the current time step.
     \ref npstf is initialized and updated automatically by the code,
     its value is not to be modified by the user */
@@ -760,7 +759,6 @@ typedef struct {
     been calculated
     (the potential iterations during which unsteady
     statistics have been calculated are counted in \ref npstft).
-    Useful if \ref iensi3=1.
     \ref npstft is initialized and updated automatically by the code,
     its value is not to be modified by the user */
   int  npstft;
@@ -769,33 +767,29 @@ typedef struct {
     particle/boundary interactions, and of the calculation of the associated
     boundary statistics.
     \ref inbrbd = 1 is a compulsory condition to use the particulate average
-    \ref imoybr = 2.
-    Useful if \ref iensi3=1 */
+    \ref imoybr = 2.  */
   int  inbrbd;
 
   /*!  activation (=1) or not (=0) of the recording of the particulate mass flow
     related to the particle/boundary interactions, and of the calculation of
     the associated boundary statistics.
     \ref inbrbd = 1 is a compulsory condition to use \ref iflmbd=1.
-    Useful if \ref iensi3=1 and \ref inbrbd=1 */
+    Useful if \ref inbrbd=1 */
   int  iflmbd;
 
   /*!  activation (=1) or not (=0) of the recording of the angle between a
     particle trajectory and a boundary face involved in a particle/boundary
-    interaction, and of the calculation of the associated boundary statistics.
-    Useful if \ref iensi3=1 */
+    interaction, and of the calculation of the associated boundary statistics. */
   int  iangbd;
 
   /*!  activation (=1) or not (=0) of the recording of the velocity of a particle
     involved in a particle/boundary interaction, and of the calculation of
-    the associated boundary statistics.
-    Useful if \ref iensi3=1 */
+    the associated boundary statistics. */
   int  ivitbd;
 
   /*!  activation (=1) or not (=0) of the recording of clogging parameters
     involved in a particle/boundary interaction, and of the calculation of
-    the associated boundary statistics.
-    Useful if \ref iensi3=1 */
+    the associated boundary statistics. */
   int  iclgst;
 
   /*! flag for number of recorded particle/boundary interactions with fouling */
@@ -858,8 +852,7 @@ typedef struct {
              by the number of particle/boundary interactions (in terms of
              statistical weight) recorded in \ref bound_stat "bound_stat"(nfabor,inbr).
              This average can only be calculated when \ref inbrbd=1.
-             Only the cumulated value is recorded in the restart file.
-             Useful if \ref iensi3=1 */
+             Only the cumulated value is recorded in the restart file. */
   int  *imoybr;
 
   /*! id for number of deposited particles */
@@ -894,13 +887,11 @@ typedef struct {
     statistics.
     if the recording of the boundary statisticss is unsteady, then
     \ref tstat=dtp (it is the Lagrangian time step, because the
-    statistics are reset to zero at every time step).
-    Useful if \ref iensi3=1 */
+    statistics are reset to zero at every time step). */
   cs_real_t        tstatp;
 
   /*!  name of the boundary statistics, displayed in the log
     and the post-processing files.
-    Useful if \ref iensi3=1.
     Warning: this name is also used to reference information in the restart
     file (\ref isuist =1). If the name of a variable is changed between two
     calculations, it will not be possible to read its value from the restart
@@ -908,65 +899,6 @@ typedef struct {
   char           **nombrd;
 
 } cs_lagr_boundary_interactions_t;
-
-/* ========================================================================== */
-
-typedef struct {
-
-  /* \anchor iensi3
-     activation (=1) or not (=0) of the recording of the particle/boundary
-     interactions in  \ref bound_stat, and of the calculation of the
-     statistics at the corresponding boundaries.
-     By default, the statistics are unsteady (reset to zero at every
-     time step). They may be steady if \ref isttio=1 (i.e.
-     calculation of a cumulated value over time, and then calculation of an
-     average over time or over the number of interactions with the boundary).*/
-  int  iensi3;
-
-  /* associates (=1) or not (=0) the variable "velocity of the locally
-     undisturbed fluid flow field" with the output of particles or
-     trajectories. */
-  int  ivisv1;
-
-  /* associates (=1) or not (=0) the variable "particle velocity"
-     with the output of particles or trajectories. */
-  int  ivisv2;
-
-  /* associates (=1) or not (=0) the variable "residence time"
-     with the output of particles or trajectories. */
-  int  ivistp;
-
-  /* associates (=1) or not (=0) the variable "particle diameter"
-     with the output of particles or trajectories. */
-  int  ivisdm;
-
-  /* associates (=1) or not (=0) the variable "particle temperature"
-     with the output of particles or trajectories. */
-  int  iviste;
-
-  /* associates (=1) or not (=0) the variable "particle mass"
-     with the output of particles or trajectories. */
-  int  ivismp;
-
-  /* associates (=1) or not (=0) the variable "shrinking core diameter of
-     the coal particles" with the output of particles or trajectories.
-     useful only if \ref physical_model = 2 */
-  int  ivisdk;
-
-  /* associates (=1) or not (=0) the variable "mass of reactive coal of the
-     coal particles" with the output of particles or trajectories.
-     useful only if \ref physical_model = 2 */
-  int  ivisch;
-
-  /* associates (=1) or not (=0) the variable "mass of coal of the
-     coal particles" with the output of particles or trajectories.
-     useful only if \ref physical_model = 2 */
-  int  ivisck;
-
-  /*! TODO */
-  int  iviswat;
-
-} cs_lagr_visualization_t;
 
 /* ========================================================================== */
 
@@ -1511,15 +1443,6 @@ cs_lagr_finalize_internal_cond(void);
 
 cs_lagr_boundary_interactions_t *
 cs_get_lagr_boundary_interactions(void);
-
-/*----------------------------------------------------------------------------
- * Provide access to cs_lagr_visualization_t
- *
- * needed to initialize structure with GUI
- *----------------------------------------------------------------------------*/
-
-cs_lagr_visualization_t *
-cs_get_lagr_visualization(void);
 
 /*----------------------------------------------------------------------------
  * Provide access to cs_lagr_extra_module_t

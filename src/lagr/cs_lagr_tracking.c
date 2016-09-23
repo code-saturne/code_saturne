@@ -2289,36 +2289,33 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   /* FIXME: Post-treatment not yet implemented... */
 
-  if (cs_glob_lagr_post_options->iensi3 > 0) {
+  if  (   bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO1
+       || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO2
+       || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO_DLVO
+       || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_REBOUND
+       || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_FOULING) {
 
-    if  (   bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO1
-         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO2
-         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO_DLVO
-         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_REBOUND
-         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_FOULING) {
+    /* Number of particle-boundary interactions  */
+    if (cs_glob_lagr_boundary_interactions->inbrbd > 0)
+      bound_stat[cs_glob_lagr_boundary_interactions->inbr * n_b_faces + face_id]
+        += particle_stat_weight;
 
-      /* Number of particle-boundary interactions  */
-      if (cs_glob_lagr_boundary_interactions->inbrbd > 0)
-        bound_stat[cs_glob_lagr_boundary_interactions->inbr * n_b_faces + face_id]
-          += particle_stat_weight;
-
-      /* Particle impact angle and velocity*/
-      if (cs_glob_lagr_boundary_interactions->iangbd > 0) {
-        cs_real_t imp_ang = acos(cs_math_3_dot_product(compo_vel, face_normal)
-                                 / (face_area * norm_vel));
-        bound_stat[cs_glob_lagr_boundary_interactions->iang * n_b_faces + face_id]
-          += imp_ang * particle_stat_weight;
-      }
-
-      if (cs_glob_lagr_boundary_interactions->ivitbd > 0)
-        bound_stat[cs_glob_lagr_boundary_interactions->ivit * n_b_faces + face_id]
-          += norm_vel * particle_stat_weight;
-
-      /* User statistics management. By defaut, set to zero */
-      if (cs_glob_lagr_boundary_interactions->nusbor > 0)
-        for (int n1 = 0; n1 < cs_glob_lagr_boundary_interactions->nusbor; n1++)
-          bound_stat[cs_glob_lagr_boundary_interactions->iusb[n1] * n_b_faces + face_id] = 0.0;
+    /* Particle impact angle and velocity*/
+    if (cs_glob_lagr_boundary_interactions->iangbd > 0) {
+      cs_real_t imp_ang = acos(cs_math_3_dot_product(compo_vel, face_normal)
+                               / (face_area * norm_vel));
+      bound_stat[cs_glob_lagr_boundary_interactions->iang * n_b_faces + face_id]
+        += imp_ang * particle_stat_weight;
     }
+
+    if (cs_glob_lagr_boundary_interactions->ivitbd > 0)
+      bound_stat[cs_glob_lagr_boundary_interactions->ivit * n_b_faces + face_id]
+        += norm_vel * particle_stat_weight;
+
+    /* User statistics management. By defaut, set to zero */
+    if (cs_glob_lagr_boundary_interactions->nusbor > 0)
+      for (int n1 = 0; n1 < cs_glob_lagr_boundary_interactions->nusbor; n1++)
+        bound_stat[cs_glob_lagr_boundary_interactions->iusb[n1] * n_b_faces + face_id] = 0.0;
   }
 
   return particle_state;

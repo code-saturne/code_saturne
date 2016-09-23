@@ -54,6 +54,7 @@
 #include "cs_post.h"
 
 #include "cs_lagr.h"
+#include "cs_lagr_particle.h"
 #include "cs_lagr_stat.h"
 
 /*----------------------------------------------------------------------------
@@ -72,45 +73,85 @@ BEGIN_C_DECLS
  * Local types and structures
  *============================================================================*/
 
-/* Structure used to pass postprocessing options */
-/*-----------------------------------------------*/
+/* Structure associated with postprocessing options */
+/*--------------------------------------------------*/
 
 typedef struct {
 
-  bool      particle_attr[CS_LAGR_N_ATTRIBUTES];
-  cs_int_t  particle_multicomponent_export[CS_LAGR_N_ATTRIBUTES];
+  /*! \anchor particle_attr
+    flag for activation of output for each possible particle attribute:
+    0:   not active
+    1:   active
+    > 1: for atributes with multiple components, number of components
+    postprocessed as separate scalars */
+  int  attr_output[CS_LAGR_N_ATTRIBUTES];
 
-} cs_post_lagr_input_t;
+} cs_lagr_post_options_t;
 
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
-/* Default output format and options */
-
-static cs_post_lagr_input_t  _lagr_input;
-static bool                  _lagr_input_is_set = false;
+static bool                    _lagr_post_options_is_set = false;
 
 /* Postprocessing options structure and associated pointer */
 
 static cs_lagr_post_options_t  _lagr_post_options
-= {.iensi3 = 0,
-   .ivisv1 = 0,
-   .ivisv2 = 0,
-   .ivistp = 0,
-   .ivisdm = 0,
-   .iviste = 0,
-   .ivismp = 0,
-   .ivisdk = 0,
-   .ivisch = 0,
-   .ivisck = 0,
-   .iviswat = 0};
+= {.attr_output[0] = -1};
 
 const cs_lagr_post_options_t *cs_glob_lagr_post_options = &_lagr_post_options;
 
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Define which Lagragian variables should be postprocessed
+ *----------------------------------------------------------------------------*/
+
+static void
+_activate_particle_output(void)
+{
+  /* No output if nothing initialized by now */
+
+  if (_lagr_post_options.attr_output[0] == -1) {
+    for (cs_lagr_attribute_t i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
+      _lagr_post_options.attr_output[i] = 0;
+    }
+  }
+
+  else {
+    for (cs_lagr_attribute_t i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
+      if (_lagr_post_options.attr_output[i]) {
+        int count = 0;
+        cs_lagr_get_attr_info(cs_glob_lagr_particle_set,
+                              0,
+                              i,
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL,
+                              &count);
+
+        if (count == 3) {
+          switch(i) {
+          case CS_LAGR_COORDS:
+          case CS_LAGR_VELOCITY:
+          case CS_LAGR_VELOCITY_SEEN:
+          case CS_LAGR_PRED_VELOCITY:
+          case CS_LAGR_PRED_VELOCITY_SEEN:
+            count = 1;
+            break;
+          default:
+            break;
+          }
+        }
+
+        _lagr_post_options.attr_output[i] = count;
+      }
+    }
+  }
+}
 
 /*----------------------------------------------------------------------------
  * Default additional particle output of mesh and time-dependent variables
@@ -124,16 +165,16 @@ const cs_lagr_post_options_t *cs_glob_lagr_post_options = &_lagr_post_options;
  *
  * parameters:
  *   input       <-> pointer to optional (untyped) value or structure;
- *                   here, we should point to _default_input.
+ *                   here, we should point to _lagr_post_options.
  *   mesh_id     <-- id of the output mesh for the current call
  *   cat_id      <-- category id of the output mesh for the current call
  *   ts          <-- time step status structure
  *----------------------------------------------------------------------------*/
 
 static void
-_write_particle_vars(cs_post_lagr_input_t   *input,
-                     int                     mesh_id,
-                     const cs_time_step_t   *ts)
+_write_particle_vars(cs_lagr_post_options_t  *options,
+                     int                      mesh_id,
+                     const cs_time_step_t    *ts)
 {
   cs_lagr_attribute_t attr_id;
 
@@ -143,31 +184,28 @@ _write_particle_vars(cs_post_lagr_input_t   *input,
 
   for (attr_id = 0; attr_id < CS_LAGR_N_ATTRIBUTES; attr_id++) {
 
-    if (input->particle_attr[attr_id]) {
+    if (options->attr_output[attr_id] > 0) {
 
       /* build name */
 
-      int i;
-      int l = snprintf(var_name,
-                       63,
-                       "particle_%s",
-                       cs_lagr_attribute_name[attr_id] + strlen("cs_lagr_"));
+      snprintf(var_name,
+               63,
+               "particle_%s",
+               cs_lagr_attribute_name[attr_id]);
       var_name[63] = '\0';
-      for (i = 0; i < l; i++)
-        var_name[i] = tolower(var_name[i]);
 
       /* Output values */
 
-      if (input->particle_multicomponent_export[attr_id] == -1)
+      if (options->attr_output[attr_id] == 1)
         cs_post_write_particle_values(mesh_id,
                                       attr_id,
                                       var_name,
-                                      input->particle_multicomponent_export[attr_id],
+                                      -1,
                                       ts);
       else {
         /* Create one output per component */
         for (component_id = 0;
-             component_id < input->particle_multicomponent_export[attr_id];
+             component_id < options->attr_output[attr_id];
              component_id++) {
           snprintf(var_name_component,
                    63,
@@ -186,63 +224,6 @@ _write_particle_vars(cs_post_lagr_input_t   *input,
 
   }
 
-}
-
-/*----------------------------------------------------------------------------
- * Define which Lagragian variables should be postprocessed
- *----------------------------------------------------------------------------*/
-
-static void
-_activate_particle_output(void)
-{
-  cs_lagr_attribute_t attr_id;
-
-  for (attr_id = 0; attr_id < CS_LAGR_N_ATTRIBUTES; attr_id++) {
-    _lagr_input.particle_attr[attr_id] = false;
-    _lagr_input.particle_multicomponent_export[attr_id] = -1;
-  }
-
-  if (cs_glob_lagr_post_options->ivisv1)
-    _lagr_input.particle_attr[CS_LAGR_VELOCITY] = true;
-
-  if (cs_glob_lagr_post_options->ivisv2)
-    _lagr_input.particle_attr[CS_LAGR_VELOCITY_SEEN] = true;
-
-  if (cs_glob_lagr_post_options->ivistp)
-    _lagr_input.particle_attr[CS_LAGR_RESIDENCE_TIME] = true;
-
-  if (cs_glob_lagr_post_options->ivisdm)
-    _lagr_input.particle_attr[CS_LAGR_DIAMETER] = true;
-
-  if (cs_glob_lagr_post_options->iviste) {
-    _lagr_input.particle_attr[CS_LAGR_TEMPERATURE] = true;
-    if (cs_glob_lagr_model->n_temperature_layers > 1)
-      _lagr_input.particle_multicomponent_export[CS_LAGR_TEMPERATURE]
-        = cs_glob_lagr_model->n_temperature_layers;
-  }
-
-  if (cs_glob_lagr_post_options->ivismp)
-    _lagr_input.particle_attr[CS_LAGR_MASS] = true;
-
-  if (cs_glob_lagr_post_options->ivisdk)
-    _lagr_input.particle_attr[CS_LAGR_SHRINKING_DIAMETER] = true;
-
-  if (cs_glob_lagr_post_options->iviswat)
-    _lagr_input.particle_attr[CS_LAGR_WATER_MASS] = true;
-
-  if (cs_glob_lagr_post_options->ivisch) {
-    _lagr_input.particle_attr[CS_LAGR_COAL_MASS] = true;
-    if (cs_glob_lagr_model->n_temperature_layers > 1)
-      _lagr_input.particle_multicomponent_export[CS_LAGR_COAL_MASS]
-        = cs_glob_lagr_model->n_temperature_layers;
-  }
-
-  if (cs_glob_lagr_post_options->ivisck) {
-    _lagr_input.particle_attr[CS_LAGR_COKE_MASS] = true;
-    if (cs_glob_lagr_model->n_temperature_layers > 1)
-      _lagr_input.particle_multicomponent_export[CS_LAGR_COKE_MASS]
-        = cs_glob_lagr_model->n_temperature_layers;
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -298,8 +279,7 @@ _cs_lagr_post(void                  *input,
   /*---------------------*/
 
   else if (   cat_id == -2
-           && cs_glob_lagr_time_scheme->iilagr > 0
-           && cs_glob_lagr_post_options->iensi3 > 0) {
+           && cs_glob_lagr_time_scheme->iilagr > 0) {
 
     cs_lnum_t nfabor = cs_glob_mesh->n_b_faces;
 
@@ -414,24 +394,70 @@ cs_lagr_post_init(void)
 {
   _activate_particle_output();
 
-  cs_post_add_time_mesh_dep_output(_cs_lagr_post, &_lagr_input);
-  _lagr_input_is_set = true;
+  cs_post_add_time_mesh_dep_output(_cs_lagr_post, &_lagr_post_options);
+  _lagr_post_options_is_set = true;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return a pointer to the global cs_lagr_post_options_t structure.
+ * \brief Activate or deactive postprocessing for a given particle attribute.
  *
- * This pointer allows write access to the structure.
+ * \param[in]  attr_id  associated attribute id
  *
- * \return pointer to cs_glob_lagr_post_options
+ * \return     true if output of given attribute is active, false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-cs_lagr_post_options_t *
-cs_lagr_post_get_options(void)
+bool
+cs_lagr_post_get_attr(cs_lagr_attribute_t  attr_id)
 {
-  return &_lagr_post_options;
+  /* Initialize if not done yet */
+
+  if (_lagr_post_options.attr_output[0] == -1) {
+    for (cs_lagr_attribute_t i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
+      _lagr_post_options.attr_output[i] = 0;
+    }
+  }
+
+  bool retval = false;
+  if (_lagr_post_options.attr_output[attr_id] > 0)
+    retval = true;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Activate or deactive postprocessing for a given particle attribute.
+ *
+ * \param[in]  attr_id  associated attribute id
+ * \param[in]  active   true if postprocessing is required, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_post_set_attr(cs_lagr_attribute_t  attr_id,
+                      bool                 active)
+{
+  if (_lagr_post_options_is_set)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s should not be called after %s."),
+              __func__, "cs_lagr_post_init");
+
+  /* Initialize if not done yet */
+
+  if (_lagr_post_options.attr_output[0] == -1) {
+    for (cs_lagr_attribute_t i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
+      _lagr_post_options.attr_output[i] = 0;
+    }
+  }
+
+  cs_lagr_particle_attr_in_range(attr_id);
+
+  if (active == false)
+    _lagr_post_options.attr_output[attr_id] = 0;
+  else
+    _lagr_post_options.attr_output[attr_id] = 1;
 }
 
 /*----------------------------------------------------------------------------*/
