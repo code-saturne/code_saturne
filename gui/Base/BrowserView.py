@@ -454,6 +454,7 @@ Calculation control
     Surface solution control
     Lagrangian solution control
     Profiles
+    Balance by zone
 Calculation management
     Start/Restart
     Performance tuning
@@ -687,6 +688,7 @@ Calculation management
             self.setRowClose(self.tr('Surface solution control'))
             self.setRowClose(self.tr('Lagrangian solution control'))
             self.setRowClose(self.tr('Profiles'))
+            self.setRowClose(self.tr('Balance by zone'))
             return
         else:
             self.setRowOpen(self.tr('Thermophysical models'))
@@ -701,6 +703,7 @@ Calculation management
             self.setRowOpen(self.tr('Surface solution control'))
             self.setRowOpen(self.tr('Lagrangian solution control'))
             self.setRowOpen(self.tr('Profiles'))
+            self.setRowOpen(self.tr('Balance by zone'))
 
         # Steady flow management
 

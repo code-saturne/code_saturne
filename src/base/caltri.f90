@@ -837,6 +837,7 @@ if (itrale.gt.0) then
 
   if (iihmpr.eq.1) then
     call uiprof()
+    call uiexop()
   endif
 
   call cs_f_user_extra_operations &

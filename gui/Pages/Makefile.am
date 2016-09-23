@@ -28,6 +28,8 @@ PYFILES = \
 AnalysisFeaturesView.py \
 AtmosphericFlowsModel.py \
 AtmosphericFlowsView.py \
+BalanceModel.py \
+BalanceView.py \
 BatchRunningModel.py \
 BatchRunningView.py \
 BodyForcesModel.py \
@@ -139,6 +141,7 @@ XMLEditorView.py
 UIFILES = \
 AnalysisFeaturesForm.ui \
 AtmosphericFlowsForm.ui \
+BalanceForm.ui \
 BatchRunningAdvancedOptionsDialogForm.ui \
 BatchRunningDebugOptionsHelpDialogForm.ui \
 BatchRunningForm.ui \

@@ -229,6 +229,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import code_saturne.Pages.ProfilesView as Page
         thisPage = Page.ProfilesView(root, case, stbar)
 
+    elif page_name == tr("Balance by zone"):
+        import code_saturne.Pages.BalanceView as Page
+        thisPage = Page.BalanceView(root, case)
+
     elif page_name == tr("Equation parameters"):
         import code_saturne.Pages.NumericalParamEquationView as Page
         thisPage = Page.NumericalParamEquationView(root, case)

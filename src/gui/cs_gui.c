@@ -95,6 +95,7 @@
 #include "cs_wall_functions.h"
 #include "cs_physical_constants.h"
 #include "cs_stokes_model.h"
+#include "cs_balance_by_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -5047,6 +5048,22 @@ void CS_PROCF (uiprof, UIPROF) (void)
   }
 }
 
+/*----------------------------------------------------------------------------
+ * extra operations
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIEXOP
+ * *****************
+ *
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiexop, UIEXOP)(void)
+{
+    cs_gui_balance_by_zone();
+    cs_gui_pressure_drop_by_zone();
+}
+
 
 /*----------------------------------------------------------------------------
  * groundwater model : read laws for capacity, saturation and permeability
@@ -6349,6 +6366,7 @@ cs_gui_user_scalar_labels(void)
     BFT_FREE(name);
   }
 }
+
 /*----------------------------------------------------------------------------
  * Define user variables through the GUI.
  *----------------------------------------------------------------------------*/
@@ -6414,6 +6432,80 @@ cs_gui_user_variables(void)
   }
 }
 
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Define balance by zone through the GUI.
+ *----------------------------------------------------------------------------*/
 
+void
+cs_gui_balance_by_zone(void)
+{
+  char *path = NULL;
+  char *name = NULL;
+  char *cell_criteria;
+  int n_balance = cs_gui_get_tag_count("/analysis_control/scalar_balances/scalar_balance", 1);
+
+  for (int i = 0; i < n_balance; i++) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2,
+                          "analysis_control",
+                          "scalar_balances");
+
+    cs_xpath_add_element_num(&path, "scalar_balance", i + 1);
+    cs_xpath_add_element(&path, "criteria");
+    cs_xpath_add_function_text(&path);
+    cell_criteria = cs_gui_get_text_value(path);
+    BFT_FREE(path);
+
+    int nb_var = cs_gui_get_tag_count("/analysis_control/scalar_balances/scalar_balance/var_prop", 1);
+    if (nb_var > 0) {
+      for (int ii = 0; ii < nb_var; ii++) {
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 2,
+                              "analysis_control",
+                              "scalar_balances");
+        cs_xpath_add_element_num(&path, "scalar_balance", i + 1);
+        cs_xpath_add_element_num(&path, "var_prop", ii + 1);
+        cs_xpath_add_attribute(&path, "name");
+        name = cs_gui_get_attribute_value(path);
+        BFT_FREE(path);
+
+        cs_balance_by_zone(cell_criteria, name);
+        BFT_FREE(name);
+      }
+    }
+
+    BFT_FREE(cell_criteria);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Define pressure drop through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_pressure_drop_by_zone(void)
+{
+  char *path = NULL;
+  char *cell_criteria;
+  int n_balance = cs_gui_get_tag_count("/analysis_control/scalar_balances/pressure_drop", 1);
+
+  for (int i = 0; i < n_balance; i++) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2,
+                          "analysis_control",
+                          "scalar_balances");
+
+    cs_xpath_add_element_num(&path, "pressure_drop", i + 1);
+    cs_xpath_add_element(&path, "criteria");
+    cs_xpath_add_function_text(&path);
+    cell_criteria = cs_gui_get_text_value(path);
+    BFT_FREE(path);
+
+    cs_pressure_drop_by_zone(cell_criteria);
+
+    BFT_FREE(cell_criteria);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 END_C_DECLS

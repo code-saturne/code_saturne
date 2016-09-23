@@ -396,6 +396,18 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
 void CS_PROCF (uiprof, UIPROF)(void);
 
 /*----------------------------------------------------------------------------
+ * extra operations
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIEXOP
+ * *****************
+ *
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiexop, UIEXOP)(void);
+
+/*----------------------------------------------------------------------------
  * groundwater model : read laws for capacity, saturation and permeability
  *
  * Fortran Interface:
@@ -541,6 +553,20 @@ cs_gui_user_scalar_labels(void);
 
 void
 cs_gui_user_variables(void);
+
+/*----------------------------------------------------------------------------
+ * Define balance by zone through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_balance_by_zone(void);
+
+/*----------------------------------------------------------------------------
+ * Define pressure drop through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_pressure_drop_by_zone(void);
 
 /*----------------------------------------------------------------------------*/
 
