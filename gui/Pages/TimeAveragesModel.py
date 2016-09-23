@@ -120,6 +120,8 @@ class TimeAveragesModel(Model):
                         label1 = label + "[" + str(ii) + "]"
                         if not (node['support'] and node['support'] == "boundary"):
                             self.dicoLabel2Name[label1] = (name, str(ii))
+                    if not (node['support'] and node['support'] == "boundary"):
+                        self.dicoLabel2Name[label] = (name, str(-1))
                 else:
                     if not (node['support'] and node['support'] == "boundary"):
                         if name != 'local_time_step':
@@ -144,7 +146,7 @@ class TimeAveragesModel(Model):
                 def_label = label + str(len(self.getTimeAverageLabels()) + i)
                 i = i + 1
 
-        node = self.node_mean.xmlInitNode('time_average', label = def_label)
+        node = self.node_mean.xmlInitNode('time_average', label = def_label, name = def_label)
         node['id'] = len(self.getTimeAverageLabels())
         ntdmom = self.defaultValues()['start']
         ttdmom = -1.0
@@ -205,6 +207,8 @@ class TimeAveragesModel(Model):
         self.isInList(old_label, self.getTimeAverageLabels())
         node = self.node_mean.xmlInitNode('time_average', label=old_label)
         node['label'] = label
+        # needed for acces by name in GUI (probes, ...)
+        node['name'] = label
 
 
     @Variables.undoLocal
