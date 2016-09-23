@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-09-16 11:54+0200\n"
+"POT-Creation-Date: 2016-09-23 02:19+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -10531,17 +10531,6 @@ msgid ""
 "---------------------------------------------------------------\n"
 msgstr ""
 
-#, c-format
-msgid ""
-"   ** LAGRANGIAN MODULE:\n"
-"   ** Error in cs_lagr.c: inclg < 0 ! \n"
-"---------------------------------------------\n"
-"\n"
-"\n"
-"** Ifac = %d  and inclg = %d\n"
-"-------------------------------------------------\n"
-msgstr ""
-
 msgid ""
 "\n"
 " WARNING: STOP AT LAGRANGIAN MODULE EXECUTION\n"
@@ -10573,20 +10562,6 @@ msgstr ""
 
 msgid "Incorrect parameter values in LAGCLI"
 msgstr ""
-
-#, c-format
-msgid ""
-"Attribute %s is of datatype %s and stride %d\n"
-"but %s and %d were requested."
-msgstr ""
-
-#, c-format
-msgid ""
-"Attribute %s has a number of components equal to %d\n"
-"but component %d is requested."
-msgstr ""
-"L'attribut %s a %d composantes\n"
-"mais la composante %d est demandée."
 
 msgid ""
 "@\n"
@@ -11899,45 +11874,21 @@ msgid ""
 "    Poisson correction for particle velocity:     %s\n"
 msgstr ""
 
-#, c-format
 msgid ""
 "\n"
 "  Trajectory/particle postprocessing options:\n"
-"    fluid velocity seen:                          %s\n"
-"    velocity:                                     %s\n"
-"    residence time:                               %s\n"
-"    diameter:                                     %s\n"
-"    temperature:                                  %s\n"
-"    mass:                                         %s\n"
 msgstr ""
+"\n"
+"  Options de post-traitement de trajectoires et particules:\n"
 
-#, c-format
-msgid ""
-"    shrinking core diameter:                      %s\n"
-"    moisture mass:                                %s\n"
-"    active coal mass:                             %s\n"
-"    coke mass:                                    %s\n"
-msgstr ""
-
-#, c-format
 msgid ""
 "\n"
 "  Statistics for particles/boundary interaction:\n"
-"    compute wall statistics: %s\n"
 msgstr ""
 
 #, c-format
-msgid ""
-"    number of interactions:                       %s\n"
-"    particle mass flow:                           %s\n"
-"    impact angle:                                 %s\n"
-"    impact velocity:                              %s\n"
-"    interactions with fouling:                    %s\n"
-"    fouling coal mass flux:                       %s\n"
-"    fouling coal diameter:                        %s\n"
-"    fouling coal coke fraction:                   %s\n"
-"    number of additional user statistics:         %d\n"
-msgstr ""
+msgid "    number of additional user statistics: %d\n"
+msgstr "    nombre de statistiques utilisateur supplémentaires : %10d\n"
 
 msgid ""
 "\n"
@@ -11991,7 +11942,7 @@ msgid "ln  resuspended                              %8llu   %14.5E\n"
 msgstr ""
 
 #, c-format
-msgid "ln  lost in the location stage               %8llu   %14.5E\n"
+msgid "ln  lost in the location stage               %8llu\n"
 msgstr ""
 
 #, c-format
@@ -12102,6 +12053,20 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid ""
+"Attribute %s is of datatype %s and stride %d\n"
+"but %s and %d were requested."
+msgstr ""
+
+#, c-format
+msgid ""
+"Attribute %s has a number of components equal to %d\n"
+"but component %d is requested."
+msgstr ""
+"L'attribut %s a %d composantes\n"
+"mais la composante %d est demandée."
+
+#, c-format
 msgid "Out-of range attribute type: %d"
 msgstr ""
 
@@ -12115,6 +12080,10 @@ msgid ""
 " unexpected boundary conditions for Phi."
 msgstr ""
 
+#, c-format
+msgid "%s should not be called after %s."
+msgstr "%s ne devrait pas être appelée après %s."
+
 msgid "Error reading main particle restart data."
 msgstr "Erreur à la lecture des données de reprise particulaires."
 
@@ -12126,24 +12095,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"@\n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@\n"
-"@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN\n"
-"@    =========\n"
-"@\n"
-"@    LE TEMPS CARACTERISTIQUE LIE A L'EQUATION\n"
-"@      DIFFERENTIELLE STOCHASTIQUE DE LA VARIABLE\n"
-"@      NUMERO %d UNE VALEUR NON PERMISE (CS_LAGR_SDE).\n"
-"@\n"
-"@    TCARAC DEVRAIT ETRE UN ENTIER STRICTEMENT POSITIF\n"
-"@       IL VAUT ICI TCARAC = %e11.4\n"
-"@       POUR LA PARTICULE NUMERO %d\n"
-"@\n"
-"@  Le calcul ne sera pas execute.\n"
-"@\n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@"
+"The characteristic time for the stochastic differential equation\n"
+"of variable %d should be > 0.\n"
+"\n"
+"Here, for particle %d, its value is %e11.4."
 msgstr ""
 
 #, c-format
