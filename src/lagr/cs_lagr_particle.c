@@ -170,6 +170,8 @@ const char *cs_lagr_attribute_name[] = {
   "CS_LAGR_TURB_STATE_1",
   "CS_LAGR_PRED_VELOCITY",
   "CS_LAGR_PRED_VELOCITY_SEEN",
+  "CS_LAGR_V_GAUSS",
+  "CS_LAGR_BR_GAUSS",
   "CS_LAGR_YPLUS",
   "CS_LAGR_INTERF",
   "CS_LAGR_NEIGHBOR_FACE_ID",
@@ -721,6 +723,18 @@ cs_lagr_particle_attr_initialize(void)
     attr_keys[CS_LAGR_PRED_VELOCITY_SEEN][0] = CS_LAGR_P_RPRP;
     attr_keys[CS_LAGR_PRED_VELOCITY_SEEN][1] = ++pepa_loc_add;
     attr_keys[CS_LAGR_PRED_VELOCITY_SEEN][2] = 3;
+
+    if (cs_glob_lagr_time_scheme->idistu == 1) {
+      attr_keys[CS_LAGR_V_GAUSS][0] = CS_LAGR_P_RPRP;
+      attr_keys[CS_LAGR_V_GAUSS][1] = ++pepa_loc_add;
+      attr_keys[CS_LAGR_V_GAUSS][2] = 9;
+    }
+
+    if (cs_glob_lagr_brownian->lamvbr == 1) {
+      attr_keys[CS_LAGR_BR_GAUSS][0] = CS_LAGR_P_RPRP;
+      attr_keys[CS_LAGR_BR_GAUSS][1] = ++pepa_loc_add;
+      attr_keys[CS_LAGR_BR_GAUSS][2] = 6;
+    }
   }
 
   if (lagr_model->deposition == 1) {

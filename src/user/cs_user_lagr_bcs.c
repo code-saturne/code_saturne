@@ -82,8 +82,6 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
 
   cs_lnum_t  nlelt = mesh->n_b_faces;
 
-  cs_lagr_extra_module_t  *extra = cs_get_lagr_extra_module();
-
   cs_lagr_bdy_condition_t *lagr_bdy_cond = cs_lagr_get_bdy_conditions();
   cs_lagr_coal_comb_t *lag_cc = cs_glob_lagr_coal_comb;
 

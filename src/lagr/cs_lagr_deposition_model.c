@@ -86,7 +86,7 @@ static const double _k_boltz = 1.38e-23;
  *   tdiffu    <->    diffusion phase mean duration
  *   ttotal    <->    tdiffu + tstruc
  *   vstruc    <--    coherent structure velocity
- *   romp      -->    particle density
+ *   romp      <--    particle density
  *   taup      <->    particle relaxation time
  *   kdif      <->    diffusion phase diffusion coefficient
  *   tlag2     <->    diffusion relaxation timescale
@@ -103,6 +103,35 @@ static const double _k_boltz = 1.38e-23;
  *   grpn      <--    wall-normal pressure gradient
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
+
+static void
+_dep_inner_zone_diffusion(cs_real_t *dx,
+                          cs_real_t *vvue,
+                          cs_real_t *vpart,
+                          cs_lnum_t *marko,
+                          cs_real_t  tempf,
+                          cs_real_t *depint,
+                          cs_real_t  dtl,
+                          cs_real_t *tstruc,
+                          cs_real_t *tdiffu,
+                          cs_real_t *ttotal,
+                          cs_real_t *vstruc,
+                          cs_real_t  romp,
+                          cs_real_t  taup,
+                          cs_real_t *kdif,
+                          cs_real_t *tlag2,
+                          cs_real_t *yplus,
+                          cs_real_t  lvisq,
+                          cs_real_t *unif1,
+                          cs_real_t *unif2,
+                          cs_real_t *dintrf,
+                          cs_real_t *rpart,
+                          cs_real_t *kdifcl,
+                          cs_lnum_t *indint,
+                          cs_real_t *gnorm,
+                          cs_real_t *vnorm,
+                          cs_real_t *grpn,
+                          cs_real_t *piiln);
 
 /*=============================================================================
  * Private function definitions
@@ -132,17 +161,17 @@ static const double _k_boltz = 1.38e-23;
  *   vnorm     <--    wall-normal fluid (Eulerian) velocity
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _dep_ejection(cs_lnum_t *marko,
               cs_real_t *depint,
               cs_real_t  dtp,
               cs_real_t *tstruc,
               cs_real_t *vstruc,
-              cs_real_t *lvisq,
+              cs_real_t  lvisq,
               cs_real_t *dx,
               cs_real_t *vvue,
               cs_real_t *vpart,
-              cs_real_t *taup,
+              cs_real_t  taup,
               cs_real_t *yplus,
               cs_real_t *unif1,
               cs_real_t *dintrf,
@@ -156,12 +185,12 @@ _dep_ejection(cs_lnum_t *marko,
 
   /* Gravity and ormal fluid velocity added   */
 
-  *vvue  =  -*vstruc + *gnorm * *taup + *vnorm;
-  *vpart = vpart0 * exp ( -dtp / *taup) + (1 - exp ( -dtp / *taup)) * vvue0;
+  *vvue  =  -*vstruc + *gnorm * taup + *vnorm;
+  *vpart = vpart0 * exp ( -dtp / taup) + (1 - exp ( -dtp / taup)) * vvue0;
   *dx    =   vvue0 * dtp
-           + vvue0 * *taup * (exp ( -dtp / *taup) - 1)
-           + vpart0 * *taup * (1 - exp ( -dtp / *taup));
-  ypaux  = *yplus - *dx / *lvisq;
+           + vvue0 * taup * (exp ( -dtp / taup) - 1)
+           + vpart0 * taup * (1 - exp ( -dtp / taup));
+  ypaux  = *yplus - *dx / lvisq;
 
   /* --------------------------------------------------------
    *    Dissociation of cases by the arrival position
@@ -213,23 +242,23 @@ _dep_ejection(cs_lnum_t *marko,
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _dep_sweep(cs_real_t *dx,
            cs_real_t *vvue,
            cs_real_t *vpart,
            cs_lnum_t *marko,
-           cs_real_t *tempf,
+           cs_real_t  tempf,
            cs_real_t *depint,
            cs_real_t  dtp,
            cs_real_t *tstruc,
            cs_real_t *tdiffu,
            cs_real_t *ttotal,
            cs_real_t *vstruc,
-           cs_real_t *romp,
-           cs_real_t *taup,
+           cs_real_t  romp,
+           cs_real_t  taup,
            cs_real_t *kdif,
            cs_real_t *tlag2,
-           cs_real_t *lvisq,
+           cs_real_t  lvisq,
            cs_real_t *yplus,
            cs_real_t *unif1,
            cs_real_t *unif2,
@@ -247,14 +276,14 @@ _dep_sweep(cs_real_t *dx,
 
   cs_real_t vvue0  = *vvue;
   cs_real_t vpart0 = *vpart;
-  *vvue  = *vstruc + *gnorm * *taup + *vnorm;
+  *vvue  = *vstruc + *gnorm * taup + *vnorm;
 
   /*  Deposition submodel */
 
-  *vpart = vpart0 * exp ( -dtp / *taup) + (1 - exp ( -dtp / *taup)) * vvue0;
-  *dx    =   vvue0 * dtp + vvue0 * *taup * (exp ( -dtp / *taup) - 1)
-           + vpart0 * *taup * (1 - exp ( -dtp / *taup));
-  cs_real_t yplusa = *yplus - *dx / *lvisq;
+  *vpart = vpart0 * exp ( -dtp / taup) + (1 - exp ( -dtp / taup)) * vvue0;
+  *dx    =   vvue0 * dtp + vvue0 * taup * (exp ( -dtp / taup) - 1)
+           + vpart0 * taup * (1 - exp ( -dtp / taup));
+  cs_real_t yplusa = *yplus - *dx / lvisq;
 
   /* --------------------------------------------------------
    *    Dissociation of cases by the arrival position
@@ -265,12 +294,12 @@ _dep_sweep(cs_real_t *dx,
 
   else if (yplusa < *dintrf) {
 
-    cs_real_t dtp1 = (*dintrf - yplusa) * *lvisq / CS_ABS(*vpart);
+    cs_real_t dtp1 = (*dintrf - yplusa) * lvisq / CS_ABS(*vpart);
     *dx *= (*dintrf - *yplus) / (yplusa - *yplus);
     cs_real_t dxaux     = *dx;
     cs_real_t ypluss    = *yplus;
     *yplus    = *dintrf;
-    *vvue     =  -*vstruc + *gnorm * *taup + *vnorm;
+    *vvue     =  -*vstruc + *gnorm * taup + *vnorm;
     *marko    = 0;
     cs_lnum_t indint    = 1;
 
@@ -304,12 +333,12 @@ _dep_sweep(cs_real_t *dx,
 
     indint  = 0;
     *dx    += dxaux;
-    yplusa  = ypluss - *dx / *lvisq;
+    yplusa  = ypluss - *dx / lvisq;
 
     if (yplusa > *dintrf) {
 
       *marko  = 3;
-      *vvue   =  -*vstruc + *gnorm * *taup + *vnorm;
+      *vvue   =  -*vstruc + *gnorm * taup + *vnorm;
       _dep_ejection(marko,
                     depint,
                     dtp1,
@@ -356,7 +385,7 @@ _dep_sweep(cs_real_t *dx,
  *   tdiffu    <->    diffusion phase mean duration
  *   ttotal    <->    tdiffu + tstruc
  *   vstruc    <--    coherent structure velocity
- *   romp      -->    particle density
+ *   romp      <--    particle density
  *   taup      <->    particle relaxation time
  *   kdif      <->    diffusion phase diffusion coefficient
  *   tlag2     <->    diffusion relaxation timescale
@@ -374,23 +403,23 @@ _dep_sweep(cs_real_t *dx,
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _dep_diffusion_phases(cs_real_t *dx,
                       cs_real_t *vvue,
                       cs_real_t *vpart,
                       cs_lnum_t *marko,
-                      cs_real_t *tempf,
+                      cs_real_t  tempf,
                       cs_real_t *depint,
                       cs_real_t  dtl,
                       cs_real_t *tstruc,
                       cs_real_t *tdiffu,
                       cs_real_t *ttotal,
                       cs_real_t *vstruc,
-                      cs_real_t *romp,
-                      cs_real_t *taup,
+                      cs_real_t  romp,
+                      cs_real_t  taup,
                       cs_real_t *kdif,
                       cs_real_t *tlag2,
-                      cs_real_t *lvisq,
+                      cs_real_t  lvisq,
                       cs_real_t *yplus,
                       cs_real_t *unif1,
                       cs_real_t *unif2,
@@ -422,22 +451,22 @@ _dep_diffusion_phases(cs_real_t *dx,
 
   tci = *piiln * *tlag2 + *vnorm;
 
-  force = (- *grpn / *romp + *gnorm) * *taup;
+  force = (- *grpn / romp + *gnorm) * taup;
 
   /* --> Coefficients and deterministic terms computation
    *     ------------------------------------------------    */
 
-  aux1 = exp ( -dtl / *taup);
+  aux1 = exp ( -dtl / taup);
   aux2 = exp ( -dtl / *tlag2);
-  aux3 = *tlag2 / (*tlag2 - *taup);
-  aux4 = *tlag2 / (*tlag2 + *taup);
+  aux3 = *tlag2 / (*tlag2 - taup);
+  aux4 = *tlag2 / (*tlag2 + taup);
   aux5 = *tlag2 * (1.0 - aux2);
   aux6 = pow (*kdif, 2) * *tlag2;
-  aux7 = *tlag2 - *taup;
+  aux7 = *tlag2 - taup;
   aux8 = pow (*kdif, 2) * pow (aux3, 2);
 
   /* --> terms for the trajectory   */
-  aa     = *taup * (1.0 - aux1);
+  aa     = taup * (1.0 - aux1);
   bb     = (aux5 - aa) * aux3;
   cc     = dtl - aa - bb;
   ter1x  = aa * vpart0;
@@ -462,10 +491,10 @@ _dep_diffusion_phases(cs_real_t *dx,
   gama2  = 0.5 * (1.0 - aux2 * aux2);
   omegam = 0.5 * aux4 * (aux5 - aux2 * aa) - 0.5 * aux2 * bb;
   omegam = omegam * sqrt (aux6);
-  omega2 =   aux7 * (aux7 * dtl - 2.0 * (*tlag2 * aux5 - *taup * aa))
+  omega2 =   aux7 * (aux7 * dtl - 2.0 * (*tlag2 * aux5 - taup * aa))
            + 0.5 * *tlag2 * *tlag2 * aux5 * (1.0 + aux2)
-           + 0.5 * *taup * *taup * aa * (1.0 + aux1)
-           - 2.0 * aux4 * *tlag2 * *taup * *taup * (1.0 - aux1 * aux2);
+           + 0.5 * taup * taup * aa * (1.0 + aux1)
+           - 2.0 * aux4 * *tlag2 * taup * taup * (1.0 - aux1 * aux2);
   omega2      = aux8 * omega2;
 
   if (CS_ABS(gama2) > cs_math_epzero) {
@@ -490,14 +519,14 @@ _dep_diffusion_phases(cs_real_t *dx,
 
   /* --> particles velocity Integral     */
   aux9   = 0.5 * *tlag2 * (1.0 - aux2 * aux2);
-  aux10  = 0.5 * *taup * (1.0 - aux1 * aux1);
-  aux11  = *taup * *tlag2 * (1.0 - aux1 * aux2) / (*taup + *tlag2);
+  aux10  = 0.5 * taup * (1.0 - aux1 * aux1);
+  aux11  = taup * *tlag2 * (1.0 - aux1 * aux2) / (taup + *tlag2);
 
   grga2  = (aux9 - 2.0 * aux11 + aux10) * aux8;
 
   gagam  = (aux9 - aux11) * (aux8 / aux3);
 
-  gaome  = ((*tlag2 - *taup) * (aux5 - aa) - *tlag2 * aux9 - *taup * aux10 + (*tlag2 + *taup) * aux11) * aux8;
+  gaome  = ((*tlag2 - taup) * (aux5 - aa) - *tlag2 * aux9 - taup * aux10 + (*tlag2 + taup) * aux11) * aux8;
 
   if (p11 > cs_math_epzero)
     p31  = gagam / p11;
@@ -525,7 +554,7 @@ _dep_diffusion_phases(cs_real_t *dx,
 
   /* --> particles velocity    */
   *vpart = ter1p + ter2p + ter3p + ter4p + ter5p;
-  yplusa = *yplus - *dx / *lvisq;
+  yplusa = *yplus - *dx / lvisq;
 
   /* --------------------------------------------------
    *  Dissociation of cases by the arrival position
@@ -539,7 +568,7 @@ _dep_diffusion_phases(cs_real_t *dx,
     *vvue  = sqrt (pow ((*kdifcl), 2) * *tlag2 / 2.0) * sqrt (2.0 * cs_math_pi) * 0.5;
     *dx   *= (*dintrf - *yplus) / (yplusa - *yplus);
     dxaux  = *dx;
-    *vpart = (*yplus - yplusa) * *lvisq / dtl;
+    *vpart = (*yplus - yplusa) * lvisq / dtl;
     dtp1   = dtl * (*dintrf - yplusa) / (*yplus - yplusa);
     *yplus = *dintrf;
     _dep_inner_zone_diffusion(dx,
@@ -580,13 +609,13 @@ _dep_diffusion_phases(cs_real_t *dx,
       if (*unif2 < 0.5) {
 
         *marko = 1;
-        *vvue  = *vstruc + *gnorm * *taup + *vnorm;
+        *vvue  = *vstruc + *gnorm * taup + *vnorm;
 
       }
       else {
 
         *marko = 3;
-        *vvue  =  -*vstruc + *gnorm * *taup + *vnorm;
+        *vvue  =  -*vstruc + *gnorm * taup + *vnorm;
 
       }
     }
@@ -628,24 +657,24 @@ _dep_diffusion_phases(cs_real_t *dx,
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _dep_inner_zone_diffusion(cs_real_t *dx,
                           cs_real_t *vvue,
                           cs_real_t *vpart,
                           cs_lnum_t *marko,
-                          cs_real_t *tempf,
+                          cs_real_t  tempf,
                           cs_real_t *depint,
                           cs_real_t  dtl,
                           cs_real_t *tstruc,
                           cs_real_t *tdiffu,
                           cs_real_t *ttotal,
                           cs_real_t *vstruc,
-                          cs_real_t *romp,
-                          cs_real_t *taup,
+                          cs_real_t  romp,
+                          cs_real_t  taup,
                           cs_real_t *kdif,
                           cs_real_t *tlag2,
                           cs_real_t *yplus,
-                          cs_real_t *lvisq,
+                          cs_real_t  lvisq,
                           cs_real_t *unif1,
                           cs_real_t *unif2,
                           cs_real_t *dintrf,
@@ -661,7 +690,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   cs_random_normal(3, vagaus);
   cs_random_normal(2, vagausbr);
 
-  cs_real_t force  = *gnorm * *taup;
+  cs_real_t force  = *gnorm * taup;
   cs_real_t vvue0  = *vvue;
   cs_real_t vpart0 = *vpart;
 
@@ -671,7 +700,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
     argt = cs_math_pi * *yplus / 5.0;
     kaux = *kdifcl * 0.5 * (1.0 - cos (argt));
     tci  =  -pow (*tlag2, 2) * 0.5 * pow (*kdifcl, 2) * cs_math_pi * sin (argt)
-           * (1.0 - cos (argt)) / (2.0 * 5.0) / *lvisq;
+           * (1.0 - cos (argt)) / (2.0 * 5.0) / lvisq;
 
   }
   else {
@@ -686,19 +715,19 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
    *  Brownian motion
    * -----------------------------------------------    */
 
-  cs_real_t mpart    = 4.0 / 3.0 * cs_math_pi * pow (*rpart, 3) * *romp;
-  cs_real_t kdifbr   = sqrt (2.0 * _k_boltz * *tempf / (mpart * *taup));
-  cs_real_t kdifbrtp = kdifbr * *taup;
+  cs_real_t mpart    = 4.0 / 3.0 * cs_math_pi * pow (*rpart, 3) * romp;
+  cs_real_t kdifbr   = sqrt (2.0 * _k_boltz * tempf / (mpart * taup));
+  cs_real_t kdifbrtp = kdifbr * taup;
 
   /* -----------------------------------------------    */
 
   cs_real_t dtstl  = dtl / *tlag2;
-  cs_real_t dtstp  = dtl / *taup;
-  cs_real_t tlmtp  = *tlag2 - *taup;
-  cs_real_t tlptp  = *tlag2 + *taup;
-  cs_real_t tltp   = *tlag2 * *taup;
+  cs_real_t dtstp  = dtl / taup;
+  cs_real_t tlmtp  = *tlag2 - taup;
+  cs_real_t tlptp  = *tlag2 + taup;
+  cs_real_t tltp   = *tlag2 * taup;
   cs_real_t tl2    = pow (*tlag2, 2);
-  cs_real_t tp2    = pow (*taup, 2);
+  cs_real_t tp2    = pow (taup, 2);
   cs_real_t thet   = *tlag2 / tlmtp;
   cs_real_t the2   = pow (thet, 2);
   cs_real_t etl    = exp ( -dtstl);
@@ -710,7 +739,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   cs_real_t l3     = 1.0 - etl * etp;
   cs_real_t kaux2  = pow (kaux, 2);
   cs_real_t k2the2 = kaux2 * the2;
-  cs_real_t aa1    = *taup * l1p;
+  cs_real_t aa1    = taup * l1p;
   cs_real_t bb1    = thet * (*tlag2 * l1l - aa1);
   cs_real_t cc1    = dtl - aa1 - bb1;
   cs_real_t dd1    = thet * (etl - etp);
@@ -722,7 +751,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
 
   cs_real_t xiubr  = 0.5 * pow ((kdifbrtp * l1p), 2);
   cs_real_t ucarbr = kdifbrtp * kdifbr * 0.5 * l2p;
-  cs_real_t xcarbr = pow (kdifbrtp, 2) * (dtl - l1p * (2.0 + l1p) * 0.5 * *taup);
+  cs_real_t xcarbr = pow (kdifbrtp, 2) * (dtl - l1p * (2.0 + l1p) * 0.5 * taup);
   cs_real_t ubr    = sqrt (CS_MAX(ucarbr, 0.0));
 
   /* ---------------------------------------------------
@@ -739,9 +768,9 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
 
   cs_real_t pgam2  = 0.5 * kaux2 * *tlag2 * l2l;
   cs_real_t ggam2  = the2 * pgam2 + k2the2 * (  l3 * ( -2 * tltp / tlptp)
-                                              + l2p * (*taup * 0.5));
+                                              + l2p * (taup * 0.5));
   cs_real_t ome2   = k2the2 * ( dtl * pow (tlmtp, 2) + l2l * (tl2 * *tlag2 * 0.5)
-                               + l2p * (tp2 * *taup * 0.5)
+                               + l2p * (tp2 * taup * 0.5)
                                + l1l * ( -2.0 * tl2 * tlmtp)
                                + l1p * (2.0 * tp2 * tlmtp)
                                + l3 * ( -2.0 * (pow (tltp, 2)) / tlptp));
@@ -749,7 +778,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   cs_real_t pgagga = thet * (pgam2 - kaux2 * tltp / tlptp * l3);
   cs_real_t pgaome = thet * *tlag2 * ( -pgam2 + kaux2 * (  l1l * tlmtp
                                                          + l3 * tp2 /  tlptp));
-  cs_real_t ggaome = k2the2 * (  tlmtp * ( *tlag2 * l1l + l1p * ( -*taup))
+  cs_real_t ggaome = k2the2 * (  tlmtp * ( *tlag2 * l1l + l1p * ( -taup))
                                + l2l * ( -tl2 * 0.5)
                                + l2p * ( -tp2 * 0.5) + l3 * tltp);
 
@@ -822,9 +851,9 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   *vvue  = *vvue + terf;
   *vpart = *vpart + terp + terpbr;
   *dx    = *dx + terx + terxbr;
-  cs_real_t yplusa = *yplus - *dx / *lvisq;
+  cs_real_t yplusa = *yplus - *dx / lvisq;
 
-  if ((yplusa * *lvisq) < *rpart) {
+  if ((yplusa * lvisq) < *rpart) {
 
     *dx  = *dx + 2 * *rpart;
     return;
@@ -837,7 +866,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
     *vvue  =  -sqrt(pow ((*kdifcl * (*ttotal / *tdiffu)), 2) * *tlag2 / 2.0)
              * sqrt (2.0 * cs_math_pi) * 0.5;
     *dx   *= (*dintrf - *yplus) / (yplusa - *yplus);
-    *vpart = (*yplus - yplusa) * *lvisq / dtl;
+    *vpart = (*yplus - yplusa) * lvisq / dtl;
     cs_real_t dxaux  = *dx;
     cs_real_t dtp1   = dtl * (*dintrf - yplusa) / (*yplus - yplusa);
     *yplus = *dintrf;
@@ -885,7 +914,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
         kauxn1  = *kdifcl * 0.5 * (1.0 - cos (argtn1));
         tcin1   =  cs_math_sq(*tlag2) * 0.5 * cs_math_sq(*kdifcl)
                    * cs_math_pi * sin (argtn1) * (1.0 - cos (argtn1))
-                   / (2.0 * 5.0) / *lvisq;
+                   / (2.0 * 5.0) / lvisq;
       }
       else {
         kauxn1     = *kdifcl;
@@ -927,7 +956,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
 
       pgam2   = 0.5 * ketoi2 * *tlag2 * l2l;
       ggam2   = the2 * (pgam2 + ketoi2 * (l3 * ( -2.0 * tltp / tlptp) + l2p *
-                                          *taup * 0.5));
+                                          taup * 0.5));
       pgagga  = thet * (pgam2 - ketoi2 * tltp / tlptp * l3);
 
       /* -----------------------------------------------------
@@ -997,15 +1026,15 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
 void
 cs_lagr_deposition(cs_real_t  dtp,
                    cs_lnum_t *marko,
-                   cs_real_t *tempf,
-                   cs_real_t *lvisq,
-                   cs_real_t *tvisq,
+                   cs_real_t  tempf,
+                   cs_real_t  lvisq,
+                   cs_real_t  tvisq,
                    cs_real_t *vpart,
                    cs_real_t *vvue,
                    cs_real_t *dx,
                    cs_real_t *diamp,
-                   cs_real_t *romp,
-                   cs_real_t *taup,
+                   cs_real_t  romp,
+                   cs_real_t  taup,
                    cs_real_t *yplus,
                    cs_real_t *dintrf,
                    cs_real_t *enertur,
@@ -1025,9 +1054,9 @@ cs_lagr_deposition(cs_real_t  dtp,
   /* The temporal parameters estimated from the DNS computations  */
   /* and written in adimensional form    */
 
-  cs_real_t tlag2  = 3.0 * *tvisq;
-  cs_real_t tstruc = 30.0 * *tvisq;
-  cs_real_t tdiffu = 10.0 * *tvisq;
+  cs_real_t tlag2  = 3.0 * tvisq;
+  cs_real_t tstruc = 30.0 * tvisq;
+  cs_real_t tdiffu = 10.0 * tvisq;
   cs_real_t ttotal = tstruc + tdiffu;
 
   /* The velocity Vstruc is estimated as the square-root of turbulent kinetic

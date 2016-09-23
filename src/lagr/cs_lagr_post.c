@@ -91,7 +91,6 @@ typedef struct {
 static cs_post_lagr_input_t  _lagr_input;
 static bool                  _lagr_input_is_set = false;
 
-
 /* Postprocessing options structure and associated pointer */
 
 static cs_lagr_post_options_t  _lagr_post_options

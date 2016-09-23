@@ -1839,9 +1839,21 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
           for (i = 0; i < particles->n_particles; i++) {
 
-            if (CS_LAGR_PART_TREATED
-                <= _get_tracking_info(particles, i)->state
-                <= CS_LAGR_PART_TO_SYNC)
+            /* FIXME wrong test (don't know what the intent was,
+               but compiler warns result may not be as intended)
+
+               was:
+
+               if (CS_LAGR_PART_TREATED
+                   <= _get_tracking_info(particles, i)->state
+                   <= CS_LAGR_PART_TO_SYNC)
+                 continue;
+
+               evaluates to expression below:
+            */
+
+            if (  CS_LAGR_PART_TREATED
+                > _get_tracking_info(particles, i)->state)
               continue;
 
             cur_part = (void *)(particles->p_buffer + p_am->extents * i);

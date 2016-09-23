@@ -121,7 +121,7 @@ static const cs_real_t  _tkelvi = 273.15;
 static void
 _lagtmp(cs_lnum_t        npt,
         cs_real_t        layer_vol,
-        cs_real_t        tempct[],
+        const cs_real_t  tempct[],
         const cs_real_t  radius[],
         const cs_real_t  mlayer[],
         const cs_real_t  phith[],
@@ -391,15 +391,15 @@ _lagtmp(cs_lnum_t        npt,
  *---------------------------------------------------------------------*/
 
 static void
-_lagsec(cs_lnum_t   npt,
-        cs_real_t   layer_vol,
-        cs_real_t   mwat_max,
-        cs_real_t   sherw,
-        cs_real_t   radius[],
-        cs_real_t   tempct[],
-        cs_real_t   mlayer[],
-        cs_real_t   mwater[],
-        cs_real_t   fwat[])
+_lagsec(cs_lnum_t         npt,
+        cs_real_t         layer_vol,
+        cs_real_t         mwat_max,
+        cs_real_t         sherw,
+        cs_real_t         radius[],
+        const cs_real_t   tempct[],
+        cs_real_t         mlayer[],
+        cs_real_t         mwater[],
+        cs_real_t         fwat[])
 {
   /* Particles management */
 
@@ -719,7 +719,7 @@ _lagidp(void)
     if (cell_id >= 0) {
 
       tcarac[npt] = 1.0;
-      pip[npt]    = cs_lagr_particle_get_real(particle, p_am,CS_LAGR_DIAMETER);
+      pip[npt]    = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
 
     }
 
@@ -736,7 +736,7 @@ _lagidp(void)
  *------------------------------------------------------------------------*/
 
 static void
-_lagitp(cs_real_t *tempct)
+_lagitp(const cs_real_t  tempct[])
 {
 
   /* Particles management */
@@ -1037,10 +1037,10 @@ _lagitf(cs_lagr_attribute_t  *iattr)
  *------------------------------------------------------------------------*/
 
 static void
-_lagich(cs_real_t  *tempct,
-        cs_real_t  *cpgd1,
-        cs_real_t  *cpgd2,
-        cs_real_t  *cpght)
+_lagich(const cs_real_t   tempct[],
+        cs_real_t        *cpgd1,
+        cs_real_t        *cpgd2,
+        cs_real_t        *cpght)
 {
   /* Particles management */
 
@@ -1239,7 +1239,7 @@ _lagich(cs_real_t  *tempct,
       /* --- Calcul du flux de vapeur pour la particule */
 
       cs_real_t fwat[nlayer];
-      _lagsec(npt, layer_vol, mwat_max, sherw, tempct, radius, mlayer, mwater, fwat);
+      _lagsec(npt, layer_vol, mwat_max, sherw, radius, tempct, mlayer, mwater, fwat);
 
       /* ==============================================================================
        * 5. Calcul des constantes de vitesses SPK1 et SPK2 du transfert
@@ -1698,13 +1698,7 @@ _lagich(cs_real_t  *tempct,
  * - variables related to coal grains (Temp, MCH, MCK)
  * - additional user parameters
  *
- * \param[in] iprev         time step indicator for fields
- *                            0: use fields at current time step
- *                            1: use fields at previous time step
- * \param[in] dt            time step (per cell)
- * \param[in] taup          dynamic characteristic time
- * \param[in] tlag          fluid characteristic time
- * \param[in] tempct        thermal characteristic time
+ * \param[in]  tempct       thermal characteristic time
  * \param[out] cpgd1,cpgd2  devolatilisation terms 1 and 2
  * \param[out] cpght        heterogeneos combusion terms (coal with thermal
  *                          return coupling)
@@ -1712,10 +1706,7 @@ _lagich(cs_real_t  *tempct,
 /*------------------------------------------------------------------------- */
 
 void
-cs_lagr_sde_model(const cs_real_t  dt[],
-                  cs_real_t        taup[],
-                  cs_real_3_t      tlag[],
-                  cs_real_t        tempct[],
+cs_lagr_sde_model(const cs_real_t  tempct[],
                   cs_real_t        cpgd1[],
                   cs_real_t        cpgd2[],
                   cs_real_t        cpght[])

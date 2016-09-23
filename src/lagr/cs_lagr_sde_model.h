@@ -61,13 +61,7 @@ BEGIN_C_DECLS
  * - variables related to coal grains (Temp, MCH, MCK)
  * - additional user parameters
  *
- * \param[in] iprev         time step indicator for fields
- *                            0: use fields at current time step
- *                            1: use fields at previous time step
- * \param[in] dt            time step (per cell)
- * \param[in] taup          dynamic characteristic time
- * \param[in] tlag          fluid characteristic time
- * \param[in] tempct        thermal characteristic time
+ * \param[in]  tempct       thermal characteristic time
  * \param[out] cpgd1,cpgd2  devolatilisation terms 1 and 2
  * \param[out] cpght        heterogeneos combusion terms (coal with thermal
  *                          return coupling)
@@ -75,10 +69,7 @@ BEGIN_C_DECLS
 /*------------------------------------------------------------------------- */
 
 void
-cs_lagr_sde_model(const cs_real_t  dt[],
-                  cs_real_t        taup[],
-                  cs_real_3_t      tlag[],
-                  cs_real_t        tempct[],
+cs_lagr_sde_model(const cs_real_t  tempct[],
                   cs_real_t        cpgd1[],
                   cs_real_t        cpgd2[],
                   cs_real_t        cpght[]);

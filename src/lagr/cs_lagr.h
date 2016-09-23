@@ -82,9 +82,6 @@ typedef struct {
   int nflagm;  /*!< maximum number of boundary zones */
   int ndlaim;  /*!< maximum number of particle integer data */
 
-  int nvgaus; /*!< number of gaussian random variables by particle */
-  int nbrgau;
-
   int ncharm2; /*!< maximum number of coal classes */
   int nlayer;  /*!< maximal number of coal layers */
 

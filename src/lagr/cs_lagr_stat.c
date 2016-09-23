@@ -534,6 +534,97 @@ _mwa_const_val(const cs_lagr_moment_wa_t  *mwa)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return number of elements associated with a weight accumulator.
+ *
+ * \return  number of elements associated with a weight accumulator.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_n_w_elts(const cs_lagr_moment_wa_t  *mwa)
+{
+  cs_lnum_t n_w_elts = 1;
+
+  if (mwa->location_id != CS_MESH_LOCATION_NONE)
+    n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
+
+  return n_w_elts;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Statistics initialization
+ *
+ * Reset moment to zero
+ * Called once for stationnary moments,
+ *        at every step for non-stationnary statistics
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cs_lagr_moment_reset(cs_lagr_moment_t *mt)
+{
+  cs_field_t *f = cs_field_by_id(mt->f_id);
+
+  cs_field_set_values(f, 0.);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize weight accumulator if required and reset to 0
+ *
+ * \param[in, out]  mwa  moment weight accumulator
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_ensure_init_wa(cs_lagr_moment_wa_t  *mwa)
+{
+  if (   mwa->location_id != CS_MESH_LOCATION_NONE
+      && mwa->val == NULL
+      && mwa->f_id < 0) {
+
+    cs_lnum_t n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
+    BFT_MALLOC(mwa->val, n_w_elts, cs_real_t);
+    for (cs_lnum_t i = 0; i < n_w_elts; i++)
+      mwa->val[i] = 0.;
+
+  }
+
+  else if (cs_glob_lagr_time_scheme->isttio == 0) {
+
+    cs_lnum_t n_w_elts = _n_w_elts(mwa);
+    cs_real_t *val = _mwa_val(mwa);
+    for (cs_lnum_t i = 0; i < n_w_elts; i++)
+      val[i] = 0.;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize moment value if required
+ *
+ * \param[in, out]  mt  moment
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_ensure_init_moment(cs_lagr_moment_t  *mt)
+{
+  assert(mt->f_id > 0);
+
+  cs_field_t *f = cs_field_by_id(mt->f_id);
+
+  if (f->vals[0] == NULL)
+    cs_field_allocate_values(f);
+
+  else if (cs_glob_lagr_time_scheme->isttio == 0)
+    _cs_lagr_moment_reset(mt);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return pointer to time step values.
  *
  * \return pointer to time step values
@@ -1024,6 +1115,7 @@ _cs_lagr_moment_restart_read(void)
     if (mwa->restart_id > -1 && mwa->location_id > CS_MESH_LOCATION_NONE) {
       char s[64];
       snprintf(s, 64, "lagr_stats:wa:%02d:val", mwa->restart_id);
+      _ensure_init_wa(mwa);
       retcode = cs_restart_read_section(cs_lag_stat_restart,
                                         s,
                                         mwa->location_id,
@@ -1037,6 +1129,7 @@ _cs_lagr_moment_restart_read(void)
   for (int i = 0; i < _n_lagr_stats; i++) {
     cs_lagr_moment_t *mt = _lagr_stats + i;
     if (mt->restart_id > -1) {
+      _ensure_init_moment(mt);
       cs_real_t *val = mt->val;
       if (mt->f_id > -1) {
         cs_field_t *f = cs_field_by_id(mt->f_id);
@@ -1362,75 +1455,6 @@ _find_or_add_moment(int                       location_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Statistics initialization
- *
- * Reset moment to zero
- * Called once for stationnary moments,
- *        at every step for non-stationnary statistics
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_cs_lagr_moment_reset(cs_lagr_moment_t *mt)
-{
-  cs_field_t *f = cs_field_by_id(mt->f_id);
-
-  cs_field_set_values(f, 0.);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return number of elements associated with a weight accumulator.
- *
- * \return  number of elements associated with a weight accumulator.
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_lnum_t
-_n_w_elts(const cs_lagr_moment_wa_t  *mwa)
-{
-  cs_lnum_t n_w_elts = 1;
-
-  if (mwa->location_id != CS_MESH_LOCATION_NONE)
-    n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
-
-  return n_w_elts;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize weight accumulator if required and reset to 0
- *
- * \param[in, out]  mwa  moment weight accumulator
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_ensure_init_wa(cs_lagr_moment_wa_t  *mwa)
-{
-  if (   mwa->location_id != CS_MESH_LOCATION_NONE
-      && mwa->val == NULL
-      && mwa->f_id < 0) {
-
-    cs_lnum_t n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
-    BFT_MALLOC(mwa->val, n_w_elts, cs_real_t);
-    for (cs_lnum_t i = 0; i < n_w_elts; i++)
-      mwa->val[i] = 0.;
-
-  }
-
-  else if (cs_glob_lagr_time_scheme->isttio == 0) {
-
-    cs_lnum_t n_w_elts = _n_w_elts(mwa);
-    cs_real_t *val = _mwa_val(mwa);
-    for (cs_lnum_t i = 0; i < n_w_elts; i++)
-      val[i] = 0.;
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Update weight accumulator for a mesh-based weight array
  *
  * \param[in, out]   mwa  moment weight accumulator
@@ -1451,28 +1475,6 @@ _update_wa_m(cs_lagr_moment_wa_t  *mwa,
     for (cs_lnum_t i = 0; i < n_w_elts; i++)
       mwa->val[i] += w[i];
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize moment value if required
- *
- * \param[in, out]  mt  moment
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_ensure_init_moment(cs_lagr_moment_t  *mt)
-{
-  assert(mt->f_id > 0);
-
-  cs_field_t *f = cs_field_by_id(mt->f_id);
-
-  if (f->vals[0] == NULL)
-    cs_field_allocate_values(f);
-
-  else if (cs_glob_lagr_time_scheme->isttio == 0)
-    _cs_lagr_moment_reset(mt);
 }
 
 /*----------------------------------------------------------------------------*/

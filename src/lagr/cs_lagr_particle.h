@@ -71,6 +71,8 @@ typedef enum {
   CS_LAGR_TURB_STATE_1,        /* turbulence characteristics of first pass */
   CS_LAGR_PRED_VELOCITY,       /* 1st step prediction for particle velocity */
   CS_LAGR_PRED_VELOCITY_SEEN,  /* 1st step prediction for relative velocity */
+  CS_LAGR_V_GAUSS,             /* 1st step Gaussian variable */
+  CS_LAGR_BR_GAUSS,            /* 1st step Brownian motion Gaussian variable */
 
   /* Deposition submodel additional parameters */
 

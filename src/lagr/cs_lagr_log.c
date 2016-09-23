@@ -521,7 +521,9 @@ cs_lagr_log_iteration(void)
   cs_lagr_bdy_condition_t *bdy_cond = cs_lagr_get_bdy_conditions();
 
   /* TODO log for internal zone */
+#if 0
   cs_lagr_internal_condition_t *internal_cond = cs_lagr_get_internal_conditions();
+#endif
 
   for (cs_lnum_t ii = 0; ii < bdy_cond->n_b_zones; ii++) {
 

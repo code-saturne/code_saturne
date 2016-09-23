@@ -128,8 +128,6 @@ cs_lagr_const_dim_t _lagr_const_dim
   = {.nusbrd = 10,
      .nflagm = 100,
      .ndlaim = 10,
-     .nvgaus = 9,
-     .nbrgau = 6,
      .ncharm2 = 5,
      .nlayer = 5};
 
@@ -219,7 +217,7 @@ cs_lagr_clogging_model_t *cs_glob_lagr_clogging_model
 /* lagr clogging model structure and associated pointer */
 static cs_lagr_consolidation_model_t _cs_glob_lagr_consolidation_model = {0, 0, 0, 0};
 cs_lagr_consolidation_model_t *cs_glob_lagr_consolidation_model
-   = &_cs_glob_lagr_clogging_model;
+   = &_cs_glob_lagr_consolidation_model;
 
 /*! current time step status */
 
@@ -1370,7 +1368,7 @@ cs_lagr_set_zone_class_foul_index(int        iclass,
  * \return
  *   pointer to particle class and boundary zone structure of parameters
  */
-/* ----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 cs_lagr_zone_class_data_t *
 cs_lagr_get_zone_class_data(int   iclass,
@@ -1774,7 +1772,7 @@ cs_get_lagr_extra_module(void)
   return &_lagr_extra_module;
 }
 
-/*--------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * Execute one time step of the Lagrangian model.
  *
  * This is the main function for that model.
@@ -1782,7 +1780,7 @@ cs_get_lagr_extra_module(void)
  *  parameters:
  *    itypfb <-- boundary face types
  *    dt     <-- time step (per cell)
- *-------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 void
 cs_lagr_solve_time_step(const int         itypfb[],
@@ -1805,17 +1803,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
   cs_real_t *surfbo = cs_glob_mesh_quantities->b_face_surf;
   cs_real_t *surfbn = cs_glob_mesh_quantities->b_face_normal;
 
-  /* ====================================================================   */
-  /* 0.  GESTION MEMOIRE ET COMPTEUR DE PASSAGE    */
-  /* ====================================================================   */
-
   /* Allocate temporary arrays */
   cs_real_3_t *gradpr;
   BFT_MALLOC(gradpr, ncelet, cs_real_3_t);
-  cs_real_t *w1, *w2, *w3;
+  cs_real_t *w1, *w2;
   BFT_MALLOC(w1, ncelet, cs_real_t);
   BFT_MALLOC(w2, ncelet, cs_real_t);
-  BFT_MALLOC(w3, ncelet, cs_real_t);
 
   /* Allocate other arrays depending on user options    */
   cs_real_33_t *gradvf;
@@ -2112,63 +2105,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
     /* 5. PROGRESSION DES PARTICULES  */
     /* ====================================================================   */
 
-    /* Allocate temporay arrays  */
-    cs_real_33_t *vagaus;
-    BFT_MALLOC(vagaus, p_set->n_particles, cs_real_33_t);
-
-    /* Random values   */
-    if (cs_glob_lagr_time_scheme->idistu == 1) {
-
-      if (p_set->n_particles > 0) {
-
-        for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
-
-          for (cs_lnum_t ivf = 0; ivf < 3; ivf++) {
-
-            for (cs_lnum_t id = 0; id < 3; id++)
-
-              cs_random_normal(1, &(vagaus[ip][id][ivf]));
-
-          }
-
-        }
-
-      }
-
-    }
-    else {
-
-      for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
-
-        for (cs_lnum_t ivf = 0; ivf < 3; ivf++) {
-
-          for (cs_lnum_t id = 0; id < 3; id++)
-
-            vagaus[ip][id][ivf] = 0.0;
-
-        }
-
-      }
-
-    }
-
-    cs_real_t *brgaus = NULL;
-
-    /* Brownian movement */
-
-    if (cs_glob_lagr_brownian->lamvbr == 1) {
-
-      BFT_MALLOC(brgaus, cs_glob_lagr_const_dim->nbrgau * p_set->n_particles, cs_real_t);
-
-      for (cs_lnum_t ivf = 0; ivf < cs_glob_lagr_const_dim->nbrgau; ivf++) {
-
-        for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++)
-          cs_random_normal(1, &(brgaus[ip * cs_glob_lagr_const_dim->nbrgau + ivf]));
-
-      }
-
-    }
-
     bool go_on = true;
     while (go_on) {
 
@@ -2269,18 +2205,16 @@ cs_lagr_solve_time_step(const int         itypfb[],
       /*     POSITION, VITESSE FLUIDE, VITESSE PARTICULE    */
 
       cs_lagr_sde(cs_glob_lagr_time_step->dtp,
-                  taup,
-                  tlag,
-                  piil,
-                  bx,
+                  (const cs_real_t *)taup,
+                  (const cs_real_3_t *)tlag,
+                  (const cs_real_3_t *)piil,
+                  (const cs_real_33_t *)bx,
                   tsfext,
-                  gradpr,
-                  gradvf,
+                  (const cs_real_3_t *)gradpr,
+                  (const cs_real_33_t *)gradvf,
                   terbru,
                   vislen,
-                  vagaus,
-                  brgaus,
-                 &nresnew );
+                  &nresnew);
 
       /* Save bx values associated with particles for next pass */
 
@@ -2311,7 +2245,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
           /* Use fields at current time step     */
           iprev   = 0;
 
-        cs_lagr_sde_model(dt, taup, tlag, tempct, cpgd1, cpgd2, cpght);
+        cs_lagr_sde_model(tempct, cpgd1, cpgd2, cpght);
 
       }
 
@@ -2321,14 +2255,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
       if (cs_glob_lagr_model->n_user_variables > 0)
         cs_user_lagr_sde(dt, taup, tlag, tempct);
 
-      /* ====================================================================   */
-      /* 6.  Couplage Retour - Calcul des termes sources    */
-      /* ====================================================================   */
+      /* Reverse coupling: compute source terms
+         -------------------------------------- */
 
       if (   cs_glob_lagr_time_scheme->iilagr == 2
           && cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order)
         cs_lagr_coupling(taup, tempct, tsfext, cpgd1, cpgd2, cpght, w1, w2);
-
 
       /* Deallocate arrays whose size is based on p_set->n_particles
          (which may change next) */
@@ -2342,13 +2274,11 @@ cs_lagr_solve_time_step(const int         itypfb[],
         BFT_FREE(tsfext);
 
       if (   cs_glob_lagr_time_scheme->iilagr == 2
-             && lagr_model->physical_model == 2
-             && cs_glob_lagr_source_terms->ltsthe == 1) {
-
+          && lagr_model->physical_model == 2
+          && cs_glob_lagr_source_terms->ltsthe == 1) {
         BFT_FREE(cpgd1);
         BFT_FREE(cpgd2);
         BFT_FREE(cpght);
-
       }
 
       if (   (   lagr_model->physical_model == 1
@@ -2505,7 +2435,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
                 / bound_stat[lag_bdi->inclgt * n_b_faces + ifac];
 
           }
-          else if (bound_stat[lag_bdi->inclg * n_b_faces + ifac] == 0) {
+          else if (bound_stat[lag_bdi->inclg * n_b_faces + ifac] <= 0) {
 
             bound_stat[lag_bdi->iclogt * n_b_faces + ifac] = 0.0;
             bound_stat[lag_bdi->ihdiam * n_b_faces + ifac] = 0.0;
@@ -2513,11 +2443,11 @@ cs_lagr_solve_time_step(const int         itypfb[],
           }
           else {
 
-            bft_printf(_("   ** LAGRANGIAN MODULE:\n"
-                         "   ** Error in cs_lagr.c: inclg < 0 ! \n"
-                         "---------------------------------------------\n\n\n"
-                         "** Ifac = %d  and inclg = %d\n"
-                         "-------------------------------------------------\n"),
+            bft_printf("   ** LAGRANGIAN MODULE:\n"
+                       "   ** Error in cs_lagr.c: inclg < 0 ! \n"
+                       "---------------------------------------------\n\n\n"
+                       "** Ifac = %d  and inclg = %g\n"
+                       "-------------------------------------------------\n",
                        ifac, bound_stat[lag_bdi->inclg * n_b_faces + ifac]);
           }
 
@@ -2543,13 +2473,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
     }
 
-    /* Free memory */
-    if (cs_glob_lagr_brownian->lamvbr == 1)
-      BFT_FREE(brgaus);
-
-    BFT_FREE(vagaus);
-
-  }  /* end if number of particle > 0 */
+  }  /* end if number of particles > 0 */
 
   /* Optional user modification of Lagrangian variables at end of iteration */
 
@@ -2590,7 +2514,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
   BFT_FREE(gradpr);
   BFT_FREE(w1);
   BFT_FREE(w2);
-  BFT_FREE(w3);
   if (cs_glob_lagr_time_scheme->modcpl > 0)
     BFT_FREE(gradvf);
 

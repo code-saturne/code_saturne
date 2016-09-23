@@ -41,37 +41,34 @@ BEGIN_C_DECLS
 /*!
  * \brief Integration of particle equations of motion:
  *
- * - Standard Model : First order  -> call of subroutine lages1
- *                    Second order -> call of subroutine lages2
+ * - Standard Model : First or second order
  * - Deposition submodel (Guingo & Minier, 2008) if needed
  *
  * \param[in]  dt_p      lagrangian time step
  * \param[in]  taup      dynamic characteristic time
  * \param[in]  tlag      fluid characteristic time
- * \param[out] piil      terme in P-U SDE integration
+ * \param[in]  piil      terme in P-U SDE integration
  * \param[in]  bx        turbulence characteristics
- * \param[in]  tsfext    info for return coupling source terms
+ * \param[out] tsfext    info for return coupling source terms
  * \param[in]  gradpr    pressure gradient
  * \param[in]  gradvf    fluid velocity gradient
- * \param[in]  terbru
- * \param[in]  vislen
+ * \param[out] terbru    FIXME
+ * \param[in]  vislen    FIXME
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_sde(cs_real_t      dt_p,
-            cs_real_t      taup[],
-            cs_real_3_t    tlag[],
-            cs_real_3_t    piil[],
-            cs_real_33_t   bx[],
-            cs_real_t      tsfext[],
-            cs_real_3_t    gradpr[],
-            cs_real_33_t   gradvf[],
-            cs_real_t      terbru[],
-            cs_real_t      vislen[],
-            cs_real_33_t  *vagaus,
-            cs_real_t     *brgaus,
-            cs_lnum_t     *nresnew );
+cs_lagr_sde(cs_real_t           dt_p,
+            const cs_real_t     taup[],
+            const cs_real_3_t   tlag[],
+            const cs_real_3_t   piil[],
+            const cs_real_33_t  bx[],
+            cs_real_t           tsfext[],
+            const cs_real_3_t   gradpr[],
+            const cs_real_33_t  gradvf[],
+            cs_real_t           terbru[],
+            const cs_real_t     vislen[],
+            cs_lnum_t          *nresnew);
 
 /*----------------------------------------------------------------------------*/
 /*!
