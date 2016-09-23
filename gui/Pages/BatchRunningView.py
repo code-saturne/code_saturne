@@ -519,7 +519,9 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                     self.mdl.setString('n_procs', None)
                 except Exception:
                     pass
-
+        validatorRunId = RegExpValidator(self.lineEditRunId,
+                                         QRegExp("[_A-Za-z0-9]*"))
+        self.lineEditRunId.setValidator(validatorRunId)
 
         # Connections
 
@@ -545,6 +547,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.comboBoxRunType.activated[str].connect(self.slotArgRunType)
         self.toolButtonAdvanced.clicked.connect(self.slotAdvancedOptions)
         self.pushButtonRunSubmit.clicked.connect(self.slotBatchRunning)
+        self.lineEditRunId.textChanged[str].connect(self.slotJobRunId)
 
         # Combomodels
 
@@ -573,6 +576,13 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         if self.jmdl.batch.rm_type != None and self.case['runcase']:
             self.displayBatchInfo()
+
+        #rm_type = self.jmdl.batch.rm_type
+        run_id = str(self.jmdl.dictValues['run_id'])
+        #if run_id == 'None' and self.case['scripts_path']:
+        #    run_id, run_title = self.__suggest_run_id()
+        #    self.__updateRuncase(run_id)
+        self.lineEditRunId.setText(run_id)
 
         # Script info is based on the XML model
 
@@ -696,6 +706,17 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         else:
             self.jmdl.dictValues['run_nthreads'] = None
         self.jmdl.updateBatchFile('run_nthreads')
+
+
+    @pyqtSlot(str)
+    def slotJobRunId(self, v):
+        """
+        """
+        if self.lineEditRunId.validator().state == QValidator.Acceptable:
+            self.jmdl.dictValues['run_id'] = str(v)
+            self.jmdl.updateBatchFile('run_id')
+            if v != 'None':
+                self.__updateRuncase(str(v))
 
 
     @pyqtSlot()

@@ -6,15 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>480</width>
-    <height>561</height>
+    <width>537</width>
+    <height>745</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <item>
+  <layout class="QGridLayout" name="gridLayout_3">
+   <item row="0" column="0">
     <widget class="QGroupBox" name="groupBoxArchi">
      <property name="minimumSize">
       <size>
@@ -112,7 +112,7 @@
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="1" column="0">
     <widget class="QGroupBox" name="groupBoxJob">
      <property name="title">
       <string> Job parameters</string>
@@ -563,7 +563,7 @@
      <zorder>horizontalSpacer_2</zorder>
     </widget>
    </item>
-   <item>
+   <item row="2" column="0">
     <widget class="QGroupBox" name="groupBoxScript">
      <property name="statusTip">
       <string/>
@@ -571,9 +571,9 @@
      <property name="title">
       <string>Calculation script parameters</string>
      </property>
-     <layout class="QVBoxLayout">
-      <item>
-       <layout class="QHBoxLayout">
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
          <spacer>
           <property name="orientation">
@@ -588,16 +588,13 @@
          </spacer>
         </item>
         <item>
-         <layout class="QGridLayout" name="gridLayout_3">
+         <layout class="QGridLayout" name="gridLayout">
           <item row="0" column="0">
            <widget class="QLabel" name="label">
             <property name="text">
              <string>Run type</string>
             </property>
            </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QComboBox" name="comboBoxRunType"/>
           </item>
           <item row="0" column="1">
            <spacer>
@@ -612,14 +609,27 @@
             </property>
            </spacer>
           </item>
+          <item row="0" column="2">
+           <widget class="QComboBox" name="comboBoxRunType"/>
+          </item>
           <item row="1" column="0">
+           <widget class="QLabel" name="labelRunId">
+            <property name="text">
+             <string>Run id</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QLineEdit" name="lineEditRunId"/>
+          </item>
+          <item row="2" column="0">
            <widget class="QLabel" name="labelNProcs">
             <property name="text">
              <string>Number of processes</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="2">
+          <item row="2" column="2">
            <widget class="QSpinBox" name="spinBoxNProcs">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of MPI processes&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -629,14 +639,14 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
+          <item row="3" column="0">
            <widget class="QLabel" name="labelNThreads">
             <property name="text">
              <string>Threads per task</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="2">
+          <item row="3" column="2">
            <widget class="QSpinBox" name="spinBoxNThreads">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of OpenMP threads per MPI task&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -646,14 +656,14 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
+          <item row="4" column="0">
            <widget class="QLabel" name="labelAdvanced">
             <property name="text">
              <string>Advanced options</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="2">
+          <item row="4" column="2">
            <widget class="QToolButton" name="toolButtonAdvanced">
             <property name="text">
              <string>...</string>
@@ -690,12 +700,12 @@
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="3" column="0">
     <widget class="QGroupBox" name="groupBox">
      <property name="sizeHint" stdset="0">
       <size>
-       <width>187</width>
-       <height>59</height>
+       <width>194</width>
+       <height>74</height>
       </size>
      </property>
      <property name="title">
@@ -741,7 +751,7 @@
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="4" column="0">
     <spacer>
      <property name="orientation">
       <enum>Qt::Vertical</enum>
