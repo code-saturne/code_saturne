@@ -1198,6 +1198,22 @@ class XMLinit(Variables):
                         node.xmlInitChildNode('probes_recording')['status'] = "off"
                     n.xmlRemoveNode()
 
+        # rename pressure into hydraulic_head for ground water module
+
+        XMLBoundaryNode = self.case.xmlGetNode('boundary_conditions')
+        XMLGWNodes = XMLBoundaryNode.xmlGetNodeList('groundwater')
+        for XMLGWNode in XMLGWNodes:
+            for node in (XMLGWNode.xmlGetNodeList('neumann') + XMLGWNode.xmlGetNodeList('dirichlet')):
+                if node['name'] == 'pressure':
+                    node['name'] = 'hydraulic_head'
+
+        XMLThermoPhysicalModelNode = self.case.xmlGetNode('thermophysical_models')
+        XMLVelPrNode = XMLThermoPhysicalModelNode.xmlGetNode('velocity_pressure')
+        for node in XMLVelPrNode.xmlGetNodeList('variable', 'name'):
+            if node['name'] == 'pressure':
+                node['name'] = 'hydraulic_head'
+            if node['label'] == 'Pressure':
+                node['label'] = 'HydraulicHead'
 
 #-------------------------------------------------------------------------------
 # XMLinit test case
