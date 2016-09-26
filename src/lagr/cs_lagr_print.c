@@ -191,7 +191,7 @@ cs_lagr_print(cs_real_t ttcabs)
                 ttcabs,
                 (unsigned long long)(pc->n_g_total), pc->w_total,
                 (unsigned long long)(pc->n_g_new), pc->w_new,
-                (unsigned long long)(pc->n_g_exit-pc->n_g_failed),
+                (unsigned long long)(pc->n_g_exit),
                 pc->w_exit,
                 (unsigned long long)(pc->n_g_deposited), pc->w_deposited,
                 (unsigned long long)(pc->n_g_failed));
