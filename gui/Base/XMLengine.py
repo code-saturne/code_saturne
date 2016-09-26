@@ -1180,7 +1180,7 @@ class XMLDocument(XMLElement):
                 if n.hasChildNodes():
                     self.xmlCleanHightLevelBlank(n)
 
-        if 'formula' not in node.tagName:
+        if 'formula' not in node.tagName or 'dirichlet_formula' in node.tagName:
             for n in node.childNodes:
                 if n.nodeType == Node.TEXT_NODE and not elementNode:
                     self.xmlCleanAllBlank(n.parentNode)
