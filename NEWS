@@ -5,6 +5,8 @@ Release 4.0.6 (unreleased)
 Bug fixes:
 ----------
 
+- GUI: minor fix for Dirichlet formula usage and turbulence properties update.
+
 - Fix Neumann boundary condition for vectors with anisotropic diffusion.
   A priori, could be used only if the thermal turbulent flux was solved.
 

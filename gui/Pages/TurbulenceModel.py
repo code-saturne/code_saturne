@@ -190,6 +190,10 @@ class TurbulenceModel(Variables, Model):
                 for node in self.node_ava.xmlGetNodeList('time_average'):
                     node.xmlRemoveChild('var_prop', name=v)
         self.node_turb.xmlRemoveChild('property', name=propName)
+        for node in self.node_prof.xmlGetNodeList('profile'):
+            node.xmlRemoveChild('var_prop', name=propName)
+        for node in self.node_ava.xmlGetNodeList('time_average'):
+            node.xmlRemoveChild('var_prop', name=propName)
 
 
     @Variables.undoGlobal
