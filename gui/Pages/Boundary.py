@@ -1101,7 +1101,7 @@ omega = 0.;"""
         formula = scalarNode.xmlGetChildString('formula')
 
         if not formula:
-            formula = 'H = 0.'
+            formula = 'H = 0.;'
 
         return formula
 
@@ -2216,7 +2216,7 @@ class OutletBoundary(Boundary) :
         formula = scalarNode.xmlGetChildString('formula')
 
         if not formula:
-            formula = 'H = 0.'
+            formula = 'H = 0.;'
 
         return formula
 
@@ -2411,7 +2411,7 @@ class GroundwaterBoundary(Boundary) :
         formula = scalarNode.xmlGetChildString('formula')
 
         if not formula:
-            formula = 'H = 0.'
+            formula = 'H = 0.;'
 
         return formula
 
