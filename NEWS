@@ -5,6 +5,8 @@ Release 4.2.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix misleading specification of particle injection mass flow rate in GUI.
+
 - GUI: minor fix for Dirichlet formula usage and turbulence properties update.
 
 - Fix Neumann boundary condition for vectors with anisotropic diffusion.
