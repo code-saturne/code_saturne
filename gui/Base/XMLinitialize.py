@@ -92,9 +92,14 @@ class XMLinit(Variables):
 
             # Initialization (order is important, see turbulenceModelsList method)
 
+            grdflow = GroundwaterModel(self.case).getGroundwaterModel()
+
             self.node_models = self.case.xmlInitNode('thermophysical_models')
             node = self.node_models.xmlInitNode('velocity_pressure')
-            self.setNewVariable(node, 'pressure')
+            if grdflow == 'groundwater':
+                self.setNewVariable(node, 'hydraulic_head')
+            else:
+                self.setNewVariable(node, 'pressure')
             self.setNewVariable(node, 'velocity', dim = '3')
             self.setNewProperty(node, 'total_pressure')
             n = self.setNewProperty(node, 'yplus')
@@ -153,7 +158,6 @@ class XMLinit(Variables):
             GasCombustionModel(self.case).getGasCombustionModel()
             ElectricalModel(self.case).getElectricalModel()
             ThermalRadiationModel(self.case).getRadiativeModel()
-            grdflow = GroundwaterModel(self.case).getGroundwaterModel()
             AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel()
             LagrangianModel(self.case).getLagrangianModel()
 
