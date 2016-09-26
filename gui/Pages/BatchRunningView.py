@@ -579,10 +579,15 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         #rm_type = self.jmdl.batch.rm_type
         run_id = str(self.jmdl.dictValues['run_id'])
+
         #if run_id == 'None' and self.case['scripts_path']:
         #    run_id, run_title = self.__suggest_run_id()
         #    self.__updateRuncase(run_id)
-        self.lineEditRunId.setText(run_id)
+
+        if run_id != 'None':
+            self.lineEditRunId.setText(run_id)
+        else:
+            self.lineEditRunId.setText("")
 
         # Script info is based on the XML model
 
