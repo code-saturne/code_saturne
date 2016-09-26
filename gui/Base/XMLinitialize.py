@@ -102,22 +102,24 @@ class XMLinit(Variables):
                 self.setNewVariable(node, 'pressure')
             self.setNewVariable(node, 'velocity', dim = '3')
             self.setNewProperty(node, 'total_pressure')
-            n = self.setNewProperty(node, 'yplus')
-            n['support'] = 'boundary'
-            n['label'] = 'Yplus'
-            n = self.setNewProperty(node, 'stress')
-            n['support'] = 'boundary'
-            n['label'] = 'Stress'
-            if not node.xmlGetChildNode('property', name='stress_tangential'):
-                n = self.setNewProperty(node, 'stress_tangential')
-                n['label'] = 'Stress, tangential'
-                n['support'] = 'boundary'
-                n.xmlInitNode('postprocessing_recording')['status']= "off"
-            if not node.xmlGetChildNode('property', name='stress_normal'):
-                n = self.setNewProperty(node, 'stress_normal')
-                n['label'] = 'Stress, normal'
-                n['support'] = 'boundary'
-                n.xmlInitNode('postprocessing_recording')['status']= "off"
+
+            if grdflow != 'groundwater':
+              n = self.setNewProperty(node, 'yplus')
+              n['support'] = 'boundary'
+              n['label'] = 'Yplus'
+              n = self.setNewProperty(node, 'stress')
+              n['support'] = 'boundary'
+              n['label'] = 'Stress'
+              if not node.xmlGetChildNode('property', name='stress_tangential'):
+                  n = self.setNewProperty(node, 'stress_tangential')
+                  n['label'] = 'Stress, tangential'
+                  n['support'] = 'boundary'
+                  n.xmlInitNode('postprocessing_recording')['status']= "off"
+              if not node.xmlGetChildNode('property', name='stress_normal'):
+                  n = self.setNewProperty(node, 'stress_normal')
+                  n['label'] = 'Stress, normal'
+                  n['support'] = 'boundary'
+                  n.xmlInitNode('postprocessing_recording')['status']= "off"
 
             MobileMeshModel(self.case).getMethod()
             TurbulenceModel(self.case).getTurbulenceModel()

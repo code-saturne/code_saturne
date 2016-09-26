@@ -146,7 +146,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
             if GroundwaterModel(self.__case).getGroundwaterModel() == "off":
                 lst = ('wall', 'inlet', 'outlet', 'free_inlet_outlet')
             else:
-                lst = ('wall', 'inlet', 'outlet', 'free_inlet_outlet', 'groundwater')
+                lst = ('groundwater')
         else:
             lst = ('wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet')
 
