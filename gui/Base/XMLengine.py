@@ -1143,7 +1143,7 @@ class XMLDocument(XMLElement):
         if isinstance(node, XMLElement):
             node = node.el
 
-        if 'formula' not in node.tagName:
+        if 'formula' not in node.tagName or 'dirichlet_formula' in node.tagName:
             for n in node.childNodes:
                 if n.nodeType == Node.TEXT_NODE:
                     n.data = self.xmlNormalizeWhitespace(n.data)
