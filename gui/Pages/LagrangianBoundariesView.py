@@ -302,7 +302,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.tableViewBoundaries.setItemDelegateForColumn(3,delegateClassNumber)
 
         self.modelIPOIT = ComboModel(self.comboBoxIPOIT,3,1)
-        self.modelIPOIT.addItem(self.tr("Volumic flow rate"), "rate")
+        self.modelIPOIT.addItem(self.tr("Mass flow rate"), "rate")
         self.modelIPOIT.addItem(self.tr("Statistical weight set by values"), "prescribed")
         self.modelIPOIT.addItem(self.tr("User defined statistical weight"), "subroutine")
 
@@ -589,10 +589,10 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         """
         choice = self.modelIPOIT.dicoV2M[str(text)]
         self.model.setStatisticalWeightChoice(self.label, self.iclass, choice)
-        self.frameVolumicRate.hide()
+        self.frameMassRate.hide()
         self.frameStatisticalWeight.hide()
         if choice == "rate":
-            self.frameVolumicRate.show()
+            self.frameMassRate.show()
             rate = self.model.getMassFlowRateValue(self.label, self.iclass)
             self.lineEditIDEBT.setText(str(rate))
             self.model.setStatisticalWeightValue(self.label, self.iclass, 1)

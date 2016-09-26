@@ -355,7 +355,7 @@
               </spacer>
              </item>
              <item row="1" column="1">
-              <widget class="QFrame" name="frameVolumicRate">
+              <widget class="QFrame" name="frameMassRate">
                <property name="frameShape">
                 <enum>QFrame::NoFrame</enum>
                </property>
@@ -374,7 +374,7 @@
                      <string>Code_Saturne key word: IDEBT</string>
                     </property>
                     <property name="text">
-                     <string>Volumic rate</string>
+                     <string>Flow rate</string>
                     </property>
                    </widget>
                   </item>
