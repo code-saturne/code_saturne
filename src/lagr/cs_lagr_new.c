@@ -156,7 +156,7 @@ cs_lagr_new(cs_lnum_t  *npt,
     cs_exit (1);
   }
 
-  cs_lnum_t n_sommets;
+  cs_lnum_t n_vertices;
   cs_lnum_t ifac;
   cs_real_t random;
 
@@ -189,8 +189,8 @@ cs_lagr_new(cs_lnum_t  *npt,
             /* type de face : 3 ou 4 points supports    */
             /* pour l'instant je ne sais pas traiter les autres   */
             /* avec plus de points supports...     */
-            n_sommets = mesh->b_face_vtx_idx[ifac + 1] - mesh->b_face_vtx_idx[ifac];
-            if (n_sommets <= 4)
+            n_vertices = mesh->b_face_vtx_idx[ifac + 1] - mesh->b_face_vtx_idx[ifac];
+            if (n_vertices <= 4)
               goon = false;
 
           }
@@ -202,14 +202,14 @@ cs_lagr_new(cs_lnum_t  *npt,
     }
 
     /* si face a 4 points, on choisit l'un des deux triangles  */
-    if (n_sommets == 4) {
+    if (n_vertices == 4) {
 
-      n_sommets = 0;
+      n_vertices = 0;
 
       for (cs_lnum_t i = mesh->b_face_vtx_idx[ifac]; i < mesh->b_face_vtx_idx[ifac + 1] ; i++) {
 
-        iconfo[n_sommets] = mesh->b_face_vtx_lst[i] ;
-        n_sommets         = n_sommets + 1;
+        iconfo[n_vertices] = mesh->b_face_vtx_lst[i] ;
+        n_vertices         = n_vertices + 1;
 
       }
 
@@ -259,14 +259,16 @@ cs_lagr_new(cs_lnum_t  *npt,
     }
 
     /* dans le cas ou la face est un triangle...     */
-    else if (n_sommets == 3) {
+    else if (n_vertices == 3) {
 
-      n_sommets = 0;
+      n_vertices = 0;
 
-      for (cs_lnum_t i = mesh->b_face_vtx_idx[ifac]; i < mesh->b_face_vtx_idx[ifac + 1] ; i++) {
+      for (cs_lnum_t i = mesh->b_face_vtx_idx[ifac];
+           i < mesh->b_face_vtx_idx[ifac + 1];
+           i++) {
 
-        iconfo[n_sommets] = mesh->b_face_vtx_lst[i];
-        n_sommets = n_sommets + 1;
+        iconfo[n_vertices] = mesh->b_face_vtx_lst[i];
+        n_vertices = n_vertices + 1;
 
       }
 
@@ -456,37 +458,15 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
                     extra->iturb);
       bft_error
         (__FILE__, __LINE__, 0,
-         _("@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@                                                            @\n"
-           "@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   @\n"
-           "@    =========   (LAGIPN)                                    @\n"
-           "@                                                            @\n"
-           "@    LE MODULE LAGRANGIEN EST INCOMPATIBLE AVEC LE MODELE    @\n"
-           "@    DE TURBULENCE SELECTIONNE.                              @\n"
-           "@                                                            @\n"
-           "@                                                            @\n"
-           "@   Le module Lagrangien a ete active avec IILAGR = %10d     @\n"
-           "@     et la dispersion turbulente est prise en compte        @\n"
-           "@                                     avec IDISTU = %10d     @\n"
-           "@   Le modele de turbulence                                  @\n"
-           "@     correspond a ITURB  = %10d                             @\n"
-           "@   Or, les seuls traitements de la turbulence compatibles   @\n"
-           "@     avec le module Lagrangien et la dispersion turbulente  @\n"
-           "@     sont k-epsilon et Rij-epsilon, v2f et k-omega.         @\n"
-           "@                                                            @\n"
-           "@  Le calcul ne sera pas execute.                            @\n"
-           "@                                                            @\n"
-           "@  Verifier la valeur de IILAGR et IDISTU dans la subroutine @\n"
-           "@  USLAG1 et verifier la valeur de ITURB  dans la subroutine @\n"
-           "@  USINI1.                                                   @\n"
-           "@                                                            @\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@"),
-         cs_glob_lagr_time_scheme->iilagr,
+         _("The Lagrangian module is incompatible with the selected\n"
+           " turbulence model.\n\n"
+           "Turbulent dispersion is used with:\n"
+           "  cs_glob_lagr_time_scheme->idistu = %d\n"
+           "And the turbulence model is iturb = %d\n\n"
+           "The only turbulence models compatible with the Lagrangian model's\n"
+           "turbulent dispersion are k-epsilon, Rij-epsilon, v2f, and k-omega."),
          cs_glob_lagr_time_scheme->idistu,
          extra->iturb);
-
     }
 
   }

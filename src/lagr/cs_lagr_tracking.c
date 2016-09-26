@@ -3421,6 +3421,22 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
     _tracking_info(particles, i)->start_coords[1] = prv_part_coord[1];
     _tracking_info(particles, i)->start_coords[2] = prv_part_coord[2];
 
+    /* Just after injection, reduce displacment so as to simulate
+       continuous injection */
+
+    cs_real_t res_time = cs_lagr_particles_get_real(particles, i,
+                                                   CS_LAGR_RESIDENCE_TIME);
+    if (res_time < 0) {
+      cs_real_t *part_coord
+        = cs_lagr_particles_attr(particles, i, CS_LAGR_COORDS);
+      cs_real_t fraction =   (cs_glob_lagr_time_step->dtp + res_time)
+                           / cs_glob_lagr_time_step->dtp;
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        cs_real_t d = part_coord[j] - prv_part_coord[j];
+        part_coord[j] = prv_part_coord[j] + fraction*d;
+      }
+    }
+
     /* Data needed if the deposition model is activated */
     if (   lagr_model->deposition <= 0
         && am->size[CS_LAGR_DEPOSITION_FLAG] > 0)

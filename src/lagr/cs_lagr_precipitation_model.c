@@ -324,7 +324,7 @@ precdi (cs_real_t   *vela,
 
   for (cs_lnum_t iel = 0; iel < mesh->n_cells; iel++) {
 
-    /* recipitation (Add particles)   */
+    /* Precipitation (Add particles)   */
     if (preci->nbprec[iel] > 0) {
 
       for (cs_lnum_t i = 0; i < preci->nbprec[iel]; i++)
@@ -400,10 +400,18 @@ precdi (cs_real_t   *vela,
 
     for (cs_lnum_t ip = npt; ip < npt + value_part; ip++) {
 
-      /* to do: place particle at random location in the cell iel
+      /* TODO: place particle at random location in the cell iel
          (not always at the cog) */
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+
+      /* Random value associated with each particle */
+
+      cs_real_t part_random = -1;
+      cs_random_uniform(1, &part_random);
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RANDOM_VALUE,
+                                part_random);
+
       cs_real_t *part_coord = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COORDS);
 
       for (cs_lnum_t i = 0; i <  3; i++)
@@ -426,7 +434,12 @@ precdi (cs_real_t   *vela,
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS, mass);
 
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_STAT_WEIGHT, 1.0);
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RESIDENCE_TIME, 0.0);
+
+      /* Residence time (may be negative to ensure continuous injection) */
+
+      cs_real_t res_time = - part_random *cs_glob_lagr_time_step->dtp;
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RESIDENCE_TIME,
+                                res_time);
 
       if (cs_glob_lagr_model->deposition == 1) {
         cs_real_t random;

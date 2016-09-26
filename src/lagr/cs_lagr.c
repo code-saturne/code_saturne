@@ -1258,16 +1258,15 @@ cs_lagr_set_zone_class_diam (int        iclass,
  * \param[in]   number     pointer to number of particles to inject
  * \param[in]   freq       pointer to injection frequency
  * \param[in]   stat       pointer to statistical groups id
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_set_zone_class_injection (int        iclass,
-                                  int        izone,
-                                  int        number,
-                                  int        freq,
-                                  int        stat)
+cs_lagr_set_zone_class_injection(int        iclass,
+                                 int        izone,
+                                 int        number,
+                                 int        freq,
+                                 int        stat)
 {
   cs_lagr_zone_class_data_t *zonedata
     = cs_lagr_get_zone_class_data(iclass, izone);
@@ -2325,9 +2324,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       }
 
-      /* ====================================================================   */
-      /* 10.  TEMPS DE SEJOUR */
-      /* ====================================================================   */
+      /* Update residence time */
 
       if (cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order) {
 
@@ -2335,7 +2332,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
           if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_CELL_NUM) - 1 >= 0) {
             cs_real_t res_time
-              =   cs_lagr_particles_get_real(p_set, npt,
+              = cs_lagr_particles_get_real(p_set, npt,
                                            CS_LAGR_RESIDENCE_TIME)
                 + cs_glob_lagr_time_step->dtp;
             cs_lagr_particles_set_real

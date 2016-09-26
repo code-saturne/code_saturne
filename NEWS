@@ -14,10 +14,14 @@ Physical modelling
 - Add sorption model treating non-equilibrium between solid and liquid phases
   to the ground water flow module.
 
-- Lagrangian module: add deposition and resuspension models on internal faces.
-  The user can the impose the motion of deposited particles. If integral
-  approach for porous modelling is set up (iporos=3), then the internal fluid
-  section is reduced by particle deposition.
+- Lagrangian module:
+  * add deposition and resuspension models on internal faces.
+    The user can the impose the motion of deposited particles. If integral
+    approach for porous modelling is set up (iporos=3), then the internal fluid
+    section is reduced by particle deposition.
+  * injection is now pseudo-continuous when injecting at every time step.
+    To revert to the previous behavior, the CS_LAGR_RESIDENCE_TIME value
+    must be set to 0 for newly injected particles.
 
 Architectural changes
 ---------------------

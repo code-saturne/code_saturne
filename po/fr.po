@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-09-23 02:19+0200\n"
+"POT-Creation-Date: 2016-09-26 00:01+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -10578,208 +10578,240 @@ msgid ""
 "@"
 msgstr ""
 
-msgid ""
-"\n"
-" Lagrangian module: \n"
-msgstr ""
-
 #, c-format
 msgid ""
-"   The zone id associated to face %d must be an integer >= 0 and < nflagm = "
+"Lagrangian module: \n"
+"  the zone id associated to face %d must be an integer >= 0 and < nflagm = "
 "%d.\n"
-"   This number (ifrlag(ifac)) is here %d\n"
+"  This number is here %d."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian module: \n"
+" the maximum number of user defined boundary zones nflagm = %d is reached."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian module: \n"
+"  number of particle classes for zone %d is not defined (=%d)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian module: \n"
+"  number of clusters = %d is either not defined (negative)\n"
+"   or > to the number of statistical classes %d for zone %d and class %d."
+msgstr ""
+
+#, c-format
+msgid "Lagrangian boundary zone %d nature %d is unknown."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d nature is of type CS_LAGR_FOULING,\n"
+"but cs_glob_lagr_model->physical_model is not equal to 2."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d nature is of type CS_LAGR_FOULING,\n"
+"but fouling is not activated."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d temperature profile value is invalid (=%d)\n"
+msgstr ""
+
+#, c-format
+msgid "Number of particles for zone %d and class %d is not defined (=%d)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d, class %d:\n"
+"  distribution profile value is invalid (=%d)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d, class %d:\n"
+"  velocity profile value is invalid (=%d)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d:\n"
+"  class %d distribution profile value is invalid (=%d)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d, class %d:\n"
+"  statistical weight value is invalid (=%e10.3)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d, class %d:\n"
+"  flow rate value is invalid (=%e10.3)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d, class %d:\n"
+" flow rate is positive (%e10.3)\n"
+" while number of particle is 0."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d, class %d:\n"
+"  error on particles properties definition:\n"
+"  rho = %e10.3, diameter = %e10.3,\n"
+"  diameter standard deviation = %e10.3."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d, class %d:\n"
+"  diameter (%e10.3) is smaller than 3 times\n"
+"  its standard deviation (%e10.3)."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d, class %d:\n"
+"  specific heat capacity is negative (%e10.3)\n"
+"  or temperature (%e10.3) is lower than %e10.3."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d, class %d:\n"
+"  particle emissivity is not properly set = %e10.3."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d, class %d:\n"
+"  the coal number %d for the injected particle is either negative\n"
+"  or over the maximum number of coal given in dp_FCP (ncharb = %d)."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian boundary zone %d, class %d:\n"
+"  the coal profile flag is not properly set.\n"
+"  I must be equal to 0 (user definition) or 1  (composition is set identical "
+"to fresh coal).\n"
+"  Coal profile is %d."
+msgstr ""
+
+msgid ""
 "\n"
-"   The calculation will not run.\n"
-"\n"
-" Please check the parameters given via the GUI\n"
-" or cs_user_lagr_boundary_conditions\n"
+"Lagrangian module warning:\n"
 msgstr ""
 
 #, c-format
 msgid ""
-"   The maximum number of user defined boundary zone nflagm = %d is reached.\n"
-"\n"
-" The calculation will not run.\n"
-"\n"
-" Please check the parameters given via the GUI\n"
-" or cs_user_lagr_boundary_conditions\n"
-msgstr ""
-
-#, c-format
-msgid "   Number of particle classes for zone %d is not defined (=%d)\n"
+"  Both coal and diameter profiles are user\n"
+" defined for zone %d, class %d.\n"
+"  This may cause unwanted problems:\n"
+"  coal initial and shrinking diameters are set before\n"
+"  the definition of the particle diameter."
 msgstr ""
 
 #, c-format
 msgid ""
-"   Number of cluster = %d is either not defined (negative)\n"
-"   or > to number of statistical classes %d for zone %d and class %d\n"
-msgstr ""
-
-#, c-format
-msgid "   Zone %d nature is unknown = %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"   Zone %d nature is of type CS_LAGR_FOULING,\n"
-"   but cs_glob_lagr_model->physical_model is not equal to 2\n"
+"Lagrangian boundary zone %d, class %d:\n"
+"  both coal and diameter profiles are set to be user defined\n"
+"  This may cause unwanted problems: coal initial and shrinking\n"
+"  diameters are set before the definition of the particle diameter."
 msgstr ""
 
 #, c-format
 msgid ""
-"   Zone %d nature is of type CS_LAGR_FOULING, but fouling is not activated\n"
-msgstr ""
-
-#, c-format
-msgid "   In zone %d, class %d temperature profile value is invalid (=%d)\n"
-msgstr ""
-
-#, c-format
-msgid "   Number of particles for zone %d and class %d is not defined (=%d)\n"
-msgstr ""
-
-#, c-format
-msgid "   In zone %d, class %d distribution profile value is invalid (=%d)\n"
-msgstr ""
-
-#, c-format
-msgid "   In zone %d, class %d velocity profile value is invalid (=%d)\n"
-msgstr ""
-
-#, c-format
-msgid "   In zone %d, class %d statistical weight value is invalid (=%e10.3)\n"
-msgstr ""
-
-#, c-format
-msgid "   In zone %d, class %d flow rate value is invalid (=%e10.3)\n"
+"Lagrangian boundary zone %d, class %d:\n"
+"  temperature is not properly set for layer %d: %e10.3."
 msgstr ""
 
 #, c-format
 msgid ""
-"   Flow rate is positive (%e10.3) while number of particle is null for class "
-"%d in zone %d\n"
+"Lagrangian boundary zone %d, class %d:\n"
+"  wrong conditions, with\n"
+"    density = %e10.3\n"
+"    Cp = %e10.3\n"
+"    steam mass fraction = %e10.3."
 msgstr ""
 
 #, c-format
 msgid ""
-"   Error on particles properties definition:\n"
-"   rho = %e10.3, diameter = %e10.3,\n"
-"   diameter standard deviation = %e10.3 for class %d in zone %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"   Diameter (%e10.3) is smaller than 3 times\n"
-"   its standard deviation (%e10.3) for class %d in zone %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"   Specific heat capacity is negative (%e10.3)\n"
-"   or temperature (%e10.3) is lower than %e10.3\n"
-" for class %d in zone %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"   Particle emissivity is not properly set = %e10.3 for class %d in zone %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"   The coal number %d for the injected particle is either negative or over "
-"the maximum number of coal given in dp_FCP (ncharb = %d) for class %d in "
-"zone %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"   The coal profile flag is not properly set. It must be equal to 0 (user "
-"definition) or 1 (composition is set identical to fresh coal). Coal profile "
-"is %d for class %d in zone %d\n"
-msgstr ""
-
-msgid ""
-"\n"
-" WARNING \n"
-msgstr ""
-
-#, c-format
-msgid ""
-"   Both coal and diameter profiles are set to be user defined for class %d "
-"and zone %d.\n"
-" This may cause unwanted problems: coal initial and shrinking diameters are "
-"set in USLAG2 before the definition of the particle diameter in USLAPR.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"   Temperature is not properly set for layer %d : %e10.3 for class %d and "
-"zone %d.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"   Wrong conditions for class %d and zone %d.\n"
-" Density = %e10.3\n"
-" Cp = %e10.3\n"
-" Steam mass fraction = %e10.3\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"  Wrong conditions for class %d and zone %d on layer %d.\n"
+"Lagrangian boundary zone %d, class %d:\n"
+"  wrong conditions on layer %d.\n"
 "    coal mass fraction = %e10.3\n"
 "    coke mass fraction = %e10.3\n"
-"    coke density after pyrolysis = %e10.3\n"
+"    coke density after pyrolysis = %e10.3."
 msgstr ""
 
 #, c-format
 msgid ""
-"  Wrong conditions for class %d and zone %d.\n"
+"Lagrangian boundary zone %d, class %d:\n"
+"  wrong conditions, with\n"
 "    coke diameter = %e10.3\n"
 "    initial diameter = %e10.3\n"
 msgstr ""
 
 #, c-format
 msgid ""
-"  Wrong conditions for class %d and zone %d for coal number %d.\n"
+"Lagrangian boundary zone %d, class %d:\n"
+"  wrong conditions for coal number %d.\n"
 "    density RHO0CH = %e10.3\n"
 "    Cp CP2CH = %e10.3\n"
 "    water mass fraction XWATCH = %e10.3\n"
-"    ashes mass fraction XASHCH = %e10.3\n"
+"    ashes mass fraction XASHCH = %e10.3."
 msgstr ""
 
 #, c-format
 msgid ""
-"  Wrong conditions for class %d and zone %d for coal number %d.\n"
+"Lagrangian boundary zone %d, class %d:\n"
+"  wrong conditions for coal number %d.\n"
 "    water mass fraction XWATCH = %e10.3\n"
 "    ashes mass fraction XASHCH = %e10.3\n"
-"    mass fraction is larger than 1: %e10.3\n"
+"    mass fraction is larger than 1: %e10.3."
 msgstr ""
 
 #, c-format
 msgid ""
-"  Wrong conditions for class %d and zone %d.\n"
-"    Conditions are set with the contents of a DP_FCP file,\n"
-"    but one is initialized to a different value than %e10.3.\n"
+"Lagrangian boundary zone %d, class %d:\n"
+"  conditions set with the contents of a DP_FCP file,\n"
+"  but one is initialized to a different value than %e10.3.\n"
 "  density = %e10.3\n"
 "  water mass fraction = %e10.3\n"
 "  Cp = %e10.3\n"
 "  coke diameter = %e10.3\n"
-"  initial diameter = %e10.3\n"
+"  initial diameter = %e10.3."
 msgstr ""
 
 #, c-format
 msgid ""
-"  Wrong conditions for class %d and zone %d for layer %d.\n"
+"Lagrangian boundary zone %d, class %d:\n"
+"  wrong conditions for layer %d.\n"
 "    Conditions are set with the contents of a DP_FCP file,\n"
 "    but one is initialized to a different value than %e10.3.\n"
 "  coal mass fraction IFRMCH = %e10.3\n"
 "  coke mass fraction IFRMCK = %e10.3\n"
 "  initial coke mass fraction IRHOCK0 = %e10.3\n"
 "  coke diameter = %e10.3\n"
-"  initial diameter = %e10.3\n"
+"  initial diameter = %e10.3."
+msgstr ""
+
+msgid ""
+"\n"
+" Lagrangian module: \n"
 msgstr ""
 
 #, c-format
@@ -10810,20 +10842,23 @@ msgstr ""
 
 #, c-format
 msgid ""
-"  Bad boudnary conditions.\n"
+"  Bad lagrangian boundary conditions.\n"
 "    the number of injected particles for this lagrangian\n"
 "    iteration does not match the one specified in the boundary\n"
 "    conditions.\n"
 "    number set for injection NBPNEW = %d\n"
-"    number effectively injected NPT-NBPART = %d\n"
+"    number effectively injected NPT-NBPART = %d"
 msgstr ""
 
 #, c-format
 msgid ""
 " In zone %d, class %d conditions are erroneous.\n"
-"   Imposed Flow rate value is =%e10.3 while number of particles is null.\n"
+"   Imposed Flow rate value is =%e10.3 while number of particles is 0."
+msgstr ""
+
+msgid ""
 "\n"
-" Computation is not run\n"
+"Lagrangian module warning: \n"
 msgstr ""
 
 #, c-format
@@ -10839,7 +10874,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"  Bad boudnary conditions.\n"
+"  Bad lagrangian boundary conditions.\n"
 "    the number of injected particles for this time step\n"
 "    does not match the one specified in the boundary conditions.\n"
 "  number set for injection NBPNEW = %d\n"
@@ -12003,33 +12038,15 @@ msgstr ""
 
 #, c-format
 msgid ""
-"@\n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@                                                            @\n"
-"@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   @\n"
-"@    =========   (LAGIPN)                                    @\n"
-"@                                                            @\n"
-"@    LE MODULE LAGRANGIEN EST INCOMPATIBLE AVEC LE MODELE    @\n"
-"@    DE TURBULENCE SELECTIONNE.                              @\n"
-"@                                                            @\n"
-"@                                                            @\n"
-"@   Le module Lagrangien a ete active avec IILAGR = %10d     @\n"
-"@     et la dispersion turbulente est prise en compte        @\n"
-"@                                     avec IDISTU = %10d     @\n"
-"@   Le modele de turbulence                                  @\n"
-"@     correspond a ITURB  = %10d                             @\n"
-"@   Or, les seuls traitements de la turbulence compatibles   @\n"
-"@     avec le module Lagrangien et la dispersion turbulente  @\n"
-"@     sont k-epsilon et Rij-epsilon, v2f et k-omega.         @\n"
-"@                                                            @\n"
-"@  Le calcul ne sera pas execute.                            @\n"
-"@                                                            @\n"
-"@  Verifier la valeur de IILAGR et IDISTU dans la subroutine @\n"
-"@  USLAG1 et verifier la valeur de ITURB  dans la subroutine @\n"
-"@  USINI1.                                                   @\n"
-"@                                                            @\n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@"
+"The Lagrangian module is incompatible with the selected\n"
+" turbulence model.\n"
+"\n"
+"Turbulent dispersion is used with:\n"
+"  cs_glob_lagr_time_scheme->idistu = %d\n"
+"And the turbulence model is iturb = %d\n"
+"\n"
+"The only turbulence models compatible with the Lagrangian model's\n"
+"turbulent dispersion are k-epsilon, Rij-epsilon, v2f, and k-omega."
 msgstr ""
 
 msgid "in Lagrangian module"

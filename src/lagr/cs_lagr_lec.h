@@ -44,8 +44,8 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
-/*=============================================================================
- * Public function prototypes
+/*============================================================================
+ * Fortran wrapper function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -59,15 +59,20 @@ CS_PROCF(laglec, LAGLEC)(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Lecture des fichiers suite Lagrangien "lagamo" et "lasamo"
- *    contenant les informations sur les particule, les statistiques
- *    volumiques et aux frontieres, ainsi que les termes sources
- *    de couplage retour.
- *     Tous les tableaux sont initialise a zero avant d'être remplis
- *    dans le cas d'une suite (sinon ils restent a zero).
- *    On realise donc ici l'initialisation des tableaux ouverts
- *    dans MEMLA1, ce qui termine l'etape d'initialisation debutee
- *    dans LAGOPT.
+ * \brief Fortran wrapper for restart files output.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+CS_PROCF(lagout, LAGOUT)(void);
+
+/*=============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *\brief  Read Lagrangian restart files.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -76,45 +81,17 @@ cs_restart_lagrangian_checkpoint_read(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Lecture des fichiers suite Lagrangien "lagamo" et "lasamo"
- *    contenant les informations sur les particule, les statistiques
- *    volumiques et aux frontieres, ainsi que les termes sources
- *    de couplage retour.
- *    Tous les tableaux sont initialise a zero avant d'être remplis
- *    dans le cas d'une suite (sinon ils restent a zero).
- *    On realise donc ici l'initialisation des tableaux ouverts
- *    dans MEMLA1, ce qui termine l'etape d'initialisation debutee
- *    dans LAGOPT.
+ * \brief  Read Lagrangian particle and statistics restart files.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_lagr_restart_read_p(void);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Fortran wrapper for restart files writings
+/*--------------------------------------------------------------------*/
+/*! \brief Output Lagrangian restart files.
  */
-/*----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (lagout, LAGOUT)(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Restart files writings
- *
- * 1. Ecriture du fichier suite 'lagava' :
- *    - variables sur les particules (ETTP)
- *    - informations sur les particules (ITEPA, TEPA)
- * 2. Ecriture du fichier suite statistiques et termes sources
- *    'lasava' :
- *    - statistiques volumiques (STATIS)
- *    - statistiques aux frontieres (PARBOR)
- *    - termes sources de couplage retour (TSLAGR)
- * 3. Finalisation des sorties graphiques
- */
-/*----------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------*/
 
 void
 cs_restart_lagrangian_checkpoint_write(void);

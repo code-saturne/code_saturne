@@ -73,10 +73,15 @@
 
 BEGIN_C_DECLS
 
-/* ----------------------------------------------------------------*/
-/*! \brief Fortran wrapper for restart files readings
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *\brief Fortran wrapper for restart files reading.
  */
-/* ----------------------------------------------------------------  */
+/*----------------------------------------------------------------------------*/
 
 void
 CS_PROCF(laglec, LAGLEC)(void)
@@ -84,18 +89,26 @@ CS_PROCF(laglec, LAGLEC)(void)
   cs_restart_lagrangian_checkpoint_read();
 }
 
-/* ----------------------------------------------------------------*/
-/*! \brief  Lecture des fichiers suite Lagrangien "lagamo" et "lasamo"
- *    contenant les informations sur les particule, les statistiques
- *    volumiques et aux frontieres, ainsi que les termes sources
- *    de couplage retour.
- *     Tous les tableaux sont initialise a zero avant d'être remplis
- *    dans le cas d'une suite (sinon ils restent a zero).
- *    On realise donc ici l'initialisation des tableaux ouverts
- *    dans MEMLA1, ce qui termine l'etape d'initialisation debutee
- *    dans LAGOPT.
+/*--------------------------------------------------------------------*/
+/*! \brief Fortran wrapper for restart files output.
  */
-/* ----------------------------------------------------------------  */
+/*--------------------------------------------------------------------*/
+
+void
+CS_PROCF(lagout, LAGOUT)(void)
+{
+  cs_restart_lagrangian_checkpoint_write();
+}
+
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *\brief  Read Lagrangian restart files.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_lagrangian_checkpoint_read(void)
@@ -118,14 +131,7 @@ cs_restart_lagrangian_checkpoint_read(void)
   cs_lnum_t ncel        = cs_glob_mesh->n_cells;
   cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  /* ====================================================================   */
-  /* 1. Initialisations par defaut  */
-  /* ====================================================================   */
-
-  /* --> Il faut faire dans cette routine les initialisations des */
-  /*     tableaux lagrangiens ouverts dans la routine MEMLA1 */
-  /*     (sauf ITYCEL et ICOCEL qui sont initialises dans LAGDEB),     */
-  /*  Initialisation faite à la création des champs dans cs_lagr_stat     */
+  /* Default initializations */
 
   if (cs_glob_lagr_time_scheme->iilagr == 2) {
 
@@ -1386,18 +1392,11 @@ cs_restart_lagrangian_checkpoint_read(void)
   BFT_FREE(nomtsl);
 }
 
-/* --------------------------------------------------------------------*/
-/*! \brief  Lecture des fichiers suite Lagrangien "lagamo" et "lasamo"
- *    contenant les informations sur les particule, les statistiques
- *    volumiques et aux frontieres, ainsi que les termes sources
- *    de couplage retour.
- *    Tous les tableaux sont initialise a zero avant d'être remplis
- *    dans le cas d'une suite (sinon ils restent a zero).
- *    On realise donc ici l'initialisation des tableaux ouverts
- *    dans MEMLA1, ce qui termine l'etape d'initialisation debutee
- *    dans LAGOPT.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read Lagrangian particle and statistics restart files.
  */
-/* --------------------------------------------------------------------   */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_lagr_restart_read_p(void)
@@ -1472,8 +1471,8 @@ cs_lagr_restart_read_p(void)
 
   /*     Dimensions des supports    */
   bool ncelok, nfaiok, nfabok, nsomok;
-  cs_restart_check_base_location (cs_lag_stat_restart, &ncelok, &nfaiok,
-                                  &nfabok, &nsomok);
+  cs_restart_check_base_location(cs_lag_stat_restart, &ncelok, &nfaiok,
+                                 &nfabok, &nsomok);
 
   if (! ncelok) {
 
@@ -1935,7 +1934,6 @@ cs_lagr_restart_read_p(void)
          "temps_physique_Lagrangien",
          "TTCLAG",
          cs_glob_lagr_time_step->ttclag);
-
   }
 
   {
@@ -1972,7 +1970,6 @@ cs_lagr_restart_read_p(void)
          "nombre_total_particules",
          "NBPTOT",
          (unsigned long long)(pc->n_g_cumulative_total));
-
   }
 
   {
@@ -2009,7 +2006,6 @@ cs_lagr_restart_read_p(void)
          "nombre_particules_perdues",
          "NBPERT",
          (unsigned long long)(pc->n_g_cumulative_failed));
-
   }
 
   {
@@ -2116,47 +2112,23 @@ cs_lagr_restart_read_p(void)
          cs_glob_lagr_model->n_user_variables,
          cs_glob_lagr_model->n_user_variables,
          cs_glob_lagr_model->n_user_variables);
-
   }
 
-  /* --> Caracteristiques et infos particulaires   */
+  /* Particle data */
   cs_lagr_restart_read_particle_data(cs_lag_stat_restart);
 
   cs_log_printf(CS_LOG_DEFAULT,
-                _("      Fin   de la lecture\n"));
+                _("    End reading particle data restart file\n"));
 
-  /*  ---> Fermeture du fichier suite    */
+  /* Close restart file */
   cs_restart_destroy(&cs_lag_stat_restart);
 
   cs_log_printf(CS_LOG_DEFAULT,
-                _("    Fin de la lecture du fichier suite\n"
-                  "      sur les variables liees aux particules\n"));
-
+                _("    End reading particle statistics restart file\n"));
 }
 
 /*--------------------------------------------------------------------*/
-/*! \brief Fortran wrapper for restart files writings
- */
-/*--------------------------------------------------------------------*/
-
-void
-CS_PROCF (lagout, LAGOUT)(void)
-{
-  cs_restart_lagrangian_checkpoint_write();
-}
-
-/*--------------------------------------------------------------------*/
-/*! \brief Restart files writing
- *
- * 1. Ecriture du fichier suite 'lagava' :
- *    - variables sur les particules (ETTP)
- *    - informations sur les particules (ITEPA, TEPA)
- * 2. Ecriture du fichier suite statistiques et termes sources
- *    'lasava' :
- *    - statistiques volumiques (STATIS)
- *    - statistiques aux frontieres (PARBOR)
- *    - termes sources de couplage retour (TSLAGR)
- * 3. Finalisation des sorties graphiques
+/*! \brief Output Lagrangian restart files
  */
 /*--------------------------------------------------------------------*/
 
@@ -2184,16 +2156,6 @@ cs_restart_lagrangian_checkpoint_write(void)
   cs_log_printf(CS_LOG_DEFAULT,
                 _("   ** Writing the Lagrangian restart file\n"
                   "-----------------------------------\n"));
-
-  /* if (cs_lag_stat_restart == NULL) */
-  /*   bft_error(__FILE__, __LINE__, 0, */
-  /*             _("Abort while opening the lagrangian module restart file " */
-  /*               "in write mode.\n" */
-  /*               "Verify the existence and the name of the restart file: %s\n"), */
-  /*             ficsui); */
-
-  cs_log_printf(CS_LOG_DEFAULT,
-                _("   Start writing\n"));
 
   /* Entete et Infos sur le calcul ou on saute si erreur
    *   On inclut une rubrique destinee a distinguer ce fichier
