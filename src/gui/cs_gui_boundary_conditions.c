@@ -970,7 +970,7 @@ _hydraulic_head_formula(const char *nature,
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
   cs_xpath_add_test_attribute(&path, "label", label);
-  cs_xpath_add_elements(&path, 2, "hydraulicHead", "formula");
+  cs_xpath_add_elements(&path, 2, "hydraulicHead", "dirichlet_formula");
   cs_xpath_add_function_text(&path);
 
   form = cs_gui_get_text_value(path);
