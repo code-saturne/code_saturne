@@ -5089,7 +5089,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
 {
   char *path = NULL;
   char *status = NULL;
-  double time0;
+  cs_real_t time0;
   char *formula = NULL;
   cs_lnum_t *cells_list = NULL;
   cs_lnum_t cells = 0;
@@ -5146,9 +5146,9 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
       BFT_FREE(path);
 
       if (cs_gui_strcmp(mdl, "VanGenuchten")) {
-        double alpha_param, ks_param, l_param, n_param, thetas_param, thetar_param;
-        double ks_xx, ks_yy, ks_zz, ks_xy, ks_xz, ks_yz;
-        double molecular_diffusion;
+        cs_real_t alpha_param, ks_param, l_param, n_param, thetas_param, thetar_param;
+        cs_real_t ks_xx, ks_yy, ks_zz, ks_xy, ks_xz, ks_yz;
+        cs_real_t molecular_diffusion;
         _van_genuchten_parameter_value(zone_id, "alpha",  &alpha_param);
         _van_genuchten_parameter_value(zone_id, "l",      &l_param);
         _van_genuchten_parameter_value(zone_id, "n",      &n_param);
@@ -5157,7 +5157,6 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
         _van_genuchten_parameter_value(zone_id, "molecularDiff",
                                        &molecular_diffusion);
 
-        double m_param = 1 - 1 / n_param;
         if (*permeability == 0)
           _van_genuchten_parameter_value(zone_id, "ks",     &ks_param);
         else {
@@ -5171,7 +5170,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
 
         for (cs_lnum_t icel = 0; icel < cells; icel++) {
           cs_lnum_t iel = cells_list[icel];
-          double head = h_head_field[iel];
+          cs_real_t head = h_head_field[iel];
 
           if (*gravity == 1)
             head -= (cell_cen[iel][0] * *gravity_x +
@@ -5194,19 +5193,18 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
             }
           }
           else {
-
-            double tmp1 = pow(fabs(alpha_param * head), n_param);
-            double tmp2 = 1. / (1. + tmp1);
-            double se_param = pow(tmp2, m_param);
-            double perm = pow(se_param, l_param) *
-                          pow((1. - pow((1. - tmp2), m_param)), 2);
+            cs_real_t m_param = 1 - 1 / n_param;
+            cs_real_t tmp1 = pow(fabs(alpha_param * head), n_param);
+            cs_real_t tmp2 = 1. / (1. + tmp1);
+            cs_real_t se_param = pow(tmp2, m_param);
+            cs_real_t perm = pow(se_param, l_param) *
+                             pow((1. - pow((1. - tmp2), m_param)), 2);
 
             capacity_field[iel] = -m_param * n_param * tmp1 *
                                   (thetas_param - thetar_param) *
                                    se_param * tmp2 / head;
             saturation_field[iel] = thetar_param +
                                     se_param * (thetas_param - thetar_param);
-
 
             if (*permeability == 0)
               permeability_field[iel] = perm * ks_param;
