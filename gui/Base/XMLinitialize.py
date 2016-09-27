@@ -1205,21 +1205,24 @@ class XMLinit(Variables):
                     n.xmlRemoveNode()
 
         # rename pressure into hydraulic_head for ground water module
+        XMLThermoPhysicalModelNode = self.case.xmlGetNode('thermophysical_models')
+        XMLPhysicalModelGWNode = XMLThermoPhysicalModelNode.xmlGetNode('groundwater')
+        if XMLPhysicalModelGWNode:
 
-        XMLBoundaryNode = self.case.xmlGetNode('boundary_conditions')
-        XMLGWNodes = XMLBoundaryNode.xmlGetNodeList('groundwater')
-        for XMLGWNode in XMLGWNodes:
-            for node in (XMLGWNode.xmlGetNodeList('neumann') + XMLGWNode.xmlGetNodeList('dirichlet')):
+            XMLVelPrNode = XMLThermoPhysicalModelNode.xmlGetNode('velocity_pressure')
+            for node in XMLVelPrNode.xmlGetNodeList('variable', 'name'):
                 if node['name'] == 'pressure':
                     node['name'] = 'hydraulic_head'
+                if node['label'] == 'Pressure':
+                    node['label'] = 'HydraulicHead'
 
-        XMLThermoPhysicalModelNode = self.case.xmlGetNode('thermophysical_models')
-        XMLVelPrNode = XMLThermoPhysicalModelNode.xmlGetNode('velocity_pressure')
-        for node in XMLVelPrNode.xmlGetNodeList('variable', 'name'):
-            if node['name'] == 'pressure':
-                node['name'] = 'hydraulic_head'
-            if node['label'] == 'Pressure':
-                node['label'] = 'HydraulicHead'
+            XMLBoundaryNode = self.case.xmlGetNode('boundary_conditions')
+            XMLGWNodes = XMLBoundaryNode.xmlGetNodeList('groundwater')
+            for XMLGWNode in XMLGWNodes:
+                for node in (XMLGWNode.xmlGetNodeList('neumann') + XMLGWNode.xmlGetNodeList('dirichlet')):
+                    if node['name'] == 'pressure':
+                        node['name'] = 'hydraulic_head'
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case
