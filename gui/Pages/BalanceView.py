@@ -345,6 +345,7 @@ class BalanceView(QWidget, Ui_BalanceForm):
         self.tableViewPressureDrop.setModel(self.pressureModel)
         self.tableViewPressureDrop.setAlternatingRowColors(True)
         self.tableViewPressureDrop.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableViewPressureDrop.setSelectionMode(QAbstractItemView.SingleSelection)
 
         delegateIdxPres = LineEditDelegateIndex(self.tableViewPressureDrop)
         self.tableViewPressureDrop.setItemDelegateForColumn(0, delegateIdxPres)
@@ -363,6 +364,9 @@ class BalanceView(QWidget, Ui_BalanceForm):
         self.modelScalarBalance = StandardItemModelScalarBalance(self.mdl)
         self.tableViewScalarBalance.setModel(self.modelScalarBalance)
         self.tableViewScalarBalance.resizeColumnToContents(0)
+        self.tableViewScalarBalance.setAlternatingRowColors(True)
+        self.tableViewScalarBalance.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableViewScalarBalance.setSelectionMode(QAbstractItemView.SingleSelection)
 
         delegateIdxScalar = LineEditDelegateIndex(self.tableViewScalarBalance)
         self.tableViewScalarBalance.setItemDelegateForColumn(0, delegateIdxScalar)
@@ -471,8 +475,8 @@ class BalanceView(QWidget, Ui_BalanceForm):
             msg   = self.tr("You must select an existing scalar balance")
             QMessageBox.information(self, title, msg)
         else:
-            self.modelScalarBalance.deleteRow(row)
             self.mdl.deleteScalarBalance(row)
+            self.modelScalarBalance.delItem(row)
             self.__eraseEntries()
 
 
