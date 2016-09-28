@@ -3825,12 +3825,12 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           mei_tree_t *ev_formula       = NULL;
           path = cs_xpath_short_path();
           cs_xpath_add_element(&path, "variable");
-          cs_xpath_add_test_attribute(&path, "name", "pressure");
+          cs_xpath_add_test_attribute(&path, "name", "hydraulic_head");
           cs_xpath_add_element(&path, "formula");
           cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
           BFT_MALLOC(path1, strlen(path) +1, char);
 
-          cs_field_t *c = cs_field_by_name_try("pressure");
+          cs_field_t *c = cs_field_by_name_try("hydraulic_head");
 
           cs_xpath_add_function_text(&path);
           formula = cs_gui_get_text_value(path);
