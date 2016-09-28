@@ -214,7 +214,7 @@ More theoretical details of such an iterative process are given in \S \ref{sec:a
 %-------------------------------------------------------------------------------
 \section{Pressure-based velocity-pressure solver}
 The aim of this section is to describe how Navier Stokes equations are solved for an incompressible
-or weakly compressible (dilatable or Low Mach algorithm) combined with a
+or weakly compressible (dilatable or Low Mach algorithm) combined with an
 implicit Euler time stepping or a second order Crank Nicolson time stepping.
 
 The set of equations to be solved is
@@ -385,9 +385,9 @@ from their non conservative balance equations ($\rho \DP{\varia} = \divs \left(K
 \label{eq:timstp:total_derivative}
 \end{equation}
 
-These scalars have to be independant to avoid counting several times
+These scalars have to be independent to avoid counting several times
 their effect on  the mass accumulation.
-One have also to bear in mind that the total derivatives are dependent of the state law for density.
+One has also to bear in mind that the total derivatives are dependent of the state law for density.
 
 Therefore, the correction system \eqref{eq:timstp:correction} written in a non conservative form reads:
 \begin{equation}

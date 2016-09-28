@@ -132,7 +132,7 @@ Moreover, the unsteady and convection terms are usually written in a \emph{non-c
 \begin{equation}\label{eq:spadis:non_conservative}
  \der{ \left( \rho\varia \right)}{t} + \dive \left(  \varia  \rho \vect{u}\right) = \rho \der{\varia }{t} + \grad \varia \cdot \left( \rho \vect{u}\right) + \Gamma \varia.
  \end{equation}
- Note that for \eqref{eq:spadis:non_conservative} to hold, the continuity equation \eqref{eq:mass} must be fulfilled.
+ Note that for \eqref{eq:spadis:non_conservative} to hold, the continuity equation \eqref{eq:goveqn:mass} must be fulfilled.
  If \eqref{eq:spadis:non_conservative} is required even for discrete volumes, the convection term must be defined as:
  %
  \begin{equation}\label{eq:spadis:convection_def}
@@ -1185,7 +1185,7 @@ with
 
 \begin{remark}
 Note that the $3\times3$ $\tens{C}_\celli$ tensor is  slightly different from \eqref{eq:spadis:gradmc_matrix} and does not depend
- on boundary condition coefficients (and thus does not require re-computation if the mesh is not modified.
+ on boundary condition coefficients (and thus does not require re-computation if the mesh is not modified).
 \end{remark}
 
 

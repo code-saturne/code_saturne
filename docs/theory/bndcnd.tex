@@ -240,7 +240,7 @@ $K  $                          & conductivity or diffusivity       & $kg.m^{-1}.
 \end{tabular}
 \end{center}
 }
-\caption{Values and unit of $\alpha$ common cases.}\label{tab:bdncnd:diffusivity}
+\caption{Definitions and units of $K$ for the most common equations.}\label{tab:bdncnd:diffusivity}
 \end{table}
 
 %-------------------------------------------------------------------------------
@@ -308,7 +308,7 @@ As explained in the introduction \ref{sec:bndcnd:intro}, the simple case of a he
 As presented in \S~ \ref{sec:bndcnd:dirichlet_bc}, Dirichlet condition $T_\centf = T_w$ simply leads to $A^f = - h_{int} T_w$ and $B^f = h_{int}$.
 In some cases, heat transfer outside the flow domain is described by a one-dimensional conduction equation $q = -h_{ext} \left(T_{REF} - T_w \right)$
 in which some reference temperature $T_{REF}$ is given and the coefficient $h_{ext}$ is known from an analytical or experimental correlation.
-Equaling this to the heat flux computed in the first fluid cell at the boundary gives $ h_{ext} \left(T_{REF} - T_w \right) = h_{int} \left( T_\centip - T_\centf \right)$. This relation between the variable and its gradient at the boundary is called a Robin or mixed boundary condtion.
+Equaling this to the heat flux computed in the first fluid cell at the boundary gives $ h_{ext} \left(T_{REF} - T_w \right) = h_{int} \left( T_\centip - T_\centf \right)$. This relation between the variable and its gradient at the boundary is called a Robin or mixed boundary condition.
 
 More generally, to impose an external Dirichlet $\varia^{imp, \, ext}$ at some distance outside the boundary face,
 this is done by a user prescribed external coefficient $h_{ext}$
@@ -409,7 +409,7 @@ $\varia$   & scalar               & unit of ($\varia$)       &$K \,\grad \varia 
 \end{tabular}
 \end{center}
 %}
-\caption{Values and unities of $h_{int}$ et $D^{imp}$  is common cases.}\label{tab:bndcnd:hint_phi_condli}
+\caption{Definitions and units of $h_{int}$ and $D^{imp}$ for the most common equations.}\label{tab:bndcnd:hint_phi_condli}
 \end{table}
 
 
@@ -618,7 +618,7 @@ The internal pair of boundary condition coefficient for the diffusive term for t
 \left\lbrace
 \begin{array}{r c l}
 \vect{A}^f_\ib & = & -h_{fluid}  \left(\tens{1} - \vect{n} \otimes \vect{n} \right) \cdot  \vect{u}_{wall}
- - h_{hint} \left( \vect{n} \cdot \vect{u}_{wall}  \right) \vect{n}
+ - h_{int} \left( \vect{n} \cdot \vect{u}_{wall}  \right) \vect{n}
 , \\
 \tens{B}^f_\ib & = & h_{fluid}  \left(\tens{1} - \vect{n} \otimes \vect{n} \right)
 + h_{int} \vect{n} \otimes \vect{n}
@@ -645,10 +645,11 @@ that the velocity gradient evaluated inside the cell by the
 standard Finite Volumes linear profile is more consistent with wall
 function.
 
-A dedicated boundary condition for the velocity gradient is therefore derived in presence of wall function.
+A dedicated boundary condition for the velocity gradient is therefore derived 
+in presence of wall function to be consistent with the logarithmic law giving 
+the ideal tangential velocity profile.
 
-To be consistent with the logarithmic law giving the ideal tangential
-velocity profile. On the first hand, the theoretical gradient is:
+On the first hand, the theoretical gradient is:
 
 \begin{equation}\label{eq:bndcnd:vel_grad_wallf_theo}
 \left( \dfrac{\partial u^r}{\partial y}\right)_{I'}^\textrm{theo} =\dfrac{u^\star}{\kappa \, y}
@@ -731,8 +732,8 @@ When the considered scalar $\varia$ is the temperature $T$,
 we have
 \begin{itemize}
 \item $C=C_p$ (specific heat capacity),
-\item $\alpha=\lambda$ (molecular conductivity),
-\item $\sigma = \displaystyle\frac{\mu \,C_p}{\lambda} = Pr$
+\item $K=\lambda$ (molecular conductivity),
+\item hence, $\sigma = \displaystyle\frac{\mu \,C_p}{\lambda} = Pr$
        (Prandtl number),
 \item $\sigma_T = Pr_T$ (turbulent Prandtl number),
 \item $q_\ib = \dfrac{D_\ib \left( \lambda_\fib , \, T \right)}{\norm{\vect{S}}_\fib} =\left(\lambda+\displaystyle\frac{C_p \mu_T}{\sigma_T}\right)
@@ -970,7 +971,7 @@ P_\fib
 \end{equation}
 
 To conclude, the outlet boundary condition on the pressure is a Dirichlet based on
-the value in $\centip$ (at the previous time step) and shifted to imposed
+the value in $\centip$ (at the previous time step) and shifted to impose
 the value $P_0$ at a given face $\fib$.
 
 %-------------------------------------------------------------------------------
@@ -979,7 +980,7 @@ the value $P_0$ at a given face $\fib$.
 In this section the boundary condition on the pressure increment at the free inlet is detailed.
 For the other variables (even the pressure itself), the treatment is similar to \S \ref{sec:bndcnd:outlet_pressure}.
 
-Let us start with the Bernoulli relation ship between a boundary face $\face$ linked to a point on the same
+Let us start with the Bernoulli relationship between a boundary face $\face$ linked to a point on the same
 stream line far away from the computational domain:
 \begin{equation}\label{eq:bndcnd:benoulli_inlet}
 P_\face - \rho_\face \vect{g} \cdot  \left( \vect{x}_\face - \vect{x}_0 \right) + \dfrac{1+K}{2}\rho_\face \vect{u}_\face \cdot \vect{u}_\face  = P_\infty - \rho_\infty \vect{g} \cdot \left(  \vect{x}_\infty

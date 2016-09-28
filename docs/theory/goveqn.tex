@@ -128,7 +128,7 @@ the \textbf{momentum} equation is obtained:
 %
 where $\vect{ST}_{\vect{u}}$ and $\rho\tens{K}\,\vect{u}$ stand for an additional
 momentum Source Terms (head loss, treated as implicit by default)
-\nomenclature[rstut1]{$\vect{ST}_{\vect{u}}$}{explicit additional momemtum source terms \nomunit{$kg.m^{-2}.s^{-2}$}}
+\nomenclature[rstut1]{$\vect{ST}_{\vect{u}}$}{explicit additional momentum source terms \nomunit{$kg.m^{-2}.s^{-2}$}}
 \nomenclature[rkt2]{$\tens{K}$}{tensor of the velocity head loss \nomunit{$s^{-1}$}}
 \nomenclature[gsigmat2]{$\tens{\sigma}$}{total stress tensor \nomunit{$Pa$}}
  which may be prescribed by the user (head loss, $\Gamma \vect{u}^{in}$
@@ -169,7 +169,7 @@ and $\tens{S}$ , the strain rate tensor, as:
 \nomenclature[odeviator]{$\deviator{ \left(\tens{.} \right)}$}{deviatoric part of a tensor}
 \nomenclature[otrace]{$\trace{ \left(\tens{.}\right)}$}{trace of a tensor}
 %
-Note that a fluid for which \eqref{eq:goveqn:newtonian_fluid} holds is called a Newtonian fluid, it is generally the case
+Note that a fluid for which \eqref{eq:goveqn:newtonian_fluid} holds, is called a Newtonian fluid, it is generally the case
 for water or air, but not the case for a paint because the stresses do not depend linearly on the strain rate.
 
 \paragraph{Navier-Stokes equations:}
@@ -468,7 +468,7 @@ Two types of transport equations are considered:
 \begin{equation}
 \frac{\partial (\rho a)}{\partial t} +
 \underbrace{
-\dive \left( a \, \rho \vect{u})
+\dive \left( a \, \rho \vect{u}
 \right)
 }_{\text{advection}}
 -\underbrace{

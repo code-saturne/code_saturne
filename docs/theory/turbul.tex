@@ -319,7 +319,7 @@ for studying a flow around an air-plane wing for instance.
 
 %--------------------------------
 \subsubsection{Model description}
-It consists of a transport equation of a scalar $\tilde{nu}$ dirctly linked to the turbulent viscosity $\mu_T$.
+It consists in a transport equation of a scalar $\tilde{\nu}$ directly linked to the turbulent viscosity $\mu_T$.
 
 More recently, this model has been extended by Aupoix \cite{Aupoix:2003} to rough wall for studying atmospheric flows. It was also successfully applied to flow in turbo-machinery where variants of this model has been developed.
 
@@ -389,7 +389,7 @@ Equation \eqref{eq:turbul:SA_used} can be rewritten with the $\theta$-scheme pre
 }
 -
 \underbrace{
-\divs \left[ \dfrac{\mu + \rho \tilde{\nu}}{\sigma} \grad \delta \tilde{\nu}^{n+1} \right]
+\divs \left[ \dfrac{\mu + \rho \tilde{\nu}^{n}}{\sigma} \grad \delta \tilde{\nu}^{n+1} \right]
 }_{
 \texttt{implicit part of the diffusion}
 }
@@ -399,13 +399,13 @@ Equation \eqref{eq:turbul:SA_used} can be rewritten with the $\theta$-scheme pre
 \\
 - \grad \tilde{\nu}^{n} \cdot \left( \rho \vect{u} \right)
 +
-\divs \left[ \dfrac{\mu + \rho \tilde{\nu}}{\sigma} \grad \tilde{\nu}^{n} \right]
+\divs \left[ \dfrac{\mu + \rho \tilde{\nu}^{n}}{\sigma} \grad \tilde{\nu}^{n} \right]
 \\
 +
 c_{b1} \rho \tilde{S} \tilde{\nu}^n
-- c_{w1}f_{w}\rho \left( \dfrac{\tilde{\nu}}{d} \right)^2
+- c_{w1}f_{w}\rho \left( \dfrac{\tilde{\nu}^{n}}{d} \right)^2
 + \dfrac{c_{b2}\rho}{ \sigma}
- \left| \grad \tilde{\nu} \right| ^2
+ \left| \grad \tilde{\nu}^{n} \right| ^2
  + \Gamma \left( \tilde{\nu}^{in} - \tilde{\nu}^n \right) +ST^{imp} \tilde{\nu}^n +ST^{exp}
 \end{array}
 \end{equation}
@@ -437,7 +437,7 @@ Note that the model gives a log law outside of the viscous sub-layer, \emph{i.e.
 In case of rough walls, let us define:
 \begin{equation}
 \begin{array}{rcl}
-\chi_{rough} & = & \chi + c_{R1} \dfrac{h_s}{d_{rug}} \\
+\chi_{rough} & = & \chi + c_{R1} \dfrac{h_s}{d_{rough}} \\
 d_{rough} & = & d + d_0 \\
 d_0     & = & \exp \left( -8.5 \kappa \right) h_s \simeq 0.03 h_s
 \end{array}
@@ -454,8 +454,7 @@ A development in series in then written:
 \begin{equation}\label{eq:eq_neumann_nu_vf}
  \tilde{\nu}_\fib = \tilde{\nu}_{\centip} -   \grad_\fib \tilde{ \nu} \cdot \vect{\centip \centf}
 \end{equation}
-Finally, that is a Robbin type boundary condition formulated as follows in \CS:
-which reads as follows in \CS:
+Finally, that is a Robin type boundary condition formulated as follows in \CS:
 \begin{equation}\label{eq:eq_neumann_nu_coef}
  \tilde{\nu}_\fib = A^g_\fib - B^g_\fib \tilde{\nu}_\centip
 \end{equation}
@@ -466,7 +465,7 @@ with $A^g_\fib=0$ and
 \end{equation}
 
 \paragraph{Inlet:}
-the profile of $\tilde{\nu}$ is imposed, the value is deduced from the profiles imposed on $k$ and $\varepsilon$ for a $k-\varepsilon$turbulence
+the profile of $\tilde{\nu}$ is imposed, the value is deduced from the profiles imposed on $k$ and $\varepsilon$ for a $k-\varepsilon$ turbulence
 model assuming $\tilde{\nu } \simeq \nu_T$.
 
 
@@ -574,7 +573,7 @@ d & = & C_{\varepsilon }\displaystyle \dive \left( \rho \frac{k}{\varepsilon}
 
 In the rare event of mass sources, $\Gamma R_{ij}^{in}$ and $\Gamma
 \varepsilon ^{i}$ are the corresponding injection terms. $ST_{R_{ij}}$ and $%
-ST_{\varepsilon }$ are also rarely used additional source terms that can
+ST_{\varepsilon }$ are also rarely used additional source terms that can be
 prescribed by the user.
 
 \begin{table}[!htp]
@@ -666,7 +665,7 @@ T_{ij}-\frac{1}{3}\trace \tens{T} \delta_{ij} &=& -2 C \widetilde{\Delta}^2 |\wi
 \end{equation}
 where
 $\overline{u}$ stands for the \emph{implicit-filtered} value of a variable $u$
-defined at the centres of the cells and $\overline{u}$ represents the
+defined at the centres of the cells and $\tilde{u}$ represents the
 \emph{explicit-filtered} value associated with the variable $u$. It follows that
 the numerical computation of $L_{ij}$ is possible, since it requires the
 explicit filtering to be applied to implicitly filtered variables only
