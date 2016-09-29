@@ -2132,6 +2132,62 @@ _get_rotor_face_joining(const char  *keyword,
   return value;
 }
 
+/*----------------------------------------------------------------------------
+ * Return the value of the choice attribute for fan
+ *
+ * parameters:
+ *   fan_id      <--  id of the fan
+ *   name        <--  name of the property
+ *----------------------------------------------------------------------------*/
+
+static double
+_fan_option(int          fan_id,
+            const char  *name)
+{
+  double value = 0.;
+  char *path   = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2,
+                        "thermophysical_models",
+                        "fans");
+  cs_xpath_add_element_num(&path, "fan", fan_id + 1);
+  cs_xpath_add_element(&path, name);
+  cs_xpath_add_function_text(&path);
+  cs_gui_get_double(path, &value);
+  BFT_FREE(path);
+
+  return value;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the value of the choice attribute for fan
+ *
+ * parameters:
+ *   fan_id      <--  id of the fan
+ *   name        <--  name of the property
+ *----------------------------------------------------------------------------*/
+
+static int
+_fan_dimension(int          fan_id,
+               const char  *name)
+{
+  double value = 0.;
+  char *path   = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2,
+                        "thermophysical_models",
+                        "fans");
+  cs_xpath_add_element_num(&path, "fan", fan_id + 1);
+  cs_xpath_add_element(&path, name);
+  cs_xpath_add_function_text(&path);
+  cs_gui_get_int(path, &value);
+  BFT_FREE(path);
+
+  return value;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -5543,6 +5599,21 @@ void CS_PROCF (memui1, MEMUI1) (const int *ncharb)
   cs_gui_finalize();
 }
 
+/*----------------------------------------------------------------------------
+ * Define fans with GUI
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIFANS
+ * *****************
+ *
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uifans, UIFANS) (void)
+{
+  cs_gui_define_fans();
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -6503,6 +6574,47 @@ cs_gui_pressure_drop_by_zone(void)
 
     BFT_FREE(cell_criteria);
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Define fans through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_define_fans(void)
+{
+  cs_real_t inlet_axis_coords[3];
+  cs_real_t outlet_axis_coords[3];
+  cs_real_t pressure_curve_coeffs[3];
+
+  int n_fans = cs_gui_get_tag_count("/thermophysical_models/fans/fan\n", 1);
+
+  for (int fan_id = 0; fan_id < n_fans; fan_id++) {
+    int dim                  = _fan_dimension(fan_id, "mesh_dimension");
+    inlet_axis_coords[0]     = _fan_option(fan_id, "inlet_axis_x");
+    inlet_axis_coords[1]     = _fan_option(fan_id, "inlet_axis_y");
+    inlet_axis_coords[2]     = _fan_option(fan_id, "inlet_axis_z");
+    outlet_axis_coords[0]    = _fan_option(fan_id, "outlet_axis_x");
+    outlet_axis_coords[1]    = _fan_option(fan_id, "outlet_axis_y");
+    outlet_axis_coords[2]    = _fan_option(fan_id, "outlet_axis_z");
+    cs_real_t fan_radius     = _fan_option(fan_id, "fan_radius");
+    cs_real_t blades_radius  = _fan_option(fan_id, "blades_radius");
+    cs_real_t hub_radius     = _fan_option(fan_id, "hub_radius");
+    cs_real_t axial_torque   = _fan_option(fan_id, "axial_torque");
+    pressure_curve_coeffs[0] = _fan_option(fan_id, "curve_coeffs_x");
+    pressure_curve_coeffs[1] = _fan_option(fan_id, "curve_coeffs_y");
+    pressure_curve_coeffs[2] = _fan_option(fan_id, "curve_coeffs_z");
+
+    cs_fan_define(dim, /* fan (mesh) dimension (2D or 3D) */
+                  inlet_axis_coords,
+                  outlet_axis_coords,
+                  fan_radius,
+                  blades_radius,
+                  hub_radius,
+                  pressure_curve_coeffs,
+                  axial_torque);
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

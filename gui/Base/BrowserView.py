@@ -421,6 +421,7 @@ Thermophysical models
     Species transport
     Turbomachinery
     Groundwater flows
+    Fans
 Physical properties
     Reference values
     Fluid properties
@@ -689,6 +690,7 @@ Calculation management
             self.setRowClose(self.tr('Lagrangian solution control'))
             self.setRowClose(self.tr('Profiles'))
             self.setRowClose(self.tr('Balance by zone'))
+            self.setRowClose(self.tr('Fans'))
             return
         else:
             self.setRowOpen(self.tr('Thermophysical models'))
@@ -704,6 +706,7 @@ Calculation management
             self.setRowOpen(self.tr('Lagrangian solution control'))
             self.setRowOpen(self.tr('Profiles'))
             self.setRowOpen(self.tr('Balance by zone'))
+            self.setRowOpen(self.tr('Fans'))
 
         # Steady flow management
 

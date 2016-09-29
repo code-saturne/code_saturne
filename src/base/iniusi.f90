@@ -307,6 +307,9 @@ if (iihmpr.eq.1) then
 
   call uiipsu(iporos)
 
+  ! Init fan
+  call uifans()
+
 endif
 
 !   - Sous-programme utilisateur

@@ -65,6 +65,8 @@ DefineUserScalarsView.py \
 ElectricalModel.py \
 ElectricalView.py \
 FacesSelectionView.py \
+FansModel.py \
+FansView.py \
 FluidCharacteristicsModel.py \
 FluidCharacteristicsView.py \
 FluidStructureInteractionModel.py \
@@ -170,6 +172,7 @@ GroundwaterLawForm.ui \
 DefineUserScalarsForm.ui \
 ElectricalForm.ui \
 FacesSelectionForm.ui \
+FansForm.ui \
 FluidCharacteristicsForm.ui \
 FluidStructureInteractionAdvancedOptionsDialogForm.ui \
 FluidStructureInteractionForm.ui \

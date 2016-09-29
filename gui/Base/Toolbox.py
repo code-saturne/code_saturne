@@ -169,6 +169,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import code_saturne.Pages.TurboMachineryView as Page
         thisPage = Page.TurboMachineryView(root, case)
 
+    elif page_name == tr("Fans"):
+        import code_saturne.Pages.FansView as Page
+        thisPage = Page.FansView(root, case)
+
     elif page_name == tr("Groundwater flows"):
         import code_saturne.Pages.GroundwaterView as Page
         thisPage = Page.GroundwaterView(root, case)
