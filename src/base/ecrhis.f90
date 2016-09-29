@@ -109,7 +109,7 @@ if (keyvis.lt.0) call field_get_key_id('post_vis', keyvis)
 ! 1. Search for neighboring nodes -> nodcap
 !===============================================================================
 
-if (ipass.eq.1) then
+if (ipass.eq.1.or.iale.eq.1.and.iturbo.eq.2.or.imobil.eq.1) then
   do ii = 1, ncapt
     call findpt                                                        &
     (ncelet, ncel, xyzcen,                                             &
