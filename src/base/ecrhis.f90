@@ -49,6 +49,9 @@ use parall
 use mesh
 use post
 use field
+use albase, only:iale
+use turbomachinery, only:iturbo
+use cplsat, only:imobil
 
 !===============================================================================
 
