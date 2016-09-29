@@ -309,10 +309,10 @@ cs_user_radiative_transfer_bcs(int               nvarcl,
       /* Thickness (m)*/
       epap[face_id] = 0.1;
 
-      /* Fixed outside temperature: 473.16 K */
+      /* Fixed outside temperature: 473.15 K */
       textp[face_id] = 200. + tkelvi;
 
-      /* Initial inside temperature: 473.16 K */
+      /* Initial inside temperature: 473.15 K */
       tintp[face_id] = 200. + tkelvi;
     }
 
@@ -344,10 +344,10 @@ cs_user_radiative_transfer_bcs(int               nvarcl,
       /* Thickness    (m)*/
       epap[face_id] = 0.10;
 
-      /* Fixed outside temperature: 473.16 K */
+      /* Fixed outside temperature: 473.15 K */
       textp[face_id] = 200.0 + tkelvi;
 
-      /* Initial inside temperature: 473.16 K */
+      /* Initial inside temperature: 473.15 K */
       tintp[face_id] = 200.0 + tkelvi;
     }
 
@@ -393,7 +393,7 @@ cs_user_radiative_transfer_bcs(int               nvarcl,
       /* Conduction flux (W/m2) */
       rcodcl[face_id + ivart * n_b_faces + 2 * nvarcl * n_b_faces ] = 0.0;
 
-      /* Initial inside temperature: 473.16 K */
+      /* Initial inside temperature: 473.15 K */
       tintp[face_id] = 200.0 + tkelvi;
     }
 
@@ -437,7 +437,7 @@ cs_user_radiative_transfer_bcs(int               nvarcl,
       /* Conduction flux (W/m2)*/
       rcodcl[face_id + ivart * n_b_faces + 2 * nvarcl * n_b_faces ] = 0.0;
 
-      /* Initial inside temperature: 473.16 K */
+      /* Initial inside temperature: 473.15 K */
       tintp[face_id] = 200.0 + tkelvi;
     }
 
