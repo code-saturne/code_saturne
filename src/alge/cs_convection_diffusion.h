@@ -4349,7 +4349,7 @@ cs_b_upwind_flux_tensor(const int          iconvp,
 
 inline static void
 cs_b_diff_flux(const int        idiffp,
-               const int        thetap,
+               const cs_real_t  thetap,
                const int        inc,
                const cs_real_t  pipr,
                const cs_real_t  cofafp,
@@ -4378,7 +4378,7 @@ cs_b_diff_flux(const int        idiffp,
 
 inline static void
 cs_b_diff_flux_vector(const int          idiffp,
-                      const int          thetap,
+                      const cs_real_t    thetap,
                       const int          inc,
                       const cs_real_3_t  pipr,
                       const cs_real_3_t  cofaf,
@@ -4413,7 +4413,7 @@ cs_b_diff_flux_vector(const int          idiffp,
 
 inline static void
 cs_b_diff_flux_tensor(const int          idiffp,
-                      const int          thetap,
+                      const cs_real_t    thetap,
                       const int          inc,
                       const cs_real_6_t  pipr,
                       const cs_real_6_t  cofaf,
