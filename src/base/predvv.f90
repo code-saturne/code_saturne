@@ -1560,7 +1560,7 @@ if (ncesmp.gt.0) then
 
 endif
 
-! ---> Right Han Side initialization
+! ---> Right Hand Side initialization
 
 ! If source terms are extrapolated in time
 if (isno2t.gt.0) then
