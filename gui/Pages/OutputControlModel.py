@@ -156,7 +156,7 @@ class OutputControlModel(Model):
         default['directory']                 = 'postprocessing'
 
         if self.case['salome']:
-            default['format'] = "MED"
+            default['format'] = "med"
 
         return default
 
