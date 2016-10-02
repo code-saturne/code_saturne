@@ -427,7 +427,7 @@ if (vcopt%iwarni.ge.1) then
   smagmy = smagmy / voltot
   write(nfecra,1000) iclipc
   write(nfecra,2001)
-  write(nfecra,2002) smagma, smagmn, smagmy
+  write(nfecra,2002) smagmy, smagmn, smagma
   write(nfecra,2003)
 
 endif
