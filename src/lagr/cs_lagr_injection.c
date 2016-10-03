@@ -491,8 +491,9 @@ cs_lagr_injection(int        time_id,
                   (int)iclas,
                   (int)userdata->distribution_profile);
 
-      /* --> Poids statistiques    */
-      if (userdata->stat_weight <= 0.0)
+      /* statistical weight */
+      if (   userdata->stat_weight <= 0.0
+          && userdata->flow_rate <= 0.0)
         bft_error(__FILE__, __LINE__, 0,
                   _("Lagrangian boundary zone %d, class %d:\n"
                     "  statistical weight value is invalid (=%e10.3)\n"),
@@ -500,15 +501,7 @@ cs_lagr_injection(int        time_id,
                   (int)iclas,
                   (double)userdata->stat_weight);
 
-      /* --> Debit massique de particule     */
-      if (userdata->flow_rate < 0.0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Lagrangian boundary zone %d, class %d:\n"
-                    "  flow rate value is invalid (=%e10.3)\n"),
-                  (int)izone + 1,
-                  (int)iclas,
-                  (double)userdata->flow_rate);
-
+      /* particle mass flow rate */
       if (   userdata->flow_rate > 0.0
           && userdata->nb_part  == 0)
         bft_error(__FILE__, __LINE__, 0,
@@ -814,7 +807,6 @@ cs_lagr_injection(int        time_id,
   /* Compute number of particles to inject for this iteration */
 
   p_set->n_part_new = 0;
-  p_set->weight_new = 0.0;
 
   for (int ii = 0; ii < nfrtot; ii++) {
 
@@ -836,10 +828,8 @@ cs_lagr_injection(int        time_id,
           local_userdata->injection_frequency = ts->nt_cur+1;
       }
 
-      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
+      if (ts->nt_cur % local_userdata->injection_frequency == 0)
         p_set->n_part_new += userdata->nb_part;
-        p_set->weight_new += userdata->nb_part * userdata->stat_weight;
-      }
 
     }
 
