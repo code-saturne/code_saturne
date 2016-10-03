@@ -604,7 +604,7 @@ if (ncesmp.gt.0) then
 endif
 
 ! Condensation source terms for the scalars
-! associated to a surface zone (icond=0)
+! associated to a surface zone (icondb=0)
 if (nfbpcd.gt.0) then
 
   allocate(srccond(nfbpcd))
@@ -637,10 +637,10 @@ if (nfbpcd.gt.0) then
 endif
 
 ! Condensation source terms for the scalars
-! associated to a volumic zone (icond=1)
+! associated to a volumic zone (icondv=0)
 ! taking into account the metal mass
 ! structures condensation modelling
-if (icond.eq.1) then
+if (icondv.eq.0) then
   allocate(srcmst(ncelet))
 
   ! When treating the Temperature, the equation is multiplied by Cp

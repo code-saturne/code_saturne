@@ -223,7 +223,7 @@ itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 
 ! In case of condensation or y+ postprocessing, create appropriate field
 
-if (icond.ge.0 .or. ipstdv(ipstyp).ne.0) then
+if (icondb.ge.0.or.icondv.ge.0.or.ipstdv(ipstyp).ne.0) then
   call field_get_id_try('yplus', f_id) ! Test if pre-existing
   call field_find_or_create('yplus', itycat, ityloc, idim1, iyplbr)
   if (f_id .lt. 0) then                ! Set some properties if new

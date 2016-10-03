@@ -43,10 +43,9 @@
   if ( ippmod(igmix).ge.0 ) then
     ! Specific condensation modelling
     !      if = -1 module not activated
-    !      if =  0 condensation source terms activated
-    !      if =  1 condensation source terms with metal
+    !      if =  0 condensation source terms with metal
     !                               structures activate
-    icond = -1
+    icondv = -1
   endif
   \endcode
 

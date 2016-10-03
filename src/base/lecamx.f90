@@ -725,7 +725,7 @@ endif
 !      with or wihtout the 1D thermal model tag1D
 !===============================================================================
 
-if (icond.eq.0) then
+if (icondb.eq.0) then
 
   if (nztag1d.eq.1) then
 

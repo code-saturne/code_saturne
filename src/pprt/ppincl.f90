@@ -255,9 +255,13 @@ module ppincl
   !> Specific condensation modelling
   !>      if = -1 module not activated
   !>      if =  0 condensation source terms activated
-  !>      if =  1 condensation source terms with metal
+  integer, save ::  icondb
+
+  !> Specific condensation modelling
+  !>      if = -1 module not activated
+  !>      if =  0 condensation source terms with metal
   !>                               structures activate
-  integer, save ::  icond
+  integer, save ::  icondv
 
   !> \}
 

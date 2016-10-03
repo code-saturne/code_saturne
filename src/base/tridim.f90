@@ -640,7 +640,7 @@ endif
 !-- condensation modelling.
 !----------------------------------------------------------
 
-if (icond.eq.1) then
+if (icondv.eq.0) then
 
   !-- Condensation source terms arrays initialized
   do iel = 1, ncelet
@@ -1183,7 +1183,7 @@ do while (iterns.le.nterup)
 
      ! 0-D thermal model coupling with condensation
      ! on a volume region associated to metal structures
-    if (icond.eq.1.and.itagms.eq.1) then
+    if (icondv.eq.0.and.itagms.eq.1) then
       call cs_metal_structures_tag &
      ( ncmast , ltmast ,                          &
        dt     )

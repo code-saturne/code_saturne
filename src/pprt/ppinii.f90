@@ -93,8 +93,9 @@ ihm = 0 ! enthalpy, common to many models
 i_comb_drift = 0
 
 !> --- Specific condensation modelling
-!>     (icond = -1 : not activated by default)
-icond = -1
+!>     (icondb, icondv = -1 : not activated by default)
+icondb = -1
+icondv = -1
 
 ! ---> Initialisation pour la combustion gaz
 !       Variables transportees

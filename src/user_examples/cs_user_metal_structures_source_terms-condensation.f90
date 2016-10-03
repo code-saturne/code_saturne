@@ -130,7 +130,7 @@ enddo
 ! coupled.
 !===============================================================================
 
-if (icond.eq.1) then
+if (icondv.eq.0) then
 
   ! Choice the way to impose the wall temperature (tmet)
   ! at the solid/fluid interface:

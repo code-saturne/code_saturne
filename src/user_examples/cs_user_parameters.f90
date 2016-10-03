@@ -430,12 +430,17 @@ if (ixmlpu.eq.0) then
 
  if ( ippmod(igmix).ge.0 ) then
    ! Specific condensation modelling
+
+   ! wall condensation
    !      if = -1 module not activated
    !      if =  0 condensation source terms activated
-   !      if =  1 condensation source terms with metal
-   !                               structures activate
-   icond = -1
+   icondb = -1
 
+   ! internal condensation
+   !      if = -1 module not activated
+   !      if =  0 condensation source terms with metal
+   !                               structures activate
+   icondv = -1
  endif
 
 endif

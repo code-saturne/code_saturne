@@ -26,6 +26,9 @@ Physical modelling
 Architectural changes
 ---------------------
 
+- Replaced icond keyword by icondb, icondv to allow to enable wall condensation
+  and condensation on internals at the same time.
+
 - Probes output activation is now based on field "post_vis" keyword, and does
   not allow fine-grained per-variable probes selection anymore (this being little-used,
   and feasible through use of additional probe sets).
