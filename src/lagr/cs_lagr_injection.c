@@ -135,29 +135,20 @@ cs_lagr_injection(int        time_id,
 
   /* Non-lagrangian fields */
   cs_real_t *vela = extra->vel->vals[time_id];
-  cs_real_t *cscalt, *temp, *temp1;
+  cs_real_t *cscalt = NULL, *temp = NULL, *temp1 = NULL;
 
   cs_lagr_particle_counter_t *pc = cs_lagr_get_particle_counter();
   const cs_time_step_t *ts = cs_glob_time_step;
 
   if (   cs_glob_thermal_model->itherm == 1
-      || cs_glob_thermal_model->itherm == 2) {
-
+      || cs_glob_thermal_model->itherm == 2)
     cscalt = extra->scal_t->vals[time_id];
 
-  }
-
-  if (extra->temperature != NULL) {
-
+  if (extra->temperature != NULL)
     temp = extra->temperature->val;
 
-  }
-
-  if (extra->t_gaz != NULL) {
-
+  if (extra->t_gaz != NULL)
     temp1 = extra->t_gaz->val;
-
-  }
 
   /* Memory management */
 
@@ -180,37 +171,22 @@ cs_lagr_injection(int        time_id,
 
   /* setup BCs */
 
-  /* ==============================================================================
-   * 3. Checks
-   * ============================================================================== */
+  /* Faces must all belong to a valid boundary zone */
 
-  int iok = 0;
-
-  /* --> Les faces doivent toutes appartenir a une zone frontiere */
   for (cs_lnum_t ifac = 0; ifac < mesh->n_b_faces; ifac++) {
-
     if (   bdy_cond->b_face_zone_id[ifac] < 0
-        || bdy_cond->b_face_zone_id[ifac] >= cs_glob_lagr_const_dim->nflagm) {
-
-      bft_printf(_("\n Lagrangian module: \n"));
-      bft_printf(_("   The zone id associated to face %d must be an integer >= 0 and < nflagm = %d.\n"
-                   "   This number (ifrlag(ifac)) is here %d\n\n"
-                   "   The calculation will not run.\n\n"
-                   " Please check the parameters given via the GUI\n"
-                   " or cs_user_lagr_boundary_conditions\n"),
-                 (int)ifac,
-                 (int)cs_glob_lagr_const_dim->nflagm,
-                 (int)bdy_cond->b_face_zone_id[ifac]);
-      iok = iok + 1;
-
-    }
-
+        || bdy_cond->b_face_zone_id[ifac] >= cs_glob_lagr_const_dim->nflagm)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian module: \n"
+                  "  the zone id associated to face %d must be "
+                  "an integer >= 0 and < nflagm = %d.\n"
+                  "  This number is here %d."),
+                (int)ifac,
+                (int)cs_glob_lagr_const_dim->nflagm,
+                (int)bdy_cond->b_face_zone_id[ifac]);
   }
 
-  if (iok > 0)
-    cs_exit(1);
-
-  /* --> On construit une liste des numeros des zones frontieres. */
+  /* Build a list of boundary zone ids. */
 
   bdy_cond->n_b_zones = 0;
   for (cs_lnum_t ifac = 0; ifac < mesh->n_b_faces; ifac++) {
@@ -231,19 +207,12 @@ cs_lagr_injection(int        time_id,
         bdy_cond->b_zone_id[bdy_cond->n_b_zones - 1]
           = bdy_cond->b_face_zone_id[ifac];
 
-      else {
-
-        bft_printf(_("\n Lagrangian module: \n"));
-        bft_printf
-          (_("   The maximum number of user defined boundary zone nflagm = %d is reached.\n"
-             "\n"
-             " The calculation will not run.\n\n"
-             " Please check the parameters given via the GUI\n"
-             " or cs_user_lagr_boundary_conditions\n"),
-           (int)cs_glob_lagr_const_dim->nflagm);
-        cs_exit (1);
-
-      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Lagrangian module: \n"
+                    " the maximum number of user defined boundary zones"
+                    " nflagm = %d is reached."),
+                  (int)cs_glob_lagr_const_dim->nflagm);
 
     }
 
@@ -339,14 +308,13 @@ cs_lagr_injection(int        time_id,
 
     int izone = bdy_cond->b_zone_id[ii];
 
-    if (bdy_cond->b_zone_classes[izone] < 0) {
-      bft_printf(_("\n Lagrangian module: \n"));
-      bft_printf(_("   Number of particle classes for zone %d "
-                   "is not defined (=%d)\n"),
-                 (int)izone + 1,
-                 (int)bdy_cond->b_zone_classes[izone]);
-      iok = iok + 1;
-    }
+    if (bdy_cond->b_zone_classes[izone] < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian module: \n"
+                  "  number of particle classes for zone %d "
+                  "is not defined (=%d)\n"),
+                (int)izone + 1,
+                (int)bdy_cond->b_zone_classes[izone]);
 
   }
 
@@ -365,17 +333,16 @@ cs_lagr_injection(int        time_id,
           = cs_lagr_get_zone_class_data(iclas, izone);
 
         if (   userdata->cluster <= 0
-            || userdata->cluster > cs_glob_lagr_model->n_stat_classes) {
-          bft_printf(_("\n Lagrangian module: \n"));
-          bft_printf
-            (_("   Number of cluster = %d is either not defined (negative)\n"
-               "   or > to number of statistical classes %d "
-               "for zone %d and class %d\n"),
-             (int)userdata->cluster,
-             (int)cs_glob_lagr_model->n_stat_classes,
-             (int)izone + 1,
-             (int)iclas);
-        }
+            || userdata->cluster > cs_glob_lagr_model->n_stat_classes)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Lagrangian module: \n"
+                      "  number of clusters = %d is either not defined (negative)\n"
+                      "   or > to the number of statistical classes %d "
+                      "for zone %d and class %d."),
+                    (int)userdata->cluster,
+                    (int)cs_glob_lagr_model->n_stat_classes,
+                    (int)izone + 1,
+                    (int)iclas);
 
       }
 
@@ -402,46 +369,34 @@ cs_lagr_injection(int        time_id,
         && bdy_cond->b_zone_natures[izone] != CS_LAGR_JBORD5
         && bdy_cond->b_zone_natures[izone] != CS_LAGR_DEPO_DLVO) {
 
-      bft_printf(_("\n Lagrangian module: \n"));
-      bft_printf(_("   Zone %d nature is unknown = %d\n"),
-                 (int)izone + 1,
-                 (int)bdy_cond->b_zone_natures[izone]);
-      iok = iok + 1;
-
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian boundary zone %d nature %d is unknown."),
+                izone + 1,
+                (int)bdy_cond->b_zone_natures[izone]);
     }
 
   }
 
   for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
-
     int izone = bdy_cond->b_zone_id[ii];
-
     if (   bdy_cond->b_zone_natures[izone] == CS_LAGR_FOULING
-        && cs_glob_lagr_model->physical_model != 2) {
-
-      bft_printf(_("\n Lagrangian module: \n"));
-      bft_printf(_("   Zone %d nature is of type CS_LAGR_FOULING,\n"
-                   "   but cs_glob_lagr_model->physical_model is not equal to 2\n"),
-                 (int)izone + 1);
-      iok = iok + 1;
-
-    }
-
+        && cs_glob_lagr_model->physical_model != 2)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Lagrangian boundary zone %d nature is of type CS_LAGR_FOULING,\n"
+           "but cs_glob_lagr_model->physical_model is not equal to 2."),
+         (int)izone + 1);
   }
 
   for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
-
     int izone = bdy_cond->b_zone_id[ii];
-
-    if (bdy_cond->b_zone_natures[izone] == CS_LAGR_FOULING && cs_glob_lagr_model->fouling != 1) {
-
-      bft_printf(_("\n Lagrangian module: \n"));
-      bft_printf(_("   Zone %d nature is of type CS_LAGR_FOULING, but fouling is not activated\n"),
-                 (int)izone + 1);
-      iok = iok + 1;
-
-    }
-
+    if (   bdy_cond->b_zone_natures[izone] == CS_LAGR_FOULING
+        && cs_glob_lagr_model->fouling != 1)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Lagrangian boundary zone %d nature is of type CS_LAGR_FOULING,\n"
+           "but fouling is not activated."),
+         (int)izone + 1);
   }
 
   /* --> Type de condition pour le diametre.  */
@@ -452,27 +407,18 @@ cs_lagr_injection(int        time_id,
           || cs_glob_lagr_specific_physics->impvar == 1)) {
 
     for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
-
       int izone = bdy_cond->b_zone_id[ii];
-
       for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
-
         cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
-
         if (   userdata->temperature_profile < 1
-            || userdata->temperature_profile > 2) {
-
-          bft_printf(_("\n Lagrangian module: \n"));
-          bft_printf(_("   In zone %d, class %d temperature profile value is invalid (=%d)\n"),
-                     (int)izone + 1,
-                     (int)iclas,
-                     (int)userdata->temperature_profile);
-          iok = iok + 1;
-
-        }
-
+            || userdata->temperature_profile > 2)
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("Lagrangian boundary zone %d temperature profile "
+               "value is invalid (=%d)\n"),
+             (int)izone + 1,
+             (int)userdata->temperature_profile);
       }
-
     }
 
   }
@@ -505,148 +451,107 @@ cs_lagr_injection(int        time_id,
 
       cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
 
-
-      /* --> Nombre de particules. */
-      if (userdata->nb_part< 0) {
-
-        bft_printf(_("\n Lagrangian module: \n"));
-        bft_printf(_("   Number of particles for zone %d and class %d is not defined (=%d)\n"),
-                   (int)izone + 1,
-                   (int)iclas,
-                   (int)bdy_cond->b_zone_classes[izone]);
-        iok = iok + 1;
-
-      }
+      if (userdata->nb_part < 0)
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("Number of particles for zone %d and class %d is not defined (=%d)\n"),
+           (int)izone + 1,
+           (int)iclas,
+           (int)bdy_cond->b_zone_classes[izone]);
 
       /* --> Type de condition pour le taux de presence.    */
       if (   userdata->distribution_profile < 1
-          || userdata->distribution_profile > 2) {
-
-        bft_printf(_("\n Lagrangian module: \n"));
-        bft_printf(_("   In zone %d, class %d distribution profile value is invalid (=%d)\n"),
-                   (int)izone + 1,
-                   (int)iclas,
-                   (int)userdata->distribution_profile);
-        iok = iok + 1;
-
-      }
+          || userdata->distribution_profile > 2)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Lagrangian boundary zone %d, class %d:\n"
+                    "  distribution profile value is invalid (=%d)\n"),
+                  (int)izone + 1,
+                  (int)iclas,
+                  (int)userdata->distribution_profile);
 
       /* --> Type de condition pour la vitesse.   */
       if (   userdata->velocity_profile <  -1
-          || userdata->velocity_profile > 2) {
-
-        bft_printf(_("\n Lagrangian module: \n"));
-        bft_printf(_("   In zone %d, class %d velocity profile value is invalid (=%d)\n"),
-                   (int)izone + 1,
-                   (int)iclas,
-                   (int)userdata->velocity_profile);
-        iok = iok + 1;
-
-      }
+          || userdata->velocity_profile > 2)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Lagrangian boundary zone %d, class %d:\n"
+                    "  velocity profile value is invalid (=%d)\n"),
+                  (int)izone + 1,
+                  (int)iclas,
+                  (int)userdata->velocity_profile);
 
       /* --> Type de condition pour le diametre.  */
-      if (   userdata->distribution_profile < 1
-          || userdata->distribution_profile > 2) {
+      if (   userdata->diameter_profile < 1
+          || userdata->diameter_profile > 2)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Lagrangian boundary zone %d:\n"
+                    "  class %d diameter profile value is invalid (=%d)\n"),
+                  (int)izone + 1,
+                  (int)iclas,
+                  (int)userdata->diameter_profile);
 
-        bft_printf(_("\n Lagrangian module: \n"));
-        bft_printf(_("   In zone %d, class %d distribution profile value is invalid (=%d)\n"),
-                   (int)izone + 1,
-                   (int)iclas,
-                   (int)userdata->distribution_profile);
-        iok = iok + 1;
+      /* statistical weight */
+      if (   userdata->stat_weight <= 0.0
+          && userdata->flow_rate <= 0.0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Lagrangian boundary zone %d, class %d:\n"
+                    "  statistical weight value is invalid (=%e10.3)\n"),
+                  (int)izone + 1,
+                  (int)iclas,
+                  (double)userdata->stat_weight);
 
-      }
-
-      /* --> Poids statistiques    */
-      if (userdata->stat_weight <= 0.0) {
-
-        bft_printf(_("\n Lagrangian module: \n"));
-        bft_printf(_("   In zone %d, class %d statistical weight value is invalid (=%e10.3)\n"),
-                   (int)izone + 1,
-                   (int)iclas,
-                   (double)userdata->stat_weight);
-        iok = iok + 1;
-
-      }
-
-      /* --> Debit massique de particule     */
-      if (userdata->flow_rate < 0.0) {
-
-        bft_printf(_("\n Lagrangian module: \n"));
-        bft_printf(_("   In zone %d, class %d flow rate value is invalid (=%e10.3)\n"),
-                   (int)izone + 1,
-                   (int)iclas,
-                   (double)userdata->flow_rate);
-        iok = iok + 1;
-
-      }
-
+      /* particle mass flow rate */
       if (   userdata->flow_rate > 0.0
-          && userdata->nb_part  == 0) {
-
-        bft_printf(_("\n Lagrangian module: \n"));
-        bft_printf(_("   Flow rate is positive (%e10.3) while number of particle is null for class %d in zone %d\n"),
-                   (double)userdata->flow_rate,
-                   (int)iclas,
-                   (int)izone + 1);
-        iok = iok + 1;
-
-      }
+          && userdata->nb_part  == 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Lagrangian boundary zone %d, class %d:\n"
+                    " flow rate is positive (%e10.3)\n"
+                    " while number of particle is 0."),
+                  (int)izone + 1,
+                  (int)iclas,
+                  (double)userdata->flow_rate);
 
       /* --> Proprietes des particules : le diametre, son ecart-type, et rho    */
       if (cs_glob_lagr_model->physical_model != 2) {
-
         if (   userdata->density  < 0.0
             || userdata->diameter < 0.0
-            || userdata->diameter_variance < 0.0) {
-
-          bft_printf(_("\n Lagrangian module: \n"));
-          bft_printf(_("   Error on particles properties definition:\n"
-                       "   rho = %e10.3, diameter = %e10.3,\n"
-                       "   diameter standard deviation = %e10.3 for class %d in zone %d\n"),
-                     (double)userdata->density,
-                     (double)userdata->diameter,
-                     (double)userdata->diameter_variance,
-                     (int)iclas,
-                     (int)izone + 1);
-          iok = iok + 1;
-
-        }
-
+            || userdata->diameter_variance < 0.0)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Lagrangian boundary zone %d, class %d:\n"
+                      "  error on particles properties definition:\n"
+                      "  rho = %e10.3, diameter = %e10.3,\n"
+                      "  diameter standard deviation = %e10.3."),
+                    (int)izone + 1,
+                    (int)iclas,
+                    (double)userdata->density,
+                    (double)userdata->diameter,
+                    (double)userdata->diameter_variance);
       }
 
-      if (userdata->diameter < 3.0 * userdata->diameter_variance) {
-
-        bft_printf(_("\n Lagrangian module: \n"));
-        bft_printf(_("   Diameter (%e10.3) is smaller than 3 times\n"
-                     "   its standard deviation (%e10.3) for class %d in zone %d\n"),
-                   (double)userdata->diameter,
-                   (double)userdata->diameter_variance,
-                   (int)iclas,
-                   (int)izone + 1);
-        iok = iok + 1;
-
-      }
+      if (userdata->diameter < 3.0 * userdata->diameter_variance)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Lagrangian boundary zone %d, class %d:\n"
+                    "  diameter (%e10.3) is smaller than 3 times\n"
+                    "  its standard deviation (%e10.3)."),
+                  (int)izone + 1,
+                  (int)iclas,
+                  (double)userdata->diameter,
+                  (double)userdata->diameter_variance);
 
       /* --> Proprietes des particules : Temperature et CP  */
       if (   cs_glob_lagr_model->physical_model == 1
           && cs_glob_lagr_specific_physics->itpvar == 1) {
 
         if (   userdata->cp < 0.0
-            || userdata->temperature[0] < tkelvn) {
-
-          bft_printf(_("\n Lagrangian module: \n"));
-          bft_printf(_("   Specific heat capacity is negative (%e10.3)\n"
-                       "   or temperature (%e10.3) is lower than %e10.3\n"
-                       " for class %d in zone %d\n"),
-                     (double)userdata->cp,
-                     (double)userdata->temperature[0],
-                     (double)tkelvn,
-                     (int)iclas,
-                     (int)izone + 1);
-          iok = iok + 1;
-
-        }
+            || userdata->temperature[0] < tkelvn)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Lagrangian boundary zone %d, class %d:\n"
+                      "  specific heat capacity is negative (%e10.3)\n"
+                      "  or temperature (%e10.3) is lower than %e10.3."),
+                    (int)izone + 1,
+                    (int)iclas,
+                    (double)userdata->cp,
+                    (double)userdata->temperature[0],
+                    (double)tkelvn);
 
       }
 
@@ -656,83 +561,78 @@ cs_lagr_injection(int        time_id,
           && extra->iirayo > 0) {
 
         if (   userdata->emissivity < 0.0
-            || userdata->emissivity > 1.0) {
-
-          bft_printf(_("\n Lagrangian module: \n"));
-          bft_printf(_("   Particle emissivity is not properly set = %e10.3 for class %d in zone %d\n"),
-                     (double)userdata->emissivity,
-                     (int)iclas,
-                     (int)izone + 1);
-          iok = iok + 1;
-
-        }
+            || userdata->emissivity > 1.0)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Lagrangian boundary zone %d, class %d:\n"
+                      "  particle emissivity is not properly set = %e10.3."),
+                    (int)izone + 1,
+                    (int)iclas,
+                    (double)userdata->emissivity);
 
       }
 
       /* Charbon    */
       if (cs_glob_lagr_model->physical_model == 2) {
 
-        if (userdata->coal_number < 0.0 && userdata->coal_number > extra->ncharb) {
+        if (   userdata->coal_number < 0.0
+            && userdata->coal_number > extra->ncharb)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Lagrangian boundary zone %d, class %d:\n"
+                      "  the coal number %d for the injected particle is either negative\n"
+                      "  or over the maximum number of coal given in dp_FCP (ncharb = %d)."),
+                    (int)izone + 1,
+                    (int)iclas,
+                    (int)userdata->coal_number,
+                    (int)extra->ncharb);
 
-          bft_printf(_("\n Lagrangian module: \n"));
-          bft_printf(_("   The coal number %d for the injected particle is either negative or over the maximum number of coal given in dp_FCP (ncharb = %d) for class %d in zone %d\n"),
-                     (int)userdata->coal_number,
-                     (int)extra->ncharb,
-                     (int)iclas,
-                     (int)izone + 1);
-          iok = iok + 1;
-
-        }
-
-        /* --> Proprietes des particules de Charbon.     */
+        /* Properties of coal particles */
         if (   userdata->coal_profile < 0
-            || userdata->coal_profile > 1) {
-
-          bft_printf(_("\n Lagrangian module: \n"));
-          bft_printf(_("   The coal profile flag is not properly set. It must be equal to 0 (user definition) or 1 (composition is set identical to fresh coal). Coal profile is %d for class %d in zone %d\n"),
-                     (int)userdata->coal_profile,
-                     (int)iclas,
-                     (int)izone + 1);
-          iok = iok + 1;
-
-        }
+            || userdata->coal_profile > 1)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Lagrangian boundary zone %d, class %d:\n"
+                      "  the coal profile flag is not properly set.\n"
+                      "  I must be equal to 0 (user definition) or 1 "
+                      " (composition is set identical to fresh coal).\n"
+                      "  Coal profile is %d."),
+                    (int)izone + 1,
+                    (int)iclas,
+                    (int)userdata->coal_profile);
 
         else if (   userdata->coal_profile     == 0
                  && userdata->diameter_profile == 2) {
-
-          bft_printf(_("\n Lagrangian module: \n"));
-          bft_printf(_("\n WARNING \n"));
-          bft_printf(_("   Both coal and diameter profiles are set to be user defined for class %d and zone %d.\n This may cause unwanted problems: coal initial and shrinking diameters are set in USLAG2 before the definition of the particle diameter in USLAPR.\n"),
-                     (int)iclas,
-                     (int)izone + 1);
-
+          bft_printf(_("\nLagrangian module warning:\n"));
+          bft_printf(_("  Both coal and diameter profiles are user\n"
+                       " defined for zone %d, class %d.\n"
+                       "  This may cause unwanted problems:\n"
+                       "  coal initial and shrinking diameters are set before\n"
+                       "  the definition of the particle diameter."),
+                     (int)izone + 1,
+                     (int)iclas);
         }
 
         else if (   userdata->coal_profile     == 0
                  && userdata->diameter_profile == 1
-                 && userdata->diameter_variance > 0.0) {
-          bft_printf(_("\n Lagrangian module: \n"));
-          bft_printf(_("   Both coal and diameter profiles are set to be user defined for class %d and zone %d.\n This may cause unwanted problems: coal initial and shrinking diameters are set in USLAG2 before the definition of the particle diameter in USLAPR.\n"),
-                     (int)iclas,
-                     (int)izone + 1);
+                 && userdata->diameter_variance > 0.0)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Lagrangian boundary zone %d, class %d:\n"
+                      "  both coal and diameter profiles are set to be user defined\n"
+                      "  This may cause unwanted problems: coal initial and shrinking\n"
+                      "  diameters are set before the definition of the particle diameter."),
+                    (int)izone + 1,
+                    (int)iclas);
 
-          iok = iok + 1;
+        for (int ilayer = 0;
+             ilayer < cs_glob_lagr_model->n_temperature_layers;
+             ilayer++) {
 
-        }
-
-        for (int ilayer = 0; ilayer < cs_glob_lagr_model->n_temperature_layers; ilayer++) {
-
-          if (userdata->temperature[ilayer] < tkelvi) {
-
-            bft_printf(_("\n Lagrangian module: \n"));
-            bft_printf(_("   Temperature is not properly set for layer %d : %e10.3 for class %d and zone %d.\n"),
-                       (int)ilayer,
-                       (double)userdata->temperature[ilayer],
-                       (int)iclas,
-                       (int)izone + 1);
-            iok = iok + 1;
-
-          }
+          if (userdata->temperature[ilayer] < tkelvi)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Lagrangian boundary zone %d, class %d:\n"
+                        "  temperature is not properly set for layer %d: %e10.3."),
+                      (int)izone + 1,
+                      (int)iclas,
+                      (int)ilayer,
+                      (double)userdata->temperature[ilayer]);
 
         }
 
@@ -745,60 +645,54 @@ cs_lagr_injection(int        time_id,
           if (   userdata->density < 0.0
               || userdata->cp < 0.0
               || userdata->water_mass_fraction < 0.0
-              || userdata->water_mass_fraction > 1.0) {
+              || userdata->water_mass_fraction > 1.0)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Lagrangian boundary zone %d, class %d:\n"
+                        "  wrong conditions, with\n"
+                        "    density = %e10.3\n"
+                        "    Cp = %e10.3\n"
+                        "    steam mass fraction = %e10.3."),
+                      (int)izone + 1,
+                      (int)iclas,
+                      (double)userdata->density,
+                      (double)userdata->cp,
+                      (double)userdata->water_mass_fraction);
 
-            bft_printf(_("\n Lagrangian module: \n"));
-            bft_printf(_("   Wrong conditions for class %d and zone %d.\n Density = %e10.3\n Cp = %e10.3\n Steam mass fraction = %e10.3\n"),
-                       (int)iclas,
-                       (int)izone + 1,
-                       (double)userdata->density,
-                       (double)userdata->cp,
-                       (double)userdata->water_mass_fraction);
-            iok = iok + 1;
-
-          }
-
-          for (int ilayer = 0; ilayer < cs_glob_lagr_model->n_temperature_layers; ilayer++) {
+          for (int ilayer = 0;
+               ilayer < cs_glob_lagr_model->n_temperature_layers;
+               ilayer++) {
 
             if (   userdata->coal_mass_fraction[ilayer] < 0.0
                 || userdata->coal_mass_fraction[ilayer] > 1.0
                 || userdata->coke_mass_fraction[ilayer] < 0.0
                 || userdata->coke_mass_fraction[ilayer] > 1.0
-                || userdata->coke_density[ilayer] < 0.0) {
-
-            bft_printf(_("\n Lagrangian module: \n"));
-            bft_printf
-              (_("  Wrong conditions for class %d and zone %d on layer %d.\n"
-                 "    coal mass fraction = %e10.3\n"
-                 "    coke mass fraction = %e10.3\n"
-                 "    coke density after pyrolysis = %e10.3\n"),
-               (int)iclas,
-               (int)izone + 1,
-               (int)ilayer,
-               (double)userdata->coal_mass_fraction[ilayer],
-               (double)userdata->coke_mass_fraction[ilayer],
-               (double)userdata->coke_density[ilayer]);
-            iok = iok + 1;
-
-            }
+                || userdata->coke_density[ilayer] < 0.0)
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Lagrangian boundary zone %d, class %d:\n"
+                          "  wrong conditions on layer %d.\n"
+                          "    coal mass fraction = %e10.3\n"
+                          "    coke mass fraction = %e10.3\n"
+                          "    coke density after pyrolysis = %e10.3."),
+                        (int)izone + 1,
+                        (int)iclas,
+                        (int)ilayer,
+                        (double)userdata->coal_mass_fraction[ilayer],
+                        (double)userdata->coke_mass_fraction[ilayer],
+                        (double)userdata->coke_density[ilayer]);
 
           }
 
           if (   userdata->shrinking_diameter < 0.0
-              || userdata->initial_diameter < 0.0) {
-
-            bft_printf(_("\n Lagrangian module: \n"));
-            bft_printf
-              (_("  Wrong conditions for class %d and zone %d.\n"
-                 "    coke diameter = %e10.3\n"
-                 "    initial diameter = %e10.3\n"),
-               (int)iclas,
-               (int)izone + 1,
-               (double)userdata->shrinking_diameter,
-               (double)userdata->initial_diameter);
-            iok = iok + 1;
-
-          }
+              || userdata->initial_diameter < 0.0)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Lagrangian boundary zone %d, class %d:\n"
+                        "  wrong conditions, with\n"
+                        "    coke diameter = %e10.3\n"
+                        "    initial diameter = %e10.3\n"),
+                      (int)izone + 1,
+                      (int)iclas,
+                      (double)userdata->shrinking_diameter,
+                      (double)userdata->initial_diameter);
 
         }
 
@@ -811,90 +705,81 @@ cs_lagr_injection(int        time_id,
               || xwatch[userdata->coal_number] < 0.0
               || xwatch[userdata->coal_number] > 1.0
               || xashch[userdata->coal_number] < 0.0
-              || xashch[userdata->coal_number] > 1.0) {
+              || xashch[userdata->coal_number] > 1.0)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Lagrangian boundary zone %d, class %d:\n"
+                        "  wrong conditions for coal number %d.\n"
+                        "    density RHO0CH = %e10.3\n"
+                        "    Cp CP2CH = %e10.3\n"
+                        "    water mass fraction XWATCH = %e10.3\n"
+                        "    ashes mass fraction XASHCH = %e10.3."),
+                      (int)izone + 1,
+                      (int)iclas,
+                      (int)userdata->coal_number,
+                      (double)rho0ch[userdata->coal_number],
+                      (double)cp2ch[userdata->coal_number],
+                      (double)xwatch[userdata->coal_number],
+                      (double)xashch[userdata->coal_number]);
 
-            bft_printf(_("\n Lagrangian module: \n"));
-            bft_printf
-              (_("  Wrong conditions for class %d and zone %d for coal number %d.\n"
-                 "    density RHO0CH = %e10.3\n"
-                 "    Cp CP2CH = %e10.3\n"
-                 "    water mass fraction XWATCH = %e10.3\n"
-                 "    ashes mass fraction XASHCH = %e10.3\n"),
-               (int)iclas,
-               (int)izone + 1,
-               (int)userdata->coal_number,
-               (double)rho0ch[userdata->coal_number],
-               (double)cp2ch[userdata->coal_number],
-               (double)xwatch[userdata->coal_number],
-               (double)xashch[userdata->coal_number]);
-            iok = iok + 1;
-
-          }
-
-          if (xwatch[userdata->coal_number] + xashch[userdata->coal_number] > 1.0) {
-
-            bft_printf(_("\n Lagrangian module: \n"));
-            bft_printf
-              (_("  Wrong conditions for class %d and zone %d for coal number %d.\n"
-                 "    water mass fraction XWATCH = %e10.3\n"
-                 "    ashes mass fraction XASHCH = %e10.3\n"
-                 "    mass fraction is larger than 1: %e10.3\n"),
-               (int)iclas,
-               (int)izone + 1,
-               (int)userdata->coal_number,
-               (double)xwatch[userdata->coal_number],
-               (double)xashch[userdata->coal_number],
-               (double)(xwatch[userdata->coal_number] + xashch[userdata->coal_number]));
-            iok = iok + 1;
-
-          }
+          if (xwatch[userdata->coal_number] + xashch[userdata->coal_number] > 1.0)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Lagrangian boundary zone %d, class %d:\n"
+                        "  wrong conditions for coal number %d.\n"
+                        "    water mass fraction XWATCH = %e10.3\n"
+                        "    ashes mass fraction XASHCH = %e10.3\n"
+                        "    mass fraction is larger than 1: %e10.3."),
+                      (int)izone + 1,
+                      (int)iclas,
+                      (int)userdata->coal_number,
+                      (double)xwatch[userdata->coal_number],
+                      (double)xashch[userdata->coal_number],
+                      (double)(  xwatch[userdata->coal_number]
+                               + xashch[userdata->coal_number]));
 
           if (   userdata->density >= 0.0
               || userdata->water_mass_fraction >= 0.0
               || userdata->cp >= 0.0
               || userdata->shrinking_diameter >= 0.0
-              || userdata->initial_diameter >= 0.0) {
-
-            bft_printf(_("\n Lagrangian module: \n"));
-            bft_printf
-              (_("  Wrong conditions for class %d and zone %d.\n"
-                 "    Conditions are set with the contents of a DP_FCP file,\n"
-                 "    but one is initialized to a different value than %e10.3.\n"
+              || userdata->initial_diameter >= 0.0)
+            bft_error
+              (__FILE__, __LINE__, 0,
+               _("Lagrangian boundary zone %d, class %d:\n"
+                 "  conditions set with the contents of a DP_FCP file,\n"
+                 "  but one is initialized to a different value than %e10.3.\n"
                  "  density = %e10.3\n"
                  "  water mass fraction = %e10.3\n"
                  "  Cp = %e10.3\n"
                  "  coke diameter = %e10.3\n"
-                 "  initial diameter = %e10.3\n"),
-               (int)iclas,
+                 "  initial diameter = %e10.3."),
                (int)izone + 1,
+               (int)iclas,
                (double)-cs_math_big_r,
                (double)userdata->density,
                (double)userdata->water_mass_fraction,
                (double)userdata->cp,
                (double)userdata->shrinking_diameter,
                (double)userdata->initial_diameter);
-            iok = iok + 1;
 
-          }
-
-          for (int ilayer = 0; ilayer < cs_glob_lagr_model->n_temperature_layers; ilayer++) {
+          for (int ilayer = 0;
+               ilayer < cs_glob_lagr_model->n_temperature_layers;
+               ilayer++) {
 
             if (   userdata->coal_mass_fraction[ilayer] >= 0.0
                 || userdata->coke_mass_fraction[ilayer] >= 0.0
-                || userdata->coke_density[ilayer] >= 0.0) {
-
-              bft_printf(_("\n Lagrangian module: \n"));
-              bft_printf
-                (_("  Wrong conditions for class %d and zone %d for layer %d.\n"
+                || userdata->coke_density[ilayer] >= 0.0)
+              bft_error
+                (__FILE__, __LINE__, 0,
+                 _("Lagrangian boundary zone %d, class %d:\n"
+                   "  wrong conditions for layer %d.\n"
                    "    Conditions are set with the contents of a DP_FCP file,\n"
                    "    but one is initialized to a different value than %e10.3.\n"
                    "  coal mass fraction IFRMCH = %e10.3\n"
                    "  coke mass fraction IFRMCK = %e10.3\n"
                    "  initial coke mass fraction IRHOCK0 = %e10.3\n"
                    "  coke diameter = %e10.3\n"
-                   "  initial diameter = %e10.3\n"),
-                 (int)iclas,
+                   "  initial diameter = %e10.3."),
                  (int)izone + 1,
+                 (int)iclas,
                  (int)ilayer,
                  (double)-cs_math_big_r,
                  (double)userdata->coal_mass_fraction[ilayer],
@@ -902,9 +787,6 @@ cs_lagr_injection(int        time_id,
                  (double)userdata->coke_density[ilayer],
                  (double)userdata->shrinking_diameter,
                  (double)userdata->initial_diameter);
-              iok = iok + 1;
-
-            }
 
           }
 
@@ -916,10 +798,6 @@ cs_lagr_injection(int        time_id,
 
   }
 
-  /* --> Stop si erreur.  */
-  if (iok > 0)
-    cs_exit(1);
-
   /* ==============================================================================
    * 4. Transformation des donnees utilisateur
    * ============================================================================== */
@@ -927,7 +805,6 @@ cs_lagr_injection(int        time_id,
   /* Compute number of particles to inject for this iteration */
 
   p_set->n_part_new = 0;
-  p_set->weight_new = 0.0;
 
   for (int ii = 0; ii < nfrtot; ii++) {
 
@@ -949,10 +826,8 @@ cs_lagr_injection(int        time_id,
           local_userdata->injection_frequency = ts->nt_cur+1;
       }
 
-      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
+      if (ts->nt_cur % local_userdata->injection_frequency == 0)
         p_set->n_part_new += userdata->nb_part;
-        p_set->weight_new += userdata->nb_part * userdata->stat_weight;
-      }
 
     }
 
@@ -1000,7 +875,7 @@ cs_lagr_injection(int        time_id,
    * au niveau des zones de bord et reperage des cellules correspondantes
    * ---------------------------------------------------------------------- */
 
-  /* Initialisation du nombre local de particules injectées par rang   */
+  /* Initialize local number of particles injected by rank */
   cs_lnum_t nlocnew = 0;
 
   /* Distribute new particles  */
@@ -1019,9 +894,9 @@ cs_lagr_injection(int        time_id,
       /* if new particles must be added */
       if (ts->nt_cur % local_userdata->injection_frequency == 0) {
 
-        /* Calcul sur le rang 0 du nombre de particules à injecter pour chaque rang
-         * base sur la surface relative de chaque zone d'injection presente sur
-         * chaque rang --> remplissage du tableau ninjrg(cs_glob_n_ranks)   */
+        /* Compute on rank 0 the number of particles to inject for each rank
+         * based on the relative surface of each injection zone present on
+         * each rank: fill array ninjrg(cs_glob_n_ranks) */
         if (cs_glob_rank_id == 0) {
 
           for (int irp = 0; irp < cs_glob_n_ranks; irp++)
@@ -1051,21 +926,17 @@ cs_lagr_injection(int        time_id,
 
         }
 
-        /* Broadcast a tous les rangs     */
+        /* Broadcast to all ranks */
         cs_parall_bcast(0, cs_glob_n_ranks, CS_LNUM_TYPE, ninjrg);
 
-        /* Fin du calcul du nombre de particules à injecter  */
+        /* End of the computation of the number of particles to inject */
         if (cs_glob_rank_id >= 0) {
-
           local_userdata->nb_part = ninjrg[cs_glob_rank_id];
           nlocnew += ninjrg[cs_glob_rank_id];
-
         }
         else {
-
           local_userdata->nb_part = userdata->nb_part;
           nlocnew += userdata->nb_part;
-
         }
 
       }
@@ -1164,7 +1035,7 @@ cs_lagr_injection(int        time_id,
         = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
       cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
 
-      /* si de nouvelles particules doivent entrer :   */
+      /* si de nouvelles particules doivent entrer */
       if (ts->nt_cur % local_userdata->injection_frequency == 0) {
 
         for (cs_lnum_t ip = npt; ip < npt + local_userdata->nb_part; ip++) {
@@ -1179,33 +1050,27 @@ cs_lagr_injection(int        time_id,
           /********************************************/
           cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
 
-          /* si composantes de la vitesse imposee :   */
+          /* prescribed components */
           if (userdata->velocity_profile == 1) {
-
             for (cs_lnum_t i = 0; i < 3; i++)
               part_vel[i] = userdata->velocity[i];
-
           }
 
-          /* si norme de la vitesse imposee :    */
+          /* prescribed norm */
           else if (userdata->velocity_profile == 0) {
-
             for (cs_lnum_t i = 0; i < 3; i++)
               part_vel[i] = -   fvq->b_face_normal[ifac * 3 + i]
                               / fvq->b_face_surf[ifac]
                               * userdata->velocity_magnitude;
-
           }
 
-          /* si vitesse du fluide vu : */
+          /* velocity as seen from fluid */
           else if (userdata->velocity_profile ==  -1) {
-
             for (cs_lnum_t i = 0; i < 3; i++)
               part_vel[i] = vela[cell_id * 3  + i];
-
           }
 
-          /* si profil de vitesse impose :  */
+          /* prescribed velocity profile */
           else if (userdata->velocity_profile == 2) {
             cs_user_lagr_new_p_attr(particle,
                                     p_am,
@@ -1213,21 +1078,16 @@ cs_lagr_injection(int        time_id,
                                     CS_LAGR_VELOCITY);
           }
 
-          /* Vitesse du fluide vu */
+          /* fluid velocity seen */
           cs_real_t *part_seen_vel = cs_lagr_particle_attr(particle, p_am,
                                                            CS_LAGR_VELOCITY_SEEN);
           for (int i = 0; i < 3; i++)
             part_seen_vel[i] = vela[cell_id * 3 + i];
 
-          /********************************************/
-          /* TEMPS DE SEJOUR */
-          /********************************************/
+          /* Residence time */
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RESIDENCE_TIME, 0.0);
 
-          /********************************************/
-          /* Diametre   */
-          /********************************************/
-          /* si diametre constant imposee : */
+          /* Diameter */
           if (userdata->diameter_profile == 1) {
 
             if (userdata->diameter_variance > 0.0) {
@@ -1261,7 +1121,7 @@ cs_lagr_injection(int        time_id,
 
           }
 
-          /* si profil pour le diametre :   */
+          /* in case of profile for diameter */
           else if (userdata->diameter_profile == 2) {
             cs_user_lagr_new_p_attr(particle,
                                     p_am,
@@ -1282,7 +1142,7 @@ cs_lagr_injection(int        time_id,
             cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_STAT_CLASS,
                                       userdata->cluster);
 
-          /* used for 2nd order only   */
+          /* used for 2nd order only */
           if (p_am->displ[0][CS_LAGR_TAUP_AUX] > 0)
             cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TAUP_AUX, 0.0);
 
@@ -1359,7 +1219,6 @@ cs_lagr_injection(int        time_id,
 
           else if (cs_glob_lagr_model->physical_model == 2) {
 
-            /* Transfert aux données particulaires */
             cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_COAL_NUM,
                                       userdata->coal_number);
             cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
@@ -1412,7 +1271,7 @@ cs_lagr_injection(int        time_id,
 
             }
 
-            /* composition from DP_FCP   */
+            /* composition from DP_FCP */
             else if (userdata->coal_profile == 1) {
 
               cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CP,
@@ -1440,7 +1299,6 @@ cs_lagr_injection(int        time_id,
 
               }
 
-              /* Remplissage de pepa  */
               cs_lagr_particle_set_real
                 (particle, p_am,
                  CS_LAGR_SHRINKING_DIAMETER,
@@ -1477,7 +1335,7 @@ cs_lagr_injection(int        time_id,
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FOULING_INDEX,
                                     userdata->foul_index);
 
-          /* Modele de Deposition : Initialisation    */
+          /* Initialization of deposition model */
 
           if (cs_glob_lagr_model->deposition == 1) {
 
@@ -1495,7 +1353,7 @@ cs_lagr_injection(int        time_id,
 
           }
 
-          /* Clogging model : Initialisation     */
+          /* Initialization of clogging model */
 
           if (cs_glob_lagr_model->clogging == 1) {
 
@@ -1515,27 +1373,24 @@ cs_lagr_injection(int        time_id,
 
   }
 
-  /* ->TEST DE CONTROLE (NE PAS MODIFIER)     */
-  if ((p_set->n_particles + nlocnew) != npt) {
+  /* Control test */
 
-    bft_printf(_("\n Lagrangian module: \n"));
-    bft_printf(_("  Bad boudnary conditions.\n"
-                 "    the number of injected particles for this lagrangian\n"
-                 "    iteration does not match the one specified in the boundary\n"
-                 "    conditions.\n"
-                 "    number set for injection NBPNEW = %d\n"
-                 "    number effectively injected NPT-NBPART = %d\n"),
-               (int)nlocnew,
-               (int)npt-p_set->n_particles);
-    cs_exit(1);
-
-  }
+  if ((p_set->n_particles + nlocnew) != npt)
+    bft_error(__FILE__, __LINE__, 0,
+              _("  Bad lagrangian boundary conditions.\n"
+                "    the number of injected particles for this lagrangian\n"
+                "    iteration does not match the one specified in the boundary\n"
+                "    conditions.\n"
+                "    number set for injection NBPNEW = %d\n"
+                "    number effectively injected NPT-NBPART = %d"),
+              (int)nlocnew,
+              (int)npt-p_set->n_particles);
 
   /* ==============================================================================
    * 5. MODIFICATION DES POIDS POUR AVOIR LE DEBIT
    * ============================================================================== */
 
-  /* Reinitialisation du compteur de nouvelles particules    */
+  /* Reinitialisation du compteur de nouvelles particules */
   npt = p_set->n_particles;
 
   /* pour chaque zone de bord :     */
@@ -1591,9 +1446,8 @@ cs_lagr_injection(int        time_id,
           bft_printf(_("\n Lagrangian module: \n"));
           bft_printf
             (_(" In zone %d, class %d conditions are erroneous.\n"
-               "   Imposed Flow rate value is =%e10.3 while number of particles is null.\n"
-               "\n"
-               " Computation is not run\n"),
+               "   Imposed Flow rate value is =%e10.3 "
+               "while number of particles is 0."),
              (int)izone + 1,
              (int)iclas,
              (double)userdata->flow_rate);
@@ -1608,14 +1462,6 @@ cs_lagr_injection(int        time_id,
     }
 
   }
-
-  /* ->TEST DE CONTROLE (NE PAS MODIFIER)     */
-  /* FIXME : the following test seems flawed  */
-  /* f ( (p_set->n_particles+nlocnew).ne.npt ) then  */
-  /* write(nfecra,3010) nlocnew, npt-p_set->n_particles   */
-  /* call cs_exit(1) */
-  /* !==========     */
-  /* ndif  */
 
   /* ==============================================================================
    * 6. SIMULATION DES VITESSES TURBULENTES FLUIDES INSTANTANEES VUES
@@ -1681,7 +1527,7 @@ cs_lagr_injection(int        time_id,
           if (   cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER) < 0.0
               && userdata->diameter_variance > 0.0){
 
-            bft_printf(_("\n Lagrangian module: \n"));
+            bft_printf(_("\nLagrangian module warning: \n"));
             bft_printf
               (_("  In zone %d, class %d conditions are erroneous.\n"
                  "    Computation of a particle diameter from mean diameter\n"
@@ -1708,20 +1554,17 @@ cs_lagr_injection(int        time_id,
 
   }
 
-  /* ->TEST DE CONTROLE (NE PAS MODIFIER)     */
-  if ((p_set->n_particles + nlocnew) != npt) {
-    bft_printf(_("\n Lagrangian module: \n"));
-    bft_printf
-      (_("  Bad boudnary conditions.\n"
-         "    the number of injected particles for this time step\n"
-         "    does not match the one specified in the boundary conditions.\n"
-         "  number set for injection NBPNEW = %d\n"
-         "  number affectively injected NPT-NBPART = %d\n"),
-       (int)nlocnew,
-       (int)npt-p_set->n_particles);
-    cs_exit(1);
+  /* Control test */
 
-  }
+  if ((p_set->n_particles + nlocnew) != npt)
+    bft_error(__FILE__, __LINE__, 0,
+              _("  Bad lagrangian boundary conditions.\n"
+                "    the number of injected particles for this time step\n"
+                "    does not match the one specified in the boundary conditions.\n"
+                "  number set for injection NBPNEW = %d\n"
+                "  number affectively injected NPT-NBPART = %d\n"),
+              (int)nlocnew,
+              (int)npt-p_set->n_particles);
 
   /* Free memory */
   BFT_FREE(iwork);
