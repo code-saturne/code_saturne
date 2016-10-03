@@ -245,6 +245,10 @@ typedef struct {
     including calculation restarts */
   cs_gnum_t   n_g_cumulative_total;
 
+  /*! total number of failed particles, since the beginning,
+    including calculation restarts */
+  cs_gnum_t   n_g_cumulative_failed;
+
   /*! total number of particles */
   cs_gnum_t   n_g_total;
 
@@ -283,9 +287,6 @@ typedef struct {
 
   /*! weight of resuspended particles */
   cs_real_t   w_resuspended;
-
-  /*! weight of failed particles*/
-  cs_real_t   w_failed;
 
 } cs_lagr_particle_counter_t;
 

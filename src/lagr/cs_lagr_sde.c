@@ -1109,7 +1109,7 @@ _lagesd(cs_real_t     dtp,
 
   if (cs_glob_lagr_reentrained_model->ireent == 1) {
 
-    if (cs_lagr_particle_get_real(particle, p_am,
+    if (cs_lagr_particle_get_lnum(particle, p_am,
                                   CS_LAGR_DEPOSITION_FLAG) != CS_LAGR_PART_IN_FLOW) {
 
       /* Resuspension model

@@ -13,10 +13,11 @@ Bug fixes:
   A priori, could be used only if the thermal turbulent flux was solved.
 
 - Lagrangian model:
+  * Fixes for restart and logging.
   * Fix misleading specification of injection mass flow rate in GUI.
-  * Fix check forbidding restart on frozen fields
-  * Fix resizing bug when Lagrangian classes or zones exceed 5
-  * Fix spurious addition to XML file for Lagrangian inlets
+  * Fix check forbidding restart on frozen fields.
+  * Fix resizing bug when Lagrangian classes or zones exceed 5.
+  * Fix spurious addition to XML file for Lagrangian inlets.
 
 - Fix for handling of paths for Code_Aster coupling
   (note that the coupling was recently tested only with SALOME_MECA 2015.1
