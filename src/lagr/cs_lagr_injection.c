@@ -482,14 +482,14 @@ cs_lagr_injection(int        time_id,
                   (int)userdata->velocity_profile);
 
       /* --> Type de condition pour le diametre.  */
-      if (   userdata->distribution_profile < 1
-          || userdata->distribution_profile > 2)
+      if (   userdata->diameter_profile < 1
+          || userdata->diameter_profile > 2)
         bft_error(__FILE__, __LINE__, 0,
                   _("Lagrangian boundary zone %d:\n"
-                    "  class %d distribution profile value is invalid (=%d)\n"),
+                    "  class %d diameter profile value is invalid (=%d)\n"),
                   (int)izone + 1,
                   (int)iclas,
-                  (int)userdata->distribution_profile);
+                  (int)userdata->diameter_profile);
 
       /* statistical weight */
       if (   userdata->stat_weight <= 0.0

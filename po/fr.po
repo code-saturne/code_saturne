@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-09-26 00:01+0200\n"
+"POT-Creation-Date: 2016-10-03 11:09+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -10645,19 +10645,13 @@ msgstr ""
 #, c-format
 msgid ""
 "Lagrangian boundary zone %d:\n"
-"  class %d distribution profile value is invalid (=%d)\n"
+"  class %d diameter profile value is invalid (=%d)\n"
 msgstr ""
 
 #, c-format
 msgid ""
 "Lagrangian boundary zone %d, class %d:\n"
 "  statistical weight value is invalid (=%e10.3)\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Lagrangian boundary zone %d, class %d:\n"
-"  flow rate value is invalid (=%e10.3)\n"
 msgstr ""
 
 #, c-format
@@ -11760,17 +11754,16 @@ msgid ""
 "@\n"
 msgstr ""
 
-msgid ""
-"    Fin de la lecture du fichier suite\n"
-"      sur les variables liees aux particules\n"
+msgid "    End reading particle data restart file\n"
+msgstr "    Fin de la lecture du fichier suite pour les particules.\n"
+
+msgid "    End reading particle statistics restart file\n"
 msgstr ""
+"    Fin de la lecture du fichier suite de statistiques particulaires.\n"
 
 msgid ""
 "   ** Writing the Lagrangian restart file\n"
 "-----------------------------------\n"
-msgstr ""
-
-msgid "   Start writing\n"
 msgstr ""
 
 msgid "      End writing info on calculation\n"
