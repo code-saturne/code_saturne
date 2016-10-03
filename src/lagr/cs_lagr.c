@@ -826,7 +826,7 @@ _cs_lagr_allocate_zone_class_data(int  iclass,
     if (izone >= cs_glob_lagr_nzone_max)
       cs_glob_lagr_nzone_max  = CS_MAX(izone , cs_glob_lagr_nzone_max  + 5);
     if (iclass >= cs_glob_lagr_nclass_max)
-      cs_glob_lagr_nclass_max = CS_MAX(iclass, cs_glob_lagr_nclass_max + 5);
+      cs_glob_lagr_nclass_max = CS_MAX(iclass, cs_glob_lagr_nclass_max + 1);
 
     BFT_REALLOC(_lagr_zone_class_data,
                 cs_glob_lagr_nzone_max * cs_glob_lagr_nclass_max,
@@ -844,9 +844,15 @@ _cs_lagr_allocate_zone_class_data(int  iclass,
       }
     }
 
-    for (int ii = old_lagr_nzone; ii < cs_glob_lagr_nzone_max; ii++) {
-      for (int jj = old_lagr_nclass; jj < cs_glob_lagr_nclass_max; jj++)
-        memset(_lagr_zone_class_data + (cs_glob_lagr_nclass_max * ii + jj),
+    for (int ii = old_lagr_nclass; ii < cs_glob_lagr_nclass_max; ii++)
+      for (int jj = 0; jj < cs_glob_lagr_nzone_max; jj++) {
+        memset(_lagr_zone_class_data + (cs_glob_lagr_nzone_max * ii + jj),
+               0,
+               sizeof(cs_lagr_zone_class_data_t));
+    }
+    for (int ii = 0; ii < cs_glob_lagr_nclass_max; ii++)
+      for (int jj = old_lagr_nzone; jj < cs_glob_lagr_nzone_max; jj++) {
+        memset(_lagr_zone_class_data + (cs_glob_lagr_nzone_max * ii + jj),
                0,
                sizeof(cs_lagr_zone_class_data_t));
     }
