@@ -60,46 +60,34 @@ typedef struct {
   /* Space dimension */
   int dim;
 
-  /* Selection criterias for coupled domains and coupling interface */
+  /* Locator + tag for exchanging variables */
+  ple_locator_t* locator_0;
+  int *tag_0;
+
+  /* Selection criterias for coupled domains */
   char *criteria_cells_1;
   char *criteria_cells_2;
-  char *criteria_juncture;
 
-  /* local = faces_1, distant = faces_2 */
-  ple_locator_t* locator_1;
-  /* local = faces_2, distant = faces_1 */
-  ple_locator_t* locator_2;
+  cs_lnum_t n_0; /* Number of faces */
+  cs_lnum_t *faces_0; /* Coupling boundary faces, numbered 1..n   */
 
-  cs_lnum_t n_1; /* Number of faces in group 1 */
-  cs_lnum_t n_2; /* Number of faces in group 2 */
-
-  cs_lnum_t *faces_1; /* Coupling boundary faces of group 1, numbered 1..n   */
-  cs_lnum_t *faces_2; /* Coupling boundary faces of group 2  numbered 1..n   */
-
-  cs_lnum_t n_dist_1; /* Number of faces in dist_loc_1 */
-  cs_lnum_t n_dist_2; /* Number of faces in dist_loc_2 */
-
-  cs_lnum_t* dist_loc_1; /* Distant boundary faces associated with locator_1 */
-  cs_lnum_t* dist_loc_2; /* Distant boundary faces associated with locator_2 */
+  cs_lnum_t n_dist_0; /* Number of faces in dist_loc_0 */
+  cs_lnum_t* dist_loc_0; /* Distant boundary faces associated with locator */
 
   /* face i is coupled in this entity if coupled_faces[i] = true */
   bool *coupled_faces;
 
-  /* hint seen from 1 and 2 respectively */
-  cs_real_t *hint_1, *hint_2;
-  /* hext seen from 1 and 2 respectively */
-  cs_real_t *hext_1, *hext_2;
+  cs_real_t *hint_0; /* hint coefficient */
+  cs_real_t *hext_0; /* hext coefficient */
 
   /* Geometrical weights around coupling interface */
-  cs_real_t *gweight_1, *gweight_2;
+  cs_real_t *gweight_0;
 
   /* IJ vectors */
-  cs_real_3_t* ij_1;
-  cs_real_3_t* ij_2;
+  cs_real_3_t* ij_0;
 
   /* OF vectors  */
-  cs_real_3_t* ofij_1;
-  cs_real_3_t* ofij_2;
+  cs_real_3_t* ofij_0;
 
   /* Calculation parameters */
   cs_real_t thetav;
@@ -124,16 +112,11 @@ typedef struct {
  *
  * parameters:
  *   criteria_cells_1  <-- string criteria for the first group of cells
- *   criteria_cells_2  <-- string criteria for the second group of cells
- *   criteria_juncture <-- string criteria for the juncture, which is a
- *                         group of faces
  *   cpl               --> pointer to coupling structure to initialize
  *----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_criteria_initialize(const char   criteria_cells_1[],
-                                         const char   criteria_cells_2[],
-                                         const char   criteria_juncture[],
                                          cs_internal_coupling_t  *cpl);
 
 ple_locator_t *
@@ -167,67 +150,59 @@ cs_internal_coupling_t *
 cs_internal_coupling_by_id(int coupling_id);
 
 /*----------------------------------------------------------------------------
- * Exchange quantities from distant to local
+ * Exchange quantities from distant to local (update local using distant)
  *
  * parameters:
- *   cpl       <-- pointer to coupling entity
- *   stride    <-- Stride (e.g. 1 for double, 3 for interleaved coordinates)
- *   distant_1 <-- Distant values 1, size coupling->n_dist_1
- *   distant_2 <-- Distant values 2, size coupling->n_dist_2
- *   local_1   --> Local values 1, size coupling->n_1
- *   local_2   --> Local values 2, size coupling->n_2
+ *   cpl     <-- pointer to coupling entity
+ *   stride  <-- Stride (e.g. 1 for double, 3 for interleaved coordinates)
+ *   distant <-- Distant values, size coupling->n_dist_0
+ *   local   --> Local values, size coupling->n_0
  *----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_exchange_var(const cs_internal_coupling_t  *cpl,
                                   int                            stride,
-                                  cs_real_t                      distant_1[],
-                                  cs_real_t                      distant_2[],
-                                  cs_real_t                      local_1[],
-                                  cs_real_t                      local_2[]);
+                                  cs_real_t                      distant[],
+                                  cs_real_t                      local[]);
 
 /*----------------------------------------------------------------------------
  * Exchange variable between groups using cell id
  *
  * parameters:
- *   cpl      <-- pointer to coupling entity
- *   stride   <-- number of values (non interlaced) by entity
- *   tab      <-- variable exchanged
- *   local_1  --> local data for group 1
- *   local_2  --> local data for group 2
+ *   cpl    <-- pointer to coupling entity
+ *   stride <-- number of values (non interlaced) by entity
+ *   tab    <-- variable exchanged
+ *   local  --> local data
  *----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_exchange_by_cell_id(const cs_internal_coupling_t  *cpl,
                                          int                            stride,
                                          const cs_real_t                tab[],
-                                         cs_real_t                      local_1[],
-                                         cs_real_t                      local_2[]);
+                                         cs_real_t                      local[]);
 
 /*----------------------------------------------------------------------------
  * Exchange variable between groups using face id
  *
  * parameters:
- *   cpl     <-- pointer to coupling entity
- *   stride  <-- number of values (non interlaced) by entity
- *   tab     <-- variable exchanged
- *   local_1 --> local data for group 1
- *   local_2 --> local data for group 2
+ *   cpl    <-- pointer to coupling entity
+ *   stride <-- number of values (non interlaced) by entity
+ *   tab    <-- variable exchanged
+ *   local  --> local data
  *----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
                                          int                            stride,
                                          const cs_real_t                tab[],
-                                         cs_real_t                      local_1[],
-                                         cs_real_t                      local_2[]);
+                                         cs_real_t                      local[]);
 
 /*----------------------------------------------------------------------------
  * Modify LSQ COCG matrix to include internal coupling
  *
  * parameters:
- *   coupling <-- pointer to coupling entity
- *   cocg            <-> cocg matrix modified
+ *   cpl  <-- pointer to coupling entity
+ *   cocg <-> cocg matrix modified
  *----------------------------------------------------------------------------*/
 
 void
@@ -238,8 +213,8 @@ cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
  * Modify iterative COCG matrix to include internal coupling
  *
  * parameters:
- *   coupling <-- pointer to coupling entity
- *   cocg            <-> cocg matrix modified
+ *   cpl  <-- pointer to coupling entity
+ *   cocg <-> cocg matrix modified
  *----------------------------------------------------------------------------*/
 
 void
@@ -268,7 +243,7 @@ cs_internal_coupling_exchange_ij(const cs_internal_coupling_t  *cpl);
  * Add internal coupling rhs contribution for LSQ gradient calculation
  *
  * parameters:
- *   cpl       <-- pointer to coupling entity
+ *   cpl      <-- pointer to coupling entity
  *   c_weight <-- weighted gradient coefficient variable, or NULL
  *   rhsv     <-> rhs contribution modified
  *----------------------------------------------------------------------------*/
@@ -332,26 +307,18 @@ cs_matrix_preconditionning_add_coupling_contribution(void       *input,
  *
  * parameters:
  *   cpl             <-- pointer to coupling entity
- *   n1              --> NULL or pointer to component n1
- *   n2              --> NULL or pointer to component n2
- *   fac_1[]         --> NULL or pointer to component fac_1[]
- *   fac_2[]         --> NULL or pointer to component fac_2[]
- *   n_dist_1        --> NULL or pointer to component n_dist_1
- *   n_dist_2        --> NULL or pointer to component n_dist_2
- *   dist_loc_1[]    --> NULL or pointer to component dist_loc_1[]
- *   dist_loc_2[]    --> NULL or pointer to component dist_loc_2[]
+ *   n_0             --> NULL or pointer to component n_0
+ *   fac_0[]         --> NULL or pointer to component faces_0[]
+ *   n_dist_0        --> NULL or pointer to component n_dist_0
+ *   dist_loc_0[]    --> NULL or pointer to component dist_loc_0[]
  *----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
-                                   cs_lnum_t                     *n1,
-                                   cs_lnum_t                     *n2,
-                                   cs_lnum_t                     *fac_1[],
-                                   cs_lnum_t                     *fac_2[],
-                                   cs_lnum_t                     *n_dist_1,
-                                   cs_lnum_t                     *n_dist_2,
-                                   cs_lnum_t                     *dist_loc_1[],
-                                   cs_lnum_t                     *dist_loc_2[]);
+                                   cs_lnum_t                     *n_0,
+                                   cs_lnum_t                     *faces_0[],
+                                   cs_lnum_t                     *n_dist_0,
+                                   cs_lnum_t                     *dist_loc_0[]);
 
 /*----------------------------------------------------------------------------
  * Print informations about the given coupling entity
@@ -392,16 +359,11 @@ cs_ic_set_exchcoeff(const int         field_id,
  * parameters:
  *   field_id   <-- id of the field
  *   volume_1[] <-- string criteria for the first group of cells
- *   volume_2[] <-- string criteria for the second group of cells
- *   juncture[] <-- string criteria for the juncture, which is a
- *                  group of faces
  *----------------------------------------------------------------------------*/
 
 int
 cs_internal_coupling_add_entity(int        field_id,
-                                const char volume_1[],
-                                const char volume_2[],
-                                const char juncture[]);
+                                const char volume_1[]);
 
 /*----------------------------------------------------------------------------
  * Add contribution from coupled faces (internal coupling) to initialisation
@@ -419,6 +381,16 @@ cs_internal_coupling_initial_contribution(const cs_internal_coupling_t  *cpl,
                                           const cs_real_t                c_weight[],
                                           const cs_real_t                pvar[],
                                           cs_real_3_t          *restrict grad);
+
+/*----------------------------------------------------------------------------
+ * Add juncture criterion from thinwall definition
+ *
+ * parameters:
+ *   criterion <-- string criteria for the juncture surface
+ *----------------------------------------------------------------------------*/
+
+void
+cs_thinwall_is_coupled(const char criterion[]);
 
 /*----------------------------------------------------------------------------*/
 

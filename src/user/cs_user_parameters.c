@@ -204,7 +204,6 @@ cs_user_time_moments(void)
 void
 cs_user_internal_coupling(void)
 {
-
 }
 
 

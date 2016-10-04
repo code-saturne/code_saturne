@@ -121,6 +121,9 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
                      selected_faces,
                      n_selected_faces);
 
+  if (false)
+    cs_thinwall_is_coupled(criteria);
+
   BFT_FREE(selected_faces);
 
   /*! [mesh_thinwall] */

@@ -215,6 +215,7 @@ cs_user_parameters(void)
  * \brief Define internal coupling options.
  *
  * Options are usually defined using cs_internal_coupling_add_entity.
+ * IMPORTANT: call "cs_thinwall_is_coupled(criteria)" in cs_user_mesh_thinwall
  */
 /*----------------------------------------------------------------------------*/
 
@@ -230,10 +231,7 @@ cs_user_internal_coupling(void)
   int f_id = cs_field_id_by_name("scalar1");
 
   cs_internal_coupling_add_entity(f_id,   /* Field to be coupled */
-                                  "x<.5", /* First  volume zone */
-                                  "x>.5", /* Second volume zone */
-                                  /* Joining criterion */
-                                  "plane[1, 0, 0, -.5, 1e-7]");
+                                  "x<.5"); /* Fluid volume zone */
 
   /*! [param_internal_coupling] */
 
