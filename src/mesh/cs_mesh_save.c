@@ -192,7 +192,7 @@ cs_mesh_save(cs_mesh_t          *mesh,
                             comm);
 #else
   cs_file_get_default_access(CS_FILE_MODE_WRITE, &method);
-  pp_out = cs_io_initialize(_name,
+  pp_out = cs_io_initialize(name,
                             "Face-based mesh definition, R0",
                             CS_IO_MODE_WRITE,
                             method,
