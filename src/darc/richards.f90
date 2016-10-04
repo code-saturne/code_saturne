@@ -116,7 +116,7 @@ integer imucpp, ircflp, isweep, isym, lchain
 integer ndircp, niterf, nswmpr
 integer iinvpe, iflmas, iflmab, iesize, idiffp, iconvp, ibsize
 integer fid
-integer iflid , iflwgr, f_dim, f_id0, iprev, iitsm
+integer iflid , iflwgr, f_dim, f_id0, iwgrp, iprev, iitsm
 
 double precision epsrgp, climgp, extrap
 double precision thetap, xdu, xdv, xdw, xnrmul
@@ -228,7 +228,8 @@ call field_get_name(ivarfl(ipr), chaine)
 lchain = 16
 
 f_id0 = -1
-if (vcopt_p%iwgrec.eq.1) f_id0 = -2
+iwgrp = 0
+if (vcopt_p%iwgrec.eq.1) iwgrp = 1
 
 ! --- Boundary conditions
 call field_get_coefa_s(ivarfl(ipr), coefa_p)
@@ -274,7 +275,6 @@ endif
 ! Computation of diffusion coefficients at the centers of faces
 if (darcy_anisotropic_permeability.eq.0) then
   call viscfa &
-  !==========
   ( imvisf ,                                  &
     cpro_permeability     ,                   &
     viscf  , viscb  )
@@ -290,7 +290,6 @@ else if (darcy_anisotropic_permeability.eq.1) then
   allocate(weighb(ndimfb))
   iwarnp = vcopt_p%iwarni
   call vitens &
-  !==========
   ( cpro_permeability_6 , iwarnp ,       &
     weighf , weighb ,                    &
     viscf  , viscb  )
@@ -316,7 +315,6 @@ imucpp = 0 ! do not multiply the convectiv term by anything
 ! Another option would be to store the arrays dam and xam in a global array
 ! rather than computing the matrix at each call to 'richards'.
 call matrix &
-!==========
 ( iconvp , idiffp , ndircp , isym   ,                            &
   thetap , imucpp ,                                              &
   coefb_p , coefbf_p     , rovsdt ,                              &
@@ -356,7 +354,6 @@ ircflp = vcopt_p%ircflu
 if (darcy_anisotropic_permeability.eq.0) then
 
   call itrgrp &
-  !==========
 ( ivarfl(ipr), init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
   iwarnp ,                                                                    &
   epsrgp , climgp , extrap ,                                                  &
@@ -371,7 +368,6 @@ if (darcy_anisotropic_permeability.eq.0) then
 else if (darcy_anisotropic_permeability.eq.1) then
 
   call itrgrv &
-  !==========
 ( ivarfl(ipr), init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp ,        &
   iphydr , iwarnp ,                                                                  &
   epsrgp , climgp , extrap ,                                                         &
@@ -478,7 +474,6 @@ do while ( (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) &
   if (darcy_anisotropic_permeability.eq.0) then
 
     call itrgrp &
-    !==========
   ( ivarfl(ipr), init  , inc , imrgra , iccocg , nswrgp , imligp , iphydr ,  &
     iwarnp ,                                                                 &
     epsrgp , climgp , extrap ,                                               &
@@ -493,7 +488,6 @@ do while ( (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) &
   else if (darcy_anisotropic_permeability.eq.1) then
 
     call itrgrv &
-    !==========
     ( ivarfl(ipr), init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp ,        &
     iphydr , iwarnp ,                                                                    &
     epsrgp , climgp , extrap ,                                                           &
@@ -575,9 +569,8 @@ extrap = vcopt_p%extrag
 if (darcy_anisotropic_permeability.eq.0) then
 
   call itrmas &
-  !==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp ,                                                       &
+   iwgrp  , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                     &
    rvoid  ,                                                       &
    presa  ,                                                       &
@@ -594,9 +587,8 @@ if (darcy_anisotropic_permeability.eq.0) then
   init = 0
 
   call itrmas &
-  !==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
-   iwarnp ,                                                                    &
+   iwgrp  , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    rvoid  ,                                                                    &
    dpvar  ,                                                                    &
@@ -608,9 +600,8 @@ if (darcy_anisotropic_permeability.eq.0) then
 else if (darcy_anisotropic_permeability.eq.1) then
 
   call itrmav &
-  !==========
  ( f_id0, init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp ,                                                     &
+   iphydr , iwgrp  , iwarnp ,                                            &
    epsrgp , climgp , extrap ,                                            &
    rvoid  ,                                                              &
    presa  ,                                                              &
@@ -629,9 +620,8 @@ else if (darcy_anisotropic_permeability.eq.1) then
   ircflp = 0
 
   call itrmav &
-  !==========
  ( f_id0, init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp ,  &
-   iphydr , iwarnp ,                                                      &
+   iphydr , iwgrp  , iwarnp ,                                             &
    epsrgp , climgp , extrap ,                                             &
    rvoid  ,                                                               &
    dpvar  ,                                                               &

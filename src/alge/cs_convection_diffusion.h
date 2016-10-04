@@ -4674,6 +4674,7 @@ void CS_PROCF (itrmas, ITRMAS)
  const cs_int_t  *const   nswrgp,
  const cs_int_t  *const   imligp,
  const cs_int_t  *const   iphydp,
+ const cs_int_t  *const   iwgrp,
  const cs_int_t  *const   iwarnp,
  const cs_real_t *const   epsrgp,
  const cs_real_t *const   climgp,
@@ -4708,6 +4709,7 @@ void CS_PROCF (itrmav, ITRMAV)
  const cs_int_t  *const   imligp,
  const cs_int_t  *const   ircflp,
  const cs_int_t  *const   iphydp,
+ const cs_int_t  *const   iwgrp,
  const cs_int_t  *const   iwarnp,
  const cs_real_t *const   epsrgp,
  const cs_real_t *const   climgp,
@@ -5442,6 +5444,9 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  *                               - = 0 thank to neighbooring gradients
  *                               - = 1 thank to the mean gradient
  * \param[in]     iphydp        hydrostatic pressure indicator
+ * \param[in]     iwgrp         indicator
+ *                               - 1 weight gradient by vicosity*porosity
+ *                               - weighting determined by field options
  * \param[in]     iwarnp        verbosity
  * \param[in]     epsrgp        relative precision for the gradient
  *                               reconstruction
@@ -5481,6 +5486,7 @@ cs_face_diffusion_potential(const int                 f_id,
                             int                       nswrgp,
                             int                       imligp,
                             int                       iphydp,
+                            int                       iwgrp,
                             int                       iwarnp,
                             double                    epsrgp,
                             double                    climgp,
@@ -5539,6 +5545,9 @@ cs_face_diffusion_potential(const int                 f_id,
  * \param[in]     iphydp        indicator
  *                               - 1 hydrostatic pressure taken into account
  *                               - 0 otherwise
+ * \param[in]     iwgrp         indicator
+ *                               - 1 weight gradient by vicosity*porosity
+ *                               - weighting determined by field options
  * \param[in]     iwarnp        verbosity
  * \param[in]     epsrgp        relative precision for the gradient
  *                               reconstruction
@@ -5581,6 +5590,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
                                         int                       imligp,
                                         int                       ircflp,
                                         int                       iphydp,
+                                        int                       iwgrp,
                                         int                       iwarnp,
                                         double                    epsrgp,
                                         double                    climgp,

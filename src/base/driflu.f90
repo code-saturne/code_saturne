@@ -418,7 +418,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     ! The computed convective flux has the dimension of rho*velocity
     call itrmas &
    ( f_id0  , init , inc , imrgra , iccocg , nswrgp , imligp , iphydp ,      &
-     iwarnp ,                                                                &
+     0      , iwarnp ,                                                       &
      epsrgp , climgp , extrap ,                                              &
      rvoid  ,                                                                &
      viscce ,                                                                &

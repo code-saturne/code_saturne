@@ -400,9 +400,8 @@ climgp = vcopt%climgr
 extrap = vcopt%extrag
 
 call itrmas &
-!==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp ,     &
-   iwarnp ,                                                                    &
+   0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    rvoid  ,                                                                    &
    pota   ,                                                                    &
@@ -420,9 +419,8 @@ nswrgp = 0
 inc = 0
 
 call itrmas &
-!==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp ,     &
-   iwarnp ,                                                                    &
+   0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    rvoid  ,                                                                    &
    dpot   ,                                                                    &

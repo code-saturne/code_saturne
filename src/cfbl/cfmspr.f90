@@ -238,7 +238,6 @@ endif
 allocate(c2(ncelet))
 
 call cs_cf_thermo_c_square(cpro_cp, cpro_cv, cvar_pr, crom, c2, ncel)
-!=========================
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel) + vcopt_p%istat*(cell_f_vol(iel)/(dt(iel)*c2(iel)))
@@ -253,7 +252,6 @@ enddo
 ! the values at boundary faces in wflmab won't be taken into account.
 
 call cfmsfp                                                                     &
-!==========
 ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                                  &
   icepdc , icetsm , itypsm ,                                                    &
   dt     , vela   ,                                                             &
@@ -298,7 +296,6 @@ call divmas(init,wflmas,wflmab,smbrs)
 imvis1 = 1
 
 call viscfa                                                                    &
-!==========
 ( imvis1 ,                                                                     &
   dt     ,                                                                     &
   viscf  , viscb  )
@@ -333,7 +330,6 @@ thetv  = vcopt_p%thetav
 icvflb = 0
 
 call codits                                                                    &
-!==========
 ( idtvar , ipr   , iconvp , idiffp , ndircp ,                                  &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                                 &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,                        &
@@ -358,7 +354,6 @@ call codits                                                                    &
 !       corrective treatement.
 
 call cs_cf_check_pressure(cvar_pr, ncel)
-!========================
 
 ! --- Explicit balance (see codits : the increment is withdrawn)
 
@@ -398,9 +393,8 @@ iphydp = 0
 ! This flux is stored as the mass flux of the energy
 
 call itrmas                                                                    &
-!==========
 ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp ,               &
-  iphydp , iwarnp ,                                                            &
+  iphydp , 0      , iwarnp ,                                                   &
   epsrgp , climgp , extrap ,                                                   &
   rvoid  ,                                                                     &
   cvar_pr,                                                                     &

@@ -1128,9 +1128,8 @@ if (arak.gt.0.d0) then
     extrap = vcopt_p%extrag
 
     call itrmas &
-    !==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
-   iwarnp ,                                                                    &
+   0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    frcxt  ,                                                                    &
    cvara_pr          ,                                                         &
@@ -1200,7 +1199,7 @@ if (arak.gt.0.d0) then
     call itrmav &
     !==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp ,                                                       &
+   iphydr , 0      , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
    frcxt  ,                                                                &
    cvara_pr,                                                               &
@@ -1866,9 +1865,8 @@ extrap = vcopt_p%extrag
 if (vcopt_p%idften.eq.1) then
 
   call itrmas &
-  !==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
-   iwarnp ,                                                                    &
+   0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
    presa  ,                                                                    &
@@ -1885,9 +1883,8 @@ if (vcopt_p%idften.eq.1) then
   inc = 0
 
   call itrmas &
-  !==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
-   iwarnp ,                                                                    &
+   0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
    dpvar  ,                                                                    &
@@ -1902,7 +1899,7 @@ else if (vcopt_p%idften.eq.6) then
   call itrmav &
   !==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp ,                                                       &
+   iphydr , 0      , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
    dfrcxt ,                                                                &
    presa  ,                                                                &
@@ -1923,7 +1920,7 @@ else if (vcopt_p%idften.eq.6) then
   call itrmav &
   !==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp ,                                                       &
+   iphydr , 0      , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
    dfrcxt ,                                                                &
    dpvar  ,                                                                &
@@ -2223,9 +2220,8 @@ if (idilat.eq.5) then
 
   if (vcopt_p%idften.eq.1) then
     call itrmas &
-    !==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
-   iwarnp ,                                                                    &
+   0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
    dpvar  ,                                                                    &
@@ -2241,9 +2237,8 @@ if (idilat.eq.5) then
     inc = 0
 
     call itrmas &
-    !==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
-   iwarnp ,                                                                    &
+   0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
    ddpvar ,                                                                    &
@@ -2255,9 +2250,8 @@ if (idilat.eq.5) then
   else if (vcopt_p%idften.eq.6) then
 
     call itrmav &
-    !==========
    ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-     iphydr , iwarnp ,                                                       &
+     iphydr , 0      , iwarnp ,                                              &
      epsrgp , climgp , extrap ,                                              &
      dfrcxt ,                                                                &
      dpvar  ,                                                                &
@@ -2274,9 +2268,8 @@ if (idilat.eq.5) then
     inc = 0
 
     call itrmav &
-    !==========
    ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-     iphydr , iwarnp ,                                                       &
+     iphydr , 0      , iwarnp ,                                              &
      epsrgp , climgp , extrap ,                                              &
      dfrcxt ,                                                                &
      ddpvar ,                                                                &
