@@ -786,7 +786,7 @@ _cs_lagr_free_zone_class_data(cs_lagr_zone_class_data_t *zone_class_data)
 {
   assert(zone_class_data != NULL);
 
-  if (cs_glob_lagr_model->physical_model == 2)
+  if (cs_glob_lagr_model->physical_model == 1)
     BFT_FREE(zone_class_data->temperature);
 
   else if (cs_glob_lagr_model->physical_model == 2) {
