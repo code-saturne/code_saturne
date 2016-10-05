@@ -119,7 +119,7 @@ enddo
 ! the cold wall (tmet=tmet0 in this case).
 !===============================================================================
 
-if (icond.eq.1) then
+if (icondv.eq.0) then
 
   ! Choice the way to impose the wall temperature (tmet)
   ! at the solid/fluid interface:
@@ -137,9 +137,9 @@ if (icond.eq.1) then
   itagms = 1
 
   ! Wall temperature computed by a 0-D thermal model
-  ! with a explicit scheme and variable over time.
+  ! with an explicit scheme and variable over time.
   ! ------------------------------------------------
-  ! Remark : the wall temperature is in unit [°C].
+  ! Remark : the wall temperature unit is [°C].
   if(itagms.eq.1) then
     !----------------------------------------
     ! (xem) thickness of the metal structures
@@ -167,10 +167,8 @@ if (icond.eq.1) then
 endif
 
 !===============================================================================
-! Define here by the user the values to specify arrays used by the modelling of
-! the metal structures condensation.
-!               -----------------------------------------
-! with :
+! The user can specify here the values of the following arrays used by the
+! modelling of the metal structures condensation:
 !         - itypst(:,ivar) to specify the condensation source term type,
 !         - svcond(:,ivar) the scalar value to multiply by the sink term array
 !                          of the metal structures condensation model.

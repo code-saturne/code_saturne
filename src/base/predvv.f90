@@ -542,7 +542,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   endif
 
 ! --- volume Gamma source term adding for volume condensation modelling
-  if (icond.eq.1) then
+  if (icondv.eq.0) then
     allocate(surfbm(ncelet))
     surfbm(:) = 0.d0
 

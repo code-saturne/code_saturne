@@ -985,7 +985,7 @@ if (iscalt.le.0) then
 endif
 
 ! If condensation, yplus is needed
-if (icond.ge.0) then
+if (icondb.ge.0.or.icondv.ge.0) then
   ipstdv(ipstyp) = 1
 endif
 

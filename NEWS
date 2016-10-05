@@ -5,6 +5,11 @@ Release 4.0.6 (unreleased)
 Bug fixes:
 ----------
 
+- Replace icond keyword by icondb, icondv to allow to enable wall condensation
+  and condensation on internals at the same time. Old keyword icond is kept for
+  compatibility of data settings, and takes precedency over icondb, icondv if
+  set.
+
 - Fix misleading specification of particle injection mass flow rate in GUI.
 
 - GUI: minor fix for Dirichlet formula usage and turbulence properties update.

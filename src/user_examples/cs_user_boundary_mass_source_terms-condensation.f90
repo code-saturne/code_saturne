@@ -255,14 +255,14 @@ endif
 !===============================================================================
 ! Parameters padding of the 1-D thermal model and condensation model
 ! ------------------------------------------------------------------
-! the both models can be activated and coupled together or
-! the condensation model can be use without activated the 1-D thermal model
-! in this case a constant wall temperature must be specified by the user at
-! the cold wall (at iappel=3 tpar=tpar0 in this case).
+! Both models can be enabled and coupled together or
+! the condensation model can be used without enabling the 1-D thermal model.
+! In this latter case a constant wall temperature must be specified by the
+! user at the cold wall (at the third call (iappel=3) tpar=tpar0).
 !===============================================================================
 if (iappel.eq.2) then
 
-  if (icond.eq.0) then
+  if (icondb.eq.0) then
 
     ! Turbulent law and empiric correlations used to
     ! define the exchange coefficients of the sink
@@ -363,7 +363,7 @@ elseif (iappel.eq.3) then
   ivarh = isca(iscalt)
   call field_get_val_s(ivarfl(ivarh), cvar_h)
 
-  if (icond.eq.0) then
+  if (icondb.eq.0) then
     if(itag1d.eq.1) then
       !-------------------------------------------
       !Boundary conditions of the 1-D thermal model

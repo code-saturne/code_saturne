@@ -94,7 +94,9 @@ i_coal_drift = 0
 
 !> --- Specific condensation modelling
 !>     (icond = -1 : not activated by default)
-icond = -1
+icond  = -1
+icondb = -1
+icondv = -1
 
 ! ---> Initialisation pour la combustion gaz
 !       Variables transportees
@@ -776,4 +778,3 @@ enddo
 
 return
 end subroutine ppinii
-

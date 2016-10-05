@@ -471,7 +471,7 @@ if (nftcdt.gt.0) then
   !=================
 endif
 
-if (icond.eq.1) then
+if (icondv.eq.0) then
   call init_vcond ( nvar, ncelet )
   !=============
 endif
@@ -1332,7 +1332,7 @@ if(nftcdt.gt.0) then
   endif
 endif
 
-if (icond.eq.1) then
+if (icondv.eq.0) then
   call finalize_vcond
   if (itagms.eq.1) then
     call finalize_tagms

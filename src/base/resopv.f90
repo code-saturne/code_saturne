@@ -125,7 +125,7 @@ use pointe, only: itypfb, b_head_loss, gamcav, dgdpca
 use albase
 use parall
 use period
-use ppincl, only: icond
+use ppincl, only: icondv
 use lagpar
 use lagran
 use cplsat
@@ -493,7 +493,7 @@ if (irnpnw.ne.1) then
   endif
 
   ! --- volume Gamma source term adding for volume condensation modelling
-  if (icond.eq.1) then
+  if (icondv.eq.0) then
     allocate(surfbm(ncelet))
     surfbm(:) = 0.d0
 
@@ -1468,7 +1468,7 @@ endif
 
 ! --- volume Gamma source for metal mass structures
 !     condensation modelling
-if (icond.eq.1) then
+if (icondv.eq.0) then
   allocate(surfbm(ncelet))
   surfbm(:) = 0.d0
 

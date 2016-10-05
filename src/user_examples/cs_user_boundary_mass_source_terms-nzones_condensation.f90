@@ -222,7 +222,7 @@ if (iappel.eq.1.or.iappel.eq.2) then
 !  - This section (iappel=1 or 2) is only accessed at the beginning of a
 !     calculation. Should the localization of the condensation source terms evolve
 !     in time, the user must identify at the beginning all cells that can
-!     potentially becomea condensation  source term.
+!     potentially become condensation  source term.
 !===============================================================================
 
 
@@ -293,7 +293,7 @@ if (iappel.eq.2) then
 
   do ii = 1, nfbpcd
     iz = izzftcd(ii)
-    if (iz.eq.1.and.icond.eq.0) then
+    if (iz.eq.1.and.icondb.eq.0) then
       ! Turbulent law and empiric correlations used to
       ! define the exchange coefficients of the sink
       ! source term and heat transfer to the cooling
@@ -406,7 +406,7 @@ elseif (iappel.eq.3) then
 
     iz = izzftcd(ii)
 
-    if (icond.eq.0) then
+    if (icondb.eq.0) then
       if (iztag1d(iz).eq.1) then
         !-------------------------------------------
         !Boundary conditions of the 1-D thermal model
@@ -426,7 +426,7 @@ elseif (iappel.eq.3) then
         ! with a value specified by the user
         ztpar(iz) = 26.57d0
       endif
-    elseif (iz.eq.2.and.icond.eq.0) then
+    elseif (iz.eq.2.and.icondb.eq.0) then
       if (iztag1d(iz).eq.1) then
         !-------------------------------------------
         !Boundary conditions of the 1-D thermal model

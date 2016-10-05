@@ -72,7 +72,7 @@ use pointe, only:itypfb, icetsm, ifbpcd, ltmast
 use entsor
 use parall
 use period
-use ppincl, only:icond
+use ppincl, only:icondv
 use mesh
 use field
 use cs_tagms, only:s_metal
@@ -185,7 +185,7 @@ endif
 
 ! Sink source term associated to
 ! the metal structures condensation modelling
-if (icond.eq.1) then
+if (icondv.eq.0) then
   allocate(surfbm(ncelet))
   surfbm(:) = 0.d0
 

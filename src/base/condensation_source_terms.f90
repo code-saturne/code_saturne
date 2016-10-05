@@ -72,7 +72,7 @@ subroutine condensation_source_terms &
 
 use optcal  , only:iscalt, itherm
 use cstphy  , only:voltot
-use ppincl  , only:icond
+use ppincl  , only:icondb, icondv
 use mesh    , only:ifabor, surfbn, volume
 use cs_tagms, only:s_metal
 !===============================================================================
@@ -101,7 +101,7 @@ integer ii, ifac, iel
 double precision, allocatable, dimension(:) :: surfbm
 !===============================================================================
 
-if (icond.eq.0) then
+if (icondb.eq.0) then
  !-----------------------------------------------------------------
  !--- Compute condensation source terms associated to surface zones
  !-----------------------------------------------------------------
@@ -125,7 +125,7 @@ if (icond.eq.0) then
       tsimp(iel) = tsimp(iel) + surfbn(ifac) *gam_s(ii)
     endif
   enddo
-elseif (icond.eq.1) then
+elseif (icondv.eq.0) then
   !-----------------------------------------------------------------
   !--- Compute condensation source terms associated to volume zones
   !--- with the metal mass structures modelling

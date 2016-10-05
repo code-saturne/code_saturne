@@ -218,6 +218,17 @@ iihmpu = iihmpr
 call usppmo(iihmpu)
 !==========
 
+! if deprecated icond has been set by the user
+! set icondb, icondv to keep old behaviour
+! (only one condensation type at the same time)
+if (icond.eq.0) then
+  icondb =  0
+  icondv = -1
+elseif (icond.eq.1) then
+  icondb = -1
+  icondv =  0
+endif
+
 ! Define fields for variables, check and build iscapp
 
 call fldvar(nmodpp)
