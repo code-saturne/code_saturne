@@ -784,10 +784,12 @@ _lagr_map_fields_default(void)
 static void
 _cs_lagr_free_zone_class_data(cs_lagr_zone_class_data_t *zone_class_data)
 {
-
   assert(zone_class_data != NULL);
 
-  if (cs_glob_lagr_model->physical_model == 2) {
+  if (cs_glob_lagr_model->physical_model == 2)
+    BFT_FREE(zone_class_data->temperature);
+
+  else if (cs_glob_lagr_model->physical_model == 2) {
 
     BFT_FREE(zone_class_data->coke_density);
     BFT_FREE(zone_class_data->temperature);
@@ -795,7 +797,6 @@ _cs_lagr_free_zone_class_data(cs_lagr_zone_class_data_t *zone_class_data)
     BFT_FREE(zone_class_data->coke_mass_fraction);
 
   }
-
 }
 
 static void
@@ -824,9 +825,9 @@ _cs_lagr_allocate_zone_class_data(int  iclass,
     int  old_lagr_nclass = cs_glob_lagr_nclass_max;
 
     if (izone >= cs_glob_lagr_nzone_max)
-      cs_glob_lagr_nzone_max  = CS_MAX(izone , cs_glob_lagr_nzone_max  + 5);
+      cs_glob_lagr_nzone_max  = CS_MAX(izone +1, cs_glob_lagr_nzone_max  + 5);
     if (iclass >= cs_glob_lagr_nclass_max)
-      cs_glob_lagr_nclass_max = CS_MAX(iclass, cs_glob_lagr_nclass_max + 1);
+      cs_glob_lagr_nclass_max = CS_MAX(iclass +1, cs_glob_lagr_nclass_max + 1);
 
     BFT_REALLOC(_lagr_zone_class_data,
                 cs_glob_lagr_nzone_max * cs_glob_lagr_nclass_max,
@@ -863,25 +864,31 @@ _cs_lagr_allocate_zone_class_data(int  iclass,
 
   assert(zone_class_data != NULL);
 
-  if (cs_glob_lagr_model->physical_model == 1) {
-    BFT_MALLOC(zone_class_data->temperature,
-               1,
-               cs_real_t);
-  }
-  else if (cs_glob_lagr_model->physical_model == 2) {
+  /* On first call for this zone */
 
-    BFT_MALLOC(zone_class_data->coke_density,
-               cs_glob_lagr_model->n_temperature_layers,
-               cs_real_t);
-    BFT_MALLOC(zone_class_data->temperature,
-               cs_glob_lagr_model->n_temperature_layers,
-               cs_real_t);
-    BFT_MALLOC(zone_class_data->coal_mass_fraction,
-               cs_glob_lagr_model->n_temperature_layers,
-               cs_real_t);
-    BFT_MALLOC(zone_class_data->coke_mass_fraction,
-               cs_glob_lagr_model->n_temperature_layers,
-               cs_real_t);
+  if (zone_class_data->nb_part == 0) {
+
+    if (cs_glob_lagr_model->physical_model == 1) {
+      BFT_MALLOC(zone_class_data->temperature,
+                 1,
+                 cs_real_t);
+    }
+    else if (cs_glob_lagr_model->physical_model == 2) {
+
+      BFT_MALLOC(zone_class_data->coke_density,
+                 cs_glob_lagr_model->n_temperature_layers,
+                 cs_real_t);
+      BFT_MALLOC(zone_class_data->temperature,
+                 cs_glob_lagr_model->n_temperature_layers,
+                 cs_real_t);
+      BFT_MALLOC(zone_class_data->coal_mass_fraction,
+                 cs_glob_lagr_model->n_temperature_layers,
+                 cs_real_t);
+      BFT_MALLOC(zone_class_data->coke_mass_fraction,
+                 cs_glob_lagr_model->n_temperature_layers,
+                 cs_real_t);
+
+    }
 
   }
 
@@ -1010,7 +1017,7 @@ cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
  *----------------------------------------------------------------------------*/
 
 void
-cs_lagr_finalize_c_arrays(void)
+cs_lagr_finalize(void)
 {
   int  nvisbr = cs_glob_lagr_dim->nvisbr;
 
@@ -1061,6 +1068,10 @@ cs_lagr_finalize_c_arrays(void)
   /* Also close log file (TODO move this) */
 
   cs_lagr_print_finalize();
+
+  /* Close tracking structures */
+
+  cs_lagr_tracking_finalize();
 }
 
 /*----------------------------------------------------------------------------*/

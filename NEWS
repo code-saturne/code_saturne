@@ -13,6 +13,7 @@ Bug fixes:
   A priori, could be used only if the thermal turbulent flux was solved.
 
 - Lagrangian model:
+  * Fix some memory leaks.
   * Fixes for some BC issues with multiple classes.
   * Fixes for boundary condition validity checks.
   * Fixes for restart and logging.

@@ -444,7 +444,7 @@ cs_run(void)
 
   /* Free Lagrangian related structures */
 
-  cs_lagr_tracking_finalize();
+  cs_lagr_finalize();
 
   /* Free main mesh after printing some statistics */
 

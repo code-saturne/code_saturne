@@ -1141,6 +1141,9 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
     BFT_FREE(path2);
     BFT_FREE(interaction);
 
+    BFT_FREE(label);
+    BFT_FREE(nature);
+
   } /* End of loop on zones */
 
 }
