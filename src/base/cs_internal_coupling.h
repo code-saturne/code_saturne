@@ -61,45 +61,45 @@ typedef struct {
   int dim;
 
   /* Locator + tag for exchanging variables */
-  ple_locator_t* locator_0;
-  int *tag_0;
+  ple_locator_t   *locator_0;
+  int             *tag_0;
 
   /* Selection criterias for coupled domains */
-  char *criteria_cells_1;
-  char *criteria_cells_2;
+  char  *criteria_cells_1;
+  char  *criteria_cells_2;
 
-  cs_lnum_t n_0; /* Number of faces */
-  cs_lnum_t *faces_0; /* Coupling boundary faces, numbered 1..n   */
+  cs_lnum_t   n_0; /* Number of faces */
+  cs_lnum_t  *faces_0; /* Coupling boundary faces, numbered 1..n   */
 
-  cs_lnum_t n_dist_0; /* Number of faces in dist_loc_0 */
-  cs_lnum_t* dist_loc_0; /* Distant boundary faces associated with locator */
+  cs_lnum_t   n_dist_0; /* Number of faces in dist_loc_0 */
+  cs_lnum_t  *dist_loc_0; /* Distant boundary faces associated with locator */
 
   /* face i is coupled in this entity if coupled_faces[i] = true */
-  bool *coupled_faces;
+  bool  *coupled_faces;
 
-  cs_real_t *hint_0; /* hint coefficient */
-  cs_real_t *hext_0; /* hext coefficient */
+  cs_real_t  *hint_0; /* hint coefficient */
+  cs_real_t  *hext_0; /* hext coefficient */
 
   /* Geometrical weights around coupling interface */
-  cs_real_t *gweight_0;
+  cs_real_t  *gweight_0;
 
   /* IJ vectors */
-  cs_real_3_t* ij_0;
+  cs_real_3_t  *ij_0;
 
   /* OF vectors  */
-  cs_real_3_t* ofij_0;
+  cs_real_3_t  *ofij_0;
 
   /* Calculation parameters */
   cs_real_t thetav;
   int       idiff;
 
   /* Gradient reconstruction */
-  cs_real_33_t* cocgb_s_lsq;
-  cs_real_33_t* cocgb_s_it;
-  cs_real_33_t* cocg_s_it;
+  cs_real_33_t  *cocgb_s_lsq;
+  cs_real_33_t  *cocgb_s_it;
+  cs_real_33_t  *cocg_s_it;
 
   /* User information */
-  char* namesca;
+  char  *namesca;
 
 } cs_internal_coupling_t;
 

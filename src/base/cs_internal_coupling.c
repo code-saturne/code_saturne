@@ -259,7 +259,7 @@ _cs_internal_coupling_exchange_gweight(const cs_internal_coupling_t  *cpl)
   const cs_lnum_t *faces_0 = cpl->faces_0;
   const cs_lnum_t n_dist_0 = cpl->n_dist_0;
   const cs_lnum_t *dist_loc_0 = cpl->dist_loc_0;
-  const cs_real_3_t *ij_0 = cpl->ij_0;
+  const cs_real_3_t *ij_0 = (const cs_real_3_t *)cpl->ij_0;
   cs_real_t* gweight_0 = cpl->gweight_0;
 
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -559,7 +559,7 @@ cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
   const cs_lnum_t *faces_0 = cpl->faces_0;
   const cs_lnum_t n_dist_0 = cpl->n_dist_0;
   const cs_lnum_t *dist_loc_0 = cpl->dist_loc_0;
-  const cs_real_3_t *ofij_0 = cpl->ofij_0;
+  const cs_real_3_t *ofij_0 = (const cs_real_3_t *)cpl->ofij_0;
   const cs_real_t* gweight_0 = cpl->gweight_0;
   cs_real_t *rweight_0 = NULL;
 
@@ -681,7 +681,7 @@ cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
   const cs_lnum_t *faces_0 = cpl->faces_0;
   const cs_lnum_t n_dist_0 = cpl->n_dist_0;
   const cs_lnum_t *dist_loc_0 = cpl->dist_loc_0;
-  const cs_real_3_t *ij_0 = cpl->ij_0;
+  const cs_real_3_t *ij_0 = (const cs_real_3_t *)cpl->ij_0;
   cs_real_t *rweight_0;
 
   const cs_mesh_t* m = cs_glob_mesh;
@@ -756,7 +756,7 @@ cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
 
   const cs_lnum_t n_0 = cpl->n_0;
   const cs_lnum_t *faces_0 = cpl->faces_0;
-  const cs_real_3_t *ij_0 = cpl->ij_0;
+  const cs_real_3_t *ij_0 = (const cs_real_3_t *)cpl->ij_0;
 
   const cs_mesh_t* m = cs_glob_mesh;
   const cs_lnum_t *restrict b_face_cells
@@ -799,7 +799,7 @@ cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
 
   const cs_lnum_t n_0 = cpl->n_0;
   const cs_lnum_t *faces_0 = cpl->faces_0;
-  const cs_real_3_t *ofij_0 = cpl->ofij_0;
+  const cs_real_3_t *ofij_0 = (const cs_real_3_t *)cpl->ofij_0;
 
   const cs_mesh_t* m = cs_glob_mesh;
   const int n_cells_ext = m->n_cells_with_ghosts;
@@ -1006,8 +1006,6 @@ cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
   int ii, jj;
   cs_lnum_t face_id;
 
-  const cs_lnum_t n_0 = cpl->n_0;
-  const cs_lnum_t *faces_0 = cpl->faces_0;
   const cs_lnum_t n_dist_0 = cpl->n_dist_0;
   const cs_lnum_t *dist_loc_0 = cpl->dist_loc_0;
 
@@ -1051,8 +1049,6 @@ cs_internal_coupling_exchange_by_cell_id(const cs_internal_coupling_t  *cpl,
   int ii, jj;
   cs_lnum_t face_id, cell_id;
 
-  const cs_lnum_t n_0 = cpl->n_0;
-  const cs_lnum_t *faces_0 = cpl->faces_0;
   const cs_lnum_t n_dist_0 = cpl->n_dist_0;
   const cs_lnum_t *dist_loc_0 = cpl->dist_loc_0;
 
@@ -1374,7 +1370,7 @@ cs_internal_coupling_print(const cs_internal_coupling_t  *cpl)
     return;
 
   int ii;
-  cs_lnum_t face_id, face_id2, cell_id, cell_id2;
+  cs_lnum_t face_id;
 
   const cs_lnum_t n_0 = cpl->n_0;
   const cs_lnum_t *faces_0 = cpl->faces_0;
